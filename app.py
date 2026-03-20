@@ -38,29 +38,16 @@ st.markdown("""
         margin: 0 auto !important;
     }
 
-    /* File uploader — visible, compact, menyatu di bawah chat bar */
+    /* File uploader — SEPENUHNYA tersembunyi, diklik via JS */
     [data-testid="stFileUploader"] {
-        max-width: 760px !important;
-        margin: 0 auto 4px auto !important;
-    }
-    [data-testid="stFileUploaderDropzone"] {
-        background: #161616 !important;
-        border: 1px dashed #333 !important;
-        border-radius: 12px !important;
-        padding: 6px 12px !important;
-        min-height: unset !important;
-    }
-    [data-testid="stFileUploaderDropzoneInstructions"] {
-        display: none !important;
-    }
-    [data-testid="stFileUploader"] label p {
-        font-size: 0.75rem !important;
-        color: #666 !important;
-    }
-    [data-testid="stFileUploader"] button {
-        font-size: 0.75rem !important;
-        padding: 3px 10px !important;
-        border-radius: 6px !important;
+        position: absolute !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     [data-testid="stTextInput"] {
@@ -299,10 +286,10 @@ if st.session_state.get("do_reset_uploader"):
     st.session_state["do_reset_uploader"] = False
 
 uploaded_file = st.file_uploader(
-    "📎 Lampirkan PDF atau Gambar/Chart",
+    "upload",
     type=["pdf", "png", "jpg", "jpeg"],
     key=f"uploader_{st.session_state['upload_key']}",
-    label_visibility="collapsed"
+    label_visibility="hidden"
 )
 
 if uploaded_file is not None:
@@ -315,14 +302,16 @@ if uploaded_file is not None:
         st.session_state.attachment_text = f"[PDF: {fname}]\n{pdf_text[:6000]}"
         st.session_state.pop("image_b64", None)
         st.session_state.pop("image_mime", None)
-        st.toast(f"✅ {fname} siap dikirim", icon="📄")
+        st.toast(f"✅ {fname} siap dikirim — ketik pertanyaan lalu Enter", icon="📄")
+        st.rerun()
     else:
         img_bytes = uploaded_file.read()
         st.session_state["image_b64"]  = base64.b64encode(img_bytes).decode("utf-8")
         ext = fname.split(".")[-1].lower()
         st.session_state["image_mime"] = "image/png" if ext == "png" else "image/jpeg"
         st.session_state.attachment_text = f"[Gambar: {fname}]"
-        st.toast(f"✅ {fname} siap dianalisa", icon="🖼️")
+        st.toast(f"✅ {fname} siap dianalisa — ketik pertanyaan lalu Enter", icon="🖼️")
+        st.rerun()
 
 
 # ── BRIDGE INPUT ──────────────────────────────────────────
@@ -585,8 +574,26 @@ chat_bar_html = f"""
     }}
   }}
   function triggerUpload() {{
-    const uploader = window.parent.document.querySelector('input[type="file"]');
-    if (uploader) uploader.click();
+    const parentDoc = window.parent.document;
+    // Cari semua file inputs
+    const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
+    if (fileInputs.length > 0) {{
+      const fi = fileInputs[fileInputs.length - 1];
+      // Sementara enable pointer-events untuk klik
+      fi.style.pointerEvents = 'auto';
+      fi.style.position = 'fixed';
+      fi.style.top = '0';
+      fi.style.left = '0';
+      fi.style.width = '1px';
+      fi.style.height = '1px';
+      fi.style.opacity = '0';
+      fi.click();
+      // Restore setelah klik
+      setTimeout(() => {{
+        fi.style.position = '';
+        fi.style.pointerEvents = '';
+      }}, 500);
+    }}
   }}
 </script>
 </body>
