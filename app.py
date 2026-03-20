@@ -6,108 +6,45 @@ import base64
 from PIL import Image
 import io
 
-# 1. Konfigurasi Halaman
+import streamlit as st
+from groq import Groq
+import fitz
+from PIL import Image
+import io
+import base64
+
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. CSS LENGKAP
+# CSS MINIMAL — hanya hide elemen yang tidak perlu, TIDAK sentuh header sama sekali
 st.markdown("""
     <style>
 
-    /* ============================================
-       SEMBUNYIKAN SEMUA ELEMEN BAWAAN STREAMLIT
-       ============================================ */
+    /* Hanya hide footer dan main menu hamburger bawaan */
+    footer { visibility: hidden; }
+    #MainMenu { visibility: hidden; }
 
-    /* Sembunyikan toolbar kanan bawah (Deploy, Settings, dll) */
-    [data-testid="stToolbar"],
-    .stToolbar,
-    #MainMenu,
-    footer {
-        visibility: hidden !important;
-        display: none !important;
-    }
-
-    /* Sembunyikan header bar Streamlit (yang berisi Deploy button)
-       TAPI jangan sembunyikan tombol toggle sidebar */
-    [data-testid="stHeader"] {
-        background: transparent !important;
-        height: 2.5rem !important;
-    }
-
-    /* Sembunyikan semua isi header KECUALI tombol collapse sidebar */
-    [data-testid="stHeader"] > * {
-        visibility: hidden !important;
-    }
-
-    /* Paksa tombol toggle sidebar tetap terlihat */
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"] {
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        z-index: 9999 !important;
-    }
-
-    /* ============================================
-       SIDEBAR
-       ============================================ */
-
-    /* Turunkan konten sidebar agar tidak terlalu ke atas */
+    /* Sidebar padding agar tidak terlalu ke atas */
     section[data-testid="stSidebar"] > div:first-child {
-        padding-top: 3.5rem !important;  /* Turunkan konten sidebar */
+        padding-top: 4rem;
     }
 
-    /* ============================================
-       MAIN CONTENT AREA
-       ============================================ */
-    [data-testid="stMainBlockContainer"] {
-        max-width: 820px !important;
-        margin: 0 auto !important;
-        padding-top: 3rem !important;
-    }
+    /* Main content */
+    .main-header { text-align: center; margin-bottom: 2rem; }
 
-    /* Header judul */
-    .main-header {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-
-    /* ============================================
-       CHAT INPUT & ATTACHMENT ICON
-       ============================================ */
+    /* Chat input */
     .stChatInputContainer textarea {
-        padding-left: 55px !important;
         border-radius: 25px !important;
     }
 
-    div[data-testid="stPopover"] {
-        position: fixed;
-        bottom: 34px;
-        left: calc(50% - 360px);
-        z-index: 1001;
-    }
-
-    @media (max-width: 850px) {
-        div[data-testid="stPopover"] { left: 48px; }
-        [data-testid="stMainBlockContainer"] { max-width: 95% !important; }
-    }
-
-    div[data-testid="stPopover"] > button {
-        border: none !important;
-        background: transparent !important;
-        font-size: 22px !important;
-        color: #888 !important;
-        cursor: pointer !important;
-    }
-
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 
-# 3. SIDEBAR
+# SIDEBAR
 with st.sidebar:
     try:
         logo = Image.open("Mate KIPM LOGO.png")
@@ -120,7 +57,7 @@ with st.sidebar:
             <p style="margin: 0; font-size: 0.8em; color: gray;">Komunitas Investasi Pasar Modal</p>
             <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
         </div>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     st.divider()
     st.subheader("📜 History Searching")
@@ -132,16 +69,16 @@ with st.sidebar:
                 st.markdown(f"🔍 {preview}")
 
 
-# 4. HEADER UTAMA
+# MAIN
 st.markdown("""
     <div class="main-header">
         <h1 style="margin:0;">KIPM SIGMA ∑</h1>
         <p style="color:gray;">Strategic Intelligence & Global Market Analysis</p>
     </div>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 
-# 5. SESSION STATE
+# SESSION STATE
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
@@ -159,39 +96,33 @@ for msg in st.session_state.messages[1:]:
         st.markdown(msg["content"])
 
 
-# 6. ATTACHMENT
-with st.popover("📎"):
+# ATTACHMENT
+with st.popover("📎 Lampirkan File"):
     uploaded_file = st.file_uploader(
-        "Upload file (PDF / Gambar)",
+        "Upload PDF atau Gambar",
         type=["pdf", "png", "jpg", "jpeg"],
         label_visibility="collapsed"
     )
 
     if uploaded_file is not None:
-        file_type = uploaded_file.type
-
-        if file_type == "application/pdf":
+        if uploaded_file.type == "application/pdf":
             pdf_bytes = uploaded_file.read()
             doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            pdf_text = ""
-            for page in doc:
-                pdf_text += page.get_text()
+            pdf_text = "".join(page.get_text() for page in doc)
             st.session_state["attachment_text"] = f"[PDF diunggah]\n{pdf_text[:3000]}"
-            st.success(f"✅ PDF berhasil dibaca ({len(pdf_text)} karakter)")
-
-        elif file_type in ["image/png", "image/jpeg", "image/jpg"]:
+            st.success(f"✅ PDF dibaca ({len(pdf_text)} karakter)")
+        else:
             image = Image.open(uploaded_file)
-            st.image(image, caption="Gambar diunggah", use_container_width=True)
+            st.image(image, use_container_width=True)
             st.session_state["attachment_text"] = "[Gambar diunggah]"
-            st.info("Gambar berhasil dimuat.")
+            st.info("Gambar siap.")
 
 
-# 7. CHAT
+# CHAT
 if prompt := st.chat_input("Tanya SIGMA..."):
     full_prompt = prompt
     if "attachment_text" in st.session_state:
-        full_prompt = f"{st.session_state['attachment_text']}\n\nPertanyaan: {prompt}"
-        del st.session_state["attachment_text"]
+        full_prompt = f"{st.session_state.pop('attachment_text')}\n\nPertanyaan: {prompt}"
 
     st.session_state.messages.append({"role": "user", "content": full_prompt})
     with st.chat_message("user"):
