@@ -14,6 +14,7 @@ import json
 import os
 import hashlib
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -46,28 +47,28 @@ st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state
 _t = st.session_state.get("theme", "dark")
 _is_dark = _t == "dark"
 
-# Nilai warna berdasarkan theme
-_bg              = "#0e1117"  if _is_dark else "#f4f6fb"
-_sidebar_bg      = "#1a1a2e"  if _is_dark else "#dce3ef"
-_sidebar_border  = "none"     if _is_dark else "1px solid #b8c4d8"
-_text            = "#e8e8e8"  if _is_dark else "#1a1a1a"
-_text_muted      = "#888"     if _is_dark else "#555"
-_border          = "#3a3a3a"  if _is_dark else "#b8c4d8"
-_btn_hover       = "#2a2a2a"  if _is_dark else "#c5cfe0"
-_btn_color       = "#ccc"     if _is_dark else "#2c3a52"
-_assistant_color = "#e8e8e8"  if _is_dark else "#1a1a2e"
-_header_color    = "#ffffff"  if _is_dark else "#1a1a2e"
-_sub_color       = "#888"     if _is_dark else "#5a6a82"
-_input_bg        = "#1e1e1e"  if _is_dark else "#ffffff"
-_input_border    = "#3a3a3a"  if _is_dark else "#b8c4d8"
-_divider_color   = "#2a2a3a"  if _is_dark else "#b8c4d8"
-_assistant_bg    = "transparent" if _is_dark else "#ffffff"
-_assistant_brd   = "none"     if _is_dark else "1px solid #e0e7f0"
-_user_bubble     = "#1B2A4A"  if _is_dark else "#1a4fa8"
-_sidebar_label   = "#555"     if _is_dark else "#6a7a96"
-_active_chat_bg  = "#1e2d45"  if _is_dark else "#b8c8e8"
-_active_chat_clr = "#fff"     if _is_dark else "#1a2a4a"
-_inactive_chat   = "#bbb"     if _is_dark else "#3a4a6a"
+# Warna ChatGPT-style
+_bg              = "#212121"  if _is_dark else "#ffffff"
+_sidebar_bg      = "#171717"  if _is_dark else "#f9f9f9"
+_text            = "#ececec"  if _is_dark else "#0d0d0d"
+_text_muted      = "#8e8ea0"  if _is_dark else "#6e6e80"
+_border          = "#2f2f2f"  if _is_dark else "#e5e5e5"
+_btn_hover       = "#2f2f2f"  if _is_dark else "#efefef"
+_btn_color       = "#ececec"  if _is_dark else "#0d0d0d"
+_assistant_color = "#ececec"  if _is_dark else "#0d0d0d"
+_header_color    = "#ffffff"  if _is_dark else "#0d0d0d"
+_sub_color       = "#8e8ea0"  if _is_dark else "#6e6e80"
+_input_bg        = "#2f2f2f"  if _is_dark else "#ffffff"
+_input_border    = "#3f3f3f"  if _is_dark else "#e5e5e5"
+_divider_color   = "#2f2f2f"  if _is_dark else "#e5e5e5"
+_assistant_bg    = "transparent"
+_assistant_brd   = "none"
+_user_bubble     = "#2f2f2f"  if _is_dark else "#f4f4f4"
+_sidebar_label   = "#8e8ea0"  if _is_dark else "#6e6e80"
+_active_chat_bg  = "#2f2f2f"  if _is_dark else "#efefef"
+_active_chat_clr = "#ffffff"  if _is_dark else "#0d0d0d"
+_inactive_chat   = "#ececec"  if _is_dark else "#0d0d0d"
+_sidebar_border  = "none"     if _is_dark else "1px solid #e5e5e5"
 
 st.markdown(f"""
     <style>
@@ -524,11 +525,11 @@ if "action" in qp:
 
 # ── SIDEBAR ───────────────────────────────────────────────
 _sbg   = _sidebar_bg
-_stext = "#ccc" if _is_dark else "#334155"
-_shov  = "#ffffff18" if _is_dark else "#00000010"
-_sact  = "#1e2d45" if _is_dark else "#b8c8e8"
-_sactc = "#fff" if _is_dark else "#1a2a4a"
-_slbl  = "#666" if _is_dark else "#6a7a96"
+_stext = "#ececec" if _is_dark else "#0d0d0d"
+_shov  = "#2f2f2f" if _is_dark else "#efefef"
+_sact  = "#2f2f2f" if _is_dark else "#efefef"
+_sactc = "#ffffff" if _is_dark else "#0d0d0d"
+_slbl  = "#8e8ea0" if _is_dark else "#6e6e80"
 
 with st.sidebar:
     try:
@@ -543,7 +544,7 @@ with st.sidebar:
                 <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
             <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:{'#fff' if _is_dark else '#1a2a4a'};">Universitas Pancasila</p>
         </div>
-        <hr style="border:none;border-top:1px solid {'#2a2a3a' if _is_dark else '#b8c4d8'};margin:0 0 8px 0;">
+        <hr style="border:none;border-top:1px solid {'#2f2f2f' if _is_dark else '#e5e5e5'};margin:0 0 8px 0;">
 
         <style>
         .sb-link {{
@@ -621,13 +622,13 @@ if "sb_ren" in st.query_params:
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
-_popup_bg      = "#1e2535" if _is_dark else "#ffffff"
-_popup_border  = "#2a3a5a" if _is_dark else "#d0d8e8"
-_popup_text    = "#cccccc" if _is_dark else "#2c3a52"
-_popup_hover   = "#2a3550" if _is_dark else "#eef2fa"
-_bar_bg        = "#1a1a2e" if _is_dark else "#dce3ef"
-_bar_border    = "#2a2a3a" if _is_dark else "#c5cedc"
-_bar_text      = "#aaaaaa" if _is_dark else "#5a6a82"
+_popup_bg      = "#2f2f2f" if _is_dark else "#ffffff"
+_popup_border  = "#3f3f3f" if _is_dark else "#e5e5e5"
+_popup_text    = "#ececec" if _is_dark else "#0d0d0d"
+_popup_hover   = "#3f3f3f" if _is_dark else "#f4f4f4"
+_bar_bg        = "#171717" if _is_dark else "#f9f9f9"
+_bar_border    = "#2f2f2f" if _is_dark else "#e5e5e5"
+_bar_text      = "#8e8ea0" if _is_dark else "#6e6e80"
 _active_dot    = "#4a90d9" if _is_dark else "#1a4fa8"
 _theme_dark_check  = "✓" if _cur_theme == "dark"  else ""
 _theme_light_check = "✓" if _cur_theme == "light" else ""
@@ -695,11 +696,11 @@ components.html(f"""
         window.parent.sigmaSetTheme = function(mode) {{
             var pd = window.parent.document;
             var isDark = mode === 'dark';
-            var bg     = isDark ? '#0e1117' : '#f4f6fb';
-            var sbg    = isDark ? '#1a1a2e' : '#dce3ef';
-            var txt    = isDark ? '#e8e8e8' : '#1a1a1a';
-            var inp    = isDark ? '#1e1e1e' : '#ffffff';
-            var brd    = isDark ? '#3a3a3a' : '#b8c4d8';
+            var bg     = isDark ? '#212121' : '#ffffff';
+            var sbg    = isDark ? '#171717' : '#f9f9f9';
+            var txt    = isDark ? '#ececec' : '#0d0d0d';
+            var inp    = isDark ? '#2f2f2f' : '#ffffff';
+            var brd    = isDark ? '#3f3f3f' : '#e5e5e5';
 
             var styleId = 'sigma-live-theme';
             var el = pd.getElementById(styleId);
@@ -1037,10 +1038,12 @@ try {{
 """, height=0)
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
-_bubble_color = "#1B2A4A" if _is_dark else "#1a4fa8"
+_bubble_color = "#2f2f2f" if _is_dark else "#f4f4f4"
+_bubble_text  = "#ffffff" if _is_dark else "#0d0d0d"
 components.html(f"""
 <script>
 const BUBBLE_COLOR = "{_bubble_color}";
+const BUBBLE_TEXT  = "{_bubble_text}";
 // Fix bubble kanan
 function fixBubbles() {{
     const doc = window.parent.document;
@@ -1059,13 +1062,14 @@ function fixBubbles() {{
             var existing = md.querySelector('.navy-pill');
             if (existing) {{
                 existing.style.backgroundColor = BUBBLE_COLOR;
+                existing.querySelectorAll('*').forEach(el => el.style.color = BUBBLE_TEXT);
             }} else if (!md.querySelector('.navy-pill')) {{
                 const pill = document.createElement('div');
                 pill.className = 'navy-pill';
-                pill.style.cssText = `background-color:${{BUBBLE_COLOR}};color:#fff;border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:72%;display:inline-block;font-size:0.93rem;line-height:1.6;font-family:Inter,sans-serif;word-wrap:break-word;`;
+                pill.style.cssText = `background-color:${{BUBBLE_COLOR}};color:${{BUBBLE_TEXT}};border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:72%;display:inline-block;font-size:0.93rem;line-height:1.6;font-family:Inter,sans-serif;word-wrap:break-word;`;
                 while (md.firstChild) pill.appendChild(md.firstChild);
                 md.appendChild(pill);
-                pill.querySelectorAll('*').forEach(el => el.style.color = '#fff');
+                pill.querySelectorAll('*').forEach(el => el.style.color = BUBBLE_TEXT);
             }} // end else
         }});
     }});
