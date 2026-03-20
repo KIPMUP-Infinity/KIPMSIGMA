@@ -9,7 +9,6 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
-
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -93,7 +92,9 @@ if "sessions" not in st.session_state:
 if "rename_id" not in st.session_state:
     st.session_state.rename_id = None
 if "attachment" not in st.session_state:
-    st.session_state.attachment = None  # {"type": "pdf"/"image", "text": ..., "b64": ..., "mime": ..., "name": ...}
+    st.session_state.attachment = None
+if "upload_key" not in st.session_state:
+    st.session_state.upload_key = 0
 
 def get_active():
     for s in st.session_state.sessions:
@@ -148,53 +149,6 @@ with st.sidebar:
             <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;">Universitas Pancasila</p>
         </div>
     """, unsafe_allow_html=True)
-
-    st.divider()
-
-    # Upload file di sidebar
-    st.markdown('<p style="font-size:0.72rem;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">📎 Lampirkan File</p>', unsafe_allow_html=True)
-
-    if "upload_key" not in st.session_state:
-        st.session_state.upload_key = 0
-
-    uploaded = st.file_uploader(
-        "upload", type=["pdf","png","jpg","jpeg"],
-        key=f"up_{st.session_state.upload_key}",
-        label_visibility="hidden"
-    )
-
-    if uploaded is not None:
-        if uploaded.type == "application/pdf":
-            pdf_bytes = uploaded.read()
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            pdf_text = "".join(p.get_text() for p in doc)
-            st.session_state.attachment = {
-                "type": "pdf", "name": uploaded.name,
-                "text": f"[PDF: {uploaded.name}]\n{pdf_text[:6000]}"
-            }
-            st.success(f"📄 {uploaded.name}")
-        else:
-            img_bytes = uploaded.read()
-            b64 = base64.b64encode(img_bytes).decode()
-            ext  = uploaded.name.split(".")[-1].lower()
-            mime = "image/png" if ext == "png" else "image/jpeg"
-            st.session_state.attachment = {
-                "type": "image", "name": uploaded.name,
-                "b64": b64, "mime": mime,
-                "text": f"[Gambar: {uploaded.name}]"
-            }
-            img = Image.open(io.BytesIO(img_bytes))
-            st.image(img, use_container_width=True)
-            st.success(f"🖼️ {uploaded.name} siap dianalisa")
-
-    # Tampilkan status attachment
-    if st.session_state.attachment:
-        att = st.session_state.attachment
-        st.info(f"📎 {att['name']} — ketik pertanyaan di chat lalu Enter")
-        if st.button("🗑️ Hapus lampiran"):
-            st.session_state.attachment = None
-            st.session_state.upload_key += 1
-            st.rerun()
 
     st.divider()
 
@@ -331,7 +285,11 @@ if prompt:
             )
         st.markdown(prompt)
 
-    # Reset attachment setelah dipakai
+    # Simpan data att sebelum reset
+    img_b64_send  = att["b64"]  if has_image else None
+    img_mime_send = att["mime"] if has_image else None
+
+    # Reset attachment
     st.session_state.attachment = None
     st.session_state.upload_key += 1
 
@@ -341,8 +299,7 @@ if prompt:
             with st.spinner("SIGMA sedang menganalisis..."):
                 groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-                if has_image:
-                    # Vision: Groq llama-3.2-90b
+                if has_image and img_b64_send:
                     res = groq_client.chat.completions.create(
                         model="llama-3.2-90b-vision-preview",
                         messages=[
@@ -353,14 +310,15 @@ if prompt:
                                 "Jawab Bahasa Indonesia, tegas dan profesional."
                             )},
                             {"role": "user", "content": [
-                                {"type": "image_url", "image_url": {"url": f"data:{att['mime']};base64,{att['b64']}"}},
+                                {"type": "image_url", "image_url": {
+                                    "url": f"data:{img_mime_send};base64,{img_b64_send}"
+                                }},
                                 {"type": "text", "text": prompt}
                             ]}
                         ],
                         max_tokens=2048
                     )
                 else:
-                    # Teks / PDF: Groq llama-3.3-70b
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=active["messages"],
@@ -369,9 +327,7 @@ if prompt:
                     )
 
                 ans = res.choices[0].message.content
-
             st.markdown(ans)
-
         active["messages"].append({"role": "assistant", "content": ans})
 
     except Exception as e:
