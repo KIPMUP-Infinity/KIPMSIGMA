@@ -7,28 +7,29 @@ from PIL import Image
 import io
 
 
-# 1. Konfigurasi Halaman (Harus di baris pertama kode)
+# 1. Konfigurasi Halaman
 st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide", initial_sidebar_state="expanded")
 
-# 2. CSS CUSTOM: Sidebar Aktif + Judul Tengah + Ikon Terintegrasi
+# 2. CSS FIX: Sidebar Muncul + Judul Tengah + Ikon Menyatu
 st.markdown("""
     <style>
     header {visibility: hidden;}
     
-    /* Memastikan Sidebar tetap terlihat */
-    [data-testid="stSidebar"] {
-        min-width: 300px !important;
+    /* FIX: Memastikan layout dasar Streamlit memberikan ruang untuk sidebar */
+    .stApp {
+        display: flex;
+        flex-direction: row;
     }
 
-    /* Memposisikan konten utama di tengah */
+    /* FIX: Membatasi lebar konten hanya pada area chat, bukan seluruh layar */
     [data-testid="stMainBlockContainer"] {
         max-width: 850px !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
         padding-top: 2rem !important;
+        /* Menggunakan margin auto tanpa memaksa posisi absolut agar sidebar tidak tertindih */
+        margin: 0 auto !important; 
     }
 
-    /* Gaya judul header sesuai permintaan user */
+    /* Gaya judul header (TIDAK DIRUBAH) */
     .main-header {
         text-align: center;
         margin-bottom: 2rem;
@@ -38,27 +39,26 @@ st.markdown("""
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        /* Kalkulasi posisi agar masuk ke kotak input */
-        left: calc(50% - 370px + 150px); 
+        /* Penyesuaian angka 145px agar presisi saat sidebar terbuka */
+        left: calc(50% - 370px + 145px); 
         z-index: 1001;
     }
 
-    /* Responsivitas untuk layar kecil */
+    /* Penyesuaian jika layar kecil */
     @media (max-width: 1200px) {
         div[data-testid="stPopover"] { left: calc(50% - 370px); }
-        [data-testid="stMainBlockContainer"] { margin: 0 auto !important; }
     }
     @media (max-width: 850px) {
         div[data-testid="stPopover"] { left: 45px; }
     }
 
-    /* Styling Input Bar agar teks tidak tertutup ikon */
+    /* Styling Input Bar */
     .stChatInputContainer textarea {
         padding-left: 55px !important;
         border-radius: 25px !important;
     }
 
-    /* Membuat tombol klip transparan agar terlihat menyatu */
+    /* Tombol Klip Transparan */
     div[data-testid="stPopover"] > button {
         border: none !important;
         background: transparent !important;
@@ -68,7 +68,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SIDEBAR (Identitas)
+# 3. SIDEBAR (Logo dan Nama Organisasi)
 with st.sidebar:
     try:
         logo = Image.open("Mate KIPM LOGO.png")
@@ -82,7 +82,7 @@ with st.sidebar:
         </div>
         """, unsafe_allow_html=True)
 
-# 4. KONTEN UTAMA (Judul Custom Anda)
+# 4. KONTEN UTAMA (Kalimat asli Anda tetap terjaga)
 st.markdown("""
     <div class="main-header">
         <h1 style="margin:0;">   KIPM SIGMA ∑</h1>
