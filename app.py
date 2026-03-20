@@ -7,7 +7,6 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 
-
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
@@ -16,6 +15,13 @@ st.set_page_config(
 
 st.markdown("""
     <style>
+    /* Import font ChatGPT style (Söhne / fallback ke Inter) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    html, body, [class*="css"], .stMarkdown, .stChatMessage, p, div {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    }
+
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
 
@@ -27,6 +33,8 @@ st.markdown("""
 
     [data-testid="stMainBlockContainer"] {
         padding-bottom: 110px !important;
+        max-width: 780px !important;
+        margin: 0 auto !important;
     }
 
     /* Sembunyikan file uploader bawaan */
@@ -48,6 +56,40 @@ st.markdown("""
         opacity: 0 !important;
         pointer-events: none !important;
     }
+
+    /* ── USER BUBBLE: Navy ── */
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+    [data-testid="stMarkdownContainer"] {
+        background-color: #1B2A4A !important;
+        color: #ffffff !important;
+        border-radius: 18px 18px 4px 18px !important;
+        padding: 12px 16px !important;
+        max-width: 75% !important;
+        font-size: 0.93rem !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Sembunyikan avatar user */
+    [data-testid="stChatMessageAvatarUser"] {
+        display: none !important;
+    }
+
+    /* ── ASSISTANT BUBBLE: Tanpa background (seperti ChatGPT) ── */
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+    [data-testid="stMarkdownContainer"] {
+        font-size: 0.93rem !important;
+        line-height: 1.75 !important;
+        color: #e8e8e8 !important;
+    }
+
+    /* Sembunyikan avatar assistant (opsional) */
+    /* [data-testid="stChatMessageAvatarAssistant"] { display: none !important; } */
+
     </style>
 """, unsafe_allow_html=True)
 
