@@ -70,14 +70,14 @@ st.markdown("""
         background: transparent !important;
     }
 
-    /* Tombol sidebar custom */
+    /* New chat button — transparan rata kiri seperti ChatGPT */
     div[data-testid="stSidebar"] .stButton button {
         width: 100% !important;
         text-align: left !important;
         background: transparent !important;
         border: none !important;
         color: #ccc !important;
-        font-size: 0.82rem !important;
+        font-size: 0.85rem !important;
         padding: 6px 10px !important;
         border-radius: 8px !important;
         transition: background 0.15s !important;
@@ -85,20 +85,6 @@ st.markdown("""
     div[data-testid="stSidebar"] .stButton button:hover {
         background: #2a2a2a !important;
         color: #fff !important;
-    }
-
-    /* New chat button khusus */
-    .new-chat-btn button {
-        background: #1B2A4A !important;
-        color: #fff !important;
-        font-weight: 600 !important;
-        font-size: 0.85rem !important;
-        border-radius: 10px !important;
-        padding: 8px 14px !important;
-        margin-bottom: 4px !important;
-    }
-    .new-chat-btn button:hover {
-        background: #243a63 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -175,15 +161,13 @@ with st.sidebar:
 
     st.divider()
 
-    # ── Tombol New Chat ──
-    st.markdown('<div class="new-chat-btn">', unsafe_allow_html=True)
-    if st.button("✏️  Obrolan Baru", use_container_width=True):
+    # ── Tombol New Chat — simpel, rata kiri ──
+    if st.button("✏️  Obrolan baru", key="new_chat_btn", use_container_width=True):
         ns = new_session()
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
         st.session_state.rename_id = None
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<p style="font-size: 0.7rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px 4px;">Obrolan Anda</p>', unsafe_allow_html=True)
 
@@ -211,32 +195,14 @@ with st.sidebar:
                     st.session_state.rename_id = None
                     st.rerun()
         else:
-            # Row sesi normal
-            title_display = sesi["title"][:32] + "..." if len(sesi["title"]) > 32 else sesi["title"]
+            # Row sesi: satu baris dengan judul + rename + delete
+            title_display = sesi["title"][:28] + "..." if len(sesi["title"]) > 28 else sesi["title"]
             bg = "#1e2d45" if is_active else "transparent"
-            color = "#fff" if is_active else "#bbb"
 
-            st.markdown(f"""
-                <div style="
-                    background: {bg};
-                    border-radius: 8px;
-                    padding: 6px 10px;
-                    margin: 2px 0;
-                    font-size: 0.82rem;
-                    color: {color};
-                    font-family: Inter, sans-serif;
-                    cursor: pointer;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <span>💬 {title_display}</span>
-                </div>
-            """, unsafe_allow_html=True)
-
-            col_sel, col_ren, col_del = st.columns([5, 1, 1])
+            col_sel, col_ren, col_del = st.columns([6, 1, 1])
             with col_sel:
-                if st.button(title_display, key=f"sel_{sid}", use_container_width=True):
+                label = f"💬 {title_display}"
+                if st.button(label, key=f"sel_{sid}", use_container_width=True):
                     set_active(sid)
                     st.session_state.rename_id = None
                     st.rerun()
