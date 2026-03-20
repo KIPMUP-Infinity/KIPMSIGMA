@@ -7,6 +7,7 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 
+
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
@@ -27,6 +28,16 @@ st.markdown("""
     /* Beri ruang di bawah untuk custom chat bar */
     [data-testid="stMainBlockContainer"] {
         padding-bottom: 100px !important;
+    }
+
+    /* Sembunyikan file uploader Streamlit — tetap fungsional di background */
+    [data-testid="stFileUploader"] {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
     </style>
 """, unsafe_allow_html=True)
