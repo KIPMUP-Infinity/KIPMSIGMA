@@ -12,23 +12,20 @@ st.set_page_config(page_title="KIPM SIGMA ", layout="wide")
 # 1. Pengaturan Tema & Logo
 st.set_page_config(page_title="KIPM SIGMA", page_icon="📈", layout="wide")
 
-# CSS untuk Background Gelap & Styling Chat (Mirip contoh gambar Anda)
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #0E1117;
-        color: white;
+    /* Mengubah warna background input chat */
+    .stChatInputContainer {
+        padding-bottom: 20px;
+        background-color: transparent;
     }
-    [data-testid="stSidebar"] {
-        background-color: #1A1C24;
-    }
-    .stChatMessage {
-        border-radius: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #30363d;
+    /* Menghilangkan border uploader agar lebih minimalis */
+    .stFileUploader {
+        padding-top: 0;
     }
     </style>
     """, unsafe_allow_html=True)
+
 
 with st.sidebar:
     # 1. Logo (Ukuran 1/3 di tengah)
@@ -49,6 +46,8 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     st.markdown("---")
+
+    
 
     # 3. Branding SIGMA (Centered)
     st.markdown("""
