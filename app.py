@@ -14,8 +14,6 @@ import json
 import os
 import hashlib
 
-
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -554,9 +552,9 @@ _slbl  = "#8e8ea0" if _is_dark else "#6e6e80"
 with st.sidebar:
     st.markdown(f"""
         <style>
-        /* Kurangi jarak atas sidebar */
+        /* Kurangi jarak atas sidebar — JS akan handle lebih lanjut */
         [data-testid="stSidebarUserContent"] {{
-            padding-top: 0.7 rem !important;
+            padding-top: 0.4rem !important;
         }}
         /* Sembunyikan teks keyboard_double_arrow dari tombol collapse */
         [data-testid="stSidebarCollapseButton"] span,
@@ -719,35 +717,49 @@ components.html(f"""
     function fixSidebarTop() {{
         var pd = window.parent.document;
 
-        // Tombol collapse — pertahankan posisi yang sudah benar
+        // Tombol collapse — posisi atas kanan
         var collapseBtn = pd.querySelector('section[data-testid="stSidebar"] button[kind="header"]');
         if (!collapseBtn) {{
             collapseBtn = pd.querySelector('[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"]');
         }}
         if (collapseBtn) {{
-            collapseBtn.style.cssText += 'position:absolute!important;top:8px!important;right:8px!important;z-index:999!important;';
+            collapseBtn.style.cssText += 'position:absolute!important;top:8px!important;right:8px!important;z-index:9999!important;';
+            // Sembunyikan teks icon
+            var spans = collapseBtn.querySelectorAll('span');
+            spans.forEach(function(s) {{ s.style.fontSize = '0'; s.style.visibility = 'hidden'; }});
         }}
 
-        // Inject <style> ke <head> parent — ini cara paling kuat, menang vs inline style
-        if (!pd.getElementById('sigma-sidebar-fix')) {{
-            var style = pd.createElement('style');
-            style.id = 'sigma-sidebar-fix';
-            style.textContent = `
-                [data-testid="stSidebarUserContent"] {{
-                    padding-top: 0.5rem !important;
-                    margin-top: 0 !important;
-                }}
-                [data-testid="stSidebarUserContent"] > div:first-child {{
-                    padding-top: 0 !important;
-                    margin-top: 0 !important;
-                }}
-                [data-testid="stSidebarUserContent"] > div > div:first-child {{
-                    padding-top: 0 !important;
-                    margin-top: 0 !important;
-                }}
-            `;
-            pd.head.appendChild(style);
-        }}
+        // Inject style ke head — zero semua padding/margin atas sidebar
+        var styleId = 'sigma-sidebar-fix';
+        var existing = pd.getElementById(styleId);
+        if (existing) existing.remove(); // selalu update
+
+        var style = pd.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            section[data-testid="stSidebar"] > div:first-child {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+            section[data-testid="stSidebar"] > div:first-child > div {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+            [data-testid="stSidebarContent"] {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+            [data-testid="stSidebarUserContent"] {{
+                padding-top: 0.4rem !important;
+                margin-top: 0 !important;
+            }}
+            [data-testid="stSidebarUserContent"] > div,
+            [data-testid="stSidebarUserContent"] > div > div {{
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }}
+        `;
+        pd.head.appendChild(style);
     }}
 
     function injectSettings() {{
