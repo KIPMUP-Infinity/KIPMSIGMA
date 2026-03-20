@@ -5,13 +5,6 @@ import fitz  # PyMuPDF untuk PDF
 import base64
 from PIL import Image
 import io
-
-import streamlit as st
-from groq import Groq
-import fitz
-from PIL import Image
-import io
-import base64
 import streamlit.components.v1 as components
 
 st.set_page_config(
