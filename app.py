@@ -7,13 +7,6 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 
-import streamlit as st
-from groq import Groq
-import fitz
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
@@ -128,14 +121,14 @@ with st.sidebar:
         st.markdown("### 🏛️ KIPM-UP")
 
     st.markdown("""
-        <div style="text-align: center; line-height: 1.2; margin-top: 10px;">
-            <p style="margin: 0; font-size: 0.8em; color: gray;">Komunitas Investasi Pasar Modal</p>
-            <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
+        <div style="text-align: center; line-height: 1.4; margin-top: 10px; font-family: 'Inter', sans-serif;">
+            <p style="margin: 0; font-size: 0.72rem; color: #888; letter-spacing: 0.3px;">Komunitas Investasi Pasar Modal</p>
+            <p style="margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 700; color: #ffffff; letter-spacing: 0.2px;">Universitas Pancasila</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.divider()
-    st.subheader("📜 History Searching")
+    st.markdown('<p style="font-family: Inter, sans-serif; font-size: 0.78rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin: 0 0 8px 0;">📜 History</p>', unsafe_allow_html=True)
 
     if "messages" in st.session_state:
         for msg in st.session_state.messages[1:]:
@@ -143,8 +136,8 @@ with st.sidebar:
                 display = msg["content"]
                 if "Pertanyaan:" in display:
                     display = display.split("Pertanyaan:")[-1].strip()
-                preview = display[:50] + "..." if len(display) > 50 else display
-                st.markdown(f"🔍 {preview}")
+                preview = display[:40] + "..." if len(display) > 40 else display
+                st.markdown(f'<p style="font-family: Inter, sans-serif; font-size: 0.78rem; color: #bbb; margin: 4px 0; padding: 4px 8px; border-radius: 6px; cursor: pointer;">🔍 {preview}</p>', unsafe_allow_html=True)
 
 
 # ── MAIN HEADER ───────────────────────────────────────────
@@ -456,52 +449,81 @@ chat_bar_html = f"""
 components.html(chat_bar_html, height=80, scrolling=False)
 
 
-# ── JS: Fix user bubble ke kanan ─────────────────────────
+# ── JS: Fix user bubble ke kanan (agresif) ───────────────
 components.html("""
 <script>
 function fixBubbles() {
-    const messages = window.parent.document.querySelectorAll('[data-testid="stChatMessage"]');
+    const doc = window.parent.document;
+    const messages = doc.querySelectorAll('[data-testid="stChatMessage"]');
+
     messages.forEach(msg => {
         const isUser = msg.querySelector('[data-testid="stChatMessageAvatarUser"]');
-        if (isUser) {
-            msg.classList.add('user-bubble-row');
-            msg.style.display = 'flex';
-            msg.style.justifyContent = 'flex-end';
-            msg.style.background = 'transparent';
+        if (!isUser) return;
 
-            // Target konten markdown langsung
-            const mdContainers = msg.querySelectorAll('[data-testid="stMarkdownContainer"]');
-            mdContainers.forEach(md => {
-                md.style.background = 'transparent';
-                // Bungkus isi dalam div navy jika belum
-                if (!md.querySelector('.navy-pill')) {
-                    const inner = document.createElement('div');
-                    inner.className = 'navy-pill';
-                    inner.style.cssText = `
-                        background-color: #1B2A4A;
-                        color: #ffffff;
-                        border-radius: 18px 18px 4px 18px;
-                        padding: 10px 16px;
-                        max-width: 100%;
-                        display: inline-block;
-                        font-size: 0.93rem;
-                        line-height: 1.6;
-                    `;
-                    while (md.firstChild) inner.appendChild(md.firstChild);
-                    md.appendChild(inner);
-                    inner.querySelectorAll('p, span').forEach(el => {
-                        el.style.color = '#ffffff';
-                        el.style.margin = '0';
-                    });
-                }
-            });
+        // Step 1: Paksa row jadi flex rata kanan
+        msg.style.cssText += `
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: flex-end !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 4px 0 !important;
+            gap: 0 !important;
+        `;
+
+        // Step 2: Sembunyikan avatar
+        const avatar = msg.querySelector('[data-testid="stChatMessageAvatarUser"]');
+        if (avatar) avatar.style.display = 'none';
+
+        // Step 3: Target wrapper konten
+        const content = msg.querySelector('[data-testid="stChatMessageContent"]');
+        if (content) {
+            content.style.cssText += `
+                background: transparent !important;
+                display: flex !important;
+                justify-content: flex-end !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+            `;
         }
+
+        // Step 4: Wrap teks dalam pill navy jika belum
+        const mdContainers = msg.querySelectorAll('[data-testid="stMarkdownContainer"]');
+        mdContainers.forEach(md => {
+            md.style.background = 'transparent';
+            md.style.display = 'flex';
+            md.style.justifyContent = 'flex-end';
+
+            if (!md.querySelector('.navy-pill')) {
+                const pill = document.createElement('div');
+                pill.className = 'navy-pill';
+                pill.style.cssText = `
+                    background-color: #1B2A4A;
+                    color: #ffffff;
+                    border-radius: 18px 18px 4px 18px;
+                    padding: 10px 16px;
+                    max-width: 72%;
+                    display: inline-block;
+                    font-size: 0.93rem;
+                    line-height: 1.6;
+                    font-family: Inter, sans-serif;
+                    word-wrap: break-word;
+                `;
+                while (md.firstChild) pill.appendChild(md.firstChild);
+                md.appendChild(pill);
+                pill.querySelectorAll('*').forEach(el => {
+                    el.style.color = '#ffffff';
+                });
+            }
+        });
     });
 }
 
-// Jalankan awal dan setiap kali ada perubahan DOM
+// Jalankan segera + observasi perubahan DOM
 fixBubbles();
-const observer = new MutationObserver(fixBubbles);
+setInterval(fixBubbles, 800);
+const observer = new MutationObserver(() => setTimeout(fixBubbles, 100));
 observer.observe(window.parent.document.body, { childList: true, subtree: true });
 </script>
 """, height=0)
