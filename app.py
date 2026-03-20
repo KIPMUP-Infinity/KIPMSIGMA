@@ -11,6 +11,33 @@ st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide")
 st.title("📊 KIPM SIGMA PRO")
 st.sidebar.title("Kontrol Panel")
 
+# 1. Tampilan UI Modern
+st.set_page_config(page_title="KIPM SIGMA PRO", page_icon="📈", layout="wide")
+
+# Custom CSS untuk mempercantik chat bubble
+st.markdown("""
+    <style>
+    .stChatMessage { background-color: #f0f2f6; border-radius: 15px; padding: 10px; margin-bottom: 10px; }
+    .stButton>button { width: 100%; border-radius: 20px; background-color: #FF4B4B; color: white; }
+    </style>
+    """, unsafe_content_type=True)
+
+# 2. Sidebar Branding
+with st.sidebar:
+    st.title("🛡️ KIPM SIGMA")
+    st.info("**Strategic Intelligence & Global Market Analysis**")
+    st.divider()
+    st.subheader("Menu Analisis")
+    mode = st.radio("Pilih Mode:", ["Market Chat", "Technical Analysis", "Macro Insight"])
+    st.divider()
+    st.caption("Universitas Pancasila - Versi 1.0 PRO")
+
+# 3. Header Utama
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.title("Pusat Analisis Saham AI")
+    st.write("Selamat datang di terminal cerdas KIPM SIGMA.")
+
 # Inisialisasi API Groq via Secrets
 if "GROQ_API_KEY" not in st.secrets:
     st.error("API Key belum disetting di Streamlit Secrets!")
