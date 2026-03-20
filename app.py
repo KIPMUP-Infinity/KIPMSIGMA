@@ -182,7 +182,7 @@ user = st.session_state.user
 # ── SESSION STATE ─────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila (Market n Mocha).
+    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila.
 
 Kamu menggunakan framework analisa MnM Strategy+ yang terdiri dari 5 modul:
 
@@ -347,7 +347,7 @@ active = get_active()
 
 st.markdown("""
     <div class="main-header">
-        <h1 style="margin:0;">KIPM SIGMA ∑</h1>
+        <h1 style="margin:0;">  KIPM SIGMA ∑</h1>
         <p style="color:gray;">Strategic Intelligence & Global Market Analysis</p>
     </div>
 """, unsafe_allow_html=True)
