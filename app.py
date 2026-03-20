@@ -12,6 +12,7 @@ import requests
 from urllib.parse import urlencode
 
 
+
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 # ── DYNAMIC THEME CSS ────────────────────────────────────
@@ -108,7 +109,7 @@ st.markdown(f"""
         flex: 1 !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
-        padding-top: 2.5rem !important;
+        padding-top: 0 !important;
         padding-bottom: 8px !important;
     }}
 
@@ -513,20 +514,26 @@ components.html(f"""
             collapseBtn.style.cssText += 'position:absolute!important;top:8px!important;right:8px!important;z-index:999!important;';
         }}
 
-        // Target SPESIFIK: stSidebarUserContent — ini yang Streamlit kasih padding-top besar
-        var userContent = pd.querySelector('[data-testid="stSidebarUserContent"]');
-        if (userContent) {{
-            userContent.style.setProperty('padding-top', '0.5rem', 'important');
+        // Inject <style> ke <head> parent — ini cara paling kuat, menang vs inline style
+        if (!pd.getElementById('sigma-sidebar-fix')) {{
+            var style = pd.createElement('style');
+            style.id = 'sigma-sidebar-fix';
+            style.textContent = `
+                [data-testid="stSidebarUserContent"] {{
+                    padding-top: 0.5rem !important;
+                    margin-top: 0 !important;
+                }}
+                [data-testid="stSidebarUserContent"] > div:first-child {{
+                    padding-top: 0 !important;
+                    margin-top: 0 !important;
+                }}
+                [data-testid="stSidebarUserContent"] > div > div:first-child {{
+                    padding-top: 0 !important;
+                    margin-top: 0 !important;
+                }}
+            `;
+            pd.head.appendChild(style);
         }}
-
-        // Target semua block langsung di dalam sidebar user content
-        var blocks = pd.querySelectorAll('[data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div');
-        blocks.forEach(function(el) {{
-            var pt = parseInt(window.parent.getComputedStyle(el).paddingTop) || 0;
-            var mt = parseInt(window.parent.getComputedStyle(el).marginTop) || 0;
-            if (pt > 16) el.style.setProperty('padding-top', '0', 'important');
-            if (mt > 16) el.style.setProperty('margin-top', '0', 'important');
-        }});
     }}
 
     function injectSettings() {{
