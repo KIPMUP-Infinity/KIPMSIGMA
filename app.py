@@ -142,10 +142,34 @@ def delete_session(sid):
         st.session_state.active_id = st.session_state.sessions[0]["id"]
 
 
+# ── HANDLE SIDEBAR ACTIONS VIA QUERY PARAMS ─────────────
+qp = st.query_params
+if "action" in qp:
+    action = qp.get("action", "")
+    sid_param = qp.get("sid", "")
+    if action == "new":
+        ns = new_session()
+        st.session_state.sessions.insert(0, ns)
+        st.session_state.active_id = ns["id"]
+        st.query_params.clear()
+        st.rerun()
+    elif action == "sel" and sid_param:
+        st.session_state.active_id = sid_param
+        st.session_state.rename_id = None
+        st.query_params.clear()
+        st.rerun()
+    elif action == "del" and sid_param:
+        delete_session(sid_param)
+        st.query_params.clear()
+        st.rerun()
+    elif action == "ren" and sid_param:
+        st.session_state.rename_id = sid_param
+        st.query_params.clear()
+        st.rerun()
+
 # ── SIDEBAR ───────────────────────────────────────────────
 with st.sidebar:
 
-    # Logo
     try:
         logo = Image.open("Mate KIPM LOGO.png")
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -155,37 +179,39 @@ with st.sidebar:
         st.markdown("### 🏛️ KIPM-UP")
 
     st.markdown("""
-        <div style="text-align: center; line-height: 1.4; margin-top: 8px; font-family: 'Inter', sans-serif;">
-            <p style="margin: 0; font-size: 0.72rem; color: #888;">Komunitas Investasi Pasar Modal</p>
-            <p style="margin: 4px 0 0 0; font-size: 1.05rem; font-weight: 700; color: #fff;">Universitas Pancasila</p>
+        <div style="text-align:center;line-height:1.4;margin-top:8px;font-family:Inter,sans-serif;">
+            <p style="margin:0;font-size:0.72rem;color:#888;">Komunitas Investasi Pasar Modal</p>
+            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;">Universitas Pancasila</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.divider()
 
-    # ── Tombol New Chat — simpel, rata kiri ──
-    if st.button("✏️  Obrolan baru", key="new_chat_btn", use_container_width=True):
-        ns = new_session()
-        st.session_state.sessions.insert(0, ns)
-        st.session_state.active_id = ns["id"]
-        st.session_state.rename_id = None
-        st.rerun()
+    # New Chat — pure HTML, no st.button
+    st.markdown("""
+        <a href="?action=new" target="_self" style="
+            display:flex;align-items:center;gap:8px;
+            padding:8px 10px;border-radius:8px;
+            color:#ccc;text-decoration:none;
+            font-size:0.88rem;font-family:Inter,sans-serif;
+            margin-bottom:2px;
+        " onmouseover="this.style.background='#2a2a2a';this.style.color='#fff'"
+           onmouseout="this.style.background='transparent';this.style.color='#ccc'">
+            ✏️ &nbsp;Obrolan baru
+        </a>
+    """, unsafe_allow_html=True)
 
-    st.markdown('<p style="font-size: 0.7rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px 4px;">Obrolan Anda</p>', unsafe_allow_html=True)
+    st.markdown('<p style="font-size:0.68rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 4px 6px;font-family:Inter,sans-serif;">Obrolan Anda</p>', unsafe_allow_html=True)
 
-    # ── Daftar Sesi ──
+    # Daftar sesi — pure HTML links, zero st.button
     for sesi in st.session_state.sessions:
         sid = sesi["id"]
         is_active = sid == st.session_state.active_id
+        title_display = sesi["title"][:34] + "..." if len(sesi["title"]) > 34 else sesi["title"]
 
-        # Mode rename
         if st.session_state.rename_id == sid:
-            new_title = st.text_input(
-                "Rename",
-                value=sesi["title"],
-                key=f"rename_{sid}",
-                label_visibility="collapsed"
-            )
+            new_title = st.text_input("Rename", value=sesi["title"],
+                key=f"rename_{sid}", label_visibility="collapsed")
             col_ok, col_cancel = st.columns([1, 1])
             with col_ok:
                 if st.button("✓", key=f"ok_{sid}"):
@@ -197,23 +223,28 @@ with st.sidebar:
                     st.session_state.rename_id = None
                     st.rerun()
         else:
-            # Hanya tampilkan judul — ikon aksi hanya di sesi aktif
-            title_display = sesi["title"][:34] + "..." if len(sesi["title"]) > 34 else sesi["title"]
-            if st.button(f"💬 {title_display}", key=f"sel_{sid}", use_container_width=True):
-                set_active(sid)
-                st.session_state.rename_id = None
-                st.rerun()
-            if is_active:
-                col_ren, col_del, _ = st.columns([1, 1, 4])
-                with col_ren:
-                    if st.button("✏️", key=f"ren_{sid}"):
-                        st.session_state.rename_id = sid
-                        st.rerun()
-                with col_del:
-                    if st.button("🗑️", key=f"del_{sid}"):
-                        delete_session(sid)
-                        st.rerun()
-
+            bg = "#1e2d45" if is_active else "transparent"
+            txt_color = "#fff" if is_active else "#bbb"
+            actions = (
+                f'''<a href="?action=ren&sid={sid}" target="_self" title="Rename"
+                       style="color:#777;text-decoration:none;font-size:0.78rem;padding:2px 5px;border-radius:4px;"
+                       onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#777'">✏️</a>
+                    <a href="?action=del&sid={sid}" target="_self" title="Hapus"
+                       style="color:#777;text-decoration:none;font-size:0.78rem;padding:2px 5px;border-radius:4px;"
+                       onmouseover="this.style.color='#ff6b6b'" onmouseout="this.style.color='#777'">🗑️</a>'''
+                if is_active else ""
+            )
+            st.markdown(f"""
+                <div style="display:flex;align-items:center;background:{bg};border-radius:8px;margin:1px 0;">
+                    <a href="?action=sel&sid={sid}" target="_self" style="
+                        flex:1;padding:7px 10px;color:{txt_color};text-decoration:none;
+                        font-size:0.83rem;font-family:Inter,sans-serif;
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">
+                        💬 {title_display}
+                    </a>
+                    <div style="display:flex;gap:2px;padding-right:6px;">{actions}</div>
+                </div>
+            """, unsafe_allow_html=True)
 
 # ── MAIN HEADER ───────────────────────────────────────────
 active = get_active()
