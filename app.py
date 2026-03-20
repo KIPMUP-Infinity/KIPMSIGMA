@@ -11,6 +11,31 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
+import streamlit as st
+from groq import Groq
+import yfinance as yf
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+import requests
+from urllib.parse import urlencode
+
+import streamlit as st
+from groq import Groq
+import fitz
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+import requests
+from urllib.parse import urlencode
+
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 # ── DYNAMIC THEME CSS ────────────────────────────────────
@@ -69,7 +94,7 @@ st.markdown(f"""
         box-shadow: {"none" if _is_dark else "2px 0 8px rgba(0,0,0,0.08)"} !important;
     }}
     section[data-testid="stSidebar"] > div:first-child {{
-        padding-top: 1rem;
+        padding-top: 0 !important;
     }}
 
     /* ── DIVIDERS ── */
@@ -84,12 +109,14 @@ st.markdown(f"""
         flex-direction: column !important;
         height: 100vh !important;
         overflow: hidden !important;
+        padding-top: 0 !important;
     }}
     /* Scrollable area */
     section[data-testid="stSidebar"] > div:first-child > div:first-child {{
         flex: 1 !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 8px !important;
     }}
 
@@ -407,6 +434,9 @@ if "action" in qp:
 
 # ── SIDEBAR ───────────────────────────────────────────────
 with st.sidebar:
+    # Kurangi padding bawaan Streamlit sidebar lewat CSS inline
+    st.markdown('<style>section[data-testid="stSidebar"] > div:first-child > div:first-child { padding-top: 0.5rem !important; }</style>', unsafe_allow_html=True)
+
     try:
         logo = Image.open("Mate KIPM LOGO.png")
         c1,c2,c3 = st.columns([1,2,1])
@@ -414,7 +444,7 @@ with st.sidebar:
     except: st.markdown("### 🏛️ KIPM-UP")
 
     st.markdown(f"""
-        <div style="text-align:center;line-height:1.4;margin-top:8px;font-family:Inter,sans-serif;">
+        <div style="text-align:center;line-height:1.4;margin-top:4px;font-family:Inter,sans-serif;">
             <p style="margin:0;font-size:0.78rem;color:{'#aaa' if _is_dark else '#6a7a96'};">Komunitas
                 <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
             <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:{'#fff' if _is_dark else '#1a2a4a'};">Universitas Pancasila</p>
