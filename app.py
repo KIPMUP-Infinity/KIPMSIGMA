@@ -298,26 +298,25 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
     fname = uploaded_file.name
-    # Hanya proses jika file baru (beda nama dari yang sudah diproses)
-    if fname != st.session_state.get("last_uploaded_fname", ""):
-        st.session_state["last_uploaded_fname"] = fname
-        if uploaded_file.type == "application/pdf":
-            pdf_bytes = uploaded_file.read()
-            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-            pdf_text = "".join(page.get_text() for page in doc)
-            st.session_state.attachment_text = f"[PDF: {fname}]\n{pdf_text[:6000]}"
-            st.session_state.pop("image_b64", None)
-            st.toast(f"✅ {fname} siap dikirim", icon="📄")
-        else:
-            img_bytes = uploaded_file.read()
-            img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-            ext = fname.split(".")[-1].lower()
-            mime = "image/png" if ext == "png" else "image/jpeg"
-            st.session_state.attachment_text = f"[Gambar: {fname}]"
-            st.session_state.image_b64  = img_b64
-            st.session_state.image_mime = mime
-            st.toast(f"✅ {fname} siap dianalisa", icon="🖼️")
-        st.rerun()  # Pastikan session_state tersimpan sebelum bridge_input diproses
+    ftype = uploaded_file.type
+    # Baca file LANGSUNG — jangan tunggu rerun
+    if ftype == "application/pdf":
+        pdf_bytes = uploaded_file.read()
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        pdf_text = "".join(page.get_text() for page in doc)
+        st.session_state.attachment_text = f"[PDF: {fname}]\n{pdf_text[:6000]}"
+        st.session_state.pop("image_b64", None)
+        st.session_state.pop("image_mime", None)
+        st.toast(f"✅ {fname} siap dikirim", icon="📄")
+    else:
+        img_bytes = uploaded_file.read()
+        img_b64_val = base64.b64encode(img_bytes).decode("utf-8")
+        ext = fname.split(".")[-1].lower()
+        mime_val = "image/png" if ext == "png" else "image/jpeg"
+        st.session_state.attachment_text = f"[Gambar: {fname}]"
+        st.session_state["image_b64"]  = img_b64_val
+        st.session_state["image_mime"] = mime_val
+        st.toast(f"✅ {fname} siap dianalisa", icon="🖼️")
 
 
 # ── BRIDGE INPUT ──────────────────────────────────────────
@@ -339,9 +338,12 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
     # Simpan flag gambar sebelum di-reset
-    has_image = bool(st.session_state.get("image_b64"))
+    has_image = "image_b64" in st.session_state and bool(st.session_state["image_b64"])
     img_b64   = st.session_state.pop("image_b64", None)
     img_mime  = st.session_state.pop("image_mime", "image/jpeg")
+    # Debug toast
+    if has_image:
+        st.toast(f"📸 Vision aktif — mengirim gambar ke model", icon="🔍")
 
     # Simpan thumbnail base64 untuk ditampilkan di history
     if has_image and img_b64:
