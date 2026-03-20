@@ -7,53 +7,53 @@ from PIL import Image
 import io
 
 
-# 1. Konfigurasi Halaman - Memaksa Sidebar Terbuka
+# 1. Konfigurasi Halaman - Memaksa Sidebar Terbuka Sejak Awal
 st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide", initial_sidebar_state="expanded")
 
-# 2. CSS Terkoreksi: Sidebar Tetap Ada + Konten Tengah + Icon Presisi
+# 2. CSS REVOLUTION: Sidebar & Centered Chat Tanpa Konflik
 st.markdown("""
     <style>
     header {visibility: hidden;}
     
-    /* Memastikan Sidebar tetap lebar 300px */
-    [data-testid="stSidebar"] {
-        min-width: 300px !important;
-        max-width: 300px !important;
+    /* Memperbaiki struktur dasar agar Sidebar dan Konten Utama tidak bertabrakan */
+    .stAppViewMain {
+        display: flex;
+        justify-content: center;
     }
 
-    /* Mengatur area utama: Menghapus margin auto agar Sidebar tidak tertutup */
+    /* Mengatur area konten utama agar tetap ramping di tengah (800px) */
     [data-testid="stMainBlockContainer"] {
-        max-width: 850px !important;
+        max-width: 800px !important;
+        width: 100% !important;
         padding-top: 2rem !important;
-        margin-left: 350px !important; /* Memberi ruang 300px untuk sidebar + 50px jarak */
+        margin: 0 auto !important;
     }
 
-    /* Judul Header (TIDAK DIRUBAH) */
+    /* Gaya judul header (TIDAK DIRUBAH) */
     .main-header {
         text-align: center;
         margin-bottom: 2rem;
     }
 
     /* Menyatukan Icon Attach (Clip) ke dalam Search Bar */
+    /* Posisi 'left' disesuaikan agar dinamis mengikuti box chat */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        /* Posisi ikon berdasarkan margin-left konten utama */
-        left: 365px; 
+        left: calc(50% - 375px + 140px); 
         z-index: 1001;
     }
 
-    /* Penyesuaian Responsif untuk Layar Kecil */
+    /* Responsif untuk layar kecil/HP */
     @media (max-width: 1200px) {
-        [data-testid="stMainBlockContainer"] { margin: 0 auto !important; }
-        div[data-testid="stPopover"] { left: calc(50% - 370px); }
+        div[data-testid="stPopover"] { left: calc(50% - 375px); }
     }
-    
     @media (max-width: 850px) {
         div[data-testid="stPopover"] { left: 45px; }
+        [data-testid="stMainBlockContainer"] { max-width: 95% !important; }
     }
 
-    /* Input Chat Styling */
+    /* Styling Input Bar */
     .stChatInputContainer textarea {
         padding-left: 55px !important;
         border-radius: 25px !important;
@@ -69,14 +69,16 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SIDEBAR (Logo dan Nama Organisasi)
+# 3. SIDEBAR (Identitas Organisasi)
 with st.sidebar:
     try:
-        # Memastikan logo tampil di sidebar
+        # Menampilkan logo (1/3 ukuran sidebar secara visual)
         logo = Image.open("Mate KIPM LOGO.png")
-        st.image(logo, use_container_width=True)
+        col_l, col_m, col_r = st.columns([1, 2, 1])
+        with col_m:
+            st.image(logo, use_container_width=True)
     except:
-        st.error("File 'Mate KIPM LOGO.png' tidak ditemukan.")
+        st.write("🛡️")
 
     st.markdown("""
         <div style="text-align: center; line-height: 1.2; margin-top: 10px;">
@@ -84,8 +86,9 @@ with st.sidebar:
             <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
         </div>
         """, unsafe_allow_html=True)
+    st.divider()
 
-# 4. KONTEN UTAMA (Judul Anda)
+# 4. KONTEN UTAMA (Judul Asli Anda)
 st.markdown("""
     <div class="main-header">
         <h1 style="margin:0;">   KIPM SIGMA ∑</h1>
@@ -118,4 +121,4 @@ if prompt := st.chat_input("Tanya SIGMA..."):
         with st.chat_message("assistant"):
             st.markdown(ans)
     except Exception as e:
-        st.error(f"Error API: {e}")
+        st.error(f"Gagal memanggil AI: {e}")
