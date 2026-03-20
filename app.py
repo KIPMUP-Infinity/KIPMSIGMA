@@ -9,7 +9,6 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
-
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -39,16 +38,29 @@ st.markdown("""
         margin: 0 auto !important;
     }
 
-    /* File uploader — tersembunyi tapi tetap bisa diklik via JS */
+    /* File uploader — visible, compact, menyatu di bawah chat bar */
     [data-testid="stFileUploader"] {
-        position: fixed !important;
-        bottom: 95px !important;
-        left: -9999px !important;
-        width: 1px !important;
-        height: 1px !important;
-        overflow: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
+        max-width: 760px !important;
+        margin: 0 auto 4px auto !important;
+    }
+    [data-testid="stFileUploaderDropzone"] {
+        background: #161616 !important;
+        border: 1px dashed #333 !important;
+        border-radius: 12px !important;
+        padding: 6px 12px !important;
+        min-height: unset !important;
+    }
+    [data-testid="stFileUploaderDropzoneInstructions"] {
+        display: none !important;
+    }
+    [data-testid="stFileUploader"] label p {
+        font-size: 0.75rem !important;
+        color: #666 !important;
+    }
+    [data-testid="stFileUploader"] button {
+        font-size: 0.75rem !important;
+        padding: 3px 10px !important;
+        border-radius: 6px !important;
     }
 
     [data-testid="stTextInput"] {
@@ -270,36 +282,32 @@ for i, msg in enumerate(active["messages"][1:]):
             display = display.split("Pertanyaan:")[-1].strip()
         # Tampilkan thumbnail gambar jika ada
         thumb_key = f"img_thumb_{i+1}"
-        if msg["role"] == "user" and thumb_key in st.session_state:
-            b64, mime = st.session_state[thumb_key]
-            st.markdown(
-                f'<img src="data:{mime};base64,{b64}" '
-                f'style="max-width:100%;max-height:260px;border-radius:10px;margin-bottom:6px;display:block;">',
-                unsafe_allow_html=True
-            )
-        st.markdown(display)
 
+# ── CHAT INPUT NATIVE (support file upload) ──────────────
+if prompt := st.chat_input("Tanya SIGMA..."):
+    uploaded_imgs = []
+    # st.chat_input di Streamlit ≥1.31 tidak support file langsung
+    # Kita tetap pakai session state dari file uploader di bawah
+    pass
 
-# ── HIDDEN FILE UPLOADER ──────────────────────────────────
+# ── FILE UPLOADER VISIBLE ────────────────────────────────
 if "upload_key" not in st.session_state:
     st.session_state["upload_key"] = 0
 
-# Reset uploader key jika ada flag dari pengiriman sebelumnya
 if st.session_state.get("do_reset_uploader"):
     st.session_state["upload_key"] += 1
     st.session_state["do_reset_uploader"] = False
 
-# ── Upload widget — dikontrol via CSS ──
 uploaded_file = st.file_uploader(
-    "📎 Upload PDF atau Gambar/Chart",
+    "📎 Lampirkan PDF atau Gambar/Chart",
     type=["pdf", "png", "jpg", "jpeg"],
-    key=f"uploader_{st.session_state['upload_key']}"
+    key=f"uploader_{st.session_state['upload_key']}",
+    label_visibility="collapsed"
 )
 
 if uploaded_file is not None:
-    fname = uploaded_file.name
     ftype = uploaded_file.type
-    # Baca file LANGSUNG — jangan tunggu rerun
+    fname = uploaded_file.name
     if ftype == "application/pdf":
         pdf_bytes = uploaded_file.read()
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -310,12 +318,10 @@ if uploaded_file is not None:
         st.toast(f"✅ {fname} siap dikirim", icon="📄")
     else:
         img_bytes = uploaded_file.read()
-        img_b64_val = base64.b64encode(img_bytes).decode("utf-8")
+        st.session_state["image_b64"]  = base64.b64encode(img_bytes).decode("utf-8")
         ext = fname.split(".")[-1].lower()
-        mime_val = "image/png" if ext == "png" else "image/jpeg"
+        st.session_state["image_mime"] = "image/png" if ext == "png" else "image/jpeg"
         st.session_state.attachment_text = f"[Gambar: {fname}]"
-        st.session_state["image_b64"]  = img_b64_val
-        st.session_state["image_mime"] = mime_val
         st.toast(f"✅ {fname} siap dianalisa", icon="🖼️")
 
 
@@ -331,31 +337,28 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
         full_prompt = f"{st.session_state.attachment_text}\n\nPertanyaan: {prompt}"
         st.session_state.attachment_text = None
         st.session_state["do_reset_uploader"] = True
-        # Jangan pop image_b64 di sini — sudah ditangani di blok API
 
-    # Auto-set judul sesi dari pesan pertama
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
-    # Simpan flag gambar sebelum di-reset
     has_image = "image_b64" in st.session_state and bool(st.session_state["image_b64"])
     img_b64   = st.session_state.pop("image_b64", None)
     img_mime  = st.session_state.pop("image_mime", "image/jpeg")
-    # Debug toast
-    if has_image:
-        st.toast(f"📸 Vision aktif — mengirim gambar ke model", icon="🔍")
 
-    # Simpan thumbnail base64 untuk ditampilkan di history
+    if has_image:
+        st.toast("📸 Vision aktif — menganalisa gambar...", icon="🔍")
+
+    # Simpan thumbnail untuk ditampilkan di history
+    thumb_idx = len(active["messages"])
     if has_image and img_b64:
-        st.session_state[f"img_thumb_{len(active['messages'])}"] = (img_b64, img_mime)
+        st.session_state[f"img_thumb_{thumb_idx}"] = (img_b64, img_mime)
 
     active["messages"].append({"role": "user", "content": full_prompt})
     with st.chat_message("user"):
         if has_image and img_b64:
-            # Tampilkan preview gambar di bubble user
             st.markdown(
-                f'<img src="data:{img_mime};base64,{img_b64}" '
-                f'style="max-width:100%;max-height:260px;border-radius:10px;margin-bottom:6px;display:block;">',
+                f'''<img src="data:{img_mime};base64,{img_b64}"
+                style="max-width:100%;max-height:260px;border-radius:10px;margin-bottom:6px;display:block;">''',
                 unsafe_allow_html=True
             )
         st.markdown(prompt)
@@ -363,22 +366,21 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
     try:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA sedang menganalisis..."):
-
                 groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
                 if has_image and img_b64:
-                    # ── Groq Llama-4 Maverick untuk analisa gambar/chart (vision) ──
                     vision_messages = [
                         {"role": "system", "content": (
-                            "Kamu adalah SIGMA, analis saham dan chart ahli dari KIPM Universitas Pancasila. "
-                            "Analisa chart, pola teknikal, bandarmologi, volume anomali, dan support/resistance "
-                            "dengan detail dan profesional. Jawab dalam Bahasa Indonesia."
+                            "Kamu adalah SIGMA, analis saham dan chart expert dari KIPM Universitas Pancasila. "
+                            "Analisa HANYA berdasarkan gambar/chart yang dikirim user. "
+                            "Identifikasi: nama saham jika terlihat, timeframe, trend, support/resistance, "
+                            "pola teknikal, volume, bandarmologi, dan buat trade plan. "
+                            "Jawab dalam Bahasa Indonesia yang profesional."
                         )},
                         {"role": "user", "content": [
-                            {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:{img_mime};base64,{img_b64}"}
-                            },
+                            {"type": "image_url", "image_url": {
+                                "url": f"data:{img_mime};base64,{img_b64}"
+                            }},
                             {"type": "text", "text": prompt}
                         ]}
                     ]
@@ -387,17 +389,15 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
                         messages=vision_messages,
                         max_tokens=2048
                     )
-                    ans = res.choices[0].message.content
-
                 else:
-                    # ── Groq Llama-3.3 untuk teks/PDF ──
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=active["messages"],
                         temperature=0.7,
                         max_tokens=2048
                     )
-                    ans = res.choices[0].message.content
+
+                ans = res.choices[0].message.content
 
         active["messages"].append({"role": "assistant", "content": ans})
         with st.chat_message("assistant"):
@@ -411,10 +411,10 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
     st.rerun()
 
 
-# ── CUSTOM CHAT BAR ───────────────────────────────────────
+# ── CUSTOM CHAT BAR (hanya untuk styling input) ───────────
 attachment_label = ""
-if st.session_state.attachment_text:
-    attachment_label = st.session_state.attachment_text.split("\n")[0]
+if st.session_state.get("attachment_text"):
+    attachment_label = st.session_state["attachment_text"].split("\n")[0]
 
 chat_bar_html = f"""
 <!DOCTYPE html>
@@ -422,73 +422,66 @@ chat_bar_html = f"""
 <head>
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 70px;
-    padding: 8px 16px;
-    font-family: Inter, sans-serif;
-  }}
+  html, body {{ background: transparent; margin: 0; padding: 0; font-family: Inter, sans-serif; }}
+  body {{ display: flex; align-items: flex-end; justify-content: center; padding: 4px 16px 8px; }}
   .bar {{
-    width: 100%;
-    max-width: 760px;
-    background: #1e1e1e;
-    border: 1px solid #3a3a3a;
-    border-radius: 16px;
-    padding: 10px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    width: 100%; max-width: 760px;
+    background: #1e1e1e; border: 1px solid #3a3a3a;
+    border-radius: 16px; padding: 10px 14px;
+    display: flex; flex-direction: column; gap: 6px;
     box-shadow: 0 4px 24px rgba(0,0,0,0.5);
   }}
   .attach-tag {{
     display: {'flex' if attachment_label else 'none'};
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    color: #aaa;
+    align-items: center; gap: 6px; font-size: 0.75rem; color: #aaa;
   }}
   .attach-tag .chip {{
-    background: #2e2e2e;
-    border: 1px solid #444;
-    padding: 2px 10px;
-    border-radius: 20px;
-    color: #ccc;
-    font-size: 0.75rem;
+    background: #2e2e2e; border: 1px solid #444;
+    padding: 2px 10px; border-radius: 20px; color: #ccc; font-size: 0.75rem;
   }}
   .row {{ display: flex; align-items: flex-end; gap: 10px; }}
   .btn-attach {{
-    background: none; border: none; cursor: pointer;
-    color: #666; display: flex; align-items: center;
-    padding: 4px; border-radius: 8px;
+    background: none; border: none; cursor: pointer; color: #666;
+    display: flex; align-items: center; padding: 4px; border-radius: 8px;
     transition: color 0.2s, background 0.2s; flex-shrink: 0; margin-bottom: 3px;
   }}
   .btn-attach:hover {{ color: #fff; background: #2e2e2e; }}
   textarea {{
-    flex: 1; background: transparent; border: none;
-    outline: none; color: #f0f0f0; font-size: 0.92rem;
-    resize: none; min-height: 24px; max-height: 150px;
-    line-height: 1.6; font-family: inherit; overflow-y: auto;
-    padding: 2px 0; word-break: break-word;
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #f0f0f0; font-size: 0.92rem; resize: none;
+    min-height: 24px; max-height: 150px; line-height: 1.6;
+    font-family: inherit; overflow-y: auto; padding: 2px 0; word-break: break-word;
   }}
   textarea::placeholder {{ color: #555; }}
   .btn-send {{
     background: #fff; border: none; border-radius: 8px;
-    width: 32px; height: 32px; display: flex;
-    align-items: center; justify-content: center;
-    cursor: pointer; flex-shrink: 0;
-    transition: background 0.2s, opacity 0.2s; opacity: 0.3;
+    width: 32px; height: 32px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; flex-shrink: 0;
+    transition: background 0.2s, opacity 0.2s; opacity: 0.3; margin-bottom: 2px;
   }}
   .btn-send.active {{ opacity: 1; }}
   .btn-send:hover.active {{ background: #e0e0e0; }}
   .btn-send svg {{ fill: #111; width: 15px; height: 15px; }}
+  /* Paste preview */
+  .paste-preview {{
+    display: none; align-items: center; gap: 8px; padding: 4px 0;
+  }}
+  .paste-preview img {{ height: 44px; border-radius: 6px; border: 1px solid #444; }}
+  .paste-preview span {{ font-size: 0.75rem; color: #aaa; }}
+  .paste-preview button {{
+    background: none; border: none; color: #888;
+    cursor: pointer; font-size: 1rem; padding: 0 4px;
+  }}
 </style>
 </head>
 <body>
 <div class="bar">
   <div class="attach-tag">📎 <span class="chip">{attachment_label}</span></div>
+  <div id="pastePreview" class="paste-preview">
+    <img id="pasteThumb" src="" />
+    <span>Screenshot (paste)</span>
+    <button onclick="clearPaste()">✕</button>
+  </div>
   <div class="row">
     <button class="btn-attach" onclick="triggerUpload()" title="Lampirkan file">
       <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24"
@@ -503,12 +496,6 @@ chat_bar_html = f"""
       <svg viewBox="0 0 24 24"><path d="M2 12L22 2L12 22L10 14L2 12Z"/></svg>
     </button>
   </div>
-  <!-- Preview gambar paste -->
-  <div id="pastePreview" style="display:none; padding:4px 0; align-items:center; gap:8px;">
-    <img id="pasteThumb" style="height:40px; border-radius:6px; border:1px solid #444;" />
-    <span id="pasteName" style="font-size:0.75rem; color:#aaa;"></span>
-    <button onclick="clearPaste()" style="background:none;border:none;color:#888;cursor:pointer;font-size:1rem;">✕</button>
-  </div>
 </div>
 <script>
   const inp = document.getElementById('inp');
@@ -518,124 +505,88 @@ chat_bar_html = f"""
   function onInput() {{
     inp.style.height = 'auto';
     inp.style.height = Math.min(inp.scrollHeight, 150) + 'px';
-    updateSendBtn();
+    updateBtn();
   }}
-
-  function updateSendBtn() {{
+  function updateBtn() {{
     sendBtn.classList.toggle('active', inp.value.trim() !== '' || pastedFile !== null);
   }}
-
   function onKey(e) {{
     if (e.key === 'Enter' && !e.shiftKey) {{
       e.preventDefault();
       if (inp.value.trim() || pastedFile) send();
     }}
   }}
-
-  // ── Handle Ctrl+V paste gambar ──
   function onPaste(e) {{
     const items = e.clipboardData && e.clipboardData.items;
     if (!items) return;
     for (let item of items) {{
       if (item.type.startsWith('image/')) {{
         e.preventDefault();
-        const file = item.getAsFile();
-        if (!file) return;
-        pastedFile = file;
-        // Tampilkan preview
+        pastedFile = item.getAsFile();
         const reader = new FileReader();
-        reader.onload = function(ev) {{
+        reader.onload = ev => {{
           document.getElementById('pasteThumb').src = ev.target.result;
-          document.getElementById('pasteName').textContent = 'Screenshot (paste)';
           document.getElementById('pastePreview').style.display = 'flex';
+          updateBtn();
         }};
-        reader.readAsDataURL(file);
-        updateSendBtn();
+        reader.readAsDataURL(pastedFile);
         return;
       }}
     }}
   }}
-
   function clearPaste() {{
     pastedFile = null;
     document.getElementById('pastePreview').style.display = 'none';
     document.getElementById('pasteThumb').src = '';
-    updateSendBtn();
+    updateBtn();
   }}
-
   function send() {{
     const text = inp.value.trim();
     if (!text && !pastedFile) return;
 
     if (pastedFile) {{
-      // Konversi gambar ke base64 lalu kirim via img_bridge input
-      const reader = new FileReader();
-      reader.onload = function(ev) {{
-        const dataUrl = ev.target.result; // "data:image/png;base64,xxxx"
-        const mime    = dataUrl.split(';')[0].replace('data:', '');
-        const b64     = dataUrl.split(',')[1];
-        const payload = mime + '|' + b64;
-
-        // Kirim ke img_bridge Streamlit
-        sendToBridge('js_img_bridge', payload, false);
-
-        // Setelah img_bridge, kirim teks prompt (dengan delay)
-        setTimeout(() => {{
-          sendText(text || 'Tolong analisa gambar ini');
-        }}, 500);
-      }};
-      reader.readAsDataURL(pastedFile);
+      // Kirim gambar via file uploader Streamlit yang visible
+      const parentDoc = window.parent.document;
+      const uploader = parentDoc.querySelector('input[type="file"]');
+      if (uploader) {{
+        const dt = new DataTransfer();
+        dt.items.add(pastedFile);
+        // Inject file ke uploader
+        Object.defineProperty(uploader, 'files', {{ value: dt.files, configurable: true }});
+        uploader.dispatchEvent(new Event('change', {{ bubbles: true }}));
+      }}
+      // Kirim teks setelah 800ms (beri waktu Streamlit proses file)
+      setTimeout(() => sendText(text || 'Tolong analisa gambar ini'), 800);
       clearPaste();
     }} else {{
       sendText(text);
     }}
   }}
-
-  function sendToBridge(testid_key, value, triggerEnter=true) {{
+  function sendText(text) {{
     const parentDoc = window.parent.document;
     const inputs = parentDoc.querySelectorAll('input[type="text"]');
-    let target = null;
-    // Cari input berdasarkan urutan — img_bridge adalah input kedua
-    const allBridges = [];
+    let bridge = null;
     for (let el of inputs) {{
-      if (el.closest('[data-testid="stTextInput"]')) allBridges.push(el);
+      if (el.closest('[data-testid="stTextInput"]')) {{ bridge = el; break; }}
     }}
-    // js_bridge_widget = index 0, js_img_bridge = index 1
-    target = testid_key === 'js_img_bridge' ? allBridges[1] : allBridges[0];
-
-    if (target) {{
+    if (bridge) {{
       const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-      setter.call(target, value);
-      target.dispatchEvent(new Event('input', {{ bubbles: true }}));
-      if (triggerEnter) {{
-        setTimeout(() => {{
-          ['keydown','keypress','keyup'].forEach(type => {{
-            target.dispatchEvent(new KeyboardEvent(type, {{
-              key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true, cancelable: true
-            }}));
-          }});
-        }}, 100);
-      }}
+      setter.call(bridge, text);
+      bridge.dispatchEvent(new Event('input', {{ bubbles: true }}));
+      setTimeout(() => {{
+        ['keydown','keypress','keyup'].forEach(t => {{
+          bridge.dispatchEvent(new KeyboardEvent(t, {{
+            key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true, cancelable: true
+          }}));
+        }});
+      }}, 100);
+      inp.value = ''; inp.style.height = '24px';
+      sendBtn.classList.remove('active');
     }}
   }}
-
-  function sendText(text) {{
-    sendToBridge('js_bridge_widget', text, true);
-    inp.value = '';
-    inp.style.height = '22px';
-    sendBtn.classList.remove('active');
-  }}
-
   function triggerUpload() {{
-    // Scroll ke file uploader agar user bisa klik langsung
-    const parentDoc = window.parent.document;
-    const uploader = parentDoc.querySelector('[data-testid="stFileUploader"]');
-    if (uploader) {{
-      uploader.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
-      // Klik browse button
-      const btn = uploader.querySelector('button');
-      if (btn) btn.click();
-    }}
+    const uploader = window.parent.document.querySelector('input[type="file"]');
+    if (uploader) uploader.click();
   }}
 </script>
 </body>
@@ -643,7 +594,6 @@ chat_bar_html = f"""
 """
 
 components.html(chat_bar_html, height=200, scrolling=False)
-
 
 # ── JS: Fix bubble user ke kanan ─────────────────────────
 components.html("""
