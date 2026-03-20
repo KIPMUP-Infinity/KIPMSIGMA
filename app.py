@@ -14,7 +14,6 @@ import json
 import os
 import hashlib
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -774,10 +773,10 @@ components.html(f"""
                     color:{_bar_text};text-transform:uppercase;letter-spacing:1.2px;">
                     Penampilan
                 </div>
-                <div class="sp-item" onclick="sigmaSetTheme('dark')" style="cursor:pointer;">
+                <div id="sp-theme-dark" class="sp-item" style="cursor:pointer;">
                     <span>Gelap</span><span id="sp-ck-dark" class="sp-ck" style="color:{_active_dot};font-weight:700;">{_theme_dark_check}</span>
                 </div>
-                <div class="sp-item" onclick="sigmaSetTheme('light')" style="cursor:pointer;">
+                <div id="sp-theme-light" class="sp-item" style="cursor:pointer;">
                     <span>Terang</span><span id="sp-ck-light" class="sp-ck" style="color:{_active_dot};font-weight:700;">{_theme_light_check}</span>
                 </div>
                 <div style="border-top:1px solid {_popup_border};margin:4px 0;"></div>
@@ -811,6 +810,15 @@ components.html(f"""
         `;
 
         sidebar.appendChild(wrap);
+
+        // Pasang event listener setelah inject — bukan inline onclick
+        // Ini yang benar karena kita akses fungsi di parentDoc scope langsung
+        parentDoc.getElementById('sp-theme-dark').addEventListener('click', function() {{
+            window.parent.sigmaSetTheme('dark');
+        }});
+        parentDoc.getElementById('sp-theme-light').addEventListener('click', function() {{
+            window.parent.sigmaSetTheme('light');
+        }});
 
         // Toggle popup
         var btn = parentDoc.getElementById('sp-btn');
