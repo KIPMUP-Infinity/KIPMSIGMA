@@ -8,7 +8,6 @@ import io
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="KIPM SIGMA ", layout="wide")
-st.title("KIPM SIGMA ")
 st.sidebar.title("Kontrol Panel")
 
 # 1. Pengaturan Tema & Logo
@@ -46,7 +45,7 @@ with st.sidebar:
     st.info("Strategic Intelligence & Global Market Analysis")
 
 # 3. Header Utama
-st.title("SIGMA $\Sigma$")
+st.title("KIPM SIGMA $\Sigma$")
 st.write("Strategic Intelligence & Global Market Analysis")
 st.divider()
 
