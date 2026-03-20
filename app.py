@@ -8,7 +8,8 @@ import io
 import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
-
+import requests
+from urllib.parse import urlencode
 
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
@@ -65,6 +66,109 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+
+
+# ── GOOGLE OAUTH ──────────────────────────────────────────
+def show_login_page():
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"] { display: none !important; }
+        [data-testid="stMainBlockContainer"] {
+            max-width: 420px !important;
+            margin: 8vh auto 0 auto !important;
+            padding-bottom: 0 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    try:
+        logo = Image.open("Mate KIPM LOGO.png")
+        c1, c2, c3 = st.columns([1, 1, 1])
+        with c2: st.image(logo, use_container_width=True)
+    except: pass
+
+    st.markdown("""
+        <div style="text-align:center;margin:24px 0 32px;font-family:Inter,sans-serif;">
+            <h2 style="margin:0;font-size:1.6rem;font-weight:700;color:#fff;">Masuk ke SIGMA</h2>
+            <p style="margin:8px 0 0;color:#888;font-size:0.9rem;">
+                Platform analisa saham KIPM Universitas Pancasila
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    client_id    = st.secrets.get("GOOGLE_CLIENT_ID", "")
+    redirect_uri = st.secrets.get("GOOGLE_REDIRECT_URI", "")
+
+    if not client_id or not redirect_uri:
+        st.error("Isi GOOGLE_CLIENT_ID dan GOOGLE_REDIRECT_URI di Streamlit Secrets.")
+        st.stop()
+
+    params = {
+        "client_id": client_id, "redirect_uri": redirect_uri,
+        "response_type": "code", "scope": "openid email profile",
+        "access_type": "offline", "prompt": "select_account",
+    }
+    auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+
+    st.markdown(f"""
+        <a href="{auth_url}" style="
+            display:flex;align-items:center;justify-content:center;gap:10px;
+            background:#fff;color:#1a1a1a;border-radius:10px;padding:13px 20px;
+            text-decoration:none;font-size:0.95rem;font-weight:500;
+            font-family:Inter,sans-serif;border:1px solid #ddd;">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Lanjutkan dengan Google
+        </a>
+        <p style="text-align:center;color:#555;font-size:0.75rem;margin-top:20px;font-family:Inter,sans-serif;">
+            Dengan masuk, kamu menyetujui penggunaan platform ini untuk analisa pasar modal.
+        </p>
+    """, unsafe_allow_html=True)
+    st.stop()
+
+
+def handle_oauth_callback():
+    code         = st.query_params.get("code", "")
+    client_id    = st.secrets.get("GOOGLE_CLIENT_ID", "")
+    client_sec   = st.secrets.get("GOOGLE_CLIENT_SECRET", "")
+    redirect_uri = st.secrets.get("GOOGLE_REDIRECT_URI", "")
+    if not all([code, client_id, client_sec, redirect_uri]): return None
+
+    r = requests.post("https://oauth2.googleapis.com/token", data={
+        "code": code, "client_id": client_id, "client_secret": client_sec,
+        "redirect_uri": redirect_uri, "grant_type": "authorization_code",
+    })
+    if r.status_code != 200: return None
+    token = r.json().get("access_token", "")
+    if not token: return None
+
+    u = requests.get("https://www.googleapis.com/oauth2/v2/userinfo",
+                     headers={"Authorization": f"Bearer {token}"})
+    return u.json() if u.status_code == 200 else None
+
+
+# ── CEK LOGIN ─────────────────────────────────────────────
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+if "code" in st.query_params and st.session_state.user is None:
+    info = handle_oauth_callback()
+    if info:
+        st.session_state.user = info
+        st.query_params.clear()
+        st.rerun()
+    else:
+        st.error("Login gagal. Coba lagi.")
+        st.query_params.clear()
+
+if st.session_state.user is None:
+    show_login_page()
+
+user = st.session_state.user
 
 # ── SESSION STATE ─────────────────────────────────────────
 SYSTEM_PROMPT = {
