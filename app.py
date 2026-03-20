@@ -9,17 +9,13 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
-st.set_page_config(
-    page_title="KIPM SIGMA",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     html, body, [class*="css"], .stMarkdown, .stChatMessage, p, div {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
@@ -57,12 +53,6 @@ st.markdown("""
         background: #2a2a2a !important;
         color: #fff !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] label { display: none !important; }
-    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
-    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
-        padding: 4px 8px !important; min-height: unset !important;
-        border-radius: 8px !important; border: 1px solid #333 !important; background: #1a1a1a !important;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -71,35 +61,27 @@ st.markdown("""
 SYSTEM_PROMPT = {
     "role": "system",
     "content": (
-        "Kamu adalah SIGMA, analis saham ahli dari KIPM Universitas Pancasila. "
-        "Analisa chart, pola teknikal, bandarmologi, support/resistance, dan buat trade plan. "
-        "Jawab dalam Bahasa Indonesia yang jelas, tegas, dan profesional."
+        "Kamu adalah SIGMA, analis saham dan chart expert dari KIPM Universitas Pancasila. "
+        "Jika ada gambar chart, analisa trend, support/resistance, pola teknikal, volume, "
+        "bandarmologi, dan buat trade plan. Jawab Bahasa Indonesia, tegas dan profesional."
     )
 }
 
 def new_session():
-    return {
-        "id": str(uuid.uuid4())[:8],
-        "title": "Obrolan Baru",
-        "messages": [SYSTEM_PROMPT],
-        "created": datetime.now().strftime("%H:%M")
-    }
+    return {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru",
+            "messages": [SYSTEM_PROMPT], "created": datetime.now().strftime("%H:%M")}
 
-if "sessions" not in st.session_state:
+if "sessions"   not in st.session_state:
     s = new_session()
     st.session_state.sessions  = [s]
     st.session_state.active_id = s["id"]
-if "rename_id" not in st.session_state:
-    st.session_state.rename_id = None
-if "attachment" not in st.session_state:
-    st.session_state.attachment = None
-if "upload_key" not in st.session_state:
-    st.session_state.upload_key = 0
+if "rename_id"  not in st.session_state: st.session_state.rename_id  = None
+if "img_data"   not in st.session_state: st.session_state.img_data   = None  # (b64, mime, name)
+if "pdf_data"   not in st.session_state: st.session_state.pdf_data   = None  # (text, name)
 
 def get_active():
     for s in st.session_state.sessions:
-        if s["id"] == st.session_state.active_id:
-            return s
+        if s["id"] == st.session_state.active_id: return s
     return st.session_state.sessions[0]
 
 def delete_session(sid):
@@ -110,54 +92,45 @@ def delete_session(sid):
         st.session_state.active_id = st.session_state.sessions[0]["id"]
 
 
-# ── HANDLE SIDEBAR ACTIONS ────────────────────────────────
+# ── SIDEBAR ACTIONS VIA QUERY PARAMS ─────────────────────
 qp = st.query_params
 if "action" in qp:
-    action    = qp.get("action", "")
-    sid_param = qp.get("sid", "")
-    if action == "new":
-        ns = new_session()
-        st.session_state.sessions.insert(0, ns)
+    a, sid = qp.get("action",""), qp.get("sid","")
+    if a == "new":
+        ns = new_session(); st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
         st.query_params.clear(); st.rerun()
-    elif action == "sel" and sid_param:
-        st.session_state.active_id = sid_param
-        st.session_state.rename_id = None
+    elif a == "sel" and sid:
+        st.session_state.active_id = sid; st.session_state.rename_id = None
         st.query_params.clear(); st.rerun()
-    elif action == "del" and sid_param:
-        delete_session(sid_param)
-        st.query_params.clear(); st.rerun()
-    elif action == "ren" and sid_param:
-        st.session_state.rename_id = sid_param
-        st.query_params.clear(); st.rerun()
+    elif a == "del" and sid:
+        delete_session(sid); st.query_params.clear(); st.rerun()
+    elif a == "ren" and sid:
+        st.session_state.rename_id = sid; st.query_params.clear(); st.rerun()
 
 
 # ── SIDEBAR ───────────────────────────────────────────────
 with st.sidebar:
     try:
         logo = Image.open("Mate KIPM LOGO.png")
-        c1, c2, c3 = st.columns([1,2,1])
+        c1,c2,c3 = st.columns([1,2,1])
         with c2: st.image(logo, use_container_width=True)
-    except:
-        st.markdown("### 🏛️ KIPM-UP")
+    except: st.markdown("### 🏛️ KIPM-UP")
 
     st.markdown("""
         <div style="text-align:center;line-height:1.4;margin-top:8px;font-family:Inter,sans-serif;">
-            <p style="margin:0;font-size:0.78rem;color:#aaa;">
-                Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal
-            </p>
+            <p style="margin:0;font-size:0.78rem;color:#aaa;">Komunitas
+                <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
             <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;">Universitas Pancasila</p>
         </div>
     """, unsafe_allow_html=True)
 
     st.divider()
 
-    # New chat
     st.markdown("""
         <a href="?action=new" target="_self" style="
-            display:flex;align-items:center;gap:8px;padding:8px 10px;
-            border-radius:8px;color:#ccc;text-decoration:none;
-            font-size:0.88rem;font-family:Inter,sans-serif;margin-bottom:2px;"
+            display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
+            color:#ccc;text-decoration:none;font-size:0.88rem;font-family:Inter,sans-serif;"
            onmouseover="this.style.background='#2a2a2a';this.style.color='#fff'"
            onmouseout="this.style.background='transparent';this.style.color='#ccc'">
             ✏️ &nbsp;Obrolan baru
@@ -167,37 +140,32 @@ with st.sidebar:
     st.markdown('<p style="font-size:0.68rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 4px 6px;">Obrolan Anda</p>', unsafe_allow_html=True)
 
     for sesi in st.session_state.sessions:
-        sid = sesi["id"]
-        is_active = sid == st.session_state.active_id
-        title_display = sesi["title"][:34] + "..." if len(sesi["title"]) > 34 else sesi["title"]
-
+        sid = sesi["id"]; is_active = sid == st.session_state.active_id
+        title_d = sesi["title"][:34] + "..." if len(sesi["title"]) > 34 else sesi["title"]
         if st.session_state.rename_id == sid:
-            new_title = st.text_input("Rename", value=sesi["title"], key=f"rename_{sid}", label_visibility="collapsed")
-            col_ok, col_cancel = st.columns([1,1])
-            with col_ok:
+            new_t = st.text_input("Rename", value=sesi["title"], key=f"ren_{sid}", label_visibility="collapsed")
+            co, cc = st.columns([1,1])
+            with co:
                 if st.button("✓", key=f"ok_{sid}"):
-                    sesi["title"] = new_title.strip() or sesi["title"]
+                    sesi["title"] = new_t.strip() or sesi["title"]
                     st.session_state.rename_id = None; st.rerun()
-            with col_cancel:
-                if st.button("✗", key=f"cancel_{sid}"):
+            with cc:
+                if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
-            bg  = "#1e2d45" if is_active else "transparent"
-            clr = "#fff"    if is_active else "#bbb"
-            actions = (
-                f'<a href="?action=ren&sid={sid}" target="_self" style="color:#666;text-decoration:none;font-size:0.78rem;padding:2px 5px;border-radius:4px;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'#666\'">✏️</a>'
-                f'<a href="?action=del&sid={sid}" target="_self" style="color:#666;text-decoration:none;font-size:0.78rem;padding:2px 5px;border-radius:4px;" onmouseover="this.style.color=\'#ff6b6b\'" onmouseout="this.style.color=\'#666\'">🗑️</a>'
-                if is_active else ""
-            )
+            bg = "#1e2d45" if is_active else "transparent"
+            clr = "#fff" if is_active else "#bbb"
+            acts = (
+                f'<a href="?action=ren&sid={sid}" target="_self" style="color:#666;text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'#666\'">✏️</a>'
+                f'<a href="?action=del&sid={sid}" target="_self" style="color:#666;text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'#f66\'" onmouseout="this.style.color=\'#666\'">🗑️</a>'
+            ) if is_active else ""
             st.markdown(f"""
                 <div style="display:flex;align-items:center;background:{bg};border-radius:8px;margin:1px 0;">
-                    <a href="?action=sel&sid={sid}" target="_self" style="
-                        flex:1;padding:7px 10px;color:{clr};text-decoration:none;
-                        font-size:0.83rem;font-family:Inter,sans-serif;
+                    <a href="?action=sel&sid={sid}" target="_self" style="flex:1;padding:7px 10px;color:{clr};
+                        text-decoration:none;font-size:0.83rem;font-family:Inter,sans-serif;
                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">
-                        💬 {title_display}
-                    </a>
-                    <div style="display:flex;gap:2px;padding-right:6px;">{actions}</div>
+                        💬 {title_d}</a>
+                    <div style="display:flex;gap:2px;padding-right:6px;">{acts}</div>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -212,106 +180,112 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# Tampilkan history chat
+# Tampilkan history
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
         display = msg["content"]
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
-        # Tampilkan thumbnail jika ada
-        thumb_key = f"thumb_{active['id']}_{i}"
-        if msg["role"] == "user" and thumb_key in st.session_state:
-            b64, mime = st.session_state[thumb_key]
-            st.markdown(
-                f'<img src="data:{mime};base64,{b64}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">',
-                unsafe_allow_html=True
-            )
+        key = f"thumb_{active['id']}_{i}"
+        if msg["role"] == "user" and key in st.session_state:
+            b64, mime = st.session_state[key]
+            st.markdown(f'<img src="data:{mime};base64,{b64}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
 
-# ── CHAT INPUT NATIVE ─────────────────────────────────────
-# accept_file tersedia di Streamlit >= 1.37
+# ── CHAT INPUT ────────────────────────────────────────────
+# Coba gunakan accept_file (Streamlit >= 1.37)
 try:
-    _ci = st.chat_input("Tanya SIGMA...", accept_file="multiple", file_type=["pdf","png","jpg","jpeg"])
+    result = st.chat_input(
+        "Tanya SIGMA... (attach file via tombol +)",
+        accept_file="multiple",
+        file_type=["pdf", "png", "jpg", "jpeg"]
+    )
 except TypeError:
-    _ci = st.chat_input("Tanya SIGMA...")
+    result = st.chat_input("Tanya SIGMA...")
 
-# Normalize output
-if _ci is None:
-    prompt = None
-elif hasattr(_ci, 'text'):
-    prompt = _ci.text
-    _files = getattr(_ci, 'files', None) or []
-    if _files:
-        _f = _files[0]; _raw = _f.read()
-        if _f.type == "application/pdf":
-            _doc = fitz.open(stream=_raw, filetype="pdf")
-            _txt = "".join(p.get_text() for p in _doc)
-            st.session_state.attachment = {"type":"pdf","name":_f.name,"text":f"[PDF: {_f.name}]\n{_txt[:6000]}"}
+# Parse result
+prompt    = None
+file_obj  = None
+
+if result is not None:
+    if hasattr(result, 'text'):
+        # Streamlit 1.37+ object
+        prompt   = (result.text or "").strip()
+        files    = getattr(result, 'files', None) or []
+        if files: file_obj = files[0]
+    elif isinstance(result, str):
+        prompt = result.strip()
+    
+    # Kalau ada file dari chat_input, proses langsung
+    if file_obj is not None:
+        raw = file_obj.read()
+        if file_obj.type == "application/pdf":
+            doc = fitz.open(stream=raw, filetype="pdf")
+            pdf_text = "".join(p.get_text() for p in doc)
+            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{pdf_text[:6000]}", file_obj.name)
+            st.session_state.img_data = None
         else:
-            _b64 = base64.b64encode(_raw).decode()
-            _ext = _f.name.split(".")[-1].lower()
-            _mime = "image/png" if _ext == "png" else "image/jpeg"
-            st.session_state.attachment = {"type":"image","name":_f.name,"b64":_b64,"mime":_mime,"text":f"[Gambar: {_f.name}]"}
-else:
-    prompt = str(_ci)
+            b64  = base64.b64encode(raw).decode()
+            ext  = file_obj.name.split(".")[-1].lower()
+            mime = "image/png" if ext == "png" else "image/jpeg"
+            st.session_state.img_data  = (b64, mime, file_obj.name)
+            st.session_state.pdf_data  = None
+    
+    # Kalau prompt kosong tapi ada file, beri default prompt
+    if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
+        prompt = "Tolong analisa file yang saya kirim"
 
 if prompt:
-    att = st.session_state.attachment
-    has_image = att is not None and att["type"] == "image"
-    has_pdf   = att is not None and att["type"] == "pdf"
+    # Ambil data attachment
+    img_data = st.session_state.img_data
+    pdf_data = st.session_state.pdf_data
+    has_image = img_data is not None
+    has_pdf   = pdf_data is not None
+
+    # Reset attachment state
+    st.session_state.img_data = None
+    st.session_state.pdf_data = None
 
     # Bangun full prompt
     full_prompt = prompt
-    if att:
-        full_prompt = f"{att['text']}\n\nPertanyaan: {prompt}"
+    if has_image:
+        full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
+    elif has_pdf:
+        full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
 
-    # Auto-title sesi
+    # Auto-title
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
-    # Simpan thumbnail untuk history
+    # Simpan thumbnail
     thumb_idx = len(active["messages"]) - 1
     if has_image:
-        st.session_state[f"thumb_{active['id']}_{thumb_idx}"] = (att["b64"], att["mime"])
+        st.session_state[f"thumb_{active['id']}_{thumb_idx}"] = (img_data[0], img_data[1])
 
     # Tampilkan pesan user
     active["messages"].append({"role": "user", "content": full_prompt})
     with st.chat_message("user"):
         if has_image:
             st.markdown(
-                f'<img src="data:{att["mime"]};base64,{att["b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">',
+                f'<img src="data:{img_data[1]};base64,{img_data[0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">',
                 unsafe_allow_html=True
             )
         st.markdown(prompt)
 
-    # Simpan data att sebelum reset
-    img_b64_send  = att["b64"]  if has_image else None
-    img_mime_send = att["mime"] if has_image else None
-
-    # Reset attachment
-    st.session_state.attachment = None
-    st.session_state.upload_key += 1
-
     # Panggil API
     try:
+        groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
         with st.chat_message("assistant"):
             with st.spinner("SIGMA sedang menganalisis..."):
-                groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-
-                if has_image and img_b64_send:
+                if has_image:
                     res = groq_client.chat.completions.create(
                         model="llama-3.2-90b-vision-preview",
                         messages=[
-                            {"role": "system", "content": (
-                                "Kamu adalah SIGMA, analis chart dan saham expert KIPM Universitas Pancasila. "
-                                "Analisa HANYA gambar yang dikirim. Identifikasi saham, timeframe, trend, "
-                                "support/resistance, pola teknikal, volume, bandarmologi, dan buat trade plan. "
-                                "Jawab Bahasa Indonesia, tegas dan profesional."
-                            )},
+                            {"role": "system", "content": SYSTEM_PROMPT["content"]},
                             {"role": "user", "content": [
                                 {"type": "image_url", "image_url": {
-                                    "url": f"data:{img_mime_send};base64,{img_b64_send}"
+                                    "url": f"data:{img_data[1]};base64,{img_data[0]}"
                                 }},
                                 {"type": "text", "text": prompt}
                             ]}
@@ -325,7 +299,6 @@ if prompt:
                         temperature=0.7,
                         max_tokens=2048
                     )
-
                 ans = res.choices[0].message.content
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
@@ -338,9 +311,10 @@ if prompt:
     st.rerun()
 
 
-# ── JS: Fix bubble user ke kanan ─────────────────────────
+# ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
 components.html("""
 <script>
+// Fix bubble kanan
 function fixBubbles() {
     const doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {
@@ -371,5 +345,34 @@ setInterval(fixBubbles, 800);
 new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(
     window.parent.document.body, {childList:true, subtree:true}
 );
+
+// Ctrl+V paste gambar ke chat input
+function setupPaste() {
+    const parentDoc = window.parent.document;
+    const chatInput = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
+    if (!chatInput || chatInput._pasteSetup) return;
+    chatInput._pasteSetup = true;
+    chatInput.addEventListener('paste', function(e) {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                e.preventDefault();
+                const file = item.getAsFile();
+                if (!file) return;
+                // Inject ke file input chat
+                const fileInput = parentDoc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+                if (fileInput) {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    Object.defineProperty(fileInput, 'files', {value: dt.files, configurable: true});
+                    fileInput.dispatchEvent(new Event('change', {bubbles: true}));
+                }
+                return;
+            }
+        }
+    });
+}
+setInterval(setupPaste, 1000);
 </script>
 """, height=0)
