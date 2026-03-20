@@ -8,6 +8,13 @@ import io
 import streamlit.components.v1 as components
 
 
+import streamlit as st
+from groq import Groq
+import fitz
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
@@ -25,13 +32,22 @@ st.markdown("""
 
     .main-header { text-align: center; margin-bottom: 2rem; }
 
-    /* Beri ruang di bawah untuk custom chat bar */
     [data-testid="stMainBlockContainer"] {
-        padding-bottom: 100px !important;
+        padding-bottom: 110px !important;
     }
 
-    /* Sembunyikan file uploader Streamlit — tetap fungsional di background */
+    /* Sembunyikan file uploader bawaan */
     [data-testid="stFileUploader"] {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Sembunyikan st.text_input yang jadi bridge */
+    [data-testid="stTextInput"] {
         position: absolute !important;
         width: 1px !important;
         height: 1px !important;
@@ -95,9 +111,6 @@ if "messages" not in st.session_state:
         }
     ]
 
-if "pending_prompt" not in st.session_state:
-    st.session_state.pending_prompt = None
-
 if "attachment_text" not in st.session_state:
     st.session_state.attachment_text = None
 
@@ -111,37 +124,7 @@ for msg in st.session_state.messages[1:]:
         st.markdown(display)
 
 
-# ── PROSES PROMPT DARI CUSTOM BAR ────────────────────────
-if st.session_state.pending_prompt:
-    prompt = st.session_state.pending_prompt
-    st.session_state.pending_prompt = None
-
-    full_prompt = prompt
-    if st.session_state.attachment_text:
-        full_prompt = f"{st.session_state.attachment_text}\n\nPertanyaan: {prompt}"
-        st.session_state.attachment_text = None
-
-    st.session_state.messages.append({"role": "user", "content": full_prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    try:
-        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-        res = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=st.session_state.messages,
-            temperature=0.7,
-            max_tokens=2048
-        )
-        ans = res.choices[0].message.content
-        st.session_state.messages.append({"role": "assistant", "content": ans})
-        with st.chat_message("assistant"):
-            st.markdown(ans)
-    except Exception as e:
-        st.error(f"❌ Error: {e}")
-
-
-# ── HANDLE FILE UPLOAD (tersembunyi, dipicu JS) ───────────
+# ── HIDDEN FILE UPLOADER ──────────────────────────────────
 uploaded_file = st.file_uploader(
     "upload",
     type=["pdf", "png", "jpg", "jpeg"],
@@ -158,101 +141,137 @@ if uploaded_file is not None and st.session_state.attachment_text is None:
         st.toast(f"✅ {uploaded_file.name} siap dikirim", icon="📄")
     else:
         image = Image.open(uploaded_file)
-        buf = io.BytesIO()
-        image.save(buf, format="PNG")
         st.session_state.attachment_text = f"[Gambar: {uploaded_file.name}]"
         st.toast("✅ Gambar siap dikirim", icon="🖼️")
 
 
-# ── CUSTOM CHAT BAR (HTML + JS) ───────────────────────────
+# ── HIDDEN TEXT INPUT SEBAGAI BRIDGE ─────────────────────
+# JS akan inject teks ke sini lalu trigger 'Enter' untuk submit ke Streamlit
+bridge_input = st.text_input("bridge", key="js_bridge", label_visibility="hidden")
+
+if bridge_input and bridge_input != st.session_state.get("last_bridge", ""):
+    st.session_state["last_bridge"] = bridge_input
+    prompt = bridge_input
+
+    full_prompt = prompt
+    if st.session_state.attachment_text:
+        full_prompt = f"{st.session_state.attachment_text}\n\nPertanyaan: {prompt}"
+        st.session_state.attachment_text = None
+
+    st.session_state.messages.append({"role": "user", "content": full_prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    try:
+        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+        with st.chat_message("assistant"):
+            with st.spinner("SIGMA sedang menganalisis..."):
+                res = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=st.session_state.messages,
+                    temperature=0.7,
+                    max_tokens=2048
+                )
+                ans = res.choices[0].message.content
+        st.session_state.messages.append({"role": "assistant", "content": ans})
+        with st.chat_message("assistant"):
+            st.markdown(ans)
+    except Exception as e:
+        st.error(f"❌ Error: {e}")
+
+    # Reset bridge
+    st.session_state["js_bridge"] = ""
+    st.rerun()
+
+
+# ── ATTACHMENT LABEL ──────────────────────────────────────
 attachment_label = ""
 if st.session_state.attachment_text:
-    name = st.session_state.attachment_text.split("\n")[0]
-    attachment_label = name
+    attachment_label = st.session_state.attachment_text.split("\n")[0]
 
+
+# ── CUSTOM CHAT BAR ───────────────────────────────────────
 chat_bar_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-
   body {{
     background: transparent;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    height: 80px;
-    padding: 0 1rem;
+    min-height: 70px;
+    padding: 8px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }}
 
-  .chat-bar-wrapper {{
+  .bar {{
     width: 100%;
     max-width: 760px;
-    background: #2b2b2b;
-    border: 1px solid #444;
+    background: #1e1e1e;
+    border: 1px solid #3a3a3a;
     border-radius: 16px;
     padding: 10px 14px;
     display: flex;
     flex-direction: column;
     gap: 6px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
   }}
 
-  /* Label attachment jika ada file */
-  .attach-label {{
+  .attach-tag {{
     display: {'flex' if attachment_label else 'none'};
     align-items: center;
     gap: 6px;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #aaa;
-    padding: 2px 4px;
   }}
-
-  .attach-label span {{
-    background: #3a3a3a;
+  .attach-tag .chip {{
+    background: #2e2e2e;
+    border: 1px solid #444;
     padding: 2px 10px;
     border-radius: 20px;
     color: #ccc;
+    font-size: 0.75rem;
   }}
 
-  /* Row input utama */
-  .input-row {{
+  .row {{
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }}
 
-  /* Tombol attach (paperclip) */
   .btn-attach {{
     background: none;
     border: none;
     cursor: pointer;
-    color: #888;
-    font-size: 1.2rem;
+    color: #666;
+    display: flex;
+    align-items: center;
     padding: 4px;
     border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
     flex-shrink: 0;
-    transition: color 0.2s;
   }}
-  .btn-attach:hover {{ color: #fff; }}
+  .btn-attach:hover {{ color: #fff; background: #2e2e2e; }}
 
-  /* Textarea */
   textarea {{
     flex: 1;
     background: transparent;
     border: none;
     outline: none;
-    color: #fff;
-    font-size: 0.95rem;
+    color: #f0f0f0;
+    font-size: 0.92rem;
     resize: none;
-    height: 24px;
+    height: 22px;
     max-height: 120px;
     line-height: 1.5;
     font-family: inherit;
     overflow-y: hidden;
   }}
+  textarea::placeholder {{ color: #555; }}
 
-  textarea::placeholder {{ color: #666; }}
-
-  /* Tombol kirim */
   .btn-send {{
     background: #fff;
     border: none;
@@ -264,120 +283,116 @@ chat_bar_html = f"""
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.2s;
+    transition: background 0.2s, opacity 0.2s;
+    opacity: 0.3;
   }}
-  .btn-send:hover {{ background: #ddd; }}
-  .btn-send svg {{ fill: #111; width: 16px; height: 16px; }}
-  .btn-send:disabled {{ background: #444; cursor: not-allowed; }}
-  .btn-send:disabled svg {{ fill: #666; }}
+  .btn-send.active {{ opacity: 1; }}
+  .btn-send:hover.active {{ background: #e0e0e0; }}
+  .btn-send svg {{ fill: #111; width: 15px; height: 15px; }}
 </style>
-
-<div class="chat-bar-wrapper">
-  <!-- Label file terlampir -->
-  <div class="attach-label">
-    📎 <span>{attachment_label}</span>
+</head>
+<body>
+<div class="bar">
+  <div class="attach-tag">
+    📎 <span class="chip">{attachment_label}</span>
   </div>
-
-  <!-- Row input -->
-  <div class="input-row">
-    <!-- Tombol attach -->
+  <div class="row">
     <button class="btn-attach" onclick="triggerUpload()" title="Lampirkan file">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66
-                 l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+      <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24"
+        fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19
+                 a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
       </svg>
     </button>
 
-    <!-- Input teks -->
-    <textarea id="chatInput" placeholder="Tanya SIGMA..." rows="1"
-      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <textarea id="inp" placeholder="Tanya SIGMA..."
+      oninput="onInput()" onkeydown="onKey(event)"></textarea>
 
-    <!-- Tombol kirim -->
-    <button class="btn-send" id="sendBtn" onclick="sendMessage()" disabled>
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 12L22 2L12 22L10 14L2 12Z"/>
-      </svg>
+    <button class="btn-send" id="sendBtn" onclick="send()">
+      <svg viewBox="0 0 24 24"><path d="M2 12L22 2L12 22L10 14L2 12Z"/></svg>
     </button>
   </div>
 </div>
 
 <script>
-  const textarea = document.getElementById('chatInput');
-  const sendBtn  = document.getElementById('sendBtn');
+  const inp     = document.getElementById('inp');
+  const sendBtn = document.getElementById('sendBtn');
 
-  // Enable/disable tombol kirim
-  textarea.addEventListener('input', () => {{
-    sendBtn.disabled = textarea.value.trim() === '';
-  }});
-
-  // Auto resize textarea
-  function autoResize(el) {{
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  function onInput() {{
+    // Auto resize
+    inp.style.height = 'auto';
+    inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+    // Toggle send button
+    sendBtn.classList.toggle('active', inp.value.trim() !== '');
   }}
 
-  // Enter = kirim, Shift+Enter = newline
-  function handleKey(e) {{
+  function onKey(e) {{
     if (e.key === 'Enter' && !e.shiftKey) {{
       e.preventDefault();
-      if (!sendBtn.disabled) sendMessage();
+      if (inp.value.trim()) send();
     }}
   }}
 
-  // Kirim pesan ke Streamlit via query param trick
-  function sendMessage() {{
-    const text = textarea.value.trim();
+  function send() {{
+    const text = inp.value.trim();
     if (!text) return;
 
-    // Kirim ke parent Streamlit lewat URL hash
-    window.parent.postMessage({{
-      type: 'SIGMA_PROMPT',
-      payload: text
-    }}, '*');
+    // Cari hidden text input Streamlit (bridge) di parent document
+    const parentDoc = window.parent.document;
+    const inputs = parentDoc.querySelectorAll('input[type="text"]');
 
-    textarea.value = '';
-    textarea.style.height = '24px';
-    sendBtn.disabled = true;
+    let bridgeInput = null;
+    for (let el of inputs) {{
+      // Cari input yang labelnya "bridge" (hidden bridge kita)
+      const wrapper = el.closest('[data-testid="stTextInput"]');
+      if (wrapper) {{ bridgeInput = el; break; }}
+    }}
+
+    if (bridgeInput) {{
+      // Set nilai input
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLInputElement.prototype, 'value'
+      ).set;
+      nativeInputValueSetter.call(bridgeInput, text);
+
+      // Trigger React onChange event
+      bridgeInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+
+      // Trigger Enter key untuk submit ke Streamlit
+      setTimeout(() => {{
+        bridgeInput.dispatchEvent(new KeyboardEvent('keydown', {{
+          key: 'Enter', code: 'Enter', keyCode: 13,
+          bubbles: true, cancelable: true
+        }}));
+        bridgeInput.dispatchEvent(new KeyboardEvent('keypress', {{
+          key: 'Enter', code: 'Enter', keyCode: 13,
+          bubbles: true, cancelable: true
+        }}));
+        bridgeInput.dispatchEvent(new KeyboardEvent('keyup', {{
+          key: 'Enter', code: 'Enter', keyCode: 13,
+          bubbles: true, cancelable: true
+        }}));
+      }}, 100);
+
+      inp.value = '';
+      inp.style.height = '22px';
+      sendBtn.classList.remove('active');
+    }} else {{
+      alert('Bridge tidak ditemukan. Coba refresh halaman.');
+    }}
   }}
 
-  // Trigger file uploader Streamlit yang tersembunyi
   function triggerUpload() {{
-    // Cari file input dari Streamlit hidden uploader
-    const inputs = window.parent.document.querySelectorAll('input[type="file"]');
-    if (inputs.length > 0) {{
-      inputs[inputs.length - 1].click();
+    const parentDoc = window.parent.document;
+    const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
+    if (fileInputs.length > 0) {{
+      fileInputs[fileInputs.length - 1].click();
     }}
   }}
 </script>
+</body>
+</html>
 """
 
-# Render custom chat bar
-components.html(chat_bar_html, height=90, scrolling=False)
-
-
-# ── LISTENER PESAN DARI JS ────────────────────────────────
-# Karena postMessage tidak langsung bisa masuk Streamlit,
-# kita pakai st.query_params sebagai bridge
-listener_html = """
-<script>
-window.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'SIGMA_PROMPT') {
-    // Set query param sebagai trigger ke Streamlit
-    const url = new URL(window.parent.location.href);
-    url.searchParams.set('sigma_prompt', encodeURIComponent(e.data.payload));
-    window.parent.history.pushState({}, '', url);
-    window.parent.location.reload();
-  }
-});
-</script>
-"""
-components.html(listener_html, height=0)
-
-# Baca prompt dari query params
-params = st.query_params
-if "sigma_prompt" in params:
-    raw = params["sigma_prompt"]
-    st.session_state.pending_prompt = raw
-    st.query_params.clear()
-    st.rerun()
+components.html(chat_bar_html, height=80, scrolling=False)
