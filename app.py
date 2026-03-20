@@ -70,19 +70,21 @@ st.markdown("""
         background: transparent !important;
     }
 
-    /* New chat button — transparan rata kiri seperti ChatGPT */
-    div[data-testid="stSidebar"] .stButton button {
-        width: 100% !important;
-        text-align: left !important;
+    /* Semua button sidebar: transparan, rata kiri, no border */
+    div[data-testid="stSidebar"] button {
         background: transparent !important;
         border: none !important;
+        box-shadow: none !important;
         color: #ccc !important;
         font-size: 0.85rem !important;
-        padding: 6px 10px !important;
+        font-weight: 400 !important;
+        text-align: left !important;
+        padding: 5px 8px !important;
         border-radius: 8px !important;
         transition: background 0.15s !important;
+        outline: none !important;
     }
-    div[data-testid="stSidebar"] .stButton button:hover {
+    div[data-testid="stSidebar"] button:hover {
         background: #2a2a2a !important;
         color: #fff !important;
     }
@@ -195,25 +197,22 @@ with st.sidebar:
                     st.session_state.rename_id = None
                     st.rerun()
         else:
-            # Row sesi: satu baris dengan judul + rename + delete
-            title_display = sesi["title"][:28] + "..." if len(sesi["title"]) > 28 else sesi["title"]
-            bg = "#1e2d45" if is_active else "transparent"
-
-            col_sel, col_ren, col_del = st.columns([6, 1, 1])
-            with col_sel:
-                label = f"💬 {title_display}"
-                if st.button(label, key=f"sel_{sid}", use_container_width=True):
-                    set_active(sid)
-                    st.session_state.rename_id = None
-                    st.rerun()
-            with col_ren:
-                if st.button("✏️", key=f"ren_{sid}"):
-                    st.session_state.rename_id = sid
-                    st.rerun()
-            with col_del:
-                if st.button("🗑️", key=f"del_{sid}"):
-                    delete_session(sid)
-                    st.rerun()
+            # Hanya tampilkan judul — ikon aksi hanya di sesi aktif
+            title_display = sesi["title"][:34] + "..." if len(sesi["title"]) > 34 else sesi["title"]
+            if st.button(f"💬 {title_display}", key=f"sel_{sid}", use_container_width=True):
+                set_active(sid)
+                st.session_state.rename_id = None
+                st.rerun()
+            if is_active:
+                col_ren, col_del, _ = st.columns([1, 1, 4])
+                with col_ren:
+                    if st.button("✏️", key=f"ren_{sid}"):
+                        st.session_state.rename_id = sid
+                        st.rerun()
+                with col_del:
+                    if st.button("🗑️", key=f"del_{sid}"):
+                        delete_session(sid)
+                        st.rerun()
 
 
 # ── MAIN HEADER ───────────────────────────────────────────
