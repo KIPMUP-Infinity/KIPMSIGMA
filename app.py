@@ -14,6 +14,7 @@ import json
 import os
 import hashlib
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -387,23 +388,60 @@ if st.session_state.user is not None and not st.session_state.data_loaded:
             st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
     st.session_state.data_loaded = True
 
-# ── JIKA BELUM LOGIN: tampilkan restore JS dulu ────────────
+# ── JIKA BELUM LOGIN ────────────────────────────────────────
 if st.session_state.user is None:
-    # Inject components.html yang baca localStorage dan redirect dengan token
+    # Tampilkan spinner + JS redirect. Kalau tidak ada token di localStorage,
+    # JS tidak redirect dan spinner hilang → tampil login page.
     components.html("""
 <script>
 (function() {
     try {
         var token = localStorage.getItem('sigma_token');
-        if (!token) return;
-        // Redirect ke app dengan token — Streamlit akan restore session
-        var url = window.parent.location.pathname + '?sigma_token=' + token;
-        window.parent.location.replace(url);
-    } catch(e) {}
+        if (!token) {
+            // Tidak ada token — sembunyikan spinner, tampilkan login
+            var sp = window.parent.document.getElementById('sigma-checking');
+            if (sp) sp.style.display = 'none';
+            var lg = window.parent.document.getElementById('sigma-login');
+            if (lg) lg.style.display = 'block';
+            return;
+        }
+        // Ada token — langsung redirect tanpa tampilkan login
+        window.parent.location.replace(
+            window.parent.location.pathname + '?sigma_token=' + token
+        );
+    } catch(e) {
+        var lg = window.parent.document.getElementById('sigma-login');
+        if (lg) lg.style.display = 'block';
+    }
 })();
 </script>
 """, height=0)
-    show_login_page()
+
+    # Spinner saat cek token
+    st.markdown("""
+        <div id="sigma-checking" style="
+            display:flex;flex-direction:column;align-items:center;
+            justify-content:center;height:60vh;gap:16px;font-family:Inter,sans-serif;">
+            <div style="
+                width:36px;height:36px;border:3px solid #333;
+                border-top-color:#F5C242;border-radius:50%;
+                animation:spin 0.8s linear infinite;">
+            </div>
+            <p style="color:#888;font-size:0.9rem;margin:0;">Memeriksa sesi...</p>
+            <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+        </div>
+        <div id="sigma-login" style="display:none;">
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Tunggu sebentar — kalau JS tidak redirect, tampilkan login
+    import time
+    time.sleep(0.8)
+
+    # Cek lagi apakah ada token via query param yang masuk
+    if st.session_state.user is None:
+        show_login_page()
+    st.stop()
 
 user = st.session_state.user
 SYSTEM_PROMPT = {
