@@ -70,12 +70,17 @@ st.markdown(f"""
         box-shadow: {"none" if _is_dark else "2px 0 8px rgba(0,0,0,0.08)"} !important;
     }}
 
-    /* Bunuh spacer/header kosong Streamlit di atas sidebar */
-    section[data-testid="stSidebar"] > div:first-child {{
+    /* ── HAPUS SEMUA PADDING/MARGIN ATAS SIDEBAR ── */
+    section[data-testid="stSidebar"] > div:first-child,
+    section[data-testid="stSidebar"] > div:first-child > div,
+    section[data-testid="stSidebar"] > div:first-child > div > div,
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
         padding-top: 0 !important;
         margin-top: 0 !important;
     }}
-    /* Tombol collapse sidebar — pindah ke pojok kanan atas, tidak dorong konten */
+
+    /* Tombol collapse sidebar — tidak dorong konten */
     section[data-testid="stSidebar"] button[kind="header"],
     section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
         position: absolute !important;
@@ -85,10 +90,6 @@ st.markdown(f"""
         margin: 0 !important;
         padding: 4px !important;
     }}
-    /* Sembunyikan div wrapper kosong di atas konten sidebar */
-    section[data-testid="stSidebar"] > div:first-child > div:first-child > div:first-child:empty {{
-        display: none !important;
-    }}
 
     /* ── DIVIDERS ── */
     [data-testid="stSidebar"] hr {{
@@ -96,20 +97,18 @@ st.markdown(f"""
         opacity: 1 !important;
     }}
 
-    /* ── SIDEBAR SCROLL + SETTINGS BOTTOM ── */
+    /* ── SIDEBAR LAYOUT ── */
     section[data-testid="stSidebar"] > div:first-child {{
         display: flex !important;
         flex-direction: column !important;
         height: 100vh !important;
         overflow: hidden !important;
-        padding-top: 0 !important;
     }}
-    /* Scrollable area */
     section[data-testid="stSidebar"] > div:first-child > div:first-child {{
         flex: 1 !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
-        padding-top: 0.75rem !important;
+        padding-top: 2.5rem !important;
         padding-bottom: 8px !important;
     }}
 
@@ -427,9 +426,6 @@ if "action" in qp:
 
 # ── SIDEBAR ───────────────────────────────────────────────
 with st.sidebar:
-    # Kurangi padding bawaan Streamlit sidebar lewat CSS inline
-    st.markdown('<style>section[data-testid="stSidebar"] > div:first-child > div:first-child { padding-top: 0.5rem !important; }</style>', unsafe_allow_html=True)
-
     try:
         logo = Image.open("Mate KIPM LOGO.png")
         c1,c2,c3 = st.columns([1,2,1])
@@ -506,32 +502,30 @@ components.html(f"""
 <script>
 (function() {{
     function fixSidebarTop() {{
-        var parentDoc = window.parent.document;
+        var pd = window.parent.document;
 
-        // Pindahkan tombol collapse « ke atas kanan sidebar (bukan di tengah)
-        var collapseBtn = parentDoc.querySelector('section[data-testid="stSidebar"] button[kind="header"]');
+        // Tombol collapse — pertahankan posisi yang sudah benar
+        var collapseBtn = pd.querySelector('section[data-testid="stSidebar"] button[kind="header"]');
         if (!collapseBtn) {{
-            collapseBtn = parentDoc.querySelector('[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"]');
+            collapseBtn = pd.querySelector('[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"]');
         }}
         if (collapseBtn) {{
             collapseBtn.style.cssText += 'position:absolute!important;top:8px!important;right:8px!important;z-index:999!important;';
         }}
 
-        // Scan semua elemen dalam sidebar, zero-out padding/margin atas yg besar (spacer Streamlit)
-        var pd = parentDoc;
-        var allInSidebar = pd.querySelectorAll(
-            'section[data-testid="stSidebar"] > div:first-child > div, ' +
-            'section[data-testid="stSidebar"] > div:first-child > div > div, ' +
-            'section[data-testid="stSidebar"] [data-testid="stVerticalBlock"], ' +
-            'section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div'
-        );
-        allInSidebar.forEach(function(el) {{
-            var computed = window.parent.getComputedStyle(el);
-            var pt = parseInt(computed.paddingTop) || 0;
-            var mt = parseInt(computed.marginTop) || 0;
-            // Hanya nol-kan kalau lebih dari 20px (itu pasti spacer Streamlit, bukan spacing normal)
-            if (pt > 20) el.style.setProperty('padding-top', '4px', 'important');
-            if (mt > 20) el.style.setProperty('margin-top', '0', 'important');
+        // Target SPESIFIK: stSidebarUserContent — ini yang Streamlit kasih padding-top besar
+        var userContent = pd.querySelector('[data-testid="stSidebarUserContent"]');
+        if (userContent) {{
+            userContent.style.setProperty('padding-top', '0.5rem', 'important');
+        }}
+
+        // Target semua block langsung di dalam sidebar user content
+        var blocks = pd.querySelectorAll('[data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div');
+        blocks.forEach(function(el) {{
+            var pt = parseInt(window.parent.getComputedStyle(el).paddingTop) || 0;
+            var mt = parseInt(window.parent.getComputedStyle(el).marginTop) || 0;
+            if (pt > 16) el.style.setProperty('padding-top', '0', 'important');
+            if (mt > 16) el.style.setProperty('margin-top', '0', 'important');
         }});
     }}
 
