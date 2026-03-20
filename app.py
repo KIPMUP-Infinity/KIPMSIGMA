@@ -11,58 +11,127 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
+import streamlit as st
+from groq import Groq
+import fitz
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+import requests
+from urllib.parse import urlencode
+
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
-st.markdown("""
+# ── DYNAMIC THEME CSS ────────────────────────────────────
+_t = st.session_state.get("theme", "dark")
+_is_dark = _t == "dark"
+
+# Nilai warna berdasarkan theme
+_bg          = "#0e1117" if _is_dark else "#ffffff"
+_sidebar_bg  = "#1a1a2e" if _is_dark else "#f0f2f6"
+_text        = "#e8e8e8" if _is_dark else "#1a1a1a"
+_text_muted  = "#888"    if _is_dark else "#555"
+_border      = "#3a3a3a" if _is_dark else "#ddd"
+_btn_hover   = "#2a2a2a" if _is_dark else "#e0e0e0"
+_btn_color   = "#ccc"    if _is_dark else "#333"
+_chat_bubble = "#1B2A4A" if _is_dark else "#1B2A4A"
+_assistant_color = "#e8e8e8" if _is_dark else "#1a1a1a"
+_header_color    = "#ffffff"  if _is_dark else "#1a1a1a"
+_sub_color       = "#888"     if _is_dark else "#666"
+_input_bg        = "#1e1e1e"  if _is_dark else "#f8f8f8"
+
+st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    html, body, [class*="css"], .stMarkdown, .stChatMessage, p, div {
+
+    html, body, [class*="css"], .stMarkdown, .stChatMessage, p, div {{
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    }
-    footer { visibility: hidden; }
-    #MainMenu { visibility: hidden; }
-    section[data-testid="stSidebar"] > div:first-child { padding-top: 1rem; }
-    .main-header { text-align: center; margin-bottom: 2rem; }
-    [data-testid="stMainBlockContainer"] {
-        padding-bottom: 80px !important;
-        max-width: 780px !important;
-        margin: 0 auto !important;
-    }
-    [data-testid="stChatMessage"] {
+    }}
+
+    /* ── GLOBAL BACKGROUND ── */
+    .stApp {{
+        background-color: {_bg} !important;
+    }}
+    [data-testid="stAppViewContainer"] {{
+        background-color: {_bg} !important;
+    }}
+
+    /* ── SIDEBAR ── */
+    section[data-testid="stSidebar"] {{
+        background-color: {_sidebar_bg} !important;
+    }}
+    section[data-testid="stSidebar"] > div:first-child {{
+        padding-top: 1rem;
+        background-color: {_sidebar_bg} !important;
+    }}
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] div {{
+        color: {_btn_color} !important;
+    }}
+
+    /* ── SIDEBAR BUTTONS ── */
+    div[data-testid="stSidebar"] button {{
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-    }
-    [data-testid="stChatMessageAvatarUser"] { display: none !important; }
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
-    [data-testid="stMarkdownContainer"] {
-        font-size: 0.93rem !important;
-        line-height: 1.75 !important;
-        color: #e8e8e8 !important;
-        background: transparent !important;
-    }
-    div[data-testid="stSidebar"] button {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: #ccc !important;
+        color: {_btn_color} !important;
         font-size: 0.85rem !important;
         text-align: left !important;
         padding: 5px 8px !important;
         border-radius: 8px !important;
-    }
-    div[data-testid="stSidebar"] button:hover {
-        background: #2a2a2a !important;
-        color: #fff !important;
-    }
-    /* Hilangkan border merah chat input */
-    [data-testid="stChatInputContainer"] textarea:focus {
+    }}
+    div[data-testid="stSidebar"] button:hover {{
+        background: {_btn_hover} !important;
+        color: {"#fff" if _is_dark else "#000"} !important;
+    }}
+
+    /* ── CHAT MESSAGES ── */
+    [data-testid="stChatMessage"] {{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }}
+    [data-testid="stChatMessageAvatarUser"] {{ display: none !important; }}
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
+    [data-testid="stMarkdownContainer"] {{
+        font-size: 0.93rem !important;
+        line-height: 1.75 !important;
+        color: {_assistant_color} !important;
+        background: transparent !important;
+    }}
+
+    /* ── MAIN CONTENT ── */
+    [data-testid="stMainBlockContainer"] {{
+        padding-bottom: 80px !important;
+        max-width: 780px !important;
+        margin: 0 auto !important;
+    }}
+
+    /* ── HEADER TITLE ── */
+    .main-header {{ text-align: center; margin-bottom: 2rem; }}
+    .main-header h1 {{ color: {_header_color} !important; }}
+    .main-header p {{ color: {_sub_color} !important; }}
+
+    /* ── CHAT INPUT ── */
+    [data-testid="stChatInputContainer"] textarea:focus {{
         box-shadow: none !important;
         outline: none !important;
-    }
-    div[data-testid="stChatInputContainer"] {
-        border-color: #3a3a3a !important;
-    }
+    }}
+    div[data-testid="stChatInputContainer"] {{
+        border-color: {_border} !important;
+        background-color: {_input_bg} !important;
+    }}
+    [data-testid="stChatInput"] textarea {{
+        background-color: {_input_bg} !important;
+        color: {_text} !important;
+    }}
+
+    footer {{ visibility: hidden; }}
+    #MainMenu {{ visibility: hidden; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -163,6 +232,8 @@ def handle_oauth_callback():
 # ── CEK LOGIN ─────────────────────────────────────────────
 if "user" not in st.session_state:
     st.session_state.user = None
+if "theme" not in st.session_state:
+    st.session_state.theme = "dark"  # default dark
 
 if "code" in st.query_params and st.session_state.user is None:
     info = handle_oauth_callback()
@@ -182,7 +253,7 @@ user = st.session_state.user
 # ── SESSION STATE ─────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila.
+    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila (Market n Mocha).
 
 Kamu menggunakan framework analisa MnM Strategy+ yang terdiri dari 5 modul:
 
@@ -299,6 +370,22 @@ with st.sidebar:
 
     st.divider()
 
+    # ── Theme Toggle ──
+    cur_theme = st.session_state.get("theme", "dark")
+    t_col1, t_col2 = st.columns(2)
+    with t_col1:
+        dark_active = cur_theme == "dark"
+        if st.button("🌙 Dark", use_container_width=True, disabled=dark_active):
+            st.session_state.theme = "dark"
+            st.rerun()
+    with t_col2:
+        light_active = cur_theme == "light"
+        if st.button("☀️ Light", use_container_width=True, disabled=light_active):
+            st.session_state.theme = "light"
+            st.rerun()
+
+    st.divider()
+
     st.markdown("""
         <a href="?action=new" target="_self" style="
             display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
@@ -369,7 +456,7 @@ for i, msg in enumerate(active["messages"][1:]):
 # Coba gunakan accept_file (Streamlit >= 1.37)
 try:
     result = st.chat_input(
-        "Tanya SIGMA... (attach file via tombol +)",
+        "Tanya SIGMA... “DYOR – bukan financial advice.”,
         accept_file="multiple",
         file_type=["pdf", "png", "jpg", "jpeg"]
     )
