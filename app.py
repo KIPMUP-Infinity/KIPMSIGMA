@@ -305,6 +305,21 @@ if uploaded_file is not None and st.session_state.attachment_text is None:
 
 # ── BRIDGE INPUT ──────────────────────────────────────────
 bridge_input = st.text_input("bridge", key="js_bridge_widget", label_visibility="hidden")
+img_bridge  = st.text_input("imgbridge", key="js_img_bridge", label_visibility="hidden")
+
+# Proses image bridge (base64 dari paste/upload JS)
+if img_bridge and img_bridge != st.session_state.get("last_img_bridge", ""):
+    st.session_state["last_img_bridge"] = img_bridge
+    try:
+        # Format: "mime|base64data"
+        parts = img_bridge.split("|", 1)
+        if len(parts) == 2:
+            st.session_state.image_mime = parts[0]
+            st.session_state.image_b64  = parts[1]
+            st.session_state.attachment_text = "[Gambar: screenshot]"
+            st.toast("✅ Gambar siap dianalisa", icon="🖼️")
+    except:
+        pass
 
 if bridge_input and bridge_input.strip() and bridge_input != st.session_state.get("last_bridge", ""):
     st.session_state["last_bridge"] = bridge_input
@@ -536,48 +551,63 @@ chat_bar_html = f"""
     const text = inp.value.trim();
     if (!text && !pastedFile) return;
 
-    const parentDoc = window.parent.document;
-
-    // Jika ada gambar paste, kirim via hidden file input
     if (pastedFile) {{
-      const dt = new DataTransfer();
-      dt.items.add(pastedFile);
-      const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
-      if (fileInputs.length > 0) {{
-        const fi = fileInputs[fileInputs.length - 1];
-        Object.defineProperty(fi, 'files', {{ value: dt.files, writable: true }});
-        fi.dispatchEvent(new Event('change', {{ bubbles: true }}));
-      }}
+      // Konversi gambar ke base64 lalu kirim via img_bridge input
+      const reader = new FileReader();
+      reader.onload = function(ev) {{
+        const dataUrl = ev.target.result; // "data:image/png;base64,xxxx"
+        const mime    = dataUrl.split(';')[0].replace('data:', '');
+        const b64     = dataUrl.split(',')[1];
+        const payload = mime + '|' + b64;
+
+        // Kirim ke img_bridge Streamlit
+        sendToBridge('js_img_bridge', payload, false);
+
+        // Setelah img_bridge, kirim teks prompt (dengan delay)
+        setTimeout(() => {{
+          sendText(text || 'Tolong analisa gambar ini');
+        }}, 500);
+      }};
+      reader.readAsDataURL(pastedFile);
       clearPaste();
-      // Delay sedikit agar Streamlit proses file dulu
-      setTimeout(() => sendText(text || 'Tolong analisa gambar ini'), 600);
     }} else {{
       sendText(text);
     }}
   }}
 
-  function sendText(text) {{
+  function sendToBridge(testid_key, value, triggerEnter=true) {{
     const parentDoc = window.parent.document;
     const inputs = parentDoc.querySelectorAll('input[type="text"]');
-    let bridgeInput = null;
+    let target = null;
+    // Cari input berdasarkan urutan — img_bridge adalah input kedua
+    const allBridges = [];
     for (let el of inputs) {{
-      if (el.closest('[data-testid="stTextInput"]')) {{ bridgeInput = el; break; }}
+      if (el.closest('[data-testid="stTextInput"]')) allBridges.push(el);
     }}
-    if (bridgeInput) {{
+    // js_bridge_widget = index 0, js_img_bridge = index 1
+    target = testid_key === 'js_img_bridge' ? allBridges[1] : allBridges[0];
+
+    if (target) {{
       const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-      setter.call(bridgeInput, text);
-      bridgeInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
-      setTimeout(() => {{
-        ['keydown','keypress','keyup'].forEach(type => {{
-          bridgeInput.dispatchEvent(new KeyboardEvent(type, {{
-            key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true, cancelable: true
-          }}));
-        }});
-      }}, 100);
-      inp.value = '';
-      inp.style.height = '22px';
-      sendBtn.classList.remove('active');
+      setter.call(target, value);
+      target.dispatchEvent(new Event('input', {{ bubbles: true }}));
+      if (triggerEnter) {{
+        setTimeout(() => {{
+          ['keydown','keypress','keyup'].forEach(type => {{
+            target.dispatchEvent(new KeyboardEvent(type, {{
+              key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true, cancelable: true
+            }}));
+          }});
+        }}, 100);
+      }}
     }}
+  }}
+
+  function sendText(text) {{
+    sendToBridge('js_bridge_widget', text, true);
+    inp.value = '';
+    inp.style.height = '22px';
+    sendBtn.classList.remove('active');
   }}
 
   function triggerUpload() {{
