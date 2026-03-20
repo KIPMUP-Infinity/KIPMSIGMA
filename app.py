@@ -9,17 +9,6 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
-
-import streamlit as st
-from groq import Groq
-import fitz
-import base64
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-import uuid
-from datetime import datetime
-
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
