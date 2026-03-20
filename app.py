@@ -11,7 +11,6 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
-
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 # ── DYNAMIC THEME CSS ────────────────────────────────────
@@ -19,18 +18,27 @@ _t = st.session_state.get("theme", "dark")
 _is_dark = _t == "dark"
 
 # Nilai warna berdasarkan theme
-_bg          = "#0e1117" if _is_dark else "#ffffff"
-_sidebar_bg  = "#1a1a2e" if _is_dark else "#f0f2f6"
-_text        = "#e8e8e8" if _is_dark else "#1a1a1a"
-_text_muted  = "#888"    if _is_dark else "#555"
-_border      = "#3a3a3a" if _is_dark else "#ddd"
-_btn_hover   = "#2a2a2a" if _is_dark else "#e0e0e0"
-_btn_color   = "#ccc"    if _is_dark else "#333"
-_chat_bubble = "#1B2A4A" if _is_dark else "#1B2A4A"
-_assistant_color = "#e8e8e8" if _is_dark else "#1a1a1a"
-_header_color    = "#ffffff"  if _is_dark else "#1a1a1a"
-_sub_color       = "#888"     if _is_dark else "#666"
-_input_bg        = "#1e1e1e"  if _is_dark else "#f8f8f8"
+_bg              = "#0e1117"  if _is_dark else "#f4f6fb"
+_sidebar_bg      = "#1a1a2e"  if _is_dark else "#dce3ef"
+_sidebar_border  = "none"     if _is_dark else "1px solid #b8c4d8"
+_text            = "#e8e8e8"  if _is_dark else "#1a1a1a"
+_text_muted      = "#888"     if _is_dark else "#555"
+_border          = "#3a3a3a"  if _is_dark else "#b8c4d8"
+_btn_hover       = "#2a2a2a"  if _is_dark else "#c5cfe0"
+_btn_color       = "#ccc"     if _is_dark else "#2c3a52"
+_assistant_color = "#e8e8e8"  if _is_dark else "#1a1a2e"
+_header_color    = "#ffffff"  if _is_dark else "#1a1a2e"
+_sub_color       = "#888"     if _is_dark else "#5a6a82"
+_input_bg        = "#1e1e1e"  if _is_dark else "#ffffff"
+_input_border    = "#3a3a3a"  if _is_dark else "#b8c4d8"
+_divider_color   = "#2a2a3a"  if _is_dark else "#b8c4d8"
+_assistant_bg    = "transparent" if _is_dark else "#ffffff"
+_assistant_brd   = "none"     if _is_dark else "1px solid #e0e7f0"
+_user_bubble     = "#1B2A4A"  if _is_dark else "#1a4fa8"
+_sidebar_label   = "#555"     if _is_dark else "#6a7a96"
+_active_chat_bg  = "#1e2d45"  if _is_dark else "#b8c8e8"
+_active_chat_clr = "#fff"     if _is_dark else "#1a2a4a"
+_inactive_chat   = "#bbb"     if _is_dark else "#3a4a6a"
 
 st.markdown(f"""
     <style>
@@ -51,6 +59,8 @@ st.markdown(f"""
     /* ── SIDEBAR ── */
     section[data-testid="stSidebar"] {{
         background-color: {_sidebar_bg} !important;
+        border-right: {_sidebar_border} !important;
+        box-shadow: {"none" if _is_dark else "2px 0 8px rgba(0,0,0,0.08)"} !important;
     }}
     section[data-testid="stSidebar"] > div:first-child {{
         padding-top: 1rem;
@@ -62,9 +72,15 @@ st.markdown(f"""
         color: {_btn_color} !important;
     }}
 
+    /* ── DIVIDERS ── */
+    [data-testid="stSidebar"] hr {{
+        border-color: {_divider_color} !important;
+        opacity: 1 !important;
+    }}
+
     /* ── SIDEBAR BUTTONS ── */
     div[data-testid="stSidebar"] button {{
-        background: transparent !important;
+        background: {"transparent" if _is_dark else "#edf1f9"} !important;
         border: 1px solid {_border} !important;
         box-shadow: none !important;
         color: {_btn_color} !important;
@@ -76,19 +92,19 @@ st.markdown(f"""
     }}
     div[data-testid="stSidebar"] button:hover:not(:disabled) {{
         background: {_btn_hover} !important;
-        color: {"#fff" if _is_dark else "#000"} !important;
-        border-color: {"#555" if _is_dark else "#aaa"} !important;
+        color: {"#fff" if _is_dark else "#1a2a4a"} !important;
+        border-color: {"#555" if _is_dark else "#8a9ab8"} !important;
     }}
     /* Tombol aktif (disabled = sedang dipilih) */
     div[data-testid="stSidebar"] button:disabled {{
-        background: {"#0048ff" if _is_dark else "#1a73e8"} !important;
+        background: {"#0048ff" if _is_dark else "#1a4fa8"} !important;
         color: #fff !important;
-        border-color: {"#0048ff" if _is_dark else "#1a73e8"} !important;
+        border-color: {"#0048ff" if _is_dark else "#1a4fa8"} !important;
         opacity: 1 !important;
         cursor: default !important;
     }}
 
-    /* ── CHAT MESSAGES ── */
+    /* ── CHAT MESSAGES — ASSISTANT ── */
     [data-testid="stChatMessage"] {{
         background: transparent !important;
         border: none !important;
@@ -100,7 +116,19 @@ st.markdown(f"""
         font-size: 0.93rem !important;
         line-height: 1.75 !important;
         color: {_assistant_color} !important;
-        background: transparent !important;
+        background: {_assistant_bg} !important;
+        border: {_assistant_brd} !important;
+        border-radius: {"0" if _is_dark else "12px"} !important;
+        padding: {"0" if _is_dark else "12px 16px"} !important;
+    }}
+
+    /* ── MAIN CONTENT TEXT ── */
+    [data-testid="stMainBlockContainer"] p,
+    [data-testid="stMainBlockContainer"] li,
+    [data-testid="stMainBlockContainer"] h1,
+    [data-testid="stMainBlockContainer"] h2,
+    [data-testid="stMainBlockContainer"] h3 {{
+        color: {_text} !important;
     }}
 
     /* ── MAIN CONTENT ── */
@@ -121,12 +149,17 @@ st.markdown(f"""
         outline: none !important;
     }}
     div[data-testid="stChatInputContainer"] {{
-        border-color: {_border} !important;
+        border: 1px solid {_input_border} !important;
         background-color: {_input_bg} !important;
+        border-radius: 12px !important;
+        box-shadow: {"none" if _is_dark else "0 2px 8px rgba(0,0,0,0.06)"} !important;
     }}
     [data-testid="stChatInput"] textarea {{
         background-color: {_input_bg} !important;
         color: {_text} !important;
+    }}
+    [data-testid="stChatInput"] textarea::placeholder {{
+        color: {_text_muted} !important;
     }}
 
     footer {{ visibility: hidden; }}
@@ -419,17 +452,17 @@ with st.sidebar:
 
     st.divider()
 
-    st.markdown("""
+    st.markdown(f"""
         <a href="?action=new" target="_self" style="
             display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
-            color:#ccc;text-decoration:none;font-size:0.88rem;font-family:Inter,sans-serif;"
-           onmouseover="this.style.background='#2a2a2a';this.style.color='#fff'"
-           onmouseout="this.style.background='transparent';this.style.color='#ccc'">
+            color:{_inactive_chat};text-decoration:none;font-size:0.88rem;font-family:Inter,sans-serif;"
+           onmouseover="this.style.background='{_btn_hover}';this.style.color='{_active_chat_clr}'"
+           onmouseout="this.style.background='transparent';this.style.color='{_inactive_chat}'">
             ✏️ &nbsp;Obrolan baru
         </a>
     """, unsafe_allow_html=True)
 
-    st.markdown('<p style="font-size:0.68rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 4px 6px;">Obrolan Anda</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="font-size:0.68rem;font-weight:600;color:{_sidebar_label};text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 4px 6px;font-family:Inter,sans-serif;">Obrolan Anda</p>', unsafe_allow_html=True)
 
     for sesi in st.session_state.sessions:
         sid = sesi["id"]; is_active = sid == st.session_state.active_id
@@ -445,11 +478,12 @@ with st.sidebar:
                 if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
-            bg = "#1e2d45" if is_active else "transparent"
-            clr = "#fff" if is_active else "#bbb"
+            bg  = _active_chat_bg  if is_active else "transparent"
+            clr = _active_chat_clr if is_active else _inactive_chat
+            icon_clr = _sidebar_label
             acts = (
-                f'<a href="?action=ren&sid={sid}" target="_self" style="color:#666;text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'#666\'">✏️</a>'
-                f'<a href="?action=del&sid={sid}" target="_self" style="color:#666;text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'#f66\'" onmouseout="this.style.color=\'#666\'">🗑️</a>'
+                f'<a href="?action=ren&sid={sid}" target="_self" style="color:{icon_clr};text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'{_active_chat_clr}\'" onmouseout="this.style.color=\'{icon_clr}\'">✏️</a>'
+                f'<a href="?action=del&sid={sid}" target="_self" style="color:{icon_clr};text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'#f66\'" onmouseout="this.style.color=\'{icon_clr}\'">🗑️</a>'
             ) if is_active else ""
             st.markdown(f"""
                 <div style="display:flex;align-items:center;background:{bg};border-radius:8px;margin:1px 0;">
@@ -611,12 +645,14 @@ if prompt:
 
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
-components.html("""
+_bubble_color = "#1B2A4A" if _is_dark else "#1a4fa8"
+components.html(f"""
 <script>
+const BUBBLE_COLOR = "{_bubble_color}";
 // Fix bubble kanan
-function fixBubbles() {
+function fixBubbles() {{
     const doc = window.parent.document;
-    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {
+    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
         const isUser = msg.querySelector('[data-testid="stChatMessageAvatarUser"]');
         if (!isUser) return;
         msg.style.cssText += 'display:flex!important;justify-content:flex-end!important;background:transparent!important;border:none!important;box-shadow:none!important;padding:4px 0!important;';
@@ -624,107 +660,107 @@ function fixBubbles() {
         if (av) av.style.display = 'none';
         const ct = msg.querySelector('[data-testid="stChatMessageContent"]');
         if (ct) ct.style.cssText += 'background:transparent!important;display:flex!important;justify-content:flex-end!important;max-width:100%!important;padding:0!important;';
-        msg.querySelectorAll('[data-testid="stMarkdownContainer"]').forEach(md => {
+        msg.querySelectorAll('[data-testid="stMarkdownContainer"]').forEach(md => {{
             md.style.background = 'transparent';
             md.style.display = 'flex';
             md.style.justifyContent = 'flex-end';
-            if (!md.querySelector('.navy-pill')) {
+            if (!md.querySelector('.navy-pill')) {{
                 const pill = document.createElement('div');
                 pill.className = 'navy-pill';
-                pill.style.cssText = 'background-color:#1B2A4A;color:#fff;border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:72%;display:inline-block;font-size:0.93rem;line-height:1.6;font-family:Inter,sans-serif;word-wrap:break-word;';
+                pill.style.cssText = `background-color:${{BUBBLE_COLOR}};color:#fff;border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:72%;display:inline-block;font-size:0.93rem;line-height:1.6;font-family:Inter,sans-serif;word-wrap:break-word;`;
                 while (md.firstChild) pill.appendChild(md.firstChild);
                 md.appendChild(pill);
                 pill.querySelectorAll('*').forEach(el => el.style.color = '#fff');
-            }
-        });
-    });
-}
+            }}
+        }});
+    }});
+}}
 fixBubbles();
 setInterval(fixBubbles, 800);
 new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(
-    window.parent.document.body, {childList:true, subtree:true}
+    window.parent.document.body, {{childList:true, subtree:true}}
 );
 
 // Ctrl+V paste gambar — listen di window.parent level
-function handlePasteImage(file) {
+function handlePasteImage(file) {{
     const parentDoc = window.parent.document;
 
     // Cari file input dari st.chat_input (accept_file)
     const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
     let injected = false;
 
-    for (let fi of fileInputs) {
-        try {
+    for (let fi of fileInputs) {{
+        try {{
             const dt = new DataTransfer();
             dt.items.add(file);
-            Object.defineProperty(fi, 'files', {
+            Object.defineProperty(fi, 'files', {{
                 value: dt.files,
                 configurable: true,
                 writable: true
-            });
-            fi.dispatchEvent(new Event('change', {bubbles: true}));
-            fi.dispatchEvent(new Event('input', {bubbles: true}));
+            }});
+            fi.dispatchEvent(new Event('change', {{bubbles: true}}));
+            fi.dispatchEvent(new Event('input', {{bubbles: true}}));
             injected = true;
             break;
-        } catch(err) {}
-    }
+        }} catch(err) {{}}
+    }}
 
-    if (injected) {
+    if (injected) {{
         // Feedback visual di textarea
         const ta = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
-        if (ta) {
+        if (ta) {{
             const prev = ta.placeholder;
             ta.style.border = '2px solid #0048ff';
             ta.placeholder = '📎 Gambar di-paste! Ketik pertanyaan lalu Enter...';
-            setTimeout(() => {
+            setTimeout(() => {{
                 ta.style.border = '';
                 ta.placeholder = prev;
-            }, 3000);
+            }}, 3000);
             ta.focus();
-        }
-    }
+        }}
+    }}
     return injected;
-}
+}}
 
-function setupPaste() {
+function setupPaste() {{
     const pw = window.parent;
     if (pw._sigmapasteOK) return;
 
     // Pasang di WINDOW level (bukan document) — ini yang benar untuk Chrome
-    pw.addEventListener('paste', function(e) {
+    pw.addEventListener('paste', function(e) {{
         const items = e.clipboardData && e.clipboardData.items;
         if (!items) return;
-        for (let item of items) {
-            if (item.type.startsWith('image/')) {
+        for (let item of items) {{
+            if (item.type.startsWith('image/')) {{
                 const file = item.getAsFile();
-                if (file) {
+                if (file) {{
                     e.preventDefault();
                     e.stopPropagation();
                     handlePasteImage(file);
-                }
+                }}
                 break;
-            }
-        }
-    }, true); // useCapture=true agar tidak di-intercept Streamlit
+            }}
+        }}
+    }}, true); // useCapture=true agar tidak di-intercept Streamlit
 
     // Juga pasang di document untuk fallback
-    pw.document.addEventListener('paste', function(e) {
+    pw.document.addEventListener('paste', function(e) {{
         const items = e.clipboardData && e.clipboardData.items;
         if (!items) return;
-        for (let item of items) {
-            if (item.type.startsWith('image/')) {
+        for (let item of items) {{
+            if (item.type.startsWith('image/')) {{
                 const file = item.getAsFile();
-                if (file) {
+                if (file) {{
                     e.preventDefault();
                     handlePasteImage(file);
-                }
+                }}
                 break;
-            }
-        }
-    }, true);
+            }}
+        }}
+    }}, true);
 
     pw._sigmapasteOK = true;
-}
+}}
 
 // Setup langsung dan dengan delay
 setupPaste();
