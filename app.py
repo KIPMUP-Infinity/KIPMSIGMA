@@ -6,15 +6,6 @@ import base64
 from PIL import Image
 import io
 
-Masalah utama pada kode sebelumnya adalah penggunaan margin: 0 auto dan position: fixed yang bertabrakan dengan cara Streamlit merender Sidebar. Saat konten dipaksa ke tengah secara absolut, Streamlit sering kali menganggap ruang tidak cukup dan menyembunyikan sidebar secara otomatis.
-
-Berikut adalah kode app.py yang telah diperbaiki total. Saya menggunakan metode Padding ketimbang Margin agar Sidebar tetap memiliki ruang "napas" dan tidak hilang.
-
-Python
-import streamlit as st
-from groq import Groq
-from PIL import Image
-
 # 1. Konfigurasi Halaman (WAJIB PERTAMA)
 st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide", initial_sidebar_state="expanded")
 
