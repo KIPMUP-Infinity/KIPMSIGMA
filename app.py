@@ -73,7 +73,7 @@ with st.sidebar:
 # 4. Konten Utama (Teks Tengah)
 st.markdown("""
     <div class="main-header">
-        <h1 style="margin-bottom: 0;"> KIPM SIGMA Σ </h1>
+        <h1 style="margin-bottom: 0;">   KIPM SIGMA Σ </h1>
         <p style="color: gray;">Strategic Intelligence & Global Market Analysis</p>
     </div>
     """, unsafe_allow_html=True)
