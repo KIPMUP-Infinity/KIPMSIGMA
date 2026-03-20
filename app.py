@@ -633,15 +633,19 @@ with st.sidebar:
         </style>
     """, unsafe_allow_html=True)
 
-    # Logo + nama organisasi
+    # Logo + nama organisasi — pure HTML, satu logo, rapat ke atas
     try:
-        logo = Image.open("Mate KIPM LOGO.png")
-        c1, c2, c3 = st.columns([1, 2, 1])
-        with c2: st.image(logo, use_container_width=True)
-    except: pass
+        _logo_img = Image.open("Mate KIPM LOGO.png")
+        _buf = io.BytesIO()
+        _logo_img.save(_buf, format="PNG")
+        _logo_b64 = base64.b64encode(_buf.getvalue()).decode()
+        _logo_src = f"data:image/png;base64,{_logo_b64}"
+    except:
+        _logo_src = ""
 
     st.markdown(f"""
-        <div style="text-align:center;padding:4px 12px 8px 12px;font-family:Inter,sans-serif;">
+        <div style="text-align:center;padding:12px 12px 8px 12px;font-family:Inter,sans-serif;">
+            {"" if not _logo_src else f'<img src="{_logo_src}" style="width:90px;height:90px;object-fit:contain;display:block;margin:0 auto 6px auto;">'}
             <p style="margin:0;font-size:0.72rem;color:{_slbl};line-height:1.4;">
                 Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal
             </p>
