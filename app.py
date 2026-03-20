@@ -773,23 +773,22 @@ components.html(f"""
             section[data-testid="stSidebar"] > div:first-child,
             section[data-testid="stSidebar"] > div:first-child > div,
             [data-testid="stSidebarContent"],
-            [data-testid="stSidebarUserContent"] {
+            [data-testid="stSidebarUserContent"] {{
                 padding-top: 0 !important;
                 margin-top: 0 !important;
-            }
+            }}
             [data-testid="stSidebarUserContent"] > div,
-            [data-testid="stSidebarUserContent"] > div > div {
+            [data-testid="stSidebarUserContent"] > div > div {{
                 padding-top: 0 !important;
                 margin-top: 0 !important;
-            }
-            /* Sembunyikan teks icon collapsed button */
-            [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
-            button[kind="header"] span:not(:has(svg)),
-            [data-testid="collapsedControl"] span:not(:has(svg)) {
+            }}
+            [data-testid="stSidebarCollapseButton"] span,
+            button[kind="header"] span,
+            [data-testid="collapsedControl"] span {{
                 font-size: 0 !important;
                 width: 0 !important;
                 overflow: hidden !important;
-            }
+            }}
         `;
         pd.head.appendChild(style);
     }}
