@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime
 
 st.set_page_config(
-    page_title="KIPM SIGMA PRO",
+    page_title="KIPM SIGMA",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -251,7 +251,7 @@ active = get_active()
 
 st.markdown("""
     <div class="main-header">
-        <h1 style="margin:0;">KIPM SIGMA ∑</h1>
+        <h1 style="margin:0;">  KIPM SIGMA ∑</h1>
         <p style="color:gray;">Strategic Intelligence & Global Market Analysis</p>
     </div>
 """, unsafe_allow_html=True)
