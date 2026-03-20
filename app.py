@@ -14,7 +14,6 @@ import json
 import os
 import hashlib
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -90,13 +89,16 @@ st.markdown(f"""
     }}
 
 
-    /* ── SIDEBAR BACKGROUND ── */
+    /* ── SIDEBAR BACKGROUND — cover semua layer ── */
     section[data-testid="stSidebar"],
     section[data-testid="stSidebar"] > div,
     section[data-testid="stSidebar"] > div > div,
     section[data-testid="stSidebar"] > div > div > div,
+    section[data-testid="stSidebar"] > div > div > div > div,
     [data-testid="stSidebarContent"],
-    [data-testid="stSidebarUserContent"] {{
+    [data-testid="stSidebarUserContent"],
+    [data-testid="stSidebarUserContent"] > div,
+    [data-testid="stSidebarUserContent"] > div > div {{
         background-color: {_sidebar_bg} !important;
         box-shadow: none !important;
     }}
@@ -104,7 +106,7 @@ st.markdown(f"""
         border-right: {"none" if _is_dark else "1px solid #e5e5e5"} !important;
     }}
 
-    /* ── FORCE SEMUA PADDING = 0 ── */
+    /* ── FORCE ALL SIDEBAR PADDING = 0 ── */
     section[data-testid="stSidebar"] > div,
     section[data-testid="stSidebar"] > div > div,
     section[data-testid="stSidebar"] > div > div > div,
@@ -116,40 +118,29 @@ st.markdown(f"""
         margin-top: 0 !important;
     }}
 
-    /* ── SIDEBAR LAYOUT ── */
-    section[data-testid="stSidebar"] > div:first-child {{
-        display: flex !important;
-        flex-direction: column !important;
-        height: 100vh !important;
-        overflow: hidden !important;
-    }}
-    section[data-testid="stSidebar"] > div:first-child > div:first-child {{
-        flex: 1 !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        padding-bottom: 8px !important;
-    }}
-
-    /* ── TOMBOL COLLAPSE ‹‹ ── */
-    [data-testid="stSidebarCollapseButton"],
-    section[data-testid="stSidebar"] button[kind="header"] {{
+    /* ── TOMBOL COLLAPSE — hanya icon, sembunyikan semua teks ── */
+    [data-testid="stSidebarCollapseButton"] {{
         position: absolute !important;
         top: 8px !important; right: 10px !important;
         z-index: 9999 !important;
         background: transparent !important;
         border: none !important; box-shadow: none !important;
-        padding: 4px !important;
     }}
-    /* Sembunyikan teks keyboard_double_arrow */
-    [data-testid="stSidebarCollapseButton"] span,
-    section[data-testid="stSidebar"] button[kind="header"] span,
+    [data-testid="stSidebarCollapseButton"] > div,
+    [data-testid="stSidebarCollapseButton"] svg {{
+        pointer-events: none !important;
+    }}
+    /* Sembunyikan SEMUA span teks di tombol collapse */
+    [data-testid="stSidebarCollapseButton"] span {{
+        display: none !important;
+    }}
+    /* Tombol buka sidebar (collapsed) */
+    [data-testid="collapsedControl"] {{
+        top: 8px !important;
+        z-index: 9999 !important;
+    }}
     [data-testid="collapsedControl"] span {{
-        font-size: 0 !important;
-        line-height: 0 !important;
-        overflow: hidden !important;
-        display: block !important;
-        width: 0 !important;
-        height: 0 !important;
+        display: none !important;
     }}
 
     /* ── TOMBOL OBROLAN BARU ── */
@@ -737,105 +728,32 @@ components.html(f"""
 (function() {{
     function fixSidebarTop() {{
         var pd = window.parent.document;
+        var sbg = '{_sidebar_bg}';
 
-        // ── Fix tombol collapse sidebar (buka/tutup) ──
-        // Cari tombol di dalam sidebar (tutup) DAN di luar sidebar (buka)
-        var btns = pd.querySelectorAll(
-            'section[data-testid="stSidebar"] button[kind="header"], ' +
-            '[data-testid="stSidebarCollapseButton"], ' +
-            '[data-testid="collapsedControl"] button'
-        );
-        btns.forEach(function(btn) {{
-            // Fix posisi dan ukuran agar mudah diklik
-            btn.style.setProperty('position', 'absolute', 'important');
-            btn.style.setProperty('top', '8px', 'important');
-            btn.style.setProperty('right', '8px', 'important');
-            btn.style.setProperty('z-index', '9999', 'important');
-            btn.style.setProperty('width', '32px', 'important');
-            btn.style.setProperty('height', '32px', 'important');
-            btn.style.setProperty('padding', '0', 'important');
-            btn.style.setProperty('display', 'flex', 'important');
-            btn.style.setProperty('align-items', 'center', 'important');
-            btn.style.setProperty('justify-content', 'center', 'important');
-            btn.style.setProperty('cursor', 'pointer', 'important');
-            btn.style.setProperty('background', 'transparent', 'important');
-            btn.style.setProperty('border', 'none', 'important');
-            btn.style.setProperty('overflow', 'hidden', 'important');
-
-            // Sembunyikan semua teks (keyboard_double_arrow_right, dll)
-            btn.querySelectorAll('span, svg + span, p').forEach(function(el) {{
-                var txt = el.textContent || '';
-                // Kalau isinya teks bukan icon/svg
-                if (txt.trim().length > 2) {{
-                    el.style.setProperty('font-size', '0', 'important');
-                    el.style.setProperty('width', '0', 'important');
-                    el.style.setProperty('overflow', 'hidden', 'important');
-                    el.style.setProperty('position', 'absolute', 'important');
-                }}
-            }});
-        }});
-
-        // ── Fix tombol buka sidebar (collapsed state) ──
-        var openBtn = pd.querySelector('[data-testid="collapsedControl"]');
-        if (openBtn) {{
-            openBtn.style.setProperty('top', '8px', 'important');
-            openBtn.style.setProperty('z-index', '9999', 'important');
-        }}
-
-        // ── Zero semua padding atas sidebar — direct inline style ──
-        var targets = [
-            'section[data-testid="stSidebar"] > div:first-child',
-            'section[data-testid="stSidebar"] > div:first-child > div:first-child',
+        // 1. Force semua elemen sidebar ke warna yang sama
+        var sidebarEls = pd.querySelectorAll([
+            'section[data-testid="stSidebar"]',
+            'section[data-testid="stSidebar"] > div',
+            'section[data-testid="stSidebar"] > div > div',
             '[data-testid="stSidebarContent"]',
             '[data-testid="stSidebarUserContent"]',
-        ];
-        targets.forEach(function(sel) {{
-            var el = pd.querySelector(sel);
-            if (el) {{
-                el.style.setProperty('padding-top', '0', 'important');
-                el.style.setProperty('margin-top', '0', 'important');
-            }}
+            '[data-testid="stSidebarUserContent"] > div',
+            '[data-testid="stSidebarUserContent"] > div > div'
+        ].join(','));
+        sidebarEls.forEach(function(el) {{
+            el.style.setProperty('background-color', sbg, 'important');
+            el.style.setProperty('padding-top', '0', 'important');
+            el.style.setProperty('margin-top', '0', 'important');
         }});
 
-        // Cari dan zero semua div anak pertama di stSidebarUserContent
-        var uc = pd.querySelector('[data-testid="stSidebarUserContent"]');
-        if (uc) {{
-            // Zero semua child div yang mungkin punya margin/padding
-            var children = uc.querySelectorAll('div');
-            children.forEach(function(el) {{
-                var pt = parseInt(window.parent.getComputedStyle(el).paddingTop) || 0;
-                var mt = parseInt(window.parent.getComputedStyle(el).marginTop) || 0;
-                if (pt > 10) el.style.setProperty('padding-top', '0', 'important');
-                if (mt > 10) el.style.setProperty('margin-top', '0', 'important');
-            }});
-        }}
-
-        // Inject style ke head
-        var styleId = 'sigma-sidebar-fix';
-        var existing = pd.getElementById(styleId);
-        if (existing) existing.remove();
-
-        var style = pd.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-            section[data-testid="stSidebar"] > div:first-child,
-            section[data-testid="stSidebar"] > div:first-child > div,
-            [data-testid="stSidebarContent"],
-            [data-testid="stSidebarUserContent"],
-            [data-testid="stSidebarUserContent"] > div,
-            [data-testid="stSidebarUserContent"] > div > div {{
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-            }}
-            [data-testid="stSidebarCollapseButton"] span,
-            button[kind="header"] span,
-            [data-testid="collapsedControl"] span {{
-                font-size: 0 !important;
-                width: 0 !important;
-                overflow: hidden !important;
-            }}
-        `;
-        pd.head.appendChild(style);
+        // 2. Sembunyikan teks "keyboard_double_arrow" dari semua tombol collapse
+        pd.querySelectorAll([
+            '[data-testid="stSidebarCollapseButton"] span',
+            '[data-testid="collapsedControl"] span',
+            'button[kind="header"] span'
+        ].join(',')).forEach(function(el) {{
+            el.style.setProperty('display', 'none', 'important');
+        }});
     }}
 
     function injectSettings() {{
