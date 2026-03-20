@@ -136,15 +136,24 @@ def handle_oauth_callback():
     client_id    = st.secrets.get("GOOGLE_CLIENT_ID", "")
     client_sec   = st.secrets.get("GOOGLE_CLIENT_SECRET", "")
     redirect_uri = st.secrets.get("GOOGLE_REDIRECT_URI", "")
-    if not all([code, client_id, client_sec, redirect_uri]): return None
+
+    if not all([code, client_id, client_sec, redirect_uri]):
+        st.error(f"Config missing — code:{bool(code)} id:{bool(client_id)} sec:{bool(client_sec)} uri:{bool(redirect_uri)}")
+        return None
 
     r = requests.post("https://oauth2.googleapis.com/token", data={
         "code": code, "client_id": client_id, "client_secret": client_sec,
         "redirect_uri": redirect_uri, "grant_type": "authorization_code",
     })
-    if r.status_code != 200: return None
+
+    if r.status_code != 200:
+        st.error(f"Token error {r.status_code}: {r.text}")
+        return None
+
     token = r.json().get("access_token", "")
-    if not token: return None
+    if not token:
+        st.error(f"No token in response: {r.json()}")
+        return None
 
     u = requests.get("https://www.googleapis.com/oauth2/v2/userinfo",
                      headers={"Authorization": f"Bearer {token}"})
