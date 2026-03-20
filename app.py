@@ -14,6 +14,7 @@ import json
 import os
 import hashlib
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -142,28 +143,28 @@ st.markdown(f"""
 
     /* ── SIDEBAR BUTTONS ── */
     div[data-testid="stSidebar"] button {{
-        background: {"transparent" if _is_dark else "#edf1f9"} !important;
-        border: 1px solid {_border} !important;
+        background: transparent !important;
+        border: none !important;
         box-shadow: none !important;
-        color: {_btn_color} !important;
+        color: {_inactive_chat} !important;
         font-size: 0.85rem !important;
-        text-align: center !important;
-        padding: 5px 8px !important;
+        text-align: left !important;
+        padding: 6px 10px !important;
         border-radius: 8px !important;
-        transition: all 0.2s ease !important;
+        transition: background 0.15s !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }}
-    div[data-testid="stSidebar"] button:hover:not(:disabled) {{
+    div[data-testid="stSidebar"] button:hover {{
         background: {_btn_hover} !important;
-        color: {"#fff" if _is_dark else "#1a2a4a"} !important;
-        border-color: {"#555" if _is_dark else "#8a9ab8"} !important;
+        color: {_active_chat_clr} !important;
     }}
-    /* Tombol aktif (disabled = sedang dipilih) */
-    div[data-testid="stSidebar"] button:disabled {{
-        background: {"#0048ff" if _is_dark else "#1a4fa8"} !important;
-        color: #fff !important;
-        border-color: {"#0048ff" if _is_dark else "#1a4fa8"} !important;
-        opacity: 1 !important;
-        cursor: default !important;
+    /* Tombol obrolan aktif */
+    div[data-testid="stSidebar"] button[data-active="true"],
+    div[data-testid="stSidebar"] button.active-chat {{
+        background: {_active_chat_bg} !important;
+        color: {_active_chat_clr} !important;
     }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
@@ -521,29 +522,18 @@ def delete_session(sid):
 # ── SIDEBAR ACTIONS VIA QUERY PARAMS ─────────────────────
 qp = st.query_params
 if "action" in qp:
-    a, sid = qp.get("action",""), qp.get("sid","")
-    if a == "new":
-        ns = new_session(); st.session_state.sessions.insert(0, ns)
-        st.session_state.active_id = ns["id"]
-        st.query_params.clear(); st.rerun()
-    elif a == "sel" and sid:
-        st.session_state.active_id = sid; st.session_state.rename_id = None
-        st.query_params.clear(); st.rerun()
-    elif a == "del" and sid:
-        delete_session(sid); st.query_params.clear(); st.rerun()
-    elif a == "ren" and sid:
-        st.session_state.rename_id = sid; st.query_params.clear(); st.rerun()
-    elif a == "theme_dark":
-        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()
-    elif a == "theme_light":
-        st.session_state.theme = "light"; st.query_params.clear(); st.rerun()
-    elif a == "theme_system":
-        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()
-    elif a == "logout":
-        st.session_state.user = None
-        st.session_state.sessions = []
-        st.session_state.ls_loaded = False
-        st.query_params.clear(); st.rerun()
+    a = qp.get("action","")
+    if a == "logout":
+        # Hapus semua token file user ini
+        if st.session_state.user:
+            try:
+                for f in os.listdir(DATA_DIR):
+                    if f.startswith("token_"):
+                        os.remove(os.path.join(DATA_DIR, f))
+            except: pass
+        st.session_state.clear()
+        st.query_params.clear()
+        st.rerun()
 
 
 # ── SIDEBAR ───────────────────────────────────────────────
@@ -564,21 +554,19 @@ with st.sidebar:
 
     st.divider()
 
-    st.markdown(f"""
-        <a href="?action=new" target="_self" style="
-            display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;
-            color:{_inactive_chat};text-decoration:none;font-size:0.88rem;font-family:Inter,sans-serif;"
-           onmouseover="this.style.background='{_btn_hover}';this.style.color='{_active_chat_clr}'"
-           onmouseout="this.style.background='transparent';this.style.color='{_inactive_chat}'">
-            ✏️ &nbsp;Obrolan baru
-        </a>
-    """, unsafe_allow_html=True)
+    # ── Obrolan Baru ──
+    if st.button("✏️  Obrolan baru", key="btn_new_chat", use_container_width=True):
+        ns = new_session()
+        st.session_state.sessions.insert(0, ns)
+        st.session_state.active_id = ns["id"]
+        st.rerun()
 
     st.markdown(f'<p style="font-size:0.68rem;font-weight:600;color:{_sidebar_label};text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 4px 6px;font-family:Inter,sans-serif;">Obrolan Anda</p>', unsafe_allow_html=True)
 
     for sesi in st.session_state.sessions:
         sid = sesi["id"]; is_active = sid == st.session_state.active_id
-        title_d = sesi["title"][:34] + "..." if len(sesi["title"]) > 34 else sesi["title"]
+        title_d = sesi["title"][:28] + "..." if len(sesi["title"]) > 28 else sesi["title"]
+
         if st.session_state.rename_id == sid:
             new_t = st.text_input("Rename", value=sesi["title"], key=f"ren_{sid}", label_visibility="collapsed")
             co, cc = st.columns([1,1])
@@ -590,22 +578,24 @@ with st.sidebar:
                 if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
-            bg  = _active_chat_bg  if is_active else "transparent"
-            clr = _active_chat_clr if is_active else _inactive_chat
-            icon_clr = _sidebar_label
-            acts = (
-                f'<a href="?action=ren&sid={sid}" target="_self" style="color:{icon_clr};text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'{_active_chat_clr}\'" onmouseout="this.style.color=\'{icon_clr}\'">✏️</a>'
-                f'<a href="?action=del&sid={sid}" target="_self" style="color:{icon_clr};text-decoration:none;font-size:0.78rem;padding:2px 5px;" onmouseover="this.style.color=\'#f66\'" onmouseout="this.style.color=\'{icon_clr}\'">🗑️</a>'
-            ) if is_active else ""
-            st.markdown(f"""
-                <div style="display:flex;align-items:center;background:{bg};border-radius:8px;margin:1px 0;">
-                    <a href="?action=sel&sid={sid}" target="_self" style="flex:1;padding:7px 10px;color:{clr};
-                        text-decoration:none;font-size:0.83rem;font-family:Inter,sans-serif;
-                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">
-                        💬 {title_d}</a>
-                    <div style="display:flex;gap:2px;padding-right:6px;">{acts}</div>
-                </div>
-            """, unsafe_allow_html=True)
+            if is_active:
+                col_main, col_ren, col_del = st.columns([7, 1, 1])
+            else:
+                col_main = st.container()
+
+            with col_main:
+                if st.button(f"💬  {title_d}", key=f"sel_{sid}", use_container_width=True):
+                    st.session_state.active_id = sid
+                    st.session_state.rename_id = None
+                    st.rerun()
+
+            if is_active:
+                with col_ren:
+                    if st.button("✏️", key=f"ren_{sid}"):
+                        st.session_state.rename_id = sid; st.rerun()
+                with col_del:
+                    if st.button("🗑", key=f"del_{sid}"):
+                        delete_session(sid); st.rerun()
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
