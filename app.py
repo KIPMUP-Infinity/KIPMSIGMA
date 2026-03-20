@@ -85,7 +85,7 @@ with st.sidebar:
 # 4. KONTEN UTAMA (Judul Custom Anda)
 st.markdown("""
     <div class="main-header">
-        <h1 style="margin:0;">    KIPM SIGMA ∑</h1>
+        <h1 style="margin:0;">   KIPM SIGMA ∑</h1>
         <p style="color:gray;">Strategic Intelligence & Global Market Analysis</p>
     </div>
     """, unsafe_allow_html=True)
