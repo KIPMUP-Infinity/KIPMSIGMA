@@ -21,7 +21,7 @@ client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 # Inisialisasi Memori Chat
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "system", "content": "Identitas: KIPM SIGMA (Universitas Pancasila). Analis Saham Profesional. Anda bisa baca PDF, Gambar Chart, dan Data Live."}
+        {"role": "system", "content": "Identitas: KIPM SIGMA (Strategic Intelligence & Global Market Analysis). Analis Saham Profesional. Anda bisa baca PDF, Gambar Chart, dan Data Live."}
     ]
 
 # Fungsi Pendukung
