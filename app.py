@@ -141,30 +141,39 @@ st.markdown(f"""
         padding-bottom: 8px !important;
     }}
 
-    /* ── SIDEBAR BUTTONS ── */
-    div[data-testid="stSidebar"] button {{
+    /* ── SIDEBAR BUTTONS — hapus semua kotak ── */
+    div[data-testid="stSidebar"] .stButton,
+    div[data-testid="stSidebar"] .stButton > div,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"],
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > div {{
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
+        padding: 0 !important;
+    }}
+    div[data-testid="stSidebar"] button,
+    div[data-testid="stSidebar"] button:focus,
+    div[data-testid="stSidebar"] button:active {{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
         color: {_inactive_chat} !important;
         font-size: 0.85rem !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        padding: 6px 10px !important;
+        padding: 5px 10px !important;
         border-radius: 8px !important;
         transition: background 0.15s !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
         width: 100% !important;
-    }}
-    div[data-testid="stSidebar"] button p {{
-        text-align: left !important;
     }}
     div[data-testid="stSidebar"] button:hover {{
         background: {_btn_hover} !important;
         color: {_active_chat_clr} !important;
-        border: none !important;
+    }}
+    div[data-testid="stSidebar"] button p {{
+        text-align: left !important;
+        margin: 0 !important;
     }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
