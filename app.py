@@ -8,35 +8,47 @@ import io
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide")
-st.title("📊 KIPM SIGMA PRO")
+st.title("KIPM SIGMA PRO")
 st.sidebar.title("Kontrol Panel")
 
-# 1. Tampilan UI Modern
+# 1. Pengaturan Tema & Logo
 st.set_page_config(page_title="KIPM SIGMA PRO", page_icon="📈", layout="wide")
 
-# CARA YANG BENAR:
+# CSS untuk Background Gelap & Styling Chat (Mirip contoh gambar Anda)
 st.markdown("""
     <style>
-    .stChatMessage { background-color: #f0f2f6; border-radius: 15px; padding: 10px; margin-bottom: 10px; }
-    .stButton>button { width: 100%; border-radius: 20px; background-color: #FF4B4B; color: white; }
+    .stApp {
+        background-color: #0E1117;
+        color: white;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #1A1C24;
+    }
+    .stChatMessage {
+        border-radius: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #30363d;
+    }
     </style>
-    """, unsafe_allow_html=True) # <-- Perhatikan perubahan di sini
+    """, unsafe_allow_html=True)
 
-# 2. Sidebar Branding
+# 2. Menampilkan Logo di Sidebar
 with st.sidebar:
+    try:
+        # Ganti 'logo.jpg' dengan nama file logo Anda di GitHub
+        logo = Image.open("logo.jpg") 
+        st.image(logo, use_container_width=True)
+    except:
+        st.error("File logo.jpg tidak ditemukan di GitHub")
+    
     st.title("🛡️ KIPM SIGMA")
-    st.info("**Strategic Intelligence & Global Market Analysis**")
-    st.divider()
-    st.subheader("Menu Analisis")
-    mode = st.radio("Pilih Mode:", ["Market Chat", "Technical Analysis", "Macro Insight"])
-    st.divider()
-    st.caption("Universitas Pancasila - Versi 1.0 PRO")
+    st.markdown("---")
+    st.info("Strategic Intelligence & Global Market Analysis")
 
 # 3. Header Utama
-col1, col2 = st.columns([4, 1])
-with col1:
-    st.title("Pusat Analisis Saham AI")
-    st.write("Selamat datang di terminal cerdas KIPM SIGMA.")
+st.title("Market Intelligence Terminal")
+st.write("Sistem Analisis Saham Terpadu - Universitas Pancasila")
+st.divider()
 
 # Inisialisasi API Groq via Secrets
 if "GROQ_API_KEY" not in st.secrets:
