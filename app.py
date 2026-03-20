@@ -73,8 +73,10 @@ _sidebar_border  = "none"     if _is_dark else "1px solid #e5e5e5"
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
     * {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }}
+    .material-icons {{ font-family: 'Material Icons' !important; }}
 
     /* ── GLOBAL BACKGROUND ── */
     .stApp,
@@ -87,22 +89,15 @@ st.markdown(f"""
         background-color: {_bg} !important;
     }}
 
-    /* ── SIDEBAR BACKGROUND — full navy tanpa perbedaan warna ── */
+    /* ── SIDEBAR — semua layer warna sama rata ── */
     section[data-testid="stSidebar"],
-    section[data-testid="stSidebar"] > div,
-    section[data-testid="stSidebar"] > div > div,
-    section[data-testid="stSidebar"] > div > div > div,
-    section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
-    section[data-testid="stSidebar"] .stButton,
-    section[data-testid="stSidebar"] .stButton > button {{
+    section[data-testid="stSidebar"] *:not(button[kind="header"]):not([data-testid="stSidebarCollapseButton"]) {{
         background-color: {_sidebar_bg} !important;
-        background: {_sidebar_bg} !important;
         box-shadow: none !important;
-        border: none !important;
+        border-color: transparent !important;
     }}
     section[data-testid="stSidebar"] {{
-        border-right: {"none" if _is_dark else "1px solid #b8c4d8"} !important;
+        border-right: {"none" if _is_dark else "1px solid #e5e5e5"} !important;
     }}
 
     /* ── SIDEBAR PADDING/MARGIN ── */
@@ -166,9 +161,12 @@ st.markdown(f"""
         border: none !important;
         box-shadow: none !important;
     }}
-    [data-testid="stChatMessageAvatarUser"] {{ display: none !important; }}
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
-    [data-testid="stMarkdownContainer"] {{
+    /* Sembunyikan avatar user DAN assistant — biar bersih seperti ChatGPT */
+    [data-testid="stChatMessageAvatarUser"],
+    [data-testid="stChatMessageAvatarAssistant"] {{
+        display: none !important;
+    }}
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{
         font-size: 0.93rem !important;
         line-height: 1.75 !important;
         color: {_assistant_color} !important;
