@@ -14,7 +14,6 @@ import json
 import os
 import hashlib
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -74,19 +73,20 @@ st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    html, body, [class*="css"], .stMarkdown, .stChatMessage, p, div {{
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-    }}
+    * {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }}
 
     /* ── GLOBAL BACKGROUND ── */
-    .stApp {{
-        background-color: {_bg} !important;
-    }}
-    [data-testid="stAppViewContainer"] {{
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"] > section,
+    section[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stBottom"],
+    [data-testid="stBottom"] > div {{
         background-color: {_bg} !important;
     }}
 
-    /* ── SIDEBAR — force navy pada semua layer ── */
+    /* ── SIDEBAR BACKGROUND ── */
     section[data-testid="stSidebar"],
     section[data-testid="stSidebar"] > div,
     section[data-testid="stSidebar"] > div > div,
@@ -95,35 +95,16 @@ st.markdown(f"""
         background-color: {_sidebar_bg} !important;
     }}
     section[data-testid="stSidebar"] {{
-        border-right: {_sidebar_border} !important;
-        box-shadow: {"none" if _is_dark else "2px 0 8px rgba(0,0,0,0.08)"} !important;
+        border-right: {"none" if _is_dark else "1px solid #b8c4d8"} !important;
     }}
 
-    /* ── HAPUS SEMUA PADDING/MARGIN ATAS SIDEBAR ── */
+    /* ── SIDEBAR PADDING/MARGIN ── */
     section[data-testid="stSidebar"] > div:first-child,
     section[data-testid="stSidebar"] > div:first-child > div,
     section[data-testid="stSidebar"] > div:first-child > div > div,
-    section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
     section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
         padding-top: 0 !important;
         margin-top: 0 !important;
-    }}
-
-    /* Tombol collapse sidebar — tidak dorong konten */
-    section[data-testid="stSidebar"] button[kind="header"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
-        position: absolute !important;
-        top: 0.5rem !important;
-        right: 0.5rem !important;
-        z-index: 999 !important;
-        margin: 0 !important;
-        padding: 4px !important;
-    }}
-
-    /* ── DIVIDERS ── */
-    [data-testid="stSidebar"] hr {{
-        border-color: {_divider_color} !important;
-        opacity: 1 !important;
     }}
 
     /* ── SIDEBAR LAYOUT ── */
@@ -141,39 +122,55 @@ st.markdown(f"""
         padding-bottom: 8px !important;
     }}
 
-    /* ── SIDEBAR BUTTONS — hapus semua kotak ── */
-    div[data-testid="stSidebar"] .stButton,
-    div[data-testid="stSidebar"] .stButton > div,
-    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"],
-    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] > div {{
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
+    /* ── TOMBOL COLLAPSE SIDEBAR ── */
+    section[data-testid="stSidebar"] button[kind="header"],
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
+        position: absolute !important;
+        top: 0.5rem !important;
+        right: 0.5rem !important;
+        z-index: 999 !important;
+        margin: 0 !important;
     }}
-    div[data-testid="stSidebar"] button,
-    div[data-testid="stSidebar"] button:focus,
-    div[data-testid="stSidebar"] button:active {{
+
+    /* ── SIDEBAR DIVIDER ── */
+    [data-testid="stSidebar"] hr {{
+        border-color: {_divider_color} !important;
+        opacity: 1 !important;
+        margin: 0.5rem 0 !important;
+    }}
+
+    /* ── SIDEBAR BUTTONS — transparan, rata kiri, tanpa kotak ── */
+    div[data-testid="stSidebar"] .stButton > button,
+    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {{
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        outline: none !important;
         color: {_inactive_chat} !important;
         font-size: 0.85rem !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        padding: 5px 10px !important;
+        padding: 5px 8px !important;
         border-radius: 8px !important;
-        transition: background 0.15s !important;
         width: 100% !important;
+        min-height: 0 !important;
     }}
-    div[data-testid="stSidebar"] button:hover {{
+    div[data-testid="stSidebar"] .stButton > button:hover {{
         background: {_btn_hover} !important;
         color: {_active_chat_clr} !important;
+        border: none !important;
     }}
-    div[data-testid="stSidebar"] button p {{
+    div[data-testid="stSidebar"] .stButton > button p {{
         text-align: left !important;
+        color: inherit !important;
         margin: 0 !important;
+    }}
+    /* Hapus wrapper kotak dari stButton */
+    div[data-testid="stSidebar"] .stButton {{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 1px 0 !important;
+        padding: 0 !important;
     }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
@@ -188,10 +185,7 @@ st.markdown(f"""
         font-size: 0.93rem !important;
         line-height: 1.75 !important;
         color: {_assistant_color} !important;
-        background: {_assistant_bg} !important;
-        border: {_assistant_brd} !important;
-        border-radius: {"0" if _is_dark else "12px"} !important;
-        padding: {"0" if _is_dark else "12px 16px"} !important;
+        background: transparent !important;
     }}
 
     /* ── MAIN CONTENT TEXT ── */
@@ -202,8 +196,6 @@ st.markdown(f"""
     [data-testid="stMainBlockContainer"] h3 {{
         color: {_text} !important;
     }}
-
-    /* ── MAIN CONTENT ── */
     [data-testid="stMainBlockContainer"] {{
         padding-bottom: 80px !important;
         max-width: 780px !important;
@@ -213,18 +205,13 @@ st.markdown(f"""
     /* ── HEADER TITLE ── */
     .main-header {{ text-align: center; margin-bottom: 2rem; }}
     .main-header h1 {{ color: {_header_color} !important; }}
-    .main-header p {{ color: {_sub_color} !important; }}
+    .main-header p  {{ color: {_sub_color} !important; }}
 
     /* ── CHAT INPUT ── */
-    [data-testid="stChatInputContainer"] textarea:focus {{
-        box-shadow: none !important;
-        outline: none !important;
-    }}
     div[data-testid="stChatInputContainer"] {{
         border: 1px solid {_input_border} !important;
         background-color: {_input_bg} !important;
         border-radius: 12px !important;
-        box-shadow: {"none" if _is_dark else "0 2px 8px rgba(0,0,0,0.06)"} !important;
     }}
     [data-testid="stChatInput"] textarea {{
         background-color: {_input_bg} !important;
@@ -232,6 +219,10 @@ st.markdown(f"""
     }}
     [data-testid="stChatInput"] textarea::placeholder {{
         color: {_text_muted} !important;
+    }}
+    [data-testid="stChatInputContainer"] textarea:focus {{
+        box-shadow: none !important;
+        outline: none !important;
     }}
 
     footer {{ visibility: hidden; }}
@@ -682,80 +673,55 @@ components.html(f"""
         window.parent.sigmaSetTheme = function(mode) {{
             var pd = window.parent.document;
             var isDark = mode === 'dark';
+            var bg     = isDark ? '#0e1117' : '#f4f6fb';
+            var sbg    = isDark ? '#1a1a2e' : '#dce3ef';
+            var txt    = isDark ? '#e8e8e8' : '#1a1a1a';
+            var inp    = isDark ? '#1e1e1e' : '#ffffff';
+            var brd    = isDark ? '#3a3a3a' : '#b8c4d8';
 
             var styleId = 'sigma-live-theme';
             var el = pd.getElementById(styleId);
             if (!el) {{ el = pd.createElement('style'); el.id = styleId; pd.head.appendChild(el); }}
 
             el.textContent = `
-                /* ── BACKGROUND UTAMA ── */
                 .stApp,
                 [data-testid="stAppViewContainer"],
                 [data-testid="stAppViewContainer"] > section,
+                section[data-testid="stMain"],
                 [data-testid="stMainBlockContainer"],
-                [data-testid="stHeader"],
-                .main {{
-                    background-color: ${{isDark ? '#0e1117' : '#f4f6fb'}} !important;
-                }}
-
-                /* ── SEMUA CONTAINER BACKGROUND ── */
-                [data-testid="stAppViewContainer"] > section,
-                [data-testid="stAppViewContainer"] > section > div,
-                [data-testid="stMainBlockContainer"],
-                [data-testid="stMainBlockContainer"] > div,
-                [data-testid="stVerticalBlock"],
                 [data-testid="stBottom"],
                 [data-testid="stBottom"] > div,
-                .stChatFloatingInputContainer,
-                .stChatFloatingInputContainer > div,
-                section[data-testid="stMain"] {{
-                    background-color: ${{isDark ? '#0e1117' : '#f4f6fb'}} !important;
+                [data-testid="stVerticalBlock"] {{
+                    background-color: ${{bg}} !important;
                 }}
-
-                /* ── SIDEBAR ── */
                 section[data-testid="stSidebar"],
                 section[data-testid="stSidebar"] > div,
                 section[data-testid="stSidebar"] > div > div,
                 section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-                section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
-                    background-color: ${{isDark ? '#1a1a2e' : '#dce3ef'}} !important;
-                }}
+                section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
                 #sigma-settings-wrap {{
-                    background: ${{isDark ? '#1a1a2e' : '#dce3ef'}} !important;
-                    border-top-color: ${{isDark ? '#2a2a3a' : '#c5cedc'}} !important;
+                    background-color: ${{sbg}} !important;
                 }}
                 #sp-btn {{ color: ${{isDark ? '#aaa' : '#5a6a82'}} !important; }}
-
-                /* ── TEKS UTAMA ── */
-                [data-testid="stMarkdownContainer"],
                 [data-testid="stMarkdownContainer"] p,
                 [data-testid="stMarkdownContainer"] li,
                 [data-testid="stMarkdownContainer"] h1,
                 [data-testid="stMarkdownContainer"] h2,
-                [data-testid="stMarkdownContainer"] h3 {{
-                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
+                [data-testid="stMarkdownContainer"] h3,
+                [data-testid="stMainBlockContainer"] p {{
+                    color: ${{txt}} !important;
                 }}
-
-                /* ── HEADER KIPM SIGMA ── */
-                .main-header h1 {{ color: ${{isDark ? '#ffffff' : '#1a1a2e'}} !important; }}
+                .main-header h1 {{ color: ${{isDark ? '#fff' : '#1a1a2e'}} !important; }}
                 .main-header p  {{ color: ${{isDark ? '#888' : '#5a6a82'}} !important; }}
-
-                /* ── CHAT INPUT AREA ── */
-                div[data-testid="stChatInputContainer"],
-                div[data-testid="stChatInputContainer"] > div {{
-                    background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
-                    border-color: ${{isDark ? '#3a3a3a' : '#b8c4d8'}} !important;
+                div[data-testid="stChatInputContainer"] {{
+                    background-color: ${{inp}} !important;
+                    border-color: ${{brd}} !important;
                 }}
                 [data-testid="stChatInput"] textarea {{
-                    background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
-                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
+                    background-color: ${{inp}} !important;
+                    color: ${{txt}} !important;
                 }}
-
-                /* ── SIDEBAR DIVIDER & BUTTONS ── */
-                [data-testid="stSidebar"] hr {{
-                    border-color: ${{isDark ? '#2a2a3a' : '#b8c4d8'}} !important;
-                }}
-                section[data-testid="stSidebar"] button {{
+                div[data-testid="stSidebar"] .stButton > button {{
                     color: ${{isDark ? '#bbb' : '#2c3a52'}} !important;
                     background: transparent !important;
                     border: none !important;
