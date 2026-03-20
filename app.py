@@ -106,23 +106,30 @@ if uploaded_file:
                 ]
             })
 
-# Tampilkan Chat
+# 1. Tampilkan riwayat chat terlebih dahulu
 for msg in st.session_state.messages[1:]:
     with st.chat_message(msg["role"]):
-        content = msg["content"]
-        st.markdown(content[0]["text"] if isinstance(content, list) else content)
+        st.markdown(msg["content"])
 
-# Input Chat
-if prompt := st.chat_input("Tanya SIGMA... (atau ketik 'cek BBCA')"):
-    if prompt.lower().startswith("cek "):
-        ticker = prompt.split(" ")[1].upper()
-        prompt = get_stock_info(ticker)
-    
+# 2. Letakkan Baris Upload & Input Chat di paling bawah
+# Buat kolom untuk tombol upload agar sejajar/di atas bar chat
+col_action1, col_action2 = st.columns([1, 5])
+
+with col_action1:
+    with st.popover("📎 Upload"):
+        uploaded_file = st.file_uploader("Pilih PDF/Chart", type=["pdf", "png", "jpg", "jpeg"], label_visibility="collapsed")
+
+# Bar input chat utama
+prompt = st.chat_input("Tanya SIGMA... (atau ketik 'cek BBCA')")
+
+# 3. Logika Pemrosesan (Setelah Input)
+if prompt:
+    # Simpan dan tampilkan pesan user
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"): st.markdown(prompt)
-
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    # Jalankan AI Groq di sini
     with st.chat_message("assistant"):
-        model = "llama-3.2-11b-vision-preview" if isinstance(st.session_state.messages[-1]["content"], list) else "llama-3.3-70b-versatile"
-        response = client.chat.completions.create(model=model, messages=st.session_state.messages).choices[0].message.content
-        st.markdown(response)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+        # (Kode client.chat.completions.create Anda di sini)
+        pass
