@@ -8,7 +8,6 @@ import io
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="KIPM SIGMA ", layout="wide")
-st.sidebar.title("Kontrol Panel")
 
 # 1. Pengaturan Tema & Logo
 st.set_page_config(page_title="KIPM SIGMA", page_icon="📈", layout="wide")
