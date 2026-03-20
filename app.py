@@ -124,23 +124,46 @@ st.markdown(f"""
         padding-bottom: 8px !important;
     }}
 
-    /* ── TOMBOL COLLAPSE ── */
+    /* ── TOMBOL COLLAPSE — sembunyikan teks, tampilkan hanya icon ── */
     section[data-testid="stSidebar"] button[kind="header"],
     section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
         position: absolute !important;
-        top: 0.5rem !important; right: 0.5rem !important;
-        z-index: 999 !important; margin: 0 !important;
+        top: 0.75rem !important;
+        right: 0.75rem !important;
+        z-index: 9999 !important;
+        margin: 0 !important;
         background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 32px !important;
+        height: 32px !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }}
+    /* Sembunyikan teks "keyboard_double_arrow_right" */
+    section[data-testid="stSidebar"] button[kind="header"] span,
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] span {{
+        font-size: 0 !important;
+        visibility: hidden !important;
+    }}
+    section[data-testid="stSidebar"] button[kind="header"]::after,
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]::after {{
+        content: '‹‹' !important;
+        font-size: 14px !important;
+        visibility: visible !important;
+        color: {_text_muted} !important;
     }}
 
-    /* ── TOMBOL OBROLAN BARU — rata kiri ── */
+    /* ── TOMBOL OBROLAN BARU ── */
     section[data-testid="stSidebar"] .stButton > button {{
         background: transparent !important;
-        border: none !important; box-shadow: none !important;
+        border: none !important;
+        box-shadow: none !important;
         color: {_inactive_chat} !important;
-        font-size: 0.85rem !important;
-        padding: 6px 10px !important;
-        border-radius: 8px !important; width: 100% !important;
+        font-size: 0.9rem !important;
+        padding: 8px 12px !important;
+        border-radius: 8px !important;
+        width: 100% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: flex-start !important;
@@ -148,10 +171,10 @@ st.markdown(f"""
     }}
     section[data-testid="stSidebar"] .stButton > button:hover {{
         background: {_btn_hover} !important;
-        color: {"#fff" if _is_dark else "#1a2a4a"} !important;
     }}
     section[data-testid="stSidebar"] .stButton > button p {{
-        margin: 0 !important; text-align: left !important;
+        margin: 0 !important;
+        text-align: left !important;
         color: inherit !important;
     }}
 
@@ -522,66 +545,124 @@ if "action" in qp:
 
 
 # ── SIDEBAR ───────────────────────────────────────────────
-_sbg   = _sidebar_bg
 _stext = "#ececec" if _is_dark else "#0d0d0d"
 _shov  = "#2f2f2f" if _is_dark else "#efefef"
-_sact  = "#2f2f2f" if _is_dark else "#efefef"
-_sactc = "#ffffff" if _is_dark else "#0d0d0d"
+_sact  = "#343434" if _is_dark else "#e8e8e8"
 _slbl  = "#8e8ea0" if _is_dark else "#6e6e80"
 
 with st.sidebar:
-    try:
-        logo = Image.open("Mate KIPM LOGO.png")
-        c1,c2,c3 = st.columns([1,2,1])
-        with c2: st.image(logo, use_container_width=True)
-    except: st.markdown("### 🏛️ KIPM-UP")
-
     st.markdown(f"""
-        <div style="text-align:center;line-height:1.4;margin-top:4px;margin-bottom:12px;font-family:Inter,sans-serif;">
-            <p style="margin:0;font-size:0.78rem;color:{'#aaa' if _is_dark else '#6a7a96'};">Komunitas
-                <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
-            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:{'#fff' if _is_dark else '#1a2a4a'};">Universitas Pancasila</p>
-        </div>
-        <hr style="border:none;border-top:1px solid {'#2f2f2f' if _is_dark else '#e5e5e5'};margin:0 0 8px 0;">
-
         <style>
+        /* Kurangi jarak atas sidebar */
+        [data-testid="stSidebarUserContent"] {{
+            padding-top: 2.8rem !important;
+        }}
+        /* Sembunyikan teks keyboard_double_arrow dari tombol collapse */
+        [data-testid="stSidebarCollapseButton"] span,
+        button[kind="header"] span {{
+            display: none !important;
+        }}
+        /* Logo & org section */
+        .sb-header {{
+            text-align: center;
+            padding: 0 12px 10px 12px;
+            font-family: Inter, sans-serif;
+        }}
+        .sb-org-text {{
+            margin: 4px 0 0 0;
+            font-size: 0.72rem;
+            color: {_slbl};
+            line-height: 1.4;
+        }}
+        .sb-org-name {{
+            margin: 2px 0 0 0;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: {'#fff' if _is_dark else '#0d0d0d'};
+        }}
+        .sb-divider {{
+            border: none;
+            border-top: 1px solid {'#2f2f2f' if _is_dark else '#e5e5e5'};
+            margin: 6px 0;
+        }}
+        /* ChatGPT-style nav links */
         .sb-link {{
-            display:flex; align-items:center; gap:8px;
-            padding:7px 10px; border-radius:8px; margin:1px 0;
-            color:{_stext}; text-decoration:none; font-size:0.85rem;
-            font-family:Inter,sans-serif; cursor:pointer;
-            background:transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            margin: 1px 4px;
+            color: {_stext};
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-family: Inter, sans-serif;
+            cursor: pointer;
+            background: transparent;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }}
-        .sb-link:hover {{ background:{_shov}; color:{'#fff' if _is_dark else '#1a2a4a'}; }}
-        .sb-link.active {{ background:{_sact}; color:{_sactc}; }}
-        .sb-lbl {{
-            font-size:0.65rem; font-weight:600; color:{_slbl};
-            text-transform:uppercase; letter-spacing:1.2px;
-            padding:8px 10px 2px; font-family:Inter,sans-serif;
+        .sb-link:hover {{ background: {_shov}; }}
+        .sb-link.active {{ background: {_sact}; }}
+        .sb-sec-label {{
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: {_slbl};
+            padding: 10px 12px 2px;
+            font-family: Inter, sans-serif;
+            display: block;
         }}
-        .sb-actions {{ display:flex; gap:2px; margin-left:auto; }}
+        .sb-actions {{
+            display: none;
+            gap: 2px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }}
+        .sb-link:hover .sb-actions,
+        .sb-link.active .sb-actions {{ display: flex; }}
         .sb-act {{
-            padding:2px 6px; border-radius:6px; font-size:0.75rem;
-            color:{_slbl}; text-decoration:none; cursor:pointer;
-            background:transparent;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: {_slbl};
+            cursor: pointer;
         }}
-        .sb-act:hover {{ color:{'#fff' if _is_dark else '#1a2a4a'}; }}
-        .sb-del:hover {{ color:#f66 !important; }}
+        .sb-act:hover {{ color: {'#fff' if _is_dark else '#000'}; }}
+        .sb-del:hover {{ color: #f55 !important; }}
         </style>
     """, unsafe_allow_html=True)
 
-    # Obrolan Baru
+    # Logo
+    try:
+        logo = Image.open("Mate KIPM LOGO.png")
+        c1, c2, c3 = st.columns([1, 2, 1])
+        with c2: st.image(logo, use_container_width=True)
+    except: pass
+
+    # Nama organisasi
+    st.markdown(f"""
+        <div class="sb-header">
+            <p class="sb-org-text">Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
+            <p class="sb-org-name">Universitas Pancasila</p>
+        </div>
+        <hr class="sb-divider">
+    """, unsafe_allow_html=True)
+
+    # Obrolan baru
     if st.button("✏️  Obrolan baru", key="btn_new_chat", use_container_width=True):
         ns = new_session()
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
         st.rerun()
 
-    st.markdown(f'<div class="sb-lbl">Obrolan Anda</div>', unsafe_allow_html=True)
+    # List obrolan
+    st.markdown('<span class="sb-sec-label">Obrolan Anda</span>', unsafe_allow_html=True)
 
     for sesi in st.session_state.sessions:
-        sid = sesi["id"]; is_active = sid == st.session_state.active_id
-        title_d = sesi["title"][:28] + "..." if len(sesi["title"]) > 28 else sesi["title"]
+        sid = sesi["id"]
+        is_active = sid == st.session_state.active_id
+        title_d = sesi["title"][:30] + "..." if len(sesi["title"]) > 30 else sesi["title"]
 
         if st.session_state.rename_id == sid:
             new_t = st.text_input("Rename", value=sesi["title"], key=f"ren_{sid}", label_visibility="collapsed")
@@ -594,15 +675,15 @@ with st.sidebar:
                 if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
-            acts = f"""
-                <a class="sb-act" onclick="window.location.href='?sb_ren={sid}'">✏️</a>
-                <a class="sb-act sb-del" onclick="window.location.href='?sb_del={sid}'">🗑</a>
-            """ if is_active else ""
             active_cls = "active" if is_active else ""
+            acts = f"""<span class="sb-actions">
+                <a class="sb-act" onclick="event.preventDefault();window.location.href='?sb_ren={sid}'">✏️</a>
+                <a class="sb-act sb-del" onclick="event.preventDefault();window.location.href='?sb_del={sid}'">🗑</a>
+            </span>"""
             st.markdown(f"""
-                <a class="sb-link {active_cls}" onclick="window.location.href='?sb_sel={sid}'">
-                    💬 {title_d}
-                    <span class="sb-actions">{acts}</span>
+                <a class="sb-link {active_cls}"
+                   onclick="event.preventDefault();window.location.href='?sb_sel={sid}'">
+                   💬 {title_d}{acts}
                 </a>
             """, unsafe_allow_html=True)
 
