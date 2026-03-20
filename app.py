@@ -180,12 +180,8 @@ with st.sidebar:
 
     st.markdown("""
         <div style="text-align:center;line-height:1.4;margin-top:8px;font-family:Inter,sans-serif;">
-            <p style="margin:0;font-size:0.78rem;color:#aaa;letter-spacing:0.2px;">
-                Komunitas 
-                <span style="color:#F5C242;font-weight:600;">Investasi</span> 
-                Pasar Modal
-            </p>
-            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:0.2px;">Universitas Pancasila</p>
+            <p style="margin:0;font-size:0.78rem;color:#aaa;letter-spacing:0.2px;">Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
+            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;">Universitas Pancasila</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -376,19 +372,27 @@ chat_bar_html = f"""
     color: #ccc;
     font-size: 0.75rem;
   }}
-  .row {{ display: flex; align-items: center; gap: 10px; }}
+  /* Row: align bawah agar tombol send tetap di bawah saat textarea memanjang */
+  .row {{ display: flex; align-items: flex-end; gap: 10px; }}
   .btn-attach {{
     background: none; border: none; cursor: pointer;
     color: #666; display: flex; align-items: center;
     padding: 4px; border-radius: 8px;
     transition: color 0.2s, background 0.2s; flex-shrink: 0;
+    margin-bottom: 4px;
   }}
   .btn-attach:hover {{ color: #fff; background: #2e2e2e; }}
   textarea {{
     flex: 1; background: transparent; border: none;
     outline: none; color: #f0f0f0; font-size: 0.92rem;
-    resize: none; height: 22px; max-height: 120px;
-    line-height: 1.5; font-family: inherit; overflow-y: hidden;
+    resize: none;
+    min-height: 24px;
+    max-height: 160px;
+    line-height: 1.6;
+    font-family: inherit;
+    overflow-y: auto;
+    padding: 2px 0;
+    word-break: break-word;
   }}
   textarea::placeholder {{ color: #555; }}
   .btn-send {{
@@ -397,6 +401,7 @@ chat_bar_html = f"""
     align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0;
     transition: background 0.2s, opacity 0.2s; opacity: 0.3;
+    margin-bottom: 1px;
   }}
   .btn-send.active {{ opacity: 1; }}
   .btn-send:hover.active {{ background: #e0e0e0; }}
@@ -425,9 +430,15 @@ chat_bar_html = f"""
   const sendBtn = document.getElementById('sendBtn');
 
   function onInput() {{
+    // Reset dulu biar scrollHeight akurat
     inp.style.height = 'auto';
-    inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+    const newH = Math.min(inp.scrollHeight, 160);
+    inp.style.height = newH + 'px';
     sendBtn.classList.toggle('active', inp.value.trim() !== '');
+
+    // Update tinggi iframe agar bar tidak terpotong
+    const barH = document.querySelector('.bar').offsetHeight;
+    window.parent.postMessage({{ type: 'SIGMA_RESIZE', height: barH + 24 }}, '*');
   }}
 
   function onKey(e) {{
@@ -472,8 +483,28 @@ chat_bar_html = f"""
 </html>
 """
 
-components.html(chat_bar_html, height=80, scrolling=False)
+components.html(chat_bar_html, height=90, scrolling=False)
 
+
+# ── JS: Auto-resize iframe chat bar ─────────────────────
+components.html("""
+<script>
+window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SIGMA_RESIZE') {
+        // Cari iframe chat bar dan update tingginya
+        const iframes = window.document.querySelectorAll('iframe');
+        iframes.forEach(function(iframe) {
+            try {
+                const bar = iframe.contentDocument && iframe.contentDocument.querySelector('.bar');
+                if (bar) {
+                    iframe.style.height = (e.data.height) + 'px';
+                }
+            } catch(err) {}
+        });
+    }
+});
+</script>
+""", height=0)
 
 # ── JS: Fix bubble user ke kanan ─────────────────────────
 components.html("""
