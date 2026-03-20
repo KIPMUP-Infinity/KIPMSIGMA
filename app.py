@@ -33,21 +33,29 @@ st.markdown("""
 
 # 2. MASUKKAN KODE SIDEBAR & LOGO DI SINI
 with st.sidebar:
+    # 1. Menampilkan Logo Kecil di Tengah
     try:
-        # Pastikan file "logo.jpg" sudah Anda upload ke GitHub di folder yang sama
-        image = Image.open("Mate KIPM LOGO.png")
-        st.image(image, use_container_width=True)
+        image = Image.open("Mate KIPM LOGO.Png")
+        
+        # Membuat 3 kolom untuk menempatkan logo di kolom tengah (ukuran 1/3)
+        col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 1, 1])
+        with col_logo_2: # Kolom tengah
+            st.image(image, use_container_width=True)
+            
     except FileNotFoundError:
         st.error("Logo tidak ditemukan di GitHub.")
 
-    st.title("🛡️ KIPM SIGMA")
+    # 2. Menampilkan Teks Berjenjang di Tengah
+    st.markdown("""
+        <div style="text-align: center;">
+            <p style="margin: 0; font-size: 1em;">Komunitas Investasi Pasar Modal</p>
+            <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.markdown("---")
-    st.info("Strategic Intelligence & Global Market Analysis")
 
-# 3. Header Utama
-st.title("KIPM SIGMA $\Sigma$")
-st.write("Strategic Intelligence & Global Market Analysis")
-st.divider()
+
 
 # Inisialisasi API Groq via Secrets
 if "GROQ_API_KEY" not in st.secrets:
