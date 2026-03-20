@@ -15,6 +15,7 @@ import os
 import hashlib
 
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -769,7 +770,35 @@ components.html(f"""
             openBtn.style.setProperty('z-index', '9999', 'important');
         }}
 
-        // ── Zero semua padding atas sidebar ──
+        // ── Zero semua padding atas sidebar — direct inline style ──
+        var targets = [
+            'section[data-testid="stSidebar"] > div:first-child',
+            'section[data-testid="stSidebar"] > div:first-child > div:first-child',
+            '[data-testid="stSidebarContent"]',
+            '[data-testid="stSidebarUserContent"]',
+        ];
+        targets.forEach(function(sel) {{
+            var el = pd.querySelector(sel);
+            if (el) {{
+                el.style.setProperty('padding-top', '0', 'important');
+                el.style.setProperty('margin-top', '0', 'important');
+            }}
+        }});
+
+        // Cari dan zero semua div anak pertama di stSidebarUserContent
+        var uc = pd.querySelector('[data-testid="stSidebarUserContent"]');
+        if (uc) {{
+            // Zero semua child div yang mungkin punya margin/padding
+            var children = uc.querySelectorAll('div');
+            children.forEach(function(el) {{
+                var pt = parseInt(window.parent.getComputedStyle(el).paddingTop) || 0;
+                var mt = parseInt(window.parent.getComputedStyle(el).marginTop) || 0;
+                if (pt > 10) el.style.setProperty('padding-top', '0', 'important');
+                if (mt > 10) el.style.setProperty('margin-top', '0', 'important');
+            }});
+        }}
+
+        // Inject style ke head
         var styleId = 'sigma-sidebar-fix';
         var existing = pd.getElementById(styleId);
         if (existing) existing.remove();
@@ -780,10 +809,7 @@ components.html(f"""
             section[data-testid="stSidebar"] > div:first-child,
             section[data-testid="stSidebar"] > div:first-child > div,
             [data-testid="stSidebarContent"],
-            [data-testid="stSidebarUserContent"] {{
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-            }}
+            [data-testid="stSidebarUserContent"],
             [data-testid="stSidebarUserContent"] > div,
             [data-testid="stSidebarUserContent"] > div > div {{
                 padding-top: 0 !important;
@@ -983,9 +1009,11 @@ components.html(f"""
     // Coba inject segera dan dengan retry
     fixSidebarTop();
     injectSettings();
+    setTimeout(function() {{ fixSidebarTop(); }}, 100);
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 300);
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 800);
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
+    setInterval(function() {{ fixSidebarTop(); }}, 1000);
 
     // Observe kalau sidebar baru render
     var obs = new MutationObserver(function() {{ fixSidebarTop(); injectSettings(); }});
