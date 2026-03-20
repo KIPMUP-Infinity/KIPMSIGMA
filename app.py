@@ -35,7 +35,7 @@ st.markdown("""
 with st.sidebar:
     try:
         # Pastikan file "logo.jpg" sudah Anda upload ke GitHub di folder yang sama
-        image = Image.open("mate KIPM logo.PNG")
+        image = Image.open("Mate KIPM LOGO.png")
         st.image(image, use_container_width=True)
     except FileNotFoundError:
         st.error("Logo tidak ditemukan di GitHub.")
