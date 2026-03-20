@@ -9,6 +9,7 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
+
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -296,22 +297,27 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    if uploaded_file.type == "application/pdf":
-        pdf_bytes = uploaded_file.read()
-        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-        pdf_text = "".join(page.get_text() for page in doc)
-        st.session_state.attachment_text = f"[PDF: {uploaded_file.name}]\n{pdf_text[:6000]}"
-        st.session_state.pop("image_b64", None)
-        st.toast(f"✅ {uploaded_file.name} siap dikirim", icon="📄")
-    else:
-        img_bytes = uploaded_file.read()
-        img_b64 = base64.b64encode(img_bytes).decode("utf-8")
-        ext = uploaded_file.name.split(".")[-1].lower()
-        mime = "image/png" if ext == "png" else "image/jpeg"
-        st.session_state.attachment_text = f"[Gambar: {uploaded_file.name}]"
-        st.session_state.image_b64 = img_b64
-        st.session_state.image_mime = mime
-        st.toast(f"✅ Gambar siap dianalisa ({len(img_b64)} chars b64)", icon="🖼️")
+    fname = uploaded_file.name
+    # Hanya proses jika file baru (beda nama dari yang sudah diproses)
+    if fname != st.session_state.get("last_uploaded_fname", ""):
+        st.session_state["last_uploaded_fname"] = fname
+        if uploaded_file.type == "application/pdf":
+            pdf_bytes = uploaded_file.read()
+            doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+            pdf_text = "".join(page.get_text() for page in doc)
+            st.session_state.attachment_text = f"[PDF: {fname}]\n{pdf_text[:6000]}"
+            st.session_state.pop("image_b64", None)
+            st.toast(f"✅ {fname} siap dikirim", icon="📄")
+        else:
+            img_bytes = uploaded_file.read()
+            img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+            ext = fname.split(".")[-1].lower()
+            mime = "image/png" if ext == "png" else "image/jpeg"
+            st.session_state.attachment_text = f"[Gambar: {fname}]"
+            st.session_state.image_b64  = img_b64
+            st.session_state.image_mime = mime
+            st.toast(f"✅ {fname} siap dianalisa", icon="🖼️")
+        st.rerun()  # Pastikan session_state tersimpan sebelum bridge_input diproses
 
 
 # ── BRIDGE INPUT ──────────────────────────────────────────
