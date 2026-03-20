@@ -56,19 +56,20 @@ st.markdown(f"""
         background-color: {_bg} !important;
     }}
 
-    /* ── SIDEBAR ── */
-    section[data-testid="stSidebar"] {{
+    /* ── SIDEBAR — force navy pada semua layer ── */
+    section[data-testid="stSidebar"],
+    section[data-testid="stSidebar"] > div,
+    section[data-testid="stSidebar"] > div > div,
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
         background-color: {_sidebar_bg} !important;
+    }}
+    section[data-testid="stSidebar"] {{
         border-right: {_sidebar_border} !important;
         box-shadow: {"none" if _is_dark else "2px 0 8px rgba(0,0,0,0.08)"} !important;
     }}
     section[data-testid="stSidebar"] > div:first-child {{
         padding-top: 1rem;
-        background-color: {_sidebar_bg} !important;
-    }}
-    /* Hanya override warna default teks sidebar, TIDAK override inline style */
-    section[data-testid="stSidebar"] > div > div > div > p {{
-        color: {_btn_color};
     }}
 
     /* ── DIVIDERS ── */
@@ -465,73 +466,71 @@ with st.sidebar:
                 </div>
             """, unsafe_allow_html=True)
 
-# ── SETTINGS BOTTOM BAR — inject ke DOM sidebar via JS ───
+# ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
 _popup_bg      = "#1e2535" if _is_dark else "#ffffff"
 _popup_border  = "#2a3a5a" if _is_dark else "#d0d8e8"
-_popup_text    = "#ccc"    if _is_dark else "#2c3a52"
+_popup_text    = "#cccccc" if _is_dark else "#2c3a52"
 _popup_hover   = "#2a3550" if _is_dark else "#eef2fa"
-_popup_divider = "#2a3a5a" if _is_dark else "#e0e7f0"
-_bar_bg        = _sidebar_bg
+_bar_bg        = "#1a1a2e" if _is_dark else "#dce3ef"
 _bar_border    = "#2a2a3a" if _is_dark else "#c5cedc"
-_bar_text      = "#aaa"    if _is_dark else "#5a6a82"
+_bar_text      = "#aaaaaa" if _is_dark else "#5a6a82"
 _active_dot    = "#4a90d9" if _is_dark else "#1a4fa8"
 _theme_dark_check  = "✓" if _cur_theme == "dark"  else ""
 _theme_light_check = "✓" if _cur_theme == "light" else ""
 
-# Tambahkan settings bar langsung di dalam sidebar (bukan fixed CSS)
-with st.sidebar:
-    st.markdown(f"""
-        <div style="
-            position:sticky; bottom:0; left:0; right:0;
-            margin: 0 -1rem -1rem -1rem;
-            padding: 0;
-            background:{_bar_bg};
-            border-top: 1px solid {_bar_border};
-            z-index: 100;
-        ">
-            <!-- Popup (muncul ke atas) -->
-            <div id="sigma-popup" style="
-                display:none;
-                position:absolute;
-                bottom:100%;
-                left:8px;
-                right:8px;
-                background:{_popup_bg};
-                border:1px solid {_popup_border};
-                border-radius:12px;
-                box-shadow:0 -4px 24px rgba(0,0,0,0.25);
-                overflow:hidden;
-                font-family:Inter,sans-serif;
-                margin-bottom:4px;
+components.html(f"""
+<script>
+(function() {{
+    function injectSettings() {{
+        var parentDoc = window.parent.document;
+        var sidebar = parentDoc.querySelector('section[data-testid="stSidebar"] > div:first-child');
+        if (!sidebar) return;
+
+        // Cek sudah ada belum
+        if (parentDoc.getElementById('sigma-settings-wrap')) return;
+
+        // Buat wrapper yang menempel di bawah
+        var wrap = parentDoc.createElement('div');
+        wrap.id = 'sigma-settings-wrap';
+        wrap.style.cssText = [
+            'position:sticky',
+            'bottom:0',
+            'left:0',
+            'right:0',
+            'background:{_bar_bg}',
+            'border-top:1px solid {_bar_border}',
+            'z-index:9999',
+            'font-family:Inter,sans-serif'
+        ].join(';');
+
+        wrap.innerHTML = `
+            <div id="sp-popup" style="
+                display:none;position:absolute;bottom:100%;left:8px;right:8px;
+                background:{_popup_bg};border:1px solid {_popup_border};
+                border-radius:12px;box-shadow:0 -6px 28px rgba(0,0,0,0.3);
+                overflow:hidden;margin-bottom:6px;font-family:Inter,sans-serif;
             ">
-                <div style="padding:10px 14px 6px;font-size:0.7rem;font-weight:600;
-                    color:{_bar_text};text-transform:uppercase;letter-spacing:1px;">
+                <div style="padding:10px 14px 6px;font-size:0.68rem;font-weight:600;
+                    color:{_bar_text};text-transform:uppercase;letter-spacing:1.2px;">
                     Penampilan
                 </div>
-                <a href="?action=theme_system" target="_self" class="spitem">
-                    Sistem <span class="spck"></span>
+                <a href="?action=theme_system" target="_self" class="sp-item">
+                    <span>Sistem</span><span class="sp-ck"></span>
                 </a>
-                <a href="?action=theme_dark" target="_self" class="spitem">
-                    Gelap <span class="spck" style="color:{_active_dot}">{_theme_dark_check}</span>
+                <a href="?action=theme_dark" target="_self" class="sp-item">
+                    <span>Gelap</span><span class="sp-ck" style="color:{_active_dot};font-weight:700;">{_theme_dark_check}</span>
                 </a>
-                <a href="?action=theme_light" target="_self" class="spitem">
-                    Terang <span class="spck" style="color:{_active_dot}">{_theme_light_check}</span>
+                <a href="?action=theme_light" target="_self" class="sp-item">
+                    <span>Terang</span><span class="sp-ck" style="color:{_active_dot};font-weight:700;">{_theme_light_check}</span>
                 </a>
             </div>
 
-            <!-- Tombol Pengaturan -->
-            <div id="sigma-settings-btn" onclick="
-                var p=document.getElementById('sigma-popup');
-                p.style.display = p.style.display==='block'?'none':'block';
-            " style="
-                display:flex;align-items:center;gap:8px;
-                padding:10px 14px;cursor:pointer;
-                color:{_bar_text};font-size:0.87rem;font-family:Inter,sans-serif;
-                transition:background 0.15s;border-radius:0;
-            "
-            onmouseover="this.style.background='{_popup_hover}'"
-            onmouseout="this.style.background='transparent'">
+            <div id="sp-btn" style="
+                display:flex;align-items:center;gap:8px;padding:11px 14px;
+                cursor:pointer;color:{_bar_text};font-size:0.87rem;
+                transition:background 0.15s;user-select:none;
+            ">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -540,29 +539,53 @@ with st.sidebar:
                 </svg>
                 Pengaturan
             </div>
-        </div>
 
-        <style>
-        .spitem {{
-            display:flex; align-items:center; justify-content:space-between;
-            padding:9px 14px; font-size:0.88rem; color:{_popup_text};
-            text-decoration:none; transition:background 0.12s;
-        }}
-        .spitem:hover {{ background:{_popup_hover}; color:{_active_chat_clr}; }}
-        .spck {{ font-weight:700; font-size:0.95rem; }}
-        </style>
+            <style>
+            .sp-item {{
+                display:flex;align-items:center;justify-content:space-between;
+                padding:9px 16px;font-size:0.88rem;color:{_popup_text};
+                text-decoration:none;transition:background 0.12s;
+            }}
+            .sp-item:hover {{ background:{_popup_hover}; }}
+            </style>
+        `;
 
-        <script>
-        // Tutup popup kalau klik di luar tombol
-        document.addEventListener('click', function(e) {{
-            var btn = document.getElementById('sigma-settings-btn');
-            var pop = document.getElementById('sigma-popup');
+        sidebar.appendChild(wrap);
+
+        // Toggle popup
+        var btn = parentDoc.getElementById('sp-btn');
+        var pop = parentDoc.getElementById('sp-popup');
+        btn.addEventListener('click', function(e) {{
+            e.stopPropagation();
+            pop.style.display = pop.style.display === 'block' ? 'none' : 'block';
+        }});
+        btn.addEventListener('mouseover', function() {{
+            btn.style.background = '{_popup_hover}';
+        }});
+        btn.addEventListener('mouseout', function() {{
+            btn.style.background = 'transparent';
+        }});
+
+        // Tutup saat klik di luar
+        parentDoc.addEventListener('click', function(e) {{
             if (pop && btn && !btn.contains(e.target) && !pop.contains(e.target)) {{
                 pop.style.display = 'none';
             }}
         }});
-        </script>
-    """, unsafe_allow_html=True)
+    }}
+
+    // Coba inject segera dan dengan retry
+    injectSettings();
+    setTimeout(injectSettings, 500);
+    setTimeout(injectSettings, 1500);
+    setTimeout(injectSettings, 3000);
+
+    // Observe kalau sidebar baru render
+    var obs = new MutationObserver(function() {{ injectSettings(); }});
+    obs.observe(window.parent.document.body, {{childList:true, subtree:true}});
+}})();
+</script>
+""", height=0)
 
 
 # ── MAIN ─────────────────────────────────────────────────
@@ -733,14 +756,17 @@ function fixBubbles() {{
             md.style.background = 'transparent';
             md.style.display = 'flex';
             md.style.justifyContent = 'flex-end';
-            if (!md.querySelector('.navy-pill')) {{
+            var existing = md.querySelector('.navy-pill');
+            if (existing) {{
+                existing.style.backgroundColor = BUBBLE_COLOR;
+            }} else if (!md.querySelector('.navy-pill')) {{
                 const pill = document.createElement('div');
                 pill.className = 'navy-pill';
                 pill.style.cssText = `background-color:${{BUBBLE_COLOR}};color:#fff;border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:72%;display:inline-block;font-size:0.93rem;line-height:1.6;font-family:Inter,sans-serif;word-wrap:break-word;`;
                 while (md.firstChild) pill.appendChild(md.firstChild);
                 md.appendChild(pill);
                 pill.querySelectorAll('*').forEach(el => el.style.color = '#fff');
-            }}
+            }} // end else
         }});
     }});
 }}
