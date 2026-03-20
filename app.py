@@ -8,7 +8,6 @@ import io
 import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
-
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -50,12 +49,15 @@ st.markdown("""
         padding: 0 !important;
     }
 
+    /* Bridge text input — collapsed tapi ada di DOM, disembunyikan via posisi */
     [data-testid="stTextInput"] {
-        position: absolute !important;
-        width: 1px !important; height: 1px !important;
+        position: fixed !important;
+        bottom: -100px !important;
+        left: 0 !important;
+        width: 1px !important;
+        height: 1px !important;
         overflow: hidden !important;
         opacity: 0 !important;
-        pointer-events: none !important;
     }
 
     [data-testid="stChatMessage"] {
@@ -315,7 +317,7 @@ if uploaded_file is not None:
 
 
 # ── BRIDGE INPUT ──────────────────────────────────────────
-bridge_input = st.text_input("bridge", key="js_bridge_widget", label_visibility="hidden")
+bridge_input = st.text_input("bridge", key="js_bridge_widget", label_visibility="collapsed")
 
 if bridge_input and bridge_input.strip() and bridge_input != st.session_state.get("last_bridge", ""):
     st.session_state["last_bridge"] = bridge_input
@@ -553,25 +555,38 @@ chat_bar_html = f"""
   }}
   function sendText(text) {{
     const parentDoc = window.parent.document;
-    const inputs = parentDoc.querySelectorAll('input[type="text"]');
-    let bridge = null;
-    for (let el of inputs) {{
-      if (el.closest('[data-testid="stTextInput"]')) {{ bridge = el; break; }}
+
+    // Cari SEMUA input text, ambil yang pertama ditemukan di stTextInput
+    const allInputs = parentDoc.querySelectorAll('[data-testid="stTextInput"] input');
+    const bridge = allInputs.length > 0 ? allInputs[0] : null;
+
+    if (!bridge) {{
+      // Fallback: cari input text biasa
+      const fallback = parentDoc.querySelector('input[type="text"]');
+      if (fallback) {{
+        doSend(fallback, text);
+      }}
+      return;
     }}
-    if (bridge) {{
-      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-      setter.call(bridge, text);
-      bridge.dispatchEvent(new Event('input', {{ bubbles: true }}));
-      setTimeout(() => {{
-        ['keydown','keypress','keyup'].forEach(t => {{
-          bridge.dispatchEvent(new KeyboardEvent(t, {{
-            key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true, cancelable: true
-          }}));
-        }});
-      }}, 100);
-      inp.value = ''; inp.style.height = '24px';
-      sendBtn.classList.remove('active');
-    }}
+    doSend(bridge, text);
+  }}
+
+  function doSend(bridge, text) {{
+    const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    nativeSetter.call(bridge, text);
+    bridge.dispatchEvent(new Event('input', {{ bubbles: true }}));
+    bridge.dispatchEvent(new Event('change', {{ bubbles: true }}));
+    setTimeout(() => {{
+      ['keydown', 'keypress', 'keyup'].forEach(evtType => {{
+        bridge.dispatchEvent(new KeyboardEvent(evtType, {{
+          key: 'Enter', code: 'Enter', keyCode: 13,
+          which: 13, bubbles: true, cancelable: true
+        }}));
+      }});
+    }}, 150);
+    inp.value = '';
+    inp.style.height = '24px';
+    sendBtn.classList.remove('active');
   }}
   function triggerUpload() {{
     const parentDoc = window.parent.document;
