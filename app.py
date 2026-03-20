@@ -6,7 +6,6 @@ import base64
 from PIL import Image
 import io
 
-
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
@@ -42,7 +41,9 @@ st.markdown("""
 with st.sidebar:
     try:
         logo = Image.open("Mate KIPM LOGO.png")
-        st.image(logo, use_container_width=True)
+        col1, col2, col3 = st.columns([1, 2, 1])  # Logo di kolom tengah 2/5
+        with col2:
+            st.image(logo, use_container_width=True)
     except:
         st.markdown("### 🏛️ KIPM-UP")
 
