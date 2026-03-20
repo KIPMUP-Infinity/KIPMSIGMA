@@ -13,42 +13,60 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. CSS — Sembunyikan header TAPI tetap tampilkan tombol toggle sidebar
+# 2. CSS LENGKAP
 st.markdown("""
     <style>
-    /* Sembunyikan elemen header KECUALI tombol toggle sidebar */
-    header[data-testid="stHeader"] {
-        background: transparent !important;
-        height: 0rem !important;
-        min-height: 0rem !important;
+
+    /* ============================================
+       SEMBUNYIKAN SEMUA ELEMEN BAWAAN STREAMLIT
+       ============================================ */
+
+    /* Sembunyikan toolbar kanan bawah (Deploy, Settings, dll) */
+    [data-testid="stToolbar"],
+    .stToolbar,
+    #MainMenu,
+    footer {
+        visibility: hidden !important;
+        display: none !important;
     }
 
-    /* Paksa tombol toggle sidebar tetap muncul dan bisa diklik */
-    button[kind="header"],
-    [data-testid="collapsedControl"],
-    button[data-testid="baseButton-header"] {
+    /* Sembunyikan header bar Streamlit (yang berisi Deploy button)
+       TAPI jangan sembunyikan tombol toggle sidebar */
+    [data-testid="stHeader"] {
+        background: transparent !important;
+        height: 2.5rem !important;
+    }
+
+    /* Sembunyikan semua isi header KECUALI tombol collapse sidebar */
+    [data-testid="stHeader"] > * {
+        visibility: hidden !important;
+    }
+
+    /* Paksa tombol toggle sidebar tetap terlihat */
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"] {
         visibility: visible !important;
-        display: block !important;
         opacity: 1 !important;
         pointer-events: auto !important;
-        position: fixed !important;
-        top: 10px !important;
-        left: 10px !important;
         z-index: 9999 !important;
-        background: rgba(255,255,255,0.1) !important;
-        border-radius: 8px !important;
     }
 
-    /* Container utama */
+    /* ============================================
+       SIDEBAR
+       ============================================ */
+
+    /* Turunkan konten sidebar agar tidak terlalu ke atas */
+    section[data-testid="stSidebar"] > div:first-child {
+        padding-top: 3.5rem !important;  /* Turunkan konten sidebar */
+    }
+
+    /* ============================================
+       MAIN CONTENT AREA
+       ============================================ */
     [data-testid="stMainBlockContainer"] {
         max-width: 820px !important;
         margin: 0 auto !important;
         padding-top: 3rem !important;
-    }
-
-    /* Sidebar styling */
-    section[data-testid="stSidebar"] > div {
-        padding-top: 1.5rem;
     }
 
     /* Header judul */
@@ -57,13 +75,14 @@ st.markdown("""
         margin-bottom: 2rem;
     }
 
-    /* Input Chat */
+    /* ============================================
+       CHAT INPUT & ATTACHMENT ICON
+       ============================================ */
     .stChatInputContainer textarea {
         padding-left: 55px !important;
         border-radius: 25px !important;
     }
 
-    /* Ikon Attach */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
@@ -83,6 +102,7 @@ st.markdown("""
         color: #888 !important;
         cursor: pointer !important;
     }
+
     </style>
     """, unsafe_allow_html=True)
 
