@@ -12,15 +12,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS MINIMAL — hanya hide elemen yang tidak perlu, TIDAK sentuh header sama sekali
 st.markdown("""
     <style>
 
-    /* Hanya hide footer dan main menu hamburger bawaan */
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
 
-    /* Sidebar padding agar tidak terlalu ke atas */
+    /* Sidebar padding */
     section[data-testid="stSidebar"] > div:first-child {
         padding-top: 4rem;
     }
@@ -28,9 +26,42 @@ st.markdown("""
     /* Main content */
     .main-header { text-align: center; margin-bottom: 2rem; }
 
-    /* Chat input */
-    .stChatInputContainer textarea {
+    /* Tambah padding kiri pada chat input agar tidak ketutup tombol attach */
+    [data-testid="stChatInput"] textarea {
+        padding-left: 3rem !important;
         border-radius: 25px !important;
+    }
+
+    /* KUNCI: paksa popover selalu fixed di atas chat bar, tidak ikut scroll */
+    div[data-testid="stPopover"] {
+        position: fixed !important;
+        bottom: 1.1rem !important;
+        left: calc(50% - 390px) !important;
+        z-index: 9999 !important;
+    }
+
+    /* Tombol attach: tampil seperti ikon + kecil transparan */
+    div[data-testid="stPopover"] > button {
+        border: none !important;
+        background: transparent !important;
+        font-size: 1.4rem !important;
+        color: #aaa !important;
+        padding: 0.2rem 0.5rem !important;
+        cursor: pointer !important;
+        border-radius: 50% !important;
+        line-height: 1 !important;
+    }
+
+    div[data-testid="stPopover"] > button:hover {
+        color: white !important;
+        background: rgba(255,255,255,0.1) !important;
+    }
+
+    /* Responsif layar kecil */
+    @media (max-width: 900px) {
+        div[data-testid="stPopover"] {
+            left: 1rem !important;
+        }
     }
 
     </style>
@@ -41,7 +72,7 @@ st.markdown("""
 with st.sidebar:
     try:
         logo = Image.open("Mate KIPM LOGO.png")
-        col1, col2, col3 = st.columns([1, 2, 1])  # Logo di kolom tengah 2/5
+        col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.image(logo, use_container_width=True)
     except:
@@ -64,7 +95,7 @@ with st.sidebar:
                 st.markdown(f"🔍 {preview}")
 
 
-# MAIN
+# MAIN HEADER
 st.markdown("""
     <div class="main-header">
         <h1 style="margin:0;">KIPM SIGMA ∑</h1>
@@ -91,8 +122,8 @@ for msg in st.session_state.messages[1:]:
         st.markdown(msg["content"])
 
 
-# ATTACHMENT
-with st.popover("📎 Lampirkan File"):
+# ATTACHMENT — popover akan di-pin ke bawah layar via CSS fixed
+with st.popover("＋"):
     uploaded_file = st.file_uploader(
         "Upload PDF atau Gambar",
         type=["pdf", "png", "jpg", "jpeg"],
@@ -112,8 +143,12 @@ with st.popover("📎 Lampirkan File"):
             st.session_state["attachment_text"] = "[Gambar diunggah]"
             st.info("Gambar siap.")
 
+    # Tampilkan status attachment aktif
+    if "attachment_text" in st.session_state:
+        st.warning("📎 File terlampir — siap dikirim bersama pesan berikutnya.")
 
-# CHAT
+
+# CHAT INPUT
 if prompt := st.chat_input("Tanya SIGMA..."):
     full_prompt = prompt
     if "attachment_text" in st.session_state:
