@@ -31,15 +31,15 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Menampilkan Logo di Sidebar
+# 2. MASUKKAN KODE SIDEBAR & LOGO DI SINI
 with st.sidebar:
     try:
-        # Ganti 'logo.jpg' dengan nama file logo Anda di GitHub
-        logo = Image.open("logo.jpg") 
-        st.image(logo, use_container_width=True)
-    except:
-        st.error("File logo.jpg tidak ditemukan di GitHub")
-    
+        # Pastikan file "logo.jpg" sudah Anda upload ke GitHub di folder yang sama
+        image = Image.open("mate KIPM logo.PNG")
+        st.image(image, use_container_width=True)
+    except FileNotFoundError:
+        st.error("Logo tidak ditemukan di GitHub.")
+
     st.title("🛡️ KIPM SIGMA")
     st.markdown("---")
     st.info("Strategic Intelligence & Global Market Analysis")
