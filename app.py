@@ -10,6 +10,16 @@ import uuid
 from datetime import datetime
 
 
+import streamlit as st
+from groq import Groq
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -263,11 +273,20 @@ st.markdown("""
 
 
 # ── TAMPILKAN CHAT AKTIF ──────────────────────────────────
-for msg in active["messages"][1:]:
+for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
         display = msg["content"]
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
+        # Tampilkan thumbnail gambar jika ada
+        thumb_key = f"img_thumb_{i+1}"
+        if msg["role"] == "user" and thumb_key in st.session_state:
+            b64, mime = st.session_state[thumb_key]
+            st.markdown(
+                f'<img src="data:{mime};base64,{b64}" '
+                f'style="max-width:100%;max-height:260px;border-radius:10px;margin-bottom:6px;display:block;">',
+                unsafe_allow_html=True
+            )
         st.markdown(display)
 
 
@@ -329,9 +348,19 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
     img_b64   = st.session_state.pop("image_b64", None)
     img_mime  = st.session_state.pop("image_mime", "image/jpeg")
 
-    # Untuk history: simpan teks saja (base64 tidak disimpan ke history)
+    # Simpan thumbnail base64 untuk ditampilkan di history
+    if has_image and img_b64:
+        st.session_state[f"img_thumb_{len(active['messages'])}"] = (img_b64, img_mime)
+
     active["messages"].append({"role": "user", "content": full_prompt})
     with st.chat_message("user"):
+        if has_image and img_b64:
+            # Tampilkan preview gambar di bubble user
+            st.markdown(
+                f'<img src="data:{img_mime};base64,{img_b64}" '
+                f'style="max-width:100%;max-height:260px;border-radius:10px;margin-bottom:6px;display:block;">',
+                unsafe_allow_html=True
+            )
         st.markdown(prompt)
 
     try:
