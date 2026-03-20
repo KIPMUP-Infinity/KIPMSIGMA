@@ -10,6 +10,34 @@ import uuid
 from datetime import datetime
 import requests
 from urllib.parse import urlencode
+import json
+import os
+import hashlib
+
+# ── FILE-BASED PERSISTENCE ────────────────────────────────
+DATA_DIR = ".sigma_data"
+os.makedirs(DATA_DIR, exist_ok=True)
+
+def _user_key(email):
+    return hashlib.md5(email.encode()).hexdigest()
+
+def save_user_data(email, data):
+    """Simpan theme + sessions ke file JSON berdasarkan email."""
+    try:
+        path = os.path.join(DATA_DIR, f"{_user_key(email)}.json")
+        with open(path, "w") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except: pass
+
+def load_user_data(email):
+    """Muat data user dari file."""
+    try:
+        path = os.path.join(DATA_DIR, f"{_user_key(email)}.json")
+        if os.path.exists(path):
+            with open(path) as f:
+                return json.load(f)
+    except: pass
+    return None
 
 
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
@@ -300,78 +328,36 @@ if "user" not in st.session_state:
     st.session_state.user = None
 if "theme" not in st.session_state:
     st.session_state.theme = "dark"
-if "ls_loaded" not in st.session_state:
-    st.session_state.ls_loaded = False
+if "data_loaded" not in st.session_state:
+    st.session_state.data_loaded = False
 
-# ── RESTORE DARI LOCALSTORAGE (via query param) ────────────
-if not st.session_state.ls_loaded:
-    import json as _json2, urllib.parse as _up
-    ls_user     = st.query_params.get("ls_user", "")
-    ls_sessions = st.query_params.get("ls_sessions", "")
-    ls_theme    = st.query_params.get("ls_theme", "")
-    ls_active   = st.query_params.get("ls_active", "")
-
-    if ls_user:
-        try:
-            st.session_state.user = _json2.loads(_up.unquote(ls_user))
-        except: pass
-
-    if ls_theme:
-        st.session_state.theme = ls_theme
-
-    if ls_sessions:
-        try:
-            sdata = _json2.loads(_up.unquote(ls_sessions))
-            if sdata:
-                for s in sdata:
-                    if not s.get("messages") or s["messages"][0].get("role") != "system":
-                        s["messages"].insert(0, {"role":"system","content":""})
-                st.session_state.sessions  = sdata
-                st.session_state.active_id = ls_active if ls_active else sdata[0]["id"]
-        except: pass
-
-    st.session_state.ls_loaded = True
-    if ls_user or ls_sessions:
-        st.query_params.clear()
-        st.rerun()
-
+# ── HANDLE OAUTH CALLBACK ──────────────────────────────────
 if "code" in st.query_params and st.session_state.user is None:
     info = handle_oauth_callback()
     if info:
         st.session_state.user = info
+        # Load data tersimpan setelah login
+        saved = load_user_data(info["email"])
+        if saved:
+            st.session_state.theme = saved.get("theme", "dark")
+            if saved.get("sessions"):
+                st.session_state.sessions  = saved["sessions"]
+                st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
         st.query_params.clear()
         st.rerun()
     else:
         st.error("Login gagal. Coba lagi.")
         st.query_params.clear()
 
-# ── RESTORE via components.html (jalan di iframe, akses window.parent) ────────
-if st.session_state.user is None and "code" not in st.query_params and not st.query_params.get("ls_user"):
-    components.html("""
-<script>
-(function() {
-    try {
-        var u = localStorage.getItem('sigma_user');
-        if (!u) return;
-        var userObj = JSON.parse(u);
-        if (!userObj || !userObj.email) return;
-
-        var s = localStorage.getItem('sigma_sessions') || '[]';
-        var a = localStorage.getItem('sigma_active') || '';
-        var t = localStorage.getItem('sigma_theme') || 'dark';
-
-        var params = new URLSearchParams();
-        params.set('ls_user',     u);
-        params.set('ls_sessions', s);
-        params.set('ls_active',   a);
-        params.set('ls_theme',    t);
-        window.parent.location.replace(
-            window.parent.location.pathname + '?' + params.toString()
-        );
-    } catch(e) {}
-})();
-</script>
-""", height=0)
+# ── RESTORE SESSION DARI FILE (setiap kali refresh) ────────
+if st.session_state.user is not None and not st.session_state.data_loaded:
+    saved = load_user_data(st.session_state.user["email"])
+    if saved:
+        st.session_state.theme = saved.get("theme", "dark")
+        if saved.get("sessions") and "sessions" not in st.session_state:
+            st.session_state.sessions  = saved["sessions"]
+            st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
+    st.session_state.data_loaded = True
 
 if st.session_state.user is None:
     show_login_page()
@@ -444,6 +430,13 @@ if "sessions" not in st.session_state:
     s = new_session()
     st.session_state.sessions  = [s]
     st.session_state.active_id = s["id"]
+else:
+    # Pastikan setiap sesi yang di-restore punya system prompt yang benar
+    for s in st.session_state.sessions:
+        if not s["messages"] or s["messages"][0].get("role") != "system":
+            s["messages"].insert(0, SYSTEM_PROMPT)
+        else:
+            s["messages"][0] = SYSTEM_PROMPT  # update system prompt terbaru
 if "rename_id"  not in st.session_state: st.session_state.rename_id  = None
 if "img_data"   not in st.session_state: st.session_state.img_data   = None
 if "pdf_data"   not in st.session_state: st.session_state.pdf_data   = None
@@ -859,30 +852,18 @@ if prompt:
     st.rerun()
 
 
-# ── LOCALSTORAGE: Simpan via st.markdown (main frame, bukan iframe) ──────────
-import json as _json
-
-_user_json     = _json.dumps(st.session_state.user or {})
-_sessions_json = _json.dumps([
-    {"id": s["id"], "title": s["title"], "created": s["created"],
-     "messages": [m for m in s["messages"] if m["role"] != "system"]}
-    for s in st.session_state.sessions
-])
-_active_id    = st.session_state.active_id
-_cur_theme_ls = st.session_state.get("theme", "dark")
-
-st.markdown(f"""
-<script>
-(function() {{
-    try {{
-        localStorage.setItem('sigma_user',     {_json.dumps(_user_json)});
-        localStorage.setItem('sigma_sessions', {_json.dumps(_sessions_json)});
-        localStorage.setItem('sigma_active',   {_json.dumps(_active_id)});
-        localStorage.setItem('sigma_theme',    {_json.dumps(_cur_theme_ls)});
-    }} catch(e) {{}}
-}})();
-</script>
-""", unsafe_allow_html=True)
+# ── SAVE DATA KE FILE (setiap render) ────────────────────
+if st.session_state.user:
+    _sessions_to_save = [
+        {"id": s["id"], "title": s["title"], "created": s["created"],
+         "messages": [m for m in s["messages"] if m["role"] != "system"]}
+        for s in st.session_state.sessions
+    ]
+    save_user_data(st.session_state.user["email"], {
+        "theme":     st.session_state.get("theme", "dark"),
+        "sessions":  _sessions_to_save,
+        "active_id": st.session_state.active_id,
+    })
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
 _bubble_color = "#1B2A4A" if _is_dark else "#1a4fa8"
