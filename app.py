@@ -149,22 +149,22 @@ st.markdown(f"""
         color: {_inactive_chat} !important;
         font-size: 0.85rem !important;
         text-align: left !important;
+        justify-content: flex-start !important;
         padding: 6px 10px !important;
         border-radius: 8px !important;
         transition: background 0.15s !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        width: 100% !important;
+    }}
+    div[data-testid="stSidebar"] button p {{
+        text-align: left !important;
     }}
     div[data-testid="stSidebar"] button:hover {{
         background: {_btn_hover} !important;
         color: {_active_chat_clr} !important;
-    }}
-    /* Tombol obrolan aktif */
-    div[data-testid="stSidebar"] button[data-active="true"],
-    div[data-testid="stSidebar"] button.active-chat {{
-        background: {_active_chat_bg} !important;
-        color: {_active_chat_clr} !important;
+        border: none !important;
     }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
@@ -689,6 +689,20 @@ components.html(f"""
                     background-color: ${{isDark ? '#0e1117' : '#f4f6fb'}} !important;
                 }}
 
+                /* ── SEMUA CONTAINER BACKGROUND ── */
+                [data-testid="stAppViewContainer"] > section,
+                [data-testid="stAppViewContainer"] > section > div,
+                [data-testid="stMainBlockContainer"],
+                [data-testid="stMainBlockContainer"] > div,
+                [data-testid="stVerticalBlock"],
+                [data-testid="stBottom"],
+                [data-testid="stBottom"] > div,
+                .stChatFloatingInputContainer,
+                .stChatFloatingInputContainer > div,
+                section[data-testid="stMain"] {{
+                    background-color: ${{isDark ? '#0e1117' : '#f4f6fb'}} !important;
+                }}
+
                 /* ── SIDEBAR ── */
                 section[data-testid="stSidebar"],
                 section[data-testid="stSidebar"] > div,
@@ -703,41 +717,39 @@ components.html(f"""
                 }}
                 #sp-btn {{ color: ${{isDark ? '#aaa' : '#5a6a82'}} !important; }}
 
-                /* ── SEMUA TEKS ── */
-                [data-testid="stMarkdownContainer"] *,
+                /* ── TEKS UTAMA ── */
                 [data-testid="stMarkdownContainer"],
-                [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p,
-                p, span, label, div {{
-                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}};
+                [data-testid="stMarkdownContainer"] p,
+                [data-testid="stMarkdownContainer"] li,
+                [data-testid="stMarkdownContainer"] h1,
+                [data-testid="stMarkdownContainer"] h2,
+                [data-testid="stMarkdownContainer"] h3 {{
+                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
                 }}
 
                 /* ── HEADER KIPM SIGMA ── */
                 .main-header h1 {{ color: ${{isDark ? '#ffffff' : '#1a1a2e'}} !important; }}
                 .main-header p  {{ color: ${{isDark ? '#888' : '#5a6a82'}} !important; }}
 
-                /* ── CHAT INPUT ── */
-                div[data-testid="stChatInputContainer"] {{
+                /* ── CHAT INPUT AREA ── */
+                div[data-testid="stChatInputContainer"],
+                div[data-testid="stChatInputContainer"] > div {{
                     background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
                     border-color: ${{isDark ? '#3a3a3a' : '#b8c4d8'}} !important;
-                    box-shadow: ${{isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.06)'}} !important;
                 }}
                 [data-testid="stChatInput"] textarea {{
                     background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
                     color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
                 }}
-                [data-testid="stChatInput"] textarea::placeholder {{
-                    color: ${{isDark ? '#666' : '#999'}} !important;
-                }}
 
-                /* ── SIDEBAR DIVIDER ── */
+                /* ── SIDEBAR DIVIDER & BUTTONS ── */
                 [data-testid="stSidebar"] hr {{
                     border-color: ${{isDark ? '#2a2a3a' : '#b8c4d8'}} !important;
                 }}
-
-                /* ── SIDEBAR LINKS & BUTTONS ── */
-                section[data-testid="stSidebar"] a,
                 section[data-testid="stSidebar"] button {{
-                    color: ${{isDark ? '#ccc' : '#2c3a52'}} !important;
+                    color: ${{isDark ? '#bbb' : '#2c3a52'}} !important;
+                    background: transparent !important;
+                    border: none !important;
                 }}
             `;
 
