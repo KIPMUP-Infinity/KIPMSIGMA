@@ -8,6 +8,13 @@ import io
 import streamlit.components.v1 as components
 
 
+import streamlit as st
+from groq import Groq
+import fitz
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
@@ -140,9 +147,9 @@ if uploaded_file is not None and st.session_state.attachment_text is None:
 
 # ── HIDDEN TEXT INPUT SEBAGAI BRIDGE ─────────────────────
 # JS akan inject teks ke sini lalu trigger 'Enter' untuk submit ke Streamlit
-bridge_input = st.text_input("bridge", key="js_bridge", label_visibility="hidden")
+bridge_input = st.text_input("bridge", key="js_bridge_widget", label_visibility="hidden")
 
-if bridge_input and bridge_input != st.session_state.get("last_bridge", ""):
+if bridge_input and bridge_input.strip() and bridge_input != st.session_state.get("last_bridge", ""):
     st.session_state["last_bridge"] = bridge_input
     prompt = bridge_input
 
@@ -172,8 +179,8 @@ if bridge_input and bridge_input != st.session_state.get("last_bridge", ""):
     except Exception as e:
         st.error(f"❌ Error: {e}")
 
-    # Reset bridge
-    st.session_state["js_bridge"] = ""
+    # Reset: simpan last_bridge agar tidak loop, lalu rerun
+    # (Tidak bisa set widget key langsung — pakai st.rerun saja)
     st.rerun()
 
 
