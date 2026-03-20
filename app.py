@@ -14,42 +14,39 @@ st.markdown("""
     <style>
     header {visibility: hidden;}
     
-    /* Memastikan Sidebar punya ruang dan tidak tertutup */
+    /* FIX: Memastikan Sidebar tetap lebar standar dan tidak tersembunyi */
     [data-testid="stSidebar"] {
-        background-color: #111b21;
+        min-width: 300px !important;
     }
 
-    /* Target khusus area konten agar di tengah tanpa merusak Sidebar */
+    /* FIX: Memposisikan konten utama agar tetap di tengah terhadap sisa layar */
     [data-testid="stMainBlockContainer"] {
         max-width: 850px !important;
-        margin: 0 auto !important;
-        padding-left: 5rem !important;
-        padding-right: 5rem !important;
+        /* Hapus margin: 0 auto agar tidak menabrak sidebar */
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding-top: 2rem !important;
     }
 
-    /* Judul Header di Tengah */
+    /* Header teks di tengah */
     .main-header {
         text-align: center;
         margin-bottom: 2rem;
-        margin-top: -2rem;
     }
 
     /* Menyatukan Icon Attach (Clip) ke dalam Search Bar */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        /* Mengunci posisi relatif terhadap bar input di tengah */
-        left: calc(50% - 370px + 130px); 
+        /* Koordinat dinamis agar masuk ke bar input */
+        left: calc(50% - 370px + 150px); 
         z-index: 1001;
     }
 
-    /* Responsif: Geser icon jika sidebar tertutup/layar kecil */
+    /* Penyesuaian jika sidebar ditutup atau layar kecil */
     @media (max-width: 1200px) {
-        div[data-testid="stPopover"] { left: calc(50% - 380px); }
-    }
-    @media (max-width: 850px) {
-        div[data-testid="stPopover"] { left: 45px; }
-        [data-testid="stMainBlockContainer"] { padding: 1rem !important; }
+        div[data-testid="stPopover"] { left: calc(50% - 370px); }
+        [data-testid="stMainBlockContainer"] { margin: 0 auto !important; }
     }
 
     /* Styling Input Bar */
