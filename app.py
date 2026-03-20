@@ -9,6 +9,7 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
+
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -62,8 +63,12 @@ SYSTEM_PROMPT = {
     "role": "system",
     "content": (
         "Kamu adalah SIGMA, analis saham dan chart expert dari KIPM Universitas Pancasila. "
-        "Jika ada gambar chart, analisa trend, support/resistance, pola teknikal, volume, "
-        "bandarmologi, dan buat trade plan. Jawab Bahasa Indonesia, tegas dan profesional."
+        "Kamu DAPAT dan HARUS melihat serta menganalisa gambar/chart yang dikirim user secara langsung. "
+        "Saat menerima gambar chart: identifikasi nama saham (jika terlihat di chart), timeframe, "
+        "trend utama, level support & resistance, pola teknikal, analisa volume dan bandarmologi, "
+        "lalu buat trade plan lengkap dengan entry, stop loss, dan target. "
+        "JANGAN pernah bilang tidak bisa melihat gambar. Langsung analisa apa yang kamu lihat. "
+        "Jawab Bahasa Indonesia, tegas, objektif, dan profesional."
     )
 }
 
@@ -280,9 +285,16 @@ if prompt:
             with st.spinner("SIGMA sedang menganalisis..."):
                 if has_image:
                     res = groq_client.chat.completions.create(
-                        model="llama-3.2-90b-vision-preview",
+                        model="meta-llama/llama-4-scout-17b-16e-instruct",
                         messages=[
-                            {"role": "system", "content": SYSTEM_PROMPT["content"]},
+                            {"role": "system", "content": (
+                                "Kamu adalah SIGMA, analis chart expert. "
+                                "Lihat gambar chart ini dengan seksama dan langsung analisa: "
+                                "1) Nama saham & timeframe 2) Trend (uptrend/downtrend/sideways) "
+                                "3) Support & Resistance 4) Pola teknikal 5) Volume & bandarmologi "
+                                "6) Trade plan (entry, stop loss, target). "
+                                "WAJIB analisa gambar secara langsung. Jawab Bahasa Indonesia."
+                            )},
                             {"role": "user", "content": [
                                 {"type": "image_url", "image_url": {
                                     "url": f"data:{img_data[1]};base64,{img_data[0]}"
