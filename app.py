@@ -11,6 +11,7 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
+
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 # ── DYNAMIC THEME CSS ────────────────────────────────────
@@ -382,6 +383,12 @@ if "action" in qp:
         delete_session(sid); st.query_params.clear(); st.rerun()
     elif a == "ren" and sid:
         st.session_state.rename_id = sid; st.query_params.clear(); st.rerun()
+    elif a == "theme_dark":
+        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()
+    elif a == "theme_light":
+        st.session_state.theme = "light"; st.query_params.clear(); st.rerun()
+    elif a == "theme_system":
+        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()  # fallback ke dark
 
 
 # ── SIDEBAR ───────────────────────────────────────────────
@@ -392,62 +399,12 @@ with st.sidebar:
         with c2: st.image(logo, use_container_width=True)
     except: st.markdown("### 🏛️ KIPM-UP")
 
-    st.markdown("""
+    st.markdown(f"""
         <div style="text-align:center;line-height:1.4;margin-top:8px;font-family:Inter,sans-serif;">
-            <p style="margin:0;font-size:0.78rem;color:#aaa;">Komunitas
+            <p style="margin:0;font-size:0.78rem;color:{'#aaa' if _is_dark else '#6a7a96'};">Komunitas
                 <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
-            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;">Universitas Pancasila</p>
+            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:{'#fff' if _is_dark else '#1a2a4a'};">Universitas Pancasila</p>
         </div>
-    """, unsafe_allow_html=True)
-
-    st.divider()
-
-    # ── Settings Section ──
-    cur_theme = st.session_state.get("theme", "dark")
-    _is_dark_now = cur_theme == "dark"
-    _set_txt  = "#ccc" if _is_dark_now else "#444"
-    _set_bg   = "#1e2d45" if _is_dark_now else "#dce3ef"
-    _set_brd  = "#2a3a5a" if _is_dark_now else "#c5cedc"
-
-    st.markdown(f'<p style="font-size:0.68rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:1.2px;margin:6px 0 6px 6px;font-family:Inter,sans-serif;">⚙️ Settings</p>', unsafe_allow_html=True)
-
-    st.markdown(f"""
-        <div style="background:{_set_bg};border:1px solid {_set_brd};border-radius:10px;padding:10px 12px;margin-bottom:4px;">
-            <p style="margin:0 0 8px 0;font-size:0.78rem;color:{_set_txt};font-family:Inter,sans-serif;font-weight:500;">🎨 Tema Tampilan</p>
-            <div style="display:flex;gap:6px;">
-    """, unsafe_allow_html=True)
-
-    t_col1, t_col2 = st.columns(2)
-    with t_col1:
-        dark_active = cur_theme == "dark"
-        btn_dark_style = "background:#0048ff;color:#fff;" if dark_active else ""
-        if st.button(
-            "🌙 Dark",
-            use_container_width=True,
-            disabled=dark_active,
-            key="btn_dark_theme"
-        ):
-            st.session_state.theme = "dark"
-            st.rerun()
-    with t_col2:
-        light_active = cur_theme == "light"
-        if st.button(
-            "☀️ Light",
-            use_container_width=True,
-            disabled=light_active,
-            key="btn_light_theme"
-        ):
-            st.session_state.theme = "light"
-            st.rerun()
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
-    # Active theme indicator
-    active_label = "🌙 Dark Mode aktif" if cur_theme == "dark" else "☀️ Light Mode aktif"
-    active_color = "#4a90d9" if cur_theme == "dark" else "#f5a623"
-    st.markdown(f"""
-        <p style="font-size:0.72rem;color:{active_color};text-align:center;
-            margin:2px 0 8px 0;font-family:Inter,sans-serif;">{active_label}</p>
     """, unsafe_allow_html=True)
 
     st.divider()
@@ -494,6 +451,151 @@ with st.sidebar:
                     <div style="display:flex;gap:2px;padding-right:6px;">{acts}</div>
                 </div>
             """, unsafe_allow_html=True)
+
+# ── SETTINGS BOTTOM BAR (inject via JS ke sidebar) ───────
+_cur_theme = st.session_state.get("theme", "dark")
+_popup_bg      = "#1e2535" if _is_dark else "#ffffff"
+_popup_border  = "#2a3a5a" if _is_dark else "#d0d8e8"
+_popup_text    = "#ccc"    if _is_dark else "#2c3a52"
+_popup_hover   = "#2a3550" if _is_dark else "#eef2fa"
+_popup_divider = "#2a3a5a" if _is_dark else "#e0e7f0"
+_bar_bg        = _sidebar_bg
+_bar_border    = "#2a2a3a" if _is_dark else "#c5cedc"
+_bar_text      = "#aaa"    if _is_dark else "#5a6a82"
+_active_dot    = "#4a90d9" if _is_dark else "#1a4fa8"
+
+_theme_dark_check  = "✓" if _cur_theme == "dark"   else ""
+_theme_light_check = "✓" if _cur_theme == "light"  else ""
+
+st.markdown(f"""
+<style>
+/* Spacer agar konten sidebar tidak tertutup bottom bar */
+section[data-testid="stSidebar"] > div:first-child {{
+    padding-bottom: 70px !important;
+}}
+/* Bottom bar fixed di bawah sidebar */
+#sigma-settings-bar {{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 244px;
+    background: {_bar_bg};
+    border-top: 1px solid {_bar_border};
+    padding: 10px 12px;
+    z-index: 9999;
+    box-sizing: border-box;
+}}
+#sigma-settings-btn {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: {_bar_text};
+    font-size: 0.87rem;
+    font-family: Inter, sans-serif;
+    transition: background 0.15s;
+    user-select: none;
+}}
+#sigma-settings-btn:hover {{
+    background: {_btn_hover};
+    color: {_active_chat_clr};
+}}
+/* Popup menu */
+#sigma-settings-popup {{
+    display: none;
+    position: fixed;
+    bottom: 62px;
+    left: 12px;
+    width: 220px;
+    background: {_popup_bg};
+    border: 1px solid {_popup_border};
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+    z-index: 99999;
+    overflow: hidden;
+    font-family: Inter, sans-serif;
+}}
+#sigma-settings-popup.open {{ display: block; }}
+.sigma-popup-header {{
+    padding: 10px 14px 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: {_bar_text};
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}}
+.sigma-popup-item {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    font-size: 0.88rem;
+    color: {_popup_text};
+    cursor: pointer;
+    transition: background 0.12s;
+    text-decoration: none;
+}}
+.sigma-popup-item:hover {{
+    background: {_popup_hover};
+    color: {_active_chat_clr};
+}}
+.sigma-popup-check {{
+    color: {_active_dot};
+    font-weight: 700;
+    font-size: 0.95rem;
+}}
+.sigma-popup-divider {{
+    border: none;
+    border-top: 1px solid {_popup_divider};
+    margin: 4px 0;
+}}
+</style>
+
+<!-- Settings Bottom Bar -->
+<div id="sigma-settings-bar">
+    <div id="sigma-settings-btn" onclick="toggleSettingsPopup()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Pengaturan
+    </div>
+</div>
+
+<!-- Popup Menu -->
+<div id="sigma-settings-popup">
+    <div class="sigma-popup-header">Penampilan</div>
+    <a href="?action=theme_system" target="_self" class="sigma-popup-item">
+        Sistem
+        <span class="sigma-popup-check"></span>
+    </a>
+    <a href="?action=theme_dark" target="_self" class="sigma-popup-item">
+        Gelap
+        <span class="sigma-popup-check">{_theme_dark_check}</span>
+    </a>
+    <a href="?action=theme_light" target="_self" class="sigma-popup-item">
+        Terang
+        <span class="sigma-popup-check">{_theme_light_check}</span>
+    </a>
+</div>
+
+<script>
+function toggleSettingsPopup() {{
+    const popup = document.getElementById('sigma-settings-popup');
+    popup.classList.toggle('open');
+}}
+// Tutup popup kalau klik di luar
+document.addEventListener('click', function(e) {{
+    const btn   = document.getElementById('sigma-settings-btn');
+    const popup = document.getElementById('sigma-settings-popup');
+    if (popup && btn && !btn.contains(e.target) && !popup.contains(e.target)) {{
+        popup.classList.remove('open');
+    }}
+}});
+</script>
+""", unsafe_allow_html=True)
 
 
 # ── MAIN ─────────────────────────────────────────────────
