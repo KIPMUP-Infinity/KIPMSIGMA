@@ -267,13 +267,16 @@ for msg in active["messages"][1:]:
 
 
 # ── HIDDEN FILE UPLOADER ──────────────────────────────────
+if "upload_key" not in st.session_state:
+    st.session_state["upload_key"] = 0
+
 uploaded_file = st.file_uploader(
     "upload", type=["pdf", "png", "jpg", "jpeg"],
-    label_visibility="hidden", key="hidden_uploader"
+    label_visibility="hidden",
+    key=f"hidden_uploader_{st.session_state['upload_key']}"
 )
 
-if uploaded_file is not None:
-    # Reset dulu jika file baru diupload
+if uploaded_file is not None and st.session_state.attachment_text is None:
     if uploaded_file.type == "application/pdf":
         pdf_bytes = uploaded_file.read()
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -297,6 +300,8 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
     if st.session_state.attachment_text:
         full_prompt = f"{st.session_state.attachment_text}\n\nPertanyaan: {prompt}"
         st.session_state.attachment_text = None
+        # Reset file uploader agar label PDF hilang setelah dikirim
+        st.session_state["upload_key"] = st.session_state.get("upload_key", 0) + 1
 
     # Auto-set judul sesi dari pesan pertama
     if active["title"] == "Obrolan Baru":
@@ -337,16 +342,14 @@ chat_bar_html = f"""
 <head>
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  html, body {{
-    background: transparent;
-    margin: 0; padding: 0;
-    font-family: Inter, sans-serif;
-  }}
   body {{
+    background: transparent;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    padding: 8px 16px 12px;
+    min-height: 70px;
+    padding: 8px 16px;
+    font-family: Inter, sans-serif;
   }}
   .bar {{
     width: 100%;
@@ -379,8 +382,8 @@ chat_bar_html = f"""
   .btn-attach {{
     background: none; border: none; cursor: pointer;
     color: #666; display: flex; align-items: center;
-    padding: 4px; border-radius: 8px; margin-bottom: 3px;
-    transition: color 0.2s, background 0.2s; flex-shrink: 0;
+    padding: 4px; border-radius: 8px;
+    transition: color 0.2s, background 0.2s; flex-shrink: 0; margin-bottom: 3px;
   }}
   .btn-attach:hover {{ color: #fff; background: #2e2e2e; }}
   textarea {{
@@ -395,7 +398,7 @@ chat_bar_html = f"""
     background: #fff; border: none; border-radius: 8px;
     width: 32px; height: 32px; display: flex;
     align-items: center; justify-content: center;
-    cursor: pointer; flex-shrink: 0; margin-bottom: 2px;
+    cursor: pointer; flex-shrink: 0;
     transition: background 0.2s, opacity 0.2s; opacity: 0.3;
   }}
   .btn-send.active {{ opacity: 1; }}
