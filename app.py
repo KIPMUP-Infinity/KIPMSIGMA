@@ -11,30 +11,6 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
-import streamlit as st
-from groq import Groq
-import yfinance as yf
-import fitz  # PyMuPDF untuk PDF
-import base64
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-import uuid
-from datetime import datetime
-import requests
-from urllib.parse import urlencode
-
-import streamlit as st
-from groq import Groq
-import fitz
-import base64
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-import uuid
-from datetime import datetime
-import requests
-from urllib.parse import urlencode
 
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
@@ -93,8 +69,25 @@ st.markdown(f"""
         border-right: {_sidebar_border} !important;
         box-shadow: {"none" if _is_dark else "2px 0 8px rgba(0,0,0,0.08)"} !important;
     }}
+
+    /* Bunuh spacer/header kosong Streamlit di atas sidebar */
     section[data-testid="stSidebar"] > div:first-child {{
         padding-top: 0 !important;
+        margin-top: 0 !important;
+    }}
+    /* Tombol collapse sidebar — pindah ke pojok kanan atas, tidak dorong konten */
+    section[data-testid="stSidebar"] button[kind="header"],
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
+        position: absolute !important;
+        top: 0.5rem !important;
+        right: 0.5rem !important;
+        z-index: 999 !important;
+        margin: 0 !important;
+        padding: 4px !important;
+    }}
+    /* Sembunyikan div wrapper kosong di atas konten sidebar */
+    section[data-testid="stSidebar"] > div:first-child > div:first-child > div:first-child:empty {{
+        display: none !important;
     }}
 
     /* ── DIVIDERS ── */
@@ -116,7 +109,7 @@ st.markdown(f"""
         flex: 1 !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
-        padding-top: 0.5rem !important;
+        padding-top: 0.75rem !important;
         padding-bottom: 8px !important;
     }}
 
@@ -327,7 +320,7 @@ user = st.session_state.user
 # ── SESSION STATE ─────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila (Market n Mocha).
+    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila.
 
 Kamu menggunakan framework analisa MnM Strategy+ yang terdiri dari 5 modul:
 
@@ -512,6 +505,33 @@ _theme_light_check = "✓" if _cur_theme == "light" else ""
 components.html(f"""
 <script>
 (function() {{
+    function fixSidebarTop() {{
+        var parentDoc = window.parent.document;
+
+        // Pindahkan tombol collapse « ke atas kanan sidebar (bukan di tengah)
+        var collapseBtn = parentDoc.querySelector('section[data-testid="stSidebar"] button[kind="header"]');
+        if (!collapseBtn) {{
+            // Coba selector alternatif untuk tombol «
+            collapseBtn = parentDoc.querySelector('[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"]');
+        }}
+        if (collapseBtn) {{
+            collapseBtn.style.cssText += 'position:absolute!important;top:8px!important;right:8px!important;z-index:999!important;';
+        }}
+
+        // Kurangi padding atas container sidebar
+        var sidebarInner = parentDoc.querySelector('section[data-testid="stSidebar"] > div:first-child > div:first-child');
+        if (sidebarInner) {{
+            sidebarInner.style.paddingTop = '0.5rem';
+        }}
+
+        // Cari block kosong atas (biasanya Streamlit render spacer)
+        var sidebarBlocks = parentDoc.querySelectorAll('section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:first-child');
+        sidebarBlocks.forEach(function(el) {{
+            el.style.marginTop = '0';
+            el.style.paddingTop = '0';
+        }});
+    }}
+
     function injectSettings() {{
         var parentDoc = window.parent.document;
         var sidebar = parentDoc.querySelector('section[data-testid="stSidebar"] > div:first-child');
@@ -605,13 +625,14 @@ components.html(f"""
     }}
 
     // Coba inject segera dan dengan retry
+    fixSidebarTop();
     injectSettings();
-    setTimeout(injectSettings, 500);
-    setTimeout(injectSettings, 1500);
-    setTimeout(injectSettings, 3000);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 300);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 800);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
 
     // Observe kalau sidebar baru render
-    var obs = new MutationObserver(function() {{ injectSettings(); }});
+    var obs = new MutationObserver(function() {{ fixSidebarTop(); injectSettings(); }});
     obs.observe(window.parent.document.body, {{childList:true, subtree:true}});
 }})();
 </script>
