@@ -358,33 +358,61 @@ new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(
     window.parent.document.body, {childList:true, subtree:true}
 );
 
-// Ctrl+V paste gambar ke chat input
+// Ctrl+V paste gambar — inject ke SEMUA file input yang ada
 function setupPaste() {
     const parentDoc = window.parent.document;
-    const chatInput = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
-    if (!chatInput || chatInput._pasteSetup) return;
-    chatInput._pasteSetup = true;
-    chatInput.addEventListener('paste', function(e) {
+
+    // Pasang listener di document level (lebih reliable)
+    if (parentDoc._pasteListenerSet) return;
+    parentDoc._pasteListenerSet = true;
+
+    parentDoc.addEventListener('paste', function(e) {
         const items = e.clipboardData && e.clipboardData.items;
         if (!items) return;
+
         for (let item of items) {
-            if (item.type.startsWith('image/')) {
-                e.preventDefault();
-                const file = item.getAsFile();
-                if (!file) return;
-                // Inject ke file input chat
-                const fileInput = parentDoc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-                if (fileInput) {
+            if (!item.type.startsWith('image/')) continue;
+
+            const file = item.getAsFile();
+            if (!file) continue;
+
+            // Cari semua file input di halaman
+            const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
+            let injected = false;
+
+            for (let fi of fileInputs) {
+                try {
                     const dt = new DataTransfer();
                     dt.items.add(file);
-                    Object.defineProperty(fileInput, 'files', {value: dt.files, configurable: true});
-                    fileInput.dispatchEvent(new Event('change', {bubbles: true}));
-                }
-                return;
+                    // Override files property
+                    Object.defineProperty(fi, 'files', {
+                        value: dt.files,
+                        configurable: true,
+                        writable: true
+                    });
+                    fi.dispatchEvent(new Event('change', {bubbles: true}));
+                    fi.dispatchEvent(new Event('input',  {bubbles: true}));
+                    injected = true;
+                    break;
+                } catch(err) {}
             }
+
+            if (injected) {
+                // Beri feedback visual ke user
+                const textarea = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
+                if (textarea) {
+                    const prev = textarea.placeholder;
+                    textarea.placeholder = '📎 Gambar berhasil di-paste! Ketik pertanyaan lalu Enter...';
+                    setTimeout(() => { textarea.placeholder = prev; }, 3000);
+                }
+            }
+            break; // hanya proses 1 gambar per paste
         }
     });
 }
-setInterval(setupPaste, 1000);
+// Setup segera dan pastikan terpasang
+setupPaste();
+setTimeout(setupPaste, 2000);
+setTimeout(setupPaste, 5000);
 </script>
 """, height=0)
