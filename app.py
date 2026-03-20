@@ -11,17 +11,6 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
-import streamlit as st
-from groq import Groq
-import fitz
-import base64
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-import uuid
-from datetime import datetime
-import requests
-from urllib.parse import urlencode
 
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
@@ -76,17 +65,27 @@ st.markdown(f"""
     /* ── SIDEBAR BUTTONS ── */
     div[data-testid="stSidebar"] button {{
         background: transparent !important;
-        border: none !important;
+        border: 1px solid {_border} !important;
         box-shadow: none !important;
         color: {_btn_color} !important;
         font-size: 0.85rem !important;
-        text-align: left !important;
+        text-align: center !important;
         padding: 5px 8px !important;
         border-radius: 8px !important;
+        transition: all 0.2s ease !important;
     }}
-    div[data-testid="stSidebar"] button:hover {{
+    div[data-testid="stSidebar"] button:hover:not(:disabled) {{
         background: {_btn_hover} !important;
         color: {"#fff" if _is_dark else "#000"} !important;
+        border-color: {"#555" if _is_dark else "#aaa"} !important;
+    }}
+    /* Tombol aktif (disabled = sedang dipilih) */
+    div[data-testid="stSidebar"] button:disabled {{
+        background: {"#0048ff" if _is_dark else "#1a73e8"} !important;
+        color: #fff !important;
+        border-color: {"#0048ff" if _is_dark else "#1a73e8"} !important;
+        opacity: 1 !important;
+        cursor: default !important;
     }}
 
     /* ── CHAT MESSAGES ── */
@@ -370,19 +369,53 @@ with st.sidebar:
 
     st.divider()
 
-    # ── Theme Toggle ──
+    # ── Settings Section ──
     cur_theme = st.session_state.get("theme", "dark")
+    _is_dark_now = cur_theme == "dark"
+    _set_txt  = "#ccc" if _is_dark_now else "#444"
+    _set_bg   = "#1e2d45" if _is_dark_now else "#dce3ef"
+    _set_brd  = "#2a3a5a" if _is_dark_now else "#c5cedc"
+
+    st.markdown(f'<p style="font-size:0.68rem;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:1.2px;margin:6px 0 6px 6px;font-family:Inter,sans-serif;">⚙️ Settings</p>', unsafe_allow_html=True)
+
+    st.markdown(f"""
+        <div style="background:{_set_bg};border:1px solid {_set_brd};border-radius:10px;padding:10px 12px;margin-bottom:4px;">
+            <p style="margin:0 0 8px 0;font-size:0.78rem;color:{_set_txt};font-family:Inter,sans-serif;font-weight:500;">🎨 Tema Tampilan</p>
+            <div style="display:flex;gap:6px;">
+    """, unsafe_allow_html=True)
+
     t_col1, t_col2 = st.columns(2)
     with t_col1:
         dark_active = cur_theme == "dark"
-        if st.button("🌙 Dark", use_container_width=True, disabled=dark_active):
+        btn_dark_style = "background:#0048ff;color:#fff;" if dark_active else ""
+        if st.button(
+            "🌙 Dark",
+            use_container_width=True,
+            disabled=dark_active,
+            key="btn_dark_theme"
+        ):
             st.session_state.theme = "dark"
             st.rerun()
     with t_col2:
         light_active = cur_theme == "light"
-        if st.button("☀️ Light", use_container_width=True, disabled=light_active):
+        if st.button(
+            "☀️ Light",
+            use_container_width=True,
+            disabled=light_active,
+            key="btn_light_theme"
+        ):
             st.session_state.theme = "light"
             st.rerun()
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+    # Active theme indicator
+    active_label = "🌙 Dark Mode aktif" if cur_theme == "dark" else "☀️ Light Mode aktif"
+    active_color = "#4a90d9" if cur_theme == "dark" else "#f5a623"
+    st.markdown(f"""
+        <p style="font-size:0.72rem;color:{active_color};text-align:center;
+            margin:2px 0 8px 0;font-family:Inter,sans-serif;">{active_label}</p>
+    """, unsafe_allow_html=True)
 
     st.divider()
 
@@ -456,7 +489,7 @@ for i, msg in enumerate(active["messages"][1:]):
 # Coba gunakan accept_file (Streamlit >= 1.37)
 try:
     result = st.chat_input(
-        "Tanya SIGMA... “DYOR – bukan financial advice.”,
+        'Tanya SIGMA... DYOR - bukan financial advice.',
         accept_file="multiple",
         file_type=["pdf", "png", "jpg", "jpeg"]
     )
