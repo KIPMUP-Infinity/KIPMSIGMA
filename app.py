@@ -39,12 +39,28 @@ st.markdown("""
         margin: 0 auto !important;
     }
 
+    /* File uploader — compact dan rapi di bawah chat */
     [data-testid="stFileUploader"] {
-        position: absolute !important;
-        width: 1px !important; height: 1px !important;
-        overflow: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
+        margin: 0 auto !important;
+        max-width: 760px !important;
+    }
+    [data-testid="stFileUploader"] section {
+        padding: 8px 12px !important;
+        border-radius: 12px !important;
+        border: 1px dashed #3a3a3a !important;
+        background: #161616 !important;
+        min-height: unset !important;
+    }
+    [data-testid="stFileUploader"] section > div {
+        gap: 6px !important;
+    }
+    [data-testid="stFileUploaderDropzoneInstructions"] {
+        display: none !important;
+    }
+    [data-testid="stFileUploader"] label {
+        font-size: 0.78rem !important;
+        color: #888 !important;
+        margin-bottom: 4px !important;
     }
 
     [data-testid="stTextInput"] {
@@ -276,21 +292,22 @@ if st.session_state.get("do_reset_uploader"):
     st.session_state["upload_key"] += 1
     st.session_state["do_reset_uploader"] = False
 
+# ── Upload widget — dikontrol via CSS ──
 uploaded_file = st.file_uploader(
-    "upload", type=["pdf", "png", "jpg", "jpeg"],
-    label_visibility="hidden",
-    key=f"hidden_uploader_{st.session_state['upload_key']}"
+    "📎 Upload PDF atau Gambar/Chart",
+    type=["pdf", "png", "jpg", "jpeg"],
+    key=f"uploader_{st.session_state['upload_key']}"
 )
 
-if uploaded_file is not None and st.session_state.attachment_text is None:
+if uploaded_file is not None:
     if uploaded_file.type == "application/pdf":
         pdf_bytes = uploaded_file.read()
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
         pdf_text = "".join(page.get_text() for page in doc)
-        st.session_state.attachment_text = f"[PDF: {uploaded_file.name}]\n{pdf_text[:3000]}"
+        st.session_state.attachment_text = f"[PDF: {uploaded_file.name}]\n{pdf_text[:6000]}"
+        st.session_state.pop("image_b64", None)
         st.toast(f"✅ {uploaded_file.name} siap dikirim", icon="📄")
     else:
-        # Simpan gambar sebagai base64 untuk dikirim ke GPT-4o vision
         img_bytes = uploaded_file.read()
         img_b64 = base64.b64encode(img_bytes).decode("utf-8")
         ext = uploaded_file.name.split(".")[-1].lower()
@@ -298,28 +315,11 @@ if uploaded_file is not None and st.session_state.attachment_text is None:
         st.session_state.attachment_text = f"[Gambar: {uploaded_file.name}]"
         st.session_state.image_b64 = img_b64
         st.session_state.image_mime = mime
-        # Preview
-        image = Image.open(io.BytesIO(img_bytes))
-        st.toast("✅ Gambar siap dikirim", icon="🖼️")
+        st.toast("✅ Gambar siap dianalisa", icon="🖼️")
 
 
 # ── BRIDGE INPUT ──────────────────────────────────────────
 bridge_input = st.text_input("bridge", key="js_bridge_widget", label_visibility="hidden")
-img_bridge  = st.text_input("imgbridge", key="js_img_bridge", label_visibility="hidden")
-
-# Proses image bridge (base64 dari paste/upload JS)
-if img_bridge and img_bridge != st.session_state.get("last_img_bridge", ""):
-    st.session_state["last_img_bridge"] = img_bridge
-    try:
-        # Format: "mime|base64data"
-        parts = img_bridge.split("|", 1)
-        if len(parts) == 2:
-            st.session_state.image_mime = parts[0]
-            st.session_state.image_b64  = parts[1]
-            st.session_state.attachment_text = "[Gambar: screenshot]"
-            st.toast("✅ Gambar siap dianalisa", icon="🖼️")
-    except:
-        pass
 
 if bridge_input and bridge_input.strip() and bridge_input != st.session_state.get("last_bridge", ""):
     st.session_state["last_bridge"] = bridge_input
@@ -611,8 +611,15 @@ chat_bar_html = f"""
   }}
 
   function triggerUpload() {{
-    const fileInputs = window.parent.document.querySelectorAll('input[type="file"]');
-    if (fileInputs.length > 0) fileInputs[fileInputs.length - 1].click();
+    // Scroll ke file uploader agar user bisa klik langsung
+    const parentDoc = window.parent.document;
+    const uploader = parentDoc.querySelector('[data-testid="stFileUploader"]');
+    if (uploader) {{
+      uploader.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+      // Klik browse button
+      const btn = uploader.querySelector('button');
+      if (btn) btn.click();
+    }}
   }}
 </script>
 </body>
