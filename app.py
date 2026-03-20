@@ -10,26 +10,45 @@ import io
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
-    initial_sidebar_state="expanded"  # Bisa diganti "collapsed" jika ingin mulai tertutup
+    initial_sidebar_state="expanded"
 )
 
-# 2. CSS — BERSIH, tanpa override paksa pada sidebar
+# 2. CSS — Sembunyikan header TAPI tetap tampilkan tombol toggle sidebar
 st.markdown("""
     <style>
-    /* Sembunyikan header bawaan Streamlit */
-    header {visibility: hidden;}
+    /* Sembunyikan elemen header KECUALI tombol toggle sidebar */
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+        height: 0rem !important;
+        min-height: 0rem !important;
+    }
 
-    /* 
-        KUNCI UTAMA: JANGAN override width sidebar dengan !important.
-        Biarkan Streamlit mengatur toggle sidebar secara native.
-        CSS di bawah hanya mempercantik tampilan, bukan memaksanya.
-    */
+    /* Paksa tombol toggle sidebar tetap muncul dan bisa diklik */
+    button[kind="header"],
+    [data-testid="collapsedControl"],
+    button[data-testid="baseButton-header"] {
+        visibility: visible !important;
+        display: block !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        position: fixed !important;
+        top: 10px !important;
+        left: 10px !important;
+        z-index: 9999 !important;
+        background: rgba(255,255,255,0.1) !important;
+        border-radius: 8px !important;
+    }
 
-    /* Container utama — tengah layar dengan max-width nyaman */
+    /* Container utama */
     [data-testid="stMainBlockContainer"] {
         max-width: 820px !important;
         margin: 0 auto !important;
-        padding-top: 2rem !important;
+        padding-top: 3rem !important;
+    }
+
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] > div {
+        padding-top: 1.5rem;
     }
 
     /* Header judul */
@@ -38,46 +57,31 @@ st.markdown("""
         margin-bottom: 2rem;
     }
 
-    /* Input Chat — padding kiri agar tidak tertimpa ikon clip */
+    /* Input Chat */
     .stChatInputContainer textarea {
         padding-left: 55px !important;
         border-radius: 25px !important;
     }
 
-    /* 
-        Ikon Attach (Popover / Paperclip)
-        Gunakan 'left' berbasis vw agar responsif saat sidebar buka/tutup.
-        Nilai ini perlu kamu fine-tune sesuai resolusi monitor kamu.
-    */
+    /* Ikon Attach */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        left: calc(50% - 360px);  /* Sesuaikan angka ini jika posisi meleset */
+        left: calc(50% - 360px);
         z-index: 1001;
     }
 
-    /* Responsivitas layar kecil / mobile */
     @media (max-width: 850px) {
-        div[data-testid="stPopover"] {
-            left: 48px;
-        }
-        [data-testid="stMainBlockContainer"] {
-            max-width: 95% !important;
-        }
+        div[data-testid="stPopover"] { left: 48px; }
+        [data-testid="stMainBlockContainer"] { max-width: 95% !important; }
     }
 
-    /* Tombol Klip — transparan, menyatu dengan chat bar */
     div[data-testid="stPopover"] > button {
         border: none !important;
         background: transparent !important;
         font-size: 22px !important;
         color: #888 !important;
         cursor: pointer !important;
-    }
-
-    /* Sidebar: hanya styling visual, TIDAK ada width override */
-    section[data-testid="stSidebar"] > div {
-        padding-top: 1.5rem;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -89,7 +93,7 @@ with st.sidebar:
         logo = Image.open("Mate KIPM LOGO.png")
         st.image(logo, use_container_width=True)
     except:
-        st.write("Logo Organisasi")
+        st.markdown("### 🏛️ KIPM-UP")
 
     st.markdown("""
         <div style="text-align: center; line-height: 1.2; margin-top: 10px;">
@@ -101,11 +105,9 @@ with st.sidebar:
     st.divider()
     st.subheader("📜 History Searching")
 
-    # Tampilkan history dari session state
     if "messages" in st.session_state:
         for msg in st.session_state.messages[1:]:
             if msg["role"] == "user":
-                # Potong teks panjang agar rapi di sidebar
                 preview = msg["content"][:50] + "..." if len(msg["content"]) > 50 else msg["content"]
                 st.markdown(f"🔍 {preview}")
 
@@ -119,7 +121,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 
-# 5. INISIALISASI SESSION STATE
+# 5. SESSION STATE
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {
@@ -132,13 +134,12 @@ if "messages" not in st.session_state:
         }
     ]
 
-# Tampilkan riwayat chat (skip index 0 = system prompt)
 for msg in st.session_state.messages[1:]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
 
-# 6. UPLOAD ATTACHMENT
+# 6. ATTACHMENT
 with st.popover("📎"):
     uploaded_file = st.file_uploader(
         "Upload file (PDF / Gambar)",
@@ -146,12 +147,10 @@ with st.popover("📎"):
         label_visibility="collapsed"
     )
 
-    # Proses file yang diupload
     if uploaded_file is not None:
         file_type = uploaded_file.type
 
         if file_type == "application/pdf":
-            # Ekstrak teks dari PDF
             pdf_bytes = uploaded_file.read()
             doc = fitz.open(stream=pdf_bytes, filetype="pdf")
             pdf_text = ""
@@ -163,26 +162,20 @@ with st.popover("📎"):
         elif file_type in ["image/png", "image/jpeg", "image/jpg"]:
             image = Image.open(uploaded_file)
             st.image(image, caption="Gambar diunggah", use_container_width=True)
-            # Simpan sebagai base64 jika ingin dikirim ke model vision
-            buffered = io.BytesIO()
-            image.save(buffered, format="PNG")
-            img_b64 = base64.b64encode(buffered.getvalue()).decode()
-            st.session_state["attachment_text"] = f"[Gambar diunggah — deskripsi manual diperlukan]"
-            st.info("Gambar berhasil dimuat. Tanyakan sesuatu tentang gambar ini.")
+            st.session_state["attachment_text"] = "[Gambar diunggah]"
+            st.info("Gambar berhasil dimuat.")
 
 
-# 7. CHAT INPUT & RESPONSE
+# 7. CHAT
 if prompt := st.chat_input("Tanya SIGMA..."):
-
-    # Gabungkan attachment jika ada
     full_prompt = prompt
     if "attachment_text" in st.session_state:
         full_prompt = f"{st.session_state['attachment_text']}\n\nPertanyaan: {prompt}"
-        del st.session_state["attachment_text"]  # Reset setelah dipakai
+        del st.session_state["attachment_text"]
 
     st.session_state.messages.append({"role": "user", "content": full_prompt})
     with st.chat_message("user"):
-        st.markdown(prompt)  # Tampilkan prompt asli tanpa attachment text
+        st.markdown(prompt)
 
     try:
         client = Groq(api_key=st.secrets["GROQ_API_KEY"])
