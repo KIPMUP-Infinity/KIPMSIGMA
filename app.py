@@ -58,9 +58,11 @@ st.markdown("""
         background: #2a2a2a !important;
         color: #fff !important;
     }
-    /* Sembunyikan label file uploader di sidebar */
-    section[data-testid="stSidebar"] [data-testid="stFileUploader"] label {
-        display: none !important;
+    section[data-testid="stSidebar"] [data-testid="stFileUploader"] label { display: none !important; }
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzoneInstructions"] { display: none !important; }
+    section[data-testid="stSidebar"] [data-testid="stFileUploaderDropzone"] {
+        padding: 4px 8px !important; min-height: unset !important;
+        border-radius: 8px !important; border: 1px solid #333 !important; background: #1a1a1a !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -274,7 +276,33 @@ for i, msg in enumerate(active["messages"][1:]):
 
 
 # ── CHAT INPUT NATIVE ─────────────────────────────────────
-if prompt := st.chat_input("Tanya SIGMA..."):
+# accept_file tersedia di Streamlit >= 1.37
+try:
+    _ci = st.chat_input("Tanya SIGMA...", accept_file="multiple", file_type=["pdf","png","jpg","jpeg"])
+except TypeError:
+    _ci = st.chat_input("Tanya SIGMA...")
+
+# Normalize output
+if _ci is None:
+    prompt = None
+elif hasattr(_ci, 'text'):
+    prompt = _ci.text
+    _files = getattr(_ci, 'files', None) or []
+    if _files:
+        _f = _files[0]; _raw = _f.read()
+        if _f.type == "application/pdf":
+            _doc = fitz.open(stream=_raw, filetype="pdf")
+            _txt = "".join(p.get_text() for p in _doc)
+            st.session_state.attachment = {"type":"pdf","name":_f.name,"text":f"[PDF: {_f.name}]\n{_txt[:6000]}"}
+        else:
+            _b64 = base64.b64encode(_raw).decode()
+            _ext = _f.name.split(".")[-1].lower()
+            _mime = "image/png" if _ext == "png" else "image/jpeg"
+            st.session_state.attachment = {"type":"image","name":_f.name,"b64":_b64,"mime":_mime,"text":f"[Gambar: {_f.name}]"}
+else:
+    prompt = str(_ci)
+
+if prompt:
     att = st.session_state.attachment
     has_image = att is not None and att["type"] == "image"
     has_pdf   = att is not None and att["type"] == "pdf"
