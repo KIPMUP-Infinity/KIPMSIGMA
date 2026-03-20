@@ -403,61 +403,90 @@ new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(
     window.parent.document.body, {childList:true, subtree:true}
 );
 
-// Ctrl+V paste gambar — inject ke SEMUA file input yang ada
-function setupPaste() {
+// Ctrl+V paste gambar — listen di window.parent level
+function handlePasteImage(file) {
     const parentDoc = window.parent.document;
 
-    // Pasang listener di document level (lebih reliable)
-    if (parentDoc._pasteListenerSet) return;
-    parentDoc._pasteListenerSet = true;
+    // Cari file input dari st.chat_input (accept_file)
+    const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
+    let injected = false;
 
-    parentDoc.addEventListener('paste', function(e) {
+    for (let fi of fileInputs) {
+        try {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            Object.defineProperty(fi, 'files', {
+                value: dt.files,
+                configurable: true,
+                writable: true
+            });
+            fi.dispatchEvent(new Event('change', {bubbles: true}));
+            fi.dispatchEvent(new Event('input', {bubbles: true}));
+            injected = true;
+            break;
+        } catch(err) {}
+    }
+
+    if (injected) {
+        // Feedback visual di textarea
+        const ta = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
+        if (ta) {
+            const prev = ta.placeholder;
+            ta.style.border = '2px solid #0048ff';
+            ta.placeholder = '📎 Gambar di-paste! Ketik pertanyaan lalu Enter...';
+            setTimeout(() => {
+                ta.style.border = '';
+                ta.placeholder = prev;
+            }, 3000);
+            ta.focus();
+        }
+    }
+    return injected;
+}
+
+function setupPaste() {
+    const pw = window.parent;
+    if (pw._sigmapasteOK) return;
+
+    // Pasang di WINDOW level (bukan document) — ini yang benar untuk Chrome
+    pw.addEventListener('paste', function(e) {
         const items = e.clipboardData && e.clipboardData.items;
         if (!items) return;
-
         for (let item of items) {
-            if (!item.type.startsWith('image/')) continue;
-
-            const file = item.getAsFile();
-            if (!file) continue;
-
-            // Cari semua file input di halaman
-            const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
-            let injected = false;
-
-            for (let fi of fileInputs) {
-                try {
-                    const dt = new DataTransfer();
-                    dt.items.add(file);
-                    // Override files property
-                    Object.defineProperty(fi, 'files', {
-                        value: dt.files,
-                        configurable: true,
-                        writable: true
-                    });
-                    fi.dispatchEvent(new Event('change', {bubbles: true}));
-                    fi.dispatchEvent(new Event('input',  {bubbles: true}));
-                    injected = true;
-                    break;
-                } catch(err) {}
-            }
-
-            if (injected) {
-                // Beri feedback visual ke user
-                const textarea = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
-                if (textarea) {
-                    const prev = textarea.placeholder;
-                    textarea.placeholder = '📎 Gambar berhasil di-paste! Ketik pertanyaan lalu Enter...';
-                    setTimeout(() => { textarea.placeholder = prev; }, 3000);
+            if (item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handlePasteImage(file);
                 }
+                break;
             }
-            break; // hanya proses 1 gambar per paste
         }
-    });
+    }, true); // useCapture=true agar tidak di-intercept Streamlit
+
+    // Juga pasang di document untuk fallback
+    pw.document.addEventListener('paste', function(e) {
+        const items = e.clipboardData && e.clipboardData.items;
+        if (!items) return;
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    handlePasteImage(file);
+                }
+                break;
+            }
+        }
+    }, true);
+
+    pw._sigmapasteOK = true;
 }
-// Setup segera dan pastikan terpasang
+
+// Setup langsung dan dengan delay
 setupPaste();
-setTimeout(setupPaste, 2000);
-setTimeout(setupPaste, 5000);
+setTimeout(setupPaste, 1500);
+setTimeout(setupPaste, 4000);
 </script>
 """, height=0)
