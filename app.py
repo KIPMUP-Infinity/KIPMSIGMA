@@ -10,6 +10,16 @@ import uuid
 from datetime import datetime
 
 
+import streamlit as st
+from groq import Groq
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -39,28 +49,16 @@ st.markdown("""
         margin: 0 auto !important;
     }
 
-    /* File uploader — compact dan rapi di bawah chat */
+    /* File uploader — tersembunyi tapi tetap bisa diklik via JS */
     [data-testid="stFileUploader"] {
-        margin: 0 auto !important;
-        max-width: 760px !important;
-    }
-    [data-testid="stFileUploader"] section {
-        padding: 8px 12px !important;
-        border-radius: 12px !important;
-        border: 1px dashed #3a3a3a !important;
-        background: #161616 !important;
-        min-height: unset !important;
-    }
-    [data-testid="stFileUploader"] section > div {
-        gap: 6px !important;
-    }
-    [data-testid="stFileUploaderDropzoneInstructions"] {
-        display: none !important;
-    }
-    [data-testid="stFileUploader"] label {
-        font-size: 0.78rem !important;
-        color: #888 !important;
-        margin-bottom: 4px !important;
+        position: fixed !important;
+        bottom: 95px !important;
+        left: -9999px !important;
+        width: 1px !important;
+        height: 1px !important;
+        overflow: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     [data-testid="stTextInput"] {
@@ -315,7 +313,7 @@ if uploaded_file is not None:
         st.session_state.attachment_text = f"[Gambar: {uploaded_file.name}]"
         st.session_state.image_b64 = img_b64
         st.session_state.image_mime = mime
-        st.toast("✅ Gambar siap dianalisa", icon="🖼️")
+        st.toast(f"✅ Gambar siap dianalisa ({len(img_b64)} chars b64)", icon="🖼️")
 
 
 # ── BRIDGE INPUT ──────────────────────────────────────────
@@ -369,7 +367,7 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
                         ]}
                     ]
                     res = groq_client.chat.completions.create(
-                        model="meta-llama/llama-4-maverick-17b-128e-instruct",
+                        model="llama-3.2-90b-vision-preview",
                         messages=vision_messages,
                         max_tokens=2048
                     )
@@ -390,7 +388,9 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
             st.markdown(ans)
 
     except Exception as e:
+        import traceback
         st.error(f"❌ Error: {e}")
+        st.code(traceback.format_exc(), language="text")
 
     st.rerun()
 
