@@ -9,6 +9,17 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
+import streamlit as st
+from groq import Groq
+import yfinance as yf
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -180,7 +191,7 @@ with st.sidebar:
 
     st.markdown("""
         <div style="text-align:center;line-height:1.4;margin-top:8px;font-family:Inter,sans-serif;">
-            <p style="margin:0;font-size:0.78rem;color:#aaa;letter-spacing:0.2px;">Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
+            <p style="margin:0;font-size:0.78rem;color:#aaa;">Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
             <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;">Universitas Pancasila</p>
         </div>
     """, unsafe_allow_html=True)
@@ -272,7 +283,8 @@ uploaded_file = st.file_uploader(
     label_visibility="hidden", key="hidden_uploader"
 )
 
-if uploaded_file is not None and st.session_state.attachment_text is None:
+if uploaded_file is not None:
+    # Reset dulu jika file baru diupload
     if uploaded_file.type == "application/pdf":
         pdf_bytes = uploaded_file.read()
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -336,14 +348,16 @@ chat_bar_html = f"""
 <head>
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{
+  html, body {{
     background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 70px;
-    padding: 8px 16px;
+    margin: 0; padding: 0;
     font-family: Inter, sans-serif;
+  }}
+  body {{
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 8px 16px 12px;
   }}
   .bar {{
     width: 100%;
@@ -372,36 +386,28 @@ chat_bar_html = f"""
     color: #ccc;
     font-size: 0.75rem;
   }}
-  /* Row: align bawah agar tombol send tetap di bawah saat textarea memanjang */
   .row {{ display: flex; align-items: flex-end; gap: 10px; }}
   .btn-attach {{
     background: none; border: none; cursor: pointer;
     color: #666; display: flex; align-items: center;
-    padding: 4px; border-radius: 8px;
+    padding: 4px; border-radius: 8px; margin-bottom: 3px;
     transition: color 0.2s, background 0.2s; flex-shrink: 0;
-    margin-bottom: 4px;
   }}
   .btn-attach:hover {{ color: #fff; background: #2e2e2e; }}
   textarea {{
     flex: 1; background: transparent; border: none;
     outline: none; color: #f0f0f0; font-size: 0.92rem;
-    resize: none;
-    min-height: 24px;
-    max-height: 160px;
-    line-height: 1.6;
-    font-family: inherit;
-    overflow-y: auto;
-    padding: 2px 0;
-    word-break: break-word;
+    resize: none; min-height: 24px; max-height: 150px;
+    line-height: 1.6; font-family: inherit; overflow-y: auto;
+    padding: 2px 0; word-break: break-word;
   }}
   textarea::placeholder {{ color: #555; }}
   .btn-send {{
     background: #fff; border: none; border-radius: 8px;
     width: 32px; height: 32px; display: flex;
     align-items: center; justify-content: center;
-    cursor: pointer; flex-shrink: 0;
+    cursor: pointer; flex-shrink: 0; margin-bottom: 2px;
     transition: background 0.2s, opacity 0.2s; opacity: 0.3;
-    margin-bottom: 1px;
   }}
   .btn-send.active {{ opacity: 1; }}
   .btn-send:hover.active {{ background: #e0e0e0; }}
@@ -430,15 +436,9 @@ chat_bar_html = f"""
   const sendBtn = document.getElementById('sendBtn');
 
   function onInput() {{
-    // Reset dulu biar scrollHeight akurat
     inp.style.height = 'auto';
-    const newH = Math.min(inp.scrollHeight, 160);
-    inp.style.height = newH + 'px';
+    inp.style.height = Math.min(inp.scrollHeight, 150) + 'px';
     sendBtn.classList.toggle('active', inp.value.trim() !== '');
-
-    // Update tinggi iframe agar bar tidak terpotong
-    const barH = document.querySelector('.bar').offsetHeight;
-    window.parent.postMessage({{ type: 'SIGMA_RESIZE', height: barH + 24 }}, '*');
   }}
 
   function onKey(e) {{
@@ -483,28 +483,8 @@ chat_bar_html = f"""
 </html>
 """
 
-components.html(chat_bar_html, height=90, scrolling=False)
+components.html(chat_bar_html, height=200, scrolling=False)
 
-
-# ── JS: Auto-resize iframe chat bar ─────────────────────
-components.html("""
-<script>
-window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'SIGMA_RESIZE') {
-        // Cari iframe chat bar dan update tingginya
-        const iframes = window.document.querySelectorAll('iframe');
-        iframes.forEach(function(iframe) {
-            try {
-                const bar = iframe.contentDocument && iframe.contentDocument.querySelector('.bar');
-                if (bar) {
-                    iframe.style.height = (e.data.height) + 'px';
-                }
-            } catch(err) {}
-        });
-    }
-});
-</script>
-""", height=0)
 
 # ── JS: Fix bubble user ke kanan ─────────────────────────
 components.html("""
