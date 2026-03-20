@@ -12,7 +12,7 @@ st.title("KIPM SIGMA PRO")
 st.sidebar.title("Kontrol Panel")
 
 # 1. Pengaturan Tema & Logo
-st.set_page_config(page_title="KIPM SIGMA PRO", page_icon="📈", layout="wide")
+st.set_page_config(page_title="KIPM SIGMA", page_icon="📈", layout="wide")
 
 # CSS untuk Background Gelap & Styling Chat (Mirip contoh gambar Anda)
 st.markdown("""
@@ -46,7 +46,7 @@ with st.sidebar:
     st.info("Strategic Intelligence & Global Market Analysis")
 
 # 3. Header Utama
-st.title("Market Intelligence Terminal")
+st.title("Hai saya SIGMA siap bantu kamu")
 st.write("Sistem Analisis Saham Terpadu - Universitas Pancasila")
 st.divider()
 
