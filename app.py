@@ -14,49 +14,56 @@ st.markdown("""
     <style>
     header {visibility: hidden;}
     
-    /* Memaksa konten utama ke tengah */
-    .main .block-container {
+    /* Memastikan area utama tetap fleksibel tapi teks rata tengah */
+    .stMainBlockContainer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    /* Membatasi lebar teks header & chat agar tetap di tengah layar */
+    .main-header, .stChatMessage, .stChatInputContainer {
         max-width: 800px;
+        width: 100%;
         margin: 0 auto;
-        padding-top: 5rem;
     }
 
     /* Header teks di tengah */
     .main-header {
         text-align: center;
-        width: 100%;
-        margin-bottom: 40px;
+        margin-top: 2rem;
+        margin-bottom: 2rem;
     }
 
-    /* Menggabungkan Icon Attach ke dalam Search Bar secara presisi */
+    /* Ikon Attach menyatu di dalam Search Bar */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        /* Menghitung posisi agar selalu di dalam bar chat (jarak dari kiri layar) */
+        /* Menyesuaikan posisi berdasarkan lebar input 800px di tengah */
         left: calc(50% - 385px); 
         z-index: 1001;
     }
 
-    /* Penyesuaian untuk layar kecil/HP */
+    /* Penyesuaian Responsif untuk Sidebar & Mobile */
+    @media (max-width: 1200px) {
+        div[data-testid="stPopover"] { left: calc(50% - 340px); }
+    }
+    
     @media (max-width: 850px) {
-        div[data-testid="stPopover"] { left: 30px; }
-        .main .block-container { max-width: 100%; }
+        div[data-testid="stPopover"] { left: 40px; }
+        .main-header, .stChatMessage, .stChatInputContainer { max-width: 95%; }
     }
 
-    /* Styling kotak input agar teks tidak menabrak icon */
     .stChatInputContainer textarea {
         padding-left: 55px !important;
         border-radius: 25px !important;
     }
 
-    /* Membuat tombol popover (klip) transparan agar menyatu */
     div[data-testid="stPopover"] > button {
         border: none !important;
         background: transparent !important;
         font-size: 22px !important;
-        padding: 0 !important;
-        width: 40px !important;
-        height: 40px !important;
     }
     </style>
     """, unsafe_allow_html=True)
