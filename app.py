@@ -8,6 +8,7 @@ import io
 import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
+from openai import OpenAI
 
 st.set_page_config(
     page_title="KIPM SIGMA",
@@ -289,8 +290,16 @@ if uploaded_file is not None and st.session_state.attachment_text is None:
         st.session_state.attachment_text = f"[PDF: {uploaded_file.name}]\n{pdf_text[:3000]}"
         st.toast(f"✅ {uploaded_file.name} siap dikirim", icon="📄")
     else:
-        image = Image.open(uploaded_file)
+        # Simpan gambar sebagai base64 untuk dikirim ke GPT-4o vision
+        img_bytes = uploaded_file.read()
+        img_b64 = base64.b64encode(img_bytes).decode("utf-8")
+        ext = uploaded_file.name.split(".")[-1].lower()
+        mime = "image/png" if ext == "png" else "image/jpeg"
         st.session_state.attachment_text = f"[Gambar: {uploaded_file.name}]"
+        st.session_state.image_b64 = img_b64
+        st.session_state.image_mime = mime
+        # Preview
+        image = Image.open(io.BytesIO(img_bytes))
         st.toast("✅ Gambar siap dikirim", icon="🖼️")
 
 
@@ -306,29 +315,67 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
         full_prompt = f"{st.session_state.attachment_text}\n\nPertanyaan: {prompt}"
         st.session_state.attachment_text = None
         st.session_state["do_reset_uploader"] = True
+        # Jangan pop image_b64 di sini — sudah ditangani di blok API
 
     # Auto-set judul sesi dari pesan pertama
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
+    # Simpan flag gambar sebelum di-reset
+    has_image = bool(st.session_state.get("image_b64"))
+    img_b64   = st.session_state.pop("image_b64", None)
+    img_mime  = st.session_state.pop("image_mime", "image/jpeg")
+
+    # Untuk history: simpan teks saja (base64 tidak disimpan ke history)
     active["messages"].append({"role": "user", "content": full_prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     try:
-        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
         with st.chat_message("assistant"):
             with st.spinner("SIGMA sedang menganalisis..."):
-                res = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=active["messages"],
-                    temperature=0.7,
-                    max_tokens=2048
-                )
-                ans = res.choices[0].message.content
+
+                if has_image and img_b64:
+                    # ── Route ke GPT-4o untuk analisa gambar/chart ──
+                    oai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+                    # Bangun messages dengan image content
+                    vision_messages = [
+                        {"role": "system", "content": (
+                            "Kamu adalah SIGMA, analis saham dan chart ahli dari KIPM Universitas Pancasila. "
+                            "Analisa chart, bandarmologi, dan pola teknikal dengan detail dan profesional. "
+                            "Jawab dalam Bahasa Indonesia."
+                        )},
+                        {"role": "user", "content": [
+                            {"type": "image_url", "image_url": {
+                                "url": f"data:{img_mime};base64,{img_b64}",
+                                "detail": "high"
+                            }},
+                            {"type": "text", "text": prompt}
+                        ]}
+                    ]
+                    res = oai.chat.completions.create(
+                        model="gpt-4o",
+                        messages=vision_messages,
+                        max_tokens=2048
+                    )
+                    ans = res.choices[0].message.content
+
+                else:
+                    # ── Route ke Groq untuk teks/PDF ──
+                    groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                    res = groq_client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=active["messages"],
+                        temperature=0.7,
+                        max_tokens=2048
+                    )
+                    ans = res.choices[0].message.content
+
         active["messages"].append({"role": "assistant", "content": ans})
         with st.chat_message("assistant"):
             st.markdown(ans)
+
     except Exception as e:
         st.error(f"❌ Error: {e}")
 
