@@ -14,7 +14,6 @@ import json
 import os
 import hashlib
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -337,20 +336,48 @@ if "code" in st.query_params and st.session_state.user is None:
     info = handle_oauth_callback()
     if info:
         st.session_state.user = info
-        # Load data tersimpan setelah login
         saved = load_user_data(info["email"])
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
             if saved.get("sessions"):
                 st.session_state.sessions  = saved["sessions"]
                 st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
+        # Buat token unik untuk sesi ini
+        token = str(uuid.uuid4()).replace("-","")
+        token_file = os.path.join(DATA_DIR, f"token_{token}.json")
+        with open(token_file, "w") as f:
+            json.dump(info, f)
+        # Simpan token ke session state — akan dikirim ke localStorage via JS
+        st.session_state.new_token = token
         st.query_params.clear()
         st.rerun()
     else:
         st.error("Login gagal. Coba lagi.")
         st.query_params.clear()
 
-# ── RESTORE SESSION DARI FILE (setiap kali refresh) ────────
+# ── RESTORE DARI TOKEN (query param yang dikirim JS) ───────
+if "sigma_token" in st.query_params and st.session_state.user is None:
+    token = st.query_params.get("sigma_token", "")
+    # Cari file user berdasarkan token
+    token_file = os.path.join(DATA_DIR, f"token_{token}.json")
+    if os.path.exists(token_file):
+        try:
+            with open(token_file) as f:
+                user_info = json.load(f)
+            st.session_state.user = user_info
+            saved = load_user_data(user_info["email"])
+            if saved:
+                st.session_state.theme = saved.get("theme", "dark")
+                if saved.get("sessions"):
+                    st.session_state.sessions  = saved["sessions"]
+                    st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
+            st.session_state.data_loaded = True
+        except: pass
+    st.query_params.clear()
+    if st.session_state.user:
+        st.rerun()
+
+# ── RESTORE SESSION DATA ────────────────────────────────────
 if st.session_state.user is not None and not st.session_state.data_loaded:
     saved = load_user_data(st.session_state.user["email"])
     if saved:
@@ -360,7 +387,22 @@ if st.session_state.user is not None and not st.session_state.data_loaded:
             st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
     st.session_state.data_loaded = True
 
+# ── JIKA BELUM LOGIN: tampilkan restore JS dulu ────────────
 if st.session_state.user is None:
+    # Inject components.html yang baca localStorage dan redirect dengan token
+    components.html("""
+<script>
+(function() {
+    try {
+        var token = localStorage.getItem('sigma_token');
+        if (!token) return;
+        // Redirect ke app dengan token — Streamlit akan restore session
+        var url = window.parent.location.pathname + '?sigma_token=' + token;
+        window.parent.location.replace(url);
+    } catch(e) {}
+})();
+</script>
+""", height=0)
     show_login_page()
 
 user = st.session_state.user
@@ -921,6 +963,17 @@ if st.session_state.user:
         "sessions":  _sessions_to_save,
         "active_id": st.session_state.active_id,
     })
+
+# ── KIRIM TOKEN BARU KE LOCALSTORAGE (sekali setelah login) ──
+_new_token = st.session_state.pop("new_token", None)
+if _new_token:
+    components.html(f"""
+<script>
+try {{
+    localStorage.setItem('sigma_token', '{_new_token}');
+}} catch(e) {{}}
+</script>
+""", height=0)
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
 _bubble_color = "#1B2A4A" if _is_dark else "#1a4fa8"
