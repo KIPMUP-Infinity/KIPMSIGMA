@@ -140,37 +140,43 @@ st.markdown(f"""
     }}
 
     /* ── SIDEBAR BUTTONS — transparan, rata kiri, tanpa kotak ── */
-    div[data-testid="stSidebar"] .stButton > button,
-    div[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {{
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: {_inactive_chat} !important;
-        font-size: 0.85rem !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        padding: 5px 8px !important;
-        border-radius: 8px !important;
-        width: 100% !important;
-        min-height: 0 !important;
-    }}
-    div[data-testid="stSidebar"] .stButton > button:hover {{
-        background: {_btn_hover} !important;
-        color: {_active_chat_clr} !important;
-        border: none !important;
-    }}
-    div[data-testid="stSidebar"] .stButton > button p {{
-        text-align: left !important;
-        color: inherit !important;
-        margin: 0 !important;
-    }}
-    /* Hapus wrapper kotak dari stButton */
+    /* ── SIDEBAR BUTTONS — rata kiri, tanpa kotak ── */
     div[data-testid="stSidebar"] .stButton {{
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
         margin: 1px 0 !important;
         padding: 0 !important;
+    }}
+    div[data-testid="stSidebar"] .stButton > button {{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: {_inactive_chat} !important;
+        font-size: 0.85rem !important;
+        padding: 5px 8px !important;
+        border-radius: 8px !important;
+        width: 100% !important;
+        min-height: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+    }}
+    div[data-testid="stSidebar"] .stButton > button:hover {{
+        background: {_btn_hover} !important;
+        color: {_active_chat_clr} !important;
+    }}
+    /* Target semua elemen di dalam button agar rata kiri */
+    div[data-testid="stSidebar"] .stButton > button *,
+    div[data-testid="stSidebar"] .stButton > button p,
+    div[data-testid="stSidebar"] .stButton > button div,
+    div[data-testid="stSidebar"] .stButton > button span {{
+        text-align: left !important;
+        justify-content: flex-start !important;
+        color: inherit !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto !important;
     }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
