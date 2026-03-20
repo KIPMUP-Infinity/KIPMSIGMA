@@ -11,6 +11,7 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
+
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 # ── DYNAMIC THEME CSS ────────────────────────────────────
@@ -303,35 +304,35 @@ if "ls_loaded" not in st.session_state:
     st.session_state.ls_loaded = False
 
 # ── RESTORE DARI LOCALSTORAGE (via query param) ────────────
-# JS akan kirim data via ?ls_user=...&ls_sessions=...&ls_theme=...
 if not st.session_state.ls_loaded:
-    ls_user    = st.query_params.get("ls_user", "")
+    import json, urllib.parse
+    ls_user     = st.query_params.get("ls_user", "")
     ls_sessions = st.query_params.get("ls_sessions", "")
-    ls_theme   = st.query_params.get("ls_theme", "")
-    ls_active  = st.query_params.get("ls_active", "")
+    ls_theme    = st.query_params.get("ls_theme", "")
+    ls_active   = st.query_params.get("ls_active", "")
 
     if ls_user:
-        import json, urllib.parse
         try:
-            user_data = json.loads(urllib.parse.unquote(ls_user))
-            st.session_state.user = user_data
+            st.session_state.user = json.loads(urllib.parse.unquote(ls_user))
         except: pass
 
     if ls_theme:
         st.session_state.theme = ls_theme
 
     if ls_sessions:
-        import json, urllib.parse
         try:
-            sessions_data = json.loads(urllib.parse.unquote(ls_sessions))
-            if sessions_data:
-                st.session_state.sessions = sessions_data
-                st.session_state.active_id = ls_active if ls_active else sessions_data[0]["id"]
+            sdata = json.loads(urllib.parse.unquote(ls_sessions))
+            if sdata:
+                # Tambahkan system prompt kembali ke setiap sesi
+                for s in sdata:
+                    if not s["messages"] or s["messages"][0].get("role") != "system":
+                        s["messages"].insert(0, {"role":"system","content":""})
+                st.session_state.sessions  = sdata
+                st.session_state.active_id = ls_active if ls_active else sdata[0]["id"]
         except: pass
 
     st.session_state.ls_loaded = True
     if ls_user or ls_sessions:
-        # Bersihkan query params setelah restore
         st.query_params.clear()
         st.rerun()
 
@@ -344,6 +345,32 @@ if "code" in st.query_params and st.session_state.user is None:
     else:
         st.error("Login gagal. Coba lagi.")
         st.query_params.clear()
+
+# ── INJECT JS RESTORE KE MAIN FRAME (bukan iframe) ────────
+# Ini jalan SEBELUM Streamlit render UI, di main document langsung
+if st.session_state.user is None and "code" not in st.query_params:
+    st.markdown("""
+    <script>
+    (function() {
+        try {
+            var u = localStorage.getItem('sigma_user');
+            var s = localStorage.getItem('sigma_sessions');
+            var a = localStorage.getItem('sigma_active');
+            var t = localStorage.getItem('sigma_theme') || 'dark';
+            if (!u) return;
+            var userObj = JSON.parse(u);
+            if (!userObj || !userObj.email) return;
+            // Kirim ke Streamlit via URL query params
+            var params = new URLSearchParams();
+            params.set('ls_user',     u);
+            params.set('ls_sessions', s || '[]');
+            params.set('ls_active',   a || '');
+            params.set('ls_theme',    t);
+            window.location.replace(window.location.pathname + '?' + params.toString());
+        } catch(e) {}
+    })();
+    </script>
+    """, unsafe_allow_html=True)
 
 if st.session_state.user is None:
     show_login_page()
@@ -833,10 +860,10 @@ if prompt:
     st.rerun()
 
 
-# ── LOCALSTORAGE: Simpan & Restore Login + Chat ──────────
+# ── LOCALSTORAGE: Simpan via st.markdown (main frame, bukan iframe) ──────────
 import json as _json
 
-_user_json    = _json.dumps(st.session_state.user or {})
+_user_json     = _json.dumps(st.session_state.user or {})
 _sessions_json = _json.dumps([
     {"id": s["id"], "title": s["title"], "created": s["created"],
      "messages": [m for m in s["messages"] if m["role"] != "system"]}
@@ -845,44 +872,18 @@ _sessions_json = _json.dumps([
 _active_id    = st.session_state.active_id
 _cur_theme_ls = st.session_state.get("theme", "dark")
 
-components.html(f"""
+st.markdown(f"""
 <script>
 (function() {{
-    // ── SAVE ke localStorage setiap render ──
     try {{
         localStorage.setItem('sigma_user',     {_json.dumps(_user_json)});
         localStorage.setItem('sigma_sessions', {_json.dumps(_sessions_json)});
         localStorage.setItem('sigma_active',   {_json.dumps(_active_id)});
         localStorage.setItem('sigma_theme',    {_json.dumps(_cur_theme_ls)});
     }} catch(e) {{}}
-
-    // ── RESTORE: kalau session_state kosong, kirim data via URL ──
-    // Cek apakah halaman baru load (tidak ada ls_loaded di sessionStorage browser)
-    var alreadySent = sessionStorage.getItem('sigma_restored');
-    if (!alreadySent) {{
-        try {{
-            var u = localStorage.getItem('sigma_user');
-            var s = localStorage.getItem('sigma_sessions');
-            var a = localStorage.getItem('sigma_active');
-            var t = localStorage.getItem('sigma_theme');
-            var userObj = u ? JSON.parse(u) : null;
-
-            // Hanya restore kalau ada data user tersimpan
-            if (userObj && userObj.email) {{
-                sessionStorage.setItem('sigma_restored', '1');
-                var params = new URLSearchParams();
-                params.set('ls_user',     u);
-                params.set('ls_sessions', s || '[]');
-                params.set('ls_active',   a || '');
-                params.set('ls_theme',    t || 'dark');
-                // Redirect ke app dengan data restore
-                window.parent.location.href = window.parent.location.pathname + '?' + params.toString();
-            }}
-        }} catch(e) {{}}
-    }}
 }})();
 </script>
-""", height=0)
+""", unsafe_allow_html=True)
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
 _bubble_color = "#1B2A4A" if _is_dark else "#1a4fa8"
