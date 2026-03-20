@@ -12,29 +12,35 @@ st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide")
 # 2. CSS untuk Menyatukan Icon ke Search Bar & Teks ke Tengah
 st.markdown("""
     <style>
-    /* Menghilangkan header default */
     header {visibility: hidden;}
     
-    /* Memposisikan teks header ke tengah layar */
-    .main-header {
-        text-align: center;
-        margin-top: -50px;
-        margin-bottom: 20px;
+    /* Memaksa konten utama ke tengah */
+    .main .block-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding-top: 5rem;
     }
 
-    /* Menggabungkan Icon Attach ke dalam Search Bar */
+    /* Header teks di tengah */
+    .main-header {
+        text-align: center;
+        width: 100%;
+        margin-bottom: 40px;
+    }
+
+    /* Menggabungkan Icon Attach ke dalam Search Bar secara presisi */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        /* Geser ke kanan agar masuk ke dalam kotak input */
-        left: calc(20% + 15px); 
+        /* Menghitung posisi agar selalu di dalam bar chat (jarak dari kiri layar) */
+        left: calc(50% - 385px); 
         z-index: 1001;
     }
 
-    /* Penyesuaian untuk layar HP */
-    @media (max-width: 768px) {
-        div[data-testid="stPopover"] { left: 45px; bottom: 34px; }
-        .stChatInputContainer { padding-left: 40px !important; }
+    /* Penyesuaian untuk layar kecil/HP */
+    @media (max-width: 850px) {
+        div[data-testid="stPopover"] { left: 30px; }
+        .main .block-container { max-width: 100%; }
     }
 
     /* Styling kotak input agar teks tidak menabrak icon */
@@ -43,12 +49,14 @@ st.markdown("""
         border-radius: 25px !important;
     }
 
-    /* Gaya tombol klip agar transparan/minimalis */
+    /* Membuat tombol popover (klip) transparan agar menyatu */
     div[data-testid="stPopover"] > button {
         border: none !important;
         background: transparent !important;
-        color: #888 !important;
-        font-size: 20px !important;
+        font-size: 22px !important;
+        padding: 0 !important;
+        width: 40px !important;
+        height: 40px !important;
     }
     </style>
     """, unsafe_allow_html=True)
