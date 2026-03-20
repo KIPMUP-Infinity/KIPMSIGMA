@@ -70,24 +70,23 @@ st.markdown(f"""
         box-shadow: {"none" if _is_dark else "2px 0 8px rgba(0,0,0,0.08)"} !important;
     }}
 
-    /* Bunuh spacer/header kosong Streamlit di atas sidebar */
-    section[data-testid="stSidebar"] > div:first-child {{
+    /* Reset semua padding/margin atas sidebar */
+    section[data-testid="stSidebar"] > div:first-child,
+    section[data-testid="stSidebar"] > div:first-child > div,
+    section[data-testid="stSidebar"] > div:first-child > div > div {{
         padding-top: 0 !important;
         margin-top: 0 !important;
     }}
-    /* Tombol collapse sidebar — pindah ke pojok kanan atas, tidak dorong konten */
+
+    /* Tombol collapse «  — absolute atas kanan, tidak makan ruang layout */
     section[data-testid="stSidebar"] button[kind="header"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
-        position: absolute !important;
-        top: 0.5rem !important;
-        right: 0.5rem !important;
-        z-index: 999 !important;
+    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+    section[data-testid="stSidebar"] button[aria-label="Collapse sidebar"] {{
+        position: fixed !important;
+        top: 0.4rem !important;
+        left: 210px !important;
+        z-index: 9999 !important;
         margin: 0 !important;
-        padding: 4px !important;
-    }}
-    /* Sembunyikan div wrapper kosong di atas konten sidebar */
-    section[data-testid="stSidebar"] > div:first-child > div:first-child > div:first-child:empty {{
-        display: none !important;
     }}
 
     /* ── DIVIDERS ── */
@@ -96,20 +95,18 @@ st.markdown(f"""
         opacity: 1 !important;
     }}
 
-    /* ── SIDEBAR SCROLL + SETTINGS BOTTOM ── */
+    /* ── SIDEBAR LAYOUT flex ── */
     section[data-testid="stSidebar"] > div:first-child {{
         display: flex !important;
         flex-direction: column !important;
         height: 100vh !important;
         overflow: hidden !important;
-        padding-top: 0 !important;
     }}
-    /* Scrollable area */
     section[data-testid="stSidebar"] > div:first-child > div:first-child {{
         flex: 1 !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
-        padding-top: 0.75rem !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 8px !important;
     }}
 
@@ -427,8 +424,6 @@ if "action" in qp:
 
 # ── SIDEBAR ───────────────────────────────────────────────
 with st.sidebar:
-    # Kurangi padding bawaan Streamlit sidebar lewat CSS inline
-    st.markdown('<style>section[data-testid="stSidebar"] > div:first-child > div:first-child { padding-top: 0.5rem !important; }</style>', unsafe_allow_html=True)
 
     try:
         logo = Image.open("Mate KIPM LOGO.png")
@@ -506,30 +501,38 @@ components.html(f"""
 <script>
 (function() {{
     function fixSidebarTop() {{
-        var parentDoc = window.parent.document;
+        var pd = window.parent.document;
 
-        // Pindahkan tombol collapse « ke atas kanan sidebar (bukan di tengah)
-        var collapseBtn = parentDoc.querySelector('section[data-testid="stSidebar"] button[kind="header"]');
-        if (!collapseBtn) {{
-            // Coba selector alternatif untuk tombol «
-            collapseBtn = parentDoc.querySelector('[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"]');
-        }}
-        if (collapseBtn) {{
-            collapseBtn.style.cssText += 'position:absolute!important;top:8px!important;right:8px!important;z-index:999!important;';
-        }}
-
-        // Kurangi padding atas container sidebar
-        var sidebarInner = parentDoc.querySelector('section[data-testid="stSidebar"] > div:first-child > div:first-child');
-        if (sidebarInner) {{
-            sidebarInner.style.paddingTop = '0.5rem';
-        }}
-
-        // Cari block kosong atas (biasanya Streamlit render spacer)
-        var sidebarBlocks = parentDoc.querySelectorAll('section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div:first-child');
-        sidebarBlocks.forEach(function(el) {{
-            el.style.marginTop = '0';
-            el.style.paddingTop = '0';
+        // Zero-out SEMUA padding & margin atas di dalam sidebar
+        var targets = pd.querySelectorAll([
+            'section[data-testid="stSidebar"] > div',
+            'section[data-testid="stSidebar"] > div > div',
+            'section[data-testid="stSidebar"] > div > div > div',
+            'section[data-testid="stSidebar"] [data-testid="stVerticalBlock"]',
+            'section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div'
+        ].join(','));
+        targets.forEach(function(el) {{
+            var s = window.parent.getComputedStyle(el);
+            // Hanya zero-out kalau ada padding/margin atas yang berarti (>12px)
+            if (parseInt(s.paddingTop) > 12 || parseInt(s.marginTop) > 12) {{
+                el.style.setProperty('padding-top', '0', 'important');
+                el.style.setProperty('margin-top', '0', 'important');
+            }}
         }});
+
+        // Tombol collapse — pastikan tidak dorong konten
+        var btn = pd.querySelector(
+            'section[data-testid="stSidebar"] button[kind="header"], ' +
+            'section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"], ' +
+            'section[data-testid="stSidebar"] button[aria-label="Collapse sidebar"]'
+        );
+        if (btn) {{
+            btn.style.setProperty('position', 'fixed', 'important');
+            btn.style.setProperty('top', '6px', 'important');
+            btn.style.setProperty('left', '210px', 'important');
+            btn.style.setProperty('z-index', '9999', 'important');
+            btn.style.setProperty('margin', '0', 'important');
+        }}
     }}
 
     function injectSettings() {{
