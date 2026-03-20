@@ -7,6 +7,13 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 
+import streamlit as st
+from groq import Groq
+import fitz
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
@@ -57,20 +64,11 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* ── RESET semua background container chat bawaan Streamlit ── */
+    /* Reset background kotak gelap bawaan Streamlit */
     [data-testid="stChatMessage"] {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        padding: 4px 0 !important;
-    }
-
-    /* ── USER MESSAGE: rata kanan, bubble navy ── */
-    [data-testid="stChatMessage"][data-testid="stChatMessage"]:has(
-        [data-testid="stChatMessageAvatarUser"]
-    ) {
-        flex-direction: row-reverse !important;
-        justify-content: flex-start !important;
     }
 
     /* Sembunyikan avatar user */
@@ -78,41 +76,41 @@ st.markdown("""
         display: none !important;
     }
 
-    /* Bubble navy untuk user */
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-    [data-testid="stChatMessageContent"] {
-        display: flex !important;
-        justify-content: flex-end !important;
-        width: 100% !important;
-        background: transparent !important;
-    }
-
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-    [data-testid="stMarkdownContainer"] {
-        background-color: #1B2A4A !important;
-        color: #ffffff !important;
-        border-radius: 18px 18px 4px 18px !important;
-        padding: 10px 16px !important;
-        max-width: 70% !important;
-        font-size: 0.93rem !important;
-        line-height: 1.6 !important;
-        display: inline-block !important;
-    }
-
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-    [data-testid="stMarkdownContainer"] p {
-        color: #ffffff !important;
-        margin: 0 !important;
-    }
-
-    /* ── ASSISTANT: tanpa bubble, rata kiri seperti ChatGPT ── */
+    /* Assistant teks normal */
     [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
     [data-testid="stMarkdownContainer"] {
         font-size: 0.93rem !important;
         line-height: 1.75 !important;
         color: #e8e8e8 !important;
         background: transparent !important;
-        padding: 0 !important;
+    }
+
+    /* Class yang akan di-inject JS untuk user bubble */
+    .user-bubble-row {
+        display: flex !important;
+        justify-content: flex-end !important;
+        background: transparent !important;
+    }
+
+    .user-bubble-row [data-testid="stChatMessageContent"],
+    .user-bubble-row [data-testid="stMarkdownContainer"] {
+        background: transparent !important;
+    }
+
+    .user-bubble-row [data-testid="stMarkdownContainer"] > div {
+        background-color: #1B2A4A !important;
+        color: #ffffff !important;
+        border-radius: 18px 18px 4px 18px !important;
+        padding: 10px 16px !important;
+        max-width: 70% !important;
+        display: inline-block !important;
+        font-size: 0.93rem !important;
+        line-height: 1.6 !important;
+    }
+
+    .user-bubble-row [data-testid="stMarkdownContainer"] p {
+        color: #ffffff !important;
+        margin: 0 !important;
     }
 
     </style>
@@ -456,3 +454,54 @@ chat_bar_html = f"""
 """
 
 components.html(chat_bar_html, height=80, scrolling=False)
+
+
+# ── JS: Fix user bubble ke kanan ─────────────────────────
+components.html("""
+<script>
+function fixBubbles() {
+    const messages = window.parent.document.querySelectorAll('[data-testid="stChatMessage"]');
+    messages.forEach(msg => {
+        const isUser = msg.querySelector('[data-testid="stChatMessageAvatarUser"]');
+        if (isUser) {
+            msg.classList.add('user-bubble-row');
+            msg.style.display = 'flex';
+            msg.style.justifyContent = 'flex-end';
+            msg.style.background = 'transparent';
+
+            // Target konten markdown langsung
+            const mdContainers = msg.querySelectorAll('[data-testid="stMarkdownContainer"]');
+            mdContainers.forEach(md => {
+                md.style.background = 'transparent';
+                // Bungkus isi dalam div navy jika belum
+                if (!md.querySelector('.navy-pill')) {
+                    const inner = document.createElement('div');
+                    inner.className = 'navy-pill';
+                    inner.style.cssText = `
+                        background-color: #1B2A4A;
+                        color: #ffffff;
+                        border-radius: 18px 18px 4px 18px;
+                        padding: 10px 16px;
+                        max-width: 100%;
+                        display: inline-block;
+                        font-size: 0.93rem;
+                        line-height: 1.6;
+                    `;
+                    while (md.firstChild) inner.appendChild(md.firstChild);
+                    md.appendChild(inner);
+                    inner.querySelectorAll('p, span').forEach(el => {
+                        el.style.color = '#ffffff';
+                        el.style.margin = '0';
+                    });
+                }
+            });
+        }
+    });
+}
+
+// Jalankan awal dan setiap kali ada perubahan DOM
+fixBubbles();
+const observer = new MutationObserver(fixBubbles);
+observer.observe(window.parent.document.body, { childList: true, subtree: true });
+</script>
+""", height=0)
