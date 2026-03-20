@@ -8,7 +8,15 @@ import io
 import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
-from openai import OpenAI
+import streamlit as st
+from groq import Groq
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
 
 st.set_page_config(
     page_title="KIPM SIGMA",
@@ -335,35 +343,33 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
         with st.chat_message("assistant"):
             with st.spinner("SIGMA sedang menganalisis..."):
 
-                if has_image and img_b64:
-                    # ── Route ke GPT-4o untuk analisa gambar/chart ──
-                    oai = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+                groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
-                    # Bangun messages dengan image content
+                if has_image and img_b64:
+                    # ── Groq Llama-4 Maverick untuk analisa gambar/chart (vision) ──
                     vision_messages = [
                         {"role": "system", "content": (
                             "Kamu adalah SIGMA, analis saham dan chart ahli dari KIPM Universitas Pancasila. "
-                            "Analisa chart, bandarmologi, dan pola teknikal dengan detail dan profesional. "
-                            "Jawab dalam Bahasa Indonesia."
+                            "Analisa chart, pola teknikal, bandarmologi, volume anomali, dan support/resistance "
+                            "dengan detail dan profesional. Jawab dalam Bahasa Indonesia."
                         )},
                         {"role": "user", "content": [
-                            {"type": "image_url", "image_url": {
-                                "url": f"data:{img_mime};base64,{img_b64}",
-                                "detail": "high"
-                            }},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:{img_mime};base64,{img_b64}"}
+                            },
                             {"type": "text", "text": prompt}
                         ]}
                     ]
-                    res = oai.chat.completions.create(
-                        model="gpt-4o",
+                    res = groq_client.chat.completions.create(
+                        model="meta-llama/llama-4-maverick-17b-128e-instruct",
                         messages=vision_messages,
                         max_tokens=2048
                     )
                     ans = res.choices[0].message.content
 
                 else:
-                    # ── Route ke Groq untuk teks/PDF ──
-                    groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                    # ── Groq Llama-3.3 untuk teks/PDF ──
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=active["messages"],
