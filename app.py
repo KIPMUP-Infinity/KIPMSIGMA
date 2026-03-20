@@ -6,6 +6,7 @@ import base64
 from PIL import Image
 import io
 
+
 # Konfigurasi Halaman
 st.set_page_config(page_title="KIPM SIGMA ", layout="wide")
 
@@ -58,6 +59,82 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     
     st.divider()
+
+# 1. Konfigurasi Halaman & CSS untuk UI "Clean"
+st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide")
+
+st.markdown("""
+    <style>
+    /* Menghilangkan header default streamlit */
+    header {visibility: hidden;}
+    
+    /* Styling Floating Chat Input agar icon dan bar sejajar */
+    .stChatInputContainer {
+        padding-bottom: 30px;
+    }
+    
+    /* Merapikan posisi popover agar terlihat seperti icon attach */
+    div[data-testid="stPopover"] {
+        position: fixed;
+        bottom: 38px;
+        left: 20%;
+        z-index: 1000;
+    }
+    
+    @media (max-width: 768px) {
+        div[data-testid="stPopover"] { left: 5%; bottom: 35px; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 2. Sidebar (Hanya Nama Organisasi & Logo)
+with st.sidebar:
+    try:
+        image = Image.open("logo.jpg")
+        col_l, col_m, col_r = st.columns([1, 1, 1])
+        with col_m:
+            st.image(image, use_container_width=True)
+    except:
+        pass
+
+    st.markdown("""
+        <div style="text-align: center; line-height: 1.2;">
+            <p style="margin: 0; font-size: 0.9em;">Komunitas Investasi Pasar Modal</p>
+            <p style="margin: 0; font-size: 1.1em; font-weight: bold;">Universitas Pancasila</p>
+        </div>
+        <hr>
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 0;">🛡️ KIPM SIGMA</h2>
+            <p style="font-size: 0.8em; color: gray;">Strategic Intelligence & Global Market Analysis</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+# 3. Logika Utama Chat
+if "messages" not in st.session_state:
+    st.session_state.messages = [{"role": "system", "content": "Analis Saham Profesional KIPM UP."}]
+
+# Tampilkan riwayat chat
+for msg in st.session_state.messages[1:]:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+
+# 4. Floating Attachment & Search Bar
+# Tombol popover yang terlihat seperti icon "attach"
+with st.popover("📎"):
+    uploaded_file = st.file_uploader("Upload Chart/PDF", type=["pdf", "png", "jpg", "jpeg"], label_visibility="collapsed")
+    if uploaded_file:
+        st.success(f"File {uploaded_file.name} siap dianalisis!")
+
+# Bar input utama
+if prompt := st.chat_input("Tanya SIGMA..."):
+    # Logika Chat
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    # Respon AI (Contoh simpel)
+    with st.chat_message("assistant"):
+        st.write("Analisis sedang diproses...")
 
 
 
