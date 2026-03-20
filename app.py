@@ -305,7 +305,7 @@ if "ls_loaded" not in st.session_state:
 
 # ── RESTORE DARI LOCALSTORAGE (via query param) ────────────
 if not st.session_state.ls_loaded:
-    import json, urllib.parse
+    import json as _json2, urllib.parse as _up
     ls_user     = st.query_params.get("ls_user", "")
     ls_sessions = st.query_params.get("ls_sessions", "")
     ls_theme    = st.query_params.get("ls_theme", "")
@@ -313,7 +313,7 @@ if not st.session_state.ls_loaded:
 
     if ls_user:
         try:
-            st.session_state.user = json.loads(urllib.parse.unquote(ls_user))
+            st.session_state.user = _json2.loads(_up.unquote(ls_user))
         except: pass
 
     if ls_theme:
@@ -321,11 +321,10 @@ if not st.session_state.ls_loaded:
 
     if ls_sessions:
         try:
-            sdata = json.loads(urllib.parse.unquote(ls_sessions))
+            sdata = _json2.loads(_up.unquote(ls_sessions))
             if sdata:
-                # Tambahkan system prompt kembali ke setiap sesi
                 for s in sdata:
-                    if not s["messages"] or s["messages"][0].get("role") != "system":
+                    if not s.get("messages") or s["messages"][0].get("role") != "system":
                         s["messages"].insert(0, {"role":"system","content":""})
                 st.session_state.sessions  = sdata
                 st.session_state.active_id = ls_active if ls_active else sdata[0]["id"]
@@ -346,38 +345,38 @@ if "code" in st.query_params and st.session_state.user is None:
         st.error("Login gagal. Coba lagi.")
         st.query_params.clear()
 
-# ── INJECT JS RESTORE KE MAIN FRAME (bukan iframe) ────────
-# Ini jalan SEBELUM Streamlit render UI, di main document langsung
-if st.session_state.user is None and "code" not in st.query_params:
-    st.markdown("""
-    <script>
-    (function() {
-        try {
-            var u = localStorage.getItem('sigma_user');
-            var s = localStorage.getItem('sigma_sessions');
-            var a = localStorage.getItem('sigma_active');
-            var t = localStorage.getItem('sigma_theme') || 'dark';
-            if (!u) return;
-            var userObj = JSON.parse(u);
-            if (!userObj || !userObj.email) return;
-            // Kirim ke Streamlit via URL query params
-            var params = new URLSearchParams();
-            params.set('ls_user',     u);
-            params.set('ls_sessions', s || '[]');
-            params.set('ls_active',   a || '');
-            params.set('ls_theme',    t);
-            window.location.replace(window.location.pathname + '?' + params.toString());
-        } catch(e) {}
-    })();
-    </script>
-    """, unsafe_allow_html=True)
+# ── RESTORE via components.html (jalan di iframe, akses window.parent) ────────
+if st.session_state.user is None and "code" not in st.query_params and not st.query_params.get("ls_user"):
+    components.html("""
+<script>
+(function() {
+    try {
+        var u = localStorage.getItem('sigma_user');
+        if (!u) return;
+        var userObj = JSON.parse(u);
+        if (!userObj || !userObj.email) return;
+
+        var s = localStorage.getItem('sigma_sessions') || '[]';
+        var a = localStorage.getItem('sigma_active') || '';
+        var t = localStorage.getItem('sigma_theme') || 'dark';
+
+        var params = new URLSearchParams();
+        params.set('ls_user',     u);
+        params.set('ls_sessions', s);
+        params.set('ls_active',   a);
+        params.set('ls_theme',    t);
+        window.parent.location.replace(
+            window.parent.location.pathname + '?' + params.toString()
+        );
+    } catch(e) {}
+})();
+</script>
+""", height=0)
 
 if st.session_state.user is None:
     show_login_page()
 
 user = st.session_state.user
-
-# ── SESSION STATE ─────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
     "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila.
