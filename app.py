@@ -6,9 +6,6 @@ import base64
 from PIL import Image
 import io
 
-Mohon maaf atas ketidaktelitian saya dalam mengganti simbol dan spasi pada judul tersebut. Saya telah mengembalikan format judul sesuai keinginan Anda, yaitu menggunakan spasi khusus dan simbol sigma matematika ($\sum$).Berikut adalah kode app.py yang sudah diperbaiki sepenuhnya. Kode ini memastikan Sidebar muncul, Judul tepat di tengah dengan format yang Anda minta, dan Ikon klip menyatu di dalam bar pencarian.Pythonimport streamlit as st
-from groq import Groq
-from PIL import Image
 
 # 1. Konfigurasi Halaman (Harus di baris pertama kode)
 st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide", initial_sidebar_state="expanded")
