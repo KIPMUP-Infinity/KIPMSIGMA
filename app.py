@@ -6,29 +6,32 @@ import base64
 from PIL import Image
 import io
 
-# 1. Konfigurasi Halaman (WAJIB PERTAMA)
+Mohon maaf atas ketidaktelitian saya dalam mengganti simbol dan spasi pada judul tersebut. Saya telah mengembalikan format judul sesuai keinginan Anda, yaitu menggunakan spasi khusus dan simbol sigma matematika ($\sum$).Berikut adalah kode app.py yang sudah diperbaiki sepenuhnya. Kode ini memastikan Sidebar muncul, Judul tepat di tengah dengan format yang Anda minta, dan Ikon klip menyatu di dalam bar pencarian.Pythonimport streamlit as st
+from groq import Groq
+from PIL import Image
+
+# 1. Konfigurasi Halaman (Harus di baris pertama kode)
 st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide", initial_sidebar_state="expanded")
 
-# 2. CSS CUSTOM (Presisi Tengah + Sidebar Tetap Ada)
+# 2. CSS CUSTOM: Sidebar Aktif + Judul Tengah + Ikon Terintegrasi
 st.markdown("""
     <style>
     header {visibility: hidden;}
     
-    /* Memastikan area utama tidak menutupi sidebar */
-    .stMain {
-        margin-left: 0px;
+    /* Memastikan Sidebar tetap terlihat */
+    [data-testid="stSidebar"] {
+        min-width: 300px !important;
     }
 
-    /* Mengatur kontainer chat agar tepat di tengah */
+    /* Memposisikan konten utama di tengah */
     [data-testid="stMainBlockContainer"] {
-        max-width: 800px !important;
+        max-width: 850px !important;
         margin-left: auto !important;
         margin-right: auto !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
+        padding-top: 2rem !important;
     }
 
-    /* Header judul di tengah */
+    /* Gaya judul header sesuai permintaan user */
     .main-header {
         text-align: center;
         margin-bottom: 2rem;
@@ -38,27 +41,27 @@ st.markdown("""
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        /* Perhitungan posisi dinamis terhadap lebar layar dan sidebar */
-        left: calc(50% - 375px + 140px); 
+        /* Kalkulasi posisi agar masuk ke kotak input */
+        left: calc(50% - 370px + 150px); 
         z-index: 1001;
     }
 
-    /* Responsif untuk layar kecil/HP */
+    /* Responsivitas untuk layar kecil */
     @media (max-width: 1200px) {
-        div[data-testid="stPopover"] { left: calc(50% - 375px); }
+        div[data-testid="stPopover"] { left: calc(50% - 370px); }
+        [data-testid="stMainBlockContainer"] { margin: 0 auto !important; }
     }
     @media (max-width: 850px) {
         div[data-testid="stPopover"] { left: 45px; }
-        [data-testid="stMainBlockContainer"] { max-width: 95% !important; }
     }
 
-    /* Input Chat Styling */
+    /* Styling Input Bar agar teks tidak tertutup ikon */
     .stChatInputContainer textarea {
         padding-left: 55px !important;
         border-radius: 25px !important;
     }
 
-    /* Tombol Klip Transparan */
+    /* Membuat tombol klip transparan agar terlihat menyatu */
     div[data-testid="stPopover"] > button {
         border: none !important;
         background: transparent !important;
@@ -68,26 +71,24 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SIDEBAR (Identitas Kampus)
+# 3. SIDEBAR (Identitas)
 with st.sidebar:
     try:
         logo = Image.open("Mate KIPM LOGO.png")
         st.image(logo, use_container_width=True)
     except:
-        st.write("📌 **Logo KIPM**")
-    
+        pass
     st.markdown("""
-        <div style="text-align: center; line-height: 1.3;">
-            <p style="margin:0; font-size:0.9em; color:#bdc3c7;">Komunitas Investasi Pasar Modal</p>
-            <p style="font-weight:bold; font-size:1em; color:white;">Universitas Pancasila</p>
+        <div style="text-align: center; line-height: 1.2;">
+            <p style="margin: 0; font-size: 0.8em; color: gray;">Komunitas Investasi Pasar Modal</p>
+            <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
         </div>
         """, unsafe_allow_html=True)
-    st.divider()
 
-# 4. KONTEN UTAMA (Teks Tengah)
+# 4. KONTEN UTAMA (Judul Custom Anda)
 st.markdown("""
     <div class="main-header">
-        <h1 style="margin:0;">🛡️ KIPM SIGMA</h1>
+        <h1 style="margin:0;">    KIPM SIGMA ∑</h1>
         <p style="color:gray;">Strategic Intelligence & Global Market Analysis</p>
     </div>
     """, unsafe_allow_html=True)
@@ -100,7 +101,7 @@ for msg in st.session_state.messages[1:]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# 6. ATTACHMENT & SEARCH BAR
+# 6. ATTACHMENT DI DALAM SEARCH BAR
 with st.popover("📎"):
     uploaded_file = st.file_uploader("Upload", type=["pdf", "png", "jpg"], label_visibility="collapsed")
 
@@ -109,7 +110,6 @@ if prompt := st.chat_input("Tanya SIGMA..."):
     with st.chat_message("user"):
         st.markdown(prompt)
     
-    # AI Response (Groq)
     try:
         client = Groq(api_key=st.secrets["GROQ_API_KEY"])
         res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=st.session_state.messages)
@@ -118,4 +118,4 @@ if prompt := st.chat_input("Tanya SIGMA..."):
         with st.chat_message("assistant"):
             st.markdown(ans)
     except Exception as e:
-        st.error(f"Gagal memanggil AI: {e}")
+        st.error(f"Error: {e}")
