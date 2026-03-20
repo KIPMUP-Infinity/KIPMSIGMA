@@ -8,15 +8,7 @@ import io
 import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
-import streamlit as st
-from groq import Groq
-import fitz  # PyMuPDF untuk PDF
-import base64
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-import uuid
-from datetime import datetime
+
 
 st.set_page_config(
     page_title="KIPM SIGMA",
@@ -474,32 +466,97 @@ chat_bar_html = f"""
                  a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
       </svg>
     </button>
-    <textarea id="inp" placeholder="Tanya SIGMA..." oninput="onInput()" onkeydown="onKey(event)"></textarea>
+    <textarea id="inp" placeholder="Tanya SIGMA... (Ctrl+V untuk paste gambar)"
+      oninput="onInput()" onkeydown="onKey(event)" onpaste="onPaste(event)"></textarea>
     <button class="btn-send" id="sendBtn" onclick="send()">
       <svg viewBox="0 0 24 24"><path d="M2 12L22 2L12 22L10 14L2 12Z"/></svg>
     </button>
+  </div>
+  <!-- Preview gambar paste -->
+  <div id="pastePreview" style="display:none; padding:4px 0; align-items:center; gap:8px;">
+    <img id="pasteThumb" style="height:40px; border-radius:6px; border:1px solid #444;" />
+    <span id="pasteName" style="font-size:0.75rem; color:#aaa;"></span>
+    <button onclick="clearPaste()" style="background:none;border:none;color:#888;cursor:pointer;font-size:1rem;">✕</button>
   </div>
 </div>
 <script>
   const inp = document.getElementById('inp');
   const sendBtn = document.getElementById('sendBtn');
+  let pastedFile = null;
 
   function onInput() {{
     inp.style.height = 'auto';
     inp.style.height = Math.min(inp.scrollHeight, 150) + 'px';
-    sendBtn.classList.toggle('active', inp.value.trim() !== '');
+    updateSendBtn();
+  }}
+
+  function updateSendBtn() {{
+    sendBtn.classList.toggle('active', inp.value.trim() !== '' || pastedFile !== null);
   }}
 
   function onKey(e) {{
     if (e.key === 'Enter' && !e.shiftKey) {{
       e.preventDefault();
-      if (inp.value.trim()) send();
+      if (inp.value.trim() || pastedFile) send();
     }}
+  }}
+
+  // ── Handle Ctrl+V paste gambar ──
+  function onPaste(e) {{
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (let item of items) {{
+      if (item.type.startsWith('image/')) {{
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (!file) return;
+        pastedFile = file;
+        // Tampilkan preview
+        const reader = new FileReader();
+        reader.onload = function(ev) {{
+          document.getElementById('pasteThumb').src = ev.target.result;
+          document.getElementById('pasteName').textContent = 'Screenshot (paste)';
+          document.getElementById('pastePreview').style.display = 'flex';
+        }};
+        reader.readAsDataURL(file);
+        updateSendBtn();
+        return;
+      }}
+    }}
+  }}
+
+  function clearPaste() {{
+    pastedFile = null;
+    document.getElementById('pastePreview').style.display = 'none';
+    document.getElementById('pasteThumb').src = '';
+    updateSendBtn();
   }}
 
   function send() {{
     const text = inp.value.trim();
-    if (!text) return;
+    if (!text && !pastedFile) return;
+
+    const parentDoc = window.parent.document;
+
+    // Jika ada gambar paste, kirim via hidden file input
+    if (pastedFile) {{
+      const dt = new DataTransfer();
+      dt.items.add(pastedFile);
+      const fileInputs = parentDoc.querySelectorAll('input[type="file"]');
+      if (fileInputs.length > 0) {{
+        const fi = fileInputs[fileInputs.length - 1];
+        Object.defineProperty(fi, 'files', {{ value: dt.files, writable: true }});
+        fi.dispatchEvent(new Event('change', {{ bubbles: true }}));
+      }}
+      clearPaste();
+      // Delay sedikit agar Streamlit proses file dulu
+      setTimeout(() => sendText(text || 'Tolong analisa gambar ini'), 600);
+    }} else {{
+      sendText(text);
+    }}
+  }}
+
+  function sendText(text) {{
     const parentDoc = window.parent.document;
     const inputs = parentDoc.querySelectorAll('input[type="text"]');
     let bridgeInput = null;
