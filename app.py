@@ -8,13 +8,6 @@ import io
 import streamlit.components.v1 as components
 
 
-import streamlit as st
-from groq import Groq
-import fitz
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-
 st.set_page_config(
     page_title="KIPM SIGMA PRO",
     layout="wide",
