@@ -15,6 +15,7 @@ import os
 import hashlib
 
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -555,7 +556,7 @@ with st.sidebar:
         <style>
         /* Kurangi jarak atas sidebar */
         [data-testid="stSidebarUserContent"] {{
-            padding-top: 2.8rem !important;
+            padding-top: 1.8rem !important;
         }}
         /* Sembunyikan teks keyboard_double_arrow dari tombol collapse */
         [data-testid="stSidebarCollapseButton"] span,
