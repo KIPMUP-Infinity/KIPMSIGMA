@@ -35,7 +35,7 @@ st.markdown("""
 with st.sidebar:
     # 1. Menampilkan Logo Kecil di Tengah
     try:
-        image = Image.open("Mate KIPM LOGO.Png")
+        image = Image.open("Mate KIPM LOGO.png")
         
         # Membuat 3 kolom untuk menempatkan logo di kolom tengah (ukuran 1/3)
         col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 1, 1])
