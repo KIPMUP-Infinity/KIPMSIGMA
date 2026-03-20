@@ -11,7 +11,6 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
-
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 # ── DYNAMIC THEME CSS ────────────────────────────────────
@@ -67,16 +66,30 @@ st.markdown(f"""
         padding-top: 1rem;
         background-color: {_sidebar_bg} !important;
     }}
-    section[data-testid="stSidebar"] p,
-    section[data-testid="stSidebar"] span,
-    section[data-testid="stSidebar"] div {{
-        color: {_btn_color} !important;
+    /* Hanya override warna default teks sidebar, TIDAK override inline style */
+    section[data-testid="stSidebar"] > div > div > div > p {{
+        color: {_btn_color};
     }}
 
     /* ── DIVIDERS ── */
     [data-testid="stSidebar"] hr {{
         border-color: {_divider_color} !important;
         opacity: 1 !important;
+    }}
+
+    /* ── SIDEBAR SCROLL + SETTINGS BOTTOM ── */
+    section[data-testid="stSidebar"] > div:first-child {{
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+    }}
+    /* Scrollable area */
+    section[data-testid="stSidebar"] > div:first-child > div:first-child {{
+        flex: 1 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-bottom: 8px !important;
     }}
 
     /* ── SIDEBAR BUTTONS ── */
@@ -452,7 +465,7 @@ with st.sidebar:
                 </div>
             """, unsafe_allow_html=True)
 
-# ── SETTINGS BOTTOM BAR (inject via JS ke sidebar) ───────
+# ── SETTINGS BOTTOM BAR — inject ke DOM sidebar via JS ───
 _cur_theme = st.session_state.get("theme", "dark")
 _popup_bg      = "#1e2535" if _is_dark else "#ffffff"
 _popup_border  = "#2a3a5a" if _is_dark else "#d0d8e8"
@@ -463,139 +476,93 @@ _bar_bg        = _sidebar_bg
 _bar_border    = "#2a2a3a" if _is_dark else "#c5cedc"
 _bar_text      = "#aaa"    if _is_dark else "#5a6a82"
 _active_dot    = "#4a90d9" if _is_dark else "#1a4fa8"
+_theme_dark_check  = "✓" if _cur_theme == "dark"  else ""
+_theme_light_check = "✓" if _cur_theme == "light" else ""
 
-_theme_dark_check  = "✓" if _cur_theme == "dark"   else ""
-_theme_light_check = "✓" if _cur_theme == "light"  else ""
+# Tambahkan settings bar langsung di dalam sidebar (bukan fixed CSS)
+with st.sidebar:
+    st.markdown(f"""
+        <div style="
+            position:sticky; bottom:0; left:0; right:0;
+            margin: 0 -1rem -1rem -1rem;
+            padding: 0;
+            background:{_bar_bg};
+            border-top: 1px solid {_bar_border};
+            z-index: 100;
+        ">
+            <!-- Popup (muncul ke atas) -->
+            <div id="sigma-popup" style="
+                display:none;
+                position:absolute;
+                bottom:100%;
+                left:8px;
+                right:8px;
+                background:{_popup_bg};
+                border:1px solid {_popup_border};
+                border-radius:12px;
+                box-shadow:0 -4px 24px rgba(0,0,0,0.25);
+                overflow:hidden;
+                font-family:Inter,sans-serif;
+                margin-bottom:4px;
+            ">
+                <div style="padding:10px 14px 6px;font-size:0.7rem;font-weight:600;
+                    color:{_bar_text};text-transform:uppercase;letter-spacing:1px;">
+                    Penampilan
+                </div>
+                <a href="?action=theme_system" target="_self" class="spitem">
+                    Sistem <span class="spck"></span>
+                </a>
+                <a href="?action=theme_dark" target="_self" class="spitem">
+                    Gelap <span class="spck" style="color:{_active_dot}">{_theme_dark_check}</span>
+                </a>
+                <a href="?action=theme_light" target="_self" class="spitem">
+                    Terang <span class="spck" style="color:{_active_dot}">{_theme_light_check}</span>
+                </a>
+            </div>
 
-st.markdown(f"""
-<style>
-/* Spacer agar konten sidebar tidak tertutup bottom bar */
-section[data-testid="stSidebar"] > div:first-child {{
-    padding-bottom: 70px !important;
-}}
-/* Bottom bar fixed di bawah sidebar */
-#sigma-settings-bar {{
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 244px;
-    background: {_bar_bg};
-    border-top: 1px solid {_bar_border};
-    padding: 10px 12px;
-    z-index: 9999;
-    box-sizing: border-box;
-}}
-#sigma-settings-btn {{
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    color: {_bar_text};
-    font-size: 0.87rem;
-    font-family: Inter, sans-serif;
-    transition: background 0.15s;
-    user-select: none;
-}}
-#sigma-settings-btn:hover {{
-    background: {_btn_hover};
-    color: {_active_chat_clr};
-}}
-/* Popup menu */
-#sigma-settings-popup {{
-    display: none;
-    position: fixed;
-    bottom: 62px;
-    left: 12px;
-    width: 220px;
-    background: {_popup_bg};
-    border: 1px solid {_popup_border};
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.28);
-    z-index: 99999;
-    overflow: hidden;
-    font-family: Inter, sans-serif;
-}}
-#sigma-settings-popup.open {{ display: block; }}
-.sigma-popup-header {{
-    padding: 10px 14px 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: {_bar_text};
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}}
-.sigma-popup-item {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 9px 14px;
-    font-size: 0.88rem;
-    color: {_popup_text};
-    cursor: pointer;
-    transition: background 0.12s;
-    text-decoration: none;
-}}
-.sigma-popup-item:hover {{
-    background: {_popup_hover};
-    color: {_active_chat_clr};
-}}
-.sigma-popup-check {{
-    color: {_active_dot};
-    font-weight: 700;
-    font-size: 0.95rem;
-}}
-.sigma-popup-divider {{
-    border: none;
-    border-top: 1px solid {_popup_divider};
-    margin: 4px 0;
-}}
-</style>
+            <!-- Tombol Pengaturan -->
+            <div id="sigma-settings-btn" onclick="
+                var p=document.getElementById('sigma-popup');
+                p.style.display = p.style.display==='block'?'none':'block';
+            " style="
+                display:flex;align-items:center;gap:8px;
+                padding:10px 14px;cursor:pointer;
+                color:{_bar_text};font-size:0.87rem;font-family:Inter,sans-serif;
+                transition:background 0.15s;border-radius:0;
+            "
+            onmouseover="this.style.background='{_popup_hover}'"
+            onmouseout="this.style.background='transparent'">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+                Pengaturan
+            </div>
+        </div>
 
-<!-- Settings Bottom Bar -->
-<div id="sigma-settings-bar">
-    <div id="sigma-settings-btn" onclick="toggleSettingsPopup()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-        Pengaturan
-    </div>
-</div>
+        <style>
+        .spitem {{
+            display:flex; align-items:center; justify-content:space-between;
+            padding:9px 14px; font-size:0.88rem; color:{_popup_text};
+            text-decoration:none; transition:background 0.12s;
+        }}
+        .spitem:hover {{ background:{_popup_hover}; color:{_active_chat_clr}; }}
+        .spck {{ font-weight:700; font-size:0.95rem; }}
+        </style>
 
-<!-- Popup Menu -->
-<div id="sigma-settings-popup">
-    <div class="sigma-popup-header">Penampilan</div>
-    <a href="?action=theme_system" target="_self" class="sigma-popup-item">
-        Sistem
-        <span class="sigma-popup-check"></span>
-    </a>
-    <a href="?action=theme_dark" target="_self" class="sigma-popup-item">
-        Gelap
-        <span class="sigma-popup-check">{_theme_dark_check}</span>
-    </a>
-    <a href="?action=theme_light" target="_self" class="sigma-popup-item">
-        Terang
-        <span class="sigma-popup-check">{_theme_light_check}</span>
-    </a>
-</div>
-
-<script>
-function toggleSettingsPopup() {{
-    const popup = document.getElementById('sigma-settings-popup');
-    popup.classList.toggle('open');
-}}
-// Tutup popup kalau klik di luar
-document.addEventListener('click', function(e) {{
-    const btn   = document.getElementById('sigma-settings-btn');
-    const popup = document.getElementById('sigma-settings-popup');
-    if (popup && btn && !btn.contains(e.target) && !popup.contains(e.target)) {{
-        popup.classList.remove('open');
-    }}
-}});
-</script>
-""", unsafe_allow_html=True)
+        <script>
+        // Tutup popup kalau klik di luar tombol
+        document.addEventListener('click', function(e) {{
+            var btn = document.getElementById('sigma-settings-btn');
+            var pop = document.getElementById('sigma-popup');
+            if (pop && btn && !btn.contains(e.target) && !pop.contains(e.target)) {{
+                pop.style.display = 'none';
+            }}
+        }});
+        </script>
+    """, unsafe_allow_html=True)
 
 
 # ── MAIN ─────────────────────────────────────────────────
