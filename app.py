@@ -9,6 +9,7 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
+
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -52,6 +53,14 @@ st.markdown("""
     div[data-testid="stSidebar"] button:hover {
         background: #2a2a2a !important;
         color: #fff !important;
+    }
+    /* Hilangkan border merah chat input */
+    [data-testid="stChatInputContainer"] textarea:focus {
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    div[data-testid="stChatInputContainer"] {
+        border-color: #3a3a3a !important;
     }
     </style>
 """, unsafe_allow_html=True)
