@@ -6,45 +6,46 @@ import base64
 from PIL import Image
 import io
 
+# 1. Konfigurasi Halaman - Setel Sidebar agar 'Expanded' secara permanen
+st.set_page_config(
+    page_title="KIPM SIGMA PRO", 
+    layout="wide", 
+    initial_sidebar_state="expanded"
+)
 
-# 1. Konfigurasi Halaman - Memaksa Sidebar Terbuka Sejak Awal
-st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide", initial_sidebar_state="expanded")
-
-# 2. CSS REVOLUTION: Sidebar & Centered Chat Tanpa Konflik
+# 2. CSS Terkoreksi (Sistem Grid agar Sidebar & Konten tidak bertabrakan)
 st.markdown("""
     <style>
     header {visibility: hidden;}
     
-    /* Memperbaiki struktur dasar agar Sidebar dan Konten Utama tidak bertabrakan */
-    .stAppViewMain {
-        display: flex;
-        justify-content: center;
+    /* Memastikan Sidebar tetap ada dan tidak bisa disembunyikan secara paksa oleh margin */
+    section[data-testid="stSidebar"] {
+        width: 300px !important;
     }
 
-    /* Mengatur area konten utama agar tetap ramping di tengah (800px) */
+    /* Mengatur kontainer utama agar tetap di tengah terhadap sisa ruang layar */
     [data-testid="stMainBlockContainer"] {
         max-width: 800px !important;
-        width: 100% !important;
-        padding-top: 2rem !important;
         margin: 0 auto !important;
+        padding-top: 2rem !important;
     }
 
-    /* Gaya judul header (TIDAK DIRUBAH) */
+    /* Gaya judul header (TIDAK DIRUBAH SESUAI PERMINTAAN) */
     .main-header {
         text-align: center;
         margin-bottom: 2rem;
     }
 
-    /* Menyatukan Icon Attach (Clip) ke dalam Search Bar */
-    /* Posisi 'left' disesuaikan agar dinamis mengikuti box chat */
+    /* Menyatukan Icon Attach (Clip) ke dalam Search Bar secara presisi */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        left: calc(50% - 375px + 140px); 
+        /* Perhitungan dinamis agar ikon mengikuti box chat di layar lebar maupun standar */
+        left: calc(50% - 375px + 150px); 
         z-index: 1001;
     }
 
-    /* Responsif untuk layar kecil/HP */
+    /* Responsivitas: Jika sidebar tertutup atau di HP, icon geser ke kiri */
     @media (max-width: 1200px) {
         div[data-testid="stPopover"] { left: calc(50% - 375px); }
     }
@@ -53,13 +54,13 @@ st.markdown("""
         [data-testid="stMainBlockContainer"] { max-width: 95% !important; }
     }
 
-    /* Styling Input Bar */
+    /* Input Chat Styling */
     .stChatInputContainer textarea {
         padding-left: 55px !important;
         border-radius: 25px !important;
     }
 
-    /* Tombol Klip Transparan */
+    /* Tombol Klip Transparan agar menyatu dengan bar */
     div[data-testid="stPopover"] > button {
         border: none !important;
         background: transparent !important;
@@ -69,16 +70,14 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SIDEBAR (Identitas Organisasi)
+# 3. SIDEBAR (Tempat History, Logo, dan Nama Organisasi)
 with st.sidebar:
     try:
-        # Menampilkan logo (1/3 ukuran sidebar secara visual)
+        # Menampilkan logo organisasi Anda
         logo = Image.open("Mate KIPM LOGO.png")
-        col_l, col_m, col_r = st.columns([1, 2, 1])
-        with col_m:
-            st.image(logo, use_container_width=True)
+        st.image(logo, use_container_width=True)
     except:
-        st.write("🛡️")
+        st.write("Logo Organisasi")
 
     st.markdown("""
         <div style="text-align: center; line-height: 1.2; margin-top: 10px;">
@@ -86,9 +85,12 @@ with st.sidebar:
             <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
         </div>
         """, unsafe_allow_html=True)
+    
     st.divider()
+    st.subheader("📜 History Searching")
+    # Tempat riwayat pencarian akan muncul otomatis di sini nanti
 
-# 4. KONTEN UTAMA (Judul Asli Anda)
+# 4. KONTEN UTAMA (Kalimat Asli Anda)
 st.markdown("""
     <div class="main-header">
         <h1 style="margin:0;">   KIPM SIGMA ∑</h1>
@@ -121,4 +123,4 @@ if prompt := st.chat_input("Tanya SIGMA..."):
         with st.chat_message("assistant"):
             st.markdown(ans)
     except Exception as e:
-        st.error(f"Gagal memanggil AI: {e}")
+        st.error(f"Error: {e}")
