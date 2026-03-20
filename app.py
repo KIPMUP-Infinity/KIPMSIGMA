@@ -15,7 +15,6 @@ import os
 import hashlib
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -90,22 +89,29 @@ st.markdown(f"""
         background-color: {_bg} !important;
     }}
 
-    /* ── SIDEBAR — semua layer warna sama rata ── */
+
+    /* ── SIDEBAR BACKGROUND ── */
     section[data-testid="stSidebar"],
-    section[data-testid="stSidebar"] *:not(button[kind="header"]):not([data-testid="stSidebarCollapseButton"]) {{
+    section[data-testid="stSidebar"] > div,
+    section[data-testid="stSidebar"] > div > div,
+    section[data-testid="stSidebar"] > div > div > div,
+    [data-testid="stSidebarContent"],
+    [data-testid="stSidebarUserContent"] {{
         background-color: {_sidebar_bg} !important;
         box-shadow: none !important;
-        border-color: transparent !important;
     }}
     section[data-testid="stSidebar"] {{
         border-right: {"none" if _is_dark else "1px solid #e5e5e5"} !important;
     }}
 
-    /* ── SIDEBAR PADDING/MARGIN ── */
-    section[data-testid="stSidebar"] > div:first-child,
-    section[data-testid="stSidebar"] > div:first-child > div,
-    section[data-testid="stSidebar"] > div:first-child > div > div,
-    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+    /* ── FORCE SEMUA PADDING = 0 ── */
+    section[data-testid="stSidebar"] > div,
+    section[data-testid="stSidebar"] > div > div,
+    section[data-testid="stSidebar"] > div > div > div,
+    [data-testid="stSidebarContent"],
+    [data-testid="stSidebarUserContent"],
+    [data-testid="stSidebarUserContent"] > div,
+    [data-testid="stSidebarUserContent"] > div > div {{
         padding-top: 0 !important;
         margin-top: 0 !important;
     }}
@@ -121,60 +127,49 @@ st.markdown(f"""
         flex: 1 !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
-        padding-top: 0 !important;
         padding-bottom: 8px !important;
     }}
 
-    /* ── TOMBOL COLLAPSE — sembunyikan teks, tampilkan hanya icon ── */
-    section[data-testid="stSidebar"] button[kind="header"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
+    /* ── TOMBOL COLLAPSE ‹‹ ── */
+    [data-testid="stSidebarCollapseButton"],
+    section[data-testid="stSidebar"] button[kind="header"] {{
         position: absolute !important;
-        top: 0.75rem !important;
-        right: 0.75rem !important;
+        top: 8px !important; right: 10px !important;
         z-index: 9999 !important;
-        margin: 0 !important;
         background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        width: 32px !important;
-        height: 32px !important;
-        padding: 0 !important;
-        overflow: hidden !important;
+        border: none !important; box-shadow: none !important;
+        padding: 4px !important;
     }}
-    /* Sembunyikan teks "keyboard_double_arrow_right" */
+    /* Sembunyikan teks keyboard_double_arrow */
+    [data-testid="stSidebarCollapseButton"] span,
     section[data-testid="stSidebar"] button[kind="header"] span,
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] span {{
+    [data-testid="collapsedControl"] span {{
         font-size: 0 !important;
-        visibility: hidden !important;
-    }}
-    section[data-testid="stSidebar"] button[kind="header"]::after,
-    section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"]::after {{
-        content: '‹‹' !important;
-        font-size: 14px !important;
-        visibility: visible !important;
-        color: {_text_muted} !important;
+        line-height: 0 !important;
+        overflow: hidden !important;
+        display: block !important;
+        width: 0 !important;
+        height: 0 !important;
     }}
 
     /* ── TOMBOL OBROLAN BARU ── */
     section[data-testid="stSidebar"] .stButton > button {{
         background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: {_inactive_chat} !important;
-        font-size: 0.9rem !important;
+        border: none !important; box-shadow: none !important;
+        color: {_text} !important;
+        font-size: 0.875rem !important;
         padding: 8px 12px !important;
-        border-radius: 8px !important;
-        width: 100% !important;
-        display: flex !important;
-        align-items: center !important;
+        border-radius: 8px !important; width: 100% !important;
+        display: flex !important; align-items: center !important;
         justify-content: flex-start !important;
-        text-align: left !important;
     }}
     section[data-testid="stSidebar"] .stButton > button:hover {{
         background: {_btn_hover} !important;
     }}
     section[data-testid="stSidebar"] .stButton > button p {{
-        margin: 0 !important;
+        margin: 0 !important; text-align: left !important;
+        color: inherit !important;
+    }}
         text-align: left !important;
         color: inherit !important;
     }}
@@ -551,126 +546,143 @@ _shov  = "#2f2f2f" if _is_dark else "#efefef"
 _sact  = "#343434" if _is_dark else "#e8e8e8"
 _slbl  = "#8e8ea0" if _is_dark else "#6e6e80"
 
+# Load logo sebagai base64
+try:
+    _logo_img = Image.open("Mate KIPM LOGO.png")
+    _buf = io.BytesIO()
+    _logo_img.save(_buf, format="PNG")
+    _logo_b64 = base64.b64encode(_buf.getvalue()).decode()
+    _logo_src = f"data:image/png;base64,{_logo_b64}"
+except:
+    _logo_src = ""
+
 with st.sidebar:
     st.markdown(f"""
         <style>
-        /* Padding dihandle oleh JS fixSidebarTop */
-        [data-testid="stSidebarUserContent"] {{
+        /* Force semua padding = 0 */
+        [data-testid="stSidebarUserContent"],
+        [data-testid="stSidebarUserContent"] > div,
+        [data-testid="stSidebarUserContent"] > div > div {{
             padding-top: 0 !important;
+            margin-top: 0 !important;
         }}
-        /* Sembunyikan teks keyboard_double_arrow dari tombol collapse */
+        /* Sembunyikan teks keyboard icon */
         [data-testid="stSidebarCollapseButton"] span,
+        [data-testid="collapsedControl"] span,
         button[kind="header"] span {{
-            display: none !important;
+            font-size: 0 !important;
+            width: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            display: block !important;
         }}
-        /* Logo & org section */
-        .sb-header {{
+        /* Logo + org block */
+        .sb-top {{
             text-align: center;
-            padding: 0 12px 10px 12px;
+            padding: 8px 12px 10px;
             font-family: Inter, sans-serif;
         }}
-        .sb-org-text {{
-            margin: 4px 0 0 0;
-            font-size: 0.72rem;
+        .sb-top img {{
+            width: 72px; height: 72px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto 6px;
+        }}
+        .sb-top .sb-sub {{
+            font-size: 0.7rem;
             color: {_slbl};
+            margin: 0;
             line-height: 1.4;
         }}
-        .sb-org-name {{
-            margin: 2px 0 0 0;
-            font-size: 0.95rem;
+        .sb-top .sb-name {{
+            font-size: 0.9rem;
             font-weight: 700;
             color: {'#fff' if _is_dark else '#0d0d0d'};
+            margin: 2px 0 0;
         }}
         .sb-divider {{
             border: none;
             border-top: 1px solid {'#2f2f2f' if _is_dark else '#e5e5e5'};
-            margin: 6px 0;
+            margin: 4px 0 6px;
         }}
-        /* ChatGPT-style nav links */
-        .sb-link {{
+        /* Obrolan baru button */
+        section[data-testid="stSidebar"] .stButton > button {{
+            background: transparent !important;
+            border: none !important; box-shadow: none !important;
+            color: {_stext} !important;
+            font-size: 0.875rem !important;
+            padding: 7px 12px !important;
+            border-radius: 8px !important; width: 100% !important;
+            display: flex !important; align-items: center !important;
+            justify-content: flex-start !important;
+        }}
+        section[data-testid="stSidebar"] .stButton > button:hover {{
+            background: {_shov} !important;
+        }}
+        section[data-testid="stSidebar"] .stButton > button p {{
+            margin: 0 !important; text-align: left !important;
+            color: inherit !important;
+        }}
+        /* Label seksi */
+        .sb-lbl {{
+            font-size: 0.7rem; font-weight: 500;
+            color: {_slbl};
+            padding: 8px 12px 3px;
+            display: block; font-family: Inter, sans-serif;
+        }}
+        /* ChatGPT-style chat item */
+        .sb-item {{
+            display: flex; align-items: center;
+            padding: 6px 12px; border-radius: 8px;
+            margin: 1px 4px; cursor: pointer;
+            font-size: 0.875rem; font-family: Inter, sans-serif;
+            color: {_stext}; text-decoration: none;
+            overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+            position: relative;
+        }}
+        .sb-item:hover {{ background: {_shov}; }}
+        .sb-item.active {{ background: {_sact}; }}
+        .sb-item-title {{
+            flex: 1; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }}
+        .sb-item-acts {{
+            display: none; gap: 2px; flex-shrink: 0;
+        }}
+        .sb-item:hover .sb-item-acts,
+        .sb-item.active .sb-item-acts {{
             display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 12px;
-            border-radius: 8px;
-            margin: 1px 4px;
-            color: {_stext};
-            text-decoration: none;
-            font-size: 0.875rem;
-            font-family: Inter, sans-serif;
-            cursor: pointer;
-            background: transparent;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }}
-        .sb-link:hover {{ background: {_shov}; }}
-        .sb-link.active {{ background: {_sact}; }}
-        .sb-sec-label {{
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: {_slbl};
-            padding: 10px 12px 2px;
-            font-family: Inter, sans-serif;
-            display: block;
+        .sb-btn {{
+            font-size: 0.72rem; padding: 2px 5px;
+            border-radius: 4px; cursor: pointer;
+            color: {_slbl}; background: transparent;
+            border: none;
         }}
-        .sb-actions {{
-            display: none;
-            gap: 2px;
-            margin-left: auto;
-            flex-shrink: 0;
-        }}
-        .sb-link:hover .sb-actions,
-        .sb-link.active .sb-actions {{ display: flex; }}
-        .sb-act {{
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            color: {_slbl};
-            cursor: pointer;
-        }}
-        .sb-act:hover {{ color: {'#fff' if _is_dark else '#000'}; }}
-        .sb-del:hover {{ color: #f55 !important; }}
+        .sb-btn:hover {{ color: {'#fff' if _is_dark else '#000'}; }}
+        .sb-btn-del:hover {{ color: #f55 !important; }}
         </style>
-    """, unsafe_allow_html=True)
 
-    # Logo + nama organisasi — pure HTML, satu logo, rapat ke atas
-    try:
-        _logo_img = Image.open("Mate KIPM LOGO.png")
-        _buf = io.BytesIO()
-        _logo_img.save(_buf, format="PNG")
-        _logo_b64 = base64.b64encode(_buf.getvalue()).decode()
-        _logo_src = f"data:image/png;base64,{_logo_b64}"
-    except:
-        _logo_src = ""
-
-    st.markdown(f"""
-        <div style="text-align:center;padding:12px 12px 8px 12px;font-family:Inter,sans-serif;">
-            {"" if not _logo_src else f'<img src="{_logo_src}" style="width:90px;height:90px;object-fit:contain;display:block;margin:0 auto 6px auto;">'}
-            <p style="margin:0;font-size:0.72rem;color:{_slbl};line-height:1.4;">
-                Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal
-            </p>
-            <p style="margin:2px 0 0 0;font-size:0.95rem;font-weight:700;color:{'#fff' if _is_dark else '#0d0d0d'};">
-                Universitas Pancasila
-            </p>
+        <div class="sb-top">
+            {"" if not _logo_src else f'<img src="{_logo_src}">'}
+            <p class="sb-sub">Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
+            <p class="sb-name">Universitas Pancasila</p>
         </div>
         <hr class="sb-divider">
     """, unsafe_allow_html=True)
 
-    # Obrolan baru
     if st.button("✏️  Obrolan baru", key="btn_new_chat", use_container_width=True):
         ns = new_session()
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
         st.rerun()
 
-    # List obrolan
-    st.markdown('<span class="sb-sec-label">Obrolan Anda</span>', unsafe_allow_html=True)
+    st.markdown('<span class="sb-lbl">Obrolan Anda</span>', unsafe_allow_html=True)
 
     for sesi in st.session_state.sessions:
         sid = sesi["id"]
         is_active = sid == st.session_state.active_id
-        title_d = sesi["title"][:30] + "..." if len(sesi["title"]) > 30 else sesi["title"]
+        title_d = sesi["title"][:32] + "..." if len(sesi["title"]) > 32 else sesi["title"]
 
         if st.session_state.rename_id == sid:
             new_t = st.text_input("Rename", value=sesi["title"], key=f"ren_{sid}", label_visibility="collapsed")
@@ -683,16 +695,16 @@ with st.sidebar:
                 if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
-            active_cls = "active" if is_active else ""
-            acts = f"""<span class="sb-actions">
-                <a class="sb-act" onclick="event.preventDefault();window.location.href='?sb_ren={sid}'">✏️</a>
-                <a class="sb-act sb-del" onclick="event.preventDefault();window.location.href='?sb_del={sid}'">🗑</a>
+            cls = "sb-item active" if is_active else "sb-item"
+            acts = f"""<span class="sb-item-acts">
+                <button class="sb-btn" onclick="event.stopPropagation();window.location.href='?sb_ren={sid}'">✏️</button>
+                <button class="sb-btn sb-btn-del" onclick="event.stopPropagation();window.location.href='?sb_del={sid}'">🗑</button>
             </span>"""
             st.markdown(f"""
-                <a class="sb-link {active_cls}"
-                   onclick="event.preventDefault();window.location.href='?sb_sel={sid}'">
-                   💬 {title_d}{acts}
-                </a>
+                <div class="{cls}" onclick="window.location.href='?sb_sel={sid}'">
+                    <span class="sb-item-title">{title_d}</span>
+                    {acts}
+                </div>
             """, unsafe_allow_html=True)
 
 # Handle sidebar HTML nav actions
