@@ -14,13 +14,13 @@ st.sidebar.title("Kontrol Panel")
 # 1. Tampilan UI Modern
 st.set_page_config(page_title="KIPM SIGMA PRO", page_icon="📈", layout="wide")
 
-# Custom CSS untuk mempercantik chat bubble
+# CARA YANG BENAR:
 st.markdown("""
     <style>
     .stChatMessage { background-color: #f0f2f6; border-radius: 15px; padding: 10px; margin-bottom: 10px; }
     .stButton>button { width: 100%; border-radius: 20px; background-color: #FF4B4B; color: white; }
     </style>
-    """, unsafe_content_type=True)
+    """, unsafe_allow_html=True) # <-- Perhatikan perubahan di sini
 
 # 2. Sidebar Branding
 with st.sidebar:
