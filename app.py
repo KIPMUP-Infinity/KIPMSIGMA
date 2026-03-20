@@ -9,7 +9,6 @@ import streamlit.components.v1 as components
 import uuid
 from datetime import datetime
 
-
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -20,22 +19,6 @@ st.markdown("""
     }
     footer { visibility: hidden; }
     #MainMenu { visibility: hidden; }
-
-    /* Hilangkan border merah bawaan Streamlit pada chat input */
-    [data-testid="stChatInput"] {
-        border-color: #3a3a3a !important;
-    }
-    [data-testid="stChatInput"]:focus-within {
-        border-color: #555 !important;
-        box-shadow: none !important;
-    }
-    [data-testid="stChatInputContainer"] {
-        border-color: #3a3a3a !important;
-    }
-    [data-testid="stChatInputContainer"]:focus-within {
-        border-color: #555 !important;
-        box-shadow: 0 0 0 1px #555 !important;
-    }
     section[data-testid="stSidebar"] > div:first-child { padding-top: 1rem; }
     .main-header { text-align: center; margin-bottom: 2rem; }
     [data-testid="stMainBlockContainer"] {
