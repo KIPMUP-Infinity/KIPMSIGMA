@@ -616,6 +616,57 @@ components.html(f"""
             'font-family:Inter,sans-serif'
         ].join(';');
 
+        // ── Define sigmaSetTheme di window.parent DULU sebelum inject HTML ──
+        window.parent.sigmaSetTheme = function(mode) {{
+            var pd = window.parent.document;
+            var isDark = mode === 'dark';
+
+            var styleId = 'sigma-live-theme';
+            var el = pd.getElementById(styleId);
+            if (!el) {{ el = pd.createElement('style'); el.id = styleId; pd.head.appendChild(el); }}
+
+            el.textContent = `
+                .stApp, [data-testid="stAppViewContainer"] {{
+                    background-color: ${{isDark ? '#0e1117' : '#f4f6fb'}} !important;
+                }}
+                section[data-testid="stSidebar"],
+                section[data-testid="stSidebar"] > div,
+                section[data-testid="stSidebar"] > div > div,
+                section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+                section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+                    background-color: ${{isDark ? '#1a1a2e' : '#dce3ef'}} !important;
+                }}
+                #sigma-settings-wrap {{
+                    background: ${{isDark ? '#1a1a2e' : '#dce3ef'}} !important;
+                    border-top-color: ${{isDark ? '#2a2a3a' : '#c5cedc'}} !important;
+                }}
+                #sp-btn {{ color: ${{isDark ? '#aaa' : '#5a6a82'}} !important; }}
+                div[data-testid="stChatInputContainer"],
+                [data-testid="stChatInput"] textarea {{
+                    background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
+                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
+                    border-color: ${{isDark ? '#3a3a3a' : '#b8c4d8'}} !important;
+                }}
+                [data-testid="stMarkdownContainer"] p,
+                [data-testid="stMarkdownContainer"] li,
+                [data-testid="stMarkdownContainer"] h1,
+                [data-testid="stMarkdownContainer"] h2,
+                [data-testid="stMarkdownContainer"] h3 {{
+                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
+                }}
+            `;
+
+            var ckDark  = pd.getElementById('sp-ck-dark');
+            var ckLight = pd.getElementById('sp-ck-light');
+            if (ckDark)  ckDark.textContent  = isDark  ? '✓' : '';
+            if (ckLight) ckLight.textContent = !isDark ? '✓' : '';
+
+            var pop = pd.getElementById('sp-popup');
+            if (pop) pop.style.display = 'none';
+
+            try {{ localStorage.setItem('sigma_theme', mode); }} catch(e) {{}}
+        }};
+
         wrap.innerHTML = `
             <div id="sp-popup" style="
                 display:none;position:absolute;bottom:100%;left:8px;right:8px;
@@ -627,14 +678,14 @@ components.html(f"""
                     color:{_bar_text};text-transform:uppercase;letter-spacing:1.2px;">
                     Penampilan
                 </div>
-                <div class="sp-item" onclick="sigmaSetTheme('dark')">
+                <div class="sp-item" onclick="sigmaSetTheme('dark')" style="cursor:pointer;">
                     <span>Gelap</span><span id="sp-ck-dark" class="sp-ck" style="color:{_active_dot};font-weight:700;">{_theme_dark_check}</span>
                 </div>
-                <div class="sp-item" onclick="sigmaSetTheme('light')">
+                <div class="sp-item" onclick="sigmaSetTheme('light')" style="cursor:pointer;">
                     <span>Terang</span><span id="sp-ck-light" class="sp-ck" style="color:{_active_dot};font-weight:700;">{_theme_light_check}</span>
                 </div>
                 <div style="border-top:1px solid {_popup_border};margin:4px 0;"></div>
-                <a href="?action=logout" target="_self" class="sp-item" style="color:#e55;">
+                <a href="?action=logout" target="_self" class="sp-item" style="color:#e55;cursor:pointer;">
                     <span>🚪 Keluar</span>
                 </a>
             </div>
@@ -687,93 +738,11 @@ components.html(f"""
         }});
     }}
 
-    // ── INSTANT THEME SWITCH — tidak ada reload sama sekali ──
-    var THEMES = {{
-        dark: {{
-            '--bg':         '#0e1117',
-            '--sidebar':    '#1a1a2e',
-            '--text':       '#e8e8e8',
-            '--input-bg':   '#1e1e1e',
-            '--border':     '#3a3a3a',
-            '--btn-hover':  '#2a2a2a',
-        }},
-        light: {{
-            '--bg':         '#f4f6fb',
-            '--sidebar':    '#dce3ef',
-            '--text':       '#1a1a1a',
-            '--input-bg':   '#ffffff',
-            '--border':     '#b8c4d8',
-            '--btn-hover':  '#c5cfe0',
-        }}
-    }};
-
-    window.sigmaSetTheme = function(mode) {{
-        var pd = window.parent.document;
-        var t  = THEMES[mode] || THEMES.dark;
-        var isDark = mode === 'dark';
-
-        // 1. Swap background utama
-        var styleId = 'sigma-live-theme';
-        var el = pd.getElementById(styleId);
-        if (!el) {{ el = pd.createElement('style'); el.id = styleId; pd.head.appendChild(el); }}
-
-        el.textContent = `
-            .stApp, [data-testid="stAppViewContainer"] {{
-                background-color: ${{isDark ? '#0e1117' : '#f4f6fb'}} !important;
-            }}
-            section[data-testid="stSidebar"],
-            section[data-testid="stSidebar"] > div,
-            section[data-testid="stSidebar"] > div > div,
-            section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-            section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
-                background-color: ${{isDark ? '#1a1a2e' : '#dce3ef'}} !important;
-            }}
-            #sigma-settings-wrap {{
-                background: ${{isDark ? '#1a1a2e' : '#dce3ef'}} !important;
-                border-top-color: ${{isDark ? '#2a2a3a' : '#c5cedc'}} !important;
-            }}
-            #sp-btn {{ color: ${{isDark ? '#aaa' : '#5a6a82'}} !important; }}
-            div[data-testid="stChatInputContainer"],
-            [data-testid="stChatInput"] textarea {{
-                background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
-                color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
-                border-color: ${{isDark ? '#3a3a3a' : '#b8c4d8'}} !important;
-            }}
-            [data-testid="stMainBlockContainer"] p,
-            [data-testid="stMainBlockContainer"] li,
-            [data-testid="stMarkdownContainer"] {{
-                color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
-            }}
-        `;
-
-        // 2. Update centang aktif di popup
-        var ckDark  = pd.getElementById('sp-ck-dark');
-        var ckLight = pd.getElementById('sp-ck-light');
-        if (ckDark)  ckDark.textContent  = isDark  ? '✓' : '';
-        if (ckLight) ckLight.textContent = !isDark ? '✓' : '';
-
-        // 3. Tutup popup
-        var pop = pd.getElementById('sp-popup');
-        if (pop) pop.style.display = 'none';
-
-        // 4. Simpan pilihan ke localStorage
-        try {{ localStorage.setItem('sigma_theme', mode); }} catch(e) {{}}
-
-        // 5. Kirim ke Streamlit via query param (background, tidak reload UI)
-        try {{
-            var url = new URL(window.parent.location.href);
-            url.searchParams.set('action', 'theme_' + mode);
-            history.pushState({{}},'', url.toString());
-            // Fetch ke Streamlit untuk update session_state tanpa reload
-            fetch(url.toString());
-        }} catch(e) {{}}
-    }};
-
     // Apply theme dari localStorage saat load
     try {{
         var saved = localStorage.getItem('sigma_theme');
         if (saved) {{
-            setTimeout(function() {{ window.sigmaSetTheme(saved); }}, 500);
+            setTimeout(function() {{ window.parent.sigmaSetTheme(saved); }}, 600);
         }}
     }} catch(e) {{}}
 
