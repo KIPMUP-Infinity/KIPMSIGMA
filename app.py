@@ -11,8 +11,6 @@ from datetime import datetime
 import requests
 from urllib.parse import urlencode
 
-
-
 st.set_page_config(page_title="KIPM SIGMA", layout="wide", initial_sidebar_state="expanded")
 
 # ── DYNAMIC THEME CSS ────────────────────────────────────
@@ -300,7 +298,42 @@ def handle_oauth_callback():
 if "user" not in st.session_state:
     st.session_state.user = None
 if "theme" not in st.session_state:
-    st.session_state.theme = "dark"  # default dark
+    st.session_state.theme = "dark"
+if "ls_loaded" not in st.session_state:
+    st.session_state.ls_loaded = False
+
+# ── RESTORE DARI LOCALSTORAGE (via query param) ────────────
+# JS akan kirim data via ?ls_user=...&ls_sessions=...&ls_theme=...
+if not st.session_state.ls_loaded:
+    ls_user    = st.query_params.get("ls_user", "")
+    ls_sessions = st.query_params.get("ls_sessions", "")
+    ls_theme   = st.query_params.get("ls_theme", "")
+    ls_active  = st.query_params.get("ls_active", "")
+
+    if ls_user:
+        import json, urllib.parse
+        try:
+            user_data = json.loads(urllib.parse.unquote(ls_user))
+            st.session_state.user = user_data
+        except: pass
+
+    if ls_theme:
+        st.session_state.theme = ls_theme
+
+    if ls_sessions:
+        import json, urllib.parse
+        try:
+            sessions_data = json.loads(urllib.parse.unquote(ls_sessions))
+            if sessions_data:
+                st.session_state.sessions = sessions_data
+                st.session_state.active_id = ls_active if ls_active else sessions_data[0]["id"]
+        except: pass
+
+    st.session_state.ls_loaded = True
+    if ls_user or ls_sessions:
+        # Bersihkan query params setelah restore
+        st.query_params.clear()
+        st.rerun()
 
 if "code" in st.query_params and st.session_state.user is None:
     info = handle_oauth_callback()
@@ -381,13 +414,13 @@ def new_session():
     return {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru",
             "messages": [SYSTEM_PROMPT], "created": datetime.now().strftime("%H:%M")}
 
-if "sessions"   not in st.session_state:
+if "sessions" not in st.session_state:
     s = new_session()
     st.session_state.sessions  = [s]
     st.session_state.active_id = s["id"]
 if "rename_id"  not in st.session_state: st.session_state.rename_id  = None
-if "img_data"   not in st.session_state: st.session_state.img_data   = None  # (b64, mime, name)
-if "pdf_data"   not in st.session_state: st.session_state.pdf_data   = None  # (text, name)
+if "img_data"   not in st.session_state: st.session_state.img_data   = None
+if "pdf_data"   not in st.session_state: st.session_state.pdf_data   = None
 
 def get_active():
     for s in st.session_state.sessions:
@@ -422,7 +455,12 @@ if "action" in qp:
     elif a == "theme_light":
         st.session_state.theme = "light"; st.query_params.clear(); st.rerun()
     elif a == "theme_system":
-        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()  # fallback ke dark
+        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()
+    elif a == "logout":
+        st.session_state.user = None
+        st.session_state.sessions = []
+        st.session_state.ls_loaded = False
+        st.query_params.clear(); st.rerun()
 
 
 # ── SIDEBAR ───────────────────────────────────────────────
@@ -577,6 +615,10 @@ components.html(f"""
                 </a>
                 <a href="?action=theme_light" target="_self" class="sp-item">
                     <span>Terang</span><span class="sp-ck" style="color:{_active_dot};font-weight:700;">{_theme_light_check}</span>
+                </a>
+                <div style="border-top:1px solid {_popup_border};margin:4px 0;"></div>
+                <a href="#" onclick="localStorage.removeItem('sigma_user');localStorage.removeItem('sigma_sessions');localStorage.removeItem('sigma_active');sessionStorage.removeItem('sigma_restored');window.parent.location.href='?action=logout';" class="sp-item" style="color:#e55;">
+                    <span>🚪 Keluar</span>
                 </a>
             </div>
 
@@ -790,6 +832,57 @@ if prompt:
 
     st.rerun()
 
+
+# ── LOCALSTORAGE: Simpan & Restore Login + Chat ──────────
+import json as _json
+
+_user_json    = _json.dumps(st.session_state.user or {})
+_sessions_json = _json.dumps([
+    {"id": s["id"], "title": s["title"], "created": s["created"],
+     "messages": [m for m in s["messages"] if m["role"] != "system"]}
+    for s in st.session_state.sessions
+])
+_active_id    = st.session_state.active_id
+_cur_theme_ls = st.session_state.get("theme", "dark")
+
+components.html(f"""
+<script>
+(function() {{
+    // ── SAVE ke localStorage setiap render ──
+    try {{
+        localStorage.setItem('sigma_user',     {_json.dumps(_user_json)});
+        localStorage.setItem('sigma_sessions', {_json.dumps(_sessions_json)});
+        localStorage.setItem('sigma_active',   {_json.dumps(_active_id)});
+        localStorage.setItem('sigma_theme',    {_json.dumps(_cur_theme_ls)});
+    }} catch(e) {{}}
+
+    // ── RESTORE: kalau session_state kosong, kirim data via URL ──
+    // Cek apakah halaman baru load (tidak ada ls_loaded di sessionStorage browser)
+    var alreadySent = sessionStorage.getItem('sigma_restored');
+    if (!alreadySent) {{
+        try {{
+            var u = localStorage.getItem('sigma_user');
+            var s = localStorage.getItem('sigma_sessions');
+            var a = localStorage.getItem('sigma_active');
+            var t = localStorage.getItem('sigma_theme');
+            var userObj = u ? JSON.parse(u) : null;
+
+            // Hanya restore kalau ada data user tersimpan
+            if (userObj && userObj.email) {{
+                sessionStorage.setItem('sigma_restored', '1');
+                var params = new URLSearchParams();
+                params.set('ls_user',     u);
+                params.set('ls_sessions', s || '[]');
+                params.set('ls_active',   a || '');
+                params.set('ls_theme',    t || 'dark');
+                // Redirect ke app dengan data restore
+                window.parent.location.href = window.parent.location.pathname + '?' + params.toString();
+            }}
+        }} catch(e) {{}}
+    }}
+}})();
+</script>
+""", height=0)
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
 _bubble_color = "#1B2A4A" if _is_dark else "#1a4fa8"
