@@ -6,108 +6,107 @@ import base64
 from PIL import Image
 import io
 
-# 1. KONFIGURASI HALAMAN (Wajib di paling atas)
-st.set_page_config(page_title="KIPM SIGMA PRO", page_icon="📈", layout="wide")
+# 1. Konfigurasi Halaman
+st.set_page_config(page_title="KIPM SIGMA PRO", layout="wide")
 
-# 2. CSS CUSTOM (UI Modern & Floating Icon)
+# 2. CSS untuk Menyatukan Icon ke Search Bar & Teks ke Tengah
 st.markdown("""
     <style>
+    /* Menghilangkan header default */
     header {visibility: hidden;}
-    .block-container {padding-top: 2rem;}
     
-    /* Memposisikan Popover (Ikon Klip) agar masuk ke area Chat Input */
+    /* Memposisikan teks header ke tengah layar */
+    .main-header {
+        text-align: center;
+        margin-top: -50px;
+        margin-bottom: 20px;
+    }
+
+    /* Menggabungkan Icon Attach ke dalam Search Bar */
     div[data-testid="stPopover"] {
         position: fixed;
         bottom: 34px;
-        left: 55px;
-        z-index: 1000;
+        /* Geser ke kanan agar masuk ke dalam kotak input */
+        left: calc(20% + 15px); 
+        z-index: 1001;
     }
-    
-    /* Memberi ruang di kiri input agar teks tidak tertutup ikon */
+
+    /* Penyesuaian untuk layar HP */
+    @media (max-width: 768px) {
+        div[data-testid="stPopover"] { left: 45px; bottom: 34px; }
+        .stChatInputContainer { padding-left: 40px !important; }
+    }
+
+    /* Styling kotak input agar teks tidak menabrak icon */
     .stChatInputContainer textarea {
-        padding-left: 50px !important;
+        padding-left: 55px !important;
+        border-radius: 25px !important;
     }
-    
-    /* Gaya tombol klip bulat */
+
+    /* Gaya tombol klip agar transparan/minimalis */
     div[data-testid="stPopover"] > button {
-        border-radius: 50% !important;
-        width: 38px !important;
-        height: 38px !important;
-        background-color: #262730 !important;
-        border: 1px solid #464b5d !important;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        border: none !important;
+        background: transparent !important;
+        color: #888 !important;
+        font-size: 20px !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SIDEBAR (Hanya Identitas)
+# 3. Sidebar (Branding Minimalis)
 with st.sidebar:
     try:
-        # Ganti dengan nama file logo Anda yang ada di GitHub
-        logo_img = Image.open("Mate KIPM LOGO.png")
+        image = Image.open("Mate KIPM LOGO.png")
         col_l, col_m, col_r = st.columns([1, 1, 1])
         with col_m:
-            st.image(logo_img, use_container_width=True)
+            st.image(image, use_container_width=True)
     except:
-        st.warning("Logo 'Mate KIPM LOGO.png' tidak ditemukan.")
+        pass
 
     st.markdown("""
-        <div style="text-align: center; line-height: 1.2; margin-top: 10px;">
-            <p style="margin: 0; font-size: 0.85em; color: #bdc3c7;">Komunitas Investasi Pasar Modal</p>
-            <p style="margin: 0; font-size: 1.1em; font-weight: bold; color: #ffffff;">Universitas Pancasila</p>
-        </div>
-        <hr style="margin: 15px 0; border-color: #464b5d;">
-        <div style="text-align: center;">
-            <h2 style="margin: 0; font-size: 1.4em;">🛡️ KIPM SIGMA</h2>
-            <p style="font-size: 0.75em; color: #7f8c8d;">Strategic Intelligence & Global Market Analysis</p>
+        <div style="text-align: center; line-height: 1.2;">
+            <p style="margin: 0; font-size: 0.8em; color: gray;">Komunitas Investasi Pasar Modal</p>
+            <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
         </div>
         """, unsafe_allow_html=True)
 
-# 4. INISIALISASI SESSION STATE (Memori Chat)
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "Anda adalah SIGMA, asisten AI cerdas dari KIPM Universitas Pancasila. Ahli dalam analisis teknikal, fundamental, dan bandarmology saham Indonesia."}
-    ]
+# 4. Konten Utama (Teks Tengah)
+st.markdown("""
+    <div class="main-header">
+        <h1 style="margin-bottom: 0;">🛡️ KIPM SIGMA</h1>
+        <p style="color: gray;">Strategic Intelligence & Global Market Analysis</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Tampilkan Riwayat Chat
+# 5. Inisialisasi & Riwayat Chat
+if "messages" not in st.session_state:
+    st.session_state.messages = [{"role": "system", "content": "Analis Saham KIPM UP."}]
+
 for msg in st.session_state.messages[1:]:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# 5. FLOATING ATTACHMENT & INPUT BAR
-# Tombol klip di kiri bawah
+# 6. Bar Pencarian dengan Icon Attach di Dalamnya
 with st.popover("📎"):
-    uploaded_file = st.file_uploader("Upload PDF/Chart", type=["pdf", "png", "jpg", "jpeg"], label_visibility="collapsed")
+    uploaded_file = st.file_uploader("Upload File", type=["pdf", "png", "jpg"], label_visibility="collapsed")
     if uploaded_file:
-        st.success(f"File '{uploaded_file.name}' dimuat.")
+        st.toast(f"File {uploaded_file.name} berhasil diunggah!")
 
-# Bar Input Chat
 if prompt := st.chat_input("Tanya SIGMA..."):
-    # Simpan pesan user
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # PROSES RESPON AI
+    # Logika Groq
     try:
         client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-        
-        # Logika tambahan jika ada file (Vision/PDF) bisa disisipkan di sini
-        # Untuk saat ini, kita proses teks via Llama 3
-        response = client.chat.completions.create(
+        completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=st.session_state.messages,
-            temperature=0.7
+            messages=st.session_state.messages
         )
-        
-        full_response = response.choices[0].message.content
-        
-        # Simpan dan tampilkan respon asisten
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        response = completion.choices[0].message.content
+        st.session_state.messages.append({"role": "assistant", "content": response})
         with st.chat_message("assistant"):
-            st.markdown(full_response)
-            
+            st.markdown(response)
     except Exception as e:
-        st.error(f"Terjadi kesalahan koneksi: {str(e)}")
+        st.error(f"Error: {e}")
