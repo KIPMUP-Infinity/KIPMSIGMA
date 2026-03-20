@@ -633,18 +633,21 @@ with st.sidebar:
         </style>
     """, unsafe_allow_html=True)
 
-    # Logo
+    # Logo + nama organisasi
     try:
         logo = Image.open("Mate KIPM LOGO.png")
         c1, c2, c3 = st.columns([1, 2, 1])
         with c2: st.image(logo, use_container_width=True)
     except: pass
 
-    # Nama organisasi
     st.markdown(f"""
-        <div class="sb-header">
-            <p class="sb-org-text">Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
-            <p class="sb-org-name">Universitas Pancasila</p>
+        <div style="text-align:center;padding:4px 12px 8px 12px;font-family:Inter,sans-serif;">
+            <p style="margin:0;font-size:0.72rem;color:{_slbl};line-height:1.4;">
+                Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal
+            </p>
+            <p style="margin:2px 0 0 0;font-size:0.95rem;font-weight:700;color:{'#fff' if _is_dark else '#0d0d0d'};">
+                Universitas Pancasila
+            </p>
         </div>
         <hr class="sb-divider">
     """, unsafe_allow_html=True)
