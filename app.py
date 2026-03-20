@@ -556,7 +556,7 @@ with st.sidebar:
         <style>
         /* Kurangi jarak atas sidebar */
         [data-testid="stSidebarUserContent"] {{
-            padding-top: 1.8rem !important;
+            padding-top: 0.7 rem !important;
         }}
         /* Sembunyikan teks keyboard_double_arrow dari tombol collapse */
         [data-testid="stSidebarCollapseButton"] span,
