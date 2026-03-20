@@ -180,8 +180,12 @@ with st.sidebar:
 
     st.markdown("""
         <div style="text-align:center;line-height:1.4;margin-top:8px;font-family:Inter,sans-serif;">
-            <p style="margin:0;font-size:0.72rem;color:#888;">Komunitas Investasi Pasar Modal</p>
-            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;">Universitas Pancasila</p>
+            <p style="margin:0;font-size:0.78rem;color:#aaa;letter-spacing:0.2px;">
+                Komunitas 
+                <span style="color:#F5C242;font-weight:600;">Investasi</span> 
+                Pasar Modal
+            </p>
+            <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:0.2px;">Universitas Pancasila</p>
         </div>
     """, unsafe_allow_html=True)
 
