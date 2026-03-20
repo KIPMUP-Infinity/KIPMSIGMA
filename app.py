@@ -390,57 +390,41 @@ if st.session_state.user is not None and not st.session_state.data_loaded:
 
 # ── JIKA BELUM LOGIN ────────────────────────────────────────
 if st.session_state.user is None:
-    # Tampilkan spinner + JS redirect. Kalau tidak ada token di localStorage,
-    # JS tidak redirect dan spinner hilang → tampil login page.
     components.html("""
 <script>
 (function() {
     try {
         var token = localStorage.getItem('sigma_token');
-        if (!token) {
+        if (token) {
+            window.parent.location.replace(
+                window.parent.location.pathname + '?sigma_token=' + token
+            );
+        } else {
             // Tidak ada token — sembunyikan spinner, tampilkan login
             var sp = window.parent.document.getElementById('sigma-checking');
             if (sp) sp.style.display = 'none';
-            var lg = window.parent.document.getElementById('sigma-login');
+            var lg = window.parent.document.getElementById('sigma-loginbox');
             if (lg) lg.style.display = 'block';
-            return;
         }
-        // Ada token — langsung redirect tanpa tampilkan login
-        window.parent.location.replace(
-            window.parent.location.pathname + '?sigma_token=' + token
-        );
-    } catch(e) {
-        var lg = window.parent.document.getElementById('sigma-login');
-        if (lg) lg.style.display = 'block';
-    }
+    } catch(e) {}
 })();
 </script>
 """, height=0)
 
-    # Spinner saat cek token
     st.markdown("""
         <div id="sigma-checking" style="
             display:flex;flex-direction:column;align-items:center;
-            justify-content:center;height:60vh;gap:16px;font-family:Inter,sans-serif;">
-            <div style="
-                width:36px;height:36px;border:3px solid #333;
+            justify-content:center;height:30vh;gap:16px;font-family:Inter,sans-serif;">
+            <div style="width:36px;height:36px;border:3px solid #333;
                 border-top-color:#F5C242;border-radius:50%;
-                animation:spin 0.8s linear infinite;">
-            </div>
+                animation:spin 0.8s linear infinite;"></div>
             <p style="color:#888;font-size:0.9rem;margin:0;">Memeriksa sesi...</p>
             <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
         </div>
-        <div id="sigma-login" style="display:none;">
-        </div>
+        <div id="sigma-loginbox" style="display:none;"></div>
     """, unsafe_allow_html=True)
 
-    # Tunggu sebentar — kalau JS tidak redirect, tampilkan login
-    import time
-    time.sleep(0.8)
-
-    # Cek lagi apakah ada token via query param yang masuk
-    if st.session_state.user is None:
-        show_login_page()
+    show_login_page()
     st.stop()
 
 user = st.session_state.user
@@ -706,9 +690,17 @@ components.html(f"""
             if (!el) {{ el = pd.createElement('style'); el.id = styleId; pd.head.appendChild(el); }}
 
             el.textContent = `
-                .stApp, [data-testid="stAppViewContainer"] {{
+                /* ── BACKGROUND UTAMA ── */
+                .stApp,
+                [data-testid="stAppViewContainer"],
+                [data-testid="stAppViewContainer"] > section,
+                [data-testid="stMainBlockContainer"],
+                [data-testid="stHeader"],
+                .main {{
                     background-color: ${{isDark ? '#0e1117' : '#f4f6fb'}} !important;
                 }}
+
+                /* ── SIDEBAR ── */
                 section[data-testid="stSidebar"],
                 section[data-testid="stSidebar"] > div,
                 section[data-testid="stSidebar"] > div > div,
@@ -721,18 +713,42 @@ components.html(f"""
                     border-top-color: ${{isDark ? '#2a2a3a' : '#c5cedc'}} !important;
                 }}
                 #sp-btn {{ color: ${{isDark ? '#aaa' : '#5a6a82'}} !important; }}
-                div[data-testid="stChatInputContainer"],
+
+                /* ── SEMUA TEKS ── */
+                [data-testid="stMarkdownContainer"] *,
+                [data-testid="stMarkdownContainer"],
+                [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p,
+                p, span, label, div {{
+                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}};
+                }}
+
+                /* ── HEADER KIPM SIGMA ── */
+                .main-header h1 {{ color: ${{isDark ? '#ffffff' : '#1a1a2e'}} !important; }}
+                .main-header p  {{ color: ${{isDark ? '#888' : '#5a6a82'}} !important; }}
+
+                /* ── CHAT INPUT ── */
+                div[data-testid="stChatInputContainer"] {{
+                    background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
+                    border-color: ${{isDark ? '#3a3a3a' : '#b8c4d8'}} !important;
+                    box-shadow: ${{isDark ? 'none' : '0 2px 8px rgba(0,0,0,0.06)'}} !important;
+                }}
                 [data-testid="stChatInput"] textarea {{
                     background-color: ${{isDark ? '#1e1e1e' : '#ffffff'}} !important;
                     color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
-                    border-color: ${{isDark ? '#3a3a3a' : '#b8c4d8'}} !important;
                 }}
-                [data-testid="stMarkdownContainer"] p,
-                [data-testid="stMarkdownContainer"] li,
-                [data-testid="stMarkdownContainer"] h1,
-                [data-testid="stMarkdownContainer"] h2,
-                [data-testid="stMarkdownContainer"] h3 {{
-                    color: ${{isDark ? '#e8e8e8' : '#1a1a1a'}} !important;
+                [data-testid="stChatInput"] textarea::placeholder {{
+                    color: ${{isDark ? '#666' : '#999'}} !important;
+                }}
+
+                /* ── SIDEBAR DIVIDER ── */
+                [data-testid="stSidebar"] hr {{
+                    border-color: ${{isDark ? '#2a2a3a' : '#b8c4d8'}} !important;
+                }}
+
+                /* ── SIDEBAR LINKS & BUTTONS ── */
+                section[data-testid="stSidebar"] a,
+                section[data-testid="stSidebar"] button {{
+                    color: ${{isDark ? '#ccc' : '#2c3a52'}} !important;
                 }}
             `;
 
