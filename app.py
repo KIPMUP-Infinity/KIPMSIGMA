@@ -86,13 +86,19 @@ st.markdown(f"""
         background-color: {_bg} !important;
     }}
 
-    /* ── SIDEBAR BACKGROUND ── */
+    /* ── SIDEBAR BACKGROUND — full navy tanpa perbedaan warna ── */
     section[data-testid="stSidebar"],
     section[data-testid="stSidebar"] > div,
     section[data-testid="stSidebar"] > div > div,
+    section[data-testid="stSidebar"] > div > div > div,
     section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
+    section[data-testid="stSidebar"] .stButton,
+    section[data-testid="stSidebar"] .stButton > button {{
         background-color: {_sidebar_bg} !important;
+        background: {_sidebar_bg} !important;
+        box-shadow: none !important;
+        border: none !important;
     }}
     section[data-testid="stSidebar"] {{
         border-right: {"none" if _is_dark else "1px solid #b8c4d8"} !important;
@@ -122,61 +128,35 @@ st.markdown(f"""
         padding-bottom: 8px !important;
     }}
 
-    /* ── TOMBOL COLLAPSE SIDEBAR ── */
+    /* ── TOMBOL COLLAPSE ── */
     section[data-testid="stSidebar"] button[kind="header"],
     section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] {{
         position: absolute !important;
-        top: 0.5rem !important;
-        right: 0.5rem !important;
-        z-index: 999 !important;
-        margin: 0 !important;
+        top: 0.5rem !important; right: 0.5rem !important;
+        z-index: 999 !important; margin: 0 !important;
+        background: transparent !important;
     }}
 
-    /* ── SIDEBAR DIVIDER ── */
-    [data-testid="stSidebar"] hr {{
-        border-color: {_divider_color} !important;
-        opacity: 1 !important;
-        margin: 0.5rem 0 !important;
-    }}
-
-    /* ── SIDEBAR BUTTONS — transparan, rata kiri, tanpa kotak ── */
-    /* ── SIDEBAR BUTTONS — rata kiri, tanpa kotak ── */
-    div[data-testid="stSidebar"] .stButton {{
+    /* ── TOMBOL OBROLAN BARU — rata kiri ── */
+    section[data-testid="stSidebar"] .stButton > button {{
         background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        margin: 1px 0 !important;
-        padding: 0 !important;
-    }}
-    div[data-testid="stSidebar"] .stButton > button {{
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
+        border: none !important; box-shadow: none !important;
         color: {_inactive_chat} !important;
         font-size: 0.85rem !important;
-        padding: 5px 8px !important;
-        border-radius: 8px !important;
-        width: 100% !important;
-        min-height: 0 !important;
+        padding: 6px 10px !important;
+        border-radius: 8px !important; width: 100% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: flex-start !important;
-    }}
-    div[data-testid="stSidebar"] .stButton > button:hover {{
-        background: {_btn_hover} !important;
-        color: {_active_chat_clr} !important;
-    }}
-    /* Target semua elemen di dalam button agar rata kiri */
-    div[data-testid="stSidebar"] .stButton > button *,
-    div[data-testid="stSidebar"] .stButton > button p,
-    div[data-testid="stSidebar"] .stButton > button div,
-    div[data-testid="stSidebar"] .stButton > button span {{
         text-align: left !important;
-        justify-content: flex-start !important;
+    }}
+    section[data-testid="stSidebar"] .stButton > button:hover {{
+        background: {_btn_hover} !important;
+        color: {"#fff" if _is_dark else "#1a2a4a"} !important;
+    }}
+    section[data-testid="stSidebar"] .stButton > button p {{
+        margin: 0 !important; text-align: left !important;
         color: inherit !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: auto !important;
     }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
@@ -543,6 +523,13 @@ if "action" in qp:
 
 
 # ── SIDEBAR ───────────────────────────────────────────────
+_sbg   = _sidebar_bg
+_stext = "#ccc" if _is_dark else "#334155"
+_shov  = "#ffffff18" if _is_dark else "#00000010"
+_sact  = "#1e2d45" if _is_dark else "#b8c8e8"
+_sactc = "#fff" if _is_dark else "#1a2a4a"
+_slbl  = "#666" if _is_dark else "#6a7a96"
+
 with st.sidebar:
     try:
         logo = Image.open("Mate KIPM LOGO.png")
@@ -551,23 +538,47 @@ with st.sidebar:
     except: st.markdown("### 🏛️ KIPM-UP")
 
     st.markdown(f"""
-        <div style="text-align:center;line-height:1.4;margin-top:4px;font-family:Inter,sans-serif;">
+        <div style="text-align:center;line-height:1.4;margin-top:4px;margin-bottom:12px;font-family:Inter,sans-serif;">
             <p style="margin:0;font-size:0.78rem;color:{'#aaa' if _is_dark else '#6a7a96'};">Komunitas
                 <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
             <p style="margin:4px 0 0 0;font-size:1.05rem;font-weight:700;color:{'#fff' if _is_dark else '#1a2a4a'};">Universitas Pancasila</p>
         </div>
+        <hr style="border:none;border-top:1px solid {'#2a2a3a' if _is_dark else '#b8c4d8'};margin:0 0 8px 0;">
+
+        <style>
+        .sb-link {{
+            display:flex; align-items:center; gap:8px;
+            padding:7px 10px; border-radius:8px; margin:1px 0;
+            color:{_stext}; text-decoration:none; font-size:0.85rem;
+            font-family:Inter,sans-serif; cursor:pointer;
+            background:transparent;
+        }}
+        .sb-link:hover {{ background:{_shov}; color:{'#fff' if _is_dark else '#1a2a4a'}; }}
+        .sb-link.active {{ background:{_sact}; color:{_sactc}; }}
+        .sb-lbl {{
+            font-size:0.65rem; font-weight:600; color:{_slbl};
+            text-transform:uppercase; letter-spacing:1.2px;
+            padding:8px 10px 2px; font-family:Inter,sans-serif;
+        }}
+        .sb-actions {{ display:flex; gap:2px; margin-left:auto; }}
+        .sb-act {{
+            padding:2px 6px; border-radius:6px; font-size:0.75rem;
+            color:{_slbl}; text-decoration:none; cursor:pointer;
+            background:transparent;
+        }}
+        .sb-act:hover {{ color:{'#fff' if _is_dark else '#1a2a4a'}; }}
+        .sb-del:hover {{ color:#f66 !important; }}
+        </style>
     """, unsafe_allow_html=True)
 
-    st.divider()
-
-    # ── Obrolan Baru ──
+    # Obrolan Baru
     if st.button("✏️  Obrolan baru", key="btn_new_chat", use_container_width=True):
         ns = new_session()
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
         st.rerun()
 
-    st.markdown(f'<p style="font-size:0.68rem;font-weight:600;color:{_sidebar_label};text-transform:uppercase;letter-spacing:1.2px;margin:10px 0 4px 6px;font-family:Inter,sans-serif;">Obrolan Anda</p>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sb-lbl">Obrolan Anda</div>', unsafe_allow_html=True)
 
     for sesi in st.session_state.sessions:
         sid = sesi["id"]; is_active = sid == st.session_state.active_id
@@ -584,24 +595,29 @@ with st.sidebar:
                 if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
-            if is_active:
-                col_main, col_ren, col_del = st.columns([7, 1, 1])
-            else:
-                col_main = st.container()
+            acts = f"""
+                <a class="sb-act" onclick="window.location.href='?sb_ren={sid}'">✏️</a>
+                <a class="sb-act sb-del" onclick="window.location.href='?sb_del={sid}'">🗑</a>
+            """ if is_active else ""
+            active_cls = "active" if is_active else ""
+            st.markdown(f"""
+                <a class="sb-link {active_cls}" onclick="window.location.href='?sb_sel={sid}'">
+                    💬 {title_d}
+                    <span class="sb-actions">{acts}</span>
+                </a>
+            """, unsafe_allow_html=True)
 
-            with col_main:
-                if st.button(f"💬  {title_d}", key=f"sel_{sid}", use_container_width=True):
-                    st.session_state.active_id = sid
-                    st.session_state.rename_id = None
-                    st.rerun()
-
-            if is_active:
-                with col_ren:
-                    if st.button("✏️", key=f"ren_{sid}"):
-                        st.session_state.rename_id = sid; st.rerun()
-                with col_del:
-                    if st.button("🗑", key=f"del_{sid}"):
-                        delete_session(sid); st.rerun()
+# Handle sidebar HTML nav actions
+if "sb_sel" in st.query_params:
+    st.session_state.active_id = st.query_params["sb_sel"]
+    st.session_state.rename_id = None
+    st.query_params.clear(); st.rerun()
+if "sb_del" in st.query_params:
+    delete_session(st.query_params["sb_del"])
+    st.query_params.clear(); st.rerun()
+if "sb_ren" in st.query_params:
+    st.session_state.rename_id = st.query_params["sb_ren"]
+    st.query_params.clear(); st.rerun()
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
