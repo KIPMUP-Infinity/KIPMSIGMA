@@ -270,6 +270,11 @@ for msg in active["messages"][1:]:
 if "upload_key" not in st.session_state:
     st.session_state["upload_key"] = 0
 
+# Reset uploader key jika ada flag dari pengiriman sebelumnya
+if st.session_state.get("do_reset_uploader"):
+    st.session_state["upload_key"] += 1
+    st.session_state["do_reset_uploader"] = False
+
 uploaded_file = st.file_uploader(
     "upload", type=["pdf", "png", "jpg", "jpeg"],
     label_visibility="hidden",
@@ -300,8 +305,7 @@ if bridge_input and bridge_input.strip() and bridge_input != st.session_state.ge
     if st.session_state.attachment_text:
         full_prompt = f"{st.session_state.attachment_text}\n\nPertanyaan: {prompt}"
         st.session_state.attachment_text = None
-        # Reset file uploader agar label PDF hilang setelah dikirim
-        st.session_state["upload_key"] = st.session_state.get("upload_key", 0) + 1
+        st.session_state["do_reset_uploader"] = True
 
     # Auto-set judul sesi dari pesan pertama
     if active["title"] == "Obrolan Baru":
