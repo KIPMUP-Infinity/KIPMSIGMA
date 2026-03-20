@@ -31,29 +31,35 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. MASUKKAN KODE SIDEBAR & LOGO DI SINI
 with st.sidebar:
-    # 1. Menampilkan Logo Kecil di Tengah
+    # 1. Logo (Ukuran 1/3 di tengah)
     try:
         image = Image.open("Mate KIPM LOGO.png")
-        
-        # Membuat 3 kolom untuk menempatkan logo di kolom tengah (ukuran 1/3)
-        col_logo_1, col_logo_2, col_logo_3 = st.columns([1, 1, 1])
-        with col_logo_2: # Kolom tengah
+        col_l, col_m, col_r = st.columns([1, 1, 1])
+        with col_m:
             st.image(image, use_container_width=True)
-            
     except FileNotFoundError:
-        st.error("Logo tidak ditemukan di GitHub.")
+        st.error("Logo tidak ditemukan.")
 
-    # 2. Menampilkan Teks Berjenjang di Tengah
+    # 2. Tulisan Nama Organisasi (Centered)
     st.markdown("""
-        <div style="text-align: center;">
-            <p style="margin: 0; font-size: 1em;">Komunitas Investasi Pasar Modal</p>
-            <p style="margin: 0; font-size: 1em; font-weight: bold;">Universitas Pancasila</p>
+        <div style="text-align: center; line-height: 1.2; margin-top: 10px;">
+            <p style="margin: 0; font-size: 0.9em; color: #ecf0f1;">Komunitas Investasi Pasar Modal</p>
+            <p style="margin: 0; font-size: 1.1em; font-weight: bold; color: #ffffff;">Universitas Pancasila</p>
         </div>
         """, unsafe_allow_html=True)
     
     st.markdown("---")
+
+    # 3. Branding SIGMA (Centered)
+    st.markdown("""
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 0;">🛡️ KIPM SIGMA</h2>
+            <p style="font-size: 0.8em; color: #95a5a6;">Strategic Intelligence & Global Market Analysis</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.divider()
 
 
 
