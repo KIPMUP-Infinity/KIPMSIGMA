@@ -57,21 +57,20 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* ── USER BUBBLE: Navy ── */
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
-        display: flex;
-        justify-content: flex-end;
+    /* ── RESET semua background container chat bawaan Streamlit ── */
+    [data-testid="stChatMessage"] {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 4px 0 !important;
     }
 
-    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
-    [data-testid="stMarkdownContainer"] {
-        background-color: #1B2A4A !important;
-        color: #ffffff !important;
-        border-radius: 18px 18px 4px 18px !important;
-        padding: 12px 16px !important;
-        max-width: 75% !important;
-        font-size: 0.93rem !important;
-        line-height: 1.6 !important;
+    /* ── USER MESSAGE: rata kanan, bubble navy ── */
+    [data-testid="stChatMessage"][data-testid="stChatMessage"]:has(
+        [data-testid="stChatMessageAvatarUser"]
+    ) {
+        flex-direction: row-reverse !important;
+        justify-content: flex-start !important;
     }
 
     /* Sembunyikan avatar user */
@@ -79,16 +78,42 @@ st.markdown("""
         display: none !important;
     }
 
-    /* ── ASSISTANT BUBBLE: Tanpa background (seperti ChatGPT) ── */
+    /* Bubble navy untuk user */
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+    [data-testid="stChatMessageContent"] {
+        display: flex !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+        background: transparent !important;
+    }
+
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+    [data-testid="stMarkdownContainer"] {
+        background-color: #1B2A4A !important;
+        color: #ffffff !important;
+        border-radius: 18px 18px 4px 18px !important;
+        padding: 10px 16px !important;
+        max-width: 70% !important;
+        font-size: 0.93rem !important;
+        line-height: 1.6 !important;
+        display: inline-block !important;
+    }
+
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"])
+    [data-testid="stMarkdownContainer"] p {
+        color: #ffffff !important;
+        margin: 0 !important;
+    }
+
+    /* ── ASSISTANT: tanpa bubble, rata kiri seperti ChatGPT ── */
     [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"])
     [data-testid="stMarkdownContainer"] {
         font-size: 0.93rem !important;
         line-height: 1.75 !important;
         color: #e8e8e8 !important;
+        background: transparent !important;
+        padding: 0 !important;
     }
-
-    /* Sembunyikan avatar assistant (opsional) */
-    /* [data-testid="stChatMessageAvatarAssistant"] { display: none !important; } */
 
     </style>
 """, unsafe_allow_html=True)
