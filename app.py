@@ -14,6 +14,7 @@ import json
 import os
 import hashlib
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -552,9 +553,9 @@ _slbl  = "#8e8ea0" if _is_dark else "#6e6e80"
 with st.sidebar:
     st.markdown(f"""
         <style>
-        /* Kurangi jarak atas sidebar — JS akan handle lebih lanjut */
+        /* Padding dihandle oleh JS fixSidebarTop */
         [data-testid="stSidebarUserContent"] {{
-            padding-top: 0.4rem !important;
+            padding-top: 0 !important;
         }}
         /* Sembunyikan teks keyboard_double_arrow dari tombol collapse */
         [data-testid="stSidebarCollapseButton"] span,
@@ -717,47 +718,78 @@ components.html(f"""
     function fixSidebarTop() {{
         var pd = window.parent.document;
 
-        // Tombol collapse — posisi atas kanan
-        var collapseBtn = pd.querySelector('section[data-testid="stSidebar"] button[kind="header"]');
-        if (!collapseBtn) {{
-            collapseBtn = pd.querySelector('[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"]');
-        }}
-        if (collapseBtn) {{
-            collapseBtn.style.cssText += 'position:absolute!important;top:8px!important;right:8px!important;z-index:9999!important;';
-            // Sembunyikan teks icon
-            var spans = collapseBtn.querySelectorAll('span');
-            spans.forEach(function(s) {{ s.style.fontSize = '0'; s.style.visibility = 'hidden'; }});
+        // ── Fix tombol collapse sidebar (buka/tutup) ──
+        // Cari tombol di dalam sidebar (tutup) DAN di luar sidebar (buka)
+        var btns = pd.querySelectorAll(
+            'section[data-testid="stSidebar"] button[kind="header"], ' +
+            '[data-testid="stSidebarCollapseButton"], ' +
+            '[data-testid="collapsedControl"] button'
+        );
+        btns.forEach(function(btn) {{
+            // Fix posisi dan ukuran agar mudah diklik
+            btn.style.setProperty('position', 'absolute', 'important');
+            btn.style.setProperty('top', '8px', 'important');
+            btn.style.setProperty('right', '8px', 'important');
+            btn.style.setProperty('z-index', '9999', 'important');
+            btn.style.setProperty('width', '32px', 'important');
+            btn.style.setProperty('height', '32px', 'important');
+            btn.style.setProperty('padding', '0', 'important');
+            btn.style.setProperty('display', 'flex', 'important');
+            btn.style.setProperty('align-items', 'center', 'important');
+            btn.style.setProperty('justify-content', 'center', 'important');
+            btn.style.setProperty('cursor', 'pointer', 'important');
+            btn.style.setProperty('background', 'transparent', 'important');
+            btn.style.setProperty('border', 'none', 'important');
+            btn.style.setProperty('overflow', 'hidden', 'important');
+
+            // Sembunyikan semua teks (keyboard_double_arrow_right, dll)
+            btn.querySelectorAll('span, svg + span, p').forEach(function(el) {{
+                var txt = el.textContent || '';
+                // Kalau isinya teks bukan icon/svg
+                if (txt.trim().length > 2) {{
+                    el.style.setProperty('font-size', '0', 'important');
+                    el.style.setProperty('width', '0', 'important');
+                    el.style.setProperty('overflow', 'hidden', 'important');
+                    el.style.setProperty('position', 'absolute', 'important');
+                }}
+            }});
+        }});
+
+        // ── Fix tombol buka sidebar (collapsed state) ──
+        var openBtn = pd.querySelector('[data-testid="collapsedControl"]');
+        if (openBtn) {{
+            openBtn.style.setProperty('top', '8px', 'important');
+            openBtn.style.setProperty('z-index', '9999', 'important');
         }}
 
-        // Inject style ke head — zero semua padding/margin atas sidebar
+        // ── Zero semua padding atas sidebar ──
         var styleId = 'sigma-sidebar-fix';
         var existing = pd.getElementById(styleId);
-        if (existing) existing.remove(); // selalu update
+        if (existing) existing.remove();
 
         var style = pd.createElement('style');
         style.id = styleId;
         style.textContent = `
-            section[data-testid="stSidebar"] > div:first-child {{
+            section[data-testid="stSidebar"] > div:first-child,
+            section[data-testid="stSidebar"] > div:first-child > div,
+            [data-testid="stSidebarContent"],
+            [data-testid="stSidebarUserContent"] {
                 padding-top: 0 !important;
                 margin-top: 0 !important;
-            }}
-            section[data-testid="stSidebar"] > div:first-child > div {{
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-            }}
-            [data-testid="stSidebarContent"] {{
-                padding-top: 0 !important;
-                margin-top: 0 !important;
-            }}
-            [data-testid="stSidebarUserContent"] {{
-                padding-top: 0.4rem !important;
-                margin-top: 0 !important;
-            }}
+            }
             [data-testid="stSidebarUserContent"] > div,
-            [data-testid="stSidebarUserContent"] > div > div {{
+            [data-testid="stSidebarUserContent"] > div > div {
                 padding-top: 0 !important;
                 margin-top: 0 !important;
-            }}
+            }
+            /* Sembunyikan teks icon collapsed button */
+            [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
+            button[kind="header"] span:not(:has(svg)),
+            [data-testid="collapsedControl"] span:not(:has(svg)) {
+                font-size: 0 !important;
+                width: 0 !important;
+                overflow: hidden !important;
+            }
         `;
         pd.head.appendChild(style);
     }}
