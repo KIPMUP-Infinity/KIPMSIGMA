@@ -14,6 +14,7 @@ import json
 import os
 import hashlib
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -771,7 +772,7 @@ components.html(f"""
     // Apply theme dari localStorage saat load
     try {{
         var saved = localStorage.getItem('sigma_theme');
-        if (saved && saved !== '{_cur_theme_ls}') {{
+        if (saved) {{
             setTimeout(function() {{ window.sigmaSetTheme(saved); }}, 500);
         }}
     }} catch(e) {{}}
