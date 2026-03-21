@@ -530,8 +530,8 @@ def show_login():
     /* Form container — transparan glass, compact, geser 1cm dari kanan */
     [data-testid="stMainBlockContainer"] {{
         max-width: 420px !important;
-        margin: 8vh 16px 0 auto !important;
-        padding: 32px 28px 36px !important;
+        margin: 3vh 16px 0 auto !important;
+        padding: 16px 28px 28px !important;
         position: relative;
         z-index: 1;
         min-height: unset !important;
@@ -551,6 +551,17 @@ def show_login():
             backdrop-filter: blur(14px) !important;
             border-radius: 16px !important;
         }}
+    }}
+
+    /* Kompres padding default Streamlit di atas konten */
+    [data-testid="stMainBlockContainer"] > div:first-child {{
+        padding-top: 0 !important;
+    }}
+    [data-testid="block-container"] {{
+        padding-top: 0 !important;
+    }}
+    .stApp > header {{
+        display: none !important;
     }}
 
     /* Glass card */
@@ -637,8 +648,8 @@ def show_login():
     """, unsafe_allow_html=True)
 
     # Background sudah di-set via CSS (URL GitHub raw)
-    st.markdown('<div style="text-align:center;margin:0 0 28px;"><h2 style="margin:0;font-size:1.6rem;font-weight:800;color:#ffffff;">Masuk ke SIGMA</h2></div>', unsafe_allow_html=True)
-    tab1, tab2, tab3 = st.tabs(["🔑 Masuk", "📝 Daftar", "🌐 Google"])
+    st.markdown('<div style="text-align:center;margin:0 0 10px;"><h2 style="margin:0;font-size:1.5rem;font-weight:800;color:#ffffff;">Masuk ke SIGMA</h2></div>', unsafe_allow_html=True)
+    tab1, tab2, tab3 = st.tabs(["🔑 Sign In", "📝 Sign Up", "🌐 Google"])
 
     with tab1:
         uname = st.text_input("Username", key="li_user", placeholder="Masukkan username")
