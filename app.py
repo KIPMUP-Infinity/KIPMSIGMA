@@ -15,6 +15,7 @@ import os
 import hashlib
 
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -121,32 +122,10 @@ st.markdown(f"""
         margin-top: 0 !important;
     }}
 
-    /* ── TOMBOL COLLAPSE ── */
-    [data-testid="stSidebarCollapseButton"],
-    [data-testid="collapsedControl"] {{
-        z-index: 10 !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: transparent !important;
-        font-size: 0 !important;
-    }}
-    [data-testid="stSidebarCollapseButton"] *,
-    [data-testid="collapsedControl"] * {{
-        color: transparent !important;
-        font-size: 0 !important;
-        line-height: 0 !important;
-    }}
-    /* Hanya SVG yang terlihat */
-    [data-testid="stSidebarCollapseButton"] svg,
-    [data-testid="stSidebarCollapseButton"] svg *,
-    [data-testid="collapsedControl"] svg,
-    [data-testid="collapsedControl"] svg * {{
-        color: {_text_muted} !important;
-        font-size: initial !important;
-        line-height: initial !important;
-        display: block !important;
-        visibility: visible !important;
+    /* ── TOMBOL COLLAPSE — biarkan Streamlit default, hanya hide teks ── */
+    [data-testid="stSidebarCollapseButton"] span[style*="overflow"],
+    [data-testid="collapsedControl"] span[style*="overflow"] {{
+        display: none !important;
     }}
 
     /* ── SIDEBAR LAYOUT — flex column agar sticky bottom bekerja ── */
@@ -239,22 +218,6 @@ st.markdown(f"""
 
     footer {{ visibility: hidden; }}
     #MainMenu {{ visibility: hidden; }}
-
-    /* Sembunyikan teks keyboard_double_arrow_right */
-    [data-testid="collapsedControl"] button {{
-        color: transparent !important;
-        font-size: 0 !important;
-    }}
-    [data-testid="collapsedControl"] button * {{
-        color: transparent !important;
-        font-size: 0 !important;
-    }}
-    [data-testid="collapsedControl"] svg,
-    [data-testid="collapsedControl"] svg path {{
-        color: {_text_muted} !important;
-        stroke: {_text_muted} !important;
-        font-size: initial !important;
-    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -281,7 +244,7 @@ def show_login_page():
 
     st.markdown("""
         <div style="text-align:center;margin:24px 0 32px;font-family:Inter,sans-serif;">
-            <h2 style="margin:0;font-size:1.6rem;font-weight:700;color:#fff;">  Masuk ke SIGMA</h2>
+            <h2 style="margin:0;font-size:1.6rem;font-weight:700;color:#fff;">Masuk ke SIGMA</h2>
             <p style="margin:8px 0 0;color:#888;font-size:0.9rem;">
                 Platform analisa saham KIPM Universitas Pancasila
             </p>
@@ -817,46 +780,6 @@ components.html(f"""
             }});
         }});
 
-        // Hapus teks keyboard_double_arrow — langsung dari text nodes
-        var collapseSels = [
-            '[data-testid="stSidebarCollapseButton"]',
-            '[data-testid="collapsedControl"]',
-            'button[kind="header"]'
-        ];
-        collapseSels.forEach(function(sel) {{
-            pd.querySelectorAll(sel).forEach(function(btn) {{
-                // Hapus TEXT NODE langsung (bukan element)
-                btn.childNodes.forEach(function(node) {{
-                    if (node.nodeType === 3) {{ // TEXT_NODE
-                        node.textContent = '';
-                    }}
-                }});
-                // Hapus semua span/p yang tidak berisi SVG
-                btn.querySelectorAll('span, p').forEach(function(el) {{
-                    if (!el.querySelector('svg') && !el.closest('svg')) {{
-                        el.style.setProperty('font-size', '0', 'important');
-                        el.style.setProperty('width', '0', 'important');
-                        el.style.setProperty('height', '0', 'important');
-                        el.style.setProperty('overflow', 'hidden', 'important');
-                        el.style.setProperty('position', 'absolute', 'important');
-                    }}
-                }});
-                // Pastikan SVG & parent-nya terlihat
-                btn.querySelectorAll('svg').forEach(function(svg) {{
-                    svg.style.setProperty('display', 'block', 'important');
-                    svg.style.setProperty('visibility', 'visible', 'important');
-                    var p = svg.parentElement;
-                    while (p && p !== btn) {{
-                        p.style.removeProperty('font-size');
-                        p.style.removeProperty('width');
-                        p.style.removeProperty('height');
-                        p.style.removeProperty('overflow');
-                        p.style.removeProperty('position');
-                        p = p.parentElement;
-                    }}
-                }});
-            }});
-        }});
     }}
 
     function injectSettings() {{
