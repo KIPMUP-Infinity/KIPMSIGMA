@@ -4,3 +4,4 @@ yfinance
 pillow
 streamlit
 requests
+bcrypt
