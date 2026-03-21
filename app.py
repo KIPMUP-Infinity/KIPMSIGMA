@@ -703,7 +703,7 @@ def show_login():
     div.id = 'sigma-mobile-header';
     div.innerHTML = `
         <div class="mh-logo">SIGMA <span>Σ</span></div>
-        <div class="mh-sub">KIPM UNIVERSITAS PANCASILA · by MarketNMocha</div>
+        <div class="mh-sub">KIPM UNIVERSITAS PANCASILA </div>
     `;
     pd.body.appendChild(div);
 })();
@@ -777,7 +777,7 @@ def show_login():
     st.markdown(f"""
     <p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">
         Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
-        Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.
+        Analisa bersifat <em>do your own research</em> dan disclaimer berlaku. by MarketnMocha
     </p>
     """, unsafe_allow_html=True)
     st.stop()
