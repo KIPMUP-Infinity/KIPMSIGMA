@@ -660,14 +660,29 @@ def show_login():
 
     # Background sudah di-set via CSS (URL GitHub raw)
 
-    # Inject logo KIPM di atas kotak khusus mobile
+    # Inject logo KIPM khusus mobile — hanya saat halaman login
     components.html(f"""
 <script>
 (function() {{
     var pd = window.parent.document;
+
+    // Sembunyikan Fork bar & toolbar GitHub Streamlit
+    var forkStyle = pd.getElementById('hide-fork-bar');
+    if (!forkStyle) {{
+        var fs = pd.createElement('style');
+        fs.id = 'hide-fork-bar';
+        fs.textContent = `
+            .viewerBadge_container__r5tak,
+            .viewerBadge_link__qRIco,
+            [class*="viewerBadge"],
+            #MainMenu,
+            footer {{ display: none !important; }}
+        `;
+        pd.head.appendChild(fs);
+    }}
+
     if (pd.getElementById('kipm-mobile-logo')) return;
 
-    // CSS: logo hanya muncul di mobile, sembunyikan duplikat heading di luar kotak
     var s = pd.createElement('style');
     s.id = 'kipm-mobile-logo-style';
     s.textContent = `
@@ -681,10 +696,9 @@ def show_login():
             pointer-events: none;
         }}
         #kipm-mobile-logo img {{
-            width: 56px;
-            height: 56px;
+            width: 80px; height: 80px;
             object-fit: contain;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6));
         }}
         #kipm-mobile-logo .kipm-name {{
             font-size: 0.7rem;
@@ -704,7 +718,7 @@ def show_login():
     div.innerHTML = `
         <img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png"
              onerror="this.style.display='none'"
-             style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6));">
+             style="width:80px;height:80px;object-fit:contain;">
         <div class="kipm-name">KIPM-UP</div>
     `;
     pd.body.appendChild(div);
@@ -846,6 +860,12 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
+
+// Sembunyikan logo KIPM login saat sudah masuk ke halaman utama
+var kipmLogo = pd.getElementById('kipm-mobile-logo');
+if (kipmLogo) kipmLogo.style.display = 'none !important';
+var kipmStyle = pd.getElementById('kipm-mobile-logo-style');
+if (kipmStyle) kipmStyle.remove();
 
 // Hapus elemen lama kalau ada, inject ulang yang baru
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{
