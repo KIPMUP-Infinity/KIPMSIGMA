@@ -569,6 +569,10 @@ def show_login():
         section[data-testid="stMain"] {{
             background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png') center top/cover no-repeat fixed !important;
         }}
+        /* Kotak login naik sedikit beri ruang logo KIPM di atas */
+        [data-testid="stMainBlockContainer"] {{
+            margin-top: 90px !important;
+        }}
     }}
 
     /* Glass card */
@@ -655,9 +659,60 @@ def show_login():
     """, unsafe_allow_html=True)
 
     # Background sudah di-set via CSS (URL GitHub raw)
+
+    # Inject logo KIPM di atas kotak khusus mobile
+    components.html(f"""
+<script>
+(function() {{
+    var pd = window.parent.document;
+    if (pd.getElementById('kipm-mobile-logo')) return;
+
+    // CSS: logo hanya muncul di mobile, sembunyikan duplikat heading di luar kotak
+    var s = pd.createElement('style');
+    s.id = 'kipm-mobile-logo-style';
+    s.textContent = `
+        #kipm-mobile-logo {{
+            display: none;
+            text-align: center;
+            padding: 14px 0 10px;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 10;
+            pointer-events: none;
+        }}
+        #kipm-mobile-logo img {{
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+        }}
+        #kipm-mobile-logo .kipm-name {{
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.7);
+            letter-spacing: 2px;
+            font-family: sans-serif;
+            margin-top: 4px;
+        }}
+        @media(max-width: 768px) {{
+            #kipm-mobile-logo {{ display: block !important; }}
+        }}
+    `;
+    pd.head.appendChild(s);
+
+    var div = pd.createElement('div');
+    div.id = 'kipm-mobile-logo';
+    div.innerHTML = `
+        <img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png"
+             onerror="this.style.display='none';this.nextElementSibling.style.fontSize='1.4rem'">
+        <div class="kipm-name">KIPM-UP</div>
+    `;
+    pd.body.appendChild(div);
+}})();
+</script>
+""", height=0)
     st.markdown('''
         <div style="text-align:center;margin:0 0 10px;">
-            <div style="font-size:1.8rem;font-weight:900;letter-spacing:3px;color:#ffffff;font-family:sans-serif;line-height:1.2;">
+            <div style="font-size:2.2rem;font-weight:900;letter-spacing:4px;color:#ffffff;font-family:sans-serif;line-height:1.2;">
                 SIGMA <span style="color:#F5C242;">Σ</span>
             </div>
             <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">
