@@ -530,7 +530,7 @@ def show_login():
     /* Form container — transparan glass, compact, geser 1cm dari kanan */
     [data-testid="stMainBlockContainer"] {{
         max-width: 300px !important;
-        margin: 3vh 74px 0 auto !important;
+        margin: 1.5vh 74px 0 auto !important;
         padding: 8px 18px 16px !important;
         position: relative;
         z-index: 1;
