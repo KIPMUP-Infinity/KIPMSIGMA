@@ -824,10 +824,9 @@ for i, msg in enumerate(active["messages"][1:]):
         display = msg["content"]
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
-        key = f"thumb_{active['id']}_{i}"
-        if msg["role"] == "user" and key in st.session_state:
-            b64, mime = st.session_state[key]
-            st.markdown(f'<img src="data:{mime};base64,{b64}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+        # Tampilkan gambar — baca dari msg langsung (persist setelah refresh)
+        if msg["role"] == "user" and msg.get("img_b64"):
+            st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
 # Chat input
@@ -932,14 +931,18 @@ if prompt:
 # SAVE DATA
 # ─────────────────────────────────────────────
 if user:
-    sessions_to_save = [
-        {"id": s["id"], "title": s["title"], "created": s["created"],
-         "messages": [
-             {k: v for k, v in m.items() if m["role"] != "system"}
-             for m in s["messages"] if m["role"] != "system"
-         ]}
-        for s in st.session_state.sessions
-    ]
+    sessions_to_save = []
+    for s in st.session_state.sessions:
+        msgs = []
+        for m in s["messages"]:
+            if m["role"] == "system":
+                continue
+            # Simpan semua field termasuk img_b64 dan img_mime
+            msgs.append({k: v for k, v in m.items()})
+        sessions_to_save.append({
+            "id": s["id"], "title": s["title"], "created": s["created"],
+            "messages": msgs
+        })
     save_user(user["email"], {
         "theme": st.session_state.get("theme", "dark"),
         "sessions": sessions_to_save,
