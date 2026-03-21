@@ -220,13 +220,10 @@ st.markdown(f"""
     footer {{ visibility: hidden; }}
     #MainMenu {{ visibility: hidden; }}
 
-    /* Sembunyikan HANYA teks, bukan tombol atau SVG */
-    [data-testid="collapsedControl"] button > span:not(:has(svg)),
-    [data-testid="stSidebarCollapseButton"] button > span:not(:has(svg)) {{
-        color: transparent !important;
-        font-size: 0 !important;
-        width: 0 !important;
-        overflow: hidden !important;
+    /* Sembunyikan tombol collapse bawaan Streamlit */
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapseButton"] {{
+        display: none !important;
     }}
     </style>
 """, unsafe_allow_html=True)
@@ -789,10 +786,67 @@ components.html(f"""
                 el.style.marginTop = '0px';
             }});
         }});
-
     }}
 
-    function injectSettings() {{
+    function injectToggleBtn() {{
+        var pd = window.parent.document;
+        if (pd.getElementById('sigma-toggle-btn')) return;
+
+        var sbg = '{_sidebar_bg}';
+        var clr = '{_text_muted}';
+
+        var btn = pd.createElement('button');
+        btn.id = 'sigma-toggle-btn';
+        btn.innerHTML = '&#8249;';
+        btn.style.cssText = [
+            'position:fixed',
+            'top:50%',
+            'transform:translateY(-50%)',
+            'left:244px',
+            'width:16px',
+            'height:48px',
+            'background:' + sbg,
+            'color:' + clr,
+            'border:none',
+            'border-radius:0 6px 6px 0',
+            'cursor:pointer',
+            'z-index:9999',
+            'font-size:18px',
+            'line-height:1',
+            'padding:0',
+            'display:flex',
+            'align-items:center',
+            'justify-content:center',
+            'transition:left 0.3s'
+        ].join(';');
+
+        btn.addEventListener('click', function() {{
+            var sidebar = pd.querySelector('section[data-testid="stSidebar"]');
+            var isOpen = sidebar && sidebar.getAttribute('aria-expanded') !== 'false'
+                         && getComputedStyle(sidebar).width !== '0px';
+            // Klik tombol collapse bawaan (tersembunyi tapi masih ada)
+            var native = pd.querySelector('[data-testid="stSidebarCollapseButton"] button, [data-testid="collapsedControl"] button');
+            if (native) native.click();
+        }});
+
+        pd.body.appendChild(btn);
+
+        // Update posisi dan icon saat sidebar buka/tutup
+        setInterval(function() {{
+            var sidebar = pd.querySelector('section[data-testid="stSidebar"]');
+            if (!sidebar) return;
+            var w = sidebar.getBoundingClientRect().width;
+            var b = pd.getElementById('sigma-toggle-btn');
+            if (!b) return;
+            if (w > 50) {{
+                b.style.left = w + 'px';
+                b.innerHTML = '&#8249;';
+            }} else {{
+                b.style.left = '0px';
+                b.innerHTML = '&#8250;';
+            }}
+        }}, 300);
+    }}
         var parentDoc = window.parent.document;
         var sidebar = parentDoc.querySelector('section[data-testid="stSidebar"] > div:first-child');
         if (!sidebar) return;
@@ -975,13 +1029,13 @@ components.html(f"""
     // Coba inject segera dan dengan retry
     fixSidebarTop();
     injectSettings();
-    setTimeout(function() {{ fixSidebarTop(); }}, 100);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 300);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 800);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
+    injectToggleBtn();
+    setTimeout(function() {{ fixSidebarTop(); injectToggleBtn(); }}, 100);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); injectToggleBtn(); }}, 300);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); injectToggleBtn(); }}, 800);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); injectToggleBtn(); }}, 2000);
     setInterval(function() {{ fixSidebarTop(); }}, 5000);
 
-    // Observe kalau sidebar baru render
     var obs = new MutationObserver(function() {{ fixSidebarTop(); injectSettings(); }});
     obs.observe(window.parent.document.body, {{childList:true, subtree:true}});
 }})();
