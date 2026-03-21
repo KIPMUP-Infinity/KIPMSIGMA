@@ -15,7 +15,6 @@ import os
 import hashlib
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -799,11 +798,6 @@ with st.sidebar:
         st.divider()
         if st.button("🚪 Keluar", key="btn_logout", use_container_width=True):
             st.session_state.clear(); st.rerun()
-
-    # Tombol tutup sidebar — icon saja
-    if st.button("◁", key="btn_close_sidebar", use_container_width=True):
-        st.session_state.sidebar_open = False
-        st.rerun()
 
 # Handle sidebar HTML nav actions
 if "sb_sel" in st.query_params:
