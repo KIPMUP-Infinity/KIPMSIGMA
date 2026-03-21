@@ -545,7 +545,7 @@ def show_login():
     }}
     @media(max-width: 768px) {{
         [data-testid="stMainBlockContainer"] {{
-            margin: 12vh auto 0 auto !important;
+            margin: 5vh auto 0 auto !important;
             max-width: 88% !important;
             padding: 20px 20px 28px !important;
             backdrop-filter: blur(20px) !important;
@@ -569,9 +569,9 @@ def show_login():
         section[data-testid="stMain"] {{
             background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png') center top/cover no-repeat fixed !important;
         }}
-        /* Kotak login naik sedikit beri ruang logo KIPM di atas */
+        /* Kotak login beri ruang logo KIPM di atas */
         [data-testid="stMainBlockContainer"] {{
-            margin-top: 90px !important;
+            margin-top: 75px !important;
         }}
     }}
 
