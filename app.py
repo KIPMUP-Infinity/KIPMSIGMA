@@ -1016,12 +1016,102 @@ if st.session_state.user is None:
 """, height=0)
 
 # ─────────────────────────────────────────────
-# JS: bubble kanan + paste gambar
+# JS: bubble kanan + paste gambar + mobile CSS
 # ─────────────────────────────────────────────
 components.html(f"""
 <script>
 const BC = "{C['bubble']}";
 const BT = "#ffffff";
+
+// ── Inject mobile CSS ke parent <head> — cara paling kuat ──
+(function() {{
+    var pd = window.parent.document;
+    if (pd.getElementById('sigma-mobile-css')) return;
+    var s = pd.createElement('style');
+    s.id = 'sigma-mobile-css';
+    s.textContent = `
+        /* Base font konsisten */
+        [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMarkdownContainer"] li,
+        [data-testid="stMarkdownContainer"] span,
+        [data-testid="stMarkdownContainer"] div,
+        [data-testid="stMarkdownContainer"] strong,
+        [data-testid="stMarkdownContainer"] b,
+        [data-testid="stMarkdownContainer"] em {{
+            font-size: 1rem !important;
+            line-height: 1.85 !important;
+        }}
+
+        @media (max-width: 768px) {{
+            /* Konten full width rapat */
+            [data-testid="stMainBlockContainer"] {{
+                max-width: 100% !important;
+                padding: 8px 12px 120px !important;
+                margin: 0 !important;
+            }}
+            /* Semua teks AI besar dan nyaman */
+            [data-testid="stMarkdownContainer"],
+            [data-testid="stMarkdownContainer"] p,
+            [data-testid="stMarkdownContainer"] li,
+            [data-testid="stMarkdownContainer"] span,
+            [data-testid="stMarkdownContainer"] div,
+            [data-testid="stMarkdownContainer"] strong,
+            [data-testid="stMarkdownContainer"] b,
+            [data-testid="stMarkdownContainer"] em,
+            [data-testid="stMarkdownContainer"] a {{
+                font-size: 1.05rem !important;
+                line-height: 1.9 !important;
+            }}
+            [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }}
+            [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
+            [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; font-weight: 700 !important; }}
+
+            /* List rapi */
+            [data-testid="stMarkdownContainer"] ul,
+            [data-testid="stMarkdownContainer"] ol {{
+                padding-left: 18px !important;
+                margin: 4px 0 !important;
+            }}
+            [data-testid="stMarkdownContainer"] li {{
+                margin-bottom: 6px !important;
+            }}
+
+            /* Jarak antar chat */
+            [data-testid="stChatMessage"] {{
+                padding: 10px 0 !important;
+            }}
+
+            /* Chat input */
+            div[data-testid="stChatInputContainer"] {{
+                border-radius: 26px !important;
+                margin: 0 4px 8px !important;
+            }}
+            [data-testid="stChatInput"] textarea {{
+                font-size: 16px !important;
+                line-height: 1.5 !important;
+            }}
+
+            /* Bubble */
+            .navy-pill {{
+                max-width: 82% !important;
+                font-size: 1.05rem !important;
+                line-height: 1.75 !important;
+                padding: 12px 16px !important;
+            }}
+
+            /* Code */
+            [data-testid="stMarkdownContainer"] code {{
+                font-size: 0.88rem !important;
+            }}
+            [data-testid="stMarkdownContainer"] pre {{
+                font-size: 0.85rem !important;
+                overflow-x: auto !important;
+                padding: 12px !important;
+            }}
+        }}
+    `;
+    pd.head.appendChild(s);
+}})();
 
 function fixBubbles() {{
     const doc = window.parent.document;
