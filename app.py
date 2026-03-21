@@ -16,6 +16,9 @@ import hashlib
 
 
 
+
+
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -390,14 +393,6 @@ if st.session_state.user is None:
     show_login_page()
     st.stop()
 
-# ── HANDLE QUERY PARAMS AWAL ─────────────────────────────
-if "toggle_sidebar" in st.query_params:
-    if "sidebar_open" not in st.session_state:
-        st.session_state.sidebar_open = True
-    st.session_state.sidebar_open = not st.session_state.sidebar_open
-    st.query_params.clear()
-    st.rerun()
-
 user = st.session_state.user
 SYSTEM_PROMPT = {
     "role": "system",
@@ -739,22 +734,18 @@ if "action" in st.query_params:
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
 
-_sb_left = "244px" if st.session_state.sidebar_open else "0px"
 _sb_icon = "‹" if st.session_state.sidebar_open else "›"
+_sb_left = "244px" if st.session_state.sidebar_open else "0px"
 
 st.markdown(f"""
     <style>
-    {'/* sidebar open */' if st.session_state.sidebar_open else '''
-    section[data-testid="stSidebar"] { display: none !important; }
-    [data-testid="stAppViewContainer"] > section.main { margin-left: 0 !important; }
-    '''}
+    {'section[data-testid="stSidebar"] {{ display: none !important; }}' if not st.session_state.sidebar_open else ''}
     #sigma-sb-toggle {{
         position: fixed;
         top: 50%;
         transform: translateY(-50%);
         left: {_sb_left};
-        width: 18px;
-        height: 48px;
+        width: 18px; height: 48px;
         background: {_sidebar_bg};
         color: {_text_muted};
         border: none;
@@ -765,12 +756,15 @@ st.markdown(f"""
         display: flex;
         align-items: center;
         justify-content: center;
-        text-decoration: none;
     }}
-    #sigma-sb-toggle:hover {{ background: {'#2f2f2f' if _is_dark else '#d0d0d0'}; }}
     </style>
-    <a id="sigma-sb-toggle" href="?toggle_sidebar=1">{_sb_icon}</a>
 """, unsafe_allow_html=True)
+
+# Tombol toggle pakai st.button — tidak clear session
+col_toggle = st.sidebar.empty() if st.session_state.sidebar_open else st.empty()
+if st.button(_sb_icon, key="sb_toggle_btn"):
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
+    st.rerun()
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
