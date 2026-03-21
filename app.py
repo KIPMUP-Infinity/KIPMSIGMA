@@ -533,134 +533,17 @@ user = st.session_state.user
 C = get_colors(st.session_state.theme)
 
 # ─────────────────────────────────────────────
-# SIDEBAR
+# SEMBUNYIKAN SIDEBAR SEPENUHNYA
 # ─────────────────────────────────────────────
-try:
-    _logo_img = Image.open("Mate KIPM LOGO.png")
-    _buf = io.BytesIO()
-    _logo_img.save(_buf, format="PNG")
-    _logo_b64 = base64.b64encode(_buf.getvalue()).decode()
-    _logo_src = f"data:image/png;base64,{_logo_b64}"
-except:
-    _logo_src = ""
-
-with st.sidebar:
-    # Header: toggle button + logo
-    col_logo, col_close = st.columns([4, 1])
-    with col_close:
-        st.markdown(f"""
-        <style>
-        /* Close button kecil di kanan atas sidebar */
-        div[data-testid="stSidebar"] [data-testid="stHorizontalBlock"] > div:last-child .stButton > button {{
-            width: 30px !important;
-            height: 30px !important;
-            min-height: 0 !important;
-            padding: 0 !important;
-            font-size: 16px !important;
-            border-radius: 6px !important;
-            color: {C['text_muted']} !important;
-            justify-content: center !important;
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-        if st.button("⊡", key="btn_close_sb"):
-            # Klik tombol collapse bawaan Streamlit via JS
-            components.html("""
-            <script>
-            setTimeout(function() {
-                var pd = window.parent.document;
-                var btn = pd.querySelector('[data-testid="stSidebarCollapseButton"] button');
-                if (btn) btn.click();
-            }, 50);
-            </script>
-            """, height=0)
-
-    # Logo + nama organisasi
-    st.markdown(f"""
-    <div style="text-align:center;padding:0 12px 10px;font-family:inherit;">
-        {"" if not _logo_src else f'<img src="{_logo_src}" style="width:68px;height:68px;object-fit:contain;display:block;margin:0 auto 6px;">'}
-        <p style="margin:0;font-size:0.68rem;color:{C['text_muted']};line-height:1.4;">
-            Komunitas <span style="color:{C['gold']};font-weight:600;">Investasi</span> Pasar Modal
-        </p>
-        <p style="margin:2px 0 0;font-size:0.88rem;font-weight:700;color:{C['text']};">
-            Universitas Pancasila
-        </p>
-    </div>
-    <hr style="border:none;border-top:1px solid {C['border']};margin:0 0 6px;">
-    """, unsafe_allow_html=True)
-
-    # New chat
-    if st.button("◎  Obrolan baru", key="btn_new", use_container_width=True):
-        ns = new_session()
-        st.session_state.sessions.insert(0, ns)
-        st.session_state.active_id = ns["id"]
-        st.rerun()
-
-    # Chat list
-    st.markdown(f'<p style="font-size:0.68rem;font-weight:500;color:{C["text_muted"]};padding:8px 12px 3px;margin:0;">OBROLAN ANDA</p>', unsafe_allow_html=True)
-
-    for sesi in st.session_state.sessions:
-        sid = sesi["id"]
-        is_active = sid == st.session_state.active_id
-        title_d = sesi["title"][:24] + "..." if len(sesi["title"]) > 24 else sesi["title"]
-
-        if st.session_state.rename_id == sid:
-            new_t = st.text_input("", value=sesi["title"], key=f"ren_{sid}", label_visibility="collapsed")
-            c1, c2 = st.columns([1,1])
-            with c1:
-                if st.button("✓", key=f"ok_{sid}"):
-                    sesi["title"] = new_t.strip() or sesi["title"]
-                    st.session_state.rename_id = None; st.rerun()
-            with c2:
-                if st.button("✗", key=f"cx_{sid}"):
-                    st.session_state.rename_id = None; st.rerun()
-        else:
-            if is_active:
-                c1, c2, c3 = st.columns([6,1,1])
-                with c1:
-                    if st.button(title_d, key=f"sel_{sid}", use_container_width=True):
-                        st.session_state.active_id = sid
-                        st.session_state.rename_id = None; st.rerun()
-                with c2:
-                    if st.button("✎", key=f"ren_{sid}"):
-                        st.session_state.rename_id = sid; st.rerun()
-                with c3:
-                    if st.button("✕", key=f"del_{sid}"):
-                        delete_session(sid); st.rerun()
-            else:
-                if st.button(title_d, key=f"sel_{sid}", use_container_width=True):
-                    st.session_state.active_id = sid
-                    st.session_state.rename_id = None; st.rerun()
-
-    # Settings
-    st.markdown(f'<hr style="border:none;border-top:1px solid {C["border"]};margin:8px 0 4px;">', unsafe_allow_html=True)
-    if "show_settings" not in st.session_state:
-        st.session_state.show_settings = False
-
-    if st.button("⚙  Pengaturan", key="btn_settings", use_container_width=True):
-        st.session_state.show_settings = not st.session_state.show_settings
-        st.rerun()
-
-    if st.session_state.show_settings:
-        cur = st.session_state.get("theme", "dark")
-        st.markdown(f'<p style="font-size:0.68rem;color:{C["text_muted"]};padding:4px 12px 2px;margin:0;">PENAMPILAN</p>', unsafe_allow_html=True)
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("🌙 Gelap", key="btn_dark", disabled=cur=="dark", use_container_width=True):
-                st.session_state.theme = "dark"; st.session_state.show_settings = False; st.rerun()
-        with c2:
-            if st.button("☀️ Terang", key="btn_light", disabled=cur=="light", use_container_width=True):
-                st.session_state.theme = "light"; st.session_state.show_settings = False; st.rerun()
-        st.markdown(f'<hr style="border:none;border-top:1px solid {C["border"]};margin:4px 0;">', unsafe_allow_html=True)
-        if st.button("🚪 Keluar", key="btn_logout", use_container_width=True):
-            # Hapus file token
-            tok = st.session_state.get("current_token", "")
-            if tok:
-                try: os.remove(os.path.join(DATA_DIR, f"token_{tok}.json"))
-                except: pass
-            st.session_state.clear()
-            st.query_params.clear()
-            st.rerun()
+st.markdown("""
+<style>
+section[data-testid="stSidebar"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
