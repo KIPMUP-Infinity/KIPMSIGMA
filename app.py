@@ -672,11 +672,27 @@ def show_login():
         var fs = pd.createElement('style');
         fs.id = 'hide-fork-bar';
         fs.textContent = `
+            /* Fork bar & GitHub badge */
             .viewerBadge_container__r5tak,
             .viewerBadge_link__qRIco,
             [class*="viewerBadge"],
+            [class*="styles_viewerBadge"],
             #MainMenu,
-            footer {{ display: none !important; }}
+            footer,
+            /* Streamlit toolbar atas */
+            [data-testid="stToolbar"],
+            [data-testid="stDecoration"],
+            [data-testid="stStatusWidget"],
+            header[data-testid="stHeader"],
+            /* Tombol deploy/fork */
+            .stDeployButton,
+            [kind="header"],
+            div[data-testid="collapsedControl"] {{
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                overflow: hidden !important;
+            }}
         `;
         pd.head.appendChild(fs);
     }}
@@ -830,6 +846,16 @@ st.markdown("""
 section[data-testid="stSidebar"],
 [data-testid="collapsedControl"],
 [data-testid="stSidebarCollapseButton"] { display: none !important; }
+
+/* Sembunyikan Fork bar, GitHub badge, Streamlit logo di semua halaman */
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+.viewerBadge_container__r5tak,
+[class*="viewerBadge"],
+.stDeployButton,
+#MainMenu,
+footer { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
