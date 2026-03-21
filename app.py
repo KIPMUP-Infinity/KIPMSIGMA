@@ -514,12 +514,98 @@ def show_login():
     st.markdown(f"""
     <style>
     [data-testid="stSidebar"] {{ display: none !important; }}
+    [data-testid="stAppViewContainer"],
+    section[data-testid="stMain"],
     [data-testid="stMainBlockContainer"] {{
-        max-width: 420px !important;
-        margin: 6vh auto 0 !important;
-        padding: 0 16px !important;
+        background: linear-gradient(135deg, #0a0a1a 0%, #0d1b2a 40%, #1a0a2e 100%) !important;
+        min-height: 100vh !important;
     }}
-    section[data-testid="stMain"] {{ background: {C['bg']} !important; }}
+    [data-testid="stMainBlockContainer"] {{
+        max-width: 440px !important;
+        margin: 0 auto !important;
+        padding: 4vh 16px 40px !important;
+    }}
+
+    /* Glass card */
+    .stTabs, [data-testid="stVerticalBlock"] {{
+        background: transparent !important;
+    }}
+
+    /* Input fields glass style */
+    [data-testid="stTextInput"] input {{
+        background: rgba(255,255,255,0.06) !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        border-radius: 12px !important;
+        color: #fff !important;
+        padding: 12px 16px !important;
+        font-size: 0.95rem !important;
+        backdrop-filter: blur(10px) !important;
+        transition: border 0.2s !important;
+    }}
+    [data-testid="stTextInput"] input:focus {{
+        border: 1px solid {C['gold']} !important;
+        box-shadow: 0 0 0 2px rgba(245,194,66,0.15) !important;
+        outline: none !important;
+    }}
+    [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
+    [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
+
+    /* Masuk button */
+    [data-testid="stMainBlockContainer"] .stButton > button {{
+        background: linear-gradient(135deg, {C['gold']}, #e0a820) !important;
+        color: #000 !important;
+        font-weight: 700 !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+        font-size: 0.95rem !important;
+        letter-spacing: 0.5px !important;
+        transition: opacity 0.2s, transform 0.1s !important;
+        box-shadow: 0 4px 20px rgba(245,194,66,0.3) !important;
+    }}
+    [data-testid="stMainBlockContainer"] .stButton > button:hover {{
+        opacity: 0.92 !important; transform: translateY(-1px) !important;
+    }}
+
+    /* Tabs glass */
+    [data-testid="stTabs"] [role="tablist"] {{
+        background: rgba(255,255,255,0.05) !important;
+        border-radius: 12px !important;
+        padding: 4px !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        gap: 2px !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"] {{
+        border-radius: 9px !important;
+        color: rgba(255,255,255,0.5) !important;
+        font-size: 0.85rem !important;
+        padding: 7px 12px !important;
+        border: none !important;
+        background: transparent !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+        background: rgba(245,194,66,0.15) !important;
+        color: {C['gold']} !important;
+        font-weight: 600 !important;
+    }}
+    [data-testid="stTabs"] [role="tabpanel"] {{
+        background: rgba(255,255,255,0.03) !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+        padding: 20px 16px !important;
+        margin-top: 8px !important;
+        backdrop-filter: blur(10px) !important;
+    }}
+
+    /* Alert colors */
+    [data-testid="stAlert"] {{ border-radius: 10px !important; }}
+
+    /* Animasi background */
+    @keyframes gradMove {{
+        0% {{ background-position: 0% 50%; }}
+        50% {{ background-position: 100% 50%; }}
+        100% {{ background-position: 0% 50%; }}
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -531,30 +617,33 @@ def show_login():
     except: pass
 
     st.markdown(f"""
-    <div style="text-align:center;margin:16px 0 24px;">
-        <h2 style="margin:0;font-size:1.5rem;font-weight:700;color:{C['text']};">    KIPM SIGMA</h2>
-        <p style="margin:4px 0 2px;font-size:0.78rem;font-weight:600;letter-spacing:1.5px;color:{C['gold']};text-transform:uppercase;">Strategic Intelligence & Global Market Analysis</p>
-        <p style="margin:4px 0 0;color:{C['text_muted']};font-size:0.82rem;">
+    <div style="text-align:center;margin:12px 0 24px;">
+        <h2 style="margin:0;font-size:1.6rem;font-weight:800;color:#ffffff;letter-spacing:0.5px;">Masuk ke SIGMA</h2>
+        <p style="margin:6px 0 3px;font-size:0.72rem;font-weight:700;letter-spacing:2px;
+            background:linear-gradient(90deg,{C['gold']},#fff8dc,{C['gold']});
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text;text-transform:uppercase;">
+            Strategic Intelligence & Global Market Analysis
+        </p>
+        <p style="margin:4px 0 0;color:rgba(255,255,255,0.45);font-size:0.8rem;">
             Platform analisa saham KIPM Universitas Pancasila
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     # Tab pilihan login
-    tab1, tab2, tab3 = st.tabs(["🔑 Username", "🔐 Daftar", "🌐 Google"])
+    tab1, tab2, tab3 = st.tabs(["🔑 Masuk", "📝 Daftar", "🌐 Google"])
 
     with tab1:
-        uname = st.text_input("Username", key="li_user", placeholder="username")
-        pwd   = st.text_input("Password", key="li_pwd",  type="password", placeholder="password")
+        uname = st.text_input("Username", key="li_user", placeholder="Masukkan username")
+        pwd   = st.text_input("Password", key="li_pwd",  type="password", placeholder="Masukkan password")
         if st.button("Masuk", key="btn_login", use_container_width=True):
             if uname and pwd:
                 info = login_user(uname.strip(), pwd)
                 if info:
-                    # Buat token
                     token = str(uuid.uuid4()).replace("-","")
                     with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f:
                         json.dump(info, f)
-                    # Set token di URL — ini yang persist saat refresh
                     st.query_params["sigma_token"] = token
                     st.session_state.user = info
                     st.session_state.current_token = token
@@ -566,11 +655,11 @@ def show_login():
                 st.warning("Isi username dan password")
 
     with tab2:
-        rname = st.text_input("Nama Tampil", key="rg_name", placeholder="Nama kamu")
+        rname  = st.text_input("Nama Tampil", key="rg_name", placeholder="Nama lengkap kamu")
         runame = st.text_input("Username", key="rg_user", placeholder="username (huruf/angka)")
-        rpwd  = st.text_input("Password", key="rg_pwd",  type="password", placeholder="min. 6 karakter")
-        rpwd2 = st.text_input("Ulangi Password", key="rg_pwd2", type="password", placeholder="ulangi password")
-        if st.button("Daftar", key="btn_register", use_container_width=True):
+        rpwd   = st.text_input("Password", key="rg_pwd",  type="password", placeholder="min. 6 karakter")
+        rpwd2  = st.text_input("Ulangi Password", key="rg_pwd2", type="password", placeholder="ulangi password")
+        if st.button("Daftar Sekarang", key="btn_register", use_container_width=True):
             if not all([rname, runame, rpwd, rpwd2]):
                 st.warning("Lengkapi semua field")
             elif rpwd != rpwd2:
@@ -591,9 +680,9 @@ def show_login():
             <div style="margin-top:8px;">
                 <a href="{auth_url}" style="
                     display:flex;align-items:center;justify-content:center;gap:10px;
-                    background:#fff;color:#1a1a1a;border-radius:10px;padding:12px;
-                    text-decoration:none;font-size:0.9rem;font-weight:500;
-                    border:1px solid #ddd;">
+                    background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;
+                    text-decoration:none;font-size:0.9rem;font-weight:600;
+                    border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
                     <svg width="18" height="18" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -607,7 +696,12 @@ def show_login():
         except:
             st.info("Google login belum dikonfigurasi di Secrets")
 
-    st.markdown(f'<p style="text-align:center;color:{C["text_muted"]};font-size:0.72rem;margin-top:20px;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa, analisa yang dilakukan didalam bersifat do your own research dan disclaimeron.</p>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">
+        Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
+        Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.
+    </p>
+    """, unsafe_allow_html=True)
     st.stop()
 
 # ─────────────────────────────────────────────
