@@ -175,6 +175,12 @@ def restore_images_from_messages():
                 key = f"thumb_{sesi['id']}_{i-1}"
                 if key not in st.session_state:
                     st.session_state[key] = (msg["img_b64"], msg.get("img_mime", "image/jpeg"))
+
+def get_active():
+    for s in st.session_state.sessions:
+        if s["id"] == st.session_state.active_id:
+            return s
+    return st.session_state.sessions[0]
     for s in st.session_state.sessions:
         if s["id"] == st.session_state.active_id:
             return s
