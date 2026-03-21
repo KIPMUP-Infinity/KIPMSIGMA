@@ -14,6 +14,22 @@ import json
 import os
 import hashlib
 
+import streamlit as st
+from groq import Groq
+import yfinance as yf
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+import requests
+from urllib.parse import urlencode
+import json
+import os
+import hashlib
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -1201,8 +1217,8 @@ try {{
 """, height=0)
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
-_bubble_color = "#2f2f2f" if _is_dark else "#dcdcdc"
-_bubble_text  = "#ffffff" if _is_dark else "#0d0d0d"
+_bubble_color = "#1B2A4A"
+_bubble_text  = "#ffffff"
 components.html(f"""
 <script>
 const BUBBLE_COLOR = "{_bubble_color}";
