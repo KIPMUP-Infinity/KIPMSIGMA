@@ -772,19 +772,19 @@ st.markdown(f"""
 <script>
 (function() {{
     var pd = window.parent.document;
-    // Cari semua button di main area
     function styleFab() {{
         pd.querySelectorAll('button').forEach(function(b) {{
             var txt = b.textContent.trim();
             if (txt === '✎') {{
-                b.style.cssText = 'position:fixed!important;left:12px!important;bottom:80px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["gold"]}!important;color:#000!important;font-size:18px!important;font-weight:700!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
+                b.style.cssText = 'position:fixed!important;left:12px!important;top:12px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["gold"]}!important;color:#000!important;font-size:18px!important;font-weight:700!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
             }} else if (txt === '☰') {{
-                b.style.cssText = 'position:fixed!important;left:12px!important;bottom:130px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["sidebar_bg"]}!important;color:{C["text_muted"]}!important;font-size:18px!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
+                b.style.cssText = 'position:fixed!important;left:12px!important;top:62px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["sidebar_bg"]}!important;color:{C["text_muted"]}!important;font-size:18px!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
             }}
         }});
     }}
     styleFab();
-    setTimeout(styleFab, 500);
+    setTimeout(styleFab, 300);
+    setTimeout(styleFab, 1000);
     new MutationObserver(styleFab).observe(pd.body, {{childList:true, subtree:true}});
 }})();
 </script>
