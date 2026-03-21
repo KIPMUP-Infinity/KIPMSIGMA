@@ -680,7 +680,7 @@ with st.sidebar:
         <div class="sb-top">
             {"" if not _logo_src else f'<img src="{_logo_src}">'}
             <p class="sb-sub">KOMUNITAS <span style="color:#F5C242;font-weight:600;">INVESTASI</span> PASAR MODAL</p>
-            <p class="sb-name">UNIVERSITRAS PANCASILA</p>
+            <p class="sb-name">UNIVERSITAS PANCASILA</p>
         </div>
         <hr class="sb-divider">
     """, unsafe_allow_html=True)
