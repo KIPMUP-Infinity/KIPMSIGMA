@@ -816,45 +816,39 @@ if "do" in st.query_params:
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
         st.query_params["do"] = ""; st.rerun()
+    elif _do.startswith("sel_"):
+        _sid = _do[4:]
+        st.session_state.active_id = _sid
+        st.query_params["do"] = ""; st.rerun()
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
 # ─────────────────────────────────────────────
 active = get_active()
 
-# History list via st.button (inject ke drawer via JS)
+# Build history JS untuk drawer — inject items tanpa st.button
+_hist_items = ""
 for sesi in st.session_state.sessions:
     sid = sesi["id"]
     is_active = sid == st.session_state.active_id
-    title_d = sesi["title"][:32] + "..." if len(sesi["title"]) > 32 else sesi["title"]
-    if st.button(f"{'▶ ' if is_active else ''}{title_d}", key=f"hi_{sid}"):
-        st.session_state.active_id = sid
-        st.rerun()
-
-# JS: inject history items ke drawer
-_hist_js = ""
-for sesi in st.session_state.sessions:
-    sid = sesi["id"]
-    is_active = sid == st.session_state.active_id
-    title_d = sesi["title"][:35].replace("'", "\\'")
+    title_d = sesi["title"][:35].replace("'", "\\'").replace("`","")
     fw = "600" if is_active else "400"
     bg = C['hover'] if is_active else "transparent"
-    _hist_js += f"""
-    var hi = document.createElement('button');
-    hi.textContent = '{title_d}';
-    hi.style.cssText = 'display:block;width:100%;padding:10px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-    hi.onmouseenter = function(){{this.style.background='{C["hover"]}'}};
-    hi.onmouseleave = function(){{this.style.background='{bg}'}};
-    hi.onclick = function(){{
-        document.getElementById('sigma-history-drawer').style.display='none';
-        var btns = window.parent.document.querySelectorAll('button');
-        for(var b of btns){{
-            if(b.textContent.trim().replace('▶ ','') === '{title_d}' || b.textContent.trim() === '▶ {title_d}'){{
-                b.click(); break;
-            }}
-        }}
-    }};
-    drawer.appendChild(hi);
+    _hist_items += f"""
+    (function() {{
+        var hi = document.createElement('button');
+        hi.textContent = '{title_d}';
+        hi.dataset.sid = '{sid}';
+        hi.style.cssText = 'display:block;width:100%;padding:11px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        hi.onmouseenter = function(){{this.style.background='{C["hover"]}'}};
+        hi.onmouseleave = function(){{this.style.background='{bg}'}};
+        hi.onclick = function(){{
+            var url = new URL(window.parent.location.href);
+            url.searchParams.set('do', 'sel_{sid}');
+            window.parent.location.href = url.toString();
+        }};
+        drawer.appendChild(hi);
+    }})();
 """
 
 st.markdown(f"""
@@ -862,21 +856,10 @@ st.markdown(f"""
 (function() {{
     var drawer = document.getElementById('sigma-history-drawer');
     if (!drawer) return;
-    // Clear existing items (keep header)
     while (drawer.children.length > 1) drawer.removeChild(drawer.lastChild);
-    {_hist_js}
+    {_hist_items}
 }})();
 </script>
-""", unsafe_allow_html=True)
-
-# Sembunyikan st.button history dari tampilan
-st.markdown("""
-<style>
-/* Sembunyikan tombol history dari main area */
-[data-testid="stMainBlockContainer"] > div > div > div:first-child .stButton {{
-    display: none !important;
-}}
-</style>
 """, unsafe_allow_html=True)
 
 # Header
