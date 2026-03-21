@@ -15,23 +15,6 @@ import os
 import hashlib
 
 
-
-import streamlit as st
-from groq import Groq
-import yfinance as yf
-import fitz  # PyMuPDF untuk PDF
-import base64
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-import uuid
-from datetime import datetime
-import requests
-from urllib.parse import urlencode
-import json
-import os
-import hashlib
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -826,17 +809,17 @@ components.html(f"""
         // Cek sudah ada belum
         if (parentDoc.getElementById('sigma-settings-wrap')) return;
 
-        // Buat wrapper yang menempel di bawah
+        // Buat wrapper settings di bawah sidebar
         var wrap = parentDoc.createElement('div');
         wrap.id = 'sigma-settings-wrap';
         wrap.style.cssText = [
-            'position:sticky',
+            'position:fixed',
             'bottom:0',
             'left:0',
-            'right:0',
+            'width:244px',
             'background:{_bar_bg}',
             'border-top:1px solid {_bar_border}',
-            'z-index:9999',
+            'z-index:999',
             'font-family:Inter,sans-serif'
         ].join(';');
 
@@ -957,7 +940,7 @@ components.html(f"""
             </style>
         `;
 
-        sidebar.appendChild(wrap);
+        parentDoc.body.appendChild(wrap);
 
         // Pasang event listener setelah inject — bukan inline onclick
         // Ini yang benar karena kita akses fungsi di parentDoc scope langsung
