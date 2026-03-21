@@ -16,7 +16,6 @@ import hashlib
 
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -836,37 +835,44 @@ components.html(f"""
             }});
         }});
 
-        // Sembunyikan teks keyboard_double_arrow, tampilkan SVG icon
+        // Hapus teks keyboard_double_arrow — langsung dari text nodes
         var collapseSels = [
             '[data-testid="stSidebarCollapseButton"]',
             '[data-testid="collapsedControl"]',
             'button[kind="header"]'
         ];
         collapseSels.forEach(function(sel) {{
-            var btn = pd.querySelector(sel);
-            if (!btn) return;
-            // Sembunyikan semua text nodes dan span yang bukan SVG container
-            btn.querySelectorAll('span, p').forEach(function(el) {{
-                el.style.setProperty('font-size', '0', 'important');
-                el.style.setProperty('line-height', '0', 'important');
-                el.style.setProperty('width', '0', 'important');
-                el.style.setProperty('height', '0', 'important');
-                el.style.setProperty('overflow', 'hidden', 'important');
-            }});
-            // Pastikan SVG tetap terlihat
-            btn.querySelectorAll('svg').forEach(function(svg) {{
-                svg.style.setProperty('display', 'block', 'important');
-                svg.style.setProperty('visibility', 'visible', 'important');
-                svg.style.setProperty('width', '18px', 'important');
-                svg.style.setProperty('height', '18px', 'important');
-                // Naik ke parent span juga di-show
-                var p = svg.parentElement;
-                if (p) {{
-                    p.style.setProperty('font-size', '18px', 'important');
-                    p.style.setProperty('width', 'auto', 'important');
-                    p.style.setProperty('height', 'auto', 'important');
-                    p.style.setProperty('overflow', 'visible', 'important');
-                }}
+            pd.querySelectorAll(sel).forEach(function(btn) {{
+                // Hapus TEXT NODE langsung (bukan element)
+                btn.childNodes.forEach(function(node) {{
+                    if (node.nodeType === 3) {{ // TEXT_NODE
+                        node.textContent = '';
+                    }}
+                }});
+                // Hapus semua span/p yang tidak berisi SVG
+                btn.querySelectorAll('span, p').forEach(function(el) {{
+                    if (!el.querySelector('svg') && !el.closest('svg')) {{
+                        el.style.setProperty('font-size', '0', 'important');
+                        el.style.setProperty('width', '0', 'important');
+                        el.style.setProperty('height', '0', 'important');
+                        el.style.setProperty('overflow', 'hidden', 'important');
+                        el.style.setProperty('position', 'absolute', 'important');
+                    }}
+                }});
+                // Pastikan SVG & parent-nya terlihat
+                btn.querySelectorAll('svg').forEach(function(svg) {{
+                    svg.style.setProperty('display', 'block', 'important');
+                    svg.style.setProperty('visibility', 'visible', 'important');
+                    var p = svg.parentElement;
+                    while (p && p !== btn) {{
+                        p.style.removeProperty('font-size');
+                        p.style.removeProperty('width');
+                        p.style.removeProperty('height');
+                        p.style.removeProperty('overflow');
+                        p.style.removeProperty('position');
+                        p = p.parentElement;
+                    }}
+                }});
             }});
         }});
     }}
