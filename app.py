@@ -527,26 +527,29 @@ def show_login():
         display: none !important;
     }}
 
-    /* Form container — transparan glass, geser 1cm dari kanan */
+    /* Form container — transparan glass, compact, geser 1cm dari kanan */
     [data-testid="stMainBlockContainer"] {{
         max-width: 420px !important;
-        margin: 0 16px 0 auto !important;
-        padding: 4vh 28px 40px !important;
+        margin: 8vh 16px 0 auto !important;
+        padding: 32px 28px 36px !important;
         position: relative;
         z-index: 1;
-        min-height: 100vh;
-        background: rgba(5, 8, 20, 0.55) !important;
-        backdrop-filter: blur(18px) saturate(1.4) !important;
-        -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
-        border-left: 1px solid rgba(255,255,255,0.10) !important;
+        min-height: unset !important;
+        height: fit-content !important;
+        background: rgba(5, 8, 20, 0.60) !important;
+        backdrop-filter: blur(20px) saturate(1.4) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
     }}
     @media(max-width: 768px) {{
         [data-testid="stMainBlockContainer"] {{
-            margin: 0 auto !important;
-            max-width: 100% !important;
-            padding: 5vh 20px 40px !important;
+            margin: 4vh auto !important;
+            max-width: 92% !important;
+            padding: 24px 20px 32px !important;
             backdrop-filter: blur(14px) !important;
-            border-left: none !important;
+            border-radius: 16px !important;
         }}
     }}
 
