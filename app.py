@@ -553,6 +553,14 @@ def show_login():
         }}
     }}
 
+    /* Sembunyikan header toolbar Streamlit bawaan */
+    header[data-testid="stHeader"] {{
+        display: none !important;
+    }}
+    #MainMenu {{
+        display: none !important;
+    }}
+
     /* Glass card */
     .stTabs, [data-testid="stVerticalBlock"] {{
         background: transparent !important;
