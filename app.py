@@ -16,6 +16,7 @@ import hashlib
 
 
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -736,55 +737,30 @@ components.html(f"""
         var pd = window.parent.document;
         var sbg = '{_sidebar_bg}';
 
-        // Inject CSS ke head parent dengan specificity tertinggi — override inline style
-        var headStyleId = 'sigma-force-top';
-        var headStyle = pd.getElementById(headStyleId);
-        if (!headStyle) {{
-            headStyle = pd.createElement('style');
-            headStyle.id = headStyleId;
-            pd.head.appendChild(headStyle);
-        }}
-        headStyle.textContent = [
-            '[data-testid="stSidebarUserContent"] {{',
-            '  padding-top: 0 !important;',
-            '  margin-top: 0 !important;',
-            '}}',
-            '[data-testid="stSidebarContent"] {{',
-            '  padding-top: 0 !important;',
-            '  margin-top: 0 !important;',
-            '}}',
-            'section[data-testid="stSidebar"] > div > div {{',
-            '  padding-top: 0 !important;',
-            '  margin-top: 0 !important;',
-            '}}'
-        ].join('\n');
-
-        // Direct inline style — hapus padding yang sudah ada lalu set 0
-        [
-            '[data-testid="stSidebarUserContent"]',
-            '[data-testid="stSidebarContent"]',
-            'section[data-testid="stSidebar"] > div',
-            'section[data-testid="stSidebar"] > div > div',
-            'section[data-testid="stSidebar"] > div > div > div'
-        ].forEach(function(sel) {{
-            pd.querySelectorAll(sel).forEach(function(el) {{
-                el.style.removeProperty('padding-top');
-                el.style.removeProperty('margin-top');
-                el.style.paddingTop = '0px';
-                el.style.marginTop = '0px';
-            }});
-        }});
-
-        // 3. Sembunyikan HANYA teks (bukan SVG) di tombol collapse
-        pd.querySelectorAll([
-            '[data-testid="stSidebarCollapseButton"] span',
-            '[data-testid="collapsedControl"] span',
-            'button[kind="header"] span'
-        ].join(',')).forEach(function(el) {{
-            if (!el.querySelector('svg')) {{
-                el.style.setProperty('display', 'none', 'important');
+        // Inject CSS ke <head> parent — ini cara terkuat
+        var sid = 'sigma-force-top';
+        var st = pd.getElementById(sid) || pd.createElement('style');
+        st.id = sid;
+        st.textContent = `
+            section[data-testid="stSidebar"],
+            section[data-testid="stSidebar"] > div,
+            section[data-testid="stSidebar"] > div > div,
+            section[data-testid="stSidebar"] > div > div > div,
+            [data-testid="stSidebarContent"],
+            [data-testid="stSidebarUserContent"],
+            [data-testid="stSidebarUserContent"] > div,
+            [data-testid="stSidebarUserContent"] > div > div {{
+                background-color: ${{sbg}} !important;
+                padding-top: 0px !important;
+                margin-top: 0px !important;
             }}
-        }});
+            [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
+            [data-testid="collapsedControl"] span:not(:has(svg)),
+            button[kind="header"] span:not(:has(svg)) {{
+                display: none !important;
+            }}
+        `;
+        if (!pd.getElementById(sid)) pd.head.appendChild(st);
     }}
 
     function injectSettings() {{
@@ -967,18 +943,20 @@ components.html(f"""
         }}
     }} catch(e) {{}}
 
-    // Coba inject segera dan dengan retry
+    // Jalankan segera + retry
     fixSidebarTop();
     injectSettings();
-    setTimeout(function() {{ fixSidebarTop(); }}, 100);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 300);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 800);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
-    setInterval(function() {{ fixSidebarTop(); }}, 1000);
+    [100, 500, 1000, 2000].forEach(function(t) {{
+        setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, t);
+    }});
 
-    // Observe kalau sidebar baru render
-    var obs = new MutationObserver(function() {{ fixSidebarTop(); injectSettings(); }});
-    obs.observe(window.parent.document.body, {{childList:true, subtree:true}});
+    // Observe DOM changes — hanya jalankan sekali per batch perubahan
+    var obsTimer;
+    var obs = new MutationObserver(function() {{
+        clearTimeout(obsTimer);
+        obsTimer = setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 150);
+    }});
+    obs.observe(window.parent.document.body, {{childList:true, subtree:false}});
 }})();
 </script>
 """, height=0)
