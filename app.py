@@ -1198,5 +1198,80 @@ function setupPaste() {{
 setupPaste();
 setTimeout(setupPaste, 1000);
 setTimeout(setupPaste, 3000);
+
+// ── Drag & Drop file (PDF/gambar) ke area chat ──
+function setupDragDrop() {{
+    var pw = window.parent;
+    var pd = pw.document;
+    if (pw._sigmaDragOK) return;
+
+    // Overlay saat drag
+    var overlay = pd.createElement('div');
+    overlay.id = 'sigma-drop-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(27,42,74,0.55);z-index:99997;display:none;align-items:center;justify-content:center;pointer-events:none;';
+    overlay.innerHTML = '<div style="background:#1B2A4A;color:#fff;border:2px dashed #4a90d9;border-radius:16px;padding:32px 48px;font-size:1.1rem;text-align:center;">📂 Lepaskan file di sini<br><span style="font-size:0.85rem;opacity:0.7;">PDF, PNG, JPG</span></div>';
+    pd.body.appendChild(overlay);
+
+    var dragCount = 0;
+
+    pd.addEventListener('dragenter', function(e) {{
+        e.preventDefault();
+        dragCount++;
+        overlay.style.display = 'flex';
+    }}, true);
+
+    pd.addEventListener('dragleave', function(e) {{
+        dragCount--;
+        if (dragCount <= 0) {{ dragCount = 0; overlay.style.display = 'none'; }}
+    }}, true);
+
+    pd.addEventListener('dragover', function(e) {{
+        e.preventDefault();
+    }}, true);
+
+    pd.addEventListener('drop', function(e) {{
+        e.preventDefault();
+        dragCount = 0;
+        overlay.style.display = 'none';
+
+        var files = e.dataTransfer && e.dataTransfer.files;
+        if (!files || files.length === 0) return;
+
+        var file = files[0];
+        var allowed = ['application/pdf','image/png','image/jpeg','image/jpg'];
+        if (!allowed.includes(file.type)) {{
+            alert('File tidak didukung. Gunakan PDF, PNG, atau JPG.');
+            return;
+        }}
+
+        // Inject ke file input Streamlit
+        var inputs = pd.querySelectorAll('input[type="file"]');
+        for (var fi of inputs) {{
+            try {{
+                var dt = new DataTransfer();
+                dt.items.add(file);
+                Object.defineProperty(fi, 'files', {{value: dt.files, configurable:true, writable:true}});
+                fi.dispatchEvent(new Event('change', {{bubbles:true}}));
+                fi.dispatchEvent(new Event('input', {{bubbles:true}}));
+                var ta = pd.querySelector('[data-testid="stChatInput"] textarea');
+                if (ta) {{
+                    ta.style.outline = '2px solid #4a90d9';
+                    var fname = file.name;
+                    ta.placeholder = '📎 ' + fname + ' siap — ketik pertanyaan lalu Enter';
+                    setTimeout(function(){{
+                        ta.style.outline = '';
+                        ta.placeholder = 'Tanya SIGMA... DYOR - bukan financial advice.';
+                    }}, 3000);
+                    ta.focus();
+                }}
+                break;
+            }} catch(err) {{ console.log('drop err', err); }}
+        }}
+    }}, true);
+
+    pw._sigmaDragOK = true;
+}}
+setupDragDrop();
+setTimeout(setupDragDrop, 2000);
 </script>
 """, height=0)
