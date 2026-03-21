@@ -222,8 +222,36 @@ if "code" in st.query_params and st.session_state.user is None:
                 st.session_state.sessions = saved["sessions"]
                 st.session_state.active_id = saved.get("active_id")
         st.session_state.data_loaded = True
+        # Buat token untuk auto-login
+        token = str(uuid.uuid4()).replace("-","")
+        with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f:
+            json.dump(info, f)
+        st.session_state.new_token = token
     st.query_params.clear()
     st.rerun()
+
+# ─────────────────────────────────────────────
+# RESTORE SESSION DARI TOKEN (auto-login saat refresh)
+# ─────────────────────────────────────────────
+if "sigma_token" in st.query_params and st.session_state.user is None:
+    token = st.query_params.get("sigma_token", "")
+    token_file = os.path.join(DATA_DIR, f"token_{token}.json")
+    if os.path.exists(token_file):
+        try:
+            with open(token_file) as f:
+                user_info = json.load(f)
+            st.session_state.user = user_info
+            saved = load_user(user_info["email"])
+            if saved:
+                st.session_state.theme = saved.get("theme", "dark")
+                if saved.get("sessions"):
+                    st.session_state.sessions = saved["sessions"]
+                    st.session_state.active_id = saved.get("active_id")
+            st.session_state.data_loaded = True
+        except: pass
+    st.query_params.clear()
+    if st.session_state.user:
+        st.rerun()
 
 # Load data setelah login
 if st.session_state.user and not st.session_state.data_loaded:
@@ -434,6 +462,11 @@ def show_login():
                 if info:
                     st.session_state.user = info
                     st.session_state.data_loaded = False
+                    # Buat token untuk auto-login saat refresh
+                    token = str(uuid.uuid4()).replace("-","")
+                    with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f:
+                        json.dump(info, f)
+                    st.session_state.new_token = token
                     st.rerun()
                 else:
                     st.error("Username atau password salah")
@@ -753,6 +786,31 @@ if user:
         "sessions": sessions_to_save,
         "active_id": st.session_state.active_id,
     })
+
+# Kirim token baru ke localStorage setelah login
+_new_token = st.session_state.pop("new_token", None)
+if _new_token:
+    components.html(f"""
+<script>
+try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}
+</script>
+""", height=0)
+
+# Auto-restore token saat refresh — baca localStorage lalu redirect
+if st.session_state.user is None:
+    components.html("""
+<script>
+(function() {
+    try {
+        var token = localStorage.getItem('sigma_token');
+        if (token) {
+            var url = window.parent.location.href.split('?')[0];
+            window.parent.location.replace(url + '?sigma_token=' + token);
+        }
+    } catch(e) {}
+})();
+</script>
+""", height=0)
 
 # ─────────────────────────────────────────────
 # JS: bubble kanan + paste gambar
