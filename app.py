@@ -119,19 +119,15 @@ st.markdown(f"""
         margin-top: 0 !important;
     }}
 
-    /* ── TOMBOL COLLAPSE — hanya icon, sembunyikan semua teks ── */
+    /* ── TOMBOL COLLAPSE ── */
     [data-testid="stSidebarCollapseButton"] {{
         position: absolute !important;
         top: 8px !important; right: 10px !important;
-        z-index: 9999 !important;
+        z-index: 10 !important;
         background: transparent !important;
         border: none !important; box-shadow: none !important;
     }}
-    [data-testid="stSidebarCollapseButton"] > div,
-    [data-testid="stSidebarCollapseButton"] svg {{
-        pointer-events: none !important;
-    }}
-    /* Sembunyikan HANYA span teks, bukan yang berisi SVG */
+    /* Sembunyikan teks keyboard_double_arrow */
     [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
     [data-testid="collapsedControl"] span:not(:has(svg)) {{
         display: none !important;
