@@ -17,9 +17,6 @@ import hashlib
 
 
 
-
-
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -394,6 +391,10 @@ if st.session_state.user is None:
     show_login_page()
     st.stop()
 
+if "open_sidebar" in st.query_params:
+    st.session_state.sidebar_open = True
+    st.query_params.clear(); st.rerun()
+
 user = st.session_state.user
 SYSTEM_PROMPT = {
     "role": "system",
@@ -740,7 +741,7 @@ if "action" in st.query_params:
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
 
-# Kalau sidebar tertutup, tampilkan tombol buka di pojok kiri atas
+# Tombol buka sidebar — fixed di kiri bawah, selalu terlihat saat sidebar tertutup
 if not st.session_state.sidebar_open:
     st.markdown(f"""
         <style>
@@ -750,6 +751,31 @@ if not st.session_state.sidebar_open:
     if st.button("▶  Buka Sidebar", key="btn_open_sidebar"):
         st.session_state.sidebar_open = True
         st.rerun()
+
+# Icon buka sidebar fixed di pojok kiri bawah (dekat chat bar) — selalu ada
+st.markdown(f"""
+    <style>
+    #btn-open-sb {{
+        position: fixed;
+        bottom: 80px;
+        left: 12px;
+        width: 36px; height: 36px;
+        background: {_sidebar_bg};
+        color: {_text_muted};
+        border: 1px solid {'#2f2f2f' if _is_dark else '#d0d0d0'};
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        z-index: 9998;
+        display: {'none' if st.session_state.sidebar_open else 'flex'};
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }}
+    #btn-open-sb:hover {{ background: {'#3f3f3f' if _is_dark else '#c0c0c0'}; }}
+    </style>
+    <a id="btn-open-sb" href="?open_sidebar=1" title="Buka Sidebar">☰</a>
+""", unsafe_allow_html=True)
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
