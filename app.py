@@ -1205,11 +1205,19 @@ function addActionButtons() {{
         msg.style.flexDirection = 'column';
         if (isUser) {{
             bar.style.justifyContent = 'flex-end';
-            // Pastikan konten bubble tetap rata kanan
-            var ct = msg.querySelector('[data-testid="stChatMessageContent"]');
-            if (ct) ct.style.justifyContent = 'flex-end';
+            bar.style.marginRight = '0';
+            // Cari container markdown (parent of navy-pill) dan insert bar setelahnya
+            var md = msg.querySelector('[data-testid="stMarkdownContainer"]');
+            if (md && md.parentNode) {{
+                md.parentNode.style.flexDirection = 'column';
+                md.parentNode.style.alignItems = 'flex-end';
+                md.parentNode.appendChild(bar);
+            }} else {{
+                msg.appendChild(bar);
+            }}
+        }} else {{
+            msg.appendChild(bar);
         }}
-        msg.appendChild(bar);
     }});
 }}
 
