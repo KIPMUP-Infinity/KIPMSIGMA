@@ -535,20 +535,134 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 # SEMBUNYIKAN SIDEBAR SEPENUHNYA
 # ─────────────────────────────────────────────
-st.markdown("""
+st.markdown(f"""
 <style>
 section[data-testid="stSidebar"],
 [data-testid="collapsedControl"],
-[data-testid="stSidebarCollapseButton"] {
+[data-testid="stSidebarCollapseButton"] {{
     display: none !important;
-}
+}}
+
+/* Floating buttons */
+.sigma-fab {{
+    position: fixed;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    z-index: 9999;
+    transition: background 0.15s, transform 0.1s;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}}
+.sigma-fab:hover {{ transform: scale(1.08); }}
+
+/* Settings — pojok kanan atas */
+#fab-settings {{
+    top: 12px; right: 12px;
+    background: {C['sidebar_bg']};
+    color: {C['text_muted']};
+}}
+#fab-settings:hover {{ background: {C['hover']}; }}
+
+/* New chat — kiri bawah di atas chat input */
+#fab-newchat {{
+    bottom: 80px; left: 12px;
+    background: {C['gold']};
+    color: #000;
+    font-size: 20px;
+    font-weight: 700;
+}}
+#fab-newchat:hover {{ background: #e0b030; }}
+
+/* Settings popup */
+#settings-popup {{
+    position: fixed;
+    top: 56px; right: 12px;
+    background: {C['sidebar_bg']};
+    border: 1px solid {C['border']};
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 9998;
+    min-width: 180px;
+    overflow: hidden;
+    display: none;
+}}
+.sp-item {{
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 16px;
+    font-size: 0.875rem;
+    color: {C['text']};
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    text-decoration: none;
+}}
+.sp-item:hover {{ background: {C['hover']}; }}
+.sp-sep {{ border: none; border-top: 1px solid {C['border']}; margin: 2px 0; }}
+.sp-red {{ color: #f55 !important; }}
 </style>
+
+<!-- Floating Settings Button -->
+<button class="sigma-fab" id="fab-settings" onclick="toggleSettings()" title="Pengaturan">⚙</button>
+
+<!-- Settings Popup -->
+<div id="settings-popup">
+    <div style="padding:6px 16px 4px;font-size:0.65rem;color:{C['text_muted']};font-weight:600;letter-spacing:1px;">PENAMPILAN</div>
+    <button class="sp-item" onclick="setTheme('dark')">🌙 Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</button>
+    <button class="sp-item" onclick="setTheme('light')">☀️ Mode Terang {'✓' if st.session_state.theme=='light' else ''}</button>
+    <div class="sp-sep"></div>
+    <a class="sp-item sp-red" href="?do=logout">🚪 Keluar</a>
+</div>
+
+<script>
+function toggleSettings() {{
+    var p = document.getElementById('settings-popup');
+    p.style.display = p.style.display === 'block' ? 'none' : 'block';
+}}
+function setTheme(t) {{
+    window.parent.location.href = window.parent.location.href.split('?')[0] + '?do=theme_' + t;
+}}
+document.addEventListener('click', function(e) {{
+    var btn = document.getElementById('fab-settings');
+    var pop = document.getElementById('settings-popup');
+    if (!btn.contains(e.target) && !pop.contains(e.target)) pop.style.display = 'none';
+}});
+</script>
 """, unsafe_allow_html=True)
+
+# Handle action dari floating buttons
+if "do" in st.query_params:
+    _do = st.query_params.get("do", "")
+    if _do == "logout":
+        tok = st.session_state.get("current_token", "")
+        if tok:
+            try: os.remove(os.path.join(DATA_DIR, f"token_{tok}.json"))
+            except: pass
+        st.session_state.clear(); st.query_params.clear(); st.rerun()
+    elif _do == "theme_dark":
+        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()
+    elif _do == "theme_light":
+        st.session_state.theme = "light"; st.query_params.clear(); st.rerun()
+    elif _do == "newchat":
+        ns = new_session()
+        st.session_state.sessions.insert(0, ns)
+        st.session_state.active_id = ns["id"]
+        st.query_params.clear(); st.rerun()
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
 # ─────────────────────────────────────────────
 active = get_active()
+
+# Floating new chat button
+st.markdown(f'<a class="sigma-fab" id="fab-newchat" href="?do=newchat" title="Obrolan Baru">✎</a>', unsafe_allow_html=True)
 
 # Header
 if not active["messages"][1:]:
