@@ -14,8 +14,21 @@ import json
 import os
 import hashlib
 
-
-
+import streamlit as st
+from groq import Groq
+import yfinance as yf
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+import requests
+from urllib.parse import urlencode
+import json
+import os
+import hashlib
 
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
@@ -229,6 +242,27 @@ st.markdown(f"""
 
     footer {{ visibility: hidden; }}
     #MainMenu {{ visibility: hidden; }}
+
+    /* ── PAKSA SIDEBAR KONTEN NAIK KE ATAS ── */
+    /* Override inline style Streamlit yang kasih padding-top besar */
+    section[data-testid="stSidebar"] > div:first-child {{
+        padding-top: 0 !important;
+    }}
+    [data-testid="stSidebarContent"] {{
+        padding-top: 0 !important;
+    }}
+    [data-testid="stSidebarUserContent"] {{
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }}
+    [data-testid="stSidebarUserContent"] > div {{
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }}
+    [data-testid="stSidebarUserContent"] > div > div {{
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -737,15 +771,12 @@ components.html(f"""
         var pd = window.parent.document;
         var sbg = '{_sidebar_bg}';
 
-        // Inject CSS ke <head> parent — ini cara terkuat
+        // Inject CSS ke <head> parent
         var sid = 'sigma-force-top';
         var st = pd.getElementById(sid) || pd.createElement('style');
         st.id = sid;
         st.textContent = `
-            section[data-testid="stSidebar"],
-            section[data-testid="stSidebar"] > div,
-            section[data-testid="stSidebar"] > div > div,
-            section[data-testid="stSidebar"] > div > div > div,
+            section[data-testid="stSidebar"] > div:first-child,
             [data-testid="stSidebarContent"],
             [data-testid="stSidebarUserContent"],
             [data-testid="stSidebarUserContent"] > div,
@@ -761,6 +792,29 @@ components.html(f"""
             }}
         `;
         if (!pd.getElementById(sid)) pd.head.appendChild(st);
+
+        // JUGA set inline style langsung — ini yang paling kuat
+        var selectors = [
+            'section[data-testid="stSidebar"] > div:first-child',
+            '[data-testid="stSidebarContent"]',
+            '[data-testid="stSidebarUserContent"]'
+        ];
+        selectors.forEach(function(s) {{
+            var el = pd.querySelector(s);
+            if (el) {{
+                el.style.paddingTop = '0px';
+                el.style.marginTop = '0px';
+                el.style.backgroundColor = sbg;
+            }}
+        }});
+        // Zero semua div langsung di dalam stSidebarUserContent
+        var uc = pd.querySelector('[data-testid="stSidebarUserContent"]');
+        if (uc) {{
+            [].slice.call(uc.children).forEach(function(child) {{
+                child.style.paddingTop = '0px';
+                child.style.marginTop = '0px';
+            }});
+        }}
     }}
 
     function injectSettings() {{
