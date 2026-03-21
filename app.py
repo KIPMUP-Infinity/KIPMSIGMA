@@ -513,22 +513,22 @@ hr {{ border-color: {C['border']} !important; }}
 def show_login():
     st.markdown(f"""
     <style>
-    [data-testid="stSidebar"] { display: none !important; }
+    [data-testid="stSidebar"] {{ display: none !important; }}
 
-    /* Background full screen */
+    /* Background full screen kipmb.png */
     [data-testid="stAppViewContainer"],
-    section[data-testid="stMain"] {
+    section[data-testid="stMain"] {{
         background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png') center/cover no-repeat fixed !important;
         min-height: 100vh !important;
-    }
+    }}
 
     /* Hapus pseudo-element kiri */
-    section[data-testid="stMain"]::before {
+    section[data-testid="stMain"]::before {{
         display: none !important;
-    }
+    }}
 
-    /* Form container transparan di kanan, geser 1cm dari batas kanan */
-    [data-testid="stMainBlockContainer"] {
+    /* Form container — transparan glass, geser 1cm dari kanan */
+    [data-testid="stMainBlockContainer"] {{
         max-width: 420px !important;
         margin: 0 16px 0 auto !important;
         padding: 4vh 28px 40px !important;
@@ -539,16 +539,16 @@ def show_login():
         backdrop-filter: blur(18px) saturate(1.4) !important;
         -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
         border-left: 1px solid rgba(255,255,255,0.10) !important;
-    }
-    @media(max-width: 768px) {
-        [data-testid="stMainBlockContainer"] {
+    }}
+    @media(max-width: 768px) {{
+        [data-testid="stMainBlockContainer"] {{
             margin: 0 auto !important;
             max-width: 100% !important;
             padding: 5vh 20px 40px !important;
             backdrop-filter: blur(14px) !important;
             border-left: none !important;
-        }
-    }
+        }}
+    }}
 
     /* Glass card */
     .stTabs, [data-testid="stVerticalBlock"] {{
@@ -633,7 +633,7 @@ def show_login():
     </style>
     """, unsafe_allow_html=True)
 
-    # Background diterapkan via CSS langsung (URL GitHub raw)
+    # Background sudah di-set via CSS (URL GitHub raw)
     st.markdown('<div style="text-align:center;margin:0 0 28px;"><h2 style="margin:0;font-size:1.6rem;font-weight:800;color:#ffffff;">Masuk ke SIGMA</h2></div>', unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["🔑 Masuk", "📝 Daftar", "🌐 Google"])
 
