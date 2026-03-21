@@ -119,7 +119,7 @@ st.markdown(f"""
         margin-top: 0 !important;
     }}
 
-    /* ── TOMBOL COLLAPSE ── */
+    /* ── TOMBOL COLLAPSE — hanya icon, sembunyikan semua teks ── */
     [data-testid="stSidebarCollapseButton"] {{
         position: absolute !important;
         top: 8px !important; right: 10px !important;
@@ -127,7 +127,7 @@ st.markdown(f"""
         background: transparent !important;
         border: none !important; box-shadow: none !important;
     }}
-    /* Sembunyikan teks keyboard_double_arrow */
+    /* Sembunyikan HANYA span teks, bukan yang berisi SVG */
     [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
     [data-testid="collapsedControl"] span:not(:has(svg)) {{
         display: none !important;
@@ -573,7 +573,6 @@ with st.sidebar:
             text-align: center;
             padding: 8px 12px 10px;
             font-family: Inter, sans-serif;
-            margin-top: -6rem;
         }}
         .sb-top img {{
             width: 72px; height: 72px;
@@ -970,7 +969,7 @@ components.html(f"""
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 300);
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 800);
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2500);
 
     // Observe kalau sidebar baru render
     var obs = new MutationObserver(function() {{ fixSidebarTop(); injectSettings(); }});
