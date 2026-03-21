@@ -622,7 +622,7 @@ for _sesi in st.session_state.sessions:
     _td = _sesi["title"][:35].replace("'","\\'").replace("`","").replace("\\","")
     _fw = "700" if _is_act else "400"
     _bg = C['hover'] if _is_act else "transparent"
-    _hist_items += f"""h.innerHTML+='<button onclick=\"goSel(\\'{_sid}\\')" style="display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_td}</button>';"""
+    _hist_items += f"""h.innerHTML+='<button onclick=\"var u=new URL(window.parent.location.href);u.searchParams.set(\\'do\\',\\'sel_{_sid}\\');window.parent.location.href=u.toString();\" style="display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_td}</button>';"""
 
 # Inject menu ke parent document via components.html
 components.html(f"""
