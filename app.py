@@ -15,6 +15,9 @@ import os
 import hashlib
 
 
+
+
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -743,60 +746,30 @@ if not st.session_state.sidebar_open:
     st.markdown(f"""
         <style>
         section[data-testid="stSidebar"] {{ display: none !important; }}
-        /* Panel icon kiri tipis */
-        #sigma-icon-panel {{
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            width: 48px;
-            background: {_sidebar_bg};
-            border-right: 1px solid {'#2f2f2f' if _is_dark else '#d0d0d0'};
-            z-index: 9998;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 12px;
-            gap: 4px;
-        }}
-        #sigma-icon-panel a {{
-            width: 36px; height: 36px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 8px;
-            color: {_text_muted};
-            text-decoration: none;
-            font-size: 18px;
-            cursor: pointer;
-            transition: background 0.15s;
-        }}
-        #sigma-icon-panel a:hover {{ background: {'#2f2f2f' if _is_dark else '#d8d8d8'}; color: {_text}; }}
-        /* Geser konten utama ke kanan */
-        section[data-testid="stMain"] {{
-            margin-left: 48px !important;
+        section[data-testid="stMain"] {{ margin-left: 0 !important; }}
+        /* Style tombol buka sidebar jadi fixed di kiri tengah */
+        div[data-testid="stMainBlockContainer"] > div > div > div:first-child > div:first-child .stButton > button {{
+            position: fixed !important;
+            top: 50% !important;
+            left: 0px !important;
+            transform: translateY(-50%) !important;
+            width: 24px !important;
+            height: 60px !important;
+            min-height: 0 !important;
+            background: {_sidebar_bg} !important;
+            color: {_text_muted} !important;
+            border: none !important;
+            border-radius: 0 8px 8px 0 !important;
+            font-size: 16px !important;
+            padding: 0 !important;
+            z-index: 9999 !important;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.3) !important;
         }}
         </style>
-        <div id="sigma-icon-panel">
-            <a href="?open_sidebar=1" title="Buka Sidebar">☰</a>
-        </div>
     """, unsafe_allow_html=True)
-
-# Icon ☰ fixed di kiri bawah saat sidebar terbuka (opsional, untuk mobile)
-st.markdown(f"""
-    <style>
-    #btn-open-sb {{
-        position: fixed;
-        bottom: 80px; left: 12px;
-        width: 36px; height: 36px;
-        background: {_sidebar_bg};
-        color: {_text_muted};
-        border: 1px solid {'#2f2f2f' if _is_dark else '#d0d0d0'};
-        border-radius: 8px;
-        font-size: 16px; cursor: pointer;
-        z-index: 9997;
-        display: {'none' if st.session_state.sidebar_open else 'none'};
-        align-items: center; justify-content: center;
-        text-decoration: none;
-    }}
-    </style>
-""", unsafe_allow_html=True)
+    if st.button("›", key="btn_open_sb"):
+        st.session_state.sidebar_open = True
+        st.rerun()
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
