@@ -15,7 +15,6 @@ import os
 import hashlib
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -607,13 +606,18 @@ with st.sidebar:
             border-radius: 8px !important; width: 100% !important;
             display: flex !important; align-items: center !important;
             justify-content: flex-start !important;
+            text-align: left !important;
         }}
         section[data-testid="stSidebar"] .stButton > button:hover {{
             background: {_shov} !important;
         }}
-        section[data-testid="stSidebar"] .stButton > button p {{
+        section[data-testid="stSidebar"] .stButton > button p,
+        section[data-testid="stSidebar"] .stButton > button span,
+        section[data-testid="stSidebar"] .stButton > button div {{
             margin: 0 !important; text-align: left !important;
             color: inherit !important;
+            justify-content: flex-start !important;
+            width: 100% !important;
         }}
         /* Label seksi */
         .sb-lbl {{
