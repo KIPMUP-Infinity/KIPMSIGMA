@@ -16,7 +16,6 @@ import hashlib
 
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -830,34 +829,72 @@ if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
 
 if not st.session_state.sidebar_open:
-    st.markdown(f"""
+    st.markdown("""
         <style>
-        section[data-testid="stSidebar"] {{ display: none !important; }}
-        /* Tombol buka sidebar — floating fixed, selalu terlihat */
-        [data-testid="stMainBlockContainer"] {{
-            padding-left: 0 !important;
-        }}
-        button[data-testid="baseButton-secondary"][kind="secondary"]#btn_sb_open,
-        .stButton:has(button[key="btn_sb_open"]) button {{
-            position: fixed !important;
-            top: 8px !important;
-            left: 8px !important;
-            width: 32px !important;
-            height: 32px !important;
-            min-height: 0 !important;
-            padding: 0 !important;
-            font-size: 18px !important;
-            background: {_sidebar_bg} !important;
-            border: none !important;
-            border-radius: 6px !important;
-            color: {_text_muted} !important;
-            z-index: 9999 !important;
-        }}
+        section[data-testid="stSidebar"] { display: none !important; }
         </style>
     """, unsafe_allow_html=True)
     if st.button("⊡", key="btn_sb_open"):
         st.session_state.sidebar_open = True
         st.rerun()
+
+# Inject tombol floating via JS — selalu muncul saat sidebar tertutup
+components.html(f"""
+<script>
+(function() {{
+    var pd = window.parent.document;
+    var isOpen = {'true' if st.session_state.sidebar_open else 'false'};
+
+    // Hapus tombol lama kalau ada
+    var old = pd.getElementById('sigma-float-btn');
+    if (old) old.remove();
+
+    // Hanya inject saat sidebar TERTUTUP
+    if (isOpen) return;
+
+    var btn = pd.createElement('button');
+    btn.id = 'sigma-float-btn';
+    btn.innerHTML = '&#9707;';
+    btn.title = 'Buka Sidebar';
+    btn.style.cssText = [
+        'position:fixed',
+        'top:10px',
+        'left:10px',
+        'width:34px',
+        'height:34px',
+        'background:{_sidebar_bg}',
+        'color:{_text_muted}',
+        'border:none',
+        'border-radius:7px',
+        'font-size:18px',
+        'cursor:pointer',
+        'z-index:99999',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+        'padding:0',
+        'box-shadow:0 2px 8px rgba(0,0,0,0.3)'
+    ].join(';');
+
+    btn.onmouseenter = function() {{ this.style.background = '{_btn_hover}'; }};
+    btn.onmouseleave = function() {{ this.style.background = '{_sidebar_bg}'; }};
+
+    // Klik → klik tombol bawaan Streamlit yang ada di DOM
+    btn.onclick = function() {{
+        // Cari semua button di parent doc
+        var allBtns = pd.querySelectorAll('button');
+        for (var b of allBtns) {{
+            if (b.textContent && b.textContent.trim() === '⊡') {{
+                b.click();
+                break;
+            }}
+        }}
+    }};
+
+    pd.body.appendChild(btn);
+}})();
+</script>
+""", height=0)
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
