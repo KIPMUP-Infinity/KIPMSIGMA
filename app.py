@@ -606,7 +606,7 @@ def show_login():
         except:
             st.info("Google login belum dikonfigurasi di Secrets")
 
-    st.markdown(f'<p style="text-align:center;color:{C["text_muted"]};font-size:0.72rem;margin-top:20px;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa pasar modal.</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="text-align:center;color:{C["text_muted"]};font-size:0.72rem;margin-top:20px;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa, analisa yang dilakukan didalam bersifat do your own research dan disclaimeron .</p>', unsafe_allow_html=True)
     st.stop()
 
 # ─────────────────────────────────────────────
