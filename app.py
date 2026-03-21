@@ -239,6 +239,22 @@ st.markdown(f"""
 
     footer {{ visibility: hidden; }}
     #MainMenu {{ visibility: hidden; }}
+
+    /* Sembunyikan teks keyboard_double_arrow_right */
+    [data-testid="collapsedControl"] button {{
+        color: transparent !important;
+        font-size: 0 !important;
+    }}
+    [data-testid="collapsedControl"] button * {{
+        color: transparent !important;
+        font-size: 0 !important;
+    }}
+    [data-testid="collapsedControl"] svg,
+    [data-testid="collapsedControl"] svg path {{
+        color: {_text_muted} !important;
+        stroke: {_text_muted} !important;
+        font-size: initial !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -402,40 +418,6 @@ if st.session_state.user is not None and not st.session_state.data_loaded:
 
 # ── JIKA BELUM LOGIN ────────────────────────────────────────
 if st.session_state.user is None:
-    components.html("""
-<script>
-(function() {
-    try {
-        var token = localStorage.getItem('sigma_token');
-        if (token) {
-            window.parent.location.replace(
-                window.parent.location.pathname + '?sigma_token=' + token
-            );
-        } else {
-            // Tidak ada token — sembunyikan spinner, tampilkan login
-            var sp = window.parent.document.getElementById('sigma-checking');
-            if (sp) sp.style.display = 'none';
-            var lg = window.parent.document.getElementById('sigma-loginbox');
-            if (lg) lg.style.display = 'block';
-        }
-    } catch(e) {}
-})();
-</script>
-""", height=0)
-
-    st.markdown("""
-        <div id="sigma-checking" style="
-            display:flex;flex-direction:column;align-items:center;
-            justify-content:center;height:30vh;gap:16px;font-family:Inter,sans-serif;">
-            <div style="width:36px;height:36px;border:3px solid #333;
-                border-top-color:#F5C242;border-radius:50%;
-                animation:spin 0.8s linear infinite;"></div>
-            <p style="color:#888;font-size:0.9rem;margin:0;">Memeriksa sesi...</p>
-            <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-        </div>
-        <div id="sigma-loginbox" style="display:none;"></div>
-    """, unsafe_allow_html=True)
-
     show_login_page()
     st.stop()
 
