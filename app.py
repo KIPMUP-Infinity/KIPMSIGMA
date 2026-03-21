@@ -515,7 +515,7 @@ def show_login():
     <style>
     [data-testid="stSidebar"] {{ display: none !important; }}
 
-    /* Background full screen kipmb.png */
+    /* Background full screen kipmd.png (desktop) / kipmm.png (mobile) */
     [data-testid="stAppViewContainer"],
     section[data-testid="stMain"] {{
         background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmd.png') center/cover no-repeat fixed !important;
@@ -567,7 +567,7 @@ def show_login():
     @media(max-width: 768px) {{
         [data-testid="stAppViewContainer"],
         section[data-testid="stMain"] {{
-            background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png') center top/cover no-repeat fixed !important;
+            background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmm.png') center top/cover no-repeat fixed !important;
         }}
         /* Kotak login beri ruang logo KIPM di atas */
         [data-testid="stMainBlockContainer"] {{
