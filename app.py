@@ -165,7 +165,16 @@ def init_chat():
             else:
                 s["messages"][0] = SYSTEM_PROMPT
 
-def get_active():
+def restore_images_from_messages():
+    """Restore gambar dari message ke session_state agar tampil setelah refresh."""
+    if not st.session_state.sessions:
+        return
+    for sesi in st.session_state.sessions:
+        for i, msg in enumerate(sesi.get("messages", [])):
+            if msg.get("role") == "user" and msg.get("img_b64"):
+                key = f"thumb_{sesi['id']}_{i-1}"
+                if key not in st.session_state:
+                    st.session_state[key] = (msg["img_b64"], msg.get("img_mime", "image/jpeg"))
     for s in st.session_state.sessions:
         if s["id"] == st.session_state.active_id:
             return s
@@ -249,6 +258,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                     st.session_state.sessions = saved["sessions"]
                     st.session_state.active_id = saved.get("active_id")
             st.session_state.data_loaded = True
+            restore_images_from_messages()
             # JANGAN clear query params — biarkan token tetap di URL
             st.rerun()
         except: pass
@@ -262,6 +272,7 @@ if st.session_state.user and not st.session_state.data_loaded:
             st.session_state.sessions = saved["sessions"]
             st.session_state.active_id = saved.get("active_id")
     st.session_state.data_loaded = True
+    restore_images_from_messages()
 
 # Refresh colors after theme load
 C = get_colors(st.session_state.theme)
@@ -865,11 +876,16 @@ if prompt:
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
-    thumb_idx = len(active["messages"]) - 1
+    # Simpan gambar di dalam message agar tetap ada setelah refresh
+    user_msg = {"role": "user", "content": full_prompt}
     if img_data:
+        user_msg["img_b64"] = img_data[0]
+        user_msg["img_mime"] = img_data[1]
+        # Juga simpan di session_state untuk render langsung
+        thumb_idx = len(active["messages"]) - 1
         st.session_state[f"thumb_{active['id']}_{thumb_idx}"] = (img_data[0], img_data[1])
 
-    active["messages"].append({"role": "user", "content": full_prompt})
+    active["messages"].append(user_msg)
     with st.chat_message("user"):
         if img_data:
             st.markdown(f'<img src="data:{img_data[1]};base64,{img_data[0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
@@ -912,7 +928,10 @@ if prompt:
 if user:
     sessions_to_save = [
         {"id": s["id"], "title": s["title"], "created": s["created"],
-         "messages": [m for m in s["messages"] if m["role"] != "system"]}
+         "messages": [
+             {k: v for k, v in m.items() if m["role"] != "system"}
+             for m in s["messages"] if m["role"] != "system"
+         ]}
         for s in st.session_state.sessions
     ]
     save_user(user["email"], {
