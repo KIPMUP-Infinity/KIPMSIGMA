@@ -613,111 +613,190 @@ section[data-testid="stSidebar"],
     display: none !important;
 }}
 
-/* Floating buttons */
-.sigma-fab {{
-    position: fixed;
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    z-index: 9999;
-    transition: background 0.15s, transform 0.1s;
-    text-decoration: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}}
-.sigma-fab:hover {{ transform: scale(1.08); }}
-
-/* Settings — pojok kanan atas */
-#fab-settings {{
-    top: 12px; right: 12px;
-    background: {C['sidebar_bg']};
-    color: {C['text_muted']};
-}}
-#fab-settings:hover {{ background: {C['hover']}; }}
-
-/* New chat — kiri bawah di atas chat input */
-#fab-newchat {{
-    bottom: 80px; left: 12px;
-    background: {C['gold']};
-    color: #000;
-    font-size: 20px;
-    font-weight: 700;
-}}
-#fab-newchat:hover {{ background: #e0b030; }}
-
 /* Settings popup */
-#settings-popup {{
+#sigma-menu-popup {{
     position: fixed;
-    top: 56px; right: 12px;
+    bottom: 80px;
+    left: 12px;
     background: {C['sidebar_bg']};
     border: 1px solid {C['border']};
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    z-index: 9998;
-    min-width: 180px;
+    border-radius: 16px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
+    z-index: 99999;
+    min-width: 240px;
     overflow: hidden;
     display: none;
+    font-family: inherit;
 }}
-.sp-item {{
-    display: flex; align-items: center; gap: 10px;
-    padding: 11px 16px;
-    font-size: 0.875rem;
+.smenu-item {{
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 18px;
+    font-size: 1rem;
     color: {C['text']};
     cursor: pointer;
     border: none;
     background: transparent;
     width: 100%;
     text-align: left;
-    text-decoration: none;
+    transition: background 0.12s;
 }}
-.sp-item:hover {{ background: {C['hover']}; }}
-.sp-sep {{ border: none; border-top: 1px solid {C['border']}; margin: 2px 0; }}
-.sp-red {{ color: #f55 !important; }}
+.smenu-item:hover {{ background: {C['hover']}; }}
+.smenu-sep {{ border: none; border-top: 1px solid {C['border']}; margin: 4px 0; }}
+.smenu-icon {{
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    background: {C['hover']};
+    flex-shrink: 0;
+}}
+.smenu-red {{ color: #f55 !important; }}
+
+/* Tombol + di chat bar */
+#sigma-plus-btn {{
+    position: fixed;
+    bottom: 18px; left: 14px;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: {C['hover']};
+    color: {C['text']};
+    border: none; cursor: pointer;
+    font-size: 22px; font-weight: 300;
+    z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    transition: background 0.15s;
+    line-height: 1;
+}}
+#sigma-plus-btn:hover {{ background: {C['border']}; }}
+
+/* Settings button pojok kanan atas */
+#sigma-settings-btn {{
+    position: fixed;
+    top: 10px; right: 10px;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: transparent;
+    color: {C['text_muted']};
+    border: none; cursor: pointer;
+    font-size: 18px;
+    z-index: 9999;
+    display: flex; align-items: center; justify-content: center;
+}}
+#sigma-settings-btn:hover {{ background: {C['hover']}; }}
+
+/* Settings popup kanan atas */
+#sigma-settings-popup {{
+    position: fixed;
+    top: 50px; right: 10px;
+    background: {C['sidebar_bg']};
+    border: 1px solid {C['border']};
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 99999;
+    min-width: 200px;
+    overflow: hidden;
+    display: none;
+}}
 </style>
 
-<!-- Floating Settings Button -->
-<button class="sigma-fab" id="fab-settings" onclick="toggleSettings()" title="Pengaturan">⚙</button>
+<!-- Tombol + di chat bar -->
+<button id="sigma-plus-btn" onclick="toggleMenu()" title="Menu">+</button>
 
-<!-- Settings Popup -->
-<div id="settings-popup">
-    <div style="padding:6px 16px 4px;font-size:0.65rem;color:{C['text_muted']};font-weight:600;letter-spacing:1px;">PENAMPILAN</div>
-    <button class="sp-item" onclick="setTheme('dark')">🌙 Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</button>
-    <button class="sp-item" onclick="setTheme('light')">☀️ Mode Terang {'✓' if st.session_state.theme=='light' else ''}</button>
-    <div class="sp-sep"></div>
-    <button class="sp-item sp-red" onclick="doLogout()">🚪 Keluar</button>
+<!-- Menu popup dari + -->
+<div id="sigma-menu-popup">
+    <button class="smenu-item" onclick="doNewChat()">
+        <span class="smenu-icon">✎</span> Obrolan baru
+    </button>
+    <button class="smenu-item" onclick="toggleHistory()">
+        <span class="smenu-icon">☰</span> Riwayat obrolan
+    </button>
+    <div class="smenu-sep"></div>
+    <div style="padding:6px 18px 2px;font-size:0.68rem;color:{C['text_muted']};font-weight:600;letter-spacing:1px;">PENAMPILAN</div>
+    <button class="smenu-item" onclick="setTheme('dark')">
+        <span class="smenu-icon">🌙</span> Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}
+    </button>
+    <button class="smenu-item" onclick="setTheme('light')">
+        <span class="smenu-icon">☀️</span> Mode Terang {'✓' if st.session_state.theme=='light' else ''}
+    </button>
+    <div class="smenu-sep"></div>
+    <button class="smenu-item smenu-red" onclick="doLogout()">
+        <span class="smenu-icon">🚪</span> Keluar
+    </button>
+</div>
+
+<!-- History drawer -->
+<div id="sigma-history-drawer" style="
+    position:fixed; bottom:80px; left:12px;
+    background:{C['sidebar_bg']}; border:1px solid {C['border']};
+    border-radius:16px; box-shadow:0 -4px 24px rgba(0,0,0,0.4);
+    z-index:99998; min-width:260px; max-height:60vh;
+    overflow-y:auto; display:none; padding:8px 0;">
+    <div style="padding:8px 16px 4px;font-size:0.68rem;color:{C['text_muted']};font-weight:600;letter-spacing:1px;">RIWAYAT OBROLAN</div>
 </div>
 
 <script>
-function toggleSettings() {{
-    var p = document.getElementById('settings-popup');
-    p.style.display = p.style.display === 'block' ? 'none' : 'block';
+var menuOpen = false;
+var histOpen = false;
+
+function toggleMenu() {{
+    menuOpen = !menuOpen;
+    document.getElementById('sigma-menu-popup').style.display = menuOpen ? 'block' : 'none';
+    if (menuOpen) histOpen = false;
+    document.getElementById('sigma-history-drawer').style.display = 'none';
 }}
+
+function toggleHistory() {{
+    document.getElementById('sigma-menu-popup').style.display = 'none';
+    menuOpen = false;
+    histOpen = !histOpen;
+    document.getElementById('sigma-history-drawer').style.display = histOpen ? 'block' : 'none';
+}}
+
+function doNewChat() {{
+    document.getElementById('sigma-menu-popup').style.display = 'none';
+    menuOpen = false;
+    // Klik st.button new chat
+    var btns = window.parent.document.querySelectorAll('button');
+    for (var b of btns) {{
+        if (b.textContent.trim() === 'NEW_CHAT_TRIGGER') {{ b.click(); break; }}
+    }}
+    // Fallback: set query param
+    var url = new URL(window.parent.location.href);
+    url.searchParams.set('do', 'newchat');
+    window.parent.location.href = url.toString();
+}}
+
 function setTheme(t) {{
-    // Pertahankan sigma_token di URL
+    document.getElementById('sigma-menu-popup').style.display = 'none';
     var url = new URL(window.parent.location.href);
     url.searchParams.set('do', 'theme_' + t);
     window.parent.location.href = url.toString();
 }}
+
 function doLogout() {{
     var url = new URL(window.parent.location.href);
     url.searchParams.delete('sigma_token');
     url.searchParams.set('do', 'logout');
     window.parent.location.href = url.toString();
 }}
+
+// Tutup saat klik di luar
 document.addEventListener('click', function(e) {{
-    var btn = document.getElementById('fab-settings');
-    var pop = document.getElementById('settings-popup');
-    if (btn && pop && !btn.contains(e.target) && !pop.contains(e.target))
-        pop.style.display = 'none';
+    var menu = document.getElementById('sigma-menu-popup');
+    var hist = document.getElementById('sigma-history-drawer');
+    var plusBtn = document.getElementById('sigma-plus-btn');
+    if (menu && plusBtn && !menu.contains(e.target) && !plusBtn.contains(e.target)) {{
+        menu.style.display = 'none'; menuOpen = false;
+    }}
+    if (hist && plusBtn && !hist.contains(e.target) && !plusBtn.contains(e.target)) {{
+        hist.style.display = 'none'; histOpen = false;
+    }}
 }});
 </script>
 """, unsafe_allow_html=True)
 
-# Handle action — selalu pertahankan sigma_token
+# Handle actions
 if "do" in st.query_params:
     _do = st.query_params.get("do", "")
     _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
@@ -728,136 +807,76 @@ if "do" in st.query_params:
         st.session_state.clear(); st.query_params.clear(); st.rerun()
     elif _do == "theme_dark":
         st.session_state.theme = "dark"
-        st.query_params["do"] = ""
-        st.rerun()
+        st.query_params["do"] = ""; st.rerun()
     elif _do == "theme_light":
         st.session_state.theme = "light"
-        st.query_params["do"] = ""
-        st.rerun()
+        st.query_params["do"] = ""; st.rerun()
+    elif _do == "newchat":
+        ns = new_session()
+        st.session_state.sessions.insert(0, ns)
+        st.session_state.active_id = ns["id"]
+        st.query_params["do"] = ""; st.rerun()
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
 # ─────────────────────────────────────────────
 active = get_active()
 
-# Floating buttons — pakai st.button biar tidak hapus token
-_col1, _col2, _col3 = st.columns([1, 8, 1])
+# History list via st.button (inject ke drawer via JS)
+for sesi in st.session_state.sessions:
+    sid = sesi["id"]
+    is_active = sid == st.session_state.active_id
+    title_d = sesi["title"][:32] + "..." if len(sesi["title"]) > 32 else sesi["title"]
+    if st.button(f"{'▶ ' if is_active else ''}{title_d}", key=f"hi_{sid}"):
+        st.session_state.active_id = sid
+        st.rerun()
 
-# Tombol obrolan baru — floating kiri bawah
-st.markdown(f"""
-<style>
-#fab-newchat, #fab-history {{
-    position: fixed;
-    left: 12px;
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    border: none;
-    cursor: pointer;
-    font-size: 18px;
-    z-index: 9999;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    display: flex; align-items: center; justify-content: center;
-    transition: transform 0.1s;
-}}
-#fab-newchat {{ bottom: 80px; background: {C['gold']}; color: #000; font-weight:700; }}
-#fab-history {{ bottom: 130px; background: {C['sidebar_bg']}; color: {C['text_muted']}; }}
-#fab-newchat:hover, #fab-history:hover {{ transform: scale(1.08); }}
+# JS: inject history items ke drawer
+_hist_js = ""
+for sesi in st.session_state.sessions:
+    sid = sesi["id"]
+    is_active = sid == st.session_state.active_id
+    title_d = sesi["title"][:35].replace("'", "\\'")
+    fw = "600" if is_active else "400"
+    bg = C['hover'] if is_active else "transparent"
+    _hist_js += f"""
+    var hi = document.createElement('button');
+    hi.textContent = '{title_d}';
+    hi.style.cssText = 'display:block;width:100%;padding:10px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    hi.onmouseenter = function(){{this.style.background='{C["hover"]}'}};
+    hi.onmouseleave = function(){{this.style.background='{bg}'}};
+    hi.onclick = function(){{
+        document.getElementById('sigma-history-drawer').style.display='none';
+        var btns = window.parent.document.querySelectorAll('button');
+        for(var b of btns){{
+            if(b.textContent.trim().replace('▶ ','') === '{title_d}' || b.textContent.trim() === '▶ {title_d}'){{
+                b.click(); break;
+            }}
+        }}
+    }};
+    drawer.appendChild(hi);
+"""
 
-/* History drawer */
-#history-drawer {{
-    position: fixed;
-    left: 60px; bottom: 80px;
-    background: {C['sidebar_bg']};
-    border: 1px solid {C['border']};
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    z-index: 9998;
-    min-width: 220px;
-    max-height: 60vh;
-    overflow-y: auto;
-    display: none;
-    padding: 6px 0;
-}}
-.hi-item {{
-    display: block; width: 100%;
-    padding: 8px 14px;
-    font-size: 0.85rem;
-    color: {C['text']};
-    background: transparent;
-    border: none;
-    text-align: left;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}}
-.hi-item:hover {{ background: {C['hover']}; }}
-.hi-item.active {{ background: {C['hover']}; font-weight: 600; }}
-</style>
-""", unsafe_allow_html=True)
-
-if st.button("✎", key="fab_new", help="Obrolan baru"):
-    ns = new_session()
-    st.session_state.sessions.insert(0, ns)
-    st.session_state.active_id = ns["id"]
-    st.rerun()
-
-if st.button("☰", key="fab_hist", help="History"):
-    st.session_state.show_history = not st.session_state.get("show_history", False)
-    st.rerun()
-
-# History drawer
-if st.session_state.get("show_history", False):
-    st.markdown(f"""
-    <div style="position:fixed;left:60px;bottom:80px;background:{C['sidebar_bg']};
-        border:1px solid {C['border']};border-radius:12px;
-        box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:9998;
-        min-width:220px;max-height:55vh;overflow-y:auto;padding:6px 0;">
-        <div style="padding:6px 14px 4px;font-size:0.65rem;color:{C['text_muted']};
-            font-weight:600;letter-spacing:1px;">OBROLAN ANDA</div>
-    """, unsafe_allow_html=True)
-
-    for sesi in st.session_state.sessions:
-        sid = sesi["id"]
-        is_active = sid == st.session_state.active_id
-        title_d = sesi["title"][:30] + "..." if len(sesi["title"]) > 30 else sesi["title"]
-        bg = C['hover'] if is_active else "transparent"
-        fw = "600" if is_active else "400"
-        st.markdown(f"""
-        <div style="padding:7px 14px;font-size:0.85rem;color:{C['text']};
-            background:{bg};font-weight:{fw};cursor:pointer;"
-            onclick="">
-            {title_d}
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button(title_d, key=f"hi_{sid}", use_container_width=True):
-            st.session_state.active_id = sid
-            st.session_state.show_history = False
-            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# Style tombol fab agar tampil fixed
 st.markdown(f"""
 <script>
 (function() {{
-    var pd = window.parent.document;
-    function styleFab() {{
-        pd.querySelectorAll('button').forEach(function(b) {{
-            var txt = b.textContent.trim();
-            if (txt === '✎') {{
-                b.style.cssText = 'position:fixed!important;left:12px!important;top:12px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["gold"]}!important;color:#000!important;font-size:18px!important;font-weight:700!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
-            }} else if (txt === '☰') {{
-                b.style.cssText = 'position:fixed!important;left:12px!important;top:62px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["sidebar_bg"]}!important;color:{C["text_muted"]}!important;font-size:18px!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
-            }}
-        }});
-    }}
-    styleFab();
-    setTimeout(styleFab, 300);
-    setTimeout(styleFab, 1000);
-    new MutationObserver(styleFab).observe(pd.body, {{childList:true, subtree:true}});
+    var drawer = document.getElementById('sigma-history-drawer');
+    if (!drawer) return;
+    // Clear existing items (keep header)
+    while (drawer.children.length > 1) drawer.removeChild(drawer.lastChild);
+    {_hist_js}
 }})();
 </script>
+""", unsafe_allow_html=True)
+
+# Sembunyikan st.button history dari tampilan
+st.markdown("""
+<style>
+/* Sembunyikan tombol history dari main area */
+[data-testid="stMainBlockContainer"] > div > div > div:first-child .stButton {{
+    display: none !important;
+}}
+</style>
 """, unsafe_allow_html=True)
 
 # Header
