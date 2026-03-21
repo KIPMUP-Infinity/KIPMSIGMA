@@ -16,7 +16,6 @@ import hashlib
 
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -727,6 +726,47 @@ if "action" in st.query_params:
         st.session_state.theme = "light"; st.query_params.clear(); st.rerun()
     elif _a == "logout":
         st.session_state.clear(); st.query_params.clear(); st.rerun()
+
+# ── TOMBOL TOGGLE SIDEBAR CUSTOM ──────────────────────────
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True
+
+if "toggle_sidebar" in st.query_params:
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
+    st.query_params.clear(); st.rerun()
+
+_sb_left = "244px" if st.session_state.sidebar_open else "0px"
+_sb_icon = "‹" if st.session_state.sidebar_open else "›"
+
+st.markdown(f"""
+    <style>
+    {'/* sidebar open */' if st.session_state.sidebar_open else '''
+    section[data-testid="stSidebar"] { display: none !important; }
+    [data-testid="stAppViewContainer"] > section.main { margin-left: 0 !important; }
+    '''}
+    #sigma-sb-toggle {{
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        left: {_sb_left};
+        width: 18px;
+        height: 48px;
+        background: {_sidebar_bg};
+        color: {_text_muted};
+        border: none;
+        border-radius: 0 6px 6px 0;
+        cursor: pointer;
+        z-index: 9999;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }}
+    #sigma-sb-toggle:hover {{ background: {'#2f2f2f' if _is_dark else '#d0d0d0'}; }}
+    </style>
+    <a id="sigma-sb-toggle" href="?toggle_sidebar=1">{_sb_icon}</a>
+""", unsafe_allow_html=True)
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
