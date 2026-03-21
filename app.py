@@ -1060,9 +1060,12 @@ function fixBubbles() {{
             if (!md.querySelector('.navy-pill')) {{
                 const pill = document.createElement('div');
                 pill.className = 'navy-pill';
-                var mob=window.parent.innerWidth<=768; pill.style.cssText=`background:${{BC}};color:${{BT}};border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
+                var mob=window.parent.innerWidth<=768;
+                pill.style.cssText=`background:${{BC}};color:#ffffff!important;border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
                 while (md.firstChild) pill.appendChild(md.firstChild);
                 md.appendChild(pill);
+                // Force semua teks dalam pill jadi putih
+                pill.querySelectorAll('*').forEach(function(el){{el.style.color='#ffffff';}});
             }}
         }});
     }});
@@ -1074,37 +1077,52 @@ new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(
     window.parent.document.body, {{childList:true,subtree:true}}
 );
 
-// Paste image support
+// Paste image support — lebih robust
 function setupPaste() {{
     var pw = window.parent;
     if (pw._sigmaOK) return;
-    pw.addEventListener('paste', function(e) {{
+
+    function handlePaste(e) {{
         var items = e.clipboardData && e.clipboardData.items;
         if (!items) return;
-        for (var item of items) {{
-            if (item.type.startsWith('image/')) {{
-                var file = item.getAsFile();
-                if (!file) break;
+        for (var i=0; i<items.length; i++) {{
+            if (items[i].type.startsWith('image/')) {{
+                var file = items[i].getAsFile();
+                if (!file) continue;
                 e.preventDefault();
+                e.stopPropagation();
                 var inputs = pw.document.querySelectorAll('input[type="file"]');
                 for (var fi of inputs) {{
                     try {{
                         var dt = new DataTransfer();
                         dt.items.add(file);
-                        Object.defineProperty(fi, 'files', {{value: dt.files, configurable:true}});
+                        Object.defineProperty(fi, 'files', {{value: dt.files, configurable:true, writable:true}});
                         fi.dispatchEvent(new Event('change', {{bubbles:true}}));
+                        fi.dispatchEvent(new Event('input', {{bubbles:true}}));
                         var ta = pw.document.querySelector('[data-testid="stChatInput"] textarea');
-                        if (ta) {{ ta.style.borderColor='#4a90d9'; setTimeout(()=>ta.style.borderColor='',2000); }}
+                        if (ta) {{
+                            ta.style.outline = '2px solid #4a90d9';
+                            ta.placeholder = '📎 Gambar siap — ketik pertanyaan lalu Enter';
+                            setTimeout(function(){{
+                                ta.style.outline='';
+                                ta.placeholder='Tanya SIGMA... DYOR - bukan financial advice.';
+                            }}, 3000);
+                            ta.focus();
+                        }}
                         break;
-                    }} catch(err) {{}}
+                    }} catch(err) {{ console.log('paste err',err); }}
                 }}
                 break;
             }}
         }}
-    }}, true);
+    }}
+
+    pw.addEventListener('paste', handlePaste, true);
+    pw.document.addEventListener('paste', handlePaste, true);
     pw._sigmaOK = true;
 }}
 setupPaste();
-setTimeout(setupPaste, 2000);
+setTimeout(setupPaste, 1000);
+setTimeout(setupPaste, 3000);
 </script>
 """, height=0)
