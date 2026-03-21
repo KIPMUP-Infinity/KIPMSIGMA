@@ -1110,84 +1110,100 @@ new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(
 // ── Tombol aksi di bawah bubble & pesan AI ──
 function addActionButtons() {{
     var doc = window.parent.document;
-    var btnStyle = 'background:transparent;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;font-size:13px;color:{C["text_muted"]};display:inline-flex;align-items:center;gap:4px;transition:background 0.15s;';
-    var hoverBg = '{C["hover"]}';
 
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
-        if (msg.querySelector('.sigma-actions')) return; // sudah ada
+        if (msg.querySelector('.sigma-actions')) return;
 
         var isUser = !!msg.querySelector('[data-testid="stChatMessageAvatarUser"]');
-        var bar = doc.createElement('div');
-        bar.className = 'sigma-actions';
-        bar.style.cssText = 'display:flex;gap:4px;margin-top:4px;padding:0 4px;justify-content:' + (isUser ? 'flex-end' : 'flex-start') + ';';
-
-        function makeBtn(icon, label, onclick) {{
-            var b = doc.createElement('button');
-            b.title = label;
-            b.innerHTML = icon + '<span style="font-size:12px;">' + label + '</span>';
-            b.style.cssText = btnStyle;
-            b.onmouseenter = function() {{ this.style.background = hoverBg; }};
-            b.onmouseleave = function() {{ this.style.background = 'transparent'; }};
-            b.onclick = onclick;
-            return b;
-        }}
 
         // Ambil teks pesan
         function getMsgText() {{
+            var pill = msg.querySelector('.navy-pill');
+            if (pill) return pill.innerText;
             var md = msg.querySelector('[data-testid="stMarkdownContainer"]');
             return md ? md.innerText : '';
         }}
 
-        // Copy
-        bar.appendChild(makeBtn('📋 ', 'Salin', function() {{
-            navigator.clipboard.writeText(getMsgText()).then(function() {{
-                bar.querySelector('button').innerHTML = '✅ <span style="font-size:12px;">Tersalin</span>';
-                setTimeout(function() {{
-                    bar.querySelector('button').innerHTML = '📋 <span style="font-size:12px;">Salin</span>';
-                }}, 2000);
+        var bar = doc.createElement('div');
+        bar.className = 'sigma-actions';
+        bar.style.cssText = 'width:100%;display:flex;gap:2px;margin-top:6px;padding:0 2px;justify-content:' + (isUser ? 'flex-end' : 'flex-start') + ';clear:both;';
+
+        function makeBtn(icon, label) {{
+            var b = doc.createElement('button');
+            b.innerHTML = icon;
+            b.title = label;
+            b.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:5px 7px;border-radius:6px;font-size:15px;color:{C["text_muted"]};line-height:1;';
+            b.onmouseenter = function() {{ this.style.background = '{C["hover"]}'; }};
+            b.onmouseleave = function() {{ this.style.background = 'transparent'; }};
+            return b;
+        }}
+
+        // Tombol SALIN
+        var copyBtn = makeBtn('📋', 'Salin');
+        copyBtn.onclick = function() {{
+            var txt = getMsgText();
+            navigator.clipboard.writeText(txt).then(function() {{
+                copyBtn.innerHTML = '✅';
+                setTimeout(function() {{ copyBtn.innerHTML = '📋'; }}, 2000);
+            }}).catch(function() {{
+                // Fallback
+                var ta = doc.createElement('textarea');
+                ta.value = getMsgText();
+                doc.body.appendChild(ta);
+                ta.select();
+                doc.execCommand('copy');
+                doc.body.removeChild(ta);
+                copyBtn.innerHTML = '✅';
+                setTimeout(function() {{ copyBtn.innerHTML = '📋'; }}, 2000);
             }});
-        }}));
+        }};
+        bar.appendChild(copyBtn);
 
         if (isUser) {{
-            // Edit — isi ulang ke chat input
-            bar.appendChild(makeBtn('✏️ ', 'Edit', function() {{
+            // Tombol EDIT
+            var editBtn = makeBtn('✏️', 'Edit');
+            editBtn.onclick = function() {{
                 var txt = getMsgText();
                 var ta = doc.querySelector('[data-testid="stChatInput"] textarea');
-                if (ta) {{
-                    var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-                    nativeInputValueSetter.call(ta, txt);
-                    ta.dispatchEvent(new Event('input', {{bubbles:true}}));
-                    ta.focus();
-                }}
-            }}));
+                if (!ta) return;
+                ta.focus();
+                ta.value = txt;
+                // Trigger React
+                var ev = new Event('input', {{bubbles:true}});
+                Object.defineProperty(ev, 'target', {{writable:false, value:ta}});
+                ta.dispatchEvent(ev);
+            }};
+            bar.appendChild(editBtn);
         }} else {{
-            // Retry — kirim ulang pesan user sebelumnya
-            bar.appendChild(makeBtn('🔄 ', 'Ulangi', function() {{
-                var msgs = doc.querySelectorAll('[data-testid="stChatMessage"]');
-                var userMsgs = [];
-                msgs.forEach(function(m) {{ if (m.querySelector('[data-testid="stChatMessageAvatarUser"]')) userMsgs.push(m); }});
-                var lastUser = userMsgs[userMsgs.length - 1];
-                if (lastUser) {{
-                    var txt = lastUser.querySelector('[data-testid="stMarkdownContainer"]');
-                    var content = txt ? txt.innerText : '';
-                    var ta = doc.querySelector('[data-testid="stChatInput"] textarea');
-                    if (ta && content) {{
-                        var nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set;
-                        nativeInputValueSetter.call(ta, content);
-                        ta.dispatchEvent(new Event('input', {{bubbles:true}}));
-                        ta.focus();
+            // Tombol ULANGI
+            var retryBtn = makeBtn('🔄', 'Ulangi');
+            retryBtn.onclick = function() {{
+                // Cari pesan user sebelum pesan AI ini
+                var allMsgs = Array.from(doc.querySelectorAll('[data-testid="stChatMessage"]'));
+                var idx = allMsgs.indexOf(msg);
+                var userMsg = null;
+                for (var i = idx - 1; i >= 0; i--) {{
+                    if (allMsgs[i].querySelector('[data-testid="stChatMessageAvatarUser"]')) {{
+                        userMsg = allMsgs[i];
+                        break;
                     }}
                 }}
-            }}));
+                if (!userMsg) return;
+                var pill = userMsg.querySelector('.navy-pill');
+                var txt = pill ? pill.innerText : (userMsg.querySelector('[data-testid="stMarkdownContainer"]') || {{}}).innerText || '';
+                var ta = doc.querySelector('[data-testid="stChatInput"] textarea');
+                if (!ta || !txt) return;
+                ta.focus();
+                ta.value = txt;
+                var ev = new Event('input', {{bubbles:true}});
+                ta.dispatchEvent(ev);
+            }};
+            bar.appendChild(retryBtn);
         }}
 
-        // Insert setelah message content
-        var ct = msg.querySelector('[data-testid="stChatMessageContent"]');
-        if (ct && ct.parentNode) {{
-            ct.parentNode.insertBefore(bar, ct.nextSibling);
-        }} else {{
-            msg.appendChild(bar);
-        }}
+        // Pasang bar SETELAH seluruh message element
+        msg.style.flexDirection = 'column';
+        msg.appendChild(bar);
     }});
 }}
 
