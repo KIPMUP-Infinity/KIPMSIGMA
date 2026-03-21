@@ -15,7 +15,6 @@ import os
 import hashlib
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -72,6 +71,7 @@ _inactive_chat   = "#ececec"  if _is_dark else "#0d0d0d"
 _sidebar_border  = "none"     if _is_dark else "1px solid #e5e5e5"
 
 st.markdown(f"""
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <style>
     @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
@@ -223,6 +223,64 @@ st.markdown(f"""
     [data-testid="collapsedControl"],
     [data-testid="stSidebarCollapseButton"] {{
         display: none !important;
+    }}
+
+    /* ── RESPONSIVE MOBILE ── */
+    @media (max-width: 768px) {{
+        /* Main content full width di mobile */
+        [data-testid="stMainBlockContainer"] {{
+            max-width: 100% !important;
+            padding: 0 12px 80px 12px !important;
+            margin: 0 !important;
+        }}
+        /* Chat input lebih besar dan mudah diklik di mobile */
+        div[data-testid="stChatInputContainer"] {{
+            border-radius: 24px !important;
+            padding: 4px 8px !important;
+        }}
+        [data-testid="stChatInput"] textarea {{
+            font-size: 16px !important;
+            min-height: 44px !important;
+        }}
+        /* Header lebih kecil di mobile */
+        .main-header h1 {{
+            font-size: 1.4rem !important;
+        }}
+        .main-header p {{
+            font-size: 0.8rem !important;
+        }}
+        /* Chat messages full width */
+        [data-testid="stChatMessage"] {{
+            padding: 4px 0 !important;
+        }}
+        /* Sidebar full width di mobile */
+        section[data-testid="stSidebar"] {{
+            width: 100% !important;
+            min-width: 100% !important;
+        }}
+        /* Tombol sidebar lebih besar */
+        section[data-testid="stSidebar"] .stButton > button {{
+            min-height: 44px !important;
+            font-size: 0.9rem !important;
+        }}
+        /* Bubble chat tidak terlalu lebar */
+        .navy-pill {{
+            max-width: 90% !important;
+            font-size: 0.875rem !important;
+        }}
+        /* Bottom bar lebih tinggi untuk jari */
+        [data-testid="stBottom"] {{
+            padding-bottom: 8px !important;
+        }}
+    }}
+
+    @media (max-width: 480px) {{
+        [data-testid="stMainBlockContainer"] {{
+            padding: 0 8px 80px 8px !important;
+        }}
+        .main-header h1 {{
+            font-size: 1.2rem !important;
+        }}
     }}
     </style>
 """, unsafe_allow_html=True)
