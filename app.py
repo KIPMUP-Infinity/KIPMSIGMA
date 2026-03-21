@@ -241,6 +241,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             with open(token_file) as f:
                 user_info = json.load(f)
             st.session_state.user = user_info
+            st.session_state.current_token = token  # simpan token di session
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
@@ -248,10 +249,9 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                     st.session_state.sessions = saved["sessions"]
                     st.session_state.active_id = saved.get("active_id")
             st.session_state.data_loaded = True
+            # JANGAN clear query params — biarkan token tetap di URL
+            st.rerun()
         except: pass
-    st.query_params.clear()
-    if st.session_state.user:
-        st.rerun()
 
 # Load data setelah login
 if st.session_state.user and not st.session_state.data_loaded:
@@ -363,7 +363,8 @@ section[data-testid="stSidebar"] .stButton > button span {{
 [data-testid="stMainBlockContainer"] {{
     max-width: 800px !important;
     margin: 0 auto !important;
-    padding: 0 16px 100px !important;
+    padding: 0 16px 120px !important;
+    overflow-y: visible !important;
 }}
 [data-testid="stMainBlockContainer"] p,
 [data-testid="stMainBlockContainer"] li,
@@ -460,13 +461,15 @@ def show_login():
             if uname and pwd:
                 info = login_user(uname.strip(), pwd)
                 if info:
-                    st.session_state.user = info
-                    st.session_state.data_loaded = False
-                    # Buat token untuk auto-login saat refresh
+                    # Buat token
                     token = str(uuid.uuid4()).replace("-","")
                     with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f:
                         json.dump(info, f)
-                    st.session_state.new_token = token
+                    # Set token di URL — ini yang persist saat refresh
+                    st.query_params["sigma_token"] = token
+                    st.session_state.user = info
+                    st.session_state.current_token = token
+                    st.session_state.data_loaded = False
                     st.rerun()
                 else:
                     st.error("Username atau password salah")
@@ -650,7 +653,14 @@ with st.sidebar:
                 st.session_state.theme = "light"; st.session_state.show_settings = False; st.rerun()
         st.markdown(f'<hr style="border:none;border-top:1px solid {C["border"]};margin:4px 0;">', unsafe_allow_html=True)
         if st.button("🚪 Keluar", key="btn_logout", use_container_width=True):
-            st.session_state.clear(); st.rerun()
+            # Hapus file token
+            tok = st.session_state.get("current_token", "")
+            if tok:
+                try: os.remove(os.path.join(DATA_DIR, f"token_{tok}.json"))
+                except: pass
+            st.session_state.clear()
+            st.query_params.clear()
+            st.rerun()
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
