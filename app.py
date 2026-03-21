@@ -16,7 +16,6 @@ import hashlib
 
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -593,6 +592,29 @@ with st.sidebar:
             padding-top: 0 !important;
             margin-top: 0 !important;
         }}
+        /* Tombol toggle sidebar — pojok kanan atas */
+        #sb-toggle-wrap {{
+            display: flex;
+            justify-content: flex-end;
+            padding: 6px 8px 0 8px;
+        }}
+        #sb-toggle-wrap .stButton > button {{
+            width: 32px !important;
+            height: 32px !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            font-size: 18px !important;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 6px !important;
+            color: {_text_muted} !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }}
+        #sb-toggle-wrap .stButton > button:hover {{
+            background: {_btn_hover} !important;
+        }}
         /* Sembunyikan teks keyboard icon */
         [data-testid="stSidebarCollapseButton"] span,
         [data-testid="collapsedControl"] span,
@@ -694,28 +716,22 @@ with st.sidebar:
         .sb-btn:hover {{ color: {'#fff' if _is_dark else '#000'}; }}
         .sb-btn-del:hover {{ color: #f55 !important; }}
         </style>
+    """, unsafe_allow_html=True)
 
-        <!-- Tombol tutup sidebar — pojok kanan atas sidebar -->
-        <div style="display:flex;justify-content:flex-end;padding:4px 8px 0 8px;">
-            <a href="?close_sidebar=1" style="
-                width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-                border-radius:6px;color:{_text_muted};text-decoration:none;font-size:18px;
-                cursor:pointer;background:transparent;
-            " title="Tutup Sidebar">&#9707;</a>
-        </div>
+    # Tombol tutup sidebar — pojok kanan atas, pakai st.button
+    st.markdown('<div id="sb-toggle-wrap">', unsafe_allow_html=True)
+    if st.button("⊡", key="btn_sb_close"):
+        st.session_state.sidebar_open = False
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
+    st.markdown(f"""
         <div class="sb-top">
             {"" if not _logo_src else f'<img src="{_logo_src}">'}
             <p class="sb-sub">KOMUNITAS <span style="color:#F5C242;font-weight:600;">INVESTASI</span> PASAR MODAL</p>
             <p class="sb-name">UNIVERSITAS PANCASILA</p>
         </div>
         <hr class="sb-divider">
-    """, unsafe_allow_html=True)
-
-    # Inject Lucide icons script sekali
-    st.markdown("""
-        <script src="https://unpkg.com/lucide@latest"></script>
-        <script>document.addEventListener('DOMContentLoaded', function() {{ if(window.lucide) lucide.createIcons(); }});</script>
     """, unsafe_allow_html=True)
 
     if st.button("◎  Obrolan baru", key="btn_new_chat", use_container_width=True):
@@ -817,23 +833,29 @@ if not st.session_state.sidebar_open:
     st.markdown(f"""
         <style>
         section[data-testid="stSidebar"] {{ display: none !important; }}
-        /* Tombol □ pojok kiri atas — sama seperti ChatGPT/Claude */
-        #sigma-open-btn {{
-            position: fixed;
-            top: 12px; left: 12px;
-            width: 32px; height: 32px;
-            background: transparent;
-            border: none; border-radius: 6px;
-            color: {_text_muted};
-            font-size: 20px; cursor: pointer;
-            z-index: 9999;
-            display: flex; align-items: center; justify-content: center;
-            text-decoration: none;
+        /* Tombol buka sidebar pojok kiri atas */
+        div[data-testid="stMainBlockContainer"] > div > div > div:first-child .stButton > button {{
+            position: fixed !important;
+            top: 8px !important; left: 8px !important;
+            width: 32px !important; height: 32px !important;
+            min-height: 0 !important; padding: 0 !important;
+            font-size: 18px !important;
+            background: transparent !important;
+            border: none !important; border-radius: 6px !important;
+            color: {_text_muted} !important;
+            z-index: 9999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }}
-        #sigma-open-btn:hover {{ background: {'#2f2f2f' if _is_dark else '#d8d8d8'}; }}
+        div[data-testid="stMainBlockContainer"] > div > div > div:first-child .stButton > button:hover {{
+            background: {_btn_hover} !important;
+        }}
         </style>
-        <a id="sigma-open-btn" href="?open_sidebar=1" title="Buka Sidebar">&#9707;</a>
     """, unsafe_allow_html=True)
+    if st.button("⊡", key="btn_sb_open"):
+        st.session_state.sidebar_open = True
+        st.rerun()
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
