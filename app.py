@@ -15,6 +15,8 @@ import os
 import hashlib
 
 
+
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -591,11 +593,15 @@ with st.sidebar:
             padding-top: 0 !important;
             margin-top: 0 !important;
         }}
-        /* Tombol toggle sidebar — pojok kanan atas */
+        /* Tombol toggle sidebar — fixed pojok kanan atas, tidak ikut scroll */
         #sb-toggle-wrap {{
             display: flex;
             justify-content: flex-end;
             padding: 6px 8px 0 8px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: {_sidebar_bg};
         }}
         #sb-toggle-wrap .stButton > button {{
             width: 32px !important;
@@ -827,23 +833,25 @@ if not st.session_state.sidebar_open:
     st.markdown(f"""
         <style>
         section[data-testid="stSidebar"] {{ display: none !important; }}
-        /* Tombol buka sidebar pojok kiri atas */
-        div[data-testid="stMainBlockContainer"] > div > div > div:first-child .stButton > button {{
+        /* Tombol buka sidebar — floating fixed, selalu terlihat */
+        [data-testid="stMainBlockContainer"] {{
+            padding-left: 0 !important;
+        }}
+        button[data-testid="baseButton-secondary"][kind="secondary"]#btn_sb_open,
+        .stButton:has(button[key="btn_sb_open"]) button {{
             position: fixed !important;
-            top: 8px !important; left: 8px !important;
-            width: 32px !important; height: 32px !important;
-            min-height: 0 !important; padding: 0 !important;
+            top: 8px !important;
+            left: 8px !important;
+            width: 32px !important;
+            height: 32px !important;
+            min-height: 0 !important;
+            padding: 0 !important;
             font-size: 18px !important;
-            background: transparent !important;
-            border: none !important; border-radius: 6px !important;
+            background: {_sidebar_bg} !important;
+            border: none !important;
+            border-radius: 6px !important;
             color: {_text_muted} !important;
             z-index: 9999 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }}
-        div[data-testid="stMainBlockContainer"] > div > div > div:first-child .stButton > button:hover {{
-            background: {_btn_hover} !important;
         }}
         </style>
     """, unsafe_allow_html=True)
