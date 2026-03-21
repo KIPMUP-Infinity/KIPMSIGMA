@@ -1202,10 +1202,21 @@ function addActionButtons() {{
         }}
 
         // Pasang bar SETELAH seluruh message element
-        msg.style.flexDirection = 'column';
-        msg.appendChild(bar);
-    }});
-}}
+        if (isUser) {{
+            // User bubble: wrap konten + bar dalam column container
+            var wrapper = doc.createElement('div');
+            wrapper.style.cssText = 'display:flex;flex-direction:column;align-items:flex-end;width:100%;';
+            // Pindahkan semua child msg ke wrapper kecuali avatar
+            var children = Array.from(msg.childNodes);
+            children.forEach(function(c) {{
+                if (c !== bar) wrapper.appendChild(c);
+            }});
+            wrapper.appendChild(bar);
+            msg.appendChild(wrapper);
+        }} else {{
+            msg.style.flexDirection = 'column';
+            msg.appendChild(bar);
+        }}
 
 addActionButtons();
 setInterval(addActionButtons, 1000);
