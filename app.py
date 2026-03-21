@@ -609,16 +609,34 @@ def show_login():
     </style>
     """, unsafe_allow_html=True)
 
-    # Background gambar kiri — load sekali, cache di session_state
-    if "login_bg_css" not in st.session_state:
+    # Background gambar kiri — inject ke parent DOM via components.html agar stabil
+    if "login_bg_data" not in st.session_state:
         try:
             import base64 as _b64
             with open('1.png', 'rb') as _f:
-                _bg_data = _b64.b64encode(_f.read()).decode()
-            st.session_state.login_bg_css = f'<style>#slbg{{position:fixed;top:0;left:0;right:440px;bottom:0;background:url("data:image/png;base64,{_bg_data}") center/cover no-repeat;z-index:-1;}}@media(max-width:768px){{#slbg{{display:none}}}}</style><div id="slbg"></div>'
+                st.session_state.login_bg_data = _b64.b64encode(_f.read()).decode()
         except:
-            st.session_state.login_bg_css = '<style>#slbg{display:none}</style>'
-    st.markdown(st.session_state.login_bg_css, unsafe_allow_html=True)
+            st.session_state.login_bg_data = ""
+
+    _bg_data = st.session_state.login_bg_data
+    components.html(f"""
+<script>
+(function() {{
+    var pd = window.parent.document;
+    // Hapus lama kalau ada
+    var old = pd.getElementById('sigma-login-bg');
+    if (old) return; // sudah ada, tidak perlu inject ulang
+    if (!'{_bg_data}') return;
+    var s = pd.createElement('style');
+    s.id = 'sigma-login-bg-style';
+    s.textContent = '#sigma-login-bg{{position:fixed;top:0;left:0;right:440px;bottom:0;background:url("data:image/png;base64,{_bg_data}") center/cover no-repeat;z-index:-1;pointer-events:none;}}@media(max-width:768px){{#sigma-login-bg{{display:none}}}}';
+    pd.head.appendChild(s);
+    var d = pd.createElement('div');
+    d.id = 'sigma-login-bg';
+    pd.body.appendChild(d);
+}})();
+</script>
+""", height=0)
     st.markdown('<div style="text-align:center;margin:0 0 28px;"><h2 style="margin:0;font-size:1.6rem;font-weight:800;color:#ffffff;">Masuk ke SIGMA</h2></div>', unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["🔑 Masuk", "📝 Daftar", "🌐 Google"])
 
