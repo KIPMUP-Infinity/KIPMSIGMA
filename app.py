@@ -162,7 +162,6 @@ st.markdown(f"""
         margin: 0 !important; text-align: left !important;
         color: inherit !important;
     }}
-    }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
     [data-testid="stChatMessage"] {{
