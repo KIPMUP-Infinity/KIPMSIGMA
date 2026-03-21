@@ -1061,11 +1061,18 @@ function fixBubbles() {{
                 const pill = document.createElement('div');
                 pill.className = 'navy-pill';
                 var mob=window.parent.innerWidth<=768;
-                pill.style.cssText=`background:${{BC}};color:#ffffff!important;border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
+                pill.style.cssText=`background:#1B2A4A;color:#ffffff;border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
                 while (md.firstChild) pill.appendChild(md.firstChild);
                 md.appendChild(pill);
-                // Force semua teks dalam pill jadi putih
-                pill.querySelectorAll('*').forEach(function(el){{el.style.color='#ffffff';}});
+            }}
+            // Force putih semua elemen dalam bubble
+            var pill = md.querySelector('.navy-pill');
+            if (pill) {{
+                pill.style.setProperty('color','#ffffff','important');
+                pill.style.setProperty('background','#1B2A4A','important');
+                pill.querySelectorAll('*').forEach(function(el){{
+                    el.style.setProperty('color','#ffffff','important');
+                }});
             }}
         }});
     }});
