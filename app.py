@@ -16,6 +16,7 @@ import hashlib
 
 
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -678,8 +679,8 @@ with st.sidebar:
 
         <div class="sb-top">
             {"" if not _logo_src else f'<img src="{_logo_src}">'}
-            <p class="sb-sub">Komunitas <span style="color:#F5C242;font-weight:600;">Investasi</span> Pasar Modal</p>
-            <p class="sb-name">Universitas Pancasila</p>
+            <p class="sb-sub">KOMUNITAS <span style="color:#F5C242;font-weight:600;">INVESTASI</span> PASAR MODAL</p>
+            <p class="sb-name">UNIVERSITRAS PANCASILA</p>
         </div>
         <hr class="sb-divider">
     """, unsafe_allow_html=True)
@@ -835,15 +836,38 @@ components.html(f"""
             }});
         }});
 
-        // 3. Sembunyikan HANYA teks (bukan SVG) di tombol collapse
-        pd.querySelectorAll([
-            '[data-testid="stSidebarCollapseButton"] span',
-            '[data-testid="collapsedControl"] span',
-            'button[kind="header"] span'
-        ].join(',')).forEach(function(el) {{
-            if (!el.querySelector('svg')) {{
-                el.style.setProperty('display', 'none', 'important');
-            }}
+        // Sembunyikan teks keyboard_double_arrow, tampilkan SVG icon
+        var collapseSels = [
+            '[data-testid="stSidebarCollapseButton"]',
+            '[data-testid="collapsedControl"]',
+            'button[kind="header"]'
+        ];
+        collapseSels.forEach(function(sel) {{
+            var btn = pd.querySelector(sel);
+            if (!btn) return;
+            // Sembunyikan semua text nodes dan span yang bukan SVG container
+            btn.querySelectorAll('span, p').forEach(function(el) {{
+                el.style.setProperty('font-size', '0', 'important');
+                el.style.setProperty('line-height', '0', 'important');
+                el.style.setProperty('width', '0', 'important');
+                el.style.setProperty('height', '0', 'important');
+                el.style.setProperty('overflow', 'hidden', 'important');
+            }});
+            // Pastikan SVG tetap terlihat
+            btn.querySelectorAll('svg').forEach(function(svg) {{
+                svg.style.setProperty('display', 'block', 'important');
+                svg.style.setProperty('visibility', 'visible', 'important');
+                svg.style.setProperty('width', '18px', 'important');
+                svg.style.setProperty('height', '18px', 'important');
+                // Naik ke parent span juga di-show
+                var p = svg.parentElement;
+                if (p) {{
+                    p.style.setProperty('font-size', '18px', 'important');
+                    p.style.setProperty('width', 'auto', 'important');
+                    p.style.setProperty('height', 'auto', 'important');
+                    p.style.setProperty('overflow', 'visible', 'important');
+                }}
+            }});
         }});
     }}
 
