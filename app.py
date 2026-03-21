@@ -15,6 +15,7 @@ import os
 import hashlib
 
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -122,16 +123,30 @@ st.markdown(f"""
     }}
 
     /* ── TOMBOL COLLAPSE ── */
-    [data-testid="stSidebarCollapseButton"] {{
-        position: absolute !important;
-        top: 8px !important; right: 10px !important;
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="collapsedControl"] {{
         z-index: 10 !important;
         background: transparent !important;
-        border: none !important; box-shadow: none !important;
+        border: none !important;
+        box-shadow: none !important;
     }}
-    [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
-    [data-testid="collapsedControl"] span:not(:has(svg)) {{
-        display: none !important;
+    /* Sembunyikan SEMUA span di tombol collapse */
+    [data-testid="stSidebarCollapseButton"] span,
+    [data-testid="collapsedControl"] span {{
+        font-size: 0 !important;
+        line-height: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        display: inline-block !important;
+    }}
+    /* Pastikan SVG tetap terlihat */
+    [data-testid="stSidebarCollapseButton"] svg,
+    [data-testid="collapsedControl"] svg {{
+        display: block !important;
+        visibility: visible !important;
+        width: 18px !important;
+        height: 18px !important;
     }}
 
     /* ── SIDEBAR LAYOUT — flex column agar sticky bottom bekerja ── */
