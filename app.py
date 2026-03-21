@@ -14,7 +14,7 @@ import json
 import os
 import hashlib
 
-
+=
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -577,6 +577,7 @@ with st.sidebar:
             text-align: center;
             padding: 8px 12px 10px;
             font-family: Inter, sans-serif;
+            margin-top: -6rem;
         }}
         .sb-top img {{
             width: 72px; height: 72px;
@@ -735,49 +736,53 @@ components.html(f"""
         var pd = window.parent.document;
         var sbg = '{_sidebar_bg}';
 
-        // Inject CSS ke head — untuk background color
+        // Inject CSS ke head parent dengan specificity tertinggi — override inline style
         var headStyleId = 'sigma-force-top';
         var headStyle = pd.getElementById(headStyleId);
         if (!headStyle) {{
             headStyle = pd.createElement('style');
             headStyle.id = headStyleId;
             pd.head.appendChild(headStyle);
-            headStyle.textContent =
-                'section[data-testid="stSidebar"],' +
-                'section[data-testid="stSidebar"]>div,' +
-                'section[data-testid="stSidebar"]>div>div,' +
-                '[data-testid="stSidebarContent"],' +
-                '[data-testid="stSidebarUserContent"],' +
-                '[data-testid="stSidebarUserContent"]>div,' +
-                '[data-testid="stSidebarUserContent"]>div>div{{' +
-                'background-color:' + sbg + '!important;' +
-                'padding-top:0!important;margin-top:0!important}}';
         }}
+        headStyle.textContent = [
+            '[data-testid="stSidebarUserContent"] {{',
+            '  padding-top: 0 !important;',
+            '  margin-top: 0 !important;',
+            '}}',
+            '[data-testid="stSidebarContent"] {{',
+            '  padding-top: 0 !important;',
+            '  margin-top: 0 !important;',
+            '}}',
+            'section[data-testid="stSidebar"] > div > div {{',
+            '  padding-top: 0 !important;',
+            '  margin-top: 0 !important;',
+            '}}'
+        ].join('\n');
 
-        // Set paddingTop=0 langsung via style attribute (menang vs inline style)
+        // Direct inline style — hapus padding yang sudah ada lalu set 0
         [
             '[data-testid="stSidebarUserContent"]',
             '[data-testid="stSidebarContent"]',
-            'section[data-testid="stSidebar"] > div:first-child',
-            'section[data-testid="stSidebar"] > div:first-child > div:first-child',
+            'section[data-testid="stSidebar"] > div',
+            'section[data-testid="stSidebar"] > div > div',
+            'section[data-testid="stSidebar"] > div > div > div'
         ].forEach(function(sel) {{
-            var el = pd.querySelector(sel);
-            if (el) {{
-                var s = (el.getAttribute('style')||'')
-                    .replace(/padding-top[^;]*;?/g,'')
-                    .replace(/margin-top[^;]*;?/g,'');
-                el.setAttribute('style', s + 'padding-top:0px!important;margin-top:0px!important;background-color:'+sbg+'!important;');
-            }}
+            pd.querySelectorAll(sel).forEach(function(el) {{
+                el.style.removeProperty('padding-top');
+                el.style.removeProperty('margin-top');
+                el.style.paddingTop = '0px';
+                el.style.marginTop = '0px';
+            }});
         }});
 
-        // Sembunyikan HANYA teks (bukan icon SVG) di tombol collapse
-        pd.querySelectorAll(
-            '[data-testid="stSidebarCollapseButton"] span,' +
-            '[data-testid="collapsedControl"] span,' +
+        // 3. Sembunyikan HANYA teks (bukan SVG) di tombol collapse
+        pd.querySelectorAll([
+            '[data-testid="stSidebarCollapseButton"] span',
+            '[data-testid="collapsedControl"] span',
             'button[kind="header"] span'
-        ).forEach(function(el) {{
-            if (!el.querySelector('svg') && (el.textContent||'').trim().length > 1) {{
-                el.style.setProperty('display','none','important');
+        ].join(',')).forEach(function(el) {{
+            if (!el.querySelector('svg')) {{
+                el.style.setProperty('display', 'none', 'important');
             }}
         }});
     }}
@@ -963,16 +968,17 @@ components.html(f"""
     }} catch(e) {{}}
 
     // Coba inject segera dan dengan retry
-    // Run sekali saat load + beberapa retry
     fixSidebarTop();
     injectSettings();
     setTimeout(function() {{ fixSidebarTop(); }}, 100);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 500);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 1500);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 300);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 800);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
 
-    // MutationObserver hanya untuk injectSettings (settings button)
-    var obs = new MutationObserver(function() {{ injectSettings(); }});
-    obs.observe(window.parent.document.body, {{childList:true, subtree:false}});
+    // Observe kalau sidebar baru render
+    var obs = new MutationObserver(function() {{ fixSidebarTop(); injectSettings(); }});
+    obs.observe(window.parent.document.body, {{childList:true, subtree:true}});
 }})();
 </script>
 """, height=0)
