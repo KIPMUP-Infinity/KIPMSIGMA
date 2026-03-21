@@ -618,7 +618,7 @@ section[data-testid="stSidebar"],
     <button class="sp-item" onclick="setTheme('dark')">🌙 Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</button>
     <button class="sp-item" onclick="setTheme('light')">☀️ Mode Terang {'✓' if st.session_state.theme=='light' else ''}</button>
     <div class="sp-sep"></div>
-    <a class="sp-item sp-red" href="?do=logout">🚪 Keluar</a>
+    <button class="sp-item sp-red" onclick="doLogout()">🚪 Keluar</button>
 </div>
 
 <script>
@@ -627,42 +627,168 @@ function toggleSettings() {{
     p.style.display = p.style.display === 'block' ? 'none' : 'block';
 }}
 function setTheme(t) {{
-    window.parent.location.href = window.parent.location.href.split('?')[0] + '?do=theme_' + t;
+    // Pertahankan sigma_token di URL
+    var url = new URL(window.parent.location.href);
+    url.searchParams.set('do', 'theme_' + t);
+    window.parent.location.href = url.toString();
+}}
+function doLogout() {{
+    var url = new URL(window.parent.location.href);
+    url.searchParams.delete('sigma_token');
+    url.searchParams.set('do', 'logout');
+    window.parent.location.href = url.toString();
 }}
 document.addEventListener('click', function(e) {{
     var btn = document.getElementById('fab-settings');
     var pop = document.getElementById('settings-popup');
-    if (!btn.contains(e.target) && !pop.contains(e.target)) pop.style.display = 'none';
+    if (btn && pop && !btn.contains(e.target) && !pop.contains(e.target))
+        pop.style.display = 'none';
 }});
 </script>
 """, unsafe_allow_html=True)
 
-# Handle action dari floating buttons
+# Handle action — selalu pertahankan sigma_token
 if "do" in st.query_params:
     _do = st.query_params.get("do", "")
+    _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
     if _do == "logout":
-        tok = st.session_state.get("current_token", "")
-        if tok:
-            try: os.remove(os.path.join(DATA_DIR, f"token_{tok}.json"))
+        if _tok:
+            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
             except: pass
         st.session_state.clear(); st.query_params.clear(); st.rerun()
     elif _do == "theme_dark":
-        st.session_state.theme = "dark"; st.query_params.clear(); st.rerun()
+        st.session_state.theme = "dark"
+        st.query_params["do"] = ""
+        st.rerun()
     elif _do == "theme_light":
-        st.session_state.theme = "light"; st.query_params.clear(); st.rerun()
-    elif _do == "newchat":
-        ns = new_session()
-        st.session_state.sessions.insert(0, ns)
-        st.session_state.active_id = ns["id"]
-        st.query_params.clear(); st.rerun()
+        st.session_state.theme = "light"
+        st.query_params["do"] = ""
+        st.rerun()
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
 # ─────────────────────────────────────────────
 active = get_active()
 
-# Floating new chat button
-st.markdown(f'<a class="sigma-fab" id="fab-newchat" href="?do=newchat" title="Obrolan Baru">✎</a>', unsafe_allow_html=True)
+# Floating buttons — pakai st.button biar tidak hapus token
+_col1, _col2, _col3 = st.columns([1, 8, 1])
+
+# Tombol obrolan baru — floating kiri bawah
+st.markdown(f"""
+<style>
+#fab-newchat, #fab-history {{
+    position: fixed;
+    left: 12px;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.1s;
+}}
+#fab-newchat {{ bottom: 80px; background: {C['gold']}; color: #000; font-weight:700; }}
+#fab-history {{ bottom: 130px; background: {C['sidebar_bg']}; color: {C['text_muted']}; }}
+#fab-newchat:hover, #fab-history:hover {{ transform: scale(1.08); }}
+
+/* History drawer */
+#history-drawer {{
+    position: fixed;
+    left: 60px; bottom: 80px;
+    background: {C['sidebar_bg']};
+    border: 1px solid {C['border']};
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 9998;
+    min-width: 220px;
+    max-height: 60vh;
+    overflow-y: auto;
+    display: none;
+    padding: 6px 0;
+}}
+.hi-item {{
+    display: block; width: 100%;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    color: {C['text']};
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}}
+.hi-item:hover {{ background: {C['hover']}; }}
+.hi-item.active {{ background: {C['hover']}; font-weight: 600; }}
+</style>
+""", unsafe_allow_html=True)
+
+if st.button("✎", key="fab_new", help="Obrolan baru"):
+    ns = new_session()
+    st.session_state.sessions.insert(0, ns)
+    st.session_state.active_id = ns["id"]
+    st.rerun()
+
+if st.button("☰", key="fab_hist", help="History"):
+    st.session_state.show_history = not st.session_state.get("show_history", False)
+    st.rerun()
+
+# History drawer
+if st.session_state.get("show_history", False):
+    st.markdown(f"""
+    <div style="position:fixed;left:60px;bottom:80px;background:{C['sidebar_bg']};
+        border:1px solid {C['border']};border-radius:12px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.4);z-index:9998;
+        min-width:220px;max-height:55vh;overflow-y:auto;padding:6px 0;">
+        <div style="padding:6px 14px 4px;font-size:0.65rem;color:{C['text_muted']};
+            font-weight:600;letter-spacing:1px;">OBROLAN ANDA</div>
+    """, unsafe_allow_html=True)
+
+    for sesi in st.session_state.sessions:
+        sid = sesi["id"]
+        is_active = sid == st.session_state.active_id
+        title_d = sesi["title"][:30] + "..." if len(sesi["title"]) > 30 else sesi["title"]
+        bg = C['hover'] if is_active else "transparent"
+        fw = "600" if is_active else "400"
+        st.markdown(f"""
+        <div style="padding:7px 14px;font-size:0.85rem;color:{C['text']};
+            background:{bg};font-weight:{fw};cursor:pointer;"
+            onclick="">
+            {title_d}
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button(title_d, key=f"hi_{sid}", use_container_width=True):
+            st.session_state.active_id = sid
+            st.session_state.show_history = False
+            st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Style tombol fab agar tampil fixed
+st.markdown(f"""
+<script>
+(function() {{
+    var pd = window.parent.document;
+    // Cari semua button di main area
+    function styleFab() {{
+        pd.querySelectorAll('button').forEach(function(b) {{
+            var txt = b.textContent.trim();
+            if (txt === '✎') {{
+                b.style.cssText = 'position:fixed!important;left:12px!important;bottom:80px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["gold"]}!important;color:#000!important;font-size:18px!important;font-weight:700!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
+            }} else if (txt === '☰') {{
+                b.style.cssText = 'position:fixed!important;left:12px!important;bottom:130px!important;width:40px!important;height:40px!important;border-radius:10px!important;background:{C["sidebar_bg"]}!important;color:{C["text_muted"]}!important;font-size:18px!important;border:none!important;cursor:pointer!important;z-index:9999!important;box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;padding:0!important;';
+            }}
+        }});
+    }}
+    styleFab();
+    setTimeout(styleFab, 500);
+    new MutationObserver(styleFab).observe(pd.body, {{childList:true, subtree:true}});
+}})();
+</script>
+""", unsafe_allow_html=True)
 
 # Header
 if not active["messages"][1:]:
