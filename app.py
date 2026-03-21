@@ -227,27 +227,6 @@ st.markdown(f"""
 
     footer {{ visibility: hidden; }}
     #MainMenu {{ visibility: hidden; }}
-
-    /* ── PAKSA SIDEBAR KONTEN NAIK KE ATAS ── */
-    /* Override inline style Streamlit yang kasih padding-top besar */
-    section[data-testid="stSidebar"] > div:first-child {{
-        padding-top: 0 !important;
-    }}
-    [data-testid="stSidebarContent"] {{
-        padding-top: 0 !important;
-    }}
-    [data-testid="stSidebarUserContent"] {{
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }}
-    [data-testid="stSidebarUserContent"] > div {{
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }}
-    [data-testid="stSidebarUserContent"] > div > div {{
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -756,34 +735,49 @@ components.html(f"""
         var pd = window.parent.document;
         var sbg = '{_sidebar_bg}';
 
-        // Paksa padding = 0 via setAttribute (menang vs inline style biasa)
-        var sels = [
-            'section[data-testid="stSidebar"] > div:first-child',
-            'section[data-testid="stSidebar"] > div:first-child > div',
-            '[data-testid="stSidebarContent"]',
+        // Inject CSS ke head — untuk background color
+        var headStyleId = 'sigma-force-top';
+        var headStyle = pd.getElementById(headStyleId);
+        if (!headStyle) {{
+            headStyle = pd.createElement('style');
+            headStyle.id = headStyleId;
+            pd.head.appendChild(headStyle);
+            headStyle.textContent =
+                'section[data-testid="stSidebar"],' +
+                'section[data-testid="stSidebar"]>div,' +
+                'section[data-testid="stSidebar"]>div>div,' +
+                '[data-testid="stSidebarContent"],' +
+                '[data-testid="stSidebarUserContent"],' +
+                '[data-testid="stSidebarUserContent"]>div,' +
+                '[data-testid="stSidebarUserContent"]>div>div{{' +
+                'background-color:' + sbg + '!important;' +
+                'padding-top:0!important;margin-top:0!important}}';
+        }}
+
+        // Set paddingTop=0 langsung via style attribute (menang vs inline style)
+        [
             '[data-testid="stSidebarUserContent"]',
-        ];
-        sels.forEach(function(s) {{
-            pd.querySelectorAll(s).forEach(function(el) {{
-                var cur = el.getAttribute('style') || '';
-                // Hanya update kalau belum di-fix
-                if (cur.indexOf('sigma-fixed') === -1) {{
-                    // Hapus padding-top yang ada lalu tambahkan 0
-                    cur = cur.replace(/padding-top[^;]*;?/gi, '');
-                    cur = cur.replace(/margin-top[^;]*;?/gi, '');
-                    el.setAttribute('style', cur + ';padding-top:0px!important;margin-top:0px!important;background-color:' + sbg + '!important;--sigma-fixed:1');
-                }}
-            }});
+            '[data-testid="stSidebarContent"]',
+            'section[data-testid="stSidebar"] > div:first-child',
+            'section[data-testid="stSidebar"] > div:first-child > div:first-child',
+        ].forEach(function(sel) {{
+            var el = pd.querySelector(sel);
+            if (el) {{
+                var s = (el.getAttribute('style')||'')
+                    .replace(/padding-top[^;]*;?/g,'')
+                    .replace(/margin-top[^;]*;?/g,'');
+                el.setAttribute('style', s + 'padding-top:0px!important;margin-top:0px!important;background-color:'+sbg+'!important;');
+            }}
         }});
 
-        // Sembunyikan teks tombol collapse (bukan SVG)
+        // Sembunyikan HANYA teks (bukan icon SVG) di tombol collapse
         pd.querySelectorAll(
             '[data-testid="stSidebarCollapseButton"] span,' +
             '[data-testid="collapsedControl"] span,' +
             'button[kind="header"] span'
         ).forEach(function(el) {{
             if (!el.querySelector('svg') && (el.textContent||'').trim().length > 1) {{
-                el.style.setProperty('display', 'none', 'important');
+                el.style.setProperty('display','none','important');
             }}
         }});
     }}
@@ -968,19 +962,16 @@ components.html(f"""
         }}
     }} catch(e) {{}}
 
-    // Jalankan segera + retry
+    // Coba inject segera dan dengan retry
+    // Run sekali saat load + beberapa retry
     fixSidebarTop();
     injectSettings();
-    [100, 500, 1000, 2000].forEach(function(t) {{
-        setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, t);
-    }});
+    setTimeout(function() {{ fixSidebarTop(); }}, 100);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 500);
+    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 1500);
 
-    // Observe DOM changes — hanya jalankan sekali per batch perubahan
-    var obsTimer;
-    var obs = new MutationObserver(function() {{
-        clearTimeout(obsTimer);
-        obsTimer = setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 150);
-    }});
+    // MutationObserver hanya untuk injectSettings (settings button)
+    var obs = new MutationObserver(function() {{ injectSettings(); }});
     obs.observe(window.parent.document.body, {{childList:true, subtree:false}});
 }})();
 </script>
