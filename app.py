@@ -398,22 +398,76 @@ footer, #MainMenu {{ visibility: hidden !important; }}
 /* Divider */
 hr {{ border-color: {C['border']} !important; }}
 
-/* Mobile responsive */
+/* ── MOBILE RESPONSIVE ── */
 @media (max-width: 768px) {{
+
+    /* Konten full width, padding nyaman */
     [data-testid="stMainBlockContainer"] {{
         max-width: 100% !important;
-        padding: 0 8px 100px !important;
+        padding: 16px 16px 120px !important;
+    }}
+
+    /* Font lebih besar untuk baca nyaman */
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li {{
+        font-size: 1rem !important;
+        line-height: 1.8 !important;
+    }}
+
+    /* Chat input nyaman di jempol */
+    div[data-testid="stChatInputContainer"] {{
+        border-radius: 24px !important;
+        padding: 4px 12px !important;
+        margin: 0 8px 8px !important;
     }}
     [data-testid="stChatInput"] textarea {{
         font-size: 16px !important;
+        line-height: 1.5 !important;
+        padding: 10px 0 !important;
     }}
-    section[data-testid="stSidebar"] {{
-        width: 85vw !important;
-        min-width: 0 !important;
-        max-width: 320px !important;
-    }}
+
+    /* Bubble chat lebih besar */
     .navy-pill {{
-        max-width: 88% !important;
+        max-width: 85% !important;
+        font-size: 1rem !important;
+        line-height: 1.7 !important;
+        padding: 12px 16px !important;
+        border-radius: 18px 18px 4px 18px !important;
+    }}
+
+    /* Jarak antar pesan */
+    [data-testid="stChatMessage"] {{
+        padding: 8px 0 !important;
+    }}
+
+    /* Header lebih besar */
+    .main-header h1,
+    [data-testid="stMainBlockContainer"] h1 {{
+        font-size: 1.6rem !important;
+    }}
+
+    /* Heading dalam respons AI */
+    [data-testid="stMarkdownContainer"] h1 {{
+        font-size: 1.3rem !important;
+    }}
+    [data-testid="stMarkdownContainer"] h2 {{
+        font-size: 1.15rem !important;
+    }}
+    [data-testid="stMarkdownContainer"] h3 {{
+        font-size: 1.05rem !important;
+    }}
+
+    /* Code block lebih kecil agar tidak overflow */
+    [data-testid="stMarkdownContainer"] code,
+    [data-testid="stMarkdownContainer"] pre {{
+        font-size: 0.82rem !important;
+        overflow-x: auto !important;
+    }}
+
+    /* Spinner text */
+    [data-testid="stSpinner"] p {{
+        font-size: 0.9rem !important;
     }}
 }}
 </style>
@@ -969,7 +1023,7 @@ function fixBubbles() {{
             if (!md.querySelector('.navy-pill')) {{
                 const pill = document.createElement('div');
                 pill.className = 'navy-pill';
-                pill.style.cssText = `background:${{BC}};color:${{BT}};border-radius:18px 18px 4px 18px;padding:10px 16px;max-width:72%;display:inline-block;font-size:0.9rem;line-height:1.6;word-wrap:break-word;`;
+                var mob=window.parent.innerWidth<=768; pill.style.cssText=`background:${{BC}};color:${{BT}};border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
                 while (md.firstChild) pill.appendChild(md.firstChild);
                 md.appendChild(pill);
             }}
