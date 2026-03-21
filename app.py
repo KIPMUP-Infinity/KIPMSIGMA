@@ -15,6 +15,8 @@ import os
 import hashlib
 
 
+
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -70,8 +72,9 @@ _active_chat_clr = "#ffffff"  if _is_dark else "#0d0d0d"
 _inactive_chat   = "#ececec"  if _is_dark else "#0d0d0d"
 _sidebar_border  = "none"     if _is_dark else "1px solid #e5e5e5"
 
+st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">', unsafe_allow_html=True)
+
 st.markdown(f"""
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <style>
     @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
