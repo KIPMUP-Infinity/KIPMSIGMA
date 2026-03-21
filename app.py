@@ -398,76 +398,92 @@ footer, #MainMenu {{ visibility: hidden !important; }}
 /* Divider */
 hr {{ border-color: {C['border']} !important; }}
 
-/* ── MOBILE RESPONSIVE ── */
+/* ── BASE FONT — konsisten semua ukuran ── */
+[data-testid="stMarkdownContainer"] *,
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] span,
+[data-testid="stMarkdownContainer"] div {{
+    font-size: 0.95rem !important;
+    line-height: 1.8 !important;
+}}
+[data-testid="stMarkdownContainer"] strong,
+[data-testid="stMarkdownContainer"] b {{
+    font-size: inherit !important;
+}}
+[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }}
+[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
+[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
+
+/* ── MOBILE ── */
 @media (max-width: 768px) {{
 
-    /* Konten full width, padding nyaman */
     [data-testid="stMainBlockContainer"] {{
         max-width: 100% !important;
-        padding: 16px 16px 120px !important;
+        padding: 12px 16px 120px !important;
     }}
 
-    /* Font lebih besar untuk baca nyaman */
-    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
+    /* Font konsisten di mobile — semua elemen sama */
+    [data-testid="stMarkdownContainer"],
+    [data-testid="stMarkdownContainer"] *,
     [data-testid="stMarkdownContainer"] p,
-    [data-testid="stMarkdownContainer"] li {{
+    [data-testid="stMarkdownContainer"] li,
+    [data-testid="stMarkdownContainer"] span,
+    [data-testid="stMarkdownContainer"] strong,
+    [data-testid="stMarkdownContainer"] b,
+    [data-testid="stMarkdownContainer"] em {{
         font-size: 1rem !important;
-        line-height: 1.8 !important;
+        line-height: 1.85 !important;
+    }}
+    [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.25rem !important; }}
+    [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.1rem !important; }}
+    [data-testid="stMarkdownContainer"] h3 {{ font-size: 1rem !important; font-weight: 700 !important; }}
+
+    /* List lebih rapi */
+    [data-testid="stMarkdownContainer"] ul,
+    [data-testid="stMarkdownContainer"] ol {{
+        padding-left: 20px !important;
+        margin: 6px 0 !important;
+    }}
+    [data-testid="stMarkdownContainer"] li {{
+        margin-bottom: 4px !important;
     }}
 
-    /* Chat input nyaman di jempol */
+    /* Code block */
+    [data-testid="stMarkdownContainer"] code {{
+        font-size: 0.85rem !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        background: rgba(255,255,255,0.08) !important;
+    }}
+    [data-testid="stMarkdownContainer"] pre {{
+        font-size: 0.82rem !important;
+        overflow-x: auto !important;
+        padding: 12px !important;
+        border-radius: 8px !important;
+    }}
+
+    /* Chat input */
     div[data-testid="stChatInputContainer"] {{
-        border-radius: 24px !important;
-        padding: 4px 12px !important;
-        margin: 0 8px 8px !important;
+        border-radius: 26px !important;
+        margin: 0 6px 8px !important;
     }}
     [data-testid="stChatInput"] textarea {{
         font-size: 16px !important;
         line-height: 1.5 !important;
+    }}
+
+    /* Pesan lebih bernapas */
+    [data-testid="stChatMessage"] {{
         padding: 10px 0 !important;
     }}
 
-    /* Bubble chat lebih besar */
+    /* Bubble user */
     .navy-pill {{
-        max-width: 85% !important;
+        max-width: 82% !important;
         font-size: 1rem !important;
         line-height: 1.7 !important;
         padding: 12px 16px !important;
-        border-radius: 18px 18px 4px 18px !important;
-    }}
-
-    /* Jarak antar pesan */
-    [data-testid="stChatMessage"] {{
-        padding: 8px 0 !important;
-    }}
-
-    /* Header lebih besar */
-    .main-header h1,
-    [data-testid="stMainBlockContainer"] h1 {{
-        font-size: 1.6rem !important;
-    }}
-
-    /* Heading dalam respons AI */
-    [data-testid="stMarkdownContainer"] h1 {{
-        font-size: 1.3rem !important;
-    }}
-    [data-testid="stMarkdownContainer"] h2 {{
-        font-size: 1.15rem !important;
-    }}
-    [data-testid="stMarkdownContainer"] h3 {{
-        font-size: 1.05rem !important;
-    }}
-
-    /* Code block lebih kecil agar tidak overflow */
-    [data-testid="stMarkdownContainer"] code,
-    [data-testid="stMarkdownContainer"] pre {{
-        font-size: 0.82rem !important;
-        overflow-x: auto !important;
-    }}
-
-    /* Spinner text */
-    [data-testid="stSpinner"] p {{
-        font-size: 0.9rem !important;
     }}
 }}
 </style>
