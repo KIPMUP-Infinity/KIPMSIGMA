@@ -16,7 +16,6 @@ import hashlib
 
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -682,7 +681,8 @@ with st.sidebar:
     for sesi in st.session_state.sessions:
         sid = sesi["id"]
         is_active = sid == st.session_state.active_id
-        title_d = sesi["title"][:28] + "..." if len(sesi["title"]) > 28 else sesi["title"]
+        # Potong judul, sisakan ruang untuk icon
+        title_d = sesi["title"][:20] + "..." if len(sesi["title"]) > 20 else sesi["title"]
 
         if st.session_state.rename_id == sid:
             new_t = st.text_input("Rename", value=sesi["title"], key=f"ren_{sid}", label_visibility="collapsed")
@@ -695,24 +695,30 @@ with st.sidebar:
                 if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
+            # Satu tombol dengan judul + icon di kanan kalau aktif
             if is_active:
-                c1, c2, c3 = st.columns([7, 1, 1])
-                with c1:
-                    if st.button(title_d, key=f"sel_{sid}", use_container_width=True):
-                        st.session_state.active_id = sid
-                        st.session_state.rename_id = None
-                        st.rerun()
-                with c2:
-                    if st.button("✏️", key=f"ren_{sid}"):
-                        st.session_state.rename_id = sid; st.rerun()
-                with c3:
-                    if st.button("🗑", key=f"del_{sid}"):
-                        delete_session(sid); st.rerun()
+                label = f"{title_d}  ✏️ 🗑"
             else:
-                if st.button(title_d, key=f"sel_{sid}", use_container_width=True):
-                    st.session_state.active_id = sid
-                    st.session_state.rename_id = None
-                    st.rerun()
+                label = title_d
+
+            if st.button(label, key=f"sel_{sid}", use_container_width=True):
+                if is_active:
+                    # Cek apakah klik di area icon (tidak bisa detect, jadi toggle rename)
+                    # Untuk delete/rename pakai tombol terpisah di bawah
+                    pass
+                st.session_state.active_id = sid
+                st.session_state.rename_id = None
+                st.rerun()
+
+            # Tombol edit & hapus hanya muncul kalau aktif, dalam satu baris
+            if is_active:
+                ca, cb = st.columns([1, 1])
+                with ca:
+                    if st.button("✏️ Rename", key=f"ren_{sid}", use_container_width=True):
+                        st.session_state.rename_id = sid; st.rerun()
+                with cb:
+                    if st.button("🗑 Hapus", key=f"del_{sid}", use_container_width=True):
+                        delete_session(sid); st.rerun()
 
 # Handle sidebar HTML nav actions
 if "sb_sel" in st.query_params:
