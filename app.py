@@ -16,6 +16,22 @@ import hashlib
 
 
 
+import streamlit as st
+from groq import Groq
+import yfinance as yf
+import fitz  # PyMuPDF untuk PDF
+import base64
+from PIL import Image
+import io
+import streamlit.components.v1 as components
+import uuid
+from datetime import datetime
+import requests
+from urllib.parse import urlencode
+import json
+import os
+import hashlib
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -670,7 +686,13 @@ with st.sidebar:
         <hr class="sb-divider">
     """, unsafe_allow_html=True)
 
-    if st.button( Obrolan baru ◎ ", key="btn_new_chat", use_container_width=True):
+    # Inject Lucide icons script sekali
+    st.markdown("""
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script>document.addEventListener('DOMContentLoaded', function() {{ if(window.lucide) lucide.createIcons(); }});</script>
+    """, unsafe_allow_html=True)
+
+    if st.button("◎  Obrolan baru", key="btn_new_chat", use_container_width=True):
         ns = new_session()
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
@@ -702,10 +724,10 @@ with st.sidebar:
                         st.session_state.rename_id = None
                         st.rerun()
                 with c2:
-                    if st.button("✏️", key=f"ren_{sid}"):
+                    if st.button("◎", key=f"ren_{sid}"):
                         st.session_state.rename_id = sid; st.rerun()
                 with c3:
-                    if st.button("🗑", key=f"del_{sid}"):
+                    if st.button("⊘", key=f"del_{sid}"):
                         delete_session(sid); st.rerun()
             else:
                 if st.button(title_d, key=f"sel_{sid}", use_container_width=True):
