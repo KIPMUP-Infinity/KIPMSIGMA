@@ -15,6 +15,8 @@ import os
 import hashlib
 
 
+
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -72,10 +74,12 @@ _sidebar_border  = "none"     if _is_dark else "1px solid #e5e5e5"
 
 st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     @import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
-    * {{ font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }}
+    * {{
+        font-family: ui-sans-serif, -apple-system, system-ui, "Segoe UI",
+                     Helvetica, Arial, sans-serif !important;
+    }}
     .material-icons {{ font-family: 'Material Icons' !important; }}
 
     /* ── GLOBAL BACKGROUND ── */
