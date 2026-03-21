@@ -16,25 +16,6 @@ import hashlib
 
 
 
-import streamlit as st
-from groq import Groq
-import yfinance as yf
-import fitz  # PyMuPDF untuk PDF
-import base64
-from PIL import Image
-import io
-import streamlit.components.v1 as components
-import uuid
-from datetime import datetime
-import requests
-from urllib.parse import urlencode
-import json
-import os
-import hashlib
-
-
-
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -413,6 +394,10 @@ if "open_sidebar" in st.query_params:
     st.session_state.sidebar_open = True
     st.query_params.clear(); st.rerun()
 
+if "close_sidebar" in st.query_params:
+    st.session_state.sidebar_open = False
+    st.query_params.clear(); st.rerun()
+
 user = st.session_state.user
 SYSTEM_PROMPT = {
     "role": "system",
@@ -650,6 +635,15 @@ with st.sidebar:
         .sb-btn-del:hover {{ color: #f55 !important; }}
         </style>
 
+        <!-- Tombol tutup sidebar — pojok kanan atas sidebar -->
+        <div style="display:flex;justify-content:flex-end;padding:4px 8px 0 8px;">
+            <a href="?close_sidebar=1" style="
+                width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+                border-radius:6px;color:{_text_muted};text-decoration:none;font-size:18px;
+                cursor:pointer;background:transparent;
+            " title="Tutup Sidebar">&#9707;</a>
+        </div>
+
         <div class="sb-top">
             {"" if not _logo_src else f'<img src="{_logo_src}">'}
             <p class="sb-sub">KOMUNITAS <span style="color:#F5C242;font-weight:600;">INVESTASI</span> PASAR MODAL</p>
@@ -755,7 +749,7 @@ if "action" in st.query_params:
     elif _a == "logout":
         st.session_state.clear(); st.query_params.clear(); st.rerun()
 
-# ── PANEL ICON KIRI (saat sidebar tertutup) ──────────────
+# ── SIDEBAR OPEN/CLOSE ──────────────────────────────────
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
 
@@ -763,67 +757,23 @@ if not st.session_state.sidebar_open:
     st.markdown(f"""
         <style>
         section[data-testid="stSidebar"] {{ display: none !important; }}
+        /* Tombol □ pojok kiri atas — sama seperti ChatGPT/Claude */
+        #sigma-open-btn {{
+            position: fixed;
+            top: 12px; left: 12px;
+            width: 32px; height: 32px;
+            background: transparent;
+            border: none; border-radius: 6px;
+            color: {_text_muted};
+            font-size: 20px; cursor: pointer;
+            z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+        }}
+        #sigma-open-btn:hover {{ background: {'#2f2f2f' if _is_dark else '#d8d8d8'}; }}
         </style>
+        <a id="sigma-open-btn" href="?open_sidebar=1" title="Buka Sidebar">&#9707;</a>
     """, unsafe_allow_html=True)
-    if st.button("□", key="btn_open_sb"):
-        st.session_state.sidebar_open = True
-        st.rerun()
-
-# Inject panel icon tipis via JS — persis seperti gambar referensi
-components.html(f"""
-<script>
-(function() {{
-    var pd = window.parent.document;
-    if (pd.getElementById('sigma-left-panel')) return;
-
-    var isOpen = {'true' if st.session_state.sidebar_open else 'false'};
-    var sbg = '{_sidebar_bg}';
-    var clr = '{_text_muted}';
-    var brd = '{'#2f2f2f' if _is_dark else '#d0d0d0'}';
-
-    var panel = pd.createElement('div');
-    panel.id = 'sigma-left-panel';
-    panel.style.cssText = [
-        'position:fixed','top:0','left:0','bottom:0',
-        'width:48px',
-        'background:' + sbg,
-        'border-right:1px solid ' + brd,
-        'z-index:9998',
-        'display:' + (isOpen ? 'none' : 'flex'),
-        'flex-direction:column',
-        'align-items:center',
-        'padding-top:10px',
-        'gap:6px'
-    ].join(';');
-
-    // Icon sidebar (paling atas)
-    var btnSidebar = pd.createElement('button');
-    btnSidebar.innerHTML = '&#9707;';
-    btnSidebar.title = 'Buka Sidebar';
-    btnSidebar.style.cssText = 'width:36px;height:36px;background:transparent;border:none;border-radius:8px;color:'+clr+';font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
-    btnSidebar.onmouseenter = function(){{ this.style.background='{'#2f2f2f' if _is_dark else '#d0d0d0'}'; }};
-    btnSidebar.onmouseleave = function(){{ this.style.background='transparent'; }};
-    btnSidebar.onclick = function() {{
-        // Klik tombol collapse bawaan Streamlit yang tersembunyi
-        var native = pd.querySelector('[data-testid="collapsedControl"] button');
-        if (native) {{ native.click(); }}
-        panel.style.display = 'none';
-    }};
-
-    panel.appendChild(btnSidebar);
-    pd.body.appendChild(panel);
-
-    // Pantau sidebar — kalau tertutup tampilkan panel
-    setInterval(function() {{
-        var sidebar = pd.querySelector('section[data-testid="stSidebar"]');
-        var p = pd.getElementById('sigma-left-panel');
-        if (!p || !sidebar) return;
-        var w = sidebar.getBoundingClientRect().width;
-        p.style.display = w < 10 ? 'flex' : 'none';
-    }}, 500);
-}})();
-</script>
-""", height=0)
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
