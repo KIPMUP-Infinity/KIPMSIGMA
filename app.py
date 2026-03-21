@@ -1149,7 +1149,12 @@ setInterval(addActionButtons, 1000);
 // Paste image support — lebih robust
 function setupPaste() {{
     var pw = window.parent;
-    if (pw._sigmaOK) return;
+
+    // Hapus handler lama dulu
+    if (pw._sigmaPasteHandler) {{
+        pw.removeEventListener('paste', pw._sigmaPasteHandler, true);
+        pw.document.removeEventListener('paste', pw._sigmaPasteHandler, true);
+    }}
 
     function handlePaste(e) {{
         var items = e.clipboardData && e.clipboardData.items;
@@ -1186,9 +1191,9 @@ function setupPaste() {{
         }}
     }}
 
+    pw._sigmaPasteHandler = handlePaste;
     pw.addEventListener('paste', handlePaste, true);
     pw.document.addEventListener('paste', handlePaste, true);
-    pw._sigmaOK = true;
 }}
 setupPaste();
 setTimeout(setupPaste, 1000);
