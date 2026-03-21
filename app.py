@@ -16,6 +16,8 @@ import hashlib
 
 
 
+
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -218,6 +220,25 @@ st.markdown(f"""
 
     footer {{ visibility: hidden; }}
     #MainMenu {{ visibility: hidden; }}
+
+    /* Sembunyikan teks keyboard_double_arrow_right tanpa ganggu tombol */
+    [data-testid="collapsedControl"] {{
+        overflow: hidden !important;
+        text-indent: -9999px !important;
+        font-size: 0 !important;
+    }}
+    [data-testid="collapsedControl"] svg {{
+        text-indent: 0 !important;
+        font-size: initial !important;
+    }}
+    [data-testid="stSidebarCollapseButton"] {{
+        font-size: 0 !important;
+        text-indent: -9999px !important;
+    }}
+    [data-testid="stSidebarCollapseButton"] svg {{
+        text-indent: 0 !important;
+        font-size: initial !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
