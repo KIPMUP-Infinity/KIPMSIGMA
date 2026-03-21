@@ -655,61 +655,16 @@ def show_login():
     """, unsafe_allow_html=True)
 
     # Background sudah di-set via CSS (URL GitHub raw)
-
-    # Inject mobile header — logo + tagline muncul di atas kotak di HP
-    components.html("""
-<script>
-(function() {
-    var pd = window.parent.document;
-    if (pd.getElementById('sigma-mobile-header')) return;
-    if (window.parent.innerWidth > 768) return;
-
-    var s = pd.createElement('style');
-    s.textContent = `
-        #sigma-mobile-header {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 999;
-            text-align: center;
-            padding: 18px 20px 12px;
-            background: linear-gradient(to bottom, rgba(5,8,20,0.85) 0%, transparent 100%);
-            pointer-events: none;
-        }
-        #sigma-mobile-header .mh-logo {
-            font-size: 1.6rem;
-            font-weight: 900;
-            color: #ffffff;
-            letter-spacing: 2px;
-            font-family: sans-serif;
-        }
-        #sigma-mobile-header .mh-logo span {
-            color: #F5C242;
-        }
-        #sigma-mobile-header .mh-sub {
-            font-size: 0.65rem;
-            color: rgba(255,255,255,0.6);
-            letter-spacing: 1.5px;
-            font-family: sans-serif;
-            margin-top: 2px;
-        }
-        @media(max-width: 768px) {
-            #sigma-mobile-header { display: block !important; }
-        }
-    `;
-    pd.head.appendChild(s);
-
-    var div = pd.createElement('div');
-    div.id = 'sigma-mobile-header';
-    div.innerHTML = `
-        <div class="mh-logo">SIGMA <span>Σ</span></div>
-        <div class="mh-sub">KIPM UNIVERSITAS PANCASILA </div>
-    `;
-    pd.body.appendChild(div);
-})();
-</script>
-""", height=0)
-    st.markdown('<div style="text-align:center;margin:0 0 10px;"><h2 style="margin:0;font-size:1.5rem;font-weight:800;color:#ffffff;">Masuk ke SIGMA</h2></div>', unsafe_allow_html=True)
+    st.markdown('''
+        <div style="text-align:center;margin:0 0 10px;">
+            <div style="font-size:1.8rem;font-weight:900;letter-spacing:3px;color:#ffffff;font-family:sans-serif;line-height:1.2;">
+                SIGMA <span style="color:#F5C242;">Σ</span>
+            </div>
+            <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">
+                KIPM UNIVERSITAS PANCASILA
+            </div>
+        </div>
+    ''', unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["🔑 Sign In", "📝 Sign Up", "🌐 Google"])
 
     with tab1:
