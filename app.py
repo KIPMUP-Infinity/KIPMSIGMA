@@ -16,7 +16,6 @@ import hashlib
 
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -720,85 +719,28 @@ with st.sidebar:
                     st.session_state.rename_id = None
                     st.rerun()
 
-    # ── SETTINGS di bawah sidebar ──
-    st.markdown(f"""
-        <div style="position:fixed;bottom:0;left:0;width:244px;
-            background:{_sidebar_bg};border-top:1px solid {'#2f2f2f' if _is_dark else '#e5e5e5'};
-            padding:4px 0;z-index:100;font-family:inherit;">
-        </div>
-    """, unsafe_allow_html=True)
+    # ── SETTINGS di bawah sidebar ── pure Streamlit, pasti muncul
+    st.divider()
+    if "show_settings" not in st.session_state:
+        st.session_state.show_settings = False
 
-    _cur_theme = st.session_state.get("theme", "dark")
-    st.markdown(f"""
-        <style>
-        .settings-btn {{
-            display:flex;align-items:center;gap:8px;
-            padding:10px 14px;cursor:pointer;
-            color:{'#8e8ea0' if _is_dark else '#6e6e80'};
-            font-size:0.875rem;font-family:inherit;
-            background:transparent;border:none;width:100%;
-            text-align:left;
-        }}
-        .settings-btn:hover {{background:{'#2f2f2f' if _is_dark else '#efefef'};}}
-        .theme-popup {{
-            display:none;position:fixed;bottom:48px;left:8px;width:228px;
-            background:{'#2f2f2f' if _is_dark else '#ffffff'};
-            border:1px solid {'#3f3f3f' if _is_dark else '#e5e5e5'};
-            border-radius:10px;box-shadow:0 -4px 20px rgba(0,0,0,0.3);
-            z-index:9999;overflow:hidden;
-        }}
-        .theme-popup.open {{display:block;}}
-        .theme-item {{
-            display:flex;justify-content:space-between;align-items:center;
-            padding:9px 16px;font-size:0.875rem;cursor:pointer;
-            color:{'#ececec' if _is_dark else '#0d0d0d'};
-        }}
-        .theme-item:hover {{background:{'#3f3f3f' if _is_dark else '#f4f4f4'};}}
-        .theme-lbl {{
-            font-size:0.68rem;font-weight:600;color:{'#8e8ea0' if _is_dark else '#6e6e80'};
-            padding:8px 16px 4px;text-transform:uppercase;letter-spacing:1px;
-        }}
-        .theme-sep {{border:none;border-top:1px solid {'#3f3f3f' if _is_dark else '#e5e5e5'};margin:4px 0;}}
-        .logout-item {{
-            display:flex;align-items:center;gap:8px;
-            padding:9px 16px;font-size:0.875rem;cursor:pointer;
-            color:#e55;
-        }}
-        .logout-item:hover {{background:{'#3f3f3f' if _is_dark else '#f4f4f4'};}}
-        </style>
+    if st.button("⚙  Pengaturan", key="btn_settings", use_container_width=True):
+        st.session_state.show_settings = not st.session_state.show_settings
+        st.rerun()
 
-        <div id="sigma-settings-bar" style="position:fixed;bottom:0;left:0;width:244px;
-            background:{'#171717' if _is_dark else '#f9f9f9'};
-            border-top:1px solid {'#2f2f2f' if _is_dark else '#e5e5e5'};z-index:100;">
-
-            <div id="sigma-theme-popup" class="theme-popup">
-                <div class="theme-lbl">Penampilan</div>
-                <a href="?action=theme_dark" target="_self" class="theme-item">
-                    Gelap <span>{'✓' if _cur_theme == 'dark' else ''}</span>
-                </a>
-                <a href="?action=theme_light" target="_self" class="theme-item">
-                    Terang <span>{'✓' if _cur_theme == 'light' else ''}</span>
-                </a>
-                <hr class="theme-sep">
-                <a href="?action=logout" target="_self" class="logout-item">🚪 Keluar</a>
-            </div>
-
-            <button class="settings-btn" onclick="
-                var p=document.getElementById('sigma-theme-popup');
-                p.classList.toggle('open');
-            ">
-                ⚙ Pengaturan
-            </button>
-        </div>
-
-        <script>
-        document.addEventListener('click',function(e){{
-            var bar=document.getElementById('sigma-settings-bar');
-            var pop=document.getElementById('sigma-theme-popup');
-            if(bar&&pop&&!bar.contains(e.target))pop.classList.remove('open');
-        }});
-        </script>
-    """, unsafe_allow_html=True)
+    if st.session_state.show_settings:
+        _cur_theme = st.session_state.get("theme", "dark")
+        st.markdown(f'<p style="font-size:0.7rem;color:{"#8e8ea0" if _is_dark else "#6e6e80"};padding:4px 12px 2px;margin:0;">PENAMPILAN</p>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🌙 Gelap", key="btn_dark", disabled=_cur_theme=="dark", use_container_width=True):
+                st.session_state.theme = "dark"; st.session_state.show_settings = False; st.rerun()
+        with col2:
+            if st.button("☀️ Terang", key="btn_light", disabled=_cur_theme=="light", use_container_width=True):
+                st.session_state.theme = "light"; st.session_state.show_settings = False; st.rerun()
+        st.divider()
+        if st.button("🚪 Keluar", key="btn_logout", use_container_width=True):
+            st.session_state.clear(); st.rerun()
 
 # Handle sidebar HTML nav actions
 if "sb_sel" in st.query_params:
