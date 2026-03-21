@@ -702,8 +702,9 @@ def show_login():
     var div = pd.createElement('div');
     div.id = 'kipm-mobile-logo';
     div.innerHTML = `
-        <img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png"
-             onerror="this.style.display='none';this.nextElementSibling.style.fontSize='1.4rem'">
+        <img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png"
+             onerror="this.style.display='none'"
+             style="width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6));">
         <div class="kipm-name">KIPM-UP</div>
     `;
     pd.body.appendChild(div);
@@ -712,7 +713,7 @@ def show_login():
 """, height=0)
     st.markdown('''
         <div style="text-align:center;margin:0 0 10px;">
-            <div style="font-size:2.2rem;font-weight:900;letter-spacing:4px;color:#ffffff;font-family:sans-serif;line-height:1.2;">
+            <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">
                 SIGMA <span style="color:#F5C242;">Σ</span>
             </div>
             <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">
