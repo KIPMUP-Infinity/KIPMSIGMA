@@ -545,11 +545,13 @@ def show_login():
     }}
     @media(max-width: 768px) {{
         [data-testid="stMainBlockContainer"] {{
-            margin: 4vh auto !important;
-            max-width: 92% !important;
-            padding: 24px 20px 32px !important;
-            backdrop-filter: blur(14px) !important;
-            border-radius: 16px !important;
+            margin: 12vh auto 0 auto !important;
+            max-width: 88% !important;
+            padding: 20px 20px 28px !important;
+            backdrop-filter: blur(20px) !important;
+            border-radius: 20px !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
         }}
     }}
 
@@ -559,6 +561,14 @@ def show_login():
     }}
     #MainMenu {{
         display: none !important;
+    }}
+
+    /* Mobile — pastikan background terlihat di atas & bawah kotak */
+    @media(max-width: 768px) {{
+        [data-testid="stAppViewContainer"],
+        section[data-testid="stMain"] {{
+            background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png') center top/cover no-repeat fixed !important;
+        }}
     }}
 
     /* Glass card */
@@ -645,6 +655,60 @@ def show_login():
     """, unsafe_allow_html=True)
 
     # Background sudah di-set via CSS (URL GitHub raw)
+
+    # Inject mobile header — logo + tagline muncul di atas kotak di HP
+    components.html("""
+<script>
+(function() {
+    var pd = window.parent.document;
+    if (pd.getElementById('sigma-mobile-header')) return;
+    if (window.parent.innerWidth > 768) return;
+
+    var s = pd.createElement('style');
+    s.textContent = `
+        #sigma-mobile-header {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 999;
+            text-align: center;
+            padding: 18px 20px 12px;
+            background: linear-gradient(to bottom, rgba(5,8,20,0.85) 0%, transparent 100%);
+            pointer-events: none;
+        }
+        #sigma-mobile-header .mh-logo {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 2px;
+            font-family: sans-serif;
+        }
+        #sigma-mobile-header .mh-logo span {
+            color: #F5C242;
+        }
+        #sigma-mobile-header .mh-sub {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 1.5px;
+            font-family: sans-serif;
+            margin-top: 2px;
+        }
+        @media(max-width: 768px) {
+            #sigma-mobile-header { display: block !important; }
+        }
+    `;
+    pd.head.appendChild(s);
+
+    var div = pd.createElement('div');
+    div.id = 'sigma-mobile-header';
+    div.innerHTML = `
+        <div class="mh-logo">SIGMA <span>Σ</span></div>
+        <div class="mh-sub">KIPM UNIVERSITAS PANCASILA · by MarketNMocha</div>
+    `;
+    pd.body.appendChild(div);
+})();
+</script>
+""", height=0)
     st.markdown('<div style="text-align:center;margin:0 0 10px;"><h2 style="margin:0;font-size:1.5rem;font-weight:800;color:#ffffff;">Masuk ke SIGMA</h2></div>', unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["🔑 Sign In", "📝 Sign Up", "🌐 Google"])
 
