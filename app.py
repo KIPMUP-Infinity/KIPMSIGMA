@@ -602,199 +602,111 @@ init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
 
+
 # ─────────────────────────────────────────────
-# SEMBUNYIKAN SIDEBAR SEPENUHNYA
+# SEMBUNYIKAN SIDEBAR
 # ─────────────────────────────────────────────
-st.markdown(f"""
+st.markdown("""
 <style>
 section[data-testid="stSidebar"],
 [data-testid="collapsedControl"],
-[data-testid="stSidebarCollapseButton"] {{
-    display: none !important;
-}}
-
-/* Settings popup */
-#sigma-menu-popup {{
-    position: fixed;
-    bottom: 80px;
-    left: 12px;
-    background: {C['sidebar_bg']};
-    border: 1px solid {C['border']};
-    border-radius: 16px;
-    box-shadow: 0 -4px 24px rgba(0,0,0,0.4);
-    z-index: 99999;
-    min-width: 240px;
-    overflow: hidden;
-    display: none;
-    font-family: inherit;
-}}
-.smenu-item {{
-    display: flex; align-items: center; gap: 14px;
-    padding: 13px 18px;
-    font-size: 1rem;
-    color: {C['text']};
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    width: 100%;
-    text-align: left;
-    transition: background 0.12s;
-}}
-.smenu-item:hover {{ background: {C['hover']}; }}
-.smenu-sep {{ border: none; border-top: 1px solid {C['border']}; margin: 4px 0; }}
-.smenu-icon {{
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px;
-    background: {C['hover']};
-    flex-shrink: 0;
-}}
-.smenu-red {{ color: #f55 !important; }}
-
-/* Tombol + di chat bar */
-#sigma-plus-btn {{
-    position: fixed;
-    bottom: 18px; left: 14px;
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    background: {C['hover']};
-    color: {C['text']};
-    border: none; cursor: pointer;
-    font-size: 22px; font-weight: 300;
-    z-index: 9999;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    transition: background 0.15s;
-    line-height: 1;
-}}
-#sigma-plus-btn:hover {{ background: {C['border']}; }}
-
-/* Settings button pojok kanan atas */
-#sigma-settings-btn {{
-    position: fixed;
-    top: 10px; right: 10px;
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    background: transparent;
-    color: {C['text_muted']};
-    border: none; cursor: pointer;
-    font-size: 18px;
-    z-index: 9999;
-    display: flex; align-items: center; justify-content: center;
-}}
-#sigma-settings-btn:hover {{ background: {C['hover']}; }}
-
-/* Settings popup kanan atas */
-#sigma-settings-popup {{
-    position: fixed;
-    top: 50px; right: 10px;
-    background: {C['sidebar_bg']};
-    border: 1px solid {C['border']};
-    border-radius: 14px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    z-index: 99999;
-    min-width: 200px;
-    overflow: hidden;
-    display: none;
-}}
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
 </style>
-
-<!-- Tombol + di chat bar -->
-<button id="sigma-plus-btn" onclick="toggleMenu()" title="Menu">+</button>
-
-<!-- Menu popup dari + -->
-<div id="sigma-menu-popup">
-    <button class="smenu-item" onclick="doNewChat()">
-        <span class="smenu-icon">✎</span> Obrolan baru
-    </button>
-    <button class="smenu-item" onclick="toggleHistory()">
-        <span class="smenu-icon">☰</span> Riwayat obrolan
-    </button>
-    <div class="smenu-sep"></div>
-    <div style="padding:6px 18px 2px;font-size:0.68rem;color:{C['text_muted']};font-weight:600;letter-spacing:1px;">PENAMPILAN</div>
-    <button class="smenu-item" onclick="setTheme('dark')">
-        <span class="smenu-icon">🌙</span> Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}
-    </button>
-    <button class="smenu-item" onclick="setTheme('light')">
-        <span class="smenu-icon">☀️</span> Mode Terang {'✓' if st.session_state.theme=='light' else ''}
-    </button>
-    <div class="smenu-sep"></div>
-    <button class="smenu-item smenu-red" onclick="doLogout()">
-        <span class="smenu-icon">🚪</span> Keluar
-    </button>
-</div>
-
-<!-- History drawer -->
-<div id="sigma-history-drawer" style="
-    position:fixed; bottom:80px; left:12px;
-    background:{C['sidebar_bg']}; border:1px solid {C['border']};
-    border-radius:16px; box-shadow:0 -4px 24px rgba(0,0,0,0.4);
-    z-index:99998; min-width:260px; max-height:60vh;
-    overflow-y:auto; display:none; padding:8px 0;">
-    <div style="padding:8px 16px 4px;font-size:0.68rem;color:{C['text_muted']};font-weight:600;letter-spacing:1px;">RIWAYAT OBROLAN</div>
-</div>
-
-<script>
-var menuOpen = false;
-var histOpen = false;
-
-function toggleMenu() {{
-    menuOpen = !menuOpen;
-    document.getElementById('sigma-menu-popup').style.display = menuOpen ? 'block' : 'none';
-    if (menuOpen) histOpen = false;
-    document.getElementById('sigma-history-drawer').style.display = 'none';
-}}
-
-function toggleHistory() {{
-    document.getElementById('sigma-menu-popup').style.display = 'none';
-    menuOpen = false;
-    histOpen = !histOpen;
-    document.getElementById('sigma-history-drawer').style.display = histOpen ? 'block' : 'none';
-}}
-
-function doNewChat() {{
-    document.getElementById('sigma-menu-popup').style.display = 'none';
-    menuOpen = false;
-    // Klik st.button new chat
-    var btns = window.parent.document.querySelectorAll('button');
-    for (var b of btns) {{
-        if (b.textContent.trim() === 'NEW_CHAT_TRIGGER') {{ b.click(); break; }}
-    }}
-    // Fallback: set query param
-    var url = new URL(window.parent.location.href);
-    url.searchParams.set('do', 'newchat');
-    window.parent.location.href = url.toString();
-}}
-
-function setTheme(t) {{
-    document.getElementById('sigma-menu-popup').style.display = 'none';
-    var url = new URL(window.parent.location.href);
-    url.searchParams.set('do', 'theme_' + t);
-    window.parent.location.href = url.toString();
-}}
-
-function doLogout() {{
-    var url = new URL(window.parent.location.href);
-    url.searchParams.delete('sigma_token');
-    url.searchParams.set('do', 'logout');
-    window.parent.location.href = url.toString();
-}}
-
-// Tutup saat klik di luar
-document.addEventListener('click', function(e) {{
-    var menu = document.getElementById('sigma-menu-popup');
-    var hist = document.getElementById('sigma-history-drawer');
-    var plusBtn = document.getElementById('sigma-plus-btn');
-    if (menu && plusBtn && !menu.contains(e.target) && !plusBtn.contains(e.target)) {{
-        menu.style.display = 'none'; menuOpen = false;
-    }}
-    if (hist && plusBtn && !hist.contains(e.target) && !plusBtn.contains(e.target)) {{
-        hist.style.display = 'none'; histOpen = false;
-    }}
-}});
-</script>
 """, unsafe_allow_html=True)
+
+# Build history JS items
+_hist_items = ""
+for _sesi in st.session_state.sessions:
+    _sid = _sesi["id"]
+    _is_act = _sid == st.session_state.active_id
+    _td = _sesi["title"][:35].replace("'","\\'").replace("`","").replace("\\","")
+    _fw = "700" if _is_act else "400"
+    _bg = C['hover'] if _is_act else "transparent"
+    _hist_items += f"""h.innerHTML+='<button onclick=\"goSel(\\'{_sid}\\')" style="display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_td}</button>';"""
+
+# Inject menu ke parent document via components.html
+components.html(f"""
+<script>
+(function(){{
+var pd=window.parent.document;
+if(pd.getElementById('spui'))return;
+
+// CSS
+var s=pd.createElement('style');
+s.textContent=`
+#spbtn{{position:fixed;bottom:16px;left:14px;width:38px;height:38px;border-radius:50%;
+    background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
+    cursor:pointer;font-size:24px;font-weight:300;z-index:99999;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 10px rgba(0,0,0,0.5);padding:0;line-height:1;}}
+#spbtn:hover{{transform:scale(1.1)}}
+#spmenu,#sphist{{position:fixed;left:12px;bottom:62px;
+    background:{C["sidebar_bg"]};border:1px solid {C["border"]};
+    border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+    z-index:99998;display:none;overflow:hidden;min-width:250px;}}
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;
+    font-size:1rem;color:{C["text"]};cursor:pointer;border:none;
+    background:transparent;width:100%;text-align:left;}}
+.smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex;
+    align-items:center;justify-content:center;font-size:16px;
+    background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}}
+.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]};
+    font-weight:600;letter-spacing:1px;}}
+.smred{{color:#f55!important}}
+`;
+pd.head.appendChild(s);
+
+// + button
+var btn=pd.createElement('button');
+btn.id='spbtn';btn.textContent='+';pd.body.appendChild(btn);
+
+// Menu
+var m=pd.createElement('div');m.id='spmenu';
+m.innerHTML=`
+<button class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</button>
+<button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
+<div class="smsp"></div>
+<div class="smhd">PENAMPILAN</div>
+<button class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</button>
+<button class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</button>
+<div class="smsp"></div>
+<button class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</button>
+`;
+pd.body.appendChild(m);
+
+// History drawer
+var h=pd.createElement('div');h.id='sphist';
+h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items}
+pd.body.appendChild(h);
+
+function nav(params){{
+    var u=new URL(window.parent.location.href);
+    Object.keys(params).forEach(function(k){{u.searchParams.set(k,params[k])}});
+    window.parent.location.href=u.toString();
+}}
+function goSel(sid){{nav({{do:'sel_'+sid}})}}
+window.parent.goSel=goSel;
+
+btn.onclick=function(e){{e.stopPropagation();m.style.display=m.style.display==='block'?'none':'block';h.style.display='none';}};
+pd.getElementById('smi-new').onclick=function(){{nav({{do:'newchat'}})}};
+pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display=h.style.display==='block'?'none':'block';}};
+pd.getElementById('smi-dark').onclick=function(){{nav({{do:'theme_dark'}})}};
+pd.getElementById('smi-light').onclick=function(){{nav({{do:'theme_light'}})}};
+pd.getElementById('smi-out').onclick=function(){{var u=new URL(window.parent.location.href);u.searchParams.delete('sigma_token');u.searchParams.set('do','logout');window.parent.location.href=u.toString();}};
+
+pd.addEventListener('click',function(e){{
+    if(!btn.contains(e.target)&&!m.contains(e.target))m.style.display='none';
+    if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target))h.style.display='none';
+}});
+
+var mk=pd.createElement('div');mk.id='spui';mk.style.display='none';pd.body.appendChild(mk);
+}})();
+</script>
+""", height=0)
 
 # Handle actions
 if "do" in st.query_params:
