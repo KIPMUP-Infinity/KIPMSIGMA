@@ -15,7 +15,6 @@ import os
 import hashlib
 
 
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -129,24 +128,25 @@ st.markdown(f"""
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
+        color: transparent !important;
+        font-size: 0 !important;
     }}
-    /* Sembunyikan SEMUA span di tombol collapse */
-    [data-testid="stSidebarCollapseButton"] span,
-    [data-testid="collapsedControl"] span {{
+    [data-testid="stSidebarCollapseButton"] *,
+    [data-testid="collapsedControl"] * {{
+        color: transparent !important;
         font-size: 0 !important;
         line-height: 0 !important;
-        width: 0 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        display: inline-block !important;
     }}
-    /* Pastikan SVG tetap terlihat */
+    /* Hanya SVG yang terlihat */
     [data-testid="stSidebarCollapseButton"] svg,
-    [data-testid="collapsedControl"] svg {{
+    [data-testid="stSidebarCollapseButton"] svg *,
+    [data-testid="collapsedControl"] svg,
+    [data-testid="collapsedControl"] svg * {{
+        color: {_text_muted} !important;
+        font-size: initial !important;
+        line-height: initial !important;
         display: block !important;
         visibility: visible !important;
-        width: 18px !important;
-        height: 18px !important;
     }}
 
     /* ── SIDEBAR LAYOUT — flex column agar sticky bottom bekerja ── */
