@@ -756,36 +756,27 @@ components.html(f"""
         var pd = window.parent.document;
         var sbg = '{_sidebar_bg}';
 
-        // Target semua elemen yang mungkin punya padding
+        // Paksa padding = 0 via setAttribute (menang vs inline style biasa)
         var sels = [
             'section[data-testid="stSidebar"] > div:first-child',
             'section[data-testid="stSidebar"] > div:first-child > div',
-            'section[data-testid="stSidebar"] > div:first-child > div > div',
             '[data-testid="stSidebarContent"]',
             '[data-testid="stSidebarUserContent"]',
         ];
         sels.forEach(function(s) {{
             pd.querySelectorAll(s).forEach(function(el) {{
-                // Hapus padding inline lalu set 0
-                el.style.removeProperty('padding-top');
-                el.style.removeProperty('margin-top');
-                el.setAttribute('style', (el.getAttribute('style')||'') +
-                    ';padding-top:0!important;margin-top:0!important;background-color:' + sbg + '!important;');
+                var cur = el.getAttribute('style') || '';
+                // Hanya update kalau belum di-fix
+                if (cur.indexOf('sigma-fixed') === -1) {{
+                    // Hapus padding-top yang ada lalu tambahkan 0
+                    cur = cur.replace(/padding-top[^;]*;?/gi, '');
+                    cur = cur.replace(/margin-top[^;]*;?/gi, '');
+                    el.setAttribute('style', cur + ';padding-top:0px!important;margin-top:0px!important;background-color:' + sbg + '!important;--sigma-fixed:1');
+                }}
             }});
         }});
 
-        // Zero child langsung stSidebarUserContent
-        var uc = pd.querySelector('[data-testid="stSidebarUserContent"]');
-        if (uc) {{
-            [].slice.call(uc.children).forEach(function(c) {{
-                c.style.removeProperty('padding-top');
-                c.style.removeProperty('margin-top');
-                c.setAttribute('style', (c.getAttribute('style')||'') +
-                    ';padding-top:0!important;margin-top:0!important;');
-            }});
-        }}
-
-        // Sembunyikan teks tombol collapse
+        // Sembunyikan teks tombol collapse (bukan SVG)
         pd.querySelectorAll(
             '[data-testid="stSidebarCollapseButton"] span,' +
             '[data-testid="collapsedControl"] span,' +
@@ -977,18 +968,20 @@ components.html(f"""
         }}
     }} catch(e) {{}}
 
-    // Jalankan segera + setInterval sampai berhasil
-    var fixCount = 0;
-    var fixInterval = setInterval(function() {{
-        fixSidebarTop();
-        injectSettings();
-        fixCount++;
-        // Setelah 10 detik, kurangi frekuensi
-        if (fixCount > 20) {{
-            clearInterval(fixInterval);
-            setInterval(fixSidebarTop, 3000);
-        }}
-    }}, 300);
+    // Jalankan segera + retry
+    fixSidebarTop();
+    injectSettings();
+    [100, 500, 1000, 2000].forEach(function(t) {{
+        setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, t);
+    }});
+
+    // Observe DOM changes — hanya jalankan sekali per batch perubahan
+    var obsTimer;
+    var obs = new MutationObserver(function() {{
+        clearTimeout(obsTimer);
+        obsTimer = setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 150);
+    }});
+    obs.observe(window.parent.document.body, {{childList:true, subtree:false}});
 }})();
 </script>
 """, height=0)
