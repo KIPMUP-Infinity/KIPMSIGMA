@@ -281,7 +281,7 @@ def show_login_page():
 
     st.markdown("""
         <div style="text-align:center;margin:24px 0 32px;font-family:Inter,sans-serif;">
-            <h2 style="margin:0;font-size:1.6rem;font-weight:700;color:#fff;">Masuk ke SIGMA</h2>
+            <h2 style="margin:0;font-size:1.6rem;font-weight:700;color:#fff;">  Masuk ke SIGMA</h2>
             <p style="margin:8px 0 0;color:#888;font-size:0.9rem;">
                 Platform analisa saham KIPM Universitas Pancasila
             </p>
