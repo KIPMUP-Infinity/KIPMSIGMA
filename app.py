@@ -15,8 +15,6 @@ import os
 import hashlib
 
 
-
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -712,8 +710,8 @@ with st.sidebar:
         if st.button("🚪 Keluar", key="btn_logout", use_container_width=True):
             st.session_state.clear(); st.rerun()
 
-    st.divider()
-    if st.button("◀  Tutup Sidebar", key="btn_close_sidebar", use_container_width=True):
+    # Tombol tutup sidebar — icon saja
+    if st.button("◁", key="btn_close_sidebar", use_container_width=True):
         st.session_state.sidebar_open = False
         st.rerun()
 
@@ -741,40 +739,63 @@ if "action" in st.query_params:
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
 
-# Tombol buka sidebar — fixed di kiri bawah, selalu terlihat saat sidebar tertutup
 if not st.session_state.sidebar_open:
     st.markdown(f"""
         <style>
         section[data-testid="stSidebar"] {{ display: none !important; }}
+        /* Panel icon kiri tipis */
+        #sigma-icon-panel {{
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: 48px;
+            background: {_sidebar_bg};
+            border-right: 1px solid {'#2f2f2f' if _is_dark else '#d0d0d0'};
+            z-index: 9998;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 12px;
+            gap: 4px;
+        }}
+        #sigma-icon-panel a {{
+            width: 36px; height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+            color: {_text_muted};
+            text-decoration: none;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }}
+        #sigma-icon-panel a:hover {{ background: {'#2f2f2f' if _is_dark else '#d8d8d8'}; color: {_text}; }}
+        /* Geser konten utama ke kanan */
+        section[data-testid="stMain"] {{
+            margin-left: 48px !important;
+        }}
         </style>
+        <div id="sigma-icon-panel">
+            <a href="?open_sidebar=1" title="Buka Sidebar">☰</a>
+        </div>
     """, unsafe_allow_html=True)
-    if st.button("▶  Buka Sidebar", key="btn_open_sidebar"):
-        st.session_state.sidebar_open = True
-        st.rerun()
 
-# Icon buka sidebar fixed di pojok kiri bawah (dekat chat bar) — selalu ada
+# Icon ☰ fixed di kiri bawah saat sidebar terbuka (opsional, untuk mobile)
 st.markdown(f"""
     <style>
     #btn-open-sb {{
         position: fixed;
-        bottom: 80px;
-        left: 12px;
+        bottom: 80px; left: 12px;
         width: 36px; height: 36px;
         background: {_sidebar_bg};
         color: {_text_muted};
         border: 1px solid {'#2f2f2f' if _is_dark else '#d0d0d0'};
         border-radius: 8px;
-        font-size: 16px;
-        cursor: pointer;
-        z-index: 9998;
-        display: {'none' if st.session_state.sidebar_open else 'flex'};
-        align-items: center;
-        justify-content: center;
+        font-size: 16px; cursor: pointer;
+        z-index: 9997;
+        display: {'none' if st.session_state.sidebar_open else 'none'};
+        align-items: center; justify-content: center;
         text-decoration: none;
     }}
-    #btn-open-sb:hover {{ background: {'#3f3f3f' if _is_dark else '#c0c0c0'}; }}
     </style>
-    <a id="btn-open-sb" href="?open_sidebar=1" title="Buka Sidebar">☰</a>
 """, unsafe_allow_html=True)
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
