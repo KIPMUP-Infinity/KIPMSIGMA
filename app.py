@@ -763,17 +763,6 @@ for sesi in st.session_state.sessions:
     }})();
 """
 
-st.markdown(f"""
-<script>
-(function() {{
-    var drawer = document.getElementById('sigma-history-drawer');
-    if (!drawer) return;
-    while (drawer.children.length > 1) drawer.removeChild(drawer.lastChild);
-    {_hist_items}
-}})();
-</script>
-""", unsafe_allow_html=True)
-
 # Header
 if not active["messages"][1:]:
     uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
