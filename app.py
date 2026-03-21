@@ -529,9 +529,9 @@ def show_login():
 
     /* Form container — transparan glass, compact, geser 1cm dari kanan */
     [data-testid="stMainBlockContainer"] {{
-        max-width: 360px !important;
+        max-width: 300px !important;
         margin: 18vh 74px 0 auto !important;
-        padding: 16px 28px 28px !important;
+        padding: 8px 18px 16px !important;
         position: relative;
         z-index: 1;
         min-height: unset !important;
@@ -713,13 +713,16 @@ def show_login():
 """, height=0)
     st.markdown('''
         <div style="text-align:center;margin:0 0 10px;">
-            <div style="font-size:4 rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">
+            <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">
                 SIGMA <span style="color:#F5C242;">Σ</span>
             </div>
-            <div style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">
+            <div class="sigma-tagline" style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">
                 Strategic Intelligence & Global Market Analysis
             </div>
         </div>
+        <style>
+            @media(min-width: 769px) { .sigma-tagline { display: none !important; } }
+        </style>
     ''', unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["🔑 Sign In", "📝 Sign Up", "🌐 Google"])
 
