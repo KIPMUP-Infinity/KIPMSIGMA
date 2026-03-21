@@ -532,7 +532,7 @@ def show_login():
 
     st.markdown(f"""
     <div style="text-align:center;margin:16px 0 24px;">
-        <h2 style="margin:0;font-size:1.5rem;font-weight:700;color:{C['text']};">  KIPM SIGMA</h2>
+        <h2 style="margin:0;font-size:1.5rem;font-weight:700;color:{C['text']};">     KIPM SIGMA</h2>
         <p style="margin:4px 0 2px;font-size:0.78rem;font-weight:600;letter-spacing:1.5px;color:{C['gold']};text-transform:uppercase;">Strategic Intelligence & Global Market Analysis</p>
         <p style="margin:4px 0 0;color:{C['text_muted']};font-size:0.82rem;">
             Platform analisa saham KIPM Universitas Pancasila
