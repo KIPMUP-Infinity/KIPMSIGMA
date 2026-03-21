@@ -529,7 +529,7 @@ def show_login():
         top: 0; left: 0;
         width: calc(100% - 440px);
         height: 100%;
-        background: url('https://raw.githubusercontent.com/USERNAME/REPO/main/1.png') center/cover no-repeat;
+        background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/1.png') center/cover no-repeat;
         z-index: 0;
         pointer-events: none;
     }}
@@ -554,7 +554,7 @@ def show_login():
             padding: 5vh 20px 40px !important;
         }}
     }}
-        background: url('https://raw.githubusercontent.com/USERNAME/REPO/main/1.png') center/cover no-repeat fixed !important;
+        background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/1.png') center/cover no-repeat fixed !important;
         min-height: 100vh !important;
     }}
 
@@ -642,7 +642,7 @@ def show_login():
     """, unsafe_allow_html=True)
 
     # Background gambar kiri — inject via URL GitHub raw (tidak perlu file lokal)
-    _LOGIN_BG_URL = "https://raw.githubusercontent.com/USERNAME/REPO/main/1.png"
+    _LOGIN_BG_URL = "https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/1.png"
     components.html(f"""
 <script>
 (function() {{
