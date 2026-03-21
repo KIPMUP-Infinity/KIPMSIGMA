@@ -658,10 +658,16 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-if(pd.getElementById('spui'))return;
+
+// Hapus elemen lama kalau ada, inject ulang yang baru
+['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{
+    var el=pd.getElementById(id);
+    if(el) el.remove();
+}});
 
 // CSS
 var s=pd.createElement('style');
+s.id='sigma-mobile-css';
 s.textContent=`
 #spbtn{{position:fixed;bottom:16px;left:14px;width:38px;height:38px;border-radius:50%;
     background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
@@ -747,8 +753,6 @@ pd.addEventListener('click',function(e){{
     if(!btn.contains(e.target)&&!m.contains(e.target))m.style.display='none';
     if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target))h.style.display='none';
 }});
-
-var mk=pd.createElement('div');mk.id='spui';mk.style.display='none';pd.body.appendChild(mk);
 }})();
 </script>
 """, height=0)
