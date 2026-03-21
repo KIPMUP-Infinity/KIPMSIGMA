@@ -237,13 +237,14 @@ if "code" in st.query_params and st.session_state.user is None:
                 st.session_state.sessions = saved["sessions"]
                 st.session_state.active_id = saved.get("active_id")
         st.session_state.data_loaded = True
-        # Buat token untuk auto-login
+        # Buat token untuk auto-login — sama seperti username login
         token = str(uuid.uuid4()).replace("-","")
         with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f:
             json.dump(info, f)
-        st.session_state.new_token = token
-    st.query_params.clear()
-    st.rerun()
+        st.session_state.current_token = token
+        st.query_params.clear()
+        st.query_params["sigma_token"] = token  # Set di URL agar persist saat refresh
+        st.rerun()
 
 # ─────────────────────────────────────────────
 # RESTORE SESSION DARI TOKEN (auto-login saat refresh)
