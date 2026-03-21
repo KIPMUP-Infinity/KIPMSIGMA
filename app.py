@@ -14,6 +14,7 @@ import json
 import os
 import hashlib
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -130,17 +131,23 @@ st.markdown(f"""
     [data-testid="stSidebarCollapseButton"] svg {{
         pointer-events: none !important;
     }}
-    /* Sembunyikan SEMUA span teks di tombol collapse */
-    [data-testid="stSidebarCollapseButton"] span {{
+    /* Sembunyikan HANYA span teks, bukan yang berisi SVG */
+    [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
+    [data-testid="collapsedControl"] span:not(:has(svg)) {{
         display: none !important;
     }}
-    /* Tombol buka sidebar (collapsed) */
-    [data-testid="collapsedControl"] {{
-        top: 8px !important;
-        z-index: 9999 !important;
+
+    /* ── SIDEBAR LAYOUT — flex column agar sticky bottom bekerja ── */
+    section[data-testid="stSidebar"] > div:first-child {{
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100vh !important;
+        overflow: hidden !important;
     }}
-    [data-testid="collapsedControl"] span {{
-        display: none !important;
+    section[data-testid="stSidebar"] > div:first-child > div:first-child {{
+        flex: 1 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
     }}
 
     /* ── TOMBOL OBROLAN BARU ── */
@@ -161,8 +168,6 @@ st.markdown(f"""
         margin: 0 !important; text-align: left !important;
         color: inherit !important;
     }}
-        text-align: left !important;
-        color: inherit !important;
     }}
 
     /* ── CHAT MESSAGES — ASSISTANT ── */
@@ -730,7 +735,7 @@ components.html(f"""
         var pd = window.parent.document;
         var sbg = '{_sidebar_bg}';
 
-        // 1. Force semua elemen sidebar ke warna yang sama
+        // 1. Force semua elemen sidebar ke warna yang sama + zero padding
         var sidebarEls = pd.querySelectorAll([
             'section[data-testid="stSidebar"]',
             'section[data-testid="stSidebar"] > div',
@@ -746,13 +751,16 @@ components.html(f"""
             el.style.setProperty('margin-top', '0', 'important');
         }});
 
-        // 2. Sembunyikan teks "keyboard_double_arrow" dari semua tombol collapse
+        // 2. Sembunyikan HANYA teks (bukan SVG) di tombol collapse
         pd.querySelectorAll([
             '[data-testid="stSidebarCollapseButton"] span',
             '[data-testid="collapsedControl"] span',
             'button[kind="header"] span'
         ].join(',')).forEach(function(el) {{
-            el.style.setProperty('display', 'none', 'important');
+            // Sembunyikan hanya kalau tidak punya child SVG
+            if (!el.querySelector('svg')) {{
+                el.style.setProperty('display', 'none', 'important');
+            }}
         }});
     }}
 
