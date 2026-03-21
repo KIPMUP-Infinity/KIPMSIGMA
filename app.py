@@ -533,7 +533,8 @@ def show_login():
     st.markdown(f"""
     <div style="text-align:center;margin:16px 0 24px;">
         <h2 style="margin:0;font-size:1.5rem;font-weight:700;color:{C['text']};">Masuk ke SIGMA</h2>
-        <p style="margin:6px 0 0;color:{C['text_muted']};font-size:0.85rem;">
+        <p style="margin:4px 0 2px;font-size:0.78rem;font-weight:600;letter-spacing:1.5px;color:{C['gold']};text-transform:uppercase;">Strategic Intelligence & Global Market Analysis</p>
+        <p style="margin:4px 0 0;color:{C['text_muted']};font-size:0.82rem;">
             Platform analisa saham KIPM Universitas Pancasila
         </p>
     </div>
@@ -606,7 +607,7 @@ def show_login():
         except:
             st.info("Google login belum dikonfigurasi di Secrets")
 
-    st.markdown(f'<p style="text-align:center;color:{C["text_muted"]};font-size:0.72rem;margin-top:20px;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa, analisa yang dilakukan didalam bersifat do your own research dan disclaimeron .</p>', unsafe_allow_html=True)
+    st.markdown(f'<p style="text-align:center;color:{C["text_muted"]};font-size:0.72rem;margin-top:20px;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa, analisa yang dilakukan didalam bersifat do your own research dan disclaimeron.</p>', unsafe_allow_html=True)
     st.stop()
 
 # ─────────────────────────────────────────────
