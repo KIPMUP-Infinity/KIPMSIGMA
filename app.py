@@ -670,7 +670,7 @@ with st.sidebar:
         <hr class="sb-divider">
     """, unsafe_allow_html=True)
 
-    if st.button("✏️  Obrolan baru", key="btn_new_chat", use_container_width=True):
+    if st.button( Obrolan baru ◎ ", key="btn_new_chat", use_container_width=True):
         ns = new_session()
         st.session_state.sessions.insert(0, ns)
         st.session_state.active_id = ns["id"]
