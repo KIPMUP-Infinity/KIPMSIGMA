@@ -1112,56 +1112,38 @@ function addActionButtons() {{
     var doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
         if (msg.querySelector('.sigma-actions')) return;
-        var isUser = !!msg.querySelector('[data-testid="stChatMessageAvatarUser"]');
-        if (isUser) return;
+        if (!!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
         function getMsgText() {{
             var md = msg.querySelector('[data-testid="stMarkdownContainer"]');
             return md ? md.innerText : '';
         }}
         var bar = doc.createElement('div');
         bar.className = 'sigma-actions';
-        bar.style.cssText = 'width:100%;display:flex;gap:2px;margin-top:6px;padding:0 2px;justify-content:flex-start;';
-        function makeBtn(icon, label) {{
-            var b = doc.createElement('button');
-            b.innerHTML = icon; b.title = label;
-            b.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:5px 7px;border-radius:6px;font-size:15px;line-height:1;';
-            b.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}};
-            b.onmouseleave=function(){{this.style.background='transparent'}};
-            return b;
-        }}
-        var copyBtn = makeBtn('📋','Salin');
+        bar.style.cssText = 'display:flex;gap:2px;margin-top:6px;padding:0 2px;';
+        var copyBtn = doc.createElement('button');
+        copyBtn.title = 'Salin';
+        copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8e8ea0\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>';
+        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:5px 6px;border-radius:6px;display:flex;align-items:center;';
+        copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}};
+        copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
         copyBtn.onclick = function() {{
             var txt = getMsgText();
-            navigator.clipboard.writeText(txt).then(function(){{
-                copyBtn.innerHTML='✅'; setTimeout(function(){{copyBtn.innerHTML='📋'}},2000);
-            }}).catch(function(){{
+            function showOk() {{
+                copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#4CAF50\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg>';
+                setTimeout(function(){{ copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8e8ea0\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>'; }}, 2000);
+            }}
+            navigator.clipboard.writeText(txt).then(showOk).catch(function(){{
                 var ta=doc.createElement('textarea'); ta.value=txt;
                 doc.body.appendChild(ta); ta.select(); doc.execCommand('copy'); doc.body.removeChild(ta);
-                copyBtn.innerHTML='✅'; setTimeout(function(){{copyBtn.innerHTML='📋'}},2000);
+                showOk();
             }});
         }};
         bar.appendChild(copyBtn);
-        var retryBtn = makeBtn('🔄','Ulangi');
-        retryBtn.onclick = function() {{
-            var allMsgs=Array.from(doc.querySelectorAll('[data-testid="stChatMessage"]'));
-            var idx=allMsgs.indexOf(msg);
-            for(var i=idx-1;i>=0;i--) {{
-                if(allMsgs[i].querySelector('[data-testid="stChatMessageAvatarUser"]')) {{
-                    var pill=allMsgs[i].querySelector('.navy-pill');
-                    var txt=pill?pill.innerText:'';
-                    var ta=doc.querySelector('[data-testid="stChatInput"] textarea');
-                    if(ta&&txt){{ta.focus();ta.value=txt;ta.dispatchEvent(new Event('input',{{bubbles:true}}));}};
-                    break;
-                }}
-            }}
-        }};
-        bar.appendChild(retryBtn);
         msg.style.flexDirection='column';
         msg.appendChild(bar);
     }});
 }}
 
-addActionButtons();
 setInterval(addActionButtons, 1000);
 
 // Paste image support — lebih robust
