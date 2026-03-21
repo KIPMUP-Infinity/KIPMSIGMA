@@ -15,10 +15,6 @@ import os
 import hashlib
 
 
-
-
-
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -740,28 +736,30 @@ _sb_left = "244px" if st.session_state.sidebar_open else "0px"
 st.markdown(f"""
     <style>
     {'section[data-testid="stSidebar"] {{ display: none !important; }}' if not st.session_state.sidebar_open else ''}
-    #sigma-sb-toggle {{
-        position: fixed;
-        top: 50%;
-        transform: translateY(-50%);
-        left: {_sb_left};
-        width: 18px; height: 48px;
-        background: {_sidebar_bg};
-        color: {_text_muted};
-        border: none;
-        border-radius: 0 6px 6px 0;
-        cursor: pointer;
-        z-index: 9999;
-        font-size: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    /* Tombol toggle custom */
+    div[data-testid="stMainBlockContainer"] > div > div > div:first-child .stButton > button#sb_toggle_btn,
+    .stButton button[kind="secondary"][id="sb_toggle_btn"] {{
+        position: fixed !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        left: {_sb_left} !important;
+        width: 18px !important;
+        height: 48px !important;
+        min-height: 0 !important;
+        background: {_sidebar_bg} !important;
+        color: {_text_muted} !important;
+        border: none !important;
+        border-radius: 0 6px 6px 0 !important;
+        cursor: pointer !important;
+        z-index: 9999 !important;
+        font-size: 18px !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+        box-shadow: 2px 0 6px rgba(0,0,0,0.2) !important;
     }}
     </style>
 """, unsafe_allow_html=True)
 
-# Tombol toggle pakai st.button — tidak clear session
-col_toggle = st.sidebar.empty() if st.session_state.sidebar_open else st.empty()
 if st.button(_sb_icon, key="sb_toggle_btn"):
     st.session_state.sidebar_open = not st.session_state.sidebar_open
     st.rerun()
