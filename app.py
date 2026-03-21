@@ -390,6 +390,14 @@ if st.session_state.user is None:
     show_login_page()
     st.stop()
 
+# ── HANDLE QUERY PARAMS AWAL ─────────────────────────────
+if "toggle_sidebar" in st.query_params:
+    if "sidebar_open" not in st.session_state:
+        st.session_state.sidebar_open = True
+    st.session_state.sidebar_open = not st.session_state.sidebar_open
+    st.query_params.clear()
+    st.rerun()
+
 user = st.session_state.user
 SYSTEM_PROMPT = {
     "role": "system",
@@ -730,10 +738,6 @@ if "action" in st.query_params:
 # ── TOMBOL TOGGLE SIDEBAR CUSTOM ──────────────────────────
 if "sidebar_open" not in st.session_state:
     st.session_state.sidebar_open = True
-
-if "toggle_sidebar" in st.query_params:
-    st.session_state.sidebar_open = not st.session_state.sidebar_open
-    st.query_params.clear(); st.rerun()
 
 _sb_left = "244px" if st.session_state.sidebar_open else "0px"
 _sb_icon = "‹" if st.session_state.sidebar_open else "›"
