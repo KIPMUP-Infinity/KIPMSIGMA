@@ -14,8 +14,6 @@ import json
 import os
 import hashlib
 
-
-
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -50,23 +48,23 @@ _is_dark = _t == "dark"
 
 # Warna ChatGPT-style
 _bg              = "#212121"  if _is_dark else "#ffffff"
-_sidebar_bg      = "#171717"  if _is_dark else "#f9f9f9"
+_sidebar_bg      = "#171717"  if _is_dark else "#e3e3e3"
 _text            = "#ececec"  if _is_dark else "#0d0d0d"
 _text_muted      = "#8e8ea0"  if _is_dark else "#6e6e80"
 _border          = "#2f2f2f"  if _is_dark else "#e5e5e5"
-_btn_hover       = "#2f2f2f"  if _is_dark else "#efefef"
+_btn_hover       = "#2f2f2f"  if _is_dark else "#d8d8d8"
 _btn_color       = "#ececec"  if _is_dark else "#0d0d0d"
 _assistant_color = "#ececec"  if _is_dark else "#0d0d0d"
 _header_color    = "#ffffff"  if _is_dark else "#0d0d0d"
 _sub_color       = "#8e8ea0"  if _is_dark else "#6e6e80"
-_input_bg        = "#2f2f2f"  if _is_dark else "#ffffff"
+_input_bg        = "#2f2f2f"  if _is_dark else "#e8e8e8"
 _input_border    = "#3f3f3f"  if _is_dark else "#e5e5e5"
 _divider_color   = "#2f2f2f"  if _is_dark else "#e5e5e5"
 _assistant_bg    = "transparent"
 _assistant_brd   = "none"
-_user_bubble     = "#2f2f2f"  if _is_dark else "#f4f4f4"
+_user_bubble     = "#2f2f2f"  if _is_dark else "#dcdcdc"
 _sidebar_label   = "#8e8ea0"  if _is_dark else "#6e6e80"
-_active_chat_bg  = "#2f2f2f"  if _is_dark else "#efefef"
+_active_chat_bg  = "#2f2f2f"  if _is_dark else "#d8d8d8"
 _active_chat_clr = "#ffffff"  if _is_dark else "#0d0d0d"
 _inactive_chat   = "#ececec"  if _is_dark else "#0d0d0d"
 _sidebar_border  = "none"     if _is_dark else "1px solid #e5e5e5"
@@ -536,7 +534,7 @@ if "action" in qp:
 
 # ── SIDEBAR ───────────────────────────────────────────────
 _stext = "#ececec" if _is_dark else "#0d0d0d"
-_shov  = "#2f2f2f" if _is_dark else "#efefef"
+_shov  = "#2f2f2f" if _is_dark else "#d8d8d8"
 _sact  = "#343434" if _is_dark else "#e8e8e8"
 _slbl  = "#8e8ea0" if _is_dark else "#6e6e80"
 
@@ -764,11 +762,11 @@ if "action" in st.query_params:
 
 # ── SETTINGS BOTTOM BAR — via components.html (JS manipulates sidebar DOM) ───
 _cur_theme = st.session_state.get("theme", "dark")
-_popup_bg      = "#2f2f2f" if _is_dark else "#ffffff"
+_popup_bg      = "#2f2f2f" if _is_dark else "#e8e8e8"
 _popup_border  = "#3f3f3f" if _is_dark else "#e5e5e5"
 _popup_text    = "#ececec" if _is_dark else "#0d0d0d"
-_popup_hover   = "#3f3f3f" if _is_dark else "#f4f4f4"
-_bar_bg        = "#171717" if _is_dark else "#f9f9f9"
+_popup_hover   = "#3f3f3f" if _is_dark else "#dcdcdc"
+_bar_bg        = "#171717" if _is_dark else "#e3e3e3"
 _bar_border    = "#2f2f2f" if _is_dark else "#e5e5e5"
 _bar_text      = "#8e8ea0" if _is_dark else "#6e6e80"
 _active_dot    = "#4a90d9" if _is_dark else "#1a4fa8"
@@ -1203,7 +1201,7 @@ try {{
 """, height=0)
 
 # ── JS: Bubble user ke kanan + Ctrl+V paste support ──────
-_bubble_color = "#2f2f2f" if _is_dark else "#f4f4f4"
+_bubble_color = "#2f2f2f" if _is_dark else "#dcdcdc"
 _bubble_text  = "#ffffff" if _is_dark else "#0d0d0d"
 components.html(f"""
 <script>
