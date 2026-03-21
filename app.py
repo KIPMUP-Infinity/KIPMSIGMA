@@ -614,15 +614,24 @@ section[data-testid="stSidebar"],
 </style>
 """, unsafe_allow_html=True)
 
-# Build history JS items
 _hist_items = ""
 for _sesi in st.session_state.sessions:
     _sid = _sesi["id"]
     _is_act = _sid == st.session_state.active_id
-    _td = _sesi["title"][:35].replace("'","\\'").replace("`","").replace("\\","")
+    _td = _sesi["title"][:35].replace("'","\\'").replace("`","").replace("\\","").replace('"',"")
     _fw = "700" if _is_act else "400"
     _bg = C['hover'] if _is_act else "transparent"
-    _hist_items += f"""h.innerHTML+='<button onclick=\"var u=new URL(window.parent.location.href);u.searchParams.set(\\'do\\',\\'sel_{_sid}\\');window.parent.location.href=u.toString();\" style="display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_td}</button>';"""
+    _hist_items += f"""
+(function(){{
+    var b=pd.createElement('button');
+    b.textContent='{_td}';
+    b.style.cssText='display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+    b.onmouseenter=function(){{this.style.background='{C["hover"]}'}};
+    b.onmouseleave=function(){{this.style.background='{_bg}'}};
+    b.addEventListener('click',function(){{nav({{do:'sel_{_sid}'}})}});
+    h.appendChild(b);
+}})();
+"""
 
 # Inject menu ke parent document via components.html
 components.html(f"""
@@ -677,19 +686,18 @@ m.innerHTML=`
 `;
 pd.body.appendChild(m);
 
-// History drawer
-var h=pd.createElement('div');h.id='sphist';
-h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items}
-pd.body.appendChild(h);
-
+// Nav function — harus didefinisikan SEBELUM history items
 function nav(params){{
     var u=new URL(window.parent.location.href);
     Object.keys(params).forEach(function(k){{u.searchParams.set(k,params[k])}});
     window.parent.location.href=u.toString();
 }}
-function goSel(sid){{nav({{do:'sel_'+sid}})}}
-window.parent.goSel=goSel;
+
+// History drawer
+var h=pd.createElement('div');h.id='sphist';
+h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items}
+pd.body.appendChild(h);
 
 btn.onclick=function(e){{e.stopPropagation();m.style.display=m.style.display==='block'?'none':'block';h.style.display='none';}};
 pd.getElementById('smi-new').onclick=function(){{nav({{do:'newchat'}})}};
