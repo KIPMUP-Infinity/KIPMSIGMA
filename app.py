@@ -618,18 +618,21 @@ _hist_items = ""
 for _sesi in st.session_state.sessions:
     _sid = _sesi["id"]
     _is_act = _sid == st.session_state.active_id
-    _td = _sesi["title"][:35].replace("'","\\'").replace("`","").replace("\\","").replace('"',"")
+    _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',"")
     _fw = "700" if _is_act else "400"
     _bg = C['hover'] if _is_act else "transparent"
+    # Pakai <a href> langsung — tidak perlu JS event listener
     _hist_items += f"""
 (function(){{
-    var b=pd.createElement('button');
-    b.textContent='{_td}';
-    b.style.cssText='display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-    b.onmouseenter=function(){{this.style.background='{C["hover"]}'}};
-    b.onmouseleave=function(){{this.style.background='{_bg}'}};
-    b.addEventListener('click',function(){{nav({{do:'sel_{_sid}'}})}});
-    h.appendChild(b);
+    var a=pd.createElement('a');
+    a.textContent='{_td}';
+    var u=new URL(window.parent.location.href);
+    u.searchParams.set('do','sel_{_sid}');
+    a.href=u.toString();
+    a.style.cssText='display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;';
+    a.onmouseenter=function(){{this.style.background='{C["hover"]}'}};
+    a.onmouseleave=function(){{this.style.background='{_bg}'}};
+    h.appendChild(a);
 }})();
 """
 
@@ -675,18 +678,18 @@ btn.id='spbtn';btn.textContent='+';pd.body.appendChild(btn);
 // Menu
 var m=pd.createElement('div');m.id='spmenu';
 m.innerHTML=`
-<button class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</button>
+<a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
 <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
 <div class="smsp"></div>
 <div class="smhd">PENAMPILAN</div>
-<button class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</button>
-<button class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</button>
+<a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a>
+<a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a>
 <div class="smsp"></div>
-<button class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</button>
+<a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
 `;
 pd.body.appendChild(m);
 
-// Nav function — harus didefinisikan SEBELUM history items
+// Nav function
 function nav(params){{
     var u=new URL(window.parent.location.href);
     Object.keys(params).forEach(function(k){{u.searchParams.set(k,params[k])}});
@@ -700,11 +703,28 @@ h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 pd.body.appendChild(h);
 
 btn.onclick=function(e){{e.stopPropagation();m.style.display=m.style.display==='block'?'none':'block';h.style.display='none';}};
-pd.getElementById('smi-new').onclick=function(){{nav({{do:'newchat'}})}};
-pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display=h.style.display==='block'?'none':'block';}};
-pd.getElementById('smi-dark').onclick=function(){{nav({{do:'theme_dark'}})}};
-pd.getElementById('smi-light').onclick=function(){{nav({{do:'theme_light'}})}};
-pd.getElementById('smi-out').onclick=function(){{var u=new URL(window.parent.location.href);u.searchParams.delete('sigma_token');u.searchParams.set('do','logout');window.parent.location.href=u.toString();}};
+
+// Set href langsung pada menu items
+(function(){{
+    var u;
+    u=new URL(window.parent.location.href); u.searchParams.set('do','newchat');
+    pd.getElementById('smi-new').href=u.toString();
+    pd.getElementById('smi-new').style.textDecoration='none';
+    
+    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display=h.style.display==='block'?'none':'block';}};
+    
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark');
+    pd.getElementById('smi-dark').href=u.toString();
+    pd.getElementById('smi-dark').style.textDecoration='none';
+    
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light');
+    pd.getElementById('smi-light').href=u.toString();
+    pd.getElementById('smi-light').style.textDecoration='none';
+    
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout');
+    pd.getElementById('smi-out').href=u.toString();
+    pd.getElementById('smi-out').style.textDecoration='none';
+}})();
 
 pd.addEventListener('click',function(e){{
     if(!btn.contains(e.target)&&!m.contains(e.target))m.style.display='none';
