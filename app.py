@@ -530,7 +530,7 @@ def show_login():
     /* Form container — transparan glass, compact, geser 1cm dari kanan */
     [data-testid="stMainBlockContainer"] {{
         max-width: 420px !important;
-        margin: 3vh 16px 0 auto !important;
+        margin: 8vh 16px 0 auto !important;
         padding: 16px 28px 28px !important;
         position: relative;
         z-index: 1;
@@ -551,17 +551,6 @@ def show_login():
             backdrop-filter: blur(14px) !important;
             border-radius: 16px !important;
         }}
-    }}
-
-    /* Kompres padding default Streamlit di atas konten */
-    [data-testid="stMainBlockContainer"] > div:first-child {{
-        padding-top: 0 !important;
-    }}
-    [data-testid="block-container"] {{
-        padding-top: 0 !important;
-    }}
-    .stApp > header {{
-        display: none !important;
     }}
 
     /* Glass card */
