@@ -518,7 +518,7 @@ def show_login():
     /* Background full screen kipmb.png */
     [data-testid="stAppViewContainer"],
     section[data-testid="stMain"] {{
-        background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png') center/cover no-repeat fixed !important;
+        background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmd.png') center/cover no-repeat fixed !important;
         min-height: 100vh !important;
     }}
 
