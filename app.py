@@ -513,50 +513,42 @@ hr {{ border-color: {C['border']} !important; }}
 def show_login():
     st.markdown(f"""
     <style>
-    [data-testid="stSidebar"] {{ display: none !important; }}
+    [data-testid="stSidebar"] { display: none !important; }
 
-    /* Full page background — kiri gambar, kanan form */
+    /* Background full screen */
     [data-testid="stAppViewContainer"],
-    section[data-testid="stMain"] {{
-        background: #0a0a1a !important;
+    section[data-testid="stMain"] {
+        background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmb.png') center/cover no-repeat fixed !important;
         min-height: 100vh !important;
-    }}
+    }
 
-    /* Gambar background di sisi kiri */
-    section[data-testid="stMain"]::before {{
-        content: '';
-        position: fixed;
-        top: 0; left: 0;
-        width: calc(100% - 440px);
-        height: 100%;
-        background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/1.png') center/cover no-repeat;
-        z-index: 0;
-        pointer-events: none;
-    }}
-    @media(max-width: 768px) {{
-        section[data-testid="stMain"]::before {{ display: none; }}
-    }}
+    /* Hapus pseudo-element kiri */
+    section[data-testid="stMain"]::before {
+        display: none !important;
+    }
 
-    /* Form container di kanan */
-    [data-testid="stMainBlockContainer"] {{
-        max-width: 440px !important;
-        margin: 0 0 0 auto !important;
-        padding: 4vh 32px 40px !important;
+    /* Form container transparan di kanan, geser 1cm dari batas kanan */
+    [data-testid="stMainBlockContainer"] {
+        max-width: 420px !important;
+        margin: 0 16px 0 auto !important;
+        padding: 4vh 28px 40px !important;
         position: relative;
         z-index: 1;
         min-height: 100vh;
-        background: rgba(10,10,26,0.97) !important;
-    }}
-    @media(max-width: 768px) {{
-        [data-testid="stMainBlockContainer"] {{
+        background: rgba(5, 8, 20, 0.55) !important;
+        backdrop-filter: blur(18px) saturate(1.4) !important;
+        -webkit-backdrop-filter: blur(18px) saturate(1.4) !important;
+        border-left: 1px solid rgba(255,255,255,0.10) !important;
+    }
+    @media(max-width: 768px) {
+        [data-testid="stMainBlockContainer"] {
             margin: 0 auto !important;
             max-width: 100% !important;
             padding: 5vh 20px 40px !important;
-        }}
-    }}
-        background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/1.png') center/cover no-repeat fixed !important;
-        min-height: 100vh !important;
-    }}
+            backdrop-filter: blur(14px) !important;
+            border-left: none !important;
+        }
+    }
 
     /* Glass card */
     .stTabs, [data-testid="stVerticalBlock"] {{
@@ -641,24 +633,7 @@ def show_login():
     </style>
     """, unsafe_allow_html=True)
 
-    # Background gambar kiri — inject via URL GitHub raw (tidak perlu file lokal)
-    _LOGIN_BG_URL = "https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/1.png"
-    components.html(f"""
-<script>
-(function() {{
-    var pd = window.parent.document;
-    var old = pd.getElementById('sigma-login-bg');
-    if (old) return;
-    var s = pd.createElement('style');
-    s.id = 'sigma-login-bg-style';
-    s.textContent = '#sigma-login-bg{{position:fixed;top:0;left:0;right:440px;bottom:0;background:url("{_LOGIN_BG_URL}") center/cover no-repeat;z-index:-1;pointer-events:none;}}@media(max-width:768px){{#sigma-login-bg{{display:none}}}}';
-    pd.head.appendChild(s);
-    var d = pd.createElement('div');
-    d.id = 'sigma-login-bg';
-    pd.body.appendChild(d);
-}})();
-</script>
-""", height=0)
+    # Background diterapkan via CSS langsung (URL GitHub raw)
     st.markdown('<div style="text-align:center;margin:0 0 28px;"><h2 style="margin:0;font-size:1.6rem;font-weight:800;color:#ffffff;">Masuk ke SIGMA</h2></div>', unsafe_allow_html=True)
     tab1, tab2, tab3 = st.tabs(["🔑 Masuk", "📝 Daftar", "🌐 Google"])
 
