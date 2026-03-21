@@ -15,6 +15,7 @@ import os
 import hashlib
 
 
+
 # ── FILE-BASED PERSISTENCE ────────────────────────────────
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -119,7 +120,7 @@ st.markdown(f"""
         margin-top: 0 !important;
     }}
 
-    /* ── TOMBOL COLLAPSE — hanya icon, sembunyikan semua teks ── */
+    /* ── TOMBOL COLLAPSE ── */
     [data-testid="stSidebarCollapseButton"] {{
         position: absolute !important;
         top: 8px !important; right: 10px !important;
@@ -127,7 +128,6 @@ st.markdown(f"""
         background: transparent !important;
         border: none !important; box-shadow: none !important;
     }}
-    /* Sembunyikan HANYA span teks, bukan yang berisi SVG */
     [data-testid="stSidebarCollapseButton"] span:not(:has(svg)),
     [data-testid="collapsedControl"] span:not(:has(svg)) {{
         display: none !important;
@@ -674,7 +674,7 @@ with st.sidebar:
     for sesi in st.session_state.sessions:
         sid = sesi["id"]
         is_active = sid == st.session_state.active_id
-        title_d = sesi["title"][:32] + "..." if len(sesi["title"]) > 32 else sesi["title"]
+        title_d = sesi["title"][:28] + "..." if len(sesi["title"]) > 28 else sesi["title"]
 
         if st.session_state.rename_id == sid:
             new_t = st.text_input("Rename", value=sesi["title"], key=f"ren_{sid}", label_visibility="collapsed")
@@ -687,17 +687,24 @@ with st.sidebar:
                 if st.button("✗", key=f"cx_{sid}"):
                     st.session_state.rename_id = None; st.rerun()
         else:
-            cls = "sb-item active" if is_active else "sb-item"
-            acts = f"""<span class="sb-item-acts">
-                <button class="sb-btn" onclick="event.stopPropagation();window.location.href='?sb_ren={sid}'">✏️</button>
-                <button class="sb-btn sb-btn-del" onclick="event.stopPropagation();window.location.href='?sb_del={sid}'">🗑</button>
-            </span>"""
-            st.markdown(f"""
-                <div class="{cls}" onclick="window.location.href='?sb_sel={sid}'">
-                    <span class="sb-item-title">{title_d}</span>
-                    {acts}
-                </div>
-            """, unsafe_allow_html=True)
+            if is_active:
+                c1, c2, c3 = st.columns([7, 1, 1])
+                with c1:
+                    if st.button(title_d, key=f"sel_{sid}", use_container_width=True):
+                        st.session_state.active_id = sid
+                        st.session_state.rename_id = None
+                        st.rerun()
+                with c2:
+                    if st.button("✏️", key=f"ren_{sid}"):
+                        st.session_state.rename_id = sid; st.rerun()
+                with c3:
+                    if st.button("🗑", key=f"del_{sid}"):
+                        delete_session(sid); st.rerun()
+            else:
+                if st.button(title_d, key=f"sel_{sid}", use_container_width=True):
+                    st.session_state.active_id = sid
+                    st.session_state.rename_id = None
+                    st.rerun()
 
 # Handle sidebar HTML nav actions
 if "sb_sel" in st.query_params:
@@ -969,7 +976,7 @@ components.html(f"""
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 300);
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 800);
     setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2000);
-    setTimeout(function() {{ fixSidebarTop(); injectSettings(); }}, 2500);
+    setInterval(function() {{ fixSidebarTop(); }}, 5000);
 
     // Observe kalau sidebar baru render
     var obs = new MutationObserver(function() {{ fixSidebarTop(); injectSettings(); }});
