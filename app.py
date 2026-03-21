@@ -855,7 +855,14 @@ section[data-testid="stSidebar"],
 [class*="viewerBadge"],
 .stDeployButton,
 #MainMenu,
-footer { display: none !important; }
+footer,
+/* Bar hitam Fork */
+[data-testid="stHeader"],
+iframe[title="streamlit_analytics"],
+div[class*="Toolbar"],
+div[class*="toolbar"],
+div[class*="ActionButton"],
+div[class*="HeaderActionButton"] { display: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
