@@ -2880,9 +2880,9 @@ if prompt:
             st.session_state["fund_no_history"] = True
         else:
             try:
-                ctx = build_combined_context(prompt)
+                ctx = build_context(prompt)
                 if ctx:
-                    full_prompt = f"{ctx}\n\n{prompt}"
+                    full_prompt = f"[DATA PASAR IDX]\n{ctx}\n[/DATA PASAR IDX]\n\n{prompt}"
             except: pass
 
     if active["title"] == "Obrolan Baru":
