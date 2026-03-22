@@ -350,9 +350,6 @@ def _fetch_multi_fundamental(ticker):
 # ─── CACHE SISTEM — simpan data fundamental agar hemat API request ───
 import hashlib as _hashlib
 
-CACHE_DIR = os.path.join(DATA_DIR, "fundamental_cache")
-os.makedirs(CACHE_DIR, exist_ok=True)
-
 def _cache_key(ticker):
     return os.path.join(CACHE_DIR, f"{ticker.upper()}.json")
 
@@ -986,6 +983,8 @@ st.set_page_config(
 
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
+CACHE_DIR = os.path.join(DATA_DIR, "fundamental_cache")
+os.makedirs(CACHE_DIR, exist_ok=True)
 
 # ─────────────────────────────────────────────
 # PERSISTENCE
