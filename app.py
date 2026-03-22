@@ -1290,9 +1290,14 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
+                    # Bersihkan field "display" — Groq hanya terima "role" dan "content"
+                    groq_messages = [
+                        {"role": m["role"], "content": m["content"]}
+                        for m in active["messages"]
+                    ]
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
-                        messages=active["messages"],
+                        messages=groq_messages,
                         temperature=0.7,
                         max_tokens=2048
                     )
