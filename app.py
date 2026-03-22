@@ -326,9 +326,9 @@ def build_fundamental_from_text(prompt):
                     yr = current_year + i
                     proj_eps = base_eps * (1 + growth) ** i
                     proj_ni  = (base_ni * (1 + growth) ** i / 1e12) if base_ni else None
-                    t_konservatif = round(proj_eps * per_base * 0.8, 0)
-                    t_moderat     = round(proj_eps * per_base, 0)
-                    t_optimis     = round(proj_eps * per_base * 1.2, 0)
+                    t_konservatif = round_to_tick(proj_eps * per_base * 0.8)
+                    t_moderat     = round_to_tick(proj_eps * per_base)
+                    t_optimis     = round_to_tick(proj_eps * per_base * 1.2)
                     ni_str = f" | Laba ~Rp{proj_ni:.1f}T" if proj_ni else ""
                     lines.append(f"  {yr}: EPS ~Rp{proj_eps:,.0f}{ni_str}")
                     lines.append(f"       🎯 Konservatif: Rp{t_konservatif:,.0f} | Moderat: Rp{t_moderat:,.0f} | Optimis: Rp{t_optimis:,.0f}")
@@ -336,20 +336,22 @@ def build_fundamental_from_text(prompt):
 
                 # Nilai wajar saat ini berdasarkan EPS TTM × PER
                 if base_eps and per_base:
-                    nilai_wajar_low  = round(base_eps * per_base * 0.8, 0)
-                    nilai_wajar_mid  = round(base_eps * per_base, 0)
-                    nilai_wajar_high = round(base_eps * per_base * 1.2, 0)
+                    nilai_wajar_low  = round_to_tick(base_eps * per_base * 0.8)
+                    nilai_wajar_mid  = round_to_tick(base_eps * per_base)
+                    nilai_wajar_high = round_to_tick(base_eps * per_base * 1.2)
                     lines.append(f"\n💎 NILAI WAJAR SAAT INI (EPS × PER {per_base:.1f}x):")
-                    lines.append(f"   Konservatif: Rp{nilai_wajar_low:,.0f}")
-                    lines.append(f"   Moderat    : Rp{nilai_wajar_mid:,.0f}")
-                    lines.append(f"   Optimis    : Rp{nilai_wajar_high:,.0f}")
+                    lines.append(f"   Harga Saat Ini : Rp{price:,.0f}" if price else "   Harga Saat Ini : N/A")
+                    lines.append(f"   Konservatif    : Rp{nilai_wajar_low:,.0f}")
+                    lines.append(f"   Moderat        : Rp{nilai_wajar_mid:,.0f}")
+                    lines.append(f"   Optimis        : Rp{nilai_wajar_high:,.0f}")
                     if price:
+                        selisih = ((price - nilai_wajar_mid) / nilai_wajar_mid * 100)
                         if price < nilai_wajar_low:
-                            lines.append(f"   Status: 🟢 UNDERVALUE (harga Rp{price:,.0f} < wajar Rp{nilai_wajar_low:,.0f})")
+                            lines.append(f"   Status: 🟢 UNDERVALUE — diskon {abs(selisih):.1f}% dari nilai wajar")
                         elif price > nilai_wajar_high:
-                            lines.append(f"   Status: 🔴 OVERVALUE (harga Rp{price:,.0f} > wajar Rp{nilai_wajar_high:,.0f})")
+                            lines.append(f"   Status: 🔴 OVERVALUE — premium {selisih:.1f}% di atas nilai wajar")
                         else:
-                            lines.append(f"   Status: 🟡 FAIRVALUE (harga Rp{price:,.0f} dalam range wajar)")
+                            lines.append(f"   Status: 🟡 FAIRVALUE — harga dalam range wajar ({selisih:+.1f}%)")
 
             lines.append(f"\nCATATAN: Data yfinance IDX sering hanya sampai 2022-2023.")
             lines.append(f"Estimasi {current_year-1}→{current_year} dari knowledge model.")
@@ -426,6 +428,22 @@ def is_bank_sector(ticker, info=None):
         if "bank" in sector or "bank" in industry or "financial" in sector:
             return True
     return False
+
+def round_to_tick(price):
+    """Bulatkan harga ke fraksi BEI yang valid."""
+    if price is None or price <= 0:
+        return price
+    if price < 200:
+        tick = 1
+    elif price < 500:
+        tick = 2
+    elif price < 2000:
+        tick = 5
+    elif price < 5000:
+        tick = 10
+    else:
+        tick = 25
+    return round(price / tick) * tick
 
 def detect_emiten(text):
     """Deteksi kode emiten dari teks PDF atau prompt."""
