@@ -6,6 +6,4 @@ streamlit
 requests
 bcrypt
 feedparser
-pandas_datareader
-openpyxl
-python-docx
+
