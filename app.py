@@ -1073,20 +1073,20 @@ for i, msg in enumerate(active["messages"][1:]):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
-# Chat input
-# Upload file via file_uploader di sidebar (lebih stabil dari accept_file)
-with st.sidebar:
-    st.markdown("---")
+# Chat input + file uploader
+col_upload, col_spacer = st.columns([1, 4])
+with col_upload:
     uploaded_file = st.file_uploader(
-        "📎 Upload PDF / Gambar",
+        "📎 PDF/Gambar",
         type=["pdf", "png", "jpg", "jpeg"],
-        key="sidebar_uploader"
+        key="main_uploader",
+        label_visibility="collapsed"
     )
 
 result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
 
 prompt = None
-file_obj = uploaded_file  # dari sidebar uploader
+file_obj = uploaded_file
 
 if result is not None:
     if isinstance(result, str):
