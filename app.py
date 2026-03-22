@@ -1379,7 +1379,10 @@ if result is not None:
             st.session_state.pdf_data = None
 
     if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
-        prompt = "Tolong analisa file yang saya kirim"
+        if st.session_state.pdf_data:
+            prompt = f"Tolong analisa laporan keuangan: {st.session_state.pdf_data[1]}"
+        else:
+            prompt = "Tolong analisa file yang saya kirim"
 
 if prompt:
     img_data = st.session_state.img_data
@@ -1437,6 +1440,14 @@ if prompt:
     with st.chat_message("user"):
         if img_data:
             st.markdown(f'<img src="data:{img_data[1]};base64,{img_data[0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+        elif pdf_data:
+            st.markdown(f'''<div style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;margin-bottom:8px;">
+                <span style="font-size:1.4rem;">📄</span>
+                <div>
+                    <div style="font-size:0.85rem;font-weight:600;color:#ececec;">{pdf_data[1]}</div>
+                    <div style="font-size:0.75rem;color:#8e8ea0;">PDF · Laporan Keuangan</div>
+                </div>
+            </div>''', unsafe_allow_html=True)
         st.markdown(prompt)
 
     try:
@@ -1461,17 +1472,46 @@ if prompt:
                         {"role": m["role"], "content": m["content"]}
                         for m in active["messages"]
                     ]
+                    # Deteksi apakah pesan terakhir adalah PDF — pakai model context lebih besar
+                    last_content = groq_messages[-1]["content"] if groq_messages else ""
+                    is_pdf_msg = "[PDF:" in last_content and "Halaman" in last_content
+                    if is_pdf_msg:
+                        # Untuk PDF: kirim hanya system prompt + pesan PDF saja (bukan history penuh)
+                        # agar tidak overflow context window
+                        groq_messages_send = [
+                            groq_messages[0],   # system prompt
+                            groq_messages[-1],  # pesan PDF user
+                        ]
+                        # Pastikan total karakter tidak melebihi ~28k token (~110k karakter)
+                        pdf_content = groq_messages_send[-1]["content"]
+                        if len(pdf_content) > 80000:
+                            groq_messages_send[-1] = {
+                                "role": "user",
+                                "content": pdf_content[:80000] + "\n\n[Data terpotong — analisa berdasarkan data di atas]"
+                            }
+                        model_to_use = "llama-3.3-70b-versatile"
+                        max_tok = 4096
+                    else:
+                        groq_messages_send = groq_messages
+                        model_to_use = "llama-3.3-70b-versatile"
+                        max_tok = 2048
                     res = groq_client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=groq_messages,
+                        model=model_to_use,
+                        messages=groq_messages_send,
                         temperature=0.7,
-                        max_tokens=2048
+                        max_tokens=max_tok
                     )
                 ans = res.choices[0].message.content
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
     except Exception as e:
-        st.error(f"Error: {e}")
+        err_msg = str(e)
+        if "rate_limit" in err_msg.lower():
+            st.error("⚠️ Rate limit Groq tercapai — coba lagi dalam beberapa detik.")
+        elif "context" in err_msg.lower() or "token" in err_msg.lower():
+            st.error("⚠️ Dokumen terlalu besar untuk diproses sekaligus. Coba kirim bagian tertentu saja (misal: hanya halaman Laba Rugi).")
+        else:
+            st.error(f"⚠️ Error: {err_msg}")
 
     st.rerun()
 
