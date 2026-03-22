@@ -873,18 +873,38 @@ for _sesi in st.session_state.sessions:
     _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',"")
     _fw = "700" if _is_act else "400"
     _bg = C['hover'] if _is_act else "transparent"
-    # Pakai <a href> langsung — tidak perlu JS event listener
     _hist_items += f"""
 (function(){{
+    var row=pd.createElement('div');
+    row.style.cssText='display:flex;align-items:center;width:100%;';
+
     var a=pd.createElement('a');
     a.textContent='{_td}';
     var u=new URL(window.parent.location.href);
     u.searchParams.set('do','sel_{_sid}');
     a.href=u.toString();
-    a.style.cssText='display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;';
+    a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;';
     a.onmouseenter=function(){{this.style.background='{C["hover"]}'}};
     a.onmouseleave=function(){{this.style.background='{_bg}'}};
-    h.appendChild(a);
+
+    var del=pd.createElement('button');
+    del.innerHTML='🗑';
+    del.title='Hapus';
+    del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.9rem;opacity:0.35;flex-shrink:0;color:{C["text"]};';
+    del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}};
+    del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}};
+    del.onclick=function(e){{
+        e.preventDefault();e.stopPropagation();
+        if(confirm('Hapus obrolan ini?')){{
+            var u2=new URL(window.parent.location.href);
+            u2.searchParams.set('do','del_{_sid}');
+            window.parent.location.href=u2.toString();
+        }}
+    }};
+
+    row.appendChild(a);
+    row.appendChild(del);
+    h.appendChild(row);
 }})();
 """
 
