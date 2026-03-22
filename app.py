@@ -36,6 +36,9 @@ def _call_gemini(messages, api_key="AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o"):
             elif role == "assistant":
                 gemini_contents.append({"role":"model","parts":[{"text":text}]})
         
+        # Gemini butuh minimal 1 message
+        if not gemini_contents:
+            gemini_contents = [{"role":"user","parts":[{"text":"Halo"}]}]
         payload = {"contents": gemini_contents}
         if system_text:
             payload["system_instruction"] = {"parts":[{"text":system_text}]}
@@ -61,6 +64,11 @@ def _call_gemini(messages, api_key="AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o"):
                 return parts[0].get("text","")
         return None
     except Exception as e:
+        # Log error Gemini ke session state untuk debugging
+        try:
+            import streamlit as _st
+            _st.session_state["last_error"] = f"Gemini error: {str(e)}"
+        except: pass
         return None
 
 
