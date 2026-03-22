@@ -1045,7 +1045,7 @@ if "do" in st.query_params:
     elif _do.startswith("del_"):
         _sid = _do[4:]
         delete_session(_sid)
-        # Simpan session setelah delete agar perubahan persist
+        # Simpan LANGSUNG ke disk sebelum rerun agar restore tidak load sesi lama
         if st.session_state.get("user"):
             _u = st.session_state.user
             _sessions_save = []
@@ -1058,6 +1058,8 @@ if "do" in st.query_params:
                 "sessions": _sessions_save,
                 "active_id": st.session_state.active_id,
             })
+        # Set data_loaded = True agar restore tidak overwrite session yang sudah didelete
+        st.session_state.data_loaded = True
         st.query_params["do"] = ""; st.rerun()
 
 # ─────────────────────────────────────────────
