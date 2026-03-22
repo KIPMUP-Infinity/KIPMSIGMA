@@ -165,10 +165,21 @@ def build_context(prompt):
 
     return "\n".join(lines) if len(lines)>1 else ""
 
+def _calc_cagr(values_sorted_new_to_old):
+    """Hitung CAGR dari list nilai [terbaru, ..., terlama]."""
+    vals = [v for v in values_sorted_new_to_old if v and v > 0]
+    if len(vals) < 2:
+        return None
+    n = len(vals) - 1
+    try:
+        return (vals[0] / vals[-1]) ** (1/n) - 1
+    except:
+        return None
+
 def build_fundamental_from_text(prompt):
     """
     Untuk perintah teks seperti 'analisa fundamental BBNI' tanpa PDF.
-    Deteksi ticker, fetch data dari yfinance + laporan keuangan historis.
+    Deteksi ticker → fetch yfinance → hitung CAGR → proyeksi 3 tahun.
     """
     ticker = detect_ticker_from_prompt(prompt)
     if not ticker:
@@ -182,62 +193,133 @@ def build_fundamental_from_text(prompt):
             info = t.info
             hist_price = t.history(period="5d")
             current_year = datetime.now().year
-            lines = [f"=== DATA FUNDAMENTAL {ticker} (live + historis) ===",
+            lines = [f"=== DATA FUNDAMENTAL {ticker} ===",
                      f"Tahun sekarang: {current_year}"]
-            # Harga live
-            if not hist_price.empty:
-                price = round(hist_price.iloc[-1]["Close"], 0)
+
+            # ── Harga & valuasi live ──
+            price = round(hist_price.iloc[-1]["Close"], 0) if not hist_price.empty else None
+            eps_yf = info.get("trailingEps")
+            bv_yf  = info.get("bookValue")
+            pe_yf  = info.get("trailingPE")
+            pbv_yf = info.get("priceToBook")
+            shares = info.get("sharesOutstanding")
+            div_yield = info.get("dividendYield")
+
+            if price:
                 lines.append(f"Harga Saham    : Rp{price:,.0f}")
             if info.get("marketCap"):
                 lines.append(f"Market Cap     : Rp{info['marketCap']/1e12:.1f} T")
-            if info.get("trailingPE"):
-                lines.append(f"PER            : {info['trailingPE']:.2f}×")
-            if info.get("priceToBook"):
-                lines.append(f"PBV            : {info['priceToBook']:.2f}×")
-            if info.get("trailingEps"):
-                lines.append(f"EPS (TTM)      : Rp{info['trailingEps']:,.0f}")
-            if info.get("bookValue"):
-                lines.append(f"Book Value/Sh  : Rp{info['bookValue']:,.0f}")
+            if info.get("fiftyTwoWeekHigh"):
+                lines.append(f"52W High/Low   : Rp{info['fiftyTwoWeekHigh']:,.0f} / Rp{info['fiftyTwoWeekLow']:,.0f}")
+
+            # PER — yfinance atau hitung manual
+            if pe_yf:
+                lines.append(f"PER            : {pe_yf:.2f}× [yfinance]")
+            elif price and eps_yf and eps_yf > 0:
+                pe_calc = price / eps_yf
+                lines.append(f"PER (hitung)   : {pe_calc:.2f}× = Rp{price:,.0f} ÷ Rp{eps_yf:,.0f}")
+                pe_yf = pe_calc
+            else:
+                lines.append(f"PER            : hitung dari knowledge (EPS tidak tersedia)")
+
+            # PBV — yfinance atau hitung manual
+            if pbv_yf:
+                lines.append(f"PBV            : {pbv_yf:.2f}× [yfinance]")
+            elif price and bv_yf and bv_yf > 0:
+                pbv_calc = price / bv_yf
+                lines.append(f"PBV (hitung)   : {pbv_calc:.2f}× = Rp{price:,.0f} ÷ Rp{bv_yf:,.0f}")
+                pbv_yf = pbv_calc
+            else:
+                lines.append(f"PBV            : hitung dari (Ekuitas ÷ Saham) ÷ Harga")
+
+            if eps_yf:
+                lines.append(f"EPS (TTM)      : Rp{eps_yf:,.0f}")
+            if bv_yf:
+                lines.append(f"Book Value/Sh  : Rp{bv_yf:,.0f}")
             if info.get("returnOnEquity"):
                 lines.append(f"ROE            : {info['returnOnEquity']*100:.2f}%")
             if info.get("returnOnAssets"):
                 lines.append(f"ROA            : {info['returnOnAssets']*100:.2f}%")
-            if info.get("dividendYield"):
-                lines.append(f"Div Yield      : {info['dividendYield']*100:.2f}%")
-            if info.get("fiftyTwoWeekHigh"):
-                lines.append(f"52W High/Low   : Rp{info['fiftyTwoWeekHigh']:,.0f} / Rp{info['fiftyTwoWeekLow']:,.0f}")
-            # Laporan keuangan historis
+            if div_yield:
+                lines.append(f"Div Yield      : {div_yield*100:.2f}%")
+
+            # ── Laporan keuangan historis + CAGR ──
+            ni_vals = []
+            eps_vals = []
+            ni_years = []
             try:
                 inc = t.income_stmt
                 if inc is None or inc.empty:
                     inc = t.financials
                 if inc is not None and not inc.empty:
-                    lines.append("\n── Historis Laba Bersih ──")
+                    lines.append("\n── Historis Keuangan ──")
                     if "Net Income" in inc.index:
                         row = inc.loc["Net Income"].dropna()
-                        vals = []
-                        for col in sorted(row.index, reverse=True)[:4]:
+                        cols = sorted(row.index, reverse=True)[:5]
+                        vals_str = []
+                        for col in cols:
                             v = row[col]
-                            vals.append(f"{str(col)[:4]}: Rp{v/1e12:.1f}T")
-                        lines.append("  " + " | ".join(vals))
+                            ni_vals.append(v)
+                            ni_years.append(str(col)[:4])
+                            vals_str.append(f"{str(col)[:4]}: Rp{v/1e12:.1f}T")
+                        lines.append("Laba Bersih    : " + " | ".join(vals_str))
                     if "Basic EPS" in inc.index:
                         row = inc.loc["Basic EPS"].dropna()
-                        vals = [f"{str(col)[:4]}: Rp{row[col]:,.0f}"
-                                for col in sorted(row.index, reverse=True)[:4]]
-                        lines.append("EPS: " + " | ".join(vals))
+                        cols = sorted(row.index, reverse=True)[:5]
+                        vals_str = []
+                        for col in cols:
+                            v = row[col]
+                            eps_vals.append(v)
+                            vals_str.append(f"{str(col)[:4]}: Rp{v:,.0f}")
+                        lines.append("EPS Historis   : " + " | ".join(vals_str))
+                    if "Total Revenue" in inc.index:
+                        row = inc.loc["Total Revenue"].dropna()
+                        cols = sorted(row.index, reverse=True)[:4]
+                        vals_str = [f"{str(col)[:4]}: Rp{row[col]/1e12:.1f}T" for col in cols]
+                        lines.append("Pendapatan     : " + " | ".join(vals_str))
             except: pass
+
+            # ── CAGR & Proyeksi Python ──
+            lines.append("\n── Kalkulasi CAGR & Proyeksi ──")
+            cagr_ni = _calc_cagr(ni_vals)
+            cagr_eps = _calc_cagr(eps_vals)
+
+            if cagr_ni is not None:
+                lines.append(f"CAGR Laba Bersih: {cagr_ni*100:.1f}% per tahun ({ni_years[-1]}→{ni_years[0]})")
+            if cagr_eps is not None:
+                lines.append(f"CAGR EPS        : {cagr_eps*100:.1f}% per tahun")
+
+            # Proyeksi 3 tahun
+            base_eps = eps_vals[0] if eps_vals else eps_yf
+            base_ni  = ni_vals[0] if ni_vals else None
+            growth   = cagr_ni if cagr_ni else (cagr_eps if cagr_eps else 0.08)
+            per_base = pe_yf if pe_yf else 12.0  # fallback PER 12x untuk bank
+
+            if base_eps and growth is not None:
+                lines.append(f"\nProyeksi (basis growth {growth*100:.1f}%/tahun):")
+                for i in range(1, 4):
+                    yr = current_year + i
+                    proj_eps = base_eps * (1 + growth) ** i
+                    proj_ni  = (base_ni * (1 + growth) ** i / 1e12) if base_ni else None
+                    # Target harga: konservatif (PER-20%), moderat (PER), optimis (PER+20%)
+                    t_konservatif = proj_eps * per_base * 0.8
+                    t_moderat     = proj_eps * per_base
+                    t_optimis     = proj_eps * per_base * 1.2
+                    ni_str = f" | Laba ~Rp{proj_ni:.1f}T" if proj_ni else ""
+                    lines.append(f"  {yr}: EPS ~Rp{proj_eps:,.0f}{ni_str}")
+                    lines.append(f"        Target: Konservatif Rp{t_konservatif:,.0f} | Moderat Rp{t_moderat:,.0f} | Optimis Rp{t_optimis:,.0f}")
+
             lines.append(f"\nCATATAN: Data yfinance IDX sering hanya sampai 2022-2023.")
-            lines.append(f"Untuk {current_year-1} dan {current_year}: estimasi dari knowledge model.")
+            lines.append(f"Estimasi {current_year-1}→{current_year} dari knowledge model.")
             lines.append(f"Buat analisa FORMAT ANALISA FUNDAMENTAL lengkap untuk {ticker}.")
-            lines.append(f"Tren 3 tahun: {current_year-2}→{current_year-1}→{current_year}")
-            lines.append(f"Proyeksi: {current_year+1}, {current_year+2}, {current_year+3}")
+            lines.append(f"Tren 3 tahun aktual: {current_year-2}→{current_year-1}→{current_year}")
             lines.append("=== AKHIR DATA ===")
             result[0] = "\n".join(lines)
         except Exception as e:
-            result[0] = f"[Gagal fetch {ticker}: {e}] Gunakan knowledge model."
+            result[0] = f"[Gagal fetch {ticker}: {e}] Gunakan knowledge model untuk {ticker}."
     th = threading.Thread(target=fetch, daemon=True)
     th.start()
-    th.join(timeout=12)
+    th.join(timeout=15)
     return result[0]
 
 # ─── PDF ENRICHMENT — deteksi emiten & lengkapi data dari yfinance ───
@@ -416,12 +498,18 @@ def enrich_pdf_context(pdf_text):
     if price_data.get("roa"):
         lines.append(f"ROA (TTM)      : {price_data['roa']*100:.2f}%")
     current_year = datetime.now().year
+    current_year = datetime.now().year
+    # Rumus kalkulasi yang tersedia jika data kurang
+    lines.append(f"\n── Rumus Hitung Manual ──")
+    lines.append(f"PER  = Harga (Rp{price_data.get('price','?'):,}) ÷ EPS laporan")
+    lines.append(f"PBV  = Harga (Rp{price_data.get('price','?'):,}) ÷ (Total Ekuitas ÷ Jumlah Saham)")
+    lines.append(f"DPS  = Total Dividen ÷ Jumlah Saham Beredar")
+    lines.append(f"Payout Ratio = Total Dividen ÷ Laba Bersih × 100")
+    lines.append(f"ROA  = Laba Sebelum Pajak ÷ Rata-rata Total Aset × 100")
     lines.append(f"\nTAHUN SEKARANG: {current_year}")
-    lines.append(f"PERINGATAN: Data historis yfinance untuk saham IDX sering hanya sampai 2022-2023.")
-    lines.append(f"Untuk tren {current_year-2}→{current_year-1}→{current_year}: gunakan data yfinance untuk tahun lama,")
-    lines.append(f"estimasi knowledge model untuk tahun {current_year-1} dan {current_year} jika data tidak ada.")
-    lines.append(f"Gunakan data live di atas untuk valuasi (PER, PBV, harga wajar).")
-    lines.append(f"Hitung PER/PBV manual jika data yfinance tidak tersedia.")
+    lines.append(f"Tren 3 tahun: {current_year-2}→{current_year-1}→{current_year}")
+    lines.append(f"Proyeksi: {current_year+1}, {current_year+2}, {current_year+3}")
+    lines.append(f"Gunakan rumus di atas untuk hitung metrik yang tidak ada di PDF.")
     lines.append("=== AKHIR DATA LIVE ===")
     return "\n".join(lines)
 
