@@ -1074,40 +1074,25 @@ for i, msg in enumerate(active["messages"][1:]):
         st.markdown(display)
 
 # Chat input
-try:
-    result = st.chat_input(
-        "Tanya SIGMA... DYOR - bukan financial advice.",
-        accept_file="multiple",
-        file_type=["pdf", "png", "jpg", "jpeg"]
+# Upload file via file_uploader di sidebar (lebih stabil dari accept_file)
+with st.sidebar:
+    st.markdown("---")
+    uploaded_file = st.file_uploader(
+        "📎 Upload PDF / Gambar",
+        type=["pdf", "png", "jpg", "jpeg"],
+        key="sidebar_uploader"
     )
-except TypeError:
-    result = st.chat_input("Tanya SIGMA...")
+
+result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
 
 prompt = None
-file_obj = None
+file_obj = uploaded_file  # dari sidebar uploader
 
 if result is not None:
-    if hasattr(result, 'text'):
-        prompt = (result.text or "").strip()
-        # Streamlit 1.55 — coba semua kemungkinan struktur file
-        files = (getattr(result, 'files', None) or
-                 getattr(result, 'file', None) or [])
-        if isinstance(files, list) and files:
-            file_obj = files[0]
-        elif hasattr(files, 'read'):
-            file_obj = files
-    elif hasattr(result, '__iter__') and not isinstance(result, str):
-        # Mungkin tuple (text, files)
-        try:
-            _items = list(result)
-            if _items:
-                prompt = (str(_items[0]) or "").strip()
-                if len(_items) > 1 and _items[1]:
-                    file_obj = _items[1][0] if isinstance(_items[1], list) else _items[1]
-        except:
-            pass
-    elif isinstance(result, str):
+    if isinstance(result, str):
         prompt = result.strip()
+    elif hasattr(result, 'text'):
+        prompt = (result.text or "").strip()
 
     if file_obj:
         raw = file_obj.read()
@@ -1121,15 +1106,6 @@ if result is not None:
             mime = "image/png" if file_obj.name.endswith(".png") else "image/jpeg"
             st.session_state.img_data = (b64, mime, file_obj.name)
             st.session_state.pdf_data = None
-
-    # DEBUG — tampilkan info result untuk diagnosa
-    if result is not None and file_obj is None:
-        _result_type = type(result).__name__
-        _result_attrs = [a for a in dir(result) if not a.startswith('_')]
-        st.sidebar.warning(f"DEBUG result type: {_result_type}")
-        st.sidebar.info(f"DEBUG attrs: {_result_attrs[:10]}")
-        if hasattr(result, 'text'):
-            st.sidebar.info(f"DEBUG text: '{result.text}'")
 
     if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
         prompt = "Tolong analisa file yang saya kirim"
