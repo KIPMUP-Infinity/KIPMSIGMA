@@ -123,6 +123,133 @@ def _fetch_all_data(tickers):
     th.join(timeout=10)
     return result
 
+def _fetch_finnhub(ticker, api_key="d705ab9r01qtb4r9hgpgd705ab9r01qtb4r9hgq0"):
+    """Fetch fundamental data dari Finnhub."""
+    try:
+        import urllib.request, json as _j
+        # Basic financials
+        url = f"https://finnhub.io/api/v1/stock/metric?symbol={ticker}.JK&metric=all&token={api_key}"
+        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = _j.loads(r.read())
+        metrics = data.get("metric", {})
+        result = {}
+        # Mapping key Finnhub ke nama yang kita pakai
+        mapping = {
+            "revenueGrowthTTMYoy": "revenue_growth",
+            "roeTTM": "roe",
+            "roaTTM": "roa",
+            "netProfitMarginTTM": "net_margin",
+            "peBasicExclExtraTTM": "pe",
+            "pbAnnual": "pbv",
+            "dividendYieldIndicatedAnnual": "div_yield",
+            "epsBasicExclExtraItemsTTM": "eps",
+            "totalDebt/totalEquityAnnual": "der",
+            "currentRatioAnnual": "current_ratio",
+            "52WeekHigh": "w52h",
+            "52WeekLow": "w52l",
+        }
+        for fh_key, our_key in mapping.items():
+            if metrics.get(fh_key) is not None:
+                result[our_key] = metrics[fh_key]
+        return result
+    except:
+        return {}
+
+def _fetch_alphavantage(ticker, api_key="GYZKT8YU8RV3QX65"):
+    """Fetch fundamental data dari Alpha Vantage."""
+    try:
+        import urllib.request, json as _j
+        result = {}
+        # Overview (fundamental)
+        url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={ticker}.JKT&apikey={api_key}"
+        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = _j.loads(r.read())
+        if data and "Symbol" in data:
+            if data.get("PERatio") and data["PERatio"] != "None":
+                result["pe"] = float(data["PERatio"])
+            if data.get("PriceToBookRatio") and data["PriceToBookRatio"] != "None":
+                result["pbv"] = float(data["PriceToBookRatio"])
+            if data.get("EPS") and data["EPS"] != "None":
+                result["eps"] = float(data["EPS"])
+            if data.get("ReturnOnEquityTTM") and data["ReturnOnEquityTTM"] != "None":
+                result["roe"] = float(data["ReturnOnEquityTTM"])
+            if data.get("ReturnOnAssetsTTM") and data["ReturnOnAssetsTTM"] != "None":
+                result["roa"] = float(data["ReturnOnAssetsTTM"])
+            if data.get("DividendYield") and data["DividendYield"] != "None":
+                result["div_yield"] = float(data["DividendYield"])
+            if data.get("MarketCapitalization") and data["MarketCapitalization"] != "None":
+                result["mktcap"] = float(data["MarketCapitalization"])
+            if data.get("52WeekHigh") and data["52WeekHigh"] != "None":
+                result["w52h"] = float(data["52WeekHigh"])
+            if data.get("52WeekLow") and data["52WeekLow"] != "None":
+                result["w52l"] = float(data["52WeekLow"])
+            if data.get("Description"):
+                result["description"] = data["Description"][:200]
+        return result
+    except:
+        return {}
+
+def _fetch_multi_fundamental(ticker):
+    """
+    Fetch fundamental dari semua sumber, gabungkan hasilnya.
+    Priority: yfinance → Finnhub → Alpha Vantage → knowledge model
+    """
+    import threading
+    result = [{}]
+    def fetch():
+        combined = {}
+        # Layer 1: yfinance
+        try:
+            import yfinance as yf
+            t = yf.Ticker(f"{ticker}.JK")
+            info = t.info
+            hist = t.history(period="5d")
+            if not hist.empty:
+                combined["price"] = round(hist.iloc[-1]["Close"], 0)
+            for k, v in {
+                "pe": info.get("trailingPE"),
+                "pbv": info.get("priceToBook"),
+                "eps": info.get("trailingEps"),
+                "bv": info.get("bookValue"),
+                "roe": info.get("returnOnEquity"),
+                "roa": info.get("returnOnAssets"),
+                "div_yield": info.get("dividendYield"),
+                "mktcap": info.get("marketCap"),
+                "w52h": info.get("fiftyTwoWeekHigh"),
+                "w52l": info.get("fiftyTwoWeekLow"),
+                "shares": info.get("sharesOutstanding"),
+            }.items():
+                if v is not None:
+                    combined[k] = v
+            combined["source_price"] = "yfinance"
+        except: pass
+
+        # Layer 2: Finnhub (isi yang kosong dari yfinance)
+        try:
+            fh = _fetch_finnhub(ticker)
+            for k, v in fh.items():
+                if k not in combined or combined[k] is None:
+                    combined[k] = v
+                    combined[f"source_{k}"] = "finnhub"
+        except: pass
+
+        # Layer 3: Alpha Vantage (isi yang masih kosong)
+        try:
+            av = _fetch_alphavantage(ticker)
+            for k, v in av.items():
+                if k not in combined or combined[k] is None:
+                    combined[k] = v
+                    combined[f"source_{k}"] = "alphavantage"
+        except: pass
+
+        result[0] = combined
+    th = threading.Thread(target=fetch, daemon=True)
+    th.start()
+    th.join(timeout=15)
+    return result[0]
+
 def build_context(prompt):
     """Build market context — inject ke prompt jika relevan."""
     tickers = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
@@ -188,6 +315,8 @@ def build_fundamental_from_text(prompt):
     result = [""]
     def fetch():
         try:
+            # Fetch dari semua sumber sekaligus
+            multi = _fetch_multi_fundamental(ticker)
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
             info = t.info
@@ -221,13 +350,16 @@ def build_fundamental_from_text(prompt):
                      f"Sektor: {sektor} | Framework: {framework}"]
 
             # ── Harga & valuasi live ──
-            price = round(hist_price.iloc[-1]["Close"], 0) if not hist_price.empty else None
-            eps_yf = info.get("trailingEps")
-            bv_yf  = info.get("bookValue")
-            pe_yf  = info.get("trailingPE")
-            pbv_yf = info.get("priceToBook")
-            shares = info.get("sharesOutstanding")
-            div_yield = info.get("dividendYield")
+            # Prioritas: yfinance → Finnhub → Alpha Vantage
+            price     = round(hist_price.iloc[-1]["Close"], 0) if not hist_price.empty else multi.get("price")
+            eps_yf    = info.get("trailingEps") or multi.get("eps")
+            bv_yf     = info.get("bookValue") or multi.get("bv")
+            pe_yf     = info.get("trailingPE") or multi.get("pe")
+            pbv_yf    = info.get("priceToBook") or multi.get("pbv")
+            shares    = info.get("sharesOutstanding") or multi.get("shares")
+            div_yield = info.get("dividendYield") or multi.get("div_yield")
+            roe_data  = info.get("returnOnEquity") or multi.get("roe")
+            roa_data  = info.get("returnOnAssets") or multi.get("roa")
 
             if price:
                 lines.append(f"💹 Harga Saham Saat Ini : Rp{price:,.0f} (per {datetime.now().strftime('%d %b %Y')})")
