@@ -123,7 +123,8 @@ def _fetch_all_data(tickers):
     th.join(timeout=10)
     return result
 
-def _fetch_finnhub(ticker, api_key="d705ab9r01qtb4r9hgpgd705ab9r01qtb4r9hgq0"):
+def _fetch_finnhub(ticker, api_key=None):
+    api_key = api_key or st.secrets.get("FINNHUB_KEY", "d705ab9r01qtb4r9hgpgd705ab9r01qtb4r9hgq0")
     """Fetch fundamental data dari Finnhub."""
     try:
         import urllib.request, json as _j
@@ -156,7 +157,8 @@ def _fetch_finnhub(ticker, api_key="d705ab9r01qtb4r9hgpgd705ab9r01qtb4r9hgq0"):
     except:
         return {}
 
-def _fetch_alphavantage(ticker, api_key="GYZKT8YU8RV3QX65"):
+def _fetch_alphavantage(ticker, api_key=None):
+    api_key = api_key or st.secrets.get("ALPHAVANTAGE_KEY", "GYZKT8YU8RV3QX65")
     """Fetch fundamental data dari Alpha Vantage."""
     try:
         import urllib.request, json as _j
@@ -191,7 +193,8 @@ def _fetch_alphavantage(ticker, api_key="GYZKT8YU8RV3QX65"):
     except:
         return {}
 
-def _fetch_fmp(ticker, api_key="6ckg4EdDYUqKkkpPK4Weo4b9PbKD6IUK"):
+def _fetch_fmp(ticker, api_key=None):
+    api_key = api_key or st.secrets.get("FMP_KEY", "6ckg4EdDYUqKkkpPK4Weo4b9PbKD6IUK")
     """Fetch fundamental dari Financial Modeling Prep — 250 req/hari."""
     try:
         import urllib.request, json as _j
@@ -982,6 +985,9 @@ SYSTEM_PROMPT = {
     "content": """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by Market n Mocha (MnM).
 
 KEPRIBADIAN: Ramah saat ngobrol biasa, profesional saat analisa. Bahasa Indonesia natural.
+PENTING: SIGMA boleh memberikan pandangan analitis berbasis data (contoh: "secara fundamental 
+saham ini undervalue dan layak diakumulasi"). Yang TIDAK BOLEH adalah menjanjikan keuntungan 
+atau menyuruh beli/jual dengan uang nyata tanpa konteks risiko. Selalu akhiri dengan DYOR.
 
 KEMAMPUAN:
 1. Trading & Pasar Modal — teknikal, fundamental, bandarmologi, berita pasar
@@ -1108,7 +1114,7 @@ Skenario: Konservatif RpX | Moderat RpX | Optimis RpX
 - Kesimpulan: [Paragraph 4-5 kalimat yang menceritakan: kondisi bisnis saat ini,
   tren pertumbuhan, posisi valuasi, risiko utama yang perlu diperhatikan,
   dan saran konkret: accumulate/wait/avoid dengan alasan spesifik]
-⚠️ DYOR — bukan rekomendasi investasi. Proyeksi bersifat estimasi.
+⚠️ DYOR — analisa ini berbasis data, bukan rekomendasi investasi. Keputusan final ada di tangan investor.
 
 ATURAN OUTPUT WAJIB:
 - Setiap metrik di BARIS TERPISAH — DILARANG digabung horizontal
