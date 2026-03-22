@@ -179,7 +179,7 @@ def _calc_cagr(values_sorted_new_to_old):
 def build_fundamental_from_text(prompt):
     """
     Untuk perintah teks seperti 'analisa fundamental BBNI' tanpa PDF.
-    Deteksi ticker → fetch yfinance → hitung CAGR → proyeksi 3 tahun.
+    Deteksi ticker → cek sektor → fetch yfinance → hitung CAGR → proyeksi 3 tahun.
     """
     ticker = detect_ticker_from_prompt(prompt)
     if not ticker:
@@ -193,8 +193,32 @@ def build_fundamental_from_text(prompt):
             info = t.info
             hist_price = t.history(period="5d")
             current_year = datetime.now().year
-            lines = [f"=== DATA FUNDAMENTAL {ticker} ===",
-                     f"Tahun sekarang: {current_year}"]
+
+            # Deteksi sektor otomatis
+            is_bank = is_bank_sector(ticker, info)
+            sektor = "Perbankan" if is_bank else "Non-Perbankan"
+            if is_bank:
+                framework = "Perbankan (NIM, NPL, LDR, CAR, BOPO, CIR)"
+                per_default = 12.0  # PER historis bank IDX rata-rata
+            else:
+                # Pilih framework berdasarkan sektor
+                sector_yf = (info.get("sector") or "").lower()
+                if "energ" in sector_yf or "mining" in sector_yf or "tambang" in sector_yf:
+                    framework = "Graham (Deep Value) + Buffett"
+                    per_default = 10.0
+                elif "consumer" in sector_yf or "retail" in sector_yf:
+                    framework = "Lynch (GARP) + Buffett"
+                    per_default = 18.0
+                elif "tech" in sector_yf or "technology" in sector_yf:
+                    framework = "CAN SLIM + Lynch"
+                    per_default = 25.0
+                else:
+                    framework = "Buffett + Graham"
+                    per_default = 15.0
+
+            lines = [f"=== DATA FUNDAMENTAL {ticker} ({sektor}) ===",
+                     f"Tahun sekarang: {current_year}",
+                     f"Sektor: {sektor} | Framework: {framework}"]
 
             # ── Harga & valuasi live ──
             price = round(hist_price.iloc[-1]["Close"], 0) if not hist_price.empty else None
@@ -296,23 +320,45 @@ def build_fundamental_from_text(prompt):
             per_base = pe_yf if pe_yf else 12.0  # fallback PER 12x untuk bank
 
             if base_eps and growth is not None:
-                lines.append(f"\nProyeksi (basis growth {growth*100:.1f}%/tahun):")
+                lines.append(f"\n── Proyeksi 3 Tahun (CAGR {growth*100:.1f}%/thn, PER basis {per_base:.1f}x) ──")
+                proj_list = []
                 for i in range(1, 4):
                     yr = current_year + i
                     proj_eps = base_eps * (1 + growth) ** i
                     proj_ni  = (base_ni * (1 + growth) ** i / 1e12) if base_ni else None
-                    # Target harga: konservatif (PER-20%), moderat (PER), optimis (PER+20%)
-                    t_konservatif = proj_eps * per_base * 0.8
-                    t_moderat     = proj_eps * per_base
-                    t_optimis     = proj_eps * per_base * 1.2
+                    t_konservatif = round(proj_eps * per_base * 0.8, 0)
+                    t_moderat     = round(proj_eps * per_base, 0)
+                    t_optimis     = round(proj_eps * per_base * 1.2, 0)
                     ni_str = f" | Laba ~Rp{proj_ni:.1f}T" if proj_ni else ""
                     lines.append(f"  {yr}: EPS ~Rp{proj_eps:,.0f}{ni_str}")
-                    lines.append(f"        Target: Konservatif Rp{t_konservatif:,.0f} | Moderat Rp{t_moderat:,.0f} | Optimis Rp{t_optimis:,.0f}")
+                    lines.append(f"       🎯 Konservatif: Rp{t_konservatif:,.0f} | Moderat: Rp{t_moderat:,.0f} | Optimis: Rp{t_optimis:,.0f}")
+                    proj_list.append(t_moderat)
+
+                # Nilai wajar saat ini berdasarkan EPS TTM × PER
+                if base_eps and per_base:
+                    nilai_wajar_low  = round(base_eps * per_base * 0.8, 0)
+                    nilai_wajar_mid  = round(base_eps * per_base, 0)
+                    nilai_wajar_high = round(base_eps * per_base * 1.2, 0)
+                    lines.append(f"\n💎 NILAI WAJAR SAAT INI (EPS × PER {per_base:.1f}x):")
+                    lines.append(f"   Konservatif: Rp{nilai_wajar_low:,.0f}")
+                    lines.append(f"   Moderat    : Rp{nilai_wajar_mid:,.0f}")
+                    lines.append(f"   Optimis    : Rp{nilai_wajar_high:,.0f}")
+                    if price:
+                        if price < nilai_wajar_low:
+                            lines.append(f"   Status: 🟢 UNDERVALUE (harga Rp{price:,.0f} < wajar Rp{nilai_wajar_low:,.0f})")
+                        elif price > nilai_wajar_high:
+                            lines.append(f"   Status: 🔴 OVERVALUE (harga Rp{price:,.0f} > wajar Rp{nilai_wajar_high:,.0f})")
+                        else:
+                            lines.append(f"   Status: 🟡 FAIRVALUE (harga Rp{price:,.0f} dalam range wajar)")
 
             lines.append(f"\nCATATAN: Data yfinance IDX sering hanya sampai 2022-2023.")
             lines.append(f"Estimasi {current_year-1}→{current_year} dari knowledge model.")
+            lines.append(f"SEKTOR: {sektor} — gunakan FRAMEWORK: {framework}")
+            lines.append(f"Untuk bank: tampilkan NIM, NPL, LDR, CAR, BOPO, CIR")
+            lines.append(f"Untuk non-bank: tampilkan Gross Margin, Operating Margin, DER, Current Ratio")
             lines.append(f"Buat analisa FORMAT ANALISA FUNDAMENTAL lengkap untuk {ticker}.")
             lines.append(f"Tren 3 tahun aktual: {current_year-2}→{current_year-1}→{current_year}")
+            lines.append(f"Nilai wajar sudah dihitung di atas — tampilkan dengan jelas di bagian VALUASI.")
             lines.append("=== AKHIR DATA ===")
             result[0] = "\n".join(lines)
         except Exception as e:
@@ -323,8 +369,9 @@ def build_fundamental_from_text(prompt):
     return result[0]
 
 # ─── PDF ENRICHMENT — deteksi emiten & lengkapi data dari yfinance ───
+# Emiten map dengan sektor
 EMITEN_MAP = {
-    # Bank
+    # Bank → sektor "bank"
     "bank central asia": "BBCA", "bca": "BBCA", "bbca": "BBCA",
     "bank rakyat indonesia": "BBRI", "bri": "BBRI", "bbri": "BBRI",
     "bank mandiri": "BMRI", "mandiri": "BMRI", "bmri": "BMRI",
@@ -333,15 +380,15 @@ EMITEN_MAP = {
     "bank syariah indonesia": "BRIS", "bsi": "BRIS", "bris": "BRIS",
     "bank cimb niaga": "BNGA", "cimb": "BNGA", "bnga": "BNGA",
     "bank danamon": "BDMN", "danamon": "BDMN", "bdmn": "BDMN",
-    "bank permata": "BNLI", "permata": "BNLI",
-    "bank panin": "PNBN", "panin": "PNBN",
-    # Telko & Tech
+    "bank permata": "BNLI", "permata": "BNLI", "bnli": "BNLI",
+    "bank panin": "PNBN", "panin": "PNBN", "pnbn": "PNBN",
+    # Telko & Tech → sektor "non-bank"
     "telkom": "TLKM", "tlkm": "TLKM",
     "xl axiata": "EXCL", "xl": "EXCL", "excl": "EXCL",
     "indosat": "ISAT", "isat": "ISAT",
-    "goto": "GOTO", "gojek": "GOTO", "tokopedia": "GOTO",
+    "goto": "GOTO", "gojek": "GOTO", "tokopedia": "GOTO", "goto": "GOTO",
     "bukalapak": "BUKA", "buka": "BUKA",
-    # Consumer & Industri
+    # Consumer & Industri → sektor "non-bank"
     "astra": "ASII", "asii": "ASII",
     "unilever": "UNVR", "unvr": "UNVR",
     "indofood": "INDF", "indf": "INDF",
@@ -349,16 +396,36 @@ EMITEN_MAP = {
     "mayora": "MYOR", "myor": "MYOR",
     "kalbe": "KLBF", "klbf": "KLBF",
     "sido muncul": "SIDO", "sido": "SIDO",
-    # Energi & Tambang
+    # Energi & Tambang → sektor "non-bank"
     "adaro": "ADRO", "adro": "ADRO",
     "antam": "ANTM", "antm": "ANTM",
     "ptba": "PTBA", "bukit asam": "PTBA",
     "pgas": "PGAS", "perusahaan gas": "PGAS",
     "medc": "MEDC", "medco": "MEDC",
-    # Properti & Semen
+    "brms": "BRMS", "bumi resources minerals": "BRMS",
+    "bumi resources": "BUMI", "bumi": "BUMI",
+    "vale": "INCO", "inco": "INCO",
+    # Properti & Semen → sektor "non-bank"
     "semen indonesia": "SMGR", "smgr": "SMGR",
     "indocement": "INTP", "intp": "INTP",
+    "ciputra": "CTRA", "ctra": "CTRA",
+    "bsde": "BSDE", "summarecon": "SMRA",
 }
+
+# Ticker yang diketahui sebagai bank
+BANK_TICKERS = {"BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN",
+                "BNLI","PNBN","BJTM","BJBR","BMAS","MEGA","NISP","BTPN"}
+
+def is_bank_sector(ticker, info=None):
+    """Deteksi apakah emiten adalah bank."""
+    if ticker in BANK_TICKERS:
+        return True
+    if info:
+        sector = (info.get("sector") or "").lower()
+        industry = (info.get("industry") or "").lower()
+        if "bank" in sector or "bank" in industry or "financial" in sector:
+            return True
+    return False
 
 def detect_emiten(text):
     """Deteksi kode emiten dari teks PDF atau prompt."""
