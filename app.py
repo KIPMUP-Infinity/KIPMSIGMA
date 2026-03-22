@@ -1099,7 +1099,7 @@ if result is not None:
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
             txt = "".join(p.get_text() for p in doc)
-            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:6000]}", file_obj.name)
+            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:30000]}", file_obj.name)
             st.session_state.img_data = None
         else:
             b64 = base64.b64encode(raw).decode()
@@ -1157,9 +1157,25 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
+                    # Untuk PDF — kirim hanya system prompt + pesan terakhir
+                    # agar tidak overflow context window Groq
+                    _last = active["messages"][-1] if active["messages"] else {}
+                    _is_pdf = "[PDF:" in (_last.get("content") or "")
+                    if _is_pdf:
+                        _sys = active["messages"][0]
+                        _groq_msgs = [
+                            {"role": _sys["role"], "content": _sys["content"]},
+                            {"role": _last["role"], "content": (_last.get("content") or "")[:30000]}
+                        ]
+                    else:
+                        _groq_msgs = [
+                            {"role": m["role"], "content": m.get("content") or ""}
+                            for m in active["messages"]
+                            if m.get("role") in ("user", "assistant", "system")
+                        ]
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
-                        messages=active["messages"],
+                        messages=_groq_msgs,
                         temperature=0.7,
                         max_tokens=2048
                     )
