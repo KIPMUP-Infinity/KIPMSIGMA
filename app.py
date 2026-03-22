@@ -181,6 +181,166 @@ def build_fundamental_context(pdf_text: str) -> str:
     return "\n".join(lines)
 
 
+def fetch_full_fundamental(ticker: str) -> str:
+    """
+    Tarik data fundamental lengkap dari yfinance:
+    - Income statement, balance sheet, cashflow (historis tahunan)
+    - Rasio keuangan, valuasi, dividen
+    - Hitung tren dan proyeksi sederhana
+    Return string konteks siap inject ke prompt.
+    """
+    try:
+        import yfinance as yf
+        import re
+
+        t = yf.Ticker(f"{ticker}.JK")
+        info = t.info
+        today_str = datetime.now().strftime("%d %B %Y")
+
+        # ── Harga & valuasi terkini ──
+        hist = t.history(period="5d")
+        price = round(hist.iloc[-1]["Close"], 0) if not hist.empty else None
+
+        # ── Laporan keuangan tahunan ──
+        try:
+            inc = t.financials          # Income statement
+            bs  = t.balance_sheet       # Balance sheet
+            cf  = t.cashflow            # Cash flow
+        except Exception:
+            inc = bs = cf = None
+
+        lines = []
+        lines.append(f"=== DATA FUNDAMENTAL LENGKAP — {ticker} ({today_str}) ===")
+        lines.append(f"Sumber: Yahoo Finance (yfinance) | Data historis tahunan\n")
+
+        # ── HARGA & VALUASI ──
+        lines.append("── HARGA & VALUASI TERKINI ──")
+        if price:
+            lines.append(f"Harga Saham     : Rp{price:,.0f}")
+        if info.get("trailingPE"):
+            lines.append(f"PER (Trailing)  : {info['trailingPE']:.2f}×")
+        if info.get("forwardPE"):
+            lines.append(f"PER (Forward)   : {info['forwardPE']:.2f}×")
+        if info.get("priceToBook"):
+            lines.append(f"PBV             : {info['priceToBook']:.2f}×")
+        if info.get("marketCap"):
+            lines.append(f"Market Cap      : Rp{info['marketCap']/1e12:.1f} triliun")
+        if info.get("fiftyTwoWeekHigh"):
+            lines.append(f"52W High/Low    : Rp{info['fiftyTwoWeekHigh']:,.0f} / Rp{info['fiftyTwoWeekLow']:,.0f}")
+        if info.get("bookValue"):
+            lines.append(f"Book Value/Sh   : Rp{info['bookValue']:,.0f}")
+        if info.get("trailingEps"):
+            lines.append(f"EPS (Trailing)  : Rp{info['trailingEps']:,.0f}")
+        if info.get("forwardEps"):
+            lines.append(f"EPS (Forward)   : Rp{info['forwardEps']:,.0f}")
+
+        # ── RASIO PROFITABILITAS ──
+        lines.append("\n── RASIO PROFITABILITAS ──")
+        if info.get("returnOnEquity"):
+            lines.append(f"ROE             : {info['returnOnEquity']*100:.2f}%")
+        if info.get("returnOnAssets"):
+            lines.append(f"ROA             : {info['returnOnAssets']*100:.2f}%")
+        if info.get("profitMargins"):
+            lines.append(f"Net Margin      : {info['profitMargins']*100:.2f}%")
+        if info.get("revenueGrowth"):
+            lines.append(f"Revenue Growth  : {info['revenueGrowth']*100:.2f}%")
+        if info.get("earningsGrowth"):
+            lines.append(f"Earnings Growth : {info['earningsGrowth']*100:.2f}%")
+
+        # ── DIVIDEN ──
+        lines.append("\n── DIVIDEN ──")
+        if info.get("dividendYield"):
+            lines.append(f"Dividend Yield  : {info['dividendYield']*100:.2f}%")
+        if info.get("payoutRatio"):
+            lines.append(f"Payout Ratio    : {info['payoutRatio']*100:.2f}%")
+        if info.get("lastDividendValue"):
+            lines.append(f"DPS Terakhir    : Rp{info['lastDividendValue']:,.0f}")
+        if info.get("sharesOutstanding"):
+            lines.append(f"Shares Outstanding: {info['sharesOutstanding']/1e9:.2f} miliar lembar")
+
+        # ── INCOME STATEMENT HISTORIS ──
+        if inc is not None and not inc.empty:
+            lines.append("\n── INCOME STATEMENT HISTORIS (tahunan, dalam miliar Rp) ──")
+            # Ambil baris penting
+            key_rows = {
+                "Total Revenue"         : "Pendapatan",
+                "Gross Profit"          : "Laba Kotor",
+                "Operating Income"      : "Laba Operasional",
+                "Net Income"            : "Laba Bersih",
+                "Basic EPS"             : "EPS",
+            }
+            for yf_key, label in key_rows.items():
+                try:
+                    if yf_key in inc.index:
+                        row = inc.loc[yf_key].dropna()
+                        vals = []
+                        for col in sorted(row.index, reverse=True)[:5]:
+                            yr = str(col)[:4]
+                            v = row[col]
+                            if abs(v) > 1e9:
+                                vals.append(f"{yr}: Rp{v/1e12:.1f}T")
+                            elif abs(v) > 1e6:
+                                vals.append(f"{yr}: Rp{v/1e9:.1f}M")
+                            else:
+                                vals.append(f"{yr}: {v:.0f}")
+                        lines.append(f"{label:20s}: {' | '.join(vals)}")
+                except Exception:
+                    pass
+
+        # ── BALANCE SHEET HISTORIS ──
+        if bs is not None and not bs.empty:
+            lines.append("\n── BALANCE SHEET HISTORIS (tahunan, dalam triliun Rp) ──")
+            key_rows_bs = {
+                "Total Assets"              : "Total Aset",
+                "Total Liabilities Net Minority Interest": "Total Liabilitas",
+                "Stockholders Equity"       : "Total Ekuitas",
+                "Common Stock Equity"       : "Ekuitas",
+            }
+            for yf_key, label in key_rows_bs.items():
+                try:
+                    if yf_key in bs.index:
+                        row = bs.loc[yf_key].dropna()
+                        vals = []
+                        for col in sorted(row.index, reverse=True)[:5]:
+                            yr = str(col)[:4]
+                            v = row[col]
+                            vals.append(f"{yr}: Rp{v/1e12:.1f}T")
+                        lines.append(f"{label:25s}: {' | '.join(vals)}")
+                except Exception:
+                    pass
+
+        # ── CASHFLOW HISTORIS ──
+        if cf is not None and not cf.empty:
+            lines.append("\n── CASHFLOW HISTORIS (tahunan, dalam triliun Rp) ──")
+            key_rows_cf = {
+                "Operating Cash Flow"   : "Cash Flow Operasi",
+                "Free Cash Flow"        : "Free Cash Flow",
+                "Capital Expenditure"   : "Capex",
+            }
+            for yf_key, label in key_rows_cf.items():
+                try:
+                    if yf_key in cf.index:
+                        row = cf.loc[yf_key].dropna()
+                        vals = []
+                        for col in sorted(row.index, reverse=True)[:5]:
+                            yr = str(col)[:4]
+                            v = row[col]
+                            vals.append(f"{yr}: Rp{v/1e12:.1f}T")
+                        lines.append(f"{label:25s}: {' | '.join(vals)}")
+                except Exception:
+                    pass
+
+        lines.append("\n=== AKHIR DATA FUNDAMENTAL ===")
+        lines.append(f"Instruksi: Gunakan semua data di atas untuk analisa fundamental lengkap.")
+        lines.append(f"Hitung tren CAGR laba bersih, proyeksi 1-2 tahun ke depan berdasarkan tren,")
+        lines.append(f"dan beri verdict valuasi apakah harga saat ini wajar berdasarkan PER & PBV historis.")
+
+        return "\n".join(lines)
+
+    except Exception as e:
+        return f"[Gagal fetch data yfinance: {str(e)}]"
+
+
 def get_market_context(prompt: str) -> str:
     """
     Deteksi kode saham dari prompt (format: 4 huruf kapital atau diikuti .JK),
@@ -454,6 +614,23 @@ Payout Ratio   : [X]%
 Konsistensi    : [naik / stabil / turun]
 
 ---
+📈 TREN 3 TAHUN TERAKHIR
+
+Laba Bersih  : [tahun-2] → [tahun-1] → [tahun ini] (CAGR ~X%)
+EPS          : [tahun-2] → [tahun-1] → [tahun ini] (tren naik/turun)
+ROE          : [tahun-2] → [tahun-1] → [tahun ini]
+DPK/Revenue  : [tahun-2] → [tahun-1] → [tahun ini]
+
+---
+🔭 PROYEKSI 1-2 TAHUN KE DEPAN
+
+Asumsi       : [pertumbuhan laba/revenue berdasarkan tren historis]
+EPS Est.     : [tahun depan]: Rp[X] | [2 tahun]: Rp[X]
+Laba Est.    : [tahun depan]: Rp[X]T | [2 tahun]: Rp[X]T
+Target Harga : [konservatif]: Rp[X] | [moderat]: Rp[X] | [optimis]: Rp[X]
+Basis        : [PER historis rata-rata × EPS proyeksi]
+
+---
 ⚖️ VERDICT
 
 Skor Fundamental : [X]/10
@@ -470,12 +647,12 @@ Risiko :
 Valuasi Saat Ini : [Undervalue / Fairvalue / Overvalue]
 
 Kesimpulan :
-[Tulis 3-4 kalimat ringkas yang menjelaskan kondisi bisnis,
-kualitas fundamental, posisi valuasi, dan saran akumulasi
-atau wait & see. Gunakan bahasa yang jelas dan mudah dipahami.]
+[3-4 kalimat: kondisi bisnis, kualitas fundamental, posisi valuasi,
+saran akumulasi atau wait & see. Bahasa jelas dan mudah dipahami.]
 
 ---
 ⚠️ DYOR — Analisa ini bukan rekomendasi investasi.
+Proyeksi bersifat estimasi berdasarkan tren historis, bukan jaminan.
 Keputusan investasi sepenuhnya tanggung jawab investor.
 
 ATURAN KERAS OUTPUT — WAJIB DIIKUTI:
@@ -1569,23 +1746,39 @@ if prompt:
             pdf_text = pdf_text[:MAX_PDF_CHARS] + "\n\n[...konten terpotong, analisa berdasarkan data di atas]"
         full_prompt = f"{pdf_text}\n\nPertanyaan: {prompt}"
 
-    # ── Deteksi intent: hanya inject market context jika relevan analisa ──
+    # ── Deteksi intent: inject data sesuai jenis permintaan ──
     if not img_data:
         try:
             import re
             _p = prompt.lower()
-            # Trigger kata kunci yang menandakan butuh data pasar
-            _analysis_keywords = [
-                "analisa", "analisis", "saham", "ihsg", "entry", "sl", "tp",
-                "target", "stop loss", "beli", "jual", "hold", "chart", "teknikal",
-                "fundamental", "harga", "pergerakan", "outlook", "bias", "setup",
-                "volume", "bandar", "bandarmologi", "rekomendasi", "review",
-                "potensi", "support", "resistance", "breakout", "breakdown"
-            ]
-            _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', prompt))
-            _is_analysis = _has_ticker or any(k in _p for k in _analysis_keywords)
 
-            if _is_analysis:
+            # Deteksi perintah analisa fundamental tanpa PDF
+            _fundamental_keywords = ["fundamental", "laporan keuangan", "keuangan", "valuasi",
+                                      "ipo", "historis", "proyeksi", "per ", "pbv", "roe", "roa"]
+            _teknikal_keywords = ["analisa", "analisis", "entry", "sl", "tp", "target",
+                                   "stop loss", "beli", "jual", "hold", "chart", "teknikal",
+                                   "bias", "setup", "volume", "bandar", "bandarmologi",
+                                   "support", "resistance", "breakout", "breakdown"]
+            _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', prompt))
+            _is_fundamental_cmd = _has_ticker and any(k in _p for k in _fundamental_keywords)
+            _is_teknikal = _has_ticker or any(k in _p for k in _teknikal_keywords)
+
+            if _is_fundamental_cmd and not pdf_data:
+                # Perintah analisa fundamental tanpa PDF — tarik data lengkap dari yfinance
+                tickers_found = re.findall(r'\b([A-Z]{4})\b', prompt)
+                if tickers_found:
+                    _ticker = tickers_found[0]
+                    fund_ctx = fetch_full_fundamental(_ticker)
+                    if fund_ctx:
+                        full_prompt = (
+                            f"{fund_ctx}\n\n"
+                            f"Perintah: {full_prompt}\n\n"
+                            f"Instruksi tambahan: Buat analisa fundamental lengkap dengan format FORMAT ANALISA FUNDAMENTAL. "
+                            f"Sertakan tren 3 tahun terakhir, ringkasan historis sejak data tersedia, "
+                            f"dan proyeksi sederhana 1-2 tahun ke depan berdasarkan tren pertumbuhan."
+                        )
+            elif _is_teknikal:
+                # Perintah teknikal — inject market context biasa
                 mkt_ctx = get_market_context(prompt)
                 if mkt_ctx:
                     full_prompt = (
