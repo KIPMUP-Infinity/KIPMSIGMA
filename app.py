@@ -2969,33 +2969,29 @@ if prompt:
                         # Chat biasa — kirim history normal (max 5 pesan terakhir)
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
-                    # Coba Groq 70b → Gemini → Groq 8b
+                    # Urutan: Groq 70b → Gemini → Groq 8b
                     ans = None
 
                     # Step 1: Groq 70b
-                    for _m in ["llama-3.3-70b-versatile"]:
-                        try:
-                            _res = groq_client.chat.completions.create(
-                                model=_m,
-                                messages=_msgs,
-                                temperature=0.7,
-                                max_tokens=2048
-                            )
-                            ans = _res.choices[0].message.content
-                            break
-                        except Exception as _me:
-                            if "rate_limit" in str(_me) or "429" in str(_me):
-                                pass  # Coba Gemini
-                            else:
-                                raise _me
+                    try:
+                        _res = groq_client.chat.completions.create(
+                            model="llama-3.3-70b-versatile",
+                            messages=_msgs,
+                            temperature=0.7,
+                            max_tokens=2048
+                        )
+                        ans = _res.choices[0].message.content
+                    except Exception as _me:
+                        if not ("rate_limit" in str(_me) or "429" in str(_me) or "quota" in str(_me).lower()):
+                            raise _me
 
-                    # Step 2: Gemini fallback
+                    # Step 2: Gemini 2.0 Flash
                     if ans is None:
                         try:
                             ans = _call_gemini(_msgs)
                         except: pass
 
-                    # Step 3: Groq 8b last resort
+                    # Step 3: Groq 8b
                     if ans is None:
                         try:
                             _res = groq_client.chat.completions.create(
@@ -3008,7 +3004,7 @@ if prompt:
                         except: pass
 
                     if ans is None:
-                        raise Exception("Semua model tidak tersedia, coba beberapa saat lagi.")
+                        raise Exception("Semua model sedang sibuk — tunggu beberapa menit lalu coba lagi.")
                     
                     # Buat res object compatible
                     class _FakeRes:
