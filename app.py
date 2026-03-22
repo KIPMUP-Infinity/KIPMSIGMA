@@ -164,6 +164,142 @@ def build_context(prompt):
 
     return "\n".join(lines) if len(lines)>1 else ""
 
+# ─── PDF ENRICHMENT — deteksi emiten & lengkapi data dari yfinance ───
+EMITEN_MAP = {
+    "bank central asia": "BBCA", "bca": "BBCA",
+    "bank rakyat indonesia": "BBRI", "bri": "BBRI",
+    "bank mandiri": "BMRI", "mandiri": "BMRI",
+    "bank negara indonesia": "BBNI", "bni": "BBNI",
+    "bank syariah indonesia": "BRIS", "bsi": "BRIS",
+    "telkom": "TLKM", "astra": "ASII",
+    "unilever": "UNVR", "indofood": "INDF",
+    "goto": "GOTO", "adaro": "ADRO",
+    "antam": "ANTM", "bukalapak": "BUKA",
+}
+
+def detect_emiten(text):
+    """Deteksi kode emiten dari teks PDF."""
+    text_lower = text[:3000].lower()
+    for name, ticker in EMITEN_MAP.items():
+        if name in text_lower:
+            return ticker
+    # Cari pola kode saham 4 huruf
+    import re
+    matches = re.findall(r'\b([A-Z]{4})\b', text[:2000])
+    skip = {"PADA","YANG","ATAU","DARI","BANK","TBKK","ANAK","ASET","LABA","RUGI"}
+    for m in matches:
+        if m not in skip:
+            return m
+    return None
+
+def fetch_price_for_pdf(ticker):
+    """Fetch harga live untuk melengkapi data PDF."""
+    import threading
+    result = [{}]
+    def fetch():
+        try:
+            import yfinance as yf
+            t = yf.Ticker(f"{ticker}.JK")
+            hist = t.history(period="5d")
+            info = t.info
+            if not hist.empty:
+                price = round(hist.iloc[-1]["Close"], 0)
+                result[0] = {
+                    "price": price,
+                    "pe": info.get("trailingPE"),
+                    "pbv": info.get("priceToBook"),
+                    "eps_yf": info.get("trailingEps"),
+                    "bv": info.get("bookValue"),
+                    "shares": info.get("sharesOutstanding"),
+                    "mktcap": info.get("marketCap"),
+                    "div_yield": info.get("dividendYield"),
+                    "w52h": info.get("fiftyTwoWeekHigh"),
+                    "w52l": info.get("fiftyTwoWeekLow"),
+                    "roe": info.get("returnOnEquity"),
+                    "roa": info.get("returnOnAssets"),
+                    "source": "yfinance"
+                }
+        except: pass
+        # Fallback stooq
+        if not result[0].get("price"):
+            try:
+                import pandas_datareader as pdr
+                from datetime import timedelta
+                df = pdr.get_data_stooq(f"{ticker}.JK",
+                    start=datetime.now()-timedelta(days=7),
+                    end=datetime.now())
+                if not df.empty:
+                    result[0] = {"price": round(df.sort_index().iloc[-1]["Close"],0), "source": "stooq"}
+            except: pass
+        # Fallback IDX API
+        if not result[0].get("price"):
+            try:
+                import urllib.request, json as _j
+                req = urllib.request.Request(
+                    f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}",
+                    headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"})
+                with urllib.request.urlopen(req, timeout=3) as r:
+                    d = _j.loads(r.read())
+                if d and d.get("LastPrice"):
+                    result[0] = {"price": d["LastPrice"], "source": "IDX"}
+            except: pass
+    th = threading.Thread(target=fetch, daemon=True)
+    th.start()
+    th.join(timeout=12)
+    return result[0]
+
+def enrich_pdf_context(pdf_text):
+    """
+    Lengkapi data PDF dengan harga live + hitung rasio yang kurang.
+    Return string tambahan untuk diinject ke prompt.
+    """
+    ticker = detect_emiten(pdf_text)
+    if not ticker:
+        return ""
+    price_data = fetch_price_for_pdf(ticker)
+    if not price_data.get("price"):
+        return ""
+    price = price_data["price"]
+    lines = [
+        f"\n=== DATA LIVE {ticker} (sumber: {price_data.get('source','-')}) ===",
+        f"Harga Saham    : Rp{price:,.0f}",
+    ]
+    if price_data.get("mktcap"):
+        lines.append(f"Market Cap     : Rp{price_data['mktcap']/1e12:.1f} triliun")
+    if price_data.get("w52h"):
+        lines.append(f"52W High/Low   : Rp{price_data['w52h']:,.0f} / Rp{price_data['w52l']:,.0f}")
+    # PER — dari yfinance atau hitung manual
+    if price_data.get("pe"):
+        lines.append(f"PER            : {price_data['pe']:.2f}× [yfinance]")
+    elif price_data.get("eps_yf") and price_data["eps_yf"] > 0:
+        per_calc = price / price_data["eps_yf"]
+        lines.append(f"PER (hitung)   : {per_calc:.2f}× = Rp{price:,.0f} ÷ Rp{price_data['eps_yf']:,.0f}")
+    else:
+        lines.append(f"PER            : hitung dari EPS laporan ÷ Rp{price:,.0f}")
+    # PBV — dari yfinance atau hitung manual
+    if price_data.get("pbv"):
+        lines.append(f"PBV            : {price_data['pbv']:.2f}× [yfinance]")
+    elif price_data.get("bv") and price_data["bv"] > 0:
+        pbv_calc = price / price_data["bv"]
+        lines.append(f"PBV (hitung)   : {pbv_calc:.2f}× = Rp{price:,.0f} ÷ Rp{price_data['bv']:,.0f}")
+    else:
+        lines.append(f"PBV            : hitung dari (Total Ekuitas ÷ Jumlah Saham) lalu bagi Rp{price:,.0f}")
+    if price_data.get("eps_yf"):
+        lines.append(f"EPS (TTM)      : Rp{price_data['eps_yf']:,.0f}")
+    if price_data.get("bv"):
+        lines.append(f"Book Value/Sh  : Rp{price_data['bv']:,.0f}")
+    if price_data.get("div_yield"):
+        lines.append(f"Dividend Yield : {price_data['div_yield']*100:.2f}%")
+    if price_data.get("roe"):
+        lines.append(f"ROE (TTM)      : {price_data['roe']*100:.2f}%")
+    if price_data.get("roa"):
+        lines.append(f"ROA (TTM)      : {price_data['roa']*100:.2f}%")
+    lines.append(f"\nGunakan data live di atas untuk melengkapi valuasi dari laporan PDF.")
+    lines.append(f"Hitung PER/PBV manual jika data yfinance tidak tersedia.")
+    lines.append("=== AKHIR DATA LIVE ===")
+    return "\n".join(lines)
+
+
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
@@ -1368,7 +1504,15 @@ if result is not None:
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
             txt = "".join(p.get_text() for p in doc)
-            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:2000]}", file_obj.name)
+            # Enrichment: tambah data live untuk melengkapi PDF
+            enrichment = ""
+            try:
+                enrichment = enrich_pdf_context(txt)
+            except: pass
+            pdf_content = f"[PDF: {file_obj.name}]\n{txt[:2000]}"
+            if enrichment:
+                pdf_content += enrichment
+            st.session_state.pdf_data = (pdf_content, file_obj.name)
             st.session_state.img_data = None
         else:
             b64 = base64.b64encode(raw).decode()
