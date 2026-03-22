@@ -368,10 +368,12 @@ def build_fundamental_from_text(prompt):
             lines.append(f"Untuk non-bank: tampilkan Gross Margin, Operating Margin, DER, Current Ratio")
             lines.append(f"Tren 3 tahun aktual: {current_year-2}→{current_year-1}→{current_year}")
             lines.append(f"Nilai wajar sudah dihitung di atas — tampilkan di bagian VALUASI.")
+            lines.append("=== INSTRUKSI OUTPUT ===")
             if price:
-                lines.append(f"WAJIB tampilkan di baris pertama setelah header:")
-                lines.append(f"💹 Harga Saat Ini: Rp{price:,.0f} (per {datetime.now().strftime('%d %B %Y')})")
-            lines.append(f"Buat analisa FORMAT ANALISA FUNDAMENTAL lengkap untuk {ticker}.")
+                lines.append(f"BARIS PERTAMA WAJIB: 💹 Harga: Rp{price:,.0f} | {datetime.now().strftime('%d %b %Y')}")
+            lines.append(f"Gunakan FORMAT ANALISA FUNDAMENTAL. Pilih ✅ ATAU ⚠️ ATAU ❌ — JANGAN tampilkan ketiganya.")
+            lines.append(f"Contoh benar: ROE: 12,23% → standar >15% [❌]")
+            lines.append(f"Contoh SALAH: ROE: 12,23% → standar >15% [✅/⚠️/❌]")
             lines.append("=== AKHIR DATA ===")
             result[0] = "\n".join(lines)
         except Exception as e:
@@ -384,17 +386,21 @@ def build_fundamental_from_text(prompt):
 # ─── PDF ENRICHMENT — deteksi emiten & lengkapi data dari yfinance ───
 # Emiten map dengan sektor
 EMITEN_MAP = {
-    # Bank → sektor "bank"
-    "bank central asia": "BBCA", "bca": "BBCA", "bbca": "BBCA",
-    "bank rakyat indonesia": "BBRI", "bri": "BBRI", "bbri": "BBRI",
-    "bank mandiri": "BMRI", "mandiri": "BMRI", "bmri": "BMRI",
-    "bank negara indonesia": "BBNI", "bni": "BBNI", "bbni": "BBNI",
-    "bank tabungan negara": "BBTN", "btn": "BBTN", "bbtn": "BBTN",
-    "bank syariah indonesia": "BRIS", "bsi": "BRIS", "bris": "BRIS",
-    "bank cimb niaga": "BNGA", "cimb": "BNGA", "bnga": "BNGA",
-    "bank danamon": "BDMN", "danamon": "BDMN", "bdmn": "BDMN",
-    "bank permata": "BNLI", "permata": "BNLI", "bnli": "BNLI",
-    "bank panin": "PNBN", "panin": "PNBN", "pnbn": "PNBN",
+    # Bank — urutan PENTING: nama lebih spesifik/panjang duluan
+    "bank syariah indonesia": "BRIS", "bris": "BRIS",
+    "bank central asia": "BBCA", "bbca": "BBCA",
+    "bank rakyat indonesia": "BBRI", "bbri": "BBRI",
+    "bank mandiri": "BMRI", "bmri": "BMRI",
+    "bank negara indonesia": "BBNI", "bbni": "BBNI",
+    "bank tabungan negara": "BBTN", "bbtn": "BBTN",
+    "bank cimb niaga": "BNGA", "bnga": "BNGA",
+    "bank danamon": "BDMN", "bdmn": "BDMN",
+    "bank permata": "BNLI", "bnli": "BNLI",
+    "bank panin": "PNBN", "pnbn": "PNBN",
+    # Alias pendek — letakkan SETELAH kode 4 huruf agar tidak override
+    "bca": "BBCA", "bri": "BBRI", "mandiri": "BMRI",
+    "bni": "BBNI", "btn": "BBTN", "bsi": "BRIS",
+    "cimb": "BNGA", "danamon": "BDMN", "permata": "BNLI", "panin": "PNBN",
     # Telko & Tech → sektor "non-bank"
     "telkom": "TLKM", "tlkm": "TLKM",
     "xl axiata": "EXCL", "xl": "EXCL", "excl": "EXCL",
@@ -477,18 +483,27 @@ def detect_ticker_from_prompt(prompt):
     """Deteksi ticker dari perintah teks user (bukan PDF)."""
     prompt_upper = prompt.upper()
     prompt_lower = prompt.lower()
-    # Cek EMITEN_MAP — nama dan kode
-    for name, ticker in EMITEN_MAP.items():
-        if name in prompt_lower:
-            return ticker
-    # Cari 4 huruf kapital
+
     skip = {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG","ANALISA",
             "SAHAM","MOHON","BISA","FUNDAMENTAL","DENGAN","MINTA","ANALISIS",
-            "APAKAH","BAGAIMANA","KENAPA","TOLONG","COBA","MINTA"}
+            "APAKAH","BAGAIMANA","KENAPA","COBA"}
+
+    # Step 1: Cari 4 huruf kapital yang valid sebagai ticker langsung
     matches = re.findall(r'\b([A-Z]{4})\b', prompt_upper)
     for m in matches:
         if m not in skip:
-            return m
+            return m  # BRIS, BBCA, BMRI, dll langsung ketemu
+
+    # Step 2: Cek nama panjang di EMITEN_MAP (bank syariah indonesia → BRIS)
+    for name, ticker in EMITEN_MAP.items():
+        if len(name) > 4 and name in prompt_lower:
+            return ticker
+
+    # Step 3: Cek alias pendek (bca, bri, dll)
+    for name, ticker in EMITEN_MAP.items():
+        if len(name) <= 4 and name in prompt_lower.split():
+            return ticker
+
     return None
 
 def fetch_price_for_pdf(ticker):
@@ -847,9 +862,12 @@ ATURAN OUTPUT WAJIB:
 - Jika ada [DATA PASAR] atau [DATA LIVE] → gunakan harga dan rasio dari sana
 - TAHUN di judul: isi dengan tahun AKTUAL laporan atau tahun sekarang (2026)
 - Tren 3 tahun: gunakan 2024→2025→2026, BUKAN 2020/2021/2022
-- Jika yfinance hanya punya data sampai 2022: pakai sebagai historis lama,
-  estimasi 2023-2026 dari knowledge model dan sebutkan itu estimasi
-- Proyeksi dihitung dari CAGR aktual, bukan angka karang
+- Proyeksi dihitung dari CAGR aktual
+- ICON STATUS: pilih SATU saja — ✅ (pass) atau ⚠️ (perhatian) atau ❌ (fail)
+  DILARANG menulis [✅/⚠️/❌] — harus pilih salah satu
+  Contoh BENAR: ROE: 14,5% → standar >15% [❌]
+  Contoh SALAH: ROE: 14,5% → standar >15% [✅/⚠️/❌]
+- Harga saat ini WAJIB tampil di baris pertama setelah header
 - Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
 
