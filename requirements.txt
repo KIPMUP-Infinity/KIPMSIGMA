@@ -6,3 +6,5 @@ streamlit
 requests
 bcrypt
 feedparser
+pandas_datareader
+ 
