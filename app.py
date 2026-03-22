@@ -257,16 +257,16 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             with open(token_file) as f:
                 user_info = json.load(f)
             st.session_state.user = user_info
-            st.session_state.current_token = token  # simpan token di session
+            st.session_state.current_token = token
+            # Selalu load dari disk — tapi disk sudah diupdate saat delete
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
                 if saved.get("sessions"):
                     st.session_state.sessions = saved["sessions"]
-                    st.session_state.active_id = saved.get("active_id")
+                    st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
             st.session_state.data_loaded = True
             restore_images_from_messages()
-            # JANGAN clear query params — biarkan token tetap di URL
             st.rerun()
         except: pass
 
@@ -1058,7 +1058,6 @@ if "do" in st.query_params:
                 "sessions": _sessions_save,
                 "active_id": st.session_state.active_id,
             })
-        # Set data_loaded = True agar restore tidak overwrite session yang sudah didelete
         st.session_state.data_loaded = True
         st.query_params["do"] = ""; st.rerun()
 
