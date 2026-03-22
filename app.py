@@ -850,11 +850,17 @@ Skenario: Konservatif RpX | Moderat RpX | Optimis RpX
 
 ⚖️ VERDICT
 - Score    : X/10
-- Kekuatan : [poin positif utama]
-- Risiko   : [poin negatif utama]
-- Valuasi  : [Undervalue/Fairvalue/Overvalue]
-- Kesimpulan: [2-3 kalimat: kondisi bisnis, posisi valuasi, saran akumulasi/wait]
-⚠️ DYOR — bukan rekomendasi investasi
+- Kekuatan :
+  → [poin kekuatan 1 dengan angka]
+  → [poin kekuatan 2 dengan angka]
+- Risiko   :
+  → [poin risiko 1 dengan angka]
+  → [poin risiko 2 dengan angka]
+- Valuasi  : [Undervalue/Fairvalue/Overvalue] — harga Rp[X] vs wajar Rp[X]
+- Kesimpulan: [Paragraph 4-5 kalimat yang menceritakan: kondisi bisnis saat ini,
+  tren pertumbuhan, posisi valuasi, risiko utama yang perlu diperhatikan,
+  dan saran konkret: accumulate/wait/avoid dengan alasan spesifik]
+⚠️ DYOR — bukan rekomendasi investasi. Proyeksi bersifat estimasi.
 
 ATURAN OUTPUT WAJIB:
 - Setiap metrik di BARIS TERPISAH — DILARANG digabung horizontal
@@ -1878,12 +1884,22 @@ if prompt:
                 fund_data = build_fundamental_from_text(prompt)
             except Exception as _fe:
                 fund_data = f"[Data fetch error: {_fe}] Gunakan knowledge model untuk {_ticker_found}."
+            # Ekstrak harga dari fund_data jika ada
+            _harga_line = ""
+            for _l in fund_data.split("\n"):
+                if "Harga Saham Saat Ini" in _l or "Harga Saham" in _l:
+                    _harga_line = _l.strip()
+                    break
             full_prompt = (
                 f"{fund_data}\n\n"
-                f"Perintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found} "
-                f"menggunakan FORMAT ANALISA FUNDAMENTAL. "
-                f"Gunakan framework sesuai sektor. "
-                f"JANGAN meminta maaf. Langsung 📋 ANALISA FUNDAMENTAL."
+                f"Perintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found}.\n"
+                f"FORMAT OUTPUT WAJIB dimulai tepat seperti ini:\n"
+                f"📋 ANALISA FUNDAMENTAL — {_ticker_found} (2026)\n"
+                f"{_harga_line if _harga_line else '💹 Harga: (dari data di atas)'}\n"
+                f"🏦 Sektor: ...\n"
+                f"Kemudian lanjutkan dengan semua seksi.\n"
+                f"Icon status: pilih SATU — ✅ pass, ⚠️ perhatian, ❌ fail. JANGAN [✅/⚠️/❌].\n"
+                f"VERDICT harus minimal 4-5 kalimat: kondisi bisnis, tren, valuasi, risiko utama, saran konkret."
             )
             st.session_state["fund_no_history"] = True
         else:
