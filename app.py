@@ -298,75 +298,87 @@ DETEKSI SEKTOR OTOMATIS:
 • Tren dividen dan payout ratio
 
 FORMAT ANALISA FUNDAMENTAL:
-WAJIB gunakan format VERTIKAL ke bawah, BUKAN horizontal. Setiap metrik di baris baru.
+Ikuti PERSIS format di bawah ini. Setiap baris adalah satu item. DILARANG menggabungkan beberapa item dalam satu baris.
 
-📋 ANALISA FUNDAMENTAL — [NAMA EMITEN] ([PERIODE DATA])
-🏦 Sektor   : [Perbankan / Non-Perbankan]
-📌 Framework: [nama framework yang dipakai]
+---
+📋 ANALISA FUNDAMENTAL — [NAMA EMITEN] ([PERIODE])
+🏦 Sektor    : [Perbankan / Non-Perbankan]
+📌 Framework : [Perbankan / Buffett / Graham]
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 💰 PROFITABILITAS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• ROE          : [angka]% → standar >15% [✅/⚠️/❌]
-• ROA          : [angka]% → standar >1,5% [✅/⚠️/❌]
-• NIM          : [angka]% → standar >4% [✅/⚠️/❌]
-• Laba Bersih  : Rp[angka] T → YoY [naik/turun] [angka]%
-• EPS          : Rp[angka] → YoY [naik/turun] [angka]%
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROE         : [X]%  →  standar >15%      [✅/⚠️/❌]
+ROA         : [X]%  →  standar >1,5%     [✅/⚠️/❌]
+NIM         : [X]%  →  standar >4%       [✅/⚠️/❌]
+Laba Bersih : Rp[X] triliun  →  YoY [+/-X]%
+EPS         : Rp[X]  →  YoY [+/-X]%
+
+---
 🛡️ KUALITAS ASET & RISIKO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• NPL Gross    : [angka]% → sehat <3% [✅/⚠️/❌]
-• NPL Net      : [angka]% → sehat <1% [✅/⚠️/❌]
-• CAR          : [angka]% → aman >14% [✅/⚠️/❌]
-• BOPO         : [angka]% → efisien <70% [✅/⚠️/❌]
-• CIR          : [angka]% → ideal <45% [✅/⚠️/❌]
-• LDR          : [angka]% → ideal 80-92% [✅/⚠️/❌]
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NPL Gross   : [X]%  →  sehat <3%         [✅/⚠️/❌]
+NPL Net     : [X]%  →  sehat <1%         [✅/⚠️/❌]
+CAR         : [X]%  →  aman >14%         [✅/⚠️/❌]
+BOPO        : [X]%  →  efisien <70%      [✅/⚠️/❌]
+CIR         : [X]%  →  ideal <45%        [✅/⚠️/❌]
+LDR         : [X]%  →  ideal 80-92%      [✅/⚠️/❌]
+
+---
 📊 PERTUMBUHAN YoY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Total Aset   : Rp[angka] T → [+/-angka]%
-• Kredit       : Rp[angka] T → [+/-angka]%
-• DPK          : Rp[angka] T → [+/-angka]%
-• Laba Bersih  : Rp[angka] T → [+/-angka]%
-• EPS          : Rp[angka] → [+/-angka]%
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total Aset  : Rp[X] triliun  →  [+/-X]%
+Kredit      : Rp[X] triliun  →  [+/-X]%
+DPK         : Rp[X] triliun  →  [+/-X]%
+Laba Bersih : Rp[X] triliun  →  [+/-X]%
+EPS         : Rp[X]  →  [+/-X]%
+
+---
 💎 VALUASI
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• PER          : [angka]× → Graham <15 [✅/⚠️/❌]
-• PBV          : [angka]× → Graham <1,5 [✅/⚠️/❌]
-• Harga Wajar  : Rp[estimasi range]
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PER         : [X]×  →  Graham <15        [✅/⚠️/❌]
+PBV         : [X]×  →  Graham <1,5       [✅/⚠️/❌]
+Harga Wajar : Rp[X] – Rp[X]
+
+---
 🏆 DIVIDEN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Total Dividen: Rp[angka] T
-• Payout Ratio : [angka]%
-• Konsistensi  : [naik/stabil/turun]
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total Dividen  : Rp[X] triliun
+Payout Ratio   : [X]%
+Konsistensi    : [naik / stabil / turun]
+
+---
 ⚖️ VERDICT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Skor         : [X]/10
-• Kekuatan     :
-  - [poin 1]
-  - [poin 2]
-• Risiko       :
-  - [poin 1]
-  - [poin 2]
-• Valuasi      : [Undervalue / Fairvalue / Overvalue]
-• Kesimpulan   : [2-3 kalimat ringkas]
 
-⚠️ DYOR — bukan rekomendasi investasi
+Skor Fundamental : [X]/10
 
-ATURAN WAJIB OUTPUT:
-- SEMUA angka dari dokumen HARUS diisi — jangan tulis "tidak disediakan" jika angkanya ada di data
-- Format VERTIKAL — setiap item di baris baru, TIDAK boleh digabung dalam satu baris
-- Jika ada data 2 periode (misal 2024 vs 2025), tampilkan keduanya untuk perbandingan
-- Hitung pertumbuhan YoY secara manual dari angka yang tersedia
-- Jika benar-benar tidak ada datanya, tulis "Data tidak tersedia di laporan ini"
+Kekuatan :
+→ [poin kekuatan 1]
+→ [poin kekuatan 2]
+→ [poin kekuatan 3]
+
+Risiko :
+→ [poin risiko 1]
+→ [poin risiko 2]
+
+Valuasi Saat Ini : [Undervalue / Fairvalue / Overvalue]
+
+Kesimpulan :
+[Tulis 3-4 kalimat ringkas yang menjelaskan kondisi bisnis,
+kualitas fundamental, posisi valuasi, dan saran akumulasi
+atau wait & see. Gunakan bahasa yang jelas dan mudah dipahami.]
+
+---
+⚠️ DYOR — Analisa ini bukan rekomendasi investasi.
+Keputusan investasi sepenuhnya tanggung jawab investor.
+
+ATURAN KERAS OUTPUT — WAJIB DIIKUTI:
+1. Setiap metrik HARUS di baris SENDIRI — DILARANG digabung
+2. SEMUA angka yang ada di dokumen WAJIB diisi — tidak boleh tulis "tidak disediakan" jika angka ada
+3. Angka dalam jutaan Rupiah → konversi ke triliun (bagi 1.000.000)
+4. Hitung YoY secara manual: ((nilai baru - nilai lama) / nilai lama) x 100
+5. Pisahkan setiap seksi dengan garis ---
+6. Verdict ditulis lengkap dan informatif, bukan satu kalimat saja
 
 ═══════════════════════════════════════
 ATURAN KERAS:
