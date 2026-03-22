@@ -1959,17 +1959,17 @@ if prompt:
                         _msgs = [
                             _all_msgs[0],  # system prompt
                             {"role": _all_msgs[-1]["role"],
-                             "content": _last_content[:5000]}
+                             "content": _last_content[:20000]}
                         ]
                     else:
                         # Chat biasa — kirim history normal (max 5 pesan terakhir)
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
                     res = groq_client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
+                        model="llama-3.3-70b-versatile",
                         messages=_msgs,
                         temperature=0.7,
-                        max_tokens=1500
+                        max_tokens=2048
                     )
                 ans = res.choices[0].message.content
             st.markdown(ans)
