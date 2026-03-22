@@ -17,59 +17,62 @@ import re
 
 
 # ─── GEMINI API — fallback saat Groq limit ───
-def _call_gemini(messages, api_key="AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o"):
-    """Call Gemini 2.5 Flash via REST API."""
-    try:
-        import urllib.request, json as _j
-        api_key = api_key or st.secrets.get("GEMINI_KEY", "AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o")
-        
-        # Convert messages ke format Gemini
-        gemini_contents = []
-        system_text = ""
-        for m in messages:
-            role = m.get("role","")
-            text = m.get("content","") or ""
-            if role == "system":
-                system_text = text
-            elif role == "user":
-                gemini_contents.append({"role":"user","parts":[{"text":text}]})
-            elif role == "assistant":
-                gemini_contents.append({"role":"model","parts":[{"text":text}]})
-        
-        # Gemini butuh minimal 1 message
-        if not gemini_contents:
-            gemini_contents = [{"role":"user","parts":[{"text":"Halo"}]}]
-        payload = {"contents": gemini_contents}
-        if system_text:
-            payload["system_instruction"] = {"parts":[{"text":system_text}]}
-        payload["generationConfig"] = {
-            "temperature": 0.7,
-            "maxOutputTokens": 2048,
-        }
-        
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-        req = urllib.request.Request(
-            url,
-            data=_j.dumps(payload).encode(),
-            headers={"Content-Type":"application/json"}
-        )
-        with urllib.request.urlopen(req, timeout=30) as r:
-            data = _j.loads(r.read())
-        
-        # Extract text dari response
-        candidates = data.get("candidates", [])
-        if candidates:
-            parts = candidates[0].get("content",{}).get("parts",[])
-            if parts:
-                return parts[0].get("text","")
-        return None
-    except Exception as e:
-        # Log error Gemini ke session state untuk debugging
+def _call_gemini(messages, api_key=None):
+    """Call Gemini 2.0 Flash — coba 2 key secara bergantian."""
+    # Daftar key — coba satu per satu
+    keys = [
+        st.secrets.get("GEMINI_KEY",  "AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o"),
+        st.secrets.get("GEMINI_KEY2", "AIzaSyBQkzii7Qco3JVjqgysv_Q7wcsNWZCL2O4"),
+    ]
+    last_err = None
+    for api_key in keys:
         try:
-            import streamlit as _st
-            _st.session_state["last_error"] = f"Gemini error: {str(e)}"
-        except: pass
-        return None
+            import urllib.request, json as _j
+        
+            # Convert messages ke format Gemini
+            gemini_contents = []
+            system_text = ""
+            for m in messages:
+                role = m.get("role","")
+                text = m.get("content","") or ""
+                if role == "system":
+                    system_text = text
+                elif role == "user":
+                    gemini_contents.append({"role":"user","parts":[{"text":text}]})
+                elif role == "assistant":
+                    gemini_contents.append({"role":"model","parts":[{"text":text}]})
+        
+            # Gemini butuh minimal 1 message
+            if not gemini_contents:
+                gemini_contents = [{"role":"user","parts":[{"text":"Halo"}]}]
+            payload = {"contents": gemini_contents}
+            if system_text:
+                payload["system_instruction"] = {"parts":[{"text":system_text}]}
+            payload["generationConfig"] = {
+                "temperature": 0.7,
+                "maxOutputTokens": 2048,
+            }
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+            req = urllib.request.Request(
+                url,
+                data=_j.dumps(payload).encode(),
+                headers={"Content-Type":"application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=30) as r:
+                data = _j.loads(r.read())
+            candidates = data.get("candidates", [])
+            if candidates:
+                parts = candidates[0].get("content",{}).get("parts",[])
+                if parts and parts[0].get("text"):
+                    return parts[0]["text"]
+        except Exception as e:
+            last_err = str(e)
+            continue  # Coba key berikutnya
+    # Semua key gagal
+    try:
+        st.session_state["last_error"] = f"Gemini error: {last_err}"
+    except: pass
+    return None
 
 
 # ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
@@ -491,12 +494,7 @@ def _fetch_us_china_stock(ticker, market="US"):
 # ─── GLOBAL NEWS RSS ───
 GLOBAL_NEWS_SOURCES = [
     ("Al Jazeera",  "https://www.aljazeera.com/xml/rss/all.xml"),
-    ("Reuters",     "https://feeds.reuters.com/reuters/businessNews"),
-    ("BBC World",   "https://feeds.bbci.co.uk/news/world/rss.xml"),
-    ("BBC Business","https://feeds.bbci.co.uk/news/business/rss.xml"),
     ("CNBC Global", "https://www.cnbc.com/id/100727362/device/rss/rss.html"),
-    ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories/"),
-    ("WSJ Markets", "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"),
 ]
 
 def _fetch_global_news(keywords=None, max_per_source=2):
