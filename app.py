@@ -2323,22 +2323,33 @@ if prompt:
             # Perintah analisa fundamental tanpa PDF — tarik data lengkap dari yfinance
             tickers_found = re.findall(r'\b([A-Z]{4})\b', _prompt_upper)
             if tickers_found:
-                # Filter kata umum yang bukan ticker
                 _skip_words = {"YANG","ATAU","DARI","PADA","UNTUK","DENGAN","SAHAM",
-                               "SAYA","MINTA","TOLONG","ANALISA","ANALISIS","MOHON"}
-                tickers_found = [t for t in tickers_found if t not in _skip_words]
+                               "SAYA","MINTA","TOLONG","ANALISA","ANALISIS","MOHON",
+                               "BBRI","BBCA","BMRI","TLKM"}  # jangan skip ticker valid
+                tickers_found = [t for t in tickers_found if t not in _skip_words or t in
+                                 {"BBRI","BBCA","BMRI","TLKM","ASII","GOTO","BRIS","UNVR",
+                                  "ANTM","PTBA","ADRO","EXCL","SMGR","KLBF","SIDO","CPIN"}]
             if tickers_found:
                 _ticker = tickers_found[0]
+                # Fetch dengan timeout agar tidak block Groq call
+                fund_ctx = ""
                 try:
-                    fund_ctx = fetch_full_fundamental(_ticker)
+                    import threading
+                    _result = [None]
+                    def _fetch():
+                        _result[0] = fetch_full_fundamental(_ticker)
+                    t = threading.Thread(target=_fetch)
+                    t.start()
+                    t.join(timeout=15)  # max 15 detik untuk fetch data
+                    fund_ctx = _result[0] or f"[Data fetch timeout — analisa dari knowledge model]"
                 except Exception as _fe:
-                    fund_ctx = f"[Gagal fetch yfinance: {_fe}]"
+                    fund_ctx = f"[Gagal fetch: {_fe} — analisa dari knowledge model]"
                 full_prompt = (
                     f"{fund_ctx}\n\n"
                     f"Perintah: {prompt}\n\n"
-                    f"Instruksi: Buat analisa fundamental lengkap format FORMAT ANALISA FUNDAMENTAL "
-                    f"untuk saham {_ticker}. Sertakan tren 3 tahun terakhir dan proyeksi 1-2 tahun "
-                    f"ke depan. Jika data yfinance gagal, gunakan pengetahuan kamu tentang emiten ini."
+                    f"Instruksi: Buat analisa fundamental lengkap FORMAT ANALISA FUNDAMENTAL "
+                    f"untuk saham {_ticker}. Tren 3 tahun terakhir dan proyeksi 1-2 tahun ke depan. "
+                    f"Jika data di atas kosong/gagal, TETAP buat analisa lengkap dari knowledge kamu."
                 )
         elif _is_teknikal:
             # Perintah teknikal — inject market context biasa
