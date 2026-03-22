@@ -1089,8 +1089,23 @@ file_obj = None
 if result is not None:
     if hasattr(result, 'text'):
         prompt = (result.text or "").strip()
-        files = getattr(result, 'files', None) or []
-        if files: file_obj = files[0]
+        # Streamlit 1.55 — coba semua kemungkinan struktur file
+        files = (getattr(result, 'files', None) or
+                 getattr(result, 'file', None) or [])
+        if isinstance(files, list) and files:
+            file_obj = files[0]
+        elif hasattr(files, 'read'):
+            file_obj = files
+    elif hasattr(result, '__iter__') and not isinstance(result, str):
+        # Mungkin tuple (text, files)
+        try:
+            _items = list(result)
+            if _items:
+                prompt = (str(_items[0]) or "").strip()
+                if len(_items) > 1 and _items[1]:
+                    file_obj = _items[1][0] if isinstance(_items[1], list) else _items[1]
+        except:
+            pass
     elif isinstance(result, str):
         prompt = result.strip()
 
