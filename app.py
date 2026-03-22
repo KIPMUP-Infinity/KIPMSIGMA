@@ -272,11 +272,19 @@ def build_fundamental_from_text(prompt):
             eps_vals = []
             ni_years = []
             try:
-                inc = t.income_stmt
-                if inc is None or inc.empty:
-                    inc = t.financials
+                # Coba API terbaru dulu, lalu fallback ke lama
+                inc = None
+                for method in ["income_stmt", "financials"]:
+                    try:
+                        inc = getattr(t, method)
+                        if inc is not None and not inc.empty:
+                            break
+                    except: pass
+
                 if inc is not None and not inc.empty:
-                    lines.append("\n── Historis Keuangan ──")
+                    # Sort kolom dari terbaru ke terlama
+                    inc = inc.reindex(sorted(inc.columns, reverse=True), axis=1)
+                    lines.append("\n── Historis Keuangan (terbaru → terlama) ──")
                     if "Net Income" in inc.index:
                         row = inc.loc["Net Income"].dropna()
                         cols = sorted(row.index, reverse=True)[:5]
@@ -358,9 +366,12 @@ def build_fundamental_from_text(prompt):
             lines.append(f"SEKTOR: {sektor} — gunakan FRAMEWORK: {framework}")
             lines.append(f"Untuk bank: tampilkan NIM, NPL, LDR, CAR, BOPO, CIR")
             lines.append(f"Untuk non-bank: tampilkan Gross Margin, Operating Margin, DER, Current Ratio")
-            lines.append(f"Buat analisa FORMAT ANALISA FUNDAMENTAL lengkap untuk {ticker}.")
             lines.append(f"Tren 3 tahun aktual: {current_year-2}→{current_year-1}→{current_year}")
-            lines.append(f"Nilai wajar sudah dihitung di atas — tampilkan dengan jelas di bagian VALUASI.")
+            lines.append(f"Nilai wajar sudah dihitung di atas — tampilkan di bagian VALUASI.")
+            if price:
+                lines.append(f"WAJIB tampilkan di baris pertama setelah header:")
+                lines.append(f"💹 Harga Saat Ini: Rp{price:,.0f} (per {datetime.now().strftime('%d %B %Y')})")
+            lines.append(f"Buat analisa FORMAT ANALISA FUNDAMENTAL lengkap untuk {ticker}.")
             lines.append("=== AKHIR DATA ===")
             result[0] = "\n".join(lines)
         except Exception as e:
@@ -1844,20 +1855,19 @@ if prompt:
 
         if _is_fund_cmd and _ticker_found:
             # Perintah fundamental tanpa PDF — fetch data lengkap
+            fund_data = ""
             try:
                 fund_data = build_fundamental_from_text(prompt)
-                if fund_data:
-                    full_prompt = (
-                        f"{fund_data}\n\n"
-                        f"Perintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found} "
-                        f"menggunakan FORMAT ANALISA FUNDAMENTAL yang sudah ditentukan. "
-                        f"Gunakan framework yang sesuai (Buffett, Graham, Lynch, CAN SLIM, atau Perbankan). "
-                        f"JANGAN meminta maaf atau merujuk percakapan sebelumnya. "
-                        f"Langsung mulai dengan 📋 ANALISA FUNDAMENTAL."
-                    )
-                    # Flag untuk Groq — kirim tanpa history
-                    st.session_state["fund_no_history"] = True
-            except: pass
+            except Exception as _fe:
+                fund_data = f"[Data fetch error: {_fe}] Gunakan knowledge model untuk {_ticker_found}."
+            full_prompt = (
+                f"{fund_data}\n\n"
+                f"Perintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found} "
+                f"menggunakan FORMAT ANALISA FUNDAMENTAL. "
+                f"Gunakan framework sesuai sektor. "
+                f"JANGAN meminta maaf. Langsung 📋 ANALISA FUNDAMENTAL."
+            )
+            st.session_state["fund_no_history"] = True
         else:
             try:
                 ctx = build_context(prompt)
