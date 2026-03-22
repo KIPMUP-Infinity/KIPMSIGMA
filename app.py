@@ -15,6 +15,119 @@ import hashlib
 import bcrypt
 
 # ─────────────────────────────────────────────
+# MARKET CONTEXT — Real-time data injector
+# ─────────────────────────────────────────────
+def _fetch_stock_data(ticker: str) -> dict:
+    """Ambil data OHLCV + info dasar via yfinance."""
+    try:
+        import yfinance as yf
+        t = yf.Ticker(ticker)
+        hist = t.history(period="5d")
+        if hist.empty:
+            return {}
+        last = hist.iloc[-1]
+        prev = hist.iloc[-2] if len(hist) > 1 else last
+        chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
+        info = t.info
+        return {
+            "ticker": ticker,
+            "close": round(last["Close"], 0),
+            "volume": int(last["Volume"]),
+            "change_pct": round(chg, 2),
+            "pe_ratio": info.get("trailingPE", "N/A"),
+            "market_cap": info.get("marketCap", "N/A"),
+            "week52_high": info.get("fiftyTwoWeekHigh", "N/A"),
+            "week52_low": info.get("fiftyTwoWeekLow", "N/A"),
+        }
+    except Exception:
+        return {}
+
+def _fetch_news_headlines(query: str, max_items: int = 5) -> list:
+    """Ambil headline berita via Google News RSS — gratis, no API key."""
+    try:
+        import feedparser
+        url = f"https://news.google.com/rss/search?q={requests.utils.quote(query)}&hl=id&gl=ID&ceid=ID:id"
+        feed = feedparser.parse(url)
+        headlines = []
+        for entry in feed.entries[:max_items]:
+            pub = entry.get("published", "")[:16]
+            headlines.append(f"• [{pub}] {entry.title}")
+        return headlines
+    except Exception:
+        return []
+
+def _fetch_ihsg_data() -> dict:
+    """Ambil data IHSG (^JKSE) sebagai konteks makro pasar."""
+    try:
+        import yfinance as yf
+        t = yf.Ticker("^JKSE")
+        hist = t.history(period="5d")
+        if hist.empty:
+            return {}
+        last = hist.iloc[-1]
+        prev = hist.iloc[-2] if len(hist) > 1 else last
+        chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
+        return {
+            "level": round(last["Close"], 0),
+            "change_pct": round(chg, 2),
+            "volume": int(last["Volume"]),
+        }
+    except Exception:
+        return {}
+
+def get_market_context(prompt: str) -> str:
+    """
+    Deteksi kode saham dari prompt (format: 4 huruf kapital atau diikuti .JK),
+    fetch data real-time, dan return string konteks untuk diinject ke prompt.
+    Jika tidak ada saham spesifik, hanya inject kondisi IHSG + berita umum.
+    """
+    import re
+    today_str = datetime.now().strftime("%d %B %Y, %H:%M WIB")
+
+    # Deteksi ticker — 4 huruf kapital, opsional dengan .JK
+    tickers_raw = re.findall(r'\b([A-Z]{4})(?:\.JK)?\b', prompt)
+    # Filter kata umum yang bukan ticker
+    SKIP = {"BBRI","BBCA","BMRI","TLKM","ASII","GOTO","BRIS","UNVR","ICBP","INDF",
+            "ANTM","PTBA","ADRO","EXCL","SMGR","INTP","KLBF","SIDO","MYOR","CPIN"}
+    # Ambil semua yang terdeteksi, prioritaskan yang memang saham IDX populer
+    tickers = list(dict.fromkeys(tickers_raw))  # deduplicate, preserve order
+
+    context_parts = [f"📅 Tanggal Analisa: {today_str}"]
+
+    # IHSG
+    ihsg = _fetch_ihsg_data()
+    if ihsg:
+        arah = "▲" if ihsg.get("change_pct", 0) >= 0 else "▼"
+        context_parts.append(
+            f"\n📈 IHSG: {ihsg['level']:,.0f} {arah}{abs(ihsg['change_pct'])}% | "
+            f"Vol: {ihsg['volume']:,}"
+        )
+
+    # Data per saham yang disebut
+    for raw_ticker in tickers[:3]:  # max 3 saham per query
+        jk_ticker = f"{raw_ticker}.JK"
+        stock = _fetch_stock_data(jk_ticker)
+        if stock:
+            arah = "▲" if stock.get("change_pct", 0) >= 0 else "▼"
+            context_parts.append(
+                f"\n📊 {raw_ticker}: Rp{stock['close']:,.0f} {arah}{abs(stock['change_pct'])}% | "
+                f"Vol: {stock['volume']:,} | P/E: {stock['pe_ratio']} | "
+                f"52W H/L: {stock['week52_high']}/{stock['week52_low']}"
+            )
+
+    # Berita — query berdasarkan saham yang disebut, atau umum
+    news_query = f"saham {tickers[0]} IDX Indonesia" if tickers else "IHSG pasar modal Indonesia"
+    headlines = _fetch_news_headlines(news_query)
+    if headlines:
+        context_parts.append(f"\n📰 Berita Terkini ({news_query}):")
+        context_parts.extend(headlines)
+
+    if len(context_parts) <= 1:
+        return ""  # Tidak ada data yang berhasil di-fetch
+
+    return "\n".join(context_parts)
+
+# ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
 st.set_page_config(
@@ -1121,6 +1234,18 @@ if prompt:
         full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     elif pdf_data:
         full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+
+    # ── Inject real-time market context (hanya untuk text prompt, bukan gambar) ──
+    if not img_data:
+        try:
+            mkt_ctx = get_market_context(prompt)
+            if mkt_ctx:
+                full_prompt = (
+                    f"=== DATA PASAR REAL-TIME ===\n{mkt_ctx}\n"
+                    f"===========================\n\n{full_prompt}"
+                )
+        except Exception:
+            pass  # Gagal fetch tidak menghentikan chat
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
