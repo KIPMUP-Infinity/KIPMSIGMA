@@ -145,7 +145,8 @@ def build_context(prompt):
     _is_fundamental = any(k in _p for k in ["fundamental","laporan","keuangan","valuasi","roe","roa","per ","pbv"])
 
     data = _fetch_all_data(tickers)
-    lines = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')}"]
+    current_year = datetime.now().year
+    lines = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')} | Tahun: {current_year}"]
 
     # Harga & rasio
     for tk, d in data["prices"].items():
@@ -294,7 +295,12 @@ def enrich_pdf_context(pdf_text):
         lines.append(f"ROE (TTM)      : {price_data['roe']*100:.2f}%")
     if price_data.get("roa"):
         lines.append(f"ROA (TTM)      : {price_data['roa']*100:.2f}%")
-    lines.append(f"\nGunakan data live di atas untuk melengkapi valuasi dari laporan PDF.")
+    current_year = datetime.now().year
+    lines.append(f"\nTAHUN SEKARANG: {current_year}")
+    lines.append(f"PERINGATAN: Data historis yfinance untuk saham IDX sering hanya sampai 2022-2023.")
+    lines.append(f"Untuk tren {current_year-2}→{current_year-1}→{current_year}: gunakan data yfinance untuk tahun lama,")
+    lines.append(f"estimasi knowledge model untuk tahun {current_year-1} dan {current_year} jika data tidak ada.")
+    lines.append(f"Gunakan data live di atas untuk valuasi (PER, PBV, harga wajar).")
     lines.append(f"Hitung PER/PBV manual jika data yfinance tidak tersedia.")
     lines.append("=== AKHIR DATA LIVE ===")
     return "\n".join(lines)
@@ -534,8 +540,11 @@ Skenario: Konservatif RpX | Moderat RpX | Optimis RpX
 ATURAN OUTPUT WAJIB:
 - Setiap metrik di BARIS TERPISAH — DILARANG digabung horizontal
 - Isi angka AKTUAL dari data — jika tidak ada, hitung dari rumus atau knowledge
-- Jika ada [DATA PASAR] → gunakan harga dan rasio dari sana untuk valuasi
-- Tahun tren = 3 tahun terakhir dari data yang tersedia, BUKAN 2020/2021/2022
+- Jika ada [DATA PASAR] atau [DATA LIVE] → gunakan harga dan rasio dari sana
+- TAHUN di judul: isi dengan tahun AKTUAL laporan atau tahun sekarang (2026)
+- Tren 3 tahun: gunakan 2024→2025→2026, BUKAN 2020/2021/2022
+- Jika yfinance hanya punya data sampai 2022: pakai sebagai historis lama,
+  estimasi 2023-2026 dari knowledge model dan sebutkan itu estimasi
 - Proyeksi dihitung dari CAGR aktual, bukan angka karang
 - Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
