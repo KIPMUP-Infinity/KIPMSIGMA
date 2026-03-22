@@ -1365,32 +1365,47 @@ if prompt:
         _is_technical = _has_ticker or any(k in _p for k in _tech_kw)
 
         if _is_fundamental and not pdf_data:
-            # Perintah fundamental tanpa PDF — tarik data berlapis
             tickers = [t for t in re.findall(r"\b([A-Z]{4})\b", _prompt_up)
                        if t not in SKIP_WORDS]
             if tickers:
                 _ticker = tickers[0]
+                # Jalankan fetch di daemon thread — kalau timeout, tetap lanjut
+                fund_ctx = f"[Data tidak tersedia — gunakan knowledge untuk {_ticker}]"
                 try:
                     import threading
                     _result = [None]
-                    def _fetch():
-                        _result[0] = build_fundamental_context(_ticker)
-                    t = threading.Thread(target=_fetch)
-                    t.start()
-                    t.join(timeout=20)
-                    fund_ctx = _result[0] or f"[Data timeout — gunakan knowledge untuk {_ticker}]"
-                except Exception as fe:
-                    fund_ctx = f"[Gagal fetch: {fe}]"
+                    def _fetch(_t=_ticker):
+                        try:
+                            _result[0] = build_fundamental_context(_t)
+                        except:
+                            pass
+                    th = threading.Thread(target=_fetch, daemon=True)
+                    th.start()
+                    th.join(timeout=15)
+                    if _result[0]:
+                        fund_ctx = _result[0]
+                except:
+                    pass
                 full_prompt = (
                     f"{fund_ctx}\n\n"
-                    f"Perintah user: {prompt}\n"
-                    f"Buat analisa fundamental lengkap FORMAT ANALISA FUNDAMENTAL untuk {_ticker}."
+                    f"Perintah: {prompt}\n"
+                    f"Buat analisa fundamental lengkap FORMAT ANALISA FUNDAMENTAL untuk {_ticker}. "
+                    f"Jika data di atas kosong, gunakan knowledge model kamu tentang {_ticker}."
                 )
         elif _is_technical:
             try:
-                ctx = build_market_context(prompt)
-                if ctx:
-                    full_prompt = f"=== DATA PASAR ===\n{ctx}\n=================\n\n{prompt}"
+                import threading
+                _ctx = [None]
+                def _fetch_ctx(_p=prompt):
+                    try:
+                        _ctx[0] = build_market_context(_p)
+                    except:
+                        pass
+                th = threading.Thread(target=_fetch_ctx, daemon=True)
+                th.start()
+                th.join(timeout=8)
+                if _ctx[0]:
+                    full_prompt = f"=== DATA PASAR ===\n{_ctx[0]}\n=================\n\n{prompt}"
             except:
                 pass
 
