@@ -373,19 +373,21 @@ def build_fundamental_from_text(prompt):
             if price:
                 lines.append(f"BARIS PERTAMA WAJIB: 💹 Harga: Rp{price:,.0f} | {datetime.now().strftime('%d %b %Y')}")
             lines.append(f"SEKTOR: {sektor} | FRAMEWORK: {framework}")
-            lines.append(f"Icon: pilih SATU — ✅ pass, ⚠️ perhatian, ❌ fail. JANGAN [✅/⚠️/❌]")
-            lines.append(f"DILARANG mengarang angka — jika tidak ada data tulis N/A")
+            lines.append(f"Icon: pilih SATU — ✅ pass, ⚠️ perhatian, ❌ fail.")
+            lines.append(f"PENTING: yfinance tidak punya NIM/NPL/CAR/BOPO/LDR/CIR.")
+            lines.append(f"Untuk metrik yang tidak ada di data di atas: WAJIB isi dari knowledge model.")
             if ipo_year and ipo_year >= current_year - 2:
                 lines.append(f"⚠️ EMITEN BARU — IPO {ipo_year}. JANGAN tulis tren sebelum {ipo_year}.")
                 lines.append(f"Untuk tren: tulis 'Baru IPO {ipo_year} — historis belum tersedia'")
             else:
-                lines.append(f"Data yfinance sering hanya s/d 2022-2023. Beri label ESTIMASI jika perkiraan.")
+                lines.append(f"Data yfinance sering hanya s/d 2022-2023. Beri label (est.) jika perkiraan.")
                 lines.append(f"Tren 3 tahun: {current_year-2}→{current_year-1}→{current_year}")
-            lines.append(f"Untuk bank: tampilkan NIM, NPL, LDR, CAR, BOPO, CIR")
-            lines.append(f"Untuk non-bank: tampilkan Gross Margin, Operating Margin, DER, Current Ratio")
-            lines.append(f"Nilai wajar sudah dihitung — tampilkan di VALUASI")
+            lines.append(f"Untuk bank: WAJIB isi NIM, NPL, LDR, CAR, BOPO, CIR dari knowledge model.")
+            lines.append(f"Untuk non-bank: WAJIB isi Gross Margin, DER, Current Ratio dari knowledge.")
+            lines.append(f"Tren & proyeksi: isi dengan angka knowledge model, beri label (est.)")
+            lines.append(f"JANGAN tulis N/A untuk data yang kamu tahu — tulis angkanya.")
+            lines.append(f"Nilai wajar sudah dihitung Python — tampilkan di VALUASI.")
             lines.append("=== AKHIR DATA ===")
-            result[0] = "\n".join(lines)
         except Exception as e:
             result[0] = f"[Gagal fetch {ticker}: {e}] Gunakan knowledge model untuk {ticker}."
     th = threading.Thread(target=fetch, daemon=True)
@@ -884,11 +886,14 @@ ATURAN OUTPUT WAJIB:
   Contoh BENAR: ROE: 14,5% → standar >15% [❌]
   Contoh SALAH: ROE: 14,5% → standar >15% [✅/⚠️/❌]
 - Harga saat ini WAJIB tampil di baris pertama setelah header
-- DILARANG MENGARANG DATA: jika data tidak tersedia, tulis "N/A — data tidak tersedia"
-  JANGAN isi dengan angka fiktif atau estimasi tanpa label "estimasi"
+- Data yfinance untuk saham IDX TIDAK PUNYA: NIM, NPL, CAR, BOPO, LDR, CIR
+  Untuk metrik ini: WAJIB isi dari knowledge model kamu tentang emiten tersebut
+  Beri label "(est.)" jika dari knowledge model
+- DILARANG tulis "N/A" untuk metrik yang kamu TAHU dari knowledge model
+  Contoh: NIM BBRI sekitar 7-8%, NPL BBRI sekitar 3%, CAR BBRI >20% — TULIS angkanya
+- Hanya tulis "N/A" jika benar-benar tidak ada data sama sekali dan tidak tahu
 - Untuk emiten baru (IPO < 2 tahun): tren historis TIDAK ADA — tulis "Baru IPO [tahun]"
-  JANGAN tulis tren sejak tahun sebelum IPO
-- Jika data yfinance tidak ada untuk suatu metrik: tulis "N/A" bukan angka karangan
+- Tren dan proyeksi: WAJIB isi dengan estimasi dari knowledge, beri label "(est.)"
 - Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
 
