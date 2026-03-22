@@ -2083,7 +2083,7 @@ if prompt:
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
                     res = groq_client.chat.completions.create(
-                        model="llama3-70b-8192",
+                        model="llama-3.1-70b-versatile",
                         messages=_msgs,
                         temperature=0.7,
                         max_tokens=2048
