@@ -1179,9 +1179,15 @@ if not active["messages"][1:]:
 # Chat history
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
-        display = msg["content"]
+        # Gunakan field "display" (prompt bersih) kalau ada, fallback ke "content"
+        raw = msg.get("display") or msg["content"]
+        display = raw
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
+        # Bersihkan sisa marker context kalau ada di pesan lama
+        if "=== DATA PASAR REAL-TIME ===" in display:
+            parts = display.split("===========================")
+            display = parts[-1].strip() if len(parts) > 1 else display
         if msg["role"] == "user" and msg.get("img_b64"):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
@@ -1251,7 +1257,9 @@ if prompt:
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
     # Simpan gambar di dalam message agar tetap ada setelah refresh
-    user_msg = {"role": "user", "content": full_prompt}
+    # PENTING: "content" diisi prompt bersih (tanpa market context) agar bubble user tetap rapi
+    # full_prompt (dengan context) hanya dipakai saat API call ke Groq, tidak disimpan ke history
+    user_msg = {"role": "user", "content": full_prompt, "display": prompt}
     if img_data:
         user_msg["img_b64"] = img_data[0]
         user_msg["img_mime"] = img_data[1]
