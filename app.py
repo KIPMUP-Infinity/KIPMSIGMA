@@ -116,6 +116,7 @@ init_session()
 # Proses delete PALING AWAL sebelum apapun — termasuk sebelum sigma_token restore
 if "del" in st.query_params:
     _del_sid = st.query_params.get("del", "")
+    st.write(f"DEBUG del param: '{_del_sid}'")  # debug sementara
     if _del_sid:
         # Load user data dari token jika belum ada
         if st.session_state.user is None:
