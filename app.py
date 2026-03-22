@@ -1748,45 +1748,47 @@ if prompt:
 
     # ── Deteksi intent: inject data sesuai jenis permintaan ──
     if not img_data:
-        try:
-            import re
-            _p = prompt.lower()
+        import re
+        _p = prompt.lower()
 
-            # Deteksi perintah analisa fundamental tanpa PDF
-            _fundamental_keywords = ["fundamental", "laporan keuangan", "keuangan", "valuasi",
-                                      "ipo", "historis", "proyeksi", "per ", "pbv", "roe", "roa"]
-            _teknikal_keywords = ["analisa", "analisis", "entry", "sl", "tp", "target",
-                                   "stop loss", "beli", "jual", "hold", "chart", "teknikal",
-                                   "bias", "setup", "volume", "bandar", "bandarmologi",
-                                   "support", "resistance", "breakout", "breakdown"]
-            _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', prompt))
-            _is_fundamental_cmd = _has_ticker and any(k in _p for k in _fundamental_keywords)
-            _is_teknikal = _has_ticker or any(k in _p for k in _teknikal_keywords)
+        # Deteksi perintah analisa fundamental tanpa PDF
+        _fundamental_keywords = ["fundamental", "laporan keuangan", "keuangan", "valuasi",
+                                  "ipo", "historis", "proyeksi", "per ", "pbv", "roe", "roa"]
+        _teknikal_keywords = ["analisa", "analisis", "entry", "sl", "tp", "target",
+                               "stop loss", "beli", "jual", "hold", "chart", "teknikal",
+                               "bias", "setup", "volume", "bandar", "bandarmologi",
+                               "support", "resistance", "breakout", "breakdown"]
+        _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', prompt))
+        _is_fundamental_cmd = _has_ticker and any(k in _p for k in _fundamental_keywords)
+        _is_teknikal = _has_ticker or any(k in _p for k in _teknikal_keywords)
 
-            if _is_fundamental_cmd and not pdf_data:
-                # Perintah analisa fundamental tanpa PDF — tarik data lengkap dari yfinance
-                tickers_found = re.findall(r'\b([A-Z]{4})\b', prompt)
-                if tickers_found:
-                    _ticker = tickers_found[0]
+        if _is_fundamental_cmd and not pdf_data:
+            # Perintah analisa fundamental tanpa PDF — tarik data lengkap dari yfinance
+            tickers_found = re.findall(r'\b([A-Z]{4})\b', prompt)
+            if tickers_found:
+                _ticker = tickers_found[0]
+                try:
                     fund_ctx = fetch_full_fundamental(_ticker)
-                    if fund_ctx:
-                        full_prompt = (
-                            f"{fund_ctx}\n\n"
-                            f"Perintah: {full_prompt}\n\n"
-                            f"Instruksi tambahan: Buat analisa fundamental lengkap dengan format FORMAT ANALISA FUNDAMENTAL. "
-                            f"Sertakan tren 3 tahun terakhir, ringkasan historis sejak data tersedia, "
-                            f"dan proyeksi sederhana 1-2 tahun ke depan berdasarkan tren pertumbuhan."
-                        )
-            elif _is_teknikal:
-                # Perintah teknikal — inject market context biasa
+                except Exception as _fe:
+                    fund_ctx = f"[Gagal fetch yfinance: {_fe}]"
+                full_prompt = (
+                    f"{fund_ctx}\n\n"
+                    f"Perintah: {prompt}\n\n"
+                    f"Instruksi: Buat analisa fundamental lengkap format FORMAT ANALISA FUNDAMENTAL "
+                    f"untuk saham {_ticker}. Sertakan tren 3 tahun terakhir dan proyeksi 1-2 tahun "
+                    f"ke depan. Jika data yfinance gagal, gunakan pengetahuan kamu tentang emiten ini."
+                )
+        elif _is_teknikal:
+            # Perintah teknikal — inject market context biasa
+            try:
                 mkt_ctx = get_market_context(prompt)
                 if mkt_ctx:
                     full_prompt = (
                         f"=== DATA PASAR REAL-TIME ===\n{mkt_ctx}\n"
                         f"===========================\n\n{full_prompt}"
                     )
-        except Exception:
-            pass  # Gagal fetch tidak menghentikan chat
+            except Exception:
+                pass
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
