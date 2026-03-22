@@ -140,17 +140,28 @@ def build_context(prompt):
         return ""
     if not tickers and not any(k in _p for k in _kw):
         return ""
+
+    # Deteksi apakah ini permintaan fundamental — jika ya, skip berita agar tidak overflow
+    _is_fundamental = any(k in _p for k in ["fundamental","laporan","keuangan","valuasi","roe","roa","per ","pbv"])
+
     data = _fetch_all_data(tickers)
     lines = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')}"]
+
+    # Harga & rasio
     for tk, d in data["prices"].items():
         arah = "▲" if d["chg"]>=0 else "▼"
         line = f"{tk}: Rp{d['price']:,.0f} {arah}{abs(d['chg']):.2f}% [{d.get('source','')}]"
         if d.get("pe"): line += f" PER:{d['pe']:.1f}x"
         if d.get("pbv"): line += f" PBV:{d['pbv']:.1f}x"
+        if d.get("roe"): line += f" ROE:{d['roe']*100:.1f}%"
+        if d.get("eps"): line += f" EPS:Rp{d['eps']:,.0f}"
         lines.append(line)
-    if data["news"]:
+
+    # Berita hanya untuk non-fundamental agar tidak overflow token
+    if not _is_fundamental and data["news"]:
         lines.append("Berita terkini:")
-        lines.extend(data["news"][:6])
+        lines.extend(data["news"][:3])
+
     return "\n".join(lines) if len(lines)>1 else ""
 
 # ─────────────────────────────────────────────
