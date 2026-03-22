@@ -18,326 +18,216 @@ import re
 
 
 # ─────────────────────────────────────────────
-# MULTI-SOURCE DATA — berlapis dengan fallback
+# DATA FETCHER — simpel, semua dalam try/except ketat
 # ─────────────────────────────────────────────
 
 SKIP_WORDS = {"YANG","ATAU","DARI","PADA","UNTUK","DENGAN","SAYA","MINTA",
               "TOLONG","ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL",
-              "ANALISIS","DATA","HARI","INI","TREN","TAHUN","LABA"}
+              "ANALISIS","HARI","INI","TREN","TAHUN"}
 
-IDX_POPULAR = {"BBRI","BBCA","BMRI","TLKM","ASII","GOTO","BRIS","UNVR",
-               "ANTM","PTBA","ADRO","EXCL","SMGR","KLBF","SIDO","CPIN",
-               "INDF","ICBP","MYOR","JPFA","INKP","TKIM","PGAS","MEDC"}
-
-def _price_yfinance(ticker):
-    """Layer 1: yfinance"""
+def _safe_yfinance(ticker):
+    """Fetch yfinance dengan timeout ketat via thread."""
     try:
         import yfinance as yf
-        t = yf.Ticker(f"{ticker}.JK")
-        hist = t.history(period="5d", auto_adjust=True)
-        if hist.empty:
-            return None
-        info = t.info
-        last = hist.iloc[-1]
-        prev = hist.iloc[-2] if len(hist) > 1 else last
-        chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
-        result = {
-            "price": round(last["Close"], 0),
-            "chg": round(chg, 2),
-            "source": "yfinance"
-        }
-        if info.get("trailingPE"): result["pe"] = round(info["trailingPE"], 2)
-        if info.get("priceToBook"): result["pbv"] = round(info["priceToBook"], 2)
-        if info.get("trailingEps"): result["eps"] = round(info["trailingEps"], 0)
-        if info.get("bookValue"): result["bv"] = round(info["bookValue"], 0)
-        if info.get("marketCap"): result["mktcap"] = info["marketCap"]
-        if info.get("dividendYield"): result["div_yield"] = round(info["dividendYield"]*100, 2)
-        if info.get("returnOnEquity"): result["roe"] = round(info["returnOnEquity"]*100, 2)
-        if info.get("returnOnAssets"): result["roa"] = round(info["returnOnAssets"]*100, 2)
-        if info.get("fiftyTwoWeekHigh"): result["w52h"] = info["fiftyTwoWeekHigh"]
-        if info.get("fiftyTwoWeekLow"): result["w52l"] = info["fiftyTwoWeekLow"]
-        if info.get("sharesOutstanding"): result["shares"] = info["sharesOutstanding"]
-        return result
+        import threading
+        result = [None]
+        def fetch():
+            try:
+                t = yf.Ticker(f"{ticker}.JK")
+                hist = t.history(period="5d")
+                if hist.empty:
+                    return
+                info = t.info
+                last = hist.iloc[-1]
+                prev = hist.iloc[-2] if len(hist) > 1 else last
+                chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
+                result[0] = {
+                    "price": round(last["Close"], 0),
+                    "chg": round(chg, 2),
+                    "pe": info.get("trailingPE"),
+                    "pbv": info.get("priceToBook"),
+                    "eps": info.get("trailingEps"),
+                    "bv": info.get("bookValue"),
+                    "roe": info.get("returnOnEquity"),
+                    "roa": info.get("returnOnAssets"),
+                    "mktcap": info.get("marketCap"),
+                    "div_yield": info.get("dividendYield"),
+                    "w52h": info.get("fiftyTwoWeekHigh"),
+                    "w52l": info.get("fiftyTwoWeekLow"),
+                    "shares": info.get("sharesOutstanding"),
+                }
+            except:
+                pass
+        th = threading.Thread(target=fetch, daemon=True)
+        th.start()
+        th.join(timeout=12)
+        return result[0]
     except:
         return None
 
-def _price_stooq(ticker):
-    """Layer 2: stooq.com"""
-    try:
-        import pandas_datareader as pdr
-        from datetime import timedelta
-        end = datetime.now()
-        start = end - timedelta(days=10)
-        df = pdr.get_data_stooq(f"{ticker}.JK", start=start, end=end)
-        if df.empty:
-            return None
-        df = df.sort_index()
-        last = df.iloc[-1]
-        prev = df.iloc[-2] if len(df) > 1 else last
-        chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
-        return {
-            "price": round(last["Close"], 0),
-            "chg": round(chg, 2),
-            "source": "stooq"
-        }
-    except:
-        return None
-
-def _price_idx(ticker):
-    """Layer 3: IDX API"""
-    try:
-        url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}"
-        r = requests.get(url, timeout=5, headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"})
-        if r.status_code != 200:
-            return None
-        d = r.json()
-        if not d:
-            return None
-        price = d.get("LastPrice", 0)
-        if price:
-            return {"price": price, "chg": d.get("ChangePercentage", 0), "source": "IDX"}
-        return None
-    except:
-        return None
-
-def get_price_data(ticker):
-    """Coba semua layer, return data + source"""
-    data = _price_yfinance(ticker)
-    if data and data.get("price"):
-        return data
-    data = _price_stooq(ticker)
-    if data and data.get("price"):
-        return data
-    data = _price_idx(ticker)
-    if data and data.get("price"):
-        return data
-    return {"source": "knowledge", "price": None}
-
-def _get_financials(ticker):
-    """Ambil laporan keuangan historis dari yfinance"""
+def _safe_financials(ticker):
+    """Fetch laporan keuangan historis dengan timeout."""
     try:
         import yfinance as yf
-        t = yf.Ticker(f"{ticker}.JK")
-        result = {}
-        try:
-            inc = t.income_stmt
-            if inc is None or inc.empty:
-                inc = t.financials
-            result["inc"] = inc
-        except:
-            result["inc"] = None
-        try:
-            result["bs"] = t.balance_sheet
-        except:
-            result["bs"] = None
-        try:
-            cf = t.cash_flow
-            if cf is None or (hasattr(cf,"empty") and cf.empty):
-                cf = t.cashflow
-            result["cf"] = cf
-        except:
-            result["cf"] = None
-        return result
+        import threading
+        result = [{}]
+        def fetch():
+            try:
+                t = yf.Ticker(f"{ticker}.JK")
+                inc, bs = None, None
+                try:
+                    inc = t.income_stmt
+                    if inc is None or inc.empty:
+                        inc = t.financials
+                except: pass
+                try:
+                    bs = t.balance_sheet
+                except: pass
+                result[0] = {"inc": inc, "bs": bs}
+            except:
+                pass
+        th = threading.Thread(target=fetch, daemon=True)
+        th.start()
+        th.join(timeout=12)
+        return result[0]
     except:
         return {}
 
-def _get_news_multi(query, n=5):
-    """Multi-source news: Google News + CNBC ID + Kontan"""
+def _safe_news(query, n=4):
+    """Fetch berita dengan timeout."""
     try:
-        import feedparser
-        all_news = []
-        seen = set()
-
-        # Google News
-        try:
-            url = f"https://news.google.com/rss/search?q={requests.utils.quote(query+' saham IDX')}&hl=id&gl=ID&ceid=ID:id"
-            feed = feedparser.parse(url)
-            for e in feed.entries[:4]:
-                k = e.title[:35].lower()
-                if k not in seen:
-                    seen.add(k)
-                    all_news.append(f"[Google] {e.title}")
-        except: pass
-
-        # CNBC Indonesia
-        try:
-            feed = feedparser.parse("https://www.cnbcindonesia.com/rss")
-            count = 0
-            for e in feed.entries:
-                if count >= 2: break
-                if query.lower() in e.title.lower() or any(k in e.title.lower() for k in ["saham","bursa","ihsg"]):
-                    k = e.title[:35].lower()
+        import feedparser, threading
+        result = [[]]
+        def fetch():
+            try:
+                seen = set()
+                news = []
+                # Google News
+                url = f"https://news.google.com/rss/search?q={requests.utils.quote(query+' saham')}&hl=id&gl=ID&ceid=ID:id"
+                feed = feedparser.parse(url)
+                for e in feed.entries[:3]:
+                    k = e.title[:30].lower()
                     if k not in seen:
                         seen.add(k)
-                        all_news.append(f"[CNBC ID] {e.title}")
-                        count += 1
-        except: pass
-
-        # Kontan
-        try:
-            feed = feedparser.parse("https://rss.kontan.co.id/category/investasi")
-            count = 0
-            for e in feed.entries:
-                if count >= 2: break
-                if query.lower() in e.title.lower() or "saham" in e.title.lower():
-                    k = e.title[:35].lower()
-                    if k not in seen:
-                        seen.add(k)
-                        all_news.append(f"[Kontan] {e.title}")
-                        count += 1
-        except: pass
-
-        return all_news[:n]
+                        news.append(f"[Google] {e.title}")
+                # CNBC Indonesia
+                try:
+                    feed2 = feedparser.parse("https://www.cnbcindonesia.com/rss")
+                    for e in feed2.entries[:10]:
+                        if query.lower() in e.title.lower() and len(news) < n:
+                            k = e.title[:30].lower()
+                            if k not in seen:
+                                seen.add(k)
+                                news.append(f"[CNBC ID] {e.title}")
+                except: pass
+                result[0] = news[:n]
+            except:
+                pass
+        th = threading.Thread(target=fetch, daemon=True)
+        th.start()
+        th.join(timeout=8)
+        return result[0]
     except:
         return []
 
 def build_fundamental_context(ticker):
-    """
-    Build konteks fundamental lengkap untuk perintah teks (tanpa PDF).
-    Layer 1: yfinance → Layer 2: stooq → Layer 3: IDX → Layer 4: knowledge model
-    Hitung rasio manual jika data tidak lengkap.
-    """
+    """Build konteks fundamental lengkap untuk perintah teks."""
     today = datetime.now().strftime("%d %B %Y")
-    current_year = datetime.now().year
-    lines = [f"=== DATA FUNDAMENTAL — {ticker} ({today}) ==="]
+    yr = datetime.now().year
+    lines = [f"=== FUNDAMENTAL {ticker} ({today}) ==="]
 
-    # Ambil harga & rasio
-    price_data = get_price_data(ticker)
-    source = price_data.get("source", "unknown")
-    lines.append(f"Sumber data: {source}")
+    # Price & rasio
+    d = _safe_yfinance(ticker) or {}
+    price = d.get("price")
+    eps = d.get("eps")
+    bv = d.get("bv")
+    pe = d.get("pe")
+    pbv = d.get("pbv")
 
-    price = price_data.get("price")
-    eps = price_data.get("eps")
-    bv = price_data.get("bv")
-    pe = price_data.get("pe")
-    pbv = price_data.get("pbv")
-    shares = price_data.get("shares")
-    mktcap = price_data.get("mktcap")
-
-    # Harga & valuasi
-    lines.append("\n── HARGA & VALUASI TERKINI ──")
+    lines.append("\n── HARGA & VALUASI ──")
     if price:
-        arah = "▲" if price_data.get("chg",0) >= 0 else "▼"
-        lines.append(f"Harga          : Rp{price:,.0f} {arah}{abs(price_data.get('chg',0)):.2f}%")
-    if mktcap:
-        lines.append(f"Market Cap     : Rp{mktcap/1e12:.1f} triliun")
-    if price_data.get("w52h"):
-        lines.append(f"52W High/Low   : Rp{price_data['w52h']:,.0f} / Rp{price_data['w52l']:,.0f}")
+        arah = "▲" if d.get("chg",0) >= 0 else "▼"
+        lines.append(f"Harga        : Rp{price:,.0f} {arah}{abs(d.get('chg',0)):.2f}%")
+    if d.get("mktcap"):
+        lines.append(f"Market Cap   : Rp{d['mktcap']/1e12:.1f} T")
+    if d.get("w52h"):
+        lines.append(f"52W H/L      : Rp{d['w52h']:,.0f} / Rp{d['w52l']:,.0f}")
 
-    # PER & PBV — dari data atau hitung manual
+    # PER
     if pe:
-        lines.append(f"PER            : {pe:.2f}× (Graham standar <15)")
+        lines.append(f"PER          : {pe:.2f}×")
     elif price and eps and eps > 0:
-        pe_calc = price / eps
-        lines.append(f"PER (hitung)   : {pe_calc:.2f}× = Rp{price:,.0f} ÷ Rp{eps:,.0f} (Graham <15)")
+        lines.append(f"PER (hitung) : {price/eps:.2f}× = {price:,.0f}÷{eps:,.0f}")
     else:
-        lines.append(f"PER            : Estimasi dari knowledge model")
+        lines.append(f"PER          : hitung dari EPS knowledge model")
 
+    # PBV
     if pbv:
-        lines.append(f"PBV            : {pbv:.2f}× (Graham standar <1.5)")
+        lines.append(f"PBV          : {pbv:.2f}×")
     elif price and bv and bv > 0:
-        pbv_calc = price / bv
-        lines.append(f"PBV (hitung)   : {pbv_calc:.2f}× = Rp{price:,.0f} ÷ Rp{bv:,.0f} (Graham <1.5)")
+        lines.append(f"PBV (hitung) : {price/bv:.2f}× = {price:,.0f}÷{bv:,.0f}")
     else:
-        lines.append(f"PBV            : Estimasi dari knowledge model")
+        lines.append(f"PBV          : hitung dari BV knowledge model")
 
-    if eps:
-        lines.append(f"EPS (TTM)      : Rp{eps:,.0f}")
-    if bv:
-        lines.append(f"Book Value/Sh  : Rp{bv:,.0f}")
-    if price_data.get("div_yield"):
-        lines.append(f"Dividend Yield : {price_data['div_yield']:.2f}%")
-    if price_data.get("roe"):
-        lines.append(f"ROE            : {price_data['roe']:.2f}%")
-    if price_data.get("roa"):
-        lines.append(f"ROA            : {price_data['roa']:.2f}%")
+    if eps: lines.append(f"EPS (TTM)    : Rp{eps:,.0f}")
+    if bv:  lines.append(f"Book Value   : Rp{bv:,.0f}/lembar")
+    if d.get("div_yield"): lines.append(f"Div Yield    : {d['div_yield']*100:.2f}%")
+    if d.get("roe"): lines.append(f"ROE          : {d['roe']*100:.2f}%")
+    if d.get("roa"): lines.append(f"ROA          : {d['roa']*100:.2f}%")
 
     # Laporan keuangan historis
-    fin = _get_financials(ticker)
+    fin = _safe_financials(ticker)
     inc = fin.get("inc")
     bs = fin.get("bs")
-    cf = fin.get("cf")
-
     if inc is not None and hasattr(inc,"empty") and not inc.empty:
-        lines.append("\n── LAPORAN KEUANGAN HISTORIS (dalam triliun Rp) ──")
-        key_rows = {
-            "Net Income": "Laba Bersih",
-            "Total Revenue": "Pendapatan",
-            "Operating Income": "Laba Operasional",
-            "Basic EPS": "EPS",
-        }
-        for yf_key, label in key_rows.items():
+        lines.append("\n── HISTORIS LAPORAN KEUANGAN ──")
+        for yf_key, label in [("Net Income","Laba Bersih"),("Total Revenue","Pendapatan"),("Basic EPS","EPS")]:
             try:
                 if yf_key in inc.index:
                     row = inc.loc[yf_key].dropna()
                     vals = []
                     for col in sorted(row.index, reverse=True)[:4]:
-                        yr = str(col)[:4]
                         v = row[col]
-                        if abs(v) > 1e12:
-                            vals.append(f"{yr}:Rp{v/1e12:.1f}T")
-                        elif abs(v) > 1e9:
-                            vals.append(f"{yr}:Rp{v/1e9:.1f}M")
-                        else:
-                            vals.append(f"{yr}:{v:.0f}")
+                        yr_lbl = str(col)[:4]
+                        vals.append(f"{yr_lbl}:{'Rp'+str(round(v/1e12,1))+'T' if abs(v)>1e12 else round(v,0)}")
                     if vals:
-                        lines.append(f"{label:20s}: {' | '.join(vals)}")
+                        lines.append(f"{label}: {' | '.join(vals)}")
             except: pass
 
-    if bs is not None and hasattr(bs,"empty") and not bs.empty:
-        lines.append("\n── BALANCE SHEET (dalam triliun Rp) ──")
-        bs_rows = {"Total Assets":"Total Aset","Stockholders Equity":"Ekuitas",
-                   "Common Stock Equity":"Ekuitas"}
-        for yf_key, label in bs_rows.items():
-            try:
-                if yf_key in bs.index:
-                    row = bs.loc[yf_key].dropna()
-                    vals = [f"{str(col)[:4]}:Rp{row[col]/1e12:.1f}T"
-                            for col in sorted(row.index, reverse=True)[:4]]
-                    if vals:
-                        lines.append(f"{label:20s}: {' | '.join(vals)}")
-            except: pass
-
-    # Berita terbaru
-    news = _get_news_multi(ticker, n=5)
+    # Berita
+    news = _safe_news(ticker, n=4)
     if news:
         lines.append("\n── BERITA TERBARU ──")
         lines.extend(news)
 
-    # Instruksi ke model
     lines.append(f"\n=== INSTRUKSI ===")
-    lines.append(f"TAHUN SEKARANG: {current_year}")
-    lines.append(f"1. Gunakan FORMAT ANALISA FUNDAMENTAL untuk output")
-    lines.append(f"2. Tren 3 tahun = {current_year-2}, {current_year-1}, {current_year}")
-    lines.append(f"3. Hitung CAGR laba bersih dari data historis di atas")
-    lines.append(f"4. Buat proyeksi {current_year+1}-{current_year+2} berdasarkan CAGR")
-    lines.append(f"5. Jika data tidak tersedia, HITUNG dari rumus atau gunakan knowledge")
-    lines.append(f"6. Setiap metrik di BARIS TERPISAH — tidak boleh digabung")
-    lines.append(f"7. Untuk bank: deteksi dari kata NPL/NIM/DPK/CAR → pakai framework perbankan")
-    lines.append(f"Sumber harga: {source} | Sumber lapkeu: yfinance historis")
-    lines.append("=== AKHIR DATA ===")
-
+    lines.append(f"Tahun sekarang: {yr}. Tren 3 tahun: {yr-2}, {yr-1}, {yr}.")
+    lines.append(f"Gunakan FORMAT ANALISA FUNDAMENTAL. Hitung CAGR. Proyeksi {yr+1}-{yr+2}.")
+    lines.append(f"Jika data tidak ada, HITUNG dari rumus atau gunakan knowledge model.")
+    lines.append(f"Setiap metrik di BARIS TERPISAH.")
+    lines.append("=== AKHIR ===")
     return "\n".join(lines)
 
 def build_market_context(prompt):
-    """Context ringan untuk analisa teknikal / pertanyaan umum"""
+    """Context ringkas untuk analisa teknikal."""
     tickers = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
                if t not in SKIP_WORDS][:2]
+    if not tickers:
+        return ""
     parts = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')}"]
     for ticker in tickers:
-        data = get_price_data(ticker)
-        if data.get("price"):
-            arah = "▲" if data.get("chg",0) >= 0 else "▼"
-            line = f"{ticker}: Rp{data['price']:,.0f} {arah}{abs(data.get('chg',0)):.2f}%"
-            if data.get("pe"): line += f" PER:{data['pe']:.1f}x"
-            if data.get("pbv"): line += f" PBV:{data['pbv']:.1f}x"
+        d = _safe_yfinance(ticker) or {}
+        if d.get("price"):
+            arah = "▲" if d.get("chg",0) >= 0 else "▼"
+            line = f"{ticker}: Rp{d['price']:,.0f} {arah}{abs(d.get('chg',0)):.2f}%"
+            if d.get("pe"): line += f" PER:{d['pe']:.1f}x"
+            if d.get("pbv"): line += f" PBV:{d['pbv']:.1f}x"
             parts.append(line)
-        news = _get_news_multi(ticker, n=3)
+        news = _safe_news(ticker, n=3)
         if news:
             parts.append(f"Berita {ticker}:")
             parts.extend(news)
     return "\n".join(parts) if len(parts) > 1 else ""
-
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
