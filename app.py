@@ -191,16 +191,89 @@ def _fetch_alphavantage(ticker, api_key="GYZKT8YU8RV3QX65"):
     except:
         return {}
 
+def _fetch_fmp(ticker, api_key="6ckg4EdDYUqKkkpPK4Weo4b9PbKD6IUK"):
+    """Fetch fundamental dari Financial Modeling Prep — 250 req/hari."""
+    try:
+        import urllib.request, json as _j
+        result = {}
+        base = "https://financialmodelingprep.com/api/v3"
+
+        # Profile (harga, market cap, sektor, deskripsi)
+        url = f"{base}/profile/{ticker}.JK?apikey={api_key}"
+        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = _j.loads(r.read())
+        if data and isinstance(data, list) and len(data) > 0:
+            d = data[0]
+            if d.get("price"): result["price"] = d["price"]
+            if d.get("mktCap"): result["mktcap"] = d["mktCap"]
+            if d.get("pe"): result["pe"] = d["pe"]
+            if d.get("eps"): result["eps"] = d["eps"]
+            if d.get("beta"): result["beta"] = d["beta"]
+            if d.get("sector"): result["sector"] = d["sector"]
+            if d.get("industry"): result["industry"] = d["industry"]
+            if d.get("description"): result["description"] = d["description"][:300]
+
+        # Key Metrics TTM (ROE, ROA, PBV, dll)
+        url2 = f"{base}/key-metrics-ttm/{ticker}.JK?apikey={api_key}"
+        req2 = urllib.request.Request(url2, headers={"User-Agent":"Mozilla/5.0"})
+        with urllib.request.urlopen(req2, timeout=5) as r2:
+            data2 = _j.loads(r2.read())
+        if data2 and isinstance(data2, list) and len(data2) > 0:
+            m = data2[0]
+            if m.get("roeTTM"): result["roe"] = m["roeTTM"]
+            if m.get("roaTTM"): result["roa"] = m["roaTTM"]
+            if m.get("pbRatioTTM"): result["pbv"] = m["pbRatioTTM"]
+            if m.get("peRatioTTM"): result["pe"] = result.get("pe") or m["peRatioTTM"]
+            if m.get("dividendYieldTTM"): result["div_yield"] = m["dividendYieldTTM"]
+            if m.get("debtToEquityTTM"): result["der"] = m["debtToEquityTTM"]
+            if m.get("currentRatioTTM"): result["current_ratio"] = m["currentRatioTTM"]
+            if m.get("netProfitMarginTTM"): result["net_margin"] = m["netProfitMarginTTM"]
+            if m.get("bookValuePerShareTTM"): result["bv"] = m["bookValuePerShareTTM"]
+            if m.get("earningsYieldTTM"): result["earnings_yield"] = m["earningsYieldTTM"]
+            if m.get("freeCashFlowPerShareTTM"): result["fcf_per_share"] = m["freeCashFlowPerShareTTM"]
+
+        # Income Statement historis (3 tahun)
+        url3 = f"{base}/income-statement/{ticker}.JK?limit=4&apikey={api_key}"
+        req3 = urllib.request.Request(url3, headers={"User-Agent":"Mozilla/5.0"})
+        with urllib.request.urlopen(req3, timeout=5) as r3:
+            data3 = _j.loads(r3.read())
+        if data3 and isinstance(data3, list):
+            hist_ni = []
+            hist_eps = []
+            hist_rev = []
+            for row in data3[:4]:
+                yr = str(row.get("date",""))[:4]
+                ni = row.get("netIncome")
+                eps = row.get("eps")
+                rev = row.get("revenue")
+                if ni: hist_ni.append((yr, ni))
+                if eps: hist_eps.append((yr, eps))
+                if rev: hist_rev.append((yr, rev))
+            if hist_ni: result["hist_ni"] = hist_ni
+            if hist_eps: result["hist_eps"] = hist_eps
+            if hist_rev: result["hist_rev"] = hist_rev
+
+        result["source"] = "FMP"
+        return result
+    except:
+        return {}
+
 def _fetch_multi_fundamental(ticker):
     """
-    Fetch fundamental dari semua sumber, gabungkan hasilnya.
-    Priority: yfinance → Finnhub → Alpha Vantage → knowledge model
+    Fetch fundamental berlapis — saling melengkapi:
+    Layer 1: yfinance (harga, PE, PBV, EPS, ROE, ROA)
+    Layer 2: FMP (historis, DER, FCF, sektor, deskripsi)
+    Layer 3: Finnhub (rasio tambahan)
+    Layer 4: Alpha Vantage (backup)
+    Layer 5: hitung manual dari rumus
     """
     import threading
     result = [{}]
     def fetch():
         combined = {}
-        # Layer 1: yfinance
+
+        # ── Layer 1: yfinance ──
         try:
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
@@ -226,28 +299,49 @@ def _fetch_multi_fundamental(ticker):
             combined["source_price"] = "yfinance"
         except: pass
 
-        # Layer 2: Finnhub (isi yang kosong dari yfinance)
+        # ── Layer 2: FMP (isi yang kosong + data historis) ──
+        try:
+            fmp = _fetch_fmp(ticker)
+            for k, v in fmp.items():
+                if k not in combined or combined[k] is None:
+                    combined[k] = v
+                elif k in ("hist_ni","hist_eps","hist_rev","sector","industry","description"):
+                    combined[k] = v  # selalu ambil dari FMP untuk data ini
+            if fmp:
+                combined["source_fundamental"] = "FMP"
+        except: pass
+
+        # ── Layer 3: Finnhub (isi yang masih kosong) ──
         try:
             fh = _fetch_finnhub(ticker)
             for k, v in fh.items():
                 if k not in combined or combined[k] is None:
                     combined[k] = v
-                    combined[f"source_{k}"] = "finnhub"
         except: pass
 
-        # Layer 3: Alpha Vantage (isi yang masih kosong)
+        # ── Layer 4: Alpha Vantage (backup terakhir) ──
         try:
             av = _fetch_alphavantage(ticker)
             for k, v in av.items():
                 if k not in combined or combined[k] is None:
                     combined[k] = v
-                    combined[f"source_{k}"] = "alphavantage"
         except: pass
+
+        # ── Layer 5: Hitung manual dari rumus ──
+        price = combined.get("price")
+        eps   = combined.get("eps")
+        bv    = combined.get("bv")
+        if price and eps and eps > 0 and not combined.get("pe"):
+            combined["pe"] = round(price / eps, 2)
+            combined["source_pe"] = "hitung (Harga÷EPS)"
+        if price and bv and bv > 0 and not combined.get("pbv"):
+            combined["pbv"] = round(price / bv, 2)
+            combined["source_pbv"] = "hitung (Harga÷BV)"
 
         result[0] = combined
     th = threading.Thread(target=fetch, daemon=True)
     th.start()
-    th.join(timeout=15)
+    th.join(timeout=18)
     return result[0]
 
 def build_context(prompt):
@@ -403,45 +497,55 @@ def build_fundamental_from_text(prompt):
             ni_vals = []
             eps_vals = []
             ni_years = []
-            try:
-                # Coba API terbaru dulu, lalu fallback ke lama
-                inc = None
-                for method in ["income_stmt", "financials"]:
-                    try:
-                        inc = getattr(t, method)
-                        if inc is not None and not inc.empty:
-                            break
-                    except: pass
 
-                if inc is not None and not inc.empty:
-                    # Sort kolom dari terbaru ke terlama
-                    inc = inc.reindex(sorted(inc.columns, reverse=True), axis=1)
-                    lines.append("\n── Historis Keuangan (terbaru → terlama) ──")
-                    if "Net Income" in inc.index:
-                        row = inc.loc["Net Income"].dropna()
-                        cols = sorted(row.index, reverse=True)[:5]
-                        vals_str = []
-                        for col in cols:
-                            v = row[col]
-                            ni_vals.append(v)
-                            ni_years.append(str(col)[:4])
-                            vals_str.append(f"{str(col)[:4]}: Rp{v/1e12:.1f}T")
-                        lines.append("Laba Bersih    : " + " | ".join(vals_str))
-                    if "Basic EPS" in inc.index:
-                        row = inc.loc["Basic EPS"].dropna()
-                        cols = sorted(row.index, reverse=True)[:5]
-                        vals_str = []
-                        for col in cols:
-                            v = row[col]
-                            eps_vals.append(v)
-                            vals_str.append(f"{str(col)[:4]}: Rp{v:,.0f}")
-                        lines.append("EPS Historis   : " + " | ".join(vals_str))
-                    if "Total Revenue" in inc.index:
-                        row = inc.loc["Total Revenue"].dropna()
-                        cols = sorted(row.index, reverse=True)[:4]
-                        vals_str = [f"{str(col)[:4]}: Rp{row[col]/1e12:.1f}T" for col in cols]
-                        lines.append("Pendapatan     : " + " | ".join(vals_str))
-            except: pass
+            # Prioritas: FMP historis (lebih lengkap) → yfinance income_stmt
+            if multi.get("hist_ni"):
+                lines.append("\n── Historis Keuangan (FMP) ──")
+                vals_str = [f"{yr}: Rp{ni/1e12:.1f}T" for yr, ni in multi["hist_ni"]]
+                lines.append("Laba Bersih    : " + " | ".join(vals_str))
+                ni_vals = [ni for _, ni in multi["hist_ni"]]
+                ni_years = [yr for yr, _ in multi["hist_ni"]]
+            if multi.get("hist_eps"):
+                vals_str = [f"{yr}: Rp{eps:,.0f}" for yr, eps in multi["hist_eps"]]
+                lines.append("EPS Historis   : " + " | ".join(vals_str))
+                eps_vals = [eps for _, eps in multi["hist_eps"]]
+            if multi.get("hist_rev"):
+                vals_str = [f"{yr}: Rp{rev/1e12:.1f}T" for yr, rev in multi["hist_rev"]]
+                lines.append("Pendapatan     : " + " | ".join(vals_str))
+
+            # Fallback ke yfinance jika FMP tidak ada data historis
+            if not ni_vals:
+                try:
+                    inc = None
+                    for method in ["income_stmt", "financials"]:
+                        try:
+                            inc = getattr(t, method)
+                            if inc is not None and not inc.empty:
+                                break
+                        except: pass
+                    if inc is not None and not inc.empty:
+                        inc = inc.reindex(sorted(inc.columns, reverse=True), axis=1)
+                        lines.append("\n── Historis Keuangan (yfinance) ──")
+                        if "Net Income" in inc.index:
+                            row = inc.loc["Net Income"].dropna()
+                            cols = sorted(row.index, reverse=True)[:5]
+                            vals_str = []
+                            for col in cols:
+                                v = row[col]
+                                ni_vals.append(v)
+                                ni_years.append(str(col)[:4])
+                                vals_str.append(f"{str(col)[:4]}: Rp{v/1e12:.1f}T")
+                            lines.append("Laba Bersih    : " + " | ".join(vals_str))
+                        if "Basic EPS" in inc.index:
+                            row = inc.loc["Basic EPS"].dropna()
+                            cols = sorted(row.index, reverse=True)[:5]
+                            vals_str = []
+                            for col in cols:
+                                v = row[col]
+                                eps_vals.append(v)
+                                vals_str.append(f"{str(col)[:4]}: Rp{v:,.0f}")
+                            lines.append("EPS Historis   : " + " | ".join(vals_str))
+                except: pass
 
             # ── CAGR & Proyeksi Python ──
             lines.append("\n── Kalkulasi CAGR & Proyeksi ──")
