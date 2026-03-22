@@ -15,6 +15,110 @@ import hashlib
 import bcrypt
 
 # ─────────────────────────────────────────────
+# MULTI-SOURCE DATA — semua dalam thread daemon
+# ─────────────────────────────────────────────
+import re as _re
+
+SKIP_WORDS = {"YANG","ATAU","DARI","PADA","UNTUK","DENGAN","SAYA","MINTA",
+              "TOLONG","ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL",
+              "ANALISIS","HARI","INI","TREN","TAHUN","APAKAH","BAGAIMANA"}
+
+def _fetch_all_data(tickers):
+    """Fetch harga + berita untuk semua ticker, return dalam 10 detik."""
+    import threading
+    result = {"prices": {}, "news": []}
+
+    def fetch():
+        try:
+            import yfinance as yf
+            for tk in tickers[:3]:
+                try:
+                    t = yf.Ticker(f"{tk}.JK")
+                    h = t.history(period="2d")
+                    if not h.empty:
+                        info = t.info
+                        last = h.iloc[-1]
+                        prev = h.iloc[-2] if len(h)>1 else last
+                        chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
+                        result["prices"][tk] = {
+                            "price": round(last["Close"],0),
+                            "chg": round(chg,2),
+                            "pe": info.get("trailingPE"),
+                            "pbv": info.get("priceToBook"),
+                            "eps": info.get("trailingEps"),
+                            "roe": info.get("returnOnEquity"),
+                        }
+                except: pass
+        except: pass
+
+        try:
+            import feedparser
+            seen = set()
+            sources = [
+                ("Google", f"https://news.google.com/rss/search?q={requests.utils.quote(tickers[0]+' saham IDX')}&hl=id&gl=ID&ceid=ID:id") if tickers else None,
+                ("CNBC ID", "https://www.cnbcindonesia.com/rss"),
+                ("Kontan", "https://rss.kontan.co.id/category/investasi"),
+                ("Bisnis", "https://ekonomi.bisnis.com/rss"),
+            ]
+            kw = [t.lower() for t in tickers] + ["ihsg","saham","bursa","emiten"]
+            for src in sources:
+                if not src: continue
+                try:
+                    feed = feedparser.parse(src[1])
+                    count = 0
+                    for e in feed.entries:
+                        if count >= 3: break
+                        title = e.title.strip()
+                        key = title[:30].lower()
+                        if key in seen: continue
+                        if src[0] == "Google" or any(k in title.lower() for k in kw):
+                            seen.add(key)
+                            result["news"].append(f"[{src[0]}] {title}")
+                            count += 1
+                except: pass
+        except: pass
+
+    th = threading.Thread(target=fetch, daemon=True)
+    th.start()
+    th.join(timeout=10)
+    return result
+
+def build_context(prompt):
+    """Build market context untuk inject ke prompt."""
+    tickers = [t for t in _re.findall(r'\b([A-Z]{4})\b', prompt.upper())
+               if t not in SKIP_WORDS][:3]
+
+    _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal",
+           "fundamental","harga","support","resistance","chart","bandar",
+           "volume","breakout","bias","valuasi"]
+    _p = prompt.lower()
+    _has_ticker = bool(tickers)
+    _is_relevant = _has_ticker or any(k in _p for k in _kw)
+
+    if not _is_relevant:
+        return ""
+
+    data = _fetch_all_data(tickers)
+    lines = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')}"]
+
+    # Harga
+    for tk, d in data["prices"].items():
+        arah = "▲" if d["chg"] >= 0 else "▼"
+        line = f"{tk}: Rp{d['price']:,.0f} {arah}{abs(d['chg']):.2f}%"
+        if d.get("pe"): line += f" | PER:{d['pe']:.1f}x"
+        if d.get("pbv"): line += f" | PBV:{d['pbv']:.1f}x"
+        if d.get("roe"): line += f" | ROE:{d['roe']*100:.1f}%"
+        lines.append(line)
+
+    # Berita
+    if data["news"]:
+        lines.append("Berita terkini:")
+        lines.extend(data["news"][:6])
+
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+# ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
 st.set_page_config(
@@ -1202,9 +1306,11 @@ if st.session_state.get("last_error"):
 # Chat history
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
-        display = msg["content"]
+        display = msg.get("display") or msg["content"]
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
+        if "[DATA PASAR]" in display:
+            display = display.split("[/DATA PASAR]")[-1].strip()
         if msg["role"] == "user" and msg.get("img_b64"):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
@@ -1268,12 +1374,19 @@ if prompt:
         full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     elif pdf_data:
         full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+    else:
+        try:
+            ctx = build_context(prompt)
+            if ctx:
+                full_prompt = f"[DATA PASAR]\n{ctx}\n[/DATA PASAR]\n\n{prompt}"
+        except:
+            pass
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
     # Simpan gambar di dalam message agar tetap ada setelah refresh
-    user_msg = {"role": "user", "content": full_prompt}
+    user_msg = {"role": "user", "content": full_prompt, "display": prompt}
     if img_data:
         user_msg["img_b64"] = img_data[0]
         user_msg["img_mime"] = img_data[1]
