@@ -571,6 +571,12 @@ def build_global_context(prompt):
         "bitcoin","btc","crypto","ethereum","eth",
         "apple","tesla","nvidia","microsoft","google","amazon","meta",
         "baba","alibaba","tencent","xiaomi","pdd",
+        # Trigger kata kunci analisa dampak
+        "kesimpulan dampak","dampak","pengaruh","efek","imbas",
+        "msci","ftse","rating","moody","fitch","s&p rating",
+        "rupiah","ihsg","apbn","subsidi","bi rate","bank indonesia",
+        "rebalancing","capital outflow","capital inflow",
+        "risk on","risk off","bullish","bearish","accumulate",
     ]
 
     if not any(k in _p for k in global_kw):
@@ -618,8 +624,27 @@ def build_global_context(prompt):
             for item in news[:8]:
                 lines.append(f"[{item['source']}] {item['title']}")
 
-        lines.append("\n⚠️ INSTRUKSI: Terjemahkan semua berita asing di atas ke Bahasa Indonesia")
-        lines.append("Kaitkan data komoditas/saham global dengan dampaknya ke pasar Indonesia")
+        lines.append("\n=== INSTRUKSI ANALISA DAMPAK ===")
+        lines.append("1. TERJEMAHKAN semua berita asing ke Bahasa Indonesia")
+        lines.append("2. Analisa dampak ke RUPIAH: DXY naik→Rupiah melemah, komoditas naik→devisa masuk→Rupiah menguat")
+        lines.append("3. Analisa dampak ke APBN: minyak naik→subsidi membengkak, komoditas ekspor naik→penerimaan naik")
+        lines.append("4. Sebutkan 10 EMITEN IDX yang paling terdampak:")
+        lines.append("   Coal naik→PTBA,ADRO,ITMG,HRUM | Nikel→INCO,ANTM,MDKA,NCKL | CPO→AALI,LSIP,SIMP")
+        lines.append("   Minyak→PGAS,MEDC,ELSA | Emas→ANTM,MDKA,BRMS | Dollar kuat→eksportir untung,importir rugi")
+        lines.append("   Rate naik→BBCA,BBRI,BMRI,BBNI | Rate turun→BSDE,CTRA,SMGR,WIKA")
+        lines.append("5. Jika user tanya emiten di luar list→analisa berdasarkan sektor dan exposure komoditasnya")
+        lines.append("6. Analisa dampak ke INDEKS INDONESIA jika relevan:")
+        lines.append("   IHSG (Composite) | LQ45 | IDX30 | IDX80 | KOMPAS100 | BISNIS27 | PEFINDO25")
+        lines.append("   JII (Jakarta Islamic Index) | SMINFRA18 | IDXBUMN20 | IDXSMC-CAP")
+        lines.append("7. Analisa dampak MSCI/FTSE/indeks global jika relevan:")
+        lines.append("   MSCI rebalancing → saham masuk/keluar = capital inflow/outflow besar")
+        lines.append("   MSCI naik bobot IDX → dana asing masuk → IHSG naik")
+        lines.append("   FTSE Russell review → dampak ke likuiditas saham IDX")
+        lines.append("   S&P500 turun → risk off global → IHSG ikut tertekan")
+        lines.append("8. Lembaga rating dunia:")
+        lines.append("   S&P / Moody's / Fitch upgrade Indonesia → obligasi naik, rupiah menguat, IHSG naik")
+        lines.append("   Downgrade → capital outflow, rupiah melemah, IHSG turun")
+        lines.append("   Rating saat ini: S&P BBB / Moody's Baa2 / Fitch BBB (investment grade)")
         lines.append("=== AKHIR DATA GLOBAL ===")
         result[0] = "\n".join(lines)
 
@@ -1529,15 +1554,46 @@ LAPISAN 2 — KOMODITAS (kaitkan ke sektor saham IDX):
   Tembaga/Copper naik → ANTM, MDKA, INCO bullish
   Aluminum naik       → INALUM, INAI bullish
 
-LAPISAN 3 — NEWS & GEOPOLITIK:
-  Perang di timur tengah → minyak naik → emiten energi bullish
-  Konflik supply chain   → komoditas naik → emiten tambang bullish
-  Fed tahan/turun rate   → IHSG bullish, rupiah menguat
-  Fed naikkan rate       → IHSG bearish, rupiah melemah
-  China stimulus         → komoditas naik, saham China bullish
-  Perang dagang US-China → supply chain terganggu → volatilitas tinggi
-  Dollar menguat (DXY↑)  → komoditas turun, IHSG tertekan
-  Dollar melemah (DXY↓)  → komoditas naik, IHSG menguat
+LAPISAN 3 — NEWS, GEOPOLITIK & EKOSISTEM EKONOMI INDONESIA:
+
+  DAMPAK KE RUPIAH:
+  Dollar menguat (DXY↑) → Rupiah melemah → impor mahal → inflasi naik
+  Komoditas ekspor naik → devisa masuk → Rupiah menguat
+  Fed naikkan rate      → capital outflow → Rupiah tertekan
+  Geopolitik global     → risk off → Rupiah melemah
+
+  DAMPAK KE APBN:
+  Minyak naik    → subsidi BBM membengkak → APBN tertekan
+  Coal/CPO naik  → penerimaan royalti & pajak naik → APBN surplus
+  Rupiah melemah → beban utang luar negeri naik
+  Investasi masuk → PDB naik → pajak naik → fiskal sehat
+
+  DAMPAK KE IHSG & EMITEN:
+  Fed tahan/turun rate → IHSG bullish, perbankan & properti naik
+  Fed naikkan rate     → IHSG bearish, rupiah tertekan
+  China stimulus       → komoditas naik → tambang & energi bullish
+  Perang timteng       → minyak naik → PGAS, MEDC bullish
+  Perang dagang        → supply chain terganggu → volatilitas tinggi
+  Dollar menguat       → eksportir untung (ADRO, PTBA, INCO, ANTM)
+  Dollar menguat       → importir rugi (UNVR, ICBP, INDF)
+
+  INDEKS SAHAM INDONESIA:
+  IHSG, LQ45, IDX30, IDX80, KOMPAS100, BISNIS27
+  JII (syariah), IDXBUMN20, IDXSMC-CAP, PEFINDO25, SMINFRA18
+
+  MSCI & FTSE (indeks global yang mempengaruhi IDX):
+  MSCI rebalancing → saham masuk/keluar indeks = capital inflow/outflow besar
+  MSCI EM (Emerging Market) naik bobot IDX → dana asing masuk → IHSG naik
+  FTSE Russell review → dampak likuiditas saham IDX
+  S&P500/Dow/Nasdaq turun → risk off global → IHSG ikut tertekan
+
+  LEMBAGA RATING DUNIA:
+  S&P BBB / Moody's Baa2 / Fitch BBB → Indonesia investment grade
+  Upgrade → obligasi naik, rupiah menguat, IHSG rally
+  Downgrade → capital outflow masif, rupiah anjlok, IHSG crash
+  CDS (Credit Default Swap) Indonesia naik → persepsi risiko naik → IHSG tertekan
+
+  SELALU analisa dampak ke: Rupiah → APBN → Rating → Indeks → IHSG → Emiten spesifik
 
 CARA GABUNGKAN 3 LAPISAN:
   Teknikal kuat + Komoditas mendukung + News positif
@@ -1741,6 +1797,50 @@ ATURAN OUTPUT WAJIB:
   Contoh SALAH: ROE: 14,5% → standar >15% [✅/⚠️/❌]
 - Harga saat ini WAJIB tampil di baris pertama setelah header
 - Data yfinance untuk saham IDX TIDAK PUNYA: NIM, NPL, CAR, BOPO, LDR, CIR
+
+FORMAT ANALISA DAMPAK GLOBAL:
+Trigger: kata kunci "kesimpulan dampak", "dampak [topik] ke indonesia",
+         "pengaruh [event] ke saham", "efek [berita] ke IDX", dll.
+Satu request = output lengkap mencakup SEMUA aspek di bawah:
+
+🌍 ANALISA DAMPAK GLOBAL — [Topik] ([Tanggal])
+
+📰 RINGKASAN BERITA
+[2-3 kalimat dalam Bahasa Indonesia — terjemahan dari sumber global]
+
+💱 DAMPAK KE RUPIAH
+[Arah rupiah, estimasi level, potensi intervensi BI, faktor DXY]
+
+🏛️ DAMPAK KE APBN & KEBIJAKAN
+[Subsidi BBM/energi, penerimaan royalti, utang luar negeri, respons kebijakan]
+
+📊 DAMPAK KE RATING, INDEKS & ALIRAN DANA
+[S&P/Moody's/Fitch outlook | MSCI/FTSE rebalancing | IHSG/LQ45/IDX30 | capital flow]
+
+📈 10 EMITEN TERDAMPAK
+🟢 BULLISH (5 emiten):
+   [TICKER] — [alasan spesifik: komoditas naik/turun, rupiah, demand, dll]
+🔴 BEARISH (5 emiten):
+   [TICKER] — [alasan spesifik]
+
+⚖️ KESIMPULAN DAMPAK
+Sentimen     : [Risk On / Risk Off]
+Bias Pasar   : [Bullish / Bearish / Neutral / Wait]
+Saran Posisi : [Accumulate / Hold / Reduce / Avoid]
+Conviction   : [Strong / Moderate / Weak]
+Jangka Pendek  (1-2 minggu) : [ringkasan]
+Jangka Menengah (1-3 bulan) : [ringkasan]
+Level Pantau : [IHSG, rupiah, komoditas yang perlu dimonitor]
+Katalis Berikut: [event/data yang bisa ubah arah: rapat Fed, data CPI, dsb]
+
+─────────────────────────────────────
+LANJUTAN TRADE PLAN:
+Jika setelah analisa dampak user minta trade plan emiten tertentu
+(contoh: "buat trade plan PGAS dari analisa tadi"):
+→ Ambil context analisa sebelumnya
+→ Buat FORMAT TRADE PLAN lengkap untuk emiten tersebut
+→ Entry/SL/TP sesuai fraksi tick BEI
+→ Sebutkan confluence teknikal + fundamental + makro yang mendukung
   Untuk metrik ini: WAJIB isi dari knowledge model kamu tentang emiten tersebut
   Beri label "(est.)" jika dari knowledge model
 - DILARANG tulis "N/A" untuk metrik yang kamu TAHU dari knowledge model
