@@ -15,6 +15,121 @@ import hashlib
 import bcrypt
 import re
 
+# ── Office file support ──
+def read_excel_file(raw: bytes, filename: str) -> str:
+    """Baca file Excel (.xlsx/.xls) dan convert ke teks terstruktur."""
+    try:
+        import openpyxl
+        from io import BytesIO
+        wb = openpyxl.load_workbook(BytesIO(raw), data_only=True)
+        result = [f"[EXCEL: {filename} | {len(wb.sheetnames)} sheet]\n"]
+        for sheet_name in wb.sheetnames[:5]:  # max 5 sheet
+            ws = wb[sheet_name]
+            result.append(f"\n=== Sheet: {sheet_name} ===")
+            rows_added = 0
+            for row in ws.iter_rows(values_only=True):
+                if rows_added > 200:  # max 200 baris per sheet
+                    result.append("...[data terpotong]")
+                    break
+                row_vals = [str(v) if v is not None else "" for v in row]
+                if any(v.strip() for v in row_vals):  # skip baris kosong
+                    result.append(" | ".join(row_vals))
+                    rows_added += 1
+        return "\n".join(result)[:40000]
+    except Exception as e:
+        return f"[Gagal baca Excel: {e}]"
+
+def read_word_file(raw: bytes, filename: str) -> str:
+    """Baca file Word (.docx) dan extract teks."""
+    try:
+        from docx import Document
+        from io import BytesIO
+        doc = Document(BytesIO(raw))
+        result = [f"[WORD: {filename}]\n"]
+        for para in doc.paragraphs:
+            if para.text.strip():
+                result.append(para.text)
+        # Baca tabel jika ada
+        for i, table in enumerate(doc.tables[:10]):
+            result.append(f"\n[Tabel {i+1}]")
+            for row in table.rows:
+                cells = [cell.text.strip() for cell in row.cells]
+                result.append(" | ".join(cells))
+        return "\n".join(result)[:40000]
+    except Exception as e:
+        return f"[Gagal baca Word: {e}]"
+
+def create_excel_download(content_text: str, filename: str = "sigma_output.xlsx") -> bytes:
+    """Buat file Excel dari teks analisa SIGMA."""
+    try:
+        import openpyxl
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from io import BytesIO
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Analisa SIGMA"
+        # Header
+        ws["A1"] = "SIGMA — Analisa Output"
+        ws["A1"].font = Font(bold=True, size=14, color="FFFFFF")
+        ws["A1"].fill = PatternFill("solid", fgColor="1B2A4A")
+        ws.column_dimensions["A"].width = 20
+        ws.column_dimensions["B"].width = 60
+        # Isi konten baris per baris
+        row = 3
+        for line in content_text.split("\n"):
+            line = line.strip()
+            if not line:
+                row += 1
+                continue
+            if line.startswith("---") or line.startswith("═"):
+                row += 1
+                continue
+            if ":" in line:
+                parts = line.split(":", 1)
+                ws.cell(row=row, column=1, value=parts[0].strip()).font = Font(bold=True)
+                ws.cell(row=row, column=2, value=parts[1].strip())
+            else:
+                ws.merge_cells(f"A{row}:B{row}")
+                ws.cell(row=row, column=1, value=line)
+            ws.cell(row=row, column=1).alignment = Alignment(wrap_text=True)
+            ws.cell(row=row, column=2).alignment = Alignment(wrap_text=True)
+            row += 1
+        buf = BytesIO()
+        wb.save(buf)
+        return buf.getvalue()
+    except Exception:
+        return b""
+
+def create_word_download(content_text: str, filename: str = "sigma_output.docx") -> bytes:
+    """Buat file Word dari teks analisa SIGMA."""
+    try:
+        from docx import Document
+        from docx.shared import Pt, RGBColor
+        from io import BytesIO
+        doc = Document()
+        doc.add_heading("SIGMA — Analisa Output", level=0)
+        for line in content_text.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("---") or line.startswith("═"):
+                doc.add_paragraph("─" * 40)
+            elif line.startswith(("📋","💰","🛡️","📊","💎","🏆","⚖️","📈","🔭")):
+                p = doc.add_heading(line, level=2)
+            elif ":" in line and len(line) < 80:
+                parts = line.split(":", 1)
+                p = doc.add_paragraph()
+                run1 = p.add_run(parts[0].strip() + ": ")
+                run1.bold = True
+                p.add_run(parts[1].strip())
+            else:
+                doc.add_paragraph(line)
+        buf = BytesIO()
+        doc.save(buf)
+        return buf.getvalue()
+    except Exception:
+        return b""
+
 # ─────────────────────────────────────────────
 # MARKET CONTEXT — Real-time data injector
 # ─────────────────────────────────────────────
@@ -43,17 +158,145 @@ def _fetch_stock_data(ticker: str) -> dict:
     except Exception:
         return {}
 
+# Sumber berita finansial Indonesia — RSS gratis
+NEWS_SOURCES = {
+    "google":  "https://news.google.com/rss/search?q={query}&hl=id&gl=ID&ceid=ID:id",
+    "cnbc_id": "https://www.cnbcindonesia.com/rss",
+    "bisnis":  "https://ekonomi.bisnis.com/rss",
+    "kontan":  "https://rss.kontan.co.id/category/investasi",
+    "idx_news":"https://www.idx.co.id/umbraco/Surface/RssHelper/GetRss?categoryId=1",
+}
+
 def _fetch_news_headlines(query: str, max_items: int = 5) -> list:
-    """Ambil headline berita via Google News RSS — gratis, no API key."""
+    """
+    Ambil headline berita dari multi-sumber:
+    1. Google News (query-based)
+    2. CNBC Indonesia
+    3. Bisnis.com
+    4. Kontan
+    5. IDX News
+    Deduplikasi judul yang mirip, return max_items per sumber.
+    """
     try:
         import feedparser
-        url = f"https://news.google.com/rss/search?q={requests.utils.quote(query)}&hl=id&gl=ID&ceid=ID:id"
-        feed = feedparser.parse(url)
+        all_headlines = []
+        seen_titles = set()
+
+        # 1. Google News — paling relevan karena query-based
+        try:
+            url = NEWS_SOURCES["google"].format(
+                query=requests.utils.quote(f"{query} saham Indonesia")
+            )
+            feed = feedparser.parse(url)
+            for entry in feed.entries[:max_items]:
+                title = entry.title.strip()
+                key = title[:40].lower()
+                if key not in seen_titles:
+                    seen_titles.add(key)
+                    pub = entry.get("published", "")[:16]
+                    all_headlines.append(f"[Google News] [{pub}] {title}")
+        except Exception:
+            pass
+
+        # 2. CNBC Indonesia
+        try:
+            feed = feedparser.parse(NEWS_SOURCES["cnbc_id"])
+            count = 0
+            for entry in feed.entries:
+                if count >= 3:
+                    break
+                title = entry.title.strip()
+                key = title[:40].lower()
+                # Filter yang relevan dengan query
+                if query.lower() in title.lower() or "saham" in title.lower() or "ihsg" in title.lower() or "bursa" in title.lower():
+                    if key not in seen_titles:
+                        seen_titles.add(key)
+                        pub = entry.get("published", "")[:16]
+                        all_headlines.append(f"[CNBC ID] [{pub}] {title}")
+                        count += 1
+        except Exception:
+            pass
+
+        # 3. Kontan
+        try:
+            feed = feedparser.parse(NEWS_SOURCES["kontan"])
+            count = 0
+            for entry in feed.entries:
+                if count >= 3:
+                    break
+                title = entry.title.strip()
+                key = title[:40].lower()
+                if query.lower() in title.lower() or "saham" in title.lower() or "investasi" in title.lower():
+                    if key not in seen_titles:
+                        seen_titles.add(key)
+                        pub = entry.get("published", "")[:16]
+                        all_headlines.append(f"[Kontan] [{pub}] {title}")
+                        count += 1
+        except Exception:
+            pass
+
+        # 4. Bisnis.com
+        try:
+            feed = feedparser.parse(NEWS_SOURCES["bisnis"])
+            count = 0
+            for entry in feed.entries:
+                if count >= 3:
+                    break
+                title = entry.title.strip()
+                key = title[:40].lower()
+                if query.lower() in title.lower() or "emiten" in title.lower() or "bursa" in title.lower():
+                    if key not in seen_titles:
+                        seen_titles.add(key)
+                        pub = entry.get("published", "")[:16]
+                        all_headlines.append(f"[Bisnis] [{pub}] {title}")
+                        count += 1
+        except Exception:
+            pass
+
+        return all_headlines[:max_items * 2]  # max 10 berita total
+
+    except Exception:
+        return []
+
+def _fetch_market_news_general() -> list:
+    """
+    Ambil berita pasar modal umum (IHSG, makro, kebijakan)
+    tanpa filter query — untuk konteks market overview.
+    """
+    try:
+        import feedparser
         headlines = []
-        for entry in feed.entries[:max_items]:
-            pub = entry.get("published", "")[:16]
-            headlines.append(f"• [{pub}] {entry.title}")
-        return headlines
+        seen = set()
+
+        sources = [
+            ("CNBC ID", NEWS_SOURCES["cnbc_id"]),
+            ("Kontan",  NEWS_SOURCES["kontan"]),
+            ("Bisnis",  NEWS_SOURCES["bisnis"]),
+        ]
+
+        market_keywords = ["ihsg", "bursa", "saham", "bi rate", "inflasi",
+                           "rupiah", "idx", "ojk", "dividen", "emiten",
+                           "right issue", "ipo", "buyback"]
+
+        for source_name, url in sources:
+            try:
+                feed = feedparser.parse(url)
+                count = 0
+                for entry in feed.entries:
+                    if count >= 3:
+                        break
+                    title = entry.title.strip()
+                    key = title[:40].lower()
+                    if any(kw in title.lower() for kw in market_keywords):
+                        if key not in seen:
+                            seen.add(key)
+                            pub = entry.get("published", "")[:16]
+                            headlines.append(f"[{source_name}] [{pub}] {title}")
+                            count += 1
+            except Exception:
+                continue
+
+        return headlines[:8]
     except Exception:
         return []
 
@@ -233,12 +476,93 @@ def _fetch_idx_company_info(ticker: str) -> dict:
     except Exception:
         return {}
 
+def _fetch_idx_financial_summary(ticker: str) -> str:
+    """
+    Ambil ringkasan keuangan terbaru dari IDX via API publik.
+    Return string data atau kosong jika gagal.
+    """
+    try:
+        # IDX Summary endpoint
+        url = f"https://www.idx.co.id/umbraco/Surface/Helper/GetCompanyProfiles?stockCode={ticker}"
+        r = requests.get(url, timeout=8, headers={
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://www.idx.co.id/"
+        })
+        if r.status_code != 200:
+            return ""
+        data = r.json()
+        if not data:
+            return ""
+
+        lines = [f"\n── DATA IDX TERBARU ({ticker}) ──"]
+        if data.get("SektorEmiten"):
+            lines.append(f"Sektor          : {data['SektorEmiten']}")
+        if data.get("SubSektorEmiten"):
+            lines.append(f"Sub-Sektor      : {data['SubSektorEmiten']}")
+        if data.get("TanggalPencatatan"):
+            lines.append(f"Tanggal IPO     : {data['TanggalPencatatan']}")
+        if data.get("JumlahSaham"):
+            shares = int(data["JumlahSaham"])
+            lines.append(f"Jumlah Saham    : {shares/1e9:.2f} miliar lembar")
+
+        return "\n".join(lines) if len(lines) > 1 else ""
+    except Exception:
+        return ""
+
+def _fetch_idx_price_latest(ticker: str) -> dict:
+    """Ambil harga terkini dari IDX API."""
+    try:
+        url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}"
+        r = requests.get(url, timeout=5, headers={
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://www.idx.co.id/"
+        })
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+        if not data:
+            return {}
+        return {
+            "price": data.get("LastPrice", 0),
+            "change": data.get("Change", 0),
+            "change_pct": data.get("ChangePercentage", 0),
+            "volume": data.get("Volume", 0),
+            "market_cap": data.get("MarketCap", 0),
+            "source": "IDX_live"
+        }
+    except Exception:
+        return {}
+
+
 def _fetch_price_with_fallback(ticker: str) -> dict:
     """
     Coba ambil data harga dengan urutan:
-    1. yfinance → 2. stooq → 3. IDX API
+    1. IDX Live → 2. yfinance → 3. stooq → 4. IDX company API
     Return dict dengan field 'source' untuk tracking.
     """
+    # Layer 0: IDX Live — paling fresh untuk harga
+    try:
+        idx_live = _fetch_idx_price_latest(ticker)
+        if idx_live.get("price") and idx_live["price"] > 0:
+            # Merge dengan yfinance untuk rasio (PER, PBV, dll)
+            try:
+                import yfinance as yf
+                info = yf.Ticker(f"{ticker}.JK").info
+                idx_live["pe_ratio"] = info.get("trailingPE")
+                idx_live["pb_ratio"] = info.get("priceToBook")
+                idx_live["eps"] = info.get("trailingEps")
+                idx_live["book_value"] = info.get("bookValue")
+                idx_live["dividend_yield"] = info.get("dividendYield")
+                idx_live["shares"] = info.get("sharesOutstanding")
+                idx_live["52w_high"] = info.get("fiftyTwoWeekHigh")
+                idx_live["52w_low"] = info.get("fiftyTwoWeekLow")
+                idx_live["source"] = "IDX_live+yfinance"
+            except Exception:
+                pass
+            return {k: v for k, v in idx_live.items() if v is not None}
+    except Exception:
+        pass
+
     # Layer 1: yfinance
     try:
         import yfinance as yf
@@ -356,6 +680,12 @@ def fetch_full_fundamental(ticker: str) -> str:
         lines.append(f"=== DATA FUNDAMENTAL LENGKAP — {ticker} ({today_str}) ===")
         lines.append(f"Sumber harga : {price_source} | Sumber lapkeu: {fin_source}\n")
 
+        # Tambahkan info IDX jika tersedia
+        idx_info = _fetch_idx_financial_summary(ticker)
+        if idx_info:
+            lines.append(idx_info)
+            lines.append("")
+
         # ── HARGA & VALUASI (dari price_data berlapis) ──
         lines.append("── HARGA & VALUASI TERKINI ──")
         if price_data.get("price"):
@@ -464,14 +794,26 @@ def fetch_full_fundamental(ticker: str) -> str:
                 except Exception:
                     pass
 
-        lines.append(f"\n=== AKHIR DATA FUNDAMENTAL ===")
-        lines.append(f"TAHUN SEKARANG: {current_year}")
-        lines.append(f"INSTRUKSI WAJIB:")
-        lines.append(f"1. Tren 3 tahun = {current_year-2}, {current_year-1}, {current_year} — BUKAN tahun lama")
-        lines.append(f"2. Setiap metrik di baris TERPISAH — DILARANG digabung satu baris")
-        lines.append(f"3. Tampilkan angka AKTUAL dari data di atas, bukan placeholder")
-        lines.append(f"4. Hitung CAGR laba bersih dari data historis")
-        lines.append(f"5. Proyeksi {current_year+1}-{current_year+2} berdasarkan tren")
+        # ── BERITA TERBARU EMITEN ──
+        news_items = _fetch_news_headlines(ticker, max_items=6)
+        if news_items:
+            lines.append("\n── BERITA TERBARU ──")
+            lines.extend(news_items)
+
+        lines.append(f"\n=== PENTING — BACA SEBELUM ANALISA ===")
+        lines.append(f"TAHUN SAAT INI: {current_year}")
+        lines.append(f"PERINGATAN DATA: Data historis dari yfinance untuk saham IDX")
+        lines.append(f"sering hanya tersedia sampai 2022-2023. Ini BUKAN data terbaru.")
+        lines.append(f"WAJIB lakukan hal berikut:")
+        lines.append(f"1. Data historis yfinance (2020-2022) → gunakan sebagai TREN HISTORIS LAMA")
+        lines.append(f"2. Untuk tahun {current_year-1} dan {current_year} → gunakan knowledge training kamu")
+        lines.append(f"   tentang emiten ini untuk estimasi, dan SEBUTKAN bahwa ini estimasi")
+        lines.append(f"3. Tren 3 tahun TERAKHIR = {current_year-2}, {current_year-1}, {current_year}")
+        lines.append(f"   Isi dengan: data yfinance untuk tahun yang ada, estimasi untuk yang tidak ada")
+        lines.append(f"4. Setiap metrik di baris TERPISAH — DILARANG digabung satu baris")
+        lines.append(f"5. Proyeksi {current_year+1}-{current_year+2} berdasarkan tren CAGR historis")
+        lines.append(f"6. Di bagian Verdict, sebutkan sumber data: mana yang real-time, mana estimasi")
+        lines.append(f"=== AKHIR INSTRUKSI ===")
 
         return "\n".join(lines)
 
@@ -523,17 +865,36 @@ def get_market_context(prompt: str) -> str:
                 f"52W H/L: {stock['week52_high']}/{stock['week52_low']}"
             )
 
-    # Berita — query berdasarkan saham yang disebut, atau umum
-    news_query = f"saham {tickers[0]} IDX Indonesia" if tickers else "IHSG pasar modal Indonesia"
-    headlines = _fetch_news_headlines(news_query)
-    if headlines:
-        context_parts.append(f"\n📰 Berita Terkini ({news_query}):")
-        context_parts.extend(headlines)
+    # Berita — multi-sumber
+    if tickers:
+        news_query = f"saham {tickers[0]} IDX Indonesia"
+        headlines = _fetch_news_headlines(news_query, max_items=4)
+        if headlines:
+            context_parts.append(f"\n📰 Berita {tickers[0]} (multi-sumber):")
+            context_parts.extend(headlines)
+    else:
+        # Berita pasar umum jika tidak ada ticker spesifik
+        general_news = _fetch_market_news_general()
+        if general_news:
+            context_parts.append(f"\n📰 Berita Pasar Modal Indonesia (terbaru):")
+            context_parts.extend(general_news)
 
     if len(context_parts) <= 1:
         return ""  # Tidak ada data yang berhasil di-fetch
 
     return "\n".join(context_parts)
+
+# ─────────────────────────────────────────────
+# VERSION INFO
+# ─────────────────────────────────────────────
+SIGMA_VERSION = "1.4.0"
+SIGMA_CHANGELOG = {
+    "1.0.0": "Initial release — chat + analisa chart",
+    "1.1.0": "Tambah real-time market data (yfinance)",
+    "1.2.0": "Tambah analisa fundamental PDF",
+    "1.3.0": "Multi-source data: yfinance + stooq + IDX API",
+    "1.4.0": "Multi-source news, Excel/Word support, versioning",
+}
 
 # ─────────────────────────────────────────────
 # CONFIG
@@ -1773,7 +2134,7 @@ try:
     result = st.chat_input(
         "Tanya SIGMA... DYOR - bukan financial advice.",
         accept_file="multiple",
-        file_type=["pdf", "png", "jpg", "jpeg"]
+        file_type=["pdf", "png", "jpg", "jpeg", "xlsx", "xls", "docx", "doc", "csv"]
     )
 except TypeError:
     result = st.chat_input("Tanya SIGMA...")
@@ -1791,7 +2152,28 @@ if result is not None:
 
     if file_obj:
         raw = file_obj.read()
-        if file_obj.type == "application/pdf":
+        fname = file_obj.name.lower()
+        ftype = file_obj.type
+
+        # Excel
+        if fname.endswith((".xlsx", ".xls")) or "spreadsheet" in ftype or "excel" in ftype:
+            excel_text = read_excel_file(raw, file_obj.name)
+            st.session_state.pdf_data = (excel_text, file_obj.name)
+            st.session_state.img_data = None
+        # Word
+        elif fname.endswith((".docx", ".doc")) or "word" in ftype or "document" in ftype:
+            word_text = read_word_file(raw, file_obj.name)
+            st.session_state.pdf_data = (word_text, file_obj.name)
+            st.session_state.img_data = None
+        # CSV
+        elif fname.endswith(".csv") or "csv" in ftype:
+            try:
+                csv_text = raw.decode("utf-8", errors="replace")
+                st.session_state.pdf_data = (f"[CSV: {file_obj.name}]\n{csv_text[:30000]}", file_obj.name)
+            except Exception:
+                st.session_state.pdf_data = (f"[CSV: {file_obj.name} — gagal dibaca]", file_obj.name)
+            st.session_state.img_data = None
+        elif ftype == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
 
             # ── Smart PDF extractor — cari halaman keuangan, skip halaman tidak relevan ──
@@ -2020,6 +2402,38 @@ if prompt:
                     )
                 ans = res.choices[0].message.content
             st.markdown(ans)
+
+            # ── Tombol download jika output adalah analisa ──
+            _is_analisa = any(k in ans for k in ["TRADE PLAN", "ANALISA FUNDAMENTAL", "PROFITABILITAS", "VERDICT"])
+            if _is_analisa:
+                col1, col2 = st.columns(2)
+                with col1:
+                    try:
+                        xlsx_bytes = create_excel_download(ans)
+                        if xlsx_bytes:
+                            st.download_button(
+                                label="⬇️ Download Excel",
+                                data=xlsx_bytes,
+                                file_name=f"sigma_analisa_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True
+                            )
+                    except Exception:
+                        pass
+                with col2:
+                    try:
+                        docx_bytes = create_word_download(ans)
+                        if docx_bytes:
+                            st.download_button(
+                                label="⬇️ Download Word",
+                                data=docx_bytes,
+                                file_name=f"sigma_analisa_{datetime.now().strftime('%Y%m%d_%H%M')}.docx",
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                use_container_width=True
+                            )
+                    except Exception:
+                        pass
+
         active["messages"].append({"role": "assistant", "content": ans})
     except Exception as e:
         err_msg = str(e)
