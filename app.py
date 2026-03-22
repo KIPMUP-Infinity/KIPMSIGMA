@@ -2128,6 +2128,29 @@ for i, msg in enumerate(active["messages"][1:]):
         if msg["role"] == "user" and msg.get("img_b64"):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
+        # Tampilkan tombol download untuk pesan analisa di history
+        if msg["role"] == "assistant" and msg.get("is_analisa"):
+            _col1, _col2 = st.columns(2)
+            with _col1:
+                try:
+                    _xb = create_excel_download(msg["content"])
+                    if _xb:
+                        st.download_button("⬇️ Excel", _xb,
+                            file_name=f"sigma_{msg.get('id','analisa')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key=f"dl_xlsx_{i}", use_container_width=True)
+                except Exception:
+                    pass
+            with _col2:
+                try:
+                    _wb = create_word_download(msg["content"])
+                    if _wb:
+                        st.download_button("⬇️ Word", _wb,
+                            file_name=f"sigma_{msg.get('id','analisa')}.docx",
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            key=f"dl_docx_{i}", use_container_width=True)
+                except Exception:
+                    pass
 
 # Chat input
 try:
@@ -2443,7 +2466,11 @@ if prompt:
                     except Exception:
                         pass
 
-        active["messages"].append({"role": "assistant", "content": ans})
+        active["messages"].append({
+            "role": "assistant",
+            "content": ans,
+            "is_analisa": any(k in ans for k in ["TRADE PLAN", "ANALISA FUNDAMENTAL", "PROFITABILITAS", "VERDICT"])
+        })
     except Exception as e:
         err_msg = str(e)
         if "rate_limit" in err_msg.lower():
