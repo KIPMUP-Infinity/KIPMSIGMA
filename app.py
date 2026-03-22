@@ -1480,6 +1480,85 @@ KEMAMPUAN:
 4. Umum — jawab pertanyaan apapun, berikan solusi praktis
 
 ════════════════════════════════════
+BANDARMOLOGI — DATABASE & FRAMEWORK
+════════════════════════════════════
+
+── IDENTIFIKASI BROKER DI STOCKBIT ──
+Warna broker menentukan kategori:
+🔴 MERAH = Foreign/Asing (institusi luar negeri)
+🟢 HIJAU = BUMN (broker pelat merah)
+🟣 UNGU  = Lokal/Domestik
+
+── DATABASE BROKER ASING (MERAH) ──
+YU=CGS International | AK=UBS | BK=J.P.Morgan | ZP=Maybank
+BQ=Korea Investment | YP=Mirae Asset | RX=Macquarie
+CP=KB Valbury | KZ=CLSA | KK=Phillip | TP=OCBC
+HD=KGI | DR=RHB | XA=NH Korindo | DP=DBS Vickers
+AI=Kay Hian | AG=Kiwoom | LS=Reliance | RB=Ina Sekuritas
+FS=Yuanta | DU=KAF | GI=Webull | AH=Shinhan
+CG=Citigroup | CS=Credit Suisse | GW=HSBC
+LH=Royal Investium | MS=Morgan Stanley
+
+── DATABASE BROKER BUMN (HIJAU) ──
+CC=Mandiri Sekuritas | NI=BNI Sekuritas
+OD=BRI Danareksa | DX=Bahana Sekuritas
+
+── DATABASE BROKER LOKAL (UNGU) ──
+XL=Stockbit | SQ=BCA Sekuritas | DH=Sinarmas | PD=Indo Premier
+IF=Samuel | BB=Verdhana | XC=Ajaib | MG=Semesta Indovest
+AZ=Sucor | LG=Trimegah | GR=Panin | YB=Yakin Bertumbuh
+EP=MNC | KI=Ciptadana | AP=Pacific | MI=Victoria
+SF=Surya Fajar | BR=Trust | YJ=Lotus Andalan | CD=Mega Capital
+PP=Aldiracita | RF=Buana Capital | HP=Henan Putihrai
+IN=Investindo Nusantara | II=Danatama | AO=Erdikha | AT=Phintraco
+SS=Supra | SH=Artha | PC=FAC | TS=Dwidana Sakti
+SA=Elit Sukses | FZ=Waterfront | MU=Minna Padi | EL=Evergreen
+IH=Indo Harvest | PG=Panca Global | IU=Indo Capital
+PO=Pilarmas | ES=Ekokapital | ZR=Bumiputera | ID=Anugerah
+GA=BNC | QA=Tuntun | PF=Danasakti | RO=Pluang Maju
+AR=Binaartha | RS=Yulie | RG=Profindo | PI=Magenta Kapital
+BS=Equity | TF=Universal Broker | IT=Inti Teladan | OK=Net Sekuritas
+AF=Harita Kencana | YO=Amantara | JB=BJB | IC=Integrity Capital
+AD=OSO | BF=Inti Fikasa | DD=Makindo | FO=Forte Global
+AN=Wanteg | BZ=Batavia Prosperindo | DM=Masindo Artha
+IP=Yugen | KS=Kresna | MK=Ekuator Swarna | PS=Paramitra Alfa
+SC=IMG Sekuritas | TX=Dhanawibawa
+
+── POLA BANDARMOLOGI ──
+
+BULLISH:
+✅ Asing net buy besar + volume naik + harga naik = Akumulasi asing → BULLISH kuat
+✅ BUMN masuk besar = dukungan pemerintah → BULLISH
+✅ Asing net buy + harga sideways = Akumulasi diam-diam → potensi breakout
+✅ Volume anomali 2-3x rata-rata + harga naik = Big lot masuk
+
+BEARISH / WARNING:
+⚠️ Asing net sell + volume naik + harga turun = Distribusi asing → BEARISH
+⚠️ Asing distribusi + lokal beli = Asing keluar, ritel diiming-iming → DANGER
+⚠️ Volume besar tapi harga tidak naik = Distribusi diam-diam → WARNING
+⚠️ Semua kategori net sell = Distribusi massal → KELUAR
+
+POLA BUMN:
+ℹ️ Asing net sell + BUMN masuk = BUMN stabilisasi, tapi asing kabur
+ℹ️ BUMN akumulasi konsisten = ada agenda/program pemerintah
+ℹ️ BUMN net sell = privatisasi atau rebalancing portofolio
+
+── CARA ANALISA SS BROKER ──
+1. Baca kode broker → identifikasi warna (merah/hijau/ungu)
+2. Hitung net buy/sell per kategori (asing/BUMN/lokal)
+3. Korelasikan dengan harga & volume
+4. Tentukan siapa yang akumulasi vs distribusi
+
+FORMAT OUTPUT BANDARMOLOGI:
+📦 BANDARMOLOGI — [TICKER]
+🔴 Foreign : Net [Buy/Sell] Rp[X]M → [Akumulasi/Distribusi]
+🟢 BUMN    : Net [Buy/Sell] Rp[X]M → [Stabilisasi/Jual]
+🟣 Lokal   : Net [Buy/Sell] Rp[X]M → [Ikut/Contra]
+📊 Volume  : [X]x rata-rata → [Normal/Anomali]
+🎯 Sinyal  : [Akumulasi Kuat/Distribusi/Mixed/Neutral]
+💡 Insight : [2-3 kalimat interpretasi pola]
+
+════════════════════════════════════
 FRAMEWORK TEKNIKAL — MnM Strategy+ (Pine Script v6)
 ════════════════════════════════════
 
@@ -3112,12 +3191,15 @@ if prompt:
                     ans = None
 
                     # Groq keys — rotasi jika satu kena limit
-                    _groq_keys = [
-                        st.secrets.get("GROQ_API_KEY", ""),
-                        st.secrets.get("GROQ_API_KEY2", ""),
-                        st.secrets.get("GROQ_API_KEY3", ""),
-                        st.secrets.get("GROQ_API_KEY4", ""),
-                    ]
+                    # Auto-scan semua GROQ key dari secrets
+                    # Tambah key baru cukup di Secrets, tidak perlu update script
+                    _groq_keys = []
+                    for _ki in ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(2, 20)]:
+                        _k = st.secrets.get(_ki, "")
+                        if _k:
+                            _groq_keys.append(_k)
+                    if not _groq_keys:
+                        _groq_keys = [""]
                     _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 
                     # Coba semua kombinasi key + model
