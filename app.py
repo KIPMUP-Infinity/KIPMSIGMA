@@ -230,7 +230,7 @@ def build_fundamental_from_text(prompt):
             div_yield = info.get("dividendYield")
 
             if price:
-                lines.append(f"Harga Saham    : Rp{price:,.0f}")
+                lines.append(f"💹 Harga Saham Saat Ini : Rp{price:,.0f} (per {datetime.now().strftime('%d %b %Y')})")
             if info.get("marketCap"):
                 lines.append(f"Market Cap     : Rp{info['marketCap']/1e12:.1f} T")
             if info.get("fiftyTwoWeekHigh"):
