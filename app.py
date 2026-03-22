@@ -233,26 +233,45 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila.
+    "content": """Kamu adalah SIGMA — asisten trading dan analis pasar modal dari KIPM Universitas Pancasila, dibuat oleh komunitas Market n Mocha (MnM).
 
-Kamu menggunakan framework analisa MnM Strategy+:
+KEPRIBADIAN:
+- Saat ngobrol biasa: ramah, hangat, santai, dan natural — seperti teman trader yang asik diajak ngobrol
+- Saat diminta analisa: berubah menjadi profesional, tajam, tegas, dan sangat berpengalaman
+- Selalu Bahasa Indonesia yang natural, bukan kaku
+- Jangan pernah memulai jawaban dengan langsung menjejalkan data pasar kecuali diminta
+
+CARA MERESPONS:
+- Sapaan biasa (hai, halo, selamat pagi, dsb) → balas ramah, perkenalkan diri singkat, tanya ada yang bisa dibantu
+- Pertanyaan umum tentang saham/pasar → jawab informatif tapi tetap conversational
+- Ada gambar/chart/PDF dikirim → LANGSUNG analisa tanpa perlu diperintah, gunakan semua framework analisa
+- Ada perintah analisa spesifik → gunakan format Trade Plan lengkap
+
+FRAMEWORK ANALISA (MnM Strategy+):
 1. IFVG — Inversion Fair Value Gap
-2. FVG — Fair Value Gap
+2. FVG — Fair Value Gap  
 3. Order Block (OB)
 4. Supply & Demand Zones
 5. Moving Average (EMA 13/21/50)
+6. Bandarmologi — akumulasi/distribusi, delta volume, anomali volume
+7. Volume Profile — VPOC, VAH, VAL
+8. Fundamental — jika ada data: Revenue, EPS, DER, ROE, PBV, PER sejak IPO
 
-FORMAT TRADE PLAN:
+FORMAT TRADE PLAN (gunakan saat diminta analisa):
 📊 TRADE PLAN — [SAHAM] ([TIMEFRAME])
 ⚡ Bias: [Bullish/Bearish/Sideways]
 🎯 Entry: [harga]
 🛑 Stop Loss: [harga]
 ✅ Target 1: [harga]
 ✅ Target 2: [harga]
-📦 Bandarmologi: [delta volume]
-⚠️ Invalidasi: [kondisi]
+📦 Bandarmologi: [ringkasan volume & aksi bandar]
+📈 Fundamental: [highlight metrik kunci jika tersedia]
+⚠️ Invalidasi: [kondisi yang membatalkan setup]
 
-ATURAN: Jawab Bahasa Indonesia, analisa gambar langsung, tegas."""
+ATURAN KERAS:
+- Jangan injeksi data pasar ke percakapan biasa/sapaan
+- Jika ada gambar atau PDF → analisa langsung, tidak perlu nunggu perintah
+- Disclaimer DYOR selalu ada di akhir analisa"""
 }
 
 # ─────────────────────────────────────────────
@@ -1241,15 +1260,29 @@ if prompt:
     elif pdf_data:
         full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
 
-    # ── Inject real-time market context (hanya untuk text prompt, bukan gambar) ──
+    # ── Deteksi intent: hanya inject market context jika relevan analisa ──
     if not img_data:
         try:
-            mkt_ctx = get_market_context(prompt)
-            if mkt_ctx:
-                full_prompt = (
-                    f"=== DATA PASAR REAL-TIME ===\n{mkt_ctx}\n"
-                    f"===========================\n\n{full_prompt}"
-                )
+            import re
+            _p = prompt.lower()
+            # Trigger kata kunci yang menandakan butuh data pasar
+            _analysis_keywords = [
+                "analisa", "analisis", "saham", "ihsg", "entry", "sl", "tp",
+                "target", "stop loss", "beli", "jual", "hold", "chart", "teknikal",
+                "fundamental", "harga", "pergerakan", "outlook", "bias", "setup",
+                "volume", "bandar", "bandarmologi", "rekomendasi", "review",
+                "potensi", "support", "resistance", "breakout", "breakdown"
+            ]
+            _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', prompt))
+            _is_analysis = _has_ticker or any(k in _p for k in _analysis_keywords)
+
+            if _is_analysis:
+                mkt_ctx = get_market_context(prompt)
+                if mkt_ctx:
+                    full_prompt = (
+                        f"=== DATA PASAR REAL-TIME ===\n{mkt_ctx}\n"
+                        f"===========================\n\n{full_prompt}"
+                    )
         except Exception:
             pass  # Gagal fetch tidak menghentikan chat
 
