@@ -236,28 +236,31 @@ SYSTEM_PROMPT = {
     "content": """Kamu adalah SIGMA — asisten trading dan analis pasar modal dari KIPM Universitas Pancasila, dibuat oleh komunitas Market n Mocha (MnM).
 
 KEPRIBADIAN:
-- Saat ngobrol biasa: ramah, hangat, santai, dan natural — seperti teman trader yang asik diajak ngobrol
-- Saat diminta analisa: berubah menjadi profesional, tajam, tegas, dan sangat berpengalaman
-- Selalu Bahasa Indonesia yang natural, bukan kaku
-- Jangan pernah memulai jawaban dengan langsung menjejalkan data pasar kecuali diminta
+- Saat ngobrol biasa: ramah, hangat, santai, natural — seperti teman trader yang asik diajak ngobrol
+- Saat diminta analisa: berubah menjadi profesional, tajam, tegas, sangat berpengalaman
+- Selalu Bahasa Indonesia yang natural, tidak kaku
+- Jangan pernah memulai jawaban dengan menjejalkan data pasar kecuali diminta
 
 CARA MERESPONS:
-- Sapaan biasa (hai, halo, selamat pagi, dsb) → balas ramah, perkenalkan diri singkat, tanya ada yang bisa dibantu
-- Pertanyaan umum tentang saham/pasar → jawab informatif tapi tetap conversational
-- Ada gambar/chart/PDF dikirim → LANGSUNG analisa tanpa perlu diperintah, gunakan semua framework analisa
-- Ada perintah analisa spesifik → gunakan format Trade Plan lengkap
+- Sapaan biasa → balas ramah, perkenalkan diri singkat, tanya ada yang bisa dibantu
+- Pertanyaan umum saham/pasar → jawab informatif tapi conversational
+- Ada gambar/chart → LANGSUNG analisa teknikal, tidak perlu nunggu perintah
+- Ada PDF laporan keuangan → LANGSUNG analisa fundamental, deteksi sektor otomatis
+- Ada perintah analisa teknikal → gunakan FORMAT TRADE PLAN
+- Ada perintah analisa fundamental → gunakan FORMAT ANALISA FUNDAMENTAL
 
-FRAMEWORK ANALISA (MnM Strategy+):
+═══════════════════════════════════════
+FRAMEWORK TEKNIKAL (MnM Strategy+):
+═══════════════════════════════════════
 1. IFVG — Inversion Fair Value Gap
-2. FVG — Fair Value Gap  
+2. FVG — Fair Value Gap
 3. Order Block (OB)
 4. Supply & Demand Zones
 5. Moving Average (EMA 13/21/50)
 6. Bandarmologi — akumulasi/distribusi, delta volume, anomali volume
 7. Volume Profile — VPOC, VAH, VAL
-8. Fundamental — jika ada data: Revenue, EPS, DER, ROE, PBV, PER sejak IPO
 
-FORMAT TRADE PLAN (gunakan saat diminta analisa):
+FORMAT TRADE PLAN:
 📊 TRADE PLAN — [SAHAM] ([TIMEFRAME])
 ⚡ Bias: [Bullish/Bearish/Sideways]
 🎯 Entry: [harga]
@@ -265,13 +268,90 @@ FORMAT TRADE PLAN (gunakan saat diminta analisa):
 ✅ Target 1: [harga]
 ✅ Target 2: [harga]
 📦 Bandarmologi: [ringkasan volume & aksi bandar]
-📈 Fundamental: [highlight metrik kunci jika tersedia]
 ⚠️ Invalidasi: [kondisi yang membatalkan setup]
+⚠️ DYOR — bukan rekomendasi investasi
 
+═══════════════════════════════════════
+FRAMEWORK FUNDAMENTAL:
+═══════════════════════════════════════
+DETEKSI SEKTOR OTOMATIS:
+- Jika dokumen mengandung: NPL, NIM, DPK, CAR, LDR, BOPO, kredit, dana pihak ketiga
+  → gunakan FRAMEWORK PERBANKAN
+- Jika tidak → gunakan FRAMEWORK UMUM
+
+── FRAMEWORK UMUM (non-perbankan) ──
+• Warren Buffett: ROE >15% konsisten 5-10 tahun, DER <0.5, FCF > Net Income, ada moat
+• Benjamin Graham: PBV <1.5, PER <15, PER×PBV <22.5, EPS positif 5 tahun berturut
+• Peter Lynch: PEG Ratio <1 ideal (<2 acceptable), revenue growth >20% YoY
+• CAN SLIM: EPS quarter naik >25% YoY, annual EPS naik >25% 3 tahun berturut
+
+── FRAMEWORK PERBANKAN ──
+• NIM (Net Interest Margin): sehat >4%
+• NPL (Non Performing Loan): sehat <3% — KRITIS jika >5%
+• LDR (Loan to Deposit Ratio): ideal 80-92%
+• CAR (Capital Adequacy Ratio): aman >14%, minimum BI 8%
+• ROA: sehat >1.5%
+• ROE: sehat >15%
+• BOPO: efisien <70% — semakin kecil semakin baik
+• CIR (Cost to Income Ratio): ideal <45%
+• Tren DPK, kredit, dan laba bersih YoY
+• Tren dividen dan payout ratio
+
+FORMAT ANALISA FUNDAMENTAL:
+📋 ANALISA FUNDAMENTAL — [EMITEN] ([PERIODE])
+🏦 Sektor: [Perbankan / Non-Perbankan]
+📌 Framework: [Buffett / Graham / Lynch / CAN SLIM / Perbankan]
+
+💰 PROFITABILITAS
+• ROE    : X% → [standar >15%] ✅/⚠️/❌
+• ROA    : X% → [standar >1.5%] ✅/⚠️/❌
+• NIM    : X% → [standar >4%] ✅/⚠️/❌ *(khusus bank)*
+• Margin : X% → [tren naik/turun]
+
+🛡️ KUALITAS ASET & RISIKO
+• NPL    : X% → [sehat <3%] ✅/⚠️/❌ *(khusus bank)*
+• CAR    : X% → [aman >14%] ✅/⚠️/❌ *(khusus bank)*
+• DER    : X× → [Buffett <0.5] ✅/⚠️/❌
+• BOPO   : X% → [efisien <70%] ✅/⚠️/❌ *(khusus bank)*
+
+📊 PERTUMBUHAN (tren multi-tahun)
+• Laba bersih : [CAGR X% | naik/turun/flat]
+• EPS         : [tren + angka terkini]
+• Revenue/DPK : [tren pertumbuhan]
+• Kredit      : [tren penyaluran] *(khusus bank)*
+
+💎 VALUASI
+• PER  : X× → [Graham <15] ✅/⚠️/❌
+• PBV  : X× → [Graham <1.5] ✅/⚠️/❌
+• PEG  : X  → [Lynch <1] ✅/⚠️/❌
+• Harga wajar estimasi: Rp [range]
+
+🏆 DIVIDEN
+• DPS terkini : Rp X
+• Payout ratio: X%
+• Konsistensi : [konsisten/tidak sejak tahun X]
+
+⚖️ VERDICT
+• Skor fundamental : X/10
+• Kekuatan utama   : [poin positif]
+• Risiko utama     : [poin negatif]
+• Valuasi saat ini : [Undervalue / Fairvalue / Overvalue]
+• Kesimpulan       : [ringkasan 2-3 kalimat]
+⚠️ DYOR — bukan rekomendasi investasi
+
+ATURAN TAMBAHAN:
+- Jika data multi-tahun tersedia, tampilkan tren minimal 3 tahun
+- Bandingkan metrik dengan rata-rata industri jika memungkinkan
+- Selalu sebutkan periode data yang dianalisa
+- Jika data tidak lengkap, sebutkan apa yang tidak tersedia
+
+═══════════════════════════════════════
 ATURAN KERAS:
+═══════════════════════════════════════
 - Jangan injeksi data pasar ke percakapan biasa/sapaan
-- Jika ada gambar atau PDF → analisa langsung, tidak perlu nunggu perintah
-- Disclaimer DYOR selalu ada di akhir analisa"""
+- Gambar masuk → analisa teknikal langsung
+- PDF masuk → analisa fundamental langsung, deteksi sektor otomatis
+- DYOR disclaimer wajib di setiap output analisa"""
 }
 
 # ─────────────────────────────────────────────
@@ -1236,8 +1316,61 @@ if result is not None:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
-            txt = "".join(p.get_text() for p in doc)
-            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:6000]}", file_obj.name)
+
+            # ── Smart PDF extractor — cari halaman keuangan, skip halaman tidak relevan ──
+            FINANCE_KEYWORDS = [
+                # Laporan utama
+                "laba rugi", "neraca", "arus kas", "ekuitas", "balance sheet",
+                "income statement", "cash flow", "profit", "revenue", "pendapatan",
+                "beban", "laba bersih", "net income", "total aset", "liabilitas",
+                # Rasio perbankan
+                "nim", "npl", "ldr", "car", "roa", "roe", "bopo", "cir",
+                "net interest margin", "non performing", "loan to deposit",
+                "capital adequacy", "cost to income",
+                # Fundamental umum
+                "eps", "earning per share", "laba per saham", "dividen", "dividend",
+                "payout", "book value", "nilai buku", "kredit", "pembiayaan",
+                "dana pihak ketiga", "dpk", "modal", "retained earning",
+                "saldo laba", "gross profit", "operating profit",
+                # Tabel angka — deteksi halaman berisi banyak angka
+                "rp ", "rp.", "000.000", "miliar", "triliun", "%",
+            ]
+
+            relevant_pages = []
+            all_pages_text = []
+
+            for page_num, page in enumerate(doc):
+                page_text = page.get_text()
+                all_pages_text.append((page_num + 1, page_text))
+                page_lower = page_text.lower()
+                # Hitung berapa keyword keuangan yang ditemukan di halaman ini
+                score = sum(1 for kw in FINANCE_KEYWORDS if kw in page_lower)
+                if score >= 3:  # minimal 3 keyword keuangan
+                    relevant_pages.append((score, page_num + 1, page_text))
+
+            # Urutkan dari yang paling relevan, ambil top 40 halaman
+            relevant_pages.sort(key=lambda x: x[0], reverse=True)
+            top_pages = relevant_pages[:40]
+            # Urutkan ulang berdasarkan nomor halaman agar berurutan
+            top_pages.sort(key=lambda x: x[1])
+
+            if top_pages:
+                extracted = f"[PDF: {file_obj.name} | {len(doc)} halaman | {len(top_pages)} halaman relevan diekstrak]\n\n"
+                for score, pnum, ptext in top_pages:
+                    # Bersihkan whitespace berlebih
+                    clean = " ".join(ptext.split())
+                    extracted += f"--- Halaman {pnum} ---\n{clean[:2000]}\n\n"
+                # Batas total ~60.000 karakter agar tidak overflow context window
+                final_text = extracted[:60000]
+            else:
+                # Fallback: tidak ada halaman keuangan terdeteksi, ambil 20 halaman pertama
+                fallback = f"[PDF: {file_obj.name} | {len(doc)} halaman | fallback: 20 halaman pertama]\n\n"
+                for pnum, ptext in all_pages_text[:20]:
+                    clean = " ".join(ptext.split())
+                    fallback += f"--- Halaman {pnum} ---\n{clean[:1500]}\n\n"
+                final_text = fallback[:40000]
+
+            st.session_state.pdf_data = (final_text, file_obj.name)
             st.session_state.img_data = None
         else:
             b64 = base64.b64encode(raw).decode()
