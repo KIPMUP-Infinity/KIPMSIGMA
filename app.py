@@ -361,19 +361,29 @@ def build_fundamental_from_text(prompt):
                         else:
                             lines.append(f"   Status: 🟡 FAIRVALUE — harga dalam range wajar ({selisih:+.1f}%)")
 
-            lines.append(f"\nCATATAN: Data yfinance IDX sering hanya sampai 2022-2023.")
-            lines.append(f"Estimasi {current_year-1}→{current_year} dari knowledge model.")
-            lines.append(f"SEKTOR: {sektor} — gunakan FRAMEWORK: {framework}")
-            lines.append(f"Untuk bank: tampilkan NIM, NPL, LDR, CAR, BOPO, CIR")
-            lines.append(f"Untuk non-bank: tampilkan Gross Margin, Operating Margin, DER, Current Ratio")
-            lines.append(f"Tren 3 tahun aktual: {current_year-2}→{current_year-1}→{current_year}")
-            lines.append(f"Nilai wajar sudah dihitung di atas — tampilkan di bagian VALUASI.")
-            lines.append("=== INSTRUKSI OUTPUT ===")
+            # Cek IPO date
+            ipo_year = None
+            try:
+                hist_all = t.history(period="max")
+                if not hist_all.empty:
+                    ipo_year = hist_all.index[0].year
+            except: pass
+
+            lines.append(f"\n=== INSTRUKSI OUTPUT ===")
             if price:
                 lines.append(f"BARIS PERTAMA WAJIB: 💹 Harga: Rp{price:,.0f} | {datetime.now().strftime('%d %b %Y')}")
-            lines.append(f"Gunakan FORMAT ANALISA FUNDAMENTAL. Pilih ✅ ATAU ⚠️ ATAU ❌ — JANGAN tampilkan ketiganya.")
-            lines.append(f"Contoh benar: ROE: 12,23% → standar >15% [❌]")
-            lines.append(f"Contoh SALAH: ROE: 12,23% → standar >15% [✅/⚠️/❌]")
+            lines.append(f"SEKTOR: {sektor} | FRAMEWORK: {framework}")
+            lines.append(f"Icon: pilih SATU — ✅ pass, ⚠️ perhatian, ❌ fail. JANGAN [✅/⚠️/❌]")
+            lines.append(f"DILARANG mengarang angka — jika tidak ada data tulis N/A")
+            if ipo_year and ipo_year >= current_year - 2:
+                lines.append(f"⚠️ EMITEN BARU — IPO {ipo_year}. JANGAN tulis tren sebelum {ipo_year}.")
+                lines.append(f"Untuk tren: tulis 'Baru IPO {ipo_year} — historis belum tersedia'")
+            else:
+                lines.append(f"Data yfinance sering hanya s/d 2022-2023. Beri label ESTIMASI jika perkiraan.")
+                lines.append(f"Tren 3 tahun: {current_year-2}→{current_year-1}→{current_year}")
+            lines.append(f"Untuk bank: tampilkan NIM, NPL, LDR, CAR, BOPO, CIR")
+            lines.append(f"Untuk non-bank: tampilkan Gross Margin, Operating Margin, DER, Current Ratio")
+            lines.append(f"Nilai wajar sudah dihitung — tampilkan di VALUASI")
             lines.append("=== AKHIR DATA ===")
             result[0] = "\n".join(lines)
         except Exception as e:
@@ -874,6 +884,11 @@ ATURAN OUTPUT WAJIB:
   Contoh BENAR: ROE: 14,5% → standar >15% [❌]
   Contoh SALAH: ROE: 14,5% → standar >15% [✅/⚠️/❌]
 - Harga saat ini WAJIB tampil di baris pertama setelah header
+- DILARANG MENGARANG DATA: jika data tidak tersedia, tulis "N/A — data tidak tersedia"
+  JANGAN isi dengan angka fiktif atau estimasi tanpa label "estimasi"
+- Untuk emiten baru (IPO < 2 tahun): tren historis TIDAK ADA — tulis "Baru IPO [tahun]"
+  JANGAN tulis tren sejak tahun sebelum IPO
+- Jika data yfinance tidak ada untuk suatu metrik: tulis "N/A" bukan angka karangan
 - Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
 
