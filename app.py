@@ -1022,6 +1022,10 @@ if "do" in st.query_params:
         _sid = _do[4:]
         st.session_state.active_id = _sid
         st.query_params["do"] = ""; st.rerun()
+    elif _do.startswith("del_"):
+        _sid = _do[4:]
+        delete_session(_sid)
+        st.query_params["do"] = ""; st.rerun()
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
@@ -1038,10 +1042,13 @@ for sesi in st.session_state.sessions:
     bg = C['hover'] if is_active else "transparent"
     _hist_items += f"""
     (function() {{
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;width:100%;';
+
         var hi = document.createElement('button');
         hi.textContent = '{title_d}';
         hi.dataset.sid = '{sid}';
-        hi.style.cssText = 'display:block;width:100%;padding:11px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        hi.style.cssText = 'flex:1;padding:11px 8px 11px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;';
         hi.onmouseenter = function(){{this.style.background='{C["hover"]}'}};
         hi.onmouseleave = function(){{this.style.background='{bg}'}};
         hi.onclick = function(){{
@@ -1049,7 +1056,25 @@ for sesi in st.session_state.sessions:
             url.searchParams.set('do', 'sel_{sid}');
             window.parent.location.href = url.toString();
         }};
-        drawer.appendChild(hi);
+
+        var del = document.createElement('button');
+        del.innerHTML = '🗑';
+        del.title = 'Hapus obrolan';
+        del.style.cssText = 'padding:8px 10px;background:transparent;border:none;cursor:pointer;font-size:0.9rem;opacity:0.4;flex-shrink:0;color:{C["text"]};';
+        del.onmouseenter = function(){{this.style.opacity='1';this.style.color='#ff5555';}};
+        del.onmouseleave = function(){{this.style.opacity='0.4';this.style.color='{C["text"]}';}};
+        del.onclick = function(e){{
+            e.stopPropagation();
+            if(confirm('Hapus obrolan ini?')){{
+                var url = new URL(window.parent.location.href);
+                url.searchParams.set('do', 'del_{sid}');
+                window.parent.location.href = url.toString();
+            }}
+        }};
+
+        row.appendChild(hi);
+        row.appendChild(del);
+        drawer.appendChild(row);
     }})();
 """
 
