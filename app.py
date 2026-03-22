@@ -113,6 +113,44 @@ def init_session():
 
 init_session()
 
+# Proses delete PALING AWAL sebelum apapun — termasuk sebelum sigma_token restore
+if "del" in st.query_params:
+    _del_sid = st.query_params.get("del", "")
+    if _del_sid:
+        # Load user data dari token jika belum ada
+        if st.session_state.user is None:
+            _tok = st.query_params.get("sigma_token", "")
+            if _tok:
+                _tfile = os.path.join(DATA_DIR, f"token_{_tok}.json")
+                if os.path.exists(_tfile):
+                    try:
+                        with open(_tfile) as _f:
+                            _uinfo = json.load(_f)
+                        st.session_state.user = _uinfo
+                        _saved = load_user(_uinfo["email"])
+                        if _saved and _saved.get("sessions"):
+                            st.session_state.sessions = _saved["sessions"]
+                            st.session_state.active_id = _saved.get("active_id")
+                        st.session_state.data_loaded = True
+                    except: pass
+        # Hapus session
+        if st.session_state.sessions:
+            delete_session(_del_sid)
+            # Simpan ke disk
+            if st.session_state.user:
+                _sv = []
+                for _s in st.session_state.sessions:
+                    _msgs = [dict(m) for m in _s["messages"] if m["role"] != "system"]
+                    _sv.append({"id": _s["id"], "title": _s["title"],
+                                "created": _s["created"], "messages": _msgs})
+                save_user(st.session_state.user["email"], {
+                    "theme": st.session_state.get("theme", "dark"),
+                    "sessions": _sv,
+                    "active_id": st.session_state.active_id,
+                })
+        st.query_params.pop("del")
+        st.rerun()
+
 C = get_colors(st.session_state.theme)
 
 # ─────────────────────────────────────────────
@@ -912,7 +950,8 @@ for _sesi in st.session_state.sessions:
         e.preventDefault();e.stopPropagation();
         if(confirm('Hapus obrolan ini?')){{
             var u2=new URL(window.parent.location.href);
-            u2.searchParams.set('do','del_{_sid}');
+            u2.searchParams.set('del','{_sid}');
+            u2.searchParams.delete('do');
             window.parent.location.href=u2.toString();
         }}
     }};
