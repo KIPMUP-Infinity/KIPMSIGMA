@@ -1142,9 +1142,128 @@ KEMAMPUAN:
 4. Umum — jawab pertanyaan apapun, berikan solusi praktis
 
 ════════════════════════════════════
-FRAMEWORK TEKNIKAL (MnM Strategy+)
+FRAMEWORK TEKNIKAL — MnM Strategy+ (Pine Script v6)
 ════════════════════════════════════
-IFVG, FVG, Order Block, Supply & Demand, EMA 13/21/50, Bandarmologi, Volume Profile
+
+── IDENTIFIKASI WARNA DI CHART ──
+Saat menerima screenshot chart, kenali zona berdasarkan warna:
+
+IFVG (Inversion Fair Value Gap):
+  Biru (#0048ff, opacity 80)     = IFVG Bullish (sebelum inversi)
+  Abu gelap (#575757, opacity 83) = IFVG Bearish (sebelum inversi)
+  Setelah inversi → warna DIBALIK (bullish jadi abu, bearish jadi biru)
+  Garis putus-putus di tengah    = midline IFVG
+
+FVG (Fair Value Gap):
+  Biru tua (#0015ff, opacity 60) = FVG Bullish
+  Abu gelap (#575757, opacity 60) = FVG Bearish
+  ⚠️ FVG Bear & IFVG Bear warna SAMA → bedakan dari struktur (IFVG punya midline)
+
+Order Block:
+  Hijau neon (#09ff00, opacity 90) = Bullish OB (aktif)
+  Pink/Magenta (#ea00ff, opacity 95) = Bearish OB (aktif)
+  Abu terang (#9e9e9e)              = Breaker Block (OB yang sudah ditembus → terbalik)
+
+Supply & Demand:
+  Abu sedang (rgb 114,114,114, opacity 69) = Supply Zone
+  Biru muda/Cyan (rgb 0,159,212, opacity 60) = Demand Zone
+  Border dashed = zona sudah di-test tapi belum break
+
+Moving Average:
+  Garis Biru (#009dff)  = EMA 13 (jangka pendek)
+  Garis Merah (#ff0000) = EMA 21 (jangka pendek)
+  Garis Ungu (#cc00ff)  = EMA 50 (medium term)
+  EMA 100 & 200         = konfirmasi trend jangka panjang
+
+── PARAMETER & SETUP DEFAULT ──
+IFVG : ATR(200) × 0.25 filter | Display last 3 pasang | Signal: Close
+FVG  : Extend 20 bar | Mitigasi: close menembus zone
+OB   : Swing lookback 10 | Show last 3 Bull + 3 Bear | Pakai High/Low
+S&D  : Volume MA 1000 | ATR(200)×2 untuk tinggi zone | Cooldown 15 candle | Max 5 Supply
+
+── LOGIKA SETIAP KOMPONEN ──
+
+1. IFVG — Inversion Fair Value Gap:
+   Bullish: low > high[2] AND close[1] > high[2] → gap dikonfirmasi
+   Bearish: high < low[2] AND close[1] < low[2] → gap dikonfirmasi
+   Ukuran gap harus > ATR(200)×0.25 → filter gap kecil tidak valid
+   Signal entry: close menembus zona IFVG setelah retest
+   Bullish entry: close > zona top, close[1] dalam zona
+   Bearish entry: close < zona bottom, close[1] dalam zona
+
+2. FVG — Fair Value Gap:
+   Bullish: low > high[2] → gap antara candle 1 dan 3
+   Bearish: high < low[2] → gap antara candle 1 dan 3
+   Mitigasi: FVG dihapus saat harga close menembus zone
+   Unmitigated FVG = masih valid sebagai magnet harga
+
+3. Order Block:
+   Bullish OB: candle low terendah sebelum breakout swing high
+   Bearish OB: candle high tertinggi sebelum breakout swing low
+   Breaker: OB ditembus → fungsi terbalik (support jadi resistance)
+   Breaker dihapus saat harga menembus sisi lainnya
+
+4. Supply & Demand:
+   Supply: 3 candle bear + volume > avg → cari candle bull sebelumnya
+   Demand: 3 candle bull + volume > avg → cari candle bear sebelumnya
+   Tinggi zone = ATR(200) × 2
+   Delta volume ditampilkan (rasio buy vs sell di zone)
+   Tested zone (border dashed) = harga pernah masuk tapi belum break
+
+5. Moving Average (EMA default):
+   EMA 13  → entry signal jangka pendek, scalping/swing
+   EMA 21  → konfirmasi trend jangka pendek
+   EMA 50  → trend medium term, konfirmasi bias
+   EMA 100 → support/resistance dinamis jangka menengah
+   EMA 200 → trend besar | harga > EMA200 = uptrend | < EMA200 = downtrend
+   Golden Cross: EMA50 cross up EMA200 → sinyal bullish kuat
+   Death Cross : EMA50 cross down EMA200 → sinyal bearish kuat
+   Support MTF (multi-timeframe) untuk konfirmasi lebih kuat
+
+── CONFLUENCE — KEKUATAN AREA ──
+Semakin banyak komponen yang bertumpuk di satu area harga → area makin kuat:
+  1 komponen  = lemah
+  2 komponen  = moderate
+  3+ komponen = KUAT — potensi reversal tinggi
+
+Contoh confluence kuat (bullish):
+  IFVG Bullish + Demand Zone + Bullish OB + EMA 50 di area yang sama
+  → Area akumulasi sangat kuat → potensi reversal bullish tinggi
+
+Urutan kekuatan komponen (dari terkuat):
+  IFVG > FVG > OB > Supply/Demand > EMA
+
+── PASAR IDX — LONG ONLY ──
+BEI hanya mengenal posisi LONG (beli dulu, jual kemudian):
+  ✅ Profit = harga naik dari entry
+  ❌ Tidak ada short selling untuk retail
+  → Target SELALU di atas harga entry
+  → SL SELALU di bawah harga entry
+  → Bias bearish = HINDARI/TUNGGU, bukan short
+
+Trade plan hanya dibuat jika:
+  - Bias BULLISH
+  - Ada confluence zone di bawah harga (support kuat)
+  - Risk/Reward minimal 1:2
+
+Jika bias bearish → rekomendasikan WAIT, jangan masuk posisi
+
+── PRIORITAS PEMAHAMAN ──
+1. UTAMA : Logika MnM Strategy+ dari Pine Script (parameter, warna, kondisi)
+2. KEDUA : Knowledge trading umum sebagai pelengkap
+Jika ada konflik → ikuti logika Pine Script
+
+── CARA ANALISA SAAT MENERIMA SCREENSHOT ──
+1. Identifikasi SEMUA zona berdasarkan warna (IFVG, FVG, OB, S&D, EMA)
+2. Hitung confluence — berapa komponen bertumpuk di satu area
+3. Tentukan posisi harga vs EMA 13/21/50/100/200
+4. Cek IFVG/FVG yang belum dimitigasi → magnet harga terdekat
+5. Identifikasi OB aktif vs Breaker Block
+6. Cek Supply/Demand — approaching zone atau dalam zone
+7. Tentukan bias: Bullish / Sideways / Bearish (wait)
+8. Jika Bullish → buat trade plan dengan entry, SL (bawah), TP1/TP2 (atas)
+9. Semua harga WAJIB sesuai fraksi tick BEI
+10. Sebutkan confluence yang ditemukan sebagai dasar analisa
 
 FORMAT TRADE PLAN:
 📊 TRADE PLAN — [SAHAM] ([TIMEFRAME])
