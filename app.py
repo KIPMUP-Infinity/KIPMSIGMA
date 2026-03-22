@@ -16,6 +16,54 @@ import bcrypt
 import re
 
 
+# ─── GEMINI API — fallback saat Groq limit ───
+def _call_gemini(messages, api_key="AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o"):
+    """Call Gemini 2.5 Flash via REST API."""
+    try:
+        import urllib.request, json as _j
+        api_key = api_key or st.secrets.get("GEMINI_KEY", "AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o")
+        
+        # Convert messages ke format Gemini
+        gemini_contents = []
+        system_text = ""
+        for m in messages:
+            role = m.get("role","")
+            text = m.get("content","") or ""
+            if role == "system":
+                system_text = text
+            elif role == "user":
+                gemini_contents.append({"role":"user","parts":[{"text":text}]})
+            elif role == "assistant":
+                gemini_contents.append({"role":"model","parts":[{"text":text}]})
+        
+        payload = {"contents": gemini_contents}
+        if system_text:
+            payload["system_instruction"] = {"parts":[{"text":system_text}]}
+        payload["generationConfig"] = {
+            "temperature": 0.7,
+            "maxOutputTokens": 2048,
+        }
+        
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        req = urllib.request.Request(
+            url,
+            data=_j.dumps(payload).encode(),
+            headers={"Content-Type":"application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = _j.loads(r.read())
+        
+        # Extract text dari response
+        candidates = data.get("candidates", [])
+        if candidates:
+            parts = candidates[0].get("content",{}).get("parts",[])
+            if parts:
+                return parts[0].get("text","")
+        return None
+    except Exception as e:
+        return None
+
+
 # ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
 def _fetch_all_data(tickers):
     import threading
@@ -2394,17 +2442,51 @@ if prompt:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
                 if img_data:
-                    res = groq_client.chat.completions.create(
-                        model="meta-llama/llama-4-scout-17b-16e-instruct",
-                        messages=[
-                            {"role": "system", "content": "Kamu SIGMA, analis chart. Analisa gambar langsung. Jawab Bahasa Indonesia."},
-                            {"role": "user", "content": [
-                                {"type": "image_url", "image_url": {"url": f"data:{img_data[1]};base64,{img_data[0]}"}},
-                                {"type": "text", "text": prompt}
-                            ]}
-                        ],
-                        max_tokens=2048
-                    )
+                    # Coba Groq vision dulu, fallback ke Gemini vision
+                    _img_ans = None
+                    try:
+                        _img_res = groq_client.chat.completions.create(
+                            model="meta-llama/llama-4-scout-17b-16e-instruct",
+                            messages=[
+                                {"role": "system", "content": "Kamu SIGMA, analis chart. Analisa gambar langsung. Jawab Bahasa Indonesia."},
+                                {"role": "user", "content": [
+                                    {"type": "image_url", "image_url": {"url": f"data:{img_data[1]};base64,{img_data[0]}"}},
+                                    {"type": "text", "text": prompt}
+                                ]}
+                            ],
+                            max_tokens=2048
+                        )
+                        _img_ans = _img_res.choices[0].message.content
+                    except Exception as _img_e:
+                        if "rate_limit" in str(_img_e) or "429" in str(_img_e):
+                            # Fallback ke Gemini untuk gambar
+                            try:
+                                import json as _j2, urllib.request as _ur
+                                _gkey = st.secrets.get("GEMINI_KEY","AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o")
+                                _gpayload = {
+                                    "contents":[{"role":"user","parts":[
+                                        {"inline_data":{"mime_type":img_data[1],"data":img_data[0]}},
+                                        {"text": f"Kamu SIGMA analis chart KIPM. {prompt}. Jawab Bahasa Indonesia."}
+                                    ]}],
+                                    "generationConfig":{"temperature":0.7,"maxOutputTokens":2048}
+                                }
+                                _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gkey}"
+                                _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type":"application/json"})
+                                with _ur.urlopen(_greq, timeout=30) as _gr:
+                                    _gdata = _j2.loads(_gr.read())
+                                _img_ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
+                            except: pass
+                        if _img_ans is None:
+                            raise _img_e
+                    
+                    class _FakeImgRes:
+                        class _C:
+                            class _M:
+                                pass
+                            message = _M()
+                        choices = [_C()]
+                    res = _FakeImgRes()
+                    res.choices[0].message.content = _img_ans
                 else:
                     _all_msgs = [
                         {"role": m["role"], "content": m.get("content") or ""}
@@ -2427,24 +2509,55 @@ if prompt:
                         # Chat biasa — kirim history normal (max 5 pesan terakhir)
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
-                    # Coba 70b dulu, fallback ke 8b jika limit
-                    _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-                    res = None
-                    for _m in _models:
+                    # Coba Groq 70b → Gemini → Groq 8b
+                    ans = None
+
+                    # Step 1: Groq 70b
+                    for _m in ["llama-3.3-70b-versatile"]:
                         try:
-                            res = groq_client.chat.completions.create(
+                            _res = groq_client.chat.completions.create(
                                 model=_m,
                                 messages=_msgs,
                                 temperature=0.7,
                                 max_tokens=2048
                             )
+                            ans = _res.choices[0].message.content
                             break
                         except Exception as _me:
-                            if "rate_limit" in str(_me) or "decommissioned" in str(_me):
-                                continue
-                            raise _me
-                    if res is None:
-                        raise Exception("Semua model tidak tersedia saat ini, coba lagi nanti.")
+                            if "rate_limit" in str(_me) or "429" in str(_me):
+                                pass  # Coba Gemini
+                            else:
+                                raise _me
+
+                    # Step 2: Gemini fallback
+                    if ans is None:
+                        try:
+                            ans = _call_gemini(_msgs)
+                        except: pass
+
+                    # Step 3: Groq 8b last resort
+                    if ans is None:
+                        try:
+                            _res = groq_client.chat.completions.create(
+                                model="llama-3.1-8b-instant",
+                                messages=_msgs,
+                                temperature=0.7,
+                                max_tokens=2048
+                            )
+                            ans = _res.choices[0].message.content
+                        except: pass
+
+                    if ans is None:
+                        raise Exception("Semua model tidak tersedia, coba beberapa saat lagi.")
+                    
+                    # Buat res object compatible
+                    class _FakeRes:
+                        class _Choice:
+                            class _Msg:
+                                content = ans
+                            message = _Msg()
+                        choices = [_Choice()]
+                    res = _FakeRes()
                 ans = res.choices[0].message.content
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
