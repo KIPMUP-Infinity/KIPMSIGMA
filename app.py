@@ -20,768 +20,61 @@ import re
 # ─────────────────────────────────────────────
 # MARKET CONTEXT — Real-time data injector
 # ─────────────────────────────────────────────
-def _fetch_stock_data(ticker: str) -> dict:
-    """Ambil data OHLCV + info dasar via yfinance."""
-    try:
-        import yfinance as yf
-        t = yf.Ticker(ticker)
-        hist = t.history(period="5d")
-        if hist.empty:
-            return {}
-        last = hist.iloc[-1]
-        prev = hist.iloc[-2] if len(hist) > 1 else last
-        chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
-        info = t.info
-        return {
-            "ticker": ticker,
-            "close": round(last["Close"], 0),
-            "volume": int(last["Volume"]),
-            "change_pct": round(chg, 2),
-            "pe_ratio": info.get("trailingPE", "N/A"),
-            "market_cap": info.get("marketCap", "N/A"),
-            "week52_high": info.get("fiftyTwoWeekHigh", "N/A"),
-            "week52_low": info.get("fiftyTwoWeekLow", "N/A"),
-        }
-    except Exception:
-        return {}
-
-# Sumber berita finansial Indonesia — RSS gratis
-NEWS_SOURCES = {
-    "google":  "https://news.google.com/rss/search?q={query}&hl=id&gl=ID&ceid=ID:id",
-    "cnbc_id": "https://www.cnbcindonesia.com/rss",
-    "bisnis":  "https://ekonomi.bisnis.com/rss",
-    "kontan":  "https://rss.kontan.co.id/category/investasi",
-    "idx_news":"https://www.idx.co.id/umbraco/Surface/RssHelper/GetRss?categoryId=1",
-}
-
-def _fetch_news_headlines(query: str, max_items: int = 5) -> list:
-    """
-    Ambil headline berita dari multi-sumber:
-    1. Google News (query-based)
-    2. CNBC Indonesia
-    3. Bisnis.com
-    4. Kontan
-    5. IDX News
-    Deduplikasi judul yang mirip, return max_items per sumber.
-    """
-    try:
-        import feedparser
-        all_headlines = []
-        seen_titles = set()
-
-        # 1. Google News — paling relevan karena query-based
-        try:
-            url = NEWS_SOURCES["google"].format(
-                query=requests.utils.quote(f"{query} saham Indonesia")
-            )
-            feed = feedparser.parse(url)
-            for entry in feed.entries[:max_items]:
-                title = entry.title.strip()
-                key = title[:40].lower()
-                if key not in seen_titles:
-                    seen_titles.add(key)
-                    pub = entry.get("published", "")[:16]
-                    all_headlines.append(f"[Google News] [{pub}] {title}")
-        except Exception:
-            pass
-
-        # 2. CNBC Indonesia
-        try:
-            feed = feedparser.parse(NEWS_SOURCES["cnbc_id"])
-            count = 0
-            for entry in feed.entries:
-                if count >= 3:
-                    break
-                title = entry.title.strip()
-                key = title[:40].lower()
-                # Filter yang relevan dengan query
-                if query.lower() in title.lower() or "saham" in title.lower() or "ihsg" in title.lower() or "bursa" in title.lower():
-                    if key not in seen_titles:
-                        seen_titles.add(key)
-                        pub = entry.get("published", "")[:16]
-                        all_headlines.append(f"[CNBC ID] [{pub}] {title}")
-                        count += 1
-        except Exception:
-            pass
-
-        # 3. Kontan
-        try:
-            feed = feedparser.parse(NEWS_SOURCES["kontan"])
-            count = 0
-            for entry in feed.entries:
-                if count >= 3:
-                    break
-                title = entry.title.strip()
-                key = title[:40].lower()
-                if query.lower() in title.lower() or "saham" in title.lower() or "investasi" in title.lower():
-                    if key not in seen_titles:
-                        seen_titles.add(key)
-                        pub = entry.get("published", "")[:16]
-                        all_headlines.append(f"[Kontan] [{pub}] {title}")
-                        count += 1
-        except Exception:
-            pass
-
-        # 4. Bisnis.com
-        try:
-            feed = feedparser.parse(NEWS_SOURCES["bisnis"])
-            count = 0
-            for entry in feed.entries:
-                if count >= 3:
-                    break
-                title = entry.title.strip()
-                key = title[:40].lower()
-                if query.lower() in title.lower() or "emiten" in title.lower() or "bursa" in title.lower():
-                    if key not in seen_titles:
-                        seen_titles.add(key)
-                        pub = entry.get("published", "")[:16]
-                        all_headlines.append(f"[Bisnis] [{pub}] {title}")
-                        count += 1
-        except Exception:
-            pass
-
-        return all_headlines[:max_items * 2]  # max 10 berita total
-
-    except Exception:
-        return []
-
-def _fetch_market_news_general() -> list:
-    """
-    Ambil berita pasar modal umum (IHSG, makro, kebijakan)
-    tanpa filter query — untuk konteks market overview.
-    """
-    try:
-        import feedparser
-        headlines = []
-        seen = set()
-
-        sources = [
-            ("CNBC ID", NEWS_SOURCES["cnbc_id"]),
-            ("Kontan",  NEWS_SOURCES["kontan"]),
-            ("Bisnis",  NEWS_SOURCES["bisnis"]),
-        ]
-
-        market_keywords = ["ihsg", "bursa", "saham", "bi rate", "inflasi",
-                           "rupiah", "idx", "ojk", "dividen", "emiten",
-                           "right issue", "ipo", "buyback"]
-
-        for source_name, url in sources:
-            try:
-                feed = feedparser.parse(url)
-                count = 0
-                for entry in feed.entries:
-                    if count >= 3:
-                        break
-                    title = entry.title.strip()
-                    key = title[:40].lower()
-                    if any(kw in title.lower() for kw in market_keywords):
-                        if key not in seen:
-                            seen.add(key)
-                            pub = entry.get("published", "")[:16]
-                            headlines.append(f"[{source_name}] [{pub}] {title}")
-                            count += 1
-            except Exception:
-                continue
-
-        return headlines[:8]
-    except Exception:
-        return []
-
-def _fetch_ihsg_data() -> dict:
-    """Ambil data IHSG (^JKSE) sebagai konteks makro pasar."""
-    try:
-        import yfinance as yf
-        t = yf.Ticker("^JKSE")
-        hist = t.history(period="5d")
-        if hist.empty:
-            return {}
-        last = hist.iloc[-1]
-        prev = hist.iloc[-2] if len(hist) > 1 else last
-        chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
-        return {
-            "level": round(last["Close"], 0),
-            "change_pct": round(chg, 2),
-            "volume": int(last["Volume"]),
-        }
-    except Exception:
-        return {}
-
-# ─────────────────────────────────────────────
-# FUNDAMENTAL DATA FETCHER — untuk melengkapi data PDF
-# ─────────────────────────────────────────────
-# Peta nama perusahaan ke ticker IDX
-COMPANY_TICKER_MAP = {
-    "bank central asia": "BBCA", "bca": "BBCA",
-    "bank rakyat indonesia": "BBRI", "bri": "BBRI",
-    "bank mandiri": "BMRI", "mandiri": "BMRI",
-    "bank negara indonesia": "BBNI", "bni": "BBNI",
-    "bank bsi": "BRIS", "bank syariah indonesia": "BRIS",
-    "telkom": "TLKM", "astra": "ASII",
-    "unilever": "UNVR", "indofood": "INDF",
-    "goto": "GOTO", "gojek": "GOTO",
-    "adaro": "ADRO", "antam": "ANTM",
-}
-
-def detect_ticker_from_pdf(pdf_text: str) -> str:
-    """Deteksi ticker saham dari teks PDF laporan keuangan."""
-    import re
-    text_lower = pdf_text.lower()[:3000]
-    # Cek peta nama perusahaan
-    for name, ticker in COMPANY_TICKER_MAP.items():
-        if name in text_lower:
-            return ticker
-    # Cek format kode saham langsung (4 huruf kapital)
-    matches = re.findall(r'([A-Z]{4})', pdf_text[:2000])
-    for m in matches:
-        if m not in {"PADA","YANG","ATAU","DARI","BANK","TBKK","ANAK","ASET"}:
-            return m
-    return ""
-
-def fetch_fundamental_supplement(ticker: str) -> dict:
-    """
-    Ambil data fundamental pelengkap dari yfinance.
-    Digunakan untuk melengkapi data yang tidak ada di PDF.
-    """
+def _get_stock_price(ticker):
     try:
         import yfinance as yf
         t = yf.Ticker(f"{ticker}.JK")
+        hist = t.history(period="2d")
+        if hist.empty:
+            return None
         info = t.info
-        hist = t.history(period="5d")
-        price = round(hist.iloc[-1]["Close"], 0) if not hist.empty else None
-
-        # Ambil data historis untuk hitung tren
-        hist_annual = t.history(period="5y", interval="1mo")
-
-        result = {
-            "ticker": ticker,
-            "price": price,
-            "pe_ratio": info.get("trailingPE"),
-            "pb_ratio": info.get("priceToBook"),
-            "market_cap": info.get("marketCap"),
-            "shares_outstanding": info.get("sharesOutstanding"),
-            "book_value": info.get("bookValue"),
-            "dividend_yield": info.get("dividendYield"),
-            "trailing_eps": info.get("trailingEps"),
-            "52w_high": info.get("fiftyTwoWeekHigh"),
-            "52w_low": info.get("fiftyTwoWeekLow"),
-            "sector": info.get("sector", ""),
-            "industry": info.get("industry", ""),
-        }
-        return {k: v for k, v in result.items() if v is not None}
-    except Exception:
-        return {}
-
-def build_fundamental_context(pdf_text: str) -> str:
-    """
-    Deteksi emiten dari PDF, fetch data pelengkap dari yfinance,
-    dan return string konteks untuk diinject ke prompt analisa.
-    """
-    ticker = detect_ticker_from_pdf(pdf_text)
-    if not ticker:
-        return ""
-
-    supp = fetch_fundamental_supplement(ticker)
-    if not supp:
-        return ""
-
-    today_str = datetime.now().strftime("%d %B %Y")
-    lines = [f"\n=== DATA PASAR REAL-TIME — {ticker} ({today_str}) ==="]
-
-    if supp.get("price"):
-        lines.append(f"Harga Saham Terkini : Rp{supp['price']:,.0f}")
-    if supp.get("pe_ratio"):
-        lines.append(f"PER (P/E)           : {supp['pe_ratio']:.2f}×")
-    if supp.get("pb_ratio"):
-        lines.append(f"PBV (P/B)           : {supp['pb_ratio']:.2f}×")
-    if supp.get("trailing_eps"):
-        lines.append(f"EPS (TTM)           : Rp{supp['trailing_eps']:,.0f}")
-    if supp.get("book_value"):
-        lines.append(f"Book Value/Share    : Rp{supp['book_value']:,.0f}")
-    if supp.get("market_cap"):
-        mc_t = supp["market_cap"] / 1e12
-        lines.append(f"Market Cap          : Rp{mc_t:.1f} triliun")
-    if supp.get("dividend_yield"):
-        lines.append(f"Dividend Yield      : {supp['dividend_yield']*100:.2f}%")
-    if supp.get("52w_high") and supp.get("52w_low"):
-        lines.append(f"52W High / Low      : Rp{supp['52w_high']:,.0f} / Rp{supp['52w_low']:,.0f}")
-
-    lines.append(f"\nGunakan data di atas untuk melengkapi PER, PBV, harga wajar,")
-    lines.append(f"dan valuasi yang tidak tersedia di laporan keuangan PDF.")
-    lines.append("=== AKHIR DATA PASAR ===")
-
-    return "\n".join(lines)
-
-
-# ─────────────────────────────────────────────
-# MULTI-SOURCE DATA FETCHER — sistem backup berlapis
-# ─────────────────────────────────────────────
-
-def _fetch_price_stooq(ticker: str) -> dict:
-    """Layer 2: Ambil harga historis dari stooq.com sebagai backup yfinance."""
-    try:
-        import pandas_datareader as pdr
-        from datetime import timedelta
-        end = datetime.now()
-        start = end - timedelta(days=365*5)  # 5 tahun historis
-        df = pdr.get_data_stooq(f"{ticker}.JK", start=start, end=end)
-        if df.empty:
-            return {}
-        df = df.sort_index()
-        last = df.iloc[-1]
-        prev = df.iloc[-2] if len(df) > 1 else last
+        last = hist.iloc[-1]
+        prev = hist.iloc[-2] if len(hist) > 1 else last
         chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
-        # Hitung simple metrics dari price history
         return {
             "price": round(last["Close"], 0),
-            "change_pct": round(chg, 2),
-            "52w_high": round(df["High"].tail(252).max(), 0),
-            "52w_low": round(df["Low"].tail(252).min(), 0),
-            "source": "stooq"
+            "chg": round(chg, 2),
+            "pe": info.get("trailingPE"),
+            "pbv": info.get("priceToBook"),
+            "eps": info.get("trailingEps"),
         }
-    except Exception:
-        return {}
+    except:
+        return None
 
-def _fetch_idx_company_info(ticker: str) -> dict:
-    """Layer 3: Ambil info dasar emiten dari IDX via request publik."""
+def _get_news(query, n=4):
     try:
-        url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetSecuritiesStock?start=0&length=1&keyword={ticker}"
-        r = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
-        if r.status_code != 200:
-            return {}
-        data = r.json()
-        if not data.get("data"):
-            return {}
-        item = data["data"][0]
-        return {
-            "name": item.get("Name", ""),
-            "sector": item.get("Sector", ""),
-            "price": item.get("LastPrice", 0),
-            "change_pct": item.get("Change", 0),
-            "market_cap": item.get("MarketCap", 0),
-            "source": "IDX"
-        }
-    except Exception:
-        return {}
+        import feedparser
+        url = f"https://news.google.com/rss/search?q={requests.utils.quote(query+' saham Indonesia')}&hl=id&gl=ID&ceid=ID:id"
+        feed = feedparser.parse(url)
+        return [f"• {e.title}" for e in feed.entries[:n]]
+    except:
+        return []
 
-def _fetch_idx_financial_summary(ticker: str) -> str:
-    """
-    Ambil ringkasan keuangan terbaru dari IDX via API publik.
-    Return string data atau kosong jika gagal.
-    """
-    try:
-        # IDX Summary endpoint
-        url = f"https://www.idx.co.id/umbraco/Surface/Helper/GetCompanyProfiles?stockCode={ticker}"
-        r = requests.get(url, timeout=8, headers={
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://www.idx.co.id/"
-        })
-        if r.status_code != 200:
-            return ""
-        data = r.json()
-        if not data:
-            return ""
-
-        lines = [f"\n── DATA IDX TERBARU ({ticker}) ──"]
-        if data.get("SektorEmiten"):
-            lines.append(f"Sektor          : {data['SektorEmiten']}")
-        if data.get("SubSektorEmiten"):
-            lines.append(f"Sub-Sektor      : {data['SubSektorEmiten']}")
-        if data.get("TanggalPencatatan"):
-            lines.append(f"Tanggal IPO     : {data['TanggalPencatatan']}")
-        if data.get("JumlahSaham"):
-            shares = int(data["JumlahSaham"])
-            lines.append(f"Jumlah Saham    : {shares/1e9:.2f} miliar lembar")
-
-        return "\n".join(lines) if len(lines) > 1 else ""
-    except Exception:
-        return ""
-
-def _fetch_idx_price_latest(ticker: str) -> dict:
-    """Ambil harga terkini dari IDX API."""
-    try:
-        url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}"
-        r = requests.get(url, timeout=5, headers={
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://www.idx.co.id/"
-        })
-        if r.status_code != 200:
-            return {}
-        data = r.json()
-        if not data:
-            return {}
-        return {
-            "price": data.get("LastPrice", 0),
-            "change": data.get("Change", 0),
-            "change_pct": data.get("ChangePercentage", 0),
-            "volume": data.get("Volume", 0),
-            "market_cap": data.get("MarketCap", 0),
-            "source": "IDX_live"
-        }
-    except Exception:
-        return {}
-
-
-def _fetch_price_with_fallback(ticker: str) -> dict:
-    """
-    Coba ambil data harga dengan urutan:
-    1. IDX Live → 2. yfinance → 3. stooq → 4. IDX company API
-    Return dict dengan field 'source' untuk tracking.
-    """
-    # Layer 0: IDX Live — paling fresh untuk harga
-    try:
-        idx_live = _fetch_idx_price_latest(ticker)
-        if idx_live.get("price") and idx_live["price"] > 0:
-            # Merge dengan yfinance untuk rasio (PER, PBV, dll)
-            try:
-                import yfinance as yf
-                info = yf.Ticker(f"{ticker}.JK").info
-                idx_live["pe_ratio"] = info.get("trailingPE")
-                idx_live["pb_ratio"] = info.get("priceToBook")
-                idx_live["eps"] = info.get("trailingEps")
-                idx_live["book_value"] = info.get("bookValue")
-                idx_live["dividend_yield"] = info.get("dividendYield")
-                idx_live["shares"] = info.get("sharesOutstanding")
-                idx_live["52w_high"] = info.get("fiftyTwoWeekHigh")
-                idx_live["52w_low"] = info.get("fiftyTwoWeekLow")
-                idx_live["source"] = "IDX_live+yfinance"
-            except Exception:
-                pass
-            return {k: v for k, v in idx_live.items() if v is not None}
-    except Exception:
-        pass
-
-    # Layer 1: yfinance
-    try:
-        import yfinance as yf
-        t = yf.Ticker(f"{ticker}.JK")
-        hist = t.history(period="5d", auto_adjust=True)
-        info = t.info
-        if not hist.empty:
-            last = hist.iloc[-1]
-            prev = hist.iloc[-2] if len(hist) > 1 else last
-            chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
-            return {
-                "price": round(last["Close"], 0),
-                "change_pct": round(chg, 2),
-                "pe_ratio": info.get("trailingPE"),
-                "pb_ratio": info.get("priceToBook"),
-                "market_cap": info.get("marketCap"),
-                "eps": info.get("trailingEps"),
-                "book_value": info.get("bookValue"),
-                "dividend_yield": info.get("dividendYield"),
-                "52w_high": info.get("fiftyTwoWeekHigh"),
-                "52w_low": info.get("fiftyTwoWeekLow"),
-                "shares": info.get("sharesOutstanding"),
-                "source": "yfinance"
-            }
-    except Exception:
-        pass
-
-    # Layer 2: stooq
-    stooq_data = _fetch_price_stooq(ticker)
-    if stooq_data:
-        return stooq_data
-
-    # Layer 3: IDX API
-    idx_data = _fetch_idx_company_info(ticker)
-    if idx_data:
-        return idx_data
-
-    # Semua gagal
-    return {"source": "failed"}
-
-def _fetch_financials_with_fallback(ticker: str) -> dict:
-    """
-    Ambil laporan keuangan historis dengan fallback:
-    1. yfinance income_stmt (API baru)
-    2. yfinance financials (API lama)
-    3. Return kosong — model akan hitung dari knowledge
-    """
-    result = {"inc": None, "bs": None, "cf": None, "source": "none"}
-    try:
-        import yfinance as yf
-        t = yf.Ticker(f"{ticker}.JK")
-
-        # Coba API baru dulu
-        try:
-            inc = t.income_stmt
-            if inc is not None and not inc.empty:
-                result["inc"] = inc
-                result["source"] = "yfinance_new"
-        except Exception:
-            pass
-
-        # Fallback ke API lama
-        if result["inc"] is None:
-            try:
-                inc = t.financials
-                if inc is not None and not inc.empty:
-                    result["inc"] = inc
-                    result["source"] = "yfinance_old"
-            except Exception:
-                pass
-
-        # Balance sheet
-        try:
-            result["bs"] = t.balance_sheet
-        except Exception:
-            pass
-
-        # Cashflow
-        try:
-            cf = t.cash_flow
-            if cf is None or (hasattr(cf, "empty") and cf.empty):
-                cf = t.cashflow
-            result["cf"] = cf
-        except Exception:
-            pass
-
-    except Exception:
-        pass
-
-    return result
-
-
-def fetch_full_fundamental(ticker: str) -> str:
-    """
-    Tarik data fundamental lengkap dengan sistem backup berlapis:
-    Layer 1: yfinance → Layer 2: stooq → Layer 3: IDX API → Layer 4: knowledge model
-    """
-    today_str = datetime.now().strftime("%d %B %Y")
-    current_year = datetime.now().year
-
-    # ── Ambil harga & rasio dengan fallback ──
-    price_data = _fetch_price_with_fallback(ticker)
-    price_source = price_data.get("source", "failed")
-
-    # ── Ambil laporan keuangan dengan fallback ──
-    fin_data = _fetch_financials_with_fallback(ticker)
-    inc = fin_data.get("inc")
-    bs  = fin_data.get("bs")
-    cf  = fin_data.get("cf")
-    fin_source = fin_data.get("source", "none")
-
-    try:
-
-        lines = []
-        lines.append(f"=== DATA FUNDAMENTAL LENGKAP — {ticker} ({today_str}) ===")
-        lines.append(f"Sumber harga : {price_source} | Sumber lapkeu: {fin_source}\n")
-
-        # Tambahkan info IDX jika tersedia
-        idx_info = _fetch_idx_financial_summary(ticker)
-        if idx_info:
-            lines.append(idx_info)
-            lines.append("")
-
-        # ── HARGA & VALUASI (dari price_data berlapis) ──
-        lines.append("── HARGA & VALUASI TERKINI ──")
-        if price_data.get("price"):
-            lines.append(f"Harga Saham     : Rp{price_data['price']:,.0f}")
-        if price_data.get("change_pct") is not None:
-            arah = "▲" if price_data["change_pct"] >= 0 else "▼"
-            lines.append(f"Perubahan       : {arah}{abs(price_data['change_pct']):.2f}%")
-        if price_data.get("pe_ratio"):
-            lines.append(f"PER (Trailing)  : {price_data['pe_ratio']:.2f}×")
-        if price_data.get("pb_ratio"):
-            lines.append(f"PBV             : {price_data['pb_ratio']:.2f}×")
-        if price_data.get("market_cap"):
-            lines.append(f"Market Cap      : Rp{price_data['market_cap']/1e12:.1f} triliun")
-        if price_data.get("52w_high") and price_data.get("52w_low"):
-            lines.append(f"52W High/Low    : Rp{price_data['52w_high']:,.0f} / Rp{price_data['52w_low']:,.0f}")
-        if price_data.get("book_value"):
-            lines.append(f"Book Value/Sh   : Rp{price_data['book_value']:,.0f}")
-        if price_data.get("eps"):
-            lines.append(f"EPS (Trailing)  : Rp{price_data['eps']:,.0f}")
-        if price_data.get("dividend_yield"):
-            lines.append(f"Dividend Yield  : {price_data['dividend_yield']*100:.2f}%")
-        if price_data.get("shares"):
-            lines.append(f"Shares Outstand : {price_data['shares']/1e9:.2f} miliar lembar")
-
-        # Hitung PER & PBV manual jika tidak ada dari source
-        _price = price_data.get("price", 0)
-        _eps   = price_data.get("eps", 0)
-        _bv    = price_data.get("book_value", 0)
-        if _price and _eps and not price_data.get("pe_ratio"):
-            lines.append(f"PER (hitung)    : {_price/_eps:.2f}× (Rp{_price:,.0f} ÷ Rp{_eps:,.0f})")
-        if _price and _bv and not price_data.get("pb_ratio"):
-            lines.append(f"PBV (hitung)    : {_price/_bv:.2f}× (Rp{_price:,.0f} ÷ Rp{_bv:,.0f})")
-
-        if price_source == "failed":
-            lines.append("⚠️ Semua sumber harga gagal — gunakan knowledge internal untuk estimasi harga")
-
-        # ── INCOME STATEMENT HISTORIS ──
-        if inc is not None and hasattr(inc, "empty") and not inc.empty:
-            lines.append("\n── INCOME STATEMENT HISTORIS (tahunan, dalam miliar Rp) ──")
-            # Ambil baris penting
-            key_rows = {
-                "Total Revenue"         : "Pendapatan",
-                "Gross Profit"          : "Laba Kotor",
-                "Operating Income"      : "Laba Operasional",
-                "Net Income"            : "Laba Bersih",
-                "Basic EPS"             : "EPS",
-            }
-            for yf_key, label in key_rows.items():
-                try:
-                    if yf_key in inc.index:
-                        row = inc.loc[yf_key].dropna()
-                        vals = []
-                        for col in sorted(row.index, reverse=True)[:5]:
-                            yr = str(col)[:4]
-                            v = row[col]
-                            if abs(v) > 1e9:
-                                vals.append(f"{yr}: Rp{v/1e12:.1f}T")
-                            elif abs(v) > 1e6:
-                                vals.append(f"{yr}: Rp{v/1e9:.1f}M")
-                            else:
-                                vals.append(f"{yr}: {v:.0f}")
-                        lines.append(f"{label:20s}: {' | '.join(vals)}")
-                except Exception:
-                    pass
-
-        # ── BALANCE SHEET HISTORIS ──
-        if bs is not None and hasattr(bs, "empty") and not bs.empty:
-            lines.append("\n── BALANCE SHEET HISTORIS (tahunan, dalam triliun Rp) ──")
-            key_rows_bs = {
-                "Total Assets"              : "Total Aset",
-                "Total Liabilities Net Minority Interest": "Total Liabilitas",
-                "Stockholders Equity"       : "Total Ekuitas",
-                "Common Stock Equity"       : "Ekuitas",
-            }
-            for yf_key, label in key_rows_bs.items():
-                try:
-                    if yf_key in bs.index:
-                        row = bs.loc[yf_key].dropna()
-                        vals = []
-                        for col in sorted(row.index, reverse=True)[:5]:
-                            yr = str(col)[:4]
-                            v = row[col]
-                            vals.append(f"{yr}: Rp{v/1e12:.1f}T")
-                        lines.append(f"{label:25s}: {' | '.join(vals)}")
-                except Exception:
-                    pass
-
-        # ── CASHFLOW HISTORIS ──
-        if cf is not None and hasattr(cf, "empty") and not cf.empty:
-            lines.append("\n── CASHFLOW HISTORIS (tahunan, dalam triliun Rp) ──")
-            key_rows_cf = {
-                "Operating Cash Flow"   : "Cash Flow Operasi",
-                "Free Cash Flow"        : "Free Cash Flow",
-                "Capital Expenditure"   : "Capex",
-            }
-            for yf_key, label in key_rows_cf.items():
-                try:
-                    if yf_key in cf.index:
-                        row = cf.loc[yf_key].dropna()
-                        vals = []
-                        for col in sorted(row.index, reverse=True)[:5]:
-                            yr = str(col)[:4]
-                            v = row[col]
-                            vals.append(f"{yr}: Rp{v/1e12:.1f}T")
-                        lines.append(f"{label:25s}: {' | '.join(vals)}")
-                except Exception:
-                    pass
-
-        # ── BERITA TERBARU EMITEN ──
-        news_items = _fetch_news_headlines(ticker, max_items=6)
-        if news_items:
-            lines.append("\n── BERITA TERBARU ──")
-            lines.extend(news_items)
-
-        lines.append(f"\n=== PENTING — BACA SEBELUM ANALISA ===")
-        lines.append(f"TAHUN SAAT INI: {current_year}")
-        lines.append(f"PERINGATAN DATA: Data historis dari yfinance untuk saham IDX")
-        lines.append(f"sering hanya tersedia sampai 2022-2023. Ini BUKAN data terbaru.")
-        lines.append(f"WAJIB lakukan hal berikut:")
-        lines.append(f"1. Data historis yfinance (2020-2022) → gunakan sebagai TREN HISTORIS LAMA")
-        lines.append(f"2. Untuk tahun {current_year-1} dan {current_year} → gunakan knowledge training kamu")
-        lines.append(f"   tentang emiten ini untuk estimasi, dan SEBUTKAN bahwa ini estimasi")
-        lines.append(f"3. Tren 3 tahun TERAKHIR = {current_year-2}, {current_year-1}, {current_year}")
-        lines.append(f"   Isi dengan: data yfinance untuk tahun yang ada, estimasi untuk yang tidak ada")
-        lines.append(f"4. Setiap metrik di baris TERPISAH — DILARANG digabung satu baris")
-        lines.append(f"5. Proyeksi {current_year+1}-{current_year+2} berdasarkan tren CAGR historis")
-        lines.append(f"6. Di bagian Verdict, sebutkan sumber data: mana yang real-time, mana estimasi")
-        lines.append(f"=== AKHIR INSTRUKSI ===")
-
-        return "\n".join(lines)
-
-    except Exception as e:
-        return (
-            f"[Data fetch gagal: {str(e)}]\n"
-            f"Gunakan knowledge internal kamu tentang {ticker} untuk analisa fundamental. "
-            f"Sebutkan bahwa data diambil dari knowledge training, bukan real-time."
-        )
-
-
-def get_market_context(prompt: str) -> str:
-    """
-    Deteksi kode saham dari prompt (format: 4 huruf kapital atau diikuti .JK),
-    fetch data real-time, dan return string konteks untuk diinject ke prompt.
-    Jika tidak ada saham spesifik, hanya inject kondisi IHSG + berita umum.
-    """
-    import re
-    today_str = datetime.now().strftime("%d %B %Y, %H:%M WIB")
-
-    # Deteksi ticker — 4 huruf kapital, opsional dengan .JK
-    tickers_raw = re.findall(r'\b([A-Z]{4})(?:\.JK)?\b', prompt)
-    # Filter kata umum yang bukan ticker
-    SKIP = {"BBRI","BBCA","BMRI","TLKM","ASII","GOTO","BRIS","UNVR","ICBP","INDF",
-            "ANTM","PTBA","ADRO","EXCL","SMGR","INTP","KLBF","SIDO","MYOR","CPIN"}
-    # Ambil semua yang terdeteksi, prioritaskan yang memang saham IDX populer
-    tickers = list(dict.fromkeys(tickers_raw))  # deduplicate, preserve order
-
-    context_parts = [f"📅 Tanggal Analisa: {today_str}"]
-
-    # IHSG
-    ihsg = _fetch_ihsg_data()
-    if ihsg:
-        arah = "▲" if ihsg.get("change_pct", 0) >= 0 else "▼"
-        context_parts.append(
-            f"\n📈 IHSG: {ihsg['level']:,.0f} {arah}{abs(ihsg['change_pct'])}% | "
-            f"Vol: {ihsg['volume']:,}"
-        )
-
-    # Data per saham yang disebut
-    for raw_ticker in tickers[:3]:  # max 3 saham per query
-        jk_ticker = f"{raw_ticker}.JK"
-        stock = _fetch_stock_data(jk_ticker)
-        if stock:
-            arah = "▲" if stock.get("change_pct", 0) >= 0 else "▼"
-            context_parts.append(
-                f"\n📊 {raw_ticker}: Rp{stock['close']:,.0f} {arah}{abs(stock['change_pct'])}% | "
-                f"Vol: {stock['volume']:,} | P/E: {stock['pe_ratio']} | "
-                f"52W H/L: {stock['week52_high']}/{stock['week52_low']}"
-            )
-
-    # Berita — multi-sumber
-    if tickers:
-        news_query = f"saham {tickers[0]} IDX Indonesia"
-        headlines = _fetch_news_headlines(news_query, max_items=4)
-        if headlines:
-            context_parts.append(f"\n📰 Berita {tickers[0]} (multi-sumber):")
-            context_parts.extend(headlines)
-    else:
-        # Berita pasar umum jika tidak ada ticker spesifik
-        general_news = _fetch_market_news_general()
-        if general_news:
-            context_parts.append(f"\n📰 Berita Pasar Modal Indonesia (terbaru):")
-            context_parts.extend(general_news)
-
-    if len(context_parts) <= 1:
-        return ""  # Tidak ada data yang berhasil di-fetch
-
-    return "\n".join(context_parts)
-
-# ─────────────────────────────────────────────
-# VERSION INFO
-# ─────────────────────────────────────────────
-SIGMA_VERSION = "1.4.0"
-SIGMA_CHANGELOG = {
-    "1.0.0": "Initial release — chat + analisa chart",
-    "1.1.0": "Tambah real-time market data (yfinance)",
-    "1.2.0": "Tambah analisa fundamental PDF",
-    "1.3.0": "Multi-source data: yfinance + stooq + IDX API",
-    "1.4.0": "Multi-source news, Excel/Word support, versioning",
-}
+def build_market_context(prompt):
+    tickers = re.findall(r'\b([A-Z]{4})\b', prompt.upper())
+    skip = {"YANG","ATAU","DARI","PADA","UNTUK","DENGAN","SAYA","MINTA",
+            "TOLONG","ANALISA","SAHAM","MOHON","BISA","MITA"}
+    tickers = [t for t in tickers if t not in skip][:2]
+    
+    parts = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')}"]
+    
+    for ticker in tickers:
+        data = _get_stock_price(ticker)
+        if data:
+            arah = "▲" if data["chg"] >= 0 else "▼"
+            line = f"{ticker}: Rp{data['price']:,.0f} {arah}{abs(data['chg'])}%"
+            if data.get("pe"):
+                line += f" | PER:{data['pe']:.1f}x"
+            if data.get("pbv"):
+                line += f" | PBV:{data['pbv']:.1f}x"
+            parts.append(line)
+        
+        news = _get_news(ticker)
+        if news:
+            parts.append(f"Berita {ticker}:")
+            parts.extend(news)
+    
+    return "\n".join(parts) if len(parts) > 1 else ""
 
 # ─────────────────────────────────────────────
 # CONFIG
@@ -889,34 +182,24 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — asisten trading dan analis pasar modal dari KIPM Universitas Pancasila, dibuat oleh komunitas Market n Mocha (MnM).
+    "content": """Kamu adalah SIGMA — asisten trading & analis pasar modal dari KIPM Universitas Pancasila, dibuat komunitas Market n Mocha (MnM).
 
 KEPRIBADIAN:
-- Saat ngobrol biasa: ramah, hangat, santai, natural — seperti teman trader yang asik diajak ngobrol
-- Saat diminta analisa: berubah menjadi profesional, tajam, tegas, sangat berpengalaman
-- Selalu Bahasa Indonesia yang natural, tidak kaku
-- Jangan pernah memulai jawaban dengan menjejalkan data pasar kecuali diminta
+- Sapaan/ngobrol biasa → ramah, hangat, natural seperti teman trader
+- Diminta analisa → profesional, tajam, tegas, berpengalaman
+- Bahasa Indonesia natural, tidak kaku
+- JANGAN langsung jejalkan data pasar saat disapa
 
-CARA MERESPONS:
-- Sapaan biasa → balas ramah, perkenalkan diri singkat, tanya ada yang bisa dibantu
-- Pertanyaan umum saham/pasar → jawab informatif tapi conversational
-- Ada gambar/chart → LANGSUNG analisa teknikal, tidak perlu nunggu perintah
-- Ada PDF laporan keuangan → LANGSUNG analisa fundamental, deteksi sektor otomatis
-- Ada perintah analisa teknikal → gunakan FORMAT TRADE PLAN
-- Ada perintah analisa fundamental → gunakan FORMAT ANALISA FUNDAMENTAL
-
-═══════════════════════════════════════
-FRAMEWORK TEKNIKAL (MnM Strategy+):
-═══════════════════════════════════════
+FRAMEWORK ANALISA (MnM Strategy+):
 1. IFVG — Inversion Fair Value Gap
-2. FVG — Fair Value Gap
+2. FVG — Fair Value Gap  
 3. Order Block (OB)
 4. Supply & Demand Zones
 5. Moving Average (EMA 13/21/50)
-6. Bandarmologi — akumulasi/distribusi, delta volume, anomali volume
-7. Volume Profile — VPOC, VAH, VAL
+6. Bandarmologi — akumulasi/distribusi, delta volume
+7. Fundamental — ROE, ROA, NIM, NPL, CAR, BOPO, PER, PBV
 
-FORMAT TRADE PLAN:
+FORMAT TRADE PLAN (saat diminta analisa teknikal):
 📊 TRADE PLAN — [SAHAM] ([TIMEFRAME])
 ⚡ Bias: [Bullish/Bearish/Sideways]
 🎯 Entry: [harga]
@@ -924,159 +207,10 @@ FORMAT TRADE PLAN:
 ✅ Target 1: [harga]
 ✅ Target 2: [harga]
 📦 Bandarmologi: [ringkasan volume & aksi bandar]
-⚠️ Invalidasi: [kondisi yang membatalkan setup]
+⚠️ Invalidasi: [kondisi]
 ⚠️ DYOR — bukan rekomendasi investasi
 
-═══════════════════════════════════════
-FRAMEWORK FUNDAMENTAL:
-═══════════════════════════════════════
-DETEKSI SEKTOR OTOMATIS:
-- Jika dokumen mengandung: NPL, NIM, DPK, CAR, LDR, BOPO, kredit, dana pihak ketiga
-  → gunakan FRAMEWORK PERBANKAN
-- Jika tidak → gunakan FRAMEWORK UMUM
-
-── FRAMEWORK UMUM (non-perbankan) ──
-• Warren Buffett: ROE >15% konsisten 5-10 tahun, DER <0.5, FCF > Net Income, ada moat
-• Benjamin Graham: PBV <1.5, PER <15, PER×PBV <22.5, EPS positif 5 tahun berturut
-• Peter Lynch: PEG Ratio <1 ideal (<2 acceptable), revenue growth >20% YoY
-• CAN SLIM: EPS quarter naik >25% YoY, annual EPS naik >25% 3 tahun berturut
-
-── FRAMEWORK PERBANKAN ──
-• NIM (Net Interest Margin): sehat >4%
-• NPL (Non Performing Loan): sehat <3% — KRITIS jika >5%
-• LDR (Loan to Deposit Ratio): ideal 80-92%
-• CAR (Capital Adequacy Ratio): aman >14%, minimum BI 8%
-• ROA: sehat >1.5%
-• ROE: sehat >15%
-• BOPO: efisien <70% — semakin kecil semakin baik
-• CIR (Cost to Income Ratio): ideal <45%
-• Tren DPK, kredit, dan laba bersih YoY
-• Tren dividen dan payout ratio
-
-FORMAT ANALISA FUNDAMENTAL:
-Ikuti PERSIS format di bawah ini. Setiap baris adalah satu item. DILARANG menggabungkan beberapa item dalam satu baris.
-
----
-📋 ANALISA FUNDAMENTAL — [NAMA EMITEN] ([PERIODE])
-🏦 Sektor    : [Perbankan / Non-Perbankan]
-📌 Framework : [Perbankan / Buffett / Graham]
-
----
-💰 PROFITABILITAS
-
-ROE         : [X]%  →  standar >15%      [✅/⚠️/❌]
-ROA         : [X]%  →  standar >1,5%     [✅/⚠️/❌]
-NIM         : [X]%  →  standar >4%       [✅/⚠️/❌]
-Laba Bersih : Rp[X] triliun  →  YoY [+/-X]%
-EPS         : Rp[X]  →  YoY [+/-X]%
-
----
-🛡️ KUALITAS ASET & RISIKO
-
-NPL Gross   : [X]%  →  sehat <3%         [✅/⚠️/❌]
-NPL Net     : [X]%  →  sehat <1%         [✅/⚠️/❌]
-CAR         : [X]%  →  aman >14%         [✅/⚠️/❌]
-BOPO        : [X]%  →  efisien <70%      [✅/⚠️/❌]
-CIR         : [X]%  →  ideal <45%        [✅/⚠️/❌]
-LDR         : [X]%  →  ideal 80-92%      [✅/⚠️/❌]
-
----
-📊 PERTUMBUHAN YoY
-
-Total Aset  : Rp[X] triliun  →  [+/-X]%
-Kredit      : Rp[X] triliun  →  [+/-X]%
-DPK         : Rp[X] triliun  →  [+/-X]%
-Laba Bersih : Rp[X] triliun  →  [+/-X]%
-EPS         : Rp[X]  →  [+/-X]%
-
----
-💎 VALUASI
-
-PER         : [X]×  →  Graham <15        [✅/⚠️/❌]
-PBV         : [X]×  →  Graham <1,5       [✅/⚠️/❌]
-Harga Wajar : Rp[X] – Rp[X]
-
----
-🏆 DIVIDEN
-
-Total Dividen  : Rp[X] triliun
-Payout Ratio   : [X]%
-Konsistensi    : [naik / stabil / turun]
-
----
-📈 TREN 3 TAHUN TERAKHIR
-(isi dengan angka AKTUAL dari data, bukan placeholder)
-
-Laba Bersih  : Rp[angka aktual tahun-2]T → Rp[angka aktual tahun-1]T → Rp[angka aktual tahun ini]T (CAGR ~X%)
-EPS          : Rp[angka aktual tahun-2] → Rp[angka aktual tahun-1] → Rp[angka aktual tahun ini]
-ROE          : [angka aktual]% → [angka aktual]% → [angka aktual]%
-Total Aset   : Rp[angka aktual]T → Rp[angka aktual]T → Rp[angka aktual]T
-
----
-🔭 PROYEKSI 1-2 TAHUN KE DEPAN
-(hitung dari tren CAGR data historis di atas)
-
-Asumsi Growth: ~X% per tahun (berdasarkan CAGR laba bersih)
-EPS Est.     : [tahun+1]: Rp[hasil hitung] | [tahun+2]: Rp[hasil hitung]
-Laba Est.    : [tahun+1]: Rp[hasil hitung]T | [tahun+2]: Rp[hasil hitung]T
-Target Harga : Konservatif Rp[PER rendah × EPS] | Moderat Rp[PER median × EPS] | Optimis Rp[PER tinggi × EPS]
-Basis Hitung : PER historis rata-rata × EPS proyeksi
-
----
-⚖️ VERDICT
-
-Skor Fundamental : [X]/10
-
-Kekuatan :
-→ [poin kekuatan 1]
-→ [poin kekuatan 2]
-→ [poin kekuatan 3]
-
-Risiko :
-→ [poin risiko 1]
-→ [poin risiko 2]
-
-Valuasi Saat Ini : [Undervalue / Fairvalue / Overvalue]
-
-Kesimpulan :
-[3-4 kalimat: kondisi bisnis, kualitas fundamental, posisi valuasi,
-saran akumulasi atau wait & see. Bahasa jelas dan mudah dipahami.]
-
----
-⚠️ DYOR — Analisa ini bukan rekomendasi investasi.
-Proyeksi bersifat estimasi berdasarkan tren historis, bukan jaminan.
-Keputusan investasi sepenuhnya tanggung jawab investor.
-
-ATURAN KERAS OUTPUT — WAJIB DIIKUTI:
-1. Setiap metrik HARUS di baris SENDIRI — DILARANG digabung dalam satu baris
-2. SEMUA angka yang ada di dokumen WAJIB diisi — tidak boleh tulis "tidak tersedia" jika angka ada
-3. Angka dalam jutaan Rupiah → konversi ke triliun (bagi 1.000.000), bulatkan 2 desimal
-4. Hitung YoY secara manual: ((nilai baru - nilai lama) / nilai lama) x 100
-5. Pisahkan setiap seksi dengan garis ---
-6. Verdict ditulis lengkap 3-4 kalimat, informatif, tidak generik
-
-HIERARKI SUMBER DATA (urutan prioritas):
-1. Data dari PDF laporan keuangan → sumber utama
-2. Data dari "=== DATA PASAR REAL-TIME ===" → gunakan untuk PER, PBV, harga saham, market cap
-3. Hitung manual dari rumus jika kedua sumber di atas tidak lengkap:
-   - PER  = Harga Saham ÷ EPS
-   - PBV  = Harga Saham ÷ Book Value per Saham
-   - Book Value/Share = Total Ekuitas ÷ Jumlah Saham Beredar
-   - Payout Ratio = Total Dividen ÷ Laba Bersih × 100
-   - DPS = Total Dividen ÷ Jumlah Saham Beredar
-   - NIM = Pendapatan Bunga Bersih ÷ Rata-rata Aset Produktif × 100
-   - ROA = Laba Sebelum Pajak ÷ Rata-rata Total Aset × 100
-   - ROE = Laba Bersih ÷ Rata-rata Ekuitas × 100
-4. Jika benar-benar tidak bisa dihitung → tulis "Tidak dapat dihitung dari data tersedia"
-   DILARANG menulis hanya "Tidak tersedia" tanpa mencoba hitung dari rumus
-
-═══════════════════════════════════════
-ATURAN KERAS:
-═══════════════════════════════════════
-- Jangan injeksi data pasar ke percakapan biasa/sapaan
-- Gambar masuk → analisa teknikal langsung
-- PDF masuk → analisa fundamental langsung, deteksi sektor otomatis
-- DYOR disclaimer wajib di setiap output analisa"""
+ATURAN: Jawab Bahasa Indonesia. Gambar masuk → analisa langsung. Tegas dan berpengalaman."""
 }
 
 # ─────────────────────────────────────────────
@@ -2003,36 +1137,26 @@ if not active["messages"][1:]:
 # Chat history
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
-        # Gunakan field "display" (prompt bersih) kalau ada, fallback ke "content"
-        raw = msg.get("display") or msg.get("content") or ""
-        display = raw
+        raw_content = msg.get("display") or msg.get("content") or ""
+        display = raw_content
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
-        # Bersihkan sisa marker context kalau ada di pesan lama
-        if "=== DATA PASAR REAL-TIME ===" in display:
-            parts = display.split("===========================")
+        if "=== DATA PASAR ===" in display:
+            parts = display.split("=================")
             display = parts[-1].strip() if len(parts) > 1 else display
         if msg["role"] == "user" and msg.get("img_b64"):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
-        # Download buttons — coming soon
 
 # Chat input
 try:
     result = st.chat_input(
         "Tanya SIGMA... DYOR - bukan financial advice.",
-        accept_file=True,
+        accept_file="multiple",
         file_type=["pdf", "png", "jpg", "jpeg"]
     )
 except TypeError:
-    try:
-        result = st.chat_input(
-            "Tanya SIGMA... DYOR - bukan financial advice.",
-            accept_file="multiple",
-            file_type=["pdf", "png", "jpg", "jpeg"]
-        )
-    except TypeError:
-        result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
+    result = st.chat_input("Tanya SIGMA...")
 
 prompt = None
 file_obj = None
@@ -2047,73 +1171,10 @@ if result is not None:
 
     if file_obj:
         raw = file_obj.read()
-        ftype = file_obj.type
-
-        if ftype == "application/pdf":
+        if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
-
-            # ── Smart PDF extractor — cari halaman keuangan, skip halaman tidak relevan ──
-            FINANCE_KEYWORDS = [
-                # Laporan utama
-                "laba rugi", "neraca", "arus kas", "ekuitas", "balance sheet",
-                "income statement", "cash flow", "profit", "revenue", "pendapatan",
-                "beban", "laba bersih", "net income", "total aset", "liabilitas",
-                # Rasio perbankan
-                "nim", "npl", "ldr", "car", "roa", "roe", "bopo", "cir",
-                "net interest margin", "non performing", "loan to deposit",
-                "capital adequacy", "cost to income",
-                # Fundamental umum
-                "eps", "earning per share", "laba per saham", "dividen", "dividend",
-                "payout", "book value", "nilai buku", "kredit", "pembiayaan",
-                "dana pihak ketiga", "dpk", "modal", "retained earning",
-                "saldo laba", "gross profit", "operating profit",
-                # Tabel angka — deteksi halaman berisi banyak angka
-                "rp ", "rp.", "000.000", "miliar", "triliun", "%",
-            ]
-
-            relevant_pages = []
-            all_pages_text = []
-
-            for page_num, page in enumerate(doc):
-                page_text = page.get_text()
-                all_pages_text.append((page_num + 1, page_text))
-                page_lower = page_text.lower()
-                # Hitung berapa keyword keuangan yang ditemukan di halaman ini
-                score = sum(1 for kw in FINANCE_KEYWORDS if kw in page_lower)
-                if score >= 3:  # minimal 3 keyword keuangan
-                    relevant_pages.append((score, page_num + 1, page_text))
-
-            # Urutkan dari yang paling relevan, ambil top 40 halaman
-            relevant_pages.sort(key=lambda x: x[0], reverse=True)
-            top_pages = relevant_pages[:40]
-            # Urutkan ulang berdasarkan nomor halaman agar berurutan
-            top_pages.sort(key=lambda x: x[1])
-
-            if top_pages:
-                extracted = f"[PDF: {file_obj.name} | {len(doc)} halaman | {len(top_pages)} halaman relevan diekstrak]\n\n"
-                for score, pnum, ptext in top_pages:
-                    # Bersihkan whitespace berlebih
-                    clean = " ".join(ptext.split())
-                    extracted += f"--- Halaman {pnum} ---\n{clean[:2000]}\n\n"
-                # Batas total ~60.000 karakter agar tidak overflow context window
-                final_text = extracted[:60000]
-            else:
-                # Fallback: tidak ada halaman keuangan terdeteksi, ambil 20 halaman pertama
-                fallback = f"[PDF: {file_obj.name} | {len(doc)} halaman | fallback: 20 halaman pertama]\n\n"
-                for pnum, ptext in all_pages_text[:20]:
-                    clean = " ".join(ptext.split())
-                    fallback += f"--- Halaman {pnum} ---\n{clean[:1500]}\n\n"
-                final_text = fallback[:40000]
-
-            # Inject data pasar real-time untuk melengkapi data yang tidak ada di PDF
-            try:
-                fundamental_ctx = build_fundamental_context(final_text)
-                if fundamental_ctx:
-                    final_text = final_text + fundamental_ctx
-            except Exception:
-                pass
-
-            st.session_state.pdf_data = (final_text, file_obj.name)
+            txt = "".join(p.get_text() for p in doc)
+            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:6000]}", file_obj.name)
             st.session_state.img_data = None
         else:
             b64 = base64.b64encode(raw).decode()
@@ -2122,108 +1183,37 @@ if result is not None:
             st.session_state.pdf_data = None
 
     if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
-        if st.session_state.pdf_data:
-            prompt = f"Tolong analisa laporan keuangan: {st.session_state.pdf_data[1]}"
-        else:
-            prompt = "Tolong analisa file yang saya kirim"
+        prompt = "Tolong analisa file yang saya kirim"
 
 if prompt:
     img_data = st.session_state.img_data
     pdf_data = st.session_state.pdf_data
-    # Clear SETELAH diambil nilainya
     st.session_state.img_data = None
     st.session_state.pdf_data = None
-
-    # Hitung estimasi token — 1 token ≈ 4 karakter
-    # llama-3.3-70b context window = 128k token ≈ 512k karakter
-    # System prompt baru ~3k karakter, sisakan ruang untuk output
-    MAX_PDF_CHARS = 80000
 
     full_prompt = prompt
     if img_data:
         full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     elif pdf_data:
-        pdf_text = pdf_data[0]
-        if len(pdf_text) > MAX_PDF_CHARS:
-            pdf_text = pdf_text[:MAX_PDF_CHARS] + "\n\n[...konten terpotong, analisa berdasarkan data di atas]"
-        full_prompt = f"{pdf_text}\n\nPertanyaan: {prompt}"
-
-    # ── Deteksi intent: inject data sesuai jenis permintaan ──
-    if not img_data:
+        full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+    else:
+        # Inject market context hanya jika ada keyword analisa atau ticker
         _p = prompt.lower()
-
-        # Deteksi perintah analisa fundamental tanpa PDF
-        _fundamental_keywords = ["fundamental", "laporan keuangan", "keuangan", "valuasi",
-                                  "ipo", "historis", "proyeksi", "per ", "pbv", "roe", "roa"]
-        _teknikal_keywords = ["analisa", "analisis", "entry", "sl", "tp", "target",
-                               "stop loss", "beli", "jual", "hold", "chart", "teknikal",
-                               "bias", "setup", "volume", "bandar", "bandarmologi",
-                               "support", "resistance", "breakout", "breakdown"]
-        # Deteksi ticker — cek huruf besar DAN kecil
-        _prompt_upper = prompt.upper()
-        # Keyword umum — semua prompt ini tetap dikirim ke Groq
-        _general_keywords = ["buatkan", "buat", "word", "excel", "download", "file",
-                              "ringkasan", "summary", "jelaskan", "ceritakan", "apa",
-                              "bagaimana", "kenapa", "kapan", "berapa", "tolong",
-                              "coba", "bisa", "mau", "ingin", "minta", "hai", "halo",
-                              "selamat", "terima", "makasih", "thanks"]
-        _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', _prompt_upper))
-        _is_fundamental_cmd = _has_ticker and any(k in _p for k in _fundamental_keywords)
-        _is_teknikal = _has_ticker or any(k in _p for k in _teknikal_keywords)
-        _is_general = not _is_fundamental_cmd and not _is_teknikal and any(k in _p for k in _general_keywords)
-
-        if _is_fundamental_cmd and not pdf_data:
-            # Perintah analisa fundamental tanpa PDF — tarik data lengkap dari yfinance
-            tickers_found = re.findall(r'\b([A-Z]{4})\b', _prompt_upper)
-            if tickers_found:
-                _skip_words = {"YANG","ATAU","DARI","PADA","UNTUK","DENGAN","SAHAM",
-                               "SAYA","MINTA","TOLONG","ANALISA","ANALISIS","MOHON",
-                               "BBRI","BBCA","BMRI","TLKM"}  # jangan skip ticker valid
-                tickers_found = [t for t in tickers_found if t not in _skip_words or t in
-                                 {"BBRI","BBCA","BMRI","TLKM","ASII","GOTO","BRIS","UNVR",
-                                  "ANTM","PTBA","ADRO","EXCL","SMGR","KLBF","SIDO","CPIN"}]
-            if tickers_found:
-                _ticker = tickers_found[0]
-                # Fetch dengan timeout agar tidak block Groq call
-                fund_ctx = ""
-                try:
-                    import threading
-                    _result = [None]
-                    def _fetch():
-                        _result[0] = fetch_full_fundamental(_ticker)
-                    t = threading.Thread(target=_fetch)
-                    t.start()
-                    t.join(timeout=15)  # max 15 detik untuk fetch data
-                    fund_ctx = _result[0] or f"[Data fetch timeout — analisa dari knowledge model]"
-                except Exception as _fe:
-                    fund_ctx = f"[Gagal fetch: {_fe} — analisa dari knowledge model]"
-                full_prompt = (
-                    f"{fund_ctx}\n\n"
-                    f"Perintah: {prompt}\n\n"
-                    f"Instruksi: Buat analisa fundamental lengkap FORMAT ANALISA FUNDAMENTAL "
-                    f"untuk saham {_ticker}. Tren 3 tahun terakhir dan proyeksi 1-2 tahun ke depan. "
-                    f"Jika data di atas kosong/gagal, TETAP buat analisa lengkap dari knowledge kamu."
-                )
-        elif _is_teknikal:
-            # Perintah teknikal — inject market context biasa
+        _has_ticker = bool(re.search(r"\b[A-Z]{4}\b", prompt.upper()))
+        _keywords = ["analisa","saham","ihsg","entry","sl","tp","beli","jual",
+                     "teknikal","fundamental","harga","support","resistance"]
+        if _has_ticker or any(k in _p for k in _keywords):
             try:
-                mkt_ctx = get_market_context(_prompt_upper)
-                if mkt_ctx:
-                    full_prompt = (
-                        f"=== DATA PASAR REAL-TIME ===\n{mkt_ctx}\n"
-                        f"===========================\n\n{full_prompt}"
-                    )
-            except Exception:
+                ctx = build_market_context(prompt)
+                if ctx:
+                    full_prompt = f"=== DATA PASAR ===\n{ctx}\n=================\n\n{prompt}"
+            except:
                 pass
-        # else: perintah umum/general — langsung kirim ke Groq tanpa inject data
-        # full_prompt tetap = prompt asli, Groq tetap menjawab
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
     # Simpan gambar di dalam message agar tetap ada setelah refresh
-    # PENTING: "content" diisi prompt bersih (tanpa market context) agar bubble user tetap rapi
-    # full_prompt (dengan context) hanya dipakai saat API call ke Groq, tidak disimpan ke history
     user_msg = {"role": "user", "content": full_prompt, "display": prompt}
     if img_data:
         user_msg["img_b64"] = img_data[0]
@@ -2236,14 +1226,6 @@ if prompt:
     with st.chat_message("user"):
         if img_data:
             st.markdown(f'<img src="data:{img_data[1]};base64,{img_data[0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
-        elif pdf_data:
-            st.markdown(f'''<div style="display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;margin-bottom:8px;">
-                <span style="font-size:1.4rem;">📄</span>
-                <div>
-                    <div style="font-size:0.85rem;font-weight:600;color:#ececec;">{pdf_data[1]}</div>
-                    <div style="font-size:0.75rem;color:#8e8ea0;">PDF · Laporan Keuangan</div>
-                </div>
-            </div>''', unsafe_allow_html=True)
         st.markdown(prompt)
 
     try:
@@ -2263,55 +1245,22 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
-                    # Bersihkan field "display" — Groq hanya terima "role" dan "content"
-                    groq_messages = [
+                    clean_msgs = [
                         {"role": m["role"], "content": m.get("content") or ""}
                         for m in active["messages"]
-                        if m.get("role") in ("user", "assistant", "system")
+                        if m.get("role") in ("user","assistant","system")
                     ]
-                    # Deteksi apakah pesan terakhir adalah PDF — pakai model context lebih besar
-                    last_content = groq_messages[-1]["content"] if groq_messages else ""
-                    is_pdf_msg = "[PDF:" in last_content and "Halaman" in last_content
-                    if is_pdf_msg:
-                        # Untuk PDF: kirim hanya system prompt + pesan PDF saja
-                        groq_messages_send = [
-                            groq_messages[0],   # system prompt
-                            groq_messages[-1],  # pesan PDF user
-                        ]
-                        pdf_content = groq_messages_send[-1]["content"]
-                        if len(pdf_content) > 80000:
-                            groq_messages_send[-1] = {
-                                "role": "user",
-                                "content": pdf_content[:80000] + "\n\n[Data terpotong — analisa berdasarkan data di atas]"
-                            }
-                        model_to_use = "llama-3.3-70b-versatile"
-                        max_tok = 4096
-                        st.caption(f"📄 Memproses PDF — {len(groq_messages_send[-1]['content']):,} karakter dikirim ke model...")
-                    else:
-                        groq_messages_send = groq_messages
-                        model_to_use = "llama-3.3-70b-versatile"
-                        max_tok = 2048
                     res = groq_client.chat.completions.create(
-                        model=model_to_use,
-                        messages=groq_messages_send,
+                        model="llama-3.3-70b-versatile",
+                        messages=clean_msgs,
                         temperature=0.7,
-                        max_tokens=max_tok
+                        max_tokens=2048
                     )
                 ans = res.choices[0].message.content
             st.markdown(ans)
-
-            # Download buttons — coming soon
-
-        active["messages"].append({
-            "role": "assistant",
-            "content": ans,
-            "is_analisa": any(k in ans for k in ["TRADE PLAN", "ANALISA FUNDAMENTAL", "PROFITABILITAS", "VERDICT"])
-        })
+        active["messages"].append({"role": "assistant", "content": ans})
     except Exception as e:
-        import traceback
-        err_msg = str(e)
-        st.error(f"⚠️ Error: {err_msg}")
-        st.code(traceback.format_exc(), language="python")
+        st.error(f"Error: {e}")
 
     st.rerun()
 
