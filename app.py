@@ -2285,9 +2285,16 @@ if prompt:
                                "support", "resistance", "breakout", "breakdown"]
         # Deteksi ticker — cek huruf besar DAN kecil
         _prompt_upper = prompt.upper()
+        # Keyword umum — semua prompt ini tetap dikirim ke Groq
+        _general_keywords = ["buatkan", "buat", "word", "excel", "download", "file",
+                              "ringkasan", "summary", "jelaskan", "ceritakan", "apa",
+                              "bagaimana", "kenapa", "kapan", "berapa", "tolong",
+                              "coba", "bisa", "mau", "ingin", "minta", "hai", "halo",
+                              "selamat", "terima", "makasih", "thanks"]
         _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', _prompt_upper))
         _is_fundamental_cmd = _has_ticker and any(k in _p for k in _fundamental_keywords)
         _is_teknikal = _has_ticker or any(k in _p for k in _teknikal_keywords)
+        _is_general = not _is_fundamental_cmd and not _is_teknikal and any(k in _p for k in _general_keywords)
 
         if _is_fundamental_cmd and not pdf_data:
             # Perintah analisa fundamental tanpa PDF — tarik data lengkap dari yfinance
@@ -2321,6 +2328,8 @@ if prompt:
                     )
             except Exception:
                 pass
+        # else: perintah umum/general — langsung kirim ke Groq tanpa inject data
+        # full_prompt tetap = prompt asli, Groq tetap menjawab
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
