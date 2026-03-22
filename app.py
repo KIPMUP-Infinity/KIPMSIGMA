@@ -734,6 +734,36 @@ def init_session():
 
 init_session()
 
+# ── PROSES DELETE PALING AWAL ──
+# Dieksekusi sebelum apapun, termasuk sebelum sigma_token restore
+if "del" in st.query_params:
+    _del_sid = st.query_params.get("del", "")
+    if _del_sid and st.session_state.get("user"):
+        # User sudah login di session — langsung proses
+        _email = st.session_state.user.get("email","")
+        if _email:
+            _saved = load_user(_email)
+            if _saved and _saved.get("sessions"):
+                _new_sessions = [s for s in _saved["sessions"] if s["id"] != _del_sid]
+                if not _new_sessions:
+                    _new_sessions = [{"id": str(uuid.uuid4()), "title": "Obrolan Baru",
+                                     "created": datetime.now().isoformat(), "messages": [SYSTEM_PROMPT]}]
+                _new_active = _saved.get("active_id","")
+                if _new_active == _del_sid:
+                    _new_active = _new_sessions[0]["id"]
+                save_user(_email, {
+                    "theme": _saved.get("theme","dark"),
+                    "sessions": _new_sessions,
+                    "active_id": _new_active,
+                })
+                st.session_state.sessions = _new_sessions
+                st.session_state.active_id = _new_active
+        try:
+            del st.query_params["del"]
+        except:
+            st.query_params["del"] = ""
+        st.rerun()
+
 C = get_colors(st.session_state.theme)
 
 # ─────────────────────────────────────────────
