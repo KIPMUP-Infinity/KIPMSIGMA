@@ -1318,11 +1318,11 @@ for i, msg in enumerate(active["messages"][1:]):
 try:
     result = st.chat_input(
         "Tanya SIGMA... DYOR - bukan financial advice.",
-        accept_file="multiple",
+        accept_file=True,
         file_type=["pdf", "png", "jpg", "jpeg"]
     )
-except TypeError:
-    result = st.chat_input("Tanya SIGMA...")
+except Exception:
+    result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
 
 prompt = None
 file_obj = None
