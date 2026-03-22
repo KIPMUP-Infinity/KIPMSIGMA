@@ -347,6 +347,96 @@ def _fetch_multi_fundamental(ticker):
     th.join(timeout=18)
     return result[0]
 
+# ─── CACHE SISTEM — simpan data fundamental agar hemat API request ───
+import hashlib as _hashlib
+
+CACHE_DIR = os.path.join(DATA_DIR, "fundamental_cache")
+os.makedirs(CACHE_DIR, exist_ok=True)
+
+def _cache_key(ticker):
+    return os.path.join(CACHE_DIR, f"{ticker.upper()}.json")
+
+def _cache_get(ticker, max_days=85):
+    """Ambil dari cache jika masih fresh (default 85 hari untuk data kuartal)."""
+    try:
+        path = _cache_key(ticker)
+        if not os.path.exists(path):
+            return None
+        with open(path) as f:
+            cached = json.load(f)
+        # Cek umur cache
+        cached_at = cached.get("_cached_at", "")
+        if not cached_at:
+            return None
+        from datetime import datetime as _dt
+        age = (_dt.now() - _dt.fromisoformat(cached_at)).days
+        if age > max_days:
+            return None  # Cache expired
+        return cached
+    except:
+        return None
+
+def _cache_set(ticker, data):
+    """Simpan data ke cache dengan timestamp."""
+    try:
+        path = _cache_key(ticker)
+        data["_cached_at"] = datetime.now().isoformat()
+        data["_ticker"] = ticker.upper()
+        with open(path, "w") as f:
+            json.dump(data, f, ensure_ascii=False, default=str)
+    except:
+        pass
+
+def _cache_info(ticker):
+    """Info cache — berapa hari lagi valid."""
+    try:
+        path = _cache_key(ticker)
+        if not os.path.exists(path):
+            return None
+        with open(path) as f:
+            cached = json.load(f)
+        from datetime import datetime as _dt
+        cached_at = cached.get("_cached_at","")
+        if not cached_at:
+            return None
+        age = (_dt.now() - _dt.fromisoformat(cached_at)).days
+        sisa = 85 - age
+        return {"age": age, "sisa": sisa, "cached_at": cached_at[:10]}
+    except:
+        return None
+
+def fetch_fundamental_with_cache(ticker):
+    """
+    Fetch fundamental dengan cache cerdas:
+    - Harga saham: SELALU fresh (dari yfinance, tidak di-cache)
+    - Data fundamental: cache 85 hari (data kuartal update per 90 hari)
+    """
+    # Cek cache untuk data fundamental
+    cached = _cache_get(ticker, max_days=85)
+
+    if cached:
+        # Punya cache — hanya update harga terkini
+        try:
+            import yfinance as yf
+            t = yf.Ticker(f"{ticker}.JK")
+            hist = t.history(period="2d")
+            if not hist.empty:
+                cached["price"] = round(hist.iloc[-1]["Close"], 0)
+                cached["price_updated"] = datetime.now().strftime("%d %b %Y")
+        except: pass
+        cached["_from_cache"] = True
+        return cached
+    else:
+        # Tidak ada cache / expired — fetch semua dari API
+        data = _fetch_multi_fundamental(ticker)
+        if data and data.get("price"):
+            # Simpan ke cache (tanpa harga — harga selalu fresh)
+            cache_data = {k: v for k, v in data.items()
+                         if k not in ("price", "price_updated", "_from_cache")}
+            _cache_set(ticker, cache_data)
+        data["_from_cache"] = False
+        return data
+
 def build_context(prompt):
     """Build market context — inject ke prompt jika relevan."""
     tickers = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
@@ -412,8 +502,9 @@ def build_fundamental_from_text(prompt):
     result = [""]
     def fetch():
         try:
-            # Fetch dari semua sumber sekaligus
-            multi = _fetch_multi_fundamental(ticker)
+            # Fetch dari semua sumber dengan cache
+            multi = fetch_fundamental_with_cache(ticker)
+            _from_cache = multi.get("_from_cache", False)
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
             info = t.info
@@ -442,7 +533,15 @@ def build_fundamental_from_text(prompt):
                     framework = "Buffett + Graham"
                     per_default = 15.0
 
-            lines = [f"=== DATA FUNDAMENTAL {ticker} ({sektor}) ===",
+            # Info cache
+            cache_info = _cache_info(ticker)
+            cache_label = ""
+            if _from_cache and cache_info:
+                cache_label = f" [cache: {cache_info['cached_at']}, sisa {cache_info['sisa']} hari]"
+            elif not _from_cache:
+                cache_label = " [data baru di-fetch]"
+
+            lines = [f"=== DATA FUNDAMENTAL {ticker} ({sektor}){cache_label} ===",
                      f"Tahun sekarang: {current_year}",
                      f"Sektor: {sektor} | Framework: {framework}"]
 
