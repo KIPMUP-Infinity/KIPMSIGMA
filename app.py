@@ -734,36 +734,6 @@ def init_session():
 
 init_session()
 
-# ── PROSES DELETE PALING AWAL ──
-# Dieksekusi sebelum apapun, termasuk sebelum sigma_token restore
-if "del" in st.query_params:
-    _del_sid = st.query_params.get("del", "")
-    if _del_sid and st.session_state.get("user"):
-        # User sudah login di session — langsung proses
-        _email = st.session_state.user.get("email","")
-        if _email:
-            _saved = load_user(_email)
-            if _saved and _saved.get("sessions"):
-                _new_sessions = [s for s in _saved["sessions"] if s["id"] != _del_sid]
-                if not _new_sessions:
-                    _new_sessions = [{"id": str(uuid.uuid4()), "title": "Obrolan Baru",
-                                     "created": datetime.now().isoformat(), "messages": [SYSTEM_PROMPT]}]
-                _new_active = _saved.get("active_id","")
-                if _new_active == _del_sid:
-                    _new_active = _new_sessions[0]["id"]
-                save_user(_email, {
-                    "theme": _saved.get("theme","dark"),
-                    "sessions": _new_sessions,
-                    "active_id": _new_active,
-                })
-                st.session_state.sessions = _new_sessions
-                st.session_state.active_id = _new_active
-        try:
-            del st.query_params["del"]
-        except:
-            st.query_params["del"] = ""
-        st.rerun()
-
 C = get_colors(st.session_state.theme)
 
 # ─────────────────────────────────────────────
@@ -923,6 +893,60 @@ ATURAN OUTPUT WAJIB:
 }
 
 # ─────────────────────────────────────────────
+# DELETE SESSION HANDLER — proses sebelum render UI
+# ─────────────────────────────────────────────
+def process_delete_if_pending():
+    """Proses delete session jika ada del param di URL."""
+    _del_sid = st.query_params.get("del", "")
+    if not _del_sid:
+        return False
+    _user = st.session_state.get("user")
+    if not _user:
+        # User belum ada di session — load dari token dulu
+        _tok = st.query_params.get("sigma_token", "")
+        if _tok:
+            _tfile = os.path.join(DATA_DIR, f"token_{_tok}.json")
+            if os.path.exists(_tfile):
+                try:
+                    with open(_tfile) as _f:
+                        _user = json.load(_f)
+                    st.session_state.user = _user
+                    st.session_state.current_token = _tok
+                except: pass
+    if not _user:
+        return False
+    _email = _user.get("email", "")
+    if not _email:
+        return False
+    _saved = load_user(_email)
+    if not _saved:
+        return False
+    _sessions = _saved.get("sessions", [])
+    _new_sessions = [s for s in _sessions if s["id"] != _del_sid]
+    if not _new_sessions:
+        _new_sessions = [new_session()]
+    _new_active = _saved.get("active_id", "")
+    if _new_active == _del_sid:
+        _new_active = _new_sessions[0]["id"]
+    # Simpan ke disk
+    save_user(_email, {
+        "theme": _saved.get("theme", "dark"),
+        "sessions": _new_sessions,
+        "active_id": _new_active,
+    })
+    # Update session state
+    st.session_state.sessions = _new_sessions
+    st.session_state.active_id = _new_active
+    st.session_state.data_loaded = True
+    # Hapus param
+    try:
+        del st.query_params["del"]
+    except:
+        try: st.query_params.pop("del")
+        except: pass
+    return True
+
+# ─────────────────────────────────────────────
 # CHAT SESSION HELPERS
 # ─────────────────────────────────────────────
 def new_session():
@@ -1071,6 +1095,11 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             restore_images_from_messages()
             st.rerun()
         except: pass
+
+# Proses delete jika ada
+if "del" in st.query_params:
+    if process_delete_if_pending():
+        st.rerun()
 
 # Load data setelah login
 if st.session_state.user and not st.session_state.data_loaded:
@@ -2054,7 +2083,7 @@ if prompt:
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
                     res = groq_client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
+                        model="llama3-70b-8192",
                         messages=_msgs,
                         temperature=0.7,
                         max_tokens=2048
