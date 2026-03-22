@@ -75,6 +75,112 @@ def _fetch_ihsg_data() -> dict:
     except Exception:
         return {}
 
+# ─────────────────────────────────────────────
+# FUNDAMENTAL DATA FETCHER — untuk melengkapi data PDF
+# ─────────────────────────────────────────────
+# Peta nama perusahaan ke ticker IDX
+COMPANY_TICKER_MAP = {
+    "bank central asia": "BBCA", "bca": "BBCA",
+    "bank rakyat indonesia": "BBRI", "bri": "BBRI",
+    "bank mandiri": "BMRI", "mandiri": "BMRI",
+    "bank negara indonesia": "BBNI", "bni": "BBNI",
+    "bank bsi": "BRIS", "bank syariah indonesia": "BRIS",
+    "telkom": "TLKM", "astra": "ASII",
+    "unilever": "UNVR", "indofood": "INDF",
+    "goto": "GOTO", "gojek": "GOTO",
+    "adaro": "ADRO", "antam": "ANTM",
+}
+
+def detect_ticker_from_pdf(pdf_text: str) -> str:
+    """Deteksi ticker saham dari teks PDF laporan keuangan."""
+    import re
+    text_lower = pdf_text.lower()[:3000]
+    # Cek peta nama perusahaan
+    for name, ticker in COMPANY_TICKER_MAP.items():
+        if name in text_lower:
+            return ticker
+    # Cek format kode saham langsung (4 huruf kapital)
+    matches = re.findall(r'([A-Z]{4})', pdf_text[:2000])
+    for m in matches:
+        if m not in {"PADA","YANG","ATAU","DARI","BANK","TBKK","ANAK","ASET"}:
+            return m
+    return ""
+
+def fetch_fundamental_supplement(ticker: str) -> dict:
+    """
+    Ambil data fundamental pelengkap dari yfinance.
+    Digunakan untuk melengkapi data yang tidak ada di PDF.
+    """
+    try:
+        import yfinance as yf
+        t = yf.Ticker(f"{ticker}.JK")
+        info = t.info
+        hist = t.history(period="5d")
+        price = round(hist.iloc[-1]["Close"], 0) if not hist.empty else None
+
+        # Ambil data historis untuk hitung tren
+        hist_annual = t.history(period="5y", interval="1mo")
+
+        result = {
+            "ticker": ticker,
+            "price": price,
+            "pe_ratio": info.get("trailingPE"),
+            "pb_ratio": info.get("priceToBook"),
+            "market_cap": info.get("marketCap"),
+            "shares_outstanding": info.get("sharesOutstanding"),
+            "book_value": info.get("bookValue"),
+            "dividend_yield": info.get("dividendYield"),
+            "trailing_eps": info.get("trailingEps"),
+            "52w_high": info.get("fiftyTwoWeekHigh"),
+            "52w_low": info.get("fiftyTwoWeekLow"),
+            "sector": info.get("sector", ""),
+            "industry": info.get("industry", ""),
+        }
+        return {k: v for k, v in result.items() if v is not None}
+    except Exception:
+        return {}
+
+def build_fundamental_context(pdf_text: str) -> str:
+    """
+    Deteksi emiten dari PDF, fetch data pelengkap dari yfinance,
+    dan return string konteks untuk diinject ke prompt analisa.
+    """
+    ticker = detect_ticker_from_pdf(pdf_text)
+    if not ticker:
+        return ""
+
+    supp = fetch_fundamental_supplement(ticker)
+    if not supp:
+        return ""
+
+    today_str = datetime.now().strftime("%d %B %Y")
+    lines = [f"\n=== DATA PASAR REAL-TIME — {ticker} ({today_str}) ==="]
+
+    if supp.get("price"):
+        lines.append(f"Harga Saham Terkini : Rp{supp['price']:,.0f}")
+    if supp.get("pe_ratio"):
+        lines.append(f"PER (P/E)           : {supp['pe_ratio']:.2f}×")
+    if supp.get("pb_ratio"):
+        lines.append(f"PBV (P/B)           : {supp['pb_ratio']:.2f}×")
+    if supp.get("trailing_eps"):
+        lines.append(f"EPS (TTM)           : Rp{supp['trailing_eps']:,.0f}")
+    if supp.get("book_value"):
+        lines.append(f"Book Value/Share    : Rp{supp['book_value']:,.0f}")
+    if supp.get("market_cap"):
+        mc_t = supp["market_cap"] / 1e12
+        lines.append(f"Market Cap          : Rp{mc_t:.1f} triliun")
+    if supp.get("dividend_yield"):
+        lines.append(f"Dividend Yield      : {supp['dividend_yield']*100:.2f}%")
+    if supp.get("52w_high") and supp.get("52w_low"):
+        lines.append(f"52W High / Low      : Rp{supp['52w_high']:,.0f} / Rp{supp['52w_low']:,.0f}")
+
+    lines.append(f"\nGunakan data di atas untuk melengkapi PER, PBV, harga wajar,")
+    lines.append(f"dan valuasi yang tidak tersedia di laporan keuangan PDF.")
+    lines.append("=== AKHIR DATA PASAR ===")
+
+    return "\n".join(lines)
+
+
 def get_market_context(prompt: str) -> str:
     """
     Deteksi kode saham dari prompt (format: 4 huruf kapital atau diikuti .JK),
@@ -373,12 +479,27 @@ atau wait & see. Gunakan bahasa yang jelas dan mudah dipahami.]
 Keputusan investasi sepenuhnya tanggung jawab investor.
 
 ATURAN KERAS OUTPUT — WAJIB DIIKUTI:
-1. Setiap metrik HARUS di baris SENDIRI — DILARANG digabung
-2. SEMUA angka yang ada di dokumen WAJIB diisi — tidak boleh tulis "tidak disediakan" jika angka ada
-3. Angka dalam jutaan Rupiah → konversi ke triliun (bagi 1.000.000)
+1. Setiap metrik HARUS di baris SENDIRI — DILARANG digabung dalam satu baris
+2. SEMUA angka yang ada di dokumen WAJIB diisi — tidak boleh tulis "tidak tersedia" jika angka ada
+3. Angka dalam jutaan Rupiah → konversi ke triliun (bagi 1.000.000), bulatkan 2 desimal
 4. Hitung YoY secara manual: ((nilai baru - nilai lama) / nilai lama) x 100
 5. Pisahkan setiap seksi dengan garis ---
-6. Verdict ditulis lengkap dan informatif, bukan satu kalimat saja
+6. Verdict ditulis lengkap 3-4 kalimat, informatif, tidak generik
+
+HIERARKI SUMBER DATA (urutan prioritas):
+1. Data dari PDF laporan keuangan → sumber utama
+2. Data dari "=== DATA PASAR REAL-TIME ===" → gunakan untuk PER, PBV, harga saham, market cap
+3. Hitung manual dari rumus jika kedua sumber di atas tidak lengkap:
+   - PER  = Harga Saham ÷ EPS
+   - PBV  = Harga Saham ÷ Book Value per Saham
+   - Book Value/Share = Total Ekuitas ÷ Jumlah Saham Beredar
+   - Payout Ratio = Total Dividen ÷ Laba Bersih × 100
+   - DPS = Total Dividen ÷ Jumlah Saham Beredar
+   - NIM = Pendapatan Bunga Bersih ÷ Rata-rata Aset Produktif × 100
+   - ROA = Laba Sebelum Pajak ÷ Rata-rata Total Aset × 100
+   - ROE = Laba Bersih ÷ Rata-rata Ekuitas × 100
+4. Jika benar-benar tidak bisa dihitung → tulis "Tidak dapat dihitung dari data tersedia"
+   DILARANG menulis hanya "Tidak tersedia" tanpa mencoba hitung dari rumus
 
 ═══════════════════════════════════════
 ATURAN KERAS:
@@ -1404,6 +1525,14 @@ if result is not None:
                     clean = " ".join(ptext.split())
                     fallback += f"--- Halaman {pnum} ---\n{clean[:1500]}\n\n"
                 final_text = fallback[:40000]
+
+            # Inject data pasar real-time untuk melengkapi data yang tidak ada di PDF
+            try:
+                fundamental_ctx = build_fundamental_context(final_text)
+                if fundamental_ctx:
+                    final_text = final_text + fundamental_ctx
+            except Exception:
+                pass
 
             st.session_state.pdf_data = (final_text, file_obj.name)
             st.session_state.img_data = None
