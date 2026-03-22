@@ -29,6 +29,34 @@ def _fetch_all_data(tickers):
     result = {"prices": {}, "news": []}
 
     def fetch():
+        # Fetch berita umum dulu (selalu)
+        try:
+            import feedparser
+            seen = set()
+            # Berita umum pasar modal Indonesia
+            general_sources = [
+                ("CNBC ID", "https://www.cnbcindonesia.com/rss"),
+                ("Kontan", "https://rss.kontan.co.id/category/investasi"),
+                ("Bisnis", "https://ekonomi.bisnis.com/rss"),
+            ]
+            mkt_kw = ["ihsg","saham","bursa","ekonomi","rupiah","bi rate",
+                      "inflasi","pasar","investor","emiten","perang","global"]
+            for src_name, src_url in general_sources:
+                try:
+                    feed = feedparser.parse(src_url)
+                    count = 0
+                    for e in feed.entries:
+                        if count >= 2: break
+                        title = e.title.strip()
+                        key = title[:30].lower()
+                        if key not in seen and any(k in title.lower() for k in mkt_kw):
+                            seen.add(key)
+                            result["news"].append(f"[{src_name}] {title}")
+                            count += 1
+                except: pass
+        except: pass
+
+        # Fetch harga saham jika ada ticker
         try:
             import yfinance as yf
             for tk in tickers[:3]:
@@ -90,7 +118,11 @@ def build_context(prompt):
 
     _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal",
            "fundamental","harga","support","resistance","chart","bandar",
-           "volume","breakout","bias","valuasi"]
+           "volume","breakout","bias","valuasi","berita","news","update",
+           "perang","ekonomi","inflasi","suku bunga","bi rate","rupiah",
+           "dolar","market","pasar","investor","bursa","emiten","dividen",
+           "ipo","right issue","buyback","ojk","bei","idx","makro",
+           "global","china","amerika","fed","trump","tarif","ekspor","impor"]
     _p = prompt.lower()
     _has_ticker = bool(tickers)
     _is_relevant = _has_ticker or any(k in _p for k in _kw)
