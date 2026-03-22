@@ -1417,9 +1417,15 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
+                    # Strip semua field selain role dan content
+                    _msgs = [
+                        {"role": m["role"], "content": m.get("content") or ""}
+                        for m in active["messages"]
+                        if m.get("role") in ("user","assistant","system")
+                    ]
                     res = groq_client.chat.completions.create(
                         model="llama-3.1-8b-instant",
-                        messages=active["messages"],
+                        messages=_msgs,
                         temperature=0.7,
                         max_tokens=2048
                     )
