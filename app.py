@@ -362,7 +362,21 @@ FORMAT TRADE PLAN (saat diminta analisa teknikal):
 ⚠️ Invalidasi: [kondisi]
 ⚠️ DYOR — bukan rekomendasi investasi
 
-ATURAN: Jawab Bahasa Indonesia. Gambar masuk → analisa langsung. Tegas dan berpengalaman."""
+ATURAN KERAS:
+- Jawab Bahasa Indonesia
+- Gambar masuk → analisa teknikal langsung
+- Tegas, berpengalaman, tidak ragu
+
+FRAKSI HARGA SAHAM BEI (wajib patuhi saat sebut harga):
+- Harga < Rp200        → tick Rp1   (contoh: 150, 151, 152)
+- Harga Rp200–Rp500    → tick Rp2   (contoh: 300, 302, 304)
+- Harga Rp500–Rp2.000  → tick Rp5   (contoh: 1.000, 1.005, 1.010)
+- Harga Rp2.000–Rp5.000→ tick Rp10  (contoh: 3.000, 3.010, 3.020)
+- Harga > Rp5.000      → tick Rp25  (contoh: 6.000, 6.025, 6.050)
+
+CONTOH BENAR: support 3.000, resistance 3.500, entry 1.005
+CONTOH SALAH: support 2.997, resistance 3.503, entry 1.003
+Semua harga entry/SL/TP/support/resistance WAJIB sesuai fraksi BEI."""
 }
 
 # ─────────────────────────────────────────────
@@ -1444,16 +1458,35 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
-                    clean_msgs = [
-                        {"role": m["role"], "content": m.get("content") or ""}
-                        for m in active["messages"]
-                        if m.get("role") in ("user","assistant","system")
-                    ]
+                    # Cek apakah pesan terakhir adalah fundamental (besar)
+                    last_content = active["messages"][-1].get("content","") if active["messages"] else ""
+                    is_big = len(last_content) > 5000
+
+                    if is_big:
+                        # Fundamental atau PDF — kirim hanya system + pesan terakhir
+                        system_msg = active["messages"][0] if active["messages"] else {"role":"system","content":""}
+                        last_msg = active["messages"][-1]
+                        # Potong jika masih terlalu besar
+                        last_content_trimmed = last_content[:60000] if len(last_content) > 60000 else last_content
+                        clean_msgs = [
+                            {"role": system_msg["role"], "content": system_msg.get("content","")},
+                            {"role": last_msg["role"], "content": last_content_trimmed}
+                        ]
+                        max_tok = 4096
+                    else:
+                        # Chat biasa — kirim history normal
+                        clean_msgs = [
+                            {"role": m["role"], "content": m.get("content") or ""}
+                            for m in active["messages"]
+                            if m.get("role") in ("user","assistant","system")
+                        ]
+                        max_tok = 2048
+
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=clean_msgs,
                         temperature=0.7,
-                        max_tokens=2048
+                        max_tokens=max_tok
                     )
                 ans = res.choices[0].message.content
             st.markdown(ans)
