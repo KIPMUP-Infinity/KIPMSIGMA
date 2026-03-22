@@ -21,8 +21,8 @@ def _call_gemini(messages, api_key=None):
     """Call Gemini 2.0 Flash — coba 2 key secara bergantian."""
     # Daftar key — coba satu per satu
     keys = [
-        st.secrets.get("GEMINI_KEY",  "AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o"),
-        st.secrets.get("GEMINI_KEY2", "AIzaSyBQkzii7Qco3JVjqgysv_Q7wcsNWZCL2O4"),
+        st.secrets.get("GEMINI_KEY", ""),
+        st.secrets.get("GEMINI_KEY2", ""),
     ]
     last_err = None
     for api_key in keys:
@@ -183,7 +183,7 @@ def _fetch_all_data(tickers):
     return result
 
 def _fetch_finnhub(ticker, api_key=None):
-    api_key = api_key or st.secrets.get("FINNHUB_KEY", "d705ab9r01qtb4r9hgpgd705ab9r01qtb4r9hgq0")
+    api_key = api_key or st.secrets.get("FINNHUB_KEY", "")
     """Fetch fundamental data dari Finnhub."""
     try:
         import urllib.request, json as _j
@@ -217,7 +217,7 @@ def _fetch_finnhub(ticker, api_key=None):
         return {}
 
 def _fetch_alphavantage(ticker, api_key=None):
-    api_key = api_key or st.secrets.get("ALPHAVANTAGE_KEY", "GYZKT8YU8RV3QX65")
+    api_key = api_key or st.secrets.get("ALPHAVANTAGE_KEY", "")
     """Fetch fundamental data dari Alpha Vantage."""
     try:
         import urllib.request, json as _j
@@ -253,7 +253,7 @@ def _fetch_alphavantage(ticker, api_key=None):
         return {}
 
 def _fetch_fmp(ticker, api_key=None):
-    api_key = api_key or st.secrets.get("FMP_KEY", "6ckg4EdDYUqKkkpPK4Weo4b9PbKD6IUK")
+    api_key = api_key or st.secrets.get("FMP_KEY", "")
     """Fetch fundamental dari Financial Modeling Prep — 250 req/hari."""
     try:
         import urllib.request, json as _j
@@ -411,7 +411,7 @@ def _fetch_commodities(api_key=None):
     """Fetch harga komoditas dari FMP — pakai key yang sudah ada."""
     try:
         import urllib.request, json as _j
-        api_key = api_key or st.secrets.get("FMP_KEY", "6ckg4EdDYUqKkkpPK4Weo4b9PbKD6IUK")
+        api_key = api_key or st.secrets.get("FMP_KEY", "")
         result = {}
 
         # Commodity list yang relevan untuk market Indonesia
@@ -494,7 +494,12 @@ def _fetch_us_china_stock(ticker, market="US"):
 # ─── GLOBAL NEWS RSS ───
 GLOBAL_NEWS_SOURCES = [
     ("Al Jazeera",  "https://www.aljazeera.com/xml/rss/all.xml"),
+    ("Reuters",     "https://feeds.reuters.com/reuters/businessNews"),
+    ("BBC World",   "https://feeds.bbci.co.uk/news/world/rss.xml"),
+    ("BBC Business","https://feeds.bbci.co.uk/news/business/rss.xml"),
     ("CNBC Global", "https://www.cnbc.com/id/100727362/device/rss/rss.html"),
+    ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories/"),
+    ("WSJ Markets", "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"),
 ]
 
 def _fetch_global_news(keywords=None, max_per_source=2):
@@ -2880,9 +2885,9 @@ if prompt:
             st.session_state["fund_no_history"] = True
         else:
             try:
-                ctx = build_context(prompt)
+                ctx = build_combined_context(prompt)
                 if ctx:
-                    full_prompt = f"[DATA PASAR IDX]\n{ctx}\n[/DATA PASAR IDX]\n\n{prompt}"
+                    full_prompt = f"{ctx}\n\n{prompt}"
             except: pass
 
     if active["title"] == "Obrolan Baru":
@@ -2978,30 +2983,32 @@ if prompt:
                     # Urutan: Groq 70b → Gemini → Groq 8b
                     ans = None
 
-                    # Step 1: Groq 70b
-                    try:
-                        _res = groq_client.chat.completions.create(
-                            model="llama-3.3-70b-versatile",
-                            messages=_msgs,
-                            temperature=0.7,
-                            max_tokens=2048
-                        )
-                        ans = _res.choices[0].message.content
-                    except: pass
+                    # Groq keys — rotasi jika satu kena limit
+                    _groq_keys = [
+                        st.secrets.get("GROQ_API_KEY", ""),
+                        st.secrets.get("GROQ_API_KEY2", ""),
+                        st.secrets.get("GROQ_API_KEY3", ""),
+                    ]
+                    _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 
-                    # Step 2: Groq 8b
-                    if ans is None:
-                        try:
-                            _res = groq_client.chat.completions.create(
-                                model="llama-3.1-8b-instant",
-                                messages=_msgs,
-                                temperature=0.7,
-                                max_tokens=2048
-                            )
-                            ans = _res.choices[0].message.content
-                        except: pass
+                    # Coba semua kombinasi key + model
+                    for _gkey in _groq_keys:
+                        if ans: break
+                        if not _gkey: continue
+                        for _gmodel in _models:
+                            if ans: break
+                            try:
+                                _gclient = Groq(api_key=_gkey)
+                                _res = _gclient.chat.completions.create(
+                                    model=_gmodel,
+                                    messages=_msgs,
+                                    temperature=0.7,
+                                    max_tokens=2048
+                                )
+                                ans = _res.choices[0].message.content
+                            except: pass
 
-                    # Step 3: Gemini (jika Groq semua gagal)
+                    # Fallback Gemini jika semua Groq gagal
                     if ans is None:
                         try:
                             ans = _call_gemini(_msgs)
