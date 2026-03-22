@@ -344,70 +344,63 @@ DETEKSI SEKTOR OTOMATIS:
    DPS & Payout  → konsisten bayar dividen
 
 FORMAT ANALISA FUNDAMENTAL:
-📋 ANALISA FUNDAMENTAL — [EMITEN] ([PERIODE])
-🏦 Sektor    : [Perbankan / Non-Perbankan]
-📌 Framework : [Buffett / Graham / Lynch / CAN SLIM / Perbankan]
+📋 ANALISA FUNDAMENTAL — [EMITEN] ([TAHUN])
+🏦 Sektor: [Perbankan / Non-Perbankan]
+📌 Framework: [Buffett / Graham / Lynch / CAN SLIM / Perbankan]
 
 💰 PROFITABILITAS
-ROE          : X% → standar >15% [✅/⚠️/❌]
-ROA          : X% → standar >1.5% [✅/⚠️/❌]
-NIM          : X% → standar >4% [✅/⚠️/❌]
-Laba Bersih  : RpX T → YoY [+/-X]%
-EPS          : RpX → YoY [+/-X]%
+- ROE      : X% → Buffett >15% [✅/⚠️/❌]
+- ROA      : X% → standar >1.5% [✅/⚠️/❌]
+- NIM      : X% → standar >4% [✅/⚠️/❌]
+- BOPO     : X% → efisien <70% [✅/⚠️/❌]
+- Laba Bersih: RpX T → YoY [+/-X]%
+- EPS      : RpX → YoY [+/-X]%
 
-🛡️ KUALITAS ASET & RISIKO
-NPL Gross    : X% → sehat <3% [✅/⚠️/❌]
-NPL Net      : X% → sehat <1% [✅/⚠️/❌]
-CAR          : X% → aman >14% [✅/⚠️/❌]
-BOPO         : X% → efisien <70% [✅/⚠️/❌]
-CIR          : X% → ideal <45% [✅/⚠️/❌]
-LDR          : X% → ideal 80-92% [✅/⚠️/❌]
+🛡️ KUALITAS ASET
+- NPL Gross: X% → sehat <3% [✅/⚠️/❌]
+- NPL Net  : X% → sehat <1% [✅/⚠️/❌]
+- CAR      : X% → aman >14% [✅/⚠️/❌]
+- LDR      : X% → ideal 80-92% [✅/⚠️/❌]
+- CIR      : X% → ideal <45% [✅/⚠️/❌]
 
-📊 PERTUMBUHAN YoY
-Total Aset   : RpX T → [+/-X]%
-Kredit       : RpX T → [+/-X]%
-DPK          : RpX T → [+/-X]%
-Laba Bersih  : RpX T → [+/-X]%
-EPS          : RpX → [+/-X]%
-
-💎 VALUASI
-PER          : Xx → Graham <15 [✅/⚠️/❌]
-PBV          : Xx → Graham <1.5 [✅/⚠️/❌]
-PEG          : X → Lynch <1 [✅/⚠️/❌]
-Harga Wajar  : RpX – RpX
+📈 VALUASI
+- PER  : Xx → Graham <15 [✅/⚠️/❌]
+- PBV  : Xx → Graham <1.5 [✅/⚠️/❌]
+- PEG  : X → Lynch <1 [✅/⚠️/❌]
+- Harga Wajar: RpX – RpX
 
 🏆 DIVIDEN
-Total Dividen : RpX T
-Payout Ratio  : X%
-Konsistensi   : [naik/stabil/turun]
+- DPS         : RpX
+- Payout Ratio: X%
+- Konsistensi : [naik/stabil/turun sejak tahun X]
 
-📈 TREN 3 TAHUN
-Laba Bersih  : [tahun-2] → [tahun-1] → [tahun ini] (CAGR ~X%)
-EPS          : [tahun-2] → [tahun-1] → [tahun ini]
-ROE          : [tahun-2] → [tahun-1] → [tahun ini]
+📊 TREN 3-5 TAHUN
+- Laba Bersih: [Y-2] → [Y-1] → [Y] (CAGR ~X%)
+- EPS        : [Y-2] → [Y-1] → [Y] (tren naik/turun)
+- ROE        : [Y-2] → [Y-1] → [Y]
+- Dividen    : [konsisten/tidak]
 
-🔭 PROYEKSI 1-2 TAHUN
-Asumsi Growth: ~X% per tahun
-EPS Est.     : [tahun+1]: RpX | [tahun+2]: RpX
-Target Harga : Konservatif RpX | Moderat RpX | Optimis RpX
+🔭 PROYEKSI 3 TAHUN KE DEPAN
+Basis: CAGR laba X% × PER historis rata-rata
+- [Y+1]: EPS RpX → Target Harga RpX–RpX
+- [Y+2]: EPS RpX → Target Harga RpX–RpX
+- [Y+3]: EPS RpX → Target Harga RpX–RpX
+Skenario: Konservatif RpX | Moderat RpX | Optimis RpX
 
 ⚖️ VERDICT
-Skor         : X/10
-Kekuatan     :
-→ [poin 1]
-→ [poin 2]
-Risiko       :
-→ [poin 1]
-→ [poin 2]
-Valuasi      : [Undervalue/Fairvalue/Overvalue]
-Kesimpulan   : [2-3 kalimat ringkas]
+- Score    : X/10
+- Kekuatan : [poin positif utama]
+- Risiko   : [poin negatif utama]
+- Valuasi  : [Undervalue/Fairvalue/Overvalue]
+- Kesimpulan: [2-3 kalimat: kondisi bisnis, posisi valuasi, saran akumulasi/wait]
 ⚠️ DYOR — bukan rekomendasi investasi
 
-ATURAN PENTING:
-- Setiap metrik di BARIS TERPISAH
-- Isi dengan angka AKTUAL dari data yang tersedia
-- Jika data tidak ada → hitung dari rumus atau gunakan knowledge
-- Jika ada data [DATA PASAR] → gunakan harga dan rasio dari sana
+ATURAN OUTPUT WAJIB:
+- Setiap metrik di BARIS TERPISAH — DILARANG digabung horizontal
+- Isi angka AKTUAL dari data — jika tidak ada, hitung dari rumus atau knowledge
+- Jika ada [DATA PASAR] → gunakan harga dan rasio dari sana untuk valuasi
+- Tahun tren = 3 tahun terakhir dari data yang tersedia, BUKAN 2020/2021/2022
+- Proyeksi dihitung dari CAGR aktual, bukan angka karang
 - Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
 
