@@ -633,6 +633,7 @@ def build_global_context(prompt):
         lines.append("   Minyak→PGAS,MEDC,ELSA | Emas→ANTM,MDKA,BRMS | Dollar kuat→eksportir untung,importir rugi")
         lines.append("   Rate naik→BBCA,BBRI,BMRI,BBNI | Rate turun→BSDE,CTRA,SMGR,WIKA")
         lines.append("5. Jika user tanya emiten di luar list→analisa berdasarkan sektor dan exposure komoditasnya")
+        lines.append("⚠️ WAJIB: Terjemahkan SEMUA judul berita asing ke Bahasa Indonesia dalam output")
         lines.append("6. Analisa dampak ke INDEKS INDONESIA jika relevan:")
         lines.append("   IHSG (Composite) | LQ45 | IDX30 | IDX80 | KOMPAS100 | BISNIS27 | PEFINDO25")
         lines.append("   JII (Jakarta Islamic Index) | SMINFRA18 | IDXBUMN20 | IDXSMC-CAP")
@@ -969,6 +970,30 @@ def build_fundamental_from_text(prompt):
                                 vals_str.append(f"{str(col)[:4]}: Rp{v:,.0f}")
                             lines.append("EPS Historis   : " + " | ".join(vals_str))
                 except: pass
+
+            # ── Hitung Payout Ratio & DPS dari data FMP/yfinance ──
+            try:
+                _div_total = None
+                _laba = ni_vals[0] if ni_vals else None
+                _shares_out = multi.get("shares") or info.get("sharesOutstanding")
+                _div_yield_val = div_yield or multi.get("div_yield")
+                _price_val = price
+
+                # DPS = Dividend Yield × Harga
+                if _div_yield_val and _price_val:
+                    dps_calc = round(_div_yield_val * _price_val, 0)
+                    lines.append(f"DPS (hitung)   : Rp{dps_calc:,.0f} = {_div_yield_val*100:.2f}% × Rp{_price_val:,.0f}")
+
+                    # Total Dividen = DPS × Jumlah Saham
+                    if _shares_out:
+                        _div_total = dps_calc * _shares_out
+                        lines.append(f"Total Dividen  : Rp{_div_total/1e12:.2f} T")
+
+                    # Payout Ratio = Total Dividen ÷ Laba Bersih × 100
+                    if _div_total and _laba and _laba > 0:
+                        payout_calc = (_div_total / _laba) * 100
+                        lines.append(f"Payout Ratio   : {payout_calc:.1f}% = Rp{_div_total/1e12:.2f}T ÷ Rp{_laba/1e12:.2f}T")
+            except: pass
 
             # ── CAGR & Proyeksi Python ──
             lines.append("\n── Kalkulasi CAGR & Proyeksi ──")
@@ -1791,10 +1816,11 @@ ATURAN OUTPUT WAJIB:
 - TAHUN di judul: isi dengan tahun AKTUAL laporan atau tahun sekarang (2026)
 - Tren 3 tahun: gunakan 2024→2025→2026, BUKAN 2020/2021/2022
 - Proyeksi dihitung dari CAGR aktual
-- ICON STATUS: pilih SATU saja — ✅ (pass) atau ⚠️ (perhatian) atau ❌ (fail)
-  DILARANG menulis [✅/⚠️/❌] — harus pilih salah satu
+- ICON STATUS: pilih SATU saja — ✅ pass | ⚠️ perhatian | ❌ fail
+  WAJIB pilih salah satu — JANGAN [✅/⚠️/❌] semua ditampilkan
   Contoh BENAR: ROE: 14,5% → standar >15% [❌]
   Contoh SALAH: ROE: 14,5% → standar >15% [✅/⚠️/❌]
+  Aturan: ✅ jika memenuhi standar | ⚠️ jika mendekati batas | ❌ jika tidak memenuhi
 - Harga saat ini WAJIB tampil di baris pertama setelah header
 - Data yfinance untuk saham IDX TIDAK PUNYA: NIM, NPL, CAR, BOPO, LDR, CIR
 
@@ -1848,6 +1874,8 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 - Hanya tulis "N/A" jika benar-benar tidak ada data sama sekali dan tidak tahu
 - Untuk emiten baru (IPO < 2 tahun): tren historis TIDAK ADA — tulis "Baru IPO [tahun]"
 - Tren dan proyeksi: WAJIB isi dengan estimasi dari knowledge, beri label "(est.)"
+- NO FABRICATION: jika data tidak tersedia dan tidak tahu → tulis "N/A"
+  Jangan karang angka — lebih baik jujur tidak ada data daripada salah
 - Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
 
@@ -3088,6 +3116,7 @@ if prompt:
                         st.secrets.get("GROQ_API_KEY", ""),
                         st.secrets.get("GROQ_API_KEY2", ""),
                         st.secrets.get("GROQ_API_KEY3", ""),
+                        st.secrets.get("GROQ_API_KEY4", ""),
                     ]
                     _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 
