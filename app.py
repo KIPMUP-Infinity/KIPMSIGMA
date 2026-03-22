@@ -15,11 +15,7 @@ import hashlib
 import bcrypt
 import re
 
-# Office file support — disabled sementara
-def read_excel_file(raw, filename): return f"[Excel: {filename} — fitur segera hadir]"
-def read_word_file(raw, filename): return f"[Word: {filename} — fitur segera hadir]"
-def create_excel_download(text, filename="out.xlsx"): return b""
-def create_word_download(text, filename="out.docx"): return b""
+
 
 # ─────────────────────────────────────────────
 # MARKET CONTEXT — Real-time data injector
@@ -2044,28 +2040,9 @@ if result is not None:
 
     if file_obj:
         raw = file_obj.read()
-        fname = file_obj.name.lower()
         ftype = file_obj.type
 
-        # Excel
-        if fname.endswith((".xlsx", ".xls")) or "spreadsheet" in ftype or "excel" in ftype:
-            excel_text = read_excel_file(raw, file_obj.name)
-            st.session_state.pdf_data = (excel_text, file_obj.name)
-            st.session_state.img_data = None
-        # Word
-        elif fname.endswith((".docx", ".doc")) or "word" in ftype or "document" in ftype:
-            word_text = read_word_file(raw, file_obj.name)
-            st.session_state.pdf_data = (word_text, file_obj.name)
-            st.session_state.img_data = None
-        # CSV
-        elif fname.endswith(".csv") or "csv" in ftype:
-            try:
-                csv_text = raw.decode("utf-8", errors="replace")
-                st.session_state.pdf_data = (f"[CSV: {file_obj.name}]\n{csv_text[:30000]}", file_obj.name)
-            except Exception:
-                st.session_state.pdf_data = (f"[CSV: {file_obj.name} — gagal dibaca]", file_obj.name)
-            st.session_state.img_data = None
-        elif ftype == "application/pdf":
+        if ftype == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
 
             # ── Smart PDF extractor — cari halaman keuangan, skip halaman tidak relevan ──
