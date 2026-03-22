@@ -298,52 +298,75 @@ DETEKSI SEKTOR OTOMATIS:
 • Tren dividen dan payout ratio
 
 FORMAT ANALISA FUNDAMENTAL:
-📋 ANALISA FUNDAMENTAL — [EMITEN] ([PERIODE])
-🏦 Sektor: [Perbankan / Non-Perbankan]
-📌 Framework: [Buffett / Graham / Lynch / CAN SLIM / Perbankan]
+WAJIB gunakan format VERTIKAL ke bawah, BUKAN horizontal. Setiap metrik di baris baru.
 
+📋 ANALISA FUNDAMENTAL — [NAMA EMITEN] ([PERIODE DATA])
+🏦 Sektor   : [Perbankan / Non-Perbankan]
+📌 Framework: [nama framework yang dipakai]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💰 PROFITABILITAS
-• ROE    : X% → [standar >15%] ✅/⚠️/❌
-• ROA    : X% → [standar >1.5%] ✅/⚠️/❌
-• NIM    : X% → [standar >4%] ✅/⚠️/❌ *(khusus bank)*
-• Margin : X% → [tren naik/turun]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• ROE          : [angka]% → standar >15% [✅/⚠️/❌]
+• ROA          : [angka]% → standar >1,5% [✅/⚠️/❌]
+• NIM          : [angka]% → standar >4% [✅/⚠️/❌]
+• Laba Bersih  : Rp[angka] T → YoY [naik/turun] [angka]%
+• EPS          : Rp[angka] → YoY [naik/turun] [angka]%
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🛡️ KUALITAS ASET & RISIKO
-• NPL    : X% → [sehat <3%] ✅/⚠️/❌ *(khusus bank)*
-• CAR    : X% → [aman >14%] ✅/⚠️/❌ *(khusus bank)*
-• DER    : X× → [Buffett <0.5] ✅/⚠️/❌
-• BOPO   : X% → [efisien <70%] ✅/⚠️/❌ *(khusus bank)*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• NPL Gross    : [angka]% → sehat <3% [✅/⚠️/❌]
+• NPL Net      : [angka]% → sehat <1% [✅/⚠️/❌]
+• CAR          : [angka]% → aman >14% [✅/⚠️/❌]
+• BOPO         : [angka]% → efisien <70% [✅/⚠️/❌]
+• CIR          : [angka]% → ideal <45% [✅/⚠️/❌]
+• LDR          : [angka]% → ideal 80-92% [✅/⚠️/❌]
 
-📊 PERTUMBUHAN (tren multi-tahun)
-• Laba bersih : [CAGR X% | naik/turun/flat]
-• EPS         : [tren + angka terkini]
-• Revenue/DPK : [tren pertumbuhan]
-• Kredit      : [tren penyaluran] *(khusus bank)*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 PERTUMBUHAN YoY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Total Aset   : Rp[angka] T → [+/-angka]%
+• Kredit       : Rp[angka] T → [+/-angka]%
+• DPK          : Rp[angka] T → [+/-angka]%
+• Laba Bersih  : Rp[angka] T → [+/-angka]%
+• EPS          : Rp[angka] → [+/-angka]%
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💎 VALUASI
-• PER  : X× → [Graham <15] ✅/⚠️/❌
-• PBV  : X× → [Graham <1.5] ✅/⚠️/❌
-• PEG  : X  → [Lynch <1] ✅/⚠️/❌
-• Harga wajar estimasi: Rp [range]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• PER          : [angka]× → Graham <15 [✅/⚠️/❌]
+• PBV          : [angka]× → Graham <1,5 [✅/⚠️/❌]
+• Harga Wajar  : Rp[estimasi range]
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏆 DIVIDEN
-• DPS terkini : Rp X
-• Payout ratio: X%
-• Konsistensi : [konsisten/tidak sejak tahun X]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Total Dividen: Rp[angka] T
+• Payout Ratio : [angka]%
+• Konsistensi  : [naik/stabil/turun]
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚖️ VERDICT
-• Skor fundamental : X/10
-• Kekuatan utama   : [poin positif]
-• Risiko utama     : [poin negatif]
-• Valuasi saat ini : [Undervalue / Fairvalue / Overvalue]
-• Kesimpulan       : [ringkasan 2-3 kalimat]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Skor         : [X]/10
+• Kekuatan     :
+  - [poin 1]
+  - [poin 2]
+• Risiko       :
+  - [poin 1]
+  - [poin 2]
+• Valuasi      : [Undervalue / Fairvalue / Overvalue]
+• Kesimpulan   : [2-3 kalimat ringkas]
+
 ⚠️ DYOR — bukan rekomendasi investasi
 
-ATURAN TAMBAHAN:
-- Jika data multi-tahun tersedia, tampilkan tren minimal 3 tahun
-- Bandingkan metrik dengan rata-rata industri jika memungkinkan
-- Selalu sebutkan periode data yang dianalisa
-- Jika data tidak lengkap, sebutkan apa yang tidak tersedia
+ATURAN WAJIB OUTPUT:
+- SEMUA angka dari dokumen HARUS diisi — jangan tulis "tidak disediakan" jika angkanya ada di data
+- Format VERTIKAL — setiap item di baris baru, TIDAK boleh digabung dalam satu baris
+- Jika ada data 2 periode (misal 2024 vs 2025), tampilkan keduanya untuk perbandingan
+- Hitung pertumbuhan YoY secara manual dari angka yang tersedia
+- Jika benar-benar tidak ada datanya, tulis "Data tidak tersedia di laporan ini"
 
 ═══════════════════════════════════════
 ATURAN KERAS:
