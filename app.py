@@ -1007,7 +1007,30 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             with open(token_file) as f:
                 user_info = json.load(f)
             st.session_state.user = user_info
-            st.session_state.current_token = token  # simpan token di session
+            st.session_state.current_token = token
+
+            # Proses delete DI SINI sebelum load sessions
+            _del_sid = st.query_params.get("del", "")
+            if _del_sid:
+                saved_pre = load_user(user_info["email"])
+                if saved_pre and saved_pre.get("sessions"):
+                    # Hapus session dari data disk
+                    new_sessions = [s for s in saved_pre["sessions"] if s["id"] != _del_sid]
+                    if not new_sessions:
+                        new_sessions = [{"id": str(uuid.uuid4()), "title": "Obrolan Baru",
+                                        "created": datetime.now().isoformat(), "messages": []}]
+                    new_active = saved_pre.get("active_id")
+                    if new_active == _del_sid:
+                        new_active = new_sessions[0]["id"]
+                    # Simpan ke disk SEKARANG
+                    save_user(user_info["email"], {
+                        "theme": saved_pre.get("theme", "dark"),
+                        "sessions": new_sessions,
+                        "active_id": new_active,
+                    })
+                st.query_params.pop("del")
+
+            # Load sessions dari disk (sudah terupdate jika ada delete)
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
@@ -1016,7 +1039,6 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                     st.session_state.active_id = saved.get("active_id")
             st.session_state.data_loaded = True
             restore_images_from_messages()
-            # JANGAN clear query params — biarkan token tetap di URL
             st.rerun()
         except: pass
 
@@ -1623,18 +1645,39 @@ for _sesi in st.session_state.sessions:
     _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',"")
     _fw = "700" if _is_act else "400"
     _bg = C['hover'] if _is_act else "transparent"
-    # Pakai <a href> langsung — tidak perlu JS event listener
     _hist_items += f"""
 (function(){{
+    var row=pd.createElement('div');
+    row.style.cssText='display:flex;align-items:center;width:100%;';
+
     var a=pd.createElement('a');
     a.textContent='{_td}';
     var u=new URL(window.parent.location.href);
     u.searchParams.set('do','sel_{_sid}');
     a.href=u.toString();
-    a.style.cssText='display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;';
+    a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;';
     a.onmouseenter=function(){{this.style.background='{C["hover"]}'}};
     a.onmouseleave=function(){{this.style.background='{_bg}'}};
-    h.appendChild(a);
+
+    var del=pd.createElement('button');
+    del.innerHTML='🗑';
+    del.title='Hapus';
+    del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};';
+    del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}};
+    del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}};
+    del.onclick=function(e){{
+        e.preventDefault();e.stopPropagation();
+        if(confirm('Hapus obrolan ini?')){{
+            var u2=new URL(window.parent.location.href);
+            u2.searchParams.set('del','{_sid}');
+            u2.searchParams.delete('do');
+            window.parent.location.href=u2.toString();
+        }}
+    }};
+
+    row.appendChild(a);
+    row.appendChild(del);
+    h.appendChild(row);
 }})();
 """
 
