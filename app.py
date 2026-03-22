@@ -13,7 +13,6 @@ import json
 import os
 import hashlib
 import bcrypt
-import re
 
 # ─────────────────────────────────────────────
 # CONFIG
@@ -121,21 +120,14 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — asisten trading & analis pasar modal KIPM Universitas Pancasila, by Market n Mocha (MnM).
+    "content": """Kamu adalah SIGMA — analis saham dan chart expert dari KIPM Universitas Pancasila.
 
-KEPRIBADIAN:
-- Sapaan biasa → ramah, hangat, natural seperti teman trader
-- Diminta analisa → profesional, tajam, tegas, berpengalaman
-- Bahasa Indonesia natural
-
-FRAMEWORK ANALISA (MnM Strategy+):
+Kamu menggunakan framework analisa MnM Strategy+:
 1. IFVG — Inversion Fair Value Gap
 2. FVG — Fair Value Gap
 3. Order Block (OB)
 4. Supply & Demand Zones
 5. Moving Average (EMA 13/21/50)
-6. Bandarmologi — akumulasi/distribusi, delta volume
-7. Fundamental — ROE, ROA, NIM, NPL, CAR, BOPO, PER, PBV
 
 FORMAT TRADE PLAN:
 📊 TRADE PLAN — [SAHAM] ([TIMEFRAME])
@@ -144,15 +136,10 @@ FORMAT TRADE PLAN:
 🛑 Stop Loss: [harga]
 ✅ Target 1: [harga]
 ✅ Target 2: [harga]
-📦 Bandarmologi: [ringkasan volume & aksi bandar]
+📦 Bandarmologi: [delta volume]
 ⚠️ Invalidasi: [kondisi]
-⚠️ DYOR — bukan rekomendasi investasi
 
-FRAKSI HARGA BEI (wajib untuk semua harga):
-- < Rp200: tick Rp1 | Rp200-500: tick Rp2 | Rp500-2.000: tick Rp5
-- Rp2.000-5.000: tick Rp10 | > Rp5.000: tick Rp25
-
-ATURAN: Jawab Bahasa Indonesia. Gambar/PDF masuk → analisa langsung. Tegas."""
+ATURAN: Jawab Bahasa Indonesia, analisa gambar langsung, tegas."""
 }
 
 # ─────────────────────────────────────────────
@@ -1079,11 +1066,9 @@ if not active["messages"][1:]:
 # Chat history
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
-        display = msg.get("display") or msg["content"]
+        display = msg["content"]
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
-        if "[DATA PASAR]" in display:
-            display = display.split("[/DATA PASAR]")[-1].strip()
         if msg["role"] == "user" and msg.get("img_b64"):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
@@ -1136,60 +1121,12 @@ if prompt:
         full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     elif pdf_data:
         full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
-    else:
-        # Inject market context hanya saat ada keyword analisa atau ticker
-        try:
-            import re as _re
-            _p = prompt.lower()
-            _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal",
-                   "fundamental","harga","support","resistance","chart","bandar"]
-            _has_ticker = bool(_re.search(r'\b[A-Z]{4}\b', prompt.upper()))
-            if _has_ticker or any(k in _p for k in _kw):
-                import threading, yfinance as yf, feedparser
-                _ctx_result = [""]
-                def _fetch_ctx():
-                    try:
-                        tickers = [t for t in _re.findall(r'\b([A-Z]{4})\b', prompt.upper())
-                                   if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA",
-                                               "TOLONG","ANALISA","SAHAM","MOHON","BISA",
-                                               "FUNDAMENTAL","DENGAN","MINTA","ANALISIS"}][:2]
-                        lines = [datetime.now().strftime("%d %B %Y %H:%M WIB")]
-                        for tk in tickers:
-                            try:
-                                t = yf.Ticker(f"{tk}.JK")
-                                h = t.history(period="2d")
-                                if not h.empty:
-                                    info = t.info
-                                    last = h.iloc[-1]
-                                    prev = h.iloc[-2] if len(h)>1 else last
-                                    chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
-                                    line = f"{tk}: Rp{last['Close']:,.0f} {'▲' if chg>=0 else '▼'}{abs(chg):.2f}%"
-                                    if info.get("trailingPE"): line += f" PER:{info['trailingPE']:.1f}x"
-                                    if info.get("priceToBook"): line += f" PBV:{info['priceToBook']:.1f}x"
-                                    lines.append(line)
-                            except: pass
-                            try:
-                                url = f"https://news.google.com/rss/search?q={requests.utils.quote(tk+' saham')}&hl=id&gl=ID&ceid=ID:id"
-                                feed = feedparser.parse(url)
-                                for e in feed.entries[:3]:
-                                    lines.append(f"• {e.title}")
-                            except: pass
-                        if len(lines) > 1:
-                            _ctx_result[0] = "\n".join(lines)
-                    except: pass
-                th = threading.Thread(target=_fetch_ctx, daemon=True)
-                th.start()
-                th.join(timeout=10)
-                if _ctx_result[0]:
-                    full_prompt = f"[DATA PASAR]\n{_ctx_result[0]}\n[/DATA PASAR]\n\n{prompt}"
-        except:
-            pass
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
     # Simpan gambar di dalam message agar tetap ada setelah refresh
-    user_msg = {"role": "user", "content": full_prompt, "display": prompt}
+    user_msg = {"role": "user", "content": full_prompt}
     if img_data:
         user_msg["img_b64"] = img_data[0]
         user_msg["img_mime"] = img_data[1]
@@ -1220,16 +1157,9 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
-                    _msgs = [{"role": m["role"], "content": m.get("content") or ""}
-                             for m in active["messages"]
-                             if m.get("role") in ("user","assistant","system")]
-                    # Jika pesan terakhir besar (PDF), kirim hanya system+pesan itu
-                    if _msgs and len(_msgs[-1]["content"]) > 5000:
-                        _msgs[-1]["content"] = _msgs[-1]["content"][:50000]
-                        _msgs = [_msgs[0], _msgs[-1]]
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
-                        messages=_msgs,
+                        messages=active["messages"],
                         temperature=0.7,
                         max_tokens=2048
                     )
