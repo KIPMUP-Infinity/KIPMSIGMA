@@ -13,6 +13,7 @@ import json
 import os
 import hashlib
 import bcrypt
+import re
 
 # ─────────────────────────────────────────────
 # MARKET CONTEXT — Real-time data injector
@@ -191,7 +192,6 @@ def fetch_full_fundamental(ticker: str) -> str:
     """
     try:
         import yfinance as yf
-        import re
 
         t = yf.Ticker(f"{ticker}.JK")
         info = t.info
@@ -1748,7 +1748,6 @@ if prompt:
 
     # ── Deteksi intent: inject data sesuai jenis permintaan ──
     if not img_data:
-        import re
         _p = prompt.lower()
 
         # Deteksi perintah analisa fundamental tanpa PDF
@@ -1758,13 +1757,20 @@ if prompt:
                                "stop loss", "beli", "jual", "hold", "chart", "teknikal",
                                "bias", "setup", "volume", "bandar", "bandarmologi",
                                "support", "resistance", "breakout", "breakdown"]
-        _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', prompt))
+        # Deteksi ticker — cek huruf besar DAN kecil
+        _prompt_upper = prompt.upper()
+        _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', _prompt_upper))
         _is_fundamental_cmd = _has_ticker and any(k in _p for k in _fundamental_keywords)
         _is_teknikal = _has_ticker or any(k in _p for k in _teknikal_keywords)
 
         if _is_fundamental_cmd and not pdf_data:
             # Perintah analisa fundamental tanpa PDF — tarik data lengkap dari yfinance
-            tickers_found = re.findall(r'\b([A-Z]{4})\b', prompt)
+            tickers_found = re.findall(r'\b([A-Z]{4})\b', _prompt_upper)
+            if tickers_found:
+                # Filter kata umum yang bukan ticker
+                _skip_words = {"YANG","ATAU","DARI","PADA","UNTUK","DENGAN","SAHAM",
+                               "SAYA","MINTA","TOLONG","ANALISA","ANALISIS","MOHON"}
+                tickers_found = [t for t in tickers_found if t not in _skip_words]
             if tickers_found:
                 _ticker = tickers_found[0]
                 try:
@@ -1781,7 +1787,7 @@ if prompt:
         elif _is_teknikal:
             # Perintah teknikal — inject market context biasa
             try:
-                mkt_ctx = get_market_context(prompt)
+                mkt_ctx = get_market_context(_prompt_upper)
                 if mkt_ctx:
                     full_prompt = (
                         f"=== DATA PASAR REAL-TIME ===\n{mkt_ctx}\n"
