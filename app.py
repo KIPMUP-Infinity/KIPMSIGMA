@@ -1314,42 +1314,71 @@ for i, msg in enumerate(active["messages"][1:]):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
-# Chat input
-try:
-    result = st.chat_input(
-        "Tanya SIGMA... DYOR - bukan financial advice.",
-        accept_file=True,
-        file_type=["pdf", "png", "jpg", "jpeg"]
-    )
-except Exception:
-    result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
-
+# Chat input — robust untuk semua versi Streamlit
 prompt = None
 file_obj = None
 
-if result is not None:
-    if hasattr(result, 'text'):
-        prompt = (result.text or "").strip()
-        files = getattr(result, 'files', None) or []
-        if files: file_obj = files[0]
-    elif isinstance(result, str):
+# Coba dengan accept_file dulu
+_use_file_input = False
+try:
+    _test = st.chat_input.__code__.co_varnames
+    _use_file_input = True
+except:
+    pass
+
+if _use_file_input:
+    try:
+        result = st.chat_input(
+            "Tanya SIGMA... DYOR - bukan financial advice.",
+            accept_file=True,
+            file_type=["pdf", "png", "jpg", "jpeg"]
+        )
+        if result is not None:
+            # Handle object result (Streamlit >= 1.46)
+            if hasattr(result, 'text'):
+                prompt = (result.text or "").strip()
+                files = getattr(result, 'files', None) or []
+                if files:
+                    file_obj = files[0]
+            elif hasattr(result, '__iter__') and not isinstance(result, str):
+                # Tuple (text, files) format
+                try:
+                    _txt, _files = result
+                    prompt = (_txt or "").strip()
+                    if _files:
+                        file_obj = _files[0]
+                except:
+                    prompt = str(result).strip()
+            elif isinstance(result, str):
+                prompt = result.strip()
+    except Exception:
+        # Fallback ke plain chat_input
+        result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
+        if result:
+            prompt = result.strip()
+else:
+    result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
+    if result:
         prompt = result.strip()
 
-    if file_obj:
+if file_obj:
+    try:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
             txt = "".join(p.get_text() for p in doc)
-            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:6000]}", file_obj.name)
+            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:30000]}", file_obj.name)
             st.session_state.img_data = None
         else:
             b64 = base64.b64encode(raw).decode()
             mime = "image/png" if file_obj.name.endswith(".png") else "image/jpeg"
             st.session_state.img_data = (b64, mime, file_obj.name)
             st.session_state.pdf_data = None
+    except Exception as fe:
+        st.error(f"Gagal baca file: {fe}")
 
-    if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
-        prompt = "Tolong analisa file yang saya kirim"
+if not prompt and (st.session_state.get('img_data') or st.session_state.get('pdf_data')):
+    prompt = "Tolong analisa file yang saya kirim"
 
 if prompt:
     img_data = st.session_state.img_data
