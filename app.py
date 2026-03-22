@@ -1122,6 +1122,15 @@ if result is not None:
             st.session_state.img_data = (b64, mime, file_obj.name)
             st.session_state.pdf_data = None
 
+    # DEBUG — tampilkan info result untuk diagnosa
+    if result is not None and file_obj is None:
+        _result_type = type(result).__name__
+        _result_attrs = [a for a in dir(result) if not a.startswith('_')]
+        st.sidebar.warning(f"DEBUG result type: {_result_type}")
+        st.sidebar.info(f"DEBUG attrs: {_result_attrs[:10]}")
+        if hasattr(result, 'text'):
+            st.sidebar.info(f"DEBUG text: '{result.text}'")
+
     if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
         prompt = "Tolong analisa file yang saya kirim"
 
