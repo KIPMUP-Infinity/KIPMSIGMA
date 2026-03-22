@@ -1387,14 +1387,23 @@ if result is not None:
 if prompt:
     img_data = st.session_state.img_data
     pdf_data = st.session_state.pdf_data
+    # Clear SETELAH diambil nilainya
     st.session_state.img_data = None
     st.session_state.pdf_data = None
+
+    # Hitung estimasi token — 1 token ≈ 4 karakter
+    # llama-3.3-70b context window = 128k token ≈ 512k karakter
+    # System prompt baru ~3k karakter, sisakan ruang untuk output
+    MAX_PDF_CHARS = 80000
 
     full_prompt = prompt
     if img_data:
         full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     elif pdf_data:
-        full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+        pdf_text = pdf_data[0]
+        if len(pdf_text) > MAX_PDF_CHARS:
+            pdf_text = pdf_text[:MAX_PDF_CHARS] + "\n\n[...konten terpotong, analisa berdasarkan data di atas]"
+        full_prompt = f"{pdf_text}\n\nPertanyaan: {prompt}"
 
     # ── Deteksi intent: hanya inject market context jika relevan analisa ──
     if not img_data:
@@ -1476,13 +1485,11 @@ if prompt:
                     last_content = groq_messages[-1]["content"] if groq_messages else ""
                     is_pdf_msg = "[PDF:" in last_content and "Halaman" in last_content
                     if is_pdf_msg:
-                        # Untuk PDF: kirim hanya system prompt + pesan PDF saja (bukan history penuh)
-                        # agar tidak overflow context window
+                        # Untuk PDF: kirim hanya system prompt + pesan PDF saja
                         groq_messages_send = [
                             groq_messages[0],   # system prompt
                             groq_messages[-1],  # pesan PDF user
                         ]
-                        # Pastikan total karakter tidak melebihi ~28k token (~110k karakter)
                         pdf_content = groq_messages_send[-1]["content"]
                         if len(pdf_content) > 80000:
                             groq_messages_send[-1] = {
@@ -1491,6 +1498,7 @@ if prompt:
                             }
                         model_to_use = "llama-3.3-70b-versatile"
                         max_tok = 4096
+                        st.caption(f"📄 Memproses PDF — {len(groq_messages_send[-1]['content']):,} karakter dikirim ke model...")
                     else:
                         groq_messages_send = groq_messages
                         model_to_use = "llama-3.3-70b-versatile"
