@@ -1073,33 +1073,44 @@ for i, msg in enumerate(active["messages"][1:]):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
-# Chat input + file uploader
-col_upload, col_spacer = st.columns([1, 4])
-with col_upload:
-    uploaded_file = st.file_uploader(
-        "📎 PDF/Gambar",
-        type=["pdf", "png", "jpg", "jpeg"],
-        key="main_uploader",
-        label_visibility="collapsed"
+# Chat input
+try:
+    result = st.chat_input(
+        "Tanya SIGMA... DYOR - bukan financial advice.",
+        accept_file="multiple",
+        file_type=["pdf", "png", "jpg", "jpeg"]
     )
-
-result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
+except TypeError:
+    result = st.chat_input("Tanya SIGMA...")
 
 prompt = None
-file_obj = uploaded_file
+file_obj = None
 
 if result is not None:
-    if isinstance(result, str):
-        prompt = result.strip()
-    elif hasattr(result, 'text'):
+    # Handle semua format result Streamlit
+    if hasattr(result, 'text'):
         prompt = (result.text or "").strip()
+        # Coba berbagai cara akses file
+        for attr in ['files', 'file', '_files']:
+            files = getattr(result, attr, None)
+            if files:
+                file_obj = files[0] if isinstance(files, (list, tuple)) else files
+                break
+    elif isinstance(result, str):
+        prompt = result.strip()
+    else:
+        # Format lain — coba konversi
+        try:
+            prompt = str(result).strip() if result else ""
+        except:
+            pass
 
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
             txt = "".join(p.get_text() for p in doc)
-            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:30000]}", file_obj.name)
+            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:6000]}", file_obj.name)
             st.session_state.img_data = None
         else:
             b64 = base64.b64encode(raw).decode()
@@ -1157,25 +1168,9 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
-                    # Untuk PDF — kirim hanya system prompt + pesan terakhir
-                    # agar tidak overflow context window Groq
-                    _last = active["messages"][-1] if active["messages"] else {}
-                    _is_pdf = "[PDF:" in (_last.get("content") or "")
-                    if _is_pdf:
-                        _sys = active["messages"][0]
-                        _groq_msgs = [
-                            {"role": _sys["role"], "content": _sys["content"]},
-                            {"role": _last["role"], "content": (_last.get("content") or "")[:30000]}
-                        ]
-                    else:
-                        _groq_msgs = [
-                            {"role": m["role"], "content": m.get("content") or ""}
-                            for m in active["messages"]
-                            if m.get("role") in ("user", "assistant", "system")
-                        ]
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
-                        messages=_groq_msgs,
+                        messages=active["messages"],
                         temperature=0.7,
                         max_tokens=2048
                     )
