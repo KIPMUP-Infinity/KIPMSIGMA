@@ -15,48 +15,6 @@ import hashlib
 import bcrypt
 import re
 
-
-# ── Market context (inject ke prompt jika ada keyword analisa) ──
-def _get_market_ctx(prompt):
-    try:
-        import threading, yfinance as yf, feedparser
-        tickers = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
-                   if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA",
-                                "TOLONG","ANALISA","SAHAM","MOHON","BISA",
-                                "ANALISIS","FUNDAMENTAL","DENGAN","MINTA"}][:2]
-        if not tickers:
-            return ""
-        result = [""]
-        def fetch():
-            lines = [datetime.now().strftime("%d %B %Y %H:%M WIB")]
-            for tk in tickers:
-                try:
-                    t = yf.Ticker(f"{tk}.JK")
-                    h = t.history(period="2d")
-                    if not h.empty:
-                        info = t.info
-                        last = h.iloc[-1]
-                        prev = h.iloc[-2] if len(h)>1 else last
-                        chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
-                        line = f"{tk}: Rp{last['Close']:,.0f} {'▲' if chg>=0 else '▼'}{abs(chg):.2f}%"
-                        if info.get("trailingPE"): line += f" PER:{info['trailingPE']:.1f}x"
-                        if info.get("priceToBook"): line += f" PBV:{info['priceToBook']:.1f}x"
-                        lines.append(line)
-                except: pass
-                try:
-                    url = f"https://news.google.com/rss/search?q={requests.utils.quote(tk+' saham')}&hl=id&gl=ID&ceid=ID:id"
-                    feed = feedparser.parse(url)
-                    for e in feed.entries[:3]:
-                        lines.append(f"• {e.title}")
-                except: pass
-            result[0] = "\n".join(lines)
-        th = threading.Thread(target=fetch, daemon=True)
-        th.start()
-        th.join(timeout=10)
-        return result[0]
-    except:
-        return ""
-
 # ─────────────────────────────────────────────
 # CONFIG
 # ─────────────────────────────────────────────
@@ -190,11 +148,11 @@ FORMAT TRADE PLAN:
 ⚠️ Invalidasi: [kondisi]
 ⚠️ DYOR — bukan rekomendasi investasi
 
-FRAKSI HARGA BEI (wajib untuk semua harga yang disebut):
+FRAKSI HARGA BEI (wajib untuk semua harga):
 - < Rp200: tick Rp1 | Rp200-500: tick Rp2 | Rp500-2.000: tick Rp5
 - Rp2.000-5.000: tick Rp10 | > Rp5.000: tick Rp25
 
-ATURAN: Jawab Bahasa Indonesia. Gambar masuk → analisa langsung. Tegas."""
+ATURAN: Jawab Bahasa Indonesia. Gambar/PDF masuk → analisa langsung. Tegas."""
 }
 
 # ─────────────────────────────────────────────
@@ -1121,8 +1079,7 @@ if not active["messages"][1:]:
 # Chat history
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
-        raw = msg.get("display") or msg.get("content") or ""
-        display = raw
+        display = msg.get("display") or msg["content"]
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
         if "[DATA PASAR]" in display:
@@ -1180,17 +1137,53 @@ if prompt:
     elif pdf_data:
         full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
     else:
-        _p = prompt.lower()
-        _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal",
-               "fundamental","harga","support","resistance","chart","bandar"]
-        _has_ticker = bool(re.search(r'\b[A-Z]{4}\b', prompt.upper()))
-        if _has_ticker or any(k in _p for k in _kw):
-            try:
-                ctx = _get_market_ctx(prompt)
-                if ctx:
-                    full_prompt = f"[DATA PASAR]\n{ctx}\n[/DATA PASAR]\n\n{prompt}"
-            except:
-                pass
+        # Inject market context hanya saat ada keyword analisa atau ticker
+        try:
+            import re as _re
+            _p = prompt.lower()
+            _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal",
+                   "fundamental","harga","support","resistance","chart","bandar"]
+            _has_ticker = bool(_re.search(r'\b[A-Z]{4}\b', prompt.upper()))
+            if _has_ticker or any(k in _p for k in _kw):
+                import threading, yfinance as yf, feedparser
+                _ctx_result = [""]
+                def _fetch_ctx():
+                    try:
+                        tickers = [t for t in _re.findall(r'\b([A-Z]{4})\b', prompt.upper())
+                                   if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA",
+                                               "TOLONG","ANALISA","SAHAM","MOHON","BISA",
+                                               "FUNDAMENTAL","DENGAN","MINTA","ANALISIS"}][:2]
+                        lines = [datetime.now().strftime("%d %B %Y %H:%M WIB")]
+                        for tk in tickers:
+                            try:
+                                t = yf.Ticker(f"{tk}.JK")
+                                h = t.history(period="2d")
+                                if not h.empty:
+                                    info = t.info
+                                    last = h.iloc[-1]
+                                    prev = h.iloc[-2] if len(h)>1 else last
+                                    chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
+                                    line = f"{tk}: Rp{last['Close']:,.0f} {'▲' if chg>=0 else '▼'}{abs(chg):.2f}%"
+                                    if info.get("trailingPE"): line += f" PER:{info['trailingPE']:.1f}x"
+                                    if info.get("priceToBook"): line += f" PBV:{info['priceToBook']:.1f}x"
+                                    lines.append(line)
+                            except: pass
+                            try:
+                                url = f"https://news.google.com/rss/search?q={requests.utils.quote(tk+' saham')}&hl=id&gl=ID&ceid=ID:id"
+                                feed = feedparser.parse(url)
+                                for e in feed.entries[:3]:
+                                    lines.append(f"• {e.title}")
+                            except: pass
+                        if len(lines) > 1:
+                            _ctx_result[0] = "\n".join(lines)
+                    except: pass
+                th = threading.Thread(target=_fetch_ctx, daemon=True)
+                th.start()
+                th.join(timeout=10)
+                if _ctx_result[0]:
+                    full_prompt = f"[DATA PASAR]\n{_ctx_result[0]}\n[/DATA PASAR]\n\n{prompt}"
+        except:
+            pass
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
@@ -1230,11 +1223,10 @@ if prompt:
                     _msgs = [{"role": m["role"], "content": m.get("content") or ""}
                              for m in active["messages"]
                              if m.get("role") in ("user","assistant","system")]
-                    _last_len = len(_msgs[-1]["content"]) if _msgs else 0
-                    if _last_len > 5000:
-                        # PDF/fundamental — kirim hanya system + pesan terakhir
-                        _msgs = [_msgs[0], _msgs[-1]]
+                    # Jika pesan terakhir besar (PDF), kirim hanya system+pesan itu
+                    if _msgs and len(_msgs[-1]["content"]) > 5000:
                         _msgs[-1]["content"] = _msgs[-1]["content"][:50000]
+                        _msgs = [_msgs[0], _msgs[-1]]
                     res = groq_client.chat.completions.create(
                         model="llama-3.3-70b-versatile",
                         messages=_msgs,
