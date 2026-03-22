@@ -182,98 +182,218 @@ def build_fundamental_context(pdf_text: str) -> str:
     return "\n".join(lines)
 
 
-def fetch_full_fundamental(ticker: str) -> str:
+# ─────────────────────────────────────────────
+# MULTI-SOURCE DATA FETCHER — sistem backup berlapis
+# ─────────────────────────────────────────────
+
+def _fetch_price_stooq(ticker: str) -> dict:
+    """Layer 2: Ambil harga historis dari stooq.com sebagai backup yfinance."""
+    try:
+        import pandas_datareader as pdr
+        from datetime import timedelta
+        end = datetime.now()
+        start = end - timedelta(days=365*5)  # 5 tahun historis
+        df = pdr.get_data_stooq(f"{ticker}.JK", start=start, end=end)
+        if df.empty:
+            return {}
+        df = df.sort_index()
+        last = df.iloc[-1]
+        prev = df.iloc[-2] if len(df) > 1 else last
+        chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
+        # Hitung simple metrics dari price history
+        return {
+            "price": round(last["Close"], 0),
+            "change_pct": round(chg, 2),
+            "52w_high": round(df["High"].tail(252).max(), 0),
+            "52w_low": round(df["Low"].tail(252).min(), 0),
+            "source": "stooq"
+        }
+    except Exception:
+        return {}
+
+def _fetch_idx_company_info(ticker: str) -> dict:
+    """Layer 3: Ambil info dasar emiten dari IDX via request publik."""
+    try:
+        url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetSecuritiesStock?start=0&length=1&keyword={ticker}"
+        r = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+        if not data.get("data"):
+            return {}
+        item = data["data"][0]
+        return {
+            "name": item.get("Name", ""),
+            "sector": item.get("Sector", ""),
+            "price": item.get("LastPrice", 0),
+            "change_pct": item.get("Change", 0),
+            "market_cap": item.get("MarketCap", 0),
+            "source": "IDX"
+        }
+    except Exception:
+        return {}
+
+def _fetch_price_with_fallback(ticker: str) -> dict:
     """
-    Tarik data fundamental lengkap dari yfinance:
-    - Income statement, balance sheet, cashflow (historis tahunan)
-    - Rasio keuangan, valuasi, dividen
-    - Hitung tren dan proyeksi sederhana
-    Return string konteks siap inject ke prompt.
+    Coba ambil data harga dengan urutan:
+    1. yfinance → 2. stooq → 3. IDX API
+    Return dict dengan field 'source' untuk tracking.
     """
+    # Layer 1: yfinance
     try:
         import yfinance as yf
-
-        # Paksa fresh data — disable cache
         t = yf.Ticker(f"{ticker}.JK")
-        today_str = datetime.now().strftime("%d %B %Y")
-        current_year = datetime.now().year
-
-        # ── Harga & valuasi terkini ──
         hist = t.history(period="5d", auto_adjust=True)
-        price = round(hist.iloc[-1]["Close"], 0) if not hist.empty else None
-
-        # ── Info terkini ──
         info = t.info
+        if not hist.empty:
+            last = hist.iloc[-1]
+            prev = hist.iloc[-2] if len(hist) > 1 else last
+            chg = ((last["Close"] - prev["Close"]) / prev["Close"] * 100) if prev["Close"] else 0
+            return {
+                "price": round(last["Close"], 0),
+                "change_pct": round(chg, 2),
+                "pe_ratio": info.get("trailingPE"),
+                "pb_ratio": info.get("priceToBook"),
+                "market_cap": info.get("marketCap"),
+                "eps": info.get("trailingEps"),
+                "book_value": info.get("bookValue"),
+                "dividend_yield": info.get("dividendYield"),
+                "52w_high": info.get("fiftyTwoWeekHigh"),
+                "52w_low": info.get("fiftyTwoWeekLow"),
+                "shares": info.get("sharesOutstanding"),
+                "source": "yfinance"
+            }
+    except Exception:
+        pass
 
-        # ── Laporan keuangan tahunan — ambil versi terbaru ──
+    # Layer 2: stooq
+    stooq_data = _fetch_price_stooq(ticker)
+    if stooq_data:
+        return stooq_data
+
+    # Layer 3: IDX API
+    idx_data = _fetch_idx_company_info(ticker)
+    if idx_data:
+        return idx_data
+
+    # Semua gagal
+    return {"source": "failed"}
+
+def _fetch_financials_with_fallback(ticker: str) -> dict:
+    """
+    Ambil laporan keuangan historis dengan fallback:
+    1. yfinance income_stmt (API baru)
+    2. yfinance financials (API lama)
+    3. Return kosong — model akan hitung dari knowledge
+    """
+    result = {"inc": None, "bs": None, "cf": None, "source": "none"}
+    try:
+        import yfinance as yf
+        t = yf.Ticker(f"{ticker}.JK")
+
+        # Coba API baru dulu
         try:
-            inc = t.income_stmt        # Income statement (API baru)
-            if inc is None or inc.empty:
-                inc = t.financials     # fallback API lama
+            inc = t.income_stmt
+            if inc is not None and not inc.empty:
+                result["inc"] = inc
+                result["source"] = "yfinance_new"
         except Exception:
-            inc = None
+            pass
+
+        # Fallback ke API lama
+        if result["inc"] is None:
+            try:
+                inc = t.financials
+                if inc is not None and not inc.empty:
+                    result["inc"] = inc
+                    result["source"] = "yfinance_old"
+            except Exception:
+                pass
+
+        # Balance sheet
         try:
-            bs = t.balance_sheet
+            result["bs"] = t.balance_sheet
         except Exception:
-            bs = None
+            pass
+
+        # Cashflow
         try:
             cf = t.cash_flow
-            if cf is None or cf.empty:
+            if cf is None or (hasattr(cf, "empty") and cf.empty):
                 cf = t.cashflow
+            result["cf"] = cf
         except Exception:
-            cf = None
+            pass
+
+    except Exception:
+        pass
+
+    return result
+
+
+def fetch_full_fundamental(ticker: str) -> str:
+    """
+    Tarik data fundamental lengkap dengan sistem backup berlapis:
+    Layer 1: yfinance → Layer 2: stooq → Layer 3: IDX API → Layer 4: knowledge model
+    """
+    today_str = datetime.now().strftime("%d %B %Y")
+    current_year = datetime.now().year
+
+    # ── Ambil harga & rasio dengan fallback ──
+    price_data = _fetch_price_with_fallback(ticker)
+    price_source = price_data.get("source", "failed")
+
+    # ── Ambil laporan keuangan dengan fallback ──
+    fin_data = _fetch_financials_with_fallback(ticker)
+    inc = fin_data.get("inc")
+    bs  = fin_data.get("bs")
+    cf  = fin_data.get("cf")
+    fin_source = fin_data.get("source", "none")
+
+    try:
 
         lines = []
         lines.append(f"=== DATA FUNDAMENTAL LENGKAP — {ticker} ({today_str}) ===")
-        lines.append(f"Sumber: Yahoo Finance (yfinance) | Data historis tahunan\n")
+        lines.append(f"Sumber harga : {price_source} | Sumber lapkeu: {fin_source}\n")
 
-        # ── HARGA & VALUASI ──
+        # ── HARGA & VALUASI (dari price_data berlapis) ──
         lines.append("── HARGA & VALUASI TERKINI ──")
-        if price:
-            lines.append(f"Harga Saham     : Rp{price:,.0f}")
-        if info.get("trailingPE"):
-            lines.append(f"PER (Trailing)  : {info['trailingPE']:.2f}×")
-        if info.get("forwardPE"):
-            lines.append(f"PER (Forward)   : {info['forwardPE']:.2f}×")
-        if info.get("priceToBook"):
-            lines.append(f"PBV             : {info['priceToBook']:.2f}×")
-        if info.get("marketCap"):
-            lines.append(f"Market Cap      : Rp{info['marketCap']/1e12:.1f} triliun")
-        if info.get("fiftyTwoWeekHigh"):
-            lines.append(f"52W High/Low    : Rp{info['fiftyTwoWeekHigh']:,.0f} / Rp{info['fiftyTwoWeekLow']:,.0f}")
-        if info.get("bookValue"):
-            lines.append(f"Book Value/Sh   : Rp{info['bookValue']:,.0f}")
-        if info.get("trailingEps"):
-            lines.append(f"EPS (Trailing)  : Rp{info['trailingEps']:,.0f}")
-        if info.get("forwardEps"):
-            lines.append(f"EPS (Forward)   : Rp{info['forwardEps']:,.0f}")
+        if price_data.get("price"):
+            lines.append(f"Harga Saham     : Rp{price_data['price']:,.0f}")
+        if price_data.get("change_pct") is not None:
+            arah = "▲" if price_data["change_pct"] >= 0 else "▼"
+            lines.append(f"Perubahan       : {arah}{abs(price_data['change_pct']):.2f}%")
+        if price_data.get("pe_ratio"):
+            lines.append(f"PER (Trailing)  : {price_data['pe_ratio']:.2f}×")
+        if price_data.get("pb_ratio"):
+            lines.append(f"PBV             : {price_data['pb_ratio']:.2f}×")
+        if price_data.get("market_cap"):
+            lines.append(f"Market Cap      : Rp{price_data['market_cap']/1e12:.1f} triliun")
+        if price_data.get("52w_high") and price_data.get("52w_low"):
+            lines.append(f"52W High/Low    : Rp{price_data['52w_high']:,.0f} / Rp{price_data['52w_low']:,.0f}")
+        if price_data.get("book_value"):
+            lines.append(f"Book Value/Sh   : Rp{price_data['book_value']:,.0f}")
+        if price_data.get("eps"):
+            lines.append(f"EPS (Trailing)  : Rp{price_data['eps']:,.0f}")
+        if price_data.get("dividend_yield"):
+            lines.append(f"Dividend Yield  : {price_data['dividend_yield']*100:.2f}%")
+        if price_data.get("shares"):
+            lines.append(f"Shares Outstand : {price_data['shares']/1e9:.2f} miliar lembar")
 
-        # ── RASIO PROFITABILITAS ──
-        lines.append("\n── RASIO PROFITABILITAS ──")
-        if info.get("returnOnEquity"):
-            lines.append(f"ROE             : {info['returnOnEquity']*100:.2f}%")
-        if info.get("returnOnAssets"):
-            lines.append(f"ROA             : {info['returnOnAssets']*100:.2f}%")
-        if info.get("profitMargins"):
-            lines.append(f"Net Margin      : {info['profitMargins']*100:.2f}%")
-        if info.get("revenueGrowth"):
-            lines.append(f"Revenue Growth  : {info['revenueGrowth']*100:.2f}%")
-        if info.get("earningsGrowth"):
-            lines.append(f"Earnings Growth : {info['earningsGrowth']*100:.2f}%")
+        # Hitung PER & PBV manual jika tidak ada dari source
+        _price = price_data.get("price", 0)
+        _eps   = price_data.get("eps", 0)
+        _bv    = price_data.get("book_value", 0)
+        if _price and _eps and not price_data.get("pe_ratio"):
+            lines.append(f"PER (hitung)    : {_price/_eps:.2f}× (Rp{_price:,.0f} ÷ Rp{_eps:,.0f})")
+        if _price and _bv and not price_data.get("pb_ratio"):
+            lines.append(f"PBV (hitung)    : {_price/_bv:.2f}× (Rp{_price:,.0f} ÷ Rp{_bv:,.0f})")
 
-        # ── DIVIDEN ──
-        lines.append("\n── DIVIDEN ──")
-        if info.get("dividendYield"):
-            lines.append(f"Dividend Yield  : {info['dividendYield']*100:.2f}%")
-        if info.get("payoutRatio"):
-            lines.append(f"Payout Ratio    : {info['payoutRatio']*100:.2f}%")
-        if info.get("lastDividendValue"):
-            lines.append(f"DPS Terakhir    : Rp{info['lastDividendValue']:,.0f}")
-        if info.get("sharesOutstanding"):
-            lines.append(f"Shares Outstanding: {info['sharesOutstanding']/1e9:.2f} miliar lembar")
+        if price_source == "failed":
+            lines.append("⚠️ Semua sumber harga gagal — gunakan knowledge internal untuk estimasi harga")
 
         # ── INCOME STATEMENT HISTORIS ──
-        if inc is not None and not inc.empty:
+        if inc is not None and hasattr(inc, "empty") and not inc.empty:
             lines.append("\n── INCOME STATEMENT HISTORIS (tahunan, dalam miliar Rp) ──")
             # Ambil baris penting
             key_rows = {
@@ -302,7 +422,7 @@ def fetch_full_fundamental(ticker: str) -> str:
                     pass
 
         # ── BALANCE SHEET HISTORIS ──
-        if bs is not None and not bs.empty:
+        if bs is not None and hasattr(bs, "empty") and not bs.empty:
             lines.append("\n── BALANCE SHEET HISTORIS (tahunan, dalam triliun Rp) ──")
             key_rows_bs = {
                 "Total Assets"              : "Total Aset",
@@ -324,7 +444,7 @@ def fetch_full_fundamental(ticker: str) -> str:
                     pass
 
         # ── CASHFLOW HISTORIS ──
-        if cf is not None and not cf.empty:
+        if cf is not None and hasattr(cf, "empty") and not cf.empty:
             lines.append("\n── CASHFLOW HISTORIS (tahunan, dalam triliun Rp) ──")
             key_rows_cf = {
                 "Operating Cash Flow"   : "Cash Flow Operasi",
@@ -356,7 +476,11 @@ def fetch_full_fundamental(ticker: str) -> str:
         return "\n".join(lines)
 
     except Exception as e:
-        return f"[Gagal fetch data yfinance: {str(e)}]"
+        return (
+            f"[Data fetch gagal: {str(e)}]\n"
+            f"Gunakan knowledge internal kamu tentang {ticker} untuk analisa fundamental. "
+            f"Sebutkan bahwa data diambil dari knowledge training, bukan real-time."
+        )
 
 
 def get_market_context(prompt: str) -> str:
