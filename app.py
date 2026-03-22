@@ -1352,7 +1352,7 @@ if result is not None:
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
             txt = "".join(p.get_text() for p in doc)
-            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:6000]}", file_obj.name)
+            st.session_state.pdf_data = (f"[PDF: {file_obj.name}]\n{txt[:4000]}", file_obj.name)
             st.session_state.img_data = None
         else:
             b64 = base64.b64encode(raw).decode()
@@ -1417,17 +1417,25 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
-                    # Strip semua field selain role dan content
                     _msgs = [
                         {"role": m["role"], "content": m.get("content") or ""}
                         for m in active["messages"]
                         if m.get("role") in ("user","assistant","system")
                     ]
+                    # Cek apakah pesan terakhir PDF/besar
+                    _last_len = len(_msgs[-1]["content"]) if _msgs else 0
+                    if _last_len > 3000:
+                        # Kirim hanya system + pesan terakhir, potong di 8000 char
+                        _msgs = [
+                            _msgs[0],
+                            {"role": _msgs[-1]["role"],
+                             "content": _msgs[-1]["content"][:8000]}
+                        ]
                     res = groq_client.chat.completions.create(
                         model="llama-3.1-8b-instant",
                         messages=_msgs,
                         temperature=0.7,
-                        max_tokens=2048
+                        max_tokens=1500
                     )
                 ans = res.choices[0].message.content
             st.markdown(ans)
