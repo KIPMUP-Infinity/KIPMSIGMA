@@ -165,29 +165,149 @@ def build_context(prompt):
 
     return "\n".join(lines) if len(lines)>1 else ""
 
+def build_fundamental_from_text(prompt):
+    """
+    Untuk perintah teks seperti 'analisa fundamental BBNI' tanpa PDF.
+    Deteksi ticker, fetch data dari yfinance + laporan keuangan historis.
+    """
+    ticker = detect_ticker_from_prompt(prompt)
+    if not ticker:
+        return ""
+    import threading
+    result = [""]
+    def fetch():
+        try:
+            import yfinance as yf
+            t = yf.Ticker(f"{ticker}.JK")
+            info = t.info
+            hist_price = t.history(period="5d")
+            current_year = datetime.now().year
+            lines = [f"=== DATA FUNDAMENTAL {ticker} (live + historis) ===",
+                     f"Tahun sekarang: {current_year}"]
+            # Harga live
+            if not hist_price.empty:
+                price = round(hist_price.iloc[-1]["Close"], 0)
+                lines.append(f"Harga Saham    : Rp{price:,.0f}")
+            if info.get("marketCap"):
+                lines.append(f"Market Cap     : Rp{info['marketCap']/1e12:.1f} T")
+            if info.get("trailingPE"):
+                lines.append(f"PER            : {info['trailingPE']:.2f}×")
+            if info.get("priceToBook"):
+                lines.append(f"PBV            : {info['priceToBook']:.2f}×")
+            if info.get("trailingEps"):
+                lines.append(f"EPS (TTM)      : Rp{info['trailingEps']:,.0f}")
+            if info.get("bookValue"):
+                lines.append(f"Book Value/Sh  : Rp{info['bookValue']:,.0f}")
+            if info.get("returnOnEquity"):
+                lines.append(f"ROE            : {info['returnOnEquity']*100:.2f}%")
+            if info.get("returnOnAssets"):
+                lines.append(f"ROA            : {info['returnOnAssets']*100:.2f}%")
+            if info.get("dividendYield"):
+                lines.append(f"Div Yield      : {info['dividendYield']*100:.2f}%")
+            if info.get("fiftyTwoWeekHigh"):
+                lines.append(f"52W High/Low   : Rp{info['fiftyTwoWeekHigh']:,.0f} / Rp{info['fiftyTwoWeekLow']:,.0f}")
+            # Laporan keuangan historis
+            try:
+                inc = t.income_stmt
+                if inc is None or inc.empty:
+                    inc = t.financials
+                if inc is not None and not inc.empty:
+                    lines.append("\n── Historis Laba Bersih ──")
+                    if "Net Income" in inc.index:
+                        row = inc.loc["Net Income"].dropna()
+                        vals = []
+                        for col in sorted(row.index, reverse=True)[:4]:
+                            v = row[col]
+                            vals.append(f"{str(col)[:4]}: Rp{v/1e12:.1f}T")
+                        lines.append("  " + " | ".join(vals))
+                    if "Basic EPS" in inc.index:
+                        row = inc.loc["Basic EPS"].dropna()
+                        vals = [f"{str(col)[:4]}: Rp{row[col]:,.0f}"
+                                for col in sorted(row.index, reverse=True)[:4]]
+                        lines.append("EPS: " + " | ".join(vals))
+            except: pass
+            lines.append(f"\nCATATAN: Data yfinance IDX sering hanya sampai 2022-2023.")
+            lines.append(f"Untuk {current_year-1} dan {current_year}: estimasi dari knowledge model.")
+            lines.append(f"Buat analisa FORMAT ANALISA FUNDAMENTAL lengkap untuk {ticker}.")
+            lines.append(f"Tren 3 tahun: {current_year-2}→{current_year-1}→{current_year}")
+            lines.append(f"Proyeksi: {current_year+1}, {current_year+2}, {current_year+3}")
+            lines.append("=== AKHIR DATA ===")
+            result[0] = "\n".join(lines)
+        except Exception as e:
+            result[0] = f"[Gagal fetch {ticker}: {e}] Gunakan knowledge model."
+    th = threading.Thread(target=fetch, daemon=True)
+    th.start()
+    th.join(timeout=12)
+    return result[0]
+
 # ─── PDF ENRICHMENT — deteksi emiten & lengkapi data dari yfinance ───
 EMITEN_MAP = {
-    "bank central asia": "BBCA", "bca": "BBCA",
-    "bank rakyat indonesia": "BBRI", "bri": "BBRI",
-    "bank mandiri": "BMRI", "mandiri": "BMRI",
-    "bank negara indonesia": "BBNI", "bni": "BBNI",
-    "bank syariah indonesia": "BRIS", "bsi": "BRIS",
-    "telkom": "TLKM", "astra": "ASII",
-    "unilever": "UNVR", "indofood": "INDF",
-    "goto": "GOTO", "adaro": "ADRO",
-    "antam": "ANTM", "bukalapak": "BUKA",
+    # Bank
+    "bank central asia": "BBCA", "bca": "BBCA", "bbca": "BBCA",
+    "bank rakyat indonesia": "BBRI", "bri": "BBRI", "bbri": "BBRI",
+    "bank mandiri": "BMRI", "mandiri": "BMRI", "bmri": "BMRI",
+    "bank negara indonesia": "BBNI", "bni": "BBNI", "bbni": "BBNI",
+    "bank tabungan negara": "BBTN", "btn": "BBTN", "bbtn": "BBTN",
+    "bank syariah indonesia": "BRIS", "bsi": "BRIS", "bris": "BRIS",
+    "bank cimb niaga": "BNGA", "cimb": "BNGA", "bnga": "BNGA",
+    "bank danamon": "BDMN", "danamon": "BDMN", "bdmn": "BDMN",
+    "bank permata": "BNLI", "permata": "BNLI",
+    "bank panin": "PNBN", "panin": "PNBN",
+    # Telko & Tech
+    "telkom": "TLKM", "tlkm": "TLKM",
+    "xl axiata": "EXCL", "xl": "EXCL", "excl": "EXCL",
+    "indosat": "ISAT", "isat": "ISAT",
+    "goto": "GOTO", "gojek": "GOTO", "tokopedia": "GOTO",
+    "bukalapak": "BUKA", "buka": "BUKA",
+    # Consumer & Industri
+    "astra": "ASII", "asii": "ASII",
+    "unilever": "UNVR", "unvr": "UNVR",
+    "indofood": "INDF", "indf": "INDF",
+    "indofood cbp": "ICBP", "icbp": "ICBP",
+    "mayora": "MYOR", "myor": "MYOR",
+    "kalbe": "KLBF", "klbf": "KLBF",
+    "sido muncul": "SIDO", "sido": "SIDO",
+    # Energi & Tambang
+    "adaro": "ADRO", "adro": "ADRO",
+    "antam": "ANTM", "antm": "ANTM",
+    "ptba": "PTBA", "bukit asam": "PTBA",
+    "pgas": "PGAS", "perusahaan gas": "PGAS",
+    "medc": "MEDC", "medco": "MEDC",
+    # Properti & Semen
+    "semen indonesia": "SMGR", "smgr": "SMGR",
+    "indocement": "INTP", "intp": "INTP",
 }
 
 def detect_emiten(text):
-    """Deteksi kode emiten dari teks PDF."""
+    """Deteksi kode emiten dari teks PDF atau prompt."""
     text_lower = text[:3000].lower()
+    # Cek EMITEN_MAP dulu (nama lengkap dan kode)
     for name, ticker in EMITEN_MAP.items():
         if name in text_lower:
             return ticker
-    # Cari pola kode saham 4 huruf
-    import re
+    # Cari 4 huruf kapital yang valid sebagai ticker IDX
     matches = re.findall(r'\b([A-Z]{4})\b', text[:2000])
-    skip = {"PADA","YANG","ATAU","DARI","BANK","TBKK","ANAK","ASET","LABA","RUGI"}
+    skip = {"PADA","YANG","ATAU","DARI","BANK","TBKK","ANAK","ASET","LABA",
+            "RUGI","TOTAL","BERSIH","TAHUN","SALDO","DANA","PIHAK","USAHA",
+            "MODAL","KREDIT","BIAYA","BUNGA","PAJAK","LAIN","ATAS","DALAM"}
+    for m in matches:
+        if m not in skip:
+            return m
+    return None
+
+def detect_ticker_from_prompt(prompt):
+    """Deteksi ticker dari perintah teks user (bukan PDF)."""
+    prompt_upper = prompt.upper()
+    prompt_lower = prompt.lower()
+    # Cek EMITEN_MAP — nama dan kode
+    for name, ticker in EMITEN_MAP.items():
+        if name in prompt_lower:
+            return ticker
+    # Cari 4 huruf kapital
+    skip = {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG","ANALISA",
+            "SAHAM","MOHON","BISA","FUNDAMENTAL","DENGAN","MINTA","ANALISIS",
+            "APAKAH","BAGAIMANA","KENAPA","TOLONG","COBA","MINTA"}
+    matches = re.findall(r'\b([A-Z]{4})\b', prompt_upper)
     for m in matches:
         if m not in skip:
             return m
@@ -1544,11 +1664,24 @@ if prompt:
     elif pdf_data:
         full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
     else:
-        try:
-            ctx = build_context(prompt)
-            if ctx:
-                full_prompt = f"[DATA PASAR]\n{ctx}\n[/DATA PASAR]\n\n{prompt}"
-        except: pass
+        _p = prompt.lower()
+        _is_fund_cmd = any(k in _p for k in ["fundamental","valuasi","laporan keuangan",
+                                               "keuangan","roe","roa","per ","pbv","analisa saham"])
+        _ticker_found = detect_ticker_from_prompt(prompt)
+
+        if _is_fund_cmd and _ticker_found:
+            # Perintah fundamental tanpa PDF — fetch data lengkap
+            try:
+                fund_data = build_fundamental_from_text(prompt)
+                if fund_data:
+                    full_prompt = f"{fund_data}\n\nPerintah: {prompt}"
+            except: pass
+        else:
+            try:
+                ctx = build_context(prompt)
+                if ctx:
+                    full_prompt = f"[DATA PASAR]\n{ctx}\n[/DATA PASAR]\n\n{prompt}"
+            except: pass
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
