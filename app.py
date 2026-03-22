@@ -1045,6 +1045,19 @@ if "do" in st.query_params:
     elif _do.startswith("del_"):
         _sid = _do[4:]
         delete_session(_sid)
+        # Simpan session setelah delete agar perubahan persist
+        if st.session_state.get("user"):
+            _u = st.session_state.user
+            _sessions_save = []
+            for _s in st.session_state.sessions:
+                _msgs = [dict(m) for m in _s["messages"] if m["role"] != "system"]
+                _sessions_save.append({"id": _s["id"], "title": _s["title"],
+                                       "created": _s["created"], "messages": _msgs})
+            save_user(_u["email"], {
+                "theme": st.session_state.get("theme", "dark"),
+                "sessions": _sessions_save,
+                "active_id": st.session_state.active_id,
+            })
         st.query_params["do"] = ""; st.rerun()
 
 # ─────────────────────────────────────────────
