@@ -193,21 +193,35 @@ def fetch_full_fundamental(ticker: str) -> str:
     try:
         import yfinance as yf
 
+        # Paksa fresh data — disable cache
         t = yf.Ticker(f"{ticker}.JK")
-        info = t.info
         today_str = datetime.now().strftime("%d %B %Y")
+        current_year = datetime.now().year
 
         # ── Harga & valuasi terkini ──
-        hist = t.history(period="5d")
+        hist = t.history(period="5d", auto_adjust=True)
         price = round(hist.iloc[-1]["Close"], 0) if not hist.empty else None
 
-        # ── Laporan keuangan tahunan ──
+        # ── Info terkini ──
+        info = t.info
+
+        # ── Laporan keuangan tahunan — ambil versi terbaru ──
         try:
-            inc = t.financials          # Income statement
-            bs  = t.balance_sheet       # Balance sheet
-            cf  = t.cashflow            # Cash flow
+            inc = t.income_stmt        # Income statement (API baru)
+            if inc is None or inc.empty:
+                inc = t.financials     # fallback API lama
         except Exception:
-            inc = bs = cf = None
+            inc = None
+        try:
+            bs = t.balance_sheet
+        except Exception:
+            bs = None
+        try:
+            cf = t.cash_flow
+            if cf is None or cf.empty:
+                cf = t.cashflow
+        except Exception:
+            cf = None
 
         lines = []
         lines.append(f"=== DATA FUNDAMENTAL LENGKAP — {ticker} ({today_str}) ===")
@@ -330,10 +344,14 @@ def fetch_full_fundamental(ticker: str) -> str:
                 except Exception:
                     pass
 
-        lines.append("\n=== AKHIR DATA FUNDAMENTAL ===")
-        lines.append(f"Instruksi: Gunakan semua data di atas untuk analisa fundamental lengkap.")
-        lines.append(f"Hitung tren CAGR laba bersih, proyeksi 1-2 tahun ke depan berdasarkan tren,")
-        lines.append(f"dan beri verdict valuasi apakah harga saat ini wajar berdasarkan PER & PBV historis.")
+        lines.append(f"\n=== AKHIR DATA FUNDAMENTAL ===")
+        lines.append(f"TAHUN SEKARANG: {current_year}")
+        lines.append(f"INSTRUKSI WAJIB:")
+        lines.append(f"1. Tren 3 tahun = {current_year-2}, {current_year-1}, {current_year} — BUKAN tahun lama")
+        lines.append(f"2. Setiap metrik di baris TERPISAH — DILARANG digabung satu baris")
+        lines.append(f"3. Tampilkan angka AKTUAL dari data di atas, bukan placeholder")
+        lines.append(f"4. Hitung CAGR laba bersih dari data historis")
+        lines.append(f"5. Proyeksi {current_year+1}-{current_year+2} berdasarkan tren")
 
         return "\n".join(lines)
 
@@ -615,20 +633,22 @@ Konsistensi    : [naik / stabil / turun]
 
 ---
 📈 TREN 3 TAHUN TERAKHIR
+(isi dengan angka AKTUAL dari data, bukan placeholder)
 
-Laba Bersih  : [tahun-2] → [tahun-1] → [tahun ini] (CAGR ~X%)
-EPS          : [tahun-2] → [tahun-1] → [tahun ini] (tren naik/turun)
-ROE          : [tahun-2] → [tahun-1] → [tahun ini]
-DPK/Revenue  : [tahun-2] → [tahun-1] → [tahun ini]
+Laba Bersih  : Rp[angka aktual tahun-2]T → Rp[angka aktual tahun-1]T → Rp[angka aktual tahun ini]T (CAGR ~X%)
+EPS          : Rp[angka aktual tahun-2] → Rp[angka aktual tahun-1] → Rp[angka aktual tahun ini]
+ROE          : [angka aktual]% → [angka aktual]% → [angka aktual]%
+Total Aset   : Rp[angka aktual]T → Rp[angka aktual]T → Rp[angka aktual]T
 
 ---
 🔭 PROYEKSI 1-2 TAHUN KE DEPAN
+(hitung dari tren CAGR data historis di atas)
 
-Asumsi       : [pertumbuhan laba/revenue berdasarkan tren historis]
-EPS Est.     : [tahun depan]: Rp[X] | [2 tahun]: Rp[X]
-Laba Est.    : [tahun depan]: Rp[X]T | [2 tahun]: Rp[X]T
-Target Harga : [konservatif]: Rp[X] | [moderat]: Rp[X] | [optimis]: Rp[X]
-Basis        : [PER historis rata-rata × EPS proyeksi]
+Asumsi Growth: ~X% per tahun (berdasarkan CAGR laba bersih)
+EPS Est.     : [tahun+1]: Rp[hasil hitung] | [tahun+2]: Rp[hasil hitung]
+Laba Est.    : [tahun+1]: Rp[hasil hitung]T | [tahun+2]: Rp[hasil hitung]T
+Target Harga : Konservatif Rp[PER rendah × EPS] | Moderat Rp[PER median × EPS] | Optimis Rp[PER tinggi × EPS]
+Basis Hitung : PER historis rata-rata × EPS proyeksi
 
 ---
 ⚖️ VERDICT
