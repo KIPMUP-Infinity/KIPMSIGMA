@@ -258,7 +258,6 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                 user_info = json.load(f)
             st.session_state.user = user_info
             st.session_state.current_token = token
-            # Selalu load dari disk — tapi disk sudah diupdate saat delete
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
@@ -267,6 +266,22 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                     st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
             st.session_state.data_loaded = True
             restore_images_from_messages()
+            # Jika ada do=del_ bersamaan, proses delete dulu sebelum rerun
+            _pending_do = st.query_params.get("do", "")
+            if _pending_do.startswith("del_"):
+                _del_sid = _pending_do[4:]
+                delete_session(_del_sid)
+                _sessions_save = []
+                for _s in st.session_state.sessions:
+                    _msgs = [dict(m) for m in _s["messages"] if m["role"] != "system"]
+                    _sessions_save.append({"id": _s["id"], "title": _s["title"],
+                                           "created": _s["created"], "messages": _msgs})
+                save_user(user_info["email"], {
+                    "theme": st.session_state.get("theme", "dark"),
+                    "sessions": _sessions_save,
+                    "active_id": st.session_state.active_id,
+                })
+                st.query_params["do"] = ""
             st.rerun()
         except: pass
 
