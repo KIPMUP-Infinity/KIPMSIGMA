@@ -13,50 +13,16 @@ import json
 import os
 import hashlib
 import bcrypt
+import re
 
-# ─────────────────────────────────────────────
-# MULTI-SOURCE DATA — semua dalam thread daemon
-# ─────────────────────────────────────────────
-import re as _re
 
-SKIP_WORDS = {"YANG","ATAU","DARI","PADA","UNTUK","DENGAN","SAYA","MINTA",
-              "TOLONG","ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL",
-              "ANALISIS","HARI","INI","TREN","TAHUN","APAKAH","BAGAIMANA"}
-
+# ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
 def _fetch_all_data(tickers):
-    """Fetch harga + berita untuk semua ticker, return dalam 10 detik."""
     import threading
     result = {"prices": {}, "news": []}
 
     def fetch():
-        # Fetch berita umum dulu (selalu)
-        try:
-            import feedparser
-            seen = set()
-            # Berita umum pasar modal Indonesia
-            general_sources = [
-                ("CNBC ID", "https://www.cnbcindonesia.com/rss"),
-                ("Kontan", "https://rss.kontan.co.id/category/investasi"),
-                ("Bisnis", "https://ekonomi.bisnis.com/rss"),
-            ]
-            mkt_kw = ["ihsg","saham","bursa","ekonomi","rupiah","bi rate",
-                      "inflasi","pasar","investor","emiten","perang","global"]
-            for src_name, src_url in general_sources:
-                try:
-                    feed = feedparser.parse(src_url)
-                    count = 0
-                    for e in feed.entries:
-                        if count >= 2: break
-                        title = e.title.strip()
-                        key = title[:30].lower()
-                        if key not in seen and any(k in title.lower() for k in mkt_kw):
-                            seen.add(key)
-                            result["news"].append(f"[{src_name}] {title}")
-                            count += 1
-                except: pass
-        except: pass
-
-        # Fetch harga saham jika ada ticker
+        # Layer 1: yfinance
         try:
             import yfinance as yf
             for tk in tickers[:3]:
@@ -75,34 +41,80 @@ def _fetch_all_data(tickers):
                             "pbv": info.get("priceToBook"),
                             "eps": info.get("trailingEps"),
                             "roe": info.get("returnOnEquity"),
+                            "source": "yfinance"
                         }
                 except: pass
         except: pass
 
+        # Layer 2: stooq — backup jika yfinance gagal
+        try:
+            import pandas_datareader as pdr
+            from datetime import timedelta
+            for tk in tickers[:3]:
+                if tk not in result["prices"]:
+                    try:
+                        df = pdr.get_data_stooq(
+                            f"{tk}.JK",
+                            start=datetime.now()-timedelta(days=7),
+                            end=datetime.now()
+                        )
+                        if not df.empty:
+                            df = df.sort_index()
+                            last = df.iloc[-1]
+                            prev = df.iloc[-2] if len(df)>1 else last
+                            chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
+                            result["prices"][tk] = {
+                                "price": round(last["Close"],0),
+                                "chg": round(chg,2),
+                                "source": "stooq"
+                            }
+                    except: pass
+        except: pass
+
+        # Layer 3: IDX API — backup terakhir
+        for tk in tickers[:3]:
+            if tk not in result["prices"]:
+                try:
+                    import urllib.request, json as _j
+                    req = urllib.request.Request(
+                        f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={tk}",
+                        headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"}
+                    )
+                    with urllib.request.urlopen(req, timeout=3) as r:
+                        d = _j.loads(r.read())
+                    if d and d.get("LastPrice"):
+                        result["prices"][tk] = {
+                            "price": d["LastPrice"],
+                            "chg": d.get("ChangePercentage", 0),
+                            "source": "IDX"
+                        }
+                except: pass
+
+        # Berita: Google News + CNBC ID + Kontan + Bisnis
         try:
             import feedparser
             seen = set()
+            q = tickers[0] if tickers else "ihsg"
             sources = [
-                ("Google", f"https://news.google.com/rss/search?q={requests.utils.quote(tickers[0]+' saham IDX')}&hl=id&gl=ID&ceid=ID:id") if tickers else None,
+                ("Google", f"https://news.google.com/rss/search?q={requests.utils.quote(q+' saham IDX')}&hl=id&gl=ID&ceid=ID:id"),
                 ("CNBC ID", "https://www.cnbcindonesia.com/rss"),
                 ("Kontan", "https://rss.kontan.co.id/category/investasi"),
                 ("Bisnis", "https://ekonomi.bisnis.com/rss"),
             ]
-            kw = [t.lower() for t in tickers] + ["ihsg","saham","bursa","emiten"]
-            for src in sources:
-                if not src: continue
+            mkt_kw = [q.lower(),"ihsg","saham","bursa","ekonomi","rupiah","pasar",
+                      "inflasi","perang","global","emiten","investor"]
+            for sn, su in sources:
                 try:
-                    feed = feedparser.parse(src[1])
-                    count = 0
+                    feed = feedparser.parse(su)
+                    cnt = 0
                     for e in feed.entries:
-                        if count >= 3: break
+                        if cnt >= 2: break
                         title = e.title.strip()
                         key = title[:30].lower()
-                        if key in seen: continue
-                        if src[0] == "Google" or any(k in title.lower() for k in kw):
+                        if key not in seen and (sn=="Google" or any(k in title.lower() for k in mkt_kw)):
                             seen.add(key)
-                            result["news"].append(f"[{src[0]}] {title}")
-                            count += 1
+                            result["news"].append(f"[{sn}] {title}")
+                            cnt += 1
                 except: pass
         except: pass
 
@@ -112,48 +124,34 @@ def _fetch_all_data(tickers):
     return result
 
 def build_context(prompt):
-    """Build market context untuk inject ke prompt."""
-    tickers = [t for t in _re.findall(r'\b([A-Z]{4})\b', prompt.upper())
-               if t not in SKIP_WORDS][:3]
-
-    _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal",
-           "fundamental","harga","support","resistance","chart","bandar",
-           "volume","breakout","bias","valuasi","berita","news","update",
-           "perang","ekonomi","inflasi","suku bunga","bi rate","rupiah",
-           "dolar","market","pasar","investor","bursa","emiten","dividen",
-           "ipo","right issue","buyback","ojk","bei","idx","makro",
-           "global","china","amerika","fed","trump","tarif","ekspor","impor"]
+    """Build market context — inject ke prompt jika relevan."""
+    tickers = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
+               if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG",
+                            "ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL","DENGAN",
+                            "MINTA","ANALISIS","APAKAH","BAGAIMANA","KENAPA"}][:3]
     _p = prompt.lower()
-    _has_ticker = bool(tickers)
-    # Pertanyaan dengan ticker atau keyword ekonomi/pasar → inject context
-    # Pertanyaan sangat umum (hai, bantu tugas, dll) → tidak perlu context berita
-    _general_only = ["hai","halo","selamat","terima kasih","makasih","oke","ok",
-                     "tugas","pr ","essay","rangkum","jelaskan","apa itu","pengertian"]
-    _is_general_chat = any(k in _p for k in _general_only) and not _has_ticker
-    _is_relevant = (_has_ticker or any(k in _p for k in _kw)) and not _is_general_chat
-
-    if not _is_relevant:
+    _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal","fundamental",
+           "harga","support","resistance","chart","bandar","volume","valuasi",
+           "berita","news","perang","ekonomi","inflasi","rupiah","market","pasar",
+           "global","china","amerika","fed","trump","tarif","ekspor","impor",
+           "geopolitik","dividen","ipo","ojk","bei","idx","makro","mikro"]
+    _skip = ["hai","halo","selamat","makasih","oke","tugas","pr ","essay","apa itu","pengertian"]
+    if any(k in _p for k in _skip) and not tickers:
         return ""
-
+    if not tickers and not any(k in _p for k in _kw):
+        return ""
     data = _fetch_all_data(tickers)
     lines = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')}"]
-
-    # Harga
     for tk, d in data["prices"].items():
-        arah = "▲" if d["chg"] >= 0 else "▼"
-        line = f"{tk}: Rp{d['price']:,.0f} {arah}{abs(d['chg']):.2f}%"
-        if d.get("pe"): line += f" | PER:{d['pe']:.1f}x"
-        if d.get("pbv"): line += f" | PBV:{d['pbv']:.1f}x"
-        if d.get("roe"): line += f" | ROE:{d['roe']*100:.1f}%"
+        arah = "▲" if d["chg"]>=0 else "▼"
+        line = f"{tk}: Rp{d['price']:,.0f} {arah}{abs(d['chg']):.2f}% [{d.get('source','')}]"
+        if d.get("pe"): line += f" PER:{d['pe']:.1f}x"
+        if d.get("pbv"): line += f" PBV:{d['pbv']:.1f}x"
         lines.append(line)
-
-    # Berita
     if data["news"]:
         lines.append("Berita terkini:")
         lines.extend(data["news"][:6])
-
-    return "\n".join(lines) if len(lines) > 1 else ""
-
+    return "\n".join(lines) if len(lines)>1 else ""
 
 # ─────────────────────────────────────────────
 # CONFIG
@@ -254,45 +252,6 @@ def init_session():
 
 init_session()
 
-# Proses delete PALING AWAL sebelum apapun — termasuk sebelum sigma_token restore
-if "del" in st.query_params:
-    _del_sid = st.query_params.get("del", "")
-    st.write(f"DEBUG del param: '{_del_sid}'")  # debug sementara
-    if _del_sid:
-        # Load user data dari token jika belum ada
-        if st.session_state.user is None:
-            _tok = st.query_params.get("sigma_token", "")
-            if _tok:
-                _tfile = os.path.join(DATA_DIR, f"token_{_tok}.json")
-                if os.path.exists(_tfile):
-                    try:
-                        with open(_tfile) as _f:
-                            _uinfo = json.load(_f)
-                        st.session_state.user = _uinfo
-                        _saved = load_user(_uinfo["email"])
-                        if _saved and _saved.get("sessions"):
-                            st.session_state.sessions = _saved["sessions"]
-                            st.session_state.active_id = _saved.get("active_id")
-                        st.session_state.data_loaded = True
-                    except: pass
-        # Hapus session
-        if st.session_state.sessions:
-            delete_session(_del_sid)
-            # Simpan ke disk
-            if st.session_state.user:
-                _sv = []
-                for _s in st.session_state.sessions:
-                    _msgs = [dict(m) for m in _s["messages"] if m["role"] != "system"]
-                    _sv.append({"id": _s["id"], "title": _s["title"],
-                                "created": _s["created"], "messages": _msgs})
-                save_user(st.session_state.user["email"], {
-                    "theme": st.session_state.get("theme", "dark"),
-                    "sessions": _sv,
-                    "active_id": st.session_state.active_id,
-                })
-        st.query_params.pop("del")
-        st.rerun()
-
 C = get_colors(st.session_state.theme)
 
 # ─────────────────────────────────────────────
@@ -300,67 +259,32 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — asisten cerdas dari KIPM Universitas Pancasila, by Market n Mocha (MnM).
+    "content": """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by Market n Mocha (MnM).
 
-IDENTITAS:
-Kamu adalah teman yang sangat pintar, berpengalaman luas, dan selalu siap membantu siapa saja dengan topik apapun. Kamu bukan hanya analis saham — kamu adalah asisten lengkap yang bisa diandalkan.
+KEPRIBADIAN: Ramah saat ngobrol biasa, profesional saat analisa. Bahasa Indonesia natural.
 
-KEPRIBADIAN:
-- Selalu ramah, hangat, dan natural dalam percakapan biasa
-- Saat diminta analisa atau penjelasan teknis → profesional, tajam, terstruktur
-- Bahasa Indonesia yang natural dan mudah dipahami
-- Empati — pahami konteks pertanyaan sebelum menjawab
-- Jangan langsung jejalkan data teknis saat user hanya menyapa
+KEMAMPUAN:
+1. Trading & Pasar Modal — teknikal, fundamental, bandarmologi, berita pasar
+2. Ekonomi & Bisnis — makro, mikro, geopolitik, akuntansi, manajemen, investasi
+3. Pendidikan — bantu tugas, jelaskan konsep, essay, laporan, matematika
+4. Umum — jawab pertanyaan apapun, berikan solusi praktis
 
-KEMAMPUAN UTAMA:
+FRAMEWORK TEKNIKAL (MnM Strategy+):
+IFVG, FVG, Order Block, Supply & Demand, EMA 13/21/50, Bandarmologi, Volume Profile
+Fundamental: ROE, ROA, NIM, NPL, CAR, BOPO, LDR, PER, PBV
 
-1. TRADING & PASAR MODAL
-- Analisa teknikal: IFVG, FVG, Order Block, Supply & Demand, EMA 13/21/50
-- Bandarmologi: akumulasi/distribusi, delta volume, anomali
-- Analisa fundamental: ROE, ROA, NIM, NPL, CAR, BOPO, LDR, PER, PBV
-- Berita pasar, sentimen market, geopolitik yang mempengaruhi saham
-
-2. EKONOMI & BISNIS
-- Makroekonomi: inflasi, suku bunga, kebijakan moneter, fiskal
-- Mikroekonomi: penawaran, permintaan, elastisitas, pasar
-- Geopolitik: perang dagang, sanksi, hubungan internasional dan dampaknya ke market
-- Bisnis: strategi, manajemen, pemasaran, operasional, keuangan perusahaan
-- Akuntansi: laporan keuangan, jurnal, neraca, laba rugi, arus kas
-- Investasi: saham, obligasi, reksa dana, properti, kripto
-
-3. PENDIDIKAN & TUGAS
-- Bantu mengerjakan tugas kuliah/sekolah semua mata pelajaran
-- Jelaskan konsep dengan cara yang mudah dipahami
-- Buat rangkuman, essay, laporan, presentasi
-- Analisa kasus bisnis dan ekonomi
-- Matematika, statistika, riset
-
-4. UMUM
-- Jawab pertanyaan apapun dengan jujur dan informatif
-- Berikan solusi praktis untuk masalah sehari-hari
-- Diskusi ide, brainstorming, creative thinking
-
-FORMAT TRADE PLAN (saat diminta analisa teknikal saham):
+FORMAT TRADE PLAN:
 📊 TRADE PLAN — [SAHAM] ([TIMEFRAME])
 ⚡ Bias: [Bullish/Bearish/Sideways]
-🎯 Entry: [harga]
-🛑 Stop Loss: [harga]
-✅ Target 1: [harga]
-✅ Target 2: [harga]
-📦 Bandarmologi: [ringkasan volume & aksi bandar]
-⚠️ Invalidasi: [kondisi]
+🎯 Entry: [harga] | 🛑 SL: [harga] | ✅ TP1: [harga] | ✅ TP2: [harga]
+📦 Bandarmologi: [ringkasan] | ⚠️ Invalidasi: [kondisi]
 ⚠️ DYOR — bukan rekomendasi investasi
 
-FRAKSI HARGA BEI (wajib untuk semua harga saham IDX):
-- < Rp200: tick Rp1 | Rp200-500: tick Rp2 | Rp500-2.000: tick Rp5
-- Rp2.000-5.000: tick Rp10 | > Rp5.000: tick Rp25
+FRAKSI HARGA BEI (wajib semua harga):
+<Rp200: tick Rp1 | Rp200-500: tick Rp2 | Rp500-2rb: tick Rp5
+Rp2rb-5rb: tick Rp10 | >Rp5rb: tick Rp25
 
-ATURAN:
-- Jawab Bahasa Indonesia kecuali user pakai bahasa lain
-- Gambar/chart masuk → analisa teknikal langsung
-- PDF laporan keuangan masuk → analisa fundamental langsung
-- Selalu berikan jawaban yang berguna dan actionable
-- Untuk topik di luar keahlian → tetap bantu sebaik mungkin"""
+ATURAN: Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
 
 # ─────────────────────────────────────────────
@@ -478,31 +402,16 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             with open(token_file) as f:
                 user_info = json.load(f)
             st.session_state.user = user_info
-            st.session_state.current_token = token
+            st.session_state.current_token = token  # simpan token di session
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
                 if saved.get("sessions"):
                     st.session_state.sessions = saved["sessions"]
-                    st.session_state.active_id = saved.get("active_id", saved["sessions"][0]["id"])
+                    st.session_state.active_id = saved.get("active_id")
             st.session_state.data_loaded = True
             restore_images_from_messages()
-            # Jika ada do=del_ bersamaan, proses delete dulu sebelum rerun
-            _pending_do = st.query_params.get("do", "")
-            if _pending_do.startswith("del_"):
-                _del_sid = _pending_do[4:]
-                delete_session(_del_sid)
-                _sessions_save = []
-                for _s in st.session_state.sessions:
-                    _msgs = [dict(m) for m in _s["messages"] if m["role"] != "system"]
-                    _sessions_save.append({"id": _s["id"], "title": _s["title"],
-                                           "created": _s["created"], "messages": _msgs})
-                save_user(user_info["email"], {
-                    "theme": st.session_state.get("theme", "dark"),
-                    "sessions": _sessions_save,
-                    "active_id": st.session_state.active_id,
-                })
-                st.query_params["do"] = ""
+            # JANGAN clear query params — biarkan token tetap di URL
             st.rerun()
         except: pass
 
@@ -1109,39 +1018,18 @@ for _sesi in st.session_state.sessions:
     _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',"")
     _fw = "700" if _is_act else "400"
     _bg = C['hover'] if _is_act else "transparent"
+    # Pakai <a href> langsung — tidak perlu JS event listener
     _hist_items += f"""
 (function(){{
-    var row=pd.createElement('div');
-    row.style.cssText='display:flex;align-items:center;width:100%;';
-
     var a=pd.createElement('a');
     a.textContent='{_td}';
     var u=new URL(window.parent.location.href);
     u.searchParams.set('do','sel_{_sid}');
     a.href=u.toString();
-    a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;';
+    a.style.cssText='display:block;width:100%;padding:12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;';
     a.onmouseenter=function(){{this.style.background='{C["hover"]}'}};
     a.onmouseleave=function(){{this.style.background='{_bg}'}};
-
-    var del=pd.createElement('button');
-    del.innerHTML='🗑';
-    del.title='Hapus';
-    del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.9rem;opacity:0.35;flex-shrink:0;color:{C["text"]};';
-    del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}};
-    del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}};
-    del.onclick=function(e){{
-        e.preventDefault();e.stopPropagation();
-        if(confirm('Hapus obrolan ini?')){{
-            var u2=new URL(window.parent.location.href);
-            u2.searchParams.set('del','{_sid}');
-            u2.searchParams.delete('do');
-            window.parent.location.href=u2.toString();
-        }}
-    }};
-
-    row.appendChild(a);
-    row.appendChild(del);
-    h.appendChild(row);
+    h.appendChild(a);
 }})();
 """
 
@@ -1279,24 +1167,6 @@ if "do" in st.query_params:
         _sid = _do[4:]
         st.session_state.active_id = _sid
         st.query_params["do"] = ""; st.rerun()
-    elif _do.startswith("del_"):
-        _sid = _do[4:]
-        delete_session(_sid)
-        # Simpan LANGSUNG ke disk sebelum rerun agar restore tidak load sesi lama
-        if st.session_state.get("user"):
-            _u = st.session_state.user
-            _sessions_save = []
-            for _s in st.session_state.sessions:
-                _msgs = [dict(m) for m in _s["messages"] if m["role"] != "system"]
-                _sessions_save.append({"id": _s["id"], "title": _s["title"],
-                                       "created": _s["created"], "messages": _msgs})
-            save_user(_u["email"], {
-                "theme": st.session_state.get("theme", "dark"),
-                "sessions": _sessions_save,
-                "active_id": st.session_state.active_id,
-            })
-        st.session_state.data_loaded = True
-        st.query_params["do"] = ""; st.rerun()
 
 # ─────────────────────────────────────────────
 # MAIN CHAT
@@ -1313,13 +1183,10 @@ for sesi in st.session_state.sessions:
     bg = C['hover'] if is_active else "transparent"
     _hist_items += f"""
     (function() {{
-        var row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;width:100%;';
-
         var hi = document.createElement('button');
         hi.textContent = '{title_d}';
         hi.dataset.sid = '{sid}';
-        hi.style.cssText = 'flex:1;padding:11px 8px 11px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;';
+        hi.style.cssText = 'display:block;width:100%;padding:11px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
         hi.onmouseenter = function(){{this.style.background='{C["hover"]}'}};
         hi.onmouseleave = function(){{this.style.background='{bg}'}};
         hi.onclick = function(){{
@@ -1327,25 +1194,7 @@ for sesi in st.session_state.sessions:
             url.searchParams.set('do', 'sel_{sid}');
             window.parent.location.href = url.toString();
         }};
-
-        var del = document.createElement('button');
-        del.innerHTML = '🗑';
-        del.title = 'Hapus obrolan';
-        del.style.cssText = 'padding:8px 10px;background:transparent;border:none;cursor:pointer;font-size:0.9rem;opacity:0.4;flex-shrink:0;color:{C["text"]};';
-        del.onmouseenter = function(){{this.style.opacity='1';this.style.color='#ff5555';}};
-        del.onmouseleave = function(){{this.style.opacity='0.4';this.style.color='{C["text"]}';}};
-        del.onclick = function(e){{
-            e.stopPropagation();
-            if(confirm('Hapus obrolan ini?')){{
-                var url = new URL(window.parent.location.href);
-                url.searchParams.set('do', 'del_{sid}');
-                window.parent.location.href = url.toString();
-            }}
-        }};
-
-        row.appendChild(hi);
-        row.appendChild(del);
-        drawer.appendChild(row);
+        drawer.appendChild(hi);
     }})();
 """
 
@@ -1358,13 +1207,6 @@ if not active["messages"][1:]:
         <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
     </div>
     """, unsafe_allow_html=True)
-
-# Tampilkan error terakhir jika ada
-if st.session_state.get("last_error"):
-    st.error(f"⚠️ Error terakhir: {st.session_state['last_error']}")
-    if st.button("✕ Tutup error"):
-        st.session_state["last_error"] = None
-        st.rerun()
 
 # Chat history
 for i, msg in enumerate(active["messages"][1:]):
@@ -1392,23 +1234,12 @@ prompt = None
 file_obj = None
 
 if result is not None:
-    # Handle semua format result Streamlit
     if hasattr(result, 'text'):
         prompt = (result.text or "").strip()
-        # Coba berbagai cara akses file
-        for attr in ['files', 'file', '_files']:
-            files = getattr(result, attr, None)
-            if files:
-                file_obj = files[0] if isinstance(files, (list, tuple)) else files
-                break
+        files = getattr(result, 'files', None) or []
+        if files: file_obj = files[0]
     elif isinstance(result, str):
         prompt = result.strip()
-    else:
-        # Format lain — coba konversi
-        try:
-            prompt = str(result).strip() if result else ""
-        except:
-            pass
 
     if file_obj:
         raw = file_obj.read()
@@ -1442,8 +1273,7 @@ if prompt:
             ctx = build_context(prompt)
             if ctx:
                 full_prompt = f"[DATA PASAR]\n{ctx}\n[/DATA PASAR]\n\n{prompt}"
-        except:
-            pass
+        except: pass
 
     if active["title"] == "Obrolan Baru":
         active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
@@ -1485,15 +1315,9 @@ if prompt:
                         for m in active["messages"]
                         if m.get("role") in ("user","assistant","system")
                     ]
-                    # Cek apakah pesan terakhir PDF/besar
-                    _last_len = len(_msgs[-1]["content"]) if _msgs else 0
-                    if _last_len > 3000:
-                        # Kirim hanya system + pesan terakhir, potong di 8000 char
-                        _msgs = [
-                            _msgs[0],
-                            {"role": _msgs[-1]["role"],
-                             "content": _msgs[-1]["content"][:8000]}
-                        ]
+                    if _msgs and len(_msgs[-1]["content"]) > 3000:
+                        _msgs = [_msgs[0], {"role": _msgs[-1]["role"],
+                                 "content": _msgs[-1]["content"][:8000]}]
                     res = groq_client.chat.completions.create(
                         model="llama-3.1-8b-instant",
                         messages=_msgs,
@@ -1504,10 +1328,7 @@ if prompt:
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
     except Exception as e:
-        err_str = str(e)
-        st.error(f"Error: {err_str}")
-        # Simpan error ke session agar tidak hilang setelah rerun
-        st.session_state["last_error"] = err_str
+        st.error(f"Error: {e}")
 
     st.rerun()
 
