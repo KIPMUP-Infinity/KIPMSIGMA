@@ -2004,7 +2004,7 @@ if not active["messages"][1:]:
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
         # Gunakan field "display" (prompt bersih) kalau ada, fallback ke "content"
-        raw = msg.get("display") or msg["content"]
+        raw = msg.get("display") or msg.get("content") or ""
         display = raw
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
@@ -2021,11 +2021,18 @@ for i, msg in enumerate(active["messages"][1:]):
 try:
     result = st.chat_input(
         "Tanya SIGMA... DYOR - bukan financial advice.",
-        accept_file="multiple",
+        accept_file=True,
         file_type=["pdf", "png", "jpg", "jpeg"]
     )
 except TypeError:
-    result = st.chat_input("Tanya SIGMA...")
+    try:
+        result = st.chat_input(
+            "Tanya SIGMA... DYOR - bukan financial advice.",
+            accept_file="multiple",
+            file_type=["pdf", "png", "jpg", "jpeg"]
+        )
+    except TypeError:
+        result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.")
 
 prompt = None
 file_obj = None
@@ -2258,8 +2265,9 @@ if prompt:
                 else:
                     # Bersihkan field "display" — Groq hanya terima "role" dan "content"
                     groq_messages = [
-                        {"role": m["role"], "content": m["content"]}
+                        {"role": m["role"], "content": m.get("content") or ""}
                         for m in active["messages"]
+                        if m.get("role") in ("user", "assistant", "system")
                     ]
                     # Deteksi apakah pesan terakhir adalah PDF — pakai model context lebih besar
                     last_content = groq_messages[-1]["content"] if groq_messages else ""
@@ -2300,13 +2308,10 @@ if prompt:
             "is_analisa": any(k in ans for k in ["TRADE PLAN", "ANALISA FUNDAMENTAL", "PROFITABILITAS", "VERDICT"])
         })
     except Exception as e:
+        import traceback
         err_msg = str(e)
-        if "rate_limit" in err_msg.lower():
-            st.error("⚠️ Rate limit Groq tercapai — coba lagi dalam beberapa detik.")
-        elif "context" in err_msg.lower() or "token" in err_msg.lower():
-            st.error("⚠️ Dokumen terlalu besar untuk diproses sekaligus. Coba kirim bagian tertentu saja (misal: hanya halaman Laba Rugi).")
-        else:
-            st.error(f"⚠️ Error: {err_msg}")
+        st.error(f"⚠️ Error: {err_msg}")
+        st.code(traceback.format_exc(), language="python")
 
     st.rerun()
 
