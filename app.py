@@ -2082,12 +2082,24 @@ if prompt:
                         # Chat biasa — kirim history normal (max 5 pesan terakhir)
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
-                    res = groq_client.chat.completions.create(
-                        model="llama-3.1-70b-versatile",
-                        messages=_msgs,
-                        temperature=0.7,
-                        max_tokens=2048
-                    )
+                    # Coba 70b dulu, fallback ke 8b jika limit
+                    _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+                    res = None
+                    for _m in _models:
+                        try:
+                            res = groq_client.chat.completions.create(
+                                model=_m,
+                                messages=_msgs,
+                                temperature=0.7,
+                                max_tokens=2048
+                            )
+                            break
+                        except Exception as _me:
+                            if "rate_limit" in str(_me) or "decommissioned" in str(_me):
+                                continue
+                            raise _me
+                    if res is None:
+                        raise Exception("Semua model tidak tersedia saat ini, coba lagi nanti.")
                 ans = res.choices[0].message.content
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
