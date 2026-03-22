@@ -1762,7 +1762,16 @@ if prompt:
             try:
                 fund_data = build_fundamental_from_text(prompt)
                 if fund_data:
-                    full_prompt = f"{fund_data}\n\nPerintah: {prompt}"
+                    full_prompt = (
+                        f"{fund_data}\n\n"
+                        f"Perintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found} "
+                        f"menggunakan FORMAT ANALISA FUNDAMENTAL yang sudah ditentukan. "
+                        f"Gunakan framework yang sesuai (Buffett, Graham, Lynch, CAN SLIM, atau Perbankan). "
+                        f"JANGAN meminta maaf atau merujuk percakapan sebelumnya. "
+                        f"Langsung mulai dengan 📋 ANALISA FUNDAMENTAL."
+                    )
+                    # Flag untuk Groq — kirim tanpa history
+                    st.session_state["fund_no_history"] = True
             except: pass
         else:
             try:
@@ -1806,19 +1815,32 @@ if prompt:
                         max_tokens=2048
                     )
                 else:
-                    _msgs = [
+                    _all_msgs = [
                         {"role": m["role"], "content": m.get("content") or ""}
                         for m in active["messages"]
                         if m.get("role") in ("user","assistant","system")
                     ]
-                    if _msgs and len(_msgs[-1]["content"]) > 2000:
-                        _msgs = [_msgs[0], {"role": _msgs[-1]["role"],
-                                 "content": _msgs[-1]["content"][:4000]}]
+                    _last_content = _all_msgs[-1]["content"] if _all_msgs else ""
+                    _is_big = len(_last_content) > 2000
+                    _no_history = st.session_state.pop("fund_no_history", False)
+
+                    if _no_history or _is_big:
+                        # Fundamental atau PDF — kirim hanya system + pesan terakhir
+                        # Hindari konteks percakapan sebelumnya agar tidak ada "maaf"
+                        _msgs = [
+                            _all_msgs[0],  # system prompt
+                            {"role": _all_msgs[-1]["role"],
+                             "content": _last_content[:5000]}
+                        ]
+                    else:
+                        # Chat biasa — kirim history normal (max 5 pesan terakhir)
+                        _msgs = [_all_msgs[0]] + _all_msgs[-4:]
+
                     res = groq_client.chat.completions.create(
                         model="llama-3.1-8b-instant",
                         messages=_msgs,
                         temperature=0.7,
-                        max_tokens=1024
+                        max_tokens=1500
                     )
                 ans = res.choices[0].message.content
             st.markdown(ans)
