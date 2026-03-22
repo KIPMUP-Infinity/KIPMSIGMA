@@ -395,6 +395,229 @@ def _fetch_multi_fundamental(ticker):
     th.join(timeout=18)
     return result[0]
 
+# ─── KOMODITAS via FMP ───
+def _fetch_commodities(api_key=None):
+    """Fetch harga komoditas dari FMP — pakai key yang sudah ada."""
+    try:
+        import urllib.request, json as _j
+        api_key = api_key or st.secrets.get("FMP_KEY", "6ckg4EdDYUqKkkpPK4Weo4b9PbKD6IUK")
+        result = {}
+
+        # Commodity list yang relevan untuk market Indonesia
+        symbols = {
+            "GCUSD": "Gold (Emas)",
+            "SIUSD": "Silver (Perak)",
+            "CLUSD": "WTI Crude Oil",
+            "BZUSD": "Brent Crude Oil",
+            "NGUSD": "Natural Gas",
+            "HGUSD": "Copper (Tembaga)",
+            "NZUSD": "Nickel",
+            "ALUSD": "Aluminum (Aluminium)",
+            "ZSUSD": "Soybeans (Kedelai)",
+            "KCUSD": "Coffee (Kopi)",
+        }
+
+        # Batch quote
+        syms = ",".join(symbols.keys())
+        url = f"https://financialmodelingprep.com/api/v3/quote/{syms}?apikey={api_key}"
+        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = _j.loads(r.read())
+
+        if data and isinstance(data, list):
+            for item in data:
+                sym = item.get("symbol","")
+                if sym in symbols:
+                    result[symbols[sym]] = {
+                        "price": item.get("price"),
+                        "chg": item.get("changesPercentage"),
+                        "symbol": sym
+                    }
+        return result
+    except:
+        return {}
+
+def _fetch_us_china_stock(ticker, market="US"):
+    """Fetch saham US atau China via yfinance + FMP."""
+    try:
+        import yfinance as yf, threading
+        result = [{}]
+        def fetch():
+            try:
+                # Format ticker: US biasa, HK tambah .HK, China .SS atau .SZ
+                if market == "HK":
+                    yf_ticker = f"{ticker}.HK"
+                elif market == "CN_SH":
+                    yf_ticker = f"{ticker}.SS"
+                elif market == "CN_SZ":
+                    yf_ticker = f"{ticker}.SZ"
+                else:
+                    yf_ticker = ticker  # US langsung
+
+                t = yf.Ticker(yf_ticker)
+                hist = t.history(period="2d")
+                info = t.info
+                if not hist.empty:
+                    last = hist.iloc[-1]
+                    prev = hist.iloc[-2] if len(hist) > 1 else last
+                    chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
+                    result[0] = {
+                        "price": round(last["Close"], 2),
+                        "chg": round(chg, 2),
+                        "pe": info.get("trailingPE"),
+                        "pbv": info.get("priceToBook"),
+                        "eps": info.get("trailingEps"),
+                        "mktcap": info.get("marketCap"),
+                        "name": info.get("longName",""),
+                        "sector": info.get("sector",""),
+                        "currency": info.get("currency","USD"),
+                    }
+            except: pass
+        th = threading.Thread(target=fetch, daemon=True)
+        th.start()
+        th.join(timeout=8)
+        return result[0]
+    except:
+        return {}
+
+# ─── GLOBAL NEWS RSS ───
+GLOBAL_NEWS_SOURCES = [
+    ("Al Jazeera",  "https://www.aljazeera.com/xml/rss/all.xml"),
+    ("Reuters",     "https://feeds.reuters.com/reuters/businessNews"),
+    ("BBC World",   "https://feeds.bbci.co.uk/news/world/rss.xml"),
+    ("BBC Business","https://feeds.bbci.co.uk/news/business/rss.xml"),
+    ("CNBC Global", "https://www.cnbc.com/id/100727362/device/rss/rss.html"),
+    ("MarketWatch", "https://feeds.marketwatch.com/marketwatch/topstories/"),
+    ("WSJ Markets", "https://feeds.a.dj.com/rss/RSSMarketsMain.xml"),
+]
+
+def _fetch_global_news(keywords=None, max_per_source=2):
+    """
+    Fetch berita global dari semua sumber.
+    keywords: list kata kunci filter (opsional)
+    Return: list berita dengan label sumber
+    """
+    try:
+        import feedparser, threading
+        result = [[]]
+
+        def fetch():
+            news = []
+            seen = set()
+            kw = [k.lower() for k in keywords] if keywords else []
+
+            for src_name, src_url in GLOBAL_NEWS_SOURCES:
+                try:
+                    feed = feedparser.parse(src_url)
+                    count = 0
+                    for entry in feed.entries:
+                        if count >= max_per_source:
+                            break
+                        title = entry.get("title","").strip()
+                        if not title:
+                            continue
+                        key = title[:30].lower()
+                        if key in seen:
+                            continue
+                        # Filter keyword jika ada
+                        if kw and not any(k in title.lower() for k in kw):
+                            continue
+                        seen.add(key)
+                        news.append({
+                            "source": src_name,
+                            "title": title,
+                            "link": entry.get("link",""),
+                        })
+                        count += 1
+                except: pass
+            result[0] = news
+
+        th = threading.Thread(target=fetch, daemon=True)
+        th.start()
+        th.join(timeout=12)
+        return result[0]
+    except:
+        return []
+
+def build_global_context(prompt):
+    """
+    Build context lengkap untuk pertanyaan global:
+    komoditas + saham US/China + berita internasional
+    Semua berita asing → instruksi translate ke Bahasa Indonesia
+    """
+    import threading
+    _p = prompt.lower()
+
+    # Keyword untuk trigger global context
+    global_kw = [
+        "gold","emas","oil","minyak","crude","coal","batubara","nikel","nickel",
+        "copper","tembaga","commodity","komoditas","silver","perak",
+        "us stock","nasdaq","nyse","dow jones","s&p","sp500",
+        "china stock","shanghai","hang seng","hkex","szse",
+        "perang","war","geopolitik","geopolitical","fed","federal reserve",
+        "inflation","inflasi","interest rate","suku bunga","dollar","usd",
+        "al jazeera","reuters","bbc","global","international","world",
+        "bitcoin","btc","crypto","ethereum","eth",
+        "apple","tesla","nvidia","microsoft","google","amazon","meta",
+        "baba","alibaba","tencent","xiaomi","pdd",
+    ]
+
+    if not any(k in _p for k in global_kw):
+        return ""
+
+    result = [{}]
+    def fetch():
+        lines = [f"=== DATA GLOBAL ({datetime.now().strftime('%d %b %Y %H:%M WIB')}) ==="]
+
+        # 1. Komoditas
+        try:
+            commodities = _fetch_commodities()
+            if commodities:
+                lines.append("\n── KOMODITAS ──")
+                for name, d in commodities.items():
+                    if d.get("price"):
+                        arah = "▲" if (d.get("chg") or 0) >= 0 else "▼"
+                        chg = abs(d.get("chg") or 0)
+                        lines.append(f"{name}: {d['price']:,.2f} {arah}{chg:.2f}%")
+        except: pass
+
+        # 2. Deteksi saham US/China dari prompt
+        import re as _re
+        us_tickers = _re.findall(r'([A-Z]{1,5})', prompt.upper())
+        us_skip = {"THE","AND","FOR","IDX","BEI","USD","IDR","RSI","EMA","FVG","OB"}
+        for tk in us_tickers[:3]:
+            if tk not in us_skip and len(tk) >= 2:
+                d = _fetch_us_china_stock(tk, "US")
+                if d.get("price"):
+                    arah = "▲" if d.get("chg",0) >= 0 else "▼"
+                    line = f"\n{tk}"
+                    if d.get("name"): line += f" ({d['name'][:30]})"
+                    line += f": ${d['price']:,.2f} {arah}{abs(d['chg']):.2f}%"
+                    if d.get("pe"): line += f" | PER:{d['pe']:.1f}x"
+                    lines.append(line)
+
+        # 3. Berita global — filter berdasarkan keyword dari prompt
+        prompt_words = [w for w in _p.split() if len(w) > 3]
+        news = _fetch_global_news(keywords=prompt_words[:5], max_per_source=2)
+        if not news:
+            # Fallback: ambil headline terbaru tanpa filter
+            news = _fetch_global_news(max_per_source=1)
+        if news:
+            lines.append("\n── BERITA GLOBAL (terjemahkan ke Bahasa Indonesia) ──")
+            for item in news[:8]:
+                lines.append(f"[{item['source']}] {item['title']}")
+
+        lines.append("\n⚠️ INSTRUKSI: Terjemahkan semua berita asing di atas ke Bahasa Indonesia")
+        lines.append("Kaitkan data komoditas/saham global dengan dampaknya ke pasar Indonesia")
+        lines.append("=== AKHIR DATA GLOBAL ===")
+        result[0] = "\n".join(lines)
+
+    th = threading.Thread(target=fetch, daemon=True)
+    th.start()
+    th.join(timeout=15)
+    return result[0]
+
+
 # ─── CACHE SISTEM — simpan data fundamental agar hemat API request ───
 import hashlib as _hashlib
 
@@ -534,6 +757,23 @@ def _calc_cagr(values_sorted_new_to_old):
         return (vals[0] / vals[-1]) ** (1/n) - 1
     except:
         return None
+
+
+def build_combined_context(prompt):
+    """Gabungkan IDX + global context secara parallel."""
+    import threading
+    local_ctx = [""]
+    global_ctx = [""]
+    def fl(): local_ctx[0] = build_context(prompt)
+    def fg(): global_ctx[0] = build_global_context(prompt)
+    t1 = threading.Thread(target=fl, daemon=True)
+    t2 = threading.Thread(target=fg, daemon=True)
+    t1.start(); t2.start()
+    t1.join(timeout=12); t2.join(timeout=15)
+    parts = []
+    if local_ctx[0]: parts.append("[DATA PASAR IDX]\n" + local_ctx[0] + "\n[/DATA PASAR IDX]")
+    if global_ctx[0]: parts.append("[DATA GLOBAL]\n" + global_ctx[0] + "\n[/DATA GLOBAL]")
+    return "\n\n".join(parts)
 
 def build_fundamental_from_text(prompt):
     """
@@ -2502,6 +2742,11 @@ for i, msg in enumerate(active["messages"][1:]):
         display = msg.get("display") or msg["content"]
         if "Pertanyaan:" in display:
             display = display.split("Pertanyaan:")[-1].strip()
+        if "[DATA PASAR IDX]" in display or "[DATA GLOBAL]" in display:
+            # Ambil hanya teks setelah semua tag data
+            for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
+                if tag in display:
+                    display = display.split(tag)[-1].strip()
         if "[DATA PASAR]" in display:
             display = display.split("[/DATA PASAR]")[-1].strip()
         if msg["role"] == "user" and msg.get("img_b64"):
@@ -2597,9 +2842,9 @@ if prompt:
             st.session_state["fund_no_history"] = True
         else:
             try:
-                ctx = build_context(prompt)
+                ctx = build_combined_context(prompt)
                 if ctx:
-                    full_prompt = f"[DATA PASAR]\n{ctx}\n[/DATA PASAR]\n\n{prompt}"
+                    full_prompt = f"{ctx}\n\n{prompt}"
             except: pass
 
     if active["title"] == "Obrolan Baru":
