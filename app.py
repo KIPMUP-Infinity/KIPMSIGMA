@@ -1063,6 +1063,13 @@ if not active["messages"][1:]:
     </div>
     """, unsafe_allow_html=True)
 
+# Tampilkan error terakhir jika ada
+if st.session_state.get("last_error"):
+    st.error(f"⚠️ Error terakhir: {st.session_state['last_error']}")
+    if st.button("✕ Tutup error"):
+        st.session_state["last_error"] = None
+        st.rerun()
+
 # Chat history
 for i, msg in enumerate(active["messages"][1:]):
     with st.chat_message(msg["role"]):
@@ -1178,7 +1185,10 @@ if prompt:
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
     except Exception as e:
-        st.error(f"Error: {e}")
+        err_str = str(e)
+        st.error(f"Error: {err_str}")
+        # Simpan error ke session agar tidak hilang setelah rerun
+        st.session_state["last_error"] = err_str
 
     st.rerun()
 
