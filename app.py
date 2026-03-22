@@ -2987,17 +2987,9 @@ if prompt:
                             max_tokens=2048
                         )
                         ans = _res.choices[0].message.content
-                    except Exception as _me:
-                        if not ("rate_limit" in str(_me) or "429" in str(_me) or "quota" in str(_me).lower()):
-                            raise _me
+                    except: pass
 
-                    # Step 2: Gemini 2.0 Flash
-                    if ans is None:
-                        try:
-                            ans = _call_gemini(_msgs)
-                        except: pass
-
-                    # Step 3: Groq 8b
+                    # Step 2: Groq 8b
                     if ans is None:
                         try:
                             _res = groq_client.chat.completions.create(
@@ -3007,6 +2999,12 @@ if prompt:
                                 max_tokens=2048
                             )
                             ans = _res.choices[0].message.content
+                        except: pass
+
+                    # Step 3: Gemini (jika Groq semua gagal)
+                    if ans is None:
+                        try:
+                            ans = _call_gemini(_msgs)
                         except: pass
 
                     if ans is None:
