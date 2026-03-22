@@ -15,120 +15,11 @@ import hashlib
 import bcrypt
 import re
 
-# ── Office file support ──
-def read_excel_file(raw: bytes, filename: str) -> str:
-    """Baca file Excel (.xlsx/.xls) dan convert ke teks terstruktur."""
-    try:
-        import openpyxl
-        from io import BytesIO
-        wb = openpyxl.load_workbook(BytesIO(raw), data_only=True)
-        result = [f"[EXCEL: {filename} | {len(wb.sheetnames)} sheet]\n"]
-        for sheet_name in wb.sheetnames[:5]:  # max 5 sheet
-            ws = wb[sheet_name]
-            result.append(f"\n=== Sheet: {sheet_name} ===")
-            rows_added = 0
-            for row in ws.iter_rows(values_only=True):
-                if rows_added > 200:  # max 200 baris per sheet
-                    result.append("...[data terpotong]")
-                    break
-                row_vals = [str(v) if v is not None else "" for v in row]
-                if any(v.strip() for v in row_vals):  # skip baris kosong
-                    result.append(" | ".join(row_vals))
-                    rows_added += 1
-        return "\n".join(result)[:40000]
-    except Exception as e:
-        return f"[Gagal baca Excel: {e}]"
-
-def read_word_file(raw: bytes, filename: str) -> str:
-    """Baca file Word (.docx) dan extract teks."""
-    try:
-        from docx import Document
-        from io import BytesIO
-        doc = Document(BytesIO(raw))
-        result = [f"[WORD: {filename}]\n"]
-        for para in doc.paragraphs:
-            if para.text.strip():
-                result.append(para.text)
-        # Baca tabel jika ada
-        for i, table in enumerate(doc.tables[:10]):
-            result.append(f"\n[Tabel {i+1}]")
-            for row in table.rows:
-                cells = [cell.text.strip() for cell in row.cells]
-                result.append(" | ".join(cells))
-        return "\n".join(result)[:40000]
-    except Exception as e:
-        return f"[Gagal baca Word: {e}]"
-
-def create_excel_download(content_text: str, filename: str = "sigma_output.xlsx") -> bytes:
-    """Buat file Excel dari teks analisa SIGMA."""
-    try:
-        import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment
-        from io import BytesIO
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = "Analisa SIGMA"
-        # Header
-        ws["A1"] = "SIGMA — Analisa Output"
-        ws["A1"].font = Font(bold=True, size=14, color="FFFFFF")
-        ws["A1"].fill = PatternFill("solid", fgColor="1B2A4A")
-        ws.column_dimensions["A"].width = 20
-        ws.column_dimensions["B"].width = 60
-        # Isi konten baris per baris
-        row = 3
-        for line in content_text.split("\n"):
-            line = line.strip()
-            if not line:
-                row += 1
-                continue
-            if line.startswith("---") or line.startswith("═"):
-                row += 1
-                continue
-            if ":" in line:
-                parts = line.split(":", 1)
-                ws.cell(row=row, column=1, value=parts[0].strip()).font = Font(bold=True)
-                ws.cell(row=row, column=2, value=parts[1].strip())
-            else:
-                ws.merge_cells(f"A{row}:B{row}")
-                ws.cell(row=row, column=1, value=line)
-            ws.cell(row=row, column=1).alignment = Alignment(wrap_text=True)
-            ws.cell(row=row, column=2).alignment = Alignment(wrap_text=True)
-            row += 1
-        buf = BytesIO()
-        wb.save(buf)
-        return buf.getvalue()
-    except Exception:
-        return b""
-
-def create_word_download(content_text: str, filename: str = "sigma_output.docx") -> bytes:
-    """Buat file Word dari teks analisa SIGMA."""
-    try:
-        from docx import Document
-        from docx.shared import Pt, RGBColor
-        from io import BytesIO
-        doc = Document()
-        doc.add_heading("SIGMA — Analisa Output", level=0)
-        for line in content_text.split("\n"):
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith("---") or line.startswith("═"):
-                doc.add_paragraph("─" * 40)
-            elif line.startswith(("📋","💰","🛡️","📊","💎","🏆","⚖️","📈","🔭")):
-                p = doc.add_heading(line, level=2)
-            elif ":" in line and len(line) < 80:
-                parts = line.split(":", 1)
-                p = doc.add_paragraph()
-                run1 = p.add_run(parts[0].strip() + ": ")
-                run1.bold = True
-                p.add_run(parts[1].strip())
-            else:
-                doc.add_paragraph(line)
-        buf = BytesIO()
-        doc.save(buf)
-        return buf.getvalue()
-    except Exception:
-        return b""
+# Office file support — disabled sementara
+def read_excel_file(raw, filename): return f"[Excel: {filename} — fitur segera hadir]"
+def read_word_file(raw, filename): return f"[Word: {filename} — fitur segera hadir]"
+def create_excel_download(text, filename="out.xlsx"): return b""
+def create_word_download(text, filename="out.docx"): return b""
 
 # ─────────────────────────────────────────────
 # MARKET CONTEXT — Real-time data injector
@@ -2128,36 +2019,14 @@ for i, msg in enumerate(active["messages"][1:]):
         if msg["role"] == "user" and msg.get("img_b64"):
             st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
-        # Tampilkan tombol download untuk pesan analisa di history
-        if msg["role"] == "assistant" and msg.get("is_analisa"):
-            _col1, _col2 = st.columns(2)
-            with _col1:
-                try:
-                    _xb = create_excel_download(msg["content"])
-                    if _xb:
-                        st.download_button("⬇️ Excel", _xb,
-                            file_name=f"sigma_{msg.get('id','analisa')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            key=f"dl_xlsx_{i}", use_container_width=True)
-                except Exception:
-                    pass
-            with _col2:
-                try:
-                    _wb = create_word_download(msg["content"])
-                    if _wb:
-                        st.download_button("⬇️ Word", _wb,
-                            file_name=f"sigma_{msg.get('id','analisa')}.docx",
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            key=f"dl_docx_{i}", use_container_width=True)
-                except Exception:
-                    pass
+        # Download buttons — coming soon
 
 # Chat input
 try:
     result = st.chat_input(
         "Tanya SIGMA... DYOR - bukan financial advice.",
         accept_file="multiple",
-        file_type=["pdf", "png", "jpg", "jpeg", "xlsx", "xls", "docx", "doc", "csv"]
+        file_type=["pdf", "png", "jpg", "jpeg"]
     )
 except TypeError:
     result = st.chat_input("Tanya SIGMA...")
@@ -2446,36 +2315,7 @@ if prompt:
                 ans = res.choices[0].message.content
             st.markdown(ans)
 
-            # ── Tombol download jika output adalah analisa ──
-            _is_analisa = any(k in ans for k in ["TRADE PLAN", "ANALISA FUNDAMENTAL", "PROFITABILITAS", "VERDICT"])
-            if _is_analisa:
-                col1, col2 = st.columns(2)
-                with col1:
-                    try:
-                        xlsx_bytes = create_excel_download(ans)
-                        if xlsx_bytes:
-                            st.download_button(
-                                label="⬇️ Download Excel",
-                                data=xlsx_bytes,
-                                file_name=f"sigma_analisa_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                use_container_width=True
-                            )
-                    except Exception:
-                        pass
-                with col2:
-                    try:
-                        docx_bytes = create_word_download(ans)
-                        if docx_bytes:
-                            st.download_button(
-                                label="⬇️ Download Word",
-                                data=docx_bytes,
-                                file_name=f"sigma_analisa_{datetime.now().strftime('%Y%m%d_%H%M')}.docx",
-                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                use_container_width=True
-                            )
-                    except Exception:
-                        pass
+            # Download buttons — coming soon
 
         active["messages"].append({
             "role": "assistant",
