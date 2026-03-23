@@ -2783,13 +2783,19 @@ if result is not None:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
-            txt = "".join(p.get_text() for p in doc)
-            # Enrichment: tambah data live untuk melengkapi PDF
+            # Baca semua halaman
+            pages = [p.get_text() for p in doc]
+            txt_full = "".join(pages)
+            total_pages = len(pages)
+            # Enrichment dari teks penuh untuk deteksi emiten
             enrichment = ""
             try:
-                enrichment = enrich_pdf_context(txt)
+                enrichment = enrich_pdf_context(txt_full)
             except: pass
-            pdf_content = f"[PDF: {file_obj.name}]\n{txt[:40000]}"
+            # Kirim ke AI: max 12,000 karakter agar tidak meledak token
+            # Cukup untuk ~6 halaman laporan keuangan
+            txt_send = txt_full[:12000]
+            pdf_content = f"[PDF: {file_obj.name} | {total_pages} halaman | menampilkan {len(txt_send):,}/{len(txt_full):,} karakter]\n{txt_send}"
             if enrichment:
                 pdf_content += enrichment
             st.session_state.pdf_data = (pdf_content, file_obj.name)
