@@ -3084,7 +3084,9 @@ if prompt:
                     if ans is None:
                         _n_rl = len(_rate_limited_keys)
                         _n_total = len(_groq_keys)
-                        raise Exception(f"Semua model sedang sibuk ({_n_rl}/{_n_total} Groq key kena rate limit) — tunggu beberapa menit lalu coba lagi.")
+                        _gem_err = st.session_state.get("last_error", "")
+                        _err_detail = f" | Gemini error: {_gem_err}" if _gem_err else " | Gemini juga tidak merespons"
+                        raise Exception(f"Semua model sedang sibuk ({_n_rl}/{_n_total} Groq key kena rate limit){_err_detail} — coba lagi dalam 1 menit.")
                     
                     # Buat res object compatible
                     class _FakeRes:
