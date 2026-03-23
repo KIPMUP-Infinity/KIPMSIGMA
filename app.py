@@ -3242,7 +3242,7 @@ def show_login():
     st.markdown(f"""
     <p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">
         Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
-        Analisa bersifat <em>do your own research</em> dan disclaimer berlaku. by MarketnMocha
+        Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha
     </p>
     """, unsafe_allow_html=True)
     st.stop()
@@ -3590,19 +3590,35 @@ Contoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
             doc = fitz.open(stream=raw, filetype="pdf")
-            # Baca semua halaman
-            pages = [p.get_text() for p in doc]
-            txt_full = "".join(pages)
-            total_pages = len(pages)
-            # Enrichment dari teks penuh untuk deteksi emiten
+            total_pages = len(doc)
+            pages_text = [p.get_text() for p in doc]
+            txt_full = "".join(pages_text)
+
+            # SMART EXTRACTION — prioritaskan halaman keuangan
+            # Keyword halaman penting LK
+            _fin_kw = ["revenue","ebitda","net income","profit","loss","assets","liabilities",
+                       "equity","cash","pendapatan","laba","rugi","aset","utang","modal",
+                       "rp bn","rp billion","million","triliun","miliar","per share"]
+            _priority_pages = []
+            _other_pages = []
+            for i, pt in enumerate(pages_text):
+                pt_lower = pt.lower()
+                if any(k in pt_lower for k in _fin_kw):
+                    _priority_pages.append(pt)
+                else:
+                    _other_pages.append(pt)
+
+            # Gabung: halaman keuangan dulu, sisanya belakang
+            txt_smart = "".join(_priority_pages) + "".join(_other_pages)
+            # Batasi 7000 karakter — cukup untuk analisa, tidak meledak token
+            txt_send = txt_smart[:7000]
+
             enrichment = ""
             try:
-                enrichment = enrich_pdf_context(txt_full)
+                enrichment = enrich_pdf_context(txt_full[:5000])
             except: pass
-            # Kirim ke AI: max 12,000 karakter agar tidak meledak token
-            # Cukup untuk ~6 halaman laporan keuangan
-            txt_send = txt_full[:12000]
-            pdf_content = f"[PDF: {file_obj.name} | {total_pages} halaman | menampilkan {len(txt_send):,}/{len(txt_full):,} karakter]\n{txt_send}"
+
+            pdf_content = f"[PDF: {file_obj.name} | {total_pages} hal | {len(txt_send):,}/{len(txt_full):,} kar]\n{txt_send}"
             if enrichment:
                 pdf_content += enrichment
             st.session_state.pdf_data = (pdf_content, file_obj.name)
@@ -3667,6 +3683,18 @@ if prompt:
                 ctx = build_combined_context(prompt)
                 if ctx:
                     full_prompt = f"{ctx}\n\n{prompt}"
+                else:
+                    # Fallback: minimal inject harga jika ada ticker di prompt
+                    _tickers_in_prompt = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
+                        if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG",
+                                    "ANALISA","SAHAM","MOHON","BISA","DENGAN","MINTA",
+                                    "APAKAH","BAGAIMANA","KENAPA","IHSG","WAIT","HOLD"}]
+                    if _tickers_in_prompt:
+                        try:
+                            _price_ctx = build_context(prompt)
+                            if _price_ctx:
+                                full_prompt = f"{_price_ctx}\n\n{prompt}"
+                        except: pass
             except: pass
 
     if active["title"] == "Obrolan Baru":
@@ -3746,18 +3774,19 @@ if prompt:
                         if m.get("role") in ("user","assistant","system")
                     ]
                     _last_content = _all_msgs[-1]["content"] if _all_msgs else ""
-                    _is_big = len(_last_content) > 2000
                     _no_history = st.session_state.pop("fund_no_history", False)
+                    _has_pdf = "[PDF:" in _last_content
 
                     # 3 TIER SYSTEM PROMPT berdasarkan jenis request
                     _p_lower = prompt.lower() if prompt else ""
 
                     # Deteksi jenis request
-                    _is_fundamental = _no_history or any(k in _p_lower for k in [
+                    _is_fundamental = _no_history or _has_pdf or any(k in _p_lower for k in [
                         "fundamental","valuasi","laporan keuangan","keuangan",
-                        "roe","roa","per ","pbv","analisa saham","laba","eps"
+                        "roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk",
+                        "analisa pdf","revenue","ebitda","net income"
                     ])
-                    _is_analisa_lengkap = any(k in _p_lower for k in [
+                    _is_analisa_lengkap = not _has_pdf and any(k in _p_lower for k in [
                         "analisa lengkap","full analisa","5 sila",
                         "kesimpulan bandarmologi","bandarmologi","broker",
                         "teknikal","analisa chart","divergen","divergence",
@@ -3773,7 +3802,8 @@ if prompt:
 Ramah saat ngobrol, profesional saat analisa. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.
 Kemampuan: teknikal (MnM Strategy+), fundamental, bandarmologi, makro, umum.
 IDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25.
-5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]"""
+5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]
+PENTING: Jika ada [DATA PASAR IDX] → gunakan harga dari sana. Jika tidak ada data harga → sebutkan "harga tidak tersedia saat ini, mohon cek manual" — JANGAN mengarang harga."""
                     }
 
                     # TIER 2: Fundamental → system prompt MEDIUM (hanya bagian fundamental)
@@ -3792,19 +3822,19 @@ FORMAT: 📋 ANALISA FUNDAMENTAL — [EMITEN] (2026) | harga | sektor | profitab
 Icon: ✅ pass | ⚠️ perhatian | ❌ fail — pilih SATU saja"""
                     }
 
-                    if _is_analisa_lengkap or _is_big:
+                    if _is_analisa_lengkap:
                         # TIER 3: Analisa lengkap/bandarmologi → system prompt PENUH
                         _msgs = [
                             _all_msgs[0],
                             {"role": _all_msgs[-1]["role"],
-                             "content": _last_content[:20000]}
+                             "content": _last_content[:15000]}
                         ]
                     elif _is_fundamental:
-                        # TIER 2: Fundamental → system prompt MEDIUM, hemat token
+                        # TIER 2: Fundamental/PDF/LK → system prompt MEDIUM, hemat token
                         _msgs = [
                             _sys_medium,
                             {"role": _all_msgs[-1]["role"],
-                             "content": _last_content[:15000]}
+                             "content": _last_content[:8000]}
                         ]
                     else:
                         # TIER 1: Chat biasa → system prompt PENDEK
