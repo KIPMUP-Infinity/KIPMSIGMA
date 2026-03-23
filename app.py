@@ -2997,7 +2997,7 @@ if prompt:
                         # Chat biasa — kirim history normal (max 5 pesan terakhir)
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
-                    # Urutan: Groq 70b → Groq 8b → Gemini
+                    # Urutan: Groq → Cerebras → Gemini
                     ans = None
                     _rate_limited_keys = set()
 
@@ -3009,7 +3009,13 @@ if prompt:
                             _groq_keys.append(_k)
                     if not _groq_keys:
                         _groq_keys = [""]
-                    _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+                    # Rotasi 4 model — kalau satu limit, coba model lain di key yang sama
+                    _models = [
+                        "llama-3.3-70b-versatile",   # terbaik
+                        "llama-3.1-70b-versatile",   # alternatif 70b
+                        "llama3-70b-8192",            # 70b context panjang
+                        "llama-3.1-8b-instant",      # fallback cepat
+                    ]
 
                     # Coba semua kombinasi key + model
                     # Skip key yang sudah terkonfirmasi rate limit
@@ -3037,51 +3043,7 @@ if prompt:
                                 # Error lain (koneksi, dll) → coba model berikutnya
                                 pass
 
-                    # Fallback Gemini jika semua Groq gagal / rate limit
-                    if ans is None:
-                        try:
-                            ans = _call_gemini(_msgs)
-                        except: pass
-
-                    # Fallback Gemini key2 jika key1 gagal
-                    if ans is None:
-                        try:
-                            import urllib.request as _ur2, json as _j3
-                            _gk2 = st.secrets.get("GEMINI_KEY2", "")
-                            if _gk2:
-                                # Convert ke format Gemini dengan system prompt
-                                _gem_contents = []
-                                _gem_system = ""
-                                for _gm in _msgs:
-                                    _gr = _gm.get("role","")
-                                    _gt = _gm.get("content","") or ""
-                                    if _gr == "system":
-                                        _gem_system = _gt
-                                    elif _gr == "user":
-                                        _gem_contents.append({"role":"user","parts":[{"text":_gt}]})
-                                    elif _gr == "assistant":
-                                        _gem_contents.append({"role":"model","parts":[{"text":_gt}]})
-                                if not _gem_contents:
-                                    _gem_contents = [{"role":"user","parts":[{"text":"Halo"}]}]
-                                _gpay2 = {"contents": _gem_contents,
-                                          "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
-                                if _gem_system:
-                                    _gpay2["system_instruction"] = {"parts":[{"text":_gem_system}]}
-                                _greq2 = _ur2.Request(
-                                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gk2}",
-                                    data=_j3.dumps(_gpay2).encode(),
-                                    headers={"Content-Type": "application/json"}
-                                )
-                                with _ur2.urlopen(_greq2, timeout=30) as _gr2:
-                                    _gd2 = _j3.loads(_gr2.read())
-                                _cands = _gd2.get("candidates", [])
-                                if _cands:
-                                    _parts = _cands[0].get("content", {}).get("parts", [])
-                                    if _parts and _parts[0].get("text"):
-                                        ans = _parts[0]["text"]
-                        except: pass
-
-                    # Fallback Cerebras jika Gemini juga gagal
+                    # Fallback Cerebras jika semua Groq gagal
                     if ans is None:
                         try:
                             _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
@@ -3112,6 +3074,49 @@ if prompt:
                                 _cb_ans = _cbd.get("choices",[{}])[0].get("message",{}).get("content","")
                                 if _cb_ans:
                                     ans = _cb_ans
+                        except: pass
+
+                    # Fallback Gemini KEY1 jika Cerebras juga gagal
+                    if ans is None:
+                        try:
+                            ans = _call_gemini(_msgs)
+                        except: pass
+
+                    # Fallback Gemini KEY2
+                    if ans is None:
+                        try:
+                            import urllib.request as _ur2, json as _j3
+                            _gk2 = st.secrets.get("GEMINI_KEY2", "")
+                            if _gk2:
+                                _gem_contents = []
+                                _gem_system = ""
+                                for _gm in _msgs:
+                                    _gr = _gm.get("role","")
+                                    _gt = _gm.get("content","") or ""
+                                    if _gr == "system":
+                                        _gem_system = _gt
+                                    elif _gr == "user":
+                                        _gem_contents.append({"role":"user","parts":[{"text":_gt}]})
+                                    elif _gr == "assistant":
+                                        _gem_contents.append({"role":"model","parts":[{"text":_gt}]})
+                                if not _gem_contents:
+                                    _gem_contents = [{"role":"user","parts":[{"text":"Halo"}]}]
+                                _gpay2 = {"contents": _gem_contents,
+                                          "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+                                if _gem_system:
+                                    _gpay2["system_instruction"] = {"parts":[{"text":_gem_system}]}
+                                _greq2 = _ur2.Request(
+                                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gk2}",
+                                    data=_j3.dumps(_gpay2).encode(),
+                                    headers={"Content-Type": "application/json"}
+                                )
+                                with _ur2.urlopen(_greq2, timeout=30) as _gr2:
+                                    _gd2 = _j3.loads(_gr2.read())
+                                _cands = _gd2.get("candidates", [])
+                                if _cands:
+                                    _parts = _cands[0].get("content", {}).get("parts", [])
+                                    if _parts and _parts[0].get("text"):
+                                        ans = _parts[0]["text"]
                         except: pass
 
                     if ans is None:
