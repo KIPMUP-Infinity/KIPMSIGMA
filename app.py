@@ -3508,16 +3508,13 @@ for i, msg in enumerate(active["messages"][1:]):
         if "[DATA PASAR]" in display:
             display = display.split("[/DATA PASAR]")[-1].strip()
         if msg["role"] == "user":
-            # Tampilkan semua gambar dari field images (multi) atau img_b64 (single)
             imgs_in_msg = msg.get("images", [])
             if imgs_in_msg:
                 if len(imgs_in_msg) == 1:
                     st.markdown(f'<img src="data:{imgs_in_msg[0][1]};base64,{imgs_in_msg[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
                 else:
-                    cols = st.columns(min(len(imgs_in_msg), 5))
-                    for ci, (ib64, imime) in enumerate(imgs_in_msg):
-                        with cols[ci]:
-                            st.markdown(f'<img src="data:{imime};base64,{ib64}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;">', unsafe_allow_html=True)
+                    imgs_html = ''.join([f'<img src="data:{imime};base64,{ib64}" style="height:160px;max-width:calc(100%/{len(imgs_in_msg)});object-fit:cover;border-radius:8px;flex:1;">' for ib64, imime in imgs_in_msg])
+                    st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
             elif msg.get("img_b64"):
                 st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
@@ -3691,10 +3688,8 @@ if prompt:
             if len(imgs_to_show) == 1:
                 st.markdown(f'<img src="data:{imgs_to_show[0][1]};base64,{imgs_to_show[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
             else:
-                cols = st.columns(min(len(imgs_to_show), 5))
-                for i, (_ib64, _imime, _iname) in enumerate(imgs_to_show):
-                    with cols[i]:
-                        st.markdown(f'<img src="data:{_imime};base64,{_ib64}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;">', unsafe_allow_html=True)
+                imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
+                st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
         st.markdown(prompt)
 
     try:
