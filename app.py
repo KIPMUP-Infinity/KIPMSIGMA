@@ -3539,9 +3539,10 @@ if result is not None:
         files = getattr(result, 'files', None) or []
         img_files = [f for f in files if f.type != "application/pdf"]
         pdf_files = [f for f in files if f.type == "application/pdf"]
+
+        # Proses gambar (max 5)
         if img_files:
-            # Baca SEMUA gambar sekali di sini — simpan sebagai tuples
-            for _mf in img_files[:10]:
+            for _mf in img_files[:5]:
                 try:
                     _mraw = _mf.read()
                     _mb64 = base64.b64encode(_mraw).decode()
@@ -3549,10 +3550,10 @@ if result is not None:
                     multi_images.append((_mb64, _mmime, _mf.name))
                 except: pass
             if multi_images:
-                # img_data = gambar pertama untuk backward compat
                 st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
-                file_obj = None  # sudah dibaca, tidak perlu file_obj lagi
-        elif pdf_files:
+
+        # Proses PDF — bisa bersamaan dengan gambar
+        if pdf_files:
             file_obj = pdf_files[0]
     elif isinstance(result, str):
         prompt = result.strip()
@@ -3601,11 +3602,12 @@ Contoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
             if enrichment:
                 pdf_content += enrichment
             st.session_state.pdf_data = (pdf_content, file_obj.name)
-            st.session_state.img_data = None
+            # JANGAN hapus img_data — biarkan gambar tetap ada kalau dikirim bersamaan
         else:
             b64 = base64.b64encode(raw).decode()
             mime = "image/png" if file_obj.name.endswith(".png") else "image/jpeg"
-            st.session_state.img_data = (b64, mime, file_obj.name)
+            if not multi_images:  # hanya set img_data kalau tidak ada multi_images
+                st.session_state.img_data = (b64, mime, file_obj.name)
             st.session_state.pdf_data = None
 
     if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
@@ -3618,10 +3620,13 @@ if prompt:
     st.session_state.pdf_data = None
 
     full_prompt = prompt
-    if img_data:
-        full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
+    if pdf_data and (img_data or multi_images):
+        # Gambar + PDF bersamaan
+        full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
     elif pdf_data:
         full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+    elif img_data:
+        full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     else:
         _p = prompt.lower()
         _is_fund_cmd = any(k in _p for k in ["fundamental","valuasi","laporan keuangan",
@@ -3690,6 +3695,8 @@ if prompt:
             else:
                 imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
                 st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+        if pdf_data:
+            st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
         st.markdown(prompt)
 
     try:
