@@ -15,6 +15,11 @@ import hashlib
 import bcrypt
 import re
 
+
+
+
+
+
 # ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
 def _fetch_all_data(tickers):
     import threading
@@ -3502,8 +3507,19 @@ for i, msg in enumerate(active["messages"][1:]):
                     display = display.split(tag)[-1].strip()
         if "[DATA PASAR]" in display:
             display = display.split("[/DATA PASAR]")[-1].strip()
-        if msg["role"] == "user" and msg.get("img_b64"):
-            st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+        if msg["role"] == "user":
+            # Tampilkan semua gambar dari field images (multi) atau img_b64 (single)
+            imgs_in_msg = msg.get("images", [])
+            if imgs_in_msg:
+                if len(imgs_in_msg) == 1:
+                    st.markdown(f'<img src="data:{imgs_in_msg[0][1]};base64,{imgs_in_msg[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+                else:
+                    cols = st.columns(min(len(imgs_in_msg), 5))
+                    for ci, (ib64, imime) in enumerate(imgs_in_msg):
+                        with cols[ci]:
+                            st.markdown(f'<img src="data:{imime};base64,{ib64}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;">', unsafe_allow_html=True)
+            elif msg.get("img_b64"):
+                st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
 # Chat input
@@ -3652,22 +3668,33 @@ if prompt:
 
     # Simpan gambar di dalam message agar tetap ada setelah refresh
     user_msg = {"role": "user", "content": full_prompt, "display": prompt}
-    if img_data:
+    if multi_images:
+        # Simpan semua gambar (max 5)
+        user_msg["images"] = [(b64, mime) for b64, mime, name in multi_images[:5]]
+        # Backward compat — simpan gambar pertama juga
+        user_msg["img_b64"] = multi_images[0][0]
+        user_msg["img_mime"] = multi_images[0][1]
+        thumb_idx = len(active["messages"]) - 1
+        st.session_state[f"thumb_{active['id']}_{thumb_idx}"] = (multi_images[0][0], multi_images[0][1])
+    elif img_data:
         user_msg["img_b64"] = img_data[0]
         user_msg["img_mime"] = img_data[1]
-        # Juga simpan di session_state untuk render langsung
         thumb_idx = len(active["messages"]) - 1
         st.session_state[f"thumb_{active['id']}_{thumb_idx}"] = (img_data[0], img_data[1])
 
     active["messages"].append(user_msg)
+
+    # Tampilkan semua gambar di chat
     with st.chat_message("user"):
-        if multi_images and len(multi_images) > 1:
-            cols = st.columns(min(len(multi_images), 5))
-            for i, (_ib64, _imime, _iname) in enumerate(multi_images[:10]):
-                with cols[i % 5]:
-                    st.markdown(f'<img src="data:{_imime};base64,{_ib64}" style="max-width:100%;max-height:150px;border-radius:8px;">', unsafe_allow_html=True)
-        elif img_data:
-            st.markdown(f'<img src="data:{img_data[1]};base64,{img_data[0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+        imgs_to_show = multi_images[:5] if multi_images else ([(img_data[0], img_data[1], img_data[2])] if img_data else [])
+        if imgs_to_show:
+            if len(imgs_to_show) == 1:
+                st.markdown(f'<img src="data:{imgs_to_show[0][1]};base64,{imgs_to_show[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+            else:
+                cols = st.columns(min(len(imgs_to_show), 5))
+                for i, (_ib64, _imime, _iname) in enumerate(imgs_to_show):
+                    with cols[i]:
+                        st.markdown(f'<img src="data:{_imime};base64,{_ib64}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;">', unsafe_allow_html=True)
         st.markdown(prompt)
 
     try:
