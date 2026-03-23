@@ -3534,6 +3534,10 @@ file_obj = None
 multi_images = []  # Support hingga 10 gambar
 
 if result is not None:
+    # Clear semua state dari upload sebelumnya
+    st.session_state.img_data = None
+    st.session_state.pdf_data = None
+
     if hasattr(result, 'text'):
         prompt = (result.text or "").strip()
         files = getattr(result, 'files', None) or []
@@ -4202,34 +4206,45 @@ function setupDragDrop() {{
         var files = e.dataTransfer && e.dataTransfer.files;
         if (!files || files.length === 0) return;
 
-        var file = files[0];
         var allowed = ['application/pdf','image/png','image/jpeg','image/jpg'];
-        if (!allowed.includes(file.type)) {{
+        var validFiles = [];
+        for (var i = 0; i < Math.min(files.length, 5); i++) {{
+            if (allowed.includes(files[i].type)) validFiles.push(files[i]);
+        }}
+        if (validFiles.length === 0) {{
             alert('File tidak didukung. Gunakan PDF, PNG, atau JPG.');
             return;
         }}
 
-        // Inject ke file input Streamlit
-        var inputs = pd.querySelectorAll('input[type="file"]');
-        for (var fi of inputs) {{
+        // Cari file input milik Streamlit chat input
+        // Streamlit chat input punya file input di dalam container stChatInputContainer
+        var chatContainer = pd.querySelector('[data-testid="stChatInputContainer"]');
+        var fileInput = chatContainer ? chatContainer.querySelector('input[type="file"]') : null;
+        if (!fileInput) {{
+            // Fallback: cari semua file input
+            var allInputs = pd.querySelectorAll('input[type="file"]');
+            fileInput = allInputs[allInputs.length - 1]; // ambil yang terakhir
+        }}
+
+        if (fileInput) {{
             try {{
                 var dt = new DataTransfer();
-                dt.items.add(file);
-                Object.defineProperty(fi, 'files', {{value: dt.files, configurable:true, writable:true}});
-                fi.dispatchEvent(new Event('change', {{bubbles:true}}));
-                fi.dispatchEvent(new Event('input', {{bubbles:true}}));
+                for (var f of validFiles) dt.items.add(f);
+                Object.defineProperty(fileInput, 'files', {{value: dt.files, configurable:true, writable:true}});
+                fileInput.dispatchEvent(new Event('change', {{bubbles:true}}));
+                fileInput.dispatchEvent(new Event('input', {{bubbles:true}}));
+
                 var ta = pd.querySelector('[data-testid="stChatInput"] textarea');
                 if (ta) {{
                     ta.style.outline = '2px solid #4a90d9';
-                    var fname = file.name;
-                    ta.placeholder = '📎 ' + fname + ' siap — ketik pertanyaan lalu Enter';
+                    var names = validFiles.map(function(f){{return f.name;}}).join(', ');
+                    ta.placeholder = '📎 ' + names + ' — ketik pertanyaan lalu Enter';
                     setTimeout(function(){{
                         ta.style.outline = '';
                         ta.placeholder = 'Tanya SIGMA... DYOR - bukan financial advice.';
-                    }}, 3000);
+                    }}, 4000);
                     ta.focus();
                 }}
-                break;
             }} catch(err) {{ console.log('drop err', err); }}
         }}
     }}, true);
