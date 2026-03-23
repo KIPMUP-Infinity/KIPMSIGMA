@@ -26,31 +26,129 @@ def _fetch_all_data(tickers):
     result = {"prices": {}, "news": []}
 
     def fetch():
-        # Layer 1: yfinance
+        # Layer 1: IDX API — sumber PALING AKURAT, langsung dari bursa
+        for tk in tickers[:3]:
+            try:
+                import urllib.request, json as _j
+                req = urllib.request.Request(
+                    f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={tk}",
+                    headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"}
+                )
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    d = _j.loads(r.read())
+                if d and d.get("LastPrice") and d["LastPrice"] > 0:
+                    result["prices"][tk] = {
+                        "price": d["LastPrice"],
+                        "chg": d.get("ChangePercentage", 0),
+                        "open": d.get("OpenPrice", 0),
+                        "high": d.get("HighPrice", 0),
+                        "low": d.get("LowPrice", 0),
+                        "vol": d.get("Volume", 0),
+                        "source": "IDX"
+                    }
+            except: pass
+
+        # Layer 2: Finnhub — reliable, adjusted
+        try:
+            import urllib.request as _ufh, json as _jfh
+            _fh_key = st.secrets.get("FINNHUB_KEY", "")
+            if _fh_key:
+                for tk in tickers[:3]:
+                    if tk not in result["prices"]:
+                        try:
+                            _fh_url = f"https://finnhub.io/api/v1/quote?symbol={tk}.JK&token={_fh_key}"
+                            _fh_req = _ufh.Request(_fh_url, headers={"User-Agent":"Mozilla/5.0"})
+                            with _ufh.urlopen(_fh_req, timeout=5) as r:
+                                _fh_d = _jfh.loads(r.read())
+                            _fh_price = _fh_d.get("c", 0)  # current price
+                            _fh_prev  = _fh_d.get("pc", 0) # previous close
+                            if _fh_price and _fh_price > 0:
+                                _fh_chg = ((_fh_price - _fh_prev) / _fh_prev * 100) if _fh_prev else 0
+                                result["prices"][tk] = {
+                                    "price": round(_fh_price, 0),
+                                    "chg": round(_fh_chg, 2),
+                                    "high": _fh_d.get("h", 0),
+                                    "low": _fh_d.get("l", 0),
+                                    "source": "Finnhub"
+                                }
+                        except: pass
+        except: pass
+
+        # Layer 3: FMP — financial data provider
+        try:
+            import urllib.request as _ufmp, json as _jfmp
+            _fmp_key = st.secrets.get("FMP_KEY", "")
+            if _fmp_key:
+                for tk in tickers[:3]:
+                    if tk not in result["prices"]:
+                        try:
+                            _fmp_url = f"https://financialmodelingprep.com/api/v3/quote/{tk}.JK?apikey={_fmp_key}"
+                            _fmp_req = _ufmp.Request(_fmp_url, headers={"User-Agent":"Mozilla/5.0"})
+                            with _ufmp.urlopen(_fmp_req, timeout=5) as r:
+                                _fmp_d = _jfmp.loads(r.read())
+                            if _fmp_d and isinstance(_fmp_d, list) and _fmp_d[0].get("price"):
+                                _fmp_q = _fmp_d[0]
+                                result["prices"][tk] = {
+                                    "price": round(_fmp_q["price"], 0),
+                                    "chg": round(_fmp_q.get("changesPercentage", 0), 2),
+                                    "high": _fmp_q.get("dayHigh", 0),
+                                    "low": _fmp_q.get("dayLow", 0),
+                                    "vol": _fmp_q.get("volume", 0),
+                                    "source": "FMP"
+                                }
+                        except: pass
+        except: pass
+
+        # Layer 4: Yahoo Finance query API — realtime, adjusted
+        for tk in tickers[:3]:
+            if tk not in result["prices"]:
+                try:
+                    import urllib.request, json as _j
+                    _url = f"https://query1.finance.yahoo.com/v8/finance/chart/{tk}.JK?interval=1d&range=5d"
+                    _req = urllib.request.Request(_url, headers={"User-Agent":"Mozilla/5.0"})
+                    with urllib.request.urlopen(_req, timeout=5) as r:
+                        _d = _j.loads(r.read())
+                    _meta = _d["chart"]["result"][0]["meta"]
+                    _price = _meta.get("regularMarketPrice") or _meta.get("previousClose")
+                    _prev  = _meta.get("previousClose", _price)
+                    if _price and _price > 0:
+                        _chg = ((_price - _prev) / _prev * 100) if _prev else 0
+                        result["prices"][tk] = {
+                            "price": round(_price, 0),
+                            "chg": round(_chg, 2),
+                            "high": _meta.get("regularMarketDayHigh", 0),
+                            "low": _meta.get("regularMarketDayLow", 0),
+                            "vol": _meta.get("regularMarketVolume", 0),
+                            "source": "Yahoo"
+                        }
+                except: pass
+
+        # Layer 5: yfinance — backup dengan auto_adjust
         try:
             import yfinance as yf
             for tk in tickers[:3]:
-                try:
-                    t = yf.Ticker(f"{tk}.JK")
-                    h = t.history(period="2d")
-                    if not h.empty:
-                        info = t.info
-                        last = h.iloc[-1]
-                        prev = h.iloc[-2] if len(h)>1 else last
-                        chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
-                        result["prices"][tk] = {
-                            "price": round(last["Close"],0),
-                            "chg": round(chg,2),
-                            "pe": info.get("trailingPE"),
-                            "pbv": info.get("priceToBook"),
-                            "eps": info.get("trailingEps"),
-                            "roe": info.get("returnOnEquity"),
-                            "source": "yfinance"
-                        }
-                except: pass
+                if tk not in result["prices"]:
+                    try:
+                        t = yf.Ticker(f"{tk}.JK")
+                        h = t.history(period="5d", auto_adjust=True)
+                        if not h.empty:
+                            info = t.info
+                            last = h.iloc[-1]
+                            prev = h.iloc[-2] if len(h)>1 else last
+                            chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
+                            result["prices"][tk] = {
+                                "price": round(last["Close"],0),
+                                "chg": round(chg,2),
+                                "pe": info.get("trailingPE"),
+                                "pbv": info.get("priceToBook"),
+                                "eps": info.get("trailingEps"),
+                                "roe": info.get("returnOnEquity"),
+                                "source": "yfinance"
+                            }
+                    except: pass
         except: pass
 
-        # Layer 2: stooq — backup jika yfinance gagal
+        # Layer 6: stooq — backup terakhir
         try:
             import pandas_datareader as pdr
             from datetime import timedelta
@@ -74,25 +172,6 @@ def _fetch_all_data(tickers):
                             }
                     except: pass
         except: pass
-
-        # Layer 3: IDX API — backup terakhir
-        for tk in tickers[:3]:
-            if tk not in result["prices"]:
-                try:
-                    import urllib.request, json as _j
-                    req = urllib.request.Request(
-                        f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={tk}",
-                        headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"}
-                    )
-                    with urllib.request.urlopen(req, timeout=3) as r:
-                        d = _j.loads(r.read())
-                    if d and d.get("LastPrice"):
-                        result["prices"][tk] = {
-                            "price": d["LastPrice"],
-                            "chg": d.get("ChangePercentage", 0),
-                            "source": "IDX"
-                        }
-                except: pass
 
         # Berita: Google News + CNBC ID + Kontan + Bisnis
         try:
@@ -276,25 +355,73 @@ def _fetch_fmp(ticker, api_key=None):
 def _fetch_multi_fundamental(ticker):
     """
     Fetch fundamental berlapis — saling melengkapi:
-    Layer 1: yfinance (harga, PE, PBV, EPS, ROE, ROA)
-    Layer 2: FMP (historis, DER, FCF, sektor, deskripsi)
-    Layer 3: Finnhub (rasio tambahan)
-    Layer 4: Alpha Vantage (backup)
-    Layer 5: hitung manual dari rumus
+    Layer 1: IDX API (harga real-time langsung dari bursa)
+    Layer 2: FMP (fundamental terlengkap: historis, DER, FCF, NIM, NPL khusus bank)
+    Layer 3: Finnhub (rasio tambahan: ROE, ROA, PE, PBV)
+    Layer 4: Alpha Vantage (backup fundamental)
+    Layer 5: yfinance (harga + rasio dasar kalau semua di atas gagal)
+    Layer 6: hitung manual dari rumus
     """
     import threading
     result = [{}]
     def fetch():
         combined = {}
 
-        # ── Layer 1: yfinance ──
+        # ── Layer 1: IDX API — harga paling akurat ──
+        try:
+            import urllib.request, json as _j
+            req = urllib.request.Request(
+                f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}",
+                headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"}
+            )
+            with urllib.request.urlopen(req, timeout=5) as r:
+                d = _j.loads(r.read())
+            if d and d.get("LastPrice") and d["LastPrice"] > 0:
+                combined["price"] = d["LastPrice"]
+                combined["source_price"] = "IDX (real-time)"
+        except: pass
+
+        # ── Layer 2: FMP — fundamental terlengkap ──
+        try:
+            fmp = _fetch_fmp(ticker)
+            for k, v in fmp.items():
+                if v is not None:
+                    combined[k] = v
+            if fmp:
+                combined["source_fundamental"] = "FMP"
+        except: pass
+
+        # ── Layer 3: Finnhub — rasio tambahan ──
+        try:
+            fh = _fetch_finnhub(ticker)
+            for k, v in fh.items():
+                if k not in combined or combined[k] is None:
+                    combined[k] = v
+            if fh and "source_fundamental" not in combined:
+                combined["source_fundamental"] = "Finnhub"
+        except: pass
+
+        # ── Layer 4: Alpha Vantage — backup fundamental ──
+        try:
+            av = _fetch_alphavantage(ticker)
+            for k, v in av.items():
+                if k not in combined or combined[k] is None:
+                    combined[k] = v
+            if av and "source_fundamental" not in combined:
+                combined["source_fundamental"] = "AlphaVantage"
+        except: pass
+
+        # ── Layer 5: yfinance — harga + rasio kalau semua di atas gagal ──
         try:
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
             info = t.info
-            hist = t.history(period="5d")
-            if not hist.empty:
+            hist = t.history(period="5d", auto_adjust=True)
+            # Harga: pakai yfinance kalau IDX API gagal
+            if not combined.get("price") and not hist.empty:
                 combined["price"] = round(hist.iloc[-1]["Close"], 0)
+                combined["source_price"] = "yfinance (adjusted)"
+            # Rasio: isi yang masih kosong saja
             for k, v in {
                 "pe": info.get("trailingPE"),
                 "pbv": info.get("priceToBook"),
@@ -308,40 +435,11 @@ def _fetch_multi_fundamental(ticker):
                 "w52l": info.get("fiftyTwoWeekLow"),
                 "shares": info.get("sharesOutstanding"),
             }.items():
-                if v is not None:
-                    combined[k] = v
-            combined["source_price"] = "yfinance"
-        except: pass
-
-        # ── Layer 2: FMP (isi yang kosong + data historis) ──
-        try:
-            fmp = _fetch_fmp(ticker)
-            for k, v in fmp.items():
-                if k not in combined or combined[k] is None:
-                    combined[k] = v
-                elif k in ("hist_ni","hist_eps","hist_rev","sector","industry","description"):
-                    combined[k] = v  # selalu ambil dari FMP untuk data ini
-            if fmp:
-                combined["source_fundamental"] = "FMP"
-        except: pass
-
-        # ── Layer 3: Finnhub (isi yang masih kosong) ──
-        try:
-            fh = _fetch_finnhub(ticker)
-            for k, v in fh.items():
-                if k not in combined or combined[k] is None:
+                if v is not None and k not in combined:
                     combined[k] = v
         except: pass
 
-        # ── Layer 4: Alpha Vantage (backup terakhir) ──
-        try:
-            av = _fetch_alphavantage(ticker)
-            for k, v in av.items():
-                if k not in combined or combined[k] is None:
-                    combined[k] = v
-        except: pass
-
-        # ── Layer 5: Hitung manual dari rumus ──
+        # ── Layer 6: Hitung manual dari rumus ──
         price = combined.get("price")
         eps   = combined.get("eps")
         bv    = combined.get("bv")
@@ -418,7 +516,7 @@ def _fetch_us_china_stock(ticker, market="US"):
                     yf_ticker = ticker  # US langsung
 
                 t = yf.Ticker(yf_ticker)
-                hist = t.history(period="2d")
+                hist = t.history(period="5d", auto_adjust=True)
                 info = t.info
                 if not hist.empty:
                     last = hist.iloc[-1]
@@ -678,31 +776,59 @@ def _cache_info(ticker):
 def fetch_fundamental_with_cache(ticker):
     """
     Fetch fundamental dengan cache cerdas:
-    - Harga saham: SELALU fresh (dari yfinance, tidak di-cache)
+    - Harga saham: SELALU fresh (IDX API → Yahoo → yfinance, tidak di-cache)
     - Data fundamental: cache 85 hari (data kuartal update per 90 hari)
     """
-    # Cek cache untuk data fundamental
     cached = _cache_get(ticker, max_days=85)
 
-    if cached:
-        # Punya cache — hanya update harga terkini
+    def _get_fresh_price(ticker):
+        """Ambil harga terkini — IDX API dulu, fallback ke Yahoo, lalu yfinance."""
+        # Layer 1: IDX API
+        try:
+            import urllib.request, json as _j
+            req = urllib.request.Request(
+                f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}",
+                headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"}
+            )
+            with urllib.request.urlopen(req, timeout=5) as r:
+                d = _j.loads(r.read())
+            if d and d.get("LastPrice") and d["LastPrice"] > 0:
+                return d["LastPrice"], "IDX"
+        except: pass
+        # Layer 2: Yahoo Finance query API
+        try:
+            import urllib.request, json as _j
+            _url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}.JK?interval=1d&range=5d"
+            _req = urllib.request.Request(_url, headers={"User-Agent":"Mozilla/5.0"})
+            with urllib.request.urlopen(_req, timeout=5) as r:
+                _d = _j.loads(r.read())
+            _price = _d["chart"]["result"][0]["meta"].get("regularMarketPrice")
+            if _price and _price > 0:
+                return round(_price, 0), "Yahoo"
+        except: pass
+        # Layer 3: yfinance — last resort
         try:
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
-            hist = t.history(period="2d")
-            if not hist.empty:
-                cached["price"] = round(hist.iloc[-1]["Close"], 0)
-                cached["price_updated"] = datetime.now().strftime("%d %b %Y")
+            h = t.history(period="5d", auto_adjust=True)
+            if not h.empty:
+                return round(h.iloc[-1]["Close"], 0), "yfinance"
         except: pass
+        return None, None
+
+    if cached:
+        price, src = _get_fresh_price(ticker)
+        if price:
+            cached["price"] = price
+            cached["source_price"] = src
+            cached["price_updated"] = datetime.now().strftime("%d %b %Y %H:%M")
         cached["_from_cache"] = True
         return cached
     else:
-        # Tidak ada cache / expired — fetch semua dari API
         data = _fetch_multi_fundamental(ticker)
         if data and data.get("price"):
-            # Simpan ke cache (tanpa harga — harga selalu fresh)
             cache_data = {k: v for k, v in data.items()
-                         if k not in ("price", "price_updated", "_from_cache")}
+                         if k not in ("price", "source_price", "price_updated", "_from_cache")}
             _cache_set(ticker, cache_data)
         data["_from_cache"] = False
         return data
@@ -725,22 +851,68 @@ def build_context(prompt):
     if not tickers and not any(k in _p for k in _kw):
         return ""
 
-    # Deteksi apakah ini permintaan fundamental — jika ya, skip berita agar tidak overflow
-    _is_fundamental = any(k in _p for k in ["fundamental","laporan","keuangan","valuasi","roe","roa","per ","pbv"])
+    _is_fundamental = any(k in _p for k in [
+        "fundamental","laporan","keuangan","valuasi","roe","roa","per ","pbv",
+        "eps","nim","npl","car","ldr","bopo","cir","dividen","laba","revenue"
+    ])
 
     data = _fetch_all_data(tickers)
     current_year = datetime.now().year
     lines = [f"Tanggal: {datetime.now().strftime('%d %B %Y %H:%M WIB')} | Tahun: {current_year}"]
 
-    # Harga & rasio
+    # Harga & rasio dari _fetch_all_data
     for tk, d in data["prices"].items():
         arah = "▲" if d["chg"]>=0 else "▼"
-        line = f"{tk}: Rp{d['price']:,.0f} {arah}{abs(d['chg']):.2f}% [{d.get('source','')}]"
+        line = f"{tk}: Rp{d['price']:,.0f} {arah}{abs(d['chg']):.2f}% [Sumber:{d.get('source','')}]"
         if d.get("pe"): line += f" PER:{d['pe']:.1f}x"
         if d.get("pbv"): line += f" PBV:{d['pbv']:.1f}x"
         if d.get("roe"): line += f" ROE:{d['roe']*100:.1f}%"
         if d.get("eps"): line += f" EPS:Rp{d['eps']:,.0f}"
         lines.append(line)
+
+    # Tambah data fundamental dari FMP/Finnhub/AV jika analisa saham
+    if _is_fundamental and tickers:
+        for tk in tickers[:2]:
+            try:
+                fund = fetch_fundamental_with_cache(tk)
+                if fund:
+                    flines = [f"\n── DATA FUNDAMENTAL {tk} [{fund.get('source_fundamental','multi-source')}] ──"]
+                    if fund.get("price"):
+                        flines.append(f"Harga: Rp{fund['price']:,.0f} [Sumber:{fund.get('source_price','IDX')}]")
+                    for label, key, fmt in [
+                        ("ROE", "roe", lambda v: f"{v*100:.1f}%" if v<10 else f"{v:.1f}%"),
+                        ("ROA", "roa", lambda v: f"{v*100:.1f}%" if v<10 else f"{v:.1f}%"),
+                        ("NIM", "nim", lambda v: f"{v:.1f}%"),
+                        ("NPL Gross", "npl_gross", lambda v: f"{v:.1f}%"),
+                        ("NPL Net", "npl_net", lambda v: f"{v:.1f}%"),
+                        ("LDR", "ldr", lambda v: f"{v:.1f}%"),
+                        ("CAR", "car", lambda v: f"{v:.1f}%"),
+                        ("BOPO", "bopo", lambda v: f"{v:.1f}%"),
+                        ("PER", "pe", lambda v: f"{v:.1f}x"),
+                        ("PBV", "pbv", lambda v: f"{v:.1f}x"),
+                        ("EPS", "eps", lambda v: f"Rp{v:,.0f}"),
+                        ("DER", "der", lambda v: f"{v:.2f}x"),
+                        ("Div Yield", "div_yield", lambda v: f"{v*100:.1f}%" if v<1 else f"{v:.1f}%"),
+                        ("Market Cap", "mktcap", lambda v: f"Rp{v/1e12:.1f}T"),
+                        ("52W High", "w52h", lambda v: f"Rp{v:,.0f}"),
+                        ("52W Low", "w52l", lambda v: f"Rp{v:,.0f}"),
+                        ("Sektor", "sector", lambda v: str(v)),
+                    ]:
+                        val = fund.get(key)
+                        if val is not None:
+                            try: flines.append(f"{label}: {fmt(val)}")
+                            except: flines.append(f"{label}: {val}")
+                    # Data historis laba/EPS dari FMP
+                    if fund.get("hist_ni"):
+                        flines.append(f"Hist Laba Bersih: {fund['hist_ni']}")
+                    if fund.get("hist_eps"):
+                        flines.append(f"Hist EPS: {fund['hist_eps']}")
+                    if fund.get("hist_rev"):
+                        flines.append(f"Hist Revenue: {fund['hist_rev']}")
+                    if fund.get("_from_cache"):
+                        flines.append(f"(Cache: {fund.get('_cached_at','')[:10]})")
+                    lines.extend(flines)
+            except: pass
 
     # Berita hanya untuk non-fundamental agar tidak overflow token
     if not _is_fundamental and data["news"]:
@@ -795,7 +967,7 @@ def build_fundamental_from_text(prompt):
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
             info = t.info
-            hist_price = t.history(period="5d")
+            hist_price = t.history(period="5d", auto_adjust=True)
             current_year = datetime.now().year
 
             # Deteksi sektor otomatis
@@ -833,23 +1005,33 @@ def build_fundamental_from_text(prompt):
                      f"Sektor: {sektor} | Framework: {framework}"]
 
             # ── Harga & valuasi live ──
-            # Prioritas: yfinance → Finnhub → Alpha Vantage
-            price     = round(hist_price.iloc[-1]["Close"], 0) if not hist_price.empty else multi.get("price")
-            eps_yf    = info.get("trailingEps") or multi.get("eps")
-            bv_yf     = info.get("bookValue") or multi.get("bv")
-            pe_yf     = info.get("trailingPE") or multi.get("pe")
-            pbv_yf    = info.get("priceToBook") or multi.get("pbv")
-            shares    = info.get("sharesOutstanding") or multi.get("shares")
-            div_yield = info.get("dividendYield") or multi.get("div_yield")
-            roe_data  = info.get("returnOnEquity") or multi.get("roe")
-            roa_data  = info.get("returnOnAssets") or multi.get("roa")
+            # Prioritas harga: IDX API → FMP → Finnhub → AV → yfinance (terakhir)
+            price = multi.get("price")  # IDX API sudah di layer 1 _fetch_multi_fundamental
+            if not price and not hist_price.empty:
+                price = round(hist_price.iloc[-1]["Close"], 0)
+            price_src = multi.get("source_price", "yfinance")
+
+            # Rasio: utamakan FMP/Finnhub/AV, yfinance sebagai backup
+            eps_yf    = multi.get("eps") or info.get("trailingEps")
+            bv_yf     = multi.get("bv") or info.get("bookValue")
+            pe_yf     = multi.get("pe") or info.get("trailingPE")
+            pbv_yf    = multi.get("pbv") or info.get("priceToBook")
+            shares    = multi.get("shares") or info.get("sharesOutstanding")
+            div_yield = multi.get("div_yield") or info.get("dividendYield")
+            roe_data  = multi.get("roe") or info.get("returnOnEquity")
+            roa_data  = multi.get("roa") or info.get("returnOnAssets")
+            mktcap    = multi.get("mktcap") or info.get("marketCap")
+            w52h      = multi.get("w52h") or info.get("fiftyTwoWeekHigh")
+            w52l      = multi.get("w52l") or info.get("fiftyTwoWeekLow")
+            fund_src  = multi.get("source_fundamental", "yfinance")
 
             if price:
-                lines.append(f"💹 Harga Saham Saat Ini : Rp{price:,.0f} (per {datetime.now().strftime('%d %b %Y')})")
-            if info.get("marketCap"):
-                lines.append(f"Market Cap     : Rp{info['marketCap']/1e12:.1f} T")
-            if info.get("fiftyTwoWeekHigh"):
-                lines.append(f"52W High/Low   : Rp{info['fiftyTwoWeekHigh']:,.0f} / Rp{info['fiftyTwoWeekLow']:,.0f}")
+                lines.append(f"💹 Harga Saham Saat Ini : Rp{price:,.0f} (per {datetime.now().strftime('%d %b %Y')} | sumber: {price_src})")
+            if mktcap:
+                lines.append(f"Market Cap     : Rp{mktcap/1e12:.1f} T")
+            if w52h:
+                lines.append(f"52W High/Low   : Rp{w52h:,.0f} / Rp{w52l:,.0f}")
+            lines.append(f"Sumber Fundamental : {fund_src}")
 
             # PER — yfinance atau hitung manual
             if pe_yf:
@@ -1175,7 +1357,7 @@ def fetch_price_for_pdf(ticker):
         try:
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
-            hist = t.history(period="5d")
+            hist = t.history(period="5d", auto_adjust=True)
             info = t.info
             if not hist.empty:
                 price = round(hist.iloc[-1]["Close"], 0)
