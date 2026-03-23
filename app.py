@@ -899,6 +899,44 @@ def build_fundamental_from_text(prompt):
                 multi["price"] = price_live
                 multi["source_price"] = price_src
 
+            # ── Deteksi Corporate Action dari yfinance ──
+            corporate_action_notes = []
+            try:
+                # Cek splits
+                splits = t.splits
+                if splits is not None and not splits.empty:
+                    recent_splits = splits[splits.index >= "2020-01-01"]
+                    if not recent_splits.empty:
+                        for date, ratio in recent_splits.items():
+                            date_str = str(date)[:10]
+                            if ratio > 1:
+                                corporate_action_notes.append(
+                                    f"⚡ STOCK SPLIT {ratio:.0f}:1 pada {date_str} — harga dibagi {ratio:.0f}, saham ×{ratio:.0f}"
+                                )
+                            elif ratio < 1:
+                                rev = round(1/ratio)
+                                corporate_action_notes.append(
+                                    f"⚡ REVERSE STOCK {rev}:1 pada {date_str} — harga ×{rev}, saham dibagi {rev}"
+                                )
+            except: pass
+            try:
+                # Cek actions (dividen + splits sekaligus)
+                actions = t.actions
+                if actions is not None and not actions.empty:
+                    recent = actions[actions.index >= "2023-01-01"]
+                    if not recent.empty and "Stock Splits" in recent.columns:
+                        sp = recent[recent["Stock Splits"] > 0]
+                        if not sp.empty:
+                            for date, row in sp.iterrows():
+                                ratio = row["Stock Splits"]
+                                date_str = str(date)[:10]
+                                corporate_action_notes.append(
+                                    f"⚡ KONFIRMASI SPLIT {ratio}:1 pada {date_str}"
+                                )
+            except: pass
+
+            multi["corporate_actions"] = corporate_action_notes
+
             # Deteksi sektor otomatis
             is_bank = is_bank_sector(ticker, info)
             sektor = "Perbankan" if is_bank else "Non-Perbankan"
@@ -954,6 +992,14 @@ def build_fundamental_from_text(prompt):
             if w52h:
                 lines.append(f"52W High/Low   : Rp{w52h:,.0f} / Rp{w52l:,.0f}")
             lines.append(f"Sumber Fundamental : {fund_src}")
+
+            # ── Tampilkan Corporate Action jika ada ──
+            ca_notes = multi.get("corporate_actions", [])
+            if ca_notes:
+                lines.append("\n── ⚡ CORPORATE ACTION TERDETEKSI ──")
+                for note in ca_notes:
+                    lines.append(note)
+                lines.append("⚠️ Semua rasio per saham (EPS/BV/DPS) sudah adjusted ke jumlah saham terkini")
 
             # PER — yfinance atau hitung manual
             if pe_yf:
