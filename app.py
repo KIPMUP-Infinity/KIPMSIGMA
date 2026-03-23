@@ -2789,7 +2789,7 @@ if result is not None:
             try:
                 enrichment = enrich_pdf_context(txt)
             except: pass
-            pdf_content = f"[PDF: {file_obj.name}]\n{txt[:2000]}"
+            pdf_content = f"[PDF: {file_obj.name}]\n{txt[:40000]}"
             if enrichment:
                 pdf_content += enrichment
             st.session_state.pdf_data = (pdf_content, file_obj.name)
