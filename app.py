@@ -724,15 +724,14 @@ import hashlib as _hashlib
 def _cache_key(ticker):
     return os.path.join(CACHE_DIR, f"{ticker.upper()}.json")
 
-def _cache_get(ticker, max_days=85):
-    """Ambil dari cache jika masih fresh (default 85 hari untuk data kuartal)."""
+def _cache_get(ticker, max_days=7):
+    """Ambil dari cache jika masih fresh (7 hari — agar data fundamental tetap terkini)."""
     try:
         path = _cache_key(ticker)
         if not os.path.exists(path):
             return None
         with open(path) as f:
             cached = json.load(f)
-        # Cek umur cache
         cached_at = cached.get("_cached_at", "")
         if not cached_at:
             return None
@@ -819,6 +818,22 @@ def fetch_fundamental_with_cache(ticker):
     if cached:
         price, src = _get_fresh_price(ticker)
         if price:
+            # Cek anomali harga — kalau beda >30% dari cache, kemungkinan ada corporate action
+            # Force refresh cache agar data fundamental ikut terupdate
+            cached_price = cached.get("price") or cached.get("eps", 0) * cached.get("pe", 0)
+            if cached_price and cached_price > 0 and price > 0:
+                diff_pct = abs(price - cached_price) / cached_price
+                if diff_pct > 0.30:
+                    # Harga beda >30% dari cache → kemungkinan stock split/reverse stock
+                    # Force fetch ulang semua data
+                    data = _fetch_multi_fundamental(ticker)
+                    if data and data.get("price"):
+                        cache_data = {k: v for k, v in data.items()
+                                     if k not in ("price", "source_price", "price_updated", "_from_cache")}
+                        _cache_set(ticker, cache_data)
+                    data["_from_cache"] = False
+                    data["_price_anomaly"] = True
+                    return data
             cached["price"] = price
             cached["source_price"] = src
             cached["price_updated"] = datetime.now().strftime("%d %b %Y %H:%M")
