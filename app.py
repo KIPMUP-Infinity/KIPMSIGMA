@@ -3081,6 +3081,39 @@ if prompt:
                                         ans = _parts[0]["text"]
                         except: pass
 
+                    # Fallback Cerebras jika Gemini juga gagal
+                    if ans is None:
+                        try:
+                            _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
+                            if _cb_key:
+                                import urllib.request as _ucb, json as _jcb
+                                _cb_msgs = []
+                                for _cm in _msgs:
+                                    _cr = _cm.get("role","")
+                                    _ct = (_cm.get("content","") or "")[:8000]
+                                    if _cr in ("system","user","assistant"):
+                                        _cb_msgs.append({"role": _cr, "content": _ct})
+                                _cb_payload = {
+                                    "model": "llama-3.3-70b",
+                                    "messages": _cb_msgs,
+                                    "temperature": 0.7,
+                                    "max_tokens": 2048
+                                }
+                                _cb_req = _ucb.Request(
+                                    "https://api.cerebras.ai/v1/chat/completions",
+                                    data=_jcb.dumps(_cb_payload).encode(),
+                                    headers={
+                                        "Content-Type": "application/json",
+                                        "Authorization": f"Bearer {_cb_key}"
+                                    }
+                                )
+                                with _ucb.urlopen(_cb_req, timeout=30) as _cbr:
+                                    _cbd = _jcb.loads(_cbr.read())
+                                _cb_ans = _cbd.get("choices",[{}])[0].get("message",{}).get("content","")
+                                if _cb_ans:
+                                    ans = _cb_ans
+                        except: pass
+
                     if ans is None:
                         _n_rl = len(_rate_limited_keys)
                         _n_total = len(_groq_keys)
