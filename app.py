@@ -718,135 +718,13 @@ def build_global_context(prompt):
     return result[0]
 
 
-# ─── CACHE SISTEM — simpan data fundamental agar hemat API request ───
-import hashlib as _hashlib
-
-def _cache_key(ticker):
-    return os.path.join(CACHE_DIR, f"{ticker.upper()}.json")
-
-def _cache_get(ticker, max_days=7):
-    """Ambil dari cache jika masih fresh (7 hari — agar data fundamental tetap terkini)."""
-    try:
-        path = _cache_key(ticker)
-        if not os.path.exists(path):
-            return None
-        with open(path) as f:
-            cached = json.load(f)
-        cached_at = cached.get("_cached_at", "")
-        if not cached_at:
-            return None
-        from datetime import datetime as _dt
-        age = (_dt.now() - _dt.fromisoformat(cached_at)).days
-        if age > max_days:
-            return None  # Cache expired
-        return cached
-    except:
-        return None
-
-def _cache_set(ticker, data):
-    """Simpan data ke cache dengan timestamp."""
-    try:
-        path = _cache_key(ticker)
-        data["_cached_at"] = datetime.now().isoformat()
-        data["_ticker"] = ticker.upper()
-        with open(path, "w") as f:
-            json.dump(data, f, ensure_ascii=False, default=str)
-    except:
-        pass
-
-def _cache_info(ticker):
-    """Info cache — berapa hari lagi valid."""
-    try:
-        path = _cache_key(ticker)
-        if not os.path.exists(path):
-            return None
-        with open(path) as f:
-            cached = json.load(f)
-        from datetime import datetime as _dt
-        cached_at = cached.get("_cached_at","")
-        if not cached_at:
-            return None
-        age = (_dt.now() - _dt.fromisoformat(cached_at)).days
-        sisa = 85 - age
-        return {"age": age, "sisa": sisa, "cached_at": cached_at[:10]}
-    except:
-        return None
+# ─── CACHE DIHAPUS — fetch langsung setiap saat untuk data selalu fresh ───
 
 def fetch_fundamental_with_cache(ticker):
-    """
-    Fetch fundamental dengan cache cerdas:
-    - Harga saham: SELALU fresh (IDX API → Yahoo → yfinance, tidak di-cache)
-    - Data fundamental: cache 85 hari (data kuartal update per 90 hari)
-    """
-    cached = _cache_get(ticker, max_days=85)
-
-    def _get_fresh_price(ticker):
-        """Ambil harga terkini — IDX API dulu, fallback ke Yahoo, lalu yfinance."""
-        # Layer 1: IDX API
-        try:
-            import urllib.request, json as _j
-            req = urllib.request.Request(
-                f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}",
-                headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"}
-            )
-            with urllib.request.urlopen(req, timeout=5) as r:
-                d = _j.loads(r.read())
-            if d and d.get("LastPrice") and d["LastPrice"] > 0:
-                return d["LastPrice"], "IDX"
-        except: pass
-        # Layer 2: Yahoo Finance query API
-        try:
-            import urllib.request, json as _j
-            _url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}.JK?interval=1d&range=5d"
-            _req = urllib.request.Request(_url, headers={"User-Agent":"Mozilla/5.0"})
-            with urllib.request.urlopen(_req, timeout=5) as r:
-                _d = _j.loads(r.read())
-            _price = _d["chart"]["result"][0]["meta"].get("regularMarketPrice")
-            if _price and _price > 0:
-                return round(_price, 0), "Yahoo"
-        except: pass
-        # Layer 3: yfinance — last resort
-        try:
-            import yfinance as yf
-            t = yf.Ticker(f"{ticker}.JK")
-            h = t.history(period="5d", auto_adjust=True)
-            if not h.empty:
-                return round(h.iloc[-1]["Close"], 0), "yfinance"
-        except: pass
-        return None, None
-
-    if cached:
-        price, src = _get_fresh_price(ticker)
-        if price:
-            # Cek anomali harga — kalau beda >30% dari cache, kemungkinan ada corporate action
-            # Force refresh cache agar data fundamental ikut terupdate
-            cached_price = cached.get("price") or cached.get("eps", 0) * cached.get("pe", 0)
-            if cached_price and cached_price > 0 and price > 0:
-                diff_pct = abs(price - cached_price) / cached_price
-                if diff_pct > 0.30:
-                    # Harga beda >30% dari cache → kemungkinan stock split/reverse stock
-                    # Force fetch ulang semua data
-                    data = _fetch_multi_fundamental(ticker)
-                    if data and data.get("price"):
-                        cache_data = {k: v for k, v in data.items()
-                                     if k not in ("price", "source_price", "price_updated", "_from_cache")}
-                        _cache_set(ticker, cache_data)
-                    data["_from_cache"] = False
-                    data["_price_anomaly"] = True
-                    return data
-            cached["price"] = price
-            cached["source_price"] = src
-            cached["price_updated"] = datetime.now().strftime("%d %b %Y %H:%M")
-        cached["_from_cache"] = True
-        return cached
-    else:
-        data = _fetch_multi_fundamental(ticker)
-        if data and data.get("price"):
-            cache_data = {k: v for k, v in data.items()
-                         if k not in ("price", "source_price", "price_updated", "_from_cache")}
-            _cache_set(ticker, cache_data)
-        data["_from_cache"] = False
-        return data
+    """Fetch fundamental langsung — selalu fresh, tanpa cache."""
+    data = _fetch_multi_fundamental(ticker)
+    data["_from_cache"] = False
+    return data
 
 def build_context(prompt):
     """Build market context — inject ke prompt jika relevan."""
@@ -924,8 +802,8 @@ def build_context(prompt):
                         flines.append(f"Hist EPS: {fund['hist_eps']}")
                     if fund.get("hist_rev"):
                         flines.append(f"Hist Revenue: {fund['hist_rev']}")
-                    if fund.get("_from_cache"):
-                        flines.append(f"(Cache: {fund.get('_cached_at','')[:10]})")
+                    if fund.get("source_fundamental"):
+                        flines.append(f"(Sumber: {fund.get('source_fundamental')})")
                     lines.extend(flines)
             except: pass
 
@@ -1007,13 +885,8 @@ def build_fundamental_from_text(prompt):
                     framework = "Buffett + Graham"
                     per_default = 15.0
 
-            # Info cache
-            cache_info = _cache_info(ticker)
-            cache_label = ""
-            if _from_cache and cache_info:
-                cache_label = f" [cache: {cache_info['cached_at']}, sisa {cache_info['sisa']} hari]"
-            elif not _from_cache:
-                cache_label = " [data baru di-fetch]"
+            # Info sumber data
+            cache_label = " [data fresh]"
 
             lines = [f"=== DATA FUNDAMENTAL {ticker} ({sektor}){cache_label} ===",
                      f"Tahun sekarang: {current_year}",
@@ -1493,8 +1366,8 @@ st.set_page_config(
 
 DATA_DIR = ".sigma_data"
 os.makedirs(DATA_DIR, exist_ok=True)
-CACHE_DIR = os.path.join(DATA_DIR, "fundamental_cache")
-os.makedirs(CACHE_DIR, exist_ok=True)
+DATA_DIR = os.path.join(os.path.expanduser("~"), ".sigma_data")
+os.makedirs(DATA_DIR, exist_ok=True)
 
 # ─────────────────────────────────────────────
 # PERSISTENCE
