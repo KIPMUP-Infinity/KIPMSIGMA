@@ -2936,11 +2936,9 @@ if prompt:
                             _groq_keys.append(_k)
                     if not _groq_keys:
                         _groq_keys = [""]
-                    # Rotasi 4 model — kalau satu limit, coba model lain di key yang sama
+                    # Rotasi 2 model yang aktif di Groq
                     _models = [
-                        "llama-3.3-70b-versatile",   # terbaik
-                        "llama-3.1-70b-versatile",   # alternatif 70b
-                        "llama3-70b-8192",            # 70b context panjang
+                        "llama-3.3-70b-versatile",   # utama - terbaik
                         "llama-3.1-8b-instant",      # fallback cepat
                     ]
 
@@ -2967,8 +2965,12 @@ if prompt:
                                 if any(x in _err_str for x in ["rate_limit","429","too many","quota"]):
                                     _rate_limited_keys.add(_gkey)
                                     break  # Langsung ke key berikutnya
-                                # Error lain (koneksi, dll) → coba model berikutnya
-                                pass
+                                # Model tidak ada / deprecated → coba model berikutnya, jangan tandai key
+                                elif any(x in _err_str for x in ["model","not found","decommissioned","deprecated"]):
+                                    pass  # Coba model berikutnya
+                                # Error lain → coba model berikutnya
+                                else:
+                                    pass
 
                     # Fallback Cerebras jika semua Groq gagal
                     if ans is None:
