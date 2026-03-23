@@ -1526,22 +1526,41 @@ SC=IMG Sekuritas | TX=Dhanawibawa
 
 ── POLA BANDARMOLOGI ──
 
-BULLISH:
-✅ Asing net buy besar + volume naik + harga naik = Akumulasi asing → BULLISH kuat
-✅ BUMN masuk besar = dukungan pemerintah → BULLISH
-✅ Asing net buy + harga sideways = Akumulasi diam-diam → potensi breakout
-✅ Volume anomali 2-3x rata-rata + harga naik = Big lot masuk
+LOGIKA UTAMA — JUMLAH BROKER BUYER vs SELLER:
+⚠️ COUNTER-INTUITIVE — banyak buyer BUKAN berarti bullish:
 
-BEARISH / WARNING:
-⚠️ Asing net sell + volume naik + harga turun = Distribusi asing → BEARISH
-⚠️ Asing distribusi + lokal beli = Asing keluar, ritel diiming-iming → DANGER
-⚠️ Volume besar tapi harga tidak naik = Distribusi diam-diam → WARNING
-⚠️ Semua kategori net sell = Distribusi massal → KELUAR
+DISTRIBUSI (Bandar Jual):
+  Buyer broker BANYAK + Seller broker SEDIKIT = DISTRIBUSI
+  → Market maker/bandar jual ke banyak ritel yang beli
+  → "Barang disebarkan ke banyak tangan kecil"
+  → Contoh BBRI: 61 buyer vs 11 seller = DISTRIBUSI
+  → Harga bisa naik sementara tapi akan turun setelah distribusi selesai
+
+AKUMULASI (Bandar Kumpulkan):
+  Buyer broker SEDIKIT + Seller broker BANYAK = AKUMULASI
+  → Sedikit tangan besar beli dari banyak yang panik jual
+  → "Barang dikumpulkan ke sedikit tangan kuat"
+  → Harga bisa turun sementara tapi akan naik setelah akumulasi selesai
+
+KONFIRMASI DENGAN NET VALUE:
+  Top 1/3/5 broker negatif (Big Dist) + banyak buyer = distribusi terkonfirmasi
+  Top 1/3/5 broker positif (Big Acc) + sedikit buyer = akumulasi terkonfirmasi
+
+POLA ASING:
+✅ Asing net buy + harga sideways = Akumulasi diam-diam → potensi breakout
+✅ Asing net buy besar + volume naik = Akumulasi asing → BULLISH kuat
+⚠️ Asing net sell besar (1 broker dominan) = Distribusi institusi → DANGER
+⚠️ Asing distribusi + lokal/ritel beli = Asing keluar, ritel nampung → WARNING
 
 POLA BUMN:
-ℹ️ Asing net sell + BUMN masuk = BUMN stabilisasi, tapi asing kabur
-ℹ️ BUMN akumulasi konsisten = ada agenda/program pemerintah
+ℹ️ BUMN beli besar = stabilisasi pemerintah, bukan akumulasi murni
+ℹ️ Asing jual + BUMN beli = BUMN serap tekanan, tapi asing tetap kabur
 ℹ️ BUMN net sell = privatisasi atau rebalancing portofolio
+
+POLA VOLUME:
+⚠️ Volume besar + harga tidak naik = Distribusi diam-diam → WARNING
+⚠️ Volume besar + harga turun = Distribusi massal → KELUAR
+✅ Volume kecil + harga naik perlahan = Akumulasi stealth → perhatikan
 
 ── CARA ANALISA SS BROKER ──
 1. Baca kode broker → identifikasi warna (merah/hijau/ungu)
