@@ -3523,14 +3523,46 @@ except TypeError:
 
 prompt = None
 file_obj = None
+multi_images = []  # Support hingga 10 gambar
 
 if result is not None:
     if hasattr(result, 'text'):
         prompt = (result.text or "").strip()
         files = getattr(result, 'files', None) or []
-        if files: file_obj = files[0]
+        # Ambil semua file, max 10 gambar
+        img_files = [f for f in files if f.type != "application/pdf"]
+        pdf_files = [f for f in files if f.type == "application/pdf"]
+        if img_files:
+            multi_images = img_files[:10]  # max 10 gambar
+            file_obj = img_files[0]  # backward compat
+        elif pdf_files:
+            file_obj = pdf_files[0]
     elif isinstance(result, str):
         prompt = result.strip()
+
+    # ── Handler 5 Sila tanpa emiten → tampilkan menu ──
+    if prompt and prompt.strip().lower() in ["5 sila", "lima sila", "5sila"]:
+        active = next((s for s in st.session_state.sessions
+                      if s["id"] == st.session_state.active_id), None)
+        if active:
+            menu_text = """╔══════════════════════════════════════╗
+║         5 SILA SIGMA — MENU          ║
+╠══════════════════════════════════════╣
+║ 1. Kesimpulan Dampak [topik/berita]  ║
+║ 2. Bandarmologi [emiten]             ║
+║ 3. Fundamental [emiten]              ║
+║ 4. Teknikal [emiten]                 ║
+║ 5. Analisa Lengkap [emiten]          ║
+╚══════════════════════════════════════╝
+Ketik salah satu + nama emiten/topik.
+Contoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
+            active["messages"].append({"role": "user", "content": "5 sila", "display": "5 sila"})
+            active["messages"].append({"role": "assistant", "content": menu_text})
+            with st.chat_message("user"):
+                st.markdown("5 sila")
+            with st.chat_message("assistant"):
+                st.markdown(menu_text)
+            st.rerun()
 
     if file_obj:
         raw = file_obj.read()
@@ -3625,26 +3657,54 @@ if prompt:
 
     active["messages"].append(user_msg)
     with st.chat_message("user"):
-        if img_data:
+        if multi_images and len(multi_images) > 1:
+            # Tampilkan semua gambar
+            cols = st.columns(min(len(multi_images), 5))
+            for i, _mf in enumerate(multi_images[:10]):
+                try:
+                    _mraw = _mf.read() if hasattr(_mf, 'read') else b""
+                    _mb64 = base64.b64encode(_mraw).decode()
+                    _mmime = "image/png" if _mf.name.endswith(".png") else "image/jpeg"
+                    with cols[i % 5]:
+                        st.markdown(f'<img src="data:{_mmime};base64,{_mb64}" style="max-width:100%;max-height:150px;border-radius:8px;">', unsafe_allow_html=True)
+                except: pass
+        elif img_data:
             st.markdown(f'<img src="data:{img_data[1]};base64,{img_data[0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(prompt)
 
     try:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
-                if img_data:
-                    # Coba Groq vision
+                if img_data or (multi_images and len(multi_images) > 0):
+                    # Coba Groq vision — support multi gambar
                     _img_ans = None
                     try:
                         _groq_vision = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                        # Bangun content dengan semua gambar (max 10)
+                        _content = []
+                        # Gambar pertama sudah di img_data, sisanya di multi_images
+                        all_imgs = []
+                        if multi_images:
+                            for _mf in multi_images[:10]:
+                                try:
+                                    _mraw = _mf.read()
+                                    _mb64 = base64.b64encode(_mraw).decode()
+                                    _mmime = "image/png" if _mf.name.endswith(".png") else "image/jpeg"
+                                    all_imgs.append((_mb64, _mmime, _mf.name))
+                                except: pass
+                        elif img_data:
+                            all_imgs = [(img_data[0], img_data[1], img_data[2])]
+
+                        for _ib64, _imime, _iname in all_imgs:
+                            _content.append({"type": "image_url", "image_url": {"url": f"data:{_imime};base64,{_ib64}"}})
+
+                        _content.append({"type": "text", "text": f"{prompt}\n\nAda {len(all_imgs)} gambar yang dikirim. Analisa semua gambar secara menyeluruh."})
+
                         _img_res = _groq_vision.chat.completions.create(
                             model="meta-llama/llama-4-scout-17b-16e-instruct",
                             messages=[
-                                {"role": "system", "content": "Kamu SIGMA, analis chart. Analisa gambar langsung. Jawab Bahasa Indonesia."},
-                                {"role": "user", "content": [
-                                    {"type": "image_url", "image_url": {"url": f"data:{img_data[1]};base64,{img_data[0]}"}},
-                                    {"type": "text", "text": prompt}
-                                ]}
+                                {"role": "system", "content": st.session_state.sessions[0]["messages"][0]["content"] if False else "Kamu SIGMA, asisten trading KIPM. Analisa semua gambar yang dikirim. Cek divergence, bandarmologi, teknikal MnM Strategy+. Jawab Bahasa Indonesia. DYOR."},
+                                {"role": "user", "content": _content}
                             ],
                             max_tokens=2048
                         )
