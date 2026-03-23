@@ -3753,11 +3753,14 @@ if prompt:
                     _p_lower = prompt.lower() if prompt else ""
 
                     # Deteksi jenis request
+                    _is_fundamental = _no_history or any(k in _p_lower for k in [
+                        "fundamental","valuasi","laporan keuangan","keuangan",
+                        "roe","roa","per ","pbv","analisa saham","laba","eps"
+                    ])
                     _is_analisa_lengkap = any(k in _p_lower for k in [
-                        "analisa lengkap","full analisa","semua analisa",
+                        "analisa lengkap","full analisa","5 sila",
                         "kesimpulan bandarmologi","bandarmologi","broker",
                         "teknikal","analisa chart","divergen","divergence",
-                        "fundamental","valuasi","laporan keuangan",
                         "kesimpulan dampak","dampak","pengaruh","efek",
                         "akumulasi","distribusi","bandar","volume anomali",
                         "siklus","shakeout","breakout","breakdown"
@@ -3773,12 +3776,35 @@ IDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=
 5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]"""
                     }
 
-                    if _no_history or _is_big or _is_analisa_lengkap:
-                        # TIER 3: Analisa besar/lengkap → system prompt PENUH
+                    # TIER 2: Fundamental → system prompt MEDIUM (hanya bagian fundamental)
+                    _sys_medium = {
+                        "role": "system",
+                        "content": """Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.
+Profesional dalam analisa fundamental. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.
+IDX = LONG ONLY. Kalimat sakti: "Beli bisnis bagus di harga murah, bukan harga murah tanpa bisnis bagus"
+
+FRAMEWORK FUNDAMENTAL:
+Bank: NIM>4%|NPL<3%|LDR 80-92%|CAR>14%|ROA>1.5%|ROE>15%|BOPO<70%|CIR<45%
+Umum: ROE>15%|DER<0.5|EPS growth konsisten|PBV<1.5|PER<15|FCF>NI
+DISIPLIN DATA: gunakan data terbaru, jangan pakai 2018-2020 kalau ada 2023-2025
+CORPORATE ACTION: cek split/reverse/right issue jika harga anomali
+FORMAT: 📋 ANALISA FUNDAMENTAL — [EMITEN] (2026) | harga | sektor | profitabilitas | valuasi | tren | proyeksi | verdict
+Icon: ✅ pass | ⚠️ perhatian | ❌ fail — pilih SATU saja"""
+                    }
+
+                    if _is_analisa_lengkap or _is_big:
+                        # TIER 3: Analisa lengkap/bandarmologi → system prompt PENUH
                         _msgs = [
                             _all_msgs[0],
                             {"role": _all_msgs[-1]["role"],
                              "content": _last_content[:20000]}
+                        ]
+                    elif _is_fundamental:
+                        # TIER 2: Fundamental → system prompt MEDIUM, hemat token
+                        _msgs = [
+                            _sys_medium,
+                            {"role": _all_msgs[-1]["role"],
+                             "content": _last_content[:15000]}
                         ]
                     else:
                         # TIER 1: Chat biasa → system prompt PENDEK
