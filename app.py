@@ -1905,28 +1905,36 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             if _del_sid:
                 saved_pre = load_user(user_info["email"])
                 if saved_pre and saved_pre.get("sessions"):
-                    # Hapus session dari data disk
                     new_sessions = [s for s in saved_pre["sessions"] if s["id"] != _del_sid]
                     if not new_sessions:
                         new_sessions = [{"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru",
-                                        "created": datetime.now().strftime("%d/%m %H:%M"), "messages": [SYSTEM_PROMPT]}]
+                                        "created": datetime.now().strftime("%d/%m %H:%M"), "messages": []}]
                     new_active = saved_pre.get("active_id")
                     if new_active == _del_sid:
                         new_active = new_sessions[0]["id"]
-                    # Simpan ke disk SEKARANG
                     save_user(user_info["email"], {
                         "theme": saved_pre.get("theme", "dark"),
                         "sessions": new_sessions,
                         "active_id": new_active,
                     })
-                st.query_params.pop("del")
+                try: st.query_params.pop("del")
+                except: pass
 
             # Load sessions dari disk (sudah terupdate jika ada delete)
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
                 if saved.get("sessions"):
-                    st.session_state.sessions = saved["sessions"]
+                    _loaded = saved["sessions"]
+                    # Inject system prompt ke semua session
+                    for _s in _loaded:
+                        if not _s.get("messages"):
+                            _s["messages"] = [SYSTEM_PROMPT]
+                        elif _s["messages"][0].get("role") != "system":
+                            _s["messages"].insert(0, SYSTEM_PROMPT)
+                        else:
+                            _s["messages"][0] = SYSTEM_PROMPT
+                    st.session_state.sessions = _loaded
                     st.session_state.active_id = saved.get("active_id")
             st.session_state.data_loaded = True
             restore_images_from_messages()
@@ -1944,7 +1952,16 @@ if st.session_state.user and not st.session_state.data_loaded:
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
         if saved.get("sessions") and not st.session_state.sessions:
-            st.session_state.sessions = saved["sessions"]
+            _loaded2 = saved["sessions"]
+            # Inject system prompt
+            for _s in _loaded2:
+                if not _s.get("messages"):
+                    _s["messages"] = [SYSTEM_PROMPT]
+                elif _s["messages"][0].get("role") != "system":
+                    _s["messages"].insert(0, SYSTEM_PROMPT)
+                else:
+                    _s["messages"][0] = SYSTEM_PROMPT
+            st.session_state.sessions = _loaded2
             st.session_state.active_id = saved.get("active_id")
     st.session_state.data_loaded = True
     restore_images_from_messages()
