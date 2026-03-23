@@ -2912,17 +2912,25 @@ if prompt:
                     _is_big = len(_last_content) > 2000
                     _no_history = st.session_state.pop("fund_no_history", False)
 
+                    # System prompt pendek untuk chat biasa — hemat token
+                    _sys_short = {
+                        "role": "system",
+                        "content": """Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.
+Ramah saat ngobrol, profesional saat analisa. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.
+Kemampuan: teknikal (MnM Strategy+), fundamental, bandarmologi, makro, umum.
+IDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25."""
+                    }
+
                     if _no_history or _is_big:
-                        # Fundamental atau PDF — kirim hanya system + pesan terakhir
-                        # Hindari konteks percakapan sebelumnya agar tidak ada "maaf"
+                        # Analisa besar — kirim system prompt PENUH
                         _msgs = [
-                            _all_msgs[0],  # system prompt
+                            _all_msgs[0],
                             {"role": _all_msgs[-1]["role"],
                              "content": _last_content[:20000]}
                         ]
                     else:
-                        # Chat biasa — kirim history normal (max 5 pesan terakhir)
-                        _msgs = [_all_msgs[0]] + _all_msgs[-4:]
+                        # Chat biasa — pakai system prompt PENDEK, hemat token
+                        _msgs = [_sys_short] + _all_msgs[-4:]
 
                     # Urutan: Groq → Cerebras
                     ans = None
