@@ -183,8 +183,8 @@ def _fetch_all_data(tickers):
     return result
 
 def _fetch_finnhub(ticker, api_key=None):
-    api_key = api_key or st.secrets.get("FINNHUB_KEY", "")
     """Fetch fundamental data dari Finnhub."""
+    api_key = api_key or st.secrets.get("FINNHUB_KEY", "")
     try:
         import urllib.request, json as _j
         # Basic financials
@@ -223,7 +223,7 @@ def _fetch_alphavantage(ticker, api_key=None):
         import urllib.request, json as _j
         result = {}
         # Overview (fundamental)
-        url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={ticker}.JKT&apikey={api_key}"
+        url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={ticker}.JK&apikey={api_key}"
         req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=5) as r:
             data = _j.loads(r.read())
@@ -253,70 +253,77 @@ def _fetch_alphavantage(ticker, api_key=None):
         return {}
 
 def _fetch_fmp(ticker, api_key=None):
-    api_key = api_key or st.secrets.get("FMP_KEY", "")
     """Fetch fundamental dari Financial Modeling Prep — 250 req/hari."""
+    api_key = api_key or st.secrets.get("FMP_KEY", "")
     try:
         import urllib.request, json as _j
         result = {}
         base = "https://financialmodelingprep.com/api/v3"
 
         # Profile (harga, market cap, sektor, deskripsi)
-        url = f"{base}/profile/{ticker}.JK?apikey={api_key}"
-        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=5) as r:
-            data = _j.loads(r.read())
-        if data and isinstance(data, list) and len(data) > 0:
-            d = data[0]
-            if d.get("price"): result["price"] = d["price"]
-            if d.get("mktCap"): result["mktcap"] = d["mktCap"]
-            if d.get("pe"): result["pe"] = d["pe"]
-            if d.get("eps"): result["eps"] = d["eps"]
-            if d.get("beta"): result["beta"] = d["beta"]
-            if d.get("sector"): result["sector"] = d["sector"]
-            if d.get("industry"): result["industry"] = d["industry"]
-            if d.get("description"): result["description"] = d["description"][:300]
+        try:
+            url = f"{base}/profile/{ticker}.JK?apikey={api_key}"
+            req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=5) as r:
+                data = _j.loads(r.read())
+            if data and isinstance(data, list) and len(data) > 0:
+                d = data[0]
+                if d.get("price"): result["price"] = d["price"]
+                if d.get("mktCap"): result["mktcap"] = d["mktCap"]
+                if d.get("pe"): result["pe"] = d["pe"]
+                if d.get("eps"): result["eps"] = d["eps"]
+                if d.get("beta"): result["beta"] = d["beta"]
+                if d.get("sector"): result["sector"] = d["sector"]
+                if d.get("industry"): result["industry"] = d["industry"]
+                if d.get("description"): result["description"] = d["description"][:300]
+        except: pass
 
         # Key Metrics TTM (ROE, ROA, PBV, dll)
-        url2 = f"{base}/key-metrics-ttm/{ticker}.JK?apikey={api_key}"
-        req2 = urllib.request.Request(url2, headers={"User-Agent":"Mozilla/5.0"})
-        with urllib.request.urlopen(req2, timeout=5) as r2:
-            data2 = _j.loads(r2.read())
-        if data2 and isinstance(data2, list) and len(data2) > 0:
-            m = data2[0]
-            if m.get("roeTTM"): result["roe"] = m["roeTTM"]
-            if m.get("roaTTM"): result["roa"] = m["roaTTM"]
-            if m.get("pbRatioTTM"): result["pbv"] = m["pbRatioTTM"]
-            if m.get("peRatioTTM"): result["pe"] = result.get("pe") or m["peRatioTTM"]
-            if m.get("dividendYieldTTM"): result["div_yield"] = m["dividendYieldTTM"]
-            if m.get("debtToEquityTTM"): result["der"] = m["debtToEquityTTM"]
-            if m.get("currentRatioTTM"): result["current_ratio"] = m["currentRatioTTM"]
-            if m.get("netProfitMarginTTM"): result["net_margin"] = m["netProfitMarginTTM"]
-            if m.get("bookValuePerShareTTM"): result["bv"] = m["bookValuePerShareTTM"]
-            if m.get("earningsYieldTTM"): result["earnings_yield"] = m["earningsYieldTTM"]
-            if m.get("freeCashFlowPerShareTTM"): result["fcf_per_share"] = m["freeCashFlowPerShareTTM"]
+        try:
+            url2 = f"{base}/key-metrics-ttm/{ticker}.JK?apikey={api_key}"
+            req2 = urllib.request.Request(url2, headers={"User-Agent":"Mozilla/5.0"})
+            with urllib.request.urlopen(req2, timeout=5) as r2:
+                data2 = _j.loads(r2.read())
+            if data2 and isinstance(data2, list) and len(data2) > 0:
+                m = data2[0]
+                if m.get("roeTTM"): result["roe"] = m["roeTTM"]
+                if m.get("roaTTM"): result["roa"] = m["roaTTM"]
+                if m.get("pbRatioTTM"): result["pbv"] = m["pbRatioTTM"]
+                if m.get("peRatioTTM"): result["pe"] = result.get("pe") or m["peRatioTTM"]
+                if m.get("dividendYieldTTM"): result["div_yield"] = m["dividendYieldTTM"]
+                if m.get("debtToEquityTTM"): result["der"] = m["debtToEquityTTM"]
+                if m.get("currentRatioTTM"): result["current_ratio"] = m["currentRatioTTM"]
+                if m.get("netProfitMarginTTM"): result["net_margin"] = m["netProfitMarginTTM"]
+                if m.get("bookValuePerShareTTM"): result["bv"] = m["bookValuePerShareTTM"]
+                if m.get("earningsYieldTTM"): result["earnings_yield"] = m["earningsYieldTTM"]
+                if m.get("freeCashFlowPerShareTTM"): result["fcf_per_share"] = m["freeCashFlowPerShareTTM"]
+        except: pass
 
         # Income Statement historis (3 tahun)
-        url3 = f"{base}/income-statement/{ticker}.JK?limit=4&apikey={api_key}"
-        req3 = urllib.request.Request(url3, headers={"User-Agent":"Mozilla/5.0"})
-        with urllib.request.urlopen(req3, timeout=5) as r3:
-            data3 = _j.loads(r3.read())
-        if data3 and isinstance(data3, list):
-            hist_ni = []
-            hist_eps = []
-            hist_rev = []
-            for row in data3[:4]:
-                yr = str(row.get("date",""))[:4]
-                ni = row.get("netIncome")
-                eps = row.get("eps")
-                rev = row.get("revenue")
-                if ni: hist_ni.append((yr, ni))
-                if eps: hist_eps.append((yr, eps))
-                if rev: hist_rev.append((yr, rev))
-            if hist_ni: result["hist_ni"] = hist_ni
-            if hist_eps: result["hist_eps"] = hist_eps
-            if hist_rev: result["hist_rev"] = hist_rev
+        try:
+            url3 = f"{base}/income-statement/{ticker}.JK?limit=4&apikey={api_key}"
+            req3 = urllib.request.Request(url3, headers={"User-Agent":"Mozilla/5.0"})
+            with urllib.request.urlopen(req3, timeout=5) as r3:
+                data3 = _j.loads(r3.read())
+            if data3 and isinstance(data3, list):
+                hist_ni = []
+                hist_eps = []
+                hist_rev = []
+                for row in data3[:4]:
+                    yr = str(row.get("date",""))[:4]
+                    ni = row.get("netIncome")
+                    eps = row.get("eps")
+                    rev = row.get("revenue")
+                    if ni: hist_ni.append((yr, ni))
+                    if eps: hist_eps.append((yr, eps))
+                    if rev: hist_rev.append((yr, rev))
+                if hist_ni: result["hist_ni"] = hist_ni
+                if hist_eps: result["hist_eps"] = hist_eps
+                if hist_rev: result["hist_rev"] = hist_rev
+        except: pass
 
-        result["source"] = "FMP"
+        if result:
+            result["source"] = "FMP"
         return result
     except:
         return {}
@@ -601,7 +608,20 @@ def build_global_context(prompt):
         # 2. Deteksi saham US/China dari prompt
         import re as _re
         us_tickers = _re.findall(r'([A-Z]{1,5})', prompt.upper())
-        us_skip = {"THE","AND","FOR","IDX","BEI","USD","IDR","RSI","EMA","FVG","OB"}
+        us_skip = {
+            "THE","AND","FOR","IDX","BEI","USD","IDR","RSI","EMA","FVG","OB",
+            # Kata umum Bahasa Indonesia yang sering muncul di prompt
+            "YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG","ANALISA",
+            "SAHAM","MOHON","BISA","DENGAN","MINTA","APAKAH","BAGAIMANA",
+            "KENAPA","COBA","IHSG","BURSA","PASAR","HARGA","ENTRY","BELI",
+            "JUAL","WAIT","HOLD","RUPIAH","APBN","DAMPAK","PENGARUH","EFEK",
+            "IMBAS","GLOBAL","BERITA","NEWS","PERANG","EKONOMI","INFLASI",
+            "MAKRO","MIKRO","SEKTOR","EMITEN","DIVIDEN","VALUASI","TEKNIKAL",
+            # Komponen Pine Script / trading umum
+            "IFVG","OBJ","SMA","ATR","MACD","VWAP","POC","VAH","VAL",
+            # Lain-lain yang bisa muncul sebagai 2-5 huruf kapital
+            "BI","FED","IMF","GDP","CPI","PDB","SBI","SUN","OJK","LPS",
+        }
         for tk in us_tickers[:3]:
             if tk not in us_skip and len(tk) >= 2:
                 d = _fetch_us_china_stock(tk, "US")
@@ -1305,7 +1325,6 @@ def enrich_pdf_context(pdf_text):
     if price_data.get("roa"):
         lines.append(f"ROA (TTM)      : {price_data['roa']*100:.2f}%")
     current_year = datetime.now().year
-    current_year = datetime.now().year
     # Rumus kalkulasi yang tersedia jika data kurang
     lines.append(f"\n── Rumus Hitung Manual ──")
     lines.append(f"PER  = Harga (Rp{price_data.get('price','?'):,}) ÷ EPS laporan")
@@ -1410,11 +1429,8 @@ def init_session():
         "data_loaded": False,
         "sessions": None,
         "active_id": None,
-        "rename_id": None,
         "img_data": None,
         "pdf_data": None,
-        "show_settings": False,
-        "auth_mode": "login",  # login | register | google
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -2061,7 +2077,7 @@ def restore_images_from_messages():
     for sesi in st.session_state.sessions:
         for i, msg in enumerate(sesi.get("messages", [])):
             if msg.get("role") == "user" and msg.get("img_b64"):
-                key = f"thumb_{sesi['id']}_{i-1}"
+                key = f"thumb_{sesi['id']}_{i}"
                 if key not in st.session_state:
                     st.session_state[key] = (msg["img_b64"], msg.get("img_mime", "image/jpeg"))
 
@@ -2074,14 +2090,6 @@ def get_active():
         if s["id"] == st.session_state.active_id:
             return s
     return st.session_state.sessions[0]
-
-def delete_session(sid):
-    st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != sid]
-    if not st.session_state.sessions:
-        ns = new_session()
-        st.session_state.sessions = [ns]
-    if st.session_state.active_id == sid:
-        st.session_state.active_id = st.session_state.sessions[0]["id"]
 
 # ─────────────────────────────────────────────
 # GOOGLE OAUTH
@@ -2943,7 +2951,16 @@ if "do" in st.query_params:
         if _tok:
             try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
             except: pass
-        st.session_state.clear(); st.query_params.clear(); st.rerun()
+        st.session_state.clear()
+        st.query_params.clear()
+        # Inject JS untuk hapus token dari localStorage browser
+        components.html("""
+<script>
+try { localStorage.removeItem('sigma_token'); } catch(e) {}
+setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);
+</script>
+""", height=0)
+        st.stop()
     elif _do == "theme_dark":
         st.session_state.theme = "dark"
         st.query_params["do"] = ""; st.rerun()
@@ -2964,31 +2981,6 @@ if "do" in st.query_params:
 # MAIN CHAT
 # ─────────────────────────────────────────────
 active = get_active()
-
-# Build history JS untuk drawer — inject items tanpa st.button
-_hist_items = ""
-for sesi in st.session_state.sessions:
-    sid = sesi["id"]
-    is_active = sid == st.session_state.active_id
-    title_d = sesi["title"][:35].replace("'", "\\'").replace("`","")
-    fw = "600" if is_active else "400"
-    bg = C['hover'] if is_active else "transparent"
-    _hist_items += f"""
-    (function() {{
-        var hi = document.createElement('button');
-        hi.textContent = '{title_d}';
-        hi.dataset.sid = '{sid}';
-        hi.style.cssText = 'display:block;width:100%;padding:11px 16px;font-size:0.95rem;color:{C["text"]};background:{bg};font-weight:{fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
-        hi.onmouseenter = function(){{this.style.background='{C["hover"]}'}};
-        hi.onmouseleave = function(){{this.style.background='{bg}'}};
-        hi.onclick = function(){{
-            var url = new URL(window.parent.location.href);
-            url.searchParams.set('do', 'sel_{sid}');
-            window.parent.location.href = url.toString();
-        }};
-        drawer.appendChild(hi);
-    }})();
-"""
 
 # Header
 if not active["messages"][1:]:
@@ -3135,14 +3127,14 @@ if prompt:
         st.markdown(prompt)
 
     try:
-        groq_client = Groq(api_key=st.secrets["GROQ_API_KEY"])
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
                 if img_data:
                     # Coba Groq vision dulu, fallback ke Gemini vision
                     _img_ans = None
                     try:
-                        _img_res = groq_client.chat.completions.create(
+                        _groq_vision = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                        _img_res = _groq_vision.chat.completions.create(
                             model="meta-llama/llama-4-scout-17b-16e-instruct",
                             messages=[
                                 {"role": "system", "content": "Kamu SIGMA, analis chart. Analisa gambar langsung. Jawab Bahasa Indonesia."},
@@ -3159,7 +3151,7 @@ if prompt:
                             # Fallback ke Gemini untuk gambar
                             try:
                                 import json as _j2, urllib.request as _ur
-                                _gkey = st.secrets.get("GEMINI_KEY","AIzaSyApoyO1dTWFPJ7Z5fykbLTxM0GN3MsYV8o")
+                                _gkey = st.secrets.get("GEMINI_KEY", "")
                                 _gpayload = {
                                     "contents":[{"role":"user","parts":[
                                         {"inline_data":{"mime_type":img_data[1],"data":img_data[0]}},
