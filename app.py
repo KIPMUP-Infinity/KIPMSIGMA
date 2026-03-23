@@ -854,14 +854,50 @@ def build_fundamental_from_text(prompt):
     result = [""]
     def fetch():
         try:
-            # Fetch dari semua sumber dengan cache
             multi = fetch_fundamental_with_cache(ticker)
             _from_cache = multi.get("_from_cache", False)
+            current_year = datetime.now().year
+
+            # ── Ambil harga dari IDX API langsung ──
+            price_live = None
+            price_src = "IDX"
+            try:
+                import urllib.request as _ur, json as _jj
+                _req = _ur.Request(
+                    f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}",
+                    headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"}
+                )
+                with _ur.urlopen(_req, timeout=5) as _r:
+                    _d = _jj.loads(_r.read())
+                if _d and _d.get("LastPrice") and _d["LastPrice"] > 0:
+                    price_live = _d["LastPrice"]
+                    price_src = "IDX (real-time)"
+            except: pass
+            # Fallback Yahoo Finance query API
+            if not price_live:
+                try:
+                    import urllib.request as _ur2, json as _jj2
+                    _url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}.JK?interval=1d&range=5d"
+                    _req2 = _ur2.Request(_url, headers={"User-Agent":"Mozilla/5.0"})
+                    with _ur2.urlopen(_req2, timeout=5) as _r2:
+                        _d2 = _jj2.loads(_r2.read())
+                    _p = _d2["chart"]["result"][0]["meta"].get("regularMarketPrice")
+                    if _p and _p > 0:
+                        price_live = round(_p, 0)
+                        price_src = "Yahoo"
+                except: pass
+            # Last resort: yfinance adjusted
             import yfinance as yf
             t = yf.Ticker(f"{ticker}.JK")
             info = t.info
             hist_price = t.history(period="5d", auto_adjust=True)
-            current_year = datetime.now().year
+            if not price_live and not hist_price.empty:
+                price_live = round(hist_price.iloc[-1]["Close"], 0)
+                price_src = "yfinance (adjusted)"
+            # Gunakan harga live sebagai price utama
+            if price_live:
+                multi["price"] = price_live
+                multi["source_price"] = price_src
 
             # Deteksi sektor otomatis
             is_bank = is_bank_sector(ticker, info)
@@ -893,11 +929,9 @@ def build_fundamental_from_text(prompt):
                      f"Sektor: {sektor} | Framework: {framework}"]
 
             # ── Harga & valuasi live ──
-            # Prioritas harga: IDX API → FMP → Finnhub → AV → yfinance (terakhir)
-            price = multi.get("price")  # IDX API sudah di layer 1 _fetch_multi_fundamental
-            if not price and not hist_price.empty:
-                price = round(hist_price.iloc[-1]["Close"], 0)
-            price_src = multi.get("source_price", "yfinance")
+            # Harga sudah dari IDX API di atas
+            price = multi.get("price") or price_live
+            price_src = multi.get("source_price", price_src)
 
             # Rasio: utamakan FMP/Finnhub/AV, yfinance sebagai backup
             eps_yf    = multi.get("eps") or info.get("trailingEps")
