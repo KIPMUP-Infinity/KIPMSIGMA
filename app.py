@@ -16,63 +16,8 @@ import bcrypt
 import re
 
 
-# ─── GEMINI API — fallback saat Groq limit ───
-def _call_gemini(messages, api_key=None):
-    """Call Gemini 2.0 Flash — coba 2 key secara bergantian."""
-    # Daftar key — coba satu per satu
-    keys = [
-        st.secrets.get("GEMINI_KEY", ""),
-        st.secrets.get("GEMINI_KEY2", ""),
-    ]
-    last_err = None
-    for api_key in keys:
-        try:
-            import urllib.request, json as _j
-        
-            # Convert messages ke format Gemini
-            gemini_contents = []
-            system_text = ""
-            for m in messages:
-                role = m.get("role","")
-                text = m.get("content","") or ""
-                if role == "system":
-                    system_text = text
-                elif role == "user":
-                    gemini_contents.append({"role":"user","parts":[{"text":text}]})
-                elif role == "assistant":
-                    gemini_contents.append({"role":"model","parts":[{"text":text}]})
-        
-            # Gemini butuh minimal 1 message
-            if not gemini_contents:
-                gemini_contents = [{"role":"user","parts":[{"text":"Halo"}]}]
-            payload = {"contents": gemini_contents}
-            if system_text:
-                payload["system_instruction"] = {"parts":[{"text":system_text}]}
-            payload["generationConfig"] = {
-                "temperature": 0.7,
-                "maxOutputTokens": 2048,
-            }
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-            req = urllib.request.Request(
-                url,
-                data=_j.dumps(payload).encode(),
-                headers={"Content-Type":"application/json"}
-            )
-            with urllib.request.urlopen(req, timeout=30) as r:
-                data = _j.loads(r.read())
-            candidates = data.get("candidates", [])
-            if candidates:
-                parts = candidates[0].get("content",{}).get("parts",[])
-                if parts and parts[0].get("text"):
-                    return parts[0]["text"]
-        except Exception as e:
-            last_err = str(e)
-            continue  # Coba key berikutnya
-    # Semua key gagal
-    try:
-        st.session_state["last_error"] = f"Gemini error: {last_err}"
-    except: pass
-    return None
+
+
 
 
 # ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
@@ -2929,7 +2874,7 @@ if prompt:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
                 if img_data:
-                    # Coba Groq vision dulu, fallback ke Gemini vision
+                    # Coba Groq vision
                     _img_ans = None
                     try:
                         _groq_vision = Groq(api_key=st.secrets["GROQ_API_KEY"])
@@ -2946,24 +2891,6 @@ if prompt:
                         )
                         _img_ans = _img_res.choices[0].message.content
                     except Exception as _img_e:
-                        if "rate_limit" in str(_img_e) or "429" in str(_img_e):
-                            # Fallback ke Gemini untuk gambar
-                            try:
-                                import json as _j2, urllib.request as _ur
-                                _gkey = st.secrets.get("GEMINI_KEY", "")
-                                _gpayload = {
-                                    "contents":[{"role":"user","parts":[
-                                        {"inline_data":{"mime_type":img_data[1],"data":img_data[0]}},
-                                        {"text": f"Kamu SIGMA analis chart KIPM. {prompt}. Jawab Bahasa Indonesia."}
-                                    ]}],
-                                    "generationConfig":{"temperature":0.7,"maxOutputTokens":2048}
-                                }
-                                _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gkey}"
-                                _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type":"application/json"})
-                                with _ur.urlopen(_greq, timeout=30) as _gr:
-                                    _gdata = _j2.loads(_gr.read())
-                                _img_ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
-                            except: pass
                         if _img_ans is None:
                             raise _img_e
                     
@@ -2997,7 +2924,7 @@ if prompt:
                         # Chat biasa — kirim history normal (max 5 pesan terakhir)
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
-                    # Urutan: Groq → Cerebras → Gemini
+                    # Urutan: Groq → Cerebras
                     ans = None
                     _rate_limited_keys = set()
 
@@ -3076,55 +3003,10 @@ if prompt:
                                     ans = _cb_ans
                         except: pass
 
-                    # Fallback Gemini KEY1 jika Cerebras juga gagal
-                    if ans is None:
-                        try:
-                            ans = _call_gemini(_msgs)
-                        except: pass
-
-                    # Fallback Gemini KEY2
-                    if ans is None:
-                        try:
-                            import urllib.request as _ur2, json as _j3
-                            _gk2 = st.secrets.get("GEMINI_KEY2", "")
-                            if _gk2:
-                                _gem_contents = []
-                                _gem_system = ""
-                                for _gm in _msgs:
-                                    _gr = _gm.get("role","")
-                                    _gt = _gm.get("content","") or ""
-                                    if _gr == "system":
-                                        _gem_system = _gt
-                                    elif _gr == "user":
-                                        _gem_contents.append({"role":"user","parts":[{"text":_gt}]})
-                                    elif _gr == "assistant":
-                                        _gem_contents.append({"role":"model","parts":[{"text":_gt}]})
-                                if not _gem_contents:
-                                    _gem_contents = [{"role":"user","parts":[{"text":"Halo"}]}]
-                                _gpay2 = {"contents": _gem_contents,
-                                          "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
-                                if _gem_system:
-                                    _gpay2["system_instruction"] = {"parts":[{"text":_gem_system}]}
-                                _greq2 = _ur2.Request(
-                                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gk2}",
-                                    data=_j3.dumps(_gpay2).encode(),
-                                    headers={"Content-Type": "application/json"}
-                                )
-                                with _ur2.urlopen(_greq2, timeout=30) as _gr2:
-                                    _gd2 = _j3.loads(_gr2.read())
-                                _cands = _gd2.get("candidates", [])
-                                if _cands:
-                                    _parts = _cands[0].get("content", {}).get("parts", [])
-                                    if _parts and _parts[0].get("text"):
-                                        ans = _parts[0]["text"]
-                        except: pass
-
                     if ans is None:
                         _n_rl = len(_rate_limited_keys)
                         _n_total = len(_groq_keys)
-                        _gem_err = st.session_state.get("last_error", "")
-                        _err_detail = f" | Gemini error: {_gem_err}" if _gem_err else " | Gemini juga tidak merespons"
-                        raise Exception(f"Semua model sedang sibuk ({_n_rl}/{_n_total} Groq key kena rate limit){_err_detail} — coba lagi dalam 1 menit.")
+                        raise Exception(f"Semua model sedang sibuk ({_n_rl}/{_n_total} Groq key kena rate limit) — tunggu beberapa menit lalu coba lagi.")
                     
                     # Buat res object compatible
                     class _FakeRes:
