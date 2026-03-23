@@ -3481,12 +3481,11 @@ if prompt:
                         # Chat biasa — kirim history normal (max 5 pesan terakhir)
                         _msgs = [_all_msgs[0]] + _all_msgs[-4:]
 
-                    # Urutan: Groq 70b → Gemini → Groq 8b
+                    # Urutan: Groq 70b → Groq 8b → Gemini
                     ans = None
+                    _rate_limited_keys = set()
 
-                    # Groq keys — rotasi jika satu kena limit
-                    # Auto-scan semua GROQ key dari secrets
-                    # Tambah key baru cukup di Secrets, tidak perlu update script
+                    # Auto-scan semua GROQ key dari secrets (GROQ_API_KEY, GROQ_API_KEY2..19)
                     _groq_keys = []
                     for _ki in ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(2, 20)]:
                         _k = st.secrets.get(_ki, "")
@@ -3497,9 +3496,11 @@ if prompt:
                     _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
 
                     # Coba semua kombinasi key + model
+                    # Skip key yang sudah terkonfirmasi rate limit
                     for _gkey in _groq_keys:
                         if ans: break
                         if not _gkey: continue
+                        if _gkey in _rate_limited_keys: continue
                         for _gmodel in _models:
                             if ans: break
                             try:
@@ -3511,16 +3512,47 @@ if prompt:
                                     max_tokens=2048
                                 )
                                 ans = _res.choices[0].message.content
-                            except: pass
+                            except Exception as _ge:
+                                _err_str = str(_ge).lower()
+                                # Rate limit → tandai key ini, skip ke key berikutnya
+                                if any(x in _err_str for x in ["rate_limit","429","too many","quota"]):
+                                    _rate_limited_keys.add(_gkey)
+                                    break  # Langsung ke key berikutnya
+                                # Error lain (koneksi, dll) → coba model berikutnya
+                                pass
 
-                    # Fallback Gemini jika semua Groq gagal
+                    # Fallback Gemini jika semua Groq gagal / rate limit
                     if ans is None:
                         try:
                             ans = _call_gemini(_msgs)
                         except: pass
 
+                    # Fallback Gemini key2 jika key1 gagal
                     if ans is None:
-                        raise Exception("Semua model sedang sibuk — tunggu beberapa menit lalu coba lagi.")
+                        try:
+                            import urllib.request as _ur2, json as _j3
+                            _gk2 = st.secrets.get("GEMINI_KEY2", "")
+                            if _gk2:
+                                _gpay2 = {"contents": _msgs[1:] if len(_msgs) > 1 else _msgs,
+                                          "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+                                _greq2 = _ur2.Request(
+                                    f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gk2}",
+                                    data=_j3.dumps(_gpay2).encode(),
+                                    headers={"Content-Type": "application/json"}
+                                )
+                                with _ur2.urlopen(_greq2, timeout=30) as _gr2:
+                                    _gd2 = _j3.loads(_gr2.read())
+                                _cands = _gd2.get("candidates", [])
+                                if _cands:
+                                    _parts = _cands[0].get("content", {}).get("parts", [])
+                                    if _parts and _parts[0].get("text"):
+                                        ans = _parts[0]["text"]
+                        except: pass
+
+                    if ans is None:
+                        _n_rl = len(_rate_limited_keys)
+                        _n_total = len(_groq_keys)
+                        raise Exception(f"Semua model sedang sibuk ({_n_rl}/{_n_total} Groq key kena rate limit) — tunggu beberapa menit lalu coba lagi.")
                     
                     # Buat res object compatible
                     class _FakeRes:
