@@ -2928,12 +2928,24 @@ if prompt:
                     ans = None
                     _rate_limited_keys = set()
 
-                    # Auto-scan semua GROQ key dari secrets (GROQ_API_KEY, GROQ_API_KEY2..19)
+                    # Baca Groq key satu per satu secara eksplisit
                     _groq_keys = []
-                    for _ki in ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(2, 20)]:
-                        _k = st.secrets.get(_ki, "")
-                        if _k:
-                            _groq_keys.append(_k)
+                    for _k in [
+                        st.secrets.get("GROQ_API_KEY", ""),
+                        st.secrets.get("GROQ_API_KEY2", ""),
+                        st.secrets.get("GROQ_API_KEY3", ""),
+                        st.secrets.get("GROQ_API_KEY4", ""),
+                        st.secrets.get("GROQ_API_KEY5", ""),
+                        st.secrets.get("GROQ_API_KEY6", ""),
+                        st.secrets.get("GROQ_API_KEY7", ""),
+                        st.secrets.get("GROQ_API_KEY8", ""),
+                        st.secrets.get("GROQ_API_KEY9", ""),
+                        st.secrets.get("GROQ_API_KEY10", ""),
+                        st.secrets.get("GROQ_API_KEY11", ""),
+                        st.secrets.get("GROQ_API_KEY12", ""),
+                        st.secrets.get("GROQ_API_KEY13", ""),
+                    ]:
+                        if _k: _groq_keys.append(_k)
                     if not _groq_keys:
                         _groq_keys = [""]
                     # Rotasi 2 model yang aktif di Groq
