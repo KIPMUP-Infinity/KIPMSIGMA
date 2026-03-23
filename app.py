@@ -15,11 +15,6 @@ import hashlib
 import bcrypt
 import re
 
-
-
-
-
-
 # ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
 def _fetch_all_data(tickers):
     import threading
@@ -3529,12 +3524,21 @@ if result is not None:
     if hasattr(result, 'text'):
         prompt = (result.text or "").strip()
         files = getattr(result, 'files', None) or []
-        # Ambil semua file, max 10 gambar
         img_files = [f for f in files if f.type != "application/pdf"]
         pdf_files = [f for f in files if f.type == "application/pdf"]
         if img_files:
-            multi_images = img_files[:10]  # max 10 gambar
-            file_obj = img_files[0]  # backward compat
+            # Baca SEMUA gambar sekali di sini — simpan sebagai tuples
+            for _mf in img_files[:10]:
+                try:
+                    _mraw = _mf.read()
+                    _mb64 = base64.b64encode(_mraw).decode()
+                    _mmime = "image/png" if _mf.name.endswith(".png") else "image/jpeg"
+                    multi_images.append((_mb64, _mmime, _mf.name))
+                except: pass
+            if multi_images:
+                # img_data = gambar pertama untuk backward compat
+                st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
+                file_obj = None  # sudah dibaca, tidak perlu file_obj lagi
         elif pdf_files:
             file_obj = pdf_files[0]
     elif isinstance(result, str):
@@ -3658,16 +3662,10 @@ if prompt:
     active["messages"].append(user_msg)
     with st.chat_message("user"):
         if multi_images and len(multi_images) > 1:
-            # Tampilkan semua gambar
             cols = st.columns(min(len(multi_images), 5))
-            for i, _mf in enumerate(multi_images[:10]):
-                try:
-                    _mraw = _mf.read() if hasattr(_mf, 'read') else b""
-                    _mb64 = base64.b64encode(_mraw).decode()
-                    _mmime = "image/png" if _mf.name.endswith(".png") else "image/jpeg"
-                    with cols[i % 5]:
-                        st.markdown(f'<img src="data:{_mmime};base64,{_mb64}" style="max-width:100%;max-height:150px;border-radius:8px;">', unsafe_allow_html=True)
-                except: pass
+            for i, (_ib64, _imime, _iname) in enumerate(multi_images[:10]):
+                with cols[i % 5]:
+                    st.markdown(f'<img src="data:{_imime};base64,{_ib64}" style="max-width:100%;max-height:150px;border-radius:8px;">', unsafe_allow_html=True)
         elif img_data:
             st.markdown(f'<img src="data:{img_data[1]};base64,{img_data[0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(prompt)
@@ -3675,35 +3673,22 @@ if prompt:
     try:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
-                if img_data or (multi_images and len(multi_images) > 0):
+                if multi_images or img_data:
                     # Coba Groq vision — support multi gambar
                     _img_ans = None
                     try:
                         _groq_vision = Groq(api_key=st.secrets["GROQ_API_KEY"])
-                        # Bangun content dengan semua gambar (max 10)
+                        # Gunakan multi_images (sudah tuples b64,mime,name)
+                        all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
                         _content = []
-                        # Gambar pertama sudah di img_data, sisanya di multi_images
-                        all_imgs = []
-                        if multi_images:
-                            for _mf in multi_images[:10]:
-                                try:
-                                    _mraw = _mf.read()
-                                    _mb64 = base64.b64encode(_mraw).decode()
-                                    _mmime = "image/png" if _mf.name.endswith(".png") else "image/jpeg"
-                                    all_imgs.append((_mb64, _mmime, _mf.name))
-                                except: pass
-                        elif img_data:
-                            all_imgs = [(img_data[0], img_data[1], img_data[2])]
-
-                        for _ib64, _imime, _iname in all_imgs:
+                        for _ib64, _imime, _iname in all_imgs[:10]:
                             _content.append({"type": "image_url", "image_url": {"url": f"data:{_imime};base64,{_ib64}"}})
-
-                        _content.append({"type": "text", "text": f"{prompt}\n\nAda {len(all_imgs)} gambar yang dikirim. Analisa semua gambar secara menyeluruh."})
-
+                        _note = f" Ada {len(all_imgs)} gambar." if len(all_imgs) > 1 else ""
+                        _content.append({"type": "text", "text": f"{prompt}{_note}"})
                         _img_res = _groq_vision.chat.completions.create(
                             model="meta-llama/llama-4-scout-17b-16e-instruct",
                             messages=[
-                                {"role": "system", "content": st.session_state.sessions[0]["messages"][0]["content"] if False else "Kamu SIGMA, asisten trading KIPM. Analisa semua gambar yang dikirim. Cek divergence, bandarmologi, teknikal MnM Strategy+. Jawab Bahasa Indonesia. DYOR."},
+                                {"role": "system", "content": "Kamu SIGMA, asisten trading KIPM. Analisa semua gambar yang dikirim. Cek divergence, bandarmologi, teknikal MnM Strategy+. Jawab Bahasa Indonesia. DYOR."},
                                 {"role": "user", "content": _content}
                             ],
                             max_tokens=2048
