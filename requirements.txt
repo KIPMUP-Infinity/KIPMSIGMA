@@ -7,3 +7,4 @@ requests
 bcrypt
 feedparser
 pandas_datareader
+google-generativeai
