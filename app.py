@@ -3029,23 +3029,49 @@ if st.session_state.user is None:
 components.html(f"""
 <script>
 (function(){{
-var pd=window.parent.document;
-var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
-var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
-['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+var pd = window.parent.document;
 
-var s=pd.createElement('style'); s.id='sigma-mobile-css';
-s.textContent=`
-/* Menu sekarang diposisikan persis di atas Chat Bar */
-#spmenu,#sphist{{position:fixed; bottom:95px; left:20px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999999;display:none;overflow:hidden;min-width:250px;}} 
-#sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left; text-decoration:none;}} .smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
-`; pd.head.appendChild(s);
+// 1. BERSIHKAN ELEMEN LAMA AGAR TIDAK BENTROK
+['spbtn','spmenu','sphist','sigma-menu-css'].forEach(function(id){{ 
+    var el = pd.getElementById(id); if(el) el.remove(); 
+}});
 
-var m=pd.createElement('div');m.id='spmenu';
-m.innerHTML=`
+// 2. CSS SAKTI: MUSNAHKAN TOMBOL ASLI & DESAIN MENU
+var s = pd.createElement('style'); s.id = 'sigma-menu-css';
+s.textContent = `
+    /* KUNCI UTAMA: Sembunyikan tombol upload bawaan Streamlit secara paksa selamanya */
+    div[data-testid="stChatInputContainer"] button:has(input[type="file"]) {{
+        display: none !important;
+    }}
+    
+    #spmenu, #sphist {{
+        position: fixed; bottom: 85px; left: 20px; 
+        background: {C["sidebar_bg"]}; border: 1px solid {C["border"]}; 
+        border-radius: 16px; box-shadow: 0 -4px 24px rgba(0,0,0,0.5); 
+        z-index: 999999; display: none; overflow: hidden; min-width: 250px;
+    }}
+    #sphist {{ max-height: 55vh; overflow-y: auto; }}
+    .smi {{ display: flex; align-items: center; gap: 14px; padding: 13px 18px; font-size: 1rem; color: {C["text"]}; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; text-decoration: none; }}
+    .smi:hover {{ background: {C["hover"]}; }}
+    .smico {{ width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: {C["hover"]}; flex-shrink: 0; }}
+    .smsp {{ border-top: 1px solid {C["border"]}; margin: 4px 0; }}
+    .smhd {{ padding: 8px 18px 4px; font-size: 0.68rem; color: {C["text_muted"]}; font-weight: 600; letter-spacing: 1px; }}
+    
+    /* Desain tombol plus palsu buatan kita */
+    #sigma-plus-fake {{
+        background: transparent; border: none; cursor: pointer; padding: 10px; margin: 0 4px; 
+        display: flex; align-items: center; justify-content: center; color: {C["text_muted"]};
+        border-radius: 50%; transition: all 0.2s;
+    }}
+    #sigma-plus-fake:hover {{
+        background: {C["hover"]}; color: {C["text"]};
+    }}
+`;
+pd.head.appendChild(s);
+
+// 3. BANGUN MENU UTAMA
+var m = pd.createElement('div'); m.id = 'spmenu';
+m.innerHTML = `
     <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
     <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
     <div class="smsp"></div>
@@ -3055,37 +3081,33 @@ m.innerHTML=`
     <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap</a>
     <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang</a>
     <div class="smsp"></div>
-    <a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
+    <a class="smi" id="smi-out" style="color:#f55!important"><span class="smico">🚪</span>Keluar</a>
 `;
 pd.body.appendChild(m);
 
-var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
+// 4. BANGUN MENU RIWAYAT
+var h = pd.createElement('div'); h.id = 'sphist'; 
+h.innerHTML = '<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} 
+pd.body.appendChild(h);
 
-// ── TRIK JITU: GANTI TOMBOL ASLI DENGAN TOMBOL PALSU ──
-function setupChatBarMenu() {{
-    var chatBox = pd.querySelector('[data-testid="stChatInputContainer"]');
-    // Jika kotak chat ada, dan tombol palsu kita belum ada
-    if (chatBox && !pd.getElementById('sigma-custom-plus')) {{
+// 5. INJEKSI TOMBOL PLUS KITA KE BAR CHAT STREAMLIT
+function injectFakePlus() {{
+    var chatBox = pd.querySelector('div[data-testid="stChatInputContainer"]');
+    if (chatBox && !pd.getElementById('sigma-plus-fake')) {{
+        // Masukkan tombol kita persis di posisi paling kiri
+        chatBox.insertAdjacentHTML('afterbegin', `
+            <button id="sigma-plus-fake" title="Menu SIGMA">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+            </button>
+        `);
         
-        // 1. Sembunyikan tombol '+' asli bawaan Streamlit (biasanya tombol paling pertama)
-        var nativeBtns = chatBox.querySelectorAll('button');
-        if (nativeBtns.length > 0 && !nativeBtns[0].innerHTML.includes('send')) {{
-            nativeBtns[0].style.display = 'none'; 
-        }}
-
-        // 2. Buat tombol '+' palsu (desain mirip Gemini)
-        var myPlus = pd.createElement('button');
-        myPlus.id = 'sigma-custom-plus';
-        myPlus.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{C["text_muted"]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
-        myPlus.style.cssText = 'background:transparent; border:none; cursor:pointer; padding:10px; margin-right:4px; display:flex; align-items:center; justify-content:center; transition: transform 0.2s;';
-        
-        // Efek hover agar terlihat interaktif
-        myPlus.onmouseover = function() {{ this.style.transform = 'scale(1.1)'; }};
-        myPlus.onmouseout = function() {{ this.style.transform = 'scale(1)'; }};
-
-        // 3. Pasang aksi untuk membuka Menu kita
-        myPlus.onclick = function(e) {{
+        // Berikan fungsi klik untuk buka menu
+        pd.getElementById('sigma-plus-fake').onclick = function(e) {{
             e.preventDefault(); e.stopPropagation();
             if (m.style.display === 'block') {{
                 m.style.display = 'none';
@@ -3094,36 +3116,57 @@ function setupChatBarMenu() {{
                 h.style.display = 'none';
             }}
         }};
-        
-        // 4. Sisipkan tombol palsu ini di paling kiri (sebelum textarea)
-        chatBox.insertBefore(myPlus, chatBox.firstChild);
     }}
 }}
-// Cek setiap 500ms agar tombol kita tidak hilang saat Streamlit refresh
-setInterval(setupChatBarMenu, 500);
+// Gunakan interval sangat cepat (100ms) agar tombol kita tidak bisa ditendang oleh Streamlit
+setInterval(injectFakePlus, 100);
 
-// ── LOGIKA KLIK MENU ──
-// Trigger Upload File Bawaan Streamlit secara diam-diam
-pd.getElementById('smi-upload').onclick = function(e) {{
-    e.preventDefault();
-    var fileInput = pd.querySelector('[data-testid="stChatInputContainer"] input[type="file"]');
-    if(fileInput) fileInput.click();
-    m.style.display = 'none';
-}};
+// 6. FUNGSI KLIK PADA MENU
+var btnUpload = pd.getElementById('smi-upload');
+if(btnUpload) {{
+    btnUpload.onclick = function(e) {{
+        e.preventDefault();
+        // Cari input file asli yang tadi kita sembunyikan, lalu paksa klik dari belakang layar!
+        var realInput = pd.querySelector('div[data-testid="stChatInputContainer"] input[type="file"]');
+        if(realInput) realInput.click();
+        m.style.display = 'none';
+    }};
+}}
 
+var btnHist = pd.getElementById('smi-hist');
+if(btnHist) {{
+    btnHist.onclick = function(e) {{
+        e.preventDefault();
+        m.style.display = 'none';
+        h.style.display = 'block';
+    }};
+}}
+
+// Daftarkan link routing (Dark mode, Light mode, dll)
 (function(){{
     var u; 
-    u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); 
+    var n = pd.getElementById('smi-new'); if(n) n.href=u.toString();
+    
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); 
+    var d = pd.getElementById('smi-dark'); if(d) d.href=u.toString();
+    
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); 
+    var l = pd.getElementById('smi-light'); if(l) l.href=u.toString();
+    
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); 
+    var o = pd.getElementById('smi-out'); if(o) o.href=u.toString();
 }})();
 
-pd.addEventListener('click',function(e){{ 
-    var myPlus = pd.getElementById('sigma-custom-plus');
-    if(myPlus && !myPlus.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
-    if(myPlus && !myPlus.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
+// Tutup menu jika user klik di sembarang tempat
+pd.addEventListener('click', function(e){{ 
+    var fakePlus = pd.getElementById('sigma-plus-fake');
+    if(fakePlus && !fakePlus.contains(e.target) && m && !m.contains(e.target)) {{
+        m.style.display = 'none'; 
+    }}
+    if(fakePlus && !fakePlus.contains(e.target) && h && !h.contains(e.target) && m && !m.contains(e.target)) {{
+        h.style.display = 'none';
+    }}
 }});
 }})();
 </script>
