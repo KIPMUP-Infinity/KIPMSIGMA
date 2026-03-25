@@ -2681,7 +2681,6 @@ st.markdown(f"""
 /* Sembunyikan elemen bawaan Streamlit (header, footer, sidebar) */
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"] {{ display: none !important; }}
-#spbtn {{ display: none !important; }} /* Matikan tombol floating lama */
 </style>
 """, unsafe_allow_html=True)
 
@@ -2707,8 +2706,8 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-/* TOMBOL MENU BULAT MENGAMBANG DI POJOK KIRI BAWAH */
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;font-size:32px;font-weight:300;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;line-height:1;transition:transform 0.2s, background 0.2s;}} 
+/* TOMBOL MENU BULAT MENGAMBANG DI POJOK KIRI BAWAH (IKON TITIK 3) */
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
 #spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
 
 #spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
@@ -2721,7 +2720,7 @@ s.textContent=`
 // Injeksi tombol mengambang dengan SVG Tiga Titik Vertikal
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.title = 'Menu SIGMA';
-btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
+btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
 
 var m=pd.createElement('div');m.id='spmenu';
@@ -2745,15 +2744,6 @@ btn.onclick=function(e){{
     e.preventDefault(); e.stopPropagation();
     m.style.display = (m.style.display === 'block') ? 'none' : 'block';
     h.style.display = 'none';
-    
-    // Posisikan menu melayang tepat di atas tombol tiga titik
-    if (m.style.display === 'block') {{
-        var rect = btn.getBoundingClientRect();
-        m.style.left = Math.max(10, rect.left) + 'px';
-        m.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
-        h.style.left = m.style.left;
-        h.style.bottom = m.style.bottom;
-    }}
 }};
 
 (function(){{
@@ -2980,7 +2970,7 @@ if st.session_state.user is None:
     components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
 
 # ─────────────────────────────────────────────
-# FINAL HELPER JAVASCRIPT (BUBBLES & COPY ICON)
+# FINAL HELPER JAVASCRIPT (BUBBLES & COPY ICON KOTAK)
 # ─────────────────────────────────────────────
 components.html(f"""
 <script>
@@ -3031,7 +3021,7 @@ function fixBubbles() {{
 fixBubbles(); setInterval(fixBubbles, 800);
 new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(window.parent.document.body, {{childList:true,subtree:true}});
 
-// --- TOMBOL COPY BERSIH (HANYA ICON, SEPERTI GAMBAR 1) ---
+// --- TOMBOL COPY KOTAK ---
 function addActionButtons() {{
     var doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
@@ -3045,7 +3035,7 @@ function addActionButtons() {{
         var copyBtn = doc.createElement('button'); 
         copyBtn.title = 'Salin respons'; 
         copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;';
+        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;';
         
         copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}}; 
         copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
@@ -3118,6 +3108,8 @@ function setupDragDrop() {{
                 var dt = new DataTransfer(); for (var f of validFiles) dt.items.add(f);
                 Object.defineProperty(fileInput, 'files', {{value: dt.files, configurable:true, writable:true}});
                 fileInput.dispatchEvent(new Event('change', {{bubbles:true}})); fileInput.dispatchEvent(new Event('input', {{bubbles:true}}));
+                var ta = pd.querySelector('[data-testid="stChatInput"] textarea');
+                if (ta) {{ ta.style.outline = '2px solid #4a90d9'; ta.placeholder = '📎 Memuat...'; setTimeout(function(){{ ta.style.outline = ''; ta.placeholder = 'Tanya SIGMA... DYOR - bukan financial advice.'; }}, 3000); ta.focus(); }}
             }} catch(err) {{ console.log('drop err', err); }}
         }}
     }}, true);
