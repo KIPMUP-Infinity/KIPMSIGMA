@@ -2025,9 +2025,9 @@ if prompt:
                 
                 # Gemini memiliki jendela konteks super besar, jadi kita gunakan full system prompt
                 model = genai.GenerativeModel(
-                    model_name="gemini-1.5-pro-latest",
+                    model_name="gemini-1.5-flash",
                     system_instruction=SYSTEM_PROMPT["content"]
-                )    
+                ) 
                 
                 gemini_history = []
                 for msg in _all_msgs[:-1]: # Abaikan pesan terakhir dari user (dikirim via send_message)
