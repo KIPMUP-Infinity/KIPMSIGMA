@@ -2678,7 +2678,7 @@ C = get_colors(st.session_state.theme)
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
 
-# ─── FUNGSI API GEMINI (MESIN UTAMA ANTI-404) ───
+# ─── FUNGSI API GEMINI (SUNTIKAN PAKSA BAHASA INDONESIA) ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     import urllib.request, urllib.error, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
@@ -2698,11 +2698,11 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 elif img_b64 and img_mime:
                     _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
                 
-                _parts.append({"text": prompt})
+                # SUNTIKAN IDENTITAS PAKSA agar tidak bahasa Inggris
+                teks_gabungan = f"{SYSTEM_PROMPT['content']}\n\n[PERTANYAAN USER]:\n{prompt}"
+                _parts.append({"text": teks_gabungan})
                 
-                # MENGUNCI BAHASA INDONESIA (Tanpa merusak UI)
                 payload = {
-                    "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT["content"]}]},
                     "contents": [{"role": "user", "parts": _parts}],
                     "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
                 }
@@ -2736,21 +2736,19 @@ def _call_gemini_text(messages):
         for model_name in models:
             try:
                 gemini_contents = []
-                system_text = ""
                 for m in messages:
                     r = m.get("role", "")
                     t = m.get("content", "") or ""
-                    if r == "system": system_text = t
-                    elif r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
+                    if r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
                     elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
                 
                 if not gemini_contents: 
                     gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
                 
+                # SUNTIKAN IDENTITAS PAKSA ke chat pertama
+                gemini_contents[0]["parts"][0]["text"] = f"{SYSTEM_PROMPT['content']}\n\n{gemini_contents[0]['parts'][0]['text']}"
+                
                 payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
-                # MENGUNCI BAHASA INDONESIA
-                if system_text: 
-                    payload["systemInstruction"] = {"parts": [{"text": system_text}]}
                 
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
@@ -2890,7 +2888,7 @@ pd.addEventListener('click',function(e){{
 </script>
 """, height=0)
 
-# ─── PENYAMBUNG KABEL TOMBOL (TRASH & MENU) ───
+# ─── LOGIKA SINKRONISASI TOMBOL (MEMPERBAIKI TRASH YANG NGADAT) ───
 if "del" in st.query_params:
     _del_id = st.query_params.get("del", "")
     if _del_id:
@@ -2899,6 +2897,15 @@ if "del" in st.query_params:
             st.session_state.sessions.append({"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]})
         if st.session_state.active_id == _del_id:
             st.session_state.active_id = st.session_state.sessions[0]["id"]
+        
+        # SIMPAN PAKSA KE DATABASE SEBELUM REFRESH (Ini kunci agar tombol trash berfungsi!)
+        if "user" in globals() and user:
+            _to_save = []
+            for s in st.session_state.sessions:
+                _msgs = [dict(m) for m in s["messages"] if m["role"] != "system"]
+                _to_save.append({"id": s["id"], "title": s["title"], "created": s["created"], "messages": _msgs})
+            save_user(user["email"], {"theme": st.session_state.get("theme", "dark"), "sessions": _to_save, "active_id": st.session_state.active_id})
+            
     st.query_params.pop("del", None)
     st.rerun()
 
@@ -2913,182 +2920,201 @@ if "do" in st.query_params:
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
     elif _do == "view_stats":
-        st.toast("Fitur Market Dashboard sedang dalam tahap pengembangan! 🚀", icon="📈")
+        st.session_state.current_view = "dashboard"
         st.query_params.pop("do", None)
+        st.rerun()
     elif _do == "view_ai":
-        st.query_params.pop("do", None); st.rerun()
+        st.session_state.current_view = "chat"
+        st.query_params.pop("do", None)
+        st.rerun()
     elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_light": st.session_state.theme = "light"; st.query_params.pop("do", None); st.rerun()
     elif _do == "newchat":
+        st.session_state.current_view = "chat"
         ns = {"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
         st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params.pop("do", None); st.rerun()
     elif _do.startswith("sel_"):
+        st.session_state.current_view = "chat"
         _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params.pop("do", None); st.rerun()
 
 active = get_active()
 
-if not active["messages"][1:]:
-    uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
+# ─── TAMPILAN DASHBOARD VS CHAT ───
+current_view = st.session_state.get("current_view", "chat")
+
+if current_view == "dashboard":
+    # Tampilan Halaman Market Dashboard Kosong
     st.markdown(f"""
-    <div style="text-align:center;padding:10vh 0 2rem;">
-        <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
-        <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
+    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:70vh; text-align:center; padding: 20px;">
+        <h1 style="color:{C['text']}; font-size:2.2rem; font-weight:800; letter-spacing:1px; margin-bottom:12px;">FITUR AKAN SEGERA HADIR</h1>
+        <p style="color:{C['text_muted']}; font-size:1.1rem; font-weight:500; opacity:0.8;">SISTEM INI DIBANGUN by. MarketnMocha</p>
     </div>
     """, unsafe_allow_html=True)
 
-if st.session_state.get("last_error"):
-    st.error(f"⚠️ {st.session_state['last_error']}")
-    st.session_state["last_error"] = None
+else:
+    # Tampilan Aplikasi Chat Normal
+    if not active["messages"][1:]:
+        uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
+        st.markdown(f"""
+        <div style="text-align:center;padding:10vh 0 2rem;">
+            <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-for i, msg in enumerate(active["messages"][1:]):
-    with st.chat_message(msg["role"]):
-        display = msg.get("display") or msg["content"]
-        if "Pertanyaan:" in display: display = display.split("Pertanyaan:")[-1].strip()
-        for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
-            if tag in display: display = display.split(tag)[-1].strip()
-        
-        if msg["role"] == "user":
-            imgs_in_msg = msg.get("images", [])
-            if imgs_in_msg:
-                if len(imgs_in_msg) == 1: st.markdown(f'<img src="data:{imgs_in_msg[0][1]};base64,{imgs_in_msg[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
-                else:
-                    imgs_html = ''.join([f'<img src="data:{imime};base64,{ib64}" style="height:160px;max-width:calc(100%/{len(imgs_in_msg)});object-fit:cover;border-radius:8px;flex:1;">' for ib64, imime in imgs_in_msg])
-                    st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
-            elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
-        st.markdown(display)
+    if st.session_state.get("last_error"):
+        st.error(f"⚠️ {st.session_state['last_error']}")
+        st.session_state["last_error"] = None
 
-try:
-    result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple", file_type=["pdf", "png", "jpg", "jpeg"])
-except TypeError:
-    result = st.chat_input("Tanya SIGMA...")
-
-prompt = None; file_obj = None; multi_images = []
-
-if result is not None:
-    st.session_state.img_data = None; st.session_state.pdf_data = None
-    if hasattr(result, 'text'):
-        prompt = (result.text or "").strip()
-        files = getattr(result, 'files', None) or []
-        img_files = [f for f in files if f.type != "application/pdf"]
-        pdf_files = [f for f in files if f.type == "application/pdf"]
-        if img_files:
-            for _mf in img_files[:5]:
-                try: multi_images.append((base64.b64encode(_mf.read()).decode(), "image/png" if _mf.name.endswith(".png") else "image/jpeg", _mf.name))
-                except: pass
-            if multi_images: st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
-        if pdf_files: file_obj = pdf_files[0]
-    elif isinstance(result, str): prompt = result.strip()
-
-    if prompt and prompt.strip().lower() in ["5 sila", "lima sila", "5sila"]:
-        active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
-        if active:
-            menu_text = """╔══════════════════════════════════════╗\n║          5 SILA SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
-            active["messages"].append({"role": "user", "content": "5 sila", "display": "5 sila"})
-            active["messages"].append({"role": "assistant", "content": menu_text})
-            with st.chat_message("user"): st.markdown("5 sila")
-            with st.chat_message("assistant"): st.markdown(menu_text)
-            st.rerun()
-
-    if file_obj:
-        raw = file_obj.read()
-        if file_obj.type == "application/pdf":
-            try:
-                doc = fitz.open(stream=raw, filetype="pdf")
-                txt = "".join(p.get_text() for p in doc)
-                pdf_content = f"[PDF: {file_obj.name}]\n{txt[:3000]}"
-                st.session_state.pdf_data = (pdf_content, file_obj.name)
-                st.session_state.img_data = None
-            except Exception as pdf_e:
-                st.error(f"Gagal membaca PDF: {str(pdf_e)}")
-                st.session_state.pdf_data = None
-        else:
-            if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
-            st.session_state.pdf_data = None
-
-    if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
-
-if prompt:
-    img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
-    st.session_state.img_data = None; st.session_state.pdf_data = None
-    full_prompt = prompt
-
-    if pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
-    elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
-    elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
-    else:
-        try:
-            ctx = build_combined_context(prompt)
-            if ctx: full_prompt = f"{ctx}\n\n{prompt}"
-        except: pass
-
-    if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
-
-    user_msg = {"role": "user", "content": full_prompt, "display": prompt}
-    if multi_images:
-        user_msg["images"] = [(b64, mime) for b64, mime, name in multi_images[:5]]
-        user_msg["img_b64"] = multi_images[0][0]; user_msg["img_mime"] = multi_images[0][1]
-    elif img_data:
-        user_msg["img_b64"] = img_data[0]; user_msg["img_mime"] = img_data[1]
-
-    active["messages"].append(user_msg)
-
-    with st.chat_message("user"):
-        imgs_to_show = multi_images[:5] if multi_images else ([(img_data[0], img_data[1], img_data[2])] if img_data else [])
-        if imgs_to_show:
-            if len(imgs_to_show) == 1: st.markdown(f'<img src="data:{imgs_to_show[0][1]};base64,{imgs_to_show[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
-            else:
-                imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
-                st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
-        if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
-        st.markdown(prompt)
+    for i, msg in enumerate(active["messages"][1:]):
+        with st.chat_message(msg["role"]):
+            display = msg.get("display") or msg["content"]
+            if "Pertanyaan:" in display: display = display.split("Pertanyaan:")[-1].strip()
+            for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
+                if tag in display: display = display.split(tag)[-1].strip()
+            
+            if msg["role"] == "user":
+                imgs_in_msg = msg.get("images", [])
+                if imgs_in_msg:
+                    if len(imgs_in_msg) == 1: st.markdown(f'<img src="data:{imgs_in_msg[0][1]};base64,{imgs_in_msg[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+                    else:
+                        imgs_html = ''.join([f'<img src="data:{imime};base64,{ib64}" style="height:160px;max-width:calc(100%/{len(imgs_in_msg)});object-fit:cover;border-radius:8px;flex:1;">' for ib64, imime in imgs_in_msg])
+                        st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+                elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+            st.markdown(display)
 
     try:
-        with st.chat_message("assistant"):
-            with st.spinner("SIGMA menganalisis..."):
-                _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
-                ans = None
-                has_image = bool(multi_images or img_data)
-                debug_info = []
+        result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple", file_type=["pdf", "png", "jpg", "jpeg"])
+    except TypeError:
+        result = st.chat_input("Tanya SIGMA...")
 
-                if has_image:
-                    try:
-                        _img_b64 = user_msg.get("img_b64")
-                        _img_mime = user_msg.get("img_mime")
-                        ans, used_model = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
-                        if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model} Vision)*"
-                    except Exception as e_img:
-                        debug_info.append(f"Gemini Vision: {str(e_img)}")
+    prompt = None; file_obj = None; multi_images = []
+
+    if result is not None:
+        st.session_state.img_data = None; st.session_state.pdf_data = None
+        if hasattr(result, 'text'):
+            prompt = (result.text or "").strip()
+            files = getattr(result, 'files', None) or []
+            img_files = [f for f in files if f.type != "application/pdf"]
+            pdf_files = [f for f in files if f.type == "application/pdf"]
+            if img_files:
+                for _mf in img_files[:5]:
+                    try: multi_images.append((base64.b64encode(_mf.read()).decode(), "image/png" if _mf.name.endswith(".png") else "image/jpeg", _mf.name))
+                    except: pass
+                if multi_images: st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
+            if pdf_files: file_obj = pdf_files[0]
+        elif isinstance(result, str): prompt = result.strip()
+
+        if prompt and prompt.strip().lower() in ["5 sila", "lima sila", "5sila"]:
+            active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
+            if active:
+                menu_text = """╔══════════════════════════════════════╗\n║          5 SILA SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
+                active["messages"].append({"role": "user", "content": "5 sila", "display": "5 sila"})
+                active["messages"].append({"role": "assistant", "content": menu_text})
+                with st.chat_message("user"): st.markdown("5 sila")
+                with st.chat_message("assistant"): st.markdown(menu_text)
+                st.rerun()
+
+        if file_obj:
+            raw = file_obj.read()
+            if file_obj.type == "application/pdf":
+                try:
+                    doc = fitz.open(stream=raw, filetype="pdf")
+                    txt = "".join(p.get_text() for p in doc)
+                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:3000]}"
+                    st.session_state.pdf_data = (pdf_content, file_obj.name)
+                    st.session_state.img_data = None
+                except Exception as pdf_e:
+                    st.error(f"Gagal membaca PDF: {str(pdf_e)}")
+                    st.session_state.pdf_data = None
+            else:
+                if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
+                st.session_state.pdf_data = None
+
+        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
+
+    if prompt:
+        img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
+        st.session_state.img_data = None; st.session_state.pdf_data = None
+        full_prompt = prompt
+
+        if pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+        elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+        elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
+        else:
+            try:
+                ctx = build_combined_context(prompt)
+                if ctx: full_prompt = f"{ctx}\n\n{prompt}"
+            except: pass
+
+        if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
+
+        user_msg = {"role": "user", "content": full_prompt, "display": prompt}
+        if multi_images:
+            user_msg["images"] = [(b64, mime) for b64, mime, name in multi_images[:5]]
+            user_msg["img_b64"] = multi_images[0][0]; user_msg["img_mime"] = multi_images[0][1]
+        elif img_data:
+            user_msg["img_b64"] = img_data[0]; user_msg["img_mime"] = img_data[1]
+
+        active["messages"].append(user_msg)
+
+        with st.chat_message("user"):
+            imgs_to_show = multi_images[:5] if multi_images else ([(img_data[0], img_data[1], img_data[2])] if img_data else [])
+            if imgs_to_show:
+                if len(imgs_to_show) == 1: st.markdown(f'<img src="data:{imgs_to_show[0][1]};base64,{imgs_to_show[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
                 else:
-                    try:
-                        ans, used_model = _call_gemini_text(_history_msgs[-5:])
-                        if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model})*"
-                    except Exception as e_txt:
-                        debug_info.append(f"Gemini Text: {str(e_txt)}")
-                        
-                        if not ans:
-                            try:
-                                client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
-                                mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab SEMUA pertanyaan WAJIB dalam Bahasa Indonesia dengan ringkas dan akurat."}
-                                safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
-                                
-                                _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
-                                _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
-                                ans = _res.choices[0].message.content
-                                if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
-                            except Exception as e_groq:
-                                debug_info.append(f"Groq: {str(e_groq)}")
-                
-                if not ans:
-                    err_msg = " | ".join(debug_info)
-                    ans = f"Maaf, semua sistem AI sedang sibuk. Coba beberapa saat lagi.\n\n`Log: {err_msg}`"
-                
-            st.markdown(ans)
-        active["messages"].append({"role": "assistant", "content": ans})
-    except Exception as e:
-        st.session_state["last_error"] = str(e)
-        st.error(f"⚠️ {str(e)}")
+                    imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
+                    st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+            if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
+            st.markdown(prompt)
 
-    st.rerun()
+        try:
+            with st.chat_message("assistant"):
+                with st.spinner("SIGMA menganalisis..."):
+                    _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
+                    ans = None
+                    has_image = bool(multi_images or img_data)
+                    debug_info = []
+
+                    if has_image:
+                        try:
+                            _img_b64 = user_msg.get("img_b64")
+                            _img_mime = user_msg.get("img_mime")
+                            ans, used_model = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
+                            if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model} Vision)*"
+                        except Exception as e_img:
+                            debug_info.append(f"Gemini Vision: {str(e_img)}")
+                    else:
+                        try:
+                            ans, used_model = _call_gemini_text(_history_msgs[-5:])
+                            if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model})*"
+                        except Exception as e_txt:
+                            debug_info.append(f"Gemini Text: {str(e_txt)}")
+                            
+                            if not ans:
+                                try:
+                                    client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
+                                    mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab SEMUA pertanyaan WAJIB dalam Bahasa Indonesia dengan ringkas dan akurat."}
+                                    safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
+                                    
+                                    _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
+                                    _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
+                                    ans = _res.choices[0].message.content
+                                    if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
+                                except Exception as e_groq:
+                                    debug_info.append(f"Groq: {str(e_groq)}")
+                    
+                    if not ans:
+                        err_msg = " | ".join(debug_info)
+                        ans = f"Maaf, semua sistem AI sedang sibuk. Coba beberapa saat lagi.\n\n`Log: {err_msg}`"
+                    
+                st.markdown(ans)
+            active["messages"].append({"role": "assistant", "content": ans})
+        except Exception as e:
+            st.session_state["last_error"] = str(e)
+            st.error(f"⚠️ {str(e)}")
+
+        st.rerun()
 
 if user:
     sessions_to_save = []
