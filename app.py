@@ -2815,30 +2815,21 @@ if result is not None:
             st.rerun()
 
     if file_obj:
-        raw = file_obj.read()
-        if file_obj.type == "application/pdf":
-            doc = fitz.open(stream=raw, filetype="pdf"); total_pages = len(doc); pages_text = [p.get_text() for p in doc]; txt_full = "".join(pages_text)
-            _fin_kw = ["revenue","ebitda","net income","profit","loss","assets","liabilities","equity","cash","pendapatan","laba","rugi","aset","utang","modal","rp bn","rp billion","million","triliun","miliar","per share"]
-            _priority_pages, _other_pages = [], []
-            for i, pt in enumerate(pages_text):
-                if any(k in pt.lower() for k in _fin_kw): _priority_pages.append(pt)
-                else: _other_pages.append(pt)
-            txt_send = ("".join(_priority_pages) + "".join(_other_pages))[:7000]
-            try: enrichment = enrich_pdf_context(txt_full[:5000])
-            except: enrichment = ""
-            pdf_content = f"[PDF: {file_obj.name} | {total_pages} hal | {len(txt_send):,}/{len(txt_full):,} kar]\n{txt_send}"
-            if enrichment: pdf_content += enrichment
-            st.session_state.pdf_data = (pdf_content, file_obj.name)
-        else:
-            if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
-            st.session_state.pdf_data = None
-
-    if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
-
-if prompt:
-    img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
-    st.session_state.img_data = None; st.session_state.pdf_data = None
-    full_prompt = prompt
+            raw = file_obj.read()
+            if file_obj.type == "application/pdf":
+                # ─── FITUR PDF DIMATIKAN SEMENTARA UNTUK MENCEGAH RATE LIMIT GROQ ───
+                st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
+                st.session_state.pdf_data = None
+            else:
+                if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
+                st.session_state.pdf_data = None
+    
+        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
+    
+    if prompt:
+        img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
+        st.session_state.img_data = None; st.session_state.pdf_data = None
+        full_prompt = prompt
 
     if pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
     elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
