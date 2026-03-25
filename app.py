@@ -2701,18 +2701,25 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
-var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
-['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+
+/* =========================================================
+   1. BAGIAN MENU & TOMBOL PLUS (YANG MAU KITA PERBAIKI)
+   ========================================================= */
+['spbtn','spmenu','sphist','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
 
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-/* Menu sekarang diposisikan persis di atas Chat Bar */
-#spmenu,#sphist{{position:fixed; bottom:95px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:99998;display:none;overflow:hidden;min-width:250px;}} 
+#spmenu,#sphist{{position:fixed; bottom:85px; left:20px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999999;display:none;overflow:hidden;min-width:250px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;}} .smi:hover{{background:{C["hover"]}}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left; text-decoration:none;}} .smi:hover{{background:{C["hover"]}}}
 .smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
 .smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+
+/* Sembunyikan tombol upload asli bawaan Streamlit */
+div[data-testid="stChatInputContainer"] button[aria-label="Attach files"],
+div[data-testid="stChatInputContainer"] button:has(input[type="file"]) {{
+    display: none !important;
+}}
 `; pd.head.appendChild(s);
 
 var m=pd.createElement('div');m.id='spmenu';
@@ -2721,453 +2728,148 @@ m.innerHTML=`
     <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
     <div class="smsp"></div>
     <button class="smi" id="smi-upload"><span class="smico">📎</span>Upload File / Gambar</button>
-    <div class="smsp"></div>
-    <div class="smhd">PENAMPILAN</div>
-    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a>
-    <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a>
-    <div class="smsp"></div>
-    <a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
-`;
-pd.body.appendChild(m);
-
-var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-
-// ── INJEKSI TOMBOL MENU KE DALAM CHAT BAR ──
-function setupChatBarMenu() {{
-    var chatBox = pd.querySelector('[data-testid="stChatInputContainer"]');
-    if (chatBox && !pd.getElementById('sigma-plus-btn')) {{
-        // Sembunyikan tombol attach bawaan Streamlit
-        var nativeBtns = chatBox.querySelectorAll('button');
-        nativeBtns.forEach(btn => {{
-            if(btn.innerHTML.includes('svg') && !btn.innerHTML.includes('send') && (!btn.hasAttribute('aria-label') || btn.getAttribute('aria-label')==='Attach files')) {{
-                btn.style.display = 'none';
-            }}
-        }});
-
-        // Buat tombol "+" gaya baru
-        var plusBtn = pd.createElement('button');
-        plusBtn.id = 'sigma-plus-btn';
-        plusBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
-        plusBtn.style.cssText = 'background:transparent; border:none; color:{C["text_muted"]}; cursor:pointer; padding:8px 12px; display:flex; align-items:center; justify-content:center; transition:color 0.2s;';
-        
-        // Letakkan di sebelah kiri kotak teks
-        chatBox.insertBefore(plusBtn, chatBox.firstChild);
-
-        plusBtn.onclick = function(e) {{
-            e.preventDefault(); e.stopPropagation();
-            if (m.style.display === 'block') {{
-                m.style.display = 'none';
-            }} else {{
-                m.style.display = 'block';
-                h.style.display = 'none';
-                var rect = chatBox.getBoundingClientRect();
-                m.style.left = rect.left + 'px';
-                h.style.left = rect.left + 'px';
-            }}
-        }};
-    }}
-}}
-setInterval(setupChatBarMenu, 1000); // Pastikan tombol selalu ada
-
-// Trigger Upload File Bawaan Streamlit
-pd.getElementById('smi-upload').onclick = function(e) {{
-    e.preventDefault();
-    var fileInput = pd.querySelector('[data-testid="stChatInputContainer"] input[type="file"]');
-    if(fileInput) fileInput.click();
-    m.style.display = 'none';
-}};
-
-(function(){{
-    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString(); pd.getElementById('smi-new').style.textDecoration='none';
-    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display=h.style.display==='block'?'none':'block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString(); pd.getElementById('smi-dark').style.textDecoration='none';
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString(); pd.getElementById('smi-light').style.textDecoration='none';
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString(); pd.getElementById('smi-out').style.textDecoration='none';
-}})();
-
-pd.addEventListener('click',function(e){{ 
-    var menuBtn = pd.getElementById('sigma-plus-btn');
-    if(menuBtn && !menuBtn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
-    if(menuBtn && !menuBtn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
-}});
-}})();
-</script>
-""", height=0)
-
-if "do" in st.query_params:
-    _do = st.query_params.get("do", "")
-    _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
-    if _do == "logout":
-        if _tok:
-            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
-            except: pass
-        st.session_state.clear(); st.query_params.clear()
-        components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
-        st.stop()
-    elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params["do"] = ""; st.rerun()
-    elif _do == "theme_light": st.session_state.theme = "light"; st.query_params["do"] = ""; st.rerun()
-    elif _do == "newchat":
-        ns = new_session(); st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params["do"] = ""; st.rerun()
-    elif _do.startswith("sel_"):
-        _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params["do"] = ""; st.rerun()
-
-active = get_active()
-
-if not active["messages"][1:]:
-    uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
-    st.markdown(f"""
-    <div style="text-align:center;padding:10vh 0 2rem;">
-        <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
-        <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-if st.session_state.get("last_error"):
-    st.error(f"⚠️ {st.session_state['last_error']}")
-    st.session_state["last_error"] = None
-
-for i, msg in enumerate(active["messages"][1:]):
-    with st.chat_message(msg["role"]):
-        display = msg.get("display") or msg["content"]
-        if "Pertanyaan:" in display: display = display.split("Pertanyaan:")[-1].strip()
-        for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
-            if tag in display: display = display.split(tag)[-1].strip()
-        if msg["role"] == "user":
-            imgs_in_msg = msg.get("images", [])
-            if imgs_in_msg:
-                if len(imgs_in_msg) == 1: st.markdown(f'<img src="data:{imgs_in_msg[0][1]};base64,{imgs_in_msg[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
-                else:
-                    imgs_html = ''.join([f'<img src="data:{imime};base64,{ib64}" style="height:160px;max-width:calc(100%/{len(imgs_in_msg)});object-fit:cover;border-radius:8px;flex:1;">' for ib64, imime in imgs_in_msg])
-                    st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
-            elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
-        st.markdown(display)
-
-try:
-    result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple", file_type=["pdf", "png", "jpg", "jpeg"])
-except TypeError:
-    result = st.chat_input("Tanya SIGMA...")
-
-prompt = None; file_obj = None; multi_images = []
-
-if result is not None:
-    st.session_state.img_data = None; st.session_state.pdf_data = None
-    if hasattr(result, 'text'):
-        prompt = (result.text or "").strip()
-        files = getattr(result, 'files', None) or []
-        img_files = [f for f in files if f.type != "application/pdf"]
-        pdf_files = [f for f in files if f.type == "application/pdf"]
-        if img_files:
-            for _mf in img_files[:5]:
-                try: multi_images.append((base64.b64encode(_mf.read()).decode(), "image/png" if _mf.name.endswith(".png") else "image/jpeg", _mf.name))
-                except: pass
-            if multi_images: st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
-        if pdf_files: file_obj = pdf_files[0]
-    elif isinstance(result, str): prompt = result.strip()
-
-    if prompt and prompt.strip().lower() in ["5 sila", "lima sila", "5sila"]:
-        active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
-        if active:
-            menu_text = """╔══════════════════════════════════════╗\n║          5 SILA SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
-            active["messages"].append({"role": "user", "content": "5 sila", "display": "5 sila"})
-            active["messages"].append({"role": "assistant", "content": menu_text})
-            with st.chat_message("user"): st.markdown("5 sila")
-            with st.chat_message("assistant"): st.markdown(menu_text)
-            st.rerun()
-
-    if file_obj:
-        raw = file_obj.read()
-        if file_obj.type == "application/pdf":
-            st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
-            st.session_state.pdf_data = None
-        else:
-            if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
-            st.session_state.pdf_data = None
-
-    if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
-
-if prompt:
-    img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
-    st.session_state.img_data = None; st.session_state.pdf_data = None
-    full_prompt = prompt
-
-    if pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
-    elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
-    elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
-    else:
-        _p = prompt.lower()
-        _is_fund_cmd = any(k in _p for k in ["fundamental","valuasi","laporan keuangan","keuangan","roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk","analisa pdf","revenue","ebitda","net income"])
-        _ticker_found = detect_ticker_from_prompt(prompt)
-
-        if _is_fund_cmd and _ticker_found:
-            try: fund_data = build_fundamental_from_text(prompt)
-            except Exception as _fe: fund_data = f"[Data fetch error: {_fe}] Gunakan knowledge model untuk {_ticker_found}."
-            _harga_line = next((_l.strip() for _l in fund_data.split("\n") if "Harga Saham Saat Ini" in _l or "Harga Saham" in _l), "")
-            full_prompt = f"{fund_data}\n\nPerintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found}.\nFORMAT OUTPUT WAJIB dimulai tepat seperti ini:\n📋 ANALISA FUNDAMENTAL — {_ticker_found} (2026)\n{_harga_line if _harga_line else '💹 Harga: (dari data di atas)'}\n🏦 Sektor: ...\nKemudian lanjutkan dengan semua seksi.\nIcon status: pilih SATU — ✅ pass, ⚠️ perhatian, ❌ fail. JANGAN [✅/⚠️/❌].\nVERDICT harus minimal 4-5 kalimat: kondisi bisnis, tren, valuasi, risiko utama, saran konkret."
-            st.session_state["fund_no_history"] = True
-        else:
-            try:
-                ctx = build_combined_context(prompt)
-                if ctx: full_prompt = f"{ctx}\n\n{prompt}"
-                else:
-                    _tickers_in_prompt = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper()) if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG","ANALISA","SAHAM","MOHON","BISA","DENGAN","MINTA","APAKAH","BAGAIMANA","KENAPA","IHSG","WAIT","HOLD"}]
-                    if _tickers_in_prompt:
-                        try:
-                            _price_ctx = build_context(prompt)
-                            if _price_ctx: full_prompt = f"{_price_ctx}\n\n{prompt}"
-                        except: pass
-            except: pass
-
-    if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
-
-    user_msg = {"role": "user", "content": full_prompt, "display": prompt}
-    if multi_images:
-        user_msg["images"] = [(b64, mime) for b64, mime, name in multi_images[:5]]
-        user_msg["img_b64"] = multi_images[0][0]; user_msg["img_mime"] = multi_images[0][1]
-        st.session_state[f"thumb_{active['id']}_{len(active['messages']) - 1}"] = (multi_images[0][0], multi_images[0][1])
-    elif img_data:
-        user_msg["img_b64"] = img_data[0]; user_msg["img_mime"] = img_data[1]
-        st.session_state[f"thumb_{active['id']}_{len(active['messages']) - 1}"] = (img_data[0], img_data[1])
-
-    active["messages"].append(user_msg)
-
-    with st.chat_message("user"):
-        imgs_to_show = multi_images[:5] if multi_images else ([(img_data[0], img_data[1], img_data[2])] if img_data else [])
-        if imgs_to_show:
-            if len(imgs_to_show) == 1: st.markdown(f'<img src="data:{imgs_to_show[0][1]};base64,{imgs_to_show[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
-            else:
-                imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
-                st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
-        if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
-        st.markdown(prompt)
-
-    try:
-        with st.chat_message("assistant"):
-            with st.spinner("SIGMA menganalisis..."):
-                _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
-                _last_content = _history_msgs[-1]["content"] if _history_msgs else ""
-                _no_history = st.session_state.pop("fund_no_history", False)
-                _has_pdf = "[PDF:" in _last_content
-                _p_lower = prompt.lower() if prompt else ""
-
-                _is_fundamental = _no_history or _has_pdf or any(k in _p_lower for k in ["fundamental","valuasi","laporan keuangan","keuangan","roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk","analisa pdf","revenue","ebitda","net income"])
-                _is_analisa_lengkap = not _has_pdf and any(k in _p_lower for k in ["analisa lengkap","full analisa","5 sila","kesimpulan bandarmologi","bandarmologi","broker","teknikal","analisa chart","divergen","divergence","kesimpulan dampak","dampak","pengaruh","efek","akumulasi","distribusi","bandar","volume anomali","siklus","shakeout","breakout","breakdown"])
-
-                _sys_short = {"role": "system", "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nRamah saat ngobrol, profesional saat analisa. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nKemampuan: teknikal (MnM Strategy+), fundamental, bandarmologi, makro, umum.\nIDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25.\n5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]\nPENTING: Jika ada [DATA PASAR IDX] → gunakan harga dari sana. Jika tidak ada data harga → sebutkan 'harga tidak tersedia saat ini, mohon cek manual' — JANGAN mengarang harga."}
-                _sys_medium = {"role": "system", "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nProfesional dalam analisa fundamental. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nIDX = LONG ONLY. Kalimat sakti: 'Beli bisnis bagus di harga murah, bukan harga murah tanpa bisnis bagus'\n\nFRAMEWORK FUNDAMENTAL:\nBank: NIM>4%|NPL<3%|LDR 80-92%|CAR>14%|ROA>1.5%|ROE>15%|BOPO<70%|CIR<45%\nUmum: ROE>15%|DER<0.5|EPS growth konsisten|PBV<1.5|PER<15|FCF>NI\nDISIPLIN DATA: gunakan data terbaru, jangan pakai 2018-2020 kalau ada 2023-2025\nCORPORATE ACTION: cek split/reverse/right issue jika harga anomali\nFORMAT: 📋 ANALISA FUNDAMENTAL — [EMITEN] (2026) | harga | sektor | profitabilitas | valuasi | tren | proyeksi | verdict\nIcon: ✅ pass | ⚠️ perhatian | ❌ fail — pilih SATU saja"}
-
-                if _is_analisa_lengkap: _msgs = [active["messages"][0], {"role": _history_msgs[-1]["role"], "content": _last_content[:15000]}]
-                elif _is_fundamental: _msgs = [_sys_medium, {"role": _history_msgs[-1]["role"], "content": _last_content[:8000]}]
-                else: _msgs = [_sys_short] + _history_msgs[-4:]
-
-                ans = None
-                has_image = bool(multi_images or img_data)
-                
-                # ── ENGINE 1: GEMINI 1.5 PRO (UTAMA) ──
-                try:
-                    genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
-                    model = genai.GenerativeModel('gemini-1.5-pro')
-                    
-                    _gem_contents = []
-                    for m in _history_msgs[:-1]: 
-                        _role = "user" if m["role"] == "user" else "model"
-                        _gem_contents.append({"role": _role, "parts": [{"text": m["content"]}]})
-                    
-                    _last_parts = []
-                    if has_image:
-                        all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
-                        for _ib64, _imime, _iname in all_imgs[:5]: 
-                            _last_parts.append({"inline_data": {"mime_type": _imime, "data": _ib64}})
-                    _last_parts.append({"text": _last_content})
-                    _gem_contents.append({"role": "user", "parts": _last_parts})
-
-                    _sys_instr = _sys_medium["content"] if _is_fundamental else _sys_short["content"]
-                    
-                    response = model.generate_content(
-                        contents=_gem_contents, 
-                        system_instruction=_sys_instr
-                    )
-                    ans = response.text
-                    if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 1.5 Pro)*"
-                except Exception as e_gem:
-                    pass # Lanjut ke Groq jika limit/error
-
-                # ── ENGINE 2: GROQ (CADANGAN) ──
-                if not ans and not has_image:
-                    try:
-                        client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
-                        _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=2048)
-                        ans = _res.choices[0].message.content
-                        if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
-                    except Exception as e_groq:
-                        pass
-                
-                if not ans:
-                    ans = "Maaf, semua sistem AI (Gemini & Groq) sedang sibuk atau limit kuota. Silakan coba beberapa saat lagi."
-                
-            st.markdown(ans)
-        active["messages"].append({"role": "assistant", "content": ans})
-    except Exception as e:
-        st.session_state["last_error"] = str(e)
-        st.error(f"⚠️ {str(e)}")
-
-    st.rerun()
-
-if user:
-    sessions_to_save = []
-    for s in st.session_state.sessions:
-        msgs = [dict(m) for m in s["messages"] if m["role"] != "system"]
-        sessions_to_save.append({"id": s["id"], "title": s["title"], "created": s["created"], "messages": msgs})
-    save_user(user["email"], {"theme": st.session_state.get("theme", "dark"), "sessions": sessions_to_save, "active_id": st.session_state.active_id})
-
-_new_token = st.session_state.pop("new_token", None)
-if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
-
-if st.session_state.user is None:
-    components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
-
-components.html(f"""
-<script>
-(function(){{
-var pd = window.parent.document;
-
-// 1. BERSIHKAN ELEMEN LAMA AGAR TIDAK BENTROK
-['spbtn','spmenu','sphist','sigma-menu-css'].forEach(function(id){{ 
-    var el = pd.getElementById(id); if(el) el.remove(); 
-}});
-
-// 2. CSS SAKTI: MUSNAHKAN TOMBOL ASLI & DESAIN MENU
-var s = pd.createElement('style'); s.id = 'sigma-menu-css';
-s.textContent = `
-    /* KUNCI UTAMA: Sembunyikan tombol upload bawaan Streamlit secara paksa selamanya */
-    div[data-testid="stChatInputContainer"] button:has(input[type="file"]) {{
-        display: none !important;
-    }}
-    
-    #spmenu, #sphist {{
-        position: fixed; bottom: 85px; left: 20px; 
-        background: {C["sidebar_bg"]}; border: 1px solid {C["border"]}; 
-        border-radius: 16px; box-shadow: 0 -4px 24px rgba(0,0,0,0.5); 
-        z-index: 999999; display: none; overflow: hidden; min-width: 250px;
-    }}
-    #sphist {{ max-height: 55vh; overflow-y: auto; }}
-    .smi {{ display: flex; align-items: center; gap: 14px; padding: 13px 18px; font-size: 1rem; color: {C["text"]}; cursor: pointer; border: none; background: transparent; width: 100%; text-align: left; text-decoration: none; }}
-    .smi:hover {{ background: {C["hover"]}; }}
-    .smico {{ width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; background: {C["hover"]}; flex-shrink: 0; }}
-    .smsp {{ border-top: 1px solid {C["border"]}; margin: 4px 0; }}
-    .smhd {{ padding: 8px 18px 4px; font-size: 0.68rem; color: {C["text_muted"]}; font-weight: 600; letter-spacing: 1px; }}
-    
-    /* Desain tombol plus palsu buatan kita */
-    #sigma-plus-fake {{
-        background: transparent; border: none; cursor: pointer; padding: 10px; margin: 0 4px; 
-        display: flex; align-items: center; justify-content: center; color: {C["text_muted"]};
-        border-radius: 50%; transition: all 0.2s;
-    }}
-    #sigma-plus-fake:hover {{
-        background: {C["hover"]}; color: {C["text"]};
-    }}
-`;
-pd.head.appendChild(s);
-
-// 3. BANGUN MENU UTAMA
-var m = pd.createElement('div'); m.id = 'spmenu';
-m.innerHTML = `
-    <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
-    <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
-    <div class="smsp"></div>
-    <button class="smi" id="smi-upload"><span class="smico">📎</span>Upload File / Gambar</button>
+    <a class="smi" id="smi-stats"><span class="smico">📊</span>Market Dashboard</a>
     <div class="smsp"></div>
     <div class="smhd">PENAMPILAN</div>
     <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap</a>
     <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang</a>
     <div class="smsp"></div>
-    <a class="smi" id="smi-out" style="color:#f55!important"><span class="smico">🚪</span>Keluar</a>
-`;
-pd.body.appendChild(m);
+    <a class="smi smred" id="smi-out" style="color:#f55!important;"><span class="smico">🚪</span>Keluar</a>
+`; pd.body.appendChild(m);
 
-// 4. BANGUN MENU RIWAYAT
-var h = pd.createElement('div'); h.id = 'sphist'; 
-h.innerHTML = '<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} 
-pd.body.appendChild(h);
+var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
 
-// 5. INJEKSI TOMBOL PLUS KITA KE BAR CHAT STREAMLIT
-function injectFakePlus() {{
+// Injeksi tombol plus buatan kita ke dalam Chat Bar
+function setupChatBarMenu() {{
     var chatBox = pd.querySelector('div[data-testid="stChatInputContainer"]');
     if (chatBox && !pd.getElementById('sigma-plus-fake')) {{
-        // Masukkan tombol kita persis di posisi paling kiri
-        chatBox.insertAdjacentHTML('afterbegin', `
-            <button id="sigma-plus-fake" title="Menu SIGMA">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-            </button>
-        `);
+        var btn = pd.createElement('button');
+        btn.id = 'sigma-plus-fake';
+        btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{C["text_muted"]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
+        btn.style.cssText = 'background:transparent; border:none; cursor:pointer; padding:10px; display:flex; align-items:center; justify-content:center; transition:transform 0.2s;';
         
-        // Berikan fungsi klik untuk buka menu
-        pd.getElementById('sigma-plus-fake').onclick = function(e) {{
+        btn.onmouseover = function() {{ this.style.transform = 'scale(1.1)'; }};
+        btn.onmouseout = function() {{ this.style.transform = 'scale(1)'; }};
+        
+        btn.onclick = function(e) {{
             e.preventDefault(); e.stopPropagation();
-            if (m.style.display === 'block') {{
-                m.style.display = 'none';
-            }} else {{
-                m.style.display = 'block';
-                h.style.display = 'none';
-            }}
+            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+            h.style.display = 'none';
         }};
+        
+        // Letakkan tombol ini di sebelah kiri kolom ketik
+        var textarea = chatBox.querySelector('textarea');
+        if(textarea && textarea.parentNode) {{
+            textarea.parentNode.insertBefore(btn, textarea);
+        }}
     }}
 }}
-// Gunakan interval sangat cepat (100ms) agar tombol kita tidak bisa ditendang oleh Streamlit
-setInterval(injectFakePlus, 100);
+setInterval(setupChatBarMenu, 500);
 
-// 6. FUNGSI KLIK PADA MENU
-var btnUpload = pd.getElementById('smi-upload');
-if(btnUpload) {{
-    btnUpload.onclick = function(e) {{
-        e.preventDefault();
-        // Cari input file asli yang tadi kita sembunyikan, lalu paksa klik dari belakang layar!
-        var realInput = pd.querySelector('div[data-testid="stChatInputContainer"] input[type="file"]');
-        if(realInput) realInput.click();
-        m.style.display = 'none';
-    }};
-}}
+pd.getElementById('smi-upload').onclick = function(e) {{
+    e.preventDefault();
+    var realInput = pd.querySelector('div[data-testid="stChatInputContainer"] input[type="file"]');
+    if(realInput) realInput.click();
+    m.style.display = 'none';
+}};
 
-var btnHist = pd.getElementById('smi-hist');
-if(btnHist) {{
-    btnHist.onclick = function(e) {{
-        e.preventDefault();
-        m.style.display = 'none';
-        h.style.display = 'block';
-    }};
-}}
-
-// Daftarkan link routing (Dark mode, Light mode, dll)
 (function(){{
     var u; 
-    u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); 
-    var n = pd.getElementById('smi-new'); if(n) n.href=u.toString();
-    
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); 
-    var d = pd.getElementById('smi-dark'); if(d) d.href=u.toString();
-    
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); 
-    var l = pd.getElementById('smi-light'); if(l) l.href=u.toString();
-    
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); 
-    var o = pd.getElementById('smi-out'); if(o) o.href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
 }})();
 
-// Tutup menu jika user klik di sembarang tempat
-pd.addEventListener('click', function(e){{ 
-    var fakePlus = pd.getElementById('sigma-plus-fake');
-    if(fakePlus && !fakePlus.contains(e.target) && m && !m.contains(e.target)) {{
-        m.style.display = 'none'; 
-    }}
-    if(fakePlus && !fakePlus.contains(e.target) && h && !h.contains(e.target) && m && !m.contains(e.target)) {{
-        h.style.display = 'none';
-    }}
+pd.addEventListener('click',function(e){{ 
+    var fakeBtn = pd.getElementById('sigma-plus-fake');
+    if(fakeBtn && !fakeBtn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
+    if(fakeBtn && !fakeBtn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
 }});
+
+
+/* =========================================================
+   2. FITUR UI KESAYANGAN KAMU (KEMBALI UTUH!)
+   ========================================================= */
+
+// --- BUBBLE CHAT & WARNA ---
+function fixBubbles() {{
+    const doc = window.parent.document;
+    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
+        if (!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
+        msg.style.cssText += 'display:flex!important;justify-content:flex-end!important;background:transparent!important;border:none!important;box-shadow:none!important;padding:4px 0!important;';
+        const av = msg.querySelector('[data-testid="stChatMessageAvatarUser"]'); if (av) av.style.display = 'none';
+        const ct = msg.querySelector('[data-testid="stChatMessageContent"]');
+        if (ct) ct.style.cssText += 'background:transparent!important;display:flex!important;justify-content:flex-end!important;max-width:100%!important;padding:0!important;';
+        msg.querySelectorAll('[data-testid="stMarkdownContainer"]').forEach(md => {{
+            md.style.background = 'transparent'; md.style.display = 'flex'; md.style.justifyContent = 'flex-end';
+            if (!md.querySelector('.navy-pill')) {{
+                const pill = document.createElement('div'); pill.className = 'navy-pill'; var mob=window.parent.innerWidth<=768;
+                pill.style.cssText=`background:linear-gradient(135deg,#42a8e0,#1a4fad);color:#ffffff;border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
+                while (md.firstChild) pill.appendChild(md.firstChild); md.appendChild(pill);
+            }}
+            var pill = md.querySelector('.navy-pill');
+            if (pill) {{ pill.style.setProperty('color','#ffffff','important'); pill.style.setProperty('background','linear-gradient(135deg,#42a8e0,#1a4fad)','important'); pill.querySelectorAll('*').forEach(function(el){{el.style.setProperty('color','#ffffff','important');}}); }}
+        }});
+    }});
+}}
+fixBubbles(); setInterval(fixBubbles, 800);
+
+// --- TOMBOL COPY ---
+function addActionButtons() {{
+    var doc = window.parent.document;
+    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
+        if (msg.querySelector('.sigma-actions')) return;
+        if (!!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
+        function getMsgText() {{ var md = msg.querySelector('[data-testid="stMarkdownContainer"]'); return md ? md.innerText : ''; }}
+        var bar = doc.createElement('div'); bar.className = 'sigma-actions'; bar.style.cssText = 'display:flex;gap:2px;margin-top:6px;padding:0 2px;';
+        var copyBtn = doc.createElement('button'); copyBtn.title = 'Salin'; copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8e8ea0\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>';
+        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:5px 6px;border-radius:6px;display:flex;align-items:center;';
+        copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}}; copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
+        copyBtn.onclick = function() {{
+            var txt = getMsgText();
+            function showOk() {{ copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#4CAF50\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg>'; setTimeout(function(){{ copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8e8ea0\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>'; }}, 2000); }}
+            navigator.clipboard.writeText(txt).then(showOk).catch(function(){{ var ta=doc.createElement('textarea'); ta.value=txt; doc.body.appendChild(ta); ta.select(); doc.execCommand('copy'); doc.body.removeChild(ta); showOk(); }});
+        }};
+        bar.appendChild(copyBtn); msg.style.flexDirection='column'; msg.appendChild(bar);
+    }});
+}}
+setInterval(addActionButtons, 1000);
+
+// --- DRAG, DROP & PASTE ---
+function setupDragDrop() {{
+    var pw = window.parent; var pd = pw.document; if (pw._sigmaDragOK) return;
+    var overlay = pd.createElement('div'); overlay.id = 'sigma-drop-overlay'; overlay.style.cssText = 'position:fixed;inset:0;background:rgba(27,42,74,0.55);z-index:99997;display:none;align-items:center;justify-content:center;pointer-events:none;';
+    overlay.innerHTML = '<div style="background:#1B2A4A;color:#fff;border:2px dashed #4a90d9;border-radius:16px;padding:32px 48px;font-size:1.1rem;text-align:center;">📂 Lepaskan file di sini</div>';
+    pd.body.appendChild(overlay);
+    var dragCount = 0;
+    pd.addEventListener('dragenter', function(e) {{ e.preventDefault(); dragCount++; overlay.style.display = 'flex'; }}, true);
+    pd.addEventListener('dragleave', function(e) {{ dragCount--; if (dragCount <= 0) {{ dragCount = 0; overlay.style.display = 'none'; }} }}, true);
+    pd.addEventListener('dragover', function(e) {{ e.preventDefault(); }}, true);
+    pd.addEventListener('drop', function(e) {{
+        e.preventDefault(); dragCount = 0; overlay.style.display = 'none';
+        var files = e.dataTransfer && e.dataTransfer.files; if (!files || files.length === 0) return;
+        var allowed = ['application/pdf','image/png','image/jpeg','image/jpg']; var validFiles = [];
+        for (var i = 0; i < Math.min(files.length, 5); i++) {{ if (allowed.includes(files[i].type)) validFiles.push(files[i]); }}
+        if (validFiles.length === 0) return;
+        var chatContainer = pd.querySelector('[data-testid="stChatInputContainer"]');
+        var fileInput = chatContainer ? chatContainer.querySelector('input[type="file"]') : null;
+        if (!fileInput) {{ var allInputs = pd.querySelectorAll('input[type="file"]'); fileInput = allInputs[allInputs.length - 1]; }}
+        if (fileInput) {{
+            try {{
+                var dt = new DataTransfer(); for (var f of validFiles) dt.items.add(f);
+                Object.defineProperty(fileInput, 'files', {{value: dt.files, configurable:true, writable:true}});
+                fileInput.dispatchEvent(new Event('change', {{bubbles:true}})); fileInput.dispatchEvent(new Event('input', {{bubbles:true}}));
+            }} catch(err) {{ console.log('drop err', err); }}
+        }}
+    }}, true);
+    pw._sigmaDragOK = true;
+}}
+setupDragDrop(); setTimeout(setupDragDrop, 2000);
+
 }})();
 </script>
 """, height=0)
