@@ -2931,12 +2931,13 @@ if prompt:
                 has_image = bool(multi_images or img_data)
                 debug_info = []
                 
-                # ── ENGINE 1: GEMINI PRO (UTAMA UNTUK TEKS & GAMBAR) ──
+                # ── ENGINE 1: GEMINI FLASH (PALING AMAN DARI ERROR 404) ──
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
                     
-                    # FIX 1: Gunakan gemini-1.5-pro untuk SEMUANYA. Pro sangat mahir menganalisis chart dan gambar.
-                    model_name = 'gemini-1.5-pro' 
+                    # FIX 1: Kita paksakan pakai gemini-1.5-flash untuk semua. 
+                    # Flash tidak pernah kena error 404 dan kemampuannya membaca chart sudah SANGAT MAUT!
+                    model_name = 'gemini-1.5-flash' 
                     
                     try:
                         model = genai.GenerativeModel(
@@ -2965,7 +2966,7 @@ if prompt:
                             raise inner_e 
                             
                     ans = response.text
-                    if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini Pro)*"
+                    if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini Flash)*"
                 except Exception as e_gem:
                     debug_info.append(f"Gemini: {str(e_gem)}")
 
@@ -2974,17 +2975,9 @@ if prompt:
                     try:
                         client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                         if has_image:
-                            content_arr = [{"type": "text", "text": prompt}]
-                            content_arr.append({"type": "image_url", "image_url": {"url": f"data:{user_msg['img_mime']};base64,{user_msg['img_b64']}"}})
-                            
-                            # FIX 2: Gunakan model Vision Groq yang TERBARU dan aktif
-                            _res = client.chat.completions.create(
-                                model="llama-3.2-90b-vision-preview",
-                                messages=[{"role": "user", "content": content_arr}],
-                                max_tokens=1024
-                            )
-                            ans = _res.choices[0].message.content
-                            if ans: ans += "\n\n*(👁️ Dijawab menggunakan Groq Vision)*"
+                            # FIX 2: Karena semua model Groq Vision dihapus dari server mereka (decommissioned),
+                            # kita tidak akan memaksa Groq melihat gambar. Kita beritahu user dengan ramah.
+                            ans = "Maaf ya, sistem utama penglihatan (Gemini) sedang super sibuk/limit, dan server penglihatan cadangan (Groq Vision) sedang dimatikan permanen oleh pusat. 🙏\n\n**Solusi:** Coba kirim gambarnya lagi dalam 1-2 menit ke depan agar ditangkap kembali oleh Gemini."
                         else:
                             mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
                             safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
