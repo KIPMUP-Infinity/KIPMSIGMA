@@ -2938,8 +2938,9 @@ if prompt:
                     try:
                         import json as _j2, urllib.request as _ur
                         
-                        # PRIORITASKAN GEMINI_KEY SESUAI FILE LAMA KAMU
-                        _gkey = st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GEMINI_KEY2", "") or st.secrets.get("GOOGLE_API_KEY", "")
+                        # ⚠️ UPDATE: MENGAMBIL GEMINI_API_KEY SESUAI FILE SECRETS.TOML MILIKMU
+                        _gkey = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
+                        
                         if not _gkey:
                             raise Exception("API Key tidak ditemukan di secrets!")
                             
@@ -2988,7 +2989,9 @@ if prompt:
                         # ── FALLBACK TEKS: GEMINI REST API ──
                         try:
                             import json as _j2, urllib.request as _ur
-                            _gkey = st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GEMINI_KEY2", "") or st.secrets.get("GOOGLE_API_KEY", "")
+                            
+                            # ⚠️ UPDATE: MENGAMBIL GEMINI_API_KEY SESUAI FILE SECRETS.TOML MILIKMU
+                            _gkey = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
                             
                             _gemini_contents = []
                             for m in _history_msgs[-5:]:
