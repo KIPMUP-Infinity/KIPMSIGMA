@@ -2685,7 +2685,7 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     keys = [k for k in keys if k]
     if not keys: raise Exception("API Key tidak ditemukan di secrets!")
     
-    # Menggunakan model terbaru yang aktif (Keluarga 1.5 sudah dihapus Google)
+    # Menggunakan model terbaru yang aktif
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
     
@@ -2715,8 +2715,8 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
             except urllib.error.HTTPError as e:
                 err_body = e.read().decode() if hasattr(e, 'read') else ""
                 last_err = f"HTTP {e.code}: {err_body}"
-                if e.code == 404: continue # Bypass jika model belum tersedia di region tertentu
-                elif e.code in [403, 400]: break # Pindah ke API Key lain jika key ditolak
+                if e.code == 404: continue 
+                elif e.code in [403, 400]: break 
             except Exception as e:
                 last_err = str(e)
                 continue
@@ -2791,15 +2791,15 @@ div[data-testid="stDecoration"] {{
     top: -500px !important;
 }}
 
-/* TARIK TAMPILAN KE ATAS LEBIH JAUH */
+/* ATUR JARAK ATAS (RUANG NAPAS) AGAR TIDAK MENTOK */
 [data-testid="stMainBlockContainer"] {{
-    padding-top: 0 !important;
-    margin-top: -5.5rem !important; 
+    padding-top: 3rem !important; /* Jarak aman dari atas untuk desktop */
+    margin-top: 0 !important; 
 }}
 @media(max-width: 768px) {{
     [data-testid="stMainBlockContainer"] {{
-        padding-top: 0 !important;
-        margin-top: -4.5rem !important;
+        padding-top: 2rem !important; /* Jarak aman dari atas untuk mobile */
+        margin-top: 0 !important;
     }}
 }}
 
@@ -2969,7 +2969,6 @@ if result is not None:
             with st.chat_message("assistant"): st.markdown(menu_text)
             st.rerun()
 
-    # ─── FITUR PDF DIKEMBALIKAN SECARA MURNI (TANPA ERROR FUNGSI SILUMAN) ───
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
@@ -3032,7 +3031,6 @@ if prompt:
                 debug_info = []
 
                 if has_image:
-                    # ── BACA GAMBAR VIA GEMINI SEBAGAI OTAR UTAMA ──
                     try:
                         _img_b64 = user_msg.get("img_b64")
                         _img_mime = user_msg.get("img_mime")
@@ -3041,14 +3039,12 @@ if prompt:
                     except Exception as e_img:
                         debug_info.append(f"Gemini Vision: {str(e_img)}")
                 else:
-                    # ── BACA TEKS VIA GEMINI SEBAGAI OTAR UTAMA ──
                     try:
                         ans, used_model = _call_gemini_text(_history_msgs[-5:])
                         if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model})*"
                     except Exception as e_txt:
                         debug_info.append(f"Gemini Text: {str(e_txt)}")
                         
-                        # ── FALLBACK TEKS: GROQ (HANYA AKTIF JIKA GEMINI LIMIT) ──
                         if not ans:
                             try:
                                 client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
