@@ -2678,14 +2678,12 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <style>
-/* Sembunyikan elemen bawaan Streamlit */
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"] {{ display: none !important; }}
-#spbtn {{ display: none !important; }} /* Matikan tombol floating lama di pojok */
+#spbtn {{ display: none !important; }} /* Matikan tombol floating lama */
 </style>
 """, unsafe_allow_html=True)
 
-# 1. SIAPKAN RIWAYAT OBROLAN UNTUK MENU
 _hist_items = ""
 for _sesi in st.session_state.sessions:
     _sid = _sesi["id"]; _is_act = _sid == st.session_state.active_id; _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',""); _fw = "700" if _is_act else "400"; _bg = C['hover'] if _is_act else "transparent"
@@ -2698,7 +2696,6 @@ for _sesi in st.session_state.sessions:
 }})();
 """
 
-# 2. INJEKSI JAVASCRIPT: MENU & TOMBOL PLUS PALSU
 components.html(f"""
 <script>
 (function(){{
@@ -2709,7 +2706,7 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spmenu,#sphist{{position:fixed; bottom:95px; left:20px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999999;display:none;overflow:hidden;min-width:250px;}} 
+#spmenu,#sphist{{position:fixed; bottom:85px; left:20px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999999;display:none;overflow:hidden;min-width:250px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
 .smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left; text-decoration:none;}} .smi:hover{{background:{C["hover"]}}}
 .smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
@@ -2721,7 +2718,6 @@ m.innerHTML=`
     <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
     <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
     <div class="smsp"></div>
-    <button class="smi" id="smi-upload"><span class="smico">📎</span>Upload File / Gambar</button>
     <a class="smi" id="smi-stats"><span class="smico">📊</span>Market Dashboard</a>
     <div class="smsp"></div>
     <div class="smhd">PENAMPILAN</div>
@@ -2734,48 +2730,30 @@ m.innerHTML=`
 var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 {_hist_items} pd.body.appendChild(h);
 
-// TRIK SAKTI: HIDE TOMBOL ASLI & INJEKSI TOMBOL PALSU
-function setupFakePlus() {{
+// ── TOMBOL TIGA TITIK (MENU SIGMA) DI SEBELAH KIRI TOMBOL PLUS ASLI ──
+function setupDotsMenu() {{
     var chatBox = pd.querySelector('div[data-testid="stChatInputContainer"]');
-    if (chatBox) {{
-        // 1. Sembunyikan tombol attach asli
-        var fileInput = chatBox.querySelector('input[type="file"]');
-        if (fileInput) {{
-            var nativeBtn = fileInput.closest('button');
-            if (nativeBtn) nativeBtn.style.display = 'none';
-        }}
+    if (chatBox && !pd.getElementById('sigma-menu-dots')) {{
+        var dotsBtn = pd.createElement('button');
+        dotsBtn.id = 'sigma-menu-dots';
+        dotsBtn.title = 'Menu SIGMA';
+        dotsBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{C["text_muted"]}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg>';
+        dotsBtn.style.cssText = 'background:transparent; border:none; cursor:pointer; padding:10px 4px 10px 14px; display:flex; align-items:center; justify-content:center; transition:transform 0.2s;';
         
-        // 2. Buat & sisipkan tombol palsu
-        if (!pd.getElementById('sigma-plus-fake')) {{
-            var ta = chatBox.querySelector('textarea');
-            if (ta && ta.parentNode) {{
-                var fakeBtn = pd.createElement('button');
-                fakeBtn.id = 'sigma-plus-fake';
-                fakeBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{C["text_muted"]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
-                fakeBtn.style.cssText = 'background:transparent; border:none; cursor:pointer; padding:10px; display:flex; align-items:center; justify-content:center; transition:transform 0.2s; margin-right:4px;';
-                
-                fakeBtn.onmouseover = function() {{ this.style.transform = 'scale(1.1)'; }};
-                fakeBtn.onmouseout = function() {{ this.style.transform = 'scale(1)'; }};
-                
-                fakeBtn.onclick = function(e) {{
-                    e.preventDefault(); e.stopPropagation();
-                    m.style.display = (m.style.display === 'block') ? 'none' : 'block';
-                    h.style.display = 'none';
-                }};
-                
-                ta.parentNode.insertBefore(fakeBtn, ta);
-            }}
-        }}
+        dotsBtn.onmouseover = function() {{ this.style.transform = 'scale(1.1)'; }};
+        dotsBtn.onmouseout = function() {{ this.style.transform = 'scale(1)'; }};
+        
+        dotsBtn.onclick = function(e) {{
+            e.preventDefault(); e.stopPropagation();
+            m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+            h.style.display = 'none';
+        }};
+        
+        // Sisipkan tombol 3-titik SEBELUM tombol plus bawaan
+        chatBox.insertBefore(dotsBtn, chatBox.firstChild);
     }}
 }}
-setInterval(setupFakePlus, 300);
-
-pd.getElementById('smi-upload').onclick = function(e) {{
-    e.preventDefault();
-    var realInput = pd.querySelector('div[data-testid="stChatInputContainer"] input[type="file"]');
-    if(realInput) realInput.click();
-    m.style.display = 'none';
-}};
+setInterval(setupDotsMenu, 500);
 
 (function(){{
     var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString(); pd.getElementById('smi-new').style.textDecoration='none';
@@ -2787,15 +2765,14 @@ pd.getElementById('smi-upload').onclick = function(e) {{
 }})();
 
 pd.addEventListener('click',function(e){{ 
-    var fakeBtn = pd.getElementById('sigma-plus-fake');
-    if(fakeBtn && !fakeBtn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
-    if(fakeBtn && !fakeBtn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
+    var dotsBtn = pd.getElementById('sigma-menu-dots');
+    if(dotsBtn && !dotsBtn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
+    if(dotsBtn && !dotsBtn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
 }});
 }})();
 </script>
 """, height=0)
 
-# 3. ROUTING & LOGIC MENDASAR
 if "do" in st.query_params:
     _do = st.query_params.get("do", "")
     _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
@@ -2834,6 +2811,8 @@ for i, msg in enumerate(active["messages"][1:]):
         if "Pertanyaan:" in display: display = display.split("Pertanyaan:")[-1].strip()
         for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
             if tag in display: display = display.split(tag)[-1].strip()
+        
+        # PREVIEW GAMBAR DALAM BUBBLE CHAT (TIDAK ADA YANG DIHAPUS)
         if msg["role"] == "user":
             imgs_in_msg = msg.get("images", [])
             if imgs_in_msg:
@@ -2844,7 +2823,6 @@ for i, msg in enumerate(active["messages"][1:]):
             elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
-# 4. CHAT INPUT & PROMPT HANDLING
 try:
     result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple", file_type=["pdf", "png", "jpg", "jpeg"])
 except TypeError:
@@ -2867,10 +2845,20 @@ if result is not None:
         if pdf_files: file_obj = pdf_files[0]
     elif isinstance(result, str): prompt = result.strip()
 
+    if prompt and prompt.strip().lower() in ["5 sila", "lima sila", "5sila"]:
+        active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
+        if active:
+            menu_text = """╔══════════════════════════════════════╗\n║          5 SILA SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
+            active["messages"].append({"role": "user", "content": "5 sila", "display": "5 sila"})
+            active["messages"].append({"role": "assistant", "content": menu_text})
+            with st.chat_message("user"): st.markdown("5 sila")
+            with st.chat_message("assistant"): st.markdown(menu_text)
+            st.rerun()
+
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
-            st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara.")
+            st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
             st.session_state.pdf_data = None
         else:
             if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
@@ -2878,18 +2866,37 @@ if result is not None:
 
     if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
 
-# 5. AI ENGINE EXECUTION (GEMINI -> GROQ)
 if prompt:
     img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
     st.session_state.img_data = None; st.session_state.pdf_data = None
     full_prompt = prompt
 
-    if img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
+    if pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+    elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+    elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     else:
-        try:
-            ctx = build_combined_context(prompt)
-            if ctx: full_prompt = f"{ctx}\n\n{prompt}"
-        except: pass
+        _p = prompt.lower()
+        _is_fund_cmd = any(k in _p for k in ["fundamental","valuasi","laporan keuangan","keuangan","roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk","analisa pdf","revenue","ebitda","net income"])
+        _ticker_found = detect_ticker_from_prompt(prompt)
+
+        if _is_fund_cmd and _ticker_found:
+            try: fund_data = build_fundamental_from_text(prompt)
+            except Exception as _fe: fund_data = f"[Data fetch error: {_fe}] Gunakan knowledge model untuk {_ticker_found}."
+            _harga_line = next((_l.strip() for _l in fund_data.split("\n") if "Harga Saham Saat Ini" in _l or "Harga Saham" in _l), "")
+            full_prompt = f"{fund_data}\n\nPerintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found}.\nFORMAT OUTPUT WAJIB dimulai tepat seperti ini:\n📋 ANALISA FUNDAMENTAL — {_ticker_found} (2026)\n{_harga_line if _harga_line else '💹 Harga: (dari data di atas)'}\n🏦 Sektor: ...\nKemudian lanjutkan dengan semua seksi.\nIcon status: pilih SATU — ✅ pass, ⚠️ perhatian, ❌ fail. JANGAN [✅/⚠️/❌].\nVERDICT harus minimal 4-5 kalimat: kondisi bisnis, tren, valuasi, risiko utama, saran konkret."
+            st.session_state["fund_no_history"] = True
+        else:
+            try:
+                ctx = build_combined_context(prompt)
+                if ctx: full_prompt = f"{ctx}\n\n{prompt}"
+                else:
+                    _tickers_in_prompt = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper()) if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG","ANALISA","SAHAM","MOHON","BISA","DENGAN","MINTA","APAKAH","BAGAIMANA","KENAPA","IHSG","WAIT","HOLD"}]
+                    if _tickers_in_prompt:
+                        try:
+                            _price_ctx = build_context(prompt)
+                            if _price_ctx: full_prompt = f"{_price_ctx}\n\n{prompt}"
+                        except: pass
+            except: pass
 
     if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
@@ -2897,8 +2904,10 @@ if prompt:
     if multi_images:
         user_msg["images"] = [(b64, mime) for b64, mime, name in multi_images[:5]]
         user_msg["img_b64"] = multi_images[0][0]; user_msg["img_mime"] = multi_images[0][1]
+        st.session_state[f"thumb_{active['id']}_{len(active['messages']) - 1}"] = (multi_images[0][0], multi_images[0][1])
     elif img_data:
         user_msg["img_b64"] = img_data[0]; user_msg["img_mime"] = img_data[1]
+        st.session_state[f"thumb_{active['id']}_{len(active['messages']) - 1}"] = (img_data[0], img_data[1])
 
     active["messages"].append(user_msg)
 
@@ -2909,16 +2918,18 @@ if prompt:
             else:
                 imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
                 st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+        if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
         st.markdown(prompt)
 
     try:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
                 _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
+                _last_content = _history_msgs[-1]["content"] if _history_msgs else ""
                 ans = None
                 has_image = bool(multi_images or img_data)
                 
-                # URUTAN 1: GEMINI 1.5 PRO (UTAMA)
+                # ── ENGINE 1: GEMINI 1.5 PRO (UTAMA) ──
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
                     # Khusus jika ada gambar, pakai flash vision
@@ -2926,12 +2937,10 @@ if prompt:
                     model = genai.GenerativeModel(model_name)
                     
                     if has_image:
-                        # Logika Vision
                         img_bytes = base64.b64decode(user_msg["img_b64"])
                         img = Image.open(io.BytesIO(img_bytes))
                         response = model.generate_content([prompt, img])
                     else:
-                        # Logika Text - Hemat Limit Token dgn potong riwayat
                         _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
                         response = model.generate_content(
                             contents=_chat_history,
@@ -2943,7 +2952,7 @@ if prompt:
                 except Exception as e_gem:
                     pass # Biarkan jatuh ke Groq
 
-                # URUTAN 2: GROQ (CADANGAN JIKA GEMINI LIMIT)
+                # ── ENGINE 2: GROQ (CADANGAN JIKA GEMINI LIMIT) ──
                 if not ans and not has_image:
                     try:
                         client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
@@ -2965,7 +2974,6 @@ if prompt:
 
     st.rerun()
 
-# 6. SAVE LOGIC
 if user:
     sessions_to_save = []
     for s in st.session_state.sessions:
@@ -2979,8 +2987,9 @@ if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_toke
 if st.session_state.user is None:
     components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
 
-
-# 7. INJEKSI JAVASCRIPT: BUBBLES, COPY, DRAG & DROP (UTUH!)
+# ─────────────────────────────────────────────
+# FINAL HELPER JAVASCRIPT (BUBBLES, COPY ICON, DRAG/DROP/PASTE)
+# ─────────────────────────────────────────────
 components.html(f"""
 <script>
 const BC = "{C['bubble']}"; const BT = "#ffffff";
@@ -2992,14 +3001,21 @@ const BC = "{C['bubble']}"; const BT = "#ffffff";
         [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
         @media (max-width: 768px) {{
             [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 8px 12px 120px !important; margin: 0 !important; }}
-            [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p {{ font-size: 1.05rem !important; line-height: 1.9 !important; }}
+            [data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em, [data-testid="stMarkdownContainer"] a {{ font-size: 1.05rem !important; line-height: 1.9 !important; }}
+            [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }} [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }} [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; font-weight: 700 !important; }}
+            [data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ padding-left: 18px !important; margin: 4px 0 !important; }}
+            [data-testid="stMarkdownContainer"] li {{ margin-bottom: 6px !important; }}
             [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
             div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 4px 8px !important; }}
+            [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
             .navy-pill {{ max-width: 82% !important; font-size: 1.05rem !important; line-height: 1.75 !important; padding: 12px 16px !important; }}
+            [data-testid="stMarkdownContainer"] code {{ font-size: 0.88rem !important; }}
+            [data-testid="stMarkdownContainer"] pre {{ font-size: 0.85rem !important; overflow-x: auto !important; padding: 12px !important; }}
         }}
     `; pd.head.appendChild(s);
 }})();
 
+// --- GELEMBUNG CHAT NAVY ---
 function fixBubbles() {{
     const doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
@@ -3021,28 +3037,76 @@ function fixBubbles() {{
     }});
 }}
 fixBubbles(); setInterval(fixBubbles, 800);
+new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(window.parent.document.body, {{childList:true,subtree:true}});
 
+// --- TOMBOL COPY BERSIH (HANYA ICON) ---
 function addActionButtons() {{
     var doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
-        if (msg.querySelector('.sigma-actions') || !!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
+        if (msg.querySelector('.sigma-actions')) return;
+        if (!!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
         function getMsgText() {{ var md = msg.querySelector('[data-testid="stMarkdownContainer"]'); return md ? md.innerText : ''; }}
-        var bar = doc.createElement('div'); bar.className = 'sigma-actions'; bar.style.cssText = 'display:flex;gap:2px;margin-top:6px;padding:0 2px;';
-        var copyBtn = doc.createElement('button'); copyBtn.innerHTML = '📋 Salin';
-        copyBtn.style.cssText = 'background:rgba(255,255,255,0.1);border:none;cursor:pointer;padding:5px 10px;border-radius:6px;color:#fff;font-size:0.8rem;';
+        
+        var bar = doc.createElement('div'); bar.className = 'sigma-actions'; 
+        bar.style.cssText = 'display:flex;gap:2px;margin-top:6px;padding:0 2px;';
+        
+        var copyBtn = doc.createElement('button'); 
+        copyBtn.title = 'Salin respons'; 
+        copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;';
+        
+        copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}}; 
+        copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
+        
         copyBtn.onclick = function() {{
-            navigator.clipboard.writeText(getMsgText());
-            copyBtn.innerHTML = '✅ Tersalin!'; setTimeout(function(){{ copyBtn.innerHTML = '📋 Salin'; }}, 2000);
+            var txt = getMsgText();
+            function showOk() {{ 
+                copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'; 
+                setTimeout(function(){{ copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'; }}, 2000); 
+            }}
+            navigator.clipboard.writeText(txt).then(showOk).catch(function(){{ 
+                var ta=doc.createElement('textarea'); ta.value=txt; doc.body.appendChild(ta); ta.select(); doc.execCommand('copy'); doc.body.removeChild(ta); showOk(); 
+            }});
         }};
         bar.appendChild(copyBtn); msg.style.flexDirection='column'; msg.appendChild(bar);
     }});
 }}
 setInterval(addActionButtons, 1000);
 
+// --- PASTE GAMBAR DI CHAT BAR (FITUR LAMA YANG DIKEMBALIKAN) ---
+function setupPaste() {{
+    var pw = window.parent;
+    if (pw._sigmaPasteHandler) {{ pw.removeEventListener('paste', pw._sigmaPasteHandler, true); pw.document.removeEventListener('paste', pw._sigmaPasteHandler, true); }}
+    function handlePaste(e) {{
+        var items = e.clipboardData && e.clipboardData.items; if (!items) return;
+        for (var i=0; i<items.length; i++) {{
+            if (items[i].type.startsWith('image/')) {{
+                var file = items[i].getAsFile(); if (!file) continue;
+                e.preventDefault(); e.stopPropagation();
+                var inputs = pw.document.querySelectorAll('input[type="file"]');
+                for (var fi of inputs) {{
+                    try {{
+                        var dt = new DataTransfer(); dt.items.add(file);
+                        Object.defineProperty(fi, 'files', {{value: dt.files, configurable:true, writable:true}});
+                        fi.dispatchEvent(new Event('change', {{bubbles:true}})); fi.dispatchEvent(new Event('input', {{bubbles:true}}));
+                        var ta = pw.document.querySelector('[data-testid="stChatInput"] textarea');
+                        if (ta) {{ ta.style.outline = '2px solid #4a90d9'; ta.placeholder = '📎 Gambar siap — ketik pertanyaan lalu Enter'; setTimeout(function(){{ ta.style.outline=''; ta.placeholder='Tanya SIGMA... DYOR - bukan financial advice.'; }}, 3000); ta.focus(); }}
+                        break;
+                    }} catch(err) {{ console.log('paste err',err); }}
+                }}
+                break;
+            }}
+        }}
+    }}
+    pw._sigmaPasteHandler = handlePaste; pw.addEventListener('paste', handlePaste, true); pw.document.addEventListener('paste', handlePaste, true);
+}}
+setupPaste(); setTimeout(setupPaste, 1000); setTimeout(setupPaste, 3000);
+
+// --- DRAG AND DROP ---
 function setupDragDrop() {{
     var pw = window.parent; var pd = pw.document; if (pw._sigmaDragOK) return;
     var overlay = pd.createElement('div'); overlay.id = 'sigma-drop-overlay'; overlay.style.cssText = 'position:fixed;inset:0;background:rgba(27,42,74,0.55);z-index:99997;display:none;align-items:center;justify-content:center;pointer-events:none;';
-    overlay.innerHTML = '<div style="background:#1B2A4A;color:#fff;border:2px dashed #4a90d9;border-radius:16px;padding:32px 48px;font-size:1.1rem;text-align:center;">📂 Lepaskan file di sini</div>';
+    overlay.innerHTML = '<div style="background:#1B2A4A;color:#fff;border:2px dashed #4a90d9;border-radius:16px;padding:32px 48px;font-size:1.1rem;text-align:center;">📂 Lepaskan file di sini<br><span style="font-size:0.85rem;opacity:0.7;">PDF, PNG, JPG</span></div>';
     pd.body.appendChild(overlay);
     var dragCount = 0;
     pd.addEventListener('dragenter', function(e) {{ e.preventDefault(); dragCount++; overlay.style.display = 'flex'; }}, true);
@@ -3053,7 +3117,7 @@ function setupDragDrop() {{
         var files = e.dataTransfer && e.dataTransfer.files; if (!files || files.length === 0) return;
         var allowed = ['application/pdf','image/png','image/jpeg','image/jpg']; var validFiles = [];
         for (var i = 0; i < Math.min(files.length, 5); i++) {{ if (allowed.includes(files[i].type)) validFiles.push(files[i]); }}
-        if (validFiles.length === 0) return;
+        if (validFiles.length === 0) {{ alert('File tidak didukung. Gunakan PDF, PNG, atau JPG.'); return; }}
         var chatContainer = pd.querySelector('[data-testid="stChatInputContainer"]');
         var fileInput = chatContainer ? chatContainer.querySelector('input[type="file"]') : null;
         if (!fileInput) {{ var allInputs = pd.querySelectorAll('input[type="file"]'); fileInput = allInputs[allInputs.length - 1]; }}
@@ -3062,6 +3126,8 @@ function setupDragDrop() {{
                 var dt = new DataTransfer(); for (var f of validFiles) dt.items.add(f);
                 Object.defineProperty(fileInput, 'files', {{value: dt.files, configurable:true, writable:true}});
                 fileInput.dispatchEvent(new Event('change', {{bubbles:true}})); fileInput.dispatchEvent(new Event('input', {{bubbles:true}}));
+                var ta = pd.querySelector('[data-testid="stChatInput"] textarea');
+                if (ta) {{ ta.style.outline = '2px solid #4a90d9'; var names = validFiles.map(function(f){{return f.name;}}).join(', '); ta.placeholder = '📎 ' + names + ' — ketik pertanyaan lalu Enter'; setTimeout(function(){{ ta.style.outline = ''; ta.placeholder = 'Tanya SIGMA... DYOR - bukan financial advice.'; }}, 4000); ta.focus(); }}
             }} catch(err) {{ console.log('drop err', err); }}
         }}
     }}, true);
