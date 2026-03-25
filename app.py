@@ -2685,7 +2685,6 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     keys = [k for k in keys if k]
     if not keys: raise Exception("API Key tidak ditemukan di secrets!")
     
-    # Menggunakan model terbaru yang aktif
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
     
@@ -2699,9 +2698,11 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 elif img_b64 and img_mime:
                     _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
                 
-                _parts.append({"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt})
+                _parts.append({"text": prompt})
                 
+                # MENGUNCI BAHASA INDONESIA (Tanpa merusak UI)
                 payload = {
+                    "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT["content"]}]},
                     "contents": [{"role": "user", "parts": _parts}],
                     "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
                 }
@@ -2747,6 +2748,7 @@ def _call_gemini_text(messages):
                     gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
                 
                 payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+                # MENGUNCI BAHASA INDONESIA
                 if system_text: 
                     payload["systemInstruction"] = {"parts": [{"text": system_text}]}
                 
@@ -2766,14 +2768,12 @@ def _call_gemini_text(messages):
                 continue
     raise Exception(last_err)
 
-
 st.markdown(f"""
 <style>
 /* Sembunyikan elemen bawaan Streamlit secara agresif */
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
 
-/* HANCURKAN HEADER DAN DEKORASI ATAS (BUANG KE LUAR LAYAR) */
 header[data-testid="stHeader"], header.stAppHeader, .stApp > header {{ 
     display: none !important; 
     height: 0 !important; 
@@ -2793,17 +2793,16 @@ div[data-testid="stDecoration"] {{
 
 /* ATUR JARAK ATAS (RUANG NAPAS) AGAR TIDAK MENTOK */
 [data-testid="stMainBlockContainer"] {{
-    padding-top: 3rem !important; /* Jarak aman dari atas untuk desktop */
+    padding-top: 3rem !important; 
     margin-top: 0 !important; 
 }}
 @media(max-width: 768px) {{
     [data-testid="stMainBlockContainer"] {{
-        padding-top: 2rem !important; /* Jarak aman dari atas untuk mobile */
+        padding-top: 2rem !important;
         margin-top: 0 !important;
     }}
 }}
 
-/* PAKSA JAWABAN SISTEM RATA KIRI */
 [data-testid="stChatMessageContent"], 
 [data-testid="stMarkdownContainer"] {{
     text-align: left !important;
@@ -2853,6 +2852,8 @@ m.innerHTML=`
     <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
     <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
     <div class="smsp"></div>
+    <div class="smhd">FITUR</div>
+    <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
     <a class="smi" id="smi-stats"><span class="smico">📊</span>Market Dashboard</a>
     <div class="smsp"></div>
     <div class="smhd">PENAMPILAN</div>
@@ -2874,7 +2875,8 @@ btn.onclick=function(e){{
 (function(){{
     var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString(); pd.getElementById('smi-new').style.textDecoration='none';
     pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString(); pd.getElementById('smi-ai').style.textDecoration='none';
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString(); pd.getElementById('smi-stats').style.textDecoration='none';
     u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString(); pd.getElementById('smi-dark').style.textDecoration='none';
     u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString(); pd.getElementById('smi-light').style.textDecoration='none';
     u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString(); pd.getElementById('smi-out').style.textDecoration='none';
@@ -2888,6 +2890,18 @@ pd.addEventListener('click',function(e){{
 </script>
 """, height=0)
 
+# ─── PENYAMBUNG KABEL TOMBOL (TRASH & MENU) ───
+if "del" in st.query_params:
+    _del_id = st.query_params.get("del", "")
+    if _del_id:
+        st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != _del_id]
+        if not st.session_state.sessions:
+            st.session_state.sessions.append({"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]})
+        if st.session_state.active_id == _del_id:
+            st.session_state.active_id = st.session_state.sessions[0]["id"]
+    st.query_params.pop("del", None)
+    st.rerun()
+
 if "do" in st.query_params:
     _do = st.query_params.get("do", "")
     _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
@@ -2898,12 +2912,18 @@ if "do" in st.query_params:
         st.session_state.clear(); st.query_params.clear()
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
-    elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params["do"] = ""; st.rerun()
-    elif _do == "theme_light": st.session_state.theme = "light"; st.query_params["do"] = ""; st.rerun()
+    elif _do == "view_stats":
+        st.toast("Fitur Market Dashboard sedang dalam tahap pengembangan! 🚀", icon="📈")
+        st.query_params.pop("do", None)
+    elif _do == "view_ai":
+        st.query_params.pop("do", None); st.rerun()
+    elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "theme_light": st.session_state.theme = "light"; st.query_params.pop("do", None); st.rerun()
     elif _do == "newchat":
-        ns = new_session(); st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params["do"] = ""; st.rerun()
+        ns = {"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
+        st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params.pop("do", None); st.rerun()
     elif _do.startswith("sel_"):
-        _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params["do"] = ""; st.rerun()
+        _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params.pop("do", None); st.rerun()
 
 active = get_active()
 
@@ -3048,7 +3068,7 @@ if prompt:
                         if not ans:
                             try:
                                 client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
-                                mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
+                                mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab SEMUA pertanyaan WAJIB dalam Bahasa Indonesia dengan ringkas dan akurat."}
                                 safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
                                 
                                 _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
