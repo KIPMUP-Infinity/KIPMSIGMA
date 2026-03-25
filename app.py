@@ -2011,26 +2011,40 @@ if prompt:
         st.markdown(prompt)
 
     try:
-        with st.chat_message("assistant"):
-            with st.spinner("SIGMA menganalisis (via Gemini Pro)..."):
+            with st.spinner("SIGMA menganalisis..."):
                 try:
-                    # Konfigurasi Gemini Pro API
                     api_key = st.secrets["GEMINI_API_KEY"]
                     genai.configure(api_key=api_key)
                 except Exception as e:
                     raise Exception("GEMINI_API_KEY belum ditemukan di st.secrets! Harap tambahkan di pengaturan.")
 
+                # --- AUTO DETECT MODEL UNTUK MENCEGAH ERROR 404 ---
+                available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                
+                if 'models/gemini-1.5-flash' in available_models:
+                    target_model = 'gemini-1.5-flash'
+                elif 'models/gemini-1.5-pro' in available_models:
+                    target_model = 'gemini-1.5-pro'
+                else:
+                    # Fallback ke model paling standar yang pasti dimiliki semua akun
+                    target_model = 'gemini-pro' 
+
                 _all_msgs = [m for m in active["messages"] if m.get("role") in ("user","assistant","system")]
                 _last_content = _all_msgs[-1]["content"] if _all_msgs else ""
                 
-                # Gemini memiliki jendela konteks super besar, jadi kita gunakan full system prompt
-                model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash",
-                    system_instruction=SYSTEM_PROMPT["content"]
-                ) 
+                # Eksekusi model sesuai versi yang didapat
+                if "1.5" in target_model:
+                    model = genai.GenerativeModel(
+                        model_name=target_model,
+                        system_instruction=SYSTEM_PROMPT["content"]
+                    )
+                else:
+                    # Jika menggunakan versi lama (gemini-pro), injeksi system prompt secara manual
+                    model = genai.GenerativeModel(model_name=target_model)
+                    _last_content = f"Instruksi Sistem:\n{SYSTEM_PROMPT['content']}\n\n{_last_content}"
                 
                 gemini_history = []
-                for msg in _all_msgs[:-1]: # Abaikan pesan terakhir dari user (dikirim via send_message)
+                for msg in _all_msgs[:-1]:
                     if msg["role"] == "system": continue
                     role_map = "user" if msg["role"] == "user" else "model"
                     gemini_history.append({"role": role_map, "parts": [msg["content"]]})
