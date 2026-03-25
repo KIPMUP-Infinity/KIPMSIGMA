@@ -2678,9 +2678,10 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <style>
+/* Sembunyikan elemen bawaan Streamlit (header, footer, sidebar) */
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"] {{ display: none !important; }}
-#spbtn {{ display: none !important; }} /* Matikan tombol floating pojok */
+#spbtn {{ display: none !important; }} /* Matikan tombol floating lama */
 </style>
 """, unsafe_allow_html=True)
 
@@ -2706,12 +2707,22 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spmenu,#sphist{{position:fixed; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999999;display:none;overflow:hidden;min-width:250px;}} 
+/* TOMBOL MENU BULAT MENGAMBANG DI POJOK KIRI BAWAH */
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;font-size:32px;font-weight:300;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;line-height:1;transition:transform 0.2s, background 0.2s;}} 
+#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
+
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left; text-decoration:none;}} .smi:hover{{background:{C["hover"]}}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
 .smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
 .smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
+
+// Injeksi tombol mengambang dengan SVG Tiga Titik Vertikal
+var btn=pd.createElement('button'); btn.id='spbtn';
+btn.title = 'Menu SIGMA';
+btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
+pd.body.appendChild(btn);
 
 var m=pd.createElement('div');m.id='spmenu';
 m.innerHTML=`
@@ -2730,48 +2741,20 @@ m.innerHTML=`
 var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 {_hist_items} pd.body.appendChild(h);
 
-// ── TRIK JITU: TOMBOL TIGA TITIK DI KIRI LUAR CHAT BAR ──
-function setupDotsMenu() {{
-    // Cari pembungkus utama chat input
-    var chatWrapper = pd.querySelector('div[data-testid="stChatInput"]');
-    if (chatWrapper && !pd.getElementById('sigma-menu-dots')) {{
-        var container = chatWrapper.querySelector('div[data-testid="stChatInputContainer"]');
-        if (container) {{
-            // Ubah wrapper menjadi flex agar tombol dan bar chat berdampingan dengan rapi
-            chatWrapper.style.display = 'flex';
-            chatWrapper.style.alignItems = 'flex-end';
-            
-            var dotsBtn = pd.createElement('button');
-            dotsBtn.id = 'sigma-menu-dots';
-            dotsBtn.title = 'Menu SIGMA';
-            dotsBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{C["text_muted"]}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"></circle><circle cx="12" cy="12" r="2"></circle><circle cx="12" cy="19" r="2"></circle></svg>';
-            dotsBtn.style.cssText = 'background:transparent; border:none; cursor:pointer; padding:10px 8px; display:flex; align-items:center; justify-content:center; transition:color 0.2s; margin-bottom: 2px; flex-shrink:0;';
-            
-            dotsBtn.onmouseover = function() {{ this.style.color = '{C["text"]}'; }};
-            dotsBtn.onmouseout = function() {{ this.style.color = '{C["text_muted"]}'; }};
-            
-            dotsBtn.onclick = function(e) {{
-                e.preventDefault(); e.stopPropagation();
-                m.style.display = (m.style.display === 'block') ? 'none' : 'block';
-                h.style.display = 'none';
-                
-                // Posisikan menu melayang tepat di atas tombol tiga titik
-                if (m.style.display === 'block') {{
-                    var rect = dotsBtn.getBoundingClientRect();
-                    m.style.left = Math.max(10, rect.left) + 'px';
-                    m.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
-                    h.style.left = m.style.left;
-                    h.style.bottom = m.style.bottom;
-                }}
-            }};
-            
-            // Sisipkan tombol tiga titik TEPAT SEBELUM bar chat
-            chatWrapper.insertBefore(dotsBtn, container);
-            container.style.marginLeft = '8px'; // Beri jarak sedikit
-        }}
+btn.onclick=function(e){{
+    e.preventDefault(); e.stopPropagation();
+    m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    h.style.display = 'none';
+    
+    // Posisikan menu melayang tepat di atas tombol tiga titik
+    if (m.style.display === 'block') {{
+        var rect = btn.getBoundingClientRect();
+        m.style.left = Math.max(10, rect.left) + 'px';
+        m.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        h.style.left = m.style.left;
+        h.style.bottom = m.style.bottom;
     }}
-}}
-setInterval(setupDotsMenu, 500);
+}};
 
 (function(){{
     var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString(); pd.getElementById('smi-new').style.textDecoration='none';
@@ -2783,9 +2766,8 @@ setInterval(setupDotsMenu, 500);
 }})();
 
 pd.addEventListener('click',function(e){{ 
-    var dotsBtn = pd.getElementById('sigma-menu-dots');
-    if(dotsBtn && !dotsBtn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
-    if(dotsBtn && !dotsBtn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
+    if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
+    if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
 }});
 }})();
 </script>
@@ -2893,21 +2875,10 @@ if prompt:
     elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
     elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
     else:
-        _p = prompt.lower()
-        _is_fund_cmd = any(k in _p for k in ["fundamental","valuasi","laporan keuangan","keuangan","roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk","analisa pdf","revenue","ebitda","net income"])
-        _ticker_found = detect_ticker_from_prompt(prompt)
-
-        if _is_fund_cmd and _ticker_found:
-            try: fund_data = build_fundamental_from_text(prompt)
-            except Exception as _fe: fund_data = f"[Data fetch error: {_fe}] Gunakan knowledge model untuk {_ticker_found}."
-            _harga_line = next((_l.strip() for _l in fund_data.split("\n") if "Harga Saham Saat Ini" in _l or "Harga Saham" in _l), "")
-            full_prompt = f"{fund_data}\n\nPerintah: Buat ANALISA FUNDAMENTAL lengkap untuk {_ticker_found}.\nFORMAT OUTPUT WAJIB dimulai tepat seperti ini:\n📋 ANALISA FUNDAMENTAL — {_ticker_found} (2026)\n{_harga_line if _harga_line else '💹 Harga: (dari data di atas)'}\n🏦 Sektor: ...\nKemudian lanjutkan dengan semua seksi.\nIcon status: pilih SATU — ✅ pass, ⚠️ perhatian, ❌ fail. JANGAN [✅/⚠️/❌].\nVERDICT harus minimal 4-5 kalimat: kondisi bisnis, tren, valuasi, risiko utama, saran konkret."
-            st.session_state["fund_no_history"] = True
-        else:
-            try:
-                ctx = build_combined_context(prompt)
-                if ctx: full_prompt = f"{ctx}\n\n{prompt}"
-            except: pass
+        try:
+            ctx = build_combined_context(prompt)
+            if ctx: full_prompt = f"{ctx}\n\n{prompt}"
+        except: pass
 
     if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
@@ -2941,6 +2912,7 @@ if prompt:
                 # ── ENGINE 1: GEMINI PRO/FLASH (UTAMA) ──
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
+                    # Wajib pakai model Flash untuk gambar agar tidak error
                     model_name = 'gemini-1.5-flash' if has_image else 'gemini-1.5-pro'
                     model = genai.GenerativeModel(model_name)
                     
@@ -2964,6 +2936,7 @@ if prompt:
                     try:
                         client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                         if has_image:
+                            # Groq Vision Model Backup
                             content_arr = [{"type": "text", "text": prompt}]
                             content_arr.append({"type": "image_url", "image_url": {"url": f"data:{user_msg['img_mime']};base64,{user_msg['img_b64']}"}})
                             _res = client.chat.completions.create(
@@ -3007,7 +2980,7 @@ if st.session_state.user is None:
     components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
 
 # ─────────────────────────────────────────────
-# FINAL HELPER JAVASCRIPT (BUBBLES & COPY ICON KOTAK)
+# FINAL HELPER JAVASCRIPT (BUBBLES & COPY ICON)
 # ─────────────────────────────────────────────
 components.html(f"""
 <script>
@@ -3058,7 +3031,7 @@ function fixBubbles() {{
 fixBubbles(); setInterval(fixBubbles, 800);
 new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(window.parent.document.body, {{childList:true,subtree:true}});
 
-// --- TOMBOL COPY KOTAK (PERMINTAAN GAMBAR KE-1) ---
+// --- TOMBOL COPY BERSIH (HANYA ICON, SEPERTI GAMBAR 1) ---
 function addActionButtons() {{
     var doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
@@ -3071,9 +3044,8 @@ function addActionButtons() {{
         
         var copyBtn = doc.createElement('button'); 
         copyBtn.title = 'Salin respons'; 
-        // Menggunakan SVG kotak (seperti gambar yang diminta)
         copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;';
+        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:6px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.2s;';
         
         copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}}; 
         copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
@@ -3146,8 +3118,6 @@ function setupDragDrop() {{
                 var dt = new DataTransfer(); for (var f of validFiles) dt.items.add(f);
                 Object.defineProperty(fileInput, 'files', {{value: dt.files, configurable:true, writable:true}});
                 fileInput.dispatchEvent(new Event('change', {{bubbles:true}})); fileInput.dispatchEvent(new Event('input', {{bubbles:true}}));
-                var ta = pd.querySelector('[data-testid="stChatInput"] textarea');
-                if (ta) {{ ta.style.outline = '2px solid #4a90d9'; ta.placeholder = '📎 Memuat...'; setTimeout(function(){{ ta.style.outline = ''; ta.placeholder = 'Tanya SIGMA... DYOR - bukan financial advice.'; }}, 3000); ta.focus(); }}
             }} catch(err) {{ console.log('drop err', err); }}
         }}
     }}, true);
