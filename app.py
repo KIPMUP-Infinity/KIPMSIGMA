@@ -2674,7 +2674,7 @@ C = get_colors(st.session_state.theme)
 
 
 # ─────────────────────────────────────────────
-# PART 7.5: MENU UI & SIDEBAR (TOMBOL PLUS)
+# PART 8: MAIN CHAT ENGINE (TRIPLE AI FALLBACK)
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
@@ -2750,13 +2750,6 @@ if "do" in st.query_params:
     elif _do.startswith("sel_"):
         _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params["do"] = ""; st.rerun()
 
-
-
-
-
-# ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE (TRIPLE AI FALLBACK)
-# ─────────────────────────────────────────────
 active = get_active()
 
 if not active["messages"][1:]:
@@ -2769,7 +2762,7 @@ if not active["messages"][1:]:
     """, unsafe_allow_html=True)
 
 if st.session_state.get("last_error"):
-    st.error(f"⚠️ Error: {st.session_state['last_error']}")
+    st.error(f"⚠️ {st.session_state['last_error']}")
     st.session_state["last_error"] = None
 
 for i, msg in enumerate(active["messages"][1:]):
@@ -2823,7 +2816,6 @@ if result is not None:
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
-            # PDF Dimatikan sementara untuk menghemat limit token Groq
             st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
             st.session_state.pdf_data = None
         else:
@@ -2890,9 +2882,9 @@ if prompt:
     try:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
-                _no_history = st.session_state.pop("fund_no_history", False)
                 _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
                 _last_content = _history_msgs[-1]["content"] if _history_msgs else ""
+                _no_history = st.session_state.pop("fund_no_history", False)
                 _has_pdf = "[PDF:" in _last_content
                 _p_lower = prompt.lower() if prompt else ""
 
@@ -2908,71 +2900,72 @@ if prompt:
 
                 ans = None
                 has_image = bool(multi_images or img_data)
+                debug_info = [] # List untuk menyimpan error detail
                 
                 # ── ENGINE 1: GROQ ──
-                _rate_limited_keys = set()
                 _groq_keys = [k for k in [st.secrets.get(f"GROQ_API_KEY{i if i>1 else ''}", "") for i in range(1, 14)] if k]
-                if not _groq_keys: _groq_keys = [""]
-                
-                for _gkey in _groq_keys:
-                    if ans: break
-                    if not _gkey or _gkey in _rate_limited_keys: continue
-                    try:
-                        _gclient = Groq(api_key=_gkey)
-                        if has_image:
-                            all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
-                            _content = []
-                            for _ib64, _imime, _iname in all_imgs[:5]: _content.append({"type": "image_url", "image_url": {"url": f"data:{_imime};base64,{_ib64}"}})
-                            _content.append({"type": "text", "text": _last_content})
-                            _res = _gclient.chat.completions.create(model="llama-3.2-11b-vision-preview", messages=[{"role": "system", "content": "Kamu SIGMA, asisten trading KIPM. Analisa gambar yang dikirim. Jawab Bahasa Indonesia. DYOR."}, {"role": "user", "content": _content}], max_tokens=2048)
-                            ans = _res.choices[0].message.content
-                        else:
-                            for _gmodel in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
-                                if ans: break
-                                try:
-                                    _res = _gclient.chat.completions.create(model=_gmodel, messages=_msgs, temperature=0.7, max_tokens=2048)
-                                    ans = _res.choices[0].message.content
-                                except Exception as _e_model:
-                                    if any(x in str(_e_model).lower() for x in ["rate_limit","429","too many","quota"]): raise _e_model
-                    except Exception as _ge:
-                        if any(x in str(_ge).lower() for x in ["rate_limit","429","too many","quota"]): _rate_limited_keys.add(_gkey)
+                if not _groq_keys: debug_info.append("Groq: Tidak ada API Key di secrets.")
+                else:
+                    _rate_limited_keys = set()
+                    for _gkey in _groq_keys:
+                        if ans: break
+                        if not _gkey or _gkey in _rate_limited_keys: continue
+                        try:
+                            _gclient = Groq(api_key=_gkey)
+                            if has_image:
+                                all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
+                                _content = []
+                                for _ib64, _imime, _iname in all_imgs[:5]: _content.append({"type": "image_url", "image_url": {"url": f"data:{_imime};base64,{_ib64}"}})
+                                _content.append({"type": "text", "text": _last_content})
+                                _res = _gclient.chat.completions.create(model="llama-3.2-11b-vision-preview", messages=[{"role": "system", "content": "Kamu SIGMA, asisten trading KIPM. Analisa gambar yang dikirim. Jawab Bahasa Indonesia. DYOR."}, {"role": "user", "content": _content}], max_tokens=2048)
+                                ans = _res.choices[0].message.content
+                                if ans: ans += "\n\n*(👁️ Dijawab menggunakan Groq Vision)*"
+                            else:
+                                for _gmodel in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+                                    if ans: break
+                                    try:
+                                        _res = _gclient.chat.completions.create(model=_gmodel, messages=_msgs, temperature=0.7, max_tokens=2048)
+                                        ans = _res.choices[0].message.content
+                                        if ans: ans += f"\n\n*(⚡ Dijawab menggunakan Groq {_gmodel})*"
+                                    except Exception as _e_model:
+                                        if any(x in str(_e_model).lower() for x in ["rate_limit","429","too many","quota"]): raise _e_model
+                                        debug_info.append(f"Groq ({_gmodel}): {str(_e_model)}")
+                        except Exception as _ge:
+                            if any(x in str(_ge).lower() for x in ["rate_limit","429","too many","quota"]): _rate_limited_keys.add(_gkey)
+                            else: debug_info.append(f"Groq Error: {str(_ge)}")
+                    if not ans and len(_rate_limited_keys) == len(_groq_keys):
+                        debug_info.append(f"Groq: Semua {len(_groq_keys)} key terkena Rate Limit atau Quota Habis.")
 
                 # ── ENGINE 2: CEREBRAS (FALLBACK TEKS) ──
                 if ans is None and not has_image:
-                    try:
-                        _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
-                        if _cb_key:
+                    _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
+                    if not _cb_key:
+                        debug_info.append("Cerebras: API Key tidak ada di secrets.")
+                    else:
+                        try:
                             import urllib.request as _ucb, json as _jcb
                             _cb_msgs = [{"role": m.get("role",""), "content": (m.get("content","") or "")[:8000]} for m in _msgs if m.get("role") in ("system","user","assistant")]
-                            
-                            # Menggunakan format nama model baku Cerebras
-                            _cb_payload = {"model": "llama3.3-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
+                            # Gunakan nama model yang didukung penuh oleh Cerebras
+                            _cb_payload = {"model": "llama3.1-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
                             _cb_req = _ucb.Request("https://api.cerebras.ai/v1/chat/completions", data=_jcb.dumps(_cb_payload).encode(), headers={"Content-Type": "application/json", "Authorization": f"Bearer {_cb_key}"})
-                            
                             with _ucb.urlopen(_cb_req, timeout=30) as _cbr: 
                                 ans = _jcb.loads(_cbr.read()).get("choices",[{}])[0].get("message",{}).get("content","")
-                                # Tambahkan watermark agar kita tahu ini Cerebras
-                                if ans: ans += "\n\n*(⚡ Dijawab menggunakan Cerebras)*"
-                    except Exception as e_cb:
-                        # Munculkan error aslinya agar kita tahu penyebabnya
-                        if hasattr(e_cb, 'read'):
-                            st.error(f"⚠️ Detail Error Cerebras: {e_cb.read().decode()}")
-                        else:
-                            st.error(f"⚠️ Error Cerebras: {str(e_cb)}")
+                                if ans: ans += "\n\n*(🧠 Dijawab menggunakan Cerebras)*"
+                        except Exception as e_cb:
+                            if hasattr(e_cb, 'read'): debug_info.append(f"Cerebras Error: {e_cb.read().decode()}")
+                            else: debug_info.append(f"Cerebras Error: {str(e_cb)}")
 
                 # ── ENGINE 3: GEMINI DIRECT API (ANTI ERROR 404 & FALLBACK GAMBAR) ──
                 if ans is None:
-                    try:
-                        _gem_key = st.secrets.get("GEMINI_API_KEY", "")
-                        if _gem_key:
+                    _gem_key = st.secrets.get("GEMINI_API_KEY", "")
+                    if not _gem_key:
+                        debug_info.append("Gemini: API Key tidak ada di secrets.")
+                    else:
+                        try:
                             import urllib.request as _ur, json as _j
                             _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gem_key}"
                             _gem_contents = []
-                            
-                            # Inject context history
-                            for m in _history_msgs[:-1]:
-                                _gem_contents.append({"role": "user" if m["role"] == "user" else "model", "parts": [{"text": m["content"]}]})
-                                
+                            for m in _history_msgs[:-1]: _gem_contents.append({"role": "user" if m["role"] == "user" else "model", "parts": [{"text": m["content"]}]})
                             _last_parts = []
                             if has_image:
                                 all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
@@ -2985,10 +2978,13 @@ if prompt:
                             with _ur.urlopen(_req, timeout=30) as _r:
                                 _data = _j.loads(_r.read())
                                 ans = _data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                    except Exception as ge: pass
+                                if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini)*"
+                        except Exception as e_gem:
+                            if hasattr(e_gem, 'read'): debug_info.append(f"Gemini Error: {e_gem.read().decode()}")
+                            else: debug_info.append(f"Gemini Error: {str(e_gem)}")
 
                 if ans is None:
-                    raise Exception("Semua mesin AI (Groq/Cerebras/Gemini) sedang kehabisan limit. Silakan tunggu 1 menit lalu coba lagi.")
+                    raise Exception("Semua mesin AI gagal merespons.\n\n" + "\n".join([f"- {d}" for d in debug_info]))
                 
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
