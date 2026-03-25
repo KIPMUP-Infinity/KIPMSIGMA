@@ -2674,11 +2674,12 @@ C = get_colors(st.session_state.theme)
 
 
 
+
 # ─────────────────────────────────────────────
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
 
-# ─── FUNGSI API TERISOLASI (ANTI BENTURAN VARIABEL) ───
+# ─── FUNGSI API TERISOLASI (ANTI 404 & ANTI BENTURAN) ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
     keys = [k for k in keys if k]
@@ -2688,12 +2689,12 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
             import urllib.request, json as _j
             _parts = []
             
-            # Wajib format snake_case seperti di file lama
+            # Wajib camelCase untuk REST API Google: inlineData, mimeType
             if multi_imgs:
                 for _b64, _mime, _ in multi_imgs[:5]:
-                    _parts.append({"inline_data": {"mime_type": _mime, "data": _b64}})
+                    _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
             elif img_b64 and img_mime:
-                _parts.append({"inline_data": {"mime_type": img_mime, "data": img_b64}})
+                _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
             
             _parts.append({"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt})
             
@@ -2701,14 +2702,15 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 "contents": [{"role": "user", "parts": _parts}],
                 "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
             }
-            # Gunakan versi 2.0 yang terbukti sukses di kodemu sebelumnya
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+            # FIX: Turunkan ke 1.5-flash karena 2.0-flash menyebabkan Error 404 di API Key milikmu
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
             req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=40) as r:
                 data = _j.loads(r.read())
             return data["candidates"][0]["content"]["parts"][0]["text"]
         except Exception as e:
-            last_err = str(e)
+            if hasattr(e, 'read'): last_err = f"HTTP {e.code}: {e.read().decode()}"
+            else: last_err = str(e)
     raise Exception(last_err)
 
 def _call_gemini_text(messages):
@@ -2732,15 +2734,17 @@ def _call_gemini_text(messages):
             
             payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
             if system_text: 
-                payload["system_instruction"] = {"parts": [{"text": system_text}]}
+                payload["systemInstruction"] = {"parts": [{"text": system_text}]}
             
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+            # FIX: Turunkan ke 1.5-flash untuk menghindari Error 404
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
             req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 data = _j.loads(r.read())
             return data["candidates"][0]["content"]["parts"][0]["text"]
         except Exception as e:
-            last_err = str(e)
+            if hasattr(e, 'read'): last_err = f"HTTP {e.code}: {e.read().decode()}"
+            else: last_err = str(e)
     raise Exception(last_err)
 
 st.markdown(f"""
@@ -2945,11 +2949,25 @@ if result is not None:
             with st.chat_message("assistant"): st.markdown(menu_text)
             st.rerun()
 
+    # RESTORE: FITUR BACA PDF (Persis seperti script app 19.py lamamu)
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
-            st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
-            st.session_state.pdf_data = None
+            try:
+                doc = fitz.open(stream=raw, filetype="pdf")
+                txt = "".join(p.get_text() for p in doc)
+                enrichment = ""
+                try:
+                    enrichment = enrich_pdf_context(txt)
+                except: pass
+                pdf_content = f"[PDF: {file_obj.name}]\n{txt[:2000]}"
+                if enrichment:
+                    pdf_content += enrichment
+                st.session_state.pdf_data = (pdf_content, file_obj.name)
+                st.session_state.img_data = None
+            except Exception as pdf_e:
+                st.error(f"Gagal membaca PDF: {str(pdf_e)}")
+                st.session_state.pdf_data = None
         else:
             if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
             st.session_state.pdf_data = None
@@ -3005,7 +3023,7 @@ if prompt:
                         _img_b64 = user_msg.get("img_b64")
                         _img_mime = user_msg.get("img_mime")
                         ans = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
-                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 2.0 Flash Vision)*"
+                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini Vision)*"
                     except Exception as e_img:
                         debug_info.append(f"Gemini Vision: {str(e_img)}")
                 else:
@@ -3026,7 +3044,7 @@ if prompt:
                         if not ans:
                             try:
                                 ans = _call_gemini_text(_history_msgs[-5:])
-                                if ans: ans += "\n\n*(✨ Fallback ke Gemini 2.0 Flash)*"
+                                if ans: ans += "\n\n*(✨ Fallback ke Gemini)*"
                             except Exception as e_txt:
                                 debug_info.append(f"Gemini Text: {str(e_txt)}")
                 
