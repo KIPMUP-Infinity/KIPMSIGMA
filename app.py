@@ -2931,10 +2931,12 @@ if prompt:
                 has_image = bool(multi_images or img_data)
                 debug_info = []
                 
-                # ── ENGINE 1: GEMINI PRO/FLASH (UTAMA) ──
+                # ── ENGINE 1: GEMINI PRO (UTAMA UNTUK TEKS & GAMBAR) ──
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
-                    model_name = 'gemini-1.5-flash' if has_image else 'gemini-1.5-pro'
+                    
+                    # FIX 1: Gunakan gemini-1.5-pro untuk SEMUANYA. Pro sangat mahir menganalisis chart dan gambar.
+                    model_name = 'gemini-1.5-pro' 
                     
                     try:
                         model = genai.GenerativeModel(
@@ -2963,7 +2965,7 @@ if prompt:
                             raise inner_e 
                             
                     ans = response.text
-                    if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini)*"
+                    if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini Pro)*"
                 except Exception as e_gem:
                     debug_info.append(f"Gemini: {str(e_gem)}")
 
@@ -2974,8 +2976,10 @@ if prompt:
                         if has_image:
                             content_arr = [{"type": "text", "text": prompt}]
                             content_arr.append({"type": "image_url", "image_url": {"url": f"data:{user_msg['img_mime']};base64,{user_msg['img_b64']}"}})
+                            
+                            # FIX 2: Gunakan model Vision Groq yang TERBARU dan aktif
                             _res = client.chat.completions.create(
-                                model="llama-3.2-11b-vision-preview",
+                                model="llama-3.2-90b-vision-preview",
                                 messages=[{"role": "user", "content": content_arr}],
                                 max_tokens=1024
                             )
