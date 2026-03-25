@@ -2678,9 +2678,11 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <style>
-/* Sembunyikan elemen bawaan Streamlit (header, footer, sidebar) */
+/* Sembunyikan elemen bawaan Streamlit secara agresif (Header, Footer, Sidebar, Decoration) */
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"] {{ display: none !important; }}
+[data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
+header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; border: none !important; padding: 0 !important; margin: 0 !important; opacity: 0 !important; visibility: hidden !important; position: absolute !important; }}
+div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; width: 0 !important; opacity: 0 !important; visibility: hidden !important; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2706,7 +2708,6 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-/* TOMBOL MENU BULAT MENGAMBANG DI POJOK KIRI BAWAH (IKON TITIK 3) */
 #spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
 #spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
 
@@ -2717,7 +2718,6 @@ s.textContent=`
 .smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 
-// Injeksi tombol mengambang dengan SVG Tiga Titik Vertikal
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.title = 'Menu SIGMA';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
@@ -2812,7 +2812,6 @@ for i, msg in enumerate(active["messages"][1:]):
             elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
         st.markdown(display)
 
-# CHAT INPUT BAWAAN STREAMLIT (TIDAK DIMODIFIKASI - AMAN!)
 try:
     result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple", file_type=["pdf", "png", "jpg", "jpeg"])
 except TypeError:
@@ -2902,9 +2901,11 @@ if prompt:
                 # ── ENGINE 1: GEMINI PRO/FLASH (UTAMA) ──
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
-                    model_name = 'gemini-1.5-flash' if has_image else 'gemini-1.5-pro'
                     
-                    # FIX 1: Pindahkan system_instruction ke dalam inisialisasi model
+                    # FIX: Gunakan endpoint "latest" agar terhindar dari error 404 Not Found
+                    model_name = 'gemini-1.5-flash-latest' if has_image else 'gemini-1.5-pro-latest'
+                    
+                    # FIX: Pindahkan system_instruction ke sini
                     model = genai.GenerativeModel(
                         model_name=model_name,
                         system_instruction=SYSTEM_PROMPT["content"]
@@ -2916,7 +2917,6 @@ if prompt:
                         response = model.generate_content([prompt, img])
                     else:
                         _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
-                        # FIX 2: Hapus system_instruction dari generate_content
                         response = model.generate_content(contents=_chat_history)
                         
                     ans = response.text
@@ -2929,19 +2929,20 @@ if prompt:
                     try:
                         client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                         if has_image:
-                            # Groq Vision Model Backup
                             content_arr = [{"type": "text", "text": prompt}]
                             content_arr.append({"type": "image_url", "image_url": {"url": f"data:{user_msg['img_mime']};base64,{user_msg['img_b64']}"}})
                             _res = client.chat.completions.create(
                                 model="llama-3.2-11b-vision-preview",
                                 messages=[{"role": "user", "content": content_arr}],
-                                max_tokens=1024 # Turunkan sedikit alokasi agar aman
+                                max_tokens=1024
                             )
                             ans = _res.choices[0].message.content
                             if ans: ans += "\n\n*(👁️ Dijawab menggunakan Groq Vision)*"
                         else:
-                            # FIX 3: Groq hanya dikirim 1 riwayat terakhir saja karena SYSTEM_PROMPT sudah sangat panjang
-                            _msgs = [SYSTEM_PROMPT] + _history_msgs[-1:] 
+                            # FIX: Putus total riwayat chat untuk Groq agar limit 12.000 Token tidak jebol
+                            # Jika full_prompt panjangnya berlebihan, kita potong untuk mengamankan Groq
+                            safe_prompt = full_prompt if len(full_prompt) < 4000 else full_prompt[:4000] + "\n\n[Teks dipotong otomatis oleh sistem...]"
+                            _msgs = [SYSTEM_PROMPT, {"role": "user", "content": safe_prompt}] 
                             _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
                             ans = _res.choices[0].message.content
                             if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
