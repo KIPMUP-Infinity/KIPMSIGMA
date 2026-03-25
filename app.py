@@ -55,8 +55,8 @@ def _fetch_all_data(tickers):
                             _fh_req = _ufh.Request(_fh_url, headers={"User-Agent":"Mozilla/5.0"})
                             with _ufh.urlopen(_fh_req, timeout=5) as r:
                                 _fh_d = _jfh.loads(r.read())
-                            _fh_price = _fh_d.get("c", 0)  # current price
-                            _fh_prev  = _fh_d.get("pc", 0) # previous close
+                            _fh_price = _fh_d.get("c", 0)
+                            _fh_prev  = _fh_d.get("pc", 0)
                             if _fh_price and _fh_price > 0:
                                 _fh_chg = ((_fh_price - _fh_prev) / _fh_prev * 100) if _fh_prev else 0
                                 result["prices"][tk] = {
@@ -94,7 +94,7 @@ def _fetch_all_data(tickers):
                         except: pass
         except: pass
 
-        # Layer 4: Yahoo Finance query API — realtime, adjusted
+        # Layer 4: Yahoo Finance
         for tk in tickers[:3]:
             if tk not in result["prices"]:
                 try:
@@ -118,14 +118,13 @@ def _fetch_all_data(tickers):
                         }
                 except: pass
 
-        # Layer 5: yfinance — backup dengan auto_adjust + averageVolume
+        # Layer 5: yfinance
         try:
             import yfinance as yf
             for tk in tickers[:3]:
                 try:
                     t = yf.Ticker(f"{tk}.JK")
                     info = t.info
-                    # Selalu ambil averageVolume meski harga sudah ada dari layer sebelumnya
                     avg_vol = info.get("averageVolume") or info.get("averageDailyVolume10Day")
                     avg_vol3m = info.get("averageVolume3Month") or info.get("averageVolume")
                     if avg_vol and tk in result["prices"]:
@@ -133,7 +132,6 @@ def _fetch_all_data(tickers):
                         result["prices"][tk]["avg_vol_src"] = "yfinance(3M)"
                     if avg_vol3m and tk in result["prices"] and not result["prices"][tk].get("avg_vol"):
                         result["prices"][tk]["avg_vol"] = avg_vol3m
-                    # Kalau belum ada harga sama sekali, pakai yfinance
                     if tk not in result["prices"]:
                         h = t.history(period="5d", auto_adjust=True)
                         if not h.empty:
@@ -141,45 +139,32 @@ def _fetch_all_data(tickers):
                             prev = h.iloc[-2] if len(h)>1 else last
                             chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
                             result["prices"][tk] = {
-                                "price": round(last["Close"],0),
-                                "chg": round(chg,2),
-                                "pe": info.get("trailingPE"),
-                                "pbv": info.get("priceToBook"),
-                                "eps": info.get("trailingEps"),
-                                "roe": info.get("returnOnEquity"),
-                                "avg_vol": avg_vol,
-                                "avg_vol_src": "yfinance(3M)",
-                                "source": "yfinance"
+                                "price": round(last["Close"],0), "chg": round(chg,2),
+                                "pe": info.get("trailingPE"), "pbv": info.get("priceToBook"),
+                                "eps": info.get("trailingEps"), "roe": info.get("returnOnEquity"),
+                                "avg_vol": avg_vol, "avg_vol_src": "yfinance(3M)", "source": "yfinance"
                             }
                 except: pass
         except: pass
 
-        # Layer 6: stooq — backup terakhir
+        # Layer 6: stooq
         try:
             import pandas_datareader as pdr
             from datetime import timedelta
             for tk in tickers[:3]:
                 if tk not in result["prices"]:
                     try:
-                        df = pdr.get_data_stooq(
-                            f"{tk}.JK",
-                            start=datetime.now()-timedelta(days=7),
-                            end=datetime.now()
-                        )
+                        df = pdr.get_data_stooq(f"{tk}.JK", start=datetime.now()-timedelta(days=7), end=datetime.now())
                         if not df.empty:
                             df = df.sort_index()
                             last = df.iloc[-1]
                             prev = df.iloc[-2] if len(df)>1 else last
                             chg = ((last["Close"]-prev["Close"])/prev["Close"]*100) if prev["Close"] else 0
-                            result["prices"][tk] = {
-                                "price": round(last["Close"],0),
-                                "chg": round(chg,2),
-                                "source": "stooq"
-                            }
+                            result["prices"][tk] = {"price": round(last["Close"],0), "chg": round(chg,2), "source": "stooq"}
                     except: pass
         except: pass
 
-        # Berita: Google News + CNBC ID + Kontan + Bisnis
+        # Berita
         try:
             import feedparser
             seen = set()
@@ -190,8 +175,7 @@ def _fetch_all_data(tickers):
                 ("Kontan", "https://rss.kontan.co.id/category/investasi"),
                 ("Bisnis", "https://ekonomi.bisnis.com/rss"),
             ]
-            mkt_kw = [q.lower(),"ihsg","saham","bursa","ekonomi","rupiah","pasar",
-                      "inflasi","perang","global","emiten","investor"]
+            mkt_kw = [q.lower(),"ihsg","saham","bursa","ekonomi","rupiah","pasar","inflasi","perang","global","emiten","investor"]
             for sn, su in sources:
                 try:
                     feed = feedparser.parse(su)
@@ -223,25 +207,16 @@ def _fetch_finnhub(ticker, api_key=None):
         metrics = data.get("metric", {})
         result = {}
         mapping = {
-            "revenueGrowthTTMYoy": "revenue_growth",
-            "roeTTM": "roe",
-            "roaTTM": "roa",
-            "netProfitMarginTTM": "net_margin",
-            "peBasicExclExtraTTM": "pe",
-            "pbAnnual": "pbv",
-            "dividendYieldIndicatedAnnual": "div_yield",
-            "epsBasicExclExtraItemsTTM": "eps",
-            "totalDebt/totalEquityAnnual": "der",
-            "currentRatioAnnual": "current_ratio",
-            "52WeekHigh": "w52h",
-            "52WeekLow": "w52l",
+            "revenueGrowthTTMYoy": "revenue_growth", "roeTTM": "roe", "roaTTM": "roa",
+            "netProfitMarginTTM": "net_margin", "peBasicExclExtraTTM": "pe", "pbAnnual": "pbv",
+            "dividendYieldIndicatedAnnual": "div_yield", "epsBasicExclExtraItemsTTM": "eps",
+            "totalDebt/totalEquityAnnual": "der", "currentRatioAnnual": "current_ratio",
+            "52WeekHigh": "w52h", "52WeekLow": "w52l",
         }
         for fh_key, our_key in mapping.items():
-            if metrics.get(fh_key) is not None:
-                result[our_key] = metrics[fh_key]
+            if metrics.get(fh_key) is not None: result[our_key] = metrics[fh_key]
         return result
-    except:
-        return {}
+    except: return {}
 
 def _fetch_alphavantage(ticker, api_key=None):
     api_key = api_key or st.secrets.get("ALPHAVANTAGE_KEY", "")
@@ -250,8 +225,7 @@ def _fetch_alphavantage(ticker, api_key=None):
         result = {}
         url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={ticker}.JK&apikey={api_key}"
         req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=5) as r:
-            data = _j.loads(r.read())
+        with urllib.request.urlopen(req, timeout=5) as r: data = _j.loads(r.read())
         if data and "Symbol" in data:
             if data.get("PERatio") and data["PERatio"] != "None": result["pe"] = float(data["PERatio"])
             if data.get("PriceToBookRatio") and data["PriceToBookRatio"] != "None": result["pbv"] = float(data["PriceToBookRatio"])
@@ -264,8 +238,7 @@ def _fetch_alphavantage(ticker, api_key=None):
             if data.get("52WeekLow") and data["52WeekLow"] != "None": result["w52l"] = float(data["52WeekLow"])
             if data.get("Description"): result["description"] = data["Description"][:200]
         return result
-    except:
-        return {}
+    except: return {}
 
 def _fetch_fmp(ticker, api_key=None):
     api_key = api_key or st.secrets.get("FMP_KEY", "")
@@ -273,12 +246,10 @@ def _fetch_fmp(ticker, api_key=None):
         import urllib.request, json as _j
         result = {}
         base = "https://financialmodelingprep.com/api/v3"
-
         try:
             url = f"{base}/profile/{ticker}.JK?apikey={api_key}"
             req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=5) as r:
-                data = _j.loads(r.read())
+            with urllib.request.urlopen(req, timeout=5) as r: data = _j.loads(r.read())
             if data and isinstance(data, list) and len(data) > 0:
                 d = data[0]
                 if d.get("price"): result["price"] = d["price"]
@@ -288,14 +259,12 @@ def _fetch_fmp(ticker, api_key=None):
                 if d.get("beta"): result["beta"] = d["beta"]
                 if d.get("sector"): result["sector"] = d["sector"]
                 if d.get("industry"): result["industry"] = d["industry"]
-                if d.get("description"): result["description"] = d["description"][:300]
         except: pass
 
         try:
             url2 = f"{base}/key-metrics-ttm/{ticker}.JK?apikey={api_key}"
             req2 = urllib.request.Request(url2, headers={"User-Agent":"Mozilla/5.0"})
-            with urllib.request.urlopen(req2, timeout=5) as r2:
-                data2 = _j.loads(r2.read())
+            with urllib.request.urlopen(req2, timeout=5) as r2: data2 = _j.loads(r2.read())
             if data2 and isinstance(data2, list) and len(data2) > 0:
                 m = data2[0]
                 if m.get("roeTTM"): result["roe"] = m["roeTTM"]
@@ -307,22 +276,16 @@ def _fetch_fmp(ticker, api_key=None):
                 if m.get("currentRatioTTM"): result["current_ratio"] = m["currentRatioTTM"]
                 if m.get("netProfitMarginTTM"): result["net_margin"] = m["netProfitMarginTTM"]
                 if m.get("bookValuePerShareTTM"): result["bv"] = m["bookValuePerShareTTM"]
-                if m.get("earningsYieldTTM"): result["earnings_yield"] = m["earningsYieldTTM"]
-                if m.get("freeCashFlowPerShareTTM"): result["fcf_per_share"] = m["freeCashFlowPerShareTTM"]
         except: pass
 
         try:
             url3 = f"{base}/income-statement/{ticker}.JK?limit=4&apikey={api_key}"
             req3 = urllib.request.Request(url3, headers={"User-Agent":"Mozilla/5.0"})
-            with urllib.request.urlopen(req3, timeout=5) as r3:
-                data3 = _j.loads(r3.read())
+            with urllib.request.urlopen(req3, timeout=5) as r3: data3 = _j.loads(r3.read())
             if data3 and isinstance(data3, list):
                 hist_ni, hist_eps, hist_rev = [], [], []
                 for row in data3[:4]:
-                    yr = str(row.get("date",""))[:4]
-                    ni = row.get("netIncome")
-                    eps = row.get("eps")
-                    rev = row.get("revenue")
+                    yr = str(row.get("date",""))[:4]; ni = row.get("netIncome"); eps = row.get("eps"); rev = row.get("revenue")
                     if ni: hist_ni.append((yr, ni))
                     if eps: hist_eps.append((yr, eps))
                     if rev: hist_rev.append((yr, rev))
@@ -330,11 +293,12 @@ def _fetch_fmp(ticker, api_key=None):
                 if hist_eps: result["hist_eps"] = hist_eps
                 if hist_rev: result["hist_rev"] = hist_rev
         except: pass
-
         if result: result["source"] = "FMP"
         return result
-    except:
-        return {}
+    except: return {}
+
+
+//-------------part 2-------------------
 
 def _fetch_multi_fundamental(ticker):
     import threading
@@ -403,8 +367,8 @@ def _fetch_multi_fundamental(ticker):
         if price and bv and bv > 0 and not combined.get("pbv"):
             combined["pbv"] = round(price / bv, 2)
             combined["source_pbv"] = "hitung (Harga÷BV)"
-
         result[0] = combined
+
     th = threading.Thread(target=fetch, daemon=True)
     th.start()
     th.join(timeout=18)
@@ -605,6 +569,7 @@ def fetch_fundamental_with_cache(ticker):
     return data
 
 def build_context(prompt):
+    import re
     tickers = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
                if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG",
                             "ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL","DENGAN",
@@ -915,6 +880,12 @@ def build_fundamental_from_text(prompt):
     th.join(timeout=15)
     return result[0]
 
+
+
+//---------------------------part3
+
+
+
 EMITEN_MAP = {
     "bank syariah indonesia": "BRIS", "bris": "BRIS",
     "bank central asia": "BBCA", "bbca": "BBCA", "bca": "BBCA",
@@ -974,6 +945,7 @@ def detect_emiten(text):
     text_lower = text[:3000].lower()
     for name, ticker in EMITEN_MAP.items():
         if name in text_lower: return ticker
+    import re
     matches = re.findall(r'\b([A-Z]{4})\b', text[:2000])
     skip = {"PADA","YANG","ATAU","DARI","BANK","TBKK","ANAK","ASET","LABA","RUGI","TOTAL","BERSIH","TAHUN","SALDO","DANA","PIHAK","USAHA","MODAL","KREDIT","BIAYA","BUNGA","PAJAK","LAIN","ATAS","DALAM"}
     for m in matches:
@@ -981,6 +953,7 @@ def detect_emiten(text):
     return None
 
 def detect_ticker_from_prompt(prompt):
+    import re
     prompt_upper = prompt.upper()
     prompt_lower = prompt.lower()
     skip = {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG","ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL","DENGAN","MINTA","ANALISIS","APAKAH","BAGAIMANA","KENAPA","COBA"}
@@ -1203,7 +1176,7 @@ Trade plan: Akumulasi saat undervalue (PBV<1.5+PER<15+ROE>15%) → Hold sampai h
 Trade plan: Identifikasi emiten terdampak → Konfirmasi bandar sudah positioning → Entry saat konfirmasi, bukan saat berita ramai
 
 🔀 DIVERGENCE (penghubung semua):
-"Ketika harga berbohong, oscillator akan berbisik kebenarannya"
+"Ketika harga bohong, oscillator akan berbisik kebenarannya"
 Bullish div: harga LL + oscillator HL = demand menguat = konfirmasi akumulasi bandar
 Bearish div: harga HH + oscillator LH = supply menguat = konfirmasi distribusi bandar
 
@@ -1483,6 +1456,10 @@ Output: 🌍 Ringkasan Berita → 💱 Dampak ke Rupiah → 🏛️ Dampak ke AP
 
 Jawab Bahasa Indonesia. Gambar/PDF → analisa langsung."""
 }
+
+
+
+//----------------------------part 4------------------
 
 def process_delete_if_pending():
     _del_sid = st.query_params.get("del", "")
@@ -2011,49 +1988,36 @@ if prompt:
         st.markdown(prompt)
 
     try:
-with st.spinner("SIGMA menganalisis (Auto-Detect Model)..."):
+        with st.chat_message("assistant"):
+            with st.spinner("SIGMA menganalisis (Auto-Detect Model)..."):
                 try:
                     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 except Exception as e:
                     raise Exception("GEMINI_API_KEY belum ditemukan di st.secrets!")
 
                 # --- FITUR AUTO DETECT MODEL ---
-                available_models = []
-                for m in genai.list_models():
-                    if 'generateContent' in m.supported_generation_methods:
-                        available_models.append(m.name)
-                        
-                if not available_models:
-                    raise Exception("API Key ini tidak memiliki akses ke model Gemini apapun. Buat API Key baru di Google AI Studio.")
+                available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                if not available_models: raise Exception("API Key tidak memiliki akses ke model Gemini.")
                 
-                # Cari otomatis: Flash -> Pro -> atau apapun model pertama yang tersedia di akunmu
-                target_model = None
-                for m in available_models:
-                    if "1.5-flash" in m: target_model = m; break
-                if not target_model:
-                    for m in available_models:
-                        if "1.5-pro" in m: target_model = m; break
-                if not target_model:
-                    target_model = available_models[0] # Pakai model apa saja yang dikasih Google
+                target_model = next((m for m in available_models if "1.5-flash" in m), None)
+                if not target_model: target_model = next((m for m in available_models if "1.5-pro" in m), None)
+                if not target_model: target_model = available_models[0]
                 
                 _all_msgs = [m for m in active["messages"] if m.get("role") in ("user","assistant","system")]
                 _last_content = _all_msgs[-1]["content"] if _all_msgs else ""
                 
-                # Eksekusi dengan model yang valid
                 if "1.5" in target_model:
                     model = genai.GenerativeModel(model_name=target_model, system_instruction=SYSTEM_PROMPT["content"])
                 else:
                     model = genai.GenerativeModel(model_name=target_model)
                     _last_content = f"Instruksi Sistem:\n{SYSTEM_PROMPT['content']}\n\n{_last_content}"
-                    
+                
                 gemini_history = []
                 for msg in _all_msgs[:-1]:
                     if msg["role"] == "system": continue
-                    role_map = "user" if msg["role"] == "user" else "model"
-                    gemini_history.append({"role": role_map, "parts": [msg["content"]]})
+                    gemini_history.append({"role": "user" if msg["role"] == "user" else "model", "parts": [msg["content"]]})
                     
                 chat = model.start_chat(history=gemini_history)
-                
                 last_parts = []
                 if multi_images or img_data:
                     all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
@@ -2066,9 +2030,10 @@ with st.spinner("SIGMA menganalisis (Auto-Detect Model)..."):
                 
             st.markdown(ans)
             active["messages"].append({"role": "assistant", "content": ans})
+            
     except Exception as e:
         st.session_state["last_error"] = str(e)
-        st.error(f"⚠️ Kesalahan pada sistem Gemini: {str(e)}")
+        st.error(f"⚠️ Kesalahan sistem Gemini: {str(e)}")
 
     st.rerun()
 
