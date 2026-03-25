@@ -2815,16 +2815,16 @@ if result is not None:
             st.rerun()
 
     if file_obj:
-            raw = file_obj.read()
-            if file_obj.type == "application/pdf":
-                # ─── FITUR PDF DIMATIKAN SEMENTARA UNTUK MENCEGAH RATE LIMIT GROQ ───
-                st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
-                st.session_state.pdf_data = None
-            else:
-                if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
-                st.session_state.pdf_data = None
-    
-        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
+        raw = file_obj.read()
+        if file_obj.type == "application/pdf":
+            # ─── FITUR PDF DIMATIKAN SEMENTARA UNTUK MENCEGAH RATE LIMIT GROQ ───
+            st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
+            st.session_state.pdf_data = None
+        else:
+            if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
+            st.session_state.pdf_data = None
+
+    if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
     
     if prompt:
         img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
