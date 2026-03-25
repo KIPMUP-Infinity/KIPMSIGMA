@@ -2672,6 +2672,8 @@ init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
 
+
+
 # ─────────────────────────────────────────────
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
@@ -2930,63 +2932,73 @@ if prompt:
                 ans = None
                 has_image = bool(multi_images or img_data)
                 debug_info = []
-                
-                # ── ENGINE 1: GEMINI FLASH (PALING AMAN DARI ERROR 404) ──
-                try:
-                    genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
-                    
-                    # FIX 1: Kita paksakan pakai gemini-1.5-flash untuk semua. 
-                    # Flash tidak pernah kena error 404 dan kemampuannya membaca chart sudah SANGAT MAUT!
-                    model_name = 'gemini-1.5-flash' 
-                    
-                    try:
-                        model = genai.GenerativeModel(
-                            model_name=model_name,
-                            system_instruction=SYSTEM_PROMPT["content"]
-                        )
-                        if has_image:
-                            img_bytes = base64.b64decode(user_msg["img_b64"])
-                            img = Image.open(io.BytesIO(img_bytes))
-                            response = model.generate_content([prompt, img])
-                        else:
-                            _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
-                            response = model.generate_content(contents=_chat_history)
-                    except Exception as inner_e:
-                        if "unexpected keyword" in str(inner_e).lower():
-                            model = genai.GenerativeModel(model_name=model_name)
-                            if has_image:
-                                img_bytes = base64.b64decode(user_msg["img_b64"])
-                                img = Image.open(io.BytesIO(img_bytes))
-                                response = model.generate_content([SYSTEM_PROMPT["content"] + "\n\n" + prompt, img])
-                            else:
-                                _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
-                                _chat_history[0]["parts"] = [SYSTEM_PROMPT["content"] + "\n\n" + _chat_history[0]["parts"][0]]
-                                response = model.generate_content(contents=_chat_history)
-                        else:
-                            raise inner_e 
-                            
-                    ans = response.text
-                    if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini Flash)*"
-                except Exception as e_gem:
-                    debug_info.append(f"Gemini: {str(e_gem)}")
 
-                # ── ENGINE 2: GROQ (CADANGAN JIKA GEMINI LIMIT) ──
-                if not ans:
+                if has_image:
+                    # ── BACA GAMBAR VIA GEMINI 2.0 FLASH (REST API / TANPA LIBRARY) ──
+                    try:
+                        import json as _j2, urllib.request as _ur
+                        # Prioritaskan GOOGLE_API_KEY, fallback ke GEMINI_KEY
+                        _gkey = st.secrets.get("GOOGLE_API_KEY", "") or st.secrets.get("GEMINI_KEY", "")
+                        
+                        _parts = []
+                        if multi_images:
+                            for _b64, _mime, _ in multi_images[:5]:
+                                _parts.append({"inline_data": {"mime_type": _mime, "data": _b64}})
+                        elif img_data:
+                            _parts.append({"inline_data": {"mime_type": img_data[1], "data": img_data[0]}})
+                        
+                        # Gabungkan instruksi sistem + prompt
+                        _parts.append({"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt})
+                        
+                        _gpayload = {
+                            "contents": [{"role": "user", "parts": _parts}],
+                            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+                        }
+                        
+                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gkey}"
+                        _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
+                        with _ur.urlopen(_greq, timeout=30) as _gr:
+                            _gdata = _j2.loads(_gr.read())
+                        ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
+                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 2.0 Flash Vision)*"
+                    except Exception as e_img:
+                        debug_info.append(f"Gemini Vision: {str(e_img)}")
+                else:
+                    # ── BACA TEKS VIA GEMINI 2.0 FLASH (REST API / TANPA LIBRARY) ──
+                    try:
+                        import json as _j2, urllib.request as _ur
+                        _gkey = st.secrets.get("GOOGLE_API_KEY", "") or st.secrets.get("GEMINI_KEY", "")
+                        
+                        _gemini_contents = []
+                        for m in _history_msgs[-5:]:
+                            r = "user" if m["role"] == "user" else "model"
+                            _gemini_contents.append({"role": r, "parts": [{"text": m["content"]}]})
+                            
+                        _gpayload = {
+                            "contents": _gemini_contents,
+                            "system_instruction": {"parts": [{"text": SYSTEM_PROMPT["content"]}]},
+                            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+                        }
+                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gkey}"
+                        _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
+                        with _ur.urlopen(_greq, timeout=30) as _gr:
+                            _gdata = _j2.loads(_gr.read())
+                        ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
+                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 2.0 Flash)*"
+                    except Exception as e_txt:
+                        debug_info.append(f"Gemini Text: {str(e_txt)}")
+
+                # ── ENGINE 2: GROQ (CADANGAN JIKA GEMINI LIMIT, HANYA UNTUK TEKS) ──
+                if not ans and not has_image:
                     try:
                         client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
-                        if has_image:
-                            # FIX 2: Karena semua model Groq Vision dihapus dari server mereka (decommissioned),
-                            # kita tidak akan memaksa Groq melihat gambar. Kita beritahu user dengan ramah.
-                            ans = "Maaf ya, sistem utama penglihatan (Gemini) sedang super sibuk/limit, dan server penglihatan cadangan (Groq Vision) sedang dimatikan permanen oleh pusat. 🙏\n\n**Solusi:** Coba kirim gambarnya lagi dalam 1-2 menit ke depan agar ditangkap kembali oleh Gemini."
-                        else:
-                            mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
-                            safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
-                            
-                            _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
-                            
-                            _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
-                            ans = _res.choices[0].message.content
-                            if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
+                        mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
+                        safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
+                        
+                        _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
+                        _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
+                        ans = _res.choices[0].message.content
+                        if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
                     except Exception as e_groq:
                         debug_info.append(f"Groq: {str(e_groq)}")
                 
