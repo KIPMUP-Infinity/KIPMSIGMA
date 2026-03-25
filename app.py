@@ -2675,82 +2675,8 @@ C = get_colors(st.session_state.theme)
 
 
 # ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE & GROQ LOOPING
+# PART 8: MAIN CHAT ENGINE (TRIPLE AI FALLBACK)
 # ─────────────────────────────────────────────
-st.markdown("""
-<style>
-section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] { display: none !important; }
-[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"], iframe[title="streamlit_analytics"], div[class*="Toolbar"], div[class*="toolbar"], div[class*="ActionButton"], div[class*="HeaderActionButton"] { display: none !important; }
-</style>
-""", unsafe_allow_html=True)
-
-_hist_items = ""
-for _sesi in st.session_state.sessions:
-    _sid = _sesi["id"]; _is_act = _sid == st.session_state.active_id; _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',""); _fw = "700" if _is_act else "400"; _bg = C['hover'] if _is_act else "transparent"
-    _hist_items += f"""
-(function(){{
-    var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
-    var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; a.onmouseleave=function(){{this.style.background='{_bg}'}};
-    var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; del.onclick=function(e){{ e.preventDefault();e.stopPropagation(); if(confirm('Hapus obrolan ini?')){{ var u2=new URL(window.parent.location.href); u2.searchParams.set('del','{_sid}'); u2.searchParams.delete('do'); window.parent.location.href=u2.toString(); }} }};
-    row.appendChild(a); row.appendChild(del); h.appendChild(row);
-}})();
-"""
-
-components.html(f"""
-<script>
-(function(){{
-var pd=window.parent.document;
-var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
-var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
-['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
-
-var s=pd.createElement('style'); s.id='sigma-mobile-css';
-s.textContent=`
-#spbtn{{position:fixed;bottom:16px;left:14px;width:38px;height:38px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;font-size:24px;font-weight:300;z-index:99999; display:flex;align-items:center;justify-content:center; box-shadow:0 2px 10px rgba(0,0,0,0.5);padding:0;line-height:1;}} #spbtn:hover{{transform:scale(1.1)}}
-#spmenu,#sphist{{position:fixed;left:12px;bottom:62px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:99998;display:none;overflow:hidden;min-width:250px;}} #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;}} .smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
-`; pd.head.appendChild(s);
-
-var btn=pd.createElement('button'); btn.id='spbtn';btn.textContent='+';pd.body.appendChild(btn);
-var m=pd.createElement('div');m.id='spmenu';
-m.innerHTML=`<a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a><button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button><div class="smsp"></div><div class="smhd">PENAMPILAN</div><a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a><a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a><div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>`;
-pd.body.appendChild(m);
-
-var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-
-btn.onclick=function(e){{e.stopPropagation();m.style.display=m.style.display==='block'?'none':'block';h.style.display='none';}};
-(function(){{
-    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString(); pd.getElementById('smi-new').style.textDecoration='none';
-    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display=h.style.display==='block'?'none':'block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString(); pd.getElementById('smi-dark').style.textDecoration='none';
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString(); pd.getElementById('smi-light').style.textDecoration='none';
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString(); pd.getElementById('smi-out').style.textDecoration='none';
-}})();
-pd.addEventListener('click',function(e){{ if(!btn.contains(e.target)&&!m.contains(e.target))m.style.display='none'; if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target))h.style.display='none'; }});
-}})();
-</script>
-""", height=0)
-
-if "do" in st.query_params:
-    _do = st.query_params.get("do", "")
-    _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
-    if _do == "logout":
-        if _tok:
-            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
-            except: pass
-        st.session_state.clear(); st.query_params.clear()
-        components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
-        st.stop()
-    elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params["do"] = ""; st.rerun()
-    elif _do == "theme_light": st.session_state.theme = "light"; st.query_params["do"] = ""; st.rerun()
-    elif _do == "newchat":
-        ns = new_session(); st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params["do"] = ""; st.rerun()
-    elif _do.startswith("sel_"):
-        _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params["do"] = ""; st.rerun()
-
 active = get_active()
 
 if not active["messages"][1:]:
@@ -2817,7 +2743,7 @@ if result is not None:
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
-            # ─── FITUR PDF DIMATIKAN SEMENTARA UNTUK MENCEGAH RATE LIMIT GROQ ───
+            # PDF Dimatikan sementara untuk menghemat limit token Groq
             st.warning(f"⚠️ Maaf, pembacaan dokumen PDF ({file_obj.name}) dinonaktifkan sementara untuk mencegah limit server.")
             st.session_state.pdf_data = None
         else:
@@ -2825,11 +2751,11 @@ if result is not None:
             st.session_state.pdf_data = None
 
     if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
-    
-    if prompt:
-        img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
-        st.session_state.img_data = None; st.session_state.pdf_data = None
-        full_prompt = prompt
+
+if prompt:
+    img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
+    st.session_state.img_data = None; st.session_state.pdf_data = None
+    full_prompt = prompt
 
     if pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
     elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
@@ -2884,144 +2810,95 @@ if result is not None:
     try:
         with st.chat_message("assistant"):
             with st.spinner("SIGMA menganalisis..."):
-                if multi_images or img_data:
-                    _img_ans = None
+                _no_history = st.session_state.pop("fund_no_history", False)
+                _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
+                _last_content = _history_msgs[-1]["content"] if _history_msgs else ""
+                _has_pdf = "[PDF:" in _last_content
+                _p_lower = prompt.lower() if prompt else ""
+
+                _is_fundamental = _no_history or _has_pdf or any(k in _p_lower for k in ["fundamental","valuasi","laporan keuangan","keuangan","roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk","analisa pdf","revenue","ebitda","net income"])
+                _is_analisa_lengkap = not _has_pdf and any(k in _p_lower for k in ["analisa lengkap","full analisa","5 sila","kesimpulan bandarmologi","bandarmologi","broker","teknikal","analisa chart","divergen","divergence","kesimpulan dampak","dampak","pengaruh","efek","akumulasi","distribusi","bandar","volume anomali","siklus","shakeout","breakout","breakdown"])
+
+                _sys_short = {"role": "system", "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nRamah saat ngobrol, profesional saat analisa. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nKemampuan: teknikal (MnM Strategy+), fundamental, bandarmologi, makro, umum.\nIDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25.\n5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]\nPENTING: Jika ada [DATA PASAR IDX] → gunakan harga dari sana. Jika tidak ada data harga → sebutkan 'harga tidak tersedia saat ini, mohon cek manual' — JANGAN mengarang harga."}
+                _sys_medium = {"role": "system", "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nProfesional dalam analisa fundamental. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nIDX = LONG ONLY. Kalimat sakti: 'Beli bisnis bagus di harga murah, bukan harga murah tanpa bisnis bagus'\n\nFRAMEWORK FUNDAMENTAL:\nBank: NIM>4%|NPL<3%|LDR 80-92%|CAR>14%|ROA>1.5%|ROE>15%|BOPO<70%|CIR<45%\nUmum: ROE>15%|DER<0.5|EPS growth konsisten|PBV<1.5|PER<15|FCF>NI\nDISIPLIN DATA: gunakan data terbaru, jangan pakai 2018-2020 kalau ada 2023-2025\nCORPORATE ACTION: cek split/reverse/right issue jika harga anomali\nFORMAT: 📋 ANALISA FUNDAMENTAL — [EMITEN] (2026) | harga | sektor | profitabilitas | valuasi | tren | proyeksi | verdict\nIcon: ✅ pass | ⚠️ perhatian | ❌ fail — pilih SATU saja"}
+
+                if _is_analisa_lengkap: _msgs = [active["messages"][0], {"role": _history_msgs[-1]["role"], "content": _last_content[:15000]}]
+                elif _is_fundamental: _msgs = [_sys_medium, {"role": _history_msgs[-1]["role"], "content": _last_content[:8000]}]
+                else: _msgs = [_sys_short] + _history_msgs[-4:]
+
+                ans = None
+                has_image = bool(multi_images or img_data)
+                
+                # ── ENGINE 1: GROQ ──
+                _rate_limited_keys = set()
+                _groq_keys = [k for k in [st.secrets.get(f"GROQ_API_KEY{i if i>1 else ''}", "") for i in range(1, 14)] if k]
+                if not _groq_keys: _groq_keys = [""]
+                
+                for _gkey in _groq_keys:
+                    if ans: break
+                    if not _gkey or _gkey in _rate_limited_keys: continue
                     try:
-                        _groq_vision = Groq(api_key=st.secrets["GROQ_API_KEY"])
-                        all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
-                        _content = []
-                        for _ib64, _imime, _iname in all_imgs[:10]:
-                            _content.append({"type": "image_url", "image_url": {"url": f"data:{_imime};base64,{_ib64}"}})
-                        _note = f" Ada {len(all_imgs)} gambar." if len(all_imgs) > 1 else ""
-                        _content.append({"type": "text", "text": f"{prompt}{_note}"})
-                        _img_res = _groq_vision.chat.completions.create(
-                            model="llama-3.2-11b-vision-preview",
-                            messages=[
-                                {"role": "system", "content": "Kamu SIGMA, asisten trading KIPM. Analisa semua gambar yang dikirim. Cek divergence, bandarmologi, teknikal MnM Strategy+. Jawab Bahasa Indonesia. DYOR."},
-                                {"role": "user", "content": _content}
-                            ],
-                            max_tokens=2048
-                        )
-                        _img_ans = _img_res.choices[0].message.content
-                    except Exception as _img_e:
-                        if _img_ans is None: raise _img_e
-                    
-                    class _FakeImgRes:
-                        class _C:
-                            class _M:
-                                pass
-                            message = _M()
-                        choices = [_C()]
-                    res = _FakeImgRes()
-                    res.choices[0].message.content = _img_ans
-                else:
-                    # PERBAIKAN: Hapus "system" agar prompt raksasa tidak bocor ke chat biasa!
-                    _history_msgs = [
-                        {"role": m["role"], "content": m.get("content") or ""}
-                        for m in active["messages"]
-                        if m.get("role") in ("user","assistant")
-                    ]
-                    
-                    _last_content = _history_msgs[-1]["content"] if _history_msgs else ""
-                    _no_history = st.session_state.pop("fund_no_history", False)
-                    _has_pdf = "[PDF:" in _last_content
+                        _gclient = Groq(api_key=_gkey)
+                        if has_image:
+                            all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
+                            _content = []
+                            for _ib64, _imime, _iname in all_imgs[:5]: _content.append({"type": "image_url", "image_url": {"url": f"data:{_imime};base64,{_ib64}"}})
+                            _content.append({"type": "text", "text": _last_content})
+                            _res = _gclient.chat.completions.create(model="llama-3.2-11b-vision-preview", messages=[{"role": "system", "content": "Kamu SIGMA, asisten trading KIPM. Analisa gambar yang dikirim. Jawab Bahasa Indonesia. DYOR."}, {"role": "user", "content": _content}], max_tokens=2048)
+                            ans = _res.choices[0].message.content
+                        else:
+                            for _gmodel in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+                                if ans: break
+                                try:
+                                    _res = _gclient.chat.completions.create(model=_gmodel, messages=_msgs, temperature=0.7, max_tokens=2048)
+                                    ans = _res.choices[0].message.content
+                                except Exception as _e_model:
+                                    if any(x in str(_e_model).lower() for x in ["rate_limit","429","too many","quota"]): raise _e_model
+                    except Exception as _ge:
+                        if any(x in str(_ge).lower() for x in ["rate_limit","429","too many","quota"]): _rate_limited_keys.add(_gkey)
 
-                    _p_lower = prompt.lower() if prompt else ""
+                # ── ENGINE 2: CEREBRAS (FALLBACK TEKS) ──
+                if ans is None and not has_image:
+                    try:
+                        _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
+                        if _cb_key:
+                            import urllib.request as _ucb, json as _jcb
+                            _cb_msgs = [{"role": m.get("role",""), "content": (m.get("content","") or "")[:8000]} for m in _msgs if m.get("role") in ("system","user","assistant")]
+                            _cb_payload = {"model": "llama-3.3-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
+                            _cb_req = _ucb.Request("https://api.cerebras.ai/v1/chat/completions", data=_jcb.dumps(_cb_payload).encode(), headers={"Content-Type": "application/json", "Authorization": f"Bearer {_cb_key}"})
+                            with _ucb.urlopen(_cb_req, timeout=30) as _cbr: ans = _jcb.loads(_cbr.read()).get("choices",[{}])[0].get("message",{}).get("content","")
+                    except: pass
 
-                    _is_fundamental = _no_history or _has_pdf or any(k in _p_lower for k in [
-                        "fundamental","valuasi","laporan keuangan","keuangan",
-                        "roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk",
-                        "analisa pdf","revenue","ebitda","net income"
-                    ])
-                    _is_analisa_lengkap = not _has_pdf and any(k in _p_lower for k in [
-                        "analisa lengkap","full analisa","5 sila",
-                        "kesimpulan bandarmologi","bandarmologi","broker",
-                        "teknikal","analisa chart","divergen","divergence",
-                        "kesimpulan dampak","dampak","pengaruh","efek",
-                        "akumulasi","distribusi","bandar","volume anomali",
-                        "siklus","shakeout","breakout","breakdown"
-                    ])
+                # ── ENGINE 3: GEMINI DIRECT API (ANTI ERROR 404 & FALLBACK GAMBAR) ──
+                if ans is None:
+                    try:
+                        _gem_key = st.secrets.get("GEMINI_API_KEY", "")
+                        if _gem_key:
+                            import urllib.request as _ur, json as _j
+                            _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gem_key}"
+                            _gem_contents = []
+                            
+                            # Inject context history
+                            for m in _history_msgs[:-1]:
+                                _gem_contents.append({"role": "user" if m["role"] == "user" else "model", "parts": [{"text": m["content"]}]})
+                                
+                            _last_parts = []
+                            if has_image:
+                                all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
+                                for _ib64, _imime, _iname in all_imgs[:5]: _last_parts.append({"inline_data": {"mime_type": _imime, "data": _ib64}})
+                            _last_parts.append({"text": _last_content})
+                            _gem_contents.append({"role": "user", "parts": _last_parts})
 
-                    _sys_short = {
-                        "role": "system",
-                        "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nRamah saat ngobrol, profesional saat analisa. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nKemampuan: teknikal (MnM Strategy+), fundamental, bandarmologi, makro, umum.\nIDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25.\n5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]\nPENTING: Jika ada [DATA PASAR IDX] → gunakan harga dari sana. Jika tidak ada data harga → sebutkan 'harga tidak tersedia saat ini, mohon cek manual' — JANGAN mengarang harga."
-                    }
+                            _payload = {"system_instruction": {"parts": [{"text": SYSTEM_PROMPT["content"]}]}, "contents": _gem_contents, "generationConfig": {"temperature": 0.7}}
+                            _req = _ur.Request(_url, data=_j.dumps(_payload).encode(), headers={"Content-Type": "application/json"})
+                            with _ur.urlopen(_req, timeout=30) as _r:
+                                _data = _j.loads(_r.read())
+                                ans = _data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                    except Exception as ge: pass
 
-                    _sys_medium = {
-                        "role": "system",
-                        "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nProfesional dalam analisa fundamental. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nIDX = LONG ONLY. Kalimat sakti: 'Beli bisnis bagus di harga murah, bukan harga murah tanpa bisnis bagus'\n\nFRAMEWORK FUNDAMENTAL:\nBank: NIM>4%|NPL<3%|LDR 80-92%|CAR>14%|ROA>1.5%|ROE>15%|BOPO<70%|CIR<45%\nUmum: ROE>15%|DER<0.5|EPS growth konsisten|PBV<1.5|PER<15|FCF>NI\nDISIPLIN DATA: gunakan data terbaru, jangan pakai 2018-2020 kalau ada 2023-2025\nCORPORATE ACTION: cek split/reverse/right issue jika harga anomali\nFORMAT: 📋 ANALISA FUNDAMENTAL — [EMITEN] (2026) | harga | sektor | profitabilitas | valuasi | tren | proyeksi | verdict\nIcon: ✅ pass | ⚠️ perhatian | ❌ fail — pilih SATU saja"
-                    }
-
-                    if _is_analisa_lengkap:
-                        # Ambil System Prompt raksasa HANYA saat diminta analisa lengkap
-                        _msgs = [active["messages"][0], {"role": _history_msgs[-1]["role"], "content": _last_content[:15000]}]
-                    elif _is_fundamental:
-                        _msgs = [_sys_medium, {"role": _history_msgs[-1]["role"], "content": _last_content[:8000]}]
-                    else:
-                        # Chat biasa "Hai" → gabung sys_short dengan history (Super hemat token!)
-                        _msgs = [_sys_short] + _history_msgs[-4:]
-
-                    ans = None
-                    _rate_limited_keys = set()
-                    _groq_keys = []
-                    for _k in [
-                        st.secrets.get("GROQ_API_KEY", ""), st.secrets.get("GROQ_API_KEY2", ""), st.secrets.get("GROQ_API_KEY3", ""),
-                        st.secrets.get("GROQ_API_KEY4", ""), st.secrets.get("GROQ_API_KEY5", ""), st.secrets.get("GROQ_API_KEY6", ""),
-                        st.secrets.get("GROQ_API_KEY7", ""), st.secrets.get("GROQ_API_KEY8", ""), st.secrets.get("GROQ_API_KEY9", ""),
-                        st.secrets.get("GROQ_API_KEY10", ""), st.secrets.get("GROQ_API_KEY11", ""), st.secrets.get("GROQ_API_KEY12", ""),
-                        st.secrets.get("GROQ_API_KEY13", ""),
-                    ]:
-                        if _k: _groq_keys.append(_k)
-                    if not _groq_keys: _groq_keys = [""]
-                    _models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-
-                    for _gkey in _groq_keys:
-                        if ans: break
-                        if not _gkey or _gkey in _rate_limited_keys: continue
-                        for _gmodel in _models:
-                            if ans: break
-                            try:
-                                _gclient = Groq(api_key=_gkey)
-                                _res = _gclient.chat.completions.create(model=_gmodel, messages=_msgs, temperature=0.7, max_tokens=2048)
-                                ans = _res.choices[0].message.content
-                            except Exception as _ge:
-                                _err_str = str(_ge).lower()
-                                if any(x in _err_str for x in ["rate_limit","429","too many","quota"]):
-                                    _rate_limited_keys.add(_gkey)
-                                    break
-                                elif any(x in _err_str for x in ["model","not found","decommissioned","deprecated"]): pass
-                                else: pass
-
-                    if ans is None:
-                        try:
-                            _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
-                            if _cb_key:
-                                import urllib.request as _ucb, json as _jcb
-                                _cb_msgs = []
-                                for _cm in _msgs:
-                                    _cr = _cm.get("role","")
-                                    _ct = (_cm.get("content","") or "")[:8000]
-                                    if _cr in ("system","user","assistant"): _cb_msgs.append({"role": _cr, "content": _ct})
-                                _cb_payload = {"model": "llama-3.3-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
-                                _cb_req = _ucb.Request("https://api.cerebras.ai/v1/chat/completions", data=_jcb.dumps(_cb_payload).encode(), headers={"Content-Type": "application/json", "Authorization": f"Bearer {_cb_key}"})
-                                with _ucb.urlopen(_cb_req, timeout=30) as _cbr: _cbd = _jcb.loads(_cbr.read())
-                                _cb_ans = _cbd.get("choices",[{}])[0].get("message",{}).get("content","")
-                                if _cb_ans: ans = _cb_ans
-                        except: pass
-
-                    if ans is None:
-                        _n_rl = len(_rate_limited_keys)
-                        _n_total = len(_groq_keys)
-                        raise Exception(f"Semua model sedang sibuk ({_n_rl}/{_n_total} Groq key kena rate limit) — tunggu beberapa menit lalu coba lagi.")
-                    
-                    class _FakeRes:
-                        class _Choice:
-                            class _Msg:
-                                content = ans
-                            message = _Msg()
-                        choices = [_Choice()]
-                    res = _FakeRes()
-                ans = res.choices[0].message.content
+                if ans is None:
+                    raise Exception("Semua mesin AI (Groq/Cerebras/Gemini) sedang kehabisan limit. Silakan tunggu 1 menit lalu coba lagi.")
+                
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
     except Exception as e:
@@ -3172,4 +3049,3 @@ function setupDragDrop() {{
 setupDragDrop(); setTimeout(setupDragDrop, 2000);
 </script>
 """, height=0)
-
