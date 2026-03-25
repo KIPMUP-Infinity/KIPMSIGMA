@@ -2011,21 +2011,41 @@ if prompt:
         st.markdown(prompt)
 
     try:
-            with st.spinner("SIGMA menganalisis (via Gemini 1.5 Flash)..."):
+with st.spinner("SIGMA menganalisis (Auto-Detect Model)..."):
                 try:
                     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
                 except Exception as e:
                     raise Exception("GEMINI_API_KEY belum ditemukan di st.secrets!")
 
+                # --- FITUR AUTO DETECT MODEL ---
+                available_models = []
+                for m in genai.list_models():
+                    if 'generateContent' in m.supported_generation_methods:
+                        available_models.append(m.name)
+                        
+                if not available_models:
+                    raise Exception("API Key ini tidak memiliki akses ke model Gemini apapun. Buat API Key baru di Google AI Studio.")
+                
+                # Cari otomatis: Flash -> Pro -> atau apapun model pertama yang tersedia di akunmu
+                target_model = None
+                for m in available_models:
+                    if "1.5-flash" in m: target_model = m; break
+                if not target_model:
+                    for m in available_models:
+                        if "1.5-pro" in m: target_model = m; break
+                if not target_model:
+                    target_model = available_models[0] # Pakai model apa saja yang dikasih Google
+                
                 _all_msgs = [m for m in active["messages"] if m.get("role") in ("user","assistant","system")]
                 _last_content = _all_msgs[-1]["content"] if _all_msgs else ""
                 
-                # Tembak langsung ke model yang 100% aktif dan terbuka untuk semua API Key
-                model = genai.GenerativeModel(
-                    model_name="gemini-1.5-flash",
-                    system_instruction=SYSTEM_PROMPT["content"]
-                )
-                
+                # Eksekusi dengan model yang valid
+                if "1.5" in target_model:
+                    model = genai.GenerativeModel(model_name=target_model, system_instruction=SYSTEM_PROMPT["content"])
+                else:
+                    model = genai.GenerativeModel(model_name=target_model)
+                    _last_content = f"Instruksi Sistem:\n{SYSTEM_PROMPT['content']}\n\n{_last_content}"
+                    
                 gemini_history = []
                 for msg in _all_msgs[:-1]:
                     if msg["role"] == "system": continue
@@ -2038,10 +2058,7 @@ if prompt:
                 if multi_images or img_data:
                     all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
                     for _ib64, _imime, _iname in all_imgs[:10]:
-                        last_parts.append({
-                            "mime_type": _imime,
-                            "data": base64.b64decode(_ib64)
-                        })
+                        last_parts.append({"mime_type": _imime, "data": base64.b64decode(_ib64)})
                 last_parts.append(_last_content)
                 
                 response = chat.send_message(last_parts)
