@@ -2934,22 +2934,21 @@ if prompt:
                 debug_info = []
 
                 if has_image:
-                    # ── BACA GAMBAR VIA GEMINI 1.5 PRO (REST API MURNI / ANTI-403) ──
+                    # ── BACA GAMBAR VIA GEMINI 1.5 FLASH (REST API MURNI SEPERTI SISTEM LAMA) ──
                     try:
                         import json as _j2, urllib.request as _ur
                         
-                        # ⚠️ UPDATE: MENGAMBIL GEMINI_API_KEY SESUAI FILE SECRETS.TOML MILIKMU
+                        # MENARIK KUNCI SECARA TEPAT DARI SECRETS.TOML KAMU
                         _gkey = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
-                        
                         if not _gkey:
                             raise Exception("API Key tidak ditemukan di secrets!")
                             
                         _parts = []
-                        # 1. Masukkan Prompt & Instruksi Sistem
+                        # Gabungkan System Prompt dan Teks User
                         final_prompt = SYSTEM_PROMPT["content"] + "\n\n" + prompt
                         _parts.append({"text": final_prompt})
                         
-                        # 2. Masukkan Gambar (WAJIB camelCase: inlineData, mimeType)
+                        # Gabungkan Gambar
                         if multi_images:
                             for _b64, _mime, _ in multi_images[:5]:
                                 _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
@@ -2961,15 +2960,15 @@ if prompt:
                             "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
                         }
                         
-                        # Endpoint Gemini 1.5 Pro (Model Paling Pintar Baca Chart)
-                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={_gkey}"
+                        # MENGGUNAKAN GEMINI-1.5-FLASH YANG DIJAMIN ANTI-404 SEPERTI FILE LAMA KAMU
+                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gkey}"
                         _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
                         
                         with _ur.urlopen(_greq, timeout=40) as _gr:
                             _gdata = _j2.loads(_gr.read())
                             
                         ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
-                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 1.5 Pro Vision)*"
+                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 1.5 Flash Vision)*"
                     except Exception as e_img:
                         debug_info.append(f"Gemini Vision: {str(e_img)}")
                 else:
@@ -2990,18 +2989,23 @@ if prompt:
                         try:
                             import json as _j2, urllib.request as _ur
                             
-                            # ⚠️ UPDATE: MENGAMBIL GEMINI_API_KEY SESUAI FILE SECRETS.TOML MILIKMU
                             _gkey = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
+                            if not _gkey:
+                                raise Exception("API Key tidak ditemukan di secrets!")
                             
                             _gemini_contents = []
                             for m in _history_msgs[-5:]:
                                 r = "user" if m["role"] == "user" else "model"
                                 _gemini_contents.append({"role": r, "parts": [{"text": m["content"]}]})
                                 
+                            # Inject System Prompt ke pesan pertama
+                            if _gemini_contents:
+                                _gemini_contents[0]["parts"][0]["text"] = SYSTEM_PROMPT["content"] + "\n\n" + _gemini_contents[0]["parts"][0]["text"]
+                            else:
+                                _gemini_contents = [{"role": "user", "parts": [{"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt}]}]
+                                
                             _gpayload = {
                                 "contents": _gemini_contents,
-                                # Wajib camelCase
-                                "systemInstruction": {"role": "system", "parts": [{"text": SYSTEM_PROMPT["content"]}]},
                                 "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
                             }
                             _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gkey}"
