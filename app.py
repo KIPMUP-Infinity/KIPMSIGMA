@@ -2915,21 +2915,51 @@ if result is not None:
                     res = _FakeImgRes()
                     res.choices[0].message.content = _img_ans
                 else:
-                    _all_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant","system")]
-                    _last_content = _all_msgs[-1]["content"] if _all_msgs else ""
+                    # PERBAIKAN: Hapus "system" agar prompt raksasa tidak bocor ke chat biasa!
+                    _history_msgs = [
+                        {"role": m["role"], "content": m.get("content") or ""}
+                        for m in active["messages"]
+                        if m.get("role") in ("user","assistant")
+                    ]
+                    
+                    _last_content = _history_msgs[-1]["content"] if _history_msgs else ""
                     _no_history = st.session_state.pop("fund_no_history", False)
                     _has_pdf = "[PDF:" in _last_content
+
                     _p_lower = prompt.lower() if prompt else ""
 
-                    _is_fundamental = _no_history or _has_pdf or any(k in _p_lower for k in ["fundamental","valuasi","laporan keuangan","keuangan","roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk","analisa pdf","revenue","ebitda","net income"])
-                    _is_analisa_lengkap = not _has_pdf and any(k in _p_lower for k in ["analisa lengkap","full analisa","5 sila","kesimpulan bandarmologi","bandarmologi","broker","teknikal","analisa chart","divergen","divergence","kesimpulan dampak","dampak","pengaruh","efek","akumulasi","distribusi","bandar","volume anomali","siklus","shakeout","breakout","breakdown"])
+                    _is_fundamental = _no_history or _has_pdf or any(k in _p_lower for k in [
+                        "fundamental","valuasi","laporan keuangan","keuangan",
+                        "roe","roa","per ","pbv","analisa saham","laba","eps","analisa lk",
+                        "analisa pdf","revenue","ebitda","net income"
+                    ])
+                    _is_analisa_lengkap = not _has_pdf and any(k in _p_lower for k in [
+                        "analisa lengkap","full analisa","5 sila",
+                        "kesimpulan bandarmologi","bandarmologi","broker",
+                        "teknikal","analisa chart","divergen","divergence",
+                        "kesimpulan dampak","dampak","pengaruh","efek",
+                        "akumulasi","distribusi","bandar","volume anomali",
+                        "siklus","shakeout","breakout","breakdown"
+                    ])
 
-                    _sys_short = {"role": "system", "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nRamah saat ngobrol, profesional saat analisa. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nKemampuan: teknikal (MnM Strategy+), fundamental, bandarmologi, makro, umum.\nIDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25.\n5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]\nPENTING: Jika ada [DATA PASAR IDX] → gunakan harga dari sana. Jika tidak ada data harga → sebutkan 'harga tidak tersedia saat ini, mohon cek manual' — JANGAN mengarang harga."}
-                    _sys_medium = {"role": "system", "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nProfesional dalam analisa fundamental. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nIDX = LONG ONLY. Kalimat sakti: 'Beli bisnis bagus di harga murah, bukan harga murah tanpa bisnis bagus'\n\nFRAMEWORK FUNDAMENTAL:\nBank: NIM>4%|NPL<3%|LDR 80-92%|CAR>14%|ROA>1.5%|ROE>15%|BOPO<70%|CIR<45%\nUmum: ROE>15%|DER<0.5|EPS growth konsisten|PBV<1.5|PER<15|FCF>NI\nDISIPLIN DATA: gunakan data terbaru, jangan pakai 2018-2020 kalau ada 2023-2025\nCORPORATE ACTION: cek split/reverse/right issue jika harga anomali\nFORMAT: 📋 ANALISA FUNDAMENTAL — [EMITEN] (2026) | harga | sektor | profitabilitas | valuasi | tren | proyeksi | verdict\nIcon: ✅ pass | ⚠️ perhatian | ❌ fail — pilih SATU saja"}
+                    _sys_short = {
+                        "role": "system",
+                        "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nRamah saat ngobrol, profesional saat analisa. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nKemampuan: teknikal (MnM Strategy+), fundamental, bandarmologi, makro, umum.\nIDX = LONG ONLY. Fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25.\n5 perintah khusus: Kesimpulan Dampak | Bandarmologi [ticker] | Fundamental [ticker] | Teknikal [ticker] | Analisa Lengkap [ticker]\nPENTING: Jika ada [DATA PASAR IDX] → gunakan harga dari sana. Jika tidak ada data harga → sebutkan 'harga tidak tersedia saat ini, mohon cek manual' — JANGAN mengarang harga."
+                    }
 
-                    if _is_analisa_lengkap: _msgs = [_all_msgs[0], {"role": _all_msgs[-1]["role"], "content": _last_content[:15000]}]
-                    elif _is_fundamental: _msgs = [_sys_medium, {"role": _all_msgs[-1]["role"], "content": _last_content[:8000]}]
-                    else: _msgs = [_sys_short] + _all_msgs[-4:]
+                    _sys_medium = {
+                        "role": "system",
+                        "content": "Kamu SIGMA — asisten trading & pasar modal KIPM Universitas Pancasila by MnM.\nProfesional dalam analisa fundamental. Bahasa Indonesia natural. Selalu akhiri dengan DYOR.\nIDX = LONG ONLY. Kalimat sakti: 'Beli bisnis bagus di harga murah, bukan harga murah tanpa bisnis bagus'\n\nFRAMEWORK FUNDAMENTAL:\nBank: NIM>4%|NPL<3%|LDR 80-92%|CAR>14%|ROA>1.5%|ROE>15%|BOPO<70%|CIR<45%\nUmum: ROE>15%|DER<0.5|EPS growth konsisten|PBV<1.5|PER<15|FCF>NI\nDISIPLIN DATA: gunakan data terbaru, jangan pakai 2018-2020 kalau ada 2023-2025\nCORPORATE ACTION: cek split/reverse/right issue jika harga anomali\nFORMAT: 📋 ANALISA FUNDAMENTAL — [EMITEN] (2026) | harga | sektor | profitabilitas | valuasi | tren | proyeksi | verdict\nIcon: ✅ pass | ⚠️ perhatian | ❌ fail — pilih SATU saja"
+                    }
+
+                    if _is_analisa_lengkap:
+                        # Ambil System Prompt raksasa HANYA saat diminta analisa lengkap
+                        _msgs = [active["messages"][0], {"role": _history_msgs[-1]["role"], "content": _last_content[:15000]}]
+                    elif _is_fundamental:
+                        _msgs = [_sys_medium, {"role": _history_msgs[-1]["role"], "content": _last_content[:8000]}]
+                    else:
+                        # Chat biasa "Hai" → gabung sys_short dengan history (Super hemat token!)
+                        _msgs = [_sys_short] + _history_msgs[-4:]
 
                     ans = None
                     _rate_limited_keys = set()
