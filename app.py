@@ -2674,10 +2674,12 @@ C = get_colors(st.session_state.theme)
 
 
 # ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE (TRIPLE AI FALLBACK)
+# PART 8: MAIN CHAT ENGINE & UI
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <style>
+/* Sembunyikan tombol floating lama dan elemen bawaan Streamlit */
+#spbtn {{ display: none !important; }}
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"], iframe[title="streamlit_analytics"], div[class*="Toolbar"], div[class*="toolbar"], div[class*="ActionButton"], div[class*="HeaderActionButton"] {{ display: none !important; }}
 </style>
@@ -2705,22 +2707,77 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{position:fixed;bottom:16px;left:14px;width:38px;height:38px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;font-size:24px;font-weight:300;z-index:99999; display:flex;align-items:center;justify-content:center; box-shadow:0 2px 10px rgba(0,0,0,0.5);padding:0;line-height:1;}} #spbtn:hover{{transform:scale(1.1)}}
-#spmenu,#sphist{{position:fixed;left:12px;bottom:62px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:99998;display:none;overflow:hidden;min-width:250px;}} #sphist{{max-height:55vh;overflow-y:auto;}}
+/* Menu sekarang diposisikan persis di atas Chat Bar */
+#spmenu,#sphist{{position:fixed; bottom:95px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:99998;display:none;overflow:hidden;min-width:250px;}} 
+#sphist{{max-height:55vh;overflow-y:auto;}}
 .smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;}} .smi:hover{{background:{C["hover"]}}}
 .smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
 .smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 
-var btn=pd.createElement('button'); btn.id='spbtn';btn.textContent='+';pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
-m.innerHTML=`<a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a><button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button><div class="smsp"></div><div class="smhd">PENAMPILAN</div><a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a><a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a><div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>`;
+m.innerHTML=`
+    <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
+    <div class="smsp"></div>
+    <button class="smi" id="smi-upload"><span class="smico">📎</span>Upload File / Gambar</button>
+    <div class="smsp"></div>
+    <div class="smhd">PENAMPILAN</div>
+    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a>
+    <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a>
+    <div class="smsp"></div>
+    <a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
+`;
 pd.body.appendChild(m);
 
 var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 {_hist_items} pd.body.appendChild(h);
 
-btn.onclick=function(e){{e.stopPropagation();m.style.display=m.style.display==='block'?'none':'block';h.style.display='none';}};
+// ── INJEKSI TOMBOL MENU KE DALAM CHAT BAR ──
+function setupChatBarMenu() {{
+    var chatBox = pd.querySelector('[data-testid="stChatInputContainer"]');
+    if (chatBox && !pd.getElementById('sigma-plus-btn')) {{
+        // Sembunyikan tombol attach bawaan Streamlit
+        var nativeBtns = chatBox.querySelectorAll('button');
+        nativeBtns.forEach(btn => {{
+            if(btn.innerHTML.includes('svg') && !btn.innerHTML.includes('send') && (!btn.hasAttribute('aria-label') || btn.getAttribute('aria-label')==='Attach files')) {{
+                btn.style.display = 'none';
+            }}
+        }});
+
+        // Buat tombol "+" gaya baru
+        var plusBtn = pd.createElement('button');
+        plusBtn.id = 'sigma-plus-btn';
+        plusBtn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>';
+        plusBtn.style.cssText = 'background:transparent; border:none; color:{C["text_muted"]}; cursor:pointer; padding:8px 12px; display:flex; align-items:center; justify-content:center; transition:color 0.2s;';
+        
+        // Letakkan di sebelah kiri kotak teks
+        chatBox.insertBefore(plusBtn, chatBox.firstChild);
+
+        plusBtn.onclick = function(e) {{
+            e.preventDefault(); e.stopPropagation();
+            if (m.style.display === 'block') {{
+                m.style.display = 'none';
+            }} else {{
+                m.style.display = 'block';
+                h.style.display = 'none';
+                var rect = chatBox.getBoundingClientRect();
+                m.style.left = rect.left + 'px';
+                h.style.left = rect.left + 'px';
+            }}
+        }};
+    }}
+}}
+setInterval(setupChatBarMenu, 1000); // Pastikan tombol selalu ada
+
+// Trigger Upload File Bawaan Streamlit
+pd.getElementById('smi-upload').onclick = function(e) {{
+    e.preventDefault();
+    var fileInput = pd.querySelector('[data-testid="stChatInputContainer"] input[type="file"]');
+    if(fileInput) fileInput.click();
+    m.style.display = 'none';
+}};
+
 (function(){{
     var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString(); pd.getElementById('smi-new').style.textDecoration='none';
     pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display=h.style.display==='block'?'none':'block';}};
@@ -2728,7 +2785,12 @@ btn.onclick=function(e){{e.stopPropagation();m.style.display=m.style.display==='
     u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString(); pd.getElementById('smi-light').style.textDecoration='none';
     u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString(); pd.getElementById('smi-out').style.textDecoration='none';
 }})();
-pd.addEventListener('click',function(e){{ if(!btn.contains(e.target)&&!m.contains(e.target))m.style.display='none'; if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target))h.style.display='none'; }});
+
+pd.addEventListener('click',function(e){{ 
+    var menuBtn = pd.getElementById('sigma-plus-btn');
+    if(menuBtn && !menuBtn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
+    if(menuBtn && !menuBtn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
+}});
 }})();
 </script>
 """, height=0)
@@ -2900,101 +2962,48 @@ if prompt:
 
                 ans = None
                 has_image = bool(multi_images or img_data)
-                debug_info = [] 
                 
-                # ── ENGINE 1: GROQ ──
-                _groq_keys = [k for k in [st.secrets.get(f"GROQ_API_KEY{i if i>1 else ''}", "") for i in range(1, 14)] if k]
-                if not _groq_keys: debug_info.append("Groq: Tidak ada API Key di secrets.")
-                else:
-                    _rate_limited_keys = set()
-                    for _gkey in _groq_keys:
-                        if ans: break
-                        if not _gkey or _gkey in _rate_limited_keys: continue
-                        try:
-                            _gclient = Groq(api_key=_gkey)
-                            if has_image:
-                                all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
-                                _content = []
-                                for _ib64, _imime, _iname in all_imgs[:5]: _content.append({"type": "image_url", "image_url": {"url": f"data:{_imime};base64,{_ib64}"}})
-                                _content.append({"type": "text", "text": _last_content})
-                                _res = _gclient.chat.completions.create(model="llama-3.2-11b-vision-preview", messages=[{"role": "system", "content": "Kamu SIGMA, asisten trading KIPM. Analisa gambar yang dikirim. Jawab Bahasa Indonesia. DYOR."}, {"role": "user", "content": _content}], max_tokens=2048)
-                                ans = _res.choices[0].message.content
-                                if ans: ans += "\n\n*(👁️ Dijawab menggunakan Groq Vision)*"
-                            else:
-                                for _gmodel in ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
-                                    if ans: break
-                                    try:
-                                        _res = _gclient.chat.completions.create(model=_gmodel, messages=_msgs, temperature=0.7, max_tokens=2048)
-                                        ans = _res.choices[0].message.content
-                                        if ans: ans += f"\n\n*(⚡ Dijawab menggunakan Groq {_gmodel})*"
-                                    except Exception as _e_model:
-                                        if any(x in str(_e_model).lower() for x in ["rate_limit","429","too many","quota"]): raise _e_model
-                                        debug_info.append(f"Groq ({_gmodel}): {str(_e_model)}")
-                        except Exception as _ge:
-                            if any(x in str(_ge).lower() for x in ["rate_limit","429","too many","quota"]): _rate_limited_keys.add(_gkey)
-                            else: debug_info.append(f"Groq Error: {str(_ge)}")
-                    if not ans and len(_rate_limited_keys) == len(_groq_keys) and _groq_keys:
-                        debug_info.append(f"Groq: Semua {len(_groq_keys)} key terkena Rate Limit atau Quota Habis.")
+                # ── ENGINE 1: GEMINI 1.5 PRO (UTAMA) ──
+                try:
+                    genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
+                    model = genai.GenerativeModel('gemini-1.5-pro')
+                    
+                    _gem_contents = []
+                    for m in _history_msgs[:-1]: 
+                        _role = "user" if m["role"] == "user" else "model"
+                        _gem_contents.append({"role": _role, "parts": [{"text": m["content"]}]})
+                    
+                    _last_parts = []
+                    if has_image:
+                        all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
+                        for _ib64, _imime, _iname in all_imgs[:5]: 
+                            _last_parts.append({"inline_data": {"mime_type": _imime, "data": _ib64}})
+                    _last_parts.append({"text": _last_content})
+                    _gem_contents.append({"role": "user", "parts": _last_parts})
 
-                # ── ENGINE 2: CEREBRAS (FIX ERROR 1010) ──
-                if ans is None and not has_image:
-                    _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
-                    if not _cb_key: debug_info.append("Cerebras: API Key tidak ada di secrets.")
-                    else:
-                        try:
-                            import urllib.request as _ucb, json as _jcb
-                            _cb_msgs = [{"role": m.get("role",""), "content": (m.get("content","") or "")[:8000]} for m in _msgs if m.get("role") in ("system","user","assistant")]
-                            _cb_payload = {"model": "llama3.1-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
-                            # Tambah User-Agent untuk bypass Cloudflare 1010
-                            _cb_headers = {"Content-Type": "application/json", "Authorization": f"Bearer {_cb_key}", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"}
-                            _cb_req = _ucb.Request("https://api.cerebras.ai/v1/chat/completions", data=_jcb.dumps(_cb_payload).encode(), headers=_cb_headers)
-                            with _ucb.urlopen(_cb_req, timeout=30) as _cbr: 
-                                ans = _jcb.loads(_cbr.read()).get("choices",[{}])[0].get("message",{}).get("content","")
-                                if ans: ans += "\n\n*(🧠 Dijawab menggunakan Cerebras)*"
-                        except Exception as e_cb:
-                            debug_info.append(f"Cerebras Error: {str(e_cb)}")
+                    _sys_instr = _sys_medium["content"] if _is_fundamental else _sys_short["content"]
+                    
+                    response = model.generate_content(
+                        contents=_gem_contents, 
+                        system_instruction=_sys_instr
+                    )
+                    ans = response.text
+                    if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 1.5 Pro)*"
+                except Exception as e_gem:
+                    pass # Lanjut ke Groq jika limit/error
 
-                # ── ENGINE 3: GEMINI DIRECT API (ANTI ERROR 404) ──
-                if ans is None:
-                    _gem_key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
-                    if not _gem_key: debug_info.append("Gemini: API Key tidak ada di secrets.")
-                    else:
-                        try:
-                            import urllib.request as _ur, json as _j
-                            # FIX ERROR 404: Menggunakan endpoint v1beta yang benar untuk generateContent
-                            _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gem_key}"
-                            _gem_contents = []
-                            for m in _history_msgs[:-1]: 
-                                _role = "user" if m["role"] == "user" else "model"
-                                _gem_contents.append({"role": _role, "parts": [{"text": m["content"]}]})
-                            
-                            _last_parts = []
-                            if has_image:
-                                all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
-                                for _ib64, _imime, _iname in all_imgs[:5]: 
-                                    _last_parts.append({"inline_data": {"mime_type": _imime, "data": _ib64}})
-                            _last_parts.append({"text": _last_content})
-                            _gem_contents.append({"role": "user", "parts": _last_parts})
-
-                            # Menggunakan framework yang lebih robust untuk payload
-                            _sys_instr = _sys_medium["content"] if _is_fundamental else _sys_short["content"]
-                            _payload = {
-                                "contents": _gem_contents, 
-                                "system_instruction": {"parts": [{"text": _sys_instr}]},
-                                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048},
-                                "safetySettings": [{"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}]
-                            }
-                            _req = _ur.Request(_url, data=_j.dumps(_payload).encode(), headers={"Content-Type": "application/json"})
-                            with _ur.urlopen(_req, timeout=30) as _r:
-                                _data = _j.loads(_r.read())
-                                ans = _data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                                if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini)*"
-                        except Exception as e_gem:
-                            # Jika 1.5-flash masih 404, coba model pro sebagai usaha terakhir
-                            debug_info.append(f"Gemini Error: {str(e_gem)}")
-
-                if ans is None:
-                    raise Exception("Semua mesin AI gagal merespons.\n\n" + "\n".join([f"- {d}" for d in debug_info]))
+                # ── ENGINE 2: GROQ (CADANGAN) ──
+                if not ans and not has_image:
+                    try:
+                        client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
+                        _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=2048)
+                        ans = _res.choices[0].message.content
+                        if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
+                    except Exception as e_groq:
+                        pass
+                
+                if not ans:
+                    ans = "Maaf, semua sistem AI (Gemini & Groq) sedang sibuk atau limit kuota. Silakan coba beberapa saat lagi."
                 
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
@@ -3022,8 +3031,8 @@ components.html(f"""
 const BC = "{C['bubble']}"; const BT = "#ffffff";
 (function() {{
     var pd = window.parent.document;
-    if (pd.getElementById('sigma-mobile-css')) return;
-    var s = pd.createElement('style'); s.id = 'sigma-mobile-css';
+    if (pd.getElementById('sigma-mobile-css2')) return;
+    var s = pd.createElement('style'); s.id = 'sigma-mobile-css2';
     s.textContent = `
         [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
         @media (max-width: 768px) {{
