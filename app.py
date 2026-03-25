@@ -2672,17 +2672,28 @@ init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
 
-
 # ─────────────────────────────────────────────
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
 st.markdown(f"""
 <style>
-/* Sembunyikan elemen bawaan Streamlit secara agresif (Header, Footer, Sidebar, Decoration) */
+/* Sembunyikan elemen bawaan Streamlit secara agresif */
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
-header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; border: none !important; padding: 0 !important; margin: 0 !important; opacity: 0 !important; visibility: hidden !important; position: absolute !important; }}
-div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; width: 0 !important; opacity: 0 !important; visibility: hidden !important; }}
+header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; opacity: 0 !important; visibility: hidden !important; }}
+div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; }}
+
+/* TARIK TAMPILAN KE ATAS UNTUK MENGHILANGKAN RUANG KOSONG */
+[data-testid="stMainBlockContainer"] {{
+    padding-top: 1rem !important;
+    margin-top: -3rem !important; /* Menarik UI ke atas */
+}}
+@media(max-width: 768px) {{
+    [data-testid="stMainBlockContainer"] {{
+        padding-top: 0.5rem !important;
+        margin-top: -2rem !important;
+    }}
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2902,23 +2913,38 @@ if prompt:
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
                     
-                    # FIX: Gunakan endpoint "latest" agar terhindar dari error 404 Not Found
-                    model_name = 'gemini-1.5-flash-latest' if has_image else 'gemini-1.5-pro-latest'
+                    # FIX 1: Gunakan penamaan standar tanpa '-latest' yang menyebabkan error 404
+                    model_name = 'gemini-1.5-flash' if has_image else 'gemini-1.5-pro'
                     
-                    # FIX: Pindahkan system_instruction ke sini
-                    model = genai.GenerativeModel(
-                        model_name=model_name,
-                        system_instruction=SYSTEM_PROMPT["content"]
-                    )
-                    
-                    if has_image:
-                        img_bytes = base64.b64decode(user_msg["img_b64"])
-                        img = Image.open(io.BytesIO(img_bytes))
-                        response = model.generate_content([prompt, img])
-                    else:
-                        _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
-                        response = model.generate_content(contents=_chat_history)
-                        
+                    try:
+                        # Coba inisialisasi dengan system_instruction (SDK Baru)
+                        model = genai.GenerativeModel(
+                            model_name=model_name,
+                            system_instruction=SYSTEM_PROMPT["content"]
+                        )
+                        if has_image:
+                            img_bytes = base64.b64decode(user_msg["img_b64"])
+                            img = Image.open(io.BytesIO(img_bytes))
+                            response = model.generate_content([prompt, img])
+                        else:
+                            _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
+                            response = model.generate_content(contents=_chat_history)
+                    except Exception as inner_e:
+                        # FIX 2: Jika SDK di server ternyata jadul dan menolak 'system_instruction'
+                        if "unexpected keyword" in str(inner_e).lower():
+                            model = genai.GenerativeModel(model_name=model_name)
+                            if has_image:
+                                img_bytes = base64.b64decode(user_msg["img_b64"])
+                                img = Image.open(io.BytesIO(img_bytes))
+                                response = model.generate_content([SYSTEM_PROMPT["content"] + "\n\n" + prompt, img])
+                            else:
+                                _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
+                                # Inject System Prompt ke chat pertama agar tetap terbaca
+                                _chat_history[0]["parts"] = [SYSTEM_PROMPT["content"] + "\n\n" + _chat_history[0]["parts"][0]]
+                                response = model.generate_content(contents=_chat_history)
+                        else:
+                            raise inner_e # Lempar error lain untuk ditangkap di exception luar
+                            
                     ans = response.text
                     if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini)*"
                 except Exception as e_gem:
@@ -2939,10 +2965,13 @@ if prompt:
                             ans = _res.choices[0].message.content
                             if ans: ans += "\n\n*(👁️ Dijawab menggunakan Groq Vision)*"
                         else:
-                            # FIX: Putus total riwayat chat untuk Groq agar limit 12.000 Token tidak jebol
-                            # Jika full_prompt panjangnya berlebihan, kita potong untuk mengamankan Groq
-                            safe_prompt = full_prompt if len(full_prompt) < 4000 else full_prompt[:4000] + "\n\n[Teks dipotong otomatis oleh sistem...]"
-                            _msgs = [SYSTEM_PROMPT, {"role": "user", "content": safe_prompt}] 
+                            # FIX 3: Groq akan HANCUR limit 12k-nya jika dikirim SYSTEM_PROMPT. 
+                            # Maka kita buat prompt khusus yang mini untuk Fallback Groq.
+                            mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
+                            safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
+                            
+                            _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
+                            
                             _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
                             ans = _res.choices[0].message.content
                             if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
