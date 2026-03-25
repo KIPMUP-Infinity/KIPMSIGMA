@@ -2902,9 +2902,13 @@ if prompt:
                 # ── ENGINE 1: GEMINI PRO/FLASH (UTAMA) ──
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
-                    # Wajib pakai model Flash untuk gambar agar tidak error
                     model_name = 'gemini-1.5-flash' if has_image else 'gemini-1.5-pro'
-                    model = genai.GenerativeModel(model_name)
+                    
+                    # FIX 1: Pindahkan system_instruction ke dalam inisialisasi model
+                    model = genai.GenerativeModel(
+                        model_name=model_name,
+                        system_instruction=SYSTEM_PROMPT["content"]
+                    )
                     
                     if has_image:
                         img_bytes = base64.b64decode(user_msg["img_b64"])
@@ -2912,10 +2916,9 @@ if prompt:
                         response = model.generate_content([prompt, img])
                     else:
                         _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
-                        response = model.generate_content(
-                            contents=_chat_history,
-                            system_instruction=SYSTEM_PROMPT["content"]
-                        )
+                        # FIX 2: Hapus system_instruction dari generate_content
+                        response = model.generate_content(contents=_chat_history)
+                        
                     ans = response.text
                     if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini)*"
                 except Exception as e_gem:
@@ -2932,13 +2935,14 @@ if prompt:
                             _res = client.chat.completions.create(
                                 model="llama-3.2-11b-vision-preview",
                                 messages=[{"role": "user", "content": content_arr}],
-                                max_tokens=2048
+                                max_tokens=1024 # Turunkan sedikit alokasi agar aman
                             )
                             ans = _res.choices[0].message.content
                             if ans: ans += "\n\n*(👁️ Dijawab menggunakan Groq Vision)*"
                         else:
-                            _msgs = [SYSTEM_PROMPT] + _history_msgs[-3:]
-                            _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=2048)
+                            # FIX 3: Groq hanya dikirim 1 riwayat terakhir saja karena SYSTEM_PROMPT sudah sangat panjang
+                            _msgs = [SYSTEM_PROMPT] + _history_msgs[-1:] 
+                            _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
                             ans = _res.choices[0].message.content
                             if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
                     except Exception as e_groq:
