@@ -2946,8 +2946,8 @@ if current_view == "dashboard":
     # Tampilan Halaman Market Dashboard Kosong
     st.markdown(f"""
     <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:70vh; text-align:center; padding: 20px;">
-        <h1 style="color:{C['text']}; font-size:2.2rem; font-weight:800; letter-spacing:1px; margin-bottom:12px;">FITUR AKAN SEGERA HADIR</h1>
-        <p style="color:{C['text_muted']}; font-size:1.1rem; font-weight:500; opacity:0.8;">SISTEM INI DIBANGUN by. MarketnMocha</p>
+        <h1 style="color:{C['text']}; font-size:10.10rem; font-weight:800; letter-spacing:1px; margin-bottom:12px;">HAI👋, FITUR INI AKAN SEGERA HADIR DITUNGGU!!! :) h1>
+        <p style="color:{C['text_muted']}; font-size:1.1rem; font-weight:500; opacity:0.8;"> by. MarketnMocha</p>
     </div>
     """, unsafe_allow_html=True)
 
