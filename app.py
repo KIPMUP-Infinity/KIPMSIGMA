@@ -2674,26 +2674,25 @@ C = get_colors(st.session_state.theme)
 
 
 
-
 # ─────────────────────────────────────────────
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
 
-# ─── FUNGSI API TERISOLASI DENGAN RADAR ANTI-404 ───
+# ─── FUNGSI API GEMINI (MESIN UTAMA ANTI-404) ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     import urllib.request, urllib.error, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
     keys = [k for k in keys if k]
+    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
     
-    # Radar Daftar Model yang akan dicoba satu per satu
-    models = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-1.5-flash-002", "gemini-1.5-flash"]
-    last_err = "API Key tidak ditemukan di secrets"
+    # Menggunakan model terbaru yang aktif (Keluarga 1.5 sudah dihapus Google)
+    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    last_err = ""
     
     for api_key in keys:
         for model_name in models:
             try:
                 _parts = []
-                # Wajib camelCase untuk REST API Google
                 if multi_imgs:
                     for _b64, _mime, _ in multi_imgs[:5]:
                         _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
@@ -2712,16 +2711,12 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 with urllib.request.urlopen(req, timeout=40) as r:
                     data = _j.loads(r.read())
                 
-                # Berhasil! Kembalikan teks dan nama model yang sukses ditembus
                 return data["candidates"][0]["content"]["parts"][0]["text"], model_name
-            
             except urllib.error.HTTPError as e:
                 err_body = e.read().decode() if hasattr(e, 'read') else ""
                 last_err = f"HTTP {e.code}: {err_body}"
-                if e.code == 404:
-                    continue # Bypass Error 404, langsung coba nama model selanjutnya!
-                elif e.code in [403, 400]:
-                    break # Model menolak kunci ini, keluar loop model, coba API KEY selanjutnya
+                if e.code == 404: continue # Bypass jika model belum tersedia di region tertentu
+                elif e.code in [403, 400]: break # Pindah ke API Key lain jika key ditolak
             except Exception as e:
                 last_err = str(e)
                 continue
@@ -2731,9 +2726,10 @@ def _call_gemini_text(messages):
     import urllib.request, urllib.error, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
     keys = [k for k in keys if k]
+    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
     
-    models = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-1.5-flash-002", "gemini-1.5-flash"]
-    last_err = "API Key tidak ditemukan di secrets"
+    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    last_err = ""
     
     for api_key in keys:
         for model_name in models:
@@ -2760,18 +2756,16 @@ def _call_gemini_text(messages):
                     data = _j.loads(r.read())
                     
                 return data["candidates"][0]["content"]["parts"][0]["text"], model_name
-            
             except urllib.error.HTTPError as e:
                 err_body = e.read().decode() if hasattr(e, 'read') else ""
                 last_err = f"HTTP {e.code}: {err_body}"
-                if e.code == 404:
-                    continue # Bypass 404
-                elif e.code in [403, 400]:
-                    break # Coba Key Lain
+                if e.code == 404: continue 
+                elif e.code in [403, 400]: break 
             except Exception as e:
                 last_err = str(e)
                 continue
     raise Exception(last_err)
+
 
 st.markdown(f"""
 <style>
@@ -2975,20 +2969,14 @@ if result is not None:
             with st.chat_message("assistant"): st.markdown(menu_text)
             st.rerun()
 
-    # ─── FITUR PDF DIKEMBALIKAN (RESTORED) ───
+    # ─── FITUR PDF DIKEMBALIKAN SECARA MURNI (TANPA ERROR FUNGSI SILUMAN) ───
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
             try:
                 doc = fitz.open(stream=raw, filetype="pdf")
                 txt = "".join(p.get_text() for p in doc)
-                enrichment = ""
-                try:
-                    enrichment = enrich_pdf_context(txt)
-                except: pass
-                pdf_content = f"[PDF: {file_obj.name}]\n{txt[:2000]}"
-                if enrichment:
-                    pdf_content += enrichment
+                pdf_content = f"[PDF: {file_obj.name}]\n{txt[:3000]}"
                 st.session_state.pdf_data = (pdf_content, file_obj.name)
                 st.session_state.img_data = None
             except Exception as pdf_e:
@@ -3044,35 +3032,35 @@ if prompt:
                 debug_info = []
 
                 if has_image:
-                    # ── BACA GAMBAR MENGGUNAKAN RADAR ANTI-404 ──
+                    # ── BACA GAMBAR VIA GEMINI SEBAGAI OTAR UTAMA ──
                     try:
                         _img_b64 = user_msg.get("img_b64")
                         _img_mime = user_msg.get("img_mime")
                         ans, used_model = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
-                        if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model})*"
+                        if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model} Vision)*"
                     except Exception as e_img:
                         debug_info.append(f"Gemini Vision: {str(e_img)}")
                 else:
-                    # ── BACA TEKS: GROQ SEBAGAI UTAMA ──
+                    # ── BACA TEKS VIA GEMINI SEBAGAI OTAR UTAMA ──
                     try:
-                        client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
-                        mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
-                        safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
+                        ans, used_model = _call_gemini_text(_history_msgs[-5:])
+                        if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model})*"
+                    except Exception as e_txt:
+                        debug_info.append(f"Gemini Text: {str(e_txt)}")
                         
-                        _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
-                        _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
-                        ans = _res.choices[0].message.content
-                        if ans: ans += "\n\n*(⚡ Dijawab menggunakan Groq)*"
-                    except Exception as e_groq:
-                        debug_info.append(f"Groq: {str(e_groq)}")
-                        
-                        # ── FALLBACK TEKS: GEMINI MENGGUNAKAN RADAR ANTI-404 ──
+                        # ── FALLBACK TEKS: GROQ (HANYA AKTIF JIKA GEMINI LIMIT) ──
                         if not ans:
                             try:
-                                ans, used_model = _call_gemini_text(_history_msgs[-5:])
-                                if ans: ans += f"\n\n*(✨ Fallback ke {used_model})*"
-                            except Exception as e_txt:
-                                debug_info.append(f"Gemini Text: {str(e_txt)}")
+                                client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
+                                mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
+                                safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
+                                
+                                _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
+                                _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
+                                ans = _res.choices[0].message.content
+                                if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
+                            except Exception as e_groq:
+                                debug_info.append(f"Groq: {str(e_groq)}")
                 
                 if not ans:
                     err_msg = " | ".join(debug_info)
