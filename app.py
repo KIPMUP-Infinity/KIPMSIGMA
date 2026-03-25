@@ -2934,62 +2934,45 @@ if prompt:
                 debug_info = []
 
                 if has_image:
-                    # ── BACA GAMBAR VIA GEMINI 2.0 FLASH (REST API / TANPA LIBRARY) ──
+                    # ── BACA GAMBAR VIA GEMINI 1.5 PRO (REST API MURNI / ANTI-403) ──
                     try:
                         import json as _j2, urllib.request as _ur
-                        # Prioritaskan GOOGLE_API_KEY, fallback ke GEMINI_KEY
-                        _gkey = st.secrets.get("GOOGLE_API_KEY", "") or st.secrets.get("GEMINI_KEY", "")
                         
+                        # PRIORITASKAN GEMINI_KEY SESUAI FILE LAMA KAMU
+                        _gkey = st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GEMINI_KEY2", "") or st.secrets.get("GOOGLE_API_KEY", "")
+                        if not _gkey:
+                            raise Exception("API Key tidak ditemukan di secrets!")
+                            
                         _parts = []
+                        # 1. Masukkan Prompt & Instruksi Sistem
+                        final_prompt = SYSTEM_PROMPT["content"] + "\n\n" + prompt
+                        _parts.append({"text": final_prompt})
+                        
+                        # 2. Masukkan Gambar (WAJIB camelCase: inlineData, mimeType)
                         if multi_images:
                             for _b64, _mime, _ in multi_images[:5]:
-                                _parts.append({"inline_data": {"mime_type": _mime, "data": _b64}})
+                                _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
                         elif img_data:
-                            _parts.append({"inline_data": {"mime_type": img_data[1], "data": img_data[0]}})
-                        
-                        # Gabungkan instruksi sistem + prompt
-                        _parts.append({"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt})
+                            _parts.append({"inlineData": {"mimeType": img_data[1], "data": img_data[0]}})
                         
                         _gpayload = {
                             "contents": [{"role": "user", "parts": _parts}],
                             "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
                         }
                         
-                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gkey}"
+                        # Endpoint Gemini 1.5 Pro (Model Paling Pintar Baca Chart)
+                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key={_gkey}"
                         _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
-                        with _ur.urlopen(_greq, timeout=30) as _gr:
+                        
+                        with _ur.urlopen(_greq, timeout=40) as _gr:
                             _gdata = _j2.loads(_gr.read())
+                            
                         ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
-                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 2.0 Flash Vision)*"
+                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 1.5 Pro Vision)*"
                     except Exception as e_img:
                         debug_info.append(f"Gemini Vision: {str(e_img)}")
                 else:
-                    # ── BACA TEKS VIA GEMINI 2.0 FLASH (REST API / TANPA LIBRARY) ──
-                    try:
-                        import json as _j2, urllib.request as _ur
-                        _gkey = st.secrets.get("GOOGLE_API_KEY", "") or st.secrets.get("GEMINI_KEY", "")
-                        
-                        _gemini_contents = []
-                        for m in _history_msgs[-5:]:
-                            r = "user" if m["role"] == "user" else "model"
-                            _gemini_contents.append({"role": r, "parts": [{"text": m["content"]}]})
-                            
-                        _gpayload = {
-                            "contents": _gemini_contents,
-                            "system_instruction": {"parts": [{"text": SYSTEM_PROMPT["content"]}]},
-                            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
-                        }
-                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_gkey}"
-                        _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
-                        with _ur.urlopen(_greq, timeout=30) as _gr:
-                            _gdata = _j2.loads(_gr.read())
-                        ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
-                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 2.0 Flash)*"
-                    except Exception as e_txt:
-                        debug_info.append(f"Gemini Text: {str(e_txt)}")
-
-                # ── ENGINE 2: GROQ (CADANGAN JIKA GEMINI LIMIT, HANYA UNTUK TEKS) ──
-                if not ans and not has_image:
+                    # ── ENGINE TEKS UTAMA: GROQ ──
                     try:
                         client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                         mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
@@ -2998,13 +2981,38 @@ if prompt:
                         _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
                         _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
                         ans = _res.choices[0].message.content
-                        if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
+                        if ans: ans += "\n\n*(⚡ Dijawab menggunakan Groq)*"
                     except Exception as e_groq:
                         debug_info.append(f"Groq: {str(e_groq)}")
+                        
+                        # ── FALLBACK TEKS: GEMINI REST API ──
+                        try:
+                            import json as _j2, urllib.request as _ur
+                            _gkey = st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GEMINI_KEY2", "") or st.secrets.get("GOOGLE_API_KEY", "")
+                            
+                            _gemini_contents = []
+                            for m in _history_msgs[-5:]:
+                                r = "user" if m["role"] == "user" else "model"
+                                _gemini_contents.append({"role": r, "parts": [{"text": m["content"]}]})
+                                
+                            _gpayload = {
+                                "contents": _gemini_contents,
+                                # Wajib camelCase
+                                "systemInstruction": {"role": "system", "parts": [{"text": SYSTEM_PROMPT["content"]}]},
+                                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+                            }
+                            _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gkey}"
+                            _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
+                            with _ur.urlopen(_greq, timeout=30) as _gr:
+                                _gdata = _j2.loads(_gr.read())
+                            ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
+                            if ans: ans += "\n\n*(✨ Fallback ke Gemini Flash)*"
+                        except Exception as e_txt:
+                            debug_info.append(f"Gemini Text: {str(e_txt)}")
                 
                 if not ans:
                     err_msg = " | ".join(debug_info)
-                    ans = f"Maaf, semua sistem AI (Gemini & Groq) sedang limit kuota atau sibuk. Coba beberapa saat lagi.\n\n`Log: {err_msg}`"
+                    ans = f"Maaf, semua sistem AI sedang sibuk. Coba beberapa saat lagi.\n\n`Log: {err_msg}`"
                 
             st.markdown(ans)
         active["messages"].append({"role": "assistant", "content": ans})
