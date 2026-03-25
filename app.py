@@ -2680,19 +2680,41 @@ st.markdown(f"""
 /* Sembunyikan elemen bawaan Streamlit secara agresif */
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
-header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; opacity: 0 !important; visibility: hidden !important; }}
-div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; }}
 
-/* TARIK TAMPILAN KE ATAS UNTUK MENGHILANGKAN RUANG KOSONG */
+/* HANCURKAN HEADER DAN DEKORASI ATAS (BUANG KE LUAR LAYAR) */
+header[data-testid="stHeader"], header.stAppHeader, .stApp > header {{ 
+    display: none !important; 
+    height: 0 !important; 
+    opacity: 0 !important; 
+    visibility: hidden !important; 
+    position: fixed !important; 
+    top: -500px !important; 
+    z-index: -999 !important; 
+}}
+div[data-testid="stDecoration"] {{ 
+    display: none !important; 
+    height: 0 !important; 
+    visibility: hidden !important;
+    position: fixed !important;
+    top: -500px !important;
+}}
+
+/* TARIK TAMPILAN KE ATAS LEBIH JAUH */
 [data-testid="stMainBlockContainer"] {{
-    padding-top: 1rem !important;
-    margin-top: -3rem !important; /* Menarik UI ke atas */
+    padding-top: 0 !important;
+    margin-top: -5.5rem !important; 
 }}
 @media(max-width: 768px) {{
     [data-testid="stMainBlockContainer"] {{
-        padding-top: 0.5rem !important;
-        margin-top: -2rem !important;
+        padding-top: 0 !important;
+        margin-top: -4.5rem !important;
     }}
+}}
+
+/* PAKSA JAWABAN SISTEM RATA KIRI */
+[data-testid="stChatMessageContent"], 
+[data-testid="stMarkdownContainer"] {{
+    text-align: left !important;
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -2912,12 +2934,9 @@ if prompt:
                 # ── ENGINE 1: GEMINI PRO/FLASH (UTAMA) ──
                 try:
                     genai.configure(api_key=st.secrets.get("GOOGLE_API_KEY", ""))
-                    
-                    # FIX 1: Gunakan penamaan standar tanpa '-latest' yang menyebabkan error 404
                     model_name = 'gemini-1.5-flash' if has_image else 'gemini-1.5-pro'
                     
                     try:
-                        # Coba inisialisasi dengan system_instruction (SDK Baru)
                         model = genai.GenerativeModel(
                             model_name=model_name,
                             system_instruction=SYSTEM_PROMPT["content"]
@@ -2930,7 +2949,6 @@ if prompt:
                             _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
                             response = model.generate_content(contents=_chat_history)
                     except Exception as inner_e:
-                        # FIX 2: Jika SDK di server ternyata jadul dan menolak 'system_instruction'
                         if "unexpected keyword" in str(inner_e).lower():
                             model = genai.GenerativeModel(model_name=model_name)
                             if has_image:
@@ -2939,11 +2957,10 @@ if prompt:
                                 response = model.generate_content([SYSTEM_PROMPT["content"] + "\n\n" + prompt, img])
                             else:
                                 _chat_history = [{"role": "user" if m["role"]=="user" else "model", "parts": [m["content"]]} for m in _history_msgs[-5:]]
-                                # Inject System Prompt ke chat pertama agar tetap terbaca
                                 _chat_history[0]["parts"] = [SYSTEM_PROMPT["content"] + "\n\n" + _chat_history[0]["parts"][0]]
                                 response = model.generate_content(contents=_chat_history)
                         else:
-                            raise inner_e # Lempar error lain untuk ditangkap di exception luar
+                            raise inner_e 
                             
                     ans = response.text
                     if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini)*"
@@ -2965,8 +2982,6 @@ if prompt:
                             ans = _res.choices[0].message.content
                             if ans: ans += "\n\n*(👁️ Dijawab menggunakan Groq Vision)*"
                         else:
-                            # FIX 3: Groq akan HANCUR limit 12k-nya jika dikirim SYSTEM_PROMPT. 
-                            # Maka kita buat prompt khusus yang mini untuk Fallback Groq.
                             mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
                             safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
                             
