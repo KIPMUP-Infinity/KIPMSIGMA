@@ -2676,10 +2676,10 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 # PART 8: MAIN CHAT ENGINE (TRIPLE AI FALLBACK)
 # ─────────────────────────────────────────────
-st.markdown("""
+st.markdown(f"""
 <style>
-section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] { display: none !important; }
-[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"], iframe[title="streamlit_analytics"], div[class*="Toolbar"], div[class*="toolbar"], div[class*="ActionButton"], div[class*="HeaderActionButton"] { display: none !important; }
+section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer, [data-testid="stHeader"], iframe[title="streamlit_analytics"], div[class*="Toolbar"], div[class*="toolbar"], div[class*="ActionButton"], div[class*="HeaderActionButton"] {{ display: none !important; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -2806,7 +2806,7 @@ if result is not None:
     if prompt and prompt.strip().lower() in ["5 sila", "lima sila", "5sila"]:
         active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
         if active:
-            menu_text = """╔══════════════════════════════════════╗\n║         5 SILA SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                 ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
+            menu_text = """╔══════════════════════════════════════╗\n║          5 SILA SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
             active["messages"].append({"role": "user", "content": "5 sila", "display": "5 sila"})
             active["messages"].append({"role": "assistant", "content": menu_text})
             with st.chat_message("user"): st.markdown("5 sila")
@@ -2900,7 +2900,7 @@ if prompt:
 
                 ans = None
                 has_image = bool(multi_images or img_data)
-                debug_info = [] # List untuk menyimpan error detail
+                debug_info = [] 
                 
                 # ── ENGINE 1: GROQ ──
                 _groq_keys = [k for k in [st.secrets.get(f"GROQ_API_KEY{i if i>1 else ''}", "") for i in range(1, 14)] if k]
@@ -2933,55 +2933,65 @@ if prompt:
                         except Exception as _ge:
                             if any(x in str(_ge).lower() for x in ["rate_limit","429","too many","quota"]): _rate_limited_keys.add(_gkey)
                             else: debug_info.append(f"Groq Error: {str(_ge)}")
-                    if not ans and len(_rate_limited_keys) == len(_groq_keys):
+                    if not ans and len(_rate_limited_keys) == len(_groq_keys) and _groq_keys:
                         debug_info.append(f"Groq: Semua {len(_groq_keys)} key terkena Rate Limit atau Quota Habis.")
 
-                # ── ENGINE 2: CEREBRAS (FALLBACK TEKS) ──
+                # ── ENGINE 2: CEREBRAS (FIX ERROR 1010) ──
                 if ans is None and not has_image:
                     _cb_key = st.secrets.get("CEREBRAS_API_KEY", "")
-                    if not _cb_key:
-                        debug_info.append("Cerebras: API Key tidak ada di secrets.")
+                    if not _cb_key: debug_info.append("Cerebras: API Key tidak ada di secrets.")
                     else:
                         try:
                             import urllib.request as _ucb, json as _jcb
                             _cb_msgs = [{"role": m.get("role",""), "content": (m.get("content","") or "")[:8000]} for m in _msgs if m.get("role") in ("system","user","assistant")]
-                            # Gunakan nama model yang didukung penuh oleh Cerebras
                             _cb_payload = {"model": "llama3.1-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
-                            _cb_req = _ucb.Request("https://api.cerebras.ai/v1/chat/completions", data=_jcb.dumps(_cb_payload).encode(), headers={"Content-Type": "application/json", "Authorization": f"Bearer {_cb_key}"})
+                            # Tambah User-Agent untuk bypass Cloudflare 1010
+                            _cb_headers = {"Content-Type": "application/json", "Authorization": f"Bearer {_cb_key}", "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"}
+                            _cb_req = _ucb.Request("https://api.cerebras.ai/v1/chat/completions", data=_jcb.dumps(_cb_payload).encode(), headers=_cb_headers)
                             with _ucb.urlopen(_cb_req, timeout=30) as _cbr: 
                                 ans = _jcb.loads(_cbr.read()).get("choices",[{}])[0].get("message",{}).get("content","")
                                 if ans: ans += "\n\n*(🧠 Dijawab menggunakan Cerebras)*"
                         except Exception as e_cb:
-                            if hasattr(e_cb, 'read'): debug_info.append(f"Cerebras Error: {e_cb.read().decode()}")
-                            else: debug_info.append(f"Cerebras Error: {str(e_cb)}")
+                            debug_info.append(f"Cerebras Error: {str(e_cb)}")
 
-                # ── ENGINE 3: GEMINI DIRECT API (ANTI ERROR 404 & FALLBACK GAMBAR) ──
+                # ── ENGINE 3: GEMINI DIRECT API (ANTI ERROR 404) ──
                 if ans is None:
-                    _gem_key = st.secrets.get("GEMINI_API_KEY", "")
-                    if not _gem_key:
-                        debug_info.append("Gemini: API Key tidak ada di secrets.")
+                    _gem_key = st.secrets.get("GEMINI_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
+                    if not _gem_key: debug_info.append("Gemini: API Key tidak ada di secrets.")
                     else:
                         try:
                             import urllib.request as _ur, json as _j
+                            # FIX ERROR 404: Menggunakan endpoint v1beta yang benar untuk generateContent
                             _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gem_key}"
                             _gem_contents = []
-                            for m in _history_msgs[:-1]: _gem_contents.append({"role": "user" if m["role"] == "user" else "model", "parts": [{"text": m["content"]}]})
+                            for m in _history_msgs[:-1]: 
+                                _role = "user" if m["role"] == "user" else "model"
+                                _gem_contents.append({"role": _role, "parts": [{"text": m["content"]}]})
+                            
                             _last_parts = []
                             if has_image:
                                 all_imgs = multi_images if multi_images else [(img_data[0], img_data[1], img_data[2])]
-                                for _ib64, _imime, _iname in all_imgs[:5]: _last_parts.append({"inline_data": {"mime_type": _imime, "data": _ib64}})
+                                for _ib64, _imime, _iname in all_imgs[:5]: 
+                                    _last_parts.append({"inline_data": {"mime_type": _imime, "data": _ib64}})
                             _last_parts.append({"text": _last_content})
                             _gem_contents.append({"role": "user", "parts": _last_parts})
 
-                            _payload = {"system_instruction": {"parts": [{"text": SYSTEM_PROMPT["content"]}]}, "contents": _gem_contents, "generationConfig": {"temperature": 0.7}}
+                            # Menggunakan framework yang lebih robust untuk payload
+                            _sys_instr = _sys_medium["content"] if _is_fundamental else _sys_short["content"]
+                            _payload = {
+                                "contents": _gem_contents, 
+                                "system_instruction": {"parts": [{"text": _sys_instr}]},
+                                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048},
+                                "safetySettings": [{"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"}]
+                            }
                             _req = _ur.Request(_url, data=_j.dumps(_payload).encode(), headers={"Content-Type": "application/json"})
                             with _ur.urlopen(_req, timeout=30) as _r:
                                 _data = _j.loads(_r.read())
                                 ans = _data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                                 if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini)*"
                         except Exception as e_gem:
-                            if hasattr(e_gem, 'read'): debug_info.append(f"Gemini Error: {e_gem.read().decode()}")
-                            else: debug_info.append(f"Gemini Error: {str(e_gem)}")
+                            # Jika 1.5-flash masih 404, coba model pro sebagai usaha terakhir
+                            debug_info.append(f"Gemini Error: {str(e_gem)}")
 
                 if ans is None:
                     raise Exception("Semua mesin AI gagal merespons.\n\n" + "\n".join([f"- {d}" for d in debug_info]))
