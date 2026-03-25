@@ -3028,130 +3028,103 @@ if st.session_state.user is None:
 
 components.html(f"""
 <script>
-const BC = "{C['bubble']}"; const BT = "#ffffff";
-(function() {{
-    var pd = window.parent.document;
-    if (pd.getElementById('sigma-mobile-css2')) return;
-    var s = pd.createElement('style'); s.id = 'sigma-mobile-css2';
-    s.textContent = `
-        [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
-        @media (max-width: 768px) {{
-            [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 8px 12px 120px !important; margin: 0 !important; }}
-            [data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em, [data-testid="stMarkdownContainer"] a {{ font-size: 1.05rem !important; line-height: 1.9 !important; }}
-            [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }} [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }} [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; font-weight: 700 !important; }}
-            [data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ padding-left: 18px !important; margin: 4px 0 !important; }}
-            [data-testid="stMarkdownContainer"] li {{ margin-bottom: 6px !important; }}
-            [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
-            div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 4px 8px !important; }}
-            [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
-            .navy-pill {{ max-width: 82% !important; font-size: 1.05rem !important; line-height: 1.75 !important; padding: 12px 16px !important; }}
-            [data-testid="stMarkdownContainer"] code {{ font-size: 0.88rem !important; }}
-            [data-testid="stMarkdownContainer"] pre {{ font-size: 0.85rem !important; overflow-x: auto !important; padding: 12px !important; }}
+(function(){{
+var pd=window.parent.document;
+var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
+var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
+['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+
+var s=pd.createElement('style'); s.id='sigma-mobile-css';
+s.textContent=`
+/* Menu sekarang diposisikan persis di atas Chat Bar */
+#spmenu,#sphist{{position:fixed; bottom:95px; left:20px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999999;display:none;overflow:hidden;min-width:250px;}} 
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left; text-decoration:none;}} .smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+`; pd.head.appendChild(s);
+
+var m=pd.createElement('div');m.id='spmenu';
+m.innerHTML=`
+    <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
+    <div class="smsp"></div>
+    <button class="smi" id="smi-upload"><span class="smico">📎</span>Upload File / Gambar</button>
+    <div class="smsp"></div>
+    <div class="smhd">PENAMPILAN</div>
+    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap</a>
+    <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang</a>
+    <div class="smsp"></div>
+    <a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
+`;
+pd.body.appendChild(m);
+
+var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
+
+// ── TRIK JITU: GANTI TOMBOL ASLI DENGAN TOMBOL PALSU ──
+function setupChatBarMenu() {{
+    var chatBox = pd.querySelector('[data-testid="stChatInputContainer"]');
+    // Jika kotak chat ada, dan tombol palsu kita belum ada
+    if (chatBox && !pd.getElementById('sigma-custom-plus')) {{
+        
+        // 1. Sembunyikan tombol '+' asli bawaan Streamlit (biasanya tombol paling pertama)
+        var nativeBtns = chatBox.querySelectorAll('button');
+        if (nativeBtns.length > 0 && !nativeBtns[0].innerHTML.includes('send')) {{
+            nativeBtns[0].style.display = 'none'; 
         }}
-    `; pd.head.appendChild(s);
+
+        // 2. Buat tombol '+' palsu (desain mirip Gemini)
+        var myPlus = pd.createElement('button');
+        myPlus.id = 'sigma-custom-plus';
+        myPlus.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{C["text_muted"]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>';
+        myPlus.style.cssText = 'background:transparent; border:none; cursor:pointer; padding:10px; margin-right:4px; display:flex; align-items:center; justify-content:center; transition: transform 0.2s;';
+        
+        // Efek hover agar terlihat interaktif
+        myPlus.onmouseover = function() {{ this.style.transform = 'scale(1.1)'; }};
+        myPlus.onmouseout = function() {{ this.style.transform = 'scale(1)'; }};
+
+        // 3. Pasang aksi untuk membuka Menu kita
+        myPlus.onclick = function(e) {{
+            e.preventDefault(); e.stopPropagation();
+            if (m.style.display === 'block') {{
+                m.style.display = 'none';
+            }} else {{
+                m.style.display = 'block';
+                h.style.display = 'none';
+            }}
+        }};
+        
+        // 4. Sisipkan tombol palsu ini di paling kiri (sebelum textarea)
+        chatBox.insertBefore(myPlus, chatBox.firstChild);
+    }}
+}}
+// Cek setiap 500ms agar tombol kita tidak hilang saat Streamlit refresh
+setInterval(setupChatBarMenu, 500);
+
+// ── LOGIKA KLIK MENU ──
+// Trigger Upload File Bawaan Streamlit secara diam-diam
+pd.getElementById('smi-upload').onclick = function(e) {{
+    e.preventDefault();
+    var fileInput = pd.querySelector('[data-testid="stChatInputContainer"] input[type="file"]');
+    if(fileInput) fileInput.click();
+    m.style.display = 'none';
+}};
+
+(function(){{
+    var u; 
+    u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
 }})();
 
-function fixBubbles() {{
-    const doc = window.parent.document;
-    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
-        if (!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
-        msg.style.cssText += 'display:flex!important;justify-content:flex-end!important;background:transparent!important;border:none!important;box-shadow:none!important;padding:4px 0!important;';
-        const av = msg.querySelector('[data-testid="stChatMessageAvatarUser"]'); if (av) av.style.display = 'none';
-        const ct = msg.querySelector('[data-testid="stChatMessageContent"]');
-        if (ct) ct.style.cssText += 'background:transparent!important;display:flex!important;justify-content:flex-end!important;max-width:100%!important;padding:0!important;';
-        msg.querySelectorAll('[data-testid="stMarkdownContainer"]').forEach(md => {{
-            md.style.background = 'transparent'; md.style.display = 'flex'; md.style.justifyContent = 'flex-end';
-            if (!md.querySelector('.navy-pill')) {{
-                const pill = document.createElement('div'); pill.className = 'navy-pill'; var mob=window.parent.innerWidth<=768;
-                pill.style.cssText=`background:linear-gradient(135deg,#42a8e0,#1a4fad);color:#ffffff;border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
-                while (md.firstChild) pill.appendChild(md.firstChild); md.appendChild(pill);
-            }}
-            var pill = md.querySelector('.navy-pill');
-            if (pill) {{ pill.style.setProperty('color','#ffffff','important'); pill.style.setProperty('background','linear-gradient(135deg,#42a8e0,#1a4fad)','important'); pill.querySelectorAll('*').forEach(function(el){{el.style.setProperty('color','#ffffff','important');}}); }}
-        }});
-    }});
-}}
-fixBubbles(); setInterval(fixBubbles, 800);
-new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(window.parent.document.body, {{childList:true,subtree:true}});
-
-function addActionButtons() {{
-    var doc = window.parent.document;
-    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
-        if (msg.querySelector('.sigma-actions')) return;
-        if (!!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
-        function getMsgText() {{ var md = msg.querySelector('[data-testid="stMarkdownContainer"]'); return md ? md.innerText : ''; }}
-        var bar = doc.createElement('div'); bar.className = 'sigma-actions'; bar.style.cssText = 'display:flex;gap:2px;margin-top:6px;padding:0 2px;';
-        var copyBtn = doc.createElement('button'); copyBtn.title = 'Salin'; copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8e8ea0\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>';
-        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:5px 6px;border-radius:6px;display:flex;align-items:center;';
-        copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}}; copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
-        copyBtn.onclick = function() {{
-            var txt = getMsgText();
-            function showOk() {{ copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#4CAF50\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg>'; setTimeout(function(){{ copyBtn.innerHTML = '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8e8ea0\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"></rect><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"></path></svg>'; }}, 2000); }}
-            navigator.clipboard.writeText(txt).then(showOk).catch(function(){{ var ta=doc.createElement('textarea'); ta.value=txt; doc.body.appendChild(ta); ta.select(); doc.execCommand('copy'); doc.body.removeChild(ta); showOk(); }});
-        }};
-        bar.appendChild(copyBtn); msg.style.flexDirection='column'; msg.appendChild(bar);
-    }});
-}}
-setInterval(addActionButtons, 1000);
-
-function setupPaste() {{
-    var pw = window.parent;
-    if (pw._sigmaPasteHandler) {{ pw.removeEventListener('paste', pw._sigmaPasteHandler, true); pw.document.removeEventListener('paste', pw._sigmaPasteHandler, true); }}
-    function handlePaste(e) {{
-        var items = e.clipboardData && e.clipboardData.items; if (!items) return;
-        for (var i=0; i<items.length; i++) {{
-            if (items[i].type.startsWith('image/')) {{
-                var file = items[i].getAsFile(); if (!file) continue;
-                e.preventDefault(); e.stopPropagation();
-                var inputs = pw.document.querySelectorAll('input[type="file"]');
-                for (var fi of inputs) {{
-                    try {{
-                        var dt = new DataTransfer(); dt.items.add(file);
-                        Object.defineProperty(fi, 'files', {{value: dt.files, configurable:true, writable:true}});
-                        fi.dispatchEvent(new Event('change', {{bubbles:true}})); fi.dispatchEvent(new Event('input', {{bubbles:true}}));
-                        var ta = pw.document.querySelector('[data-testid="stChatInput"] textarea');
-                        if (ta) {{ ta.style.outline = '2px solid #4a90d9'; ta.placeholder = '📎 Gambar siap — ketik pertanyaan lalu Enter'; setTimeout(function(){{ ta.style.outline=''; ta.placeholder='Tanya SIGMA... DYOR - bukan financial advice.'; }}, 3000); ta.focus(); }}
-                        break;
-                    }} catch(err) {{ console.log('paste err',err); }}
-                }}
-                break;
-            }}
-        }}
-    }}
-    pw._sigmaPasteHandler = handlePaste; pw.addEventListener('paste', handlePaste, true); pw.document.addEventListener('paste', handlePaste, true);
-}}
-setupPaste(); setTimeout(setupPaste, 1000); setTimeout(setupPaste, 3000);
-
-function setupDragDrop() {{
-    var pw = window.parent; var pd = pw.document; if (pw._sigmaDragOK) return;
-    var overlay = pd.createElement('div'); overlay.id = 'sigma-drop-overlay'; overlay.style.cssText = 'position:fixed;inset:0;background:rgba(27,42,74,0.55);z-index:99997;display:none;align-items:center;justify-content:center;pointer-events:none;';
-    overlay.innerHTML = '<div style="background:#1B2A4A;color:#fff;border:2px dashed #4a90d9;border-radius:16px;padding:32px 48px;font-size:1.1rem;text-align:center;">📂 Lepaskan file di sini<br><span style="font-size:0.85rem;opacity:0.7;">PDF, PNG, JPG</span></div>';
-    pd.body.appendChild(overlay);
-    var dragCount = 0;
-    pd.addEventListener('dragenter', function(e) {{ e.preventDefault(); dragCount++; overlay.style.display = 'flex'; }}, true);
-    pd.addEventListener('dragleave', function(e) {{ dragCount--; if (dragCount <= 0) {{ dragCount = 0; overlay.style.display = 'none'; }} }}, true);
-    pd.addEventListener('dragover', function(e) {{ e.preventDefault(); }}, true);
-    pd.addEventListener('drop', function(e) {{
-        e.preventDefault(); dragCount = 0; overlay.style.display = 'none';
-        var files = e.dataTransfer && e.dataTransfer.files; if (!files || files.length === 0) return;
-        var allowed = ['application/pdf','image/png','image/jpeg','image/jpg']; var validFiles = [];
-        for (var i = 0; i < Math.min(files.length, 5); i++) {{ if (allowed.includes(files[i].type)) validFiles.push(files[i]); }}
-        if (validFiles.length === 0) {{ alert('File tidak didukung. Gunakan PDF, PNG, atau JPG.'); return; }}
-        var chatContainer = pd.querySelector('[data-testid="stChatInputContainer"]');
-        var fileInput = chatContainer ? chatContainer.querySelector('input[type="file"]') : null;
-        if (!fileInput) {{ var allInputs = pd.querySelectorAll('input[type="file"]'); fileInput = allInputs[allInputs.length - 1]; }}
-        if (fileInput) {{
-            try {{
-                var dt = new DataTransfer(); for (var f of validFiles) dt.items.add(f);
-                Object.defineProperty(fileInput, 'files', {{value: dt.files, configurable:true, writable:true}});
-                fileInput.dispatchEvent(new Event('change', {{bubbles:true}})); fileInput.dispatchEvent(new Event('input', {{bubbles:true}}));
-                var ta = pd.querySelector('[data-testid="stChatInput"] textarea');
-                if (ta) {{ ta.style.outline = '2px solid #4a90d9'; var names = validFiles.map(function(f){{return f.name;}}).join(', '); ta.placeholder = '📎 ' + names + ' — ketik pertanyaan lalu Enter'; setTimeout(function(){{ ta.style.outline = ''; ta.placeholder = 'Tanya SIGMA... DYOR - bukan financial advice.'; }}, 4000); ta.focus(); }}
-            }} catch(err) {{ console.log('drop err', err); }}
-        }}
-    }}, true);
-    pw._sigmaDragOK = true;
-}}
-setupDragDrop(); setTimeout(setupDragDrop, 2000);
+pd.addEventListener('click',function(e){{ 
+    var myPlus = pd.getElementById('sigma-custom-plus');
+    if(myPlus && !myPlus.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
+    if(myPlus && !myPlus.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
+}});
+}})();
 </script>
 """, height=0)
