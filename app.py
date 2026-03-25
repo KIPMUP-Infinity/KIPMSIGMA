@@ -2027,7 +2027,7 @@ if prompt:
                 model = genai.GenerativeModel(
                     model_name="gemini-1.5-pro",
                     system_instruction=SYSTEM_PROMPT["content"]
-                )
+                )    
                 
                 gemini_history = []
                 for msg in _all_msgs[:-1]: # Abaikan pesan terakhir dari user (dikirim via send_message)
