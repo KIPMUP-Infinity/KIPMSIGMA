@@ -2677,6 +2677,72 @@ C = get_colors(st.session_state.theme)
 # ─────────────────────────────────────────────
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
+
+# ─── FUNGSI API TERISOLASI (ANTI BENTURAN VARIABEL) ───
+def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
+    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
+    keys = [k for k in keys if k]
+    last_err = "API Key tidak ditemukan di secrets"
+    for api_key in keys:
+        try:
+            import urllib.request, json as _j
+            _parts = []
+            
+            # Wajib format snake_case seperti di file lama
+            if multi_imgs:
+                for _b64, _mime, _ in multi_imgs[:5]:
+                    _parts.append({"inline_data": {"mime_type": _mime, "data": _b64}})
+            elif img_b64 and img_mime:
+                _parts.append({"inline_data": {"mime_type": img_mime, "data": img_b64}})
+            
+            _parts.append({"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt})
+            
+            payload = {
+                "contents": [{"role": "user", "parts": _parts}],
+                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+            }
+            # Gunakan versi 2.0 yang terbukti sukses di kodemu sebelumnya
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+            req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=40) as r:
+                data = _j.loads(r.read())
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            last_err = str(e)
+    raise Exception(last_err)
+
+def _call_gemini_text(messages):
+    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
+    keys = [k for k in keys if k]
+    last_err = "API Key tidak ditemukan di secrets"
+    for api_key in keys:
+        try:
+            import urllib.request, json as _j
+            gemini_contents = []
+            system_text = ""
+            for m in messages:
+                r = m.get("role", "")
+                t = m.get("content", "") or ""
+                if r == "system": system_text = t
+                elif r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
+                elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
+            
+            if not gemini_contents: 
+                gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
+            
+            payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+            if system_text: 
+                payload["system_instruction"] = {"parts": [{"text": system_text}]}
+            
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+            req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                data = _j.loads(r.read())
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception as e:
+            last_err = str(e)
+    raise Exception(last_err)
+
 st.markdown(f"""
 <style>
 /* Sembunyikan elemen bawaan Streamlit secara agresif */
@@ -2934,45 +3000,16 @@ if prompt:
                 debug_info = []
 
                 if has_image:
-                    # ── BACA GAMBAR VIA GEMINI 1.5 FLASH (REST API MURNI SEPERTI SISTEM LAMA) ──
+                    # ── BACA GAMBAR MENGGUNAKAN FUNGSI TERISOLASI ──
                     try:
-                        import json as _j2, urllib.request as _ur
-                        
-                        # MENARIK KUNCI SECARA TEPAT DARI SECRETS.TOML KAMU
-                        _gkey = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
-                        if not _gkey:
-                            raise Exception("API Key tidak ditemukan di secrets!")
-                            
-                        _parts = []
-                        # Gabungkan System Prompt dan Teks User
-                        final_prompt = SYSTEM_PROMPT["content"] + "\n\n" + prompt
-                        _parts.append({"text": final_prompt})
-                        
-                        # Gabungkan Gambar
-                        if multi_images:
-                            for _b64, _mime, _ in multi_images[:5]:
-                                _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
-                        elif img_data:
-                            _parts.append({"inlineData": {"mimeType": img_data[1], "data": img_data[0]}})
-                        
-                        _gpayload = {
-                            "contents": [{"role": "user", "parts": _parts}],
-                            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
-                        }
-                        
-                        # MENGGUNAKAN GEMINI-1.5-FLASH YANG DIJAMIN ANTI-404 SEPERTI FILE LAMA KAMU
-                        _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gkey}"
-                        _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
-                        
-                        with _ur.urlopen(_greq, timeout=40) as _gr:
-                            _gdata = _j2.loads(_gr.read())
-                            
-                        ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
-                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 1.5 Flash Vision)*"
+                        _img_b64 = user_msg.get("img_b64")
+                        _img_mime = user_msg.get("img_mime")
+                        ans = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
+                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini 2.0 Flash Vision)*"
                     except Exception as e_img:
                         debug_info.append(f"Gemini Vision: {str(e_img)}")
                 else:
-                    # ── ENGINE TEKS UTAMA: GROQ ──
+                    # ── BACA TEKS: GROQ SEBAGAI UTAMA ──
                     try:
                         client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                         mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab pertanyaan user dengan ringkas dan akurat."}
@@ -2985,37 +3022,13 @@ if prompt:
                     except Exception as e_groq:
                         debug_info.append(f"Groq: {str(e_groq)}")
                         
-                        # ── FALLBACK TEKS: GEMINI REST API ──
-                        try:
-                            import json as _j2, urllib.request as _ur
-                            
-                            _gkey = st.secrets.get("GEMINI_API_KEY", "") or st.secrets.get("GEMINI_KEY", "") or st.secrets.get("GOOGLE_API_KEY", "")
-                            if not _gkey:
-                                raise Exception("API Key tidak ditemukan di secrets!")
-                            
-                            _gemini_contents = []
-                            for m in _history_msgs[-5:]:
-                                r = "user" if m["role"] == "user" else "model"
-                                _gemini_contents.append({"role": r, "parts": [{"text": m["content"]}]})
-                                
-                            # Inject System Prompt ke pesan pertama
-                            if _gemini_contents:
-                                _gemini_contents[0]["parts"][0]["text"] = SYSTEM_PROMPT["content"] + "\n\n" + _gemini_contents[0]["parts"][0]["text"]
-                            else:
-                                _gemini_contents = [{"role": "user", "parts": [{"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt}]}]
-                                
-                            _gpayload = {
-                                "contents": _gemini_contents,
-                                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
-                            }
-                            _gurl = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_gkey}"
-                            _greq = _ur.Request(_gurl, data=_j2.dumps(_gpayload).encode(), headers={"Content-Type": "application/json"})
-                            with _ur.urlopen(_greq, timeout=30) as _gr:
-                                _gdata = _j2.loads(_gr.read())
-                            ans = _gdata["candidates"][0]["content"]["parts"][0]["text"]
-                            if ans: ans += "\n\n*(✨ Fallback ke Gemini Flash)*"
-                        except Exception as e_txt:
-                            debug_info.append(f"Gemini Text: {str(e_txt)}")
+                        # ── FALLBACK TEKS: GEMINI MENGGUNAKAN FUNGSI TERISOLASI ──
+                        if not ans:
+                            try:
+                                ans = _call_gemini_text(_history_msgs[-5:])
+                                if ans: ans += "\n\n*(✨ Fallback ke Gemini 2.0 Flash)*"
+                            except Exception as e_txt:
+                                debug_info.append(f"Gemini Text: {str(e_txt)}")
                 
                 if not ans:
                     err_msg = " | ".join(debug_info)
@@ -3070,7 +3083,6 @@ const BC = "{C['bubble']}"; const BT = "#ffffff";
     `; pd.head.appendChild(s);
 }})();
 
-// --- GELEMBUNG CHAT NAVY ---
 function fixBubbles() {{
     const doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
@@ -3094,7 +3106,6 @@ function fixBubbles() {{
 fixBubbles(); setInterval(fixBubbles, 800);
 new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(window.parent.document.body, {{childList:true,subtree:true}});
 
-// --- TOMBOL COPY KOTAK ---
 function addActionButtons() {{
     var doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
@@ -3128,7 +3139,6 @@ function addActionButtons() {{
 }}
 setInterval(addActionButtons, 1000);
 
-// --- PASTE GAMBAR LANGSUNG KE CHAT BAR ---
 function setupPaste() {{
     var pw = window.parent;
     if (pw._sigmaPasteHandler) {{ pw.removeEventListener('paste', pw._sigmaPasteHandler, true); pw.document.removeEventListener('paste', pw._sigmaPasteHandler, true); }}
@@ -3157,7 +3167,6 @@ function setupPaste() {{
 }}
 setupPaste(); setTimeout(setupPaste, 1000); setTimeout(setupPaste, 3000);
 
-// --- DRAG AND DROP ---
 function setupDragDrop() {{
     var pw = window.parent; var pd = pw.document; if (pw._sigmaDragOK) return;
     var overlay = pd.createElement('div'); overlay.id = 'sigma-drop-overlay'; overlay.style.cssText = 'position:fixed;inset:0;background:rgba(27,42,74,0.55);z-index:99997;display:none;align-items:center;justify-content:center;pointer-events:none;';
