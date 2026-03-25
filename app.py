@@ -2679,72 +2679,98 @@ C = get_colors(st.session_state.theme)
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
 
-# ─── FUNGSI API TERISOLASI (ANTI 404 & ANTI BENTURAN) ───
+# ─── FUNGSI API TERISOLASI DENGAN RADAR ANTI-404 ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
+    import urllib.request, urllib.error, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
     keys = [k for k in keys if k]
+    
+    # Radar Daftar Model yang akan dicoba satu per satu
+    models = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-1.5-flash-002", "gemini-1.5-flash"]
     last_err = "API Key tidak ditemukan di secrets"
+    
     for api_key in keys:
-        try:
-            import urllib.request, json as _j
-            _parts = []
+        for model_name in models:
+            try:
+                _parts = []
+                # Wajib camelCase untuk REST API Google
+                if multi_imgs:
+                    for _b64, _mime, _ in multi_imgs[:5]:
+                        _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
+                elif img_b64 and img_mime:
+                    _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
+                
+                _parts.append({"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt})
+                
+                payload = {
+                    "contents": [{"role": "user", "parts": _parts}],
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+                }
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=40) as r:
+                    data = _j.loads(r.read())
+                
+                # Berhasil! Kembalikan teks dan nama model yang sukses ditembus
+                return data["candidates"][0]["content"]["parts"][0]["text"], model_name
             
-            # Wajib camelCase untuk REST API Google: inlineData, mimeType
-            if multi_imgs:
-                for _b64, _mime, _ in multi_imgs[:5]:
-                    _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
-            elif img_b64 and img_mime:
-                _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
-            
-            _parts.append({"text": SYSTEM_PROMPT["content"] + "\n\n" + prompt})
-            
-            payload = {
-                "contents": [{"role": "user", "parts": _parts}],
-                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
-            }
-            # FIX: Turunkan ke 1.5-flash karena 2.0-flash menyebabkan Error 404 di API Key milikmu
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-            req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=40) as r:
-                data = _j.loads(r.read())
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-        except Exception as e:
-            if hasattr(e, 'read'): last_err = f"HTTP {e.code}: {e.read().decode()}"
-            else: last_err = str(e)
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode() if hasattr(e, 'read') else ""
+                last_err = f"HTTP {e.code}: {err_body}"
+                if e.code == 404:
+                    continue # Bypass Error 404, langsung coba nama model selanjutnya!
+                elif e.code in [403, 400]:
+                    break # Model menolak kunci ini, keluar loop model, coba API KEY selanjutnya
+            except Exception as e:
+                last_err = str(e)
+                continue
     raise Exception(last_err)
 
 def _call_gemini_text(messages):
+    import urllib.request, urllib.error, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
     keys = [k for k in keys if k]
+    
+    models = ["gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro-latest", "gemini-1.5-flash-002", "gemini-1.5-flash"]
     last_err = "API Key tidak ditemukan di secrets"
+    
     for api_key in keys:
-        try:
-            import urllib.request, json as _j
-            gemini_contents = []
-            system_text = ""
-            for m in messages:
-                r = m.get("role", "")
-                t = m.get("content", "") or ""
-                if r == "system": system_text = t
-                elif r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
-                elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
+        for model_name in models:
+            try:
+                gemini_contents = []
+                system_text = ""
+                for m in messages:
+                    r = m.get("role", "")
+                    t = m.get("content", "") or ""
+                    if r == "system": system_text = t
+                    elif r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
+                    elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
+                
+                if not gemini_contents: 
+                    gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
+                
+                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+                if system_text: 
+                    payload["systemInstruction"] = {"parts": [{"text": system_text}]}
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    data = _j.loads(r.read())
+                    
+                return data["candidates"][0]["content"]["parts"][0]["text"], model_name
             
-            if not gemini_contents: 
-                gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
-            
-            payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
-            if system_text: 
-                payload["systemInstruction"] = {"parts": [{"text": system_text}]}
-            
-            # FIX: Turunkan ke 1.5-flash untuk menghindari Error 404
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-            req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                data = _j.loads(r.read())
-            return data["candidates"][0]["content"]["parts"][0]["text"]
-        except Exception as e:
-            if hasattr(e, 'read'): last_err = f"HTTP {e.code}: {e.read().decode()}"
-            else: last_err = str(e)
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode() if hasattr(e, 'read') else ""
+                last_err = f"HTTP {e.code}: {err_body}"
+                if e.code == 404:
+                    continue # Bypass 404
+                elif e.code in [403, 400]:
+                    break # Coba Key Lain
+            except Exception as e:
+                last_err = str(e)
+                continue
     raise Exception(last_err)
 
 st.markdown(f"""
@@ -2949,7 +2975,7 @@ if result is not None:
             with st.chat_message("assistant"): st.markdown(menu_text)
             st.rerun()
 
-    # RESTORE: FITUR BACA PDF (Persis seperti script app 19.py lamamu)
+    # ─── FITUR PDF DIKEMBALIKAN (RESTORED) ───
     if file_obj:
         raw = file_obj.read()
         if file_obj.type == "application/pdf":
@@ -3018,12 +3044,12 @@ if prompt:
                 debug_info = []
 
                 if has_image:
-                    # ── BACA GAMBAR MENGGUNAKAN FUNGSI TERISOLASI ──
+                    # ── BACA GAMBAR MENGGUNAKAN RADAR ANTI-404 ──
                     try:
                         _img_b64 = user_msg.get("img_b64")
                         _img_mime = user_msg.get("img_mime")
-                        ans = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
-                        if ans: ans += "\n\n*(✨ Dijawab menggunakan Gemini Vision)*"
+                        ans, used_model = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
+                        if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model})*"
                     except Exception as e_img:
                         debug_info.append(f"Gemini Vision: {str(e_img)}")
                 else:
@@ -3040,11 +3066,11 @@ if prompt:
                     except Exception as e_groq:
                         debug_info.append(f"Groq: {str(e_groq)}")
                         
-                        # ── FALLBACK TEKS: GEMINI MENGGUNAKAN FUNGSI TERISOLASI ──
+                        # ── FALLBACK TEKS: GEMINI MENGGUNAKAN RADAR ANTI-404 ──
                         if not ans:
                             try:
-                                ans = _call_gemini_text(_history_msgs[-5:])
-                                if ans: ans += "\n\n*(✨ Fallback ke Gemini)*"
+                                ans, used_model = _call_gemini_text(_history_msgs[-5:])
+                                if ans: ans += f"\n\n*(✨ Fallback ke {used_model})*"
                             except Exception as e_txt:
                                 debug_info.append(f"Gemini Text: {str(e_txt)}")
                 
