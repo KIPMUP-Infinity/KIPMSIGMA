@@ -2944,10 +2944,21 @@ if prompt:
                         if _cb_key:
                             import urllib.request as _ucb, json as _jcb
                             _cb_msgs = [{"role": m.get("role",""), "content": (m.get("content","") or "")[:8000]} for m in _msgs if m.get("role") in ("system","user","assistant")]
-                            _cb_payload = {"model": "llama-3.3-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
+                            
+                            # Menggunakan format nama model baku Cerebras
+                            _cb_payload = {"model": "llama3.3-70b", "messages": _cb_msgs, "temperature": 0.7, "max_tokens": 2048}
                             _cb_req = _ucb.Request("https://api.cerebras.ai/v1/chat/completions", data=_jcb.dumps(_cb_payload).encode(), headers={"Content-Type": "application/json", "Authorization": f"Bearer {_cb_key}"})
-                            with _ucb.urlopen(_cb_req, timeout=30) as _cbr: ans = _jcb.loads(_cbr.read()).get("choices",[{}])[0].get("message",{}).get("content","")
-                    except: pass
+                            
+                            with _ucb.urlopen(_cb_req, timeout=30) as _cbr: 
+                                ans = _jcb.loads(_cbr.read()).get("choices",[{}])[0].get("message",{}).get("content","")
+                                # Tambahkan watermark agar kita tahu ini Cerebras
+                                if ans: ans += "\n\n*(⚡ Dijawab menggunakan Cerebras)*"
+                    except Exception as e_cb:
+                        # Munculkan error aslinya agar kita tahu penyebabnya
+                        if hasattr(e_cb, 'read'):
+                            st.error(f"⚠️ Detail Error Cerebras: {e_cb.read().decode()}")
+                        else:
+                            st.error(f"⚠️ Error Cerebras: {str(e_cb)}")
 
                 # ── ENGINE 3: GEMINI DIRECT API (ANTI ERROR 404 & FALLBACK GAMBAR) ──
                 if ans is None:
