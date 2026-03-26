@@ -2343,7 +2343,8 @@ from datetime import datetime
 # ─── DAFTAR SAHAM PERBANKAN UNTUK FILTERING ───
 BANK_TICKERS = ["BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN","PNBN","ARTO","BBYB","AGRO","BJBR","BSIM","BBKP","BTPN","NISP","MEGA","MCOR","SDRA","MAYA"]
 
-# ─── TEMPLATE 1: KHUSUS NON-BANK (HEMAT TOKEN, SANGAT RAPI) ───
+# ─── KUMPULAN TEMPLATE SIGMA ───
+
 TEMPLATE_NON_BANK = """
 [INSTRUKSI WAJIB SYSTEM]:
 User meminta analisa fundamental saham {emiten} (Sektor Non-Perbankan). 
@@ -2410,7 +2411,6 @@ Harga **{emiten}** saat ini adalah **Rp[ISI HARGA DARI DATA LIVE]**.
 ⚠️ *DYOR — analisa ini berbasis data yang tersedia dan pengetahuan umum, bukan rekomendasi investasi.*
 """
 
-# ─── TEMPLATE 2: KHUSUS BANK (LENGKAP DENGAN NPL, CAR, NIM) ───
 TEMPLATE_BANK = """
 [INSTRUKSI WAJIB SYSTEM]:
 User meminta analisa fundamental saham {emiten} (Sektor Perbankan). 
@@ -2485,6 +2485,120 @@ Harga **{emiten}** saat ini adalah **Rp[ISI HARGA DARI DATA LIVE]**.
 ⚠️ *DYOR — analisa ini berbasis data yang tersedia dan pengetahuan umum, bukan rekomendasi investasi.*
 """
 
+TEMPLATE_DAMPAK_MAKRO = """
+[INSTRUKSI WAJIB SYSTEM]:
+User meminta analisa "Kesimpulan Dampak Makro".
+Fokuskan pada dampak berita/ekonomi ini ke pasar saham secara umum (IHSG) dan sektor apa yang akan diuntungkan atau dirugikan. Gunakan format list (- ) agar rapi!
+
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
+Berikut adalah analisa dampak makro pasar dari SIGMA:
+
+🌍 **GAMBARAN UMUM**
+
+- [Jelaskan inti dari isu makro tersebut secara singkat]
+- [Pengaruhnya ke ekonomi domestik / inflasi / nilai tukar Rupiah]
+
+🟢 **SEKTOR DIUNTUNGKAN (WINNERS)**
+
+- **[Sektor 1]:** [Alasan fundamental/sentimen mengapa untung]
+- **[Sektor 2]:** [Alasan fundamental/sentimen mengapa untung]
+
+🔴 **SEKTOR DIRUGIKAN (LOSERS)**
+
+- **[Sektor 1]:** [Alasan mengapa akan tertekan]
+- **[Sektor 2]:** [Alasan mengapa akan tertekan]
+
+📉 **DAMPAK KE IHSG**
+
+- **Tren Jangka Pendek:** [Bullish / Bearish / Volatile]
+- **Alasan:** [Jelaskan respons investor asing & lokal terhadap isu ini]
+
+⚖️ **KESIMPULAN & STRATEGI**
+
+- [Berikan saran bijak bagaimana trader harus mengatur portofolionya (misal: perbanyak cash, atau rotasi sektor)]
+
+⚠️ *DYOR — analisa makro bergantung pada data rilis dan kebijakan lanjutan.*
+"""
+
+TEMPLATE_DAMPAK_EMITEN = """
+[INSTRUKSI WAJIB SYSTEM]:
+User meminta analisa "Kesimpulan Dampak" khusus terhadap emiten {emiten}.
+Fokuskan 100% analisamu pada BAGAIMANA TOPIK/BERITA INI MEMPENGARUHI KINERJA BISNIS, PENDAPATAN, DAN HARGA SAHAM {emiten}.
+Gunakan format list (- ) agar rapi!
+
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
+Berikut adalah analisa dampak pasar untuk **{emiten}** terkait isu tersebut:
+
+🔍 **KORELASI BISNIS**
+
+- [Jelaskan spesifik apa hubungan bisnis/operasional {emiten} dengan isu/topik ini]
+- [Jelaskan apakah ini berdampak pada biaya bahan baku, daya beli konsumen, atau beban utang mereka]
+
+🟢 **DAMPAK POSITIF (PELUANG)**
+
+- [Poin 1 potensi keuntungan bagi {emiten}]
+- [Poin 2 potensi keuntungan bagi {emiten}]
+
+🔴 **DAMPAK NEGATIF (RISIKO)**
+
+- [Poin 1 potensi kerugian/risiko bagi {emiten}]
+- [Poin 2 potensi kerugian/risiko bagi {emiten}]
+
+📊 **PROYEKSI REAKSI PASAR**
+
+- **Jangka Pendek:** [Prediksi respons pergerakan teknikal sesaat]
+- **Jangka Menengah:** [Prediksi dampak nyata ke laporan keuangan kuartal berikutnya]
+
+⚖️ **KESIMPULAN FINAL**
+
+- **Status Katalis:** [Tulis dengan tegas apakah ini BULLISH, BEARISH, atau NEUTRAL untuk {emiten}]
+- **Kesimpulan:** [Langkah apa yang sebaiknya diperhatikan investor terkait {emiten}]
+
+⚠️ *DYOR — analisa ini berbasis sentimen pasar saat ini.*
+"""
+
+TEMPLATE_IPO = """
+[INSTRUKSI WAJIB SYSTEM]:
+User meminta "Analisa IPO" berdasarkan dokumen PDF prospektus yang dilampirkan untuk calon emiten {emiten}.
+Tugasmu adalah membongkar isi PDF tersebut dan merangkumnya khusus untuk konsumsi Investor Ritel. 
+JANGAN bertele-tele. Cari data paling krusial seperti Tujuan Penggunaan Dana, Valuasi, dan Info Underwriter di dalam teks PDF!
+
+[ISI TEKS PDF PROSPEKTUS]:
+{pdf_content}
+
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
+Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
+
+🏢 **PROFIL SINGKAT BISNIS**
+
+- [Jelaskan bisnis utama perusahaan dalam 1-2 kalimat dengan bahasa sederhana]
+- [Kelebihan/keunggulan kompetitif perusahaan menurut prospektus]
+
+💰 **TUJUAN PENGGUNAAN DANA (CRUCIAL)**
+
+- [Jelaskan persentase (%) penggunaan dana. Berapa untuk modal kerja/ekspansi? Berapa untuk bayar utang?]
+- *Penilaian SIGMA:* [Jelaskan apakah alokasi ini bagus (produktif) atau buruk (hanya buat gali lubang tutup lubang)]
+
+📈 **VALUASI & STRUKTUR PENAWARAN**
+
+- **Harga Penawaran:** [Sebutkan rentang harga penawaran]
+- **Valuasi (PER/PBV):** [Sebutkan estimasi valuasi post-IPO jika ada data di PDF, atau estimasikan]
+- **Bonus Warrant:** [Sebutkan apakah ada pemanis berupa warrant gratis dan rasionya. Jika tidak ada, tulis "Tidak ada"]
+
+🤝 **UNDERWRITER (PENJAMIN EMISI)**
+
+- **Sekuritas:** [Sebutkan kode broker / nama sekuritas penjamin]
+- **Track Record (Knowledge AI):** [Sebutkan reputasi sekuritas ini dalam mengawal IPO. Sering dibikin ARA atau dibanting ARB?]
+
+⚖️ **KESIMPULAN FINAL SIGMA**
+
+- **Daya Tarik:** [Sangat Menarik / Biasa Saja / Berisiko Tinggi]
+- **Peringatan / Risiko Utama:** [Tulis 1-2 risiko paling fatal dari bisnis mereka]
+- **Saran Ritel:** [Saran strategis: Cocok untuk investasi panjang, atau sekadar hit-and-run hari pertama?]
+
+⚠️ *DYOR — prospektus adalah dokumen resmi, namun pasar IPO sangat dipengaruhi oleh sentimen bandar/underwriter.*
+"""
+
 # ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     import urllib.request, urllib.error, json as _j
@@ -2551,7 +2665,7 @@ header[data-testid="stHeader"] {{ display: none !important; height: 0 !important
 div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
 [data-testid="stMainBlockContainer"] {{ padding-top: 3rem !important; margin-top: 0 !important; }}
 [data-testid="stChatMessageContent"], [data-testid="stMarkdownContainer"] {{ text-align: left !important; }}
-/* MEMASTIKAN LIST POINT (UL/LI) RAPI DAN TIDAK BERTUMPUK */
+/* MEMASTIKAN LIST POINT RAPI DAN TIDAK BERTUMPUK */
 [data-testid="stMarkdownContainer"] ul {{ margin-top: 6px !important; margin-bottom: 16px !important; padding-left: 20px !important; }}
 [data-testid="stMarkdownContainer"] li {{ margin-bottom: 8px !important; line-height: 1.6 !important; }}
 </style>
@@ -2713,14 +2827,14 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
-        if prompt and prompt.strip().lower() in ["5 logic", "lima sila", "5sila"]:
+        # ─── MENU 7 LOGIC BARU ───
+        if prompt and prompt.strip().lower() in ["7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                # MENU DIUBAH MENJADI FORMAT TEKS RAPI
-                menu_text = """**5 Logic SIGMA — MENU**\n\n1. Kesimpulan Dampak [topik/berita]\n2. Bandarmologi [emiten]\n3. Fundamental [emiten]\n4. Teknikal [emiten]\n5. Analisa Lengkap [emiten]\n\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"3. Fundamental BBCA"**"""
-                active["messages"].append({"role": "user", "content": "5 Logic", "display": "5 Logic"})
+                menu_text = """**7 Logic SIGMA — MENU**\n\n1. Kesimpulan Dampak Makro [topik/berita]\n2. Kesimpulan Dampak [emiten]\n3. Bandarmologi [emiten]\n4. Fundamental [emiten]\n5. Teknikal [emiten]\n6. Analisa Lengkap [emiten]\n7. Analisa IPO [emiten]\n\nKetik angkanya atau perintahnya.\nContoh: **"4. Fundamental BBCA"** atau **"7. Analisa IPO AWAN"** (sambil lampirkan PDF Prospektus)."""
+                active["messages"].append({"role": "user", "content": "7 Logic", "display": "7 Logic"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
-                with st.chat_message("user"): st.markdown("5 Logic")
+                with st.chat_message("user"): st.markdown("7 Logic")
                 with st.chat_message("assistant"): st.markdown(menu_text)
                 st.rerun()
 
@@ -2731,7 +2845,7 @@ else:
                     import fitz
                     doc = fitz.open(stream=raw, filetype="pdf")
                     txt = "".join(p.get_text() for p in doc)
-                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:3000]}"
+                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:12000]}" # Diperbesar agar cukup muat rangkuman prospektus
                     st.session_state.pdf_data = (pdf_content, file_obj.name)
                     st.session_state.img_data = None
                 except Exception as pdf_e:
@@ -2748,10 +2862,41 @@ else:
         st.session_state.img_data = None; st.session_state.pdf_data = None
         full_prompt = prompt
 
-        is_fundamental_request = "fundamental" in prompt.lower() or prompt.lower().startswith("3.")
+        # ─── LOGIC ROUTER & INTERCEPTOR ───
+        prompt_lower = prompt.lower()
+        
+        is_dampak_makro = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower
+        is_dampak_emiten = prompt_lower.startswith("2.") or ("dampak" in prompt_lower and not is_dampak_makro)
+        is_fundamental = prompt_lower.startswith("4.") or "fundamental" in prompt_lower
+        is_ipo = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
+        
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
         
-        if is_fundamental_request and emiten_match:
+        # LOGIC 1: DAMPAK MAKRO
+        if is_dampak_makro:
+            with st.spinner("🔍 Menganalisa sentimen makro global/domestik..."):
+                try:
+                    ctx = build_global_context(prompt)
+                    if ctx: full_prompt = f"[BERITA GLOBAL/EKONOMI]:\n{ctx}\n\n"
+                    else: full_prompt = ""
+                except: full_prompt = ""
+                full_prompt += TEMPLATE_DAMPAK_MAKRO
+                full_prompt += f"\n\nPertanyaan Asli User (Topik yang dibahas): {prompt}"
+
+        # LOGIC 2: DAMPAK EMITEN
+        elif is_dampak_emiten and emiten_match:
+            emiten_target = emiten_match.group(0).upper()
+            with st.spinner(f"🔍 Menganalisa korelasi berita ke emiten {emiten_target}..."):
+                try:
+                    ctx = build_combined_context(prompt)
+                    if ctx: full_prompt = f"[DATA BERITA DAN PASAR]:\n{ctx}\n\n"
+                    else: full_prompt = ""
+                except: full_prompt = ""
+                full_prompt += TEMPLATE_DAMPAK_EMITEN.format(emiten=emiten_target)
+                full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
+
+        # LOGIC 4: FUNDAMENTAL
+        elif is_fundamental and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             is_bank = emiten_target in BANK_TICKERS
             chosen_template = TEMPLATE_BANK if is_bank else TEMPLATE_NON_BANK
@@ -2766,6 +2911,17 @@ else:
                 full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
                 full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
 
+        # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
+        elif is_ipo:
+            if pdf_data:
+                emiten_target = emiten_match.group(0).upper() if emiten_match else "CALON EMITEN BARU"
+                with st.spinner("🔍 Membongkar & Membaca Ratusan Halaman Prospektus..."):
+                    full_prompt = TEMPLATE_IPO.format(emiten=emiten_target, pdf_content=pdf_data[0])
+            else:
+                # Jika user lupa upload PDF
+                full_prompt = "[INSTRUKSI SYSTEM]: Beritahu user dengan ramah bahwa untuk melakukan Analisa IPO, mereka WAJIB meng-upload atau melampirkan file PDF Prospektus e-IPO terlebih dahulu ke dalam kolom chat."
+
+        # FALLBACK GENERAL
         elif pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
