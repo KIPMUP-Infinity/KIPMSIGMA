@@ -2346,7 +2346,7 @@ C = get_colors(st.session_state.theme)
 
 
 # ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE & UI (STABLE & FIX PASTE)
+# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE & 3-MODEL PLAN)
 # ─────────────────────────────────────────────
 import requests
 import re
@@ -2928,6 +2928,25 @@ else:
                 with st.chat_message("assistant"): st.markdown(menu_text)
                 st.rerun()
 
+        if file_obj:
+            raw = file_obj.read()
+            if file_obj.type == "application/pdf":
+                try:
+                    import fitz
+                    doc = fitz.open(stream=raw, filetype="pdf")
+                    txt = "".join(p.get_text() for p in doc)
+                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:12000]}"
+                    st.session_state.pdf_data = (pdf_content, file_obj.name)
+                    st.session_state.img_data = None
+                except Exception as pdf_e:
+                    st.error(f"Gagal membaca PDF: {str(pdf_e)}")
+                    st.session_state.pdf_data = None
+            else:
+                if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
+                st.session_state.pdf_data = None
+
+        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
+
     if prompt:
         img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
         st.session_state.img_data = None; st.session_state.pdf_data = None
@@ -3156,7 +3175,59 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
-# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" (Non-f-string agar kebal dari SyntaxError) ───
+# ─── JEMBATAN COPY-PASTE (POLYFILL KHUSUS STREAMLIT) ───
+components.html("""
+<script>
+(function() {
+    function injectPastePolyfill() {
+        var doc = window.parent.document;
+        var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
+        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+        
+        if (textarea && fileInput && !textarea.dataset.pastePolyfill) {
+            textarea.dataset.pastePolyfill = "true";
+            
+            textarea.addEventListener('paste', function(e) {
+                if (e.clipboardData && e.clipboardData.items) {
+                    var items = e.clipboardData.items;
+                    var dt = new DataTransfer();
+                    var hasNewImage = false;
+                    
+                    // Simpan file yang mungkin sudah di-upload sebelumnya (biar tidak hilang)
+                    if (fileInput.files) {
+                        for (var i=0; i<fileInput.files.length; i++) {
+                            dt.items.add(fileInput.files[i]);
+                        }
+                    }
+                    
+                    // Cek jika yang di-paste adalah gambar dari Snipping Tool/Clipboard
+                    for (var i=0; i<items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            var file = items[i].getAsFile();
+                            // PAKSA kasih nama ekstensi .png agar Streamlit TIDAK me-reject file-nya
+                            var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
+                            dt.items.add(newFile);
+                            hasNewImage = true;
+                        }
+                    }
+                    
+                    if (hasNewImage) {
+                        e.preventDefault(); // Hentikan paste biasa
+                        fileInput.files = dt.files; // Masukkan paksa ke file uploader Streamlit
+                        // Picu sistem React Streamlit agar sadar ada file baru masuk
+                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+        }
+    }
+    // Pantau terus karena elemen chat input bisa re-render kapan saja
+    setInterval(injectPastePolyfill, 1000);
+})();
+</script>
+""", height=0)
+
+# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
 <script>
