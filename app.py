@@ -2333,24 +2333,584 @@ C = get_colors(st.session_state.theme)
 
 
 
-Baik, mari kita lakukan analisa fundamental untuk BRMS berdasarkan data paling aktual.
+# ─────────────────────────────────────────────
+# PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
+# ─────────────────────────────────────────────
+import requests
+import re
+from datetime import datetime
 
-Harga BRMS saat ini adalah Rp710.
+# ─── DAFTAR SAHAM PERBANKAN UNTUK FILTERING ───
+BANK_TICKERS = ["BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN","PNBN","ARTO","BBYB","AGRO","BJBR","BSIM","BBKP","BTPN","NISP","MEGA","MCOR","SDRA","MAYA"]
 
-📋 ANALISA FUNDAMENTAL — BRMS (2026) 🏦 Sektor: Non-Perbankan (Pertambangan Emas) 📌 Framework: Gabungan Warren Buffett, Peter Lynch, dan Benjamin Graham
+# ─── TEMPLATE 1: KHUSUS NON-BANK (HEMAT TOKEN, SANGAT RAPI) ───
+TEMPLATE_NON_BANK = """
+[INSTRUKSI WAJIB SYSTEM]:
+User meminta analisa fundamental saham {emiten} (Sektor Non-Perbankan). 
+Kamu WAJIB mematuhi aturan berikut:
+1. DILARANG KERAS memunculkan atau membahas metrik Perbankan seperti NIM, BOPO, NPL, CAR, LDR, atau Kualitas Aset.
+2. JANGAN PERNAH mengubah format list (- ). Gunakan format di bawah ini persis, perhatikan jarak spasi/enternya agar UI rapi dan tidak bertumpuk!
+3. Jika data kosong, hitung manual (PER = Harga/EPS, PBV = Harga/BV) atau gunakan estimasimu.
 
-💰 PROFITABILITAS ROE : 16% (est.) → Buffett >15% [✅] ROA : 8% (est.) → standar >1.5% [✅] NIM : N/A (bukan sektor perbankan) BOPO : N/A (bukan sektor perbankan) Laba Bersih: Cenderung meningkat signifikan dalam 3 tahun terakhir (dari rugi ke untung), didorong oleh peningkatan produksi emas dan harga komoditas yang menguntungkan. EPS : Rp28 (est.)
+[DATA LIVE MULTI-SOURCE & KALKULASI DARI {sumber}]:
+{data_raw}
 
-🛡️ KUALITAS ASET NPL Gross: N/A (bukan sektor perbankan) NPL Net : N/A (bukan sektor perbankan) CAR : N/A (bukan sektor perbankan) LDR : N/A (bukan sektor perbankan) CIR : N/A (bukan sektor perbankan)
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
+Baik, mari kita lakukan analisa fundamental untuk **{emiten}** berdasarkan data paling aktual.
 
-📈 VALUASI PER : 25.3x (est. dari Harga ÷ EPS) → Graham <15 [❌] PBV : 4.2x (est. dari Harga ÷ Book Value) → Graham <1.5 [❌] PEG : 1.2 (est.) → Lynch <1 [⚠️] Harga Wajar: Rp550 – Rp700 (est. berdasarkan rerata industri dan proyeksi pertumbuhan)
+Harga **{emiten}** saat ini adalah **Rp[ISI HARGA DARI DATA LIVE]**.
 
-🏆 DIVIDEN DPS : Rp0 (est.) Payout Ratio: 0% (est.) Konsistensi : Tidak konsisten membayar dividen dalam beberapa tahun terakhir.
+📋 **ANALISA FUNDAMENTAL — {emiten} ({tahun})**
 
-📊 TREN 3-5 TAHUN TERAKHIR (FOKUS DATA TERBARU) Laba Bersih: Tumbuh pesat dari rugi menjadi untung besar di 2022-2023, dengan potensi pertumbuhan berlanjut di 2024-2026 (est.). EPS : Mengalami pertumbuhan signifikan dari negatif menjadi positif dan meningkat tajam. ROE : Meningkat secara substansial seiring dengan peningkatan laba bersih dan efisiensi operasional. Dividen : Tidak ada pembayaran dividen yang konsisten, fokus pada reinvestasi.
+- **Sektor:** [ISI SEKTOR]
+- **Framework:** Gabungan Warren Buffett, Peter Lynch, dan Benjamin Graham
 
-🔭 PROYEKSI 3 TAHUN KE DEPAN 2027: EPS Rp32 (est.) → Target Harga Rp640–Rp800 2028: EPS Rp37 (est.) → Target Harga Rp740–Rp925 2029: EPS Rp42 (est.) → Target Harga Rp840–Rp1050 Skenario: Konservatif Rp700 | Moderat Rp850 | Optimis Rp1000
+💰 **PROFITABILITAS**
 
-⚖️ VERDICT Score : 65/100 Kekuatan : → Pertumbuhan laba bersih dan EPS yang sangat kuat dalam beberapa tahun terakhir, menandai transformasi signifikan dari rugi ke untung. → Didukung oleh sentimen harga komoditas emas yang cenderung bullish secara global, yang menguntungkan bisnis inti BRMS. → Potensi peningkatan produksi dari fasilitas pengolahan bijih emas yang dapat mendorong kinerja di masa depan. Risiko : → Valuasi yang terlihat premium dengan PER dan PBV di atas standar Benjamin Graham, menunjukkan harga saat ini sudah mencerminkan sebagian besar potensi pertumbuhan. → Ketergantungan tinggi pada fluktuasi harga komoditas emas yang dapat memengaruhi profitabilitas secara signifikan. → Tidak adanya dividen yang konsisten mengindikasikan bahwa perusahaan masih memprioritaskan reinvestasi atau profitabilitas belum sepenuhnya stabil untuk pembagian kepada pemegang saham. Valuasi : Fairvalue ke Overvalue — harga Rp710 saat ini berada di atas atau di ujung atas estimasi harga wajar Rp550–Rp700, namun ini dapat dibenarkan oleh potensi pertumbuhan yang kuat di sektor pertambangan emas. Kesimpulan: BRMS menunjukkan potensi pertumbuhan yang menarik di sektor pertambangan emas, didorong oleh peningkatan produksi dan sentimen harga emas global yang positif. Profitabilitasnya telah meningkat pesat, namun valuasi saat ini terlihat cukup premium. Investor perlu mempertimbangkan risiko fluktuasi harga komoditas dan kebijakan dividen yang belum konsisten. Secara fundamental, saham ini memiliki momentum pertumbuhan, tetapi harga saat ini memerlukan konfirmasi berkelanjutan dari kinerja operasional dan pergerakan harga emas.
+- **ROE:** [ISI ROE ATAU ESTIMASI]
+- **ROA:** [ISI ROA ATAU ESTIMASI]
+- **Laba Bersih:** [ANALISA TREN LABA]
+- **EPS:** [ISI EPS DARI DATA LIVE]
 
-⚠️ DYOR — analisa ini berbasis data yang tersedia dan pengetahuan umum, bukan rekomendasi investasi. Keputusan final ada di tangan investor.
+📈 **VALUASI**
+
+- **PER:** [ISI PER ATAU HITUNG MANUAL: Harga ÷ EPS]
+- **PBV:** [ISI PBV ATAU HITUNG MANUAL: Harga ÷ Book Value]
+- **PEG:** [ANALISA PEG ATAU ESTIMASI]
+- **Harga Wajar:** [ESTIMASI HARGA WAJAR]
+
+🏆 **DIVIDEN**
+
+- **DPS:** [ISI DATA DIVIDEN]
+- **Payout Ratio:** [ANALISA PAYOUT]
+- **Konsistensi:** [ANALISA KONSISTENSI DIVIDEN]
+
+📊 **TREN 3-5 TAHUN TERAKHIR**
+
+- **Laba Bersih:** [ANALISA SINGKAT TREN]
+- **EPS:** [ANALISA SINGKAT TREN]
+- **ROE:** [ANALISA SINGKAT TREN]
+- **Dividen:** [ANALISA SINGKAT TREN]
+
+🔭 **PROYEKSI 3 TAHUN KE DEPAN**
+
+- **[2027]:** EPS Rp[ESTIMASI] → Target Harga Rp[ESTIMASI]
+- **[2028]:** EPS Rp[ESTIMASI] → Target Harga Rp[ESTIMASI]
+- **[2029]:** EPS Rp[ESTIMASI] → Target Harga Rp[ESTIMASI] 
+- **Skenario:** Konservatif Rp[X] | Moderat Rp[Y] | Optimis Rp[Z]
+
+⚖️ **VERDICT**
+
+- **Score:** [BERI SKOR 1-100]
+- **Kekuatan:** → [JELASKAN KEKUATAN]
+- **Risiko:** → [JELASKAN RISIKO]
+- **Valuasi:** [JELASKAN UNDERVALUED/OVERVALUED]
+- **Kesimpulan:** [BUAT KESIMPULAN PROFESIONAL]
+
+⚠️ *DYOR — analisa ini berbasis data yang tersedia dan pengetahuan umum, bukan rekomendasi investasi.*
+"""
+
+# ─── TEMPLATE 2: KHUSUS BANK (LENGKAP DENGAN NPL, CAR, NIM) ───
+TEMPLATE_BANK = """
+[INSTRUKSI WAJIB SYSTEM]:
+User meminta analisa fundamental saham {emiten} (Sektor Perbankan). 
+Kamu WAJIB mematuhi aturan berikut:
+1. ISI SEMUA KOLOM. Jika NIM, BOPO, NPL, CAR, LDR kosong di data live, kamu WAJIB menggunakan knowledge internalmu untuk mengisi estimasinya!
+2. JANGAN PERNAH mengubah format list (- ). Gunakan format di bawah ini persis, perhatikan jarak spasi/enternya agar UI rapi dan tidak bertumpuk!
+
+[DATA LIVE MULTI-SOURCE & KALKULASI DARI {sumber}]:
+{data_raw}
+
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
+Baik, mari kita lakukan analisa fundamental untuk **{emiten}** berdasarkan data paling aktual.
+
+Harga **{emiten}** saat ini adalah **Rp[ISI HARGA DARI DATA LIVE]**.
+
+📋 **ANALISA FUNDAMENTAL — {emiten} ({tahun})**
+
+- **Sektor:** Perbankan
+- **Framework:** Analisa Institusi Keuangan & Value Investing
+
+💰 **PROFITABILITAS**
+
+- **ROE:** [ISI ROE ATAU ESTIMASI]
+- **ROA:** [ISI ROA ATAU ESTIMASI]
+- **NIM:** [ISI NIM ATAU ESTIMASI]
+- **BOPO:** [ISI BOPO ATAU ESTIMASI]
+- **Laba Bersih:** [ANALISA TREN LABA]
+- **EPS:** [ISI EPS DARI DATA LIVE]
+
+🛡️ **KUALITAS ASET & LIKUIDITAS**
+
+- **NPL Gross:** [ISI ESTIMASI NPL]
+- **NPL Net:** [ISI ESTIMASI NPL]
+- **CAR:** [ISI ESTIMASI CAR]
+- **LDR:** [ISI ESTIMASI LDR]
+- **CIR:** [ISI ESTIMASI CIR]
+
+📈 **VALUASI**
+
+- **PER:** [ISI PER ATAU HITUNG MANUAL: Harga ÷ EPS]
+- **PBV:** [ISI PBV ATAU HITUNG MANUAL: Harga ÷ Book Value]
+- **Harga Wajar:** [ESTIMASI HARGA WAJAR BERDASARKAN PBV BAND HISTORIS]
+
+🏆 **DIVIDEN**
+
+- **DPS:** [ISI DATA DIVIDEN]
+- **Payout Ratio:** [ANALISA PAYOUT]
+- **Konsistensi:** [ANALISA KONSISTENSI DIVIDEN]
+
+📊 **TREN 3-5 TAHUN TERAKHIR**
+
+- **Laba Bersih:** [ANALISA SINGKAT TREN]
+- **EPS:** [ANALISA SINGKAT TREN]
+- **ROE:** [ANALISA SINGKAT TREN]
+- **Dividen:** [ANALISA SINGKAT TREN]
+
+🔭 **PROYEKSI 3 TAHUN KE DEPAN**
+
+- **[2027]:** EPS Rp[ESTIMASI] → Target Harga Rp[ESTIMASI]
+- **[2028]:** EPS Rp[ESTIMASI] → Target Harga Rp[ESTIMASI]
+- **[2029]:** EPS Rp[ESTIMASI] → Target Harga Rp[ESTIMASI] 
+- **Skenario:** Konservatif Rp[X] | Moderat Rp[Y] | Optimis Rp[Z]
+
+⚖️ **VERDICT**
+
+- **Score:** [BERI SKOR 1-100]
+- **Kekuatan:** → [JELASKAN KEKUATAN]
+- **Risiko:** → [JELASKAN RISIKO]
+- **Valuasi:** [JELASKAN UNDERVALUED/OVERVALUED]
+- **Kesimpulan:** [BUAT KESIMPULAN PROFESIONAL]
+
+⚠️ *DYOR — analisa ini berbasis data yang tersedia dan pengetahuan umum, bukan rekomendasi investasi.*
+"""
+
+# ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
+def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
+    import urllib.request, urllib.error, json as _j
+    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
+    keys = [k for k in keys if k]
+    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
+    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    last_err = ""
+    for api_key in keys:
+        for model_name in models:
+            try:
+                _parts = []
+                if multi_imgs:
+                    for _b64, _mime, _ in multi_imgs[:5]: _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
+                elif img_b64 and img_mime: _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
+                teks_gabungan = f"{SYSTEM_PROMPT['content']}\n\n[PERTANYAAN USER]:\n{prompt}"
+                _parts.append({"text": teks_gabungan})
+                payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=40) as r: data = _j.loads(r.read())
+                return data["candidates"][0]["content"]["parts"][0]["text"], model_name
+            except Exception as e:
+                last_err = str(e); continue
+    raise Exception(last_err)
+
+def _call_gemini_text(messages):
+    import urllib.request, urllib.error, json as _j
+    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
+    keys = [k for k in keys if k]
+    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
+    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    last_err = ""
+    for api_key in keys:
+        for model_name in models:
+            try:
+                gemini_contents = []
+                for m in messages:
+                    r = m.get("role", "")
+                    t = m.get("content", "") or ""
+                    # PEMBERSIH HISTORY AGAR SIMBOL TIDAK DOUBLE
+                    t = re.sub(r'\n\n\*\([✨⚡].*?\)\*', '', t)
+                    t = re.sub(r'\n\n\([✨⚡].*?\)', '', t)
+                    
+                    if r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
+                    elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
+                if not gemini_contents: gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
+                gemini_contents[0]["parts"][0]["text"] = f"{SYSTEM_PROMPT['content']}\n\n{gemini_contents[0]['parts'][0]['text']}"
+                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=30) as r: data = _j.loads(r.read())
+                return data["candidates"][0]["content"]["parts"][0]["text"], model_name
+            except Exception as e:
+                last_err = str(e); continue
+    raise Exception(last_err)
+
+# ─── PENGATURAN UI CSS KHUSUS ───
+st.markdown(f"""
+<style>
+section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+[data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
+header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
+div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
+[data-testid="stMainBlockContainer"] {{ padding-top: 3rem !important; margin-top: 0 !important; }}
+[data-testid="stChatMessageContent"], [data-testid="stMarkdownContainer"] {{ text-align: left !important; }}
+/* MEMASTIKAN LIST POINT (UL/LI) RAPI DAN TIDAK BERTUMPUK */
+[data-testid="stMarkdownContainer"] ul {{ margin-top: 6px !important; margin-bottom: 16px !important; padding-left: 20px !important; }}
+[data-testid="stMarkdownContainer"] li {{ margin-bottom: 8px !important; line-height: 1.6 !important; }}
+</style>
+""", unsafe_allow_html=True)
+
+_hist_items = ""
+for _sesi in st.session_state.sessions:
+    _sid = _sesi["id"]; _is_act = _sid == st.session_state.active_id; _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',""); _fw = "700" if _is_act else "400"; _bg = C['hover'] if _is_act else "transparent"
+    _hist_items += f"""
+(function(){{
+    var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
+    var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; a.onmouseleave=function(){{this.style.background='{_bg}'}};
+    var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; del.onclick=function(e){{ e.preventDefault();e.stopPropagation(); if(confirm('Hapus obrolan ini?')){{ var u2=new URL(window.parent.location.href); u2.searchParams.set('del','{_sid}'); u2.searchParams.delete('do'); window.parent.location.href=u2.toString(); }} }};
+    row.appendChild(a); row.appendChild(del); h.appendChild(row);
+}})();
+"""
+
+components.html(f"""
+<script>
+(function(){{
+var pd=window.parent.document;
+var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
+var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
+['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+var s=pd.createElement('style'); s.id='sigma-mobile-css';
+s.textContent=`
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
+#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+`; pd.head.appendChild(s);
+var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
+var m=pd.createElement('div');m.id='spmenu';
+m.innerHTML=`
+    <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
+    <div class="smsp"></div><div class="smhd">FITUR</div>
+    <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
+    <a class="smi" id="smi-stats"><span class="smico">📊</span>Market Dashboard</a>
+    <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
+    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a>
+    <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a>
+    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
+`; pd.body.appendChild(m);
+var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; h.style.display = 'none'; }};
+(function(){{
+    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+}})();
+pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
+}})();
+</script>
+""", height=0)
+
+if "del" in st.query_params:
+    _del_id = st.query_params.get("del", "")
+    if _del_id and st.session_state.get("user"):
+        st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != _del_id]
+        if not st.session_state.sessions: st.session_state.sessions = [new_session()]
+        if st.session_state.active_id == _del_id: st.session_state.active_id = st.session_state.sessions[0]["id"]
+        _to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
+        save_user(st.session_state.user["email"], {"theme": st.session_state.get("theme", "dark"), "sessions": _to_save, "active_id": st.session_state.active_id})
+    try: st.query_params.pop("del", None)
+    except: pass
+    st.rerun()
+
+if "do" in st.query_params:
+    _do = st.query_params.get("do", "")
+    _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
+    if _do == "logout":
+        if _tok:
+            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
+            except: pass
+        st.session_state.clear(); st.query_params.clear()
+        components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
+        st.stop()
+    elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "view_ai": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "theme_light": st.session_state.theme = "light"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "newchat":
+        st.session_state.current_view = "chat"
+        ns = {"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
+        st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params.pop("do", None); st.rerun()
+    elif _do.startswith("sel_"):
+        st.session_state.current_view = "chat"; _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params.pop("do", None); st.rerun()
+
+active = get_active()
+current_view = st.session_state.get("current_view", "chat")
+
+if current_view == "dashboard":
+    st.markdown(f"""
+    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:70vh; text-align:center; padding: 20px;">
+        <h1 style="color:{C['text']}; font-size:10.10rem; font-weight:800; letter-spacing:1px; margin-bottom:12px;">HAI👋, FITUR INI AKAN SEGERA HADIR DITUNGGU!!! :)</h1>
+        <p style="color:{C['text_muted']}; font-size:1.1rem; font-weight:500; opacity:0.8;"> by. MarketnMocha</p>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    if not active["messages"][1:]:
+        uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
+        st.markdown(f"""
+        <div style="text-align:center;padding:10vh 0 2rem;">
+            <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    if st.session_state.get("last_error"):
+        st.error(f"⚠️ {st.session_state['last_error']}")
+        st.session_state["last_error"] = None
+
+    for i, msg in enumerate(active["messages"][1:]):
+        with st.chat_message(msg["role"]):
+            display = msg.get("display") or msg["content"]
+            if "Pertanyaan:" in display: display = display.split("Pertanyaan:")[-1].strip()
+            for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
+                if tag in display: display = display.split(tag)[-1].strip()
+            
+            display_clean = re.sub(r'\n\n\*\([✨⚡].*?\)\*', '', display)
+            display_clean = re.sub(r'\n\n\([✨⚡].*?\)', '', display_clean)
+            
+            if msg["role"] == "user":
+                imgs_in_msg = msg.get("images", [])
+                if imgs_in_msg:
+                    if len(imgs_in_msg) == 1: st.markdown(f'<img src="data:{imgs_in_msg[0][1]};base64,{imgs_in_msg[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+                    else:
+                        imgs_html = ''.join([f'<img src="data:{imime};base64,{ib64}" style="height:160px;max-width:calc(100%/{len(imgs_in_msg)});object-fit:cover;border-radius:8px;flex:1;">' for ib64, imime in imgs_in_msg])
+                        st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+                elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+            st.markdown(display_clean)
+
+    try: result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple", file_type=["pdf", "png", "jpg", "jpeg"])
+    except TypeError: result = st.chat_input("Tanya SIGMA...")
+
+    prompt = None; file_obj = None; multi_images = []
+
+    if result is not None:
+        st.session_state.img_data = None; st.session_state.pdf_data = None
+        if hasattr(result, 'text'):
+            prompt = (result.text or "").strip()
+            files = getattr(result, 'files', None) or []
+            img_files = [f for f in files if f.type != "application/pdf"]
+            pdf_files = [f for f in files if f.type == "application/pdf"]
+            if img_files:
+                for _mf in img_files[:5]:
+                    try: multi_images.append((base64.b64encode(_mf.read()).decode(), "image/png" if _mf.name.endswith(".png") else "image/jpeg", _mf.name))
+                    except: pass
+                if multi_images: st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
+            if pdf_files: file_obj = pdf_files[0]
+        elif isinstance(result, str): prompt = result.strip()
+
+        if prompt and prompt.strip().lower() in ["5 logic", "lima sila", "5sila"]:
+            active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
+            if active:
+                menu_text = """╔══════════════════════════════════════╗\n║          5 Logic SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"3. Fundamental BBCA"**"""
+                active["messages"].append({"role": "user", "content": "5 Logic", "display": "5 Logic"})
+                active["messages"].append({"role": "assistant", "content": menu_text})
+                with st.chat_message("user"): st.markdown("5 Logic")
+                with st.chat_message("assistant"): st.markdown(menu_text)
+                st.rerun()
+
+        if file_obj:
+            raw = file_obj.read()
+            if file_obj.type == "application/pdf":
+                try:
+                    import fitz
+                    doc = fitz.open(stream=raw, filetype="pdf")
+                    txt = "".join(p.get_text() for p in doc)
+                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:3000]}"
+                    st.session_state.pdf_data = (pdf_content, file_obj.name)
+                    st.session_state.img_data = None
+                except Exception as pdf_e:
+                    st.error(f"Gagal membaca PDF: {str(pdf_e)}")
+                    st.session_state.pdf_data = None
+            else:
+                if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
+                st.session_state.pdf_data = None
+
+        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
+
+    if prompt:
+        img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
+        st.session_state.img_data = None; st.session_state.pdf_data = None
+        full_prompt = prompt
+
+        is_fundamental_request = "fundamental" in prompt.lower() or prompt.lower().startswith("3.")
+        emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
+        
+        if is_fundamental_request and emiten_match:
+            emiten_target = emiten_match.group(0).upper()
+            is_bank = emiten_target in BANK_TICKERS
+            chosen_template = TEMPLATE_BANK if is_bank else TEMPLATE_NON_BANK
+            tahun_sekarang = datetime.now().year
+            
+            with st.spinner(f"🔍 Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
+                try:
+                    fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
+                except:
+                    fund_text = "Data gagal ditarik."
+                
+                full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
+                full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
+
+        elif pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+        elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+        elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
+        else:
+            try:
+                ctx = build_combined_context(prompt)
+                if ctx: full_prompt = f"{ctx}\n\n{prompt}"
+            except: pass
+
+        if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
+
+        user_msg = {"role": "user", "content": full_prompt, "display": prompt}
+        if multi_images:
+            user_msg["images"] = [(b64, mime) for b64, mime, name in multi_images[:5]]
+            user_msg["img_b64"] = multi_images[0][0]; user_msg["img_mime"] = multi_images[0][1]
+        elif img_data:
+            user_msg["img_b64"] = img_data[0]; user_msg["img_mime"] = img_data[1]
+
+        active["messages"].append(user_msg)
+
+        with st.chat_message("user"):
+            imgs_to_show = multi_images[:5] if multi_images else ([(img_data[0], img_data[1], img_data[2])] if img_data else [])
+            if imgs_to_show:
+                if len(imgs_to_show) == 1: st.markdown(f'<img src="data:{imgs_to_show[0][1]};base64,{imgs_to_show[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+                else:
+                    imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
+                    st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+            if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
+            st.markdown(prompt)
+
+        try:
+            with st.chat_message("assistant"):
+                with st.spinner("SIGMA menganalisis..."):
+                    _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
+                    ans_bersih = None; simbol_ai = ""; has_image = bool(multi_images or img_data); debug_info = []
+
+                    if has_image:
+                        try:
+                            _img_b64 = user_msg.get("img_b64"); _img_mime = user_msg.get("img_mime")
+                            ans_bersih, _ = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
+                            simbol_ai = "\n\n(✨)"
+                        except Exception as e_img: debug_info.append(f"Gemini Vision: {str(e_img)}")
+                    else:
+                        try:
+                            ans_bersih, _ = _call_gemini_text(_history_msgs[-5:])
+                            simbol_ai = "\n\n(✨)"
+                        except Exception as e_txt:
+                            debug_info.append(f"Gemini Text: {str(e_txt)}")
+                            if not ans_bersih:
+                                try:
+                                    from groq import Groq
+                                    client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
+                                    mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA. Jawab SEMUA pertanyaan dalam Bahasa Indonesia dan JANGAN MENOLAK mengisi template yang diberikan."}
+                                    
+                                    safe_prompt = full_prompt[:6000] if len(full_prompt) > 6000 else full_prompt
+                                    
+                                    _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
+                                    _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=4000)
+                                    ans_bersih = _res.choices[0].message.content
+                                    simbol_ai = "\n\n(⚡✨)"
+                                except Exception as e_groq: debug_info.append(f"Groq: {str(e_groq)}")
+                    
+                    if not ans_bersih:
+                        err_msg = " | ".join(debug_info)
+                        ans_bersih = f"Maaf, semua sistem AI sedang sibuk. Coba beberapa saat lagi.\n\n`Log: {err_msg}`"
+                    
+                st.markdown(ans_bersih + simbol_ai)
+            
+            active["messages"].append({"role": "assistant", "content": ans_bersih})
+        except Exception as e:
+            st.session_state["last_error"] = str(e)
+            st.error(f"⚠️ {str(e)}")
+        st.rerun()
+
+if user:
+    sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
+    save_user(user["email"], {"theme": st.session_state.get("theme", "dark"), "sessions": sessions_to_save, "active_id": st.session_state.active_id})
+
+_new_token = st.session_state.pop("new_token", None)
+if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
+if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
+
+components.html(f"""
+<script>
+const BC = "{C['bubble']}"; const BT = "#ffffff";
+(function() {{
+    var pd = window.parent.document; if (pd.getElementById('sigma-mobile-css2')) return;
+    var s = pd.createElement('style'); s.id = 'sigma-mobile-css2';
+    s.textContent = `
+        [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
+        @media (max-width: 768px) {{
+            [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 8px 12px 120px !important; margin: 0 !important; }}
+            [data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em, [data-testid="stMarkdownContainer"] a {{ font-size: 1.05rem !important; line-height: 1.9 !important; }}
+            [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }} [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }} [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; font-weight: 700 !important; }}
+            [data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ padding-left: 18px !important; margin: 4px 0 !important; }}
+            [data-testid="stMarkdownContainer"] li {{ margin-bottom: 6px !important; }}
+            [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
+            div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 4px 8px !important; }}
+            [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
+            .navy-pill {{ max-width: 82% !important; font-size: 1.05rem !important; line-height: 1.75 !important; padding: 12px 16px !important; }}
+            [data-testid="stMarkdownContainer"] code {{ font-size: 0.88rem !important; }}
+            [data-testid="stMarkdownContainer"] pre {{ font-size: 0.85rem !important; overflow-x: auto !important; padding: 12px !important; }}
+        }}
+    `; pd.head.appendChild(s);
+}})();
+function fixBubbles() {{
+    const doc = window.parent.document;
+    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
+        if (!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
+        msg.style.cssText += 'display:flex!important;justify-content:flex-end!important;background:transparent!important;border:none!important;box-shadow:none!important;padding:4px 0!important;';
+        const av = msg.querySelector('[data-testid="stChatMessageAvatarUser"]'); if (av) av.style.display = 'none';
+        const ct = msg.querySelector('[data-testid="stChatMessageContent"]');
+        if (ct) ct.style.cssText += 'background:transparent!important;display:flex!important;justify-content:flex-end!important;max-width:100%!important;padding:0!important;';
+        msg.querySelectorAll('[data-testid="stMarkdownContainer"]').forEach(md => {{
+            md.style.background = 'transparent'; md.style.display = 'flex'; md.style.justifyContent = 'flex-end';
+            if (!md.querySelector('.navy-pill')) {{
+                const pill = document.createElement('div'); pill.className = 'navy-pill'; var mob=window.parent.innerWidth<=768;
+                pill.style.cssText=`background:linear-gradient(135deg,#42a8e0,#1a4fad);color:#ffffff;border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
+                while (md.firstChild) pill.appendChild(md.firstChild); md.appendChild(pill);
+            }}
+            var pill = md.querySelector('.navy-pill');
+            if (pill) {{ pill.style.setProperty('color','#ffffff','important'); pill.style.setProperty('background','linear-gradient(135deg,#42a8e0,#1a4fad)','important'); pill.querySelectorAll('*').forEach(function(el){{el.style.setProperty('color','#ffffff','important');}}); }}
+        }});
+    }});
+}}
+fixBubbles(); setInterval(fixBubbles, 800);
+new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(window.parent.document.body, {{childList:true,subtree:true}});
+function addActionButtons() {{
+    var doc = window.parent.document;
+    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
+        if (msg.querySelector('.sigma-actions')) return;
+        if (!!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
+        function getMsgText() {{ var md = msg.querySelector('[data-testid="stMarkdownContainer"]'); return md ? md.innerText : ''; }}
+        var bar = doc.createElement('div'); bar.className = 'sigma-actions'; bar.style.cssText = 'display:flex;gap:2px;margin-top:6px;padding:0 2px;';
+        var copyBtn = doc.createElement('button'); copyBtn.title = 'Salin respons'; 
+        copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;';
+        copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}}; copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
+        copyBtn.onclick = function() {{
+            var txt = getMsgText();
+            function showOk() {{ copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'; setTimeout(function(){{ copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'; }}, 2000); }}
+            navigator.clipboard.writeText(txt).then(showOk).catch(function(){{ var ta=doc.createElement('textarea'); ta.value=txt; doc.body.appendChild(ta); ta.select(); doc.execCommand('copy'); doc.body.removeChild(ta); showOk(); }});
+        }};
+        bar.appendChild(copyBtn); msg.style.flexDirection='column'; msg.appendChild(bar);
+    }});
+}}
+setInterval(addActionButtons, 1000);
+</script>
+""", height=0)
