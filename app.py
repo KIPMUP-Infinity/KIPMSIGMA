@@ -2632,98 +2632,39 @@ C = get_colors(st.session_state.theme)
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
 import requests
-import yfinance as yf
 import re
-
-# ─── MESIN PENARIK DATA FUNDAMENTAL (FMP & YFINANCE) ───
-def get_fundamental_data(ticker):
-    ticker_jk = f"{ticker.upper()}.JK"
-    fmp_key = st.secrets.get("FMP_KEY", "")
-    data_terkumpul = {"sumber": "Tidak ada data", "raw": ""}
-    
-    # 1. COBA FMP DULU (PRIORITAS UTAMA)
-    if fmp_key:
-        try:
-            url_metrics = f"https://financialmodelingprep.com/api/v3/key-metrics-ttm/{ticker_jk}?apikey={fmp_key}"
-            url_profile = f"https://financialmodelingprep.com/api/v3/profile/{ticker_jk}?apikey={fmp_key}"
-            url_div = f"https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/{ticker_jk}?apikey={fmp_key}"
-            
-            res_m = requests.get(url_metrics, timeout=5)
-            res_p = requests.get(url_profile, timeout=5)
-            
-            if res_m.status_code == 200 and res_p.status_code == 200:
-                m_data = res_m.json()[0] if res_m.json() else {}
-                p_data = res_p.json()[0] if res_p.json() else {}
-                
-                div_info = "Belum ada riwayat dividen terbaru"
-                try:
-                    res_d = requests.get(url_div, timeout=5).json()
-                    if "historical" in res_d and res_d["historical"]:
-                        last_div = res_d["historical"][0]
-                        div_info = f"Terakhir {last_div.get('adjDividend', 0)} pada {last_div.get('date', '')}"
-                except: pass
-                
-                data_terkumpul["sumber"] = "FMP (Financial Modeling Prep)"
-                data_terkumpul["raw"] = f"""
-                Harga: {p_data.get('price', 'N/A')}
-                Sektor: {p_data.get('sector', 'N/A')}
-                Market Cap: {p_data.get('mktCap', 'N/A')}
-                PER: {m_data.get('peRatioTTM', 'N/A')}
-                PBV: {m_data.get('pbRatioTTM', 'N/A')}
-                ROE: {m_data.get('roeTTM', 'N/A')}
-                ROA: {m_data.get('roaTTM', 'N/A')}
-                EPS: {m_data.get('netIncomePerShareTTM', 'N/A')}
-                Dividend Yield: {m_data.get('dividendYieldTTM', 'N/A')}
-                Info Dividen: {div_info}
-                """
-                return data_terkumpul
-        except: pass
-
-    # 2. FALLBACK KE YFINANCE JIKA FMP GAGAL/KOSONG
-    try:
-        saham = yf.Ticker(ticker_jk)
-        info = saham.info
-        if "currentPrice" in info:
-            data_terkumpul["sumber"] = "Yahoo Finance"
-            data_terkumpul["raw"] = f"""
-            Harga: {info.get('currentPrice', 'N/A')}
-            Sektor: {info.get('sector', 'N/A')}
-            PER: {info.get('trailingPE', 'N/A')}
-            PBV: {info.get('priceToBook', 'N/A')}
-            ROE: {info.get('returnOnEquity', 'N/A')}
-            ROA: {info.get('returnOnAssets', 'N/A')}
-            Dividend Yield: {info.get('dividendYield', 'N/A')}
-            """
-            return data_terkumpul
-    except: pass
-    
-    return data_terkumpul
 
 # ─── TEMPLATE BAKU WAJIB (SESUAI PERMINTAAN KIPM) ───
 TEMPLATE_FUNDAMENTAL = """
 [INSTRUKSI WAJIB SYSTEM]:
-User meminta analisa fundamental saham {emiten}. Kamu WAJIB menggunakan data live di bawah ini untuk mengisi template.
-JIKA DATA TERSEDIA, ISI ANGkANYA DARI DATA LIVE TERSEBUT. JIKA SAMA SEKALI TIDAK ADA, TULIS "Tidak tersedia".
-JANGAN UBAH SUSUNAN, HEADING, ATAU EMOJI DARI TEMPLATE INI SEDIKITPUN. HARUS PERSIS SEPERTI INI FORMATNYA:
+User meminta analisa fundamental saham {emiten}. 
+Kamu WAJIB mematuhi aturan ketat berikut:
+1. DATA PALING AKTUAL: Selalu gunakan data tahun terbaru (TTM/Current Year) dari [DATA LIVE] di bawah ini. JANGAN PERNAH menggunakan angka dari tahun-tahun lama (misal 2018-2021) untuk metrik saat ini.
+2. KALKULASI MANUAL (LAPIS TERAKHIR): Jika rasio valuasi kosong/N/A di data live, kamu WAJIB menghitungnya secara manual:
+   - Jika PER kosong: Hitung (Harga Saat Ini ÷ EPS)
+   - Jika PBV kosong: Hitung (Harga Saat Ini ÷ Book Value)
+   - Jika Dividend Yield kosong: Hitung (DPS ÷ Harga Saat Ini)
+3. ISI SEMUA KOLOM: Dilarang keras menjawab "Tidak tersedia" jika kamu bisa menghitungnya secara manual atau memperkirakannya berdasarkan sektor.
+4. JANGAN UBAH SUSUNAN, HEADING, ATAU EMOJI DARI TEMPLATE INI SEDIKITPUN!
 
-[DATA LIVE DARI {sumber}]:
+[DATA LIVE MULTI-SOURCE DARI {sumber}]:
 {data_raw}
 
 [TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
-Baik, mari kita lakukan analisa fundamental untuk {emiten} berdasarkan data yang tersedia.
+Baik, mari kita lakukan analisa fundamental untuk {emiten} berdasarkan data paling aktual.
 
 Harga {emiten} saat ini adalah Rp[ISI HARGA DARI DATA LIVE].
 
 📋 ANALISA FUNDAMENTAL — {emiten} (2026) 
-🏦 Sektor: [ISI SEKTOR DARI DATA LIVE]
+🏦 Sektor: [ISI SEKTOR]
 📌 Framework: Gabungan Warren Buffett, Peter Lynch, dan Benjamin Graham
 
 💰 PROFITABILITAS
-ROE : [ISI ROE DARI DATA LIVE]
-ROA : [ISI ROA DARI DATA LIVE]
+ROE : [ISI ROE DARI DATA LIVE ATAU KNOWLEDGE]
+ROA : [ISI ROA DARI DATA LIVE ATAU KNOWLEDGE]
 NIM : [ISI JIKA BANK, JIKA BUKAN TULIS: N/A (bukan sektor perbankan)]
 BOPO : [ISI JIKA BANK, JIKA BUKAN TULIS: N/A (bukan sektor perbankan)]
-Laba Bersih: [ANALISA LABA BERSIH ATAU TULIS Tidak tersedia]
+Laba Bersih: [ANALISA TREN LABA BERSIH DARI HISTORIS]
 EPS : [ISI EPS DARI DATA LIVE]
 
 🛡️ KUALITAS ASET
@@ -2734,17 +2675,17 @@ LDR : [ISI JIKA BANK, JIKA BUKAN TULIS: N/A (bukan sektor perbankan)]
 CIR : [ISI JIKA BANK, JIKA BUKAN TULIS: N/A (bukan sektor perbankan)]
 
 📈 VALUASI
-PER : [ISI PER DARI DATA LIVE]
-PBV : [ISI PBV DARI DATA LIVE]
-PEG : [ANALISA PEG ATAU TULIS Tidak tersedia]
-Harga Wajar: [ESTIMASI HARGA WAJAR BERDASARKAN PBV/PER BAND, ATAU TULIS Tidak tersedia jika sulit dihitung]
+PER : [ISI PER DARI DATA LIVE ATAU HITUNG MANUAL: Harga ÷ EPS]
+PBV : [ISI PBV DARI DATA LIVE ATAU HITUNG MANUAL: Harga ÷ Book Value]
+PEG : [ANALISA PEG ATAU ESTIMASI]
+Harga Wajar: [ESTIMASI HARGA WAJAR BERDASARKAN PBV/PER]
 
 🏆 DIVIDEN
-DPS : [ISI DATA DIVIDEN TERAKHIR DARI DATA LIVE]
-Payout Ratio: [ANALISA PAYOUT ATAU TULIS Tidak tersedia]
+DPS : [ISI DATA DIVIDEN]
+Payout Ratio: [ANALISA PAYOUT]
 Konsistensi : [ANALISA KONSISTENSI DIVIDEN]
 
-📊 TREN 3-5 TAHUN
+📊 TREN 3-5 TAHUN TERAKHIR (FOKUS DATA TERBARU)
 Laba Bersih: [ANALISA SINGKAT TREN LABA]
 EPS : [ANALISA SINGKAT TREN EPS]
 ROE : [ANALISA SINGKAT TREN ROE]
@@ -2757,11 +2698,11 @@ Dividen : [ANALISA SINGKAT TREN DIVIDEN]
 Skenario: Konservatif Rp[X] | Moderat Rp[Y] | Optimis Rp[Z]
 
 ⚖️ VERDICT
-Score : [BERI SKOR 1-100 BERDASARKAN DATA]
-Kekuatan : → [JELASKAN KEKUATAN BERDASARKAN DATA]
-Risiko : → [JELASKAN RISIKO BERDASARKAN DATA]
-Valuasi : [JELASKAN APAKAH UNDERVALUED ATAU OVERVALUED]
-Kesimpulan: [BUAT KESIMPULAN PROFESIONAL BERDASARKAN ANGKA DI ATAS]
+Score : [BERI SKOR 1-100]
+Kekuatan : → [JELASKAN KEKUATAN]
+Risiko : → [JELASKAN RISIKO]
+Valuasi : [JELASKAN APAKAH UNDERVALUED/OVERVALUED]
+Kesimpulan: [BUAT KESIMPULAN PROFESIONAL BERDASARKAN ANGKA AKTUAL]
 
 ⚠️ DYOR — analisa ini berbasis data yang tersedia dan pengetahuan umum, bukan rekomendasi investasi. Keputusan final ada di tangan investor.
 """
@@ -3000,7 +2941,6 @@ else:
             raw = file_obj.read()
             if file_obj.type == "application/pdf":
                 try:
-                    import fitz
                     doc = fitz.open(stream=raw, filetype="pdf")
                     txt = "".join(p.get_text() for p in doc)
                     pdf_content = f"[PDF: {file_obj.name}]\n{txt[:3000]}"
@@ -3020,18 +2960,38 @@ else:
         st.session_state.img_data = None; st.session_state.pdf_data = None
         full_prompt = prompt
 
-        # ─── INTERCEPTOR FUNDAMENTAL OTOMATIS ───
+        # ─── INTERCEPTOR FUNDAMENTAL OTOMATIS (MENGGUNAKAN MESIN PART 4) ───
         is_fundamental_request = "fundamental" in prompt.lower() or prompt.lower().startswith("3.")
-        emiten_match = re.search(r'\b[A-Z]{4}\b', prompt)
+        emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
         
         if is_fundamental_request and emiten_match:
-            emiten_target = emiten_match.group(0)
-            with st.spinner(f"🔍 Menarik data live {emiten_target} dari FMP/Pasar..."):
-                hasil_tarik = get_fundamental_data(emiten_target)
+            emiten_target = emiten_match.group(0).upper()
+            with st.spinner(f"🔍 Menarik data live multi-sumber {emiten_target}..."):
+                try:
+                    # Kita panggil langsung fungsi super dari Part 4 yang mengecek IDX, FMP, Finnhub, AV, YFinance
+                    fund_data = fetch_fundamental_with_cache(emiten_target)
+                except:
+                    fund_data = {}
                 
-            if hasil_tarik["sumber"] != "Tidak ada data":
-                full_prompt = TEMPLATE_FUNDAMENTAL.format(emiten=emiten_target, sumber=hasil_tarik["sumber"], data_raw=hasil_tarik["raw"])
-                full_prompt += f"\n\nPertanyaan User Tambahan (jika ada): {prompt}"
+                sumber = fund_data.get('source_fundamental', 'Multi-Source (IDX/FMP/YFinance)')
+                raw_text = f"""
+                Harga Saat Ini: Rp{fund_data.get('price', 'N/A')} (Sumber: {fund_data.get('source_price', 'IDX')})
+                Sektor: {fund_data.get('sector', 'N/A')}
+                Market Cap: {fund_data.get('mktcap', 'N/A')}
+                PER: {fund_data.get('pe', 'N/A')}
+                PBV: {fund_data.get('pbv', 'N/A')}
+                ROE: {fund_data.get('roe', 'N/A')}
+                ROA: {fund_data.get('roa', 'N/A')}
+                EPS: {fund_data.get('eps', 'N/A')}
+                Book Value (BV): {fund_data.get('bv', 'N/A')}
+                Dividend Yield: {fund_data.get('div_yield', 'N/A')}
+                Hist Laba Bersih: {fund_data.get('hist_ni', 'N/A')}
+                Hist EPS: {fund_data.get('hist_eps', 'N/A')}
+                """
+                
+                # PAKSA AI MENGGUNAKAN TEMPLATE
+                full_prompt = TEMPLATE_FUNDAMENTAL.format(emiten=emiten_target, sumber=sumber, data_raw=raw_text)
+                full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
 
         elif pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
@@ -3083,10 +3043,12 @@ else:
                             debug_info.append(f"Gemini Text: {str(e_txt)}")
                             if not ans:
                                 try:
-                                    from groq import Groq
                                     client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
-                                    mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA. Jawab SEMUA pertanyaan dalam Bahasa Indonesia."}
-                                    safe_prompt = full_prompt[:2500] if len(full_prompt) > 2500 else full_prompt
+                                    mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA. Jawab SEMUA pertanyaan dalam Bahasa Indonesia dan JANGAN MENOLAK mengisi template yang diberikan."}
+                                    
+                                    # LIMIT DILEBARKAN JADI 6000 AGAR TEMPLATE TIDAK TERPOTONG!
+                                    safe_prompt = full_prompt[:6000] if len(full_prompt) > 6000 else full_prompt
+                                    
                                     _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
                                     _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
                                     ans = _res.choices[0].message.content
