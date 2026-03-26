@@ -2633,6 +2633,44 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 ⚠️ *DYOR — prospektus adalah dokumen resmi, namun pasar IPO sangat dipengaruhi oleh sentimen bandar/underwriter.*
 """
 
+# --- TAMBAHAN BARU: TEMPLATE KHUSUS TEKNIKAL & TRADE PLAN ---
+TEMPLATE_TEKNIKAL = """
+[INSTRUKSI WAJIB SYSTEM]:
+User meminta analisa TEKNIKAL saham {emiten}.
+Fokuskan analisamu pada GAMBAR CHART yang dikirimkan user (atau estimasi pergerakan harga jika tidak ada gambar).
+Berikan jawaban yang TO THE POINT, tidak bertele-tele, dan WAJIB mengikuti format Trade Plan MnM Strategy+ di bawah ini secara persis! Jangan merubah struktur bullet point!
+
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
+Berikut adalah Trade Plan Teknikal (MnM Strategy+) untuk **{emiten}**:
+
+📈 **STATUS TREN & STRUKTUR PASAR**
+
+- **Tren Mayor:** [Pilih salah satu: Bullish / Bearish / Sideways]
+- **Tren Minor:** [Pilih salah satu: Bullish / Bearish / Sideways]
+- **Pola Chart Terdeteksi:** [Misal: Double Bottom, Bullish Flag, Symmetrical Triangle, atau tulis "Tidak ada pola jelas"]
+
+🎯 **TRADING PLAN (AKSI & LEVEL HARGA)**
+
+- **Strategi:** [Pilih salah satu: Buy on Breakout / Buy on Weakness / Sell on Strength / Wait & See]
+- **Area Beli (Entry):** Rp[X] - Rp[Y] (Area demand terdekat)
+- **Take Profit (TP 1):** Rp[A] (Resistensi minor)
+- **Take Profit (TP 2):** Rp[B] (Resistensi mayor / swing high)
+- **Stop Loss (SL):** Bawah Rp[Z] (Level cut loss ketat)
+- **Risk/Reward Ratio:** [Hitung rasio estimasi, misal 1:2 atau 1:3]
+
+🔍 **KONFIRMASI INDIKATOR & VOLUME**
+
+- **Volume:** [Analisa pergerakan volume: apakah ada lonjakan akumulasi atau distribusi?]
+- **Momentum:** [Kondisi RSI, MACD, atau MA jika terlihat di chart]
+
+⚖️ **KESIMPULAN FINAL**
+
+- **Conviction Score:** [Berikan skor dalam format [X/5]. Contoh: [4/5] ⭐⭐⭐⭐]
+- **Tindakan (To The Point):** [Tulis 1 kalimat instruksi tegas. Misal: "Setup berisiko rendah, cicil beli perlahan di area support" atau "Harga rawan koreksi, hindari/Wait and See."]
+
+⚠️ *Trading plan ini murni berdasarkan teknikal & probabilitas. Selalu disiplin pada batas Stop Loss (SL) dan gunakan money management yang baik.*
+"""
+
 # ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     import urllib.request, urllib.error, json as _j
@@ -2693,8 +2731,11 @@ def _call_gemini_text(messages):
 # ─── PENGATURAN UI CSS KHUSUS ───
 st.markdown(f"""
 <style>
+/* PENANGKAL ERROR COPY PASTE: MEMAKSA STATUS UPLOAD UNTUK TETAP TERLIHAT */
+[data-testid="stStatusWidget"] {{ display: flex !important; visibility: visible !important; height: auto !important; overflow: visible !important; opacity: 1 !important; }}
+
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-[data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
+[data-testid="stToolbar"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
 header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
 div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
 [data-testid="stMainBlockContainer"] {{ padding-top: 3rem !important; margin-top: 0 !important; }}
@@ -2842,7 +2883,6 @@ else:
                 elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
             st.markdown(display_clean)
 
-    # PERBAIKAN: file_type DIHILANGKAN agar OS/Clipboard bisa paste gambar mentah
     try: result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple")
     except TypeError: result = st.chat_input("Tanya SIGMA...")
 
@@ -2906,6 +2946,7 @@ else:
         is_dampak_makro = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower
         is_dampak_emiten = prompt_lower.startswith("2.") or ("dampak" in prompt_lower and not is_dampak_makro)
         is_fundamental = prompt_lower.startswith("4.") or "fundamental" in prompt_lower
+        is_teknikal = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
         is_ipo = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
         
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
@@ -2948,6 +2989,17 @@ else:
                 
                 full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
                 full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
+
+        # LOGIC 5: TEKNIKAL (BARU DITAMBAHKAN)
+        elif is_teknikal:
+            emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
+            if img_data or multi_images:
+                with st.spinner(f"🔍 Membaca Chart & Merancang Trade Plan {emiten_target}..."):
+                    full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
+                    full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
+            else:
+                full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
+                full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data hargamu.]\nPertanyaan Asli User: {prompt}"
 
         # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
         elif is_ipo:
@@ -3109,58 +3161,6 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
-# ─── JEMBATAN COPY-PASTE (POLYFILL KHUSUS STREAMLIT) ───
-components.html("""
-<script>
-(function() {
-    function injectPastePolyfill() {
-        var doc = window.parent.document;
-        var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-        
-        if (textarea && fileInput && !textarea.dataset.pastePolyfill) {
-            textarea.dataset.pastePolyfill = "true";
-            
-            textarea.addEventListener('paste', function(e) {
-                if (e.clipboardData && e.clipboardData.items) {
-                    var items = e.clipboardData.items;
-                    var dt = new DataTransfer();
-                    var hasNewImage = false;
-                    
-                    // Simpan file yang mungkin sudah di-upload sebelumnya (biar tidak hilang)
-                    if (fileInput.files) {
-                        for (var i=0; i<fileInput.files.length; i++) {
-                            dt.items.add(fileInput.files[i]);
-                        }
-                    }
-                    
-                    // Cek jika yang di-paste adalah gambar dari Snipping Tool/Clipboard
-                    for (var i=0; i<items.length; i++) {
-                        if (items[i].type.indexOf('image') !== -1) {
-                            var file = items[i].getAsFile();
-                            // PAKSA kasih nama ekstensi .png agar Streamlit TIDAK me-reject file-nya
-                            var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
-                            dt.items.add(newFile);
-                            hasNewImage = true;
-                        }
-                    }
-                    
-                    if (hasNewImage) {
-                        e.preventDefault(); // Hentikan paste biasa
-                        fileInput.files = dt.files; // Masukkan paksa ke file uploader Streamlit
-                        // Picu sistem React Streamlit agar sadar ada file baru masuk
-                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
-            });
-        }
-    }
-    // Pantau terus karena elemen chat input bisa re-render kapan saja
-    setInterval(injectPastePolyfill, 1000);
-})();
-</script>
-""", height=0)
-
 # ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
@@ -3171,12 +3171,16 @@ components.html("""
     
     var brand = pd.createElement('div');
     brand.id = 'sigma-desktop-brand';
+    
+    /* Teks SIGMA menggunakan font stack sistem yang bersih */
     brand.innerHTML = 'SIGMA';
     brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
+    /* Sesuaikan ukuran dan posisi di layar Mobile agar tetap rapi */
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
+    
     pd.body.appendChild(brand);
 })();
 </script>
