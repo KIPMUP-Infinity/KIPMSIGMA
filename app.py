@@ -3040,6 +3040,29 @@ const BC = "{C['bubble']}"; const BT = "#ffffff";
         }}
     `; pd.head.appendChild(s);
 }})();
+
+/* =======================================================
+   INI SCRIPT UNTUK MENAMPILKAN STICKY HEADER "SIGMA" 
+   DI POJOK KIRI ATAS, MIRIP SEPERTI CHATGPT
+   ======================================================= */
+(function() {{
+    var pd = window.parent.document;
+    if (pd.getElementById('sigma-desktop-brand')) return;
+    var brand = pd.createElement('div');
+    brand.id = 'sigma-desktop-brand';
+    
+    /* Teks SIGMA menggunakan font stack sistem yang bersih, identik dengan ChatGPT */
+    brand.innerHTML = 'SIGMA';
+    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: #ececec; letter-spacing: 0.2px; user-select: none; cursor: default;';
+    
+    /* Menyembunyikan teks di versi Mobile agar tidak tabrakan dengan logo KIPM */
+    var style = pd.createElement('style');
+    style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { display: none !important; } }';
+    pd.head.appendChild(style);
+    
+    pd.body.appendChild(brand);
+}})();
+
 function fixBubbles() {{
     const doc = window.parent.document;
     doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
