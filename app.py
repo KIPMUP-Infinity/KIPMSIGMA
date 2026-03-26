@@ -1570,25 +1570,25 @@ Kalau belum ada → "Mohon kirim screenshot chart MnM Strategy+ untuk [TICKER], 
 Output: zona+confluence+EMA → DIVERGENCE CHECK WAJIB → bias → trade plan
 ⚠️ DIVERGENCE WAJIB DICEK SETIAP MENERIMA SCREENSHOT — ingatkan user kalau ada yang terlewat
 
-── PERINTAH 0: "5 Sila" — TAMPILKAN MENU ──
-Trigger: user ketik "5 sila" atau "lima sila" TANPA nama emiten
+── PERINTAH 0: "5 Logic" — TAMPILKAN MENU ──
+Trigger: user ketik "5 Logic" atau "lima sila" TANPA nama emiten
 SIGMA WAJIB tampilkan menu ini persis:
 
-╔══════════════════════════════════════╗
-║         5 SILA SIGMA — MENU          ║
-╠══════════════════════════════════════╣
-║ 1. Kesimpulan Dampak [topik/berita]  ║
-║ 2. Bandarmologi [emiten]             ║
-║ 3. Fundamental [emiten]              ║
-║ 4. Teknikal [emiten]                 ║
-║ 5. Analisa Lengkap [emiten]          ║
-╚══════════════════════════════════════╝
+
+        5 Logic SIGMA — MENU          
+
+1. Kesimpulan Dampak [topik/berita]  
+2. Bandarmologi [emiten]             
+3. Fundamental [emiten]              
+4. Teknikal [emiten]                 
+5. Analisa Lengkap [emiten]          
+
 Ketik salah satu perintah + nama emiten/topik.
-Contoh: "Bandarmologi BBRI" atau "5 Sila BBCA"
+Contoh: "Bandarmologi BBRI" atau "5 Logic BBCA"
 
 ── PERINTAH 5: "Analisa Lengkap [emiten]" — PERINTAH SAKTI ──
-Trigger: "analisa lengkap / full analisa / semua / 5 sila / lima sila [TICKER]"
-Alias: "5 sila [TICKER]" atau "lima sila [TICKER]" = sama dengan "analisa lengkap [TICKER]"
+Trigger: "analisa lengkap / full analisa / semua / 5 Logic / lima sila [TICKER]"
+Alias: "5 Logic [TICKER]" atau "lima sila [TICKER]" = sama dengan "analisa lengkap [TICKER]"
 Data BUTUH: screenshot chart MnM Strategy+ + SS broker Stockbit
 Data otomatis: fundamental + makro
 Kalau belum lengkap → minta yang kurang, analisa yang sudah ada dulu
@@ -3005,13 +3005,13 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
-        if prompt and prompt.strip().lower() in ["5 sila", "lima sila", "5sila"]:
+        if prompt and prompt.strip().lower() in ["5 Logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                menu_text = """╔══════════════════════════════════════╗\n║          5 SILA SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Sila BBCA"**"""
-                active["messages"].append({"role": "user", "content": "5 sila", "display": "5 sila"})
+                menu_text = """╔══════════════════════════════════════╗\n║          5 Logic SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Logic BBCA"**"""
+                active["messages"].append({"role": "user", "content": "5 Logic", "display": "5 Logic"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
-                with st.chat_message("user"): st.markdown("5 sila")
+                with st.chat_message("user"): st.markdown("5 Logic")
                 with st.chat_message("assistant"): st.markdown(menu_text)
                 st.rerun()
 
