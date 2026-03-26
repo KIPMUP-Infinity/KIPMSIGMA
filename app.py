@@ -2412,7 +2412,7 @@ Kesimpulan: [BUAT KESIMPULAN PROFESIONAL BERDASARKAN ANGKA DI ATAS]
 ⚠️ DYOR — analisa ini berbasis data yang tersedia dan pengetahuan umum, bukan rekomendasi investasi. Keputusan final ada di tangan investor.
 """
 
-# ─── FUNGSI API GEMINI (SUNTIKAN PAKSA BAHASA INDONESIA) ───
+# ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     import urllib.request, urllib.error, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
@@ -2429,7 +2429,8 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 elif img_b64 and img_mime: _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
                 teks_gabungan = f"{SYSTEM_PROMPT['content']}\n\n[PERTANYAAN USER]:\n{prompt}"
                 _parts.append({"text": teks_gabungan})
-                payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+                # NAPAS GEMINI DITINGKATKAN MENJADI 4096 AGAR TIDAK TERPOTONG
+                payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=40) as r: data = _j.loads(r.read())
@@ -2453,7 +2454,7 @@ def _call_gemini_text(messages):
                     r = m.get("role", "")
                     t = m.get("content", "") or ""
                     
-                    # PEMBERSIH HISTORY: Hapus semua simbol teks panjang atau pendek dari history JSON
+                    # PEMBERSIH HISTORY: Hapus semua simbol dari history JSON
                     t = re.sub(r'\n\n\*\([✨⚡].*?\)\*', '', t)
                     t = re.sub(r'\n\n\([✨⚡].*?\)', '', t)
                     
@@ -2461,7 +2462,9 @@ def _call_gemini_text(messages):
                     elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
                 if not gemini_contents: gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
                 gemini_contents[0]["parts"][0]["text"] = f"{SYSTEM_PROMPT['content']}\n\n{gemini_contents[0]['parts'][0]['text']}"
-                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+                
+                # NAPAS GEMINI DITINGKATKAN MENJADI 4096
+                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=30) as r: data = _j.loads(r.read())
@@ -2607,7 +2610,7 @@ else:
             for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
                 if tag in display: display = display.split(tag)[-1].strip()
             
-            # PEMBERSIH UI CHAT: Pastikan UI bersih dari sisa-sisa teks panjang masa lalu
+            # PEMBERSIH UI CHAT: Pastikan UI bersih dari sisa-sisa teks masa lalu
             display_clean = re.sub(r'\n\n\*\([✨⚡].*?\)\*', '', display)
             display_clean = re.sub(r'\n\n\([✨⚡].*?\)', '', display_clean)
             
@@ -2675,7 +2678,6 @@ else:
         st.session_state.img_data = None; st.session_state.pdf_data = None
         full_prompt = prompt
 
-        # ─── INTERCEPTOR FUNDAMENTAL OTOMATIS: SEKARANG MENGGUNAKAN FUNGSI SAKTI PART 4 ───
         is_fundamental_request = "fundamental" in prompt.lower() or prompt.lower().startswith("3.")
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
         
@@ -2683,7 +2685,6 @@ else:
             emiten_target = emiten_match.group(0).upper()
             with st.spinner(f"🔍 Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
                 try:
-                    # MENGGUNAKAN MESIN KALKULATOR DARI PART 4 YANG BISA HITUNG PBV & PER MANUAL
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
                 except:
                     fund_text = "Data gagal ditarik."
@@ -2744,11 +2745,11 @@ else:
                                     client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                                     mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA. Jawab SEMUA pertanyaan dalam Bahasa Indonesia dan JANGAN MENOLAK mengisi template yang diberikan."}
                                     
-                                    # LIMIT DILEBARKAN JADI 6000 AGAR TEMPLATE TIDAK TERPOTONG!
+                                    # NAPAS GROQ DITINGKATKAN MENJADI 4000 AGAR TEMPLATE TIDAK TERPOTONG!
                                     safe_prompt = full_prompt[:6000] if len(full_prompt) > 6000 else full_prompt
                                     
                                     _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
-                                    _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
+                                    _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=4000)
                                     ans_bersih = _res.choices[0].message.content
                                     simbol_ai = "\n\n(⚡✨)"
                                 except Exception as e_groq: debug_info.append(f"Groq: {str(e_groq)}")
@@ -2760,7 +2761,7 @@ else:
                 # TAMPILKAN DI LAYAR DENGAN SIMBOL BARU YANG SIMPEL
                 st.markdown(ans_bersih + simbol_ai)
             
-            # SIMPAN KE HISTORY *TANPA* SIMBOL AGAR TIDAK DOUBLE DI KEMUDIAN HARI
+            # SIMPAN KE HISTORY *TANPA* SIMBOL AGAR TIDAK DOUBLE
             active["messages"].append({"role": "assistant", "content": ans_bersih})
         except Exception as e:
             st.session_state["last_error"] = str(e)
