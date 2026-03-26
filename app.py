@@ -2634,40 +2634,44 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 """
 
 TEMPLATE_TEKNIKAL = """
-[INSTRUKSI WAJIB SYSTEM]:
-User meminta analisa TEKNIKAL saham {emiten}.
-Fokuskan analisamu pada GAMBAR CHART yang dikirimkan user (atau estimasi pergerakan harga jika tidak ada gambar).
-Berikan jawaban yang TO THE POINT, tidak bertele-tele, dan WAJIB mengikuti format Trade Plan MnM Strategy+ di bawah ini secara persis! Jangan merubah struktur bullet point!
+[INSTRUKSI SANGAT TEGAS UNTUK AI]:
+Kamu HANYA BOLEH menjawab menggunakan format di bawah ini! JANGAN MENGOCEH PANJANG LEBAR DI LUAR FORMAT!
+User meminta analisa TEKNIKAL dan Trade Plan. (Jika nama saham "SAHAM INI", BACA SENDIRI nama ticker dari gambar chart yang dilampirkan).
+Tugasmu adalah MENGISI 3 MODEL EKSEKUSI di bawah ini berdasarkan zona support/resistance (IFVG, OB) yang ada di gambar.
 
-[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
-Berikut adalah Trade Plan Teknikal (MnM Strategy+) untuk **{emiten}**:
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN (JANGAN UBAH BULLET POINT)]:
+Berikut adalah **Trade Plan Teknikal (MnM Strategy+)** untuk **{emiten}**:
 
-📈 **STATUS TREN & STRUKTUR PASAR**
+Berdasarkan chart yang ada, berikut 3 model pendekatan eksekusi yang bisa dipilih sesuai profil risiko Anda:
 
-- **Tren Mayor:** [Pilih salah satu: Bullish / Bearish / Sideways]
-- **Tren Minor:** [Pilih salah satu: Bullish / Bearish / Sideways]
-- **Pola Chart Terdeteksi:** [Misal: Double Bottom, Bullish Flag, Symmetrical Triangle, atau tulis "Tidak ada pola jelas"]
+🟢 **MODEL 1 — MEAN REVERSION (REBOUND)**
+- **Bias:** [Jelaskan: Misal, Harga mendekati Support / IFVG Bull → potensi pantulan teknikal]
+- **Entry:** Rp[X] - Rp[Y] (Berdasarkan area support/IFVG Bull terdekat di chart)
+- **Stop Loss:** Rp[Z] (Ketat di bawah area support)
+- **Target:** TP1: Rp[A] | TP2: Rp[B] (Resistensi terdekat)
+- **Inti Model:** Tangkap pantulan (*bounce*) di area diskon. Exit cepat di area supply, tidak di-hold lama.
 
-🎯 **TRADING PLAN (AKSI & LEVEL HARGA)**
+🔵 **MODEL 2 — REVERSAL STRUCTURE (CONFIRMATION)**
+- **Bias:** [Jelaskan: Misal, Menunggu perubahan struktur/tren dengan menembus Resistance]
+- **Entry:** Buy on Breakout jika harga tembus & *close* di atas Rp[X] (Gunakan area IFVG Bear/OB Bear sebagai acuan breakout)
+- **Stop Loss:** Rp[Y] (Di bawah harga *breakout* atau retest level)
+- **Target:** TP1: Rp[A] | TP2: Rp[B]
+- **Inti Model:** Tidak menebak *bottom*. Fokus pada konfirmasi tren (*confirmation > prediction*).
 
-- **Strategi:** [Pilih salah satu: Buy on Breakout / Buy on Weakness / Sell on Strength / Wait & See]
-- **Area Beli (Entry):** Rp[X] - Rp[Y] (Area demand terdekat)
-- **Take Profit (TP 1):** Rp[A] (Resistensi minor)
-- **Take Profit (TP 2):** Rp[B] (Resistensi mayor / swing high)
-- **Stop Loss (SL):** Bawah Rp[Z] (Level cut loss ketat)
-- **Risk/Reward Ratio:** [Hitung rasio estimasi, misal 1:2 atau 1:3]
+🟣 **MODEL 3 — BASE ACCUMULATION (DEEP)**
+- **Bias:** [Jelaskan: Misal, Antisipasi mencari area pembentukan *base* jika support saat ini jebol]
+- **Entry:** Rp[X] - Rp[Y] (Area Demand/Support mayor yang lebih dalam di bawah level saat ini. Layering/bertahap)
+- **Stop Loss:** Rp[Z] (Batas invalidasi tren mayor terbawah)
+- **Target:** TP1: Rp[A] | TP2: Rp[B]
+- **Inti Model:** Antisipasi terbentuknya *long-term base*. Entry sebelum konfirmasi penuh → kompensasi dengan *sizing* (porsi dana) kecil.
 
-🔍 **KONFIRMASI INDIKATOR & VOLUME**
+⚖️ **KESIMPULAN FINAL & PRIORITAS**
+- **Struktur Utama:** Mayor [Bullish/Bearish/Sideways] | Minor [Bullish/Bearish/Sideways]
+- **Konfirmasi Indikator:** [Jelaskan singkat adakah Divergence RSI/MACD atau volume anomali]
+- **Prioritas Model:** [Pilih salah satu model di atas yang PALING RASIONAL & VALID dieksekusi hari ini berdasarkan posisi chart. Beri alasan 1 kalimat.]
+- **Conviction Score:** [X/5] ⭐⭐⭐
 
-- **Volume:** [Analisa pergerakan volume: apakah ada lonjakan akumulasi atau distribusi?]
-- **Momentum:** [Kondisi RSI, MACD, atau MA jika terlihat di chart]
-
-⚖️ **KESIMPULAN FINAL**
-
-- **Conviction Score:** [Berikan skor dalam format [X/5]. Contoh: [4/5] ⭐⭐⭐⭐]
-- **Tindakan (To The Point):** [Tulis 1 kalimat instruksi tegas. Misal: "Setup berisiko rendah, cicil beli perlahan di area support" atau "Harga rawan koreksi, hindari/Wait and See."]
-
-⚠️ *Trading plan ini murni berdasarkan teknikal & probabilitas. Selalu disiplin pada batas Stop Loss (SL) dan gunakan money management yang baik.*
+⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
 """
 
 # ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
@@ -2905,6 +2909,14 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
+        # --- AUTO-TRIGGER TEKNIKAL SAAT PASTE GAMBAR ---
+        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
+            if file_obj or st.session_state.pdf_data:
+                prompt = "Tolong analisa file yang saya kirim"
+            else:
+                # Jika user hanya paste gambar tanpa ngetik apa-apa, PAKSA jadi analisa teknikal!
+                prompt = "5. Teknikal saham di gambar ini"
+
         # ─── MENU 7 ALPHA BARU ───
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
@@ -2915,25 +2927,6 @@ else:
                 with st.chat_message("user"): st.markdown("7 Alpha")
                 with st.chat_message("assistant"): st.markdown(menu_text)
                 st.rerun()
-
-        if file_obj:
-            raw = file_obj.read()
-            if file_obj.type == "application/pdf":
-                try:
-                    import fitz
-                    doc = fitz.open(stream=raw, filetype="pdf")
-                    txt = "".join(p.get_text() for p in doc)
-                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:12000]}"
-                    st.session_state.pdf_data = (pdf_content, file_obj.name)
-                    st.session_state.img_data = None
-                except Exception as pdf_e:
-                    st.error(f"Gagal membaca PDF: {str(pdf_e)}")
-                    st.session_state.pdf_data = None
-            else:
-                if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
-                st.session_state.pdf_data = None
-
-        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
 
     if prompt:
         img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
@@ -2990,16 +2983,15 @@ else:
                 full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
                 full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
 
-        # LOGIC 5: TEKNIKAL
+        # LOGIC 5: TEKNIKAL (Format Baru 3 Model Eksekusi)
         elif is_teknikal:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
             if img_data or multi_images:
-                with st.spinner(f"🔍 Membaca Chart & Merancang Trade Plan {emiten_target}..."):
+                with st.spinner(f"🔍 Membaca Chart & Merancang 3 Skenario Trade Plan..."):
                     full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
-                    full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
             else:
                 full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
-                full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]\nPertanyaan Asli User: {prompt}"
+                full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]"
 
         # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
         elif is_ipo:
@@ -3039,7 +3031,10 @@ else:
                     imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
                     st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
             if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
-            st.markdown(prompt)
+            
+            # Jangan tampilkan prompt kaku "5. Teknikal saham di gambar ini" ke user, ganti jadi lebih natural
+            display_prompt = prompt if prompt != "5. Teknikal saham di gambar ini" else "Tolong buatkan Trade Plan dari chart ini."
+            st.markdown(display_prompt)
 
         try:
             with st.chat_message("assistant"):
@@ -3161,59 +3156,7 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
-# ─── JEMBATAN COPY-PASTE (POLYFILL KHUSUS STREAMLIT) ───
-components.html("""
-<script>
-(function() {
-    function injectPastePolyfill() {
-        var doc = window.parent.document;
-        var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-        
-        if (textarea && fileInput && !textarea.dataset.pastePolyfill) {
-            textarea.dataset.pastePolyfill = "true";
-            
-            textarea.addEventListener('paste', function(e) {
-                if (e.clipboardData && e.clipboardData.items) {
-                    var items = e.clipboardData.items;
-                    var dt = new DataTransfer();
-                    var hasNewImage = false;
-                    
-                    // Simpan file yang mungkin sudah di-upload sebelumnya (biar tidak hilang)
-                    if (fileInput.files) {
-                        for (var i=0; i<fileInput.files.length; i++) {
-                            dt.items.add(fileInput.files[i]);
-                        }
-                    }
-                    
-                    // Cek jika yang di-paste adalah gambar dari Snipping Tool/Clipboard
-                    for (var i=0; i<items.length; i++) {
-                        if (items[i].type.indexOf('image') !== -1) {
-                            var file = items[i].getAsFile();
-                            // PAKSA kasih nama ekstensi .png agar Streamlit TIDAK me-reject file-nya
-                            var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
-                            dt.items.add(newFile);
-                            hasNewImage = true;
-                        }
-                    }
-                    
-                    if (hasNewImage) {
-                        e.preventDefault(); // Hentikan paste biasa
-                        fileInput.files = dt.files; // Masukkan paksa ke file uploader Streamlit
-                        // Picu sistem React Streamlit agar sadar ada file baru masuk
-                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
-            });
-        }
-    }
-    // Pantau terus karena elemen chat input bisa re-render kapan saja
-    setInterval(injectPastePolyfill, 1000);
-})();
-</script>
-""", height=0)
-
-# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
+# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" (Non-f-string agar kebal dari SyntaxError) ───
 sig_color = C["text"]
 components.html("""
 <script>
@@ -3223,12 +3166,16 @@ components.html("""
     
     var brand = pd.createElement('div');
     brand.id = 'sigma-desktop-brand';
+    
+    /* Teks SIGMA menggunakan font stack sistem yang bersih */
     brand.innerHTML = 'SIGMA';
     brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
+    /* Sesuaikan ukuran dan posisi di layar Mobile agar tetap rapi */
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
+    
     pd.body.appendChild(brand);
 })();
 </script>
