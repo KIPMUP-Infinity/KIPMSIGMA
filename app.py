@@ -1070,6 +1070,12 @@ def enrich_pdf_context(pdf_text):
 # ─────────────────────────────────────────────
 # PART 6: CONFIG, AUTH & SYSTEM PROMPT
 # ─────────────────────────────────────────────
+import streamlit as st
+import os
+import hashlib
+import bcrypt
+import json
+
 st.set_page_config(
     page_title="KIPM SIGMA",
     layout="wide",
@@ -1221,10 +1227,10 @@ KEMAMPUAN:
 4. Umum — jawab pertanyaan apapun, berikan solusi praktis
 
 ════════════════════════════════════
-5 PERINTAH KHUSUS SIGMA
+7 PERINTAH KHUSUS SIGMA (7 ALPHA)
 ════════════════════════════════════
 
-SIGMA mengenali 5 perintah khusus dan WAJIB merespons sesuai protokolnya.
+SIGMA mengenali 7 perintah khusus dan WAJIB merespons sesuai protokolnya.
 Kalau data belum dikirim → JANGAN error → MINTA data yang kurang secara spesifik dan ramah.
 
 ── KALIMAT SAKTI PER DIMENSI ──
@@ -1250,50 +1256,55 @@ Trade plan: Identifikasi emiten terdampak → Konfirmasi bandar sudah positionin
 Bullish div: harga LL + oscillator HL = demand menguat = konfirmasi akumulasi bandar
 Bearish div: harga HH + oscillator LH = supply menguat = konfirmasi distribusi bandar
 
-── PERINTAH 1: "Kesimpulan Dampak [topik]" ──
-Trigger: "kesimpulan dampak / dampak [X] ke indonesia / pengaruh [X] ke IDX / efek [X]"
-Data: TIDAK perlu dari user — otomatis dari sistem
-Output: 🌍Ringkasan → 💱Rupiah → 🏛️APBN → 📊Rating/Indeks → 📈10 Emiten terdampak → ⚖️Kesimpulan
+── PERINTAH 0: "7 Alpha" — TAMPILKAN MENU ──
+Trigger: user ketik "7 Alpha" atau "tujuh alpha" atau "7 logic" TANPA nama emiten
+SIGMA WAJIB tampilkan menu ini persis:
 
-── PERINTAH 2: "Kesimpulan Bandarmologi [emiten]" ──
+**7 Alpha SIGMA — MENU**
+
+1. Kesimpulan Dampak Makro [topik/berita]
+2. Kesimpulan Dampak [emiten]
+3. Bandarmologi [emiten]
+4. Fundamental [emiten]
+5. Teknikal [emiten]
+6. Analisa Lengkap [emiten]
+7. Analisa IPO [emiten]
+
+Ketik salah satu perintah + nama emiten/topik.
+Contoh: "Bandarmologi BBRI" atau "7 Alpha BBCA"
+
+── PERINTAH 1: "Kesimpulan Dampak Makro" ──
+Trigger: "kesimpulan dampak makro / dampak makro [topik]"
+Data: TIDAK perlu dari user — otomatis dari sistem
+Output: Menggunakan TEMPLATE_DAMPAK_MAKRO
+
+── PERINTAH 2: "Kesimpulan Dampak [emiten]" ──
+Trigger: "kesimpulan dampak [TICKER] / dampak [berita] ke [TICKER]"
+Data: TIDAK perlu dari user — otomatis dari sistem
+Output: Menggunakan TEMPLATE_DAMPAK_EMITEN
+
+── PERINTAH 3: "Bandarmologi [emiten]" ──
 Trigger: "kesimpulan bandarmologi / bandarmologi / analisa broker [TICKER]"
 Data BUTUH dari user: SS broker Stockbit + Price table
 Data otomatis: volume harian (yfinance) + rata-rata volume (averageVolume)
 Kalau SS belum ada → "Mohon kirim screenshot SS broker Stockbit untuk [TICKER] ya"
 Output: 12 langkah + volume anomali + fase siklus + estimasi distribusi + trade plan
 
-── PERINTAH 3: "Fundamental [emiten]" ──
+── PERINTAH 4: "Fundamental [emiten]" ──
 Trigger: "fundamental / analisa fundamental / valuasi [TICKER]"
 Data: otomatis — IDX API → FMP → Finnhub → AV → yfinance
-Output: harga+corporate action → profitabilitas → valuasi → tren → proyeksi → verdict
-Jangan mengarang angka — kalau tidak ada sebutkan "tidak tersedia"
+Output: Menggunakan TEMPLATE_BANK atau TEMPLATE_NON_BANK tergantung emiten.
 
-── PERINTAH 4: "Teknikal [emiten]" + screenshot ──
+── PERINTAH 5: "Teknikal [emiten]" + screenshot ──
 Trigger: "teknikal / analisa chart / chart [TICKER]" + kirim screenshot
 Data BUTUH: screenshot chart MnM Strategy+
 Kalau belum ada → "Mohon kirim screenshot chart MnM Strategy+ untuk [TICKER], timeframe berapa?"
 Output: zona+confluence+EMA → DIVERGENCE CHECK WAJIB → bias → trade plan
 ⚠️ DIVERGENCE WAJIB DICEK SETIAP MENERIMA SCREENSHOT — ingatkan user kalau ada yang terlewat
 
-── PERINTAH 0: "7 Alpha" — TAMPILKAN MENU ──
-Trigger: user ketik "7 Alpha" atau "lima sila" TANPA nama emiten
-SIGMA WAJIB tampilkan menu ini persis:
-
-
-        7 Alpha SIGMA — MENU          
-
-1. Kesimpulan Dampak [topik/berita]  
-2. Bandarmologi [emiten]             
-3. Fundamental [emiten]              
-4. Teknikal [emiten]                 
-5. Analisa Lengkap [emiten]          
-
-Ketik salah satu perintah + nama emiten/topik.
-Contoh: "Bandarmologi BBRI" atau "7 Alpha BBCA"
-
-── PERINTAH 5: "Analisa Lengkap [emiten]" — PERINTAH SAKTI ──
-Trigger: "analisa lengkap / full analisa / semua / 7 Alpha / lima sila [TICKER]"
-Alias: "7 Alpha [TICKER]" atau "lima sila [TICKER]" = sama dengan "analisa lengkap [TICKER]"
+── PERINTAH 6: "Analisa Lengkap [emiten]" — PERINTAH SAKTI ──
+Trigger: "analisa lengkap / full analisa / semua / 7 Alpha [TICKER]"
+Alias: "7 Alpha [TICKER]" = sama dengan "analisa lengkap [TICKER]"
 Data BUTUH: screenshot chart MnM Strategy+ + SS broker Stockbit
 Data otomatis: fundamental + makro
 Kalau belum lengkap → minta yang kurang, analisa yang sudah ada dulu
@@ -1313,6 +1324,10 @@ Output — 5 DIMENSI BERURUTAN:
      Timeframe: [swing/position] | R:R: [X:Y]
      Invalidasi: [kondisi]
   ⚠️ DYOR
+
+── PERINTAH 7: "Analisa IPO [emiten]" ──
+Trigger: "analisa ipo / bedah ipo [TICKER]" + kirim PDF Prospektus.
+Output: Menggunakan TEMPLATE_IPO. Membedah tujuan penggunaan dana, valuasi, struktur penawaran, dan underwriter.
 
 ── TRIPLE/QUAD CONFLUENCE — DIVERGENCE+BANDARMOLOGI+TEKNIKAL+FUNDAMENTAL ──
 
@@ -1337,7 +1352,7 @@ SCORING:
 2/4 = SINYAL MODERAT → sizing kecil, konfirmasi dulu
 1/4 = TUNGGU → jangan entry
 
-── ATURAN UMUM 5 PERINTAH ──
+── ATURAN UMUM 7 PERINTAH ──
 ❌ JANGAN error saat data kurang
 ❌ JANGAN analisa dengan data kosong atau asumsi tidak berdasar
 ❌ JANGAN diam atau jawab hal lain
@@ -2071,8 +2086,6 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 }
 
 
-
-
 # ─────────────────────────────────────────────
 # PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
 # ─────────────────────────────────────────────
@@ -2779,8 +2792,7 @@ else:
         st.markdown(f"""
         <div style="text-align:center;padding:10vh 0 2rem;">
             <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
-            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila. Ada yang bisa saya bantu hari ini?
-            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu lengkap saya. 😊</p>
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -2828,8 +2840,8 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
-        # ─── MENU 7 Alpha BARU ───
-        if prompt and prompt.strip().lower() in ["7 Alpha", "tujuh sila", "7sila", "7 Alpha", "lima sila", "5sila"]:
+        # ─── MENU 7 ALPHA BARU (KATA KUNCI SUDAH DITAMBAHKAN) ───
+        if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
                 menu_text = """**7 Alpha SIGMA — MENU**\n\n1. Kesimpulan Dampak Makro [topik/berita]\n2. Kesimpulan Dampak [emiten]\n3. Bandarmologi [emiten]\n4. Fundamental [emiten]\n5. Teknikal [emiten]\n6. Analisa Lengkap [emiten]\n7. Analisa IPO [emiten]\n\nKetik angkanya atau perintahnya.\nContoh: **"4. Fundamental BBCA"** atau **"7. Analisa IPO AWAN"** (sambil lampirkan PDF Prospektus)."""
@@ -2846,7 +2858,7 @@ else:
                     import fitz
                     doc = fitz.open(stream=raw, filetype="pdf")
                     txt = "".join(p.get_text() for p in doc)
-                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:12000]}" # Diperbesar agar cukup muat rangkuman prospektus
+                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:12000]}" # Kapasitas PDF diperbesar
                     st.session_state.pdf_data = (pdf_content, file_obj.name)
                     st.session_state.img_data = None
                 except Exception as pdf_e:
@@ -2919,7 +2931,6 @@ else:
                 with st.spinner("🔍 Membongkar & Membaca Ratusan Halaman Prospektus..."):
                     full_prompt = TEMPLATE_IPO.format(emiten=emiten_target, pdf_content=pdf_data[0])
             else:
-                # Jika user lupa upload PDF
                 full_prompt = "[INSTRUKSI SYSTEM]: Beritahu user dengan ramah bahwa untuk melakukan Analisa IPO, mereka WAJIB meng-upload atau melampirkan file PDF Prospektus e-IPO terlebih dahulu ke dalam kolom chat."
 
         # FALLBACK GENERAL
