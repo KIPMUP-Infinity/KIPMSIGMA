@@ -3110,7 +3110,7 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
-# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
+# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" (Non-f-string agar kebal dari SyntaxError) ───
 sig_color = C["text"]
 components.html("""
 <script>
@@ -3120,37 +3120,17 @@ components.html("""
     
     var brand = pd.createElement('div');
     brand.id = 'sigma-desktop-brand';
+    
+    /* Teks SIGMA menggunakan font stack sistem yang bersih */
     brand.innerHTML = 'SIGMA';
     brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
+    /* Sesuaikan ukuran dan posisi di layar Mobile agar tetap rapi */
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
+    
     pd.body.appendChild(brand);
-})();
-</script>
-""", height=0)
-
-# ─── CLIPBOARD PASTE HELPER (PANDUAN UNTUK USER) ───
-components.html("""
-<script>
-(function() {
-    const doc = window.parent.document;
-    // Cari text area input chat
-    const inputArea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-
-    if (inputArea && !inputArea.dataset.pasteListener) {
-        inputArea.dataset.pasteListener = "true";
-        inputArea.addEventListener('paste', function(e) {
-            const items = e.clipboardData.items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    // Notifikasi bantuan jika user melakukan Ctrl+V di luar jendela upload
-                    alert("📸 Gambar tercopy di Clipboard!\\n\\nKarena aturan keamanan browser, silakan klik tombol penjepit kertas (Browse files) terlebih dahulu, lalu tekan Ctrl+V / Paste di jendela file yang terbuka.");
-                }
-            }
-        });
-    }
 })();
 </script>
 """, height=0)
