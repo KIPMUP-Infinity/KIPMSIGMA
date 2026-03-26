@@ -348,6 +348,8 @@ def _fetch_fmp(ticker, api_key=None):
     except:
         return {}
 
+# PENGAMAN LIMIT API: Menyimpan memori selama 1 jam (3600 detik)
+@st.cache_data(ttl=3600)
 def _fetch_multi_fundamental(ticker):
     """Fetch fundamental berlapis — saling melengkapi."""
     import threading
