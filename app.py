@@ -2345,8 +2345,9 @@ user = st.session_state.user
 C = get_colors(st.session_state.theme)
 
 
+
 # ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE & 3-MODEL PLAN)
+# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE & RIGID 3-MODEL PLAN)
 # ─────────────────────────────────────────────
 import requests
 import re
@@ -2633,43 +2634,43 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 ⚠️ *DYOR — prospektus adalah dokumen resmi, namun pasar IPO sangat dipengaruhi oleh sentimen bandar/underwriter.*
 """
 
+# FORMAT RIGID 3-MODEL DARI USER (DIPAKSA SANGAT KETAT)
 TEMPLATE_TEKNIKAL = """
 [INSTRUKSI SANGAT TEGAS UNTUK AI]:
-Kamu HANYA BOLEH menjawab menggunakan format di bawah ini! JANGAN MENGOCEH PANJANG LEBAR DI LUAR FORMAT!
-User meminta analisa TEKNIKAL dan Trade Plan. (Jika nama saham "SAHAM INI", BACA SENDIRI nama ticker dari gambar chart yang dilampirkan).
-Tugasmu adalah MENGISI 3 MODEL EKSEKUSI di bawah ini berdasarkan zona support/resistance (IFVG, OB) yang ada di gambar.
+Kamu HANYA BOLEH menjawab MENGGUNAKAN FORMAT YANG SAMA PERSIS SEPERTI DI BAWAH INI! 
+JANGAN MENGOCEH PANJANG LEBAR DI LUAR FORMAT! Jangan hilangkan emoji apapun!
+(Jika nama saham "SAHAM INI", BACA SENDIRI nama ticker dari gambar chart yang dilampirkan).
+Tugasmu adalah mengisi angka harga [X] dan penjelasan di dalam kurung kurawal sesuai dengan chart yang ada.
 
-[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN (JANGAN UBAH BULLET POINT)]:
-Berikut adalah **Trade Plan Teknikal (MnM Strategy+)** untuk **{emiten}**:
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN (JANGAN UBAH STRUKTURNYA)]:
+Berikut Trade Plan Teknikal (MnM Strategy+) untuk **{emiten}**:
 
-Berdasarkan chart yang ada, berikut 3 model pendekatan eksekusi yang bisa dipilih sesuai profil risiko Anda:
+🟢 **MODEL 1 — REBOUND / MEAN REVERSION (Paling Relevan Saat Ini)**
+- **Bias:** [Jelaskan: Misal, Harga tertahan tepat di area Support kuat / IFVG Bull → Potensi technical bounce.]
+- **Entry:** Rp[X] - Rp[Y] 
+- **Stop Loss:** Rp[Z] (Ketat di bawah zona support terdekat)
+- **Target:** TP1: Rp[A] | TP2: Rp[B] 
+- **Inti Model:** Tangkap pantulan di area diskon. Exit cepat di area supply, tidak di-hold lama.
 
-🟢 **MODEL 1 — MEAN REVERSION (REBOUND)**
-- **Bias:** [Jelaskan: Misal, Harga mendekati Support / IFVG Bull → potensi pantulan teknikal]
-- **Entry:** Rp[X] - Rp[Y] (Berdasarkan area support/IFVG Bull terdekat di chart)
-- **Stop Loss:** Rp[Z] (Ketat di bawah area support)
-- **Target:** TP1: Rp[A] | TP2: Rp[B] (Resistensi terdekat)
-- **Inti Model:** Tangkap pantulan (*bounce*) di area diskon. Exit cepat di area supply, tidak di-hold lama.
+🔵 **MODEL 2 — CONFIRMATION / REVERSAL STRUCTURE (Paling Aman)**
+- **Bias:** [Jelaskan: Misal, Menunggu konfirmasi bahwa tekanan jual benar-benar usai dengan menjebol Resistance.]
+- **Entry:** Buy on Breakout jika harga tembus dan close di atas Rp[X].
+- **Stop Loss:** Rp[Y] (Di bawah harga breakout / retest).
+- **Target:** TP1: Rp[A] | TP2: Rp[B] 
+- **Inti Model:** Tidak menebak bottom. Fokus pada konfirmasi tren dibanding prediksi.
 
-🔵 **MODEL 2 — REVERSAL STRUCTURE (CONFIRMATION)**
-- **Bias:** [Jelaskan: Misal, Menunggu perubahan struktur/tren dengan menembus Resistance]
-- **Entry:** Buy on Breakout jika harga tembus & *close* di atas Rp[X] (Gunakan area IFVG Bear/OB Bear sebagai acuan breakout)
-- **Stop Loss:** Rp[Y] (Di bawah harga *breakout* atau retest level)
+🟣 **MODEL 3 — DEEP ACCUMULATION (Spekulatif / Jika Penurunan Berlanjut)**
+- **Bias:** [Jelaskan: Misal, Antisipasi jika area Support saat ini jebol, harga akan berburu likuiditas ke base bawah.]
+- **Entry:** Rp[X] - Rp[Y] (Area Support/Demand yang lebih dalam, gunakan skema layering/cicil).
+- **Stop Loss:** Rp[Z] (Batas invalidasi tren mayor)
 - **Target:** TP1: Rp[A] | TP2: Rp[B]
-- **Inti Model:** Tidak menebak *bottom*. Fokus pada konfirmasi tren (*confirmation > prediction*).
+- **Inti Model:** Entry sebelum konfirmasi penuh, kompensasi dengan sizing dana yang kecil.
 
-🟣 **MODEL 3 — BASE ACCUMULATION (DEEP)**
-- **Bias:** [Jelaskan: Misal, Antisipasi mencari area pembentukan *base* jika support saat ini jebol]
-- **Entry:** Rp[X] - Rp[Y] (Area Demand/Support mayor yang lebih dalam di bawah level saat ini. Layering/bertahap)
-- **Stop Loss:** Rp[Z] (Batas invalidasi tren mayor terbawah)
-- **Target:** TP1: Rp[A] | TP2: Rp[B]
-- **Inti Model:** Antisipasi terbentuknya *long-term base*. Entry sebelum konfirmasi penuh → kompensasi dengan *sizing* (porsi dana) kecil.
-
-⚖️ **KESIMPULAN FINAL & PRIORITAS**
-- **Struktur Utama:** Mayor [Bullish/Bearish/Sideways] | Minor [Bullish/Bearish/Sideways]
-- **Konfirmasi Indikator:** [Jelaskan singkat adakah Divergence RSI/MACD atau volume anomali]
-- **Prioritas Model:** [Pilih salah satu model di atas yang PALING RASIONAL & VALID dieksekusi hari ini berdasarkan posisi chart. Beri alasan 1 kalimat.]
-- **Conviction Score:** [X/5] ⭐⭐⭐
+⚖️ **KESIMPULAN FINAL & KONFIRMASI**
+- **Struktur Saat Ini:** Mayor [Bullish/Bearish/Sideways] | Minor [Bullish/Bearish/Sideways]
+- **Konfirmasi Indikator:** [Sebutkan misal: Indikator momentum menunjukkan extreme oversold dan mulai melengkung naik. Ada divergence/tidak.]
+- **Saran Eksekusi:** Saat ini **Model [1/2/3]** paling rasional untuk dieksekusi secara taktis karena [Sebutkan alasannya dalam 1 kalimat].
+- **Conviction Score:** [X/5] [Tambahkan simbol bintang sesuai angka, cth: ⭐⭐⭐]
 
 ⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
 """
@@ -3051,7 +3052,7 @@ else:
                     st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
             if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
             
-            # Jangan tampilkan prompt kaku "5. Teknikal saham di gambar ini" ke user, ganti jadi lebih natural
+            # Jangan tampilkan prompt kaku ke user
             display_prompt = prompt if prompt != "5. Teknikal saham di gambar ini" else "Tolong buatkan Trade Plan dari chart ini."
             st.markdown(display_prompt)
 
@@ -3246,7 +3247,6 @@ components.html("""
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
-    
     pd.body.appendChild(brand);
 })();
 </script>
