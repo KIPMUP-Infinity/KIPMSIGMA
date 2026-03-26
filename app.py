@@ -1275,12 +1275,12 @@ Kalau belum ada → "Mohon kirim screenshot chart MnM Strategy+ untuk [TICKER], 
 Output: zona+confluence+EMA → DIVERGENCE CHECK WAJIB → bias → trade plan
 ⚠️ DIVERGENCE WAJIB DICEK SETIAP MENERIMA SCREENSHOT — ingatkan user kalau ada yang terlewat
 
-── PERINTAH 0: "5 Logic" — TAMPILKAN MENU ──
-Trigger: user ketik "5 Logic" atau "lima sila" TANPA nama emiten
+── PERINTAH 0: "7 Alpha" — TAMPILKAN MENU ──
+Trigger: user ketik "7 Alpha" atau "lima sila" TANPA nama emiten
 SIGMA WAJIB tampilkan menu ini persis:
 
 
-        5 Logic SIGMA — MENU          
+        7 Alpha SIGMA — MENU          
 
 1. Kesimpulan Dampak [topik/berita]  
 2. Bandarmologi [emiten]             
@@ -1289,11 +1289,11 @@ SIGMA WAJIB tampilkan menu ini persis:
 5. Analisa Lengkap [emiten]          
 
 Ketik salah satu perintah + nama emiten/topik.
-Contoh: "Bandarmologi BBRI" atau "5 Logic BBCA"
+Contoh: "Bandarmologi BBRI" atau "7 Alpha BBCA"
 
 ── PERINTAH 5: "Analisa Lengkap [emiten]" — PERINTAH SAKTI ──
-Trigger: "analisa lengkap / full analisa / semua / 5 Logic / lima sila [TICKER]"
-Alias: "5 Logic [TICKER]" atau "lima sila [TICKER]" = sama dengan "analisa lengkap [TICKER]"
+Trigger: "analisa lengkap / full analisa / semua / 7 Alpha / lima sila [TICKER]"
+Alias: "7 Alpha [TICKER]" atau "lima sila [TICKER]" = sama dengan "analisa lengkap [TICKER]"
 Data BUTUH: screenshot chart MnM Strategy+ + SS broker Stockbit
 Data otomatis: fundamental + makro
 Kalau belum lengkap → minta yang kurang, analisa yang sudah ada dulu
@@ -2827,14 +2827,14 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
-        # ─── MENU 7 LOGIC BARU ───
-        if prompt and prompt.strip().lower() in ["7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
+        # ─── MENU 7 Alpha BARU ───
+        if prompt and prompt.strip().lower() in ["7 Alpha", "tujuh sila", "7sila", "7 Alpha", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                menu_text = """**7 Logic SIGMA — MENU**\n\n1. Kesimpulan Dampak Makro [topik/berita]\n2. Kesimpulan Dampak [emiten]\n3. Bandarmologi [emiten]\n4. Fundamental [emiten]\n5. Teknikal [emiten]\n6. Analisa Lengkap [emiten]\n7. Analisa IPO [emiten]\n\nKetik angkanya atau perintahnya.\nContoh: **"4. Fundamental BBCA"** atau **"7. Analisa IPO AWAN"** (sambil lampirkan PDF Prospektus)."""
-                active["messages"].append({"role": "user", "content": "7 Logic", "display": "7 Logic"})
+                menu_text = """**7 Alpha SIGMA — MENU**\n\n1. Kesimpulan Dampak Makro [topik/berita]\n2. Kesimpulan Dampak [emiten]\n3. Bandarmologi [emiten]\n4. Fundamental [emiten]\n5. Teknikal [emiten]\n6. Analisa Lengkap [emiten]\n7. Analisa IPO [emiten]\n\nKetik angkanya atau perintahnya.\nContoh: **"4. Fundamental BBCA"** atau **"7. Analisa IPO AWAN"** (sambil lampirkan PDF Prospektus)."""
+                active["messages"].append({"role": "user", "content": "7 Alpha", "display": "7 Alpha"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
-                with st.chat_message("user"): st.markdown("7 Logic")
+                with st.chat_message("user"): st.markdown("7 Alpha")
                 with st.chat_message("assistant"): st.markdown(menu_text)
                 st.rerun()
 
