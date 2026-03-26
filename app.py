@@ -2665,7 +2665,8 @@ else:
         st.markdown(f"""
         <div style="text-align:center;padding:10vh 0 2rem;">
             <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
-            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila, siap membantu Anda.
+            Ada yang bisa SIGMA bantu hari ini? Jika Anda ingin melihat menu kemampuan saya, cukup ketik "5 Logic" ya.😊?</p>
         </div>
         """, unsafe_allow_html=True)
 
