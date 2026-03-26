@@ -2792,7 +2792,8 @@ else:
         st.markdown(f"""
         <div style="text-align:center;padding:10vh 0 2rem;">
             <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
-            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila. Ada yang bisa saya bantu hari ini?
+            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu lengkap saya.😊</p>
         </div>
         """, unsafe_allow_html=True)
 
