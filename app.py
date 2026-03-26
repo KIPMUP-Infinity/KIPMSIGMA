@@ -3110,7 +3110,7 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
-# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" (Non-f-string agar kebal dari SyntaxError) ───
+# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
 <script>
