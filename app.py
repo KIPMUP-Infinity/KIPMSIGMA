@@ -2717,7 +2717,7 @@ else:
         if prompt and prompt.strip().lower() in ["5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                menu_text = """╔══════════════════════════════════════╗\n║          5 Logic SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"3. Fundamental BBCA"**"""
+               menu_text = """**5 Logic SIGMA — MENU**\n\n1. Kesimpulan Dampak [topik/berita]\n2. Bandarmologi [emiten]\n3. Fundamental [emiten]\n4. Teknikal [emiten]\n5. Analisa Lengkap [emiten]\n\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"3. Fundamental BBCA"**"""
                 active["messages"].append({"role": "user", "content": "5 Logic", "display": "5 Logic"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
                 with st.chat_message("user"): st.markdown("5 Logic")
