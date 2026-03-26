@@ -2665,8 +2665,7 @@ else:
         st.markdown(f"""
         <div style="text-align:center;padding:10vh 0 2rem;">
             <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
-            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila, siap membantu Anda.
-            Ada yang bisa SIGMA bantu hari ini? Jika Anda ingin melihat menu kemampuan saya, cukup ketik "5 Logic" ya.😊?</p>
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -2717,7 +2716,8 @@ else:
         if prompt and prompt.strip().lower() in ["5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-               menu_text = """**5 Logic SIGMA — MENU**\n\n1. Kesimpulan Dampak [topik/berita]\n2. Bandarmologi [emiten]\n3. Fundamental [emiten]\n4. Teknikal [emiten]\n5. Analisa Lengkap [emiten]\n\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"3. Fundamental BBCA"**"""
+                # MENU DIUBAH MENJADI FORMAT TEKS RAPI
+                menu_text = """**5 Logic SIGMA — MENU**\n\n1. Kesimpulan Dampak [topik/berita]\n2. Bandarmologi [emiten]\n3. Fundamental [emiten]\n4. Teknikal [emiten]\n5. Analisa Lengkap [emiten]\n\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"3. Fundamental BBCA"**"""
                 active["messages"].append({"role": "user", "content": "5 Logic", "display": "5 Logic"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
                 with st.chat_message("user"): st.markdown("5 Logic")
