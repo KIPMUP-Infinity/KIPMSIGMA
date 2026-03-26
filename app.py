@@ -2346,7 +2346,7 @@ C = get_colors(st.session_state.theme)
 
 
 # ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
+# PART 8: MAIN CHAT ENGINE & UI (STABLE & FIX PASTE)
 # ─────────────────────────────────────────────
 import requests
 import re
@@ -2358,19 +2358,14 @@ def _compress_image_file(file_obj):
     try:
         from PIL import Image
         import io, base64
-        # Buka gambar dari objek file Streamlit
         img = Image.open(file_obj)
-        # Pastikan formatnya RGB agar aman disimpan sebagai JPEG
         if img.mode != 'RGB':
             img = img.convert('RGB')
-        # Resize maksimal 1024x1024 (cukup tajam untuk AI membaca tulisan/chart)
         img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
-        # Simpan sementara di memori dengan quality 80 (sangat hemat)
         buf = io.BytesIO()
         img.save(buf, format="JPEG", quality=80)
         return base64.b64encode(buf.getvalue()).decode(), "image/jpeg"
     except Exception as e:
-        # Jika gagal kompresi, fallback gunakan ukuran aslinya
         file_obj.seek(0)
         return base64.b64encode(file_obj.read()).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg"
 
@@ -2690,11 +2685,14 @@ def _call_gemini_text(messages):
                 last_err = str(e); continue
     raise Exception(last_err)
 
-# ─── PENGATURAN UI CSS KHUSUS ───
+# ─── PENGATURAN UI CSS KHUSUS (DIPERBAIKI AGAR COPY-PASTE AKTIF) ───
 st.markdown(f"""
 <style>
+/* PENANGKAL ERROR COPY PASTE: MEMAKSA STATUS UPLOAD UNTUK TETAP TERLIHAT */
+[data-testid="stStatusWidget"] {{ display: flex !important; visibility: visible !important; height: auto !important; overflow: visible !important; opacity: 1 !important; }}
+
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-[data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
+[data-testid="stToolbar"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
 header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
 div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
 [data-testid="stMainBlockContainer"] {{ padding-top: 3rem !important; margin-top: 0 !important; }}
@@ -3120,16 +3118,12 @@ components.html("""
     
     var brand = pd.createElement('div');
     brand.id = 'sigma-desktop-brand';
-    
-    /* Teks SIGMA menggunakan font stack sistem yang bersih */
     brand.innerHTML = 'SIGMA';
     brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
-    /* Sesuaikan ukuran dan posisi di layar Mobile agar tetap rapi */
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
-    
     pd.body.appendChild(brand);
 })();
 </script>
