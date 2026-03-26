@@ -2633,7 +2633,6 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 ⚠️ *DYOR — prospektus adalah dokumen resmi, namun pasar IPO sangat dipengaruhi oleh sentimen bandar/underwriter.*
 """
 
-# --- TAMBAHAN BARU: TEMPLATE KHUSUS TEKNIKAL & TRADE PLAN ---
 TEMPLATE_TEKNIKAL = """
 [INSTRUKSI WAJIB SYSTEM]:
 User meminta analisa TEKNIKAL saham {emiten}.
@@ -2883,6 +2882,7 @@ else:
                 elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
             st.markdown(display_clean)
 
+    # PERBAIKAN: file_type DIHILANGKAN agar OS/Clipboard bisa paste gambar mentah
     try: result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple")
     except TypeError: result = st.chat_input("Tanya SIGMA...")
 
@@ -2990,7 +2990,7 @@ else:
                 full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
                 full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
 
-        # LOGIC 5: TEKNIKAL (BARU DITAMBAHKAN)
+        # LOGIC 5: TEKNIKAL
         elif is_teknikal:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
             if img_data or multi_images:
@@ -2999,7 +2999,7 @@ else:
                     full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
             else:
                 full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
-                full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data hargamu.]\nPertanyaan Asli User: {prompt}"
+                full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]\nPertanyaan Asli User: {prompt}"
 
         # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
         elif is_ipo:
@@ -3161,6 +3161,58 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
+# ─── JEMBATAN COPY-PASTE (POLYFILL KHUSUS STREAMLIT) ───
+components.html("""
+<script>
+(function() {
+    function injectPastePolyfill() {
+        var doc = window.parent.document;
+        var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
+        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+        
+        if (textarea && fileInput && !textarea.dataset.pastePolyfill) {
+            textarea.dataset.pastePolyfill = "true";
+            
+            textarea.addEventListener('paste', function(e) {
+                if (e.clipboardData && e.clipboardData.items) {
+                    var items = e.clipboardData.items;
+                    var dt = new DataTransfer();
+                    var hasNewImage = false;
+                    
+                    // Simpan file yang mungkin sudah di-upload sebelumnya (biar tidak hilang)
+                    if (fileInput.files) {
+                        for (var i=0; i<fileInput.files.length; i++) {
+                            dt.items.add(fileInput.files[i]);
+                        }
+                    }
+                    
+                    // Cek jika yang di-paste adalah gambar dari Snipping Tool/Clipboard
+                    for (var i=0; i<items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            var file = items[i].getAsFile();
+                            // PAKSA kasih nama ekstensi .png agar Streamlit TIDAK me-reject file-nya
+                            var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
+                            dt.items.add(newFile);
+                            hasNewImage = true;
+                        }
+                    }
+                    
+                    if (hasNewImage) {
+                        e.preventDefault(); // Hentikan paste biasa
+                        fileInput.files = dt.files; // Masukkan paksa ke file uploader Streamlit
+                        // Picu sistem React Streamlit agar sadar ada file baru masuk
+                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+        }
+    }
+    // Pantau terus karena elemen chat input bisa re-render kapan saja
+    setInterval(injectPastePolyfill, 1000);
+})();
+</script>
+""", height=0)
+
 # ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
@@ -3171,16 +3223,12 @@ components.html("""
     
     var brand = pd.createElement('div');
     brand.id = 'sigma-desktop-brand';
-    
-    /* Teks SIGMA menggunakan font stack sistem yang bersih */
     brand.innerHTML = 'SIGMA';
     brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
-    /* Sesuaikan ukuran dan posisi di layar Mobile agar tetap rapi */
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
-    
     pd.body.appendChild(brand);
 })();
 </script>
