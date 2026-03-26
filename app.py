@@ -2352,6 +2352,28 @@ import requests
 import re
 from datetime import datetime
 
+# --- FUNGSI KOMPRESI GAMBAR UNTUK HEMAT LIMIT API ---
+def _compress_image_file(file_obj):
+    """Mengkompres file gambar (PNG/JPG) agar ukurannya kecil sebelum dikirim ke API Gemini"""
+    try:
+        from PIL import Image
+        import io, base64
+        # Buka gambar dari objek file Streamlit
+        img = Image.open(file_obj)
+        # Pastikan formatnya RGB agar aman disimpan sebagai JPEG
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        # Resize maksimal 1024x1024 (cukup tajam untuk AI membaca tulisan/chart)
+        img.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+        # Simpan sementara di memori dengan quality 80 (sangat hemat)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=80)
+        return base64.b64encode(buf.getvalue()).decode(), "image/jpeg"
+    except Exception as e:
+        # Jika gagal kompresi, fallback gunakan ukuran aslinya
+        file_obj.seek(0)
+        return base64.b64encode(file_obj.read()).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg"
+
 # ─── DAFTAR SAHAM PERBANKAN UNTUK FILTERING ───
 BANK_TICKERS = ["BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN","PNBN","ARTO","BBYB","AGRO","BJBR","BSIM","BBKP","BTPN","NISP","MEGA","MCOR","SDRA","MAYA"]
 
@@ -2834,13 +2856,16 @@ else:
             pdf_files = [f for f in files if f.type == "application/pdf"]
             if img_files:
                 for _mf in img_files[:5]:
-                    try: multi_images.append((base64.b64encode(_mf.read()).decode(), "image/png" if _mf.name.endswith(".png") else "image/jpeg", _mf.name))
+                    try: 
+                        # --- PENGGUNAAN KOMPRESOR GAMBAR ---
+                        b64_img, mime_img = _compress_image_file(_mf)
+                        multi_images.append((b64_img, mime_img, _mf.name))
                     except: pass
                 if multi_images: st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
-        # ─── MENU 7 ALPHA BARU (KATA KUNCI SUDAH DITAMBAHKAN) ───
+        # ─── MENU 7 ALPHA BARU ───
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
@@ -3085,7 +3110,7 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
-# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" (Non-f-string agar kebal dari SyntaxError) ───
+# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
 <script>
@@ -3095,17 +3120,37 @@ components.html("""
     
     var brand = pd.createElement('div');
     brand.id = 'sigma-desktop-brand';
-    
-    /* Teks SIGMA menggunakan font stack sistem yang bersih */
     brand.innerHTML = 'SIGMA';
     brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
-    /* Sesuaikan ukuran dan posisi di layar Mobile agar tetap rapi */
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
-    
     pd.body.appendChild(brand);
+})();
+</script>
+""", height=0)
+
+# ─── CLIPBOARD PASTE HELPER (PANDUAN UNTUK USER) ───
+components.html("""
+<script>
+(function() {
+    const doc = window.parent.document;
+    // Cari text area input chat
+    const inputArea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
+
+    if (inputArea && !inputArea.dataset.pasteListener) {
+        inputArea.dataset.pasteListener = "true";
+        inputArea.addEventListener('paste', function(e) {
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    // Notifikasi bantuan jika user melakukan Ctrl+V di luar jendela upload
+                    alert("📸 Gambar tercopy di Clipboard!\\n\\nKarena aturan keamanan browser, silakan klik tombol penjepit kertas (Browse files) terlebih dahulu, lalu tekan Ctrl+V / Paste di jendela file yang terbuka.");
+                }
+            }
+        });
+    }
 })();
 </script>
 """, height=0)
