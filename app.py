@@ -2371,40 +2371,6 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 # ─────────────────────────────────────────────
 # PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
 # ─────────────────────────────────────────────
-def process_delete_if_pending():
-    _del_sid = st.query_params.get("del", "")
-    if not _del_sid: return False
-    _user = st.session_state.get("user")
-    if not _user:
-        _tok = st.query_params.get("sigma_token", "")
-        if _tok:
-            _tfile = os.path.join(DATA_DIR, f"token_{_tok}.json")
-            if os.path.exists(_tfile):
-                try:
-                    with open(_tfile) as _f: _user = json.load(_f)
-                    st.session_state.user = _user; st.session_state.current_token = _tok
-                except: pass
-    if not _user: return False
-    _email = _user.get("email", "")
-    if not _email: return False
-    _saved = load_user(_email)
-    if not _saved: return False
-    _sessions = _saved.get("sessions", [])
-    _new_sessions = [s for s in _sessions if s["id"] != _del_sid]
-    if not _new_sessions: _new_sessions = [new_session()]
-    _new_active = _saved.get("active_id", "")
-    if _new_active == _del_sid: _new_active = _new_sessions[0]["id"]
-    save_user(_email, {"theme": _saved.get("theme", "dark"), "sessions": _new_sessions, "active_id": _new_active})
-    st.session_state.sessions = _new_sessions; st.session_state.active_id = _new_active; st.session_state.data_loaded = True
-    for _s in st.session_state.sessions:
-        if not _s.get("messages") or _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
-        else: _s["messages"][0] = SYSTEM_PROMPT
-    try: del st.query_params["del"]
-    except:
-        try: st.query_params.pop("del")
-        except: pass
-    return True
-
 def new_session():
     return {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "messages": [SYSTEM_PROMPT], "created": datetime.now().strftime("%d/%m %H:%M")}
 
@@ -2443,6 +2409,7 @@ def handle_oauth(code):
     u = requests.get("https://www.googleapis.com/oauth2/v2/userinfo", headers={"Authorization": f"Bearer {token}"})
     return u.json() if u.status_code == 200 else None
 
+# ─── AUTENTIKASI GOOGLE ───
 if "code" in st.query_params and st.session_state.user is None:
     info = handle_oauth(st.query_params["code"])
     if info:
@@ -2459,6 +2426,7 @@ if "code" in st.query_params and st.session_state.user is None:
         st.query_params["sigma_token"] = token
         st.rerun()
 
+# ─── AUTO-LOGIN VIA TOKEN ───
 if "sigma_token" in st.query_params and st.session_state.user is None:
     token = st.query_params.get("sigma_token", "")
     token_file = os.path.join(DATA_DIR, f"token_{token}.json")
@@ -2466,17 +2434,6 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
         try:
             with open(token_file) as f: user_info = json.load(f)
             st.session_state.user = user_info; st.session_state.current_token = token
-            _del_sid = st.query_params.get("del", "")
-            if _del_sid:
-                saved_pre = load_user(user_info["email"])
-                if saved_pre and saved_pre.get("sessions"):
-                    new_sessions = [s for s in saved_pre["sessions"] if s["id"] != _del_sid]
-                    if not new_sessions: new_sessions = [{"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "created": datetime.now().strftime("%d/%m %H:%M"), "messages": []}]
-                    new_active = saved_pre.get("active_id")
-                    if new_active == _del_sid: new_active = new_sessions[0]["id"]
-                    save_user(user_info["email"], {"theme": saved_pre.get("theme", "dark"), "sessions": new_sessions, "active_id": new_active})
-                try: st.query_params.pop("del")
-                except: pass
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
@@ -2491,9 +2448,6 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             restore_images_from_messages()
             st.rerun()
         except: pass
-
-if "del" in st.query_params:
-    if process_delete_if_pending(): st.rerun()
 
 if st.session_state.user and not st.session_state.data_loaded:
     saved = load_user(st.session_state.user["email"])
@@ -2674,6 +2628,620 @@ C = get_colors(st.session_state.theme)
 
 
 
+# ─────────────────────────────────────────────
+# PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
+# ─────────────────────────────────────────────
+
+# ─── FUNGSI API GEMINI (SUNTIKAN PAKSA BAHASA INDONESIA) ───
+def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
+    import urllib.request, urllib.error, json as _j
+    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
+    keys = [k for k in keys if k]
+    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
+    
+    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    last_err = ""
+    
+    for api_key in keys:
+        for model_name in models:
+            try:
+                _parts = []
+                if multi_imgs:
+                    for _b64, _mime, _ in multi_imgs[:5]:
+                        _parts.append({"inlineData": {"mimeType": _mime, "data": _b64}})
+                elif img_b64 and img_mime:
+                    _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
+                
+                # SUNTIKAN IDENTITAS PAKSA agar tidak bahasa Inggris
+                teks_gabungan = f"{SYSTEM_PROMPT['content']}\n\n[PERTANYAAN USER]:\n{prompt}"
+                _parts.append({"text": teks_gabungan})
+                
+                payload = {
+                    "contents": [{"role": "user", "parts": _parts}],
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+                }
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=40) as r:
+                    data = _j.loads(r.read())
+                
+                return data["candidates"][0]["content"]["parts"][0]["text"], model_name
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode() if hasattr(e, 'read') else ""
+                last_err = f"HTTP {e.code}: {err_body}"
+                if e.code == 404: continue 
+                elif e.code in [403, 400]: break 
+            except Exception as e:
+                last_err = str(e)
+                continue
+    raise Exception(last_err)
+
+def _call_gemini_text(messages):
+    import urllib.request, urllib.error, json as _j
+    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
+    keys = [k for k in keys if k]
+    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
+    
+    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    last_err = ""
+    
+    for api_key in keys:
+        for model_name in models:
+            try:
+                gemini_contents = []
+                for m in messages:
+                    r = m.get("role", "")
+                    t = m.get("content", "") or ""
+                    if r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
+                    elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
+                
+                if not gemini_contents: 
+                    gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
+                
+                # SUNTIKAN IDENTITAS PAKSA ke chat pertama
+                gemini_contents[0]["parts"][0]["text"] = f"{SYSTEM_PROMPT['content']}\n\n{gemini_contents[0]['parts'][0]['text']}"
+                
+                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}}
+                
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    data = _j.loads(r.read())
+                    
+                return data["candidates"][0]["content"]["parts"][0]["text"], model_name
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode() if hasattr(e, 'read') else ""
+                last_err = f"HTTP {e.code}: {err_body}"
+                if e.code == 404: continue 
+                elif e.code in [403, 400]: break 
+            except Exception as e:
+                last_err = str(e)
+                continue
+    raise Exception(last_err)
+
+st.markdown(f"""
+<style>
+/* Sembunyikan elemen bawaan Streamlit secara agresif */
+section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+[data-testid="stToolbar"], [data-testid="stStatusWidget"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
+
+header[data-testid="stHeader"], header.stAppHeader, .stApp > header {{ 
+    display: none !important; 
+    height: 0 !important; 
+    opacity: 0 !important; 
+    visibility: hidden !important; 
+    position: fixed !important; 
+    top: -500px !important; 
+    z-index: -999 !important; 
+}}
+div[data-testid="stDecoration"] {{ 
+    display: none !important; 
+    height: 0 !important; 
+    visibility: hidden !important;
+    position: fixed !important;
+    top: -500px !important;
+}}
+
+/* ATUR JARAK ATAS (RUANG NAPAS) AGAR TIDAK MENTOK */
+[data-testid="stMainBlockContainer"] {{
+    padding-top: 3rem !important; 
+    margin-top: 0 !important; 
+}}
+@media(max-width: 768px) {{
+    [data-testid="stMainBlockContainer"] {{
+        padding-top: 2rem !important;
+        margin-top: 0 !important;
+    }}
+}}
+
+[data-testid="stChatMessageContent"], 
+[data-testid="stMarkdownContainer"] {{
+    text-align: left !important;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+_hist_items = ""
+for _sesi in st.session_state.sessions:
+    _sid = _sesi["id"]; _is_act = _sid == st.session_state.active_id; _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',""); _fw = "700" if _is_act else "400"; _bg = C['hover'] if _is_act else "transparent"
+    _hist_items += f"""
+(function(){{
+    var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
+    var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; a.onmouseleave=function(){{this.style.background='{_bg}'}};
+    var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; del.onclick=function(e){{ e.preventDefault();e.stopPropagation(); if(confirm('Hapus obrolan ini?')){{ var u2=new URL(window.parent.location.href); u2.searchParams.set('del','{_sid}'); u2.searchParams.delete('do'); window.parent.location.href=u2.toString(); }} }};
+    row.appendChild(a); row.appendChild(del); h.appendChild(row);
+}})();
+"""
+
+components.html(f"""
+<script>
+(function(){{
+var pd=window.parent.document;
+var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
+var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
+['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+
+var s=pd.createElement('style'); s.id='sigma-mobile-css';
+s.textContent=`
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
+#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
+
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+`; pd.head.appendChild(s);
+
+var btn=pd.createElement('button'); btn.id='spbtn';
+btn.title = 'Menu SIGMA';
+btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
+pd.body.appendChild(btn);
+
+var m=pd.createElement('div');m.id='spmenu';
+m.innerHTML=`
+    <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
+    <div class="smsp"></div>
+    <div class="smhd">FITUR</div>
+    <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
+    <a class="smi" id="smi-stats"><span class="smico">📊</span>Market Dashboard</a>
+    <div class="smsp"></div>
+    <div class="smhd">PENAMPILAN</div>
+    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a>
+    <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a>
+    <div class="smsp"></div>
+    <a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
+`; pd.body.appendChild(m);
+
+var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
+
+btn.onclick=function(e){{
+    e.preventDefault(); e.stopPropagation();
+    m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    h.style.display = 'none';
+}};
+
+(function(){{
+    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString(); pd.getElementById('smi-new').style.textDecoration='none';
+    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString(); pd.getElementById('smi-ai').style.textDecoration='none';
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString(); pd.getElementById('smi-stats').style.textDecoration='none';
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString(); pd.getElementById('smi-dark').style.textDecoration='none';
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString(); pd.getElementById('smi-light').style.textDecoration='none';
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString(); pd.getElementById('smi-out').style.textDecoration='none';
+}})();
+
+pd.addEventListener('click',function(e){{ 
+    if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; 
+    if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; 
+}});
+}})();
+</script>
+""", height=0)
+
+# ─── LOGIKA SINKRONISASI TOMBOL HAPUS (KONSOLIDASI & FINAL) ───
+if "del" in st.query_params:
+    _del_id = st.query_params.get("del", "")
+    if _del_id and st.session_state.get("user"):
+        # 1. Hapus dari memori list session
+        st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != _del_id]
+        
+        # 2. Pastikan tidak kosong sama sekali
+        if not st.session_state.sessions:
+            st.session_state.sessions = [new_session()]
+            
+        # 3. Pindahkan view chat aktif jika yang dihapus adalah obrolan yang sedang dibuka
+        if st.session_state.active_id == _del_id:
+            st.session_state.active_id = st.session_state.sessions[0]["id"]
+            
+        # 4. SIMPAN PERMANEN ke file JSON sistem
+        _to_save = []
+        for s in st.session_state.sessions:
+            _msgs = [dict(m) for m in s["messages"] if m["role"] != "system"]
+            _to_save.append({"id": s["id"], "title": s["title"], "created": s["created"], "messages": _msgs})
+        
+        save_user(st.session_state.user["email"], {
+            "theme": st.session_state.get("theme", "dark"), 
+            "sessions": _to_save, 
+            "active_id": st.session_state.active_id
+        })
+        
+    # 5. Bersihkan URL dari parameter '?del=...' agar tidak terjadi looping error
+    try: 
+        st.query_params.pop("del", None)
+    except: 
+        pass
+    st.rerun()
+
+# ─── ROUTING & NAVIGASI MENU (do) ───
+if "do" in st.query_params:
+    _do = st.query_params.get("do", "")
+    _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
+    if _do == "logout":
+        if _tok:
+            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
+            except: pass
+        st.session_state.clear(); st.query_params.clear()
+        components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
+        st.stop()
+    elif _do == "view_stats":
+        st.session_state.current_view = "dashboard"
+        st.query_params.pop("do", None)
+        st.rerun()
+    elif _do == "view_ai":
+        st.session_state.current_view = "chat"
+        st.query_params.pop("do", None)
+        st.rerun()
+    elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "theme_light": st.session_state.theme = "light"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "newchat":
+        st.session_state.current_view = "chat"
+        ns = {"id": str(uuid.uuid4()), "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
+        st.session_state.sessions.insert(0, ns); st.session_state.active_id = ns["id"]; st.query_params.pop("do", None); st.rerun()
+    elif _do.startswith("sel_"):
+        st.session_state.current_view = "chat"
+        _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params.pop("do", None); st.rerun()
+
+active = get_active()
+
+# ─── TAMPILAN DASHBOARD VS CHAT ───
+current_view = st.session_state.get("current_view", "chat")
+
+if current_view == "dashboard":
+    # Tampilan Halaman Market Dashboard Kosong
+    st.markdown(f"""
+    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:70vh; text-align:center; padding: 20px;">
+        <h1 style="color:{C['text']}; font-size:10.10rem; font-weight:800; letter-spacing:1px; margin-bottom:12px;">HAI👋, FITUR INI AKAN SEGERA HADIR DITUNGGU!!! :)</h1>
+        <p style="color:{C['text_muted']}; font-size:1.1rem; font-weight:500; opacity:0.8;"> by. MarketnMocha</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+else:
+    # Tampilan Aplikasi Chat Normal
+    if not active["messages"][1:]:
+        uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
+        st.markdown(f"""
+        <div style="text-align:center;padding:10vh 0 2rem;">
+            <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Ada yang bisa SIGMA bantu analisa hari ini?</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    if st.session_state.get("last_error"):
+        st.error(f"⚠️ {st.session_state['last_error']}")
+        st.session_state["last_error"] = None
+
+    for i, msg in enumerate(active["messages"][1:]):
+        with st.chat_message(msg["role"]):
+            display = msg.get("display") or msg["content"]
+            if "Pertanyaan:" in display: display = display.split("Pertanyaan:")[-1].strip()
+            for tag in ["[/DATA GLOBAL]", "[/DATA PASAR IDX]", "[/DATA PASAR]"]:
+                if tag in display: display = display.split(tag)[-1].strip()
+            
+            if msg["role"] == "user":
+                imgs_in_msg = msg.get("images", [])
+                if imgs_in_msg:
+                    if len(imgs_in_msg) == 1: st.markdown(f'<img src="data:{imgs_in_msg[0][1]};base64,{imgs_in_msg[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+                    else:
+                        imgs_html = ''.join([f'<img src="data:{imime};base64,{ib64}" style="height:160px;max-width:calc(100%/{len(imgs_in_msg)});object-fit:cover;border-radius:8px;flex:1;">' for ib64, imime in imgs_in_msg])
+                        st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+                elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+            st.markdown(display)
+
+    try:
+        result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple", file_type=["pdf", "png", "jpg", "jpeg"])
+    except TypeError:
+        result = st.chat_input("Tanya SIGMA...")
+
+    prompt = None; file_obj = None; multi_images = []
+
+    if result is not None:
+        st.session_state.img_data = None; st.session_state.pdf_data = None
+        if hasattr(result, 'text'):
+            prompt = (result.text or "").strip()
+            files = getattr(result, 'files', None) or []
+            img_files = [f for f in files if f.type != "application/pdf"]
+            pdf_files = [f for f in files if f.type == "application/pdf"]
+            if img_files:
+                for _mf in img_files[:5]:
+                    try: multi_images.append((base64.b64encode(_mf.read()).decode(), "image/png" if _mf.name.endswith(".png") else "image/jpeg", _mf.name))
+                    except: pass
+                if multi_images: st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
+            if pdf_files: file_obj = pdf_files[0]
+        elif isinstance(result, str): prompt = result.strip()
+
+        if prompt and prompt.strip().lower() in ["5 Logic", "lima sila", "5sila"]:
+            active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
+            if active:
+                menu_text = """╔══════════════════════════════════════╗\n║          5 Logic SIGMA — MENU          ║\n╠══════════════════════════════════════╣\n║ 1. Kesimpulan Dampak [topik/berita]  ║\n║ 2. Bandarmologi [emiten]             ║\n║ 3. Fundamental [emiten]              ║\n║ 4. Teknikal [emiten]                  ║\n║ 5. Analisa Lengkap [emiten]          ║\n╚══════════════════════════════════════╝\nKetik salah satu + nama emiten/topik.\nContoh: **"Bandarmologi BBRI"** atau **"5 Logic BBCA"**"""
+                active["messages"].append({"role": "user", "content": "5 Logic", "display": "5 Logic"})
+                active["messages"].append({"role": "assistant", "content": menu_text})
+                with st.chat_message("user"): st.markdown("5 Logic")
+                with st.chat_message("assistant"): st.markdown(menu_text)
+                st.rerun()
+
+        if file_obj:
+            raw = file_obj.read()
+            if file_obj.type == "application/pdf":
+                try:
+                    doc = fitz.open(stream=raw, filetype="pdf")
+                    txt = "".join(p.get_text() for p in doc)
+                    pdf_content = f"[PDF: {file_obj.name}]\n{txt[:3000]}"
+                    st.session_state.pdf_data = (pdf_content, file_obj.name)
+                    st.session_state.img_data = None
+                except Exception as pdf_e:
+                    st.error(f"Gagal membaca PDF: {str(pdf_e)}")
+                    st.session_state.pdf_data = None
+            else:
+                if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
+                st.session_state.pdf_data = None
+
+        if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data): prompt = "Tolong analisa file yang saya kirim"
+
+    if prompt:
+        img_data = st.session_state.img_data; pdf_data = st.session_state.pdf_data
+        st.session_state.img_data = None; st.session_state.pdf_data = None
+        full_prompt = prompt
+
+        if pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+        elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
+        elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
+        else:
+            try:
+                ctx = build_combined_context(prompt)
+                if ctx: full_prompt = f"{ctx}\n\n{prompt}"
+            except: pass
+
+        if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
+
+        user_msg = {"role": "user", "content": full_prompt, "display": prompt}
+        if multi_images:
+            user_msg["images"] = [(b64, mime) for b64, mime, name in multi_images[:5]]
+            user_msg["img_b64"] = multi_images[0][0]; user_msg["img_mime"] = multi_images[0][1]
+        elif img_data:
+            user_msg["img_b64"] = img_data[0]; user_msg["img_mime"] = img_data[1]
+
+        active["messages"].append(user_msg)
+
+        with st.chat_message("user"):
+            imgs_to_show = multi_images[:5] if multi_images else ([(img_data[0], img_data[1], img_data[2])] if img_data else [])
+            if imgs_to_show:
+                if len(imgs_to_show) == 1: st.markdown(f'<img src="data:{imgs_to_show[0][1]};base64,{imgs_to_show[0][0]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
+                else:
+                    imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
+                    st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
+            if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
+            st.markdown(prompt)
+
+        try:
+            with st.chat_message("assistant"):
+                with st.spinner("SIGMA menganalisis..."):
+                    _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
+                    ans = None
+                    has_image = bool(multi_images or img_data)
+                    debug_info = []
+
+                    if has_image:
+                        try:
+                            _img_b64 = user_msg.get("img_b64")
+                            _img_mime = user_msg.get("img_mime")
+                            ans, used_model = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
+                            if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model} Vision)*"
+                        except Exception as e_img:
+                            debug_info.append(f"Gemini Vision: {str(e_img)}")
+                    else:
+                        try:
+                            ans, used_model = _call_gemini_text(_history_msgs[-5:])
+                            if ans: ans += f"\n\n*(✨ Dijawab menggunakan {used_model})*"
+                        except Exception as e_txt:
+                            debug_info.append(f"Gemini Text: {str(e_txt)}")
+                            
+                            if not ans:
+                                try:
+                                    client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
+                                    mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA, asisten KIPM Universitas Pancasila. Jawab SEMUA pertanyaan WAJIB dalam Bahasa Indonesia dengan ringkas dan akurat."}
+                                    safe_prompt = full_prompt[:1500] if len(full_prompt) > 1500 else full_prompt
+                                    
+                                    _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
+                                    _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=1024)
+                                    ans = _res.choices[0].message.content
+                                    if ans: ans += "\n\n*(⚡ Fallback ke Groq)*"
+                                except Exception as e_groq:
+                                    debug_info.append(f"Groq: {str(e_groq)}")
+                    
+                    if not ans:
+                        err_msg = " | ".join(debug_info)
+                        ans = f"Maaf, semua sistem AI sedang sibuk. Coba beberapa saat lagi.\n\n`Log: {err_msg}`"
+                    
+                st.markdown(ans)
+            active["messages"].append({"role": "assistant", "content": ans})
+        except Exception as e:
+            st.session_state["last_error"] = str(e)
+            st.error(f"⚠️ {str(e)}")
+
+        st.rerun()
+
+if user:
+    sessions_to_save = []
+    for s in st.session_state.sessions:
+        msgs = [dict(m) for m in s["messages"] if m["role"] != "system"]
+        sessions_to_save.append({"id": s["id"], "title": s["title"], "created": s["created"], "messages": msgs})
+    save_user(user["email"], {"theme": st.session_state.get("theme", "dark"), "sessions": sessions_to_save, "active_id": st.session_state.active_id})
+
+_new_token = st.session_state.pop("new_token", None)
+if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
+
+if st.session_state.user is None:
+    components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
+
+# ─────────────────────────────────────────────
+# FINAL HELPER JAVASCRIPT (BUBBLES & COPY ICON KOTAK)
+# ─────────────────────────────────────────────
+components.html(f"""
+<script>
+const BC = "{C['bubble']}"; const BT = "#ffffff";
+(function() {{
+    var pd = window.parent.document;
+    if (pd.getElementById('sigma-mobile-css2')) return;
+    var s = pd.createElement('style'); s.id = 'sigma-mobile-css2';
+    s.textContent = `
+        [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
+        @media (max-width: 768px) {{
+            [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 8px 12px 120px !important; margin: 0 !important; }}
+            [data-testid="stMarkdownContainer"], [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em, [data-testid="stMarkdownContainer"] a {{ font-size: 1.05rem !important; line-height: 1.9 !important; }}
+            [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }} [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }} [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; font-weight: 700 !important; }}
+            [data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ padding-left: 18px !important; margin: 4px 0 !important; }}
+            [data-testid="stMarkdownContainer"] li {{ margin-bottom: 6px !important; }}
+            [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
+            div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 4px 8px !important; }}
+            [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
+            .navy-pill {{ max-width: 82% !important; font-size: 1.05rem !important; line-height: 1.75 !important; padding: 12px 16px !important; }}
+            [data-testid="stMarkdownContainer"] code {{ font-size: 0.88rem !important; }}
+            [data-testid="stMarkdownContainer"] pre {{ font-size: 0.85rem !important; overflow-x: auto !important; padding: 12px !important; }}
+        }}
+    `; pd.head.appendChild(s);
+}})();
+
+function fixBubbles() {{
+    const doc = window.parent.document;
+    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(msg => {{
+        if (!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
+        msg.style.cssText += 'display:flex!important;justify-content:flex-end!important;background:transparent!important;border:none!important;box-shadow:none!important;padding:4px 0!important;';
+        const av = msg.querySelector('[data-testid="stChatMessageAvatarUser"]'); if (av) av.style.display = 'none';
+        const ct = msg.querySelector('[data-testid="stChatMessageContent"]');
+        if (ct) ct.style.cssText += 'background:transparent!important;display:flex!important;justify-content:flex-end!important;max-width:100%!important;padding:0!important;';
+        msg.querySelectorAll('[data-testid="stMarkdownContainer"]').forEach(md => {{
+            md.style.background = 'transparent'; md.style.display = 'flex'; md.style.justifyContent = 'flex-end';
+            if (!md.querySelector('.navy-pill')) {{
+                const pill = document.createElement('div'); pill.className = 'navy-pill'; var mob=window.parent.innerWidth<=768;
+                pill.style.cssText=`background:linear-gradient(135deg,#42a8e0,#1a4fad);color:#ffffff;border-radius:18px 18px 4px 18px;padding:${{mob?"12px 16px":"10px 16px"}};max-width:${{mob?"85%":"72%"}};display:inline-block;font-size:${{mob?"1rem":"0.9rem"}};line-height:1.7;word-wrap:break-word;`;
+                while (md.firstChild) pill.appendChild(md.firstChild); md.appendChild(pill);
+            }}
+            var pill = md.querySelector('.navy-pill');
+            if (pill) {{ pill.style.setProperty('color','#ffffff','important'); pill.style.setProperty('background','linear-gradient(135deg,#42a8e0,#1a4fad)','important'); pill.querySelectorAll('*').forEach(function(el){{el.style.setProperty('color','#ffffff','important');}}); }}
+        }});
+    }});
+}}
+fixBubbles(); setInterval(fixBubbles, 800);
+new MutationObserver(() => setTimeout(fixBubbles, 100)).observe(window.parent.document.body, {{childList:true,subtree:true}});
+
+function addActionButtons() {{
+    var doc = window.parent.document;
+    doc.querySelectorAll('[data-testid="stChatMessage"]').forEach(function(msg) {{
+        if (msg.querySelector('.sigma-actions')) return;
+        if (!!msg.querySelector('[data-testid="stChatMessageAvatarUser"]')) return;
+        function getMsgText() {{ var md = msg.querySelector('[data-testid="stMarkdownContainer"]'); return md ? md.innerText : ''; }}
+        
+        var bar = doc.createElement('div'); bar.className = 'sigma-actions'; 
+        bar.style.cssText = 'display:flex;gap:2px;margin-top:6px;padding:0 2px;';
+        
+        var copyBtn = doc.createElement('button'); 
+        copyBtn.title = 'Salin respons'; 
+        copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        copyBtn.style.cssText = 'background:transparent;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background 0.2s;';
+        
+        copyBtn.onmouseenter=function(){{this.style.background='rgba(255,255,255,0.08)'}}; 
+        copyBtn.onmouseleave=function(){{this.style.background='transparent'}};
+        
+        copyBtn.onclick = function() {{
+            var txt = getMsgText();
+            function showOk() {{ 
+                copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'; 
+                setTimeout(function(){{ copyBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8e8ea0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'; }}, 2000); 
+            }}
+            navigator.clipboard.writeText(txt).then(showOk).catch(function(){{ 
+                var ta=doc.createElement('textarea'); ta.value=txt; doc.body.appendChild(ta); ta.select(); doc.execCommand('copy'); doc.body.removeChild(ta); showOk(); 
+            }});
+        }};
+        bar.appendChild(copyBtn); msg.style.flexDirection='column'; msg.appendChild(bar);
+    }});
+}}
+setInterval(addActionButtons, 1000);
+
+function setupPaste() {{
+    var pw = window.parent;
+    if (pw._sigmaPasteHandler) {{ pw.removeEventListener('paste', pw._sigmaPasteHandler, true); pw.document.removeEventListener('paste', pw._sigmaPasteHandler, true); }}
+    function handlePaste(e) {{
+        var items = e.clipboardData && e.clipboardData.items; if (!items) return;
+        for (var i=0; i<items.length; i++) {{
+            if (items[i].type.startsWith('image/')) {{
+                var file = items[i].getAsFile(); if (!file) continue;
+                e.preventDefault(); e.stopPropagation();
+                var inputs = pw.document.querySelectorAll('input[type="file"]');
+                for (var fi of inputs) {{
+                    try {{
+                        var dt = new DataTransfer(); dt.items.add(file);
+                        Object.defineProperty(fi, 'files', {{value: dt.files, configurable:true, writable:true}});
+                        fi.dispatchEvent(new Event('change', {{bubbles:true}})); fi.dispatchEvent(new Event('input', {{bubbles:true}}));
+                        var ta = pw.document.querySelector('[data-testid="stChatInput"] textarea');
+                        if (ta) {{ ta.style.outline = '2px solid #4a90d9'; ta.placeholder = '📎 Gambar disiapkan... tekan Enter'; setTimeout(function(){{ ta.style.outline=''; ta.placeholder='Tanya SIGMA... DYOR - bukan financial advice.'; }}, 3000); ta.focus(); }}
+                        break;
+                    }} catch(err) {{ console.log('paste err',err); }}
+                }}
+                break;
+            }}
+        }}
+    }}
+    pw._sigmaPasteHandler = handlePaste; pw.addEventListener('paste', handlePaste, true); pw.document.addEventListener('paste', handlePaste, true);
+}}
+setupPaste(); setTimeout(setupPaste, 1000); setTimeout(setupPaste, 3000);
+
+function setupDragDrop() {{
+    var pw = window.parent; var pd = pw.document; if (pw._sigmaDragOK) return;
+    var overlay = pd.createElement('div'); overlay.id = 'sigma-drop-overlay'; overlay.style.cssText = 'position:fixed;inset:0;background:rgba(27,42,74,0.55);z-index:99997;display:none;align-items:center;justify-content:center;pointer-events:none;';
+    overlay.innerHTML = '<div style="background:#1B2A4A;color:#fff;border:2px dashed #4a90d9;border-radius:16px;padding:32px 48px;font-size:1.1rem;text-align:center;">📂 Lepaskan file di sini<br><span style="font-size:0.85rem;opacity:0.7;">PDF, PNG, JPG</span></div>';
+    pd.body.appendChild(overlay);
+    var dragCount = 0;
+    pd.addEventListener('dragenter', function(e) {{ e.preventDefault(); dragCount++; overlay.style.display = 'flex'; }}, true);
+    pd.addEventListener('dragleave', function(e) {{ dragCount--; if (dragCount <= 0) {{ dragCount = 0; overlay.style.display = 'none'; }} }}, true);
+    pd.addEventListener('dragover', function(e) {{ e.preventDefault(); }}, true);
+    pd.addEventListener('drop', function(e) {{
+        e.preventDefault(); dragCount = 0; overlay.style.display = 'none';
+        var files = e.dataTransfer && e.dataTransfer.files; if (!files || files.length === 0) return;
+        var allowed = ['application/pdf','image/png','image/jpeg','image/jpg']; var validFiles = [];
+        for (var i = 0; i < Math.min(files.length, 5); i++) {{ if (allowed.includes(files[i].type)) validFiles.push(files[i]); }}
+        if (validFiles.length === 0) return;
+        var chatContainer = pd.querySelector('[data-testid="stChatInputContainer"]');
+        var fileInput = chatContainer ? chatContainer.querySelector('input[type="file"]') : null;
+        if (!fileInput) {{ var allInputs = pd.querySelectorAll('input[type="file"]'); fileInput = allInputs[allInputs.length - 1]; }}
+        if (fileInput) {{
+            try {{
+                var dt = new DataTransfer(); for (var f of validFiles) dt.items.add(f);
+                Object.defineProperty(fileInput, 'files', {{value: dt.files, configurable:true, writable:true}});
+                fileInput.dispatchEvent(new Event('change', {{bubbles:true}})); fileInput.dispatchEvent(new Event('input', {{bubbles:true}}));
+                var ta = pd.querySelector('[data-testid="stChatInput"] textarea');
+                if (ta) {{ ta.style.outline = '2px solid #4a90d9'; ta.placeholder = '📎 Memuat...'; setTimeout(function(){{ ta.style.outline = ''; ta.placeholder = 'Tanya SIGMA... DYOR - bukan financial advice.'; }}, 3000); ta.focus(); }}
+            }} catch(err) {{ console.log('drop err', err); }}
+        }}
+    }}, true);
+    pw._sigmaDragOK = true;
+}}
+setupDragDrop(); setTimeout(setupDragDrop, 2000);
+</script>
+""", height=0)
 # ─────────────────────────────────────────────
 # PART 8: MAIN CHAT ENGINE & UI (STABLE VERSION)
 # ─────────────────────────────────────────────
