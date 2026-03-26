@@ -3057,7 +3057,7 @@ const BC = "{C['bubble']}"; const BT = "#ffffff";
     
     /* Menyembunyikan teks di versi Mobile agar tidak tabrakan dengan logo KIPM */
     var style = pd.createElement('style');
-    style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { display: none !important; } }';
+    style.innerHTML = '@media (max-width: 768px) {{ #sigma-desktop-brand {{ display: none !important; }} }}';
     pd.head.appendChild(style);
     
     pd.body.appendChild(brand);
