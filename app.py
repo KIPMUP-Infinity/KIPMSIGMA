@@ -2985,8 +2985,10 @@ if current_view == "dashboard":
     try:
         import yfinance as yf
         import pandas as pd
+        import plotly.graph_objects as go
+        from datetime import datetime, timedelta
     except ImportError:
-        st.error("⚠️ Library 'yfinance' atau 'pandas' belum terinstall. Buka terminal/CMD dan ketik: pip install yfinance pandas")
+        st.error("⚠️ Library belum lengkap. Buka terminal/CMD dan ketik: pip install yfinance pandas plotly")
         st.stop()
 
     # --- INJEKSI CSS UNTUK UI MEWAH & MODERN (LUXURY THEME) ---
@@ -3000,7 +3002,7 @@ if current_view == "dashboard":
         padding: 15px 20px;
         box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-        margin-bottom: 15px; /* Jarak antar baris */
+        margin-bottom: 15px;
     }}
     [data-testid="stMetric"]:hover {{
         transform: translateY(-4px);
@@ -3008,7 +3010,7 @@ if current_view == "dashboard":
         box-shadow: 0 12px 25px rgba(245, 194, 66, 0.15);
     }}
     [data-testid="stMetricValue"] {{
-        font-size: 1.6rem !important; /* Dikecilkan sedikit agar fit di 5 kolom */
+        font-size: 1.6rem !important;
         font-weight: 800 !important;
         color: #ffffff !important;
     }}
@@ -3109,13 +3111,12 @@ if current_view == "dashboard":
         idx_data = get_market_data(indices_tickers)
         com_data = get_market_data(commodities_tickers)
     
-    # Render: Global Indices (Maks 5 kolom per baris)
+    # Render: Global Indices
     st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
     if idx_data:
         items_idx = list(idx_data.items())
-        # Looping dengan step 5 untuk membuat baris baru
         for i in range(0, len(items_idx), 5):
-            cols = st.columns(5) # Selalu panggil 5 kolom agar lebarnya seragam
+            cols = st.columns(5)
             chunk = items_idx[i:i+5]
             for j in range(5):
                 if j < len(chunk):
@@ -3127,7 +3128,7 @@ if current_view == "dashboard":
         
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Render: Commodities & Forex (Maks 5 kolom per baris)
+    # Render: Commodities & Forex
     st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
     if com_data:
         items_com = list(com_data.items())
@@ -3152,57 +3153,92 @@ if current_view == "dashboard":
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
-    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
-    tv_widget = f"""
-    <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
-      <div id="tradingview_sigma" style="height:550px;width:100%"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-      <script type="text/javascript">
-      new TradingView.widget(
-      {{
-      "autosize": true,
-      "symbol": "IDX:COMPOSITE",
-      "interval": "D",
-      "timezone": "Asia/Jakarta",
-      "theme": "dark",
-      "style": "1",
-      "locale": "id",
-      "enable_publishing": false,
-      "allow_symbol_change": true,
-      "hide_top_toolbar": false,
-      "hide_side_toolbar": false,
-      "backgroundColor": "rgba(20, 20, 20, 1)",
-      "gridColor": "rgba(45, 45, 45, 1)",
-      "save_image": false,
-      "container_id": "tradingview_sigma"
-    }}
-      );
-      </script>
-    </div>
-    """
-    components.html(tv_widget, height=570)
+    # --- 2. INTERACTIVE CANDLESTICK CHART (PLOTLY DINAMIS) ---
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (Sigma Live Candlestick)</h4>", unsafe_allow_html=True)
+    
+    col_tk, col_space = st.columns([1, 2])
+    with col_tk:
+        ticker_input = st.text_input("Simbol Saham/Indeks (BEI wajib pakai .JK):", "^JKSE", help="Contoh: BBCA.JK, GOTO.JK, ^JKSE")
+
+    @st.cache_data(ttl=300)
+    def fetch_candlestick_data(ticker_symbol):
+        try:
+            # Menggunakan method history untuk menarik data 6 bulan terakhir s.d hari ini
+            t = yf.Ticker(ticker_symbol)
+            df = t.history(period="6mo")
+            if not df.empty:
+                df.reset_index(inplace=True)
+                # Standarisasi nama kolom jika yfinance mereturn timezone pada Date
+                if 'Date' in df.columns:
+                    df['Date'] = pd.to_datetime(df['Date']).dt.date
+                return df
+            return None
+        except Exception as e:
+            return None
+
+    if ticker_input:
+        with st.spinner(f"Menarik data terkini untuk {ticker_input}..."):
+            df_chart = fetch_candlestick_data(ticker_input.upper())
+            
+        if df_chart is not None and not df_chart.empty:
+            fig = go.Figure(data=[go.Candlestick(
+                x=df_chart['Date'],
+                open=df_chart['Open'],
+                high=df_chart['High'],
+                low=df_chart['Low'],
+                close=df_chart['Close'],
+                increasing_line_color='#09ff00',  # Hijau ala Sigma
+                decreasing_line_color='#ff0000'   # Merah ala Sigma
+            )])
+            
+            fig.update_layout(
+                template='plotly_dark',
+                margin=dict(l=0, r=0, t=30, b=0),
+                paper_bgcolor='rgba(20,20,20,0.8)',
+                plot_bgcolor='rgba(20,20,20,0.8)',
+                xaxis_rangeslider_visible=False,
+                height=500,
+                title=f"Pergerakan 6 Bulan Terakhir: {ticker_input.upper()}"
+            )
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("Data tidak ditemukan. Pastikan koneksi internet aman dan kode ticker valid.")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- 3. KORELASI MAKRO EKONOMI (RI VS US) ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Maret 2026)</p>", unsafe_allow_html=True)
+    
+    # Fungsi pembentuk label bulan secara dinamis (12 bulan ke belakang dari hari ini)
+    def get_dynamic_months():
+        months = []
+        id_months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"]
+        now = datetime.now()
+        for i in range(11, -1, -1):
+            target_month = now.month - i
+            target_year = now.year
+            if target_month <= 0:
+                target_month += 12
+                target_year -= 1
+            months.append(f"{id_months[target_month-1]} '{str(target_year)[-2:]}")
+        return months
 
-    # Membagi chart menjadi 2 kolom: Kiri (RI), Kanan (US)
+    dynamic_months_labels = get_dynamic_months()
+    
+    # Display update date dynamically
+    current_month_str = dynamic_months_labels[-1].split(" ")[0]
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: {current_month_str} {datetime.now().year})</p>", unsafe_allow_html=True)
+
     macro_col1, macro_col2 = st.columns(2)
-
-    # Label Bulan (12 Bulan terakhir hingga Maret 2026)
-    months_labels = ["Apr '25", "Mei '25", "Jun '25", "Jul '25", "Ags '25", "Sep '25", "Okt '25", "Nov '25", "Des '25", "Jan '26", "Feb '26", "Mar '26"]
 
     with macro_col1:
         st.markdown(f"<p style='text-align:center; color:{C['gold']}; font-weight:600;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
-        # Data Historis RI
+        # Data Historis RI (Bisa diupdate angkanya sewaktu-waktu)
         macro_id = pd.DataFrame({
             "BI Rate (%)": [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00],
             "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80],
             "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
-        }, index=months_labels)
+        }, index=dynamic_months_labels)
         st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
     with macro_col2:
@@ -3212,14 +3248,14 @@ if current_view == "dashboard":
             "Fed Rate (%)": [5.25, 5.25, 5.25, 5.25, 5.00, 5.00, 4.75, 4.75, 4.50, 4.50, 4.50, 4.50],
             "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 3.40, 3.10, 3.20, 3.10],
             "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
-        }, index=months_labels)
+        }, index=dynamic_months_labels)
         st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
     st.info("💡 **The SIGMA View:** Amati korelasi antara **Fed Rate US** dan **BI Rate**. Jika The Fed menahan suku bunganya tinggi, BI seringkali terpaksa ikut menahan bunga tinggi agar Rupiah tidak jeblok dan uang asing (*capital*) tidak kabur ke pasar obligasi US (Yield 10Y US).")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 4. MARKET INSIGHT & KETAHANAN NASIONAL (2 KOLOM LUXURY) ---
+    # --- 4. MARKET INSIGHT & KETAHANAN NASIONAL ---
     col1, col2 = st.columns(2)
 
     with col1:
@@ -3250,7 +3286,6 @@ if current_view == "dashboard":
             </p>
         </div>
         """, unsafe_allow_html=True)
-
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
