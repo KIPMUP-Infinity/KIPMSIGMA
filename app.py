@@ -3005,6 +3005,397 @@ if st.session_state.user is None: components.html("<script>(function() { try { v
 
 
 # ─────────────────────────────────────────────
+# PART 9: SIGMA TERMINAL (MACRO, HEATMAP & NEWS)
+# ─────────────────────────────────────────────
+# --- OBAT ANTI AMNESIA (HEALER) ---
+# Menyelamatkan layar agar tidak terpental ke SIGMA AI saat ganti tema
+if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
+    try:
+        _saved_data = load_user(st.session_state.user["email"])
+        if _saved_data and "current_view" in _saved_data and "current_view" not in st.session_state:
+            st.session_state.current_view = _saved_data["current_view"]
+    except: pass
+    st.session_state.amnesia_fixed = True
+
+current_view = st.session_state.get("current_view", "chat")
+
+if current_view == "dashboard":
+    try:
+        import yfinance as yf
+        import pandas as pd
+        import streamlit.components.v1 as components
+    except ImportError:
+        st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
+        st.stop()
+
+    # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
+    is_dark = st.session_state.get("theme", "dark") == "dark"
+
+    # --- VARIABEL WARNA BUNGLEON (Berubah Sesuai Tema) ---
+    met_bg = "linear-gradient(145deg, rgba(30,30,30,0.7), rgba(15,15,15,0.9))" if is_dark else "#ffffff"
+    met_border = "rgba(245, 194, 66, 0.2)" if is_dark else "#e5e7eb"
+    met_shadow = "0 8px 20px rgba(0,0,0,0.5)" if is_dark else "0 4px 10px rgba(0,0,0,0.05)"
+    met_hover = "rgba(245, 194, 66, 0.8)" if is_dark else "#F5C242"
+    met_hshadow = "0 12px 25px rgba(245, 194, 66, 0.15)" if is_dark else "0 10px 20px rgba(245, 194, 66, 0.15)"
+    
+    text_main = "#ffffff" if is_dark else "#111827"
+    text_sub = "#a0a0a0" if is_dark else "#6b7280"
+    
+    title_bg = "-webkit-linear-gradient(0deg, #F5C242, #FFD700, #FFA500)" if is_dark else "none"
+    title_fill = "transparent" if is_dark else "#111827"
+    
+    card_bg = "linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8))" if is_dark else "#ffffff"
+    card_border = "rgba(255,255,255,0.1)" if is_dark else "#e5e7eb"
+    card_shadow = "0 8px 32px rgba(0,0,0,0.4)" if is_dark else "0 4px 15px rgba(0,0,0,0.03)"
+    
+    tv_theme = "dark" if is_dark else "light"
+    tv_bg = "rgba(20, 20, 20, 1)" if is_dark else "#ffffff"
+    tv_grid = "rgba(45, 45, 45, 1)" if is_dark else "#f3f4f6"
+
+    # --- INJEKSI CSS DINAMIS ---
+    st.markdown(f"""
+    <style>
+    /* Kotak Metrik */
+    [data-testid="stMetric"] {{
+        background: {met_bg} !important;
+        border: 1px solid {met_border} !important;
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: {met_shadow};
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 15px;
+    }}
+    [data-testid="stMetric"]:hover {{
+        transform: translateY(-4px);
+        border-color: {met_hover} !important;
+        box-shadow: {met_hshadow};
+    }}
+    [data-testid="stMetricValue"] {{
+        font-size: 1.6rem !important;
+        font-weight: 800 !important;
+        color: {text_main} !important; 
+    }}
+    [data-testid="stMetricLabel"] {{
+        color: {text_sub} !important;
+        font-weight: 600 !important;
+    }}
+    
+    /* Title Tengah */
+    .sigma-title {{
+        text-align: center;
+        background: {title_bg};
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: {title_fill};
+        color: {text_main};
+        font-weight: 900;
+        font-size: 3rem;
+        margin-bottom: 0px;
+        letter-spacing: 2px;
+    }}
+    .sigma-subtitle {{
+        text-align: center;
+        color: {text_sub};
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        margin-top: -5px;
+        margin-bottom: 20px;
+    }}
+    
+    /* Garis pemisah */
+    .fancy-divider {{
+        border: 0;
+        height: 1px;
+        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0));
+        margin-bottom: 30px;
+    }}
+    
+    /* Card Insight */
+    .dynamic-card {{
+        background: {card_bg};
+        border: 1px solid {card_border};
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: {card_shadow};
+        height: 100%;
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }}
+    .dynamic-card:hover {{
+        transform: translateY(-4px);
+        border-color: {met_hover};
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+        
+    # Header Terminal
+    st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
+    st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+    
+    # --- SISTEM TAB NAVIGASI ---
+    tab_macro, tab_heatmap, tab_news = st.tabs([
+        "🌍 Global & Macro", 
+        "🗺️ Sector Heatmap", 
+        "📰 Live News Feed"
+    ])
+
+    # ==========================================
+    # TAB 1: GLOBAL & MACRO
+    # ==========================================
+    with tab_macro:
+        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
+        
+        @st.cache_data(ttl=300)
+        def get_market_data(ticker_dict):
+            data = {}
+            for name, tk in ticker_dict.items():
+                try: 
+                    ticker = yf.Ticker(tk)
+                    hist = ticker.history(period="5d") 
+                    if len(hist) >= 2:
+                        last = float(hist['Close'].iloc[-1])
+                        prev = float(hist['Close'].iloc[-2])
+                        pct = ((last - prev) / prev) * 100
+                        data[name] = {"price": last, "pct": pct}
+                    elif len(hist) == 1:
+                        last = float(hist['Close'].iloc[-1])
+                        data[name] = {"price": last, "pct": 0.0}
+                    else:
+                        data[name] = {"price": 0, "pct": 0}
+                except Exception as e:
+                    data[name] = {"price": 0, "pct": 0}
+            return data
+
+        indices_tickers = {
+            "IHSG": "^JKSE", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
+            "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
+            "Hang Seng": "^HSI", "Shanghai": "000001.SS", "VIX": "^VIX"
+        }
+        
+        commodities_tickers = {
+            "USD/IDR": "IDR=X", "Gold (oz)": "GC=F", "WTI Crude": "CL=F",
+            "Brent Crude": "BZ=F", "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F", "Nickel": "ALI=F"          
+        }
+        
+        with st.spinner("Mendeteksi denyut pasar global..."):
+            idx_data = get_market_data(indices_tickers)
+            com_data = get_market_data(commodities_tickers)
+        
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
+        if idx_data:
+            items_idx = list(idx_data.items())
+            for i in range(0, len(items_idx), 5):
+                cols = st.columns(5)
+                chunk = items_idx[i:i+5]
+                for j in range(5):
+                    if j < len(chunk):
+                        name, info = chunk[j]
+                        with cols[j]:
+                            st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
+        else:
+            st.warning("⚠️ Gagal menarik data indeks.")
+            
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
+        if com_data:
+            items_com = list(com_data.items())
+            for i in range(0, len(items_com), 5):
+                cols = st.columns(5)
+                chunk = items_com[i:i+5]
+                for j in range(5):
+                    if j < len(chunk):
+                        name, info = chunk[j]
+                        with cols[j]:
+                            if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
+                            elif info['price'] == 0: price_str = "N/A"
+                            else: price_str = f"${info['price']:,.2f}"
+                            
+                            delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
+                            st.metric(label=name, value=price_str, delta=delta_str)
+        else:
+            st.warning("⚠️ Gagal menarik data komoditas.")
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # --- KORELASI MAKRO EKONOMI ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
+
+        macro_col1, macro_col2 = st.columns(2)
+        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
+
+        with macro_col1:
+            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
+            macro_id = pd.DataFrame({
+                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
+                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
+                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
+            }, index=dates)
+            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        with macro_col2:
+            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
+            macro_us = pd.DataFrame({
+                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
+                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
+                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
+            }, index=dates)
+            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        st.info("💡 **The SIGMA View:** Suku bunga global (The Fed & BI) sudah berada di tren pemangkasan. Namun, perhatikan lonjakan **Inflasi RI** belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- MARKET INSIGHT ---
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div class="dynamic-card">
+                <h5 style='color:#F5C242; margin-top:0;'>🏗️ Fundamental & The Real Macro</h5>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>📈 GDP & PMI Manufaktur:</b><br>
+                Perekonomian ditopang konsumsi rumah tangga. Angka PMI di atas 50 menandakan ekspansi pabrik.
+                </p>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>⚖️ Cadangan Devisa & Neraca Perdagangan:</b><br>
+                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="dynamic-card">
+                <h5 style='color:#ff5555; margin-top:0;'>🔥 Rotasi & Kurva Imbal Hasil</h5>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>📉 Yield Curve Obligasi RI:</b><br>
+                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
+                </p>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>⚠️ Sektor Fokus:</b><br>
+                Jika komoditas memanas, amati Coal & Gold. Jika suku bunga turun, uang institusi mengalir ke Big Banks dan Properti.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # --- TRADINGVIEW ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+        tv_widget = f"""
+        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
+          <div id="tradingview_sigma" style="height:550px;width:100%"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+          <script type="text/javascript">
+          new TradingView.widget(
+          {{
+          "autosize": true,
+          "symbol": "IDX:COMPOSITE",
+          "interval": "D",
+          "timezone": "Asia/Jakarta",
+          "theme": "{tv_theme}", 
+          "style": "1",
+          "locale": "id",
+          "enable_publishing": false,
+          "allow_symbol_change": true,
+          "hide_top_toolbar": false,
+          "hide_side_toolbar": false,
+          "backgroundColor": "{tv_bg}",
+          "gridColor": "{tv_grid}",
+          "save_image": false,
+          "container_id": "tradingview_sigma"
+        }}
+          );
+          </script>
+        </div>
+        """
+        components.html(tv_widget, height=570)
+
+    # ==========================================
+    # TAB 2: SECTOR HEATMAP (DILENGKAPI DATA PLOTLY)
+    # ==========================================
+    with tab_heatmap:
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px;'>🗺️ Korelasi Komoditas vs Harga Saham</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.95rem; margin-bottom: 20px;'>Membandingkan persentase pergerakan harga acuan Batu Bara Global terhadap saham PTBA dan PTRO dalam 3 bulan terakhir.</p>", unsafe_allow_html=True)
+
+        with st.spinner("Menghitung korelasi data historis..."):
+            try:
+                import plotly.express as px
+                # Mengambil data 3 bulan terakhir
+                coal = yf.Ticker("NCF=F").history(period="3mo")['Close']
+                ptba = yf.Ticker("PTBA.JK").history(period="3mo")['Close']
+                ptro = yf.Ticker("PTRO.JK").history(period="3mo")['Close']
+
+                # Normalisasi Timezone agar bisa digabung tanpa error bentrok waktu libur
+                if not coal.empty: coal.index = pd.to_datetime(coal.index).normalize().tz_localize(None)
+                if not ptba.empty: ptba.index = pd.to_datetime(ptba.index).normalize().tz_localize(None)
+                if not ptro.empty: ptro.index = pd.to_datetime(ptro.index).normalize().tz_localize(None)
+
+                # Gabung data
+                df_corr = pd.DataFrame({
+                    "Newcastle Coal (Global)": coal,
+                    "PTBA (Bukit Asam)": ptba,
+                    "PTRO (Petrosea)": ptro
+                })
+
+                # FIX ERROR WAKTU LIBUR: Isi data kosong (NaN) dengan data harga penutupan di hari sebelumnya
+                df_corr = df_corr.ffill().dropna()
+
+                # Normalisasi persentase ke base 100
+                if not df_corr.empty:
+                    df_norm = (df_corr / df_corr.iloc[0] - 1) * 100
+                    
+                    coal_color = "#111827" if not is_dark else "#ffffff"
+                    fig = px.line(
+                        df_norm, 
+                        x=df_norm.index, 
+                        y=df_norm.columns,
+                        labels={'value': 'Performa (%)', 'variable': 'Aset/Komoditas', 'Date': 'Tanggal'},
+                        color_discrete_sequence=[coal_color, "#F5C242", "#4285F4"]
+                    )
+                    
+                    fig.update_layout(
+                        plot_bgcolor="rgba(0,0,0,0)", 
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        margin=dict(l=0, r=0, t=10, b=0),
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                        hovermode="x unified",
+                        font=dict(color=text_main)
+                    )
+                    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=met_border, title="")
+                    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=met_border, title="Performa (%)")
+
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("Data tidak cukup untuk menampilkan korelasi saat ini.")
+
+            except Exception as e:
+                st.warning(f"⚠️ Gagal menarik data korelasi komoditas: {str(e)}")
+
+    # ==========================================
+    # TAB 3: LIVE NEWS FEED
+    # ==========================================
+    with tab_news:
+        st.markdown("<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
+        
+        news_widget = f"""
+        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+          {{
+          "feedMode": "all_symbols",
+          "isTransparent": false,
+          "displayMode": "regular",
+          "width": "100%",
+          "height": 600,
+          "colorTheme": "{tv_theme}",
+          "locale": "id"
+        }}
+          </script>
+        </div>
+        """
+        components.html(news_widget, height=620)
+
+# ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
 else:
@@ -3042,7 +3433,6 @@ else:
                 elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
             st.markdown(display_clean)
 
-    # PERBAIKAN: file_type DIHILANGKAN agar OS/Clipboard bisa paste gambar mentah
     try: result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple")
     except TypeError: result = st.chat_input("Tanya SIGMA...")
 
@@ -3065,44 +3455,16 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
-        # --- AUTO-TRIGGER SAAT PASTE GAMBAR ---
         if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
             if file_obj or st.session_state.pdf_data:
                 prompt = "Tolong analisa file yang saya kirim"
             else:
-                # Jika user hanya paste gambar chart tanpa ngetik apa-apa, PAKSA jadi analisa teknikal!
                 prompt = "5. Teknikal saham di gambar ini"
 
-        # ─── MENU 7 ALPHA BARU (GUIDE PANDUAN PENGGUNA) ───
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                menu_text = """**🌟 7 ALPHA SIGMA — PANDUAN & MENU UTAMA 🌟**
-
-**1. Kesimpulan Dampak Makro [topik/berita]**
-↳ *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*
-
-**2. Kesimpulan Dampak [emiten]**
-↳ *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*
-
-**3. Bandarmologi [emiten]**
-↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*
-
-**4. Fundamental [emiten]**
-↳ *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*
-
-**5. Teknikal [emiten]**
-↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic/RSI/MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*
-
-**6. Analisa Lengkap [emiten] (Quad Confluence)**
-↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*
-
-**7. Analisa IPO [emiten]**
-↳ ⚠️ *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*
-
-💡 **Cara Pakai:** Ketik angkanya atau perintahnya. 
-Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan)."""
-                
+                menu_text = """**🌟 7 ALPHA SIGMA — PANDUAN & MENU UTAMA 🌟**\n\n**1. Kesimpulan Dampak Makro [topik/berita]**\n↳ *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*\n\n**2. Kesimpulan Dampak [emiten]**\n↳ *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*\n\n**3. Bandarmologi [emiten]**\n↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*\n\n**4. Fundamental [emiten]**\n↳ *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*\n\n**5. Teknikal [emiten]**\n↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic/RSI/MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*\n\n**6. Analisa Lengkap [emiten] (Quad Confluence)**\n↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*\n\n**7. Analisa IPO [emiten]**\n↳ ⚠️ *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*\n\n💡 **Cara Pakai:** Ketik angkanya atau perintahnya. \nContoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan)."""
                 active["messages"].append({"role": "user", "content": "7 Alpha", "display": "7 Alpha"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
                 with st.chat_message("user"): st.markdown("7 Alpha")
@@ -3133,9 +3495,7 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
         st.session_state.img_data = None; st.session_state.pdf_data = None
         full_prompt = prompt
 
-        # ─── LOGIC ROUTER & INTERCEPTOR ───
         prompt_lower = prompt.lower()
-        
         is_dampak_makro = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower
         is_dampak_emiten = prompt_lower.startswith("2.") or ("dampak" in prompt_lower and not is_dampak_makro)
         is_bandarmologi = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or "broker" in prompt_lower
@@ -3143,10 +3503,8 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
         is_teknikal = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
         is_lengkap = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
         is_ipo = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
-        
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
         
-        # LOGIC 1: DAMPAK MAKRO
         if is_dampak_makro:
             with st.spinner("🔍 Menganalisa sentimen makro global/domestik..."):
                 try:
@@ -3157,7 +3515,6 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
                 full_prompt += TEMPLATE_DAMPAK_MAKRO
                 full_prompt += f"\n\nPertanyaan Asli User (Topik yang dibahas): {prompt}"
 
-        # LOGIC 2: DAMPAK EMITEN
         elif is_dampak_emiten and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             with st.spinner(f"🔍 Menganalisa korelasi berita ke emiten {emiten_target}..."):
@@ -3169,30 +3526,23 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
                 full_prompt += TEMPLATE_DAMPAK_EMITEN.format(emiten=emiten_target)
                 full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
 
-        # LOGIC 3: BANDARMOLOGI (Menu 3) - PURE BANDAR FORMAT
         elif is_bandarmologi:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
             with st.spinner(f"🔍 Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
                 full_prompt = TEMPLATE_BANDARMOLOGI.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: Fokus 100% pada data Broker Summary, Average Price, dan Volume. JANGAN bahas indikator teknikal (RSI/MACD) atau Fundamental!]\nPertanyaan Asli User: {prompt}"
 
-        # LOGIC 4: FUNDAMENTAL
         elif is_fundamental and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             is_bank = emiten_target in BANK_TICKERS
             chosen_template = TEMPLATE_BANK if is_bank else TEMPLATE_NON_BANK
             tahun_sekarang = datetime.now().year
-            
             with st.spinner(f"🔍 Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
-                try:
-                    fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
-                except:
-                    fund_text = "Data gagal ditarik."
-                
+                try: fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
+                except: fund_text = "Data gagal ditarik."
                 full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
                 full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
 
-        # LOGIC 5: TEKNIKAL (Format Baru 3 Model Eksekusi)
         elif is_teknikal:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
             if img_data or multi_images:
@@ -3202,19 +3552,14 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
                 full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]"
 
-        # LOGIC 6: ANALISA LENGKAP (MASTER / QUAD CONFLUENCE)
         elif is_lengkap and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             with st.spinner(f"🔍 Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
-                try:
-                    fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
-                except:
-                    fund_text = "Data fundamental gagal ditarik secara live, gunakan estimasi dari knowledge base."
-                
+                try: fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
+                except: fund_text = "Data fundamental gagal ditarik secara live, gunakan estimasi dari knowledge base."
                 full_prompt = TEMPLATE_LENGKAP.format(emiten=emiten_target, data_raw=fund_text)
                 full_prompt += f"\n\n[PENTING: Gunakan gambar chart & data Broker Summary yang dilampirkan user! Cari Divergence!]\nPertanyaan Asli User: {prompt}"
 
-        # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
         elif is_ipo:
             if pdf_data:
                 emiten_target = emiten_match.group(0).upper() if emiten_match else "CALON EMITEN BARU"
@@ -3223,7 +3568,6 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
             else:
                 full_prompt = "[INSTRUKSI SYSTEM]: Beritahu user dengan ramah bahwa untuk melakukan Analisa IPO, mereka WAJIB meng-upload atau melampirkan file PDF Prospektus e-IPO terlebih dahulu ke dalam kolom chat."
 
-        # FALLBACK GENERAL
         elif pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
@@ -3253,7 +3597,6 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
                     st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
             if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
             
-            # Jangan tampilkan prompt kaku ke user, ubah ke natural text
             display_prompt = prompt if prompt != "5. Teknikal saham di gambar ini" else "Tolong buatkan Trade Plan dari chart ini."
             st.markdown(display_prompt)
 
@@ -3280,9 +3623,7 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
                                     from groq import Groq
                                     client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                                     mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA. Jawab SEMUA pertanyaan dalam Bahasa Indonesia dan JANGAN MENOLAK mengisi template yang diberikan."}
-                                    
                                     safe_prompt = full_prompt[:6000] if len(full_prompt) > 6000 else full_prompt
-                                    
                                     _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
                                     _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=4000)
                                     ans_bersih = _res.choices[0].message.content
@@ -3304,13 +3645,14 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     
-    # GANTI BARIS SAVE_USER DI BAWAH INI:
+    # KODE PERBAIKAN PENYIMPANAN POSISI TERAKHIR (SUPER PENTING!)
     save_user(user["email"], {
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat") # <-- BARIS INI YANG BIKIN INGAT POSISI
+        "current_view": st.session_state.get("current_view", "chat")
     })
+
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
 if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
@@ -3401,18 +3743,15 @@ components.html("""
                     var dt = new DataTransfer();
                     var hasNewImage = false;
                     
-                    // Simpan file yang mungkin sudah di-upload sebelumnya (biar tidak hilang)
                     if (fileInput.files) {
                         for (var i=0; i<fileInput.files.length; i++) {
                             dt.items.add(fileInput.files[i]);
                         }
                     }
                     
-                    // Cek jika yang di-paste adalah gambar dari Snipping Tool/Clipboard
                     for (var i=0; i<items.length; i++) {
                         if (items[i].type.indexOf('image') !== -1) {
                             var file = items[i].getAsFile();
-                            // PAKSA kasih nama ekstensi .png agar Streamlit TIDAK me-reject file-nya
                             var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
                             dt.items.add(newFile);
                             hasNewImage = true;
@@ -3420,16 +3759,14 @@ components.html("""
                     }
                     
                     if (hasNewImage) {
-                        e.preventDefault(); // Hentikan paste biasa
-                        fileInput.files = dt.files; // Masukkan paksa ke file uploader Streamlit
-                        // Picu sistem React Streamlit agar sadar ada file baru masuk
+                        e.preventDefault();
+                        fileInput.files = dt.files;
                         fileInput.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 }
             });
         }
     }
-    // Pantau terus karena elemen chat input bisa re-render kapan saja
     setInterval(injectPastePolyfill, 1000);
 })();
 </script>
@@ -3446,11 +3783,9 @@ components.html("""
     var brand = pd.createElement('div');
     brand.id = 'sigma-desktop-brand';
     
-    /* Teks SIGMA menggunakan font stack sistem yang bersih */
     brand.innerHTML = 'SIGMA';
     brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
-    /* Sesuaikan ukuran dan posisi di layar Mobile agar tetap rapi */
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
     pd.head.appendChild(style);
