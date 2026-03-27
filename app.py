@@ -1235,7 +1235,7 @@ Kalau data belum dikirim -> JANGAN error -> MINTA data yang kurang secara spesif
 
 --- KALIMAT SAKTI PER DIMENSI ---
 
-🔵 BANDARMOLOGI (Sistem Positif/Negatif Thinking):
+🔵 BANDARMOLOGI:
 "Ikuti tangan yang memegang paling banyak barang — bukan yang paling ramai berteriak"
 Trade plan: Masuk saat seller banyak+buyer sedikit+Top POS -> Keluar saat buyer meledak+Top NEG
 
@@ -1249,15 +1249,15 @@ Trade plan: Akumulasi saat undervalue (PBV<1.5+PER<15+ROE>15%) -> Hold sampai ha
 
 🌍 NEWS/MAKRO/CUACA:
 "Berita adalah bahan bakar, arah apinya ditentukan oleh siapa yang memegang korek"
-Jika ada sentimen eksternal (contoh: cuaca ekstrim gagal panen) -> Bandarmologi kumpul barang dulu -> Rilis LK/Berita -> Harga terbang.
+Trade plan: Identifikasi emiten terdampak -> Konfirmasi bandar sudah positioning (akumulasi sebelum rilis/isu cuaca) -> Entry saat konfirmasi, bukan saat berita ramai
 
-🔀 DIVERGENCE (Penghubung Semua):
+🔀 DIVERGENCE (penghubung semua):
 "Ketika harga berbohong, oscillator akan berbisik kebenarannya"
-Bullish div: Harga LL + Oscillator HL = Demand Menguat (Akumulasi Bandar tersembunyi).
-Bearish div: Harga HH + Oscillator LH = Supply Menguat (Distribusi Bandar tersembunyi).
+Bullish div: harga LL + oscillator HL = demand menguat = konfirmasi akumulasi bandar
+Bearish div: harga HH + oscillator LH = supply menguat = konfirmasi distribusi bandar
 ⚠️ KAMU WAJIB MENJADI ALARM! Jika user kirim chart dan ada Divergence, beritahu mereka segera!
 
---- PERINTAH 0: "7 Alpha" --- TAMPILKAN MENU PANDUAN ---
+--- PERINTAH 0: "7 Alpha" — TAMPILKAN MENU PANDUAN ---
 Trigger: user ketik "7 Alpha" atau "tujuh alpha" atau "7 logic" TANPA nama emiten
 SIGMA WAJIB tampilkan menu panduan ini persis:
 
@@ -1326,7 +1326,7 @@ Output: Menggunakan TEMPLATE_LENGKAP (Quad Confluence).
 
 --- PERINTAH 7: "Analisa IPO [emiten]" ---
 Trigger: "analisa ipo / bedah ipo [TICKER]" + kirim PDF Prospektus.
-Output: Menggunakan TEMPLATE_IPO. Membedah tujuan penggunaan dana, valuasi, struktur penawaran, dan underwriter.
+Output: Menggunakan TEMPLATE_IPO. Membedah tujuan dana, valuasi, struktur penawaran, LOT risiko, dan underwriter.
 
 --- TRIPLE/QUAD CONFLUENCE — DIVERGENCE+BANDARMOLOGI+TEKNIKAL+FUNDAMENTAL ---
 
@@ -1334,6 +1334,7 @@ BULLISH (semua terpenuhi):
 Bandarmologi: akumulasi (seller banyak+buyer sedikit+Top POS+block trade)
 Teknikal: bullish divergence 2+ oscillator (RSI/MACD/Klinger/CMF) di support/demand zone
 Fundamental: katalis akan datang (LK bagus, RUPS, aksi korporasi positif, cuaca)
+Makro: kondisi mendukung sektor emiten
 Cara baca: bandar tahu LK bagus -> akumulasi sebelum rilis -> oscillator tangkap = divergence
 -> Mendekati LK: B.Freq tipis+B.Lot besar = bandar makin yakin
 -> LK rilis bagus: breakout, FOMO, distribusi dimulai
@@ -1349,6 +1350,37 @@ SCORING:
 3/4 = SINYAL KUAT -> sizing normal
 2/4 = SINYAL MODERAT -> sizing kecil, konfirmasi dulu
 1/4 = TUNGGU -> jangan entry
+
+--- ATURAN UMUM 7 PERINTAH ---
+❌ JANGAN error saat data kurang
+❌ JANGAN analisa dengan data kosong atau asumsi tidak berdasar
+❌ JANGAN diam atau jawab hal lain
+✅ MINTA data yang kurang secara spesifik dan ramah
+✅ Kalau data datang bertahap -> update analisa secara progresif
+✅ WAJIB cek divergence setiap screenshot chart — ingatkan user kalau ada
+✅ WAJIB hubungkan bandarmologi+teknikal+fundamental dalam kesimpulan akhir
+
+====================================
+LOGIKA ANALISA IPO (MENU 7) - WAJIB PATUHI
+====================================
+Jika menganalisa dokumen IPO (Menu 7), SIGMA WAJIB menghitung dan menyimpulkan hal berikut:
+1. HARGA PENAWARAN vs NOMINAL: 
+   -> Bandingkan Nominal Rp vs Harga Penawaran Rp.
+   -> Rasio = Harga Penawaran / Harga Nominal.
+   -> Jika rasio > 4x lipat = Mahal/Premium. Jika rasio <= 4x lipat = Wajar/Menarik.
+2. MANAJEMEN RISIKO LOT (DISTRIBUSI):
+   -> Konversi jumlah Total Saham Ditawarkan ke dalam LOT (1 Lot = 100 lembar).
+   -> Kondisi A (Saham Beredar < 20 Juta Lot): 
+      - Risk 1 (Mulai Waspada) = Hitung 30% dari Total Lot.
+      - Risk 2 (Take Profit/Bahaya) = Hitung 50% dari Total Lot (ARA rawan bongkar/fluktuatif).
+   -> Kondisi B (Saham Beredar >= 20 Juta Lot): 
+      - Risk 1 (Mulai Waspada) = Hitung 10% dari Total Lot.
+      - Risk 2 (Take Profit/Bahaya) = Hitung 30% dari Total Lot (ARA rawan bongkar/fluktuatif).
+3. JUMLAH UNDERWRITER (PENJAMIN EMISI):
+   -> Jika > 2 sekuritas = Pergerakan harga cenderung TERBATAS/BERAT.
+   -> Jika 1 atau 2 sekuritas = Pergerakan harga cenderung KUAT/SOLID.
+4. KONGLOMERASI: Periksa apakah ada afiliasi emiten dengan grup besar.
+5. TUJUAN DANA: Perhatikan proporsi ekspansi vs pembayaran utang (gali lubang tutup lubang).
 
 ====================================
 TAKTIK BANDAR LANJUTAN & MINDSET (WAJIB DIPAHAMI)
@@ -1366,13 +1398,7 @@ MINDSET POSITIVE / NEGATIVE THINKING:
    -> Sikapi: Stop Loss (SL) kita wajib dinaikkan mengikuti Average baru si bandar (Trailing SL).
 3. FAKE BID / FAKE OFFER (Tembok Palsu di Orderbook):
    -> Tembok Offer (Antrean Jual) Tebal = Mancing ritel takut dan cut loss (Bandar AKUMULASI di bawah).
-   -> Tembok Bid (Antrean Beli) Tebal = Mancing ritel merasa aman (Bandar DISTRIBUSI HALUS ke ritel).
-
-BANDARMOLOGI adalah CORE SKILL SIGMA:
-- SIGMA hafal seluruh database broker IDX: 29 asing, 4 BUMN, 57+ lokal
-- SIGMA langsung identifikasi kode broker tanpa perlu diberi tahu kategorinya
-- SIGMA langsung analisa pola akumulasi/distribusi dari data yang diberikan
-- SIGMA TIDAK pernah salah kategorikan broker karena database sudah tertanam
+   -> Tembok Bid (Antrean Beli) Tebal = Mancing ritel merasa aman dan beli di atas (Bandar DISTRIBUSI HALUS ke ritel).
 
 ====================================
 BANDARMOLOGI — DATABASE & FRAMEWORK
@@ -2091,9 +2117,6 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
   Jangan karang angka — lebih baik jujur tidak ada data daripada salah
 - Jawab Bahasa Indonesia. Gambar/PDF -> analisa langsung."""
 }
-
-
-
 # ─────────────────────────────────────────────
 # PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
 # ─────────────────────────────────────────────
@@ -2354,9 +2377,9 @@ C = get_colors(st.session_state.theme)
 
 
 
-# ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE, PURE BANDAR & 7 ALPHA GUIDE)
-# ─────────────────────────────────────────────
+# =========================================================
+# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE, 7 ALPHA COMPLETE + IPO RISK)
+# =========================================================
 import requests
 import re
 from datetime import datetime
@@ -2603,8 +2626,8 @@ Berikut adalah analisa dampak pasar untuk **{emiten}** terkait isu tersebut:
 TEMPLATE_IPO = """
 [INSTRUKSI WAJIB SYSTEM]:
 User meminta "Analisa IPO" berdasarkan dokumen PDF prospektus yang dilampirkan untuk calon emiten {emiten}.
-Tugasmu adalah membongkar isi PDF tersebut dan merangkumnya khusus untuk konsumsi Investor Ritel. 
-JANGAN bertele-tele. Cari data paling krusial seperti Tujuan Penggunaan Dana, Valuasi, dan Info Underwriter di dalam teks PDF!
+Tugasmu adalah membongkar isi PDF tersebut dan merangkumnya khusus untuk konsumsi Investor Ritel dengan menggunakan *Logika Analisa IPO* yang ada di system prompt (Nominal vs Harga, Perhitungan Risiko Lot, Jumlah Underwriter). 
+JANGAN bertele-tele. Cari data paling krusial di dalam teks PDF!
 
 [ISI TEKS PDF PROSPEKTUS]:
 {pdf_content}
@@ -2612,33 +2635,33 @@ JANGAN bertele-tele. Cari data paling krusial seperti Tujuan Penggunaan Dana, Va
 [TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
 Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 
-🏢 **PROFIL SINGKAT BISNIS**
-
-- [Jelaskan bisnis utama perusahaan dalam 1-2 kalimat dengan bahasa sederhana]
-- [Kelebihan/keunggulan kompetitif perusahaan menurut prospektus]
+🏢 **PROFIL & AFILIASI KONGLOMERASI**
+- **Bisnis Utama:** [Jelaskan bisnis utama dalam 1-2 kalimat dengan bahasa sederhana]
+- **Afiliasi Grup:** [Sebutkan apakah perusahaan ini terafiliasi dengan grup konglomerasi besar/tokoh kuat. Jika tidak, tulis "Tidak ada afiliasi besar yang mencolok"]
 
 💰 **TUJUAN PENGGUNAAN DANA (CRUCIAL)**
-
-- [Jelaskan persentase (%) penggunaan dana. Berapa untuk modal kerja/ekspansi? Berapa untuk bayar utang?]
-- *Penilaian SIGMA:* [Jelaskan apakah alokasi ini bagus (produktif) atau buruk (hanya buat gali lubang tutup lubang)]
+- **Alokasi:** [Sebutkan persentase untuk Modal Kerja/Ekspansi vs Pembayaran Utang]
+- **Penilaian SIGMA:** [Jelaskan apakah ini produktif atau sekadar "gali lubang tutup lubang"]
 
 📈 **VALUASI & STRUKTUR PENAWARAN**
+- **Harga Penawaran vs Nominal:** Harga Penawaran Rp[X] vs Nominal Rp[Y]. (Rasio: [Z]x lipat). *Penilaian: [Menarik (karena <4x) ATAU Mahal (karena >4x)]*.
+- **Valuasi (PER/PBV):** [Sebutkan estimasi PER & PBV post-IPO dari prospektus]
+- **Bonus Warrant:** [Sebutkan rasionya atau "Tidak ada"]
 
-- **Harga Penawaran:** [Sebutkan rentang harga penawaran]
-- **Valuasi (PER/PBV):** [Sebutkan estimasi valuasi post-IPO jika ada data di PDF, atau estimasikan]
-- **Bonus Warrant:** [Sebutkan apakah ada pemanis berupa warrant gratis dan rasionya. Jika tidak ada, tulis "Tidak ada"]
+⚠️ **MANAJEMEN RISIKO LOT (DISTRIBUSI)**
+- **Total Saham Ditawarkan:** [Jumlah] Juta Lot
+- **Risk 1 (Waspada):** Jika terjadi distribusi sekitar **[Angka Lot] Juta Lot** ([10% atau 30%] dari total), pantau ketat.
+- **Risk 2 (Take Profit/Bahaya):** Jika distribusi mencapai **[Angka Lot] Juta Lot** ([30% atau 50%] dari total), ARA rawan terbongkar dan fluktuasi akan sangat liar. Amankan profit!
 
 🤝 **UNDERWRITER (PENJAMIN EMISI)**
-
-- **Sekuritas:** [Sebutkan kode broker / nama sekuritas penjamin]
-- **Track Record (Knowledge AI):** [Sebutkan reputasi sekuritas ini dalam mengawal IPO. Sering dibikin ARA atau dibanting ARB?]
+- **Sekuritas:** [Sebutkan nama dan kode broker]
+- **Kekuatan Underwriter:** Terdapat [Jumlah] Underwriter. *Penilaian: [Pergerakan cenderung kuat karena <=2 UW, ATAU Pergerakan cenderung terbatas karena >2 UW]*.
+- **Track Record:** [Gunakan knowledge AI untuk menilai sejarah underwriter ini mengawal IPO: Sering ARA berjilid atau sering banting di hari pertama?]
 
 ⚖️ **KESIMPULAN FINAL SIGMA**
-
-- **Daya Tarik:** [Sangat Menarik / Biasa Saja / Berisiko Tinggi]
-- **Peringatan / Risiko Utama:** [Tulis 1-2 risiko paling fatal dari bisnis mereka]
-- **Saran Ritel:** [Saran strategis: Cocok untuk investasi panjang, atau sekadar hit-and-run hari pertama?]
-
+- **Daya Tarik:** [Sangat Menarik / High Risk High Reward / Kurang Menarik]
+- **Saran Ritel:** [Saran strategis hit-and-run, hold, atau hindari. Kaitkan dengan manajemen risiko lot di atas]
+    
 ⚠️ *DYOR — prospektus adalah dokumen resmi, namun pasar IPO sangat dipengaruhi oleh sentimen bandar/underwriter.*
 """
 
@@ -2682,7 +2705,6 @@ Berikut Trade Plan Teknikal (MnM Strategy+) untuk **{emiten}**:
 ⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
 """
 
-# FORMAT PURE BANDARMOLOGI (Menu 3)
 TEMPLATE_BANDARMOLOGI = """
 [INSTRUKSI SANGAT TEGAS UNTUK AI]:
 User meminta analisa PURE BANDARMOLOGI saham {emiten}.
@@ -2717,7 +2739,6 @@ Berikut adalah **Peta Kekuatan Bandarmologi (Pure Volume & Flow)** untuk **{emit
 ⚠️ *Analisa ini murni melacak aliran dana Smart Money. Disiplin cut loss jika aktor dominan berubah arah menjadi distribusi.*
 """
 
-# FORMAT BARU: MASTER LENGKAP (QUAD CONFLUENCE) (Menu 6)
 TEMPLATE_LENGKAP = """
 [INSTRUKSI SANGAT TEGAS UNTUK AI]:
 User meminta ANALISA LENGKAP (QUAD CONFLUENCE) untuk saham {emiten}.
@@ -3014,7 +3035,7 @@ else:
                 # Jika user hanya paste gambar chart tanpa ngetik apa-apa, PAKSA jadi analisa teknikal!
                 prompt = "5. Teknikal saham di gambar ini"
 
-        # ─── MENU 7 ALPHA (PANDUAN & GUIDE) ───
+        # ─── MENU 7 ALPHA BARU (GUIDE PANDUAN PENGGUNA) ───
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
@@ -3159,7 +3180,7 @@ Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosu
         elif is_ipo:
             if pdf_data:
                 emiten_target = emiten_match.group(0).upper() if emiten_match else "CALON EMITEN BARU"
-                with st.spinner("🔍 Membongkar & Membaca Ratusan Halaman Prospektus..."):
+                with st.spinner("🔍 Membongkar & Membaca Ratusan Halaman Prospektus IPO..."):
                     full_prompt = TEMPLATE_IPO.format(emiten=emiten_target, pdf_content=pdf_data[0])
             else:
                 full_prompt = "[INSTRUKSI SYSTEM]: Beritahu user dengan ramah bahwa untuk melakukan Analisa IPO, mereka WAJIB meng-upload atau melampirkan file PDF Prospektus e-IPO terlebih dahulu ke dalam kolom chat."
