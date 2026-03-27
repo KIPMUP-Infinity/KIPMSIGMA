@@ -3040,7 +3040,6 @@ if current_view == "dashboard":
 
     # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px;'>📈 Live Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
-    # Widget TradingView murni HTML/JS, di-embed pakai components.html
     tv_widget = f"""
     <div class="tradingview-widget-container" style="height:100%;width:100%">
       <div id="tradingview_sigma" style="height:500px;width:100%"></div>
@@ -3071,43 +3070,41 @@ if current_view == "dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 3. RADAR MAKRO RI & NEWS FEED ---
-    col_macro, col_news = st.columns([1.2, 1.8])
-    
-    with col_macro:
-        st.markdown(f"<h4 style='color:{C['text']};'>🇮🇩 Histori Makro RI</h4>", unsafe_allow_html=True)
-        
-        # Grafik BI Rate Historis (Simulasi Data 6 Bulan Terakhir)
-        st.write("**Suku Bunga BI (BI Rate)**")
-        bi_data = pd.DataFrame({"BI Rate (%)": [5.75, 6.00, 6.00, 6.25, 6.25, 6.00]}, index=["Okt", "Nov", "Des", "Jan", "Feb", "Mar"])
-        st.line_chart(bi_data, color="#F5C242")
-        st.caption("*Pengaruh: Tren suku bunga tinggi memberatkan emiten properti, namun menguntungkan margin Big Banks.*")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Grafik Inflasi Historis (Simulasi Data 6 Bulan Terakhir)
-        st.write("**Tingkat Inflasi (YoY)**")
-        inf_data = pd.DataFrame({"Inflasi (%)": [2.56, 2.86, 2.61, 2.57, 2.75, 2.80]}, index=["Okt", "Nov", "Des", "Jan", "Feb", "Mar"])
-        st.line_chart(inf_data, color="#4285F4")
-        st.caption("*Pengaruh: Inflasi yang stabil menjaga daya beli masyarakat (Katalis positif untuk sektor FMCG).*")
-        
-    with col_news:
-        st.markdown(f"<h4 style='color:{C['text']};'>📰 Market Insight (SIGMA View)</h4>", unsafe_allow_html=True)
-        
-        # Menggunakan native Streamlit callout (anti bocor HTML)
-        st.success("**🔥 Sektor Fokus Saat Ini**\n\nPerhatikan rotasi sektor. Jika harga komoditas global memanas, amati emiten Coal dan Gold. Jika BI Rate ada wacana turun, pantau Big Banks dan Properti.")
-        
-        st.error("**⚠️ Peringatan Risiko Mayor**\n\nVolatilitas nilai tukar Rupiah (USD/IDR) wajib dipantau ketat. Pelemahan Rupiah > Rp 15.800 rentan memicu keluarnya dana Asing (Net Foreign Sell) dari saham-saham Bluechip IDX.")
-        
-        st.info("**📈 Data Ketahanan Nasional**\n\n- **GDP Growth:** ~5.11% YoY (Masih solid di atas rata-rata global)\n- **Neraca Dagang:** Surplus beruntun (Menahan tekanan Rupiah)")
-        
-        st.warning("💡 **Tips Trading:** Setelah melihat kondisi Makro di sini, buka menu **SIGMA AI** lalu ketik **'1. Dampak Makro'** atau **'7 Alpha'** untuk membuat Trade Plan pada saham pilihanmu!")
+    # --- 3. KORELASI MAKRO EKONOMI (WIDE CHART) ---
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px;'>📊 Korelasi Makro: Suku Bunga vs Inflasi vs Yield Obligasi</h4>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.9rem; margin-bottom: 15px;'>Tren 12 Bulan Terakhir (Visualisasi interaksi data ekonomi Indonesia)</p>", unsafe_allow_html=True)
 
+    # Data Simulasi Historis 12 Bulan agar chart melebar dan menyamping
+    macro_data = pd.DataFrame({
+        "BI Rate (%)": [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 5.75, 6.00, 6.00, 6.25, 6.25, 6.00],
+        "Inflasi YoY (%)": [3.00, 2.84, 2.51, 2.13, 2.12, 2.28, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80],
+        "Bond Yield 10Y (%)": [6.80, 6.95, 7.10, 6.85, 6.70, 6.65, 6.50, 6.75, 6.60, 6.80, 6.70, 6.65]
+    }, index=["Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Jan", "Feb", "Mar"])
+
+    # Render Multi-line Chart
+    st.line_chart(macro_data, color=["#F5C242", "#4285F4", "#ff5555"], height=350)
+
+    # Penjelasan Cara Baca Korelasi
+    st.info("💡 **The SIGMA View (Cara Membaca Hubungan di Atas):**\n\nJika garis **Inflasi (Biru)** naik tajam, Bank Indonesia cenderung merespons dengan menaikkan **BI Rate (Kuning)** untuk mengerem harga barang. Kenaikan BI Rate ini akan memicu kenaikan **Bond Yield/Obligasi (Merah)**. Jika Yield Obligasi sedang tinggi, para Fund Manager Asing akan lebih suka memindahkan uangnya dari Saham (aset berisiko) ke Obligasi Negara (aset aman). **Akibatnya: Capital Outflow & IHSG tertekan turun.**")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- 4. MARKET INSIGHT & KETAHANAN NASIONAL (2 KOLOM) ---
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown(f"<h5 style='color:{C['text']};'>🔥 Sektor Fokus & Risiko Sentimen</h5>", unsafe_allow_html=True)
+        st.success("**Rotasi Sektor (Commodity vs Banking):**\nJika harga komoditas global memanas akibat ketegangan geopolitik, amati emiten *Coal* (Batu Bara) dan *Gold* (Emas). Sebaliknya, jika tren suku bunga (BI Rate) berbalik dipangkas turun, aliran uang akan mengalir deras ke *Big Banks* dan sektor Properti.")
+        st.error("**Peringatan Volatilitas Rupiah (USD/IDR):**\nPelemahan Rupiah yang sangat cepat dan tajam wajib dipantau ketat. Jika USD mendominasi, hal ini berisiko memicu *Net Foreign Sell* masif di bursa domestik, karena aset saham dalam satuan Rupiah dianggap menyusut nilainya di mata asing (rugi kurs).")
+
+    with col2:
+        st.markdown(f"<h5 style='color:{C['text']};'>🛡️ Status Fundamental Negara</h5>", unsafe_allow_html=True)
+        st.info("**📈 GDP Growth (Pertumbuhan Ekonomi): ~5.11% YoY**\nPerekonomian Indonesia masih bertumbuh secara solid di atas rata-rata global, ditopang kuat oleh konsumsi rumah tangga dalam negeri. Ini adalah fundamental yang baik untuk sektor *Consumer Goods* (FMCG).")
+        st.info("**⚖️ Ketahanan APBN & Neraca Perdagangan:**\nNeraca dagang konsisten surplus (ekspor lebih besar dari impor). Ini adalah 'bantalan' krusial yang menyuplai cadangan devisa agar Bank Indonesia bisa melakukan intervensi pasar untuk menahan gejolak Rupiah dari serangan eksternal.")
 
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
-
 else:
     if not active["messages"][1:]:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
