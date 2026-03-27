@@ -2978,13 +2978,106 @@ if "do" in st.query_params:
 active = get_active()
 current_view = st.session_state.get("current_view", "chat")
 
+# ─────────────────────────────────────────────
+# PART 9: SIGMA TERMINAL (MACRO & MARKET DASHBOARD)
+# ─────────────────────────────────────────────
 if current_view == "dashboard":
-    st.markdown(f"""
-    <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:70vh; text-align:center; padding: 20px;">
-        <h1 style="color:{C['text']}; font-size:10.10rem; font-weight:800; letter-spacing:1px; margin-bottom:12px;">HAI👋, FITUR INI AKAN SEGERA HADIR DITUNGGU!!! :)</h1>
-        <p style="color:{C['text_muted']}; font-size:1.1rem; font-weight:500; opacity:0.8;"> by. MarketnMocha</p>
-    </div>
-    """, unsafe_allow_html=True)
+    try:
+        import yfinance as yf
+    except ImportError:
+        st.error("⚠️ Library 'yfinance' belum terinstall. Buka terminal/CMD dan ketik: pip install yfinance")
+        st.stop()
+        
+    # Header Terminal
+    st.markdown(f"<h2 style='color:{C['text']}; font-weight:800; margin-bottom: 0px;'>🌐 SIGMA Terminal</h2>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size: 1.1rem;'>Real-time Macro, Forex & Commodities (0 Token Usage)</p>", unsafe_allow_html=True)
+    st.markdown(f"<hr style='border-color: {C['border']}; margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
+    
+    # --- 1. LIVE TICKER (YFINANCE) ---
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px;'>Live Market Pulse</h4>", unsafe_allow_html=True)
+    
+    @st.cache_data(ttl=300) # Cache 5 menit agar aplikasi tidak lemot dan tidak limit API
+    def get_market_data():
+        # ^JKSE = IHSG, IDR=X = USD/IDR, GC=F = Emas, CL=F = Minyak Mentah, ^DJI = Dow Jones
+        tickers = {
+            "IHSG": "^JKSE", 
+            "Dow Jones": "^DJI",
+            "USD/IDR": "IDR=X", 
+            "Gold (USD/oz)": "GC=F", 
+            "Crude Oil (WTI)": "CL=F"
+        }
+        data = {}
+        try:
+            for name, tk in tickers.items():
+                ticker = yf.Ticker(tk)
+                # Ambil data 5 hari terakhir untuk jaga-jaga jika ada hari libur bursa (weekend)
+                hist = ticker.history(period="5d") 
+                if len(hist) >= 2:
+                    last = float(hist['Close'].iloc[-1])
+                    prev = float(hist['Close'].iloc[-2])
+                    pct = ((last - prev) / prev) * 100
+                    data[name] = {"price": last, "pct": pct}
+                else:
+                    data[name] = {"price": 0, "pct": 0}
+        except Exception as e:
+            pass # Lewati jika gagal narik data internet
+        return data
+    
+    with st.spinner("Mendeteksi denyut pasar global..."):
+        market_data = get_market_data()
+    
+    # Menampilkan Kotak Ticker Berjejer
+    if market_data:
+        cols = st.columns(len(market_data))
+        for i, (name, info) in enumerate(market_data.items()):
+            with cols[i]:
+                # Custom format angka biar rapi seperti Bloomberg
+                if name == "IHSG" or name == "Dow Jones":
+                    price_str = f"{info['price']:,.2f}"
+                elif name == "USD/IDR":
+                    price_str = f"Rp {info['price']:,.0f}"
+                else:
+                    price_str = f"${info['price']:,.2f}"
+                
+                # Tampilkan metrik (Otomatis Hijau jika naik, Merah jika turun)
+                st.metric(label=name, value=price_str, delta=f"{info['pct']:.2f}%")
+    else:
+        st.warning("⚠️ Gagal menarik data live. Pastikan koneksi internet aktif.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- 2. RADAR MAKRO RI & NEWS FEED ---
+    col_macro, col_news = st.columns([1.2, 1.8])
+    
+    with col_macro:
+        st.markdown(f"<h4 style='color:{C['text']};'>🇮🇩 Indikator Makro RI</h4>", unsafe_allow_html=True)
+        # Catatan: Data makro ini sengaja di-hardcode sebagai Knowledge Base karena rilisnya hanya bulanan
+        st.info("**🏦 Suku Bunga (BI Rate): 6.00%**\n\n*Kondisi Tetap. Pengaruh: Cenderung netral untuk sektor Properti dan Perbankan.*")
+        st.success("**🛒 Inflasi RI: Terjaga di ~2.75%**\n\n*Pengaruh: Positif. Daya beli masyarakat masih stabil, bagus untuk sektor Consumer Goods (FMCG).*")
+        st.info("**📈 GDP Growth: ~5.11% YoY**\n\n*Pertumbuhan ekonomi Indonesia masih solid di atas rata-rata global.*")
+        st.success("**⚖️ Neraca Dagang: Surplus**\n\n*Pengaruh: Capital Inflow aman, cadangan devisa kuat untuk menahan pelemahan Rupiah lebih lanjut.*")
+        
+    with col_news:
+        st.markdown(f"<h4 style='color:{C['text']};'>📰 Market Insight (SIGMA View)</h4>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="background-color: {C['input_bg']}; padding: 20px; border-radius: 12px; border: 1px solid {C['border']}; height: 100%;">
+            <h5 style="color:{C['gold']}; margin-top:0;">🔥 Sektor Fokus Saat Ini</h5>
+            <p style="color:{C['text']}; font-size: 0.95rem; line-height: 1.6;">Perhatikan rotasi sektor. Jika harga komoditas global memanas, amati emiten Coal dan Gold. Jika BI Rate turun, pantau Big Banks dan Properti.</p>
+            
+            <h5 style="color:#ff5555; margin-top:15px;">⚠️ Peringatan Risiko Mayor</h5>
+            <p style="color:{C['text']}; font-size: 0.95rem; line-height: 1.6;">Volatilitas nilai tukar Rupiah (USD/IDR) wajib dipantau ketat. Pelemahan Rupiah > Rp 15.800 rentan memicu keluarnya dana Asing (Net Foreign Sell) dari saham-saham Bluechip IDX.</p>
+            
+            <hr style="border-color: {C['border']}; margin: 15px 0;">
+            <p style="color:{C['text_muted']}; font-size: 0.85rem; margin-bottom:0;">
+                <i>💡 Tips: Setelah melihat kondisi Makro di sini, buka menu <b>"SIGMA AI"</b> lalu ketik <b>"1. Dampak Makro [Topik]"</b> atau <b>"7 Alpha"</b> untuk membuat Trade Plan!</i>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# PART 10: RUANG CHAT AI 
+# ─────────────────────────────────────────────
+
 else:
     if not active["messages"][1:]:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
