@@ -3065,10 +3065,11 @@ if current_view == "dashboard":
     @st.cache_data(ttl=300) # Cache 5 menit agar tidak limit API
     def get_market_data(ticker_dict):
         data = {}
-        try:
-            for name, tk in ticker_dict.items():
+        for name, tk in ticker_dict.items():
+            try: # <-- PINDAHKAN TRY KE SINI (Di dalam for loop)
                 ticker = yf.Ticker(tk)
                 hist = ticker.history(period="5d") 
+                
                 if len(hist) >= 2:
                     last = float(hist['Close'].iloc[-1])
                     prev = float(hist['Close'].iloc[-2])
@@ -3079,8 +3080,10 @@ if current_view == "dashboard":
                     data[name] = {"price": last, "pct": 0.0}
                 else:
                     data[name] = {"price": 0, "pct": 0}
-        except Exception as e:
-            pass
+            except Exception as e:
+                # Jika 1 ticker error, beri nilai 0 dan lanjut ke ticker lain
+                data[name] = {"price": 0, "pct": 0} 
+                
         return data
 
     indices_tickers = {
