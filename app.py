@@ -3062,17 +3062,10 @@ if current_view == "dashboard":
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
     
     @st.cache_data(ttl=300) # Cache 5 menit agar tidak limit API
-    def get_market_data():
-        tickers = {
-            "IHSG": "^JKSE", 
-            "Dow Jones": "^DJI",
-            "USD/IDR": "IDR=X", 
-            "Gold (USD/oz)": "GC=F", 
-            "Crude Oil (WTI)": "CL=F"
-        }
+    def get_market_data(ticker_dict):
         data = {}
         try:
-            for name, tk in tickers.items():
+            for name, tk in ticker_dict.items():
                 ticker = yf.Ticker(tk)
                 hist = ticker.history(period="5d") 
                 if len(hist) >= 2:
@@ -3080,31 +3073,75 @@ if current_view == "dashboard":
                     prev = float(hist['Close'].iloc[-2])
                     pct = ((last - prev) / prev) * 100
                     data[name] = {"price": last, "pct": pct}
+                elif len(hist) == 1:
+                    last = float(hist['Close'].iloc[-1])
+                    data[name] = {"price": last, "pct": 0.0}
                 else:
                     data[name] = {"price": 0, "pct": 0}
         except Exception as e:
             pass
         return data
+
+    # Memecah menjadi dua kategori agar UI tidak rusak / berdesakan
+    indices_tickers = {
+        "IHSG": "^JKSE", 
+        "S&P 500": "^GSPC",
+        "Dow Jones": "^DJI",
+        "Nasdaq": "^IXIC",
+        "FTSE": "^FTSE",
+        "Nikkei": "^N225",
+        "Hang Seng": "^HSI",
+        "Shanghai": "000001.SS",
+        "VIX": "^VIX"
+    }
+    
+    commodities_tickers = {
+        "USD/IDR": "IDR=X", 
+        "Gold (oz)": "GC=F", 
+        "WTI Crude": "CL=F",
+        "Brent Crude": "BZ=F",
+        "Newcastle Coal": "NCF=F",  # Proxy YF
+        "Palm Oil": "MYP=F",        # Proxy YF
+        "Nickel": "ALI=F"           # Proxy base metal (YF sangat terbatas untuk Nickel LME)
+    }
     
     with st.spinner("Mendeteksi denyut pasar global..."):
-        market_data = get_market_data()
+        idx_data = get_market_data(indices_tickers)
+        com_data = get_market_data(commodities_tickers)
     
-    if market_data:
-        cols = st.columns(len(market_data))
-        for i, (name, info) in enumerate(market_data.items()):
-            with cols[i]:
-                if name in ["IHSG", "Dow Jones"]: price_str = f"{info['price']:,.2f}"
-                elif name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
-                else: price_str = f"${info['price']:,.2f}"
+    # Render Baris 1: Global Indices
+    st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
+    if idx_data:
+        cols1 = st.columns(len(idx_data))
+        for i, (name, info) in enumerate(idx_data.items()):
+            with cols1[i]:
+                price_str = f"{info['price']:,.2f}"
                 st.metric(label=name, value=price_str, delta=f"{info['pct']:.2f}%")
     else:
-        st.warning("⚠️ Gagal menarik data live. Pastikan koneksi internet aktif.")
+        st.warning("⚠️ Gagal menarik data indeks. Pastikan koneksi internet aktif.")
+        
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Render Baris 2: Commodities & Forex
+    st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
+    if com_data:
+        cols2 = st.columns(len(com_data))
+        for i, (name, info) in enumerate(com_data.items()):
+            with cols2[i]:
+                if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
+                elif info['price'] == 0: price_str = "N/A"
+                else: price_str = f"${info['price']:,.2f}"
+                
+                delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
+                st.metric(label=name, value=price_str, delta=delta_str)
+    else:
+        st.warning("⚠️ Gagal menarik data komoditas.")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
     # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
-    # Ditambahkan "allow_symbol_change": true agar user bisa ganti emiten
+    # Ditambahkan "hide_side_toolbar": false agar tools drawing muncul
     tv_widget = f"""
     <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
       <div id="tradingview_sigma" style="height:550px;width:100%"></div>
@@ -3121,10 +3158,10 @@ if current_view == "dashboard":
       "locale": "id",
       "enable_publishing": false,
       "allow_symbol_change": true,
+      "hide_top_toolbar": false,
+      "hide_side_toolbar": false,
       "backgroundColor": "rgba(20, 20, 20, 1)",
       "gridColor": "rgba(45, 45, 45, 1)",
-      "hide_top_toolbar": false,
-      "hide_legend": false,
       "save_image": false,
       "container_id": "tradingview_sigma"
     }}
@@ -3186,7 +3223,9 @@ if current_view == "dashboard":
             </p>
         </div>
         """, unsafe_allow_html=True)
-            
+
+
+        
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
