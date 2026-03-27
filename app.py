@@ -2985,6 +2985,7 @@ if current_view == "dashboard":
     try:
         import yfinance as yf
         import pandas as pd
+        import streamlit.components.v1 as components
     except ImportError:
         st.error("⚠️ Library 'yfinance' atau 'pandas' belum terinstall. Buka terminal/CMD dan ketik: pip install yfinance pandas")
         st.stop()
@@ -3000,7 +3001,7 @@ if current_view == "dashboard":
         padding: 15px 20px;
         box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-        margin-bottom: 15px; /* Jarak antar baris */
+        margin-bottom: 15px;
     }}
     [data-testid="stMetric"]:hover {{
         transform: translateY(-4px);
@@ -3008,7 +3009,7 @@ if current_view == "dashboard":
         box-shadow: 0 12px 25px rgba(245, 194, 66, 0.15);
     }}
     [data-testid="stMetricValue"] {{
-        font-size: 1.6rem !important; /* Dikecilkan sedikit agar fit di 5 kolom */
+        font-size: 1.6rem !important;
         font-weight: 800 !important;
         color: #ffffff !important;
     }}
@@ -3041,7 +3042,7 @@ if current_view == "dashboard":
         margin-bottom: 30px;
     }}
     
-    /* Card Khusus untuk Insight */
+    /* Card Khusus untuk Insight dengan Efek Hover Baru */
     .glass-card {{
         background: linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8));
         backdrop-filter: blur(10px);
@@ -3050,11 +3051,17 @@ if current_view == "dashboard":
         padding: 20px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         height: 100%;
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }}
+    .glass-card:hover {{
+        transform: translateY(-4px);
+        border-color: rgba(66, 133, 244, 0.6); /* Nyala biru saat di-hover */
+        box-shadow: 0 12px 25px rgba(66, 133, 244, 0.15);
     }}
     </style>
     """, unsafe_allow_html=True)
         
-    # Header Terminal (Tengah & Mewah)
+    # Header Terminal
     st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -3062,14 +3069,13 @@ if current_view == "dashboard":
     # --- 1. LIVE TICKER (YFINANCE) ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
     
-    @st.cache_data(ttl=300) # Cache 5 menit agar tidak limit API
+    @st.cache_data(ttl=300) # Cache 5 menit
     def get_market_data(ticker_dict):
         data = {}
         for name, tk in ticker_dict.items():
-            try: # <-- PINDAHKAN TRY KE SINI (Di dalam for loop)
+            try:
                 ticker = yf.Ticker(tk)
                 hist = ticker.history(period="5d") 
-                
                 if len(hist) >= 2:
                     last = float(hist['Close'].iloc[-1])
                     prev = float(hist['Close'].iloc[-2])
@@ -3081,9 +3087,7 @@ if current_view == "dashboard":
                 else:
                     data[name] = {"price": 0, "pct": 0}
             except Exception as e:
-                # Jika 1 ticker error, beri nilai 0 dan lanjut ke ticker lain
-                data[name] = {"price": 0, "pct": 0} 
-                
+                data[name] = {"price": 0, "pct": 0}
         return data
 
     indices_tickers = {
@@ -3112,13 +3116,12 @@ if current_view == "dashboard":
         idx_data = get_market_data(indices_tickers)
         com_data = get_market_data(commodities_tickers)
     
-    # Render: Global Indices (Maks 5 kolom per baris)
+    # Render: Global Indices
     st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
     if idx_data:
         items_idx = list(idx_data.items())
-        # Looping dengan step 5 untuk membuat baris baru
         for i in range(0, len(items_idx), 5):
-            cols = st.columns(5) # Selalu panggil 5 kolom agar lebarnya seragam
+            cols = st.columns(5)
             chunk = items_idx[i:i+5]
             for j in range(5):
                 if j < len(chunk):
@@ -3130,7 +3133,7 @@ if current_view == "dashboard":
         
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Render: Commodities & Forex (Maks 5 kolom per baris)
+    # Render: Commodities & Forex
     st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
     if com_data:
         items_com = list(com_data.items())
@@ -3155,74 +3158,37 @@ if current_view == "dashboard":
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
-    # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
-    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
-    tv_widget = f"""
-    <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
-      <div id="tradingview_sigma" style="height:550px;width:100%"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-      <script type="text/javascript">
-      new TradingView.widget(
-      {{
-      "autosize": true,
-      "symbol": "IDX:COMPOSITE",
-      "interval": "D",
-      "timezone": "Asia/Jakarta",
-      "theme": "dark",
-      "style": "1",
-      "locale": "id",
-      "enable_publishing": false,
-      "allow_symbol_change": true,
-      "hide_top_toolbar": false,
-      "hide_side_toolbar": false,
-      "backgroundColor": "rgba(20, 20, 20, 1)",
-      "gridColor": "rgba(45, 45, 45, 1)",
-      "save_image": false,
-      "container_id": "tradingview_sigma"
-    }}
-      );
-      </script>
-    </div>
-    """
-    components.html(tv_widget, height=570)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # --- 3. KORELASI MAKRO EKONOMI (RI VS US) ---
+    # --- 2. KORELASI MAKRO EKONOMI (RI VS US) ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Maret 2026)</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
 
-    # Membagi chart menjadi 2 kolom: Kiri (RI), Kanan (US)
     macro_col1, macro_col2 = st.columns(2)
 
-    # Label Bulan (12 Bulan terakhir hingga Maret 2026)
-    months_labels = ["Apr '25", "Mei '25", "Jun '25", "Jul '25", "Ags '25", "Sep '25", "Okt '25", "Nov '25", "Des '25", "Jan '26", "Feb '26", "Mar '26"]
+    dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
     with macro_col1:
         st.markdown(f"<p style='text-align:center; color:{C['gold']}; font-weight:600;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
-        # Data Historis RI
         macro_id = pd.DataFrame({
-            "BI Rate (%)": [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00],
-            "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80],
+            "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
+            "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
             "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
-        }, index=months_labels)
+        }, index=dates)
         st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
     with macro_col2:
         st.markdown(f"<p style='text-align:center; color:{C['gold']}; font-weight:600;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
-        # Data Historis US
         macro_us = pd.DataFrame({
-            "Fed Rate (%)": [5.25, 5.25, 5.25, 5.25, 5.00, 5.00, 4.75, 4.75, 4.50, 4.50, 4.50, 4.50],
-            "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 3.40, 3.10, 3.20, 3.10],
+            "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
+            "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
             "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
-        }, index=months_labels)
+        }, index=dates)
         st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
-    st.info("💡 **The SIGMA View:** Amati korelasi antara **Fed Rate US** dan **BI Rate**. Jika The Fed menahan suku bunganya tinggi, BI seringkali terpaksa ikut menahan bunga tinggi agar Rupiah tidak jeblok dan uang asing (*capital*) tidak kabur ke pasar obligasi US (Yield 10Y US).")
+    st.info("💡 **The SIGMA View:** Suku bunga global (The Fed & BI) sudah berada di tren pemangkasan. Namun, perhatikan lonjakan **Inflasi RI** belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 4. MARKET INSIGHT & KETAHANAN NASIONAL (2 KOLOM LUXURY) ---
+    # --- 3. MARKET INSIGHT & KETAHANAN NASIONAL ---
     col1, col2 = st.columns(2)
 
     with col1:
@@ -3254,6 +3220,38 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    # --- 4. TRADINGVIEW ADVANCED CHART WIDGET (DIPINDAH KE BAWAH) ---
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+    tv_widget = f"""
+    <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
+      <div id="tradingview_sigma" style="height:550px;width:100%"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+      new TradingView.widget(
+      {{
+      "autosize": true,
+      "symbol": "IDX:COMPOSITE",
+      "interval": "D",
+      "timezone": "Asia/Jakarta",
+      "theme": "dark",
+      "style": "1",
+      "locale": "id",
+      "enable_publishing": false,
+      "allow_symbol_change": true,
+      "hide_top_toolbar": false,
+      "hide_side_toolbar": false,
+      "backgroundColor": "rgba(20, 20, 20, 1)",
+      "gridColor": "rgba(45, 45, 45, 1)",
+      "save_image": false,
+      "container_id": "tradingview_sigma"
+    }}
+      );
+      </script>
+    </div>
+    """
+    components.html(tv_widget, height=570)
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
