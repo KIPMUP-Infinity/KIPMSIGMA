@@ -2990,16 +2990,16 @@ if current_view == "dashboard":
         st.error("⚠️ Library 'yfinance' atau 'pandas' belum terinstall. Buka terminal/CMD dan ketik: pip install yfinance pandas")
         st.stop()
 
-    # --- INJEKSI CSS: LUXURY DARK THEME (GLASSMORPHISM) ---
+    # --- INJEKSI CSS: CLEAN LIGHT THEME ---
     st.markdown("""
     <style>
-    /* Styling Kotak Metrik (Angka) agar tampak mewah seperti kaca gelap */
+    /* Styling Kotak Metrik (Angka) - Tema Terang Bersih */
     [data-testid="stMetric"] {
-        background: linear-gradient(145deg, rgba(30,30,30,0.7), rgba(15,15,15,0.9));
-        border: 1px solid rgba(245, 194, 66, 0.2);
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
         border-radius: 12px;
         padding: 15px 20px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         margin-bottom: 15px;
     }
@@ -3007,27 +3007,25 @@ if current_view == "dashboard":
     /* Efek Hover Nyala Emas (Gold) */
     [data-testid="stMetric"]:hover {
         transform: translateY(-4px);
-        border-color: rgba(245, 194, 66, 0.8);
-        box-shadow: 0 12px 25px rgba(245, 194, 66, 0.15);
+        border-color: #F5C242 !important;
+        box-shadow: 0 10px 20px rgba(245, 194, 66, 0.15);
     }
     
-    /* Memastikan teks angka putih terang dan tebal */
+    /* Memastikan teks angka gelap (hitam) agar terbaca di Light Mode */
     [data-testid="stMetricValue"] {
         font-size: 1.6rem !important;
         font-weight: 800 !important;
-        color: #ffffff !important;
+        color: #111827 !important; /* Hitam Arang */
     }
     [data-testid="stMetricLabel"] {
-        color: #a0a0a0 !important;
+        color: #4b5563 !important; /* Abu-abu gelap */
         font-weight: 600 !important;
     }
     
-    /* Title Tengah dengan Gradasi Emas */
+    /* Title Tengah */
     .sigma-title {
         text-align: center;
-        background: -webkit-linear-gradient(0deg, #F5C242, #FFD700, #FFA500);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #111827;
         font-weight: 900;
         font-size: 3rem;
         margin-bottom: 0px;
@@ -3035,36 +3033,35 @@ if current_view == "dashboard":
     }
     .sigma-subtitle {
         text-align: center;
-        color: #a0a0a0;
+        color: #6b7280;
         font-size: 1.1rem;
         letter-spacing: 1px;
         margin-top: -5px;
         margin-bottom: 20px;
     }
     
-    /* Garis pemisah mewah */
+    /* Garis pemisah */
     .fancy-divider {
         border: 0;
         height: 1px;
-        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.75), rgba(0, 0, 0, 0));
+        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0));
         margin-bottom: 30px;
     }
     
-    /* Card Khusus untuk Insight (Dark Glass) */
-    .glass-card {
-        background: linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8));
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.1);
+    /* Card Khusus untuk Insight (Terang & Bersih) */
+    .light-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 16px;
         padding: 20px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         height: 100%;
         transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    .glass-card:hover {
+    .light-card:hover {
         transform: translateY(-4px);
-        border-color: rgba(245, 194, 66, 0.8);
-        box-shadow: 0 12px 25px rgba(245, 194, 66, 0.15);
+        border-color: #F5C242;
+        box-shadow: 0 10px 20px rgba(245, 194, 66, 0.1);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -3074,7 +3071,7 @@ if current_view == "dashboard":
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
     
-    # --- SISTEM TAB NAVIGASI (HANYA 3 TAB) ---
+    # --- SISTEM TAB NAVIGASI ---
     tab_macro, tab_heatmap, tab_news = st.tabs([
         "🌍 Global & Macro", 
         "🗺️ Sector Heatmap", 
@@ -3085,7 +3082,8 @@ if current_view == "dashboard":
     # TAB 1: GLOBAL & MACRO
     # ==========================================
     with tab_macro:
-        st.markdown("<h4 style='color:#ffffff; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
+        # WARNA TEKS DIUBAH MENJADI #111827 (HITAM)
+        st.markdown("<h4 style='color:#111827; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
         
         @st.cache_data(ttl=300)
         def get_market_data(ticker_dict):
@@ -3123,8 +3121,8 @@ if current_view == "dashboard":
             idx_data = get_market_data(indices_tickers)
             com_data = get_market_data(commodities_tickers)
         
-        # Render: Global Indices
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
+        # Render: Global Indices (Label warna emas/kuning tua)
+        st.markdown("<p style='color:#D97706; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
         if idx_data:
             items_idx = list(idx_data.items())
             for i in range(0, len(items_idx), 5):
@@ -3141,7 +3139,7 @@ if current_view == "dashboard":
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Render: Commodities & Forex
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#D97706; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
         if com_data:
             items_com = list(com_data.items())
             for i in range(0, len(items_com), 5):
@@ -3166,14 +3164,14 @@ if current_view == "dashboard":
         st.markdown("<br><br>", unsafe_allow_html=True)
 
         # --- KORELASI MAKRO EKONOMI (RI VS US) ---
-        st.markdown("<h4 style='color:#ffffff; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#a0a0a0; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#111827; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#6b7280; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
 
         macro_col1, macro_col2 = st.columns(2)
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
-            st.markdown("<p style='text-align:center; color:#F5C242; font-weight:600;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center; color:#111827; font-weight:700;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
                 "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
@@ -3182,7 +3180,7 @@ if current_view == "dashboard":
             st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
         with macro_col2:
-            st.markdown("<p style='text-align:center; color:#F5C242; font-weight:600;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
+            st.markdown("<p style='text-align:center; color:#111827; font-weight:700;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
                 "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
@@ -3197,13 +3195,13 @@ if current_view == "dashboard":
         col1, col2 = st.columns(2)
         with col1:
             st.markdown("""
-            <div class="glass-card">
-                <h5 style='color:#F5C242; margin-top:0;'>🏗️ Fundamental & The Real Macro</h5>
-                <p style='color:#e0e0e0; font-size: 0.95rem; line-height: 1.6;'>
+            <div class="light-card">
+                <h5 style='color:#D97706; margin-top:0;'>🏗️ Fundamental & The Real Macro</h5>
+                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
                 <b>📈 GDP & PMI Manufaktur:</b><br>
                 <i>[Modul PMI Manufaktur akan diintegrasikan di sini]</i> Perekonomian ditopang konsumsi rumah tangga. Angka PMI di atas 50 menandakan ekspansi pabrik.
                 </p>
-                <p style='color:#e0e0e0; font-size: 0.95rem; line-height: 1.6;'>
+                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
                 <b>⚖️ Cadangan Devisa & Neraca Perdagangan:</b><br>
                 <i>[Modul Cadangan Devisa akan diintegrasikan di sini]</i> Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
                 </p>
@@ -3212,13 +3210,13 @@ if current_view == "dashboard":
 
         with col2:
             st.markdown("""
-            <div class="glass-card">
+            <div class="light-card">
                 <h5 style='color:#ff5555; margin-top:0;'>🔥 Rotasi & Kurva Imbal Hasil</h5>
-                <p style='color:#e0e0e0; font-size: 0.95rem; line-height: 1.6;'>
+                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
                 <b>📉 Yield Curve Obligasi RI:</b><br>
                 <i>[Modul Yield Curve akan diintegrasikan di sini]</i> Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
                 </p>
-                <p style='color:#e0e0e0; font-size: 0.95rem; line-height: 1.6;'>
+                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
                 <b>⚠️ Sektor Fokus:</b><br>
                 Jika komoditas memanas, amati Coal & Gold. Jika suku bunga turun, uang institusi mengalir ke Big Banks dan Properti.
                 </p>
@@ -3227,10 +3225,10 @@ if current_view == "dashboard":
 
         st.markdown("<br><br>", unsafe_allow_html=True)
 
-        # --- TRADINGVIEW (KEMBALI KE THEME DARK) ---
-        st.markdown("<h4 style='color:#ffffff; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+        # --- TRADINGVIEW (THEME DIUBAH KE LIGHT) ---
+        st.markdown("<h4 style='color:#111827; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
         tv_widget = """
-        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
+        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
           <div id="tradingview_sigma" style="height:550px;width:100%"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
           <script type="text/javascript">
@@ -3240,15 +3238,15 @@ if current_view == "dashboard":
           "symbol": "IDX:COMPOSITE",
           "interval": "D",
           "timezone": "Asia/Jakarta",
-          "theme": "dark", 
+          "theme": "light", 
           "style": "1",
           "locale": "id",
           "enable_publishing": false,
           "allow_symbol_change": true,
           "hide_top_toolbar": false,
           "hide_side_toolbar": false,
-          "backgroundColor": "rgba(20, 20, 20, 1)",
-          "gridColor": "rgba(45, 45, 45, 1)",
+          "backgroundColor": "#ffffff",
+          "gridColor": "#f3f4f6",
           "save_image": false,
           "container_id": "tradingview_sigma"
         }
@@ -3259,29 +3257,30 @@ if current_view == "dashboard":
         components.html(tv_widget, height=570)
 
     # ==========================================
-    # TAB 2: SECTOR HEATMAP (Kerangka)
+    # TAB 2: SECTOR HEATMAP
     # ==========================================
     with tab_heatmap:
-        st.markdown("<h4 style='color:#ffffff; margin-top: 10px;'>🗺️ Peta Panas Sektoral & Korelasi Komoditas</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#111827; margin-top: 10px;'>🗺️ Peta Panas Sektoral & Korelasi Komoditas</h4>", unsafe_allow_html=True)
         st.info("Di sini kita akan membuat grafik perbandingan korelasi harga saham andalan dengan harga komoditas acuan global.")
 
     # ==========================================
-    # TAB 3: LIVE NEWS FEED (SELESAI)
+    # TAB 3: LIVE NEWS FEED
     # ==========================================
     with tab_news:
-        st.markdown("<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#D97706; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
         
+        # WIDGET NEWS DIUBAH KE THEME LIGHT
         news_widget = """
-        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
+        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
           <div class="tradingview-widget-container__widget"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
           {
           "feedMode": "all_symbols",
-          "isTransparent": true,
+          "isTransparent": false,
           "displayMode": "regular",
           "width": "100%",
           "height": 600,
-          "colorTheme": "dark",
+          "colorTheme": "light",
           "locale": "id"
         }
           </script>
