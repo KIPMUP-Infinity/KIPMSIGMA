@@ -3055,7 +3055,7 @@ if current_view == "dashboard":
         
     # Header Terminal (Tengah & Mewah)
     st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='sigma-subtitle'>Real-time Macro, Forex, Commodities & Charting (0 Token Usage)</p>", unsafe_allow_html=True)
+    st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
     
     # --- 1. LIVE TICKER (YFINANCE) ---
