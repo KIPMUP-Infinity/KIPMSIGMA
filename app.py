@@ -2993,12 +2993,12 @@ if current_view == "dashboard":
     # --- INJEKSI CSS UNTUK INSTITUTIONAL LIGHT THEME ---
     st.markdown("""
     <style>
-    /* Ubah background utama Streamlit menjadi Soft Cool Gray (Opsional, tergantung setting tema dasar Streamlit-mu) */
+    /* Ubah background utama Streamlit menjadi Soft Cool Gray (Meningkatkan kenyamanan baca) */
     .stApp {
         background-color: #F3F4F6;
     }
 
-    /* Styling Kotak Metrik (Angka) - Light Mode dengan Hover Biru Korporat */
+    /* Styling Kotak Metrik (Angka) - Light Mode dengan Hover GOLD (Pilihan Pengguna) */
     [data-testid="stMetric"] {
         background: #FFFFFF;
         border: 1px solid #E5E7EB;
@@ -3010,17 +3010,26 @@ if current_view == "dashboard":
     }
     [data-testid="stMetric"]:hover {
         transform: translateY(-4px);
-        border-color: #2563EB; /* Biru Korporat / Wall Street Blue */
-        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.15), 0 4px 6px -2px rgba(37, 99, 235, 0.05);
+        border-color: #F5C242; /* WARNA EMAS (GOLD) SESUAI PERMINTAAN */
+        box-shadow: 0 10px 15px -3px rgba(245, 194, 66, 0.2), 0 4px 6px -2px rgba(245, 194, 66, 0.1);
     }
+    
+    /* PERBAIKAN KETERBACAAN METRIK DI TEMA TERANG (Fix Kontras yang Sangat Penting) */
     [data-testid="stMetricValue"] {
         font-size: 1.6rem !important;
         font-weight: 800 !important;
-        color: #111827 !important; /* Abu-abu arang sangat gelap (bukan hitam pekat) */
+        color: #111827 !important; /* Teks Gelap Pekat untuk Kontras yang Lebih Baik */
     }
     [data-testid="stMetricLabel"] {
-        color: #6B7280 !important; /* Abu-abu medium untuk label */
+        color: #1F2937 !important; /* Label abu-abu gelap */
         font-weight: 600 !important;
+    }
+    /* Pastikan warna delta (persentase) tetap kontras */
+    [data-testid="stMetricDeltaPositive"] {
+        color: #16A34A !important; /* Hijau cerah kontras */
+    }
+    [data-testid="stMetricDeltaNegative"] {
+        color: #DC2626 !important; /* Merah cerah kontras */
     }
     
     /* Title Tengah */
@@ -3049,7 +3058,7 @@ if current_view == "dashboard":
         margin-bottom: 30px;
     }
     
-    /* Card Khusus Insight - Light Theme */
+    /* Card Khusus Insight - Tema Terang dengan Hover Biru (Seperti disarankan sebelumnya) */
     .institutional-card {
         background: #FFFFFF;
         border: 1px solid #E5E7EB;
@@ -3061,7 +3070,7 @@ if current_view == "dashboard":
     }
     .institutional-card:hover {
         transform: translateY(-4px);
-        border-color: #2563EB;
+        border-color: #2563EB; /* Biru Korporat / Wall Street Blue */
         box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.15);
     }
     
@@ -3110,7 +3119,7 @@ if current_view == "dashboard":
         def get_market_data(ticker_dict):
             data = {}
             for name, tk in ticker_dict.items():
-                try:
+                try: # FIX: Pindahkan try-except ke dalam loop for
                     ticker = yf.Ticker(tk)
                     hist = ticker.history(period="5d") 
                     if len(hist) >= 2:
@@ -3143,7 +3152,7 @@ if current_view == "dashboard":
             com_data = get_market_data(commodities_tickers)
         
         # Render: Global Indices
-        st.markdown("<p style='color:#2563EB; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>Global Indices & Volatility</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
         if idx_data:
             items_idx = list(idx_data.items())
             for i in range(0, len(items_idx), 5):
@@ -3160,7 +3169,7 @@ if current_view == "dashboard":
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Render: Commodities & Forex
-        st.markdown("<p style='color:#2563EB; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>Commodities & Forex</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
         if com_data:
             items_com = list(com_data.items())
             for i in range(0, len(items_com), 5):
@@ -3189,6 +3198,8 @@ if current_view == "dashboard":
         st.markdown("<p style='color:#6B7280; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
 
         macro_col1, macro_col2 = st.columns(2)
+        
+        # SOLUSI FIX GRAFIK: Menggunakan pd.date_range agar Streamlit membacanya sebagai WAKTU (Kronologis), bukan ALFABET
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
@@ -3218,11 +3229,11 @@ if current_view == "dashboard":
             st.markdown("""
             <div class="institutional-card">
                 <h5 style='color:#2563EB; margin-top:0;'>🏗️ Fundamental & The Real Macro</h5>
-                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
+                <p style='color:#111827; font-size: 0.95rem; line-height: 1.6;'>
                 <b>📈 GDP & PMI Manufaktur:</b><br>
                 <i>[Modul PMI Manufaktur akan diintegrasikan di sini]</i> Perekonomian ditopang konsumsi rumah tangga. Angka PMI di atas 50 menandakan ekspansi pabrik.
                 </p>
-                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
+                <p style='color:#111827; font-size: 0.95rem; line-height: 1.6;'>
                 <b>⚖️ Cadangan Devisa & Neraca Perdagangan:</b><br>
                 <i>[Modul Cadangan Devisa akan diintegrasikan di sini]</i> Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
                 </p>
@@ -3233,11 +3244,11 @@ if current_view == "dashboard":
             st.markdown("""
             <div class="institutional-card">
                 <h5 style='color:#D97706; margin-top:0;'>🔥 Rotasi & Kurva Imbal Hasil</h5>
-                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
+                <p style='color:#111827; font-size: 0.95rem; line-height: 1.6;'>
                 <b>📉 Yield Curve Obligasi RI:</b><br>
                 <i>[Modul Yield Curve akan diintegrasikan di sini]</i> Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
                 </p>
-                <p style='color:#374151; font-size: 0.95rem; line-height: 1.6;'>
+                <p style='color:#111827; font-size: 0.95rem; line-height: 1.6;'>
                 <b>⚠️ Sektor Fokus:</b><br>
                 Jika komoditas memanas, amati Coal & Gold. Jika suku bunga turun, uang institusi mengalir ke Big Banks dan Properti.
                 </p>
@@ -3246,7 +3257,7 @@ if current_view == "dashboard":
 
         st.markdown("<br><br>", unsafe_allow_html=True)
 
-        # --- TRADINGVIEW (THEME LIGHT) ---
+        # --- TRADINGVIEW (DIPINDAH KE BAWAH, THEME LIGHT) ---
         st.markdown("<h4 style='color:#111827; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
         tv_widget = """
         <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; border: 1px solid #E5E7EB; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
@@ -3297,6 +3308,9 @@ if current_view == "dashboard":
     with tab_news:
         st.markdown("<h4 style='color:#111827; margin-top: 10px;'>📰 Terminal Berita Berjalan</h4>", unsafe_allow_html=True)
         st.info("Suntikan **RSS Feed** dari portal berita finansial (CNBC, Bisnis.com, dll) akan otomatis bergulir di sini agar Anda tidak tertinggal sentimen pasar terbaru.")
+
+
+
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
