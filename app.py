@@ -2984,21 +2984,21 @@ current_view = st.session_state.get("current_view", "chat")
 if current_view == "dashboard":
     try:
         import yfinance as yf
+        import pandas as pd
     except ImportError:
-        st.error("⚠️ Library 'yfinance' belum terinstall. Buka terminal/CMD dan ketik: pip install yfinance")
+        st.error("⚠️ Library 'yfinance' atau 'pandas' belum terinstall. Buka terminal/CMD dan ketik: pip install yfinance pandas")
         st.stop()
         
     # Header Terminal
     st.markdown(f"<h2 style='color:{C['text']}; font-weight:800; margin-bottom: 0px;'>🌐 SIGMA Terminal</h2>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:{C['text_muted']}; font-size: 1.1rem;'>Real-time Macro, Forex & Commodities (0 Token Usage)</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size: 1.1rem;'>Real-time Macro, Forex, Commodities & Charting (0 Token Usage)</p>", unsafe_allow_html=True)
     st.markdown(f"<hr style='border-color: {C['border']}; margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
     
     # --- 1. LIVE TICKER (YFINANCE) ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px;'>Live Market Pulse</h4>", unsafe_allow_html=True)
     
-    @st.cache_data(ttl=300) # Cache 5 menit agar aplikasi tidak lemot dan tidak limit API
+    @st.cache_data(ttl=300) # Cache 5 menit agar tidak limit API
     def get_market_data():
-        # ^JKSE = IHSG, IDR=X = USD/IDR, GC=F = Emas, CL=F = Minyak Mentah, ^DJI = Dow Jones
         tickers = {
             "IHSG": "^JKSE", 
             "Dow Jones": "^DJI",
@@ -3010,7 +3010,6 @@ if current_view == "dashboard":
         try:
             for name, tk in tickers.items():
                 ticker = yf.Ticker(tk)
-                # Ambil data 5 hari terakhir untuk jaga-jaga jika ada hari libur bursa (weekend)
                 hist = ticker.history(period="5d") 
                 if len(hist) >= 2:
                     last = float(hist['Close'].iloc[-1])
@@ -3020,59 +3019,90 @@ if current_view == "dashboard":
                 else:
                     data[name] = {"price": 0, "pct": 0}
         except Exception as e:
-            pass # Lewati jika gagal narik data internet
+            pass
         return data
     
     with st.spinner("Mendeteksi denyut pasar global..."):
         market_data = get_market_data()
     
-    # Menampilkan Kotak Ticker Berjejer
     if market_data:
         cols = st.columns(len(market_data))
         for i, (name, info) in enumerate(market_data.items()):
             with cols[i]:
-                # Custom format angka biar rapi seperti Bloomberg
-                if name == "IHSG" or name == "Dow Jones":
-                    price_str = f"{info['price']:,.2f}"
-                elif name == "USD/IDR":
-                    price_str = f"Rp {info['price']:,.0f}"
-                else:
-                    price_str = f"${info['price']:,.2f}"
-                
-                # Tampilkan metrik (Otomatis Hijau jika naik, Merah jika turun)
+                if name in ["IHSG", "Dow Jones"]: price_str = f"{info['price']:,.2f}"
+                elif name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
+                else: price_str = f"${info['price']:,.2f}"
                 st.metric(label=name, value=price_str, delta=f"{info['pct']:.2f}%")
     else:
         st.warning("⚠️ Gagal menarik data live. Pastikan koneksi internet aktif.")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 2. RADAR MAKRO RI & NEWS FEED ---
+    # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px;'>📈 Live Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+    # Widget TradingView murni HTML/JS, di-embed pakai components.html
+    tv_widget = f"""
+    <div class="tradingview-widget-container" style="height:100%;width:100%">
+      <div id="tradingview_sigma" style="height:500px;width:100%"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+      <script type="text/javascript">
+      new TradingView.widget(
+      {{
+      "autosize": true,
+      "symbol": "IDX:COMPOSITE",
+      "interval": "D",
+      "timezone": "Asia/Jakarta",
+      "theme": "dark",
+      "style": "1",
+      "locale": "id",
+      "enable_publishing": false,
+      "backgroundColor": "{C['bg']}",
+      "gridColor": "{C['border']}",
+      "hide_top_toolbar": false,
+      "hide_legend": false,
+      "save_image": false,
+      "container_id": "tradingview_sigma"
+    }}
+      );
+      </script>
+    </div>
+    """
+    components.html(tv_widget, height=520)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- 3. RADAR MAKRO RI & NEWS FEED ---
     col_macro, col_news = st.columns([1.2, 1.8])
     
     with col_macro:
-        st.markdown(f"<h4 style='color:{C['text']};'>🇮🇩 Indikator Makro RI</h4>", unsafe_allow_html=True)
-        # Catatan: Data makro ini sengaja di-hardcode sebagai Knowledge Base karena rilisnya hanya bulanan
-        st.info("**🏦 Suku Bunga (BI Rate): 6.00%**\n\n*Kondisi Tetap. Pengaruh: Cenderung netral untuk sektor Properti dan Perbankan.*")
-        st.success("**🛒 Inflasi RI: Terjaga di ~2.75%**\n\n*Pengaruh: Positif. Daya beli masyarakat masih stabil, bagus untuk sektor Consumer Goods (FMCG).*")
-        st.info("**📈 GDP Growth: ~5.11% YoY**\n\n*Pertumbuhan ekonomi Indonesia masih solid di atas rata-rata global.*")
-        st.success("**⚖️ Neraca Dagang: Surplus**\n\n*Pengaruh: Capital Inflow aman, cadangan devisa kuat untuk menahan pelemahan Rupiah lebih lanjut.*")
+        st.markdown(f"<h4 style='color:{C['text']};'>🇮🇩 Histori Makro RI</h4>", unsafe_allow_html=True)
+        
+        # Grafik BI Rate Historis (Simulasi Data 6 Bulan Terakhir)
+        st.write("**Suku Bunga BI (BI Rate)**")
+        bi_data = pd.DataFrame({"BI Rate (%)": [5.75, 6.00, 6.00, 6.25, 6.25, 6.00]}, index=["Okt", "Nov", "Des", "Jan", "Feb", "Mar"])
+        st.line_chart(bi_data, color="#F5C242")
+        st.caption("*Pengaruh: Tren suku bunga tinggi memberatkan emiten properti, namun menguntungkan margin Big Banks.*")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Grafik Inflasi Historis (Simulasi Data 6 Bulan Terakhir)
+        st.write("**Tingkat Inflasi (YoY)**")
+        inf_data = pd.DataFrame({"Inflasi (%)": [2.56, 2.86, 2.61, 2.57, 2.75, 2.80]}, index=["Okt", "Nov", "Des", "Jan", "Feb", "Mar"])
+        st.line_chart(inf_data, color="#4285F4")
+        st.caption("*Pengaruh: Inflasi yang stabil menjaga daya beli masyarakat (Katalis positif untuk sektor FMCG).*")
         
     with col_news:
         st.markdown(f"<h4 style='color:{C['text']};'>📰 Market Insight (SIGMA View)</h4>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <div style="background-color: {C['input_bg']}; padding: 20px; border-radius: 12px; border: 1px solid {C['border']}; height: 100%;">
-            <h5 style="color:{C['gold']}; margin-top:0;">🔥 Sektor Fokus Saat Ini</h5>
-            <p style="color:{C['text']}; font-size: 0.95rem; line-height: 1.6;">Perhatikan rotasi sektor. Jika harga komoditas global memanas, amati emiten Coal dan Gold. Jika BI Rate turun, pantau Big Banks dan Properti.</p>
-            
-            <h5 style="color:#ff5555; margin-top:15px;">⚠️ Peringatan Risiko Mayor</h5>
-            <p style="color:{C['text']}; font-size: 0.95rem; line-height: 1.6;">Volatilitas nilai tukar Rupiah (USD/IDR) wajib dipantau ketat. Pelemahan Rupiah > Rp 15.800 rentan memicu keluarnya dana Asing (Net Foreign Sell) dari saham-saham Bluechip IDX.</p>
-            
-            <hr style="border-color: {C['border']}; margin: 15px 0;">
-            <p style="color:{C['text_muted']}; font-size: 0.85rem; margin-bottom:0;">
-                <i>💡 Tips: Setelah melihat kondisi Makro di sini, buka menu <b>"SIGMA AI"</b> lalu ketik <b>"1. Dampak Makro [Topik]"</b> atau <b>"7 Alpha"</b> untuk membuat Trade Plan!</i>
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        
+        # Menggunakan native Streamlit callout (anti bocor HTML)
+        st.success("**🔥 Sektor Fokus Saat Ini**\n\nPerhatikan rotasi sektor. Jika harga komoditas global memanas, amati emiten Coal dan Gold. Jika BI Rate ada wacana turun, pantau Big Banks dan Properti.")
+        
+        st.error("**⚠️ Peringatan Risiko Mayor**\n\nVolatilitas nilai tukar Rupiah (USD/IDR) wajib dipantau ketat. Pelemahan Rupiah > Rp 15.800 rentan memicu keluarnya dana Asing (Net Foreign Sell) dari saham-saham Bluechip IDX.")
+        
+        st.info("**📈 Data Ketahanan Nasional**\n\n- **GDP Growth:** ~5.11% YoY (Masih solid di atas rata-rata global)\n- **Neraca Dagang:** Surplus beruntun (Menahan tekanan Rupiah)")
+        
+        st.warning("💡 **Tips Trading:** Setelah melihat kondisi Makro di sini, buka menu **SIGMA AI** lalu ketik **'1. Dampak Makro'** atau **'7 Alpha'** untuk membuat Trade Plan pada saham pilihanmu!")
+
 
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
