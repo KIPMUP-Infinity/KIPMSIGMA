@@ -2185,7 +2185,7 @@ if "code" in st.query_params and st.session_state.user is None:
         saved = load_user(info["email"])
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
-            st.session_state.current_view = saved.get("current_view", "chat") # <-- FIX AMNESIA
+            st.session_state.current_view = saved.get("current_view", "chat")
             if saved.get("sessions"): st.session_state.sessions = saved["sessions"]; st.session_state.active_id = saved.get("active_id")
         st.session_state.data_loaded = True
         token = str(uuid.uuid4()).replace("-","")
@@ -2206,7 +2206,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
-                st.session_state.current_view = saved.get("current_view", "chat") # <-- FIX AMNESIA
+                st.session_state.current_view = saved.get("current_view", "chat")
                 if saved.get("sessions"):
                     _loaded = saved["sessions"]
                     for _s in _loaded:
@@ -2223,7 +2223,7 @@ if st.session_state.user and not st.session_state.data_loaded:
     saved = load_user(st.session_state.user["email"])
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
-        st.session_state.current_view = saved.get("current_view", "chat") # <-- FIX AMNESIA
+        st.session_state.current_view = saved.get("current_view", "chat")
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -2396,6 +2396,143 @@ if st.session_state.user is None: show_login()
 init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
+
+# --- PENANGANAN PARAMETER URL (DO & DEL) ---
+# Ditempatkan SEBELUM pembuatan HTML agar UI selalu ter-update dengan state terbaru
+if "del" in st.query_params:
+    _del_id = st.query_params.get("del", "")
+    if isinstance(_del_id, list): _del_id = _del_id[0] if _del_id else ""
+    
+    if _del_id and st.session_state.get("user"):
+        st.session_state.sessions = [s for s in st.session_state.sessions if s["id"] != _del_id]
+        if not st.session_state.sessions: 
+            st.session_state.sessions = [new_session()]
+        if st.session_state.active_id == _del_id: 
+            st.session_state.active_id = st.session_state.sessions[0]["id"]
+            
+        _to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
+        save_user(st.session_state.user["email"], {
+            "theme": st.session_state.get("theme", "dark"), 
+            "sessions": _to_save, 
+            "active_id": st.session_state.active_id,
+            "current_view": st.session_state.get("current_view", "chat")
+        })
+        
+    try: del st.query_params["del"]
+    except: 
+        try: st.query_params.pop("del", None)
+        except: pass
+    st.rerun()
+
+if "do" in st.query_params:
+    _do = st.query_params.get("do", "")
+    if isinstance(_do, list): _do = _do[0] if _do else ""
+    
+    _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
+    if isinstance(_tok, list): _tok = _tok[0] if _tok else ""
+    
+    if _do == "logout":
+        if _tok:
+            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
+            except: pass
+        st.session_state.clear(); st.query_params.clear()
+        components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
+        st.stop()
+    elif _do == "view_stats": st.session_state.current_view = "dashboard"
+    elif _do == "view_ai": st.session_state.current_view = "chat"
+    elif _do == "theme_dark": st.session_state.theme = "dark"
+    elif _do == "theme_light": st.session_state.theme = "light"
+    elif _do == "newchat":
+        st.session_state.current_view = "chat"
+        ns = {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
+        st.session_state.sessions.insert(0, ns)
+        st.session_state.active_id = ns["id"]
+    elif _do.startswith("sel_"):
+        st.session_state.current_view = "chat"
+        _sid = _do[4:]
+        st.session_state.active_id = _sid
+
+    try: del st.query_params["do"]
+    except: 
+        try: st.query_params.pop("do", None)
+        except: pass
+    st.rerun()
+
+# --- PEMBUATAN MENU SIDEBAR HISTORI CHAT ---
+_hist_items = ""
+for _sesi in st.session_state.sessions:
+    _sid = _sesi["id"]
+    _is_act = _sid == st.session_state.active_id
+    _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',"")
+    _fw = "700" if _is_act else "400"
+    _bg = C['hover'] if _is_act else "transparent"
+    _hist_items += f"""
+(function(){{
+    var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
+    var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; a.onmouseleave=function(){{this.style.background='{_bg}'}};
+    var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; 
+    del.onclick=function(e){{ 
+        e.preventDefault(); e.stopPropagation(); 
+        if(confirm('Hapus obrolan ini?')){{ 
+            var u2=new URL(window.parent.location.href); 
+            u2.searchParams.set('del','{_sid}'); 
+            u2.searchParams.delete('do'); 
+            window.parent.location.href=u2.toString(); 
+        }} 
+    }};
+    row.appendChild(a); row.appendChild(del); h.appendChild(row);
+}})();
+"""
+
+components.html(f"""
+<script>
+(function(){{
+var pd=window.parent.document;
+var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
+var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
+['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+var s=pd.createElement('style'); s.id='sigma-mobile-css';
+s.textContent=`
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
+#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+`; pd.head.appendChild(s);
+var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
+var m=pd.createElement('div');m.id='spmenu';
+m.innerHTML=`
+    <a class="smi" id="smi-new"><span class="smico">✎</span>Percakapan Baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">☰</span>History</button>
+    <div class="smsp"></div><div class="smhd">FITUR</div>
+    <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
+    <a class="smi" id="smi-stats"><span class="smico">📊</span>SIGMA Terminal</a>
+    <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
+    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
+    <a class="smi" id="smi-light"><span class="smico">☀️</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
+    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Sign Out</a>
+`; pd.body.appendChild(m);
+var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; h.style.display = 'none'; }};
+(function(){{
+    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+}})();
+pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
+}})();
+</script>
+""", height=0)
+
+active = get_active()
+current_view = st.session_state.get("current_view", "chat")
 
 
 # =========================================================
