@@ -3000,6 +3000,7 @@ if current_view == "dashboard":
         padding: 15px 20px;
         box-shadow: 0 8px 20px rgba(0,0,0,0.5);
         transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        margin-bottom: 15px; /* Jarak antar baris */
     }}
     [data-testid="stMetric"]:hover {{
         transform: translateY(-4px);
@@ -3007,7 +3008,7 @@ if current_view == "dashboard":
         box-shadow: 0 12px 25px rgba(245, 194, 66, 0.15);
     }}
     [data-testid="stMetricValue"] {{
-        font-size: 1.85rem !important;
+        font-size: 1.6rem !important; /* Dikecilkan sedikit agar fit di 5 kolom */
         font-weight: 800 !important;
         color: #ffffff !important;
     }}
@@ -3082,7 +3083,6 @@ if current_view == "dashboard":
             pass
         return data
 
-    # Memecah menjadi dua kategori agar UI tidak rusak / berdesakan
     indices_tickers = {
         "IHSG": "^JKSE", 
         "S&P 500": "^GSPC",
@@ -3100,40 +3100,53 @@ if current_view == "dashboard":
         "Gold (oz)": "GC=F", 
         "WTI Crude": "CL=F",
         "Brent Crude": "BZ=F",
-        "Newcastle Coal": "NCF=F",  # Proxy YF
-        "Palm Oil": "MYP=F",        # Proxy YF
-        "Nickel": "ALI=F"           # Proxy base metal (YF sangat terbatas untuk Nickel LME)
+        "Newcastle Coal": "NCF=F", 
+        "Palm Oil": "MYP=F",       
+        "Nickel": "ALI=F"          
     }
     
     with st.spinner("Mendeteksi denyut pasar global..."):
         idx_data = get_market_data(indices_tickers)
         com_data = get_market_data(commodities_tickers)
     
-    # Render Baris 1: Global Indices
+    # Render: Global Indices (Maks 5 kolom per baris)
     st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
     if idx_data:
-        cols1 = st.columns(len(idx_data))
-        for i, (name, info) in enumerate(idx_data.items()):
-            with cols1[i]:
-                price_str = f"{info['price']:,.2f}"
-                st.metric(label=name, value=price_str, delta=f"{info['pct']:.2f}%")
+        items_idx = list(idx_data.items())
+        # Looping dengan step 5 untuk membuat baris baru
+        for i in range(0, len(items_idx), 5):
+            cols = st.columns(5) # Selalu panggil 5 kolom agar lebarnya seragam
+            chunk = items_idx[i:i+5]
+            for j in range(5):
+                if j < len(chunk):
+                    name, info = chunk[j]
+                    with cols[j]:
+                        st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
     else:
-        st.warning("⚠️ Gagal menarik data indeks. Pastikan koneksi internet aktif.")
+        st.warning("⚠️ Gagal menarik data indeks.")
         
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Render Baris 2: Commodities & Forex
+    # Render: Commodities & Forex (Maks 5 kolom per baris)
     st.markdown(f"<p style='color:{C['gold']}; font-size:1.05rem; font-weight:600; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
     if com_data:
-        cols2 = st.columns(len(com_data))
-        for i, (name, info) in enumerate(com_data.items()):
-            with cols2[i]:
-                if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
-                elif info['price'] == 0: price_str = "N/A"
-                else: price_str = f"${info['price']:,.2f}"
-                
-                delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
-                st.metric(label=name, value=price_str, delta=delta_str)
+        items_com = list(com_data.items())
+        for i in range(0, len(items_com), 5):
+            cols = st.columns(5)
+            chunk = items_com[i:i+5]
+            for j in range(5):
+                if j < len(chunk):
+                    name, info = chunk[j]
+                    with cols[j]:
+                        if name == "USD/IDR": 
+                            price_str = f"Rp {info['price']:,.0f}"
+                        elif info['price'] == 0: 
+                            price_str = "N/A"
+                        else: 
+                            price_str = f"${info['price']:,.2f}"
+                        
+                        delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
+                        st.metric(label=name, value=price_str, delta=delta_str)
     else:
         st.warning("⚠️ Gagal menarik data komoditas.")
 
@@ -3141,7 +3154,6 @@ if current_view == "dashboard":
 
     # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
-    # Ditambahkan "hide_side_toolbar": false agar tools drawing muncul
     tv_widget = f"""
     <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
       <div id="tradingview_sigma" style="height:550px;width:100%"></div>
@@ -3173,22 +3185,37 @@ if current_view == "dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 3. KORELASI MAKRO EKONOMI (WIDE CHART) ---
-    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro RI: Suku Bunga vs Inflasi vs Yield Obligasi</h4>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.95rem; margin-bottom: 15px;'>Tren 12 Bulan Terakhir (Update: Kuartal 1 - 2026)</p>", unsafe_allow_html=True)
+    # --- 3. KORELASI MAKRO EKONOMI (RI VS US) ---
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Maret 2026)</p>", unsafe_allow_html=True)
 
-    # Data Historis 12 Bulan (Diupdate hingga Maret 2026)
-    macro_data = pd.DataFrame({
-        "BI Rate (%)": [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00],
-        "Inflasi YoY (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80],
-        "Bond Yield 10Y (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
-    }, index=["Apr '25", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Jan '26", "Feb", "Mar '26"])
+    # Membagi chart menjadi 2 kolom: Kiri (RI), Kanan (US)
+    macro_col1, macro_col2 = st.columns(2)
 
-    # Render Multi-line Chart (Kuning, Biru, Merah)
-    st.line_chart(macro_data, color=["#F5C242", "#4285F4", "#ff5555"], height=380)
+    # Label Bulan (12 Bulan terakhir hingga Maret 2026)
+    months_labels = ["Apr '25", "Mei '25", "Jun '25", "Jul '25", "Ags '25", "Sep '25", "Okt '25", "Nov '25", "Des '25", "Jan '26", "Feb '26", "Mar '26"]
 
-    # Penjelasan Cara Baca Korelasi
-    st.info("💡 **The SIGMA View (Cara Membaca Korelasi):**\n\nJika garis **Inflasi (Biru)** naik tajam, Bank Indonesia cenderung menaikkan **BI Rate (Kuning)** untuk mengerem harga. Kenaikan BI Rate memicu naiknya **Bond Yield/Obligasi (Merah)**. Saat Yield Obligasi tinggi, Fund Manager Asing akan memindahkan uangnya dari Saham ke Obligasi Negara. **Akibatnya: Capital Outflow & IHSG akan tertekan turun.**")
+    with macro_col1:
+        st.markdown(f"<p style='text-align:center; color:{C['gold']}; font-weight:600;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
+        # Data Historis RI
+        macro_id = pd.DataFrame({
+            "BI Rate (%)": [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00],
+            "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80],
+            "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
+        }, index=months_labels)
+        st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+    with macro_col2:
+        st.markdown(f"<p style='text-align:center; color:{C['gold']}; font-weight:600;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
+        # Data Historis US
+        macro_us = pd.DataFrame({
+            "Fed Rate (%)": [5.25, 5.25, 5.25, 5.25, 5.00, 5.00, 4.75, 4.75, 4.50, 4.50, 4.50, 4.50],
+            "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 3.40, 3.10, 3.20, 3.10],
+            "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
+        }, index=months_labels)
+        st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+    st.info("💡 **The SIGMA View:** Amati korelasi antara **Fed Rate US** dan **BI Rate**. Jika The Fed menahan suku bunganya tinggi, BI seringkali terpaksa ikut menahan bunga tinggi agar Rupiah tidak jeblok dan uang asing (*capital*) tidak kabur ke pasar obligasi US (Yield 10Y US).")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
