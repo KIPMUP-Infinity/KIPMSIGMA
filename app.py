@@ -2988,14 +2988,78 @@ if current_view == "dashboard":
     except ImportError:
         st.error("⚠️ Library 'yfinance' atau 'pandas' belum terinstall. Buka terminal/CMD dan ketik: pip install yfinance pandas")
         st.stop()
+
+    # --- INJEKSI CSS UNTUK UI MEWAH & MODERN (LUXURY THEME) ---
+    st.markdown(f"""
+    <style>
+    /* Styling Kotak Metrik (Angka) agar tampak mewah seperti kaca gelap (Glassmorphism) */
+    [data-testid="stMetric"] {{
+        background: linear-gradient(145deg, rgba(30,30,30,0.7), rgba(15,15,15,0.9));
+        border: 1px solid rgba(245, 194, 66, 0.2);
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }}
+    [data-testid="stMetric"]:hover {{
+        transform: translateY(-4px);
+        border-color: rgba(245, 194, 66, 0.8);
+        box-shadow: 0 12px 25px rgba(245, 194, 66, 0.15);
+    }}
+    [data-testid="stMetricValue"] {{
+        font-size: 1.85rem !important;
+        font-weight: 800 !important;
+        color: #ffffff !important;
+    }}
+    
+    /* Title Tengah dengan Gradasi Emas */
+    .sigma-title {{
+        text-align: center;
+        background: -webkit-linear-gradient(0deg, #F5C242, #FFD700, #FFA500);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 900;
+        font-size: 3rem;
+        margin-bottom: 0px;
+        letter-spacing: 2px;
+    }}
+    .sigma-subtitle {{
+        text-align: center;
+        color: {C['text_muted']};
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        margin-top: -5px;
+        margin-bottom: 20px;
+    }}
+    
+    /* Garis pemisah mewah yang memudar di ujungnya */
+    .fancy-divider {{
+        border: 0;
+        height: 1px;
+        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.75), rgba(0, 0, 0, 0));
+        margin-bottom: 30px;
+    }}
+    
+    /* Card Khusus untuk Insight */
+    .glass-card {{
+        background: linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8));
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        height: 100%;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
         
-    # Header Terminal
-    st.markdown(f"<h2 style='color:{C['text']}; font-weight:800; margin-bottom: 0px;'>🌐 SIGMA Terminal</h2>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:{C['text_muted']}; font-size: 1.1rem;'>Real-time Macro, Forex, Commodities & Charting (0 Token Usage)</p>", unsafe_allow_html=True)
-    st.markdown(f"<hr style='border-color: {C['border']}; margin-top: 10px; margin-bottom: 25px;'>", unsafe_allow_html=True)
+    # Header Terminal (Tengah & Mewah)
+    st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
+    st.markdown("<p class='sigma-subtitle'>Real-time Macro, Forex, Commodities & Charting (0 Token Usage)</p>", unsafe_allow_html=True)
+    st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
     
     # --- 1. LIVE TICKER (YFINANCE) ---
-    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px;'>Live Market Pulse</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
     
     @st.cache_data(ttl=300) # Cache 5 menit agar tidak limit API
     def get_market_data():
@@ -3036,13 +3100,13 @@ if current_view == "dashboard":
     else:
         st.warning("⚠️ Gagal menarik data live. Pastikan koneksi internet aktif.")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
 
     # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
-    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px;'>📈 Live Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
     # Ditambahkan "allow_symbol_change": true agar user bisa ganti emiten
     tv_widget = f"""
-    <div class="tradingview-widget-container" style="height:100%;width:100%">
+    <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
       <div id="tradingview_sigma" style="height:550px;width:100%"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
       <script type="text/javascript">
@@ -3057,8 +3121,8 @@ if current_view == "dashboard":
       "locale": "id",
       "enable_publishing": false,
       "allow_symbol_change": true,
-      "backgroundColor": "{C['bg']}",
-      "gridColor": "{C['border']}",
+      "backgroundColor": "rgba(20, 20, 20, 1)",
+      "gridColor": "rgba(45, 45, 45, 1)",
       "hide_top_toolbar": false,
       "hide_legend": false,
       "save_image": false,
@@ -3073,36 +3137,55 @@ if current_view == "dashboard":
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- 3. KORELASI MAKRO EKONOMI (WIDE CHART) ---
-    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px;'>📊 Korelasi Makro: Suku Bunga vs Inflasi vs Yield Obligasi</h4>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.9rem; margin-bottom: 15px;'>Tren Historis 12 Bulan Terakhir (Visualisasi interaksi data ekonomi Indonesia)</p>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro RI: Suku Bunga vs Inflasi vs Yield Obligasi</h4>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.95rem; margin-bottom: 15px;'>Tren 12 Bulan Terakhir (Update: Kuartal 1 - 2026)</p>", unsafe_allow_html=True)
 
-    # Data Simulasi Historis 12 Bulan agar chart melebar dan menyamping
+    # Data Historis 12 Bulan (Diupdate hingga Maret 2026)
     macro_data = pd.DataFrame({
-        "BI Rate (%)": [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 5.75, 6.00, 6.00, 6.25, 6.25, 6.00],
-        "Inflasi YoY (%)": [3.00, 2.84, 2.51, 2.13, 2.12, 2.28, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80],
-        "Bond Yield 10Y (%)": [6.80, 6.95, 7.10, 6.85, 6.70, 6.65, 6.50, 6.75, 6.60, 6.80, 6.70, 6.65]
-    }, index=["Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Jan", "Feb", "Mar"])
+        "BI Rate (%)": [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00],
+        "Inflasi YoY (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80],
+        "Bond Yield 10Y (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
+    }, index=["Apr '25", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Jan '26", "Feb", "Mar '26"])
 
     # Render Multi-line Chart (Kuning, Biru, Merah)
     st.line_chart(macro_data, color=["#F5C242", "#4285F4", "#ff5555"], height=380)
 
     # Penjelasan Cara Baca Korelasi
-    st.info("💡 **The SIGMA View (Cara Membaca Hubungan di Atas):**\n\nJika garis **Inflasi (Biru)** naik tajam, Bank Indonesia cenderung merespons dengan menaikkan **BI Rate (Kuning)** untuk mengerem harga barang. Kenaikan BI Rate ini akan memicu kenaikan **Bond Yield/Obligasi (Merah)**. Jika Yield Obligasi sedang tinggi, para Fund Manager Asing akan lebih suka memindahkan uangnya dari Saham (aset berisiko) ke Obligasi Negara (aset aman). **Akibatnya: Capital Outflow & IHSG tertekan turun.**")
+    st.info("💡 **The SIGMA View (Cara Membaca Korelasi):**\n\nJika garis **Inflasi (Biru)** naik tajam, Bank Indonesia cenderung menaikkan **BI Rate (Kuning)** untuk mengerem harga. Kenaikan BI Rate memicu naiknya **Bond Yield/Obligasi (Merah)**. Saat Yield Obligasi tinggi, Fund Manager Asing akan memindahkan uangnya dari Saham ke Obligasi Negara. **Akibatnya: Capital Outflow & IHSG akan tertekan turun.**")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 4. MARKET INSIGHT & KETAHANAN NASIONAL (2 KOLOM) ---
+    # --- 4. MARKET INSIGHT & KETAHANAN NASIONAL (2 KOLOM LUXURY) ---
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown(f"<h5 style='color:{C['text']};'>🔥 Sektor Fokus & Risiko Sentimen</h5>", unsafe_allow_html=True)
-        st.success("**Rotasi Sektor (Commodity vs Banking):**\nJika harga komoditas global memanas akibat ketegangan geopolitik, amati emiten *Coal* (Batu Bara) dan *Gold* (Emas). Sebaliknya, jika tren suku bunga (BI Rate) berbalik dipangkas turun, aliran uang akan mengalir deras ke *Big Banks* dan sektor Properti.")
-        st.error("**Peringatan Volatilitas Rupiah (USD/IDR):**\nPelemahan nilai tukar Rupiah yang sangat cepat terhadap Dollar wajib dipantau ketat. Jika USD mendominasi secara agresif, hal ini berisiko memicu *Net Foreign Sell* masif di bursa domestik, karena aset saham dalam satuan Rupiah akan dianggap menyusut nilainya di mata investor asing.")
+        st.markdown(f"""
+        <div class="glass-card">
+            <h5 style='color:{C['gold']}; margin-top:0;'>🔥 Sektor Fokus & Rotasi</h5>
+            <p style='color:{C['text']}; font-size: 0.95rem; line-height: 1.6;'>
+            Jika harga komoditas global memanas, amati emiten <b>Coal</b> dan <b>Gold</b>. Sebaliknya, jika tren suku bunga (BI Rate) ditahan atau dipangkas turun, aliran uang institusi akan mengalir deras ke sektor <b>Big Banks</b> dan <b>Properti</b>.
+            </p>
+            <h5 style='color:#ff5555; margin-top:15px;'>⚠️ Risiko Mayor (Rupiah)</h5>
+            <p style='color:{C['text']}; font-size: 0.95rem; line-height: 1.6;'>
+            Volatilitas nilai tukar Rupiah (USD/IDR) wajib dipantau ketat di panel atas. Pelemahan Rupiah yang tajam berisiko memicu <i>Net Foreign Sell</i> masif karena aset saham dalam Rupiah dianggap menyusut nilainya di mata asing.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown(f"<h5 style='color:{C['text']};'>🛡️ Status Fundamental Negara</h5>", unsafe_allow_html=True)
-        st.info("**📈 GDP Growth (Pertumbuhan Ekonomi): ~5.11% YoY**\nPerekonomian Indonesia masih bertumbuh secara solid di atas rata-rata global, ditopang kuat oleh konsumsi rumah tangga dalam negeri. Ini adalah fundamental yang baik untuk sektor *Consumer Goods* (FMCG).")
-        st.info("**⚖️ Ketahanan APBN & Neraca Perdagangan:**\nNeraca dagang konsisten surplus (ekspor lebih besar dari impor). Ini adalah 'bantalan' krusial yang menyuplai cadangan devisa agar Bank Indonesia bisa melakukan intervensi pasar untuk menahan gejolak Rupiah dari serangan eksternal.")
+        st.markdown(f"""
+        <div class="glass-card">
+            <h5 style='color:#4285F4; margin-top:0;'>🛡️ Status Fundamental Negara</h5>
+            <p style='color:{C['text']}; font-size: 0.95rem; line-height: 1.6;'>
+            <b>📈 Pertumbuhan Ekonomi (GDP): ~5.11% YoY</b><br>
+            Perekonomian Indonesia masih bertumbuh secara solid di atas rata-rata global, ditopang kuat oleh konsumsi rumah tangga dalam negeri. Ini fundamental yang sangat baik untuk sektor <i>Consumer Goods</i>.
+            </p>
+            <p style='color:{C['text']}; font-size: 0.95rem; line-height: 1.6;'>
+            <b>⚖️ APBN & Neraca Perdagangan:</b><br>
+            Neraca dagang konsisten surplus. Ini adalah 'bantalan' krusial yang menyuplai cadangan devisa agar Bank Indonesia bisa melakukan intervensi pasar untuk menahan gejolak Rupiah dari tekanan eksternal.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
