@@ -2365,7 +2365,7 @@ C = get_colors(st.session_state.theme)
 
 
 # ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE & RIGID 3-MODEL PLAN)
+# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE, 7 ALPHA COMPLETE)
 # ─────────────────────────────────────────────
 import requests
 import re
@@ -2694,36 +2694,92 @@ Berikut Trade Plan Teknikal (MnM Strategy+) untuk **{emiten}**:
 
 TEMPLATE_BANDARMOLOGI = """
 [INSTRUKSI SANGAT TEGAS UNTUK AI]:
-User meminta analisa BANDARMOLOGI saham {emiten}.
-WAJIB gunakan konsep "Triple Confluence", "Positive/Negative Thinking", dan taktik lanjutan Bandar (Washing, Mark-Up Cost, Fake Bid/Offer) jika terlihat indikasinya pada data/gambar yang dilampirkan user!
+User meminta analisa PURE BANDARMOLOGI saham {emiten}.
+Fokuskan 100% analisamu pada aliran dana (Broker Summary), Volume, dan Average Price. 
+DILARANG KERAS membahas indikator teknikal (RSI/MACD/Support/Resistance chart) atau Laporan Keuangan/Fundamental di dalam output ini!
 
 [TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN (JANGAN UBAH BULLET POINT)]:
-Berikut adalah **Peta Kekuatan Bandarmologi (MnM Strategy+)** untuk **{emiten}**:
+Berikut adalah **Peta Kekuatan Bandarmologi (Pure Volume & Flow)** untuk **{emiten}**:
 
-🕵️‍♂️ **1. ANALISA ALIRAN DANA & AKTOR (Pure Bandarmology)**
-- **Fase Saat Ini:** [Pilih: Akumulasi Diam-diam / Mark-Up / Distribusi Halus / Mark-Down / Shakeout]
-- **Aktor Dominan:** [Sebutkan broker Top Buyer/Seller dan Average Price-nya jika data tersedia]
-- **Jejak Taktik Bandar:** [Sebutkan jika ada indikasi Washing (Cuci barang antar broker), Mark-Up Cost (Average bandar naik), atau Fake Bid/Offer di orderbook]
-- **Logika Market:** [Jelaskan anomali dengan Positive/Negative Thinking. Cth: "Harga turun tapi broker top net buy = Positive Thinking (Akumulasi)."]
+🕵️‍♂️ **1. STATUS AKUMULASI / DISTRIBUSI**
+- **Fase Bandar:** [Pilih salah satu: Akumulasi / Distribusi / Mark-Up / Mark-Down / Shakeout]
+- **Aktor Dominan:** [Sebutkan Top Buyer dan Top Seller]
+- **Jejak Asing (Foreign Flow):** [Jelaskan apakah Asing Net Buy masif, Net Sell, atau Neutral]
+- **Taktik Lanjutan:** [Jelaskan jika ada indikasi Washing (cuci barang), Bandar Nyamar pakai broker ritel, atau Fake Bid/Offer]
 
-📈 **2. TECHNO-BANDARMOLOGY (Validasi Chart & Divergence)**
-- **Sinyal Divergence:** [⚠️ Tulis TEBAL jika ada Bullish/Bearish Divergence di chart! Jika user tidak kirim chart, tulis "Menunggu konfirmasi chart dari user"]
-- **Posisi Harga vs Bandar:** [Cth: "Harga Rp 800, Average Bandar Rp 750. Bandar sedang floating profit."]
-- **Key Levels:** Support kuat di Rp[X], Resistance di Rp[Y].
+💰 **2. PETA HARGA & POSISI BANDAR**
+- **Average Top Buyer:** Rp[X] (Harga rata-rata bandar kumpul barang)
+- **Harga Market Saat Ini:** Rp[Y]
+- **Status Bandar:** [Jelaskan apakah bandar sedang Floating Profit, Floating Loss, atau Break Even]
 
-🏢 **3. FUNDA-BANDARMOLOGY (Katalis Eksternal)**
-- **Antisipasi Katalis:** [Sebutkan ekspektasi katalis terdekat dari knowledgamu: Rilis Laporan Keuangan, Aksi Korporasi, atau Cuaca Makro Ekstrim jika relevan]
-- **Korelasi:** [Jelaskan hubungan aksi bandar saat ini dengan katalis yang akan datang]
+📊 **3. ANALISA VOLUME & FREKUENSI**
+- **Karakter Transaksi:** [Pilih: Block Trade (Lot besar, frekuensi kecil) / Eceran (Lot kecil, frekuensi besar)]
+- **Anomali Volume:** [Jelaskan apakah ada lonjakan volume signifikan, normal, atau sepi]
+- **Tekanan Transaksi:** [Analisa perbandingan lot buy/sell jika terlihat di Price Table]
 
-⚖️ **TRADE PLAN & KESIMPULAN**
-- **Skenario Prioritas:** [Skenario paling logis berdasarkan konfluensi data saat ini]
-- **Entry Area:** Rp[X] - Rp[Y]
-- **Stop Loss:** Rp[Z] (Sesuaikan SL ini dengan pergeseran Mark-Up Cost/Average Bandar)
-- **Target Profit:** Rp[A] | Rp[B]
-- **Tindakan (To The Point):** [Tulis 1 Kalimat instruksi tegas! Cth: "Akumulasi bertahap selama harga bertahan di atas Average Bandar."]
-        
-⚠️ *Bandar bisa merubah taktik kapan saja (Distribusi tiba-tiba). Disiplin pada Stop Loss!*
+🎯 **TRADE PLAN (Base on Money Flow)**
+- **Skenario Terpilih:** [Pilih S1-S9 berdasarkan kondisi. Contoh: "S1 - Akumulasi Dini" atau "S3 - Ikuti Asing"]
+- **Entry Area:** Rp[X] - Rp[Y] (Mendekati atau maksimal setara Average Bandar)
+- **Stop Loss:** Bawah Rp[Z] (Wajib cut loss jika harga jebol jauh di bawah Average Bandar dan bandar mulai distribusi)
+- **Kesimpulan Aksi:** [Tulis 1 Kalimat instruksi tegas! Cth: "Ikuti akumulasi, cicil beli selama harga dijaga di sekitar area modal bandar."]
+
+⚠️ *Analisa ini murni melacak aliran dana Smart Money. Disiplin cut loss jika aktor dominan berubah arah menjadi distribusi.*
 """
+
+# FORMAT BARU: MASTER LENGKAP (QUAD CONFLUENCE)
+TEMPLATE_LENGKAP = """
+[INSTRUKSI SANGAT TEGAS UNTUK AI]:
+User meminta ANALISA LENGKAP (QUAD CONFLUENCE) untuk saham {emiten}.
+Tugasmu adalah menggabungkan Bandarmologi (dari gambar/data brosum), Teknikal (gambar Chart, WAJIB CEK DIVERGENCE!), Fundamental (data live di bawah ini), dan Makro (sentimen/berita/cuaca saat ini).
+
+[DATA LIVE FUNDAMENTAL (Gunakan sebagai referensi valuasi & kinerja)]:
+{data_raw}
+
+[TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN (JANGAN UBAH FORMAT/EMOJI)]:
+**🌟 ANALISA LENGKAP (QUAD CONFLUENCE) — {emiten} 🌟**
+
+🕵️‍♂️ **1. BANDARMOLOGI (Money Flow)**
+* **Fase Bandar:** [Sebutkan durasi/tipe: Akumulasi Jangka Pendek/Menengah/Panjang, Distribusi, Mark-Up, Mark-Down, atau Shakeout]
+* **Aktor Dominan:** [Sebutkan Top Buyer/Seller dan indikasikan jika ada block trade/washing]
+* **Posisi Harga:** [Bandingkan Average Bandar vs Harga Market saat ini]
+* **Kesimpulan Bandar:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH]. [Sebutkan alasannya singkat]
+
+📈 **2. TEKNIKAL (MnM Strategy+)**
+* **Status Struktur:** [Jelaskan posisi harga terhadap zona IFVG/OB/Demand/Supply dan indikator EMA]
+* **Konfirmasi Divergence:** [⚠️ Tulis dengan TEBAL apakah ada Bullish/Bearish Divergence atau Tidak Ada Divergence]
+* **Kesimpulan Teknikal:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH]. [Sebutkan alasannya singkat]
+
+💰 **3. FUNDAMENTAL (Valuasi & Bisnis)**
+* **Kinerja Terakhir:** [Analisa singkat laba/revenue dari data live atau knowledge]
+* **Valuasi:** [Sebutkan rasio PER/PBV saat ini, jelaskan apakah undervalue/fair/overvalue]
+* **Kesimpulan Fundamental:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH]. [Sebutkan alasannya singkat]
+
+🌍 **4. MAKRO & SENTIMEN (Katalis)**
+* **Sentimen Eksternal:** [Sebutkan sentimen makro saat ini, harga komoditas terkait, atau faktor cuaca/ekonomi yang memengaruhi emiten]
+* **Kesimpulan Makro:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH]. [Sebutkan alasannya singkat]
+
+***
+
+⚖️ **KESIMPULAN MASTER & SUPER TRADE PLAN**
+
+🔥 **SKOR QUAD CONFLUENCE: [X/4] [SANGAT KUAT / KUAT / MODERAT / TUNGGU]**
+*(Bandar [✅/⚠️/❌] | Teknikal [✅/⚠️/❌] | Fundamental [✅/⚠️/❌] | Makro [✅/⚠️/❌])*
+
+**🔍 Analisa Logika (The Story):**
+[Tulis 3-4 kalimat cerita logis yang merangkai mengapa Bandar melakukan akumulasi/distribusi saat ini, dikaitkan dengan antisipasi rilis Fundamental/Makro, dan bagaimana hal tersebut terbaca oleh Divergence di Teknikal.]
+
+**📋 SUPER TRADE PLAN (Skenario Terpilih: [Sebutkan misal S1 / S3 / S4])**
+* **Strategi Eksekusi:** [Cth: Buy on Weakness / Wait for Breakout / Avoid]
+* **Area Entry:** Rp[X] - Rp[Y] (Konfluensi antara Average Bandar & Support Teknikal)
+* **Target Profit (TP 1):** Rp[A] (Resistance teknikal minor)
+* **Target Profit (TP 2):** Rp[B] (Target valuasi / Resistance mayor)
+* **Batas Aman (Stop Loss):** Bawah Rp[Z] (Wajib angka mutlak, tempat invalidasi teknikal & bandar)
+* **Risk/Reward Ratio:** 1 : [X]
+* **Keputusan Final:** **[STRONG BUY / BUY / WAIT / SELL / STRONG SELL]**. [Sertakan alasan porsi sizing dana, cth: Sizing penuh karena probabilitas tinggi].
+
+⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
+"""
+
 
 # ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
@@ -2972,7 +3028,7 @@ else:
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                menu_text = """**7 Alpha SIGMA — MENU**\n\n1. Kesimpulan Dampak Makro [topik/berita]\n2. Kesimpulan Dampak [emiten]\n3. Bandarmologi [emiten]\n4. Fundamental [emiten]\n5. Teknikal [emiten]\n6. Analisa Lengkap [emiten]\n7. Analisa IPO [emiten]\n\nKetik angkanya atau perintahnya.\nContoh: **"3. Bandarmologi BBCA"** atau **"5. Teknikal BRMS"** (sambil lampirkan gambar chart)."""
+                menu_text = """**7 Alpha SIGMA — MENU**\n\n1. Kesimpulan Dampak Makro [topik/berita]\n2. Kesimpulan Dampak [emiten]\n3. Bandarmologi [emiten]\n4. Fundamental [emiten]\n5. Teknikal [emiten]\n6. Analisa Lengkap [emiten]\n7. Analisa IPO [emiten]\n\nKetik angkanya atau perintahnya.\nContoh: **"3. Bandarmologi BBCA"** atau **"6. Analisa Lengkap BRMS"**."""
                 active["messages"].append({"role": "user", "content": "7 Alpha", "display": "7 Alpha"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
                 with st.chat_message("user"): st.markdown("7 Alpha")
@@ -3011,6 +3067,7 @@ else:
         is_bandarmologi = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or "broker" in prompt_lower
         is_fundamental = prompt_lower.startswith("4.") or "fundamental" in prompt_lower
         is_teknikal = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
+        is_lengkap = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
         is_ipo = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
         
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
@@ -3038,12 +3095,12 @@ else:
                 full_prompt += TEMPLATE_DAMPAK_EMITEN.format(emiten=emiten_target)
                 full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
 
-        # LOGIC 3: BANDARMOLOGI (Menu 3)
+        # LOGIC 3: BANDARMOLOGI (Menu 3) - PURE BANDAR FORMAT
         elif is_bandarmologi:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
-            with st.spinner(f"🔍 Melacak Jejak Bandar & Taktik Lanjutan (Washing/Mark-Up) di {emiten_target}..."):
+            with st.spinner(f"🔍 Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
                 full_prompt = TEMPLATE_BANDARMOLOGI.format(emiten=emiten_target)
-                full_prompt += f"\n\n[PENTING JIKA ADA GAMBAR CHART/BROSUM: Gunakan data di gambar untuk mengisi analisa. Cari Divergence juga jika ada chart!]\nPertanyaan Asli User: {prompt}"
+                full_prompt += f"\n\n[PENTING: Fokus 100% pada data Broker Summary, Average Price, dan Volume. JANGAN bahas indikator teknikal (RSI/MACD) atau Fundamental!]\nPertanyaan Asli User: {prompt}"
 
         # LOGIC 4: FUNDAMENTAL
         elif is_fundamental and emiten_match:
@@ -3070,6 +3127,18 @@ else:
             else:
                 full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]"
+
+        # LOGIC 6: ANALISA LENGKAP (MASTER / QUAD CONFLUENCE)
+        elif is_lengkap and emiten_match:
+            emiten_target = emiten_match.group(0).upper()
+            with st.spinner(f"🔍 Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
+                try:
+                    fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
+                except:
+                    fund_text = "Data fundamental gagal ditarik secara live, gunakan estimasi dari knowledge base."
+                
+                full_prompt = TEMPLATE_LENGKAP.format(emiten=emiten_target, data_raw=fund_text)
+                full_prompt += f"\n\n[PENTING: Gunakan gambar chart & data Broker Summary yang dilampirkan user! Cari Divergence!]\nPertanyaan Asli User: {prompt}"
 
         # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
         elif is_ipo:
