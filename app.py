@@ -2979,7 +2979,7 @@ active = get_active()
 current_view = st.session_state.get("current_view", "chat")
 
 # ─────────────────────────────────────────────
-# PART 9: SIGMA TERMINAL (ANTI-LUPA UPDATE VERSION)
+# PART 9: SIGMA TERMINAL (LUXURY COMMODITY EDITION)
 # ─────────────────────────────────────────────
 if current_view == "dashboard":
     try:
@@ -2990,89 +2990,106 @@ if current_view == "dashboard":
         st.error("⚠️ Library missing! Install: pip install yfinance pandas")
         st.stop()
 
-    # --- KONFIGURASI DATA MANUAL (Update di sini setiap bulan) ---
-    # Tips: Cukup luangkan waktu 2 menit di tanggal 20 setiap bulan
-    DATA_OFFICIAL_AS_OF = "2026-03-20" # Format: YYYY-MM-DD
-    
-    # Data 12 Bulan Terakhir (Geser data ke kiri, tambahkan data baru di kanan setiap bulan)
+    # --- KONFIGURASI DATA MAKRO (Update Manual di Sini) ---
+    DATA_OFFICIAL_AS_OF = "2026-03-20"
     months = ["Apr '25", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Jan '26", "Feb", "Mar '26"]
     bi_rate_vals = [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00]
     inflation_vals = [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80]
     bond_vals = [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
 
-    # --- LOGIKA PENGINGAT OTOMATIS ---
-    last_upd = datetime.strptime(DATA_OFFICIAL_AS_OF, "%Y-%m-%d")
-    days_since_update = (datetime.now() - last_upd).days
-
-    # Injeksi CSS (Sama seperti sebelumnya untuk tampilan mewah)
-    st.markdown("""
+    # --- INJEKSI CSS LUXURY ---
+    st.markdown(f"""
     <style>
-    .sigma-title { text-align: center; background: -webkit-linear-gradient(0deg, #F5C242, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; font-size: 3rem; margin-bottom: 0px; }
-    .sigma-subtitle { text-align: center; color: #888; font-size: 1.1rem; margin-top: -5px; margin-bottom: 20px; }
-    .glass-card { background: linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8)); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); }
+    .sigma-title {{ text-align: center; background: -webkit-linear-gradient(0deg, #F5C242, #FFD700, #FFA500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; font-size: 3.2rem; margin-bottom: 0px; letter-spacing: 2px; }}
+    .sigma-subtitle {{ text-align: center; color: #888; font-size: 1.1rem; margin-top: -5px; margin-bottom: 30px; }}
+    [data-testid="stMetric"] {{ background: linear-gradient(145deg, rgba(30,30,30,0.8), rgba(15,15,15,1)); border: 1px solid rgba(245, 194, 66, 0.2); border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }}
+    .glass-card {{ background: rgba(30, 30, 30, 0.6); backdrop-filter: blur(10px); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }}
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='sigma-subtitle'>Modern Market & Macro Intelligence Center</p>", unsafe_allow_html=True)
+    st.markdown("<p class='sigma-subtitle'>Advanced Commodity & Macro Intelligence Center</p>", unsafe_allow_html=True)
 
-    # Notifikasi jika lupa update lebih dari 35 hari
-    if days_since_update > 35:
-        st.warning(f"🔔 **Sinyal Pembaruan:** Data Makro terakhir diperbarui {days_since_update} hari yang lalu. Periksa rilis BI Rate/Inflasi terbaru di BPS/BI untuk akurasi maksimal.")
-
-    # --- 1. LIVE TICKER (YFINANCE) ---
+    # --- 1. LIVE TICKER (CORE & COMMODITIES) ---
+    st.markdown("#### ⚡ Real-Time Global Market")
+    
     @st.cache_data(ttl=300)
     def get_market_data():
-        tickers = {"IHSG": "^JKSE", "Dow Jones": "^DJI", "USD/IDR": "IDR=X", "Gold": "GC=F", "Oil": "CL=F"}
+        # Menambahkan Batu Bara (Coal), Nikel, dan CPO (Sawit acuan Malaysia/Global)
+        tickers = {
+            "IHSG": "^JKSE", 
+            "USD/IDR": "IDR=X", 
+            "Gold": "GC=F", 
+            "Coal (Newcastle)": "MTW=F", 
+            "Nickel (LME)": "NICK", # Proxy ticker
+            "Crude Oil": "CL=F",
+            "CPO (Palm Oil)": "FCPO=F"
+        }
         data = {}
         for name, tk in tickers.items():
             try:
                 t = yf.Ticker(tk)
                 h = t.history(period="2d")
-                last = h['Close'].iloc[-1]
-                pct = ((last - h['Close'].iloc[-2]) / h['Close'].iloc[-2]) * 100
-                data[name] = {"price": last, "pct": pct}
+                if not h.empty:
+                    last = h['Close'].iloc[-1]
+                    prev = h['Close'].iloc[-2]
+                    pct = ((last - prev) / prev) * 100
+                    data[name] = {"price": last, "pct": pct}
             except: continue
         return data
 
     m_data = get_market_data()
-    cols = st.columns(len(m_data))
+    # Menampilkan dalam 2 baris agar tidak terlalu rapat
+    row1 = st.columns(4)
+    row2 = st.columns(3)
+    
     for i, (name, info) in enumerate(m_data.items()):
-        with cols[i]:
-            st.metric(label=name, value=f"{info['price']:,.0f}" if "IDR" in name else f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
+        target_col = row1[i] if i < 4 else row2[i-4]
+        with target_col:
+            prefix = "Rp" if "IDR" in name else "$"
+            val_format = f"{info['price']:,.0f}" if info['price'] > 1000 else f"{info['price']:,.2f}"
+            st.metric(label=name, value=f"{prefix} {val_format}" if name != "IHSG" else val_format, delta=f"{info['pct']:.2f}%")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- 2. TRADINGVIEW ---
     components.html(f"""
-        <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-        <div id="tv_chart"></div>
-        <script>
-        new TradingView.widget({{"autosize": true, "symbol": "IDX:COMPOSITE", "interval": "D", "timezone": "Asia/Jakarta", "theme": "dark", "style": "1", "locale": "id", "allow_symbol_change": true, "container_id": "tv_chart"}});
-        </script>
+        <div style="border-radius: 12px; overflow: hidden; border: 1px solid #333;">
+            <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+            <div id="tv_chart"></div>
+            <script>
+            new TradingView.widget({{"autosize": true, "symbol": "IDX:COMPOSITE", "interval": "D", "timezone": "Asia/Jakarta", "theme": "dark", "style": "1", "locale": "id", "allow_symbol_change": true, "container_id": "tv_chart"}});
+            </script>
+        </div>
     """, height=500)
 
-    # --- 3. GRAFIK KORELASI MAKRO (WIDE) ---
-    st.markdown("### 📊 Macro Correlation Dashboard")
+    # --- 3. MACRO CORRELATION (WIDE CHART) ---
+    st.markdown("### 📊 Macro & Commodity Correlation")
     df_macro = pd.DataFrame({
         "BI Rate (%)": bi_rate_vals,
-        "Inflasi YoY (%)": inflation_vals,
-        "Bond Yield 10Y (%)": bond_vals
+        "Inflasi (%)": inflation_vals,
+        "Bond Yield (%)": bond_vals
     }, index=months)
-    
     st.line_chart(df_macro, color=["#F5C242", "#4285F4", "#ff5555"], height=400)
-    
-    # Info update terakhir di bawah chart
-    st.caption(f"Last Official Data Update: {DATA_OFFICIAL_AS_OF} | Source: Bank Indonesia & BPS")
+    st.caption(f"Last Official Update: {DATA_OFFICIAL_AS_OF} | Source: BI, BPS, Yahoo Finance")
 
     # --- 4. INSIGHT CARDS ---
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f'<div class="glass-card"><h5 style="color:#F5C242">🔥 Sektor Fokus</h5><p style="font-size:0.9rem">Berdasarkan BI Rate {bi_rate_vals[-1]}%, perhatikan sektor Perbankan dan Properti. Jika inflasi tetap di bawah 3%, daya beli sektor Consumer akan menguat.</p></div>', unsafe_allow_html=True)
+        st.markdown(f"""<div class="glass-card">
+            <h5 style="color:#F5C242">⛏️ Commodity Watch</h5>
+            <p style="font-size:0.9rem; color:#ccc;">
+            <b>Coal & Nickel:</b> Jika harga Newcastle atau LME Nickel naik, perhatikan emiten <b>ADRO, ITMG, INCO, ANTM</b>.<br>
+            <b>CPO:</b> Kenaikan Palm Oil global akan menjadi katalis positif untuk <b>LSIP</b> dan <b>AALI</b>.
+            </p></div>""", unsafe_allow_html=True)
     with c2:
-        st.markdown(f'<div class="glass-card"><h5 style="color:#ff5555">⚠️ Risiko Makro</h5><p style="font-size:0.9rem">Waspadai kenaikan Bond Yield di angka {bond_vals[-1]}%. Jika terus naik, IHSG berpotensi mengalami tekanan jual oleh investor asing.</p></div>', unsafe_allow_html=True)
+        st.markdown(f"""<div class="glass-card">
+            <h5 style="color:#4285F4">🏦 Macro Strategy</h5>
+            <p style="font-size:0.9rem; color:#ccc;">
+            Dengan BI Rate di level {bi_rate_vals[-1]}%, pasar menunggu kebijakan pelonggaran moneter. Jika Inflasi tetap terjaga rendah, sektor perbankan (BBCA, BBRI) akan tetap menjadi <i>backbone</i> IHSG.
+            </p></div>""", unsafe_allow_html=True)
 
-
+            
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
