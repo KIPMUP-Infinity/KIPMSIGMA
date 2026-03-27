@@ -2979,7 +2979,7 @@ active = get_active()
 current_view = st.session_state.get("current_view", "chat")
 
 # ─────────────────────────────────────────────
-# PART 9: SIGMA TERMINAL (ELITE EDITION)
+# PART 9: SIGMA TERMINAL (GLOBAL ELITE EDITION - FULL & STABLE)
 # ─────────────────────────────────────────────
 if current_view == "dashboard":
     try:
@@ -2990,33 +2990,39 @@ if current_view == "dashboard":
         st.error("⚠️ Library missing! Install: pip install yfinance pandas")
         st.stop()
 
-    # --- DATA MAKRO (Update Manual Bulanan) ---
-    DATA_OFFICIAL_AS_OF = "2026-03-20"
+    # --- 1. KONFIGURASI DATA MAKRO ---
+    DATA_OFFICIAL_AS_OF = "2026-03-20" 
     months = ["Apr '25", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Jan '26", "Feb", "Mar '26"]
     bi_rate_vals = [6.25, 6.25, 6.25, 6.25, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00, 6.00]
     inflation_vals = [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 2.57, 2.75, 2.80]
     bond_vals = [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
 
-    # --- INJEKSI CSS LUXURY (Token Usage Removed) ---
+    last_upd = datetime.strptime(DATA_OFFICIAL_AS_OF, "%Y-%m-%d")
+    days_since_update = (datetime.now() - last_upd).days
+
+    # --- 2. INJEKSI CSS LUXURY ---
     st.markdown(f"""
     <style>
-    .sigma-title {{ text-align: center; background: -webkit-linear-gradient(0deg, #F5C242, #FFD700, #FFA500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; font-size: 3.2rem; margin-bottom: 10px; letter-spacing: 2px; }}
-    .sigma-subtitle {{ text-align: center; color: #888; font-size: 1.1rem; margin-top: -5px; margin-bottom: 30px; letter-spacing: 1px; text-transform: uppercase; }}
-    [data-testid="stMetric"] {{ background: linear-gradient(145deg, rgba(30,30,30,0.9), rgba(10,10,10,1)); border: 1px solid rgba(245, 194, 66, 0.15); border-radius: 12px; padding: 15px; }}
-    .glass-card {{ background: rgba(25, 25, 25, 0.7); backdrop-filter: blur(15px); border-radius: 16px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
-    .stock-tag {{ background: rgba(245, 194, 66, 0.1); color: #F5C242; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }}
+    .sigma-title {{ text-align: center; background: -webkit-linear-gradient(0deg, #F5C242, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; font-size: 3.2rem; margin-bottom: 0px; }}
+    .sigma-subtitle {{ text-align: center; color: #888; font-size: 1.1rem; margin-top: -5px; margin-bottom: 30px; letter-spacing: 1px; }}
+    [data-testid="stMetric"] {{ background: linear-gradient(145deg, rgba(30,30,30,0.8), rgba(15,15,15,1)); border: 1px solid rgba(245, 194, 66, 0.2); border-radius: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }}
+    .glass-card {{ background: linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8)); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }}
+    .stock-tag {{ background: rgba(245, 194, 66, 0.1); color: #F5C242; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }}
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='sigma-subtitle'>Advanced Market Intelligence & Real-time Analytics</p>", unsafe_allow_html=True)
+    st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
 
-    # --- 1. LIVE TICKER PANEL ---
+    if days_since_update > 35:
+        st.warning(f"🔔 **Update Required:** Data Makro berumur {days_since_update} hari. Mohon perbarui manual di script Part 9.")
+
+    # --- 3. LIVE TICKER (8 ASSET) ---
     @st.cache_data(ttl=300)
-    def get_market_data():
+    def get_extended_market():
         tickers = {
-            "IHSG": "^JKSE", "USD/IDR": "IDR=X", "Gold": "GC=F", 
-            "Coal": "MTW=F", "Nickel": "NICK", "Crude Oil": "CL=F", "CPO": "FCPO=F"
+            "IHSG": "^JKSE", "USD/IDR": "IDR=X", "Gold": "GC=F", "Brent Oil": "BZ=F",
+            "Coal": "MTW=F", "VIX Index": "^VIX", "Bitcoin": "BTC-USD", "Ethereum": "ETH-USD"
         }
         data = {}
         for name, tk in tickers.items():
@@ -3028,19 +3034,24 @@ if current_view == "dashboard":
             except: continue
         return data
 
-    m_data = get_market_data()
-    cols = st.columns(len(m_data))
+    m_data = get_extended_market()
+    row1 = st.columns(4)
+    row2 = st.columns(4)
+    
     for i, (name, info) in enumerate(m_data.items()):
-        with cols[i]:
+        target_col = row1[i] if i < 4 else row2[i-4]
+        with target_col:
             prefix = "Rp" if "IDR" in name else "$"
+            if name == "IHSG": prefix = ""
+            elif name == "VIX Index": prefix = "⚠️"
             val_format = f"{info['price']:,.0f}" if info['price'] > 1000 else f"{info['price']:,.2f}"
-            st.metric(label=name, value=f"{prefix} {val_format}" if name != "IHSG" else val_format, delta=f"{info['pct']:.2f}%")
+            st.metric(label=name, value=f"{prefix} {val_format}".strip(), delta=f"{info['pct']:.2f}%")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- 2. TRADINGVIEW ---
+    # --- 4. TRADINGVIEW ---
     components.html(f"""
-        <div style="border-radius: 16px; overflow: hidden; border: 1px solid #333; box-shadow: 0 15px 35px rgba(0,0,0,0.7);">
+        <div style="border-radius: 16px; overflow: hidden; border: 1px solid #333;">
             <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
             <div id="tv_chart"></div>
             <script>
@@ -3049,46 +3060,31 @@ if current_view == "dashboard":
         </div>
     """, height=500)
 
-    # --- 3. MACRO & STOCK EXPLAINER (NEW!) ---
-    st.markdown("### 📊 Macro Correlation & Stock Analysis")
-    
-    # Chart Utama
+    # --- 5. MACRO CORRELATION (WIDE) ---
+    st.markdown("### 📊 Macro Correlation Dashboard")
     df_macro = pd.DataFrame({
         "BI Rate (%)": bi_rate_vals,
         "Inflasi (%)": inflation_vals,
         "Bond Yield (%)": bond_vals
     }, index=months)
-    st.line_chart(df_macro, color=["#F5C242", "#4285F4", "#ff5555"], height=350)
+    st.line_chart(df_macro, color=["#F5C242", "#4285F4", "#ff5555"], height=400)
     
-    # Penjelasan Stok Berdasarkan Data
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    
+    # --- 6. STOCK WATCHLIST INSIGHTS ---
+    c1, c2 = st.columns(2)
     with c1:
         st.markdown(f"""<div class="glass-card">
             <h5 style="color:#F5C242">🏦 Banking & Rates</h5>
-            <p style="font-size:0.85rem; color:#bbb;">BI Rate tetap di <b>{bi_rate_vals[-1]}%</b> mengindikasikan NIM perbankan masih terjaga.</p>
-            <p style="font-size:0.9rem;"><span class="stock-tag">BBCA</span> <span class="stock-tag">BBRI</span><br><br>
-            Kondisi ini mendukung stabilitas emiten Big Caps perbankan sebagai motor IHSG.</p>
+            <p style="font-size:0.9rem; color:#ccc;">BI Rate {bi_rate_vals[-1]}% mendukung NIM perbankan.</p>
+            <span class="stock-tag">BBCA</span> <span class="stock-tag">BBRI</span> <span class="stock-tag">BMRI</span>
         </div>""", unsafe_allow_html=True)
-        
     with c2:
         st.markdown(f"""<div class="glass-card">
-            <h5 style="color:#ff5555">⛏️ Mining & Energy</h5>
-            <p style="font-size:0.85rem; color:#bbb;">Harga Coal Newcastle & Nickel LME menjadi penentu arah sektor energi.</p>
-            <p style="font-size:0.9rem;"><span class="stock-tag">ADRO</span> <span class="stock-tag">ANTM</span> <span class="stock-tag">INCO</span><br><br>
-            Waspadai volatilitas harga komoditas global yang sangat sensitif terhadap suku bunga US (The Fed).</p>
-        </div>""", unsafe_allow_html=True)
-        
-    with c3:
-        st.markdown(f"""<div class="glass-card">
-            <h5 style="color:#4285F4">🍃 Soft Commodity</h5>
-            <p style="font-size:0.85rem; color:#bbb;">Kenaikan CPO global berdampak langsung pada margin emiten sawit.</p>
-            <p style="font-size:0.9rem;"><span class="stock-tag">LSIP</span> <span class="stock-tag">AALI</span> <span class="stock-tag">TAPG</span><br><br>
-            Perhatikan kebijakan DMO domestik yang bisa membatasi potensi profit ekspor emiten.</p>
+            <h5 style="color:#ff5555">🔋 Energy & Commodities</h5>
+            <p style="font-size:0.9rem; color:#ccc;">Kenaikan Coal & Brent menguntungkan emiten energi.</p>
+            <span class="stock-tag">ADRO</span> <span class="stock-tag">MEDC</span> <span class="stock-tag">ITMG</span>
         </div>""", unsafe_allow_html=True)
 
-    st.caption(f"Last Official Update: {DATA_OFFICIAL_AS_OF} | Data source synchronized with IDX & Yahoo Finance")
+    st.caption(f"Last Official Data Update: {DATA_OFFICIAL_AS_OF} | Source: BI, BPS, Yahoo Finance")
 
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
