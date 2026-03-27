@@ -2397,6 +2397,267 @@ init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
 
+# ─────────────────────────────────────────────
+# PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
+# ─────────────────────────────────────────────
+def new_session():
+    return {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "messages": [SYSTEM_PROMPT], "created": datetime.now().strftime("%d/%m %H:%M")}
+
+def init_chat():
+    if not st.session_state.sessions:
+        s = new_session()
+        st.session_state.sessions = [s]
+        st.session_state.active_id = s["id"]
+    else:
+        for s in st.session_state.sessions:
+            if not s["messages"] or s["messages"][0].get("role") != "system": s["messages"].insert(0, SYSTEM_PROMPT)
+            else: s["messages"][0] = SYSTEM_PROMPT
+
+def restore_images_from_messages():
+    if not st.session_state.sessions: return
+    for sesi in st.session_state.sessions:
+        for i, msg in enumerate(sesi.get("messages", [])):
+            if msg.get("role") == "user" and msg.get("img_b64"):
+                key = f"thumb_{sesi['id']}_{i}"
+                if key not in st.session_state: st.session_state[key] = (msg["img_b64"], msg.get("img_mime", "image/jpeg"))
+
+def get_active():
+    for s in st.session_state.sessions:
+        if s["id"] == st.session_state.active_id: return s
+    return st.session_state.sessions[0]
+
+def google_auth_url():
+    params = {"client_id": st.secrets.get("GOOGLE_CLIENT_ID", ""), "redirect_uri": st.secrets.get("GOOGLE_REDIRECT_URI", ""), "response_type": "code", "scope": "openid email profile", "access_type": "offline", "prompt": "select_account"}
+    return "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+
+def handle_oauth(code):
+    r = requests.post("https://oauth2.googleapis.com/token", data={"code": code, "client_id": st.secrets.get("GOOGLE_CLIENT_ID", ""), "client_secret": st.secrets.get("GOOGLE_CLIENT_SECRET", ""), "redirect_uri": st.secrets.get("GOOGLE_REDIRECT_URI", ""), "grant_type": "authorization_code"})
+    if r.status_code != 200: return None
+    token = r.json().get("access_token", "")
+    if not token: return None
+    u = requests.get("https://www.googleapis.com/oauth2/v2/userinfo", headers={"Authorization": f"Bearer {token}"})
+    return u.json() if u.status_code == 200 else None
+
+# ─── AUTENTIKASI GOOGLE ───
+if "code" in st.query_params and st.session_state.user is None:
+    info = handle_oauth(st.query_params["code"])
+    if info:
+        st.session_state.user = info
+        saved = load_user(info["email"])
+        if saved:
+            st.session_state.theme = saved.get("theme", "dark")
+            st.session_state.current_view = saved.get("current_view", "chat")
+            if saved.get("sessions"): st.session_state.sessions = saved["sessions"]; st.session_state.active_id = saved.get("active_id")
+        st.session_state.data_loaded = True
+        token = str(uuid.uuid4()).replace("-","")
+        with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f: json.dump(info, f)
+        st.session_state.current_token = token
+        st.query_params.clear()
+        st.query_params["sigma_token"] = token
+        st.rerun()
+
+# ─── AUTO-LOGIN VIA TOKEN ───
+if "sigma_token" in st.query_params and st.session_state.user is None:
+    token = st.query_params.get("sigma_token", "")
+    token_file = os.path.join(DATA_DIR, f"token_{token}.json")
+    if os.path.exists(token_file):
+        try:
+            with open(token_file) as f: user_info = json.load(f)
+            st.session_state.user = user_info; st.session_state.current_token = token
+            saved = load_user(user_info["email"])
+            if saved:
+                st.session_state.theme = saved.get("theme", "dark")
+                st.session_state.current_view = saved.get("current_view", "chat")
+                if saved.get("sessions"):
+                    _loaded = saved["sessions"]
+                    for _s in _loaded:
+                        if not _s.get("messages"): _s["messages"] = [SYSTEM_PROMPT]
+                        elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
+                        else: _s["messages"][0] = SYSTEM_PROMPT
+                    st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
+            st.session_state.data_loaded = True
+            restore_images_from_messages()
+            st.rerun()
+        except: pass
+
+if st.session_state.user and not st.session_state.data_loaded:
+    saved = load_user(st.session_state.user["email"])
+    if saved:
+        st.session_state.theme = saved.get("theme", "dark")
+        st.session_state.current_view = saved.get("current_view", "chat")
+        if saved.get("sessions") and not st.session_state.sessions:
+            _loaded2 = saved["sessions"]
+            for _s in _loaded2:
+                if not _s.get("messages"): _s["messages"] = [SYSTEM_PROMPT]
+                elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
+                else: _s["messages"][0] = SYSTEM_PROMPT
+            st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
+    st.session_state.data_loaded = True
+    restore_images_from_messages()
+
+C = get_colors(st.session_state.theme)
+
+st.markdown(f"""
+<style>
+* {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
+section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
+section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
+section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
+[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; }}
+section[data-testid="stSidebar"] .stButton > button:hover {{ background: {C['hover']} !important; }}
+section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
+[data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
+[data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+[data-testid="stMainBlockContainer"] {{ max-width: 800px !important; margin: 0 auto !important; padding: 0 16px 120px !important; overflow-y: visible !important; }}
+[data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
+div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
+[data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.9rem !important; }}
+[data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
+[data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
+footer, #MainMenu {{ visibility: hidden !important; }}
+hr {{ border-color: {C['border']} !important; }}
+[data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.95rem !important; line-height: 1.8 !important; }}
+[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }}
+[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
+[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
+@media (max-width: 768px) {{
+    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 16px 120px !important; }}
+    [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
+    [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.25rem !important; }}
+    [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.1rem !important; }}
+    [data-testid="stMarkdownContainer"] h3 {{ font-size: 1rem !important; font-weight: 700 !important; }}
+    [data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ padding-left: 20px !important; margin: 6px 0 !important; }}
+    [data-testid="stMarkdownContainer"] li {{ margin-bottom: 4px !important; }}
+    [data-testid="stMarkdownContainer"] code {{ font-size: 0.85rem !important; padding: 2px 6px !important; border-radius: 4px !important; background: rgba(255,255,255,0.08) !important; }}
+    [data-testid="stMarkdownContainer"] pre {{ font-size: 0.82rem !important; overflow-x: auto !important; padding: 12px !important; border-radius: 8px !important; }}
+    div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 6px 8px !important; }}
+    [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
+    [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
+    .navy-pill {{ max-width: 82% !important; font-size: 1rem !important; line-height: 1.7 !important; padding: 12px 16px !important; }}
+}}
+</style>
+""", unsafe_allow_html=True)
+
+def show_login():
+    st.markdown(f"""
+    <style>
+    [data-testid="stSidebar"] {{ display: none !important; }}
+    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmd.png') center/cover no-repeat fixed !important; min-height: 100vh !important; }}
+    section[data-testid="stMain"]::before {{ display: none !important; }}
+    [data-testid="stMainBlockContainer"] {{ max-width: 300px !important; margin: 1.5vh 74px 0 auto !important; padding: 8px 18px 16px !important; position: relative; z-index: 1; min-height: unset !important; height: fit-content !important; background: rgba(5, 8, 20, 0.60) !important; backdrop-filter: blur(20px) saturate(1.4) !important; -webkit-backdrop-filter: blur(20px) saturate(1.4) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
+    @media(max-width: 768px) {{
+        [data-testid="stMainBlockContainer"] {{ margin: 5vh auto 0 auto !important; max-width: 88% !important; padding: 20px 20px 28px !important; backdrop-filter: blur(20px) !important; border-radius: 20px !important; border: 1px solid rgba(255,255,255,0.12) !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
+        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmm.png') center top/cover no-repeat fixed !important; }}
+        [data-testid="stMainBlockContainer"] {{ margin-top: 75px !important; }}
+    }}
+    header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
+    .stTabs, [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
+    [data-testid="stTextInput"] input {{ background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 12px !important; color: #fff !important; padding: 12px 16px !important; font-size: 0.95rem !important; backdrop-filter: blur(10px) !important; transition: border 0.2s !important; }}
+    [data-testid="stTextInput"] input:focus {{ border: 1px solid {C['gold']} !important; box-shadow: 0 0 0 2px rgba(245,194,66,0.15) !important; outline: none !important; }}
+    [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
+    [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, {C['gold']}, #e0a820) !important; color: #000 !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s !important; box-shadow: 0 4px 20px rgba(245,194,66,0.3) !important; }}
+    [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; }}
+    [data-testid="stTabs"] [role="tablist"] {{ background: rgba(255,255,255,0.05) !important; border-radius: 12px !important; padding: 4px !important; border: 1px solid rgba(255,255,255,0.08) !important; gap: 2px !important; }}
+    [data-testid="stTabs"] button[role="tab"] {{ border-radius: 9px !important; color: rgba(255,255,255,0.5) !important; font-size: 0.85rem !important; padding: 7px 12px !important; border: none !important; background: transparent !important; }}
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{ background: rgba(245,194,66,0.15) !important; color: {C['gold']} !important; font-weight: 600 !important; }}
+    [data-testid="stTabs"] [role="tabpanel"] {{ background: rgba(255,255,255,0.03) !important; border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.08) !important; padding: 20px 16px !important; margin-top: 8px !important; backdrop-filter: blur(10px) !important; }}
+    [data-testid="stAlert"] {{ border-radius: 10px !important; }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    components.html(f"""
+<script>
+(function() {{
+    var pd = window.parent.document;
+    var forkStyle = pd.getElementById('hide-fork-bar');
+    if (!forkStyle) {{
+        var fs = pd.createElement('style');
+        fs.id = 'hide-fork-bar';
+        fs.textContent = `
+            .viewerBadge_container__r5tak, .viewerBadge_link__qRIco, [class*="viewerBadge"], [class*="styles_viewerBadge"], #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], header[data-testid="stHeader"], .stDeployButton, [kind="header"], div[data-testid="collapsedControl"] {{ display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; }}
+        `;
+        pd.head.appendChild(fs);
+    }}
+    if (pd.getElementById('kipm-mobile-logo')) return;
+    var s = pd.createElement('style');
+    s.id = 'kipm-mobile-logo-style';
+    s.textContent = `
+        #kipm-mobile-logo {{ display: none; text-align: center; padding: 14px 0 10px; position: fixed; top: 0; left: 0; right: 0; z-index: 10; pointer-events: none; }}
+        #kipm-mobile-logo img {{ width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6)); }}
+        #kipm-mobile-logo .kipm-name {{ font-size: 0.7rem; color: rgba(255,255,255,0.7); letter-spacing: 2px; font-family: sans-serif; margin-top: 4px; }}
+        @media(max-width: 768px) {{ #kipm-mobile-logo {{ display: block !important; }} }}
+    `;
+    pd.head.appendChild(s);
+    var div = pd.createElement('div');
+    div.id = 'kipm-mobile-logo';
+    div.innerHTML = `<img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png" onerror="this.style.display='none'" style="width:80px;height:80px;object-fit:contain;"><div class="kipm-name">KIPM-UP</div>`;
+    pd.body.appendChild(div);
+}})();
+</script>
+""", height=0)
+    st.markdown('''
+        <div style="text-align:center;margin:0 0 10px;">
+            <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#F5C242;">Σ</span></div>
+            <div class="sigma-tagline" style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
+        </div>
+        <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
+    ''', unsafe_allow_html=True)
+    tab1, tab2, tab3 = st.tabs(["🔑 Sign In", "📝 Sign Up", "🌐 Google"])
+
+    with tab1:
+        uname = st.text_input("Username", key="li_user", placeholder="Masukkan username")
+        pwd   = st.text_input("Password", key="li_pwd",  type="password", placeholder="Masukkan password")
+        if st.button("Masuk", key="btn_login", use_container_width=True):
+            if uname and pwd:
+                info = login_user(uname.strip(), pwd)
+                if info:
+                    token = str(uuid.uuid4()).replace("-","")
+                    with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f: json.dump(info, f)
+                    st.query_params["sigma_token"] = token
+                    st.session_state.user = info; st.session_state.current_token = token; st.session_state.data_loaded = False
+                    st.rerun()
+                else: st.error("Username atau password salah")
+            else: st.warning("Isi username dan password")
+
+    with tab2:
+        rname  = st.text_input("Nama Tampil", key="rg_name", placeholder="Nama lengkap kamu")
+        runame = st.text_input("Username", key="rg_user", placeholder="username (huruf/angka)")
+        rpwd   = st.text_input("Password", key="rg_pwd",  type="password", placeholder="min. 6 karakter")
+        rpwd2  = st.text_input("Ulangi Password", key="rg_pwd2", type="password", placeholder="ulangi password")
+        if st.button("Daftar Sekarang", key="btn_register", use_container_width=True):
+            if not all([rname, runame, rpwd, rpwd2]): st.warning("Lengkapi semua field")
+            elif rpwd != rpwd2: st.error("Password tidak cocok")
+            elif len(rpwd) < 6: st.error("Password minimal 6 karakter")
+            else:
+                ok, msg = register_user(runame.strip(), rpwd, rname.strip())
+                if ok: st.success(f"✅ {msg} — silakan masuk")
+                else: st.error(msg)
+
+    with tab3:
+        try:
+            auth_url = google_auth_url()
+            st.markdown(f"""
+            <div style="margin-top:8px;">
+                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;text-decoration:none;font-size:0.9rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                    Lanjutkan dengan Google
+                </a>
+            </div>
+            """, unsafe_allow_html=True)
+        except: st.info("Google login belum dikonfigurasi di Secrets")
+
+    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
+    st.stop()
+
+if st.session_state.user is None: show_login()
+init_chat()
+user = st.session_state.user
+C = get_colors(st.session_state.theme)
+
 # --- PENANGANAN PARAMETER URL (DO & DEL) ---
 # Ditempatkan SEBELUM pembuatan HTML agar UI selalu ter-update dengan state terbaru
 if "del" in st.query_params:
@@ -2469,18 +2730,43 @@ for _sesi in st.session_state.sessions:
     _hist_items += f"""
 (function(){{
     var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
-    var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; a.onmouseleave=function(){{this.style.background='{_bg}'}};
-    var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; 
-    del.onclick=function(e){{ 
-        e.preventDefault(); e.stopPropagation(); 
-        if(confirm('Hapus obrolan ini?')){{ 
-            var u2=new URL(window.parent.location.href); 
-            u2.searchParams.set('del','{_sid}'); 
-            u2.searchParams.delete('do'); 
-            window.parent.location.href=u2.toString(); 
-        }} 
+    
+    var a=pd.createElement('a'); 
+    a.textContent='{_td}'; 
+    var u=new URL(window.parent.location.href); 
+    u.searchParams.set('do','sel_{_sid}'); 
+    u.searchParams.delete('del');
+    a.href=u.toString(); 
+    a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; 
+    a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; 
+    a.onmouseleave=function(){{this.style.background='{_bg}'}};
+    
+    // PERBAIKAN: Mengubah tombol hapus menjadi Link (Tag a) agar bebas blokir dari browser
+    var del=pd.createElement('a'); 
+    del.innerHTML='🗑️'; 
+    del.title='Hapus Obrolan'; 
+    var uDel=new URL(window.parent.location.href); 
+    uDel.searchParams.set('del','{_sid}'); 
+    uDel.searchParams.delete('do'); 
+    del.href=uDel.toString();
+    del.style.cssText='padding:12px 16px;background:transparent;border:none;cursor:pointer;font-size:1.1rem;opacity:0.4;flex-shrink:0;color:{C["text"]};text-decoration:none;display:flex;align-items:center;justify-content:center;'; 
+    del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; 
+    del.onmouseleave=function(){{this.style.opacity='0.4';this.style.color='{C["text"]}';}}; 
+    
+    // Konfirmasi penghapusan
+    del.onclick = function(e) {{
+        try {{
+            if(!confirm('Yakin ingin menghapus riwayat obrolan ini?')) {{
+                e.preventDefault();
+            }}
+        }} catch(err) {{
+            // Abaikan jika browser memblokir pop-up confirm
+        }}
     }};
-    row.appendChild(a); row.appendChild(del); h.appendChild(row);
+    
+    row.appendChild(a); 
+    row.appendChild(del); 
+    h.appendChild(row);
 }})();
 """
 
@@ -2533,8 +2819,6 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 
 active = get_active()
 current_view = st.session_state.get("current_view", "chat")
-
-
 # =========================================================
 # PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE, 7 ALPHA COMPLETE + IPO RISK)
 # =========================================================
