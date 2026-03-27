@@ -2915,15 +2915,15 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
 m.innerHTML=`
-    <a class="smi" id="smi-new"><span class="smico">✎</span>Obrolan baru</a>
-    <button class="smi" id="smi-hist"><span class="smico">☰</span>Riwayat obrolan</button>
+    <a class="smi" id="smi-new"><span class="smico">✎</span>Percakapan Baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">☰</span>History</button>
     <div class="smsp"></div><div class="smhd">FITUR</div>
     <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
-    <a class="smi" id="smi-stats"><span class="smico">📊</span>Market Dashboard</a>
+    <a class="smi" id="smi-stats"><span class="smico">📊</span>SIGMA Terminal</a>
     <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Mode Gelap {'✓' if st.session_state.theme=='dark' else ''}</a>
-    <a class="smi" id="smi-light"><span class="smico">☀️</span>Mode Terang {'✓' if st.session_state.theme=='light' else ''}</a>
-    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Keluar</a>
+    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
+    <a class="smi" id="smi-light"><span class="smico">☀️</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
+    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 {_hist_items} pd.body.appendChild(h);
