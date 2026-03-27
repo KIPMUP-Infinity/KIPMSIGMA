@@ -3040,9 +3040,10 @@ if current_view == "dashboard":
 
     # --- 2. TRADINGVIEW ADVANCED CHART WIDGET ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 15px;'>📈 Live Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+    # Ditambahkan "allow_symbol_change": true agar user bisa ganti emiten
     tv_widget = f"""
     <div class="tradingview-widget-container" style="height:100%;width:100%">
-      <div id="tradingview_sigma" style="height:500px;width:100%"></div>
+      <div id="tradingview_sigma" style="height:550px;width:100%"></div>
       <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
       <script type="text/javascript">
       new TradingView.widget(
@@ -3055,6 +3056,7 @@ if current_view == "dashboard":
       "style": "1",
       "locale": "id",
       "enable_publishing": false,
+      "allow_symbol_change": true,
       "backgroundColor": "{C['bg']}",
       "gridColor": "{C['border']}",
       "hide_top_toolbar": false,
@@ -3066,13 +3068,13 @@ if current_view == "dashboard":
       </script>
     </div>
     """
-    components.html(tv_widget, height=520)
+    components.html(tv_widget, height=570)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     # --- 3. KORELASI MAKRO EKONOMI (WIDE CHART) ---
     st.markdown(f"<h4 style='color:{C['text']}; margin-bottom: 5px;'>📊 Korelasi Makro: Suku Bunga vs Inflasi vs Yield Obligasi</h4>", unsafe_allow_html=True)
-    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.9rem; margin-bottom: 15px;'>Tren 12 Bulan Terakhir (Visualisasi interaksi data ekonomi Indonesia)</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='color:{C['text_muted']}; font-size:0.9rem; margin-bottom: 15px;'>Tren Historis 12 Bulan Terakhir (Visualisasi interaksi data ekonomi Indonesia)</p>", unsafe_allow_html=True)
 
     # Data Simulasi Historis 12 Bulan agar chart melebar dan menyamping
     macro_data = pd.DataFrame({
@@ -3081,8 +3083,8 @@ if current_view == "dashboard":
         "Bond Yield 10Y (%)": [6.80, 6.95, 7.10, 6.85, 6.70, 6.65, 6.50, 6.75, 6.60, 6.80, 6.70, 6.65]
     }, index=["Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des", "Jan", "Feb", "Mar"])
 
-    # Render Multi-line Chart
-    st.line_chart(macro_data, color=["#F5C242", "#4285F4", "#ff5555"], height=350)
+    # Render Multi-line Chart (Kuning, Biru, Merah)
+    st.line_chart(macro_data, color=["#F5C242", "#4285F4", "#ff5555"], height=380)
 
     # Penjelasan Cara Baca Korelasi
     st.info("💡 **The SIGMA View (Cara Membaca Hubungan di Atas):**\n\nJika garis **Inflasi (Biru)** naik tajam, Bank Indonesia cenderung merespons dengan menaikkan **BI Rate (Kuning)** untuk mengerem harga barang. Kenaikan BI Rate ini akan memicu kenaikan **Bond Yield/Obligasi (Merah)**. Jika Yield Obligasi sedang tinggi, para Fund Manager Asing akan lebih suka memindahkan uangnya dari Saham (aset berisiko) ke Obligasi Negara (aset aman). **Akibatnya: Capital Outflow & IHSG tertekan turun.**")
@@ -3095,7 +3097,7 @@ if current_view == "dashboard":
     with col1:
         st.markdown(f"<h5 style='color:{C['text']};'>🔥 Sektor Fokus & Risiko Sentimen</h5>", unsafe_allow_html=True)
         st.success("**Rotasi Sektor (Commodity vs Banking):**\nJika harga komoditas global memanas akibat ketegangan geopolitik, amati emiten *Coal* (Batu Bara) dan *Gold* (Emas). Sebaliknya, jika tren suku bunga (BI Rate) berbalik dipangkas turun, aliran uang akan mengalir deras ke *Big Banks* dan sektor Properti.")
-        st.error("**Peringatan Volatilitas Rupiah (USD/IDR):**\nPelemahan Rupiah yang sangat cepat dan tajam wajib dipantau ketat. Jika USD mendominasi, hal ini berisiko memicu *Net Foreign Sell* masif di bursa domestik, karena aset saham dalam satuan Rupiah dianggap menyusut nilainya di mata asing (rugi kurs).")
+        st.error("**Peringatan Volatilitas Rupiah (USD/IDR):**\nPelemahan nilai tukar Rupiah yang sangat cepat terhadap Dollar wajib dipantau ketat. Jika USD mendominasi secara agresif, hal ini berisiko memicu *Net Foreign Sell* masif di bursa domestik, karena aset saham dalam satuan Rupiah akan dianggap menyusut nilainya di mata investor asing.")
 
     with col2:
         st.markdown(f"<h5 style='color:{C['text']};'>🛡️ Status Fundamental Negara</h5>", unsafe_allow_html=True)
