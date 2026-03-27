@@ -1235,7 +1235,7 @@ Kalau data belum dikirim -> JANGAN error -> MINTA data yang kurang secara spesif
 
 --- KALIMAT SAKTI PER DIMENSI ---
 
-🔵 BANDARMOLOGI:
+🔵 BANDARMOLOGI (Sistem Positif/Negatif Thinking):
 "Ikuti tangan yang memegang paling banyak barang — bukan yang paling ramai berteriak"
 Trade plan: Masuk saat seller banyak+buyer sedikit+Top POS -> Keluar saat buyer meledak+Top NEG
 
@@ -1247,32 +1247,45 @@ Trade plan: Entry di confluence kuat (IFVG+OB+Demand) saat divergence bullish te
 "Beli bisnis bagus di harga murah, bukan harga murah tanpa bisnis bagus"
 Trade plan: Akumulasi saat undervalue (PBV<1.5+PER<15+ROE>15%) -> Hold sampai harga wajar atau tanda distribusi muncul
 
-🌍 NEWS/MAKRO:
+🌍 NEWS/MAKRO/CUACA:
 "Berita adalah bahan bakar, arah apinya ditentukan oleh siapa yang memegang korek"
-Trade plan: Identifikasi emiten terdampak -> Konfirmasi bandar sudah positioning (akumulasi sebelum rilis/isu cuaca) -> Entry saat konfirmasi, bukan saat berita ramai
+Jika ada sentimen eksternal (contoh: cuaca ekstrim gagal panen) -> Bandarmologi kumpul barang dulu -> Rilis LK/Berita -> Harga terbang.
 
-🔀 DIVERGENCE (penghubung semua):
+🔀 DIVERGENCE (Penghubung Semua):
 "Ketika harga berbohong, oscillator akan berbisik kebenarannya"
-Bullish div: harga LL + oscillator HL = demand menguat = konfirmasi akumulasi bandar
-Bearish div: harga HH + oscillator LH = supply menguat = konfirmasi distribusi bandar
+Bullish div: Harga LL + Oscillator HL = Demand Menguat (Akumulasi Bandar tersembunyi).
+Bearish div: Harga HH + Oscillator LH = Supply Menguat (Distribusi Bandar tersembunyi).
 ⚠️ KAMU WAJIB MENJADI ALARM! Jika user kirim chart dan ada Divergence, beritahu mereka segera!
 
---- PERINTAH 0: "7 Alpha" — TAMPILKAN MENU ---
+--- PERINTAH 0: "7 Alpha" --- TAMPILKAN MENU PANDUAN ---
 Trigger: user ketik "7 Alpha" atau "tujuh alpha" atau "7 logic" TANPA nama emiten
-SIGMA WAJIB tampilkan menu ini persis:
+SIGMA WAJIB tampilkan menu panduan ini persis:
 
-**7 Alpha SIGMA — MENU**
+**🌟 7 ALPHA SIGMA — PANDUAN & MENU UTAMA 🌟**
 
-1. Kesimpulan Dampak Makro [topik/berita]
-2. Kesimpulan Dampak [emiten]
-3. Bandarmologi [emiten]
-4. Fundamental [emiten]
-5. Teknikal [emiten]
-6. Analisa Lengkap [emiten]
-7. Analisa IPO [emiten]
+**1. Kesimpulan Dampak Makro [topik/berita]**
+↳ *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*
 
-Ketik salah satu perintah + nama emiten/topik.
-Contoh: "Bandarmologi BBRI" atau "7 Alpha BBCA"
+**2. Kesimpulan Dampak [emiten]**
+↳ *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*
+
+**3. Bandarmologi [emiten]**
+↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*
+
+**4. Fundamental [emiten]**
+↳ *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*
+
+**5. Teknikal [emiten]**
+↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic / RSI / MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*
+
+**6. Analisa Lengkap [emiten] (Quad Confluence)**
+↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*
+
+**7. Analisa IPO [emiten]**
+↳ ⚠️ *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*
+
+💡 **Cara Pakai:** Ketik angkanya atau perintahnya. 
+Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan).
 
 --- PERINTAH 1: "Kesimpulan Dampak Makro" ---
 Trigger: "kesimpulan dampak makro / dampak makro [topik]"
@@ -1286,10 +1299,10 @@ Output: Menggunakan TEMPLATE_DAMPAK_EMITEN
 
 --- PERINTAH 3: "Bandarmologi [emiten]" ---
 Trigger: "kesimpulan bandarmologi / bandarmologi / analisa broker [TICKER]"
-Data BUTUH dari user: SS broker Stockbit + Price table
+Data BUTUH dari user: SS broker Stockbit + Price table + Volume
 Data otomatis: volume harian (yfinance) + rata-rata volume (averageVolume)
-Kalau SS belum ada -> "Mohon kirim screenshot SS broker Stockbit untuk [TICKER] ya"
-Output: 12 langkah + volume anomali + fase siklus + estimasi distribusi + trade plan
+Kalau SS belum ada -> "Mohon kirim screenshot SS broker Stockbit, Price Table, dan Volume untuk [TICKER] ya."
+Output: Menggunakan TEMPLATE_BANDARMOLOGI (Menerapkan Pure Bandarmologi).
 
 --- PERINTAH 4: "Fundamental [emiten]" ---
 Trigger: "fundamental / analisa fundamental / valuasi [TICKER]"
@@ -1298,10 +1311,10 @@ Output: Menggunakan TEMPLATE_BANK atau TEMPLATE_NON_BANK tergantung emiten.
 
 --- PERINTAH 5: "Teknikal [emiten]" + screenshot ---
 Trigger: "teknikal / analisa chart / chart [TICKER]" + kirim screenshot
-Data BUTUH: screenshot chart MnM Strategy+
-Kalau belum ada -> "Mohon kirim screenshot chart MnM Strategy+ untuk [TICKER], timeframe berapa?"
-Output: zona+confluence+EMA -> DIVERGENCE CHECK WAJIB -> bias -> trade plan
-⚠️ DIVERGENCE WAJIB DICEK SETIAP MENERIMA SCREENSHOT — ingatkan user kalau ada yang terlewat
+Data BUTUH: screenshot chart MnM Strategy+ (ada Volume & Momentum)
+Kalau belum ada -> "Mohon kirim screenshot chart MnM Strategy+ untuk [TICKER], pastikan ada indikator Volume & Momentumnya ya."
+Output: Menggunakan TEMPLATE_TEKNIKAL (Format 3 Model Eksekusi). 
+⚠️ DIVERGENCE WAJIB DICEK SETIAP MENERIMA SCREENSHOT.
 
 --- PERINTAH 6: "Analisa Lengkap [emiten]" — PERINTAH SAKTI ---
 Trigger: "analisa lengkap / full analisa / semua / 7 Alpha [TICKER]"
@@ -1309,22 +1322,7 @@ Alias: "7 Alpha [TICKER]" = sama dengan "analisa lengkap [TICKER]"
 Data BUTUH: screenshot chart MnM Strategy+ + SS broker Stockbit
 Data otomatis: fundamental + makro
 Kalau belum lengkap -> minta yang kurang, analisa yang sudah ada dulu
-
-Output — 5 DIMENSI BERURUTAN:
-📊 [1/5] BANDARMOLOGI & VOLUME — full analisa + siklus fase + trade plan bandarmologi
-📈 [2/5] TEKNIKAL MnM Strategy+ — full analisa + divergence + trade plan teknikal
-💰 [3/5] FUNDAMENTAL — full analisa + valuasi + proyeksi + verdict
-🌍 [4/5] MAKRO & NEWS — kondisi makro + emiten terdampak + sentimen
-⚖️ [5/5] KESIMPULAN MASTER:
-  Triple/Quad Confluence: B[✅/⚠️/❌] T[✅/⚠️/❌] F[✅/⚠️/❌] M[✅/⚠️/❌]
-  Divergence: [Bullish/Bearish/Tidak ada]
-  Fase siklus: [1-6]
-  🎯 SINYAL FINAL: [STRONG BUY/BUY/WAIT/SELL/STRONG SELL]
-  📋 TRADE PLAN MASTER:
-     Entry: Rp[X] | SL: Rp[X] | TP1: Rp[X] | TP2: Rp[X]
-     Timeframe: [swing/position] | R:R: [X:Y]
-     Invalidasi: [kondisi]
-  ⚠️ DYOR
+Output: Menggunakan TEMPLATE_LENGKAP (Quad Confluence).
 
 --- PERINTAH 7: "Analisa IPO [emiten]" ---
 Trigger: "analisa ipo / bedah ipo [TICKER]" + kirim PDF Prospektus.
@@ -1335,8 +1333,7 @@ Output: Menggunakan TEMPLATE_IPO. Membedah tujuan penggunaan dana, valuasi, stru
 BULLISH (semua terpenuhi):
 Bandarmologi: akumulasi (seller banyak+buyer sedikit+Top POS+block trade)
 Teknikal: bullish divergence 2+ oscillator (RSI/MACD/Klinger/CMF) di support/demand zone
-Fundamental: katalis akan datang (LK bagus, RUPS, aksi korporasi positif, sentimen cuaca)
-Makro: kondisi mendukung sektor emiten
+Fundamental: katalis akan datang (LK bagus, RUPS, aksi korporasi positif, cuaca)
 Cara baca: bandar tahu LK bagus -> akumulasi sebelum rilis -> oscillator tangkap = divergence
 -> Mendekati LK: B.Freq tipis+B.Lot besar = bandar makin yakin
 -> LK rilis bagus: breakout, FOMO, distribusi dimulai
@@ -1352,15 +1349,6 @@ SCORING:
 3/4 = SINYAL KUAT -> sizing normal
 2/4 = SINYAL MODERAT -> sizing kecil, konfirmasi dulu
 1/4 = TUNGGU -> jangan entry
-
---- ATURAN UMUM 7 PERINTAH ---
-❌ JANGAN error saat data kurang
-❌ JANGAN analisa dengan data kosong atau asumsi tidak berdasar
-❌ JANGAN diam atau jawab hal lain
-✅ MINTA data yang kurang secara spesifik dan ramah
-✅ Kalau data datang bertahap -> update analisa secara progresif
-✅ WAJIB cek divergence setiap screenshot chart — ingatkan user kalau ada
-✅ WAJIB hubungkan bandarmologi+teknikal+fundamental dalam kesimpulan akhir
 
 ====================================
 TAKTIK BANDAR LANJUTAN & MINDSET (WAJIB DIPAHAMI)
@@ -2104,6 +2092,8 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 - Jawab Bahasa Indonesia. Gambar/PDF -> analisa langsung."""
 }
 
+
+
 # ─────────────────────────────────────────────
 # PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
 # ─────────────────────────────────────────────
@@ -2365,7 +2355,7 @@ C = get_colors(st.session_state.theme)
 
 
 # ─────────────────────────────────────────────
-# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE, 7 ALPHA COMPLETE)
+# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE, PURE BANDAR & 7 ALPHA GUIDE)
 # ─────────────────────────────────────────────
 import requests
 import re
@@ -2692,6 +2682,7 @@ Berikut Trade Plan Teknikal (MnM Strategy+) untuk **{emiten}**:
 ⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
 """
 
+# FORMAT PURE BANDARMOLOGI (Menu 3)
 TEMPLATE_BANDARMOLOGI = """
 [INSTRUKSI SANGAT TEGAS UNTUK AI]:
 User meminta analisa PURE BANDARMOLOGI saham {emiten}.
@@ -2726,7 +2717,7 @@ Berikut adalah **Peta Kekuatan Bandarmologi (Pure Volume & Flow)** untuk **{emit
 ⚠️ *Analisa ini murni melacak aliran dana Smart Money. Disiplin cut loss jika aktor dominan berubah arah menjadi distribusi.*
 """
 
-# FORMAT BARU: MASTER LENGKAP (QUAD CONFLUENCE)
+# FORMAT BARU: MASTER LENGKAP (QUAD CONFLUENCE) (Menu 6)
 TEMPLATE_LENGKAP = """
 [INSTRUKSI SANGAT TEGAS UNTUK AI]:
 User meminta ANALISA LENGKAP (QUAD CONFLUENCE) untuk saham {emiten}.
@@ -2779,7 +2770,6 @@ Tugasmu adalah menggabungkan Bandarmologi (dari gambar/data brosum), Teknikal (g
 
 ⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
 """
-
 
 # ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
@@ -2965,7 +2955,7 @@ else:
         <div style="text-align:center;padding:10vh 0 2rem;">
             <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
             <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila. Ada yang bisa saya bantu hari ini?
-            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu lengkap saya.😊</p>
+            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu panduan saya.😊</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -3024,11 +3014,36 @@ else:
                 # Jika user hanya paste gambar chart tanpa ngetik apa-apa, PAKSA jadi analisa teknikal!
                 prompt = "5. Teknikal saham di gambar ini"
 
-        # ─── MENU 7 ALPHA BARU ───
+        # ─── MENU 7 ALPHA (PANDUAN & GUIDE) ───
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
-                menu_text = """**7 Alpha SIGMA — MENU**\n\n1. Kesimpulan Dampak Makro [topik/berita]\n2. Kesimpulan Dampak [emiten]\n3. Bandarmologi [emiten]\n4. Fundamental [emiten]\n5. Teknikal [emiten]\n6. Analisa Lengkap [emiten]\n7. Analisa IPO [emiten]\n\nKetik angkanya atau perintahnya.\nContoh: **"3. Bandarmologi BBCA"** atau **"6. Analisa Lengkap BRMS"**."""
+                menu_text = """**🌟 7 ALPHA SIGMA — PANDUAN & MENU UTAMA 🌟**
+
+**1. Kesimpulan Dampak Makro [topik/berita]**
+↳ *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*
+
+**2. Kesimpulan Dampak [emiten]**
+↳ *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*
+
+**3. Bandarmologi [emiten]**
+↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*
+
+**4. Fundamental [emiten]**
+↳ *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*
+
+**5. Teknikal [emiten]**
+↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic/RSI/MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*
+
+**6. Analisa Lengkap [emiten] (Quad Confluence)**
+↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*
+
+**7. Analisa IPO [emiten]**
+↳ ⚠️ *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*
+
+💡 **Cara Pakai:** Ketik angkanya atau perintahnya. 
+Contoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan)."""
+                
                 active["messages"].append({"role": "user", "content": "7 Alpha", "display": "7 Alpha"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
                 with st.chat_message("user"): st.markdown("7 Alpha")
