@@ -3007,7 +3007,7 @@ if st.session_state.user is None: components.html("<script>(function() { try { v
 # ─────────────────────────────────────────────
 # PART 9: SIGMA TERMINAL (MACRO, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
-# --- OBAT ANTI AMNESIA (HEALER) ---
+# --- OBAT ANTI AMNESIA ---
 # Menyelamatkan layar agar tidak terpental ke SIGMA AI saat ganti tema
 if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     try:
@@ -3433,6 +3433,7 @@ else:
                 elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
             st.markdown(display_clean)
 
+    # PERBAIKAN: file_type DIHILANGKAN agar OS/Clipboard bisa paste gambar mentah
     try: result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple")
     except TypeError: result = st.chat_input("Tanya SIGMA...")
 
@@ -3455,16 +3456,20 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
+        # --- AUTO-TRIGGER SAAT PASTE GAMBAR ---
         if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
             if file_obj or st.session_state.pdf_data:
                 prompt = "Tolong analisa file yang saya kirim"
             else:
+                # Jika user hanya paste gambar chart tanpa ngetik apa-apa, PAKSA jadi analisa teknikal!
                 prompt = "5. Teknikal saham di gambar ini"
 
+        # ─── MENU 7 ALPHA BARU (GUIDE PANDUAN PENGGUNA) ───
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
                 menu_text = """**🌟 7 ALPHA SIGMA — PANDUAN & MENU UTAMA 🌟**\n\n**1. Kesimpulan Dampak Makro [topik/berita]**\n↳ *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*\n\n**2. Kesimpulan Dampak [emiten]**\n↳ *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*\n\n**3. Bandarmologi [emiten]**\n↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*\n\n**4. Fundamental [emiten]**\n↳ *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*\n\n**5. Teknikal [emiten]**\n↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic/RSI/MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*\n\n**6. Analisa Lengkap [emiten] (Quad Confluence)**\n↳ ⚠️ *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*\n\n**7. Analisa IPO [emiten]**\n↳ ⚠️ *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*\n\n💡 **Cara Pakai:** Ketik angkanya atau perintahnya. \nContoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan)."""
+                
                 active["messages"].append({"role": "user", "content": "7 Alpha", "display": "7 Alpha"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
                 with st.chat_message("user"): st.markdown("7 Alpha")
@@ -3495,7 +3500,9 @@ else:
         st.session_state.img_data = None; st.session_state.pdf_data = None
         full_prompt = prompt
 
+        # ─── LOGIC ROUTER & INTERCEPTOR ───
         prompt_lower = prompt.lower()
+        
         is_dampak_makro = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower
         is_dampak_emiten = prompt_lower.startswith("2.") or ("dampak" in prompt_lower and not is_dampak_makro)
         is_bandarmologi = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or "broker" in prompt_lower
@@ -3503,8 +3510,10 @@ else:
         is_teknikal = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
         is_lengkap = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
         is_ipo = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
+        
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
         
+        # LOGIC 1: DAMPAK MAKRO
         if is_dampak_makro:
             with st.spinner("🔍 Menganalisa sentimen makro global/domestik..."):
                 try:
@@ -3515,6 +3524,7 @@ else:
                 full_prompt += TEMPLATE_DAMPAK_MAKRO
                 full_prompt += f"\n\nPertanyaan Asli User (Topik yang dibahas): {prompt}"
 
+        # LOGIC 2: DAMPAK EMITEN
         elif is_dampak_emiten and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             with st.spinner(f"🔍 Menganalisa korelasi berita ke emiten {emiten_target}..."):
@@ -3526,23 +3536,30 @@ else:
                 full_prompt += TEMPLATE_DAMPAK_EMITEN.format(emiten=emiten_target)
                 full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
 
+        # LOGIC 3: BANDARMOLOGI (Menu 3) - PURE BANDAR FORMAT
         elif is_bandarmologi:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
             with st.spinner(f"🔍 Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
                 full_prompt = TEMPLATE_BANDARMOLOGI.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: Fokus 100% pada data Broker Summary, Average Price, dan Volume. JANGAN bahas indikator teknikal (RSI/MACD) atau Fundamental!]\nPertanyaan Asli User: {prompt}"
 
+        # LOGIC 4: FUNDAMENTAL
         elif is_fundamental and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             is_bank = emiten_target in BANK_TICKERS
             chosen_template = TEMPLATE_BANK if is_bank else TEMPLATE_NON_BANK
             tahun_sekarang = datetime.now().year
+            
             with st.spinner(f"🔍 Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
-                try: fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
-                except: fund_text = "Data gagal ditarik."
+                try:
+                    fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
+                except:
+                    fund_text = "Data gagal ditarik."
+                
                 full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
                 full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
 
+        # LOGIC 5: TEKNIKAL (Format Baru 3 Model Eksekusi)
         elif is_teknikal:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
             if img_data or multi_images:
@@ -3552,14 +3569,19 @@ else:
                 full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]"
 
+        # LOGIC 6: ANALISA LENGKAP (MASTER / QUAD CONFLUENCE)
         elif is_lengkap and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             with st.spinner(f"🔍 Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
-                try: fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
-                except: fund_text = "Data fundamental gagal ditarik secara live, gunakan estimasi dari knowledge base."
+                try:
+                    fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
+                except:
+                    fund_text = "Data fundamental gagal ditarik secara live, gunakan estimasi dari knowledge base."
+                
                 full_prompt = TEMPLATE_LENGKAP.format(emiten=emiten_target, data_raw=fund_text)
                 full_prompt += f"\n\n[PENTING: Gunakan gambar chart & data Broker Summary yang dilampirkan user! Cari Divergence!]\nPertanyaan Asli User: {prompt}"
 
+        # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
         elif is_ipo:
             if pdf_data:
                 emiten_target = emiten_match.group(0).upper() if emiten_match else "CALON EMITEN BARU"
@@ -3568,6 +3590,7 @@ else:
             else:
                 full_prompt = "[INSTRUKSI SYSTEM]: Beritahu user dengan ramah bahwa untuk melakukan Analisa IPO, mereka WAJIB meng-upload atau melampirkan file PDF Prospektus e-IPO terlebih dahulu ke dalam kolom chat."
 
+        # FALLBACK GENERAL
         elif pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
@@ -3597,6 +3620,7 @@ else:
                     st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
             if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
             
+            # Jangan tampilkan prompt kaku ke user, ubah ke natural text
             display_prompt = prompt if prompt != "5. Teknikal saham di gambar ini" else "Tolong buatkan Trade Plan dari chart ini."
             st.markdown(display_prompt)
 
@@ -3623,7 +3647,9 @@ else:
                                     from groq import Groq
                                     client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
                                     mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA. Jawab SEMUA pertanyaan dalam Bahasa Indonesia dan JANGAN MENOLAK mengisi template yang diberikan."}
+                                    
                                     safe_prompt = full_prompt[:6000] if len(full_prompt) > 6000 else full_prompt
+                                    
                                     _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
                                     _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=4000)
                                     ans_bersih = _res.choices[0].message.content
@@ -3642,15 +3668,15 @@ else:
             st.error(f"⚠️ {str(e)}")
         st.rerun()
 
+# --- PENYIMPANAN DATA SANGAT PENTING (FIX AMNESIA) ---
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     
-    # KODE PERBAIKAN PENYIMPANAN POSISI TERAKHIR (SUPER PENTING!)
     save_user(user["email"], {
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat")
+        "current_view": st.session_state.get("current_view", "chat") # <-- INI YANG MENYELAMATKAN DARI AMNESIA
     })
 
 _new_token = st.session_state.pop("new_token", None)
