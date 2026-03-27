@@ -3058,7 +3058,7 @@ if current_view == "dashboard":
             new TradingView.widget({{"autosize": true, "symbol": "IDX:COMPOSITE", "interval": "D", "timezone": "Asia/Jakarta", "theme": "dark", "style": "1", "locale": "id", "allow_symbol_change": true, "container_id": "tv_chart"}});
             </script>
         </div>
-    """, height=500)
+    """, height=1000)
 
     # --- 5. MACRO CORRELATION (WIDE) ---
     st.markdown("### 📊 Macro Correlation Dashboard")
