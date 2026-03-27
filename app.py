@@ -2979,7 +2979,7 @@ active = get_active()
 current_view = st.session_state.get("current_view", "chat")
 
 # ─────────────────────────────────────────────
-# PART 9: SIGMA TERMINAL (MACRO, FLOW & DASHBOARD)
+# PART 9: SIGMA TERMINAL (MACRO, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
 if current_view == "dashboard":
     try:
@@ -3074,10 +3074,9 @@ if current_view == "dashboard":
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
     
-    # --- SISTEM TAB NAVIGASI ---
-    tab_macro, tab_bandar, tab_heatmap, tab_news = st.tabs([
+    # --- SISTEM TAB NAVIGASI (HANYA 3 TAB) ---
+    tab_macro, tab_heatmap, tab_news = st.tabs([
         "🌍 Global & Macro", 
-        "🐋 Flow & Bandarmologi", 
         "🗺️ Sector Heatmap", 
         "📰 Live News Feed"
     ])
@@ -3260,26 +3259,35 @@ if current_view == "dashboard":
         components.html(tv_widget, height=570)
 
     # ==========================================
-    # TAB 2: FLOW & BANDARMOLOGI
-    # ==========================================
-    with tab_bandar:
-        st.markdown("<h4 style='color:#ffffff; margin-top: 10px;'>🐋 Pelacakan Jejak Uang Besar (Smart Money)</h4>", unsafe_allow_html=True)
-        st.info("Fitur **Net Foreign Buy/Sell (NFB/NFS)** dan **Top Broker Summary** sedang dalam tahap pengembangan. Di sini kita akan melacak pergerakan broker besar penggerak IHSG.")
-
-    # ==========================================
-    # TAB 3: SECTOR HEATMAP
+    # TAB 2: SECTOR HEATMAP (Kerangka)
     # ==========================================
     with tab_heatmap:
-        st.markdown("<h4 style='color:#ffffff; margin-top: 10px;'>🗺️ Peta Panas Sektoral & Korelasi</h4>", unsafe_allow_html=True)
-        st.info("Modul **IDX Sector Performance** akan dimuat di sini. Selain itu, layar ini akan digunakan untuk menumpuk (overlay) grafik harga acuan *Newcastle Coal* atau komoditas lain secara *real-time* langsung di atas grafik saham-saham jagoan KIPM.")
+        st.markdown("<h4 style='color:#ffffff; margin-top: 10px;'>🗺️ Peta Panas Sektoral & Korelasi Komoditas</h4>", unsafe_allow_html=True)
+        st.info("Di sini kita akan membuat grafik perbandingan korelasi harga saham andalan dengan harga komoditas acuan global.")
 
     # ==========================================
-    # TAB 4: LIVE NEWS FEED
+    # TAB 3: LIVE NEWS FEED (SELESAI)
     # ==========================================
     with tab_news:
-        st.markdown("<h4 style='color:#ffffff; margin-top: 10px;'>📰 Terminal Berita Berjalan</h4>", unsafe_allow_html=True)
-        st.info("Suntikan **RSS Feed** dari portal berita finansial (CNBC, Bisnis.com, dll) akan otomatis bergulir di sini agar Anda tidak tertinggal sentimen pasar terbaru.")
-
+        st.markdown("<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
+        
+        news_widget = """
+        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.6);">
+          <div class="tradingview-widget-container__widget"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+          {
+          "feedMode": "all_symbols",
+          "isTransparent": true,
+          "displayMode": "regular",
+          "width": "100%",
+          "height": 600,
+          "colorTheme": "dark",
+          "locale": "id"
+        }
+          </script>
+        </div>
+        """
+        components.html(news_widget, height=620)
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
