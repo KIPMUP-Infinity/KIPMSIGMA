@@ -2224,7 +2224,7 @@ def _get_groq_client_and_key():
     raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
 
 
-def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=4000):
+def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
     """
     Groq PRIMARY — LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
     Dipakai untuk semua request TEXT. Key rotation otomatis 1-13.
@@ -2232,7 +2232,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=4000):
     """
     client, used_key = _get_groq_client_and_key()
 
-    MAX_PROMPT_CHARS = 12000
+    MAX_PROMPT_CHARS = 20000
     if len(full_prompt) > MAX_PROMPT_CHARS:
         cutoff = full_prompt[:MAX_PROMPT_CHARS].rfind('\n')
         if cutoff < int(MAX_PROMPT_CHARS * 0.8):
@@ -2283,7 +2283,7 @@ def _call_groq_fallback(full_prompt):
             {"role": "user", "content": full_prompt}
         ],
         temperature=0.7,
-        max_tokens=3000
+        max_tokens=6000
     )
     return response.choices[0].message.content, f"Groq/Llama8B({used_key})"
 
@@ -3404,7 +3404,7 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 elif img_b64 and img_mime: _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
                 teks_gabungan = f"{SYSTEM_PROMPT['content']}\n\n[PERTANYAAN USER]:\n{prompt}"
                 _parts.append({"text": teks_gabungan})
-                payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
+                payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=45) as r: data = _j.loads(r.read())
@@ -3434,7 +3434,7 @@ def _call_gemini_text(messages):
                     elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
                 if not gemini_contents: gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
                 gemini_contents[0]["parts"][0]["text"] = f"{SYSTEM_PROMPT['content']}\n\n{gemini_contents[0]['parts'][0]['text']}"
-                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
+                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=35) as r: data = _j.loads(r.read())
