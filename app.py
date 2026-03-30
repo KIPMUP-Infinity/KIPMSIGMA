@@ -4076,15 +4076,15 @@ else:
         # ─── LOGIC ROUTER & INTERCEPTOR ───
         prompt_lower = prompt.lower()
         
-        is_dampak_makro = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower
-        is_dampak_emiten = prompt_lower.startswith("2.") or ("dampak" in prompt_lower and not is_dampak_makro)
-        is_bandarmologi = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or "broker" in prompt_lower
-        is_fundamental = prompt_lower.startswith("4.") or "fundamental" in prompt_lower
-        is_teknikal = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
-        is_lengkap = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
-        is_ipo = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
-        
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
+
+        is_dampak_makro  = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower or ("kesimpulan dampak" in prompt_lower and not emiten_match)
+        is_dampak_emiten = prompt_lower.startswith("2.") or ("kesimpulan dampak" in prompt_lower and bool(emiten_match))
+        is_bandarmologi  = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or ("broker summary" in prompt_lower)
+        is_fundamental   = prompt_lower.startswith("4.") or "fundamental" in prompt_lower
+        is_teknikal      = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
+        is_lengkap       = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
+        is_ipo           = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
         
         # LOGIC 1: DAMPAK MAKRO
         if is_dampak_makro:
@@ -4168,6 +4168,9 @@ else:
         elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
         else:
+            # ── PENTING: full_prompt SELALU reset ke prompt asli dulu ──
+            # Ini mencegah prompt dari request sebelumnya terbawa ke request baru
+            full_prompt = prompt
             try:
                 ctx = build_combined_context(prompt)
                 if ctx: full_prompt = f"{ctx}\n\n{prompt}"
