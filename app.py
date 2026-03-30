@@ -2852,6 +2852,7 @@ if "do" in st.query_params:
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
     elif _do == "view_stats": st.session_state.current_view = "dashboard"
+    elif _do == "view_diag": st.session_state.current_view = "diagnostik"
     elif _do == "view_ai": st.session_state.current_view = "chat"
     elif _do == "theme_dark": st.session_state.theme = "dark"
     elif _do == "theme_light": st.session_state.theme = "light"
@@ -2947,6 +2948,7 @@ m.innerHTML=`
     <div class="smsp"></div><div class="smhd">FITUR</div>
     <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
     <a class="smi" id="smi-stats"><span class="smico">📊</span>SIGMA Terminal</a>
+    <a class="smi" id="smi-diag"><span class="smico">🔧</span>Diagnostik API</a>
     <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
     <a class="smi" id="smi-dark"><span class="smico">🌙</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
     <a class="smi" id="smi-light"><span class="smico">☀️</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
@@ -2960,6 +2962,7 @@ btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.displ
     pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
     u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','view_diag'); pd.getElementById('smi-diag').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
@@ -3610,6 +3613,128 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     st.session_state.amnesia_fixed = True
 
 current_view = st.session_state.get("current_view", "chat")
+
+# ─────────────────────────────────────────────
+# HALAMAN DIAGNOSTIK API — cek status semua key
+# ─────────────────────────────────────────────
+if current_view == "diagnostik":
+    st.markdown(f"""
+    <style>
+    [data-testid="stMainBlockContainer"] {{ padding-top: 2rem !important; }}
+    </style>
+    """, unsafe_allow_html=True)
+    st.markdown("## 🔧 Diagnostik API SIGMA")
+    st.markdown("Cek status semua API key yang terdaftar di Secrets secara real-time.")
+    st.markdown("---")
+
+    # ── GEMINI ──
+    st.markdown("### ✨ Gemini API Keys")
+    gemini_key_names = (
+        ["GEMINI_API_KEY"] +
+        [f"GEMINI_API_KEY{i}" for i in range(2, 6)] +
+        ["GEMINI_KEY"] +
+        [f"GEMINI_KEY{i}" for i in range(2, 6)] +
+        ["GOOGLE_API_KEY"]
+    )
+    gemini_found = []
+    for kname in gemini_key_names:
+        val = st.secrets.get(kname, "")
+        if val and len(val) > 10:
+            gemini_found.append((kname, val))
+
+    if not gemini_found:
+        st.error("❌ Tidak ada Gemini key ditemukan di Secrets.")
+    else:
+        for kname, kval in gemini_found:
+            col1, col2, col3 = st.columns([2, 3, 3])
+            col1.markdown(f"**`{kname}`**")
+            col2.markdown(f"`{kval[:12]}...{kval[-4:]}`")
+            with col3:
+                with st.spinner("Testing..."):
+                    try:
+                        import urllib.request as _ur, json as _jj
+                        _test_payload = {
+                            "contents": [{"role": "user", "parts": [{"text": "Balas hanya dengan kata: OK"}]}],
+                            "generationConfig": {"maxOutputTokens": 10}
+                        }
+                        _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={kval}"
+                        _req = _ur.Request(_url, data=_jj.dumps(_test_payload).encode(), headers={"Content-Type": "application/json"})
+                        with _ur.urlopen(_req, timeout=10) as r:
+                            _resp = _jj.loads(r.read())
+                        _txt = _resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        st.success(f"✅ Aktif — respons: `{_txt[:30]}`")
+                    except Exception as _e:
+                        _err = str(_e)
+                        if "429" in _err or "quota" in _err.lower() or "RESOURCE_EXHAUSTED" in _err:
+                            st.warning(f"⚠️ Rate limit / Quota habis")
+                        elif "403" in _err or "API_KEY_INVALID" in _err:
+                            st.error(f"❌ Key tidak valid")
+                        else:
+                            st.error(f"❌ Error: `{_err[:80]}`")
+
+    st.markdown("---")
+
+    # ── GROQ ──
+    st.markdown("### ⚡ Groq API Keys")
+    groq_key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
+    groq_found = []
+    for kname in groq_key_names:
+        val = st.secrets.get(kname, "")
+        if val and len(val) > 10:
+            groq_found.append((kname, val))
+
+    if not groq_found:
+        st.error("❌ Tidak ada Groq key ditemukan di Secrets.")
+    else:
+        for kname, kval in groq_found:
+            col1, col2, col3 = st.columns([2, 3, 3])
+            col1.markdown(f"**`{kname}`**")
+            col2.markdown(f"`{kval[:12]}...{kval[-4:]}`")
+            with col3:
+                with st.spinner("Testing..."):
+                    try:
+                        from groq import Groq as _Groq
+                        _gclient = _Groq(api_key=kval)
+                        _gresp = _gclient.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[{"role": "user", "content": "Balas hanya: OK"}],
+                            max_tokens=5,
+                            temperature=0
+                        )
+                        _gtxt = _gresp.choices[0].message.content.strip()
+                        st.success(f"✅ Aktif — respons: `{_gtxt[:30]}`")
+                    except Exception as _e:
+                        _err = str(_e)
+                        if "429" in _err or "rate_limit" in _err.lower():
+                            st.warning(f"⚠️ Rate limit aktif")
+                        elif "401" in _err or "invalid" in _err.lower():
+                            st.error(f"❌ Key tidak valid")
+                        else:
+                            st.error(f"❌ Error: `{_err[:80]}`")
+
+    st.markdown("---")
+
+    # ── DATA APIs ──
+    st.markdown("### 📊 Data API Keys (FMP / Finnhub / AlphaVantage)")
+    data_keys = [("FMP_KEY", "FMP"), ("FINNHUB_KEY", "Finnhub"), ("ALPHAVANTAGE_KEY", "AlphaVantage")]
+    for kname, label in data_keys:
+        val = st.secrets.get(kname, "")
+        col1, col2, col3 = st.columns([2, 3, 3])
+        col1.markdown(f"**`{kname}`** ({label})")
+        if not val or len(val) < 5:
+            col2.markdown("`—`")
+            col3.warning("⚠️ Tidak dikonfigurasi")
+        else:
+            col2.markdown(f"`{val[:8]}...{val[-4:]}`")
+            col3.success("✅ Terdaftar di Secrets")
+
+    st.markdown("---")
+    st.markdown(f"<p style='font-size:0.8rem;color:rgba(255,255,255,0.35);'>Diagnostik dijalankan pada {datetime.now().strftime('%d %b %Y %H:%M:%S')} WIB</p>", unsafe_allow_html=True)
+
+    if st.button("← Kembali ke SIGMA Chat"):
+        st.session_state.current_view = "chat"
+        st.rerun()
+    st.stop()
 
 if current_view == "dashboard":
     try:
