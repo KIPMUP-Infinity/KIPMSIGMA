@@ -2135,6 +2135,158 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 }
 
 
+# ─────────────────────────────────────────────
+# GROQ SYSTEM PROMPT (VERSI RINGKAS & EFISIEN)
+# Dipakai khusus untuk Groq/LLaMA — mencakup semua fungsi SIGMA
+# tanpa overhead teks yang tidak perlu untuk LLM dengan context lebih terbatas
+# ─────────────────────────────────────────────
+GROQ_SYSTEM_PROMPT = """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by Market n Mocha (MnM).
+Bahasa: Indonesia natural. Ramah saat ngobrol, profesional saat analisa. Selalu akhiri analisa dengan DYOR.
+
+=== ATURAN WAJIB ===
+1. PASAR IDX = LONG ONLY. SL selalu di bawah entry, TP selalu di atas entry. Bias BEARISH = WAIT, bukan short.
+2. CONFLUENCE: IFVG > FVG > OB > Supply/Demand > EMA. Sebutkan semua komponen yang bertumpuk.
+3. PRIORITAS: Logika Pine Script MnM Strategy+ > knowledge umum. Konflik → ikuti Pine Script.
+4. JANGAN tolak mengisi template. JANGAN tulis N/A jika kamu tahu datanya.
+5. Semua harga dalam trade plan WAJIB sesuai fraksi tick BEI.
+
+=== WARNA ZONA MnM Strategy+ ===
+IFVG Bull=#0048ff | IFVG Bear=#575757 | FVG Bull=#0015ff | FVG Bear=#575757
+OB Bull=#09ff00 | OB Bear=#ea00ff | Breaker=#9e9e9e
+Supply=rgb(114,114,114) | Demand=rgb(0,159,212)
+EMA13=#009dff | EMA21=#ff0000 | EMA50=#cc00ff
+
+=== 7 ALPHA — PERINTAH KHUSUS ===
+Kenali trigger berikut dan jalankan protokolnya:
+- "7 Alpha" / "7 alpha" → tampilkan menu 7 Alpha lengkap
+- "Kesimpulan Dampak Makro [topik]" → analisa dampak global ke rupiah/APBN/IHSG/emiten
+- "Kesimpulan Dampak [emiten]" → analisa dampak berita ke emiten spesifik
+- "Bandarmologi [emiten]" → analisa broker summary, akumulasi/distribusi, 12 langkah wajib
+- "Fundamental [emiten]" → analisa fundamental lengkap dengan rasio keuangan
+- "Teknikal [emiten]" → trade plan 3 model (Rebound/Confirmation/Deep Acc)
+- "Analisa Lengkap [emiten]" → Quad Confluence (Bandar+Teknikal+Fundamental+Makro)
+- "IPO [emiten]" → bedah prospektus (butuh PDF)
+
+=== BANDARMOLOGI — LOGIKA KRITIS ===
+IDX COUNTER-INTUITIVE:
+- Buyer sedikit + Seller banyak = AKUMULASI (smart money beli dari ritel panik)
+- Buyer banyak + Seller sedikit = DISTRIBUSI (smart money jual ke ritel FOMO)
+Warna broker: Merah=asing/foreign | Hijau=BUMN | Ungu=lokal/domestik
+Asing net buy + lokal nampung = kuat | Asing net sell + lokal nampung = BAHAYA
+
+Skenario S1-S9 wajib disebutkan. Format output bandarmologi:
+📦 BANDARMOLOGI — [TICKER] | 💹 Harga: Rp[X]
+🔴Foreign/🟢BUMN/🟣Lokal: Net B/S + interpretasi
+📊Bar/Top1/3/5 | 📈Freq | 🔍Posisi | ⚡Asing | 🎯Skenario | 💡Insight | ⚠️DYOR
+
+=== FUNDAMENTAL — FORMAT ===
+Gunakan data live yang diberikan sistem. Label "(est.)" jika dari knowledge model.
+Bank: NIM/NPL/LDR/CAR/BOPO/ROE/ROA/PBV/PER/EPS
+Non-bank: ROE/ROA/DER/PBV/PER/EPS/Div Yield/Market Cap
+VERDICT: Undervalue/Fair Value/Overvalue + saran akumulasi/hold/hindari
+
+=== MAKRO — MAPPING EMITEN ===
+Coal→PTBA/ADRO/ITMG | Nikel→INCO/ANTM/MDKA | CPO→AALI/LSIP
+Minyak→PGAS/MEDC/ELSA | Emas→ANTM/MDKA/BRMS
+Rate naik→BBCA/BBRI/BMRI/BBNI | Rate turun→BSDE/CTRA/SMGR
+DXY naik→Rupiah lemah | Komoditas ekspor naik→devisa masuk→Rupiah menguat
+
+=== VOLUME ANOMALI ===
+2-3x normal=perhatikan | 5x=signifikan | 10x+=KUAT | 50-100x=EKSTREM
+Estimasi posisi bandar = Volume anomali - Volume normal
+Estimasi distribusi = Posisi bandar ÷ Volume harian saat naik
+
+=== CORPORATE ACTION ===
+Split/Reverse/Right Issue/Buyback dapat mengubah EPS/DPS/BV per saham.
+Selalu cek jika harga historis berbeda jauh dari data sekarang.
+
+Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya."""
+
+
+# ─────────────────────────────────────────────
+# GROQ KEY ROTATION — AUTO SCAN KEY 1-13
+# ─────────────────────────────────────────────
+def _get_groq_client_and_key():
+    """
+    Auto-rotate melalui GROQ_API_KEY s/d GROQ_API_KEY13.
+    Return (client, key_name) dari key pertama yang valid.
+    """
+    from groq import Groq
+    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
+    for key_name in key_names:
+        key = st.secrets.get(key_name, "")
+        if key and len(key) > 10:
+            try:
+                client = Groq(api_key=key)
+                return client, key_name
+            except Exception:
+                continue
+    raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
+
+
+def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=4000):
+    """
+    Groq PRIMARY — LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
+    Dipakai untuk semua request TEXT. Key rotation otomatis 1-13.
+    Prompt dipotong cerdas di batas baris/kalimat.
+    """
+    client, used_key = _get_groq_client_and_key()
+
+    MAX_PROMPT_CHARS = 12000
+    if len(full_prompt) > MAX_PROMPT_CHARS:
+        cutoff = full_prompt[:MAX_PROMPT_CHARS].rfind('\n')
+        if cutoff < int(MAX_PROMPT_CHARS * 0.8):
+            cutoff = full_prompt[:MAX_PROMPT_CHARS].rfind('. ')
+        if cutoff < 1:
+            cutoff = MAX_PROMPT_CHARS
+        full_prompt = full_prompt[:cutoff] + "\n\n[... data dipotong karena terlalu panjang]"
+
+    messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
+
+    if history_msgs:
+        hist_clean = [
+            {"role": m["role"], "content": (m.get("content") or "")[:2000]}
+            for m in history_msgs
+            if m.get("role") in ("user", "assistant")
+        ][-4:]
+        if hist_clean and hist_clean[-1]["role"] == "user":
+            hist_clean = hist_clean[:-1]
+        messages.extend(hist_clean)
+
+    messages.append({"role": "user", "content": full_prompt})
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=messages,
+        temperature=0.7,
+        max_tokens=max_tokens
+    )
+    return response.choices[0].message.content, f"Groq/Llama70B({used_key})"
+
+
+def _call_groq_fallback(full_prompt):
+    """
+    Groq LAST RESORT — LLaMA 3.1 8B Instant.
+    Dipakai jika Gemini dan Groq 70B keduanya gagal.
+    """
+    client, used_key = _get_groq_client_and_key()
+
+    MAX_CHARS = 8000
+    if len(full_prompt) > MAX_CHARS:
+        cutoff = full_prompt[:MAX_CHARS].rfind('\n')
+        full_prompt = full_prompt[:cutoff] if cutoff > 0 else full_prompt[:MAX_CHARS]
+
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": GROQ_SYSTEM_PROMPT},
+            {"role": "user", "content": full_prompt}
+        ],
+        temperature=0.7,
+        max_tokens=3000
+    )
+    return response.choices[0].message.content, f"Groq/Llama8B({used_key})"
+
 
 # ─────────────────────────────────────────────
 # PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
@@ -3234,12 +3386,13 @@ Tugasmu adalah menggabungkan Bandarmologi (dari gambar/data brosum), Teknikal (g
 ⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
 """
 
-# ─── FUNGSI API GEMINI DENGAN NAPAS PANJANG ───
+# ─── FUNGSI API GEMINI ───
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
-    import urllib.request, urllib.error, json as _j
+    """Gemini Vision — PRIMARY untuk semua request gambar. Auto-rotate key & model."""
+    import urllib.request, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
-    keys = [k for k in keys if k]
-    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
+    keys = [k for k in keys if k and len(k) > 10]
+    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
     for api_key in keys:
@@ -3254,17 +3407,18 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=40) as r: data = _j.loads(r.read())
+                with urllib.request.urlopen(req, timeout=45) as r: data = _j.loads(r.read())
                 return data["candidates"][0]["content"]["parts"][0]["text"], model_name
             except Exception as e:
                 last_err = str(e); continue
-    raise Exception(last_err)
+    raise Exception(f"Gemini Vision gagal semua model/key: {last_err}")
 
 def _call_gemini_text(messages):
-    import urllib.request, urllib.error, json as _j
+    """Gemini Text — FALLBACK untuk text jika semua Groq 70B rate limit. Pakai full SYSTEM_PROMPT."""
+    import urllib.request, json as _j
     keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
-    keys = [k for k in keys if k]
-    if not keys: raise Exception("API Key tidak ditemukan di secrets!")
+    keys = [k for k in keys if k and len(k) > 10]
+    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
     for api_key in keys:
@@ -3274,10 +3428,8 @@ def _call_gemini_text(messages):
                 for m in messages:
                     r = m.get("role", "")
                     t = m.get("content", "") or ""
-                    # PEMBERSIH HISTORY AGAR SIMBOL TIDAK DOUBLE
-                    t = re.sub(r'\n\n\*\([✨⚡].*?\)\*', '', t)
-                    t = re.sub(r'\n\n\([✨⚡].*?\)', '', t)
-                    
+                    # Bersihkan simbol AI dari history agar tidak double
+                    t = re.sub(r'\n\n\*?\([✨⚡🤖].*?\)\*?', '', t)
                     if r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
                     elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
                 if not gemini_contents: gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
@@ -3285,11 +3437,11 @@ def _call_gemini_text(messages):
                 payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4096}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
-                with urllib.request.urlopen(req, timeout=30) as r: data = _j.loads(r.read())
+                with urllib.request.urlopen(req, timeout=35) as r: data = _j.loads(r.read())
                 return data["candidates"][0]["content"]["parts"][0]["text"], model_name
             except Exception as e:
                 last_err = str(e); continue
-    raise Exception(last_err)
+    raise Exception(f"Gemini Text gagal semua model/key: {last_err}")
 
 # ─── PENGATURAN UI CSS KHUSUS ───
 st.markdown(f"""
@@ -4048,42 +4200,86 @@ else:
         try:
             with st.chat_message("assistant"):
                 with st.spinner("SIGMA menganalisis..."):
-                    _history_msgs = [{"role": m["role"], "content": m.get("content") or ""} for m in active["messages"] if m.get("role") in ("user","assistant")]
-                    ans_bersih = None; simbol_ai = ""; has_image = bool(multi_images or img_data); debug_info = []
 
+                    _history_msgs = [
+                        {"role": m["role"], "content": m.get("content") or ""}
+                        for m in active["messages"]
+                        if m.get("role") in ("user", "assistant")
+                    ]
+
+                    ans_bersih = None
+                    simbol_ai  = ""
+                    has_image  = bool(multi_images or img_data)
+                    has_pdf    = bool(pdf_data)
+                    debug_info = []
+
+                    # ── JALUR 1: ADA GAMBAR → GEMINI VISION (satu-satunya yang bisa) ──
                     if has_image:
                         try:
-                            _img_b64 = user_msg.get("img_b64"); _img_mime = user_msg.get("img_mime")
+                            _img_b64  = user_msg.get("img_b64")
+                            _img_mime = user_msg.get("img_mime")
                             ans_bersih, _ = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
-                            simbol_ai = "\n\n(✨)"
-                        except Exception as e_img: debug_info.append(f"Gemini Vision: {str(e_img)}")
-                    else:
+                            simbol_ai = "\n\n*(✨ Gemini Vision)*"
+                        except Exception as e_vision:
+                            debug_info.append(f"Gemini Vision: {str(e_vision)}")
+                            ans_bersih = (
+                                "⚠️ Sistem analisa gambar sedang tidak merespons. "
+                                "Silakan upload ulang gambarnya atau coba lagi dalam beberapa saat."
+                                f"\n\n`Debug: {str(e_vision)[:200]}`"
+                            )
+
+                    # ── JALUR 2: ADA PDF (tanpa gambar) → GEMINI TEXT (handle konteks panjang) ──
+                    elif has_pdf and not has_image:
                         try:
-                            ans_bersih, _ = _call_gemini_text(_history_msgs[-5:])
-                            simbol_ai = "\n\n(✨)"
-                        except Exception as e_txt:
-                            debug_info.append(f"Gemini Text: {str(e_txt)}")
-                            if not ans_bersih:
+                            ans_bersih, _ = _call_gemini_text(
+                                _history_msgs[-6:] + [{"role": "user", "content": full_prompt}]
+                            )
+                            simbol_ai = "\n\n*(✨ Gemini — PDF Mode)*"
+                        except Exception as e_pdf:
+                            debug_info.append(f"Gemini PDF: {str(e_pdf)}")
+                            # Fallback Groq jika Gemini tidak tersedia
+                            try:
+                                ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
+                                simbol_ai = "\n\n*(⚡ Groq — PDF Fallback)*"
+                            except Exception as e_groq_pdf:
+                                debug_info.append(f"Groq PDF fallback: {str(e_groq_pdf)}")
+
+                    # ── JALUR 3: TEXT BIASA → GROQ 70B PRIMARY → GEMINI → GROQ 8B ──
+                    else:
+                        # Step 1: Groq 70B dengan key rotation (primary)
+                        try:
+                            ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
+                            simbol_ai = "\n\n*(⚡ Groq/Llama)*"
+                        except Exception as e_groq70:
+                            debug_info.append(f"Groq 70B: {str(e_groq70)}")
+
+                            # Step 2: Gemini Text sebagai fallback
+                            try:
+                                ans_bersih, _ = _call_gemini_text(_history_msgs[-6:])
+                                simbol_ai = "\n\n*(✨ Gemini)*"
+                            except Exception as e_gemini:
+                                debug_info.append(f"Gemini Text: {str(e_gemini)}")
+
+                                # Step 3: Groq 8B sebagai last resort
                                 try:
-                                    from groq import Groq
-                                    client = Groq(api_key=st.secrets.get("GROQ_API_KEY", ""))
-                                    mini_sys_prompt = {"role": "system", "content": "Kamu adalah SIGMA. Jawab SEMUA pertanyaan dalam Bahasa Indonesia dan JANGAN MENOLAK mengisi template yang diberikan."}
-                                    
-                                    safe_prompt = full_prompt[:6000] if len(full_prompt) > 6000 else full_prompt
-                                    
-                                    _msgs = [mini_sys_prompt, {"role": "user", "content": safe_prompt}] 
-                                    _res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=_msgs, temperature=0.7, max_tokens=4000)
-                                    ans_bersih = _res.choices[0].message.content
-                                    simbol_ai = "\n\n(⚡✨)"
-                                except Exception as e_groq: debug_info.append(f"Groq: {str(e_groq)}")
-                    
+                                    ans_bersih, _ = _call_groq_fallback(full_prompt)
+                                    simbol_ai = "\n\n*(⚡ Groq/Mini)*"
+                                except Exception as e_groq8:
+                                    debug_info.append(f"Groq 8B: {str(e_groq8)}")
+
+                    # ── FINAL: semua gagal ──
                     if not ans_bersih:
-                        err_msg = " | ".join(debug_info)
-                        ans_bersih = f"Maaf, semua sistem AI sedang sibuk. Coba beberapa saat lagi.\n\n`Log: {err_msg}`"
-                    
-                st.markdown(ans_bersih + simbol_ai)
-            
-            active["messages"].append({"role": "assistant", "content": ans_bersih})
+                        err_summary = " | ".join(debug_info)
+                        ans_bersih = (
+                            "⚠️ Semua sistem AI sedang sibuk atau mengalami gangguan. "
+                            "Mohon coba lagi dalam 1-2 menit.\n\n"
+                            f"`Log: {err_summary}`"
+                        )
+                        simbol_ai = ""
+
+                    st.markdown(ans_bersih + simbol_ai)
+
+            active["messages"].append({"role": "assistant", "content": ans_bersih + simbol_ai})
         except Exception as e:
             st.session_state["last_error"] = str(e)
             st.error(f"⚠️ {str(e)}")
