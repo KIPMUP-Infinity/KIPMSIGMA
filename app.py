@@ -3387,11 +3387,31 @@ Tugasmu adalah menggabungkan Bandarmologi (dari gambar/data brosum), Teknikal (g
 """
 
 # ─── FUNGSI API GEMINI ───
+def _get_gemini_keys():
+    """
+    Auto-scan semua Gemini API key dari Secrets.
+    Support: GEMINI_API_KEY, GEMINI_API_KEY2–5, GEMINI_KEY, GEMINI_KEY2–5, GOOGLE_API_KEY
+    Tambah key baru di Secrets → langsung aktif tanpa edit kode.
+    """
+    key_names = (
+        ["GEMINI_API_KEY"] +
+        [f"GEMINI_API_KEY{i}" for i in range(2, 6)] +   # GEMINI_API_KEY2 s/d GEMINI_API_KEY5
+        ["GEMINI_KEY"] +
+        [f"GEMINI_KEY{i}" for i in range(2, 6)] +        # GEMINI_KEY2 s/d GEMINI_KEY5
+        ["GOOGLE_API_KEY"]
+    )
+    keys = []
+    for name in key_names:
+        val = st.secrets.get(name, "")
+        if val and len(val) > 10 and val not in keys:
+            keys.append(val)
+    return keys
+
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     """Gemini Vision — PRIMARY untuk semua request gambar. Auto-rotate key & model."""
     import urllib.request, json as _j
-    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
-    keys = [k for k in keys if k and len(k) > 10]
+    keys = _get_gemini_keys()
+    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
@@ -3416,8 +3436,7 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
 def _call_gemini_text(messages):
     """Gemini Text — FALLBACK untuk text jika semua Groq 70B rate limit. Pakai full SYSTEM_PROMPT."""
     import urllib.request, json as _j
-    keys = [st.secrets.get(k, "") for k in ["GEMINI_API_KEY", "GEMINI_KEY", "GEMINI_KEY2", "GOOGLE_API_KEY"]]
-    keys = [k for k in keys if k and len(k) > 10]
+    keys = _get_gemini_keys()
     if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
