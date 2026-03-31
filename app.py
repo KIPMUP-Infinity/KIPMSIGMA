@@ -3653,17 +3653,6 @@ if current_view == "dashboard":
     .fancy-divider {{ border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0)); margin-bottom: 30px; }}
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
-    
-    /* FIX: Menyembunyikan glitch teks _arrow_down / _arrow_right pada Expander */
-    [data-testid="stExpander"] summary div[data-testid="stExpanderToggleIcon"] {{
-        font-size: 0px !important; 
-        color: transparent !important;
-    }}
-    [data-testid="stExpander"] summary div[data-testid="stExpanderToggleIcon"] svg {{
-        font-size: 24px !important;
-        color: {text_main} !important;
-        display: block !important;
-    }}
     </style>
     """, unsafe_allow_html=True)
         
@@ -3716,39 +3705,39 @@ if current_view == "dashboard":
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- MSCI INDEX TRACKER (FULL 29 EMITEN) ---
-        with st.expander("🏆 MSCI Indonesia Index Tracker (Update Mar 2026)", expanded=True):
-            msci_data = {
-                "Ticker": [
-                    "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN", "TPIA", "DSSA", "BRMS", "GOTO", "ADRO",
-                    "PTRO", "RAJA", "BRPT", "INDF", "BUMI", "ANTM", "MBMA", "AVIA", "ARTO", "MYOR", "BSDE", "CTRA",
-                    "CUAN", "ACES", "CLEO", "RATU"
-                ],
-                "Kategori": [
-                    "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
-                    "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap",
-                    "Excluded", "Excluded", "Excluded", "Excluded"
-                ],
-                "Status": [
-                    "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing", "Existing", "Existing",
-                    "NEW ENTRY", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                    "OUT (Feb '26)", "OUT (Feb '26)", "OUT (Feb '26)", "Not Listed"
-                ],
-                "Sektor": [
-                    "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy", "Materials", "Energy", "Materials", "Technology", "Energy",
-                    "Infrastructure", "Energy", "Materials", "Consumer", "Energy", "Materials", "Materials", "Materials", "Finance", "Consumer", "Property", "Property",
-                    "Energy", "Retail", "Consumer", "Energy"
-                ]
-            }
-            df_msci = pd.DataFrame(msci_data)
-            
-            def highlight_msci(val):
-                if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
-                elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
-                elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
-                return ''
+        # --- MSCI INDEX TRACKER (FULL 29 EMITEN) TAMPIL LANGSUNG ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
+        msci_data = {
+            "Ticker": [
+                "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN", "TPIA", "DSSA", "BRMS", "GOTO", "ADRO",
+                "PTRO", "RAJA", "BRPT", "INDF", "BUMI", "ANTM", "MBMA", "AVIA", "ARTO", "MYOR", "BSDE", "CTRA",
+                "CUAN", "ACES", "CLEO", "RATU"
+            ],
+            "Kategori": [
+                "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
+                "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap",
+                "Excluded", "Excluded", "Excluded", "Excluded"
+            ],
+            "Status": [
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing", "Existing", "Existing",
+                "NEW ENTRY", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                "OUT (Feb '26)", "OUT (Feb '26)", "OUT (Feb '26)", "Not Listed"
+            ],
+            "Sektor": [
+                "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy", "Materials", "Energy", "Materials", "Technology", "Energy",
+                "Infrastructure", "Energy", "Materials", "Consumer", "Energy", "Materials", "Materials", "Materials", "Finance", "Consumer", "Property", "Property",
+                "Energy", "Retail", "Consumer", "Energy"
+            ]
+        }
+        df_msci = pd.DataFrame(msci_data)
+        
+        def highlight_msci(val):
+            if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
+            elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
+            elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
+            return ''
 
-            st.dataframe(df_msci.style.applymap(highlight_msci, subset=['Status']), use_container_width=True, hide_index=True)
+        st.dataframe(df_msci.style.applymap(highlight_msci, subset=['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
