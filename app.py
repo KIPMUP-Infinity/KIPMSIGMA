@@ -3705,13 +3705,29 @@ if current_view == "dashboard":
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # --- MSCI INDEX TRACKER ---
+        # --- MSCI INDEX TRACKER (FULL 29 EMITEN) ---
         with st.expander("🏆 MSCI Indonesia Index Tracker (Update Mar 2026)", expanded=True):
             msci_data = {
-                "Ticker": ["BREN", "BBCA", "BBRI", "BMRI", "TLKM", "AMMN", "DSSA", "BRMS", "PTRO", "RAJA", "BRPT", "INDF", "BUMI", "ANTM", "CUAN", "ACES", "RATU"],
-                "Kategori": ["Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Excluded", "Excluded", "Not Listed"],
-                "Status": ["Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "NEW ENTRY", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "OUT (Feb '26)", "OUT (Feb '26)", "-"],
-                "Sektor": ["Energy", "Finance", "Finance", "Finance", "Infrastructure", "Materials", "Energy", "Materials", "Infrastructure", "Energy", "Materials", "Consumer", "Energy", "Materials", "Energy", "Retail", "Energy"]
+                "Ticker": [
+                    "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN", "TPIA", "DSSA", "BRMS", "GOTO", "ADRO",
+                    "PTRO", "RAJA", "BRPT", "INDF", "BUMI", "ANTM", "MBMA", "AVIA", "ARTO", "MYOR", "BSDE", "CTRA",
+                    "CUAN", "ACES", "CLEO", "RATU"
+                ],
+                "Kategori": [
+                    "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
+                    "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap",
+                    "Excluded", "Excluded", "Excluded", "Excluded"
+                ],
+                "Status": [
+                    "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing", "Existing", "Existing",
+                    "NEW ENTRY", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                    "OUT (Feb '26)", "OUT (Feb '26)", "OUT (Feb '26)", "Not Listed"
+                ],
+                "Sektor": [
+                    "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy", "Materials", "Energy", "Materials", "Technology", "Energy",
+                    "Infrastructure", "Energy", "Materials", "Consumer", "Energy", "Materials", "Materials", "Materials", "Finance", "Consumer", "Property", "Property",
+                    "Energy", "Retail", "Consumer", "Energy"
+                ]
             }
             df_msci = pd.DataFrame(msci_data)
             
@@ -3818,7 +3834,6 @@ if current_view == "dashboard":
         </div>
         """
         components.html(news_widget, height=620)
-
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
