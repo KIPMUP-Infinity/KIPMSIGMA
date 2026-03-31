@@ -3650,7 +3650,7 @@ if current_view == "dashboard":
     [data-testid="stMetricLabel"] {{ color: {text_sub} !important; font-weight: 600 !important; }}
     .sigma-title {{ text-align: center; background: {title_bg}; -webkit-background-clip: text; -webkit-text-fill-color: {title_fill}; color: {text_main}; font-weight: 900; font-size: 3rem; margin-bottom: 0px; letter-spacing: 2px; }}
     .sigma-subtitle {{ text-align: center; color: {text_sub}; font-size: 1.1rem; letter-spacing: 1px; margin-top: -5px; margin-bottom: 20px; }}
-    .fancy-divider {{ border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0)); margin-bottom: 30px; }}
+    .fancy-divider {{ border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0)); margin-bottom: 30px; margin-top: 30px; }}
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
     </style>
@@ -3658,7 +3658,7 @@ if current_view == "dashboard":
         
     st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
-    st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+    st.markdown("<hr class='fancy-divider' style='margin-top:0;'>", unsafe_allow_html=True)
     
     # KATEGORI TAB BARU (4 TABS)
     tab_macro, tab_rotation, tab_heatmap, tab_news = st.tabs([
@@ -3841,10 +3841,34 @@ if current_view == "dashboard":
         components.html(tv_widget, height=570)
 
     # ==========================================
-    # TAB 2: INDEX & SECTOR ROTATION
+    # TAB 2: INDEX & SECTOR ROTATION (TOP DOWN ANALYSIS)
     # ==========================================
     with tab_rotation:
-        # --- MSCI INDEX TRACKER (DIPISAH 3 TABEL) ---
+        # Fungsi styling umum untuk semua tabel indeks
+        def highlight_status(val):
+            if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
+            elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
+            elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
+            return ''
+
+        # --- 1. SECTOR ROTATION (RRG) - PALING ATAS ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
+        
+        col_rot1, col_rot2 = st.columns([1.5, 1])
+        with col_rot1:
+            rotation_data = {
+                "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
+                "Fase Saat Ini": ["Leading 🚀", "Improving 📈", "Weakening ⚠️", "Lagging 📉", "Lagging 📉"],
+                "Aksi Institusi": ["Hold / Profit Run", "Accumulation", "Distribution / Wait", "Avoid", "Avoid"]
+            }
+            st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
+        
+        with col_rot2:
+            st.info("🎯 **SIGMA Insight:** Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (*Weakening*) menuju sektor energi dan material dasar (*Improving/Leading*). Pantau ketat emiten yang berada di fase Improving.")
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # --- 2. MSCI INDEX TRACKER ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
         
         msci_data = {
@@ -3871,50 +3895,92 @@ if current_view == "dashboard":
         }
         df_msci = pd.DataFrame(msci_data)
         
-        def highlight_msci(val):
-            if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
-            elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
-            elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
-            return ''
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. MSCI Standard Index (The Giants)</p>", unsafe_allow_html=True)
+        st.dataframe(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
-        # Tabel 1: Standard Index
-        st.markdown(f"<p style='color:#F5C242; font-size:1.1rem; font-weight:700; margin-bottom:10px;'>1. Master List Indeks MSCI Indonesia (Standard Index)</p>", unsafe_allow_html=True)
-        st.dataframe(
-            df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style.applymap(highlight_msci, subset=['Status']), 
-            use_container_width=True, hide_index=True
-        )
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. MSCI Small Cap Index (The Mid-Caps)</p>", unsafe_allow_html=True)
+        st.dataframe(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
-        # Tabel 2: Small Cap
-        st.markdown(f"<p style='color:#F5C242; font-size:1.1rem; font-weight:700; margin-bottom:10px; margin-top:25px;'>2. MSCI Indonesia Small Cap Index (The Mid-Caps)</p>", unsafe_allow_html=True)
-        st.dataframe(
-            df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style.applymap(highlight_msci, subset=['Status']), 
-            use_container_width=True, hide_index=True
-        )
-
-        # Tabel 3: Excluded
-        st.markdown(f"<p style='color:#ff5555; font-size:1.1rem; font-weight:700; margin-bottom:10px; margin-top:25px;'>3. Excluded / Out (Keluar dari Indeks)</p>", unsafe_allow_html=True)
-        st.dataframe(
-            df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_msci, subset=['Status']), 
-            use_container_width=True, hide_index=True
-        )
+        st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>3. Excluded / Out (Keluar dari Indeks)</p>", unsafe_allow_html=True)
+        st.dataframe(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
+        # --- 3. FTSE INDEX TRACKER ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🇬🇧 FTSE Global Equity Index (Indonesia)</h4>", unsafe_allow_html=True)
         
-        col_rot1, col_rot2 = st.columns([1.5, 1])
-        with col_rot1:
-            rotation_data = {
-                "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
-                "Fase Saat Ini": ["Leading 🚀", "Improving 📈", "Weakening ⚠️", "Lagging 📉", "Lagging 📉"],
-                "Aksi Institusi": ["Hold / Profit Run", "Accumulation", "Distribution / Wait", "Avoid", "Avoid"]
-            }
-            st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
-        
-        with col_rot2:
-            st.info("🎯 **SIGMA Insight:** Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (*Weakening*) menuju sektor energi dan material dasar (*Improving/Leading*). Pantau ketat emiten yang berada di fase Improving.")
+        ftse_data = {
+            "Ticker": [
+                "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN",
+                "ADRO", "BRPT", "MDKA", "PGAS",
+                "PTRO", "CUAN", "VKTR", "RAJA",
+                "GOTO"
+            ],
+            "Kategori": [
+                "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap",
+                "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap",
+                "Small Cap", "Small Cap", "Small Cap", "Small Cap",
+                "Micro Cap"
+            ],
+            "Status": [
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                "Existing", "Existing", "Existing", "Existing",
+                "NEW ENTRY", "NEW ENTRY", "Existing", "Existing",
+                "DOWNGRADED"
+            ],
+            "Sektor": [
+                "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy",
+                "Energy", "Materials", "Materials", "Energy",
+                "Infrastructure", "Energy", "Industrials", "Energy",
+                "Technology"
+            ]
+        }
+        df_ftse = pd.DataFrame(ftse_data)
+
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. FTSE Large & Mid Cap</p>", unsafe_allow_html=True)
+        st.dataframe(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. FTSE Small & Micro Cap</p>", unsafe_allow_html=True)
+        st.dataframe(df_ftse[df_ftse['Kategori'].isin(['Small Cap', 'Micro Cap'])].style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # --- 4. LQ45 INDEX TRACKER ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🇮🇩 Indeks LQ45 (Rebalancing Feb - Jul 2026)</h4>", unsafe_allow_html=True)
+        
+        lq45_data = {
+            "Ticker": [
+                "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN", "ADRO", "BRPT", "GOTO", "MDKA", "PGAS",
+                "PTRO", "MBMA", "VKTR",
+                "EMTK", "SCMA", "SRTG"
+            ],
+            "Kategori": [
+                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active",
+                "New Entry", "New Entry", "New Entry",
+                "Excluded", "Excluded", "Excluded"
+            ],
+            "Status": [
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                "NEW ENTRY", "NEW ENTRY", "NEW ENTRY",
+                "OUT (Feb '26)", "OUT (Feb '26)", "OUT (Feb '26)"
+            ],
+            "Sektor": [
+                "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy", "Energy", "Materials", "Technology", "Materials", "Energy",
+                "Infrastructure", "Materials", "Industrials",
+                "Technology", "Consumer", "Financials"
+            ]
+        }
+        df_lq45 = pd.DataFrame(lq45_data)
+
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. Daftar Aktif & Pendatang Baru (Top Movers)</p>", unsafe_allow_html=True)
+        st.dataframe(df_lq45[df_lq45['Kategori'].isin(['Active', 'New Entry'])].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+
+        st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45 (Potensi Outflow Reksadana)</p>", unsafe_allow_html=True)
+        st.dataframe(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # --- 5. KORELASI CHART ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px;'>🗺️ Korelasi Rotasi: Coal vs PTBA vs PTRO</h4>", unsafe_allow_html=True)
 
         with st.spinner("Menghitung korelasi rotasi data historis..."):
