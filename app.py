@@ -3619,7 +3619,7 @@ if current_view == "dashboard":
         import pandas as pd
         import streamlit.components.v1 as components
     except ImportError:
-        st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
+        st.error("⚠️ Library 'yfinance' atau 'pandas' belum terinstall. Ketik di Terminal: pip install yfinance pandas")
         st.stop()
 
     # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
@@ -3653,6 +3653,12 @@ if current_view == "dashboard":
     .fancy-divider {{ border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0)); margin-bottom: 30px; margin-top: 30px; }}
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
+    
+    /* FIX: Menyembunyikan menu titik tiga di header kolom tabel */
+    [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display: none !important; }}
+    [data-testid="stDataFrame"] th button {{ display: none !important; }}
+    /* FIX: Menyembunyikan toolbar melayang (download CSV, search) di atas dataframe */
+    [data-testid="stElementToolbar"] {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
         
@@ -3660,7 +3666,7 @@ if current_view == "dashboard":
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider' style='margin-top:0;'>", unsafe_allow_html=True)
     
-    # KATEGORI TAB BARU (4 TABS)
+    # KATEGORI TAB (4 TABS)
     tab_macro, tab_rotation, tab_heatmap, tab_news = st.tabs([
         "🌍 Global & Macro", 
         "🔄 Index & Sector Rotation", 
@@ -3869,7 +3875,8 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 2. MSCI INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Mei 2026 (Quarterly Index Review)</p>", unsafe_allow_html=True)
         
         msci_data = {
             "Ticker": [
@@ -3907,7 +3914,8 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 3. FTSE INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🇬🇧 FTSE Global Equity Index (Indonesia)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇬🇧 FTSE Global Equity Index (Indonesia)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Juni 2026 (Quarterly Review)</p>", unsafe_allow_html=True)
         
         ftse_data = {
             "Ticker": [
@@ -3946,7 +3954,8 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 4. LQ45 INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🇮🇩 Indeks LQ45 (Rebalancing Feb - Jul 2026)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇮🇩 Indeks LQ45 (Periode Feb - Jul 2026)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Evaluasi Mayor Berikutnya:</b> Agustus 2026</p>", unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
@@ -3978,35 +3987,6 @@ if current_view == "dashboard":
         st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45 (Potensi Outflow Reksadana)</p>", unsafe_allow_html=True)
         st.dataframe(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # --- 5. KORELASI CHART ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px;'>🗺️ Korelasi Rotasi: Coal vs PTBA vs PTRO</h4>", unsafe_allow_html=True)
-
-        with st.spinner("Menghitung korelasi rotasi data historis..."):
-            try:
-                import plotly.express as px
-                coal = yf.Ticker("NCF=F").history(period="3mo")['Close']
-                ptba = yf.Ticker("PTBA.JK").history(period="3mo")['Close']
-                ptro = yf.Ticker("PTRO.JK").history(period="3mo")['Close']
-
-                if not coal.empty: coal.index = pd.to_datetime(coal.index).normalize().tz_localize(None)
-                if not ptba.empty: ptba.index = pd.to_datetime(ptba.index).normalize().tz_localize(None)
-                if not ptro.empty: ptro.index = pd.to_datetime(ptro.index).normalize().tz_localize(None)
-
-                df_corr = pd.DataFrame({"Newcastle Coal": coal, "PTBA": ptba, "PTRO": ptro}).ffill().dropna()
-
-                if not df_corr.empty:
-                    df_norm = (df_corr / df_corr.iloc[0] - 1) * 100
-                    coal_color = "#111827" if not is_dark else "#ffffff"
-                    fig = px.line(df_norm, x=df_norm.index, y=df_norm.columns, color_discrete_sequence=[coal_color, "#F5C242", "#4285F4"])
-                    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=10, b=0), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), hovermode="x unified", font=dict(color=text_main))
-                    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=met_border, title="")
-                    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=met_border, title="Performa (%)")
-                    st.plotly_chart(fig, use_container_width=True)
-                else: st.warning("Data tidak cukup untuk menampilkan korelasi.")
-            except Exception as e: st.warning(f"⚠️ Gagal menarik data korelasi: {str(e)}")
-
     # ==========================================
     # TAB 3: SECTOR HEATMAP
     # ==========================================
@@ -4028,6 +4008,14 @@ if current_view == "dashboard":
         </div>
         """
         components.html(news_widget, height=620)
+
+
+
+
+
+
+
+        
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
