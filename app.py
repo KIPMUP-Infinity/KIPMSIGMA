@@ -3600,10 +3600,9 @@ if st.session_state.user is None: components.html("<script>(function() { try { v
 
 
 # ─────────────────────────────────────────────
-# PART 9: SIGMA TERMINAL (MACRO, HEATMAP & NEWS)
+# PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
 # --- OBAT ANTI AMNESIA ---
-# Menyelamatkan layar agar tidak terpental ke SIGMA AI saat ganti tema
 if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     try:
         _saved_data = load_user(st.session_state.user["email"])
@@ -3613,128 +3612,6 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     st.session_state.amnesia_fixed = True
 
 current_view = st.session_state.get("current_view", "chat")
-
-# ─────────────────────────────────────────────
-# HALAMAN DIAGNOSTIK API — cek status semua key
-# ─────────────────────────────────────────────
-if current_view == "diagnostik":
-    st.markdown(f"""
-    <style>
-    [data-testid="stMainBlockContainer"] {{ padding-top: 2rem !important; }}
-    </style>
-    """, unsafe_allow_html=True)
-    st.markdown("## 🔧 Diagnostik API SIGMA")
-    st.markdown("Cek status semua API key yang terdaftar di Secrets secara real-time.")
-    st.markdown("---")
-
-    # ── GEMINI ──
-    st.markdown("### ✨ Gemini API Keys")
-    gemini_key_names = (
-        ["GEMINI_API_KEY"] +
-        [f"GEMINI_API_KEY{i}" for i in range(2, 6)] +
-        ["GEMINI_KEY"] +
-        [f"GEMINI_KEY{i}" for i in range(2, 6)] +
-        ["GOOGLE_API_KEY"]
-    )
-    gemini_found = []
-    for kname in gemini_key_names:
-        val = st.secrets.get(kname, "")
-        if val and len(val) > 10:
-            gemini_found.append((kname, val))
-
-    if not gemini_found:
-        st.error("❌ Tidak ada Gemini key ditemukan di Secrets.")
-    else:
-        for kname, kval in gemini_found:
-            col1, col2, col3 = st.columns([2, 3, 3])
-            col1.markdown(f"**`{kname}`**")
-            col2.markdown(f"`{kval[:12]}...{kval[-4:]}`")
-            with col3:
-                with st.spinner("Testing..."):
-                    try:
-                        import urllib.request as _ur, json as _jj
-                        _test_payload = {
-                            "contents": [{"role": "user", "parts": [{"text": "Balas hanya dengan kata: OK"}]}],
-                            "generationConfig": {"maxOutputTokens": 10}
-                        }
-                        _url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={kval}"
-                        _req = _ur.Request(_url, data=_jj.dumps(_test_payload).encode(), headers={"Content-Type": "application/json"})
-                        with _ur.urlopen(_req, timeout=10) as r:
-                            _resp = _jj.loads(r.read())
-                        _txt = _resp["candidates"][0]["content"]["parts"][0]["text"].strip()
-                        st.success(f"✅ Aktif — respons: `{_txt[:30]}`")
-                    except Exception as _e:
-                        _err = str(_e)
-                        if "429" in _err or "quota" in _err.lower() or "RESOURCE_EXHAUSTED" in _err:
-                            st.warning(f"⚠️ Rate limit / Quota habis")
-                        elif "403" in _err or "API_KEY_INVALID" in _err:
-                            st.error(f"❌ Key tidak valid")
-                        else:
-                            st.error(f"❌ Error: `{_err[:80]}`")
-
-    st.markdown("---")
-
-    # ── GROQ ──
-    st.markdown("### ⚡ Groq API Keys")
-    groq_key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
-    groq_found = []
-    for kname in groq_key_names:
-        val = st.secrets.get(kname, "")
-        if val and len(val) > 10:
-            groq_found.append((kname, val))
-
-    if not groq_found:
-        st.error("❌ Tidak ada Groq key ditemukan di Secrets.")
-    else:
-        for kname, kval in groq_found:
-            col1, col2, col3 = st.columns([2, 3, 3])
-            col1.markdown(f"**`{kname}`**")
-            col2.markdown(f"`{kval[:12]}...{kval[-4:]}`")
-            with col3:
-                with st.spinner("Testing..."):
-                    try:
-                        from groq import Groq as _Groq
-                        _gclient = _Groq(api_key=kval)
-                        _gresp = _gclient.chat.completions.create(
-                            model="llama-3.1-8b-instant",
-                            messages=[{"role": "user", "content": "Balas hanya: OK"}],
-                            max_tokens=5,
-                            temperature=0
-                        )
-                        _gtxt = _gresp.choices[0].message.content.strip()
-                        st.success(f"✅ Aktif — respons: `{_gtxt[:30]}`")
-                    except Exception as _e:
-                        _err = str(_e)
-                        if "429" in _err or "rate_limit" in _err.lower():
-                            st.warning(f"⚠️ Rate limit aktif")
-                        elif "401" in _err or "invalid" in _err.lower():
-                            st.error(f"❌ Key tidak valid")
-                        else:
-                            st.error(f"❌ Error: `{_err[:80]}`")
-
-    st.markdown("---")
-
-    # ── DATA APIs ──
-    st.markdown("### 📊 Data API Keys (FMP / Finnhub / AlphaVantage)")
-    data_keys = [("FMP_KEY", "FMP"), ("FINNHUB_KEY", "Finnhub"), ("ALPHAVANTAGE_KEY", "AlphaVantage")]
-    for kname, label in data_keys:
-        val = st.secrets.get(kname, "")
-        col1, col2, col3 = st.columns([2, 3, 3])
-        col1.markdown(f"**`{kname}`** ({label})")
-        if not val or len(val) < 5:
-            col2.markdown("`—`")
-            col3.warning("⚠️ Tidak dikonfigurasi")
-        else:
-            col2.markdown(f"`{val[:8]}...{val[-4:]}`")
-            col3.success("✅ Terdaftar di Secrets")
-
-    st.markdown("---")
-    st.markdown(f"<p style='font-size:0.8rem;color:rgba(255,255,255,0.35);'>Diagnostik dijalankan pada {datetime.now().strftime('%d %b %Y %H:%M:%S')} WIB</p>", unsafe_allow_html=True)
-
-    if st.button("← Kembali ke SIGMA Chat"):
-        st.session_state.current_view = "chat"
-        st.rerun()
-    st.stop()
 
 if current_view == "dashboard":
     try:
@@ -3748,115 +3625,45 @@ if current_view == "dashboard":
     # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
     is_dark = st.session_state.get("theme", "dark") == "dark"
 
-    # --- VARIABEL WARNA BUNGLEON (Berubah Sesuai Tema) ---
+    # --- VARIABEL WARNA BUNGLEON ---
     met_bg = "linear-gradient(145deg, rgba(30,30,30,0.7), rgba(15,15,15,0.9))" if is_dark else "#ffffff"
     met_border = "rgba(245, 194, 66, 0.2)" if is_dark else "#e5e7eb"
     met_shadow = "0 8px 20px rgba(0,0,0,0.5)" if is_dark else "0 4px 10px rgba(0,0,0,0.05)"
     met_hover = "rgba(245, 194, 66, 0.8)" if is_dark else "#F5C242"
     met_hshadow = "0 12px 25px rgba(245, 194, 66, 0.15)" if is_dark else "0 10px 20px rgba(245, 194, 66, 0.15)"
-    
     text_main = "#ffffff" if is_dark else "#111827"
     text_sub = "#a0a0a0" if is_dark else "#6b7280"
-    
     title_bg = "-webkit-linear-gradient(0deg, #F5C242, #FFD700, #FFA500)" if is_dark else "none"
     title_fill = "transparent" if is_dark else "#111827"
-    
     card_bg = "linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8))" if is_dark else "#ffffff"
     card_border = "rgba(255,255,255,0.1)" if is_dark else "#e5e7eb"
     card_shadow = "0 8px 32px rgba(0,0,0,0.4)" if is_dark else "0 4px 15px rgba(0,0,0,0.03)"
-    
     tv_theme = "dark" if is_dark else "light"
     tv_bg = "rgba(20, 20, 20, 1)" if is_dark else "#ffffff"
     tv_grid = "rgba(45, 45, 45, 1)" if is_dark else "#f3f4f6"
 
-    # --- INJEKSI CSS DINAMIS ---
     st.markdown(f"""
     <style>
-    /* Kotak Metrik */
-    [data-testid="stMetric"] {{
-        background: {met_bg} !important;
-        border: 1px solid {met_border} !important;
-        border-radius: 12px;
-        padding: 15px 20px;
-        box-shadow: {met_shadow};
-        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-        margin-bottom: 15px;
-    }}
-    [data-testid="stMetric"]:hover {{
-        transform: translateY(-4px);
-        border-color: {met_hover} !important;
-        box-shadow: {met_hshadow};
-    }}
-    [data-testid="stMetricValue"] {{
-        font-size: 1.6rem !important;
-        font-weight: 800 !important;
-        color: {text_main} !important; 
-    }}
-    [data-testid="stMetricLabel"] {{
-        color: {text_sub} !important;
-        font-weight: 600 !important;
-    }}
-    
-    /* Title Tengah */
-    .sigma-title {{
-        text-align: center;
-        background: {title_bg};
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: {title_fill};
-        color: {text_main};
-        font-weight: 900;
-        font-size: 3rem;
-        margin-bottom: 0px;
-        letter-spacing: 2px;
-    }}
-    .sigma-subtitle {{
-        text-align: center;
-        color: {text_sub};
-        font-size: 1.1rem;
-        letter-spacing: 1px;
-        margin-top: -5px;
-        margin-bottom: 20px;
-    }}
-    
-    /* Garis pemisah */
-    .fancy-divider {{
-        border: 0;
-        height: 1px;
-        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0));
-        margin-bottom: 30px;
-    }}
-    
-    /* Card Insight */
-    .dynamic-card {{
-        background: {card_bg};
-        border: 1px solid {card_border};
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: {card_shadow};
-        height: 100%;
-        transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-    }}
-    .dynamic-card:hover {{
-        transform: translateY(-4px);
-        border-color: {met_hover};
-    }}
+    [data-testid="stMetric"] {{ background: {met_bg} !important; border: 1px solid {met_border} !important; border-radius: 12px; padding: 15px 20px; box-shadow: {met_shadow}; transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; margin-bottom: 15px; }}
+    [data-testid="stMetric"]:hover {{ transform: translateY(-4px); border-color: {met_hover} !important; box-shadow: {met_hshadow}; }}
+    [data-testid="stMetricValue"] {{ font-size: 1.6rem !important; font-weight: 800 !important; color: {text_main} !important; }}
+    [data-testid="stMetricLabel"] {{ color: {text_sub} !important; font-weight: 600 !important; }}
+    .sigma-title {{ text-align: center; background: {title_bg}; -webkit-background-clip: text; -webkit-text-fill-color: {title_fill}; color: {text_main}; font-weight: 900; font-size: 3rem; margin-bottom: 0px; letter-spacing: 2px; }}
+    .sigma-subtitle {{ text-align: center; color: {text_sub}; font-size: 1.1rem; letter-spacing: 1px; margin-top: -5px; margin-bottom: 20px; }}
+    .fancy-divider {{ border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0)); margin-bottom: 30px; }}
+    .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
+    .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
     </style>
     """, unsafe_allow_html=True)
         
-    # Header Terminal
     st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
     
-    # --- SISTEM TAB NAVIGASI ---
-    tab_macro, tab_heatmap, tab_news = st.tabs([
-        "🌍 Global & Macro", 
-        "🗺️ Sector Heatmap", 
-        "📰 Live News Feed"
-    ])
+    tab_macro, tab_heatmap, tab_news = st.tabs(["🌍 Global & Macro", "🗺️ Sector Dynamics", "📰 Live News Feed"])
 
     # ==========================================
-    # TAB 1: GLOBAL & MACRO
+    # TAB 1: GLOBAL & MACRO (WITH MSCI)
     # ==========================================
     with tab_macro:
         st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
@@ -3866,78 +3673,60 @@ if current_view == "dashboard":
             data = {}
             for name, tk in ticker_dict.items():
                 try: 
-                    ticker = yf.Ticker(tk)
-                    hist = ticker.history(period="5d") 
+                    hist = yf.Ticker(tk).history(period="5d") 
                     if len(hist) >= 2:
                         last = float(hist['Close'].iloc[-1])
                         prev = float(hist['Close'].iloc[-2])
-                        pct = ((last - prev) / prev) * 100
-                        data[name] = {"price": last, "pct": pct}
-                    elif len(hist) == 1:
-                        last = float(hist['Close'].iloc[-1])
-                        data[name] = {"price": last, "pct": 0.0}
-                    else:
-                        data[name] = {"price": 0, "pct": 0}
-                except Exception as e:
-                    data[name] = {"price": 0, "pct": 0}
+                        data[name] = {"price": last, "pct": ((last - prev) / prev) * 100}
+                    else: data[name] = {"price": 0, "pct": 0}
+                except: data[name] = {"price": 0, "pct": 0}
             return data
 
-        indices_tickers = {
-            "IHSG": "^JKSE", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
-            "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
-            "Hang Seng": "^HSI", "Shanghai": "000001.SS", "VIX": "^VIX"
-        }
-        
-        commodities_tickers = {
-            "USD/IDR": "IDR=X", "Gold (oz)": "GC=F", "WTI Crude": "CL=F",
-            "Brent Crude": "BZ=F", "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F", "Nickel": "ALI=F"          
-        }
+        indices_tickers = {"IHSG": "^JKSE", "S&P 500": "^GSPC", "Dow Jones": "^DJI", "Nasdaq": "^IXIC", "FTSE": "^FTSE"}
+        commodities_tickers = {"USD/IDR": "IDR=X", "Gold (oz)": "GC=F", "WTI Crude": "CL=F", "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F"}
         
         with st.spinner("Mendeteksi denyut pasar global..."):
             idx_data = get_market_data(indices_tickers)
             com_data = get_market_data(commodities_tickers)
         
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices</p>", unsafe_allow_html=True)
         if idx_data:
-            items_idx = list(idx_data.items())
-            for i in range(0, len(items_idx), 5):
-                cols = st.columns(5)
-                chunk = items_idx[i:i+5]
-                for j in range(5):
-                    if j < len(chunk):
-                        name, info = chunk[j]
-                        with cols[j]:
-                            st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
-        else:
-            st.warning("⚠️ Gagal menarik data indeks.")
-            
+            cols = st.columns(5)
+            for i, (name, info) in enumerate(list(idx_data.items())[:5]):
+                with cols[i]: st.metric(name, f"{info['price']:,.2f}", f"{info['pct']:.2f}%")
+
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
+        if com_data:
+            cols = st.columns(5)
+            for i, (name, info) in enumerate(list(com_data.items())[:5]):
+                with cols[i]:
+                    price_str = f"Rp {info['price']:,.0f}" if name == "USD/IDR" else f"${info['price']:,.2f}"
+                    st.metric(name, price_str, f"{info['pct']:.2f}%")
+
         st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
-        if com_data:
-            items_com = list(com_data.items())
-            for i in range(0, len(items_com), 5):
-                cols = st.columns(5)
-                chunk = items_com[i:i+5]
-                for j in range(5):
-                    if j < len(chunk):
-                        name, info = chunk[j]
-                        with cols[j]:
-                            if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
-                            elif info['price'] == 0: price_str = "N/A"
-                            else: price_str = f"${info['price']:,.2f}"
-                            
-                            delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
-                            st.metric(label=name, value=price_str, delta=delta_str)
-        else:
-            st.warning("⚠️ Gagal menarik data komoditas.")
+        # --- MSCI INDEX TRACKER ---
+        with st.expander("🏆 MSCI Indonesia Index Tracker (Update Mar 2026)", expanded=True):
+            msci_data = {
+                "Ticker": ["BREN", "BBCA", "BBRI", "BMRI", "TLKM", "AMMN", "DSSA", "BRMS", "PTRO", "RAJA", "BRPT", "INDF", "BUMI", "ANTM", "CUAN", "ACES", "RATU"],
+                "Kategori": ["Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Excluded", "Excluded", "Not Listed"],
+                "Status": ["Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "NEW ENTRY", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "OUT (Feb '26)", "OUT (Feb '26)", "-"],
+                "Sektor": ["Energy", "Finance", "Finance", "Finance", "Infrastructure", "Materials", "Energy", "Materials", "Infrastructure", "Energy", "Materials", "Consumer", "Energy", "Materials", "Energy", "Retail", "Energy"]
+            }
+            df_msci = pd.DataFrame(msci_data)
+            
+            def highlight_msci(val):
+                if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
+                elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
+                elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
+                return ''
 
-        st.markdown("<br><br>", unsafe_allow_html=True)
+            st.dataframe(df_msci.style.applymap(highlight_msci, subset=['Status']), use_container_width=True, hide_index=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # --- KORELASI MAKRO EKONOMI ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
-
+        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro: Indonesia vs US</h4>", unsafe_allow_html=True)
         macro_col1, macro_col2 = st.columns(2)
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
@@ -3945,168 +3734,86 @@ if current_view == "dashboard":
             st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
-                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
-                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
+                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76]
             }, index=dates)
-            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+            st.line_chart(macro_id, color=["#F5C242", "#4285F4"], height=280)
 
         with macro_col2:
             st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
-                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
-                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
+                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40]
             }, index=dates)
-            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
-
-        st.info("💡 **The SIGMA View:** Suku bunga global (The Fed & BI) sudah berada di tren pemangkasan. Namun, perhatikan lonjakan **Inflasi RI** belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.")
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        # --- MARKET INSIGHT ---
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div class="dynamic-card">
-                <h5 style='color:#F5C242; margin-top:0;'>🏗️ Fundamental & The Real Macro</h5>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>📈 GDP & PMI Manufaktur:</b><br>
-                Perekonomian ditopang konsumsi rumah tangga. Angka PMI di atas 50 menandakan ekspansi pabrik.
-                </p>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>⚖️ Cadangan Devisa & Neraca Perdagangan:</b><br>
-                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col2:
-            st.markdown(f"""
-            <div class="dynamic-card">
-                <h5 style='color:#ff5555; margin-top:0;'>🔥 Rotasi & Kurva Imbal Hasil</h5>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>📉 Yield Curve Obligasi RI:</b><br>
-                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
-                </p>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>⚠️ Sektor Fokus:</b><br>
-                Jika komoditas memanas, amati Coal & Gold. Jika suku bunga turun, uang institusi mengalir ke Big Banks dan Properti.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<br><br>", unsafe_allow_html=True)
+            st.line_chart(macro_us, color=["#F5C242", "#4285F4"], height=280)
 
         # --- TRADINGVIEW ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; margin-top:20px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
         tv_widget = f"""
         <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
-          <div id="tradingview_sigma" style="height:550px;width:100%"></div>
+          <div id="tradingview_sigma" style="height:500px;width:100%"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
           <script type="text/javascript">
-          new TradingView.widget(
-          {{
-          "autosize": true,
-          "symbol": "IDX:COMPOSITE",
-          "interval": "D",
-          "timezone": "Asia/Jakarta",
-          "theme": "{tv_theme}", 
-          "style": "1",
-          "locale": "id",
-          "enable_publishing": false,
-          "allow_symbol_change": true,
-          "hide_top_toolbar": false,
-          "hide_side_toolbar": false,
-          "backgroundColor": "{tv_bg}",
-          "gridColor": "{tv_grid}",
-          "save_image": false,
-          "container_id": "tradingview_sigma"
-        }}
-          );
+          new TradingView.widget({{ "autosize": true, "symbol": "IDX:COMPOSITE", "interval": "D", "timezone": "Asia/Jakarta", "theme": "{tv_theme}", "style": "1", "locale": "id", "enable_publishing": false, "backgroundColor": "{tv_bg}", "gridColor": "{tv_grid}", "container_id": "tradingview_sigma" }});
           </script>
         </div>
         """
-        components.html(tv_widget, height=570)
+        components.html(tv_widget, height=520)
 
     # ==========================================
-    # TAB 2: SECTOR HEATMAP (DILENGKAPI DATA PLOTLY)
+    # TAB 2: SECTOR DYNAMICS (HEATMAP & ROTATION)
     # ==========================================
     with tab_heatmap:
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px;'>🗺️ Korelasi Komoditas vs Harga Saham</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.95rem; margin-bottom: 20px;'>Membandingkan persentase pergerakan harga acuan Batu Bara Global terhadap saham PTBA dan PTRO dalam 3 bulan terakhir.</p>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
+        
+        col_rot1, col_rot2 = st.columns([1.5, 1])
+        with col_rot1:
+            rotation_data = {
+                "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
+                "Fase Saat Ini": ["Leading 🚀", "Improving 📈", "Weakening ⚠️", "Lagging 📉", "Lagging 📉"],
+                "Aksi Institusi": ["Hold / Profit Run", "Accumulation", "Distribution / Wait", "Avoid", "Avoid"]
+            }
+            st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
+        
+        with col_rot2:
+            st.info("🎯 **SIGMA Insight:** Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (*Weakening*) menuju sektor energi dan material dasar (*Improving/Leading*). Pantau ketat saham-saham **New Entry MSCI** di sektor ini.")
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px;'>🗺️ Korelasi Harga: Coal vs PTBA vs PTRO</h4>", unsafe_allow_html=True)
 
         with st.spinner("Menghitung korelasi data historis..."):
             try:
                 import plotly.express as px
-                # Mengambil data 3 bulan terakhir
                 coal = yf.Ticker("NCF=F").history(period="3mo")['Close']
                 ptba = yf.Ticker("PTBA.JK").history(period="3mo")['Close']
                 ptro = yf.Ticker("PTRO.JK").history(period="3mo")['Close']
 
-                # Normalisasi Timezone agar bisa digabung tanpa error bentrok waktu libur
                 if not coal.empty: coal.index = pd.to_datetime(coal.index).normalize().tz_localize(None)
                 if not ptba.empty: ptba.index = pd.to_datetime(ptba.index).normalize().tz_localize(None)
                 if not ptro.empty: ptro.index = pd.to_datetime(ptro.index).normalize().tz_localize(None)
 
-                # Gabung data
-                df_corr = pd.DataFrame({
-                    "Newcastle Coal (Global)": coal,
-                    "PTBA (Bukit Asam)": ptba,
-                    "PTRO (Petrosea)": ptro
-                })
+                df_corr = pd.DataFrame({"Newcastle Coal": coal, "PTBA": ptba, "PTRO": ptro}).ffill().dropna()
 
-                # FIX ERROR WAKTU LIBUR: Isi data kosong (NaN) dengan data harga penutupan di hari sebelumnya
-                df_corr = df_corr.ffill().dropna()
-
-                # Normalisasi persentase ke base 100
                 if not df_corr.empty:
                     df_norm = (df_corr / df_corr.iloc[0] - 1) * 100
-                    
                     coal_color = "#111827" if not is_dark else "#ffffff"
-                    fig = px.line(
-                        df_norm, 
-                        x=df_norm.index, 
-                        y=df_norm.columns,
-                        labels={'value': 'Performa (%)', 'variable': 'Aset/Komoditas', 'Date': 'Tanggal'},
-                        color_discrete_sequence=[coal_color, "#F5C242", "#4285F4"]
-                    )
-                    
-                    fig.update_layout(
-                        plot_bgcolor="rgba(0,0,0,0)", 
-                        paper_bgcolor="rgba(0,0,0,0)",
-                        margin=dict(l=0, r=0, t=10, b=0),
-                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                        hovermode="x unified",
-                        font=dict(color=text_main)
-                    )
+                    fig = px.line(df_norm, x=df_norm.index, y=df_norm.columns, color_discrete_sequence=[coal_color, "#F5C242", "#4285F4"])
+                    fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=10, b=0), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), hovermode="x unified", font=dict(color=text_main))
                     fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor=met_border, title="")
                     fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor=met_border, title="Performa (%)")
-
                     st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.warning("Data tidak cukup untuk menampilkan korelasi saat ini.")
-
-            except Exception as e:
-                st.warning(f"⚠️ Gagal menarik data korelasi komoditas: {str(e)}")
+                else: st.warning("Data tidak cukup untuk menampilkan korelasi.")
+            except Exception as e: st.warning(f"⚠️ Gagal menarik data korelasi: {str(e)}")
 
     # ==========================================
     # TAB 3: LIVE NEWS FEED
     # ==========================================
     with tab_news:
         st.markdown("<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
-        
+        news_theme = "dark" if is_dark else "light"
         news_widget = f"""
         <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
-          <div class="tradingview-widget-container__widget"></div>
           <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-          {{
-          "feedMode": "all_symbols",
-          "isTransparent": false,
-          "displayMode": "regular",
-          "width": "100%",
-          "height": 600,
-          "colorTheme": "{tv_theme}",
-          "locale": "id"
-        }}
+          {{ "feedMode": "all_symbols", "isTransparent": false, "displayMode": "regular", "width": "100%", "height": 600, "colorTheme": "{news_theme}", "locale": "id" }}
           </script>
         </div>
         """
