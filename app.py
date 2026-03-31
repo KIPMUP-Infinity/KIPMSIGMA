@@ -3660,7 +3660,13 @@ if current_view == "dashboard":
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
     
-    tab_macro, tab_heatmap, tab_news = st.tabs(["🌍 Global & Macro", "🗺️ Sector Dynamics", "📰 Live News Feed"])
+    # KATEGORI TAB BARU (4 TABS)
+    tab_macro, tab_rotation, tab_heatmap, tab_news = st.tabs([
+        "🌍 Global & Macro", 
+        "🔄 Index & Sector Rotation", 
+        "🗺️ Sector Heatmap", 
+        "📰 Live News Feed"
+    ])
 
     # ==========================================
     # TAB 1: GLOBAL & MACRO (WITH MSCI)
@@ -3776,9 +3782,9 @@ if current_view == "dashboard":
         components.html(tv_widget, height=520)
 
     # ==========================================
-    # TAB 2: SECTOR DYNAMICS (HEATMAP & ROTATION)
+    # TAB 2: INDEX & SECTOR ROTATION (KATEGORI KHUSUS)
     # ==========================================
-    with tab_heatmap:
+    with tab_rotation:
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
         
         col_rot1, col_rot2 = st.columns([1.5, 1])
@@ -3791,12 +3797,12 @@ if current_view == "dashboard":
             st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
         
         with col_rot2:
-            st.info("🎯 **SIGMA Insight:** Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (*Weakening*) menuju sektor energi dan material dasar (*Improving/Leading*). Pantau ketat saham-saham **New Entry MSCI** di sektor ini.")
+            st.info("🎯 **SIGMA Insight:** Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (*Weakening*) menuju sektor energi dan material dasar (*Improving/Leading*). Pantau ketat emiten yang berada di fase Improving.")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px;'>🗺️ Korelasi Harga: Coal vs PTBA vs PTRO</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px;'>🗺️ Korelasi Rotasi: Coal vs PTBA vs PTRO</h4>", unsafe_allow_html=True)
 
-        with st.spinner("Menghitung korelasi data historis..."):
+        with st.spinner("Menghitung korelasi rotasi data historis..."):
             try:
                 import plotly.express as px
                 coal = yf.Ticker("NCF=F").history(period="3mo")['Close']
@@ -3821,10 +3827,17 @@ if current_view == "dashboard":
             except Exception as e: st.warning(f"⚠️ Gagal menarik data korelasi: {str(e)}")
 
     # ==========================================
-    # TAB 3: LIVE NEWS FEED
+    # TAB 3: SECTOR HEATMAP
+    # ==========================================
+    with tab_heatmap:
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px;'>🗺️ Sector Heatmap</h4>", unsafe_allow_html=True)
+        st.info("💡 **Kategori Heatmap** sedang dalam tahap penyesuaian API. Fitur ini nantinya akan menampilkan peta panas (Heatmap) pergerakan seluruh sektor dan saham di IHSG secara real-time.")
+
+    # ==========================================
+    # TAB 4: LIVE NEWS FEED
     # ==========================================
     with tab_news:
-        st.markdown("<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
         news_theme = "dark" if is_dark else "light"
         news_widget = f"""
         <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
