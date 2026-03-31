@@ -3619,7 +3619,7 @@ if current_view == "dashboard":
         import pandas as pd
         import streamlit.components.v1 as components
     except ImportError:
-        st.error("⚠️ Library 'yfinance' atau 'pandas' belum terinstall. Ketik di Terminal: pip install yfinance pandas")
+        st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
         st.stop()
 
     # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
@@ -3654,11 +3654,14 @@ if current_view == "dashboard":
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
     
-    /* FIX: Menyembunyikan menu titik tiga di header kolom tabel */
+    /* CSS AGRESIF MENGHILANGKAN TOMBOL 3 TITIK DI TABEL (GLIDE DATA GRID) */
+    [data-testid="stDataFrame"] [data-testid="stElementToolbar"] {{ display: none !important; opacity: 0 !important; pointer-events: none !important; }}
     [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display: none !important; }}
-    [data-testid="stDataFrame"] th button {{ display: none !important; }}
-    /* FIX: Menyembunyikan toolbar melayang (download CSV, search) di atas dataframe */
-    [data-testid="stElementToolbar"] {{ display: none !important; }}
+    [data-testid="stDataFrame"] .gdg-header-action {{ display: none !important; }}
+    [data-testid="stDataFrame"] div[class*="header"] svg {{ display: none !important; }}
+    [data-testid="stDataFrame"] div[role="button"] {{ pointer-events: none !important; }}
+    /* Mengamankan agar tabel tetap bisa diklik untuk sorting tanpa memunculkan menu */
+    [data-testid="stDataFrame"] div[role="columnheader"] {{ cursor: pointer !important; }}
     </style>
     """, unsafe_allow_html=True)
         
@@ -3876,7 +3879,7 @@ if current_view == "dashboard":
 
         # --- 2. MSCI INDEX TRACKER ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Mei 2026 (Quarterly Index Review)</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Pengumuman ~13 Mei 2026 | Efektif <b>1 Juni 2026</b></p>", unsafe_allow_html=True)
         
         msci_data = {
             "Ticker": [
@@ -3915,7 +3918,7 @@ if current_view == "dashboard":
 
         # --- 3. FTSE INDEX TRACKER ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇬🇧 FTSE Global Equity Index (Indonesia)</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Juni 2026 (Quarterly Review)</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Pengumuman ~5 Juni 2026 | Efektif <b>22 Juni 2026</b></p>", unsafe_allow_html=True)
         
         ftse_data = {
             "Ticker": [
@@ -3955,7 +3958,7 @@ if current_view == "dashboard":
 
         # --- 4. LQ45 INDEX TRACKER ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇮🇩 Indeks LQ45 (Periode Feb - Jul 2026)</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Evaluasi Mayor Berikutnya:</b> Agustus 2026</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Evaluasi Berikutnya:</b> Minor: April 2026 | Mayor: <b>Juli 2026 (Efektif 1 Agustus 2026)</b></p>", unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
