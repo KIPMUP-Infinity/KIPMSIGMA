@@ -3586,7 +3586,7 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     except: pass
     st.session_state.amnesia_fixed = True
 
-# --- SET DEFAULT VIEW MENJADI 'hub' AGAR MASUK KE MENU PEMILIHAN DULU ---
+# --- 1. SET DEFAULT VIEW MENJADI 'hub' AGAR MASUK KE MENU PEMILIHAN DULU ---
 current_view = st.session_state.get("current_view", "hub")
 
 if user:
@@ -3616,49 +3616,30 @@ def show_selection_hub():
     #spbtn { display: none !important; }
     
     .hub-title {
-        text-align: center;
-        font-size: 3.5rem;
-        font-weight: 900;
-        letter-spacing: 6px;
-        color: #ffffff;
-        margin-top: 10vh;
-        margin-bottom: 5px;
+        text-align: center; font-size: 3.5rem; font-weight: 900; letter-spacing: 6px;
+        color: #ffffff; margin-top: 10vh; margin-bottom: 5px;
         text-shadow: 0 0 20px rgba(245, 194, 66, 0.3);
     }
     .hub-subtitle {
-        text-align: center;
-        font-size: 1rem;
-        color: #F5C242;
-        letter-spacing: 4px;
-        margin-bottom: 8vh;
-        font-weight: 600;
+        text-align: center; font-size: 1rem; color: #F5C242; letter-spacing: 4px;
+        margin-bottom: 8vh; font-weight: 600;
     }
     
-    /* Hack CSS untuk mengubah st.button menjadi Card Futuristik */
+    /* Hack CSS untuk Card Futuristik */
     div[data-testid="column"] > div > div > div > div.stButton > button {
-        height: 260px;
-        border-radius: 24px;
+        height: 260px; border-radius: 24px;
         background: linear-gradient(145deg, rgba(20, 25, 40, 0.7), rgba(10, 12, 20, 0.9)) !important;
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1) !important;
         box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
         transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
     }
     div[data-testid="column"] > div > div > div > div.stButton > button:hover {
-        transform: translateY(-12px);
-        border-color: #F5C242 !important;
+        transform: translateY(-12px); border-color: #F5C242 !important;
         box-shadow: 0 15px 50px rgba(245, 194, 66, 0.3) !important;
     }
     div[data-testid="column"] > div > div > div > div.stButton > button p {
-        font-size: 1.5rem !important;
-        font-weight: 800 !important;
-        color: white !important;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        white-space: pre-wrap;
+        font-size: 1.5rem !important; font-weight: 800 !important; color: white !important;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; white-space: pre-wrap;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -3683,11 +3664,9 @@ def show_selection_hub():
 # ROUTING LOGIC UTAMA (BERDASARKAN PILIHAN HUB)
 # =========================================================
 
-# 1. JIKA USER BERADA DI HALAMAN PEMILIHAN
 if current_view == "hub":
     show_selection_hub()
 
-# 2. JIKA USER MEMILIH TERMINAL
 elif current_view == "dashboard":
     # ─────────────────────────────────────────────
     # PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
