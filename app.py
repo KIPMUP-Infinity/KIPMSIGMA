@@ -3653,6 +3653,17 @@ if current_view == "dashboard":
     .fancy-divider {{ border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0)); margin-bottom: 30px; }}
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
+    
+    /* FIX: Menyembunyikan glitch teks _arrow_down / _arrow_right pada Expander */
+    [data-testid="stExpander"] summary div[data-testid="stExpanderToggleIcon"] {{
+        font-size: 0px !important; 
+        color: transparent !important;
+    }}
+    [data-testid="stExpander"] summary div[data-testid="stExpanderToggleIcon"] svg {{
+        font-size: 24px !important;
+        color: {text_main} !important;
+        display: block !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
         
