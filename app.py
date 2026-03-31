@@ -3576,33 +3576,8 @@ if "do" in st.query_params:
         st.session_state.current_view = "chat"; _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params.pop("do", None); st.rerun()
 
 active = get_active()
-current_view = st.session_state.get("current_view", "chat")
 
-if user:
-    sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
-    # KODE SIMPAN POSISI LAYAR YANG BARU 
-    save_user(user["email"], {
-        "theme": st.session_state.get("theme", "dark"), 
-        "sessions": sessions_to_save, 
-        "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat") # <-- INI WAJIB ADA AGAR INGAT POSISI
-    })
-
-_new_token = st.session_state.pop("new_token", None)
-if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
-if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
-
-
-
-
-
-
-
-
-# ─────────────────────────────────────────────
-# PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
-# ─────────────────────────────────────────────
-# --- OBAT ANTI AMNESIA ---
+# --- OBAT ANTI AMNESIA PENGGUNA ---
 if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     try:
         _saved_data = load_user(st.session_state.user["email"])
@@ -3611,9 +3586,112 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     except: pass
     st.session_state.amnesia_fixed = True
 
-current_view = st.session_state.get("current_view", "chat")
+# --- SET DEFAULT VIEW MENJADI 'hub' AGAR MASUK KE MENU PEMILIHAN DULU ---
+current_view = st.session_state.get("current_view", "hub")
 
-if current_view == "dashboard":
+if user:
+    sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
+    # KODE SIMPAN POSISI LAYAR YANG BARU 
+    save_user(user["email"], {
+        "theme": st.session_state.get("theme", "dark"), 
+        "sessions": sessions_to_save, 
+        "active_id": st.session_state.active_id,
+        "current_view": current_view 
+    })
+
+_new_token = st.session_state.pop("new_token", None)
+if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
+if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
+
+
+# ─────────────────────────────────────────────
+# PART 8.5: THE SELECTION HUB (MENU UTAMA KIPM)
+# ─────────────────────────────────────────────
+def show_selection_hub():
+    # CSS Khusus untuk Tampilan Hub yang Futuristik
+    st.markdown("""
+    <style>
+    /* Sembunyikan Sidebar dan Menu Bulat di Halaman Ini */
+    [data-testid="stSidebar"] { display: none !important; }
+    #spbtn { display: none !important; }
+    
+    .hub-title {
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: 900;
+        letter-spacing: 6px;
+        color: #ffffff;
+        margin-top: 10vh;
+        margin-bottom: 5px;
+        text-shadow: 0 0 20px rgba(245, 194, 66, 0.3);
+    }
+    .hub-subtitle {
+        text-align: center;
+        font-size: 1rem;
+        color: #F5C242;
+        letter-spacing: 4px;
+        margin-bottom: 8vh;
+        font-weight: 600;
+    }
+    
+    /* Hack CSS untuk mengubah st.button menjadi Card Futuristik */
+    div[data-testid="column"] > div > div > div > div.stButton > button {
+        height: 260px;
+        border-radius: 24px;
+        background: linear-gradient(145deg, rgba(20, 25, 40, 0.7), rgba(10, 12, 20, 0.9)) !important;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    }
+    div[data-testid="column"] > div > div > div > div.stButton > button:hover {
+        transform: translateY(-12px);
+        border-color: #F5C242 !important;
+        box-shadow: 0 15px 50px rgba(245, 194, 66, 0.3) !important;
+    }
+    div[data-testid="column"] > div > div > div > div.stButton > button p {
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        color: white !important;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        white-space: pre-wrap;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div class='hub-title'>KIPM NEXUS</div>", unsafe_allow_html=True)
+    st.markdown("<div class='hub-subtitle'>SELECT YOUR OPERATING DIMENSION</div>", unsafe_allow_html=True)
+
+    col_space_left, col_term, col_ai, col_space_right = st.columns([1, 4, 4, 1])
+
+    with col_term:
+        if st.button("📊\n\nKIPM TERMINAL\nMarket Radar & Data", use_container_width=True, key="btn_hub_terminal"):
+            st.session_state.current_view = "dashboard"
+            st.rerun()
+            
+    with col_ai:
+        if st.button("🧠\n\nSIGMA AI\nIntelligent Assistant", use_container_width=True, key="btn_hub_ai"):
+            st.session_state.current_view = "chat"
+            st.rerun()
+
+
+# =========================================================
+# ROUTING LOGIC UTAMA (BERDASARKAN PILIHAN HUB)
+# =========================================================
+
+# 1. JIKA USER BERADA DI HALAMAN PEMILIHAN
+if current_view == "hub":
+    show_selection_hub()
+
+# 2. JIKA USER MEMILIH TERMINAL
+elif current_view == "dashboard":
+    # ─────────────────────────────────────────────
+    # PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
+    # ─────────────────────────────────────────────
     try:
         import yfinance as yf
         import pandas as pd
@@ -4012,17 +4090,11 @@ if current_view == "dashboard":
         """
         components.html(news_widget, height=620)
 
-
-
-
-
-
-
-        
-# ─────────────────────────────────────────────
-# PART 10: RUANG CHAT AI 
-# ─────────────────────────────────────────────
+# 3. JIKA USER MEMILIH CHAT AI
 else:
+    # ─────────────────────────────────────────────
+    # PART 10: RUANG CHAT AI 
+    # ─────────────────────────────────────────────
     if not active["messages"][1:]:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
         st.markdown(f"""
@@ -4220,7 +4292,6 @@ else:
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
         else:
             # ── PENTING: full_prompt SELALU reset ke prompt asli dulu ──
-            # Ini mencegah prompt dari request sebelumnya terbawa ke request baru
             full_prompt = prompt
             try:
                 ctx = build_combined_context(prompt)
@@ -4247,7 +4318,6 @@ else:
                     st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
             if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
             
-            # Jangan tampilkan prompt kaku ke user, ubah ke natural text
             display_prompt = prompt if prompt != "5. Teknikal saham di gambar ini" else "Tolong buatkan Trade Plan dari chart ini."
             st.markdown(display_prompt)
 
@@ -4267,7 +4337,7 @@ else:
                     has_pdf    = bool(pdf_data)
                     debug_info = []
 
-                    # ── JALUR 1: ADA GAMBAR → GEMINI VISION (satu-satunya yang bisa) ──
+                    # ── JALUR 1: ADA GAMBAR → GEMINI VISION ──
                     if has_image:
                         try:
                             _img_b64  = user_msg.get("img_b64")
@@ -4282,7 +4352,7 @@ else:
                                 f"\n\n`Debug: {str(e_vision)[:200]}`"
                             )
 
-                    # ── JALUR 2: ADA PDF (tanpa gambar) → GEMINI TEXT (handle konteks panjang) ──
+                    # ── JALUR 2: ADA PDF (tanpa gambar) → GEMINI TEXT ──
                     elif has_pdf and not has_image:
                         try:
                             ans_bersih, _ = _call_gemini_text(
@@ -4291,7 +4361,6 @@ else:
                             simbol_ai = "\n\n*(✨ Gemini — PDF Mode)*"
                         except Exception as e_pdf:
                             debug_info.append(f"Gemini PDF: {str(e_pdf)}")
-                            # Fallback Groq jika Gemini tidak tersedia
                             try:
                                 ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
                                 simbol_ai = "\n\n*(⚡ Groq — PDF Fallback)*"
@@ -4300,21 +4369,16 @@ else:
 
                     # ── JALUR 3: TEXT BIASA → GROQ 70B PRIMARY → GEMINI → GROQ 8B ──
                     else:
-                        # Step 1: Groq 70B dengan key rotation (primary)
                         try:
                             ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
                             simbol_ai = "\n\n*(⚡ Groq/Llama)*"
                         except Exception as e_groq70:
                             debug_info.append(f"Groq 70B: {str(e_groq70)}")
-
-                            # Step 2: Gemini Text sebagai fallback
                             try:
                                 ans_bersih, _ = _call_gemini_text(_history_msgs[-6:])
                                 simbol_ai = "\n\n*(✨ Gemini)*"
                             except Exception as e_gemini:
                                 debug_info.append(f"Gemini Text: {str(e_gemini)}")
-
-                                # Step 3: Groq 8B sebagai last resort
                                 try:
                                     ans_bersih, _ = _call_groq_fallback(full_prompt)
                                     simbol_ai = "\n\n*(⚡ Groq/Mini)*"
@@ -4339,21 +4403,7 @@ else:
             st.error(f"⚠️ {str(e)}")
         st.rerun()
 
-# --- PENYIMPANAN DATA SANGAT PENTING (FIX AMNESIA) ---
-if user:
-    sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
-    
-    save_user(user["email"], {
-        "theme": st.session_state.get("theme", "dark"), 
-        "sessions": sessions_to_save, 
-        "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat") # <-- INI YANG MENYELAMATKAN DARI AMNESIA
-    })
-
-_new_token = st.session_state.pop("new_token", None)
-if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
-if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
-
+# --- SCRIPT JAVASCRIPT & KOMPONEN TAMBAHAN AKHIR ---
 components.html(f"""
 <script>
 const BC = "{C['bubble']}"; const BT = "#ffffff";
@@ -4422,7 +4472,6 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
-# ─── JEMBATAN COPY-PASTE (POLYFILL KHUSUS STREAMLIT) ───
 components.html("""
 <script>
 (function() {
@@ -4469,7 +4518,6 @@ components.html("""
 </script>
 """, height=0)
 
-# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
 <script>
