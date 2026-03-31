@@ -3669,7 +3669,7 @@ if current_view == "dashboard":
     ])
 
     # ==========================================
-    # TAB 1: GLOBAL & MACRO (WITH MSCI)
+    # TAB 1: GLOBAL & MACRO
     # ==========================================
     with tab_macro:
         st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
@@ -3679,38 +3679,171 @@ if current_view == "dashboard":
             data = {}
             for name, tk in ticker_dict.items():
                 try: 
-                    hist = yf.Ticker(tk).history(period="5d") 
+                    ticker = yf.Ticker(tk)
+                    hist = ticker.history(period="5d") 
                     if len(hist) >= 2:
                         last = float(hist['Close'].iloc[-1])
                         prev = float(hist['Close'].iloc[-2])
-                        data[name] = {"price": last, "pct": ((last - prev) / prev) * 100}
-                    else: data[name] = {"price": 0, "pct": 0}
-                except: data[name] = {"price": 0, "pct": 0}
+                        pct = ((last - prev) / prev) * 100
+                        data[name] = {"price": last, "pct": pct}
+                    elif len(hist) == 1:
+                        last = float(hist['Close'].iloc[-1])
+                        data[name] = {"price": last, "pct": 0.0}
+                    else:
+                        data[name] = {"price": 0, "pct": 0}
+                except Exception as e:
+                    data[name] = {"price": 0, "pct": 0}
             return data
 
-        indices_tickers = {"IHSG": "^JKSE", "S&P 500": "^GSPC", "Dow Jones": "^DJI", "Nasdaq": "^IXIC", "FTSE": "^FTSE"}
-        commodities_tickers = {"USD/IDR": "IDR=X", "Gold (oz)": "GC=F", "WTI Crude": "CL=F", "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F"}
+        indices_tickers = {
+            "IHSG": "^JKSE", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
+            "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
+            "Hang Seng": "^HSI", "Shanghai": "000001.SS", "VIX": "^VIX"
+        }
+        
+        commodities_tickers = {
+            "USD/IDR": "IDR=X", "Gold (oz)": "GC=F", "WTI Crude": "CL=F",
+            "Brent Crude": "BZ=F", "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F", "Nickel": "ALI=F"          
+        }
         
         with st.spinner("Mendeteksi denyut pasar global..."):
             idx_data = get_market_data(indices_tickers)
             com_data = get_market_data(commodities_tickers)
         
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
         if idx_data:
-            cols = st.columns(5)
-            for i, (name, info) in enumerate(list(idx_data.items())[:5]):
-                with cols[i]: st.metric(name, f"{info['price']:,.2f}", f"{info['pct']:.2f}%")
-
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
-        if com_data:
-            cols = st.columns(5)
-            for i, (name, info) in enumerate(list(com_data.items())[:5]):
-                with cols[i]:
-                    price_str = f"Rp {info['price']:,.0f}" if name == "USD/IDR" else f"${info['price']:,.2f}"
-                    st.metric(name, price_str, f"{info['pct']:.2f}%")
-
+            items_idx = list(idx_data.items())
+            for i in range(0, len(items_idx), 5):
+                cols = st.columns(5)
+                chunk = items_idx[i:i+5]
+                for j in range(5):
+                    if j < len(chunk):
+                        name, info = chunk[j]
+                        with cols[j]:
+                            st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
+        else:
+            st.warning("⚠️ Gagal menarik data indeks.")
+            
         st.markdown("<br>", unsafe_allow_html=True)
 
+        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
+        if com_data:
+            items_com = list(com_data.items())
+            for i in range(0, len(items_com), 5):
+                cols = st.columns(5)
+                chunk = items_com[i:i+5]
+                for j in range(5):
+                    if j < len(chunk):
+                        name, info = chunk[j]
+                        with cols[j]:
+                            if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
+                            elif info['price'] == 0: price_str = "N/A"
+                            else: price_str = f"${info['price']:,.2f}"
+                            
+                            delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
+                            st.metric(label=name, value=price_str, delta=delta_str)
+        else:
+            st.warning("⚠️ Gagal menarik data komoditas.")
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # --- KORELASI MAKRO EKONOMI ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
+
+        macro_col1, macro_col2 = st.columns(2)
+        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
+
+        with macro_col1:
+            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
+            macro_id = pd.DataFrame({
+                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
+                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
+                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
+            }, index=dates)
+            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        with macro_col2:
+            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
+            macro_us = pd.DataFrame({
+                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
+                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
+                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
+            }, index=dates)
+            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        st.info("💡 **The SIGMA View:** Suku bunga global (The Fed & BI) sudah berada di tren pemangkasan. Namun, perhatikan lonjakan **Inflasi RI** belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.")
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- MARKET INSIGHT ---
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div class="dynamic-card">
+                <h5 style='color:#F5C242; margin-top:0;'>🏗️ Fundamental & The Real Macro</h5>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>📈 GDP & PMI Manufaktur:</b><br>
+                Perekonomian ditopang konsumsi rumah tangga. Angka PMI di atas 50 menandakan ekspansi pabrik.
+                </p>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>⚖️ Cadangan Devisa & Neraca Perdagangan:</b><br>
+                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="dynamic-card">
+                <h5 style='color:#ff5555; margin-top:0;'>🔥 Rotasi & Kurva Imbal Hasil</h5>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>📉 Yield Curve Obligasi RI:</b><br>
+                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
+                </p>
+                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
+                <b>⚠️ Sektor Fokus:</b><br>
+                Jika komoditas memanas, amati Coal & Gold. Jika suku bunga turun, uang institusi mengalir ke Big Banks dan Properti.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<br><br>", unsafe_allow_html=True)
+
+        # --- TRADINGVIEW ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
+        tv_widget = f"""
+        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
+          <div id="tradingview_sigma" style="height:550px;width:100%"></div>
+          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+          <script type="text/javascript">
+          new TradingView.widget(
+          {{
+          "autosize": true,
+          "symbol": "IDX:COMPOSITE",
+          "interval": "D",
+          "timezone": "Asia/Jakarta",
+          "theme": "{tv_theme}", 
+          "style": "1",
+          "locale": "id",
+          "enable_publishing": false,
+          "allow_symbol_change": true,
+          "hide_top_toolbar": false,
+          "hide_side_toolbar": false,
+          "backgroundColor": "{tv_bg}",
+          "gridColor": "{tv_grid}",
+          "save_image": false,
+          "container_id": "tradingview_sigma"
+        }}
+          );
+          </script>
+        </div>
+        """
+        components.html(tv_widget, height=570)
+
+    # ==========================================
+    # TAB 2: INDEX & SECTOR ROTATION (KATEGORI KHUSUS)
+    # ==========================================
+    with tab_rotation:
         # --- MSCI INDEX TRACKER (FULL 29 EMITEN) TAMPIL LANGSUNG ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
         msci_data = {
@@ -3745,46 +3878,8 @@ if current_view == "dashboard":
 
         st.dataframe(df_msci.style.applymap(highlight_msci, subset=['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # --- KORELASI MAKRO EKONOMI ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro: Indonesia vs US</h4>", unsafe_allow_html=True)
-        macro_col1, macro_col2 = st.columns(2)
-        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
-
-        with macro_col1:
-            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
-            macro_id = pd.DataFrame({
-                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
-                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76]
-            }, index=dates)
-            st.line_chart(macro_id, color=["#F5C242", "#4285F4"], height=280)
-
-        with macro_col2:
-            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
-            macro_us = pd.DataFrame({
-                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
-                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40]
-            }, index=dates)
-            st.line_chart(macro_us, color=["#F5C242", "#4285F4"], height=280)
-
-        # --- TRADINGVIEW ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; margin-top:20px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
-        tv_widget = f"""
-        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
-          <div id="tradingview_sigma" style="height:500px;width:100%"></div>
-          <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-          <script type="text/javascript">
-          new TradingView.widget({{ "autosize": true, "symbol": "IDX:COMPOSITE", "interval": "D", "timezone": "Asia/Jakarta", "theme": "{tv_theme}", "style": "1", "locale": "id", "enable_publishing": false, "backgroundColor": "{tv_bg}", "gridColor": "{tv_grid}", "container_id": "tradingview_sigma" }});
-          </script>
-        </div>
-        """
-        components.html(tv_widget, height=520)
-
-    # ==========================================
-    # TAB 2: INDEX & SECTOR ROTATION (KATEGORI KHUSUS)
-    # ==========================================
-    with tab_rotation:
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
         
         col_rot1, col_rot2 = st.columns([1.5, 1])
