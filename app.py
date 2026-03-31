@@ -3841,11 +3841,12 @@ if current_view == "dashboard":
         components.html(tv_widget, height=570)
 
     # ==========================================
-    # TAB 2: INDEX & SECTOR ROTATION (KATEGORI KHUSUS)
+    # TAB 2: INDEX & SECTOR ROTATION
     # ==========================================
     with tab_rotation:
-        # --- MSCI INDEX TRACKER (FULL 29 EMITEN) TAMPIL LANGSUNG ---
+        # --- MSCI INDEX TRACKER (DIPISAH 3 TABEL) ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
+        
         msci_data = {
             "Ticker": [
                 "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN", "TPIA", "DSSA", "BRMS", "GOTO", "ADRO",
@@ -3876,7 +3877,26 @@ if current_view == "dashboard":
             elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
             return ''
 
-        st.dataframe(df_msci.style.applymap(highlight_msci, subset=['Status']), use_container_width=True, hide_index=True)
+        # Tabel 1: Standard Index
+        st.markdown(f"<p style='color:#F5C242; font-size:1.1rem; font-weight:700; margin-bottom:10px;'>1. Master List Indeks MSCI Indonesia (Standard Index)</p>", unsafe_allow_html=True)
+        st.dataframe(
+            df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style.applymap(highlight_msci, subset=['Status']), 
+            use_container_width=True, hide_index=True
+        )
+
+        # Tabel 2: Small Cap
+        st.markdown(f"<p style='color:#F5C242; font-size:1.1rem; font-weight:700; margin-bottom:10px; margin-top:25px;'>2. MSCI Indonesia Small Cap Index (The Mid-Caps)</p>", unsafe_allow_html=True)
+        st.dataframe(
+            df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style.applymap(highlight_msci, subset=['Status']), 
+            use_container_width=True, hide_index=True
+        )
+
+        # Tabel 3: Excluded
+        st.markdown(f"<p style='color:#ff5555; font-size:1.1rem; font-weight:700; margin-bottom:10px; margin-top:25px;'>3. Excluded / Out (Keluar dari Indeks)</p>", unsafe_allow_html=True)
+        st.dataframe(
+            df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_msci, subset=['Status']), 
+            use_container_width=True, hide_index=True
+        )
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
