@@ -3752,8 +3752,13 @@ st.markdown(f"""
 
 section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
 [data-testid="stToolbar"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
-header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
-div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; visibility: hidden !important; }}
+
+/* FIX: MENGHILANGKAN GARIS/GAP PUTIH DI ATAS SECARA TOTAL */
+header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; visibility: hidden !important; border: none !important; background: transparent !important; }}
+div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; visibility: hidden !important; border: none !important; background: transparent !important; }}
+.stApp > header {{ display: none !important; background: transparent !important; border: none !important; }}
+.stAppViewContainer {{ padding-top: 0 !important; margin-top: 0 !important; }}
+
 [data-testid="stMainBlockContainer"] {{ padding-top: 3rem !important; margin-top: 0 !important; }}
 [data-testid="stChatMessageContent"], [data-testid="stMarkdownContainer"] {{ text-align: left !important; }}
 /* MEMASTIKAN LIST POINT RAPI DAN TIDAK BERTUMPUK */
