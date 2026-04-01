@@ -1130,24 +1130,25 @@ def login_user(username, password):
         return {"email": acc[username]["email"], "name": acc[username]["display_name"], "picture": ""}
     return None
 
+
 # =========================================================
 # THEME COLORS
 # =========================================================
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#212121" if dark else "#f0f0f0",
-        "sidebar_bg":   "#171717" if dark else "#e3e3e3",
-        "text":         "#ececec" if dark else "#0d0d0d",
-        "text_muted":   "#8e8ea0" if dark else "#6e6e80",
-        "border":       "#2f2f2f" if dark else "#d0d0d0",
-        "hover":        "#2f2f2f" if dark else "#d0d0d0",
-        "input_bg":     "#2f2f2f" if dark else "#ffffff",
+        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap (mirip background menu)
+        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk membedakan sidebar
+        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan (cool white) agar lebih tajam
+        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
+        "border":       "#132545" if dark else "#d0d0d0",       # Border dengan highlight biru navy
+        "hover":        "#0d1c36" if dark else "#d0d0d0",       # Efek hover kebiruan
+        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat warna deep blue
         "bubble":       "#1B2A4A",
         "bubble_text":  "#ffffff",
-        "divider":      "#2f2f2f" if dark else "#d0d0d0",
+        "divider":      "#132545" if dark else "#d0d0d0",       # Garis pemisah biru navy
         "gold":         "#F5C242",
-        "active_bg":    "#2f2f2f" if dark else "#c8c8c8",
+        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
     }
 
 # =========================================================
