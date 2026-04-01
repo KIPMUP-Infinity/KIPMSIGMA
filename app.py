@@ -3995,7 +3995,7 @@ if st.session_state.user is None:
 
 
 # ─────────────────────────────────────────────
-# PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
+# PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, AI INSIGHT)
 # ─────────────────────────────────────────────
 
 # --- OBAT ANTI AMNESIA ---
@@ -4017,6 +4017,7 @@ if current_view == "dashboard":
         import yfinance as yf
         import pandas as pd
         import streamlit.components.v1 as components
+        import plotly.graph_objects as go
     except ImportError:
         st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
         st.stop()
@@ -4053,13 +4054,11 @@ if current_view == "dashboard":
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
     
-    /* CSS AGRESIF MENGHILANGKAN TOMBOL 3 TITIK DI TABEL (GLIDE DATA GRID) */
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"] {{ display: none !important; opacity: 0 !important; pointer-events: none !important; }}
     [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display: none !important; }}
     [data-testid="stDataFrame"] .gdg-header-action {{ display: none !important; }}
     [data-testid="stDataFrame"] div[class*="header"] svg {{ display: none !important; }}
     [data-testid="stDataFrame"] div[role="button"] {{ pointer-events: none !important; }}
-    /* Mengamankan agar tabel tetap bisa diklik untuk sorting tanpa memunculkan menu */
     [data-testid="stDataFrame"] div[role="columnheader"] {{ cursor: pointer !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -4068,17 +4067,16 @@ if current_view == "dashboard":
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider' style='margin-top:0;'>", unsafe_allow_html=True)
     
-    # KATEGORI TAB (5 TABS)
-    tab_macro, tab_rotation, tab_conglo, tab_heatmap, tab_news = st.tabs([
-        "🌍 Global & Macro", 
+    # KATEGORI TAB (4 TABS)
+    tab_macro, tab_rotation, tab_conglo, tab_ai = st.tabs([
+        "🌍 Global, Macro & News", 
         "🔄 Index & Sector Rotation", 
         "👑 Conglomerate Map",
-        "🗺️ Sector Heatmap", 
-        "📰 Live News Feed"
+        "🤖 AI Stock Insight"
     ])
 
     # ==========================================
-    # TAB 1: GLOBAL & MACRO
+    # TAB 1: GLOBAL, MACRO & NEWS
     # ==========================================
     with tab_macro:
         st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
@@ -4158,7 +4156,7 @@ if current_view == "dashboard":
 
         # --- KORELASI MAKRO EKONOMI ---
         st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir (Update: Data Asli Maret 2026)</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
 
         macro_col1, macro_col2 = st.columns(2)
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
@@ -4181,7 +4179,7 @@ if current_view == "dashboard":
             }, index=dates)
             st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
-        st.info("💡 **The SIGMA View:** Suku bunga global (The Fed & BI) sudah berada di tren pemangkasan. Namun, perhatikan lonjakan **Inflasi RI** belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.")
+        st.info("💡 **The SIGMA View:** Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan **Inflasi RI** belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.")
         st.markdown("<br>", unsafe_allow_html=True)
 
         # --- MARKET INSIGHT ---
@@ -4218,7 +4216,7 @@ if current_view == "dashboard":
 
         st.markdown("<br><br>", unsafe_allow_html=True)
 
-        # --- TRADINGVIEW ---
+        # --- TRADINGVIEW WIDGET ---
         st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>📈 Interactive Chart (TradingView)</h4>", unsafe_allow_html=True)
         tv_widget = f"""
         <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
@@ -4249,18 +4247,32 @@ if current_view == "dashboard":
         """
         components.html(tv_widget, height=570)
 
+        # --- BERITA PINDAHAN (LIVE NEWS FEED) DI BAWAH TRADINGVIEW ---
+        st.markdown("<hr class='fancy-divider' style='margin-top:40px; margin-bottom:20px;'>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Berita ekonomi dan pergerakan pasar saham global maupun domestik terkini.</p>", unsafe_allow_html=True)
+        
+        news_theme = "dark" if is_dark else "light"
+        news_widget = f"""
+        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
+          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+          {{ "feedMode": "all_symbols", "isTransparent": false, "displayMode": "regular", "width": "100%", "height": 600, "colorTheme": "{news_theme}", "locale": "id" }}
+          </script>
+        </div>
+        """
+        components.html(news_widget, height=620)
+
     # ==========================================
-    # TAB 2: INDEX & SECTOR ROTATION (TOP DOWN ANALYSIS)
+    # TAB 2: INDEX & SECTOR ROTATION
     # ==========================================
     with tab_rotation:
-        # Fungsi styling umum untuk semua tabel indeks
         def highlight_status(val):
             if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
             elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
             elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
             return ''
 
-        # --- 1. SECTOR ROTATION (RRG) - PALING ATAS ---
+        # --- 1. SECTOR ROTATION (RRG) ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
         
         col_rot1, col_rot2 = st.columns([1.5, 1])
@@ -4278,8 +4290,7 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 2. MSCI INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Pengumuman ~13 Mei 2026 | Efektif <b>1 Juni 2026</b></p>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker</h4>", unsafe_allow_html=True)
         
         msci_data = {
             "Ticker": [
@@ -4318,7 +4329,6 @@ if current_view == "dashboard":
 
         # --- 3. FTSE INDEX TRACKER ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇬🇧 FTSE Global Equity Index (Indonesia)</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Pengumuman ~5 Juni 2026 | Efektif <b>22 Juni 2026</b></p>", unsafe_allow_html=True)
         
         ftse_data = {
             "Ticker": [
@@ -4357,8 +4367,7 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 4. LQ45 INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇮🇩 Indeks LQ45 (Periode Feb - Jul 2026)</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Evaluasi Berikutnya:</b> Minor: April 2026 | Mayor: <b>Juli 2026 (Efektif 1 Agustus 2026)</b></p>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇮🇩 Indeks LQ45</h4>", unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
@@ -4384,20 +4393,19 @@ if current_view == "dashboard":
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. Daftar Aktif & Pendatang Baru (Top Movers)</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. Daftar Aktif & Pendatang Baru</p>", unsafe_allow_html=True)
         st.dataframe(df_lq45[df_lq45['Kategori'].isin(['Active', 'New Entry'])].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45 (Potensi Outflow Reksadana)</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45</p>", unsafe_allow_html=True)
         st.dataframe(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
     # ==========================================
-    # TAB 3: CONGLOMERATE MAP (PETA KONGLOMERASI)
+    # TAB 3: CONGLOMERATE MAP
     # ==========================================
     with tab_conglo:
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>👑 Peta Saham Konglomerasi Indonesia</h4>", unsafe_allow_html=True)
         st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG.</p>", unsafe_allow_html=True)
         
-        # Data Base Konglomerasi Terlengkap
         conglo_data = [
             {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
             {"Grup": "Barito (Prajogo P.)", "Ticker": "TPIA", "Nama": "Chandra Asri Pacific", "Fokus Bisnis": "Petrokimia"},
@@ -4452,7 +4460,6 @@ if current_view == "dashboard":
         ]
         df_conglo = pd.DataFrame(conglo_data)
         
-        # Fitur Filter Dropdown agar user gampang mencari
         grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
         selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list)
         
@@ -4463,13 +4470,12 @@ if current_view == "dashboard":
             
         st.dataframe(df_display, use_container_width=True, hide_index=True)
         
-        # Kartu Insight Keren di Bawah Tabel
         st.markdown(f"""
         <div class="dynamic-card" style="margin-top: 15px;">
             <h5 style='color:#F5C242; margin-top:0;'>💡 SIGMA Insight: The Power of Conglomerates</h5>
             <p style='color:{text_main}; font-size: 0.92rem; line-height: 1.6;'>
-            Di IHSG, sentimen yang terjadi pada <i>holding company</i> (induk perusahaan) seringkali menjalar dengan cepat ke anak-anak usahanya. Misalnya, saat sentimen energi hijau menguat pada BREN, saham BRPT, TPIA, dan CDIA sering ikut terkerek naik karena mereka berada di gerbong konglomerasi yang sama.<br><br>
-            <b>Tips Trading:</b> Pantau <i>Leader</i> (penggerak utama) dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i> dengan akumulasi bandar masif, saham <i>Laggard</i> (anak usaha yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang sangat profitabel!
+            Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.<br><br>
+            <b>Tips Trading:</b> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -4477,26 +4483,112 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     # ==========================================
-    # TAB 4: SECTOR HEATMAP
+    # TAB 4: AI STOCK INSIGHT (NEW DASHBOARD)
     # ==========================================
-    with tab_heatmap:
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px;'>🗺️ Sector Heatmap</h4>", unsafe_allow_html=True)
-        st.info("💡 **Kategori Heatmap** sedang dalam tahap penyesuaian API. Fitur ini nantinya akan menampilkan peta panas (Heatmap) pergerakan seluruh sektor dan saham di IHSG secara real-time.")
+    with tab_ai:
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🤖 SIGMA AI - Technical & Fundamental Insight</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Analisis instan menggunakan mesin AI SIGMA dan data Live IDX.</p>", unsafe_allow_html=True)
 
-    # ==========================================
-    # TAB 5: LIVE NEWS FEED
-    # ==========================================
-    with tab_news:
-        st.markdown(f"<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
-        news_theme = "dark" if is_dark else "light"
-        news_widget = f"""
-        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-          {{ "feedMode": "all_symbols", "isTransparent": false, "displayMode": "regular", "width": "100%", "height": 600, "colorTheme": "{news_theme}", "locale": "id" }}
-          </script>
-        </div>
-        """
-        components.html(news_widget, height=620)
+        # Control Panel
+        col_input, col_btn, col_empty = st.columns([2, 1, 3])
+        with col_input:
+            ticker_input = st.text_input("Kode Saham (Contoh: BBCA):", "BBCA").upper()
+        with col_btn:
+            st.markdown("<br>", unsafe_allow_html=True) 
+            run_analysis = st.button("🚀 Analyze with SIGMA", use_container_width=True)
+
+        st.markdown("<hr class='fancy-divider' style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
+
+        if ticker_input:
+            # Layout Utama (2 Kolom: Kiri Chart, Kanan AI)
+            col_chart, col_ai = st.columns([2.5, 1.5])
+
+            with col_chart:
+                st.markdown(f"<h5 style='color:{text_main};'>📈 Price Action: {ticker_input}</h5>", unsafe_allow_html=True)
+                with st.spinner("Memuat grafik..."):
+                    try:
+                        # Ambil data chart pakai yfinance
+                        df_chart = yf.download(f"{ticker_input}.JK", period="6mo", interval="1d", progress=False)
+                        
+                        if not df_chart.empty:
+                            fig = go.Figure(data=[go.Candlestick(
+                                x=df_chart.index,
+                                open=df_chart['Open'], high=df_chart['High'],
+                                low=df_chart['Low'], close=df_chart['Close'],
+                                name="Price"
+                            )])
+                            fig.update_layout(
+                                template="plotly_dark" if is_dark else "plotly_white",
+                                margin=dict(l=0, r=0, t=10, b=0),
+                                height=450,
+                                paper_bgcolor="rgba(0,0,0,0)",
+                                plot_bgcolor="rgba(0,0,0,0)"
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI.")
+                    except Exception as e:
+                        st.error(f"Gagal memuat grafik: {e}")
+
+            with col_ai:
+                st.markdown(f"<h5 style='color:{text_main};'>🧠 Executive Summary</h5>", unsafe_allow_html=True)
+                
+                if run_analysis:
+                    with st.spinner("SIGMA sedang mengumpulkan data dan menganalisis..."):
+                        try:
+                            # 1. Tarik Data Fundamental
+                            fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
+                            
+                            # 2. Tarik Harga Terakhir
+                            live_price = "N/A"
+                            if not df_chart.empty:
+                                live_price = f"Rp {df_chart['Close'].iloc[-1].item() if hasattr(df_chart['Close'].iloc[-1], 'item') else df_chart['Close'].iloc[-1]:,.0f}"
+
+                            # 3. Prompt Khusus
+                            dashboard_prompt = f"""
+                            Sebagai SIGMA AI, berikan Executive Summary SINGKAT untuk saham {ticker_input}.
+                            Harga Terakhir: {live_price}
+                            
+                            Data Fundamental & Evaluasi:
+                            {fund_context}
+                            
+                            Berikan output dalam format persis seperti ini (gunakan emoji, langsung to the point, jangan bertele-tele):
+                            
+                            🎯 **VERDICT:** [BULLISH / BEARISH / WAIT & SEE]
+                            
+                            🏢 **Kondisi Bisnis & Valuasi:**
+                            (Tulis 2-3 kalimat tajam tentang posisi PE, PBV, ROE, dan tren keuangannya. Apakah murah atau mahal?)
+                            
+                            📊 **Teknikal & Momentum:**
+                            (Tulis 2 kalimat tentang posisinya saat ini berdasarkan chart 6 bulan terakhir).
+                            
+                            💡 **Action Plan:**
+                            (Tulis saran konkrit: Area Buy, Hold, atau Hindari beserta rentang harga singkat).
+                            """
+
+                            # 4. Tembak ke LLM
+                            try:
+                                ai_result, _ = _call_groq_primary(dashboard_prompt)
+                            except:
+                                ai_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+
+                            # 5. Tampilkan Hasilnya
+                            st.markdown(f"""
+                            <div class="dynamic-card" style="padding: 15px; margin-top: 10px; border-left: 4px solid #F5C242;">
+                                {ai_result}
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                        except Exception as e:
+                            st.error(f"Gagal memproses analisa AI: {e}")
+                else:
+                    # Tampilan default sebelum tombol ditekan
+                    st.markdown(f"""
+                    <div class="dynamic-card" style="padding: 20px; text-align: center; margin-top: 10px;">
+                        <span style="font-size: 3rem;">🤖</span>
+                        <p style="color:{text_sub}; margin-top: 10px;">Klik <b>Analyze with SIGMA</b> untuk memproses data teknikal dan fundamental {ticker_input} secara otomatis.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
 
 
 
