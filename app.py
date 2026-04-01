@@ -2862,7 +2862,28 @@ function selectTerminal() {{
 </html>
     """, height=1150, scrolling=False)
 
-# ── FIX APPLE SAFARI: Menangkap sinyal dari URL Parameter ──
+# ── JALUR ANDROID / WINDOWS: Tombol Streamlit Tersembunyi ──
+    col1, col2 = st.columns(2)
+    with col1:
+        btn_chat = st.button("chat", key="btn_sys_chat", use_container_width=True)
+    with col2:
+        btn_terminal = st.button("terminal", key="btn_sys_terminal", use_container_width=True)
+
+    if btn_chat:
+        st.session_state.selected_system = "chat"
+        st.session_state.current_view = "chat"
+        st.rerun()
+
+    if btn_terminal:
+        _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
+        if _turl:
+            st.session_state.selected_system = "terminal"
+        else:
+            st.session_state.selected_system = "terminal_local"
+            st.session_state.current_view = "dashboard"
+        st.rerun()
+
+    # ── JALUR APPLE SAFARI: Menangkap sinyal dari URL Parameter ──
     if "action" in st.query_params:
         _action = st.query_params.get("action")
         try: st.query_params.pop("action", None)
