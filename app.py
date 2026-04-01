@@ -2442,13 +2442,16 @@ hr {{ border-color: {C['border']} !important; }}
     .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
     .sys-subtitle {{ font-size: 0.75rem; }}
     .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
+    
     .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
     .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
+    
     .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
     .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
     .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
     .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
     .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
+    
     .card-features {{ margin-bottom: 20px; }}
     .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
     .card-cta {{ padding: 12px; font-size: 0.85rem; }}
@@ -2719,28 +2722,28 @@ body {{ background: #080c14; }}
 
 .sys-footer {{ margin-top:48px; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
 
-@media (max-width:768px) {
-    .sys-wrapper { padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }
-    .sys-header { margin-bottom: 24px; }
-    .sys-welcome { font-size: 0.65rem; margin-bottom: 4px; }
-    .sys-title { font-size: 1.8rem; margin-bottom: 4px; }
-    .sys-subtitle { font-size: 0.75rem; }
-    .sys-divider { margin-top: 10px; margin-bottom: 0; }
+@media (max-width:768px) {{
+    .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
+    .sys-header {{ margin-bottom: 24px; }}
+    .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
+    .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
+    .sys-subtitle {{ font-size: 0.75rem; }}
+    .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
     
-    .sys-cards { gap: 14px; flex-direction: column; align-items: center; width: 100%; }
-    .sys-card { width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }
+    .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
+    .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
     
-    .card-icon { width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }
-    .card-badge { top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }
-    .card-name { font-size: 1.2rem; margin-bottom: 4px; }
-    .card-tagline { font-size: 0.65rem; margin-bottom: 12px; }
-    .card-desc { font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }
+    .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
+    .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
+    .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
+    .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
+    .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
     
-    .card-features { margin-bottom: 20px; }
-    .card-features li { font-size: 0.75rem; padding: 5px 0; gap: 6px; }
-    .card-cta { padding: 12px; font-size: 0.85rem; }
-    .sys-footer { margin-top: 32px; font-size: 0.65rem; }
-}
+    .card-features {{ margin-bottom: 20px; }}
+    .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
+    .card-cta {{ padding: 12px; font-size: 0.85rem; }}
+    .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
+}}
 }}
 }}
 </style>
