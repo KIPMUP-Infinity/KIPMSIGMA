@@ -2626,7 +2626,7 @@ body {{ background: #080c14; }}
 .sys-wrapper {{
     min-height: 100vh; background: #080c14;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 40px 20px; position: relative; overflow: hidden;
+    padding: 40px 20px; position: relative; overflow-x: hidden; overflow-y: auto;
 }}
 .sys-wrapper::before {{
     content: ''; position: absolute; inset: 0;
@@ -2715,10 +2715,12 @@ body {{ background: #080c14; }}
 .sys-footer {{ margin-top:48px; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
 
 @media (max-width:720px) {{
+    .sys-wrapper {{ justify-content: flex-start; padding-top: 50px; padding-bottom: 80px; }}
     .sys-title {{ font-size:2rem; }}
     .sys-cards {{ gap:16px; }}
     .sys-card {{ min-width:260px; padding:28px 20px 22px; }}
     .sys-header {{ margin-bottom:32px; }}
+}}
 }}
 </style>
 </head>
@@ -2810,7 +2812,7 @@ function selectTerminal() {{
 </script>
 </body>
 </html>
-    """, height=700, scrolling=False)
+    """, height=850, scrolling=true)
 
     # ── Hidden Streamlit buttons — di-trigger oleh JS di atas ──
     col1, col2 = st.columns(2)
