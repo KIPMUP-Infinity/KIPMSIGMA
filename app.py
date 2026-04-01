@@ -2340,6 +2340,7 @@ ALLOWED_EMAILS = [
     "ayuningtyaskinanti678@gmail.com",
     "tofanhabibi84@gmail.com",
     "ismailjamil212@gmail.com",
+    "chandralie594@gmail.com",
     "baimdaniel020@gmail.com",
     "hotmantugas@gmail.com",
     "fabianalaziz.9e@gmail.com"
