@@ -4056,7 +4056,6 @@ if current_view == "dashboard":
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
     
-    /* CSS AGRESIF MENGHILANGKAN TOMBOL 3 TITIK DI TABEL (GLIDE DATA GRID) */
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"] {{ display: none !important; opacity: 0 !important; pointer-events: none !important; }}
     [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display: none !important; }}
     [data-testid="stDataFrame"] .gdg-header-action {{ display: none !important; }}
@@ -4240,11 +4239,17 @@ if current_view == "dashboard":
     # TAB 2: INDEX & SECTOR ROTATION
     # ==========================================
     with tab_rotation:
+        # FUNGSI SAFE STYLER ANTI-CRASH
         def highlight_status(val):
             if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
             elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
             elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
             return ''
+            
+        def safe_style(df_style, func, subset):
+            if hasattr(df_style, 'map'):
+                return df_style.map(func, subset=subset)
+            return df_style.applymap(func, subset=subset)
 
         # --- 1. SECTOR ROTATION (RRG) ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
@@ -4265,40 +4270,43 @@ if current_view == "dashboard":
 
         # --- 2. MSCI INDEX TRACKER ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Pengumuman ~13 Mei 2026 | Efektif <b>1 Juni 2026</b></p>", unsafe_allow_html=True)
         
         msci_data = {
             "Ticker": [
-                "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN", "TPIA", "DSSA", "BRMS", "GOTO", "ADRO",
-                "PTRO", "RAJA", "BRPT", "INDF", "BUMI", "ANTM", "MBMA", "AVIA", "ARTO", "MYOR", "BSDE", "CTRA",
-                "CUAN", "ACES", "CLEO", "RATU"
+                "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", 
+                "ICBP", "INDF", "INKP", "INTP", "ISAT", "KLBF", "MDKA", "TPIA", "TLKM", "TOWR", 
+                "UNTR", "UNVR",
+                "ADRO", "BRMS", "BSDE", "CTRA", "MBMA", "MYOR", "PTRO", "RAJA", "ACES", "CLEO"
             ],
             "Kategori": [
-                "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
-                "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap",
-                "Excluded", "Excluded", "Excluded", "Excluded"
+                "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
+                "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
+                "Standard", "Standard",
+                "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Excluded", "Excluded"
             ],
             "Status": [
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing", "Existing", "Existing",
-                "NEW ENTRY", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                "OUT (Feb '26)", "OUT (Feb '26)", "OUT (Feb '26)", "Not Listed"
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing",
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                "Existing", "Existing",
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "NEW ENTRY", "Existing", "OUT", "OUT"
             ],
             "Sektor": [
-                "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy", "Materials", "Energy", "Materials", "Technology", "Energy",
-                "Infrastructure", "Energy", "Materials", "Consumer", "Energy", "Materials", "Materials", "Materials", "Finance", "Consumer", "Property", "Property",
-                "Energy", "Retail", "Consumer", "Energy"
+                "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology",
+                "Consumer", "Consumer", "Materials", "Materials", "Infrastructures", "Healthcare", "Materials", "Materials", "Infrastructures", "Infrastructures",
+                "Industrials", "Consumer",
+                "Energy", "Materials", "Properties", "Properties", "Materials", "Consumer", "Infrastructures", "Energy", "Retail", "Consumer"
             ]
         }
         df_msci = pd.DataFrame(msci_data)
         
         st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. MSCI Standard Index (The Giants)</p>", unsafe_allow_html=True)
-        st.dataframe(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. MSCI Small Cap Index (The Mid-Caps)</p>", unsafe_allow_html=True)
-        st.dataframe(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>3. Excluded / Out (Keluar dari Indeks)</p>", unsafe_allow_html=True)
-        st.dataframe(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -4307,72 +4315,80 @@ if current_view == "dashboard":
         
         ftse_data = {
             "Ticker": [
-                "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN",
-                "ADRO", "BRPT", "MDKA", "PGAS",
-                "PTRO", "CUAN", "VKTR", "RAJA",
-                "GOTO"
+                "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", "ICBP", "INDF", "KLBF", "MDKA", "TLKM", "UNTR",
+                "ADRO", "AKRA", "BRIS", "INKP", "PGAS",
+                "PTRO", "CUAN", "VKTR", "RAJA"
             ],
             "Kategori": [
-                "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap",
-                "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap",
-                "Small Cap", "Small Cap", "Small Cap", "Small Cap",
-                "Micro Cap"
+                "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap",
+                "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap",
+                "Small Cap", "Small Cap", "Small Cap", "Small Cap"
             ],
             "Status": [
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                "Existing", "Existing", "Existing", "Existing",
-                "NEW ENTRY", "NEW ENTRY", "Existing", "Existing",
-                "DOWNGRADED"
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                "Existing", "Existing", "Existing", "Existing", "Existing",
+                "NEW ENTRY", "NEW ENTRY", "Existing", "Existing"
             ],
             "Sektor": [
-                "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy",
-                "Energy", "Materials", "Materials", "Energy",
-                "Infrastructure", "Energy", "Industrials", "Energy",
-                "Technology"
+                "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology", "Consumer", "Consumer", "Healthcare", "Materials", "Infrastructures", "Industrials",
+                "Energy", "Energy", "Finance", "Materials", "Energy",
+                "Infrastructures", "Energy", "Industrials", "Energy"
             ]
         }
         df_ftse = pd.DataFrame(ftse_data)
 
         st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. FTSE Large & Mid Cap</p>", unsafe_allow_html=True)
-        st.dataframe(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. FTSE Small & Micro Cap</p>", unsafe_allow_html=True)
-        st.dataframe(df_ftse[df_ftse['Kategori'].isin(['Small Cap', 'Micro Cap'])].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. FTSE Small Cap</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # --- 4. LQ45 INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇮🇩 Indeks LQ45</h4>", unsafe_allow_html=True)
+        # --- 4. LQ45 INDEX TRACKER (FIX 45 SAHAM) ---
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇮🇩 Indeks LQ45 (Tepat 45 Saham Aktif)</h4>", unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
-                "BBCA", "BBRI", "BMRI", "BBNI", "TLKM", "ASII", "AMMN", "BREN", "ADRO", "BRPT", "GOTO", "MDKA", "PGAS",
-                "PTRO", "MBMA", "VKTR",
+                "ACES", "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI", 
+                "BBRI", "BBTN", "BFIN", "BMRI", "BRIS", "BRPT", "BUKA", "CPIN", "CTRA", "ESSA", 
+                "EXCL", "GOTO", "HRUM", "ICBP", "INCO", "INDF", "INKP", "INTP", "ISAT", "ITMG", 
+                "KLBF", "MAPI", "MBMA", "MDKA", "MEDC", "MTEL", "PGAS", "PGEO", "PTBA", "PTPP", 
+                "SIDO", "SMGR", "TLKM", "TOWR", "UNTR",
                 "EMTK", "SCMA", "SRTG"
             ],
             "Kategori": [
-                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active",
-                "New Entry", "New Entry", "New Entry",
+                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                "Active", "Active", "Active", "Active", "Active",
                 "Excluded", "Excluded", "Excluded"
             ],
             "Status": [
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                "NEW ENTRY", "NEW ENTRY", "NEW ENTRY",
-                "OUT (Feb '26)", "OUT (Feb '26)", "OUT (Feb '26)"
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                "Existing", "Existing", "Existing", "Existing", "Existing",
+                "OUT", "OUT", "OUT"
             ],
             "Sektor": [
-                "Finance", "Finance", "Finance", "Finance", "Infrastructure", "Industrials", "Materials", "Energy", "Energy", "Materials", "Technology", "Materials", "Energy",
-                "Infrastructure", "Materials", "Industrials",
+                "Cyclical", "Energy", "Energy", "Materials", "Consumer", "Materials", "Finance", "Industrials", "Finance", "Finance",
+                "Finance", "Finance", "Finance", "Finance", "Finance", "Materials", "Technology", "Consumer", "Properties", "Materials",
+                "Infrastructures", "Technology", "Energy", "Consumer", "Materials", "Consumer", "Materials", "Materials", "Infrastructures", "Energy",
+                "Healthcare", "Cyclical", "Materials", "Materials", "Energy", "Infrastructures", "Energy", "Energy", "Energy", "Infrastructures",
+                "Healthcare", "Materials", "Infrastructures", "Infrastructures", "Industrials",
                 "Technology", "Consumer", "Financials"
             ]
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. Daftar Aktif & Pendatang Baru</p>", unsafe_allow_html=True)
-        st.dataframe(df_lq45[df_lq45['Kategori'].isin(['Active', 'New Entry'])].drop(columns=['Kategori']).style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45</p>", unsafe_allow_html=True)
-        st.dataframe(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
     # ==========================================
     # TAB 3: CONGLOMERATE MAP
@@ -4478,13 +4494,10 @@ if current_view == "dashboard":
             ai_data = None
             ai_text_verdict = ""
             
-            # 1. Fetch data chart dengan aman (handle error multi-index yfinance terbaru)
+            # 1. Fetch data chart dengan cara PALING AMAN (anti multi-index error)
             try:
-                df_raw = yf.download(f"{ticker_input}.JK", period="6mo", interval="1d", progress=False)
-                if not df_raw.empty:
-                    if isinstance(df_raw.columns, pd.MultiIndex):
-                        df_raw.columns = df_raw.columns.get_level_values(0)
-                    df_chart = df_raw
+                t = yf.Ticker(f"{ticker_input}.JK")
+                df_chart = t.history(period="6mo")
             except:
                 pass
 
@@ -4534,7 +4547,7 @@ if current_view == "dashboard":
                             try:
                                 ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
                             except Exception as e_gem:
-                                ai_raw_result = f"Gagal API: {e_gem}"
+                                ai_raw_result = f"Gagal memanggil AI: {e_gem}"
 
                         # Ekstrak data JSON dari teks jawaban AI
                         try:
@@ -4609,7 +4622,7 @@ if current_view == "dashboard":
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
             else:
-                st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI.")
+                st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
             # 4. Tampilkan Verdict Text AI di bawah Chart
             if run_analysis and ai_text_verdict:
@@ -4626,6 +4639,7 @@ if current_view == "dashboard":
                     <p style="color:{text_sub}; margin-top: 10px;">Klik <b>Analyze with SIGMA</b> untuk memproses data teknikal dan fundamental, lalu menggambar Trading Plan otomatis di atas Chart.</p>
                 </div>
                 """, unsafe_allow_html=True)
+
 
 
 
