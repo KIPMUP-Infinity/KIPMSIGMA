@@ -3903,7 +3903,7 @@ if st.session_state.user is None:
         # FIX APPLE LOOP: Jika ada token di URL tapi gagal login (server amnesia), HANCURKAN token lama!
         components.html("<script>try { localStorage.removeItem('sigma_token'); } catch(e) {}</script>", height=0)
         try: st.query_params.pop("sigma_token", None)
-        except: passtion.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
+        except: pass
 
 
 
