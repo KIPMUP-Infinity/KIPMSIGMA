@@ -2333,8 +2333,8 @@ def handle_oauth(code):
 
 # ─── DAFTAR EMAIL YANG DIIZINKAN (WHITELIST) ───
 ALLOWED_EMAILS = [
-    "emailkamu@gmail.com",
-    "teman1@gmail.com",
+    "alfantirta@gmail.com",
+    "kipmuniversitaspancasila@gmail.com",
     "dosen@univpancasila.ac.id"
 ] # Silakan isi dengan daftar email yang boleh masuk
 
