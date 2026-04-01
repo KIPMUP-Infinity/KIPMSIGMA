@@ -2634,7 +2634,7 @@ body {{ background: #080c14; }}
 .sys-wrapper {{
     min-height: 100vh; background: #080c14;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 40px 20px; position: relative; overflow-x: hidden; overflow-y: auto;
+    padding: 40px 20px; position: relative; overflow: hidden;
 }}
 .sys-wrapper::before {{
     content: ''; position: absolute; inset: 0;
@@ -2836,7 +2836,7 @@ function selectTerminal() {{
 </script>
 </body>
 </html>
-    """, height=1000, scrolling=True)
+    """, height=1150, scrolling=False)
 
     # ── Hidden Streamlit buttons — di-trigger oleh JS di atas ──
     col1, col2 = st.columns(2)
