@@ -4069,7 +4069,7 @@ if current_view == "dashboard":
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider' style='margin-top:0;'>", unsafe_allow_html=True)
     
-    # KATEGORI TAB (4 TABS - SESUAI REQUEST)
+    # KATEGORI TAB (4 TABS)
     tab_macro, tab_rotation, tab_conglo, tab_ai = st.tabs([
         "🌍 Global, Macro & News", 
         "🔄 Index & Sector Rotation", 
@@ -4250,10 +4250,12 @@ if current_view == "dashboard":
         components.html(tv_widget, height=570)
 
         # ---------------------------------------------------------
-        # LIVE NEWS FEED (PINDAHAN SESUAI REQUEST)
+        # LIVE NEWS FEED
         # ---------------------------------------------------------
         st.markdown("<hr class='fancy-divider' style='margin-top:40px; margin-bottom:20px;'>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Berita ekonomi dan pergerakan pasar saham global maupun domestik terkini.</p>", unsafe_allow_html=True)
+        
         news_theme = "dark" if is_dark else "light"
         news_widget = f"""
         <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
@@ -4268,14 +4270,13 @@ if current_view == "dashboard":
     # TAB 2: INDEX & SECTOR ROTATION
     # ==========================================
     with tab_rotation:
-        # Fungsi styling umum untuk semua tabel indeks
         def highlight_status(val):
             if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
             elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
             elif 'OUT' in str(val): return 'background-color: rgba(231, 76, 60, 0.2); color: #e74c3c;'
             return ''
 
-        # --- 1. SECTOR ROTATION (RRG) - PALING ATAS ---
+        # --- 1. SECTOR ROTATION (RRG) ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
         
         col_rot1, col_rot2 = st.columns([1.5, 1])
@@ -4293,7 +4294,7 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 2. MSCI INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker (Update Mar 2026)</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker</h4>", unsafe_allow_html=True)
         st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Pengumuman ~13 Mei 2026 | Efektif <b>1 Juni 2026</b></p>", unsafe_allow_html=True)
         
         msci_data = {
@@ -4320,7 +4321,6 @@ if current_view == "dashboard":
         }
         df_msci = pd.DataFrame(msci_data)
         
-        # PERBAIKAN: .style.applymap diganti menjadi .style.map untuk mencegah AttributeError
         st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. MSCI Standard Index (The Giants)</p>", unsafe_allow_html=True)
         st.dataframe(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
@@ -4364,7 +4364,6 @@ if current_view == "dashboard":
         }
         df_ftse = pd.DataFrame(ftse_data)
 
-        # PERBAIKAN: .style.applymap diganti menjadi .style.map
         st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. FTSE Large & Mid Cap</p>", unsafe_allow_html=True)
         st.dataframe(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
@@ -4401,7 +4400,6 @@ if current_view == "dashboard":
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        # PERBAIKAN: .style.applymap diganti menjadi .style.map
         st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. Daftar Aktif & Pendatang Baru (Top Movers)</p>", unsafe_allow_html=True)
         st.dataframe(df_lq45[df_lq45['Kategori'].isin(['Active', 'New Entry'])].drop(columns=['Kategori']).style.map(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
@@ -4483,8 +4481,8 @@ if current_view == "dashboard":
         <div class="dynamic-card" style="margin-top: 15px;">
             <h5 style='color:#F5C242; margin-top:0;'>💡 SIGMA Insight: The Power of Conglomerates</h5>
             <p style='color:{text_main}; font-size: 0.92rem; line-height: 1.6;'>
-            Di IHSG, sentimen yang terjadi pada <i>holding company</i> (induk perusahaan) seringkali menjalar dengan cepat ke anak-anak usahanya. Misalnya, saat sentimen energi hijau menguat pada BREN, saham BRPT, TPIA, dan CDIA sering ikut terkerek naik karena mereka berada di gerbong konglomerasi yang sama.<br><br>
-            <b>Tips Trading:</b> Pantau <i>Leader</i> (penggerak utama) dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i> dengan akumulasi bandar masif, saham <i>Laggard</i> (anak usaha yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang sangat profitabel!
+            Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.<br><br>
+            <b>Tips Trading:</b> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -4492,7 +4490,7 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     # ==========================================
-    # TAB 4: AI STOCK INSIGHT (DASHBOARD BARU)
+    # TAB 4: AI STOCK INSIGHT (DASHBOARD BARU TATA LETAK ATAS BAWAH)
     # ==========================================
     with tab_ai:
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🤖 SIGMA AI - Technical & Fundamental Insight</h4>", unsafe_allow_html=True)
@@ -4503,100 +4501,101 @@ if current_view == "dashboard":
         with col_input:
             ticker_input = st.text_input("Kode Saham (Contoh: BBCA):", "BBCA").upper()
         with col_btn:
-            st.markdown("<br>", unsafe_allow_html=True) # Spacer biar sejajar
+            st.markdown("<br>", unsafe_allow_html=True) 
             run_analysis = st.button("🚀 Analyze with SIGMA", use_container_width=True)
 
         st.markdown("<hr class='fancy-divider' style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
 
         if ticker_input:
-            # Layout Utama (2 Kolom: Kiri Chart, Kanan AI)
-            col_chart, col_ai = st.columns([2.5, 1.5])
+            # 1. TAMPILKAN CHART TRADINGVIEW DI ATAS
+            st.markdown(f"<h5 style='color:{text_main}; margin-bottom: 10px;'>📈 Interactive Chart: {ticker_input}</h5>", unsafe_allow_html=True)
+            
+            # TradingView Widget untuk emiten spesifik
+            tv_symbol = f"IDX:{ticker_input}"
+            tv_widget_ai = f"""
+            <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border}; margin-bottom: 20px;">
+              <div id="tv_ai_{ticker_input}" style="height:550px;width:100%"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+              <script type="text/javascript">
+              new TradingView.widget(
+              {{
+              "autosize": true,
+              "symbol": "{tv_symbol}",
+              "interval": "D",
+              "timezone": "Asia/Jakarta",
+              "theme": "{tv_theme}", 
+              "style": "1",
+              "locale": "id",
+              "enable_publishing": false,
+              "allow_symbol_change": false,
+              "hide_top_toolbar": false,
+              "hide_side_toolbar": false, 
+              "backgroundColor": "{tv_bg}",
+              "gridColor": "{tv_grid}",
+              "save_image": false,
+              "container_id": "tv_ai_{ticker_input}"
+            }}
+              );
+              </script>
+            </div>
+            """
+            components.html(tv_widget_ai, height=570)
 
-            with col_chart:
-                st.markdown(f"<h5 style='color:{text_main};'>📈 Price Action: {ticker_input}</h5>", unsafe_allow_html=True)
-                with st.spinner("Memuat grafik..."):
+            # 2. TAMPILKAN HASIL ANALISA AI DI BAWAH CHART
+            if run_analysis:
+                st.markdown(f"<h5 style='color:{text_main}; margin-top: 20px;'>🧠 Executive Summary</h5>", unsafe_allow_html=True)
+                with st.spinner("SIGMA sedang mengumpulkan data dan menganalisis..."):
                     try:
-                        df_chart = yf.download(f"{ticker_input}.JK", period="6mo", interval="1d", progress=False)
+                        # Tarik Data Fundamental
+                        fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
                         
-                        if not df_chart.empty:
-                            fig = go.Figure(data=[go.Candlestick(
-                                x=df_chart.index,
-                                open=df_chart['Open'], high=df_chart['High'],
-                                low=df_chart['Low'], close=df_chart['Close'],
-                                name="Price"
-                            )])
-                            fig.update_layout(
-                                template="plotly_dark" if is_dark else "plotly_white",
-                                margin=dict(l=0, r=0, t=10, b=0),
-                                height=450,
-                                paper_bgcolor="rgba(0,0,0,0)",
-                                plot_bgcolor="rgba(0,0,0,0)"
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                        else:
-                            st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI.")
-                    except Exception as e:
-                        st.error(f"Gagal memuat grafik: {e}")
-
-            with col_ai:
-                st.markdown(f"<h5 style='color:{text_main};'>🧠 Executive Summary</h5>", unsafe_allow_html=True)
-                
-                if run_analysis:
-                    with st.spinner("SIGMA sedang mengumpulkan data dan menganalisis..."):
+                        # Tarik Harga Terakhir cepat via yfinance
+                        live_price = "N/A"
                         try:
-                            # 1. Tarik Data Fundamental
-                            fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
-                            
-                            # 2. Tarik Harga Terakhir
-                            live_price = "N/A"
-                            if not df_chart.empty:
-                                live_price = f"Rp {df_chart['Close'].iloc[-1].item() if hasattr(df_chart['Close'].iloc[-1], 'item') else df_chart['Close'].iloc[-1]:,.0f}"
+                            df_quick = yf.download(f"{ticker_input}.JK", period="1d", progress=False)
+                            if not df_quick.empty:
+                                live_price = f"Rp {df_quick['Close'].iloc[-1].item() if hasattr(df_quick['Close'].iloc[-1], 'item') else df_quick['Close'].iloc[-1]:,.0f}"
+                        except:
+                            pass
 
-                            # 3. Prompt Khusus
-                            dashboard_prompt = f"""
-                            Sebagai SIGMA AI, berikan Executive Summary SINGKAT untuk saham {ticker_input}.
-                            Harga Terakhir: {live_price}
-                            
-                            Data Fundamental & Evaluasi:
-                            {fund_context}
-                            
-                            Berikan output dalam format persis seperti ini (gunakan emoji, langsung to the point, jangan bertele-tele):
-                            
-                            🎯 **VERDICT:** [BULLISH / BEARISH / WAIT & SEE]
-                            
-                            🏢 **Kondisi Bisnis & Valuasi:**
-                            (Tulis 2-3 kalimat tajam tentang posisi PE, PBV, ROE, dan tren keuangannya. Apakah murah atau mahal?)
-                            
-                            📊 **Teknikal & Momentum:**
-                            (Tulis 2 kalimat tentang posisinya saat ini berdasarkan chart 6 bulan terakhir).
-                            
-                            💡 **Action Plan:**
-                            (Tulis saran konkrit: Area Buy, Hold, atau Hindari beserta rentang harga singkat).
-                            """
+                        # Prompt Khusus
+                        dashboard_prompt = f"""
+                        Sebagai SIGMA AI, berikan Executive Summary SINGKAT untuk saham {ticker_input}.
+                        Harga Terakhir: {live_price}
+                        
+                        Data Fundamental & Evaluasi:
+                        {fund_context}
+                        
+                        Berikan output dalam format persis seperti ini (gunakan emoji, langsung to the point, jangan bertele-tele):
+                        
+                        🎯 **VERDICT:** [BULLISH / BEARISH / WAIT & SEE]
+                        
+                        🏢 **Kondisi Bisnis & Valuasi:**
+                        (Tulis 2-3 kalimat tajam tentang posisi PE, PBV, ROE, dan tren keuangannya. Apakah murah atau mahal?)
+                        
+                        📊 **Teknikal & Momentum:**
+                        (Tulis 2 kalimat tentang posisinya saat ini berdasarkan chart 6 bulan terakhir).
+                        
+                        💡 **Action Plan:**
+                        (Tulis saran konkrit: Area Buy, Hold, atau Hindari beserta rentang harga singkat).
+                        """
 
-                            # 4. Tembak ke LLM
-                            try:
-                                ai_result, _ = _call_groq_primary(dashboard_prompt)
-                            except:
-                                ai_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+                        # Tembak ke LLM
+                        try:
+                            ai_result, _ = _call_groq_primary(dashboard_prompt)
+                        except:
+                            ai_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
 
-                            # 5. Tampilkan Hasilnya
-                            st.markdown(f"""
-                            <div class="dynamic-card" style="padding: 15px; margin-top: 10px; border-left: 4px solid #F5C242;">
-                                {ai_result}
-                            </div>
-                            """, unsafe_allow_html=True)
+                        # Tampilkan Hasilnya
+                        st.markdown(f"""
+                        <div class="dynamic-card" style="padding: 20px; margin-top: 10px; border-left: 4px solid #F5C242;">
+                            {ai_result}
+                        </div>
+                        """, unsafe_allow_html=True)
 
-                        except Exception as e:
-                            st.error(f"Gagal memproses analisa AI: {e}")
-                else:
-                    # Tampilan default sebelum tombol ditekan
-                    st.markdown(f"""
-                    <div class="dynamic-card" style="padding: 20px; text-align: center; margin-top: 10px;">
-                        <span style="font-size: 3rem;">🤖</span>
-                        <p style="color:{text_sub}; margin-top: 10px;">Klik <b>Analyze with SIGMA</b> untuk memproses data teknikal dan fundamental {ticker_input} secara otomatis.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"Gagal memproses analisa AI: {e}")
+
 
 
 
