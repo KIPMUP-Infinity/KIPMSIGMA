@@ -4494,7 +4494,7 @@ if current_view == "dashboard":
             ai_data = None
             ai_text_verdict = ""
             
-            # 1. Fetch data chart dengan cara PALING AMAN (anti multi-index error)
+            # 1. Fetch data chart
             try:
                 t = yf.Ticker(f"{ticker_input}.JK")
                 df_chart = t.history(period="6mo")
@@ -4563,7 +4563,7 @@ if current_view == "dashboard":
                     except Exception as e:
                         st.error(f"Gagal memproses analisa AI: {e}")
 
-            # 3. Tampilkan Chart Plotly yang meniru TradingView
+            # 3. Tampilkan Chart Plotly yang meniru TradingView (Gridlines off, Ada EMA, Teks Kanan)
             st.markdown(f"<h5 style='color:{text_main}; margin-bottom: 10px;'>📈 Technical Plan Chart: {ticker_input}</h5>", unsafe_allow_html=True)
             
             if not df_chart.empty:
@@ -4573,6 +4573,7 @@ if current_view == "dashboard":
                     
                     fig = go.Figure()
                     
+                    # Candlestick Utama
                     fig.add_trace(go.Candlestick(
                         x=df_chart.index,
                         open=df_chart['Open'], high=df_chart['High'],
@@ -4581,40 +4582,54 @@ if current_view == "dashboard":
                         name="Price"
                     ))
 
-                    # Auto Drawing garis jika AI membalas dengan JSON yang valid
+                    # Tambah Indikator EMA 13, 21, 100, 200
+                    df_chart['EMA13'] = df_chart['Close'].ewm(span=13, adjust=False).mean()
+                    df_chart['EMA21'] = df_chart['Close'].ewm(span=21, adjust=False).mean()
+                    df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
+                    df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
+
+                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA13'], mode='lines', line=dict(color='#00BCD4', width=1), name='EMA 13'))
+                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA21'], mode='lines', line=dict(color='#FFEB3B', width=1), name='EMA 21'))
+                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA100'], mode='lines', line=dict(color='#9C27B0', width=1.5), name='EMA 100'))
+                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA200'], mode='lines', line=dict(color='#FFFFFF', width=1.5), name='EMA 200'))
+
+                    # Auto Drawing garis (Geser Label ke Kanan: top right / bottom right)
                     if ai_data:
                         try:
                             fig.add_hrect(
                                 y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']), 
                                 line_width=0, fillcolor="rgba(8,153,129,0.2)", opacity=0.5,
-                                annotation_text="🟢 BUY AREA", annotation_position="top left"
+                                annotation_text="🟢 BUY AREA", annotation_position="top right"
                             )
                             fig.add_hline(
                                 y=float(ai_data['target']), line_dash="dash", line_color="#089981", line_width=2,
-                                annotation_text=f"🎯 TARGET: {ai_data['target']}", annotation_position="top left",
+                                annotation_text=f"🎯 TARGET: {ai_data['target']}", annotation_position="top right",
                                 annotation_font_color="#089981"
                             )
                             fig.add_hline(
                                 y=float(ai_data['stop_loss']), line_dash="dash", line_color="#f23645", line_width=2,
-                                annotation_text=f"🛑 SL: {ai_data['stop_loss']}", annotation_position="bottom left",
+                                annotation_text=f"🛑 SL: {ai_data['stop_loss']}", annotation_position="bottom right",
                                 annotation_font_color="#f23645"
                             )
                         except Exception as e:
                             st.warning("AI gagal menghasilkan kordinat harga yang pas untuk digambar otomatis.")
 
                     tv_bg_color = "#131722" if is_dark else "#ffffff"
-                    tv_grid_color = "#2a2e39" if is_dark else "#e5e7eb"
                     tv_text_color = "#b2b5be" if is_dark else "#1f2937"
+
+                    # Buat X-Axis sedikit lebih lebar ke kanan agar candle terakhir tidak menabrak batas layar
+                    future_date = df_chart.index[-1] + pd.Timedelta(days=20)
 
                     fig.update_layout(
                         template="plotly_dark" if is_dark else "plotly_white",
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
                         font=dict(color=tv_text_color),
-                        xaxis=dict(showgrid=True, gridcolor=tv_grid_color, rangeslider=dict(visible=False)),
-                        yaxis=dict(showgrid=True, gridcolor=tv_grid_color, side="right"),
+                        # MENGHILANGKAN GRIDLINES (showgrid=False) & SET RANGE X-AXIS
+                        xaxis=dict(showgrid=False, rangeslider=dict(visible=False), range=[df_chart.index[0], future_date]),
+                        yaxis=dict(showgrid=False, side="right"),
                         margin=dict(l=0, r=0, t=10, b=0),
-                        height=500,
+                        height=550,
                         showlegend=False
                     )
                     
