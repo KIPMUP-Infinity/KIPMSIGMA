@@ -2799,11 +2799,16 @@ function selectTerminal() {{
 
     if btn_chat:
         st.session_state.selected_system = "chat"
+        st.session_state.current_view = "chat" # FIX: Paksa memori UI pindah ke Chat
         st.rerun()
 
     if btn_terminal:
         _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
-        st.session_state.selected_system = "terminal" if _turl else "chat"
+        if _turl:
+            st.session_state.selected_system = "terminal"
+        else:
+            st.session_state.selected_system = "terminal_local"
+            st.session_state.current_view = "dashboard" # FIX: Paksa memori UI pindah ke Terminal Internal
         st.rerun()
 
     st.stop()
