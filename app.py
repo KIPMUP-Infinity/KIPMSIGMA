@@ -2331,15 +2331,27 @@ def handle_oauth(code):
     u = requests.get("https://www.googleapis.com/oauth2/v2/userinfo", headers={"Authorization": f"Bearer {token}"})
     return u.json() if u.status_code == 200 else None
 
+# ─── DAFTAR EMAIL YANG DIIZINKAN (WHITELIST) ───
+ALLOWED_EMAILS = [
+    "emailkamu@gmail.com",
+    "teman1@gmail.com",
+    "dosen@univpancasila.ac.id"
+] # Silakan isi dengan daftar email yang boleh masuk
+
 # ─── AUTENTIKASI GOOGLE ───
 if "code" in st.query_params and st.session_state.user is None:
     info = handle_oauth(st.query_params["code"])
     if info:
+        # BLOKIR JIKA EMAIL TIDAK ADA DI DAFTAR
+        if info.get("email") not in ALLOWED_EMAILS:
+            st.error(f"⛔ Akses Ditolak: Email {info.get('email')} tidak terdaftar di sistem KIPM SIGMA.")
+            st.stop()
+            
         st.session_state.user = info
         saved = load_user(info["email"])
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
-            st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
+            st.session_state.current_view = saved.get("current_view", "chat")
             if saved.get("sessions"): st.session_state.sessions = saved["sessions"]; st.session_state.active_id = saved.get("active_id")
         st.session_state.data_loaded = True
         token = str(uuid.uuid4()).replace("-","")
@@ -2525,6 +2537,9 @@ def show_login():
             if not all([rname, runame, rpwd, rpwd2]): st.warning("Lengkapi semua field")
             elif rpwd != rpwd2: st.error("Password tidak cocok")
             elif len(rpwd) < 6: st.error("Password minimal 6 karakter")
+            elif runame.strip() not in ALLOWED_EMAILS: 
+                # CEK WHITELIST SAAT DAFTAR MANUAL
+                st.error("⛔ Akses Ditolak: Username/Email ini tidak diizinkan untuk mendaftar.")
             else:
                 ok, msg = register_user(runame.strip(), rpwd, rname.strip())
                 if ok: st.success(f"✅ {msg} — silakan masuk")
