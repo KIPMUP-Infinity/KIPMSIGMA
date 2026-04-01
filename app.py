@@ -2803,34 +2803,34 @@ body {{ background: #080c14; }}
 <script>
 var TERMINAL_URL = "{_terminal_url}";
 
-// Radar Deteksi Perangkat Apple (iPhone, iPad, Mac)
-function isAppleDevice() {{
-    var ua = navigator.userAgent || navigator.platform;
-    return /Mac|iPod|iPhone|iPad|Macintosh|MacIntel/.test(ua);
-}}
-
 function selectChat() {{
-    if (isAppleDevice()) {{
-        // JALUR APPLE: Gunakan URL Parameter
-        try {{
-            var u = new URL(window.parent.location.href);
-            u.searchParams.set('action', 'open_chat');
-            window.parent.location.assign(u.toString());
-        }} catch(e) {{}}
-    }} else {{
-        // JALUR ANDROID/WINDOWS: Gunakan Klik Instan (Tanpa Reload)
-        try {{
-            var pd = window.parent.document;
-            var btns = pd.querySelectorAll('[data-testid="stButton"] button');
-            for (var i = 0; i < btns.length; i++) {{
-                var txt = (btns[i].textContent || "").trim().toLowerCase();
-                if (txt === 'chat') {{
-                    btns[i].click();
-                    return;
-                }}
+    var success = false;
+    // JALUR ANDROID & WINDOWS: Cari tombol yang "mengandung" kata chat
+    try {{
+        var pd = window.parent.document;
+        var btns = pd.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {{
+            var txt = (btns[i].innerText || btns[i].textContent || "").toLowerCase();
+            if (txt.includes('chat')) {{
+                btns[i].click();
+                success = true;
+                break;
             }}
-        }} catch(e) {{}}
-    }}
+        }}
+    }} catch(e) {{}}
+
+    // JALUR APPLE (atau jika tombol gagal diklik)
+    setTimeout(function() {{
+        var ua = navigator.userAgent || navigator.platform;
+        var isApple = /Mac|iPod|iPhone|iPad|Macintosh|MacIntel/.test(ua);
+        if (!success || isApple) {{
+            try {{
+                var u = new URL(window.parent.location.href);
+                u.searchParams.set('action', 'open_chat');
+                window.parent.location.assign(u.toString());
+            }} catch(e) {{}}
+        }}
+    }}, 150);
 }}
 
 function selectTerminal() {{
@@ -2839,27 +2839,33 @@ function selectTerminal() {{
         return;
     }}
     
-    if (isAppleDevice()) {{
-        // JALUR APPLE
-        try {{
-            var u = new URL(window.parent.location.href);
-            u.searchParams.set('action', 'open_terminal');
-            window.parent.location.assign(u.toString());
-        }} catch(e) {{}}
-    }} else {{
-        // JALUR ANDROID/WINDOWS
-        try {{
-            var pd = window.parent.document;
-            var btns = pd.querySelectorAll('[data-testid="stButton"] button');
-            for (var i = 0; i < btns.length; i++) {{
-                var txt = (btns[i].textContent || "").trim().toLowerCase();
-                if (txt === 'terminal') {{
-                    btns[i].click();
-                    return;
-                }}
+    var success = false;
+    // JALUR ANDROID & WINDOWS
+    try {{
+        var pd = window.parent.document;
+        var btns = pd.querySelectorAll('button');
+        for (var i = 0; i < btns.length; i++) {{
+            var txt = (btns[i].innerText || btns[i].textContent || "").toLowerCase();
+            if (txt.includes('terminal')) {{
+                btns[i].click();
+                success = true;
+                break;
             }}
-        }} catch(e) {{}}
-    }}
+        }}
+    }} catch(e) {{}}
+
+    // JALUR APPLE (atau jika tombol gagal diklik)
+    setTimeout(function() {{
+        var ua = navigator.userAgent || navigator.platform;
+        var isApple = /Mac|iPod|iPhone|iPad|Macintosh|MacIntel/.test(ua);
+        if (!success || isApple) {{
+            try {{
+                var u = new URL(window.parent.location.href);
+                u.searchParams.set('action', 'open_terminal');
+                window.parent.location.assign(u.toString());
+            }} catch(e) {{}}
+        }}
+    }}, 150);
 }}
 </script>
 
