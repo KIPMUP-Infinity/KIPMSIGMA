@@ -2572,175 +2572,225 @@ def show_system_selector():
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"""
+    # ── CSS inject via st.markdown (ringan, tidak ada HTML body) ──
+    st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
-    * {{ font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif !important; }}
-
-    .sys-wrapper {{
-        min-height: 100vh;
-        background: #080c14;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 20px;
-        position: relative;
-        overflow: hidden;
-    }}
-    .sys-wrapper::before {{
-        content: '';
-        position: absolute;
-        inset: 0;
-        background-image:
-            linear-gradient(rgba(0,157,255,0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,157,255,0.06) 1px, transparent 1px);
-        background-size: 60px 60px;
-        animation: gridPulse 8s ease-in-out infinite;
-        pointer-events: none;
-    }}
-    @keyframes gridPulse {{ 0%, 100% {{ opacity: 0.4; }} 50% {{ opacity: 1; }} }}
-    .sys-wrapper::after {{
-        content: '';
-        position: absolute;
-        width: 600px; height: 600px;
-        background: radial-gradient(circle, rgba(0,100,255,0.12) 0%, transparent 70%);
-        top: -150px; left: -100px;
-        pointer-events: none;
-        animation: orbFloat 12s ease-in-out infinite;
-    }}
-    @keyframes orbFloat {{ 0%, 100% {{ transform: translate(0,0); }} 50% {{ transform: translate(60px, 40px); }} }}
-
-    .sys-header {{ text-align: center; margin-bottom: 48px; position: relative; z-index: 2; }}
-    .sys-welcome {{ font-size: 0.8rem; letter-spacing: 4px; color: rgba(0,157,255,0.7); text-transform: uppercase; margin-bottom: 10px; }}
-    .sys-title {{ font-size: 2.8rem; font-weight: 700; color: #ffffff; letter-spacing: 2px; line-height: 1.1; margin-bottom: 6px; }}
-    .sys-title span {{ color: #F5C242; }}
-    .sys-subtitle {{ font-size: 0.85rem; color: rgba(255,255,255,0.35); letter-spacing: 1px; }}
-    .sys-divider {{ width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #009dff, transparent); margin: 14px auto 0; animation: shimmer 2.5s ease-in-out infinite; }}
-    @keyframes shimmer {{ 0%, 100% {{ opacity: 0.4; width: 40px; }} 50% {{ opacity: 1; width: 80px; }} }}
-
-    .sys-cards {{ display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 2; max-width: 820px; width: 100%; }}
-
-    .sys-card {{
-        flex: 1; min-width: 300px; max-width: 380px;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 20px; padding: 36px 28px 28px;
-        position: relative; overflow: hidden; cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    }}
-    .sys-card::before {{
-        content: ''; position: absolute; top: 0; left: 0; right: 0;
-        height: 2px; border-radius: 20px 20px 0 0;
-    }}
-    .sys-card.sigma-chat::before {{ background: linear-gradient(90deg, transparent, #009dff, #0048ff, transparent); }}
-    .sys-card.sigma-terminal::before {{ background: linear-gradient(90deg, transparent, #F5C242, #e0a820, transparent); }}
-
-    .sys-card .card-glow {{
-        position: absolute; width: 200px; height: 200px; border-radius: 50%;
-        filter: blur(60px); opacity: 0; top: -60px; right: -40px;
-        transition: opacity 0.4s ease; pointer-events: none;
-    }}
-    .sys-card.sigma-chat .card-glow {{ background: rgba(0,157,255,0.3); }}
-    .sys-card.sigma-terminal .card-glow {{ background: rgba(245,194,66,0.25); }}
-    .sys-card:hover .card-glow {{ opacity: 1; }}
-    .sys-card:hover {{ transform: translateY(-6px); }}
-    .sys-card.sigma-chat:hover {{ border-color: rgba(0,157,255,0.5); box-shadow: 0 20px 60px rgba(0,100,255,0.2), 0 0 0 1px rgba(0,157,255,0.3); }}
-    .sys-card.sigma-terminal:hover {{ border-color: rgba(245,194,66,0.5); box-shadow: 0 20px 60px rgba(245,194,66,0.15), 0 0 0 1px rgba(245,194,66,0.3); }}
-
-    .card-icon {{ width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 20px; }}
-    .sigma-chat .card-icon {{ background: rgba(0,157,255,0.12); border: 1px solid rgba(0,157,255,0.25); }}
-    .sigma-terminal .card-icon {{ background: rgba(245,194,66,0.1); border: 1px solid rgba(245,194,66,0.2); }}
-
-    .card-badge {{ position: absolute; top: 18px; right: 20px; font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; font-weight: 600; }}
-    .sigma-chat .card-badge {{ background: rgba(0,157,255,0.15); color: #009dff; border: 1px solid rgba(0,157,255,0.25); }}
-    .sigma-terminal .card-badge {{ background: rgba(245,194,66,0.12); color: #F5C242; border: 1px solid rgba(245,194,66,0.2); }}
-
-    .card-name {{ font-size: 1.35rem; font-weight: 700; color: #ffffff; margin-bottom: 6px; letter-spacing: 0.5px; }}
-    .card-tagline {{ font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }}
-    .sigma-chat .card-tagline {{ color: rgba(0,157,255,0.7); }}
-    .sigma-terminal .card-tagline {{ color: rgba(245,194,66,0.7); }}
-
-    .card-desc {{ font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 24px; }}
-
-    .card-features {{ list-style: none; padding: 0; margin: 0 0 28px 0; }}
-    .card-features li {{ font-size: 0.8rem; color: rgba(255,255,255,0.55); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 8px; }}
-    .card-features li:last-child {{ border-bottom: none; }}
-    .feat-dot {{ width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }}
-    .sigma-chat .feat-dot {{ background: #009dff; box-shadow: 0 0 6px #009dff; }}
-    .sigma-terminal .feat-dot {{ background: #F5C242; box-shadow: 0 0 6px #F5C242; }}
-
-    .card-cta {{ width: 100%; padding: 13px; border-radius: 12px; border: none; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.8px; cursor: pointer; transition: opacity 0.2s, transform 0.15s; text-transform: uppercase; }}
-    .sigma-chat .card-cta {{ background: linear-gradient(135deg, #009dff, #0048ff); color: #ffffff; box-shadow: 0 6px 24px rgba(0,100,255,0.35); }}
-    .sigma-terminal .card-cta {{ background: linear-gradient(135deg, #F5C242, #e0a820); color: #0a0e18; box-shadow: 0 6px 24px rgba(245,194,66,0.3); }}
-    .card-cta:hover {{ opacity: 0.88; transform: translateY(-1px); }}
-
-    .sys-footer {{ margin-top: 48px; text-align: center; font-size: 0.72rem; color: rgba(255,255,255,0.2); letter-spacing: 1px; position: relative; z-index: 2; }}
-
-    @media (max-width: 720px) {{
-        .sys-title {{ font-size: 2rem; }}
-        .sys-cards {{ gap: 16px; }}
-        .sys-card {{ min-width: 260px; padding: 28px 20px 22px; }}
-        .sys-header {{ margin-bottom: 32px; }}
-    }}
+    * { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif !important; }
+    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {
+        background: #080c14 !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important;
+    }
+    [data-testid="stVerticalBlock"] { gap: 0 !important; }
+    [data-testid="stHorizontalBlock"] {
+        position: fixed !important; bottom: -300px !important;
+        opacity: 0 !important; pointer-events: none !important; height: 0 !important; overflow: hidden !important;
+    }
     </style>
-
-    <div class="sys-wrapper">
-        <div class="sys-header">
-            <div class="sys-welcome">Welcome back, {_name}</div>
-            <div class="sys-title">Choose Your <span>System</span></div>
-            <div class="sys-subtitle">Select the platform you want to access today</div>
-            <div class="sys-divider"></div>
-        </div>
-
-        <div class="sys-cards">
-            <div class="sys-card sigma-chat" id="card-sigma-chat">
-                <div class="card-glow"></div>
-                <div class="card-badge">Live</div>
-                <div class="card-icon">⚡</div>
-                <div class="card-name">SIGMA AI Chat</div>
-                <div class="card-tagline">AI Trading Assistant</div>
-                <div class="card-desc">
-                    Asisten analisa pasar berbasis AI — teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.
-                </div>
-                <ul class="card-features">
-                    <li><span class="feat-dot"></span>Analisa teknikal MnM Strategy+ (Pine Script v6)</li>
-                    <li><span class="feat-dot"></span>Bandarmologi &amp; broker summary IDX</li>
-                    <li><span class="feat-dot"></span>Fundamental multi-source (FMP, Finnhub, IDX)</li>
-                    <li><span class="feat-dot"></span>Dampak makro global → emiten IDX</li>
-                    <li><span class="feat-dot"></span>Upload chart &amp; PDF prospektus</li>
-                </ul>
-                <button class="card-cta" id="cta-chat">Masuk ke AI Chat →</button>
-            </div>
-
-            <div class="sys-card sigma-terminal" id="card-sigma-terminal">
-                <div class="card-glow"></div>
-                <div class="card-badge">Beta</div>
-                <div class="card-icon">🖥</div>
-                <div class="card-name">SIGMA Terminal</div>
-                <div class="card-tagline">Market Dashboard</div>
-                <div class="card-desc">
-                    Dashboard pasar real-time — Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.
-                </div>
-                <ul class="card-features">
-                    <li><span class="feat-dot"></span>Market Overview — IHSG &amp; indeks sektoral</li>
-                    <li><span class="feat-dot"></span>Broker Summary real-time IDX</li>
-                    <li><span class="feat-dot"></span>Stock Screener dengan filter custom</li>
-                    <li><span class="feat-dot"></span>Watchlist personal dengan alert</li>
-                    <li><span class="feat-dot"></span>Data langsung dari BEI</li>
-                </ul>
-                <button class="card-cta" id="cta-terminal">Masuk ke Terminal →</button>
-            </div>
-        </div>
-
-        <div class="sys-footer">
-            SIGMA · by Market n Mocha (MnM) × KIPM Universitas Pancasila
-        </div>
-    </div>
     """, unsafe_allow_html=True)
 
-    # ── Hidden Streamlit buttons yang di-trigger oleh card click via JS ──
+    # ── Full page HTML via components.html — tidak kena Streamlit markdown limit ──
+    _terminal_url = st.secrets.get("SIGMA_TERMINAL_URL", "")
+    components.html(f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+* {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'Space Grotesk', system-ui, sans-serif; }}
+body {{ background: #080c14; }}
+
+.sys-wrapper {{
+    min-height: 100vh; background: #080c14;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 20px; position: relative; overflow: hidden;
+}}
+.sys-wrapper::before {{
+    content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,157,255,0.06) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,157,255,0.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridPulse 8s ease-in-out infinite; pointer-events: none;
+}}
+@keyframes gridPulse {{ 0%,100% {{ opacity:0.4; }} 50% {{ opacity:1; }} }}
+.orb {{
+    position: absolute; width: 600px; height: 600px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,100,255,0.12) 0%, transparent 70%);
+    top: -150px; left: -100px; pointer-events: none;
+    animation: orbFloat 12s ease-in-out infinite;
+}}
+.orb2 {{
+    position: absolute; width: 400px; height: 400px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(245,194,66,0.07) 0%, transparent 70%);
+    bottom: -100px; right: -80px; pointer-events: none;
+    animation: orbFloat 15s ease-in-out infinite reverse;
+}}
+@keyframes orbFloat {{ 0%,100% {{ transform:translate(0,0); }} 50% {{ transform:translate(60px,40px); }} }}
+
+.sys-header {{ text-align:center; margin-bottom:48px; position:relative; z-index:2; }}
+.sys-welcome {{ font-size:0.8rem; letter-spacing:4px; color:rgba(0,157,255,0.7); text-transform:uppercase; margin-bottom:10px; }}
+.sys-title {{ font-size:2.8rem; font-weight:700; color:#fff; letter-spacing:2px; line-height:1.1; margin-bottom:6px; }}
+.sys-title span {{ color:#F5C242; }}
+.sys-subtitle {{ font-size:0.85rem; color:rgba(255,255,255,0.35); letter-spacing:1px; }}
+.sys-divider {{ width:60px; height:2px; background:linear-gradient(90deg,transparent,#009dff,transparent); margin:14px auto 0; animation:shimmer 2.5s ease-in-out infinite; }}
+@keyframes shimmer {{ 0%,100% {{ opacity:0.4; width:40px; }} 50% {{ opacity:1; width:80px; }} }}
+
+.sys-cards {{ display:flex; gap:28px; flex-wrap:wrap; justify-content:center; position:relative; z-index:2; max-width:820px; width:100%; }}
+
+.sys-card {{
+    flex:1; min-width:300px; max-width:380px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+    border-radius:20px; padding:36px 28px 28px;
+    position:relative; overflow:hidden; cursor:pointer;
+    transition:transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}}
+.sys-card::before {{
+    content:''; position:absolute; top:0; left:0; right:0; height:2px; border-radius:20px 20px 0 0;
+}}
+.sigma-chat::before {{ background:linear-gradient(90deg,transparent,#009dff,#0048ff,transparent); }}
+.sigma-terminal::before {{ background:linear-gradient(90deg,transparent,#F5C242,#e0a820,transparent); }}
+
+.card-glow {{
+    position:absolute; width:220px; height:220px; border-radius:50%;
+    filter:blur(60px); opacity:0; top:-60px; right:-40px;
+    transition:opacity 0.4s ease; pointer-events:none;
+}}
+.sigma-chat .card-glow {{ background:rgba(0,157,255,0.35); }}
+.sigma-terminal .card-glow {{ background:rgba(245,194,66,0.28); }}
+.sys-card:hover .card-glow {{ opacity:1; }}
+.sys-card:hover {{ transform:translateY(-6px); }}
+.sigma-chat:hover {{ border-color:rgba(0,157,255,0.5); box-shadow:0 20px 60px rgba(0,100,255,0.2),0 0 0 1px rgba(0,157,255,0.3); }}
+.sigma-terminal:hover {{ border-color:rgba(245,194,66,0.5); box-shadow:0 20px 60px rgba(245,194,66,0.15),0 0 0 1px rgba(245,194,66,0.3); }}
+
+.card-badge {{ position:absolute; top:18px; right:20px; font-size:0.62rem; letter-spacing:2px; text-transform:uppercase; padding:3px 8px; border-radius:20px; font-weight:600; }}
+.sigma-chat .card-badge {{ background:rgba(0,157,255,0.15); color:#009dff; border:1px solid rgba(0,157,255,0.25); }}
+.sigma-terminal .card-badge {{ background:rgba(245,194,66,0.12); color:#F5C242; border:1px solid rgba(245,194,66,0.2); }}
+
+.card-icon {{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:20px; }}
+.sigma-chat .card-icon {{ background:rgba(0,157,255,0.12); border:1px solid rgba(0,157,255,0.25); }}
+.sigma-terminal .card-icon {{ background:rgba(245,194,66,0.1); border:1px solid rgba(245,194,66,0.2); }}
+
+.card-name {{ font-size:1.35rem; font-weight:700; color:#fff; margin-bottom:6px; letter-spacing:0.5px; }}
+.card-tagline {{ font-size:0.75rem; letter-spacing:2px; text-transform:uppercase; margin-bottom:16px; }}
+.sigma-chat .card-tagline {{ color:rgba(0,157,255,0.7); }}
+.sigma-terminal .card-tagline {{ color:rgba(245,194,66,0.7); }}
+.card-desc {{ font-size:0.85rem; color:rgba(255,255,255,0.5); line-height:1.7; margin-bottom:24px; }}
+
+.card-features {{ list-style:none; padding:0; margin:0 0 28px 0; }}
+.card-features li {{ font-size:0.8rem; color:rgba(255,255,255,0.55); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:8px; }}
+.card-features li:last-child {{ border-bottom:none; }}
+.feat-dot {{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }}
+.sigma-chat .feat-dot {{ background:#009dff; box-shadow:0 0 6px #009dff; }}
+.sigma-terminal .feat-dot {{ background:#F5C242; box-shadow:0 0 6px #F5C242; }}
+
+.card-cta {{ width:100%; padding:13px; border-radius:12px; border:none; font-size:0.88rem; font-weight:700; letter-spacing:0.8px; cursor:pointer; transition:opacity 0.2s, transform 0.15s; text-transform:uppercase; }}
+.sigma-chat .card-cta {{ background:linear-gradient(135deg,#009dff,#0048ff); color:#fff; box-shadow:0 6px 24px rgba(0,100,255,0.35); }}
+.sigma-terminal .card-cta {{ background:linear-gradient(135deg,#F5C242,#e0a820); color:#0a0e18; box-shadow:0 6px 24px rgba(245,194,66,0.3); }}
+.card-cta:hover {{ opacity:0.88; transform:translateY(-1px); }}
+
+.sys-footer {{ margin-top:48px; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
+
+@media (max-width:720px) {{
+    .sys-title {{ font-size:2rem; }}
+    .sys-cards {{ gap:16px; }}
+    .sys-card {{ min-width:260px; padding:28px 20px 22px; }}
+    .sys-header {{ margin-bottom:32px; }}
+}}
+</style>
+</head>
+<body>
+<div class="sys-wrapper">
+    <div class="orb"></div>
+    <div class="orb2"></div>
+
+    <div class="sys-header">
+        <div class="sys-welcome">Welcome back, {_name}</div>
+        <div class="sys-title">Choose Your <span>System</span></div>
+        <div class="sys-subtitle">Select the platform you want to access today</div>
+        <div class="sys-divider"></div>
+    </div>
+
+    <div class="sys-cards">
+        <div class="sys-card sigma-chat" id="card-chat" onclick="selectChat()">
+            <div class="card-glow"></div>
+            <div class="card-badge">Live</div>
+            <div class="card-icon">⚡</div>
+            <div class="card-name">SIGMA AI Chat</div>
+            <div class="card-tagline">AI Trading Assistant</div>
+            <div class="card-desc">Asisten analisa pasar berbasis AI — teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
+            <ul class="card-features">
+                <li><span class="feat-dot"></span>Analisa teknikal MnM Strategy+ (Pine Script v6)</li>
+                <li><span class="feat-dot"></span>Bandarmologi & broker summary IDX</li>
+                <li><span class="feat-dot"></span>Fundamental multi-source (FMP, Finnhub, IDX)</li>
+                <li><span class="feat-dot"></span>Dampak makro global → emiten IDX</li>
+                <li><span class="feat-dot"></span>Upload chart & PDF prospektus</li>
+            </ul>
+            <button class="card-cta" onclick="event.stopPropagation(); selectChat()">Masuk ke AI Chat →</button>
+        </div>
+
+        <div class="sys-card sigma-terminal" id="card-terminal" onclick="selectTerminal()">
+            <div class="card-glow"></div>
+            <div class="card-badge">Beta</div>
+            <div class="card-icon">🖥️</div>
+            <div class="card-name">SIGMA Terminal</div>
+            <div class="card-tagline">Market Dashboard</div>
+            <div class="card-desc">Dashboard pasar real-time — Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
+            <ul class="card-features">
+                <li><span class="feat-dot"></span>Market Overview — IHSG & indeks sektoral</li>
+                <li><span class="feat-dot"></span>Broker Summary real-time IDX</li>
+                <li><span class="feat-dot"></span>Stock Screener dengan filter custom</li>
+                <li><span class="feat-dot"></span>Watchlist personal dengan alert</li>
+                <li><span class="feat-dot"></span>Data langsung dari BEI</li>
+            </ul>
+            <button class="card-cta" onclick="event.stopPropagation(); selectTerminal()">Masuk ke Terminal →</button>
+        </div>
+    </div>
+
+    <div class="sys-footer">SIGMA · by Market n Mocha (MnM) × KIPM Universitas Pancasila</div>
+</div>
+
+<script>
+var TERMINAL_URL = "{_terminal_url}";
+
+function selectChat() {{
+    // Find the hidden Streamlit "chat" button in parent frame and click it
+    try {{
+        var pd = window.parent.document;
+        var btns = pd.querySelectorAll('[data-testid="stButton"] button');
+        for (var i = 0; i < btns.length; i++) {{
+            if (btns[i].innerText.trim() === 'chat') {{
+                btns[i].click();
+                return;
+            }}
+        }}
+    }} catch(e) {{}}
+}}
+
+function selectTerminal() {{
+    if (TERMINAL_URL && TERMINAL_URL.length > 4) {{
+        window.parent.location.href = TERMINAL_URL;
+    }} else {{
+        // No terminal URL — fall back to chat
+        try {{
+            var pd = window.parent.document;
+            var btns = pd.querySelectorAll('[data-testid="stButton"] button');
+            for (var i = 0; i < btns.length; i++) {{
+                if (btns[i].innerText.trim() === 'terminal') {{
+                    btns[i].click();
+                    return;
+                }}
+            }}
+        }} catch(e) {{}}
+    }}
+}}
+</script>
+</body>
+</html>
+    """, height=700, scrolling=False)
+
+    # ── Hidden Streamlit buttons — di-trigger oleh JS di atas ──
     col1, col2 = st.columns(2)
     with col1:
         btn_chat = st.button("chat", key="btn_sys_chat", use_container_width=True)
@@ -2752,61 +2802,9 @@ def show_system_selector():
         st.rerun()
 
     if btn_terminal:
-        st.session_state.selected_system = "terminal"
-        SIGMA_TERMINAL_URL = st.secrets.get("SIGMA_TERMINAL_URL", "")
-        if SIGMA_TERMINAL_URL:
-            st.markdown(f'<meta http-equiv="refresh" content="0; url={SIGMA_TERMINAL_URL}">', unsafe_allow_html=True)
-        else:
-            st.session_state.selected_system = "chat"
+        _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
+        st.session_state.selected_system = "terminal" if _turl else "chat"
         st.rerun()
-
-    # ── CSS: sembunyikan tombol Streamlit asli, biarkan HTML card jadi UI ──
-    st.markdown("""
-    <style>
-    [data-testid="stHorizontalBlock"] {
-        position: fixed !important;
-        bottom: -200px !important;
-        left: 0; right: 0;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        height: 0 !important;
-        overflow: hidden !important;
-    }
-    </style>
-
-    <script>
-    (function() {
-        var pd = window.parent.document;
-
-        // Hide streamlit chrome
-        ['stToolbar','stDecoration','stStatusWidget'].forEach(function(t) {
-            var el = pd.querySelector('[data-testid="'+t+'"]');
-            if (el) el.style.display = 'none';
-        });
-
-        function attachClicks() {
-            // Find the two Streamlit buttons
-            var stBtns = Array.from(pd.querySelectorAll('[data-testid="stButton"] button'));
-            var chatBtn  = stBtns.find(function(b) { return b.innerText.trim() === 'chat'; });
-            var termBtn  = stBtns.find(function(b) { return b.innerText.trim() === 'terminal'; });
-
-            if (!chatBtn || !termBtn) { setTimeout(attachClicks, 400); return; }
-
-            // Wire card clicks → Streamlit buttons
-            var chatCard = pd.getElementById('card-sigma-chat');
-            var termCard = pd.getElementById('card-sigma-terminal');
-            var chatCta  = pd.getElementById('cta-chat');
-            var termCta  = pd.getElementById('cta-terminal');
-
-            if (chatCard) chatCard.addEventListener('click', function(e) { if (e.target !== chatCta) chatBtn.click(); });
-            if (termCard) termCard.addEventListener('click', function(e) { if (e.target !== termCta) termBtn.click(); });
-            if (chatCta)  chatCta.addEventListener('click', function(e) { e.stopPropagation(); chatBtn.click(); });
-            if (termCta)  termCta.addEventListener('click', function(e) { e.stopPropagation(); termBtn.click(); });
-        }
-        setTimeout(attachClicks, 700);
-    })();
-    </script>
-    """, unsafe_allow_html=True)
 
     st.stop()
 
