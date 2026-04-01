@@ -2344,6 +2344,17 @@ ALLOWED_EMAILS = [
     "chandralie594@gmail.com",
     "baimdaniel020@gmail.com",
     "hotmantugas@gmail.com",
+    "rizkisweet04@gmail.com",
+    "khoirunnisaassoleha@gmail.com",
+    "majdatsania49@gmail.com",
+    "mariyahh31@gmail.com",
+    "maudynatasya322@gmail.com",
+    "melanyseptianap@gmail.com",
+    "mlknrzh12@gmail.com",
+    "vchascout2@gmail.com",
+    "yordan.nandini@gmail.com",
+    "nisrinazakiyahr@gmail.com",
+    "uploaddt969@gmail.com",
     "fabianalaziz.9e@gmail.com"
 ] # Silakan isi dengan daftar email yang boleh masuk
 
