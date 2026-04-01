@@ -2434,20 +2434,28 @@ hr {{ border-color: {C['border']} !important; }}
 [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }}
 [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
 [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
-@media (max-width: 768px) {{
-    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 16px 120px !important; }}
-    [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
-    [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.25rem !important; }}
-    [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.1rem !important; }}
-    [data-testid="stMarkdownContainer"] h3 {{ font-size: 1rem !important; font-weight: 700 !important; }}
-    [data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ padding-left: 20px !important; margin: 6px 0 !important; }}
-    [data-testid="stMarkdownContainer"] li {{ margin-bottom: 4px !important; }}
-    [data-testid="stMarkdownContainer"] code {{ font-size: 0.85rem !important; padding: 2px 6px !important; border-radius: 4px !important; background: rgba(255,255,255,0.08) !important; }}
-    [data-testid="stMarkdownContainer"] pre {{ font-size: 0.82rem !important; overflow-x: auto !important; padding: 12px !important; border-radius: 8px !important; }}
-    div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 6px 8px !important; }}
-    [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
-    [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
-    .navy-pill {{ max-width: 82% !important; font-size: 1rem !important; line-height: 1.7 !important; padding: 12px 16px !important; }}
+
+@media (max-width:768px) {{
+    .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
+    .sys-header {{ margin-bottom: 24px; }}
+    .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
+    .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
+    .sys-subtitle {{ font-size: 0.75rem; }}
+    .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
+    
+    .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
+    .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
+    
+    .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
+    .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
+    .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
+    .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
+    .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
+    
+    .card-features {{ margin-bottom: 20px; }}
+    .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
+    .card-cta {{ padding: 12px; font-size: 0.85rem; }}
+    .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
 }}
 </style>
 """, unsafe_allow_html=True)
