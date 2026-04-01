@@ -2812,7 +2812,7 @@ function selectTerminal() {{
 </script>
 </body>
 </html>
-    """, height=850, scrolling=true)
+    """, height=850, scrolling=True)
 
     # ── Hidden Streamlit buttons — di-trigger oleh JS di atas ──
     col1, col2 = st.columns(2)
