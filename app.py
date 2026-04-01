@@ -2803,22 +2803,67 @@ body {{ background: #080c14; }}
 <script>
 var TERMINAL_URL = "{_terminal_url}";
 
+// Radar Deteksi Perangkat Apple (iPhone, iPad, Mac)
+function isAppleDevice() {{
+    var ua = navigator.userAgent || navigator.platform;
+    return /Mac|iPod|iPhone|iPad|Macintosh|MacIntel/.test(ua);
+}}
+
 function selectChat() {{
-    var u = new URL(window.parent.location.href);
-    u.searchParams.set('action', 'open_chat');
-    window.parent.location.href = u.toString();
+    if (isAppleDevice()) {{
+        // JALUR APPLE: Gunakan URL Parameter
+        try {{
+            var u = new URL(window.parent.location.href);
+            u.searchParams.set('action', 'open_chat');
+            window.parent.location.assign(u.toString());
+        }} catch(e) {{}}
+    }} else {{
+        // JALUR ANDROID/WINDOWS: Gunakan Klik Instan (Tanpa Reload)
+        try {{
+            var pd = window.parent.document;
+            var btns = pd.querySelectorAll('[data-testid="stButton"] button');
+            for (var i = 0; i < btns.length; i++) {{
+                var txt = (btns[i].textContent || "").trim().toLowerCase();
+                if (txt === 'chat') {{
+                    btns[i].click();
+                    return;
+                }}
+            }}
+        }} catch(e) {{}}
+    }}
 }}
 
 function selectTerminal() {{
     if (TERMINAL_URL && TERMINAL_URL.length > 4) {{
         window.parent.location.href = TERMINAL_URL;
+        return;
+    }}
+    
+    if (isAppleDevice()) {{
+        // JALUR APPLE
+        try {{
+            var u = new URL(window.parent.location.href);
+            u.searchParams.set('action', 'open_terminal');
+            window.parent.location.assign(u.toString());
+        }} catch(e) {{}}
     }} else {{
-        var u = new URL(window.parent.location.href);
-        u.searchParams.set('action', 'open_terminal');
-        window.parent.location.href = u.toString();
+        // JALUR ANDROID/WINDOWS
+        try {{
+            var pd = window.parent.document;
+            var btns = pd.querySelectorAll('[data-testid="stButton"] button');
+            for (var i = 0; i < btns.length; i++) {{
+                var txt = (btns[i].textContent || "").trim().toLowerCase();
+                if (txt === 'terminal') {{
+                    btns[i].click();
+                    return;
+                }}
+            }}
+        }} catch(e) {{}}
     }}
 }}
 </script>
+
+
 </body>
 </html>
     """, height=1150, scrolling=False)
