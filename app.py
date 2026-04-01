@@ -2339,7 +2339,7 @@ if "code" in st.query_params and st.session_state.user is None:
         saved = load_user(info["email"])
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
-            st.session_state.current_view = saved.get("current_view", "chat")
+            st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
             if saved.get("sessions"): st.session_state.sessions = saved["sessions"]; st.session_state.active_id = saved.get("active_id")
         st.session_state.data_loaded = True
         token = str(uuid.uuid4()).replace("-","")
@@ -2360,7 +2360,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
-                st.session_state.current_view = saved.get("current_view", "chat")
+                st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
                 if saved.get("sessions"):
                     _loaded = saved["sessions"]
                     for _s in _loaded:
@@ -2377,7 +2377,7 @@ if st.session_state.user and not st.session_state.data_loaded:
     saved = load_user(st.session_state.user["email"])
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
-        st.session_state.current_view = saved.get("current_view", "chat")
+        st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -2871,7 +2871,7 @@ if "code" in st.query_params and st.session_state.user is None:
         saved = load_user(info["email"])
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
-            st.session_state.current_view = saved.get("current_view", "chat")
+            st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
             st.session_state.selected_system = saved.get("selected_system")
             if saved.get("sessions"): st.session_state.sessions = saved["sessions"]; st.session_state.active_id = saved.get("active_id")
         st.session_state.data_loaded = True
@@ -2893,7 +2893,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
-                st.session_state.current_view = saved.get("current_view", "chat")
+                st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
                 st.session_state.selected_system = saved.get("selected_system")
                 if saved.get("sessions"):
                     _loaded = saved["sessions"]
@@ -2911,7 +2911,7 @@ if st.session_state.user and not st.session_state.data_loaded:
     saved = load_user(st.session_state.user["email"])
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
-        st.session_state.current_view = saved.get("current_view", "chat")
+        st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -3103,7 +3103,7 @@ if "del" in st.query_params:
             "theme": st.session_state.get("theme", "dark"), 
             "sessions": _to_save, 
             "active_id": st.session_state.active_id,
-            "current_view": st.session_state.get("current_view", "chat")
+            "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat"), "selected_system": st.session_state.get("selected_system", "chat")
         })
         
     try: del st.query_params["del"]
@@ -3864,7 +3864,7 @@ if user:
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat"),
+        "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat"), "selected_system": st.session_state.get("selected_system", "chat"),
         "selected_system": st.session_state.get("selected_system", "chat")
     })
 _new_token = st.session_state.pop("new_token", None)
@@ -4630,7 +4630,7 @@ if user:
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat") # <-- INI YANG MENYELAMATKAN DARI AMNESIA
+        "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat"), "selected_system": st.session_state.get("selected_system", "chat") # <-- INI YANG MENYELAMATKAN DARI AMNESIA
     })
 
 _new_token = st.session_state.pop("new_token", None)
