@@ -3859,13 +3859,13 @@ current_view = st.session_state.get("current_view", "chat")
 
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
-    # KODE SIMPAN POSISI LAYAR YANG BARU 
+    
     save_user(user["email"], {
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
         "current_view": st.session_state.get("current_view", "chat"),
-        "selected_system": st.session_state.get("selected_system") # FIX: Mencegah terlempar ke Home saat ganti tema
+        "selected_system": st.session_state.get("selected_system", "chat")
     })
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
@@ -3881,12 +3881,16 @@ if st.session_state.user is None: components.html("<script>(function() { try { v
 # ─────────────────────────────────────────────
 # PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
+
 # --- OBAT ANTI AMNESIA ---
 if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     try:
         _saved_data = load_user(st.session_state.user["email"])
-        if _saved_data and "current_view" in _saved_data and "current_view" not in st.session_state:
-            st.session_state.current_view = _saved_data["current_view"]
+        if _saved_data:
+            if "current_view" in _saved_data:
+                st.session_state.current_view = _saved_data["current_view"]
+            if "selected_system" in _saved_data:
+                st.session_state.selected_system = _saved_data["selected_system"]
     except: pass
     st.session_state.amnesia_fixed = True
 
