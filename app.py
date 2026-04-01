@@ -4379,7 +4379,7 @@ if current_view == "dashboard":
         st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45 (Potensi Outflow Reksadana)</p>", unsafe_allow_html=True)
         st.dataframe(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
 
-# ==========================================
+    # ==========================================
     # TAB 3: CONGLOMERATE MAP (PETA KONGLOMERASI)
     # ==========================================
     with tab_conglo:
@@ -4464,11 +4464,6 @@ if current_view == "dashboard":
         """, unsafe_allow_html=True)
         
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-    # ==========================================
-    # TAB 4: SECTOR HEATMAP
-    # ==========================================
-    with tab_heatmap:
 
     # ==========================================
     # TAB 4: SECTOR HEATMAP
