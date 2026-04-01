@@ -3860,13 +3860,13 @@ current_view = st.session_state.get("current_view", "chat")
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     # KODE SIMPAN POSISI LAYAR YANG BARU 
-        save_user(user["email"], {
-            "theme": st.session_state.get("theme", "dark"), 
-            "sessions": sessions_to_save, 
-            "active_id": st.session_state.active_id,
-            "current_view": st.session_state.get("current_view", "chat"),
-            "selected_system": st.session_state.get("selected_system") # FIX: Mencegah terlempar ke Home saat ganti tema
-        })
+    save_user(user["email"], {
+        "theme": st.session_state.get("theme", "dark"), 
+        "sessions": sessions_to_save, 
+        "active_id": st.session_state.active_id,
+        "current_view": st.session_state.get("current_view", "chat"),
+        "selected_system": st.session_state.get("selected_system") # FIX: Mencegah terlempar ke Home saat ganti tema
+    })
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
 if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
