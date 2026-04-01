@@ -4056,10 +4056,11 @@ if current_view == "dashboard":
     st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
     st.markdown("<hr class='fancy-divider' style='margin-top:0;'>", unsafe_allow_html=True)
     
-    # KATEGORI TAB (4 TABS)
-    tab_macro, tab_rotation, tab_heatmap, tab_news = st.tabs([
+    # KATEGORI TAB (5 TABS)
+    tab_macro, tab_rotation, tab_conglo, tab_heatmap, tab_news = st.tabs([
         "🌍 Global & Macro", 
         "🔄 Index & Sector Rotation", 
+        "👑 Conglomerate Map",
         "🗺️ Sector Heatmap", 
         "📰 Live News Feed"
     ])
@@ -4376,16 +4377,102 @@ if current_view == "dashboard":
 
         st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45 (Potensi Outflow Reksadana)</p>", unsafe_allow_html=True)
         st.dataframe(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style.applymap(highlight_status, subset=['Status']), use_container_width=True, hide_index=True)
+# ==========================================
+    # TAB 3: CONGLOMERATE MAP (PETA KONGLOMERASI)
+    # ==========================================
+    with tab_conglo:
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>👑 Peta Saham Konglomerasi Indonesia</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG.</p>", unsafe_allow_html=True)
+        
+        # Data Base Konglomerasi Terlengkap
+        conglo_data = [
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "TPIA", "Nama": "Chandra Asri Pacific", "Fokus Bisnis": "Petrokimia"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "BREN", "Nama": "Barito Renewables", "Fokus Bisnis": "Panas Bumi (Geothermal)"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "CUAN", "Nama": "Petrindo Jaya Kreasi", "Fokus Bisnis": "Tambang Mineral"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "PTRO", "Nama": "Petrosea", "Fokus Bisnis": "Kontraktor Tambang"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "CDIA", "Nama": "Chandra Daya Investasi", "Fokus Bisnis": "Infrastruktur & Utilitas"},
+            
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BBCA", "Nama": "Bank Central Asia", "Fokus Bisnis": "Perbankan"},
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "TOWR", "Nama": "Sarana Menara Nusantara", "Fokus Bisnis": "Menara Telekomunikasi"},
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "SUPR", "Nama": "Solusi Tunas Pratama", "Fokus Bisnis": "Menara Telekomunikasi"},
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BELI", "Nama": "Global Digital Niaga", "Fokus Bisnis": "E-Commerce (Blibli)"},
+            
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "INDF", "Nama": "Indofood Sukses Makmur", "Fokus Bisnis": "Consumer Goods"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "ICBP", "Nama": "Indofood CBP", "Fokus Bisnis": "Consumer Goods"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "LSIP", "Nama": "PP London Sumatra", "Fokus Bisnis": "Perkebunan"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "SIMP", "Nama": "Salim Ivomas Pratama", "Fokus Bisnis": "Perkebunan"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "AMMN", "Nama": "Amman Mineral", "Fokus Bisnis": "Tambang Emas & Tembaga"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "DNET", "Nama": "Indoritel Makmur", "Fokus Bisnis": "Ritel (Indomaret)"},
+            
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "ASII", "Nama": "Astra International", "Fokus Bisnis": "Holding Otomotif"},
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "UNTR", "Nama": "United Tractors", "Fokus Bisnis": "Alat Berat & Tambang"},
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "AALI", "Nama": "Astra Agro Lestari", "Fokus Bisnis": "Kelapa Sawit"},
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "AUTO", "Nama": "Astra Otoparts", "Fokus Bisnis": "Komponen Otomotif"},
+            
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "INKP", "Nama": "Indah Kiat Pulp & Paper", "Fokus Bisnis": "Pulp & Paper"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "TKIM", "Nama": "Tjiwi Kimia", "Fokus Bisnis": "Pulp & Paper"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "BSDE", "Nama": "Bumi Serpong Damai", "Fokus Bisnis": "Properti"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "SMAR", "Nama": "Sinar Mas Agro", "Fokus Bisnis": "Agribisnis"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "DSSA", "Nama": "Dian Swastatika", "Fokus Bisnis": "Energi"},
+            
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BUMI", "Nama": "Bumi Resources", "Fokus Bisnis": "Batu Bara"},
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BRMS", "Nama": "Bumi Resources Minerals", "Fokus Bisnis": "Tambang Emas"},
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "ENRG", "Nama": "Energi Mega Persada", "Fokus Bisnis": "Migas"},
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "VKTR", "Nama": "VKTR Teknologi", "Fokus Bisnis": "Kendaraan Listrik"},
+            
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADRO", "Nama": "Adaro Energy", "Fokus Bisnis": "Batu Bara"},
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADMR", "Nama": "Adaro Minerals", "Fokus Bisnis": "Batu Bara Metalurgi"},
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "MBMA", "Nama": "Merdeka Battery", "Fokus Bisnis": "Nikel & Baterai"},
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ESSA", "Nama": "ESSA Industries", "Fokus Bisnis": "Amonia & LPG"},
+            
+            {"Grup": "MNC (Hary Tanoe)", "Ticker": "BHIT", "Nama": "MNC Asia Holding", "Fokus Bisnis": "Holding"},
+            {"Grup": "MNC (Hary Tanoe)", "Ticker": "MNCN", "Nama": "Media Nusantara Citra", "Fokus Bisnis": "Media Televisi"},
+            {"Grup": "MNC (Hary Tanoe)", "Ticker": "KPIG", "Nama": "MNC Land", "Fokus Bisnis": "Properti"},
+            
+            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "LPKR", "Nama": "Lippo Karawaci", "Fokus Bisnis": "Properti"},
+            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "SILO", "Nama": "Siloam Hospitals", "Fokus Bisnis": "Kesehatan"},
+            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "MPPA", "Nama": "Matahari Putra Prima", "Fokus Bisnis": "Ritel"},
+            
+            {"Grup": "CT Corp (Chairul T.)", "Ticker": "MEGA", "Nama": "Bank Mega", "Fokus Bisnis": "Perbankan"},
+            {"Grup": "CT Corp (Chairul T.)", "Ticker": "BBHI", "Nama": "Allo Bank", "Fokus Bisnis": "Bank Digital"}
+        ]
+        df_conglo = pd.DataFrame(conglo_data)
+        
+        # Fitur Filter Dropdown agar user gampang mencari
+        grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
+        selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list)
+        
+        if selected_grup != "Semua Grup":
+            df_display = df_conglo[df_conglo["Grup"] == selected_grup]
+        else:
+            df_display = df_conglo
+            
+        st.dataframe(df_display, use_container_width=True, hide_index=True)
+        
+        # Kartu Insight Keren di Bawah Tabel
+        st.markdown(f"""
+        <div class="dynamic-card" style="margin-top: 15px;">
+            <h5 style='color:#F5C242; margin-top:0;'>💡 SIGMA Insight: The Power of Conglomerates</h5>
+            <p style='color:{text_main}; font-size: 0.92rem; line-height: 1.6;'>
+            Di IHSG, sentimen yang terjadi pada <i>holding company</i> (induk perusahaan) seringkali menjalar dengan cepat ke anak-anak usahanya. Misalnya, saat sentimen energi hijau menguat pada BREN, saham BRPT, TPIA, dan CDIA sering ikut terkerek naik karena mereka berada di gerbong konglomerasi yang sama.<br><br>
+            <b>Tips Trading:</b> Pantau <i>Leader</i> (penggerak utama) dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i> dengan akumulasi bandar masif, saham <i>Laggard</i> (anak usaha yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang sangat profitabel!
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
 
     # ==========================================
-    # TAB 3: SECTOR HEATMAP
+    # TAB 4: SECTOR HEATMAP
     # ==========================================
     with tab_heatmap:
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px;'>🗺️ Sector Heatmap</h4>", unsafe_allow_html=True)
         st.info("💡 **Kategori Heatmap** sedang dalam tahap penyesuaian API. Fitur ini nantinya akan menampilkan peta panas (Heatmap) pergerakan seluruh sektor dan saham di IHSG secara real-time.")
 
     # ==========================================
-    # TAB 4: LIVE NEWS FEED
+    # TAB 5: LIVE NEWS FEED
     # ==========================================
     with tab_news:
         st.markdown(f"<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
