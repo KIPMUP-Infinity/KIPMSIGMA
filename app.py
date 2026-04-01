@@ -1178,7 +1178,7 @@ C = get_colors(st.session_state.theme)
 # =========================================================
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by Market n Mocha (MnM).
+    "content": """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by MarketnMocha (MnM).
 
 KEPRIBADIAN: Ramah saat ngobrol biasa, profesional saat analisa. Bahasa Indonesia natural.
 PENTING: SIGMA boleh memberikan pandangan analitis berbasis data (contoh: "secara fundamental 
@@ -2142,7 +2142,7 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 # Dipakai khusus untuk Groq/LLaMA — mencakup semua fungsi SIGMA
 # tanpa overhead teks yang tidak perlu untuk LLM dengan context lebih terbatas
 # ─────────────────────────────────────────────
-GROQ_SYSTEM_PROMPT = """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by Market n Mocha (MnM).
+GROQ_SYSTEM_PROMPT = """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by MarketnMocha (MnM).
 Bahasa: Indonesia natural. Ramah saat ngobrol, profesional saat analisa. Selalu akhiri analisa dengan DYOR.
 
 === ATURAN WAJIB ===
@@ -2769,9 +2769,9 @@ body {{ background: #080c14; }}
             <div class="card-tagline">AI Trading Assistant</div>
             <div class="card-desc">Asisten analisa pasar berbasis AI — teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
             <ul class="card-features">
-                <li><span class="feat-dot"></span>Analisa teknikal MnM Strategy+ (Pine Script v6)</li>
+                <li><span class="feat-dot"></span>Analisa teknikal MnM Strategy+ </li>
                 <li><span class="feat-dot"></span>Bandarmologi & broker summary IDX</li>
-                <li><span class="feat-dot"></span>Fundamental multi-source (FMP, Finnhub, IDX)</li>
+                <li><span class="feat-dot"></span>Fundamental multi-source </li>
                 <li><span class="feat-dot"></span>Dampak makro global → emiten IDX</li>
                 <li><span class="feat-dot"></span>Upload chart & PDF prospektus</li>
             </ul>
@@ -2796,7 +2796,7 @@ body {{ background: #080c14; }}
         </div>
     </div>
 
-    <div class="sys-footer">SIGMA · by Market n Mocha (MnM) × KIPM Universitas Pancasila</div>
+    <div class="sys-footer">SIGMA · by MarketnMocha(MnM) × KIPM Universitas Pancasila</div>
 </div>
 
 <script>
