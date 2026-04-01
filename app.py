@@ -2615,7 +2615,7 @@ def show_system_selector():
     [data-testid="stVerticalBlock"] { gap: 0 !important; }
     [data-testid="stHorizontalBlock"] {
         position: fixed !important; bottom: -300px !important;
-        opacity: 0 !important; pointer-events: none !important; height: 0 !important; overflow: hidden !important;
+        opacity: 0 !important; height: 1px !important; width: 1px !important; overflow: hidden !important; z-index: -999 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -2804,32 +2804,26 @@ body {{ background: #080c14; }}
 var TERMINAL_URL = "{_terminal_url}";
 
 function selectChat() {{
-    var success = false;
-    // JALUR ANDROID & WINDOWS: Cari tombol yang "mengandung" kata chat
+    // Eksekusi Klik Normal (Berlaku untuk Android, Windows, dll)
     try {{
         var pd = window.parent.document;
-        var btns = pd.querySelectorAll('button');
+        var btns = pd.querySelectorAll('[data-testid="stButton"] button');
         for (var i = 0; i < btns.length; i++) {{
             var txt = (btns[i].innerText || btns[i].textContent || "").toLowerCase();
             if (txt.includes('chat')) {{
                 btns[i].click();
-                success = true;
-                break;
+                return;
             }}
         }}
     }} catch(e) {{}}
-
-    // JALUR APPLE (atau jika tombol gagal diklik)
+    
+    // Sabuk Pengaman: Jika klik gagal, paksa lewat URL (Berlaku untuk Apple/Safari)
     setTimeout(function() {{
-        var ua = navigator.userAgent || navigator.platform;
-        var isApple = /Mac|iPod|iPhone|iPad|Macintosh|MacIntel/.test(ua);
-        if (!success || isApple) {{
-            try {{
-                var u = new URL(window.parent.location.href);
-                u.searchParams.set('action', 'open_chat');
-                window.parent.location.assign(u.toString());
-            }} catch(e) {{}}
-        }}
+        try {{
+            var u = new URL(window.parent.location.href);
+            u.searchParams.set('action', 'open_chat');
+            window.parent.location.assign(u.toString());
+        }} catch(e) {{}}
     }}, 150);
 }}
 
@@ -2839,32 +2833,26 @@ function selectTerminal() {{
         return;
     }}
     
-    var success = false;
-    // JALUR ANDROID & WINDOWS
+    // Eksekusi Klik Normal
     try {{
         var pd = window.parent.document;
-        var btns = pd.querySelectorAll('button');
+        var btns = pd.querySelectorAll('[data-testid="stButton"] button');
         for (var i = 0; i < btns.length; i++) {{
             var txt = (btns[i].innerText || btns[i].textContent || "").toLowerCase();
             if (txt.includes('terminal')) {{
                 btns[i].click();
-                success = true;
-                break;
+                return;
             }}
         }}
     }} catch(e) {{}}
-
-    // JALUR APPLE (atau jika tombol gagal diklik)
+    
+    // Sabuk Pengaman
     setTimeout(function() {{
-        var ua = navigator.userAgent || navigator.platform;
-        var isApple = /Mac|iPod|iPhone|iPad|Macintosh|MacIntel/.test(ua);
-        if (!success || isApple) {{
-            try {{
-                var u = new URL(window.parent.location.href);
-                u.searchParams.set('action', 'open_terminal');
-                window.parent.location.assign(u.toString());
-            }} catch(e) {{}}
-        }}
+        try {{
+            var u = new URL(window.parent.location.href);
+            u.searchParams.set('action', 'open_terminal');
+            window.parent.location.assign(u.toString());
+        }} catch(e) {{}}
     }}, 150);
 }}
 </script>
