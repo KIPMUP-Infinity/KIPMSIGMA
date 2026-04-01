@@ -1162,6 +1162,7 @@ def init_session():
         "active_id": None,
         "img_data": None,
         "pdf_data": None,
+        "selected_system": None,
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -2545,6 +2546,274 @@ def show_login():
     st.stop()
 
 if st.session_state.user is None: show_login()
+
+# ─────────────────────────────────────────────
+# HALAMAN 2: SYSTEM SELECTOR (setelah login, sebelum app)
+# ─────────────────────────────────────────────
+def show_system_selector():
+    """Halaman promosi pemilihan sistem — dark futuristic style."""
+    _user = st.session_state.user
+    _name = (_user.get("name") or _user.get("email","")).split()[0] if _user else "Trader"
+
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"] { display: none !important; }
+    header[data-testid="stHeader"] { display: none !important; }
+    #MainMenu { display: none !important; }
+    footer { display: none !important; }
+    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"] {
+        background: #080c14 !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    [data-testid="stVerticalBlock"] { gap: 0 !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+    * {{ font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif !important; }}
+
+    .sys-wrapper {{
+        min-height: 100vh;
+        background: #080c14;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        position: relative;
+        overflow: hidden;
+    }}
+    .sys-wrapper::before {{
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(0,157,255,0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,157,255,0.06) 1px, transparent 1px);
+        background-size: 60px 60px;
+        animation: gridPulse 8s ease-in-out infinite;
+        pointer-events: none;
+    }}
+    @keyframes gridPulse {{ 0%, 100% {{ opacity: 0.4; }} 50% {{ opacity: 1; }} }}
+    .sys-wrapper::after {{
+        content: '';
+        position: absolute;
+        width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(0,100,255,0.12) 0%, transparent 70%);
+        top: -150px; left: -100px;
+        pointer-events: none;
+        animation: orbFloat 12s ease-in-out infinite;
+    }}
+    @keyframes orbFloat {{ 0%, 100% {{ transform: translate(0,0); }} 50% {{ transform: translate(60px, 40px); }} }}
+
+    .sys-header {{ text-align: center; margin-bottom: 48px; position: relative; z-index: 2; }}
+    .sys-welcome {{ font-size: 0.8rem; letter-spacing: 4px; color: rgba(0,157,255,0.7); text-transform: uppercase; margin-bottom: 10px; }}
+    .sys-title {{ font-size: 2.8rem; font-weight: 700; color: #ffffff; letter-spacing: 2px; line-height: 1.1; margin-bottom: 6px; }}
+    .sys-title span {{ color: #F5C242; }}
+    .sys-subtitle {{ font-size: 0.85rem; color: rgba(255,255,255,0.35); letter-spacing: 1px; }}
+    .sys-divider {{ width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #009dff, transparent); margin: 14px auto 0; animation: shimmer 2.5s ease-in-out infinite; }}
+    @keyframes shimmer {{ 0%, 100% {{ opacity: 0.4; width: 40px; }} 50% {{ opacity: 1; width: 80px; }} }}
+
+    .sys-cards {{ display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 2; max-width: 820px; width: 100%; }}
+
+    .sys-card {{
+        flex: 1; min-width: 300px; max-width: 380px;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px; padding: 36px 28px 28px;
+        position: relative; overflow: hidden; cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }}
+    .sys-card::before {{
+        content: ''; position: absolute; top: 0; left: 0; right: 0;
+        height: 2px; border-radius: 20px 20px 0 0;
+    }}
+    .sys-card.sigma-chat::before {{ background: linear-gradient(90deg, transparent, #009dff, #0048ff, transparent); }}
+    .sys-card.sigma-terminal::before {{ background: linear-gradient(90deg, transparent, #F5C242, #e0a820, transparent); }}
+
+    .sys-card .card-glow {{
+        position: absolute; width: 200px; height: 200px; border-radius: 50%;
+        filter: blur(60px); opacity: 0; top: -60px; right: -40px;
+        transition: opacity 0.4s ease; pointer-events: none;
+    }}
+    .sys-card.sigma-chat .card-glow {{ background: rgba(0,157,255,0.3); }}
+    .sys-card.sigma-terminal .card-glow {{ background: rgba(245,194,66,0.25); }}
+    .sys-card:hover .card-glow {{ opacity: 1; }}
+    .sys-card:hover {{ transform: translateY(-6px); }}
+    .sys-card.sigma-chat:hover {{ border-color: rgba(0,157,255,0.5); box-shadow: 0 20px 60px rgba(0,100,255,0.2), 0 0 0 1px rgba(0,157,255,0.3); }}
+    .sys-card.sigma-terminal:hover {{ border-color: rgba(245,194,66,0.5); box-shadow: 0 20px 60px rgba(245,194,66,0.15), 0 0 0 1px rgba(245,194,66,0.3); }}
+
+    .card-icon {{ width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 20px; }}
+    .sigma-chat .card-icon {{ background: rgba(0,157,255,0.12); border: 1px solid rgba(0,157,255,0.25); }}
+    .sigma-terminal .card-icon {{ background: rgba(245,194,66,0.1); border: 1px solid rgba(245,194,66,0.2); }}
+
+    .card-badge {{ position: absolute; top: 18px; right: 20px; font-size: 0.62rem; letter-spacing: 2px; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; font-weight: 600; }}
+    .sigma-chat .card-badge {{ background: rgba(0,157,255,0.15); color: #009dff; border: 1px solid rgba(0,157,255,0.25); }}
+    .sigma-terminal .card-badge {{ background: rgba(245,194,66,0.12); color: #F5C242; border: 1px solid rgba(245,194,66,0.2); }}
+
+    .card-name {{ font-size: 1.35rem; font-weight: 700; color: #ffffff; margin-bottom: 6px; letter-spacing: 0.5px; }}
+    .card-tagline {{ font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 16px; }}
+    .sigma-chat .card-tagline {{ color: rgba(0,157,255,0.7); }}
+    .sigma-terminal .card-tagline {{ color: rgba(245,194,66,0.7); }}
+
+    .card-desc {{ font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.7; margin-bottom: 24px; }}
+
+    .card-features {{ list-style: none; padding: 0; margin: 0 0 28px 0; }}
+    .card-features li {{ font-size: 0.8rem; color: rgba(255,255,255,0.55); padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 8px; }}
+    .card-features li:last-child {{ border-bottom: none; }}
+    .feat-dot {{ width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }}
+    .sigma-chat .feat-dot {{ background: #009dff; box-shadow: 0 0 6px #009dff; }}
+    .sigma-terminal .feat-dot {{ background: #F5C242; box-shadow: 0 0 6px #F5C242; }}
+
+    .card-cta {{ width: 100%; padding: 13px; border-radius: 12px; border: none; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.8px; cursor: pointer; transition: opacity 0.2s, transform 0.15s; text-transform: uppercase; }}
+    .sigma-chat .card-cta {{ background: linear-gradient(135deg, #009dff, #0048ff); color: #ffffff; box-shadow: 0 6px 24px rgba(0,100,255,0.35); }}
+    .sigma-terminal .card-cta {{ background: linear-gradient(135deg, #F5C242, #e0a820); color: #0a0e18; box-shadow: 0 6px 24px rgba(245,194,66,0.3); }}
+    .card-cta:hover {{ opacity: 0.88; transform: translateY(-1px); }}
+
+    .sys-footer {{ margin-top: 48px; text-align: center; font-size: 0.72rem; color: rgba(255,255,255,0.2); letter-spacing: 1px; position: relative; z-index: 2; }}
+
+    @media (max-width: 720px) {{
+        .sys-title {{ font-size: 2rem; }}
+        .sys-cards {{ gap: 16px; }}
+        .sys-card {{ min-width: 260px; padding: 28px 20px 22px; }}
+        .sys-header {{ margin-bottom: 32px; }}
+    }}
+    </style>
+
+    <div class="sys-wrapper">
+        <div class="sys-header">
+            <div class="sys-welcome">Welcome back, {_name}</div>
+            <div class="sys-title">Choose Your <span>System</span></div>
+            <div class="sys-subtitle">Select the platform you want to access today</div>
+            <div class="sys-divider"></div>
+        </div>
+
+        <div class="sys-cards">
+            <div class="sys-card sigma-chat" id="card-sigma-chat">
+                <div class="card-glow"></div>
+                <div class="card-badge">Live</div>
+                <div class="card-icon">⚡</div>
+                <div class="card-name">SIGMA AI Chat</div>
+                <div class="card-tagline">AI Trading Assistant</div>
+                <div class="card-desc">
+                    Asisten analisa pasar berbasis AI — teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.
+                </div>
+                <ul class="card-features">
+                    <li><span class="feat-dot"></span>Analisa teknikal MnM Strategy+ (Pine Script v6)</li>
+                    <li><span class="feat-dot"></span>Bandarmologi &amp; broker summary IDX</li>
+                    <li><span class="feat-dot"></span>Fundamental multi-source (FMP, Finnhub, IDX)</li>
+                    <li><span class="feat-dot"></span>Dampak makro global → emiten IDX</li>
+                    <li><span class="feat-dot"></span>Upload chart &amp; PDF prospektus</li>
+                </ul>
+                <button class="card-cta" id="cta-chat">Masuk ke AI Chat →</button>
+            </div>
+
+            <div class="sys-card sigma-terminal" id="card-sigma-terminal">
+                <div class="card-glow"></div>
+                <div class="card-badge">Beta</div>
+                <div class="card-icon">🖥</div>
+                <div class="card-name">SIGMA Terminal</div>
+                <div class="card-tagline">Market Dashboard</div>
+                <div class="card-desc">
+                    Dashboard pasar real-time — Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.
+                </div>
+                <ul class="card-features">
+                    <li><span class="feat-dot"></span>Market Overview — IHSG &amp; indeks sektoral</li>
+                    <li><span class="feat-dot"></span>Broker Summary real-time IDX</li>
+                    <li><span class="feat-dot"></span>Stock Screener dengan filter custom</li>
+                    <li><span class="feat-dot"></span>Watchlist personal dengan alert</li>
+                    <li><span class="feat-dot"></span>Data langsung dari BEI</li>
+                </ul>
+                <button class="card-cta" id="cta-terminal">Masuk ke Terminal →</button>
+            </div>
+        </div>
+
+        <div class="sys-footer">
+            SIGMA · by Market n Mocha (MnM) × KIPM Universitas Pancasila
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Hidden Streamlit buttons yang di-trigger oleh card click via JS ──
+    col1, col2 = st.columns(2)
+    with col1:
+        btn_chat = st.button("chat", key="btn_sys_chat", use_container_width=True)
+    with col2:
+        btn_terminal = st.button("terminal", key="btn_sys_terminal", use_container_width=True)
+
+    if btn_chat:
+        st.session_state.selected_system = "chat"
+        st.rerun()
+
+    if btn_terminal:
+        st.session_state.selected_system = "terminal"
+        SIGMA_TERMINAL_URL = st.secrets.get("SIGMA_TERMINAL_URL", "")
+        if SIGMA_TERMINAL_URL:
+            st.markdown(f'<meta http-equiv="refresh" content="0; url={SIGMA_TERMINAL_URL}">', unsafe_allow_html=True)
+        else:
+            st.session_state.selected_system = "chat"
+        st.rerun()
+
+    # ── CSS: sembunyikan tombol Streamlit asli, biarkan HTML card jadi UI ──
+    st.markdown("""
+    <style>
+    [data-testid="stHorizontalBlock"] {
+        position: fixed !important;
+        bottom: -200px !important;
+        left: 0; right: 0;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+    </style>
+
+    <script>
+    (function() {
+        var pd = window.parent.document;
+
+        // Hide streamlit chrome
+        ['stToolbar','stDecoration','stStatusWidget'].forEach(function(t) {
+            var el = pd.querySelector('[data-testid="'+t+'"]');
+            if (el) el.style.display = 'none';
+        });
+
+        function attachClicks() {
+            // Find the two Streamlit buttons
+            var stBtns = Array.from(pd.querySelectorAll('[data-testid="stButton"] button'));
+            var chatBtn  = stBtns.find(function(b) { return b.innerText.trim() === 'chat'; });
+            var termBtn  = stBtns.find(function(b) { return b.innerText.trim() === 'terminal'; });
+
+            if (!chatBtn || !termBtn) { setTimeout(attachClicks, 400); return; }
+
+            // Wire card clicks → Streamlit buttons
+            var chatCard = pd.getElementById('card-sigma-chat');
+            var termCard = pd.getElementById('card-sigma-terminal');
+            var chatCta  = pd.getElementById('cta-chat');
+            var termCta  = pd.getElementById('cta-terminal');
+
+            if (chatCard) chatCard.addEventListener('click', function(e) { if (e.target !== chatCta) chatBtn.click(); });
+            if (termCard) termCard.addEventListener('click', function(e) { if (e.target !== termCta) termBtn.click(); });
+            if (chatCta)  chatCta.addEventListener('click', function(e) { e.stopPropagation(); chatBtn.click(); });
+            if (termCta)  termCta.addEventListener('click', function(e) { e.stopPropagation(); termBtn.click(); });
+        }
+        setTimeout(attachClicks, 700);
+    })();
+    </script>
+    """, unsafe_allow_html=True)
+
+    st.stop()
+
+# ── Routing: jika sudah login tapi belum pilih sistem → tampilkan selector ──
+if st.session_state.user and not st.session_state.get("selected_system"):
+    show_system_selector()
+
 init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
@@ -3576,18 +3845,7 @@ if "do" in st.query_params:
         st.session_state.current_view = "chat"; _sid = _do[4:]; st.session_state.active_id = _sid; st.query_params.pop("do", None); st.rerun()
 
 active = get_active()
-
-# --- OBAT ANTI AMNESIA PENGGUNA ---
-if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
-    try:
-        _saved_data = load_user(st.session_state.user["email"])
-        if _saved_data and "current_view" in _saved_data and "current_view" not in st.session_state:
-            st.session_state.current_view = _saved_data["current_view"]
-    except: pass
-    st.session_state.amnesia_fixed = True
-
-# --- 1. SET DEFAULT VIEW MENJADI 'hub' AGAR MASUK KE MENU PEMILIHAN DULU ---
-current_view = st.session_state.get("current_view", "hub")
+current_view = st.session_state.get("current_view", "chat")
 
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
@@ -3596,7 +3854,7 @@ if user:
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": current_view 
+        "current_view": st.session_state.get("current_view", "chat") # <-- INI WAJIB ADA AGAR INGAT POSISI
     })
 
 _new_token = st.session_state.pop("new_token", None)
@@ -3604,73 +3862,27 @@ if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_toke
 if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
 
 
+
+
+
+
+
+
 # ─────────────────────────────────────────────
-# PART 8.5: THE SELECTION HUB (MENU UTAMA KIPM)
+# PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
-def show_selection_hub():
-    # CSS Khusus untuk Tampilan Hub yang Futuristik
-    st.markdown("""
-    <style>
-    /* Sembunyikan Sidebar dan Menu Bulat di Halaman Ini */
-    [data-testid="stSidebar"] { display: none !important; }
-    #spbtn { display: none !important; }
-    
-    .hub-title {
-        text-align: center; font-size: 3.5rem; font-weight: 900; letter-spacing: 6px;
-        color: #ffffff; margin-top: 10vh; margin-bottom: 5px;
-        text-shadow: 0 0 20px rgba(245, 194, 66, 0.3);
-    }
-    .hub-subtitle {
-        text-align: center; font-size: 1rem; color: #F5C242; letter-spacing: 4px;
-        margin-bottom: 8vh; font-weight: 600;
-    }
-    
-    /* Hack CSS untuk Card Futuristik */
-    div[data-testid="column"] > div > div > div > div.stButton > button {
-        height: 260px; border-radius: 24px;
-        background: linear-gradient(145deg, rgba(20, 25, 40, 0.7), rgba(10, 12, 20, 0.9)) !important;
-        backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-    }
-    div[data-testid="column"] > div > div > div > div.stButton > button:hover {
-        transform: translateY(-12px); border-color: #F5C242 !important;
-        box-shadow: 0 15px 50px rgba(245, 194, 66, 0.3) !important;
-    }
-    div[data-testid="column"] > div > div > div > div.stButton > button p {
-        font-size: 1.5rem !important; font-weight: 800 !important; color: white !important;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; white-space: pre-wrap;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+# --- OBAT ANTI AMNESIA ---
+if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
+    try:
+        _saved_data = load_user(st.session_state.user["email"])
+        if _saved_data and "current_view" in _saved_data and "current_view" not in st.session_state:
+            st.session_state.current_view = _saved_data["current_view"]
+    except: pass
+    st.session_state.amnesia_fixed = True
 
-    st.markdown("<div class='hub-title'>KIPM NEXUS</div>", unsafe_allow_html=True)
-    st.markdown("<div class='hub-subtitle'>SELECT YOUR OPERATING DIMENSION</div>", unsafe_allow_html=True)
+current_view = st.session_state.get("current_view", "chat")
 
-    col_space_left, col_term, col_ai, col_space_right = st.columns([1, 4, 4, 1])
-
-    with col_term:
-        if st.button("📊\n\nKIPM TERMINAL\nMarket Radar & Data", use_container_width=True, key="btn_hub_terminal"):
-            st.session_state.current_view = "dashboard"
-            st.rerun()
-            
-    with col_ai:
-        if st.button("🧠\n\nSIGMA AI\nIntelligent Assistant", use_container_width=True, key="btn_hub_ai"):
-            st.session_state.current_view = "chat"
-            st.rerun()
-
-
-# =========================================================
-# ROUTING LOGIC UTAMA (BERDASARKAN PILIHAN HUB)
-# =========================================================
-
-if current_view == "hub":
-    show_selection_hub()
-
-elif current_view == "dashboard":
-    # ─────────────────────────────────────────────
-    # PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
-    # ─────────────────────────────────────────────
+if current_view == "dashboard":
     try:
         import yfinance as yf
         import pandas as pd
@@ -4069,11 +4281,17 @@ elif current_view == "dashboard":
         """
         components.html(news_widget, height=620)
 
-# 3. JIKA USER MEMILIH CHAT AI
+
+
+
+
+
+
+        
+# ─────────────────────────────────────────────
+# PART 10: RUANG CHAT AI 
+# ─────────────────────────────────────────────
 else:
-    # ─────────────────────────────────────────────
-    # PART 10: RUANG CHAT AI 
-    # ─────────────────────────────────────────────
     if not active["messages"][1:]:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
         st.markdown(f"""
@@ -4271,6 +4489,7 @@ else:
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
         else:
             # ── PENTING: full_prompt SELALU reset ke prompt asli dulu ──
+            # Ini mencegah prompt dari request sebelumnya terbawa ke request baru
             full_prompt = prompt
             try:
                 ctx = build_combined_context(prompt)
@@ -4297,6 +4516,7 @@ else:
                     st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
             if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
             
+            # Jangan tampilkan prompt kaku ke user, ubah ke natural text
             display_prompt = prompt if prompt != "5. Teknikal saham di gambar ini" else "Tolong buatkan Trade Plan dari chart ini."
             st.markdown(display_prompt)
 
@@ -4316,7 +4536,7 @@ else:
                     has_pdf    = bool(pdf_data)
                     debug_info = []
 
-                    # ── JALUR 1: ADA GAMBAR → GEMINI VISION ──
+                    # ── JALUR 1: ADA GAMBAR → GEMINI VISION (satu-satunya yang bisa) ──
                     if has_image:
                         try:
                             _img_b64  = user_msg.get("img_b64")
@@ -4331,7 +4551,7 @@ else:
                                 f"\n\n`Debug: {str(e_vision)[:200]}`"
                             )
 
-                    # ── JALUR 2: ADA PDF (tanpa gambar) → GEMINI TEXT ──
+                    # ── JALUR 2: ADA PDF (tanpa gambar) → GEMINI TEXT (handle konteks panjang) ──
                     elif has_pdf and not has_image:
                         try:
                             ans_bersih, _ = _call_gemini_text(
@@ -4340,6 +4560,7 @@ else:
                             simbol_ai = "\n\n*(✨ Gemini — PDF Mode)*"
                         except Exception as e_pdf:
                             debug_info.append(f"Gemini PDF: {str(e_pdf)}")
+                            # Fallback Groq jika Gemini tidak tersedia
                             try:
                                 ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
                                 simbol_ai = "\n\n*(⚡ Groq — PDF Fallback)*"
@@ -4348,16 +4569,21 @@ else:
 
                     # ── JALUR 3: TEXT BIASA → GROQ 70B PRIMARY → GEMINI → GROQ 8B ──
                     else:
+                        # Step 1: Groq 70B dengan key rotation (primary)
                         try:
                             ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
                             simbol_ai = "\n\n*(⚡ Groq/Llama)*"
                         except Exception as e_groq70:
                             debug_info.append(f"Groq 70B: {str(e_groq70)}")
+
+                            # Step 2: Gemini Text sebagai fallback
                             try:
                                 ans_bersih, _ = _call_gemini_text(_history_msgs[-6:])
                                 simbol_ai = "\n\n*(✨ Gemini)*"
                             except Exception as e_gemini:
                                 debug_info.append(f"Gemini Text: {str(e_gemini)}")
+
+                                # Step 3: Groq 8B sebagai last resort
                                 try:
                                     ans_bersih, _ = _call_groq_fallback(full_prompt)
                                     simbol_ai = "\n\n*(⚡ Groq/Mini)*"
@@ -4382,7 +4608,21 @@ else:
             st.error(f"⚠️ {str(e)}")
         st.rerun()
 
-# --- SCRIPT JAVASCRIPT & KOMPONEN TAMBAHAN AKHIR ---
+# --- PENYIMPANAN DATA SANGAT PENTING (FIX AMNESIA) ---
+if user:
+    sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
+    
+    save_user(user["email"], {
+        "theme": st.session_state.get("theme", "dark"), 
+        "sessions": sessions_to_save, 
+        "active_id": st.session_state.active_id,
+        "current_view": st.session_state.get("current_view", "chat") # <-- INI YANG MENYELAMATKAN DARI AMNESIA
+    })
+
+_new_token = st.session_state.pop("new_token", None)
+if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
+if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
+
 components.html(f"""
 <script>
 const BC = "{C['bubble']}"; const BT = "#ffffff";
@@ -4451,6 +4691,7 @@ setInterval(addActionButtons, 1000);
 </script>
 """, height=0)
 
+# ─── JEMBATAN COPY-PASTE (POLYFILL KHUSUS STREAMLIT) ───
 components.html("""
 <script>
 (function() {
@@ -4497,6 +4738,7 @@ components.html("""
 </script>
 """, height=0)
 
+# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
 <script>
