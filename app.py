@@ -3895,7 +3895,15 @@ if user:
     })
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
-if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
+if st.session_state.user is None:
+    if "sigma_token" not in st.query_params:
+        # Jika tidak ada token di URL, coba cari di memori browser
+        components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
+    else:
+        # FIX APPLE LOOP: Jika ada token di URL tapi gagal login (server amnesia), HANCURKAN token lama!
+        components.html("<script>try { localStorage.removeItem('sigma_token'); } catch(e) {}</script>", height=0)
+        try: st.query_params.pop("sigma_token", None)
+        except: passtion.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
 
 
 
