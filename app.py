@@ -2804,34 +2804,18 @@ body {{ background: #080c14; }}
 var TERMINAL_URL = "{_terminal_url}";
 
 function selectChat() {{
-    // Find the hidden Streamlit "chat" button in parent frame and click it
-    try {{
-        var pd = window.parent.document;
-        var btns = pd.querySelectorAll('[data-testid="stButton"] button');
-        for (var i = 0; i < btns.length; i++) {{
-            if (btns[i].innerText.trim() === 'chat') {{
-                btns[i].click();
-                return;
-            }}
-        }}
-    }} catch(e) {{}}
+    var u = new URL(window.parent.location.href);
+    u.searchParams.set('action', 'open_chat');
+    window.parent.location.href = u.toString();
 }}
 
 function selectTerminal() {{
     if (TERMINAL_URL && TERMINAL_URL.length > 4) {{
         window.parent.location.href = TERMINAL_URL;
     }} else {{
-        // No terminal URL — fall back to chat
-        try {{
-            var pd = window.parent.document;
-            var btns = pd.querySelectorAll('[data-testid="stButton"] button');
-            for (var i = 0; i < btns.length; i++) {{
-                if (btns[i].innerText.trim() === 'terminal') {{
-                    btns[i].click();
-                    return;
-                }}
-            }}
-        }} catch(e) {{}}
+        var u = new URL(window.parent.location.href);
+        u.searchParams.set('action', 'open_terminal');
+        window.parent.location.href = u.toString();
     }}
 }}
 </script>
@@ -2839,26 +2823,24 @@ function selectTerminal() {{
 </html>
     """, height=1150, scrolling=False)
 
-    # ── Hidden Streamlit buttons — di-trigger oleh JS di atas ──
-    col1, col2 = st.columns(2)
-    with col1:
-        btn_chat = st.button("chat", key="btn_sys_chat", use_container_width=True)
-    with col2:
-        btn_terminal = st.button("terminal", key="btn_sys_terminal", use_container_width=True)
-
-    if btn_chat:
-        st.session_state.selected_system = "chat"
-        st.session_state.current_view = "chat" # FIX: Paksa memori UI pindah ke Chat
-        st.rerun()
-
-    if btn_terminal:
-        _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
-        if _turl:
-            st.session_state.selected_system = "terminal"
-        else:
-            st.session_state.selected_system = "terminal_local"
-            st.session_state.current_view = "dashboard" # FIX: Paksa memori UI pindah ke Terminal Internal
-        st.rerun()
+# ── FIX APPLE SAFARI: Menangkap sinyal dari URL Parameter ──
+    if "action" in st.query_params:
+        _action = st.query_params.get("action")
+        try: st.query_params.pop("action", None)
+        except: pass
+        
+        if _action == "open_chat":
+            st.session_state.selected_system = "chat"
+            st.session_state.current_view = "chat"
+            st.rerun()
+        elif _action == "open_terminal":
+            _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
+            if _turl:
+                st.session_state.selected_system = "terminal"
+            else:
+                st.session_state.selected_system = "terminal_local"
+                st.session_state.current_view = "dashboard"
+            st.rerun()
 
     st.stop()
 
