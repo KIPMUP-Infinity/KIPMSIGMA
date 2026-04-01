@@ -4056,6 +4056,7 @@ if current_view == "dashboard":
     .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
     .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
     
+    /* CSS AGRESIF MENGHILANGKAN TOMBOL 3 TITIK DI TABEL (GLIDE DATA GRID) */
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"] {{ display: none !important; opacity: 0 !important; pointer-events: none !important; }}
     [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display: none !important; }}
     [data-testid="stDataFrame"] .gdg-header-action {{ display: none !important; }}
@@ -4219,7 +4220,7 @@ if current_view == "dashboard":
         st.markdown("<br><br>", unsafe_allow_html=True)
 
         # ---------------------------------------------------------
-        # LIVE NEWS FEED (LANGSUNG SETELAH MAKRO, TANPA CHART)
+        # LIVE NEWS FEED 
         # ---------------------------------------------------------
         st.markdown("<hr class='fancy-divider' style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
         st.markdown(f"<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
@@ -4264,6 +4265,7 @@ if current_view == "dashboard":
 
         # --- 2. MSCI INDEX TRACKER ---
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 15px;'>📅 <b>Jadwal Rebalancing Berikutnya:</b> Pengumuman ~13 Mei 2026 | Efektif <b>1 Juni 2026</b></p>", unsafe_allow_html=True)
         
         msci_data = {
             "Ticker": [
@@ -4378,6 +4380,253 @@ if current_view == "dashboard":
     with tab_conglo:
         st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>👑 Peta Saham Konglomerasi Indonesia</h4>", unsafe_allow_html=True)
         st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG.</p>", unsafe_allow_html=True)
+        
+        conglo_data = [
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "TPIA", "Nama": "Chandra Asri Pacific", "Fokus Bisnis": "Petrokimia"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "BREN", "Nama": "Barito Renewables", "Fokus Bisnis": "Panas Bumi (Geothermal)"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "CUAN", "Nama": "Petrindo Jaya Kreasi", "Fokus Bisnis": "Tambang Mineral"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "PTRO", "Nama": "Petrosea", "Fokus Bisnis": "Kontraktor Tambang"},
+            {"Grup": "Barito (Prajogo P.)", "Ticker": "CDIA", "Nama": "Chandra Daya Investasi", "Fokus Bisnis": "Infrastruktur & Utilitas"},
+            
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BBCA", "Nama": "Bank Central Asia", "Fokus Bisnis": "Perbankan"},
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "TOWR", "Nama": "Sarana Menara Nusantara", "Fokus Bisnis": "Menara Telekomunikasi"},
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "SUPR", "Nama": "Solusi Tunas Pratama", "Fokus Bisnis": "Menara Telekomunikasi"},
+            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BELI", "Nama": "Global Digital Niaga", "Fokus Bisnis": "E-Commerce (Blibli)"},
+            
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "INDF", "Nama": "Indofood Sukses Makmur", "Fokus Bisnis": "Consumer Goods"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "ICBP", "Nama": "Indofood CBP", "Fokus Bisnis": "Consumer Goods"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "LSIP", "Nama": "PP London Sumatra", "Fokus Bisnis": "Perkebunan"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "SIMP", "Nama": "Salim Ivomas Pratama", "Fokus Bisnis": "Perkebunan"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "AMMN", "Nama": "Amman Mineral", "Fokus Bisnis": "Tambang Emas & Tembaga"},
+            {"Grup": "Salim (Anthoni S.)", "Ticker": "DNET", "Nama": "Indoritel Makmur", "Fokus Bisnis": "Ritel (Indomaret)"},
+            
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "ASII", "Nama": "Astra International", "Fokus Bisnis": "Holding Otomotif"},
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "UNTR", "Nama": "United Tractors", "Fokus Bisnis": "Alat Berat & Tambang"},
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "AALI", "Nama": "Astra Agro Lestari", "Fokus Bisnis": "Kelapa Sawit"},
+            {"Grup": "Astra (Jardine Matheson)", "Ticker": "AUTO", "Nama": "Astra Otoparts", "Fokus Bisnis": "Komponen Otomotif"},
+            
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "INKP", "Nama": "Indah Kiat Pulp & Paper", "Fokus Bisnis": "Pulp & Paper"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "TKIM", "Nama": "Tjiwi Kimia", "Fokus Bisnis": "Pulp & Paper"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "BSDE", "Nama": "Bumi Serpong Damai", "Fokus Bisnis": "Properti"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "SMAR", "Nama": "Sinar Mas Agro", "Fokus Bisnis": "Agribisnis"},
+            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "DSSA", "Nama": "Dian Swastatika", "Fokus Bisnis": "Energi"},
+            
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BUMI", "Nama": "Bumi Resources", "Fokus Bisnis": "Batu Bara"},
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BRMS", "Nama": "Bumi Resources Minerals", "Fokus Bisnis": "Tambang Emas"},
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "ENRG", "Nama": "Energi Mega Persada", "Fokus Bisnis": "Migas"},
+            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "VKTR", "Nama": "VKTR Teknologi", "Fokus Bisnis": "Kendaraan Listrik"},
+            
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADRO", "Nama": "Adaro Energy", "Fokus Bisnis": "Batu Bara"},
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADMR", "Nama": "Adaro Minerals", "Fokus Bisnis": "Batu Bara Metalurgi"},
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "MBMA", "Nama": "Merdeka Battery", "Fokus Bisnis": "Nikel & Baterai"},
+            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ESSA", "Nama": "ESSA Industries", "Fokus Bisnis": "Amonia & LPG"},
+            
+            {"Grup": "MNC (Hary Tanoe)", "Ticker": "BHIT", "Nama": "MNC Asia Holding", "Fokus Bisnis": "Holding"},
+            {"Grup": "MNC (Hary Tanoe)", "Ticker": "MNCN", "Nama": "Media Nusantara Citra", "Fokus Bisnis": "Media Televisi"},
+            {"Grup": "MNC (Hary Tanoe)", "Ticker": "KPIG", "Nama": "MNC Land", "Fokus Bisnis": "Properti"},
+            
+            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "LPKR", "Nama": "Lippo Karawaci", "Fokus Bisnis": "Properti"},
+            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "SILO", "Nama": "Siloam Hospitals", "Fokus Bisnis": "Kesehatan"},
+            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "MPPA", "Nama": "Matahari Putra Prima", "Fokus Bisnis": "Ritel"},
+            
+            {"Grup": "CT Corp (Chairul T.)", "Ticker": "MEGA", "Nama": "Bank Mega", "Fokus Bisnis": "Perbankan"},
+            {"Grup": "CT Corp (Chairul T.)", "Ticker": "BBHI", "Nama": "Allo Bank", "Fokus Bisnis": "Bank Digital"}
+        ]
+        df_conglo = pd.DataFrame(conglo_data)
+        
+        grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
+        selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list)
+        
+        if selected_grup != "Semua Grup":
+            df_display = df_conglo[df_conglo["Grup"] == selected_grup]
+        else:
+            df_display = df_conglo
+            
+        st.dataframe(df_display, use_container_width=True, hide_index=True)
+        
+        st.markdown(f"""
+        <div class="dynamic-card" style="margin-top: 15px;">
+            <h5 style='color:#F5C242; margin-top:0;'>💡 SIGMA Insight: The Power of Conglomerates</h5>
+            <p style='color:{text_main}; font-size: 0.92rem; line-height: 1.6;'>
+            Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.<br><br>
+            <b>Tips Trading:</b> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+    # ==========================================
+    # TAB 4: AI STOCK INSIGHT (AUTO DRAWING CHART)
+    # ==========================================
+    with tab_ai:
+        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🤖 SIGMA AI - Auto Technical & Fundamental Insight</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Analisis instan menggunakan mesin AI SIGMA dan data Live IDX, dilengkapi dengan Auto-Drawing Plan di Chart.</p>", unsafe_allow_html=True)
+
+        col_input, col_btn, col_empty = st.columns([2, 1, 3])
+        with col_input:
+            ticker_input = st.text_input("Kode Saham (Contoh: BBCA):", "BBCA").upper()
+        with col_btn:
+            st.markdown("<br>", unsafe_allow_html=True) 
+            run_analysis = st.button("🚀 Analyze with SIGMA", use_container_width=True)
+
+        st.markdown("<hr class='fancy-divider' style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
+
+        if ticker_input:
+            df_chart = pd.DataFrame()
+            ai_data = None
+            ai_text_verdict = ""
+            
+            # 1. Fetch data chart dengan aman (handle error multi-index yfinance terbaru)
+            try:
+                df_raw = yf.download(f"{ticker_input}.JK", period="6mo", interval="1d", progress=False)
+                if not df_raw.empty:
+                    if isinstance(df_raw.columns, pd.MultiIndex):
+                        df_raw.columns = df_raw.columns.get_level_values(0)
+                    df_chart = df_raw
+            except:
+                pass
+
+            # 2. Jika tombol ditekan, jalankan analisa AI
+            if run_analysis:
+                with st.spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
+                    try:
+                        fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
+                        
+                        live_price_str = "N/A"
+                        if not df_chart.empty:
+                            try: live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
+                            except: pass
+
+                        # Prompt khusus meminta AI mengeluarkan output JSON murni di bagian bawah
+                        dashboard_prompt = f"""
+                        Sebagai SIGMA AI, berikan Executive Summary SINGKAT untuk saham {ticker_input}.
+                        Harga Terakhir: {live_price_str}
+                        
+                        Data Fundamental & Evaluasi:
+                        {fund_context}
+                        
+                        Berikan output dengan aturan ketat:
+                        1. Tulis penjelasan dalam format markdown biasa (Verdict, Valuasi, Teknikal, Action Plan).
+                        2. DI BAGIAN PALING BAWAH, kamu WAJIB memberikan satu blok JSON murni yang berisi angka prediksi untuk digambar di chart. JANGAN ADA TEKS LAIN DI DALAM BLOK JSON!
+                        
+                        Format Penjelasan:
+                        🎯 **VERDICT:** [BULLISH / BEARISH / WAIT & SEE]
+                        🏢 **Kondisi Bisnis & Valuasi:** (2 kalimat)
+                        📊 **Teknikal & Momentum:** (2 kalimat)
+                        💡 **Action Plan:** (Area buy, SL, Target)
+                        
+                        Format JSON Wajib (Sesuaikan angka dengan analisamu, angka HARUS INTEGER murni tanpa titik koma):
+                        ```json
+                        {{
+                            "entry_low": 5000,
+                            "entry_high": 5200,
+                            "target": 5600,
+                            "stop_loss": 4800
+                        }}
+                        ```
+                        """
+
+                        try:
+                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
+                        except:
+                            try:
+                                ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+                            except Exception as e_gem:
+                                ai_raw_result = f"Gagal API: {e_gem}"
+
+                        # Ekstrak data JSON dari teks jawaban AI
+                        try:
+                            json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
+                            if json_match:
+                                ai_data = json.loads(json_match.group(1))
+                                ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
+                            else:
+                                ai_text_verdict = ai_raw_result
+                        except:
+                            ai_text_verdict = ai_raw_result 
+
+                    except Exception as e:
+                        st.error(f"Gagal memproses analisa AI: {e}")
+
+            # 3. Tampilkan Chart Plotly yang meniru TradingView
+            st.markdown(f"<h5 style='color:{text_main}; margin-bottom: 10px;'>📈 Technical Plan Chart: {ticker_input}</h5>", unsafe_allow_html=True)
+            
+            if not df_chart.empty:
+                try:
+                    inc_color = '#089981' # Hijau khas TradingView
+                    dec_color = '#f23645' # Merah khas TradingView
+                    
+                    fig = go.Figure()
+                    
+                    fig.add_trace(go.Candlestick(
+                        x=df_chart.index,
+                        open=df_chart['Open'], high=df_chart['High'],
+                        low=df_chart['Low'], close=df_chart['Close'],
+                        increasing_line_color=inc_color, decreasing_line_color=dec_color,
+                        name="Price"
+                    ))
+
+                    # Auto Drawing garis jika AI membalas dengan JSON yang valid
+                    if ai_data:
+                        try:
+                            fig.add_hrect(
+                                y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']), 
+                                line_width=0, fillcolor="rgba(8,153,129,0.2)", opacity=0.5,
+                                annotation_text="🟢 BUY AREA", annotation_position="top left"
+                            )
+                            fig.add_hline(
+                                y=float(ai_data['target']), line_dash="dash", line_color="#089981", line_width=2,
+                                annotation_text=f"🎯 TARGET: {ai_data['target']}", annotation_position="top left",
+                                annotation_font_color="#089981"
+                            )
+                            fig.add_hline(
+                                y=float(ai_data['stop_loss']), line_dash="dash", line_color="#f23645", line_width=2,
+                                annotation_text=f"🛑 SL: {ai_data['stop_loss']}", annotation_position="bottom left",
+                                annotation_font_color="#f23645"
+                            )
+                        except Exception as e:
+                            st.warning("AI gagal menghasilkan kordinat harga yang pas untuk digambar otomatis.")
+
+                    tv_bg_color = "#131722" if is_dark else "#ffffff"
+                    tv_grid_color = "#2a2e39" if is_dark else "#e5e7eb"
+                    tv_text_color = "#b2b5be" if is_dark else "#1f2937"
+
+                    fig.update_layout(
+                        template="plotly_dark" if is_dark else "plotly_white",
+                        plot_bgcolor=tv_bg_color,
+                        paper_bgcolor=tv_bg_color,
+                        font=dict(color=tv_text_color),
+                        xaxis=dict(showgrid=True, gridcolor=tv_grid_color, rangeslider=dict(visible=False)),
+                        yaxis=dict(showgrid=True, gridcolor=tv_grid_color, side="right"),
+                        margin=dict(l=0, r=0, t=10, b=0),
+                        height=500,
+                        showlegend=False
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
+            else:
+                st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI.")
+
+            # 4. Tampilkan Verdict Text AI di bawah Chart
+            if run_analysis and ai_text_verdict:
+                st.markdown(f"<h5 style='color:{text_main}; margin-top: 20px;'>🧠 Executive Summary</h5>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="dynamic-card" style="padding: 20px; margin-top: 10px; border-left: 4px solid #F5C242;">
+                    {ai_text_verdict}
+                </div>
+                """, unsafe_allow_html=True)
+            elif not run_analysis:
+                st.markdown(f"""
+                <div class="dynamic-card" style="padding: 20px; text-align: center; margin-top: 20px;">
+                    <span style="font-size: 3rem;">🤖</span>
+                    <p style="color:{text_sub}; margin-top: 10px;">Klik <b>Analyze with SIGMA</b> untuk memproses data teknikal dan fundamental, lalu menggambar Trading Plan otomatis di atas Chart.</p>
+                </div>
+                """, unsafe_allow_html=True)
+
 
 
 
