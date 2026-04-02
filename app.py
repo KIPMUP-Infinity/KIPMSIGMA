@@ -5237,6 +5237,13 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     rs    = avg_g / avg_l.replace(0, 1e-9)
                     df_chart['RSI'] = (100 - (100 / (1 + rs))).fillna(50)
 
+                    # ── MACD ──────────────────────────────────────────────
+                    ema12 = df_chart['Close'].ewm(span=12, adjust=False).mean()
+                    ema26 = df_chart['Close'].ewm(span=26, adjust=False).mean()
+                    df_chart['MACD']        = ema12 - ema26
+                    df_chart['MACD_signal'] = df_chart['MACD'].ewm(span=9, adjust=False).mean()
+                    df_chart['MACD_hist']   = df_chart['MACD'] - df_chart['MACD_signal']
+
                     # ── x-axis: string kategori (anti-gap weekend) ────────
                     x_str  = df_chart.index.strftime('%d %b %y').tolist()
                     n_bars = len(x_str)
@@ -5244,15 +5251,14 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     # Ruang kosong di kanan untuk label trade plan
                     n_pad   = 35
                     pad_str = [f"_p{i}" for i in range(n_pad)]
-                    x_all   = x_str + pad_str          # semua label termasuk padding
-                    lbl_pos = x_str[-1]                # anchor label = bar terakhir data
+                    x_all   = x_str + pad_str
 
-                    # ── Figure 3 rows ─────────────────────────────────────
+                    # ── Figure 4 rows: Price / Volume / RSI / MACD ────────
                     fig = make_subplots(
-                        rows=3, cols=1,
+                        rows=4, cols=1,
                         shared_xaxes=True,
-                        row_heights=[0.60, 0.20, 0.20],
-                        vertical_spacing=0.015,
+                        row_heights=[0.52, 0.16, 0.16, 0.16],
+                        vertical_spacing=0.012,
                     )
 
                     # ── Candlestick ───────────────────────────────────────
@@ -5276,7 +5282,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             showlegend=False,
                         ), row=1, col=1)
 
-                    # ── Trade plan lines + labels di kanan ───────────────
+                    # ── Trade plan lines + labels di kanan (paper coords) ──
                     if ai_data:
                         try:
                             el  = ai_data.get('entry_low')
@@ -5286,11 +5292,8 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             tp2 = ai_data.get('tp2')
                             tp3 = ai_data.get('tp3')
 
-                            # Posisi label: 3 bar setelah data terakhir
-                            lbl_x = x_all[n_bars + 3] if n_bars + 3 < len(x_all) else x_all[-2]
-
                             def _line(y, clr, dash='dash'):
-                                # Perpanjangkan garis sampai akhir padding
+                                # Garis dari bar pertama sampai akhir padding (full width)
                                 fig.add_trace(go.Scatter(
                                     x=[x_str[0], x_all[-1]],
                                     y=[float(y), float(y)],
@@ -5300,18 +5303,18 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                                 ), row=1, col=1)
 
                             def _lbl(y, txt, fclr, bclr, brdclr):
+                                # Label pakai xref='paper' agar selalu nempel di tepi kanan
                                 fig.add_annotation(
-                                    x=lbl_x, y=float(y),
+                                    xref='paper', yref='y',
+                                    x=1.002, y=float(y),
                                     text=txt, showarrow=False,
                                     xanchor='left', yanchor='middle',
                                     font=dict(color=fclr, size=10, family='IBM Plex Mono, monospace'),
                                     bgcolor=bclr, bordercolor=brdclr,
                                     borderwidth=1, borderpad=4,
-                                    xref='x', yref='y',
                                 )
 
                             if el and eh:
-                                # Shaded buy area
                                 fig.add_trace(go.Scatter(
                                     x=x_str + x_str[::-1],
                                     y=[float(eh)]*n_bars + [float(el)]*n_bars,
@@ -5320,19 +5323,21 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                                     line=dict(width=0),
                                     showlegend=False,
                                 ), row=1, col=1)
+                                _line(el, '#089981', 'dash')
+                                _line(eh, '#089981', 'dash')
                                 _lbl((float(el)+float(eh))/2,
-                                     f"<b>BUY AREA</b>  Rp{float(el):,.0f}–{float(eh):,.0f}",
+                                     f"<b>BUY AREA</b> Rp{float(el):,.0f}–{float(eh):,.0f}",
                                      '#089981','rgba(8,153,129,0.18)','#089981')
 
                             if sl:
                                 _line(sl, '#f23645', 'dash')
-                                _lbl(sl, f"<b>STOP LOSS</b>  Rp{float(sl):,.0f}",
+                                _lbl(sl, f"<b>STOP LOSS</b> Rp{float(sl):,.0f}",
                                      '#f23645','rgba(242,54,69,0.15)','#f23645')
 
                             for tp_v, tp_n in [(tp1,'TP 1'),(tp2,'TP 2'),(tp3,'TP 3')]:
                                 if tp_v:
                                     _line(tp_v, '#089981', 'dot')
-                                    _lbl(tp_v, f"<b>{tp_n}</b>  Rp{float(tp_v):,.0f}",
+                                    _lbl(tp_v, f"<b>{tp_n}</b> Rp{float(tp_v):,.0f}",
                                          '#089981','rgba(8,153,129,0.12)','#089981')
 
                         except Exception:
@@ -5346,25 +5351,50 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         marker_color=vol_clr, showlegend=False,
                     ), row=2, col=1)
 
-                    # ── RSI ───────────────────────────────────────────────
+                    # ── RSI (70/30 yang benar) ────────────────────────────
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['RSI'],
                         mode='lines', line=dict(color='#F5C242', width=1.2),
                         showlegend=False,
                     ), row=3, col=1)
-                    for lvl, clr in [(70,'rgba(242,54,69,0.45)'),(30,'rgba(8,153,129,0.45)')]:
+                    for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
                         fig.add_trace(go.Scatter(
                             x=[x_str[0], x_str[-1]], y=[lvl, lvl],
                             mode='lines', line=dict(color=clr, width=1, dash='dot'),
                             showlegend=False,
                         ), row=3, col=1)
 
+                    # ── MACD ──────────────────────────────────────────────
+                    macd_hist_clr = [inc_color if v >= 0 else dec_color
+                                     for v in df_chart['MACD_hist']]
+                    fig.add_trace(go.Bar(
+                        x=x_str, y=df_chart['MACD_hist'],
+                        marker_color=macd_hist_clr, showlegend=False,
+                        name='MACD Hist',
+                    ), row=4, col=1)
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=df_chart['MACD'],
+                        mode='lines', line=dict(color='#2196f3', width=1.2),
+                        showlegend=False, name='MACD',
+                    ), row=4, col=1)
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=df_chart['MACD_signal'],
+                        mode='lines', line=dict(color='#ff5252', width=1.2),
+                        showlegend=False, name='Signal',
+                    ), row=4, col=1)
+                    # Garis nol MACD
+                    fig.add_trace(go.Scatter(
+                        x=[x_str[0], x_str[-1]], y=[0, 0],
+                        mode='lines', line=dict(color=tv_border, width=1),
+                        showlegend=False,
+                    ), row=4, col=1)
+
                     # ── Tick labels: ambil ~8 titik merata ───────────────
                     step     = max(1, n_bars // 8)
                     tickvals = x_str[::step]
 
                     # ── Layout ────────────────────────────────────────────
-                    # Konfigurasi khusus untuk x-axis (kategori, label tanggal)
+                    # x-axis: kategori (string tanggal)
                     ax_x = dict(
                         type='category',
                         showgrid=False,
@@ -5373,10 +5403,9 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         tickangle=-30,
                         tickfont=dict(size=10),
                     )
-                    # Konfigurasi khusus untuk y-axis (linear, nilai numerik)
+                    # y-axis: linear numerik, NO gridlines (kecuali pembatas antar panel)
                     ax_y = dict(
-                        showgrid=True,
-                        gridcolor=tv_border,
+                        showgrid=False,
                         showline=True, linecolor=tv_border, linewidth=1,
                         zeroline=False,
                         tickfont=dict(size=10),
@@ -5386,16 +5415,21 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
                         font=dict(color=tv_text_color, size=11),
-                        height=820,
+                        height=980,
                         showlegend=False,
-                        margin=dict(l=0, r=160, t=10, b=40),
+                        margin=dict(l=0, r=200, t=10, b=40),
                         xaxis =dict(**ax_x, rangeslider=dict(visible=False),
                                     range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
-                        xaxis2=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
-                        xaxis3=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
+                        xaxis2=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis3=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis4=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
                         yaxis =dict(**ax_y, type='linear', side='right', title=''),
-                        yaxis2=dict(**ax_y, type='linear', side='right', title='VOL'),
-                        yaxis3=dict(**ax_y, type='linear', side='right', title='RSI', range=[0,100]),
+                        yaxis2=dict(**ax_y, type='linear', side='right', title='VOL',
+                                    showgrid=True, gridcolor=tv_border),
+                        yaxis3=dict(**ax_y, type='linear', side='right', title='RSI', range=[0,100],
+                                    showgrid=True, gridcolor=tv_border),
+                        yaxis4=dict(**ax_y, type='linear', side='right', title='MACD',
+                                    showgrid=True, gridcolor=tv_border),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
