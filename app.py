@@ -5395,7 +5395,7 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
         else:
             st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
-        # 4. Tampilkan Verdict Text AI di bawah Chart
+            # 4. Tampilkan Verdict Text AI di bawah Chart
             if run_analysis and ai_text_verdict:
                 st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
                 st.markdown(f"""
