@@ -4708,15 +4708,24 @@ if current_view == "dashboard":
             """, unsafe_allow_html=True)
 
 
-        # ---------------------------------------------------------
-        # LIVE NEWS FEED - ANTI-ERROR VERSION
-        # ---------------------------------------------------------
-        import feedparser
+        # =========================================================
+        # 1. PEMBATAS SEKSI (YANG TADI HILANG)
+        # =========================================================
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown("""
+            <div class='trm-section'>
+                <div class='trm-section-line'></div>
+                <span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span>
+                <div class='trm-section-line'></div>
+            </div>
+        """, unsafe_allow_html=True)
 
-        # 1. CSS FIXED (Agar kotak sejajar dan bersih)
+        # =========================================================
+        # 2. CSS STYLING UNTUK KOTAK BERITA
+        # =========================================================
         st.markdown(f"""
         <style>
-        .news-container-box {{
+        .news-card-v2 {{
             background: {met_bg};
             border: 1px solid {met_border};
             border-radius: 12px;
@@ -4724,109 +4733,104 @@ if current_view == "dashboard":
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            margin-bottom: 20px;
+            margin-top: 10px;
+            transition: all 0.3s ease;
         }}
-        .news-header-label {{
+        .news-card-v2:hover {{
+            border-color: #F5C242;
+            box-shadow: 0 5px 15px rgba(245,194,66,0.1);
+        }}
+        .news-header-v2 {{
             padding: 12px 15px;
             background: rgba(245,194,66,0.1);
             border-bottom: 1px solid {met_border};
             color: #F5C242;
             font-family: 'IBM Plex Mono', monospace;
             font-weight: 700;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }}
-        .news-scroll-area {{
+        .news-content-v2 {{
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 5px;
         }}
-        .news-entry {{
+        .news-item-v2 {{
             display: block;
-            padding: 10px;
+            padding: 10px 15px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             text-decoration: none !important;
-            transition: 0.2s;
         }}
-        .news-entry:hover {{ background: rgba(245,194,66,0.05); }}
-        .news-entry-title {{
+        .news-item-v2:hover {{ background: rgba(245,194,66,0.05); }}
+        .news-item-title {{
             color: {text_main};
-            font-size: 0.85rem;
+            font-size: 13px;
             line-height: 1.4;
-            margin-bottom: 5px;
-            font-weight: 500;
+            margin-bottom: 4px;
         }}
-        .news-entry-meta {{
+        .news-item-meta {{
             color: {text_sub};
-            font-size: 0.65rem;
+            font-size: 10px;
             font-family: 'IBM Plex Mono', monospace;
         }}
+        /* Scrollbar kustom */
+        .news-content-v2::-webkit-scrollbar {{ width: 4px; }}
+        .news-content-v2::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
         """, unsafe_allow_html=True)
 
-        # 2. FUNGSI FETCH (Memastikan hasil adalah HTML, bukan data mentah)
-        def build_news_html(url, label):
+        # =========================================================
+        # 3. LOGIKA FETCH DATA
+        # =========================================================
+        import feedparser
+
+        def render_news_logic(url, label_tag):
             try:
-                feed = feedparser.parse(url)
-                if not feed.entries:
-                    return "<p style='color:gray; padding:15px; font-size:0.8rem;'>No news found.</p>"
+                f = feedparser.parse(url)
+                if not f.entries:
+                    return "<div style='padding:20px; color:gray; font-size:12px;'>No news data available.</div>"
                 
-                html_items = ""
-                for entry in feed.entries[:12]: # Ambil 12 berita
-                    title = entry.title
-                    link = entry.link
-                    # Bersihkan tanggal
-                    date = entry.get('published', entry.get('updated', 'Recent'))[:16]
-                    
-                    html_items += f'''
-                    <a href="{link}" target="_blank" class="news-entry">
-                        <div class="news-entry-title">{title}</div>
-                        <div class="news-entry-meta">[{label}] • {date}</div>
+                html = ""
+                for entry in f.entries[:12]:
+                    # Ambil judul dan link
+                    tgl = entry.get('published', '')[:16]
+                    html += f'''
+                    <a href="{entry.link}" target="_blank" class="news-item-v2">
+                        <div class="news-item-title">{entry.title}</div>
+                        <div class="news-item-meta">[{label_tag}] • {tgl}</div>
                     </a>
                     '''
-                return html_items
-            except Exception as e:
-                return f"<p style='color:red; padding:15px;'>Connection Error.</p>"
+                return html
+            except:
+                return "<div style='padding:20px; color:red;'>Failed to connect to feed.</div>"
 
-        # 3. AMBIL DATA DULU (Link Global diganti ke CNBC yang lebih stabil)
-        # Jangan taruh variabel ini sendirian di baris baru agar tidak "bocor"
-        html_indo = build_news_html("https://www.cnbcindonesia.com/market/rss", "IDX")
-        html_glob = build_news_html("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
+        # Tarik data
+        html_domestic = render_news_logic("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
+        html_global = render_news_logic("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
 
-        # 4. RENDER LAYOUT
-        col_a, col_b = st.columns(2)
+        # =========================================================
+        # 4. TAMPILKAN KOLOM
+        # =========================================================
+        col_news_left, col_news_right = st.columns(2)
 
-        with col_a:
+        with col_news_left:
             st.markdown(f"""
-            <div class="news-container-box">
-                <div class="news-header-label">🇮🇩 DOMESTIC MARKET NEWS</div>
-                <div class="news-scroll-area">{html_indo}</div>
+            <div class="news-card-v2">
+                <div class="news-header-v2">🇮🇩 DOMESTIC NEWS PULSE</div>
+                <div class="news-content-v2">{html_domestic}</div>
             </div>
             """, unsafe_allow_html=True)
 
-        with col_b:
+        with col_news_right:
             st.markdown(f"""
-            <div class="news-container-box">
-                <div class="news-header-label">🌎 GLOBAL ECONOMIC PULSE</div>
-                <div class="news-scroll-area">{html_glob}</div>
+            <div class="news-card-v2">
+                <div class="news-header-v2">🌎 GLOBAL ECONOMIC PULSE</div>
+                <div class="news-content-v2">{html_global}</div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Sumber: Reuters Business News
-            global_news_html = render_news_feed("https://www.reutersagency.com/feed/?best-topics=business&format=xml", "REUTERS")
-            st.markdown(global_news_html, unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-            # Widget Berita Global (Wall Street / World)
-            global_news_widget = f"""
-            <div class="tradingview-widget-container" style="height:100%;width:100%;">
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-              {{ "feedMode": "all_symbols", "isTransparent": true, "displayMode": "regular", "width": "100%", "height": "100%", "colorTheme": "{news_theme}", "locale": "en" }}
-              </script>
-            </div>
-            """
-            components.html(global_news_widget, height=490)
-            st.markdown("</div></div>", unsafe_allow_html=True)
 
 
     with tab_rotation:
