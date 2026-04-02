@@ -3637,8 +3637,9 @@ Berikut adalah analisa dampak pasar untuk **{emiten}** terkait isu tersebut:
 TEMPLATE_IPO = """
 [INSTRUKSI WAJIB SYSTEM]:
 User meminta "Analisa IPO" berdasarkan dokumen PDF prospektus yang dilampirkan untuk calon emiten {emiten}.
-Tugasmu adalah membongkar isi PDF tersebut dan merangkumnya khusus untuk konsumsi Investor Ritel dengan menggunakan *Logika Analisa IPO* yang ada di system prompt (Nominal vs Harga, Perhitungan Risiko Lot, Jumlah Underwriter). 
+Tugasmu adalah membongkar isi PDF tersebut dan merangkumnya khusus untuk konsumsi Investor Ritel dengan menggunakan *Logika Analisa IPO* yang ada di system prompt (Nominal vs Harga, Perhitungan Risiko Lot, Jumlah Underwriter).
 JANGAN bertele-tele. Cari data paling krusial di dalam teks PDF!
+JANGAN ubah urutan atau struktur template. Isi setiap poin dengan data dari PDF.
 
 [ISI TEKS PDF PROSPEKTUS]:
 {pdf_content}
@@ -3646,34 +3647,49 @@ JANGAN bertele-tele. Cari data paling krusial di dalam teks PDF!
 [TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN]:
 Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 
-🏢 **PROFIL & AFILIASI KONGLOMERASI**
-- **Bisnis Utama:** [Jelaskan bisnis utama dalam 1-2 kalimat dengan bahasa sederhana]
-- **Afiliasi Grup:** [Sebutkan apakah perusahaan ini terafiliasi dengan grup konglomerasi besar/tokoh kuat. Jika tidak, tulis "Tidak ada afiliasi besar yang mencolok"]
+**1. HARGA PENAWARAN vs NOMINAL**
+- **Harga Nominal:** Rp[X] per saham
+- **Rentang Harga Penawaran:** Rp[Y] hingga Rp[Z] per saham
+- **Rasio Harga Penawaran / Harga Nominal:**
+  - Pada harga Rp[Y]: [A]x (Rp[Y] / Rp[X])
+  - Pada harga Rp[Z]: [B]x (Rp[Z] / Rp[X])
+- **Kesimpulan:** [Jelaskan apakah menarik (<= 4x) atau mahal (>4x), dan di harga mana yang lebih wajar. Sertakan saran pertimbangan investor.]
 
-💰 **TUJUAN PENGGUNAAN DANA (CRUCIAL)**
-- **Alokasi:** [Sebutkan persentase untuk Modal Kerja/Ekspansi vs Pembayaran Utang]
-- **Penilaian SIGMA:** [Jelaskan apakah ini produktif atau sekadar "gali lubang tutup lubang"]
+**2. MANAJEMEN RISIKO LOT (DISTRIBUSI)**
+- **Total Saham Ditawarkan:** [Jumlah] lembar = [Jumlah Lot] Lot
+- **Kondisi:** [Kondisi A (<20 Juta Lot) atau Kondisi B (>=20 Juta Lot)]
+- **Risk 1 (Mulai Waspada):** [30% atau 10%] dari Total Lot = [Angka] Lot. [Jelaskan arti sinyal ini]
+- **Risk 2 (Take Profit/Bahaya):** [50% atau 30%] dari Total Lot = [Angka] Lot. [Jelaskan arti sinyal dan saran aksi]
+- **Insight:** [1-2 kalimat tentang implikasi jumlah lot ini terhadap likuiditas dan pergerakan harga]
 
-📈 **VALUASI & STRUKTUR PENAWARAN**
-- **Harga Penawaran vs Nominal:** Harga Penawaran Rp[X] vs Nominal Rp[Y]. (Rasio: [Z]x lipat). *Penilaian: [Menarik (karena <4x) ATAU Mahal (karena >4x)]*.
-- **Valuasi (PER/PBV):** [Sebutkan estimasi PER & PBV post-IPO dari prospektus]
-- **Bonus Warrant:** [Sebutkan rasionya atau "Tidak ada"]
+**3. JUMLAH UNDERWRITER (PENJAMIN EMISI)**
+- **Penjamin Pelaksana Emisi Efek:** [Sebutkan nama lengkap semua underwriter]
+- **Jumlah:** [N] sekuritas
+- **Kesimpulan:** [Jelaskan implikasi jumlah ini terhadap pergerakan harga. <=2 = cenderung kuat/solid. >2 = cenderung terbatas/berat.]
+- **Track Record:** [Penilaian AI tentang rekam jejak underwriter ini mengawal IPO — sering ARA berjilid atau sering banting?]
 
-⚠️ **MANAJEMEN RISIKO LOT (DISTRIBUSI)**
-- **Total Saham Ditawarkan:** [Jumlah] Juta Lot
-- **Risk 1 (Waspada):** Jika terjadi distribusi sekitar **[Angka Lot] Juta Lot** ([10% atau 30%] dari total), pantau ketat.
-- **Risk 2 (Take Profit/Bahaya):** Jika distribusi mencapai **[Angka Lot] Juta Lot** ([30% atau 50%] dari total), ARA rawan terbongkar dan fluktuasi akan sangat liar. Amankan profit!
+**4. KONGLOMERASI**
+- [Jelaskan apakah ada afiliasi dengan grup konglomerasi besar atau tokoh kuat. Jika tidak ada, tulis secara eksplisit dan implikasinya.]
 
-🤝 **UNDERWRITER (PENJAMIN EMISI)**
-- **Sekuritas:** [Sebutkan nama dan kode broker]
-- **Kekuatan Underwriter:** Terdapat [Jumlah] Underwriter. *Penilaian: [Pergerakan cenderung kuat karena <=2 UW, ATAU Pergerakan cenderung terbatas karena >2 UW]*.
-- **Track Record:** [Gunakan knowledge AI untuk menilai sejarah underwriter ini mengawal IPO: Sering ARA berjilid atau sering banting di hari pertama?]
+**5. TUJUAN DANA IPO**
+- **Alokasi Dana:**
+  [Sebutkan tiap pos penggunaan dana dan persentasenya]
+- **Penilaian SIGMA:** [Apakah produktif (ekspansi/modal kerja) atau "gali lubang tutup lubang" (mayoritas untuk bayar utang)?]
 
-⚖️ **KESIMPULAN FINAL SIGMA**
-- **Daya Tarik:** [Sangat Menarik / High Risk High Reward / Kurang Menarik]
-- **Saran Ritel:** [Saran strategis hit-and-run, hold, atau hindari. Kaitkan dengan manajemen risiko lot di atas]
-    
-⚠️ *DYOR — prospektus adalah dokumen resmi, namun pasar IPO sangat dipengaruhi oleh sentimen bandar/underwriter.*
+**6. RISIKO UTAMA YANG DIUNGKAPKAN**
+[Sebutkan 2-3 risiko paling kritis dari prospektus yang wajib diperhatikan investor ritel]
+
+**JADWAL PENTING:**
+- Masa Penawaran Awal: [tanggal]
+- Tanggal Efektif: [tanggal]
+- Masa Penawaran Umum Perdana: [tanggal]
+- Tanggal Penjatahan: [tanggal]
+- Tanggal Distribusi Saham Elektronik: [tanggal]
+- Tanggal Pencatatan di BEI: [tanggal]
+
+**Kesimpulan Awal:** [2-3 kalimat merangkai semua poin di atas — sektor, kekuatan underwriter, valuasi, risiko utama, dan apakah layak dipertimbangkan atau dihindari. Netral dan berbasis data.]
+
+⚠️ *DYOR — Analisa ini berdasarkan informasi dari prospektus yang diberikan. Selalu lakukan riset mendalam dan pertimbangkan semua faktor risiko sebelum membuat keputusan investasi. Keputusan final ada di tangan investor.*
 """
 
 TEMPLATE_TEKNIKAL = """
