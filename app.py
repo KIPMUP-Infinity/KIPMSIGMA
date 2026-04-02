@@ -5210,12 +5210,23 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
             if not df_chart.empty:
                 try:
                     from plotly.subplots import make_subplots
+                    import numpy as np
 
                     inc_color    = '#089981'
                     dec_color    = '#f23645'
                     tv_bg_color  = "#131722" if is_dark else "#ffffff"
                     tv_text_color= "#b2b5be" if is_dark else "#1f2937"
                     tv_border    = "#2a2e39" if is_dark else "#e0e3eb"
+
+                    # ── Filter weekend/holiday: hanya trading days ────────
+                    # Reset index jadi DatetimeIndex, buang baris dengan gap > 4 hari
+                    df_chart = df_chart.copy()
+                    df_chart.index = pd.to_datetime(df_chart.index)
+                    # Buang hari non-bursa (Sabtu=5, Minggu=6)
+                    df_chart = df_chart[df_chart.index.dayofweek < 5]
+                    # Buat x-axis pakai string tanggal sebagai kategori → tidak ada gap
+                    x_labels = df_chart.index.strftime('%d %b %y').tolist()
+                    n_bars   = len(x_labels)
 
                     # ── EMAs ──────────────────────────────────────────────
                     df_chart['EMA13']  = df_chart['Close'].ewm(span=13,  adjust=False).mean()
@@ -5224,18 +5235,26 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
 
                     # ── RSI ───────────────────────────────────────────────
-                    delta   = df_chart['Close'].diff()
-                    gain    = delta.clip(lower=0)
-                    loss    = -delta.clip(upper=0)
-                    avg_g   = gain.ewm(com=13, adjust=False).mean()
-                    avg_l   = loss.ewm(com=13, adjust=False).mean()
-                    rs      = avg_g / avg_l.replace(0, 1e-9)
+                    delta = df_chart['Close'].diff()
+                    gain  = delta.clip(lower=0)
+                    loss  = -delta.clip(upper=0)
+                    avg_g = gain.ewm(com=13, adjust=False).mean()
+                    avg_l = loss.ewm(com=13, adjust=False).mean()
+                    rs    = avg_g / avg_l.replace(0, 1e-9)
                     df_chart['RSI'] = 100 - (100 / (1 + rs))
 
-                    # ── Future range: 45 hari ke depan ───────────────────
-                    future_date = df_chart.index[-1] + pd.Timedelta(days=45)
+                    # ── Future padding: tambah ~30 bar kosong di kanan ───
+                    # (supaya label trade plan punya ruang)
+                    n_future = 30
+                    future_labels = [f"F{i}" for i in range(n_future)]  # dummy labels
+                    all_labels = x_labels + future_labels
+                    # Range x: tampilkan semua bar + future
+                    x_range = [-0.5, len(all_labels) - 0.5]
 
-                    # ── Layout: 3 rows (Price 60%, Volume 20%, RSI 20%) ──
+                    # Index posisi untuk annotation label (di zona future)
+                    label_x = n_bars + 2  # 2 bar setelah candle terakhir
+
+                    # ── Layout: 3 rows ────────────────────────────────────
                     fig = make_subplots(
                         rows=3, cols=1,
                         shared_xaxes=True,
@@ -5243,17 +5262,17 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         vertical_spacing=0.02,
                     )
 
-                    # ── Row 1: Candlestick ────────────────────────────────
+                    # ── Row 1: Candlestick (pakai x_labels sbg kategori) ──
                     fig.add_trace(go.Candlestick(
-                        x=df_chart.index,
-                        open=df_chart['Open'], high=df_chart['High'],
-                        low=df_chart['Low'],   close=df_chart['Close'],
+                        x=x_labels,
+                        open=df_chart['Open'],  high=df_chart['High'],
+                        low=df_chart['Low'],    close=df_chart['Close'],
                         increasing_line_color=inc_color,
                         decreasing_line_color=dec_color,
-                        name="Price",
-                        showlegend=False,
+                        name="Price", showlegend=False,
                     ), row=1, col=1)
 
+                    # ── EMAs ──────────────────────────────────────────────
                     ema_cfg = [
                         ('EMA13',  '#009dff', 1.2, 'EMA 13'),
                         ('EMA21',  '#ff0000', 1.2, 'EMA 21'),
@@ -5262,68 +5281,72 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     ]
                     for col_name, color, width, label in ema_cfg:
                         fig.add_trace(go.Scatter(
-                            x=df_chart.index, y=df_chart[col_name],
+                            x=x_labels, y=df_chart[col_name],
                             mode='lines', line=dict(color=color, width=width),
                             name=label, showlegend=False,
                         ), row=1, col=1)
 
-                    # ── Trade plan lines (entry/SL/TP) ───────────────────
+                    # ── Trade plan lines + labels ─────────────────────────
                     if ai_data:
                         try:
-                            el = ai_data.get('entry_low')
-                            eh = ai_data.get('entry_high')
-                            sl = ai_data.get('stop_loss')
+                            el  = ai_data.get('entry_low')
+                            eh  = ai_data.get('entry_high')
+                            sl  = ai_data.get('stop_loss')
                             tp1 = ai_data.get('tp1')
                             tp2 = ai_data.get('tp2')
                             tp3 = ai_data.get('tp3')
 
+                            def _hline_cat(fig, y, color, dash, row):
+                                """Gambar hline sebagai Scatter di category axis."""
+                                fig.add_trace(go.Scatter(
+                                    x=[x_labels[0], all_labels[-1]],
+                                    y=[y, y],
+                                    mode='lines',
+                                    line=dict(color=color, width=1.5, dash=dash),
+                                    showlegend=False,
+                                ), row=row, col=1)
+
+                            def _label(fig, y, text, fcolor, bcolor, bordercolor):
+                                fig.add_annotation(
+                                    x=label_x, y=y,
+                                    text=text,
+                                    showarrow=False,
+                                    xanchor="left",
+                                    font=dict(color=fcolor, size=10, family="IBM Plex Mono"),
+                                    bgcolor=bcolor,
+                                    bordercolor=bordercolor,
+                                    borderwidth=1,
+                                    borderpad=4,
+                                    xref="x", yref="y",
+                                )
+
                             if el and eh:
-                                fig.add_hrect(
-                                    y0=float(el), y1=float(eh),
-                                    line_width=0, fillcolor="rgba(8,153,129,0.18)",
-                                    opacity=1, row=1, col=1,
-                                )
-                                # Label BUY AREA di kanan
-                                fig.add_annotation(
-                                    x=future_date, y=(float(el)+float(eh))/2,
-                                    text=f"<b>BUY AREA</b><br>Rp{float(el):,.0f}–{float(eh):,.0f}",
-                                    showarrow=False, xanchor="left",
-                                    font=dict(color="#089981", size=10),
-                                    bgcolor="rgba(8,153,129,0.15)",
-                                    bordercolor="#089981", borderwidth=1,
-                                    xref="x", yref="y",
-                                )
+                                # BUY AREA shading
+                                fig.add_trace(go.Scatter(
+                                    x=x_labels + x_labels[::-1],
+                                    y=[float(eh)]*n_bars + [float(el)]*n_bars,
+                                    fill='toself',
+                                    fillcolor='rgba(8,153,129,0.15)',
+                                    line=dict(width=0),
+                                    showlegend=False,
+                                ), row=1, col=1)
+                                _label(fig, (float(el)+float(eh))/2,
+                                    f"<b>BUY AREA</b><br>Rp{float(el):,.0f}–{float(eh):,.0f}",
+                                    "#089981","rgba(8,153,129,0.18)","#089981")
+
                             if sl:
-                                fig.add_hline(
-                                    y=float(sl), line_dash="dash",
-                                    line_color="#f23645", line_width=1.5,
-                                    row=1, col=1,
-                                )
-                                fig.add_annotation(
-                                    x=future_date, y=float(sl),
-                                    text=f"<b>STOP LOSS</b>  Rp{float(sl):,.0f}",
-                                    showarrow=False, xanchor="left",
-                                    font=dict(color="#f23645", size=10),
-                                    bgcolor="rgba(242,54,69,0.12)",
-                                    bordercolor="#f23645", borderwidth=1,
-                                    xref="x", yref="y",
-                                )
+                                _hline_cat(fig, float(sl), "#f23645", "dash", 1)
+                                _label(fig, float(sl),
+                                    f"<b>STOP LOSS</b>  Rp{float(sl):,.0f}",
+                                    "#f23645","rgba(242,54,69,0.15)","#f23645")
+
                             for tp_val, tp_lbl in [(tp1,"TP 1"),(tp2,"TP 2"),(tp3,"TP 3")]:
                                 if tp_val:
-                                    fig.add_hline(
-                                        y=float(tp_val), line_dash="dot",
-                                        line_color="#089981", line_width=1.5,
-                                        row=1, col=1,
-                                    )
-                                    fig.add_annotation(
-                                        x=future_date, y=float(tp_val),
-                                        text=f"<b>{tp_lbl}</b>  Rp{float(tp_val):,.0f}",
-                                        showarrow=False, xanchor="left",
-                                        font=dict(color="#089981", size=10),
-                                        bgcolor="rgba(8,153,129,0.12)",
-                                        bordercolor="#089981", borderwidth=1,
-                                        xref="x", yref="y",
-                                    )
+                                    _hline_cat(fig, float(tp_val), "#089981", "dot", 1)
+                                    _label(fig, float(tp_val),
+                                        f"<b>{tp_lbl}</b>  Rp{float(tp_val):,.0f}",
+                                        "#089981","rgba(8,153,129,0.12)","#089981")
+
                         except Exception:
                             st.warning("AI gagal menghasilkan koordinat harga yang pas.")
 
@@ -5331,26 +5354,30 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     vol_colors = [inc_color if c >= o else dec_color
                                   for c, o in zip(df_chart['Close'], df_chart['Open'])]
                     fig.add_trace(go.Bar(
-                        x=df_chart.index, y=df_chart['Volume'],
+                        x=x_labels, y=df_chart['Volume'],
                         marker_color=vol_colors, name="Volume",
                         showlegend=False,
                     ), row=2, col=1)
 
                     # ── Row 3: RSI ────────────────────────────────────────
                     fig.add_trace(go.Scatter(
-                        x=df_chart.index, y=df_chart['RSI'],
+                        x=x_labels, y=df_chart['RSI'],
                         mode='lines', line=dict(color='#F5C242', width=1.2),
                         name="RSI", showlegend=False,
                     ), row=3, col=1)
-                    for lvl, clr in [(70,"rgba(242,54,69,0.25)"),(30,"rgba(8,153,129,0.25)")]:
-                        fig.add_hline(y=lvl, line_dash="dot", line_color=clr,
-                                      line_width=1, row=3, col=1)
+                    for lvl, clr in [(70,"rgba(242,54,69,0.4)"),(30,"rgba(8,153,129,0.4)")]:
+                        fig.add_trace(go.Scatter(
+                            x=[x_labels[0], x_labels[-1]], y=[lvl, lvl],
+                            mode='lines', line=dict(color=clr, width=1, dash='dot'),
+                            showlegend=False,
+                        ), row=3, col=1)
 
-                    # ── Shared axis config ────────────────────────────────
+                    # ── Axis config ───────────────────────────────────────
                     axis_common = dict(
                         showgrid=False,
                         showline=True, linecolor=tv_border, linewidth=1,
                         zeroline=False,
+                        type='category',   # ← kunci: no datetime gaps
                     )
                     fig.update_layout(
                         template="plotly_dark" if is_dark else "plotly_white",
@@ -5359,21 +5386,21 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         font=dict(color=tv_text_color, size=11),
                         height=780,
                         showlegend=False,
-                        margin=dict(l=0, r=160, t=10, b=10),
+                        margin=dict(l=0, r=10, t=10, b=10),
                         xaxis=dict(**axis_common,
                             rangeslider=dict(visible=False),
-                            range=[df_chart.index[0], future_date],
+                            range=x_range,
+                            tickvals=[x_labels[i] for i in range(0, n_bars, max(1, n_bars//8))],
                         ),
-                        xaxis2=dict(**axis_common,
-                            range=[df_chart.index[0], future_date],
+                        xaxis2=dict(**axis_common, range=x_range,
+                            tickvals=[x_labels[i] for i in range(0, n_bars, max(1, n_bars//8))],
                         ),
-                        xaxis3=dict(**axis_common,
-                            range=[df_chart.index[0], future_date],
+                        xaxis3=dict(**axis_common, range=x_range,
+                            tickvals=[x_labels[i] for i in range(0, n_bars, max(1, n_bars//8))],
                         ),
-                        yaxis=dict(**axis_common,  side="right", title=""),
+                        yaxis =dict(**axis_common, side="right", title=""),
                         yaxis2=dict(**axis_common, side="right", title="VOL"),
-                        yaxis3=dict(**axis_common, side="right", title="RSI",
-                                    range=[0, 100]),
+                        yaxis3=dict(**axis_common, side="right", title="RSI", range=[0, 100]),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
