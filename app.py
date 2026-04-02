@@ -4207,6 +4207,29 @@ if current_view == "dashboard":
         st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
         st.stop()
 
+    # ── FULL-WIDTH OVERRIDE — paksa terminal pakai seluruh lebar layar ──
+    st.markdown("""
+    <style>
+    [data-testid="stMainBlockContainer"] {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        margin: 0 !important;
+    }
+    [data-testid="stMain"] > div,
+    [data-testid="stAppViewBlockContainer"] {
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    section[data-testid="stMain"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
     is_dark = st.session_state.get("theme", "dark") == "dark"
 
@@ -4669,35 +4692,26 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>GLOBAL INDICES &amp; VOLATILITY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if idx_data:
             items_idx = list(idx_data.items())
-            for i in range(0, len(items_idx), 5):
-                cols = st.columns(5)
-                chunk = items_idx[i:i+5]
-                for j in range(5):
-                    if j < len(chunk):
-                        name, info = chunk[j]
-                        with cols[j]:
-                            st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
+            # Full width: semua 9 indeks dalam 1 baris
+            cols = st.columns(len(items_idx))
+            for j, (name, info) in enumerate(items_idx):
+                with cols[j]:
+                    st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
         else:
             st.warning("⚠️ Gagal menarik data indeks.")
-            
-        st.markdown("<br>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>COMMODITIES &amp; FOREX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if com_data:
             items_com = list(com_data.items())
-            for i in range(0, len(items_com), 5):
-                cols = st.columns(5)
-                chunk = items_com[i:i+5]
-                for j in range(5):
-                    if j < len(chunk):
-                        name, info = chunk[j]
-                        with cols[j]:
-                            if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
-                            elif info['price'] == 0: price_str = "N/A"
-                            else: price_str = f"${info['price']:,.2f}"
-                            
-                            delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
-                            st.metric(label=name, value=price_str, delta=delta_str)
+            # Full width: semua komoditas dalam 1 baris
+            cols = st.columns(len(items_com))
+            for j, (name, info) in enumerate(items_com):
+                with cols[j]:
+                    if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
+                    elif info['price'] == 0: price_str = "N/A"
+                    else: price_str = f"${info['price']:,.2f}"
+                    delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
+                    st.metric(label=name, value=price_str, delta=delta_str)
         else:
             st.warning("⚠️ Gagal menarik data komoditas.")
 
