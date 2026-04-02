@@ -4709,98 +4709,106 @@ if current_view == "dashboard":
 
 
         # ---------------------------------------------------------
-        # LIVE NEWS FEED - TOTAL REPAIR
+        # LIVE NEWS FEED - ANTI-ERROR VERSION
         # ---------------------------------------------------------
         import feedparser
 
-        # 1. DEFINISI CSS (Hanya untuk Styling)
+        # 1. CSS FIXED (Agar kotak sejajar dan bersih)
         st.markdown(f"""
         <style>
-        .news-card {{
+        .news-container-box {{
             background: {met_bg};
             border: 1px solid {met_border};
-            border-radius: 10px;
-            height: 450px;
+            border-radius: 12px;
+            height: 480px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             margin-bottom: 20px;
         }}
-        .news-head {{
-            padding: 10px 15px;
+        .news-header-label {{
+            padding: 12px 15px;
             background: rgba(245,194,66,0.1);
             border-bottom: 1px solid {met_border};
             color: #F5C242;
             font-family: 'IBM Plex Mono', monospace;
-            font-weight: bold;
-            font-size: 12px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
         }}
-        .news-body {{
+        .news-scroll-area {{
             flex: 1;
             overflow-y: auto;
             padding: 10px;
         }}
-        .news-link {{
+        .news-entry {{
             display: block;
-            padding: 8px;
+            padding: 10px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             text-decoration: none !important;
-            color: {text_main};
-            font-size: 13px;
             transition: 0.2s;
         }}
-        .news-link:hover {{ background: rgba(245,194,66,0.05); }}
-        .news-meta {{
-            font-size: 10px;
+        .news-entry:hover {{ background: rgba(245,194,66,0.05); }}
+        .news-entry-title {{
+            color: {text_main};
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }}
+        .news-entry-meta {{
             color: {text_sub};
-            margin-top: 4px;
+            font-size: 0.65rem;
+            font-family: 'IBM Plex Mono', monospace;
         }}
         </style>
         """, unsafe_allow_html=True)
 
-        # 2. FUNGSI AMBIL DATA (Hanya Mengembalikan Teks HTML)
-        def get_clean_news(url, label):
+        # 2. FUNGSI FETCH (Memastikan hasil adalah HTML, bukan data mentah)
+        def build_news_html(url, label):
             try:
-                # Ambil data dari internet
-                f = feedparser.parse(url)
-                if not f.entries:
-                    return "<p style='color:gray; padding:10px;'>No news at the moment.</p>"
+                feed = feedparser.parse(url)
+                if not feed.entries:
+                    return "<p style='color:gray; padding:15px; font-size:0.8rem;'>No news found.</p>"
                 
-                html_result = ""
-                # Ambil 10 berita teratas
-                for entry in f.entries[:10]:
-                    tgl = entry.get('published', '')[:16]
-                    html_result += f'''
-                    <a href="{entry.link}" target="_blank" class="news-link">
-                        <div>{entry.title}</div>
-                        <div class="news-meta">[{label}] • {tgl}</div>
+                html_items = ""
+                for entry in feed.entries[:12]: # Ambil 12 berita
+                    title = entry.title
+                    link = entry.link
+                    # Bersihkan tanggal
+                    date = entry.get('published', entry.get('updated', 'Recent'))[:16]
+                    
+                    html_items += f'''
+                    <a href="{link}" target="_blank" class="news-entry">
+                        <div class="news-entry-title">{title}</div>
+                        <div class="news-entry-meta">[{label}] • {date}</div>
                     </a>
                     '''
-                return html_result
+                return html_items
             except Exception as e:
-                return f"<p style='color:red; padding:10px;'>Error: {str(e)}</p>"
+                return f"<p style='color:red; padding:15px;'>Connection Error.</p>"
 
-        # 3. PROSES DATA (Simpan ke variabel dulu)
-        # Gunakan link CNBC International untuk Global karena Reuters sering lambat/error
-        berita_indo = get_clean_news("https://www.cnbcindonesia.com/market/rss", "IDX")
-        berita_glob = get_clean_news("https://search.cnbc.com/rs/search/all/view.rss?partnerId=2000&keywords=finance", "GLOBAL")
+        # 3. AMBIL DATA DULU (Link Global diganti ke CNBC yang lebih stabil)
+        # Jangan taruh variabel ini sendirian di baris baru agar tidak "bocor"
+        html_indo = build_news_html("https://www.cnbcindonesia.com/market/rss", "IDX")
+        html_glob = build_news_html("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
 
-        # 4. TAMPILKAN KE LAYAR (Layout Kolom)
-        c1, c2 = st.columns(2)
+        # 4. RENDER LAYOUT
+        col_a, col_b = st.columns(2)
 
-        with c1:
+        with col_a:
             st.markdown(f"""
-            <div class="news-card">
-                <div class="news-head">🇮🇩 DOMESTIC MARKET NEWS</div>
-                <div class="news-body">{berita_indo}</div>
+            <div class="news-container-box">
+                <div class="news-header-label">🇮🇩 DOMESTIC MARKET NEWS</div>
+                <div class="news-scroll-area">{html_indo}</div>
             </div>
             """, unsafe_allow_html=True)
 
-        with c2:
+        with col_b:
             st.markdown(f"""
-            <div class="news-card">
-                <div class="news-head">🌎 GLOBAL ECONOMIC PULSE</div>
-                <div class="news-body">{berita_glob}</div>
+            <div class="news-container-box">
+                <div class="news-header-label">🌎 GLOBAL ECONOMIC PULSE</div>
+                <div class="news-scroll-area">{html_glob}</div>
             </div>
             """, unsafe_allow_html=True)
             
