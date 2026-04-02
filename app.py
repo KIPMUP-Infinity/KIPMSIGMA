@@ -4202,6 +4202,7 @@ if current_view == "dashboard":
         import pandas as pd
         import streamlit.components.v1 as components
         import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
         import re
         import json
     except ImportError:
@@ -5205,93 +5206,223 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         st.error(f"Gagal memproses analisa AI: {e}")
 
             st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART &mdash; {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            
+
             if not df_chart.empty:
                 try:
-                    inc_color = '#089981'
-                    dec_color = '#f23645'
-                    
-                    fig = go.Figure()
-                    
+                    from plotly.subplots import make_subplots
+
+                    inc_color    = '#089981'
+                    dec_color    = '#f23645'
+                    tv_bg_color  = "#131722" if is_dark else "#ffffff"
+                    tv_text_color= "#b2b5be" if is_dark else "#1f2937"
+                    tv_border    = "#2a2e39" if is_dark else "#e0e3eb"
+
+                    # ── EMAs ──────────────────────────────────────────────
+                    df_chart['EMA13']  = df_chart['Close'].ewm(span=13,  adjust=False).mean()
+                    df_chart['EMA21']  = df_chart['Close'].ewm(span=21,  adjust=False).mean()
+                    df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
+                    df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
+
+                    # ── RSI ───────────────────────────────────────────────
+                    delta   = df_chart['Close'].diff()
+                    gain    = delta.clip(lower=0)
+                    loss    = -delta.clip(upper=0)
+                    avg_g   = gain.ewm(com=13, adjust=False).mean()
+                    avg_l   = loss.ewm(com=13, adjust=False).mean()
+                    rs      = avg_g / avg_l.replace(0, 1e-9)
+                    df_chart['RSI'] = 100 - (100 / (1 + rs))
+
+                    # ── Future range: 45 hari ke depan ───────────────────
+                    future_date = df_chart.index[-1] + pd.Timedelta(days=45)
+
+                    # ── Layout: 3 rows (Price 60%, Volume 20%, RSI 20%) ──
+                    fig = make_subplots(
+                        rows=3, cols=1,
+                        shared_xaxes=True,
+                        row_heights=[0.60, 0.20, 0.20],
+                        vertical_spacing=0.02,
+                    )
+
+                    # ── Row 1: Candlestick ────────────────────────────────
                     fig.add_trace(go.Candlestick(
                         x=df_chart.index,
                         open=df_chart['Open'], high=df_chart['High'],
-                        low=df_chart['Low'], close=df_chart['Close'],
-                        increasing_line_color=inc_color, decreasing_line_color=dec_color,
-                        name="Price"
-                    ))
+                        low=df_chart['Low'],   close=df_chart['Close'],
+                        increasing_line_color=inc_color,
+                        decreasing_line_color=dec_color,
+                        name="Price",
+                        showlegend=False,
+                    ), row=1, col=1)
 
-                    df_chart['EMA13'] = df_chart['Close'].ewm(span=13, adjust=False).mean()
-                    df_chart['EMA21'] = df_chart['Close'].ewm(span=21, adjust=False).mean()
-                    
-                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA13'], mode='lines', line=dict(color='#00BCD4', width=1), name='EMA 13'))
-                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA21'], mode='lines', line=dict(color='#FFEB3B', width=1), name='EMA 21'))
+                    ema_cfg = [
+                        ('EMA13',  '#009dff', 1.2, 'EMA 13'),
+                        ('EMA21',  '#ff0000', 1.2, 'EMA 21'),
+                        ('EMA100', '#cc00ff', 1.2, 'EMA 100'),
+                        ('EMA200', '#F5C242', 1.5, 'EMA 200'),
+                    ]
+                    for col_name, color, width, label in ema_cfg:
+                        fig.add_trace(go.Scatter(
+                            x=df_chart.index, y=df_chart[col_name],
+                            mode='lines', line=dict(color=color, width=width),
+                            name=label, showlegend=False,
+                        ), row=1, col=1)
 
-                    tv_bg_color = "#131722" if is_dark else "#ffffff"
-                    tv_text_color = "#b2b5be" if is_dark else "#1f2937"
-                    tv_border_color = "#2a2e39" if is_dark else "#e0e3eb"
-
-                    future_date = df_chart.index[-1] + pd.Timedelta(days=30)
-
+                    # ── Trade plan lines (entry/SL/TP) ───────────────────
                     if ai_data:
                         try:
-                            fig.add_hrect(
-                                y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
-                                line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
-                            )
-                            fig.add_hline(
-                                y=float(ai_data['stop_loss']),
-                                line_dash="dash", line_color="#f23645", line_width=1.5,
-                            )
-                            if ai_data.get('tp1'):
-                                fig.add_hline(
-                                    y=float(ai_data['tp1']),
-                                    line_dash="dash", line_color="#089981", line_width=1.5,
-                                )
-                        except Exception as e:
-                            st.warning("AI gagal menghasilkan kordinat harga yang pas.")
+                            el = ai_data.get('entry_low')
+                            eh = ai_data.get('entry_high')
+                            sl = ai_data.get('stop_loss')
+                            tp1 = ai_data.get('tp1')
+                            tp2 = ai_data.get('tp2')
+                            tp3 = ai_data.get('tp3')
 
+                            if el and eh:
+                                fig.add_hrect(
+                                    y0=float(el), y1=float(eh),
+                                    line_width=0, fillcolor="rgba(8,153,129,0.18)",
+                                    opacity=1, row=1, col=1,
+                                )
+                                # Label BUY AREA di kanan
+                                fig.add_annotation(
+                                    x=future_date, y=(float(el)+float(eh))/2,
+                                    text=f"<b>BUY AREA</b><br>Rp{float(el):,.0f}–{float(eh):,.0f}",
+                                    showarrow=False, xanchor="left",
+                                    font=dict(color="#089981", size=10),
+                                    bgcolor="rgba(8,153,129,0.15)",
+                                    bordercolor="#089981", borderwidth=1,
+                                    xref="x", yref="y",
+                                )
+                            if sl:
+                                fig.add_hline(
+                                    y=float(sl), line_dash="dash",
+                                    line_color="#f23645", line_width=1.5,
+                                    row=1, col=1,
+                                )
+                                fig.add_annotation(
+                                    x=future_date, y=float(sl),
+                                    text=f"<b>STOP LOSS</b>  Rp{float(sl):,.0f}",
+                                    showarrow=False, xanchor="left",
+                                    font=dict(color="#f23645", size=10),
+                                    bgcolor="rgba(242,54,69,0.12)",
+                                    bordercolor="#f23645", borderwidth=1,
+                                    xref="x", yref="y",
+                                )
+                            for tp_val, tp_lbl in [(tp1,"TP 1"),(tp2,"TP 2"),(tp3,"TP 3")]:
+                                if tp_val:
+                                    fig.add_hline(
+                                        y=float(tp_val), line_dash="dot",
+                                        line_color="#089981", line_width=1.5,
+                                        row=1, col=1,
+                                    )
+                                    fig.add_annotation(
+                                        x=future_date, y=float(tp_val),
+                                        text=f"<b>{tp_lbl}</b>  Rp{float(tp_val):,.0f}",
+                                        showarrow=False, xanchor="left",
+                                        font=dict(color="#089981", size=10),
+                                        bgcolor="rgba(8,153,129,0.12)",
+                                        bordercolor="#089981", borderwidth=1,
+                                        xref="x", yref="y",
+                                    )
+                        except Exception:
+                            st.warning("AI gagal menghasilkan koordinat harga yang pas.")
+
+                    # ── Row 2: Volume ─────────────────────────────────────
+                    vol_colors = [inc_color if c >= o else dec_color
+                                  for c, o in zip(df_chart['Close'], df_chart['Open'])]
+                    fig.add_trace(go.Bar(
+                        x=df_chart.index, y=df_chart['Volume'],
+                        marker_color=vol_colors, name="Volume",
+                        showlegend=False,
+                    ), row=2, col=1)
+
+                    # ── Row 3: RSI ────────────────────────────────────────
+                    fig.add_trace(go.Scatter(
+                        x=df_chart.index, y=df_chart['RSI'],
+                        mode='lines', line=dict(color='#F5C242', width=1.2),
+                        name="RSI", showlegend=False,
+                    ), row=3, col=1)
+                    for lvl, clr in [(70,"rgba(242,54,69,0.25)"),(30,"rgba(8,153,129,0.25)")]:
+                        fig.add_hline(y=lvl, line_dash="dot", line_color=clr,
+                                      line_width=1, row=3, col=1)
+
+                    # ── Shared axis config ────────────────────────────────
+                    axis_common = dict(
+                        showgrid=False,
+                        showline=True, linecolor=tv_border, linewidth=1,
+                        zeroline=False,
+                    )
                     fig.update_layout(
                         template="plotly_dark" if is_dark else "plotly_white",
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
                         font=dict(color=tv_text_color, size=11),
-                        xaxis=dict(
-                            showgrid=True,
-                            gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
-                            gridwidth=1,
-                            showline=True,
-                            linecolor=tv_border_color,
-                            linewidth=1,
+                        height=780,
+                        showlegend=False,
+                        margin=dict(l=0, r=160, t=10, b=10),
+                        xaxis=dict(**axis_common,
                             rangeslider=dict(visible=False),
                             range=[df_chart.index[0], future_date],
                         ),
-                        yaxis=dict(
-                            showgrid=True,
-                            gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
-                            gridwidth=1,
-                            showline=True,
-                            linecolor=tv_border_color,
-                            linewidth=1,
-                            side="right",
+                        xaxis2=dict(**axis_common,
+                            range=[df_chart.index[0], future_date],
                         ),
-                        margin=dict(l=0, r=60, t=10, b=40),
-                        height=550,
-                        showlegend=False
+                        xaxis3=dict(**axis_common,
+                            range=[df_chart.index[0], future_date],
+                        ),
+                        yaxis=dict(**axis_common,  side="right", title=""),
+                        yaxis2=dict(**axis_common, side="right", title="VOL"),
+                        yaxis3=dict(**axis_common, side="right", title="RSI",
+                                    range=[0, 100]),
                     )
-                    
+
                     st.plotly_chart(fig, use_container_width=True)
+
+                    # ── EMA Legend di bawah chart ─────────────────────────
+                    ema_legend_items = [
+                        ("#009dff", "EMA 13 — Fast (Momentum)"),
+                        ("#ff0000", "EMA 21 — Signal"),
+                        ("#cc00ff", "EMA 100 — Mid Trend"),
+                        ("#F5C242", "EMA 200 — Major Trend"),
+                    ]
+                    legend_html = "<div style='display:flex;flex-wrap:wrap;gap:16px;padding:8px 4px;margin-top:-8px;'>"
+                    for clr, lbl in ema_legend_items:
+                        legend_html += (
+                            f"<span style='display:flex;align-items:center;gap:6px;'>"
+                            f"<span style='display:inline-block;width:28px;height:3px;"
+                            f"background:{clr};border-radius:2px;'></span>"
+                            f"<span style='font-family:IBM Plex Mono,monospace;"
+                            f"font-size:0.72rem;color:{tv_text_color};'>{lbl}</span>"
+                            f"</span>"
+                        )
+                    legend_html += "</div>"
+                    st.markdown(legend_html, unsafe_allow_html=True)
+
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
             else:
                 st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
+            # ── Executive Summary — kanan chart (kolom) ───────────────────
             if run_analysis and ai_text_verdict:
-                st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""<div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0; padding: 16px 20px;">""", unsafe_allow_html=True)
-                # Render teks AI sebagai markdown murni (bukan HTML) agar tag tidak bocor
-                st.markdown(ai_text_verdict)
-                st.markdown("</div>", unsafe_allow_html=True)
+                col_chart_gap, col_plan = st.columns([3, 1])
+                with col_plan:
+                    st.markdown(f"""
+                    <div style="background:{tv_bg_color if not df_chart.empty else 'transparent'};
+                        border:1px solid {tv_border if not df_chart.empty else 'transparent'};
+                        border-left:3px solid #F5C242;
+                        border-radius:0 8px 8px 0;
+                        padding:16px 14px;
+                        margin-top:8px;
+                        font-family:'IBM Plex Sans',sans-serif;">
+                        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
+                            letter-spacing:0.12em;color:#F5C242;font-weight:700;
+                            text-transform:uppercase;margin-bottom:10px;">
+                            📋 TRADE PLAN SIGMA
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.markdown(ai_text_verdict)
             elif not run_analysis:
                 st.markdown(f"""
                 <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
