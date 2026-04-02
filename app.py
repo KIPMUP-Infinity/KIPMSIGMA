@@ -4208,26 +4208,24 @@ if current_view == "dashboard":
         st.error("&#9888; Library 'yfinance', 'pandas', atau 'plotly' belum terinstall.")
         st.stop()
 
+# FIX UKURAN DESKTOP & MOBILE (ANTI TERPOTONG)
     st.markdown("""
     <style>
-    /* Desktop */
+    /* Desktop: Kasih jarak kanan-kiri */
     [data-testid="stMainBlockContainer"] {
-        max-width: 1250px !important;
-        width: 95% !important;
-        margin: 0 auto !important;
+        max-width: 1200px !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
-        padding-top: 2rem !important;
+        margin: 0 auto !important;
+    }
+    /* Mobile: Paksa grafik mengecil & anti geser */
+    @media (max-width: 768px) {
+        .stApp, html, body { overflow-x: hidden !important; width: 100vw !important; }
+        [data-testid="stMainBlockContainer"] { padding-left: 12px !important; padding-right: 12px !important; }
+        .stLineChart, canvas, iframe, [data-testid="stVerticalBlock"] > div { max-width: 100% !important; width: 100% !important; }
+        .stDataFrame { overflow-x: auto !important; }
     }
 
-    /* Mobile: Kunci scroll & pastikan grafik tidak terpotong */
-    @media (max-width: 768px) {
-        html, body, .stApp {
-            overflow-x: hidden !important;
-            width: 100vw !important;
-            max-width: 100vw !important;
-            position: relative;
-        }
         
         [data-testid="stMainBlockContainer"] {
             max-width: 100vw !important;
