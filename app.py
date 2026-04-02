@@ -5293,7 +5293,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             tp2 = ai_data.get('tp2')
                             tp3 = ai_data.get('tp3')
 
-                            # Fungsi Final: Garis Full Layar & Label Rata Kanan Dalam
+                            # Fungsi Final: Garis Full Layar & Label Rata Kanan Dalam (Untuk SL dan TP)
                             def _draw_tv_level(y_val, label_text, line_color, bg_color, text_color, dash_style='dash'):
                                 if not y_val: return
                                 y_val = float(y_val)
@@ -5306,8 +5306,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                                     layer="below"
                                 )
 
-                                # 2. Label dikunci di x=1.0 (batas tembok kanan) dengan xanchor='right' 
-                                # (Artinya kotak ditarik ke kiri dari tembok, jadi TIDAK MUNGKIN kepotong/keluar layar)
+                                # 2. Label dikunci di x=1.0 (batas tembok kanan)
                                 fig.add_annotation(
                                     xref='paper', yref='y',
                                     x=1.0, y=y_val,
@@ -5321,17 +5320,34 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                                     borderpad=4
                                 )
 
-                            # Area BUY (Menggunakan Shape Kotak agar mulus full width)
+                            # Area BUY (Hanya kotak highlight & 1 Label gabungan di tengah)
                             if el and eh:
+                                el_val = float(el)
+                                eh_val = float(eh)
+                                mid_y = (el_val + eh_val) / 2 # Mencari titik tengah untuk posisi label
+                                
+                                # Gambar kotak background hijau tanpa garis tepi
                                 fig.add_shape(
                                     type="rect", xref="paper", yref="y",
-                                    x0=0, x1=1, y0=float(el), y1=float(eh),
+                                    x0=0, x1=1, y0=el_val, y1=eh_val,
                                     fillcolor="rgba(8,153,129,0.15)", # Hijau transparan
-                                    line=dict(width=0),
+                                    line=dict(width=0), # Garis tepi dihilangkan
                                     layer="below"
                                 )
-                                _draw_tv_level(eh, "BUY AREA", '#089981', tv_bg_color, '#089981', 'dash')
-                                _draw_tv_level(el, "BUY AREA", '#089981', tv_bg_color, '#089981', 'dash')
+
+                                # Gambar satu label di tengah-tengah kotak
+                                fig.add_annotation(
+                                    xref='paper', yref='y',
+                                    x=1.0, y=mid_y,
+                                    text=f"<b>BUY {min(el_val, eh_val):,.0f} - {max(el_val, eh_val):,.0f}</b>",
+                                    showarrow=False,
+                                    xanchor='right', yanchor='middle',
+                                    font=dict(color='#089981', size=10, family='IBM Plex Mono, monospace'),
+                                    bgcolor=tv_bg_color,
+                                    bordercolor='#089981',
+                                    borderwidth=1,
+                                    borderpad=4
+                                )
 
                             # SL (Merah Solid)
                             if sl:
@@ -5344,7 +5360,6 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
 
                         except Exception as e:
                             st.warning(f"AI gagal menggambar Trade Plan: {e}")
-
 
                     # ── Volume ────────────────────────────────────────────
                     vol_clr = [inc_color if c >= o else dec_color
