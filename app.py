@@ -4555,9 +4555,25 @@ if current_view == "dashboard":
     """, unsafe_allow_html=True)
 
     _tape_items = [
-        ("IHSG","^JKSE"), ("S&P500","^GSPC"), ("GOLD","GC=F"),
-        ("USD/IDR","IDR=X"), ("WTI","CL=F"), ("COAL","NCF=F"),
-        ("NIKKEI","^N225"), ("VIX","^VIX"),
+        # GLOBAL INDICES & VOLATILITY
+        ("IHSG",     "^JKSE"),
+        ("S&P500",   "^GSPC"),
+        ("Dow Jones","^DJI"),
+        ("Nasdaq",   "^IXIC"),
+        ("FTSE 100", "^FTSE"),
+        ("Nikkei",   "^N225"),
+        ("Hang Seng","^HSI"),
+        ("Shanghai", "000001.SS"),
+        ("VIX",      "^VIX"),
+        # COMMODITIES & FOREX
+        ("USD/IDR",  "IDR=X"),
+        ("DXY",      "DX-Y.NYB"),
+        ("Gold",     "GC=F"),
+        ("WTI",      "CL=F"),
+        ("Brent",    "BZ=F"),
+        ("Coal",     "NCF=F"),
+        ("Palm Oil", "MYP=F"),
+        ("Nickel",   "ALI=F"),
     ]
     _tape_html = ""
     for _name, _tk in _tape_items:
@@ -5114,7 +5130,19 @@ if current_view == "dashboard":
                             except Exception as e:
                                 vol_context = ""
 
-                        dashboard_prompt = f"Kamu adalah SIGMA AI. Analisa saham {ticker_input}.\\nHarga Terakhir: {live_price_str}\\n\\n{vol_context}\\n\\nData Fundamental:\\n{fund_context}\\n\\nBerikan format JSON di akhir jawaban dengan struktur: entry_low, entry_high, stop_loss, tp1, tp2, tp3 (isi dengan angka murni, atau null jika tidak ada)."
+                        dashboard_prompt = f"""Kamu adalah SIGMA AI. Analisa saham {ticker_input}.
+Harga Terakhir: {live_price_str}
+
+{vol_context}
+
+Data Fundamental:
+{fund_context}
+
+Berikan analisa teknikal singkat, lalu di AKHIR jawaban WAJIB sertakan blok JSON persis seperti format ini (gunakan harga dalam Rupiah, angka murni tanpa tanda kutip):
+```json
+{{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": null, "tp3": null}}
+```
+Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harga HARUS mendekati harga saat ini ({live_price_str})."""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
@@ -5125,22 +5153,53 @@ if current_view == "dashboard":
                                 ai_raw_result = f"Gagal memanggil AI: {e_gem}"
 
                         try:
+                            # Coba berbagai format: ```json block, { plain }, atau inline
                             json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
-                            if json_match:
-                                raw_json = json.loads(json_match.group(1))
-                                ai_data = {
-                                    "entry_low":  raw_json.get("entry_low", 0),
-                                    "entry_high": raw_json.get("entry_high", 0),
-                                    "stop_loss":  raw_json.get("stop_loss", 0),
-                                    "tp1": raw_json.get("tp1") or raw_json.get("target"),
-                                    "tp2": raw_json.get("tp2"),
-                                    "tp3": raw_json.get("tp3"),
-                                }
-                                ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
+                            if not json_match:
+                                # Coba cari JSON object langsung (tanpa backtick)
+                                json_match_plain = re.search(r'\{[^{}]*"entry_low"[^{}]*\}', ai_raw_result, re.DOTALL)
+                                if json_match_plain:
+                                    raw_json = json.loads(json_match_plain.group(0))
+                                else:
+                                    # Coba cari JSON object apapun di akhir teks
+                                    json_match_any = re.search(r'\{[\s\S]*\}', ai_raw_result)
+                                    raw_json = json.loads(json_match_any.group(0)) if json_match_any else {}
                             else:
-                                ai_text_verdict = ai_raw_result
+                                raw_json = json.loads(json_match.group(1))
+
+                            def _safe_float(v):
+                                try: return float(v) if v is not None else None
+                                except: return None
+
+                            ai_data = {
+                                "entry_low":  _safe_float(raw_json.get("entry_low")),
+                                "entry_high": _safe_float(raw_json.get("entry_high")),
+                                "stop_loss":  _safe_float(raw_json.get("stop_loss")),
+                                "tp1": _safe_float(raw_json.get("tp1") or raw_json.get("target")),
+                                "tp2": _safe_float(raw_json.get("tp2")),
+                                "tp3": _safe_float(raw_json.get("tp3")),
+                            }
+                            # Validasi: semua harga harus > 0 dan masuk akal
+                            last_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0
+                            if last_price > 0:
+                                def _plausible(v, ref, pct=0.6):
+                                    return v and v > 0 and abs(v - ref) / ref < pct
+                                if not _plausible(ai_data['entry_low'], last_price): ai_data['entry_low'] = None
+                                if not _plausible(ai_data['entry_high'], last_price): ai_data['entry_high'] = None
+                                if not _plausible(ai_data['stop_loss'], last_price): ai_data['stop_loss'] = None
+                                if not _plausible(ai_data['tp1'], last_price): ai_data['tp1'] = None
+                                if not _plausible(ai_data['tp2'], last_price): ai_data['tp2'] = None
+                                if not _plausible(ai_data['tp3'], last_price): ai_data['tp3'] = None
+                            # Hanya simpan ai_data jika minimal entry_low atau stop_loss valid
+                            if not (ai_data.get('entry_low') or ai_data.get('stop_loss')):
+                                ai_data = None
+
+                            # Bersihkan teks dari JSON block
+                            ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
+                            ai_text_verdict = re.sub(r'\{[\s\S]*"entry_low"[\s\S]*\}', '', ai_text_verdict).strip()
                         except Exception as e:
-                            ai_text_verdict = ai_raw_result 
+                            ai_data = None
+                            ai_text_verdict = ai_raw_result
 
                     except Exception as e:
                         st.error(f"Gagal memproses analisa AI: {e}")
@@ -5197,8 +5256,25 @@ if current_view == "dashboard":
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
                         font=dict(color=tv_text_color, size=11),
-                        xaxis=dict(showgrid=False, rangeslider=dict(visible=False), range=[df_chart.index[0], future_date]),
-                        yaxis=dict(showgrid=False, side="right"),
+                        xaxis=dict(
+                            showgrid=True,
+                            gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                            gridwidth=1,
+                            showline=True,
+                            linecolor=tv_border_color,
+                            linewidth=1,
+                            rangeslider=dict(visible=False),
+                            range=[df_chart.index[0], future_date],
+                        ),
+                        yaxis=dict(
+                            showgrid=True,
+                            gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                            gridwidth=1,
+                            showline=True,
+                            linecolor=tv_border_color,
+                            linewidth=1,
+                            side="right",
+                        ),
                         margin=dict(l=0, r=60, t=10, b=40),
                         height=550,
                         showlegend=False
@@ -5212,11 +5288,10 @@ if current_view == "dashboard":
 
             if run_analysis and ai_text_verdict:
                 st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""
-                <div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0;">
-                    {ai_text_verdict}
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"""<div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0; padding: 16px 20px;">""", unsafe_allow_html=True)
+                # Render teks AI sebagai markdown murni (bukan HTML) agar tag tidak bocor
+                st.markdown(ai_text_verdict)
+                st.markdown("</div>", unsafe_allow_html=True)
             elif not run_analysis:
                 st.markdown(f"""
                 <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
@@ -5650,4 +5725,3 @@ js_code = """
 </script>
 """
 components.html(js_code, height=0)
-
