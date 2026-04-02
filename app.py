@@ -4792,8 +4792,6 @@ if current_view == "dashboard":
             components.html(global_news_widget, height=490)
             st.markdown("</div></div>", unsafe_allow_html=True)
 
-            except Exception as e:
-            st.error("Gagal menarik data berita (Cek koneksi internet atau library 'feedparser')")
 
     with tab_rotation:
         def highlight_status(val):
