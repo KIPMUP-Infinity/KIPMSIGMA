@@ -4593,42 +4593,86 @@ if current_view == "dashboard":
                     fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA100'], mode='lines', line=dict(color='#9C27B0', width=1.5), name='EMA 100'))
                     fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA200'], mode='lines', line=dict(color='#FFFFFF', width=1.5), name='EMA 200'))
 
-                    # Auto Drawing garis (Geser Label ke Kanan: top right / bottom right)
+                    tv_bg_color = "#131722" if is_dark else "#ffffff"
+                    tv_text_color = "#b2b5be" if is_dark else "#1f2937"
+                    tv_border_color = "#2a2e39" if is_dark else "#e0e3eb"
+
+                    # Right padding ~1 bulan (30 hari) agar candle terakhir tidak mepet batas
+                    future_date = df_chart.index[-1] + pd.Timedelta(days=30)
+
+                    # Auto Drawing garis trade plan (label di kanan, tidak terpotong)
                     if ai_data:
                         try:
+                            # BUY AREA — shaded zone
                             fig.add_hrect(
-                                y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']), 
-                                line_width=0, fillcolor="rgba(8,153,129,0.2)", opacity=0.5,
-                                annotation_text="🟢 BUY AREA", annotation_position="top right"
+                                y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
+                                line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
                             )
-                            fig.add_hline(
-                                y=float(ai_data['target']), line_dash="dash", line_color="#089981", line_width=2,
-                                annotation_text=f"🎯 TARGET: {ai_data['target']}", annotation_position="top right",
-                                annotation_font_color="#089981"
+                            # Label BUY AREA manual via annotation agar tidak terpotong margin
+                            fig.add_annotation(
+                                x=future_date, xref="x",
+                                y=(float(ai_data['entry_low']) + float(ai_data['entry_high'])) / 2,
+                                text="<b>🟢 BUY AREA</b>",
+                                showarrow=False, xanchor="right", yanchor="middle",
+                                font=dict(color="#089981", size=11),
+                                bgcolor="rgba(8,153,129,0.12)", borderpad=4,
                             )
+                            # TARGET line
                             fig.add_hline(
-                                y=float(ai_data['stop_loss']), line_dash="dash", line_color="#f23645", line_width=2,
-                                annotation_text=f"🛑 SL: {ai_data['stop_loss']}", annotation_position="bottom right",
-                                annotation_font_color="#f23645"
+                                y=float(ai_data['target']),
+                                line_dash="dash", line_color="#089981", line_width=1.5,
+                            )
+                            fig.add_annotation(
+                                x=future_date, xref="x",
+                                y=float(ai_data['target']),
+                                text=f"<b>🎯 TP: {int(float(ai_data['target'])):,}</b>",
+                                showarrow=False, xanchor="right", yanchor="bottom",
+                                font=dict(color="#089981", size=11),
+                                bgcolor="rgba(8,153,129,0.12)", borderpad=4,
+                            )
+                            # STOP LOSS line
+                            fig.add_hline(
+                                y=float(ai_data['stop_loss']),
+                                line_dash="dash", line_color="#f23645", line_width=1.5,
+                            )
+                            fig.add_annotation(
+                                x=future_date, xref="x",
+                                y=float(ai_data['stop_loss']),
+                                text=f"<b>🛑 SL: {int(float(ai_data['stop_loss'])):,}</b>",
+                                showarrow=False, xanchor="right", yanchor="top",
+                                font=dict(color="#f23645", size=11),
+                                bgcolor="rgba(242,54,69,0.12)", borderpad=4,
                             )
                         except Exception as e:
                             st.warning("AI gagal menghasilkan kordinat harga yang pas untuk digambar otomatis.")
-
-                    tv_bg_color = "#131722" if is_dark else "#ffffff"
-                    tv_text_color = "#b2b5be" if is_dark else "#1f2937"
-
-                    # Buat X-Axis sedikit lebih lebar ke kanan agar candle terakhir tidak menabrak batas layar
-                    future_date = df_chart.index[-1] + pd.Timedelta(days=20)
 
                     fig.update_layout(
                         template="plotly_dark" if is_dark else "plotly_white",
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
-                        font=dict(color=tv_text_color),
-                        # MENGHILANGKAN GRIDLINES (showgrid=False) & SET RANGE X-AXIS
-                        xaxis=dict(showgrid=False, rangeslider=dict(visible=False), range=[df_chart.index[0], future_date]),
-                        yaxis=dict(showgrid=False, side="right"),
-                        margin=dict(l=0, r=0, t=10, b=0),
+                        font=dict(color=tv_text_color, size=11),
+                        xaxis=dict(
+                            showgrid=False,
+                            rangeslider=dict(visible=False),
+                            range=[df_chart.index[0], future_date],
+                            showline=True,           # garis pembatas bawah (horizontal separator)
+                            linecolor=tv_border_color,
+                            linewidth=1,
+                            mirror=False,
+                            ticks="outside",
+                            tickcolor=tv_border_color,
+                        ),
+                        yaxis=dict(
+                            showgrid=False,
+                            side="right",
+                            showline=True,           # garis pembatas kanan (vertical separator)
+                            linecolor=tv_border_color,
+                            linewidth=1,
+                            mirror=False,
+                            ticks="outside",
+                            tickcolor=tv_border_color,
+                        ),
+                        margin=dict(l=0, r=60, t=10, b=40),
                         height=550,
                         showlegend=False
                     )
