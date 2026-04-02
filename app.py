@@ -4233,27 +4233,24 @@ if current_view == "dashboard":
         [data-testid="stMainBlockContainer"] {
             max-width: 100% !important;
             width: 100% !important;
-            padding-left: 14px !important; /* Space aman agar teks tidak nempel layar */
+            padding-left: 14px !important;
             padding-right: 14px !important;
             padding-top: 1rem !important;
             margin: 0 !important;
         }
 
-        /* Memastikan Metric dan Card mengecil sesuai layar mobile */
         [data-testid="stMetric"] {
             padding: 10px 12px !important;
         }
         
         [data-testid="stMetricValue"] {
-            font-size: 1.15rem !important; /* Agar angka tidak terpotong */
+            font-size: 1.15rem !important; 
         }
         
-        /* Menghilangkan margin berlebih pada kolom mobile */
         [data-testid="stVerticalBlock"] {
             gap: 0.5rem !important;
         }
 
-        /* Tabel bisa di-scroll ke samping di HP */
         .stDataFrame {
             width: 100% !important;
             overflow-x: auto !important;
@@ -4285,17 +4282,14 @@ if current_view == "dashboard":
     <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
-    /* ── GLOBAL TERMINAL FONT ── */
     .stApp, .stApp * {{ font-family: 'IBM Plex Sans', sans-serif !important; }}
 
-    /* ── HIDE STREAMLIT CHROME ── */
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"],
     [data-testid="stDataFrame"] [aria-haspopup="menu"],
     [data-testid="stDataFrame"] .gdg-header-action,
     [data-testid="stDataFrame"] div[class*="header"] svg {{ display: none !important; }}
     [data-testid="stDataFrame"] div[role="button"] {{ pointer-events: none !important; }}
 
-    /* ── METRIC CARDS — TERMINAL STYLE ── */
     [data-testid="stMetric"] {{
         background: {met_bg} !important;
         border: 1px solid {met_border} !important;
@@ -4333,7 +4327,6 @@ if current_view == "dashboard":
     }}
     [data-testid="stMetricDelta"] {{ font-family: 'IBM Plex Mono', monospace !important; font-size: 0.8rem !important; }}
 
-    /* ── TAB NAV — TERMINAL PILL STYLE ── */
     [data-testid="stTabs"] [role="tablist"] {{
         background: {"rgba(6,9,18,0.95)" if is_dark else "#f1f5f9"} !important;
         border: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"} !important;
@@ -4372,18 +4365,8 @@ if current_view == "dashboard":
         margin-top: 16px !important;
     }}
 
-    /* ── SECTION LABEL — TERMINAL CATEGORY ── */
-    .trm-section {{
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 28px 0 14px;
-    }}
-    .trm-section-line {{
-        flex: 1;
-        height: 1px;
-        background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"};
-    }}
+    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 28px 0 14px; }}
+    .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.68rem;
@@ -4398,7 +4381,6 @@ if current_view == "dashboard":
         background: {"rgba(245,194,66,0.05)" if is_dark else "#f8fafc"};
     }}
 
-    /* ── DATA CARD ── */
     .trm-card {{
         background: {met_bg};
         border: 1px solid {met_border};
@@ -4419,7 +4401,6 @@ if current_view == "dashboard":
         font-weight: 600;
     }}
 
-    /* ── INSIGHT CALLOUT ── */
     .trm-insight {{
         background: {"rgba(245,194,66,0.05)" if is_dark else "#fffbeb"};
         border-left: 3px solid #F5C242;
@@ -4431,7 +4412,6 @@ if current_view == "dashboard":
         line-height: 1.6;
     }}
 
-    /* ── DIVIDER ── */
     .fancy-divider {{
         border: 0;
         height: 1px;
@@ -4439,19 +4419,6 @@ if current_view == "dashboard":
         margin: 24px 0;
     }}
 
-    /* ── DYNAMIC CARD (backward compat) ── */
-    .dynamic-card {{
-        background: {met_bg};
-        border: 1px solid {met_border};
-        border-radius: 8px;
-        padding: 20px 22px;
-        box-shadow: {met_shadow};
-        height: 100%;
-        transition: border-color 0.2s;
-    }}
-    .dynamic-card:hover {{ border-color: rgba(245,194,66,0.3); }}
-
-    /* ── FIX BUTTON VISIBILITY (dark + light mode) ── */
     [data-testid="stTabs"] ~ div .stButton > button,
     [data-testid="stVerticalBlock"] .stButton > button {{
         background: {"rgba(245,194,66,0.1)" if is_dark else "rgba(245,194,66,0.08)"} !important;
@@ -4474,7 +4441,6 @@ if current_view == "dashboard":
         box-shadow: 0 0 12px rgba(245,194,66,0.15) !important;
     }}
 
-    /* ── TICKER TAPE ── */
    .trm-ticker-wrap {{ overflow: hidden; max-width: 100%;
         white-space: nowrap;
         border-top: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
@@ -4500,75 +4466,6 @@ if current_view == "dashboard":
         100% {{ transform: translateX(-50%); }}
     }}
 
-    /* ── STATUS BADGE ── */
-    .trm-badge {{
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.65rem;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        padding: 3px 9px;
-        border-radius: 3px;
-        border: 1px solid;
-    }}
-    .trm-badge-green {{
-        color: #26a69a;
-        border-color: rgba(38,166,154,0.3);
-        background: rgba(38,166,154,0.06);
-    }}
-    .trm-badge-gold {{
-        color: #F5C242;
-        border-color: rgba(245,194,66,0.3);
-        background: rgba(245,194,66,0.06);
-    }}
-    .trm-badge-red {{
-        color: #f23645;
-        border-color: rgba(242,54,69,0.3);
-        background: rgba(242,54,69,0.06);
-    }}
-
-    /* ── STAT ROW (horizontal KPI bar) ── */
-    .trm-stat-row {{
-        display: flex;
-        gap: 1px;
-        margin: 12px 0;
-    }}
-    .trm-stat-cell {{
-        flex: 1;
-        background: {met_bg};
-        border: 1px solid {met_border};
-        padding: 10px 14px;
-        transition: border-color 0.2s;
-    }}
-    .trm-stat-cell:first-child {{ border-radius: 6px 0 0 6px; }}
-    .trm-stat-cell:last-child  {{ border-radius: 0 6px 6px 0; }}
-    .trm-stat-cell:hover {{ border-color: rgba(245,194,66,0.35); z-index:1; }}
-    .trm-stat-label {{
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.62rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: {text_sub};
-        margin-bottom: 4px;
-    }}
-    .trm-stat-val {{
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: {text_main};
-    }}
-    .trm-stat-delta {{
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.7rem;
-        margin-top: 2px;
-    }}
-    .trm-stat-delta.up {{ color: #26a69a; }}
-    .trm-stat-delta.dn {{ color: #f23645; }}
-
-    /* ── INPUT FIELD TERMINAL STYLE ── */
     [data-testid="stTextInput"] input {{
         font-family: 'IBM Plex Mono', monospace !important;
         font-size: 0.95rem !important;
@@ -4584,22 +4481,13 @@ if current_view == "dashboard":
         border-color: rgba(245,194,66,0.5) !important;
         box-shadow: 0 0 0 2px rgba(245,194,66,0.08) !important;
     }}
-    [data-testid="stTextInput"] label {{
+    [data-testid="stTextInput"] label, [data-testid="stSelectbox"] label {{
         font-family: 'IBM Plex Mono', monospace !important;
         font-size: 0.68rem !important;
         letter-spacing: 0.1em !important;
         text-transform: uppercase !important;
         color: {text_sub} !important;
         font-weight: 500 !important;
-    }}
-
-    /* ── SELECTBOX TERMINAL STYLE ── */
-    [data-testid="stSelectbox"] label {{
-        font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.68rem !important;
-        letter-spacing: 0.1em !important;
-        text-transform: uppercase !important;
-        color: {text_sub} !important;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -4633,7 +4521,7 @@ if current_view == "dashboard":
                 border:1px solid {'rgba(107,122,153,0.25)' if is_dark else '#e2e8f0'};
                 padding:2px 8px;
                 border-radius:3px;
-            ">KIPM — MnM</span>
+            ">KIPM &mdash; MnM</span>
         </div>
         <div style="
             font-family:'IBM Plex Mono',monospace;
@@ -4667,7 +4555,7 @@ if current_view == "dashboard":
                 _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
         except: pass
     if _tape_html:
-        _tape_double = _tape_html * 2  # seamless loop
+        _tape_double = _tape_html * 2  
         st.markdown(f"""
         <div class="trm-ticker-wrap">
             <div class="trm-ticker-tape">{_tape_double}</div>
@@ -4682,9 +4570,6 @@ if current_view == "dashboard":
         "  AI STOCK INSIGHT  ",
     ])
 
-    # ==========================================
-    # TAB 1: GLOBAL, MACRO & NEWS
-    # ==========================================
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
@@ -4727,7 +4612,6 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>GLOBAL INDICES &amp; VOLATILITY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if idx_data:
             items_idx = list(idx_data.items())
-            # Full width: semua 9 indeks dalam 1 baris
             cols = st.columns(len(items_idx))
             for j, (name, info) in enumerate(items_idx):
                 with cols[j]:
@@ -4738,7 +4622,6 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>COMMODITIES &amp; FOREX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if com_data:
             items_com = list(com_data.items())
-            # Full width: semua komoditas dalam 1 baris
             cols = st.columns(len(items_com))
             for j, (name, info) in enumerate(items_com):
                 with cols[j]:
@@ -4750,15 +4633,14 @@ if current_view == "dashboard":
         else:
             st.warning("⚠️ Gagal menarik data komoditas.")
 
-        # --- KORELASI MAKRO EKONOMI ---
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KORELASI MAKRO EKONOMI — INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KORELASI MAKRO EKONOMI &mdash; INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
 
         macro_col1, macro_col2 = st.columns(2)
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
                 "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
@@ -4767,7 +4649,7 @@ if current_view == "dashboard":
             st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
         with macro_col2:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
                 "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
@@ -4775,9 +4657,8 @@ if current_view == "dashboard":
             }, index=dates)
             st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
-        st.markdown(f"<div class='trm-insight'>💡 <b>SIGMA VIEW —</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
 
-        # --- MARKET INSIGHT ---
         col1, col2 = st.columns(2)
         with col1:
             st.markdown(f"""
@@ -4804,14 +4685,11 @@ if current_view == "dashboard":
                 </p>
                 <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
                 <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
-                Komoditas memanas → Coal &amp; Gold. Suku bunga turun → Big Banks &amp; Properti.
+                Komoditas memanas &rarr; Coal &amp; Gold. Suku bunga turun &rarr; Big Banks &amp; Properti.
                 </p>
             </div>
             """, unsafe_allow_html=True)
 
-        # ---------------------------------------------------------
-        # LIVE NEWS FEED 
-        # ---------------------------------------------------------
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Berita ekonomi dan pasar saham global & domestik terkini</p>", unsafe_allow_html=True)
@@ -4826,11 +4704,7 @@ if current_view == "dashboard":
         """
         components.html(news_widget, height=620)
 
-    # ==========================================
-    # TAB 2: INDEX & SECTOR ROTATION
-    # ==========================================
     with tab_rotation:
-        # FUNGSI SAFE STYLER ANTI-CRASH
         def highlight_status(val):
             if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
             elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
@@ -4842,24 +4716,22 @@ if current_view == "dashboard":
                 return df_style.map(func, subset=subset)
             return df_style.applymap(func, subset=subset)
 
-        # --- 1. SECTOR ROTATION (RRG) ---
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION — RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         col_rot1, col_rot2 = st.columns([1.5, 1])
         with col_rot1:
             rotation_data = {
                 "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
-                "Fase Saat Ini": ["Leading 🚀", "Improving 📈", "Weakening ⚠️", "Lagging 📉", "Lagging 📉"],
+                "Fase Saat Ini": ["Leading", "Improving", "Weakening", "Lagging", "Lagging"],
                 "Aksi Institusi": ["Hold / Profit Run", "Accumulation", "Distribution / Wait", "Avoid", "Avoid"]
             }
             st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
         
         with col_rot2:
-            st.markdown(f"<div class='trm-insight'>🎯 <b>SIGMA INSIGHT —</b> Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (<i>Weakening</i>) menuju sektor energi dan material dasar (<i>Improving/Leading</i>). Pantau ketat emiten yang berada di fase Improving.</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='trm-insight'>&#127919; <b>SIGMA INSIGHT &mdash;</b> Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (<i>Weakening</i>) menuju sektor energi dan material dasar (<i>Improving/Leading</i>). Pantau ketat emiten yang berada di fase Improving.</div>", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # --- 2. MSCI INDEX TRACKER ---
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         msci_data = {
@@ -4890,19 +4762,18 @@ if current_view == "dashboard":
         }
         df_msci = pd.DataFrame(msci_data)
         
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index — The Giants</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index — The Mid-Caps</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded — Keluar dari Indeks</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # --- 3. FTSE INDEX TRACKER ---
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX — INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         ftse_data = {
             "Ticker": [
@@ -4936,8 +4807,7 @@ if current_view == "dashboard":
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # --- 4. LQ45 INDEX TRACKER (FIX 45 SAHAM) ---
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX — 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
@@ -4981,9 +4851,6 @@ if current_view == "dashboard":
         st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-    # ==========================================
-    # TAB 3: CONGLOMERATE MAP
-    # ==========================================
     with tab_conglo:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
@@ -5054,7 +4921,7 @@ if current_view == "dashboard":
         
         st.markdown(f"""
         <div class="trm-card" style="margin-top: 16px;">
-            <div class="trm-card-title">SIGMA INSIGHT — The Power of Conglomerates</div>
+            <div class="trm-card-title">SIGMA INSIGHT &mdash; The Power of Conglomerates</div>
             <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
             Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
             </p>
@@ -5066,12 +4933,9 @@ if current_view == "dashboard":
         
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-    # ==========================================
-    # TAB 4: AI STOCK INSIGHT (AUTO DRAWING CHART)
-    # ==========================================
     with tab_ai:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI — AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan · Data Live IDX · Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
         col_input, col_btn, col_empty = st.columns([2, 1, 3])
         with col_input:
@@ -5087,14 +4951,12 @@ if current_view == "dashboard":
             ai_data = None
             ai_text_verdict = ""
             
-            # 1. Fetch data chart
             try:
                 t = yf.Ticker(f"{ticker_input}.JK")
                 df_chart = t.history(period="6mo")
-            except:
+            except Exception as e:
                 pass
 
-            # 2. Jika tombol ditekan, jalankan analisa AI
             if run_analysis:
                 with st.spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
                     try:
@@ -5102,10 +4964,11 @@ if current_view == "dashboard":
                         
                         live_price_str = "N/A"
                         if not df_chart.empty:
-                            try: live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
-                            except: pass
+                            try: 
+                                live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
+                            except Exception as e: 
+                                pass
 
-                        # ── VOLUME INTELLIGENCE dari OHLCV ──
                         vol_context = ""
                         if not df_chart.empty and 'Volume' in df_chart.columns:
                             try:
@@ -5113,289 +4976,132 @@ if current_view == "dashboard":
                                 avg_vol_5  = df_chart['Volume'].rolling(5).mean().iloc[-1]
                                 last_vol   = df_chart['Volume'].iloc[-1]
                                 last_close = df_chart['Close'].iloc[-1]
-                                last_value = last_vol * last_close  # nilai transaksi Rp
+                                last_value = last_vol * last_close  
 
-                                # Spike ratio
                                 spike_ratio = last_vol / avg_vol_20 if avg_vol_20 > 0 else 1
 
-                                # Price-Volume divergence (5 hari)
                                 price_chg_5d = (df_chart['Close'].iloc[-1] - df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
                                 vol_chg_5d   = (avg_vol_5 - df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
 
-                                # Volume dry-up: 5-bar avg < 50% dari 20-bar avg
                                 dryup = avg_vol_5 < (avg_vol_20 * 0.5)
 
-                                # Value transaksi 5 hari (proxy institutional activity)
-                                val_5d = (df_chart['Volume'].iloc[-5:] * df_chart['Close'].iloc[-5:]).sum() if len(df_chart) >= 5 else 0
+                                if spike_ratio >= 10:    vol_signal = "🔴 VOLUME EKSTREM"
+                                elif spike_ratio >= 5:   vol_signal = "🟠 VOLUME SANGAT TINGGI"
+                                elif spike_ratio >= 2:   vol_signal = "🟡 VOLUME SPIKE"
+                                elif dryup:              vol_signal = "🔵 VOLUME DRY-UP"
+                                else:                    vol_signal = "⚪ Volume normal"
 
-                                # Label sinyal
-                                if spike_ratio >= 10:    vol_signal = "🔴 VOLUME EKSTREM (10x+) — kemungkinan besar institutional event"
-                                elif spike_ratio >= 5:   vol_signal = "🟠 VOLUME SANGAT TINGGI (5x+) — aksi korporasi atau institutional entry/exit"
-                                elif spike_ratio >= 2:   vol_signal = "🟡 VOLUME SPIKE (2x+) — perhatikan arah harga hari ini"
-                                elif dryup:              vol_signal = "🔵 VOLUME DRY-UP — tekanan jual/beli melemah, potensi akumulasi diam-diam"
-                                else:                    vol_signal = "⚪ Volume normal — tidak ada anomali signifikan"
-
-                                # Price-Volume divergence
                                 if price_chg_5d > 2 and vol_chg_5d < -20:
-                                    pvd_signal = "⚠️ DIVERGENSI: Harga naik tapi volume turun — momentum lemah, waspadai false breakout"
+                                    pvd_signal = "⚠️ DIVERGENSI: Harga naik tapi volume turun"
                                 elif price_chg_5d < -2 and vol_chg_5d < -20:
-                                    pvd_signal = "🔵 Volume turun saat harga turun — tekanan jual melemah, potensi bottom"
+                                    pvd_signal = "🔵 Volume turun saat harga turun"
                                 elif price_chg_5d > 2 and vol_chg_5d > 20:
-                                    pvd_signal = "✅ Harga naik + volume naik — breakout dengan konfirmasi volume kuat"
+                                    pvd_signal = "✅ Harga naik + volume naik"
                                 elif price_chg_5d < -2 and vol_chg_5d > 20:
-                                    pvd_signal = "⚠️ Volume spike saat turun — kemungkinan kapitulasi atau distribusi besar"
+                                    pvd_signal = "⚠️ Volume spike saat turun"
                                 else:
-                                    pvd_signal = "Volume dan harga bergerak konsisten — tidak ada divergensi signifikan"
+                                    pvd_signal = "Volume dan harga konsisten"
 
-                                vol_context = f"""
-=== VOLUME INTELLIGENCE (Data OHLCV) ===
-Volume Terakhir     : {int(last_vol):,} lot
-Volume Avg 20 Hari  : {int(avg_vol_20):,} lot
-Volume Avg 5 Hari   : {int(avg_vol_5):,} lot
-Spike Ratio         : {spike_ratio:.1f}x
-Nilai Transaksi     : Rp {last_value:,.0f}
-Nilai 5 Hari        : Rp {val_5d:,.0f}
-Sinyal Volume       : {vol_signal}
-Price-Vol Divergence: {pvd_signal}
-Harga -5 hari       : {price_chg_5d:+.1f}% | Volume -5 hari: {vol_chg_5d:+.1f}%
-"""
-                            except:
+                                vol_context = f"Volume Terakhir: {int(last_vol):,} | Spike Ratio: {spike_ratio:.1f}x | Sinyal: {vol_signal} | Divergensi: {pvd_signal}"
+                            except Exception as e:
                                 vol_context = ""
 
-                        # Prompt upgrade: multi-TP, volume, makro, fundamental
-                        dashboard_prompt = f"""
-Kamu adalah SIGMA AI. Analisa saham {ticker_input} secara komprehensif dan tulis Executive Summary.
-Harga Terakhir: {live_price_str}
+                        dashboard_prompt = f"Kamu adalah SIGMA AI. Analisa saham {ticker_input}.\\nHarga Terakhir: {live_price_str}\\n\\n{vol_context}\\n\\nData Fundamental:\\n{fund_context}\\n\\nBerikan format JSON di akhir jawaban dengan struktur: entry_low, entry_high, stop_loss, tp1, tp2, tp3 (isi dengan angka murni, atau null jika tidak ada)."
 
-{vol_context}
-
-Data Fundamental & Evaluasi:
-{fund_context}
-
-INSTRUKSI KETAT:
-1. Tulis analisa dalam format markdown (JANGAN keluar dari format di bawah).
-2. DI BAGIAN PALING BAWAH wajib ada satu blok JSON murni untuk auto-drawing chart.
-3. Target (TP) WAJIB berdasarkan struktur teknikal nyata: resistance terdekat, swing high, FVG unmitigated, OB, level psikologis. JANGAN pakai rasio matematika murni.
-4. Jumlah TP: buat 1 sampai 3 sesuai kondisi chart. Jika tidak ada resistance jelas di atas → jangan paksakan TP2/TP3 (isi null).
-5. Harga HARUS sesuai fraksi tick BEI. IDX = LONG ONLY (SL selalu di bawah entry).
-6. Volume: jadikan bahan analisa — spike, dry-up, divergensi. Jangan abaikan signal volume.
-
-FORMAT ANALISA (WAJIB IKUT PERSIS):
-
-🎯 **VERDICT:** [BULLISH / BEARISH / WAIT & SEE] — [1 kalimat alasan utama]
-
-📊 **TEKNIKAL & VOLUME**
-[3-4 kalimat: posisi harga vs struktur (IFVG/OB/Demand/EMA), kondisi volume (spike/dry-up/divergensi), momentum. Sebutkan level kunci yang terlihat dari data.]
-
-💰 **FUNDAMENTAL & MAKRO**
-[2-3 kalimat: kondisi bisnis, valuasi (undervalue/fair/overvalue), faktor makro yang relevan untuk sektor ini (suku bunga, kurs, komoditas, dll).]
-
-🗺️ **TRADE PLAN**
-- **Entry Area:** Rp[X] – Rp[Y]
-- **Stop Loss:** Rp[Z] *(alasan: [invalidasi struktur apa])*
-- **TP1:** Rp[A] *(alasan teknikal: [sebutkan level/zona])*
-- **TP2:** Rp[B] *(alasan: [sebutkan level/zona])* ← tulis "—" jika tidak ada alasan teknikal kuat
-- **TP3:** Rp[C] *(alasan: [sebutkan level/zona])* ← tulis "—" jika tidak ada alasan teknikal kuat
-- **Conviction:** [⭐ / ⭐⭐ / ⭐⭐⭐ / ⭐⭐⭐⭐ / ⭐⭐⭐⭐⭐]
-
-⚠️ *#DYOR. Disiplin SL. Edge ada di timing eksekusi.*
-
-FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
-```json
-{{
-    "entry_low": 0,
-    "entry_high": 0,
-    "stop_loss": 0,
-    "tp1": 0,
-    "tp2": null,
-    "tp3": null
-}}
-
-                    try:
-                        ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                    except:
                         try:
-                            ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
-                        except Exception as e_gem:
-                            ai_raw_result = f"Gagal memanggil AI: {e_gem}"
+                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
+                        except Exception as e_groq:
+                            try:
+                                ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+                            except Exception as e_gem:
+                                ai_raw_result = f"Gagal memanggil AI: {e_gem}"
 
-                    # Ekstrak data JSON dari teks jawaban AI
-                    try:
-                        json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
-                        if json_match:
-                            raw_json = json.loads(json_match.group(1))
-                            # Normalize schema: support both lama (target) dan baru (tp1/tp2/tp3)
-                            ai_data = {
-                                "entry_low":  raw_json.get("entry_low", 0),
-                                "entry_high": raw_json.get("entry_high", 0),
-                                "stop_loss":  raw_json.get("stop_loss", 0),
-                                "tp1": raw_json.get("tp1") or raw_json.get("target"),
-                                "tp2": raw_json.get("tp2"),
-                                "tp3": raw_json.get("tp3"),
-                            }
-                            ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
-                        else:
-                            ai_text_verdict = ai_raw_result
-                    except:
-                        ai_text_verdict = ai_raw_result 
-
-                except Exception as e:
-                    st.error(f"Gagal memproses analisa AI: {e}")
-
-        # 3. Tampilkan Chart Plotly yang meniru TradingView (Gridlines off, Ada EMA, Teks Kanan)
-        st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART — {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        
-        if not df_chart.empty:
-            try:
-                inc_color = '#089981' # Hijau khas TradingView
-                dec_color = '#f23645' # Merah khas TradingView
-                
-                fig = go.Figure()
-                
-                # Candlestick Utama
-                fig.add_trace(go.Candlestick(
-                    x=df_chart.index,
-                    open=df_chart['Open'], high=df_chart['High'],
-                    low=df_chart['Low'], close=df_chart['Close'],
-                    increasing_line_color=inc_color, decreasing_line_color=dec_color,
-                    name="Price"
-                ))
-
-                # Tambah Indikator EMA 13, 21, 100, 200
-                df_chart['EMA13'] = df_chart['Close'].ewm(span=13, adjust=False).mean()
-                df_chart['EMA21'] = df_chart['Close'].ewm(span=21, adjust=False).mean()
-                df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
-                df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
-
-                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA13'], mode='lines', line=dict(color='#00BCD4', width=1), name='EMA 13'))
-                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA21'], mode='lines', line=dict(color='#FFEB3B', width=1), name='EMA 21'))
-                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA100'], mode='lines', line=dict(color='#9C27B0', width=1.5), name='EMA 100'))
-                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA200'], mode='lines', line=dict(color='#FFFFFF', width=1.5), name='EMA 200'))
-
-                tv_bg_color = "#131722" if is_dark else "#ffffff"
-                tv_text_color = "#b2b5be" if is_dark else "#1f2937"
-                tv_border_color = "#2a2e39" if is_dark else "#e0e3eb"
-
-                # Right padding ~1 bulan (30 hari) agar candle terakhir tidak mepet batas
-                future_date = df_chart.index[-1] + pd.Timedelta(days=30)
-
-                # Auto Drawing garis trade plan (label di kanan, tidak terpotong)
-                if ai_data:
-                    try:
-                        # BUY AREA — shaded zone
-                        fig.add_hrect(
-                            y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
-                            line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
-                        )
-                        fig.add_annotation(
-                            x=future_date, xref="x",
-                            y=(float(ai_data['entry_low']) + float(ai_data['entry_high'])) / 2,
-                            text="<b>🟢 BUY AREA</b>",
-                            showarrow=False, xanchor="right", yanchor="middle",
-                            font=dict(color="#089981", size=11),
-                            bgcolor="rgba(8,153,129,0.12)", borderpad=4,
-                        )
-
-                        # STOP LOSS line
-                        fig.add_hline(
-                            y=float(ai_data['stop_loss']),
-                            line_dash="dash", line_color="#f23645", line_width=1.5,
-                        )
-                        fig.add_annotation(
-                            x=future_date, xref="x",
-                            y=float(ai_data['stop_loss']),
-                            text=f"<b>🛑 SL: {int(float(ai_data['stop_loss'])):,}</b>",
-                            showarrow=False, xanchor="right", yanchor="top",
-                            font=dict(color="#f23645", size=11),
-                            bgcolor="rgba(242,54,69,0.12)", borderpad=4,
-                        )
-
-                        # TP1 — selalu ada
-                        if ai_data.get('tp1'):
-                            fig.add_hline(
-                                y=float(ai_data['tp1']),
-                                line_dash="dash", line_color="#089981", line_width=1.5,
-                            )
-                            fig.add_annotation(
-                                x=future_date, xref="x",
-                                y=float(ai_data['tp1']),
-                                text=f"<b>🎯 TP1: {int(float(ai_data['tp1'])):,}</b>",
-                                showarrow=False, xanchor="right", yanchor="bottom",
-                                font=dict(color="#089981", size=11),
-                                bgcolor="rgba(8,153,129,0.12)", borderpad=4,
-                            )
-
-                        # TP2 — opsional
-                        if ai_data.get('tp2'):
-                            fig.add_hline(
-                                y=float(ai_data['tp2']),
-                                line_dash="dot", line_color="#26a69a", line_width=1.2,
-                            )
-                            fig.add_annotation(
-                                x=future_date, xref="x",
-                                y=float(ai_data['tp2']),
-                                text=f"<b>🎯 TP2: {int(float(ai_data['tp2'])):,}</b>",
-                                showarrow=False, xanchor="right", yanchor="bottom",
-                                font=dict(color="#26a69a", size=11),
-                                bgcolor="rgba(38,166,154,0.12)", borderpad=4,
-                            )
-
-                        # TP3 — opsional
-                        if ai_data.get('tp3'):
-                            fig.add_hline(
-                                y=float(ai_data['tp3']),
-                                line_dash="dot", line_color="#80cbc4", line_width=1.2,
-                            )
-                            fig.add_annotation(
-                                x=future_date, xref="x",
-                                y=float(ai_data['tp3']),
-                                text=f"<b>🎯 TP3: {int(float(ai_data['tp3'])):,}</b>",
-                                showarrow=False, xanchor="right", yanchor="bottom",
-                                font=dict(color="#80cbc4", size=11),
-                                bgcolor="rgba(128,203,196,0.12)", borderpad=4,
-                            )
+                        try:
+                            json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
+                            if json_match:
+                                raw_json = json.loads(json_match.group(1))
+                                ai_data = {
+                                    "entry_low":  raw_json.get("entry_low", 0),
+                                    "entry_high": raw_json.get("entry_high", 0),
+                                    "stop_loss":  raw_json.get("stop_loss", 0),
+                                    "tp1": raw_json.get("tp1") or raw_json.get("target"),
+                                    "tp2": raw_json.get("tp2"),
+                                    "tp3": raw_json.get("tp3"),
+                                }
+                                ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
+                            else:
+                                ai_text_verdict = ai_raw_result
+                        except Exception as e:
+                            ai_text_verdict = ai_raw_result 
 
                     except Exception as e:
-                        st.warning("AI gagal menghasilkan kordinat harga yang pas untuk digambar otomatis.")
+                        st.error(f"Gagal memproses analisa AI: {e}")
 
-                fig.update_layout(
-                    template="plotly_dark" if is_dark else "plotly_white",
-                    plot_bgcolor=tv_bg_color,
-                    paper_bgcolor=tv_bg_color,
-                    font=dict(color=tv_text_color, size=11),
-                    xaxis=dict(
-                        showgrid=False,
-                        rangeslider=dict(visible=False),
-                        range=[df_chart.index[0], future_date],
-                        showline=True,           
-                        linecolor=tv_border_color,
-                        linewidth=1,
-                        mirror=False,
-                        ticks="outside",
-                        tickcolor=tv_border_color,
-                    ),
-                    yaxis=dict(
-                        showgrid=False,
-                        side="right",
-                        showline=True,           
-                        linecolor=tv_border_color,
-                        linewidth=1,
-                        mirror=False,
-                        ticks="outside",
-                        tickcolor=tv_border_color,
-                    ),
-                    margin=dict(l=0, r=60, t=10, b=40),
-                    height=550,
-                    showlegend=False
-                )
-                
-                st.plotly_chart(fig, use_container_width=True)
-            except Exception as e:
-                st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
-        else:
-            st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
+            st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART &mdash; {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            
+            if not df_chart.empty:
+                try:
+                    inc_color = '#089981'
+                    dec_color = '#f23645'
+                    
+                    fig = go.Figure()
+                    
+                    fig.add_trace(go.Candlestick(
+                        x=df_chart.index,
+                        open=df_chart['Open'], high=df_chart['High'],
+                        low=df_chart['Low'], close=df_chart['Close'],
+                        increasing_line_color=inc_color, decreasing_line_color=dec_color,
+                        name="Price"
+                    ))
 
-            # 4. Tampilkan Verdict Text AI di bawah Chart
+                    df_chart['EMA13'] = df_chart['Close'].ewm(span=13, adjust=False).mean()
+                    df_chart['EMA21'] = df_chart['Close'].ewm(span=21, adjust=False).mean()
+                    
+                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA13'], mode='lines', line=dict(color='#00BCD4', width=1), name='EMA 13'))
+                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA21'], mode='lines', line=dict(color='#FFEB3B', width=1), name='EMA 21'))
+
+                    tv_bg_color = "#131722" if is_dark else "#ffffff"
+                    tv_text_color = "#b2b5be" if is_dark else "#1f2937"
+                    tv_border_color = "#2a2e39" if is_dark else "#e0e3eb"
+
+                    future_date = df_chart.index[-1] + pd.Timedelta(days=30)
+
+                    if ai_data:
+                        try:
+                            fig.add_hrect(
+                                y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
+                                line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
+                            )
+                            fig.add_hline(
+                                y=float(ai_data['stop_loss']),
+                                line_dash="dash", line_color="#f23645", line_width=1.5,
+                            )
+                            if ai_data.get('tp1'):
+                                fig.add_hline(
+                                    y=float(ai_data['tp1']),
+                                    line_dash="dash", line_color="#089981", line_width=1.5,
+                                )
+                        except Exception as e:
+                            st.warning("AI gagal menghasilkan kordinat harga yang pas.")
+
+                    fig.update_layout(
+                        template="plotly_dark" if is_dark else "plotly_white",
+                        plot_bgcolor=tv_bg_color,
+                        paper_bgcolor=tv_bg_color,
+                        font=dict(color=tv_text_color, size=11),
+                        xaxis=dict(showgrid=False, rangeslider=dict(visible=False), range=[df_chart.index[0], future_date]),
+                        yaxis=dict(showgrid=False, side="right"),
+                        margin=dict(l=0, r=60, t=10, b=40),
+                        height=550,
+                        showlegend=False
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
+            else:
+                st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
+
             if run_analysis and ai_text_verdict:
                 st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
                 st.markdown(f"""
@@ -5404,7 +5110,6 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
                 </div>
                 """, unsafe_allow_html=True)
             elif not run_analysis:
-                # Perbaikan simbol Unicode menggunakan kode HTML agar aman dari SyntaxError
                 st.markdown(f"""
                 <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
                     <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
@@ -5413,7 +5118,6 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
-
 
 
 
@@ -5436,7 +5140,7 @@ else:
         """, unsafe_allow_html=True)
 
     if st.session_state.get("last_error"):
-        st.error(f"⚠️ {st.session_state['last_error']}")
+        st.error(f"[!] {st.session_state['last_error']}")
         st.session_state["last_error"] = None
 
     for i, msg in enumerate(active["messages"][1:]):
@@ -5459,7 +5163,6 @@ else:
                 elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
             st.markdown(display_clean)
 
-    # PERBAIKAN: file_type DIHILANGKAN agar OS/Clipboard bisa paste gambar mentah
     try: result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple")
     except TypeError: result = st.chat_input("Tanya SIGMA...")
 
@@ -5482,19 +5185,17 @@ else:
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
 
-        # --- AUTO-TRIGGER SAAT PASTE GAMBAR ---
         if not prompt and (file_obj or st.session_state.img_data or st.session_state.pdf_data):
             if file_obj or st.session_state.pdf_data:
                 prompt = "Tolong analisa file yang saya kirim"
             else:
-                # Jika user hanya paste gambar chart tanpa ngetik apa-apa, PAKSA jadi analisa teknikal!
                 prompt = "5. Teknikal saham di gambar ini"
 
-        # ─── MENU 7 ALPHA BARU (GUIDE PANDUAN PENGGUNA) ───
         if prompt and prompt.strip().lower() in ["7 alpha", "tujuh alpha", "7alpha", "7 logic", "tujuh sila", "7sila", "5 logic", "lima sila", "5sila"]:
             active = next((s for s in st.session_state.sessions if s["id"] == st.session_state.active_id), None)
             if active:
                 menu_text = """**&#127775; 7 ALPHA SIGMA &mdash; PANDUAN & MENU UTAMA &#127775;**\n\n**1. Kesimpulan Dampak Makro [topik/berita]**\n&#8627; *Sistem otomatis melacak info & sentimen global/domestik terupdate. Menilai dampaknya ke ekonomi RI, IHSG, dan masyarakat. (Tidak butuh data dari user).*\n\n**2. Kesimpulan Dampak [emiten]**\n&#8627; *Sistem otomatis melacak korelasi sentimen/berita spesifik terhadap kinerja dan harga saham emiten yang direquest. (Tidak butuh data dari user).*\n\n**3. Bandarmologi [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Broker Summary (Brosum), Price Table/Frekuensi, dan Volume. Sistem akan membedah jejak akumulasi/distribusi bandar.*\n\n**4. Fundamental [emiten]**\n&#8627; *Sistem otomatis menarik data keuangan & valuasi emiten dari sumber terpercaya secara real-time. (Tidak butuh data dari user).*\n\n**5. Teknikal [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Chart (disarankan pakai indikator MnM Strategy+). Pastikan terlihat indikator Volume & Momentum (Stochastic/RSI/MACD bebas pilih). Disarankan Timeframe besar (Daily/Weekly) agar sinyal kuat & minim false breakout.*\n\n**6. Analisa Lengkap [emiten] (Quad Confluence)**\n&#8627; &#9888; *WAJIB LAMPIRKAN: Screenshot Chart Teknikal + SS Broker Summary. Sistem akan menggabungkan data user dengan data Fundamental & Makro otomatis untuk mencari "Triple/Quad Confluence".*\n\n**7. Analisa IPO [emiten]**\n&#8627; &#9888; *WAJIB LAMPIRKAN: File PDF Prospektus e-IPO emiten terkait. Sistem akan membedah tujuan dana, valuasi, dan track record underwriter.*\n\n&#128161; **Cara Pakai:** Ketik angkanya atau perintahnya. \nContoh: **"6. Analisa Lengkap BRMS"** (sambil upload/paste SS Chart dan SS Brosum bersamaan)."""
+                
                 active["messages"].append({"role": "user", "content": "7 Alpha", "display": "7 Alpha"})
                 active["messages"].append({"role": "assistant", "content": menu_text})
                 with st.chat_message("user"): st.markdown("7 Alpha")
@@ -5512,7 +5213,7 @@ else:
                     st.session_state.pdf_data = (pdf_content, file_obj.name)
                     st.session_state.img_data = None
                 except Exception as pdf_e:
-                    st.error(f"Gagal membaca PDF: {str(pdf_e)}")
+                    st.error(f"[!] Gagal membaca PDF: {str(pdf_e)}")
                     st.session_state.pdf_data = None
             else:
                 if not multi_images: st.session_state.img_data = (base64.b64encode(raw).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg", file_obj.name)
@@ -5525,7 +5226,6 @@ else:
         st.session_state.img_data = None; st.session_state.pdf_data = None
         full_prompt = prompt
 
-        # ─── LOGIC ROUTER & INTERCEPTOR ───
         prompt_lower = prompt.lower()
         
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
@@ -5538,9 +5238,8 @@ else:
         is_lengkap       = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
         is_ipo           = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
         
-        # LOGIC 1: DAMPAK MAKRO
         if is_dampak_makro:
-            with st.spinner("🔍 Menganalisa sentimen makro global/domestik..."):
+            with st.spinner("Menganalisa sentimen makro global/domestik..."):
                 try:
                     ctx = build_global_context(prompt)
                     if ctx: full_prompt = f"[BERITA GLOBAL/EKONOMI]:\n{ctx}\n\n"
@@ -5549,10 +5248,9 @@ else:
                 full_prompt += TEMPLATE_DAMPAK_MAKRO
                 full_prompt += f"\n\nPertanyaan Asli User (Topik yang dibahas): {prompt}"
 
-        # LOGIC 2: DAMPAK EMITEN
         elif is_dampak_emiten and emiten_match:
             emiten_target = emiten_match.group(0).upper()
-            with st.spinner(f"🔍 Menganalisa korelasi berita ke emiten {emiten_target}..."):
+            with st.spinner(f"Menganalisa korelasi berita ke emiten {emiten_target}..."):
                 try:
                     ctx = build_combined_context(prompt)
                     if ctx: full_prompt = f"[DATA BERITA DAN PASAR]:\n{ctx}\n\n"
@@ -5561,21 +5259,19 @@ else:
                 full_prompt += TEMPLATE_DAMPAK_EMITEN.format(emiten=emiten_target)
                 full_prompt += f"\n\nPertanyaan Asli User: {prompt}"
 
-        # LOGIC 3: BANDARMOLOGI (Menu 3) - PURE BANDAR FORMAT
         elif is_bandarmologi:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
-            with st.spinner(f"🔍 Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
+            with st.spinner(f"Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
                 full_prompt = TEMPLATE_BANDARMOLOGI.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: Fokus 100% pada data Broker Summary, Average Price, dan Volume. JANGAN bahas indikator teknikal (RSI/MACD) atau Fundamental!]\nPertanyaan Asli User: {prompt}"
 
-        # LOGIC 4: FUNDAMENTAL
         elif is_fundamental and emiten_match:
             emiten_target = emiten_match.group(0).upper()
             is_bank = emiten_target in BANK_TICKERS
             chosen_template = TEMPLATE_BANK if is_bank else TEMPLATE_NON_BANK
             tahun_sekarang = datetime.now().year
             
-            with st.spinner(f"🔍 Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
+            with st.spinner(f"Kalkulasi & Tarik Data Multi-Sumber {emiten_target}..."):
                 try:
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
                 except:
@@ -5584,20 +5280,18 @@ else:
                 full_prompt = chosen_template.format(emiten=emiten_target, sumber="Multi-Source + Kalkulasi Manual", data_raw=fund_text, tahun=tahun_sekarang)
                 full_prompt += f"\n\nPertanyaan Tambahan User: {prompt}"
 
-        # LOGIC 5: TEKNIKAL (Format Baru 3 Model Eksekusi)
         elif is_teknikal:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
             if img_data or multi_images:
-                with st.spinner(f"🔍 Membaca Chart & Merancang 3 Skenario Trade Plan..."):
+                with st.spinner(f"Membaca Chart & Merancang 3 Skenario Trade Plan..."):
                     full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
             else:
                 full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]"
 
-        # LOGIC 6: ANALISA LENGKAP (MASTER / QUAD CONFLUENCE)
         elif is_lengkap and emiten_match:
             emiten_target = emiten_match.group(0).upper()
-            with st.spinner(f"🔍 Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
+            with st.spinner(f"Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
                 try:
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
                 except:
@@ -5606,22 +5300,18 @@ else:
                 full_prompt = TEMPLATE_LENGKAP.format(emiten=emiten_target, data_raw=fund_text)
                 full_prompt += f"\n\n[PENTING: Gunakan gambar chart & data Broker Summary yang dilampirkan user! Cari Divergence!]\nPertanyaan Asli User: {prompt}"
 
-        # LOGIC 7: ANALISA IPO (PDF PROSPEKTUS)
         elif is_ipo:
             if pdf_data:
                 emiten_target = emiten_match.group(0).upper() if emiten_match else "CALON EMITEN BARU"
-                with st.spinner("🔍 Membongkar & Membaca Ratusan Halaman Prospektus IPO..."):
+                with st.spinner("Membongkar & Membaca Ratusan Halaman Prospektus IPO..."):
                     full_prompt = TEMPLATE_IPO.format(emiten=emiten_target, pdf_content=pdf_data[0])
             else:
                 full_prompt = "[INSTRUKSI SYSTEM]: Beritahu user dengan ramah bahwa untuk melakukan Analisa IPO, mereka WAJIB meng-upload atau melampirkan file PDF Prospektus e-IPO terlebih dahulu ke dalam kolom chat."
 
-        # FALLBACK GENERAL
         elif pdf_data and (img_data or multi_images): full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif pdf_data: full_prompt = f"{pdf_data[0]}\n\nPertanyaan: {prompt}"
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
         else:
-            # ── PENTING: full_prompt SELALU reset ke prompt asli dulu ──
-            # Ini mencegah prompt dari request sebelumnya terbawa ke request baru
             full_prompt = prompt
             try:
                 ctx = build_combined_context(prompt)
@@ -5646,9 +5336,8 @@ else:
                 else:
                     imgs_html = ''.join([f'<img src="data:{_imime};base64,{_ib64}" style="height:160px;max-width:calc(100%/{len(imgs_to_show)});object-fit:cover;border-radius:8px;flex:1;">' for _ib64, _imime, _iname in imgs_to_show])
                     st.markdown(f'<div style="display:flex;gap:4px;margin-bottom:6px;">{imgs_html}</div>', unsafe_allow_html=True)
-            if pdf_data: st.markdown(f'📄 **{pdf_data[1]}**', unsafe_allow_html=False)
+            if pdf_data: st.markdown(f'&#128196; **{pdf_data[1]}**', unsafe_allow_html=False)
             
-            # Jangan tampilkan prompt kaku ke user, ubah ke natural text
             display_prompt = prompt if prompt != "5. Teknikal saham di gambar ini" else "Tolong buatkan Trade Plan dari chart ini."
             st.markdown(display_prompt)
 
@@ -5668,65 +5357,57 @@ else:
                     has_pdf    = bool(pdf_data)
                     debug_info = []
 
-                    # ── JALUR 1: ADA GAMBAR → GEMINI VISION (satu-satunya yang bisa) ──
                     if has_image:
                         try:
                             _img_b64  = user_msg.get("img_b64")
                             _img_mime = user_msg.get("img_mime")
                             ans_bersih, _ = _call_gemini_vision(prompt, _img_b64, _img_mime, multi_images)
-                            simbol_ai = "\n\n*(✨ Gemini Vision)*"
+                            simbol_ai = "\n\n*(&#10024; Gemini Vision)*"
                         except Exception as e_vision:
                             debug_info.append(f"Gemini Vision: {str(e_vision)}")
                             ans_bersih = (
-                                "⚠️ Sistem analisa gambar sedang tidak merespons. "
+                                "[!] Sistem analisa gambar sedang tidak merespons. "
                                 "Silakan upload ulang gambarnya atau coba lagi dalam beberapa saat."
                                 f"\n\n`Debug: {str(e_vision)[:200]}`"
                             )
 
-                    # ── JALUR 2: ADA PDF (tanpa gambar) → GEMINI TEXT (handle konteks panjang) ──
                     elif has_pdf and not has_image:
                         try:
                             ans_bersih, _ = _call_gemini_text(
                                 _history_msgs[-6:] + [{"role": "user", "content": full_prompt}]
                             )
-                            simbol_ai = "\n\n*(✨ Gemini — PDF Mode)*"
+                            simbol_ai = "\n\n*(&#10024; Gemini - PDF Mode)*"
                         except Exception as e_pdf:
                             debug_info.append(f"Gemini PDF: {str(e_pdf)}")
-                            # Fallback Groq jika Gemini tidak tersedia
                             try:
                                 ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
-                                simbol_ai = "\n\n*(⚡ Groq — PDF Fallback)*"
+                                simbol_ai = "\n\n*(&#9889; Groq - PDF Fallback)*"
                             except Exception as e_groq_pdf:
                                 debug_info.append(f"Groq PDF fallback: {str(e_groq_pdf)}")
 
-                    # ── JALUR 3: TEXT BIASA → GROQ 70B PRIMARY → GEMINI → GROQ 8B ──
                     else:
-                        # Step 1: Groq 70B dengan key rotation (primary)
                         try:
                             ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
-                            simbol_ai = "\n\n*(⚡ Groq/Llama)*"
+                            simbol_ai = "\n\n*(&#9889; Groq/Llama)*"
                         except Exception as e_groq70:
                             debug_info.append(f"Groq 70B: {str(e_groq70)}")
 
-                            # Step 2: Gemini Text sebagai fallback
                             try:
                                 ans_bersih, _ = _call_gemini_text(_history_msgs[-6:])
-                                simbol_ai = "\n\n*(✨ Gemini)*"
+                                simbol_ai = "\n\n*(&#10024; Gemini)*"
                             except Exception as e_gemini:
                                 debug_info.append(f"Gemini Text: {str(e_gemini)}")
 
-                                # Step 3: Groq 8B sebagai last resort
                                 try:
                                     ans_bersih, _ = _call_groq_fallback(full_prompt)
-                                    simbol_ai = "\n\n*(⚡ Groq/Mini)*"
+                                    simbol_ai = "\n\n*(&#9889; Groq/Mini)*"
                                 except Exception as e_groq8:
                                     debug_info.append(f"Groq 8B: {str(e_groq8)}")
 
-                    # ── FINAL: semua gagal ──
                     if not ans_bersih:
                         err_summary = " | ".join(debug_info)
                         ans_bersih = (
-                            "⚠️ Semua sistem AI sedang sibuk atau mengalami gangguan. "
+                            "[!] Semua sistem AI sedang sibuk atau mengalami gangguan. "
                             "Mohon coba lagi dalam 1-2 menit.\n\n"
                             f"`Log: {err_summary}`"
                         )
@@ -5737,10 +5418,9 @@ else:
             active["messages"].append({"role": "assistant", "content": ans_bersih + simbol_ai})
         except Exception as e:
             st.session_state["last_error"] = str(e)
-            st.error(f"⚠️ {str(e)}")
+            st.error(f"[!] {str(e)}")
         st.rerun()
 
-# --- PENYIMPANAN DATA SANGAT PENTING (FIX AMNESIA) ---
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     
@@ -5748,7 +5428,7 @@ if user:
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat"), "selected_system": st.session_state.get("selected_system", "chat") # <-- INI YANG MENYELAMATKAN DARI AMNESIA
+        "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat")
     })
 
 _new_token = st.session_state.pop("new_token", None)
@@ -5775,14 +5455,14 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
 m.innerHTML=`
-    <a class="smi" id="smi-new"><span class="smico">✎</span>Percakapan Baru</a>
-    <button class="smi" id="smi-hist"><span class="smico">☰</span>History</button>
+    <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
     <div class="smsp"></div><div class="smhd">NAVIGASI</div>
-    <a class="smi" id="smi-home"><span class="smico">🏠</span>Kembali ke Home</a>
+    <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
     <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
-    <a class="smi" id="smi-light"><span class="smico">☀️</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
-    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Sign Out</a>
+    <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
+    <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
+    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 {_hist_items} pd.body.appendChild(h);
@@ -5800,7 +5480,6 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 </script>
 """, height=0)
 
-# ─── JEMBATAN COPY-PASTE (POLYFILL KHUSUS STREAMLIT) ───
 components.html("""
 <script>
 (function() {
@@ -5847,7 +5526,6 @@ components.html("""
 </script>
 """, height=0)
 
-# ─── SCRIPT UNTUK STICKY HEADER "SIGMA" ───
 sig_color = C["text"]
 components.html("""
 <script>
