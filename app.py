@@ -4689,27 +4689,62 @@ if current_view == "dashboard":
             """, unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS (INDONESIA)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Berita pasar saham & ekonomi langsung dari CNBC dan Kontan</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET INTELLIGENCE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         try:
             import feedparser
-            news_html = f"<div style='height:550px; overflow-y:auto; padding:18px; border:1px solid {met_border}; border-radius:12px; background:{met_bg}; box-shadow:{met_shadow};'>"
-            feeds = [
-                ("CNBC Indonesia", "https://www.cnbcindonesia.com/market/rss"),
-                ("Kontan Investasi", "https://rss.kontan.co.id/category/investasi")
-            ]
-            for src, url in feeds:
-                f = feedparser.parse(url)
-                for entry in f.entries[:7]:
-                    news_html += f"<div style='margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid {card_border};'>"
-                    news_html += f"<span style='font-family:IBM Plex Mono, monospace; font-size:0.65rem; color:#F5C242; font-weight:600; border:1px solid rgba(245,194,66,0.3); padding:2px 6px; border-radius:4px;'>{src}</span><br>"
-                    news_html += f"<a href='{entry.link}' target='_blank' style='color:{text_main}; text-decoration:none; font-size:0.9rem; font-weight:600; display:block; margin-top:8px; line-height:1.5;'>{entry.title}</a>"
-                    news_html += f"</div>"
-            news_html += "</div>"
-            st.markdown(news_html, unsafe_allow_html=True)
+            
+            # Pengaturan layout 2 kolom: Dalam Negeri vs Luar Negeri
+            col_news_id, col_news_global = st.columns(2)
+
+            # --- KOLOM 1: BERITA DALAM NEGERI (INDONESIA) ---
+            with col_news_id:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:#F5C242;font-weight:600;margin-bottom:15px;'>🇮🇩 DOMESTIC (INDONESIA)</p>", unsafe_allow_html=True)
+                id_feeds = [
+                    ("CNBC Indonesia", "https://www.cnbcindonesia.com/market/rss"),
+                    ("Bisnis.com", "https://market.bisnis.com/rss"),
+                    ("Kontan", "https://rss.kontan.co.id/category/investasi")
+                ]
+                
+                id_html = f"<div style='height:500px; overflow-y:auto; padding-right:10px;'>"
+                for src, url in id_feeds:
+                    try:
+                        f = feedparser.parse(url)
+                        for entry in f.entries[:5]:
+                            id_html += f"""
+                            <div style='margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid {card_border};'>
+                                <span style='font-family:IBM Plex Mono, monospace; font-size:0.6rem; color:#F5C242; border:1px solid rgba(245,194,66,0.2); padding:1px 5px; border-radius:3px;'>{src}</span>
+                                <a href='{entry.link}' target='_blank' style='color:{text_main}; text-decoration:none; font-size:0.85rem; font-weight:500; display:block; margin-top:5px; line-height:1.4;'>{entry.title}</a>
+                            </div>"""
+                    except: pass
+                id_html += "</div>"
+                st.markdown(id_html, unsafe_allow_html=True)
+
+            # --- KOLOM 2: BERITA LUAR NEGERI (GLOBAL) ---
+            with col_news_global:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:#4285F4;font-weight:600;margin-bottom:15px;'>🌎 GLOBAL (INTERNATIONAL)</p>", unsafe_allow_html=True)
+                global_feeds = [
+                    ("Reuters Business", "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best"),
+                    ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
+                    ("CNBC Intl", "https://www.cnbc.com/id/10000664/device/rss/rss.html")
+                ]
+                
+                global_html = f"<div style='height:500px; overflow-y:auto; padding-right:10px;'>"
+                for src, url in global_feeds:
+                    try:
+                        f = feedparser.parse(url)
+                        for entry in f.entries[:5]:
+                            global_html += f"""
+                            <div style='margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid {card_border};'>
+                                <span style='font-family:IBM Plex Mono, monospace; font-size:0.6rem; color:#4285F4; border:1px solid rgba(66,133,244,0.2); padding:1px 5px; border-radius:3px;'>{src}</span>
+                                <a href='{entry.link}' target='_blank' style='color:{text_main}; text-decoration:none; font-size:0.85rem; font-weight:500; display:block; margin-top:5px; line-height:1.4;'>{entry.title}</a>
+                            </div>"""
+                    except: pass
+                global_html += "</div>"
+                st.markdown(global_html, unsafe_allow_html=True)
+
         except Exception as e:
-            st.warning("Gagal memuat berita lokal.")
+            st.error("Gagal menarik data berita (Cek koneksi internet atau library 'feedparser')")
 
     with tab_rotation:
         def highlight_status(val):
