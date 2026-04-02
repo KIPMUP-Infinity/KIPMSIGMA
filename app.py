@@ -5293,87 +5293,58 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             tp2 = ai_data.get('tp2')
                             tp3 = ai_data.get('tp3')
 
-                            # Semua level untuk deteksi tumpukan
-                            all_levels = []
-                            if el and eh: all_levels.append((float(el)+float(eh))/2)
-                            if sl:  all_levels.append(float(sl))
-                            if tp1: all_levels.append(float(tp1))
-                            if tp2: all_levels.append(float(tp2))
-                            if tp3: all_levels.append(float(tp3))
+                            # Fungsi ajaib untuk menggambar garis full & label nempel persis di Sumbu Y Kanan
+                            def _draw_tv_level(y_val, label_text, line_color, bg_color, text_color, dash_style='dash'):
+                                if not y_val: return
+                                y_val = float(y_val)
 
-                            price_range = float(df_chart['High'].max()) - float(df_chart['Low'].min())
-                            min_gap = price_range * 0.022
-
-                            def _resolve_offsets(levels, min_gap):
-                                if not levels: return {}
-                                sorted_lvl = sorted(set([float(v) for v in levels]))
-                                offsets = {v: 0.0 for v in sorted_lvl}
-                                for i in range(1, len(sorted_lvl)):
-                                    prev_y = sorted_lvl[i-1] + offsets[sorted_lvl[i-1]]
-                                    curr   = sorted_lvl[i]
-                                    if curr - prev_y < min_gap:
-                                        offsets[curr] = prev_y + min_gap - curr
-                                return offsets
-
-                            offsets = _resolve_offsets(all_levels, min_gap)
-
-                            def _line(y, clr, dash='dash'):
-                                # Garis dari bar pertama sampai akhir padding — full width menyentuh sumbu Y
-                                fig.add_trace(go.Scatter(
-                                    x=[x_str[0], x_all[-1]],
-                                    y=[float(y), float(y)],
-                                    mode='lines',
-                                    line=dict(color=clr, width=1.2, dash=dash),
-                                    showlegend=False,
-                                    cliponaxis=False,
-                                ), row=1, col=1)
-
-                            def _lbl(y_orig, txt, fclr, bclr, brdclr):
-                                # Label tag gaya TradingView: menempel di tepi kanan sumbu Y
-                                y_disp = float(y_orig) + offsets.get(float(y_orig), 0)
-                                # kotak tag menempel sumbu Y, xref=paper x=1 = tepi kanan plot
-                                fig.add_annotation(
-                                    xref='paper', yref='y',
-                                    x=1.0, y=y_disp,
-                                    text=f"<b>{txt}</b>",
-                                    showarrow=False,
-                                    xanchor='left', yanchor='middle',
-                                    font=dict(color=fclr, size=10,
-                                              family='IBM Plex Mono, monospace'),
-                                    bgcolor=bclr,
-                                    bordercolor=brdclr,
-                                    borderwidth=1,
-                                    borderpad=3,
+                                # 1. Garis membentang full (xref='paper' menjamin garis menyentuh ujung)
+                                fig.add_shape(
+                                    type="line", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=y_val, y1=y_val,
+                                    line=dict(color=line_color, width=1.5, dash=dash_style),
+                                    layer="below"
                                 )
 
+                                # 2. Label Tag nempel di Sumbu Y Kanan (x=1.0)
+                                fig.add_annotation(
+                                    xref='paper', yref='y',
+                                    x=1.0, y=y_val,
+                                    text=f"<b>{label_text} {y_val:,.0f}</b>",
+                                    showarrow=False,
+                                    xanchor='left', yanchor='middle',
+                                    font=dict(color=text_color, size=10, family='IBM Plex Mono, monospace'),
+                                    bgcolor=bg_color,
+                                    bordercolor=line_color,
+                                    borderwidth=1,
+                                    borderpad=4
+                                )
+
+                            # Gambar Area BUY (Kotak hijau transparan + Batas Atas Bawah)
                             if el and eh:
-                                # Shaded buy zone
                                 fig.add_trace(go.Scatter(
                                     x=x_str + x_str[::-1],
                                     y=[float(eh)]*n_bars + [float(el)]*n_bars,
                                     fill='toself', mode='lines',
-                                    fillcolor='rgba(8,153,129,0.13)',
+                                    fillcolor='rgba(8,153,129,0.15)', # Hijau transparan
                                     line=dict(width=0), showlegend=False,
                                 ), row=1, col=1)
-                                _line(el, '#089981', 'dash')
-                                _line(eh, '#089981', 'dash')
-                                _lbl((float(el)+float(eh))/2,
-                                     f"BUY  {float(el):,.0f}–{float(eh):,.0f}",
-                                     '#089981', 'rgba(8,153,129,0.28)', '#089981')
 
+                                # Garis Buy Area (Gaya TradingView: tulisan hijau background gelap)
+                                _draw_tv_level(eh, "BUY AREA", '#089981', tv_bg_color, '#089981', 'dash')
+                                _draw_tv_level(el, "BUY AREA", '#089981', tv_bg_color, '#089981', 'dash')
+
+                            # Gambar SL (Warna Merah Solid, tulisan putih background merah)
                             if sl:
-                                _line(sl, '#f23645', 'dash')
-                                _lbl(sl, f"SL  {float(sl):,.0f}",
-                                     '#ffffff', '#f23645', '#f23645')
+                                _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
 
-                            for tp_v, tp_n in [(tp1,'TP1'),(tp2,'TP2'),(tp3,'TP3')]:
-                                if tp_v:
-                                    _line(tp_v, '#089981', 'dot')
-                                    _lbl(tp_v, f"{tp_n}  {float(tp_v):,.0f}",
-                                         '#089981', 'rgba(8,153,129,0.22)', '#089981')
+                            # Gambar TP (Gaya TradingView: Kuning Solid, garis putus-putus)
+                            if tp1: _draw_tv_level(tp1, "TP1", '#F5C242', '#F5C242', '#000000', 'dot')
+                            if tp2: _draw_tv_level(tp2, "TP2", '#F5C242', '#F5C242', '#000000', 'dot')
+                            if tp3: _draw_tv_level(tp3, "TP3", '#F5C242', '#F5C242', '#000000', 'dot')
 
-                        except Exception:
-                            st.warning("AI gagal menghasilkan koordinat harga yang pas.")
+                        except Exception as e:
+                            st.warning(f"AI gagal menghasilkan koordinat harga yang pas: {e}")
 
                     # ── Volume ────────────────────────────────────────────
                     vol_clr = [inc_color if c >= o else dec_color
