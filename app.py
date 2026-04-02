@@ -4689,18 +4689,27 @@ if current_view == "dashboard":
             """, unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Berita ekonomi dan pasar saham global &amp; domestik terkini</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS (INDONESIA)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Berita pasar saham & ekonomi langsung dari CNBC dan Kontan</p>", unsafe_allow_html=True)
         
-        news_theme = "dark" if is_dark else "light"
-        news_widget = f"""
-        <div class="tradingview-widget-container" style="height:100%;width:100%; border-radius: 12px; overflow: hidden; box-shadow: {met_shadow}; border: 1px solid {met_border};">
-          <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-          {{ "feedMode": "all_symbols", "isTransparent": false, "displayMode": "regular", "width": "100%", "height": 600, "colorTheme": "{news_theme}", "locale": "id" }}
-          </script>
-        </div>
-        """
-        components.html(news_widget, height=620)
+        try:
+            import feedparser
+            news_html = f"<div style='height:550px; overflow-y:auto; padding:18px; border:1px solid {met_border}; border-radius:12px; background:{met_bg}; box-shadow:{met_shadow};'>"
+            feeds = [
+                ("CNBC Indonesia", "https://www.cnbcindonesia.com/market/rss"),
+                ("Kontan Investasi", "https://rss.kontan.co.id/category/investasi")
+            ]
+            for src, url in feeds:
+                f = feedparser.parse(url)
+                for entry in f.entries[:7]:
+                    news_html += f"<div style='margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid {card_border};'>"
+                    news_html += f"<span style='font-family:IBM Plex Mono, monospace; font-size:0.65rem; color:#F5C242; font-weight:600; border:1px solid rgba(245,194,66,0.3); padding:2px 6px; border-radius:4px;'>{src}</span><br>"
+                    news_html += f"<a href='{entry.link}' target='_blank' style='color:{text_main}; text-decoration:none; font-size:0.9rem; font-weight:600; display:block; margin-top:8px; line-height:1.5;'>{entry.title}</a>"
+                    news_html += f"</div>"
+            news_html += "</div>"
+            st.markdown(news_html, unsafe_allow_html=True)
+        except Exception as e:
+            st.warning("Gagal memuat berita lokal.")
 
     with tab_rotation:
         def highlight_status(val):
