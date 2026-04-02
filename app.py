@@ -4688,60 +4688,109 @@ if current_view == "dashboard":
             </div>
             """, unsafe_allow_html=True)
 
+        # ---------------------------------------------------------
+        # LIVE NEWS FEED - DUAL BOX (DOMESTIC & GLOBAL)
+        # ---------------------------------------------------------
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET INTELLIGENCE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        
-        try:
-            import feedparser
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        # CSS UNTUK KOTAK BERITA DUAL BOX DENGAN EFEK HOVER
+        st.markdown(f"""
+        <style>
+        .news-container {{
+            display: flex;
+            gap: 20px;
+            margin-bottom: 24px;
+        }}
+        .news-box {{
+            flex: 1;
+            background: {met_bg};
+            border: 1px solid {met_border};
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            box-shadow: {met_shadow};
+        }}
+        .news-box:hover {{
+            transform: translateY(-5px);
+            border-color: #F5C242;
+            box-shadow: 0 12px 30px rgba(245,194,66,0.15);
+        }}
+        .news-header {{
+            padding: 15px 20px;
+            background: rgba(245,194,66,0.08);
+            border-bottom: 1px solid {met_border};
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        .news-icon {{
+            font-size: 1.2rem;
+        }}
+        .news-title {{
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: #F5C242;
+            text-transform: uppercase;
+        }}
+        .news-content {{
+            height: 500px;
+            padding: 5px;
+        }}
+        @media (max-width: 768px) {{
+            .news-container {{ flex-direction: column; }}
+            .news-content {{ height: 400px; }}
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+
+        col_news1, col_news2 = st.columns(2)
+
+        with col_news1:
+            st.markdown(f"""
+            <div class="news-box">
+                <div class="news-header">
+                    <span class="news-icon">🇮🇩</span>
+                    <span class="news-title">Domestic Market News</span>
+                </div>
+                <div class="news-content">
+            """, unsafe_allow_html=True)
             
-            # Pengaturan layout 2 kolom: Dalam Negeri vs Luar Negeri
-            col_news_id, col_news_global = st.columns(2)
+            # Widget Berita Indonesia (CNBC ID / IDX)
+            idx_news_widget = f"""
+            <div class="tradingview-widget-container" style="height:100%;width:100%;">
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+              {{ "feedMode": "market", "market": "indonesia", "isTransparent": true, "displayMode": "regular", "width": "100%", "height": "100%", "colorTheme": "{news_theme}", "locale": "id" }}
+              </script>
+            </div>
+            """
+            components.html(idx_news_widget, height=490)
+            st.markdown("</div></div>", unsafe_allow_html=True)
 
-            # --- KOLOM 1: BERITA DALAM NEGERI (INDONESIA) ---
-            with col_news_id:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:#F5C242;font-weight:600;margin-bottom:15px;'>🇮🇩 DOMESTIC (INDONESIA)</p>", unsafe_allow_html=True)
-                id_feeds = [
-                    ("CNBC Indonesia", "https://www.cnbcindonesia.com/market/rss"),
-                    ("Bisnis.com", "https://market.bisnis.com/rss"),
-                    ("Kontan", "https://rss.kontan.co.id/category/investasi")
-                ]
-                
-                id_html = f"<div style='height:500px; overflow-y:auto; padding-right:10px;'>"
-                for src, url in id_feeds:
-                    try:
-                        f = feedparser.parse(url)
-                        for entry in f.entries[:5]:
-                            id_html += f"""
-                            <div style='margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid {card_border};'>
-                                <span style='font-family:IBM Plex Mono, monospace; font-size:0.6rem; color:#F5C242; border:1px solid rgba(245,194,66,0.2); padding:1px 5px; border-radius:3px;'>{src}</span>
-                                <a href='{entry.link}' target='_blank' style='color:{text_main}; text-decoration:none; font-size:0.85rem; font-weight:500; display:block; margin-top:5px; line-height:1.4;'>{entry.title}</a>
-                            </div>"""
-                    except: pass
-                id_html += "</div>"
-                st.markdown(id_html, unsafe_allow_html=True)
-
-            # --- KOLOM 2: BERITA LUAR NEGERI (GLOBAL) ---
-            with col_news_global:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:#4285F4;font-weight:600;margin-bottom:15px;'>🌎 GLOBAL (INTERNATIONAL)</p>", unsafe_allow_html=True)
-                global_feeds = [
-                    ("Reuters Business", "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best"),
-                    ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
-                    ("CNBC Intl", "https://www.cnbc.com/id/10000664/device/rss/rss.html")
-                ]
-                
-                global_html = f"<div style='height:500px; overflow-y:auto; padding-right:10px;'>"
-                for src, url in global_feeds:
-                    try:
-                        f = feedparser.parse(url)
-                        for entry in f.entries[:5]:
-                            global_html += f"""
-                            <div style='margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid {card_border};'>
-                                <span style='font-family:IBM Plex Mono, monospace; font-size:0.6rem; color:#4285F4; border:1px solid rgba(66,133,244,0.2); padding:1px 5px; border-radius:3px;'>{src}</span>
-                                <a href='{entry.link}' target='_blank' style='color:{text_main}; text-decoration:none; font-size:0.85rem; font-weight:500; display:block; margin-top:5px; line-height:1.4;'>{entry.title}</a>
-                            </div>"""
-                    except: pass
-                global_html += "</div>"
-                st.markdown(global_html, unsafe_allow_html=True)
+        with col_news2:
+            st.markdown(f"""
+            <div class="news-box">
+                <div class="news-header">
+                    <span class="news-icon">🌎</span>
+                    <span class="news-title">Global Economic Pulse</span>
+                </div>
+                <div class="news-content">
+            """, unsafe_allow_html=True)
+            
+            # Widget Berita Global (Wall Street / World)
+            global_news_widget = f"""
+            <div class="tradingview-widget-container" style="height:100%;width:100%;">
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+              {{ "feedMode": "all_symbols", "isTransparent": true, "displayMode": "regular", "width": "100%", "height": "100%", "colorTheme": "{news_theme}", "locale": "en" }}
+              </script>
+            </div>
+            """
+            components.html(global_news_widget, height=490)
+            st.markdown("</div></div>", unsafe_allow_html=True)
 
         except Exception as e:
             st.error("Gagal menarik data berita (Cek koneksi internet atau library 'feedparser')")
