@@ -4209,8 +4209,39 @@ if current_view == "dashboard":
         st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
         st.stop()
 
-    # ── CONTAINER OVERRIDE — DESKTOP SPACE & MOBILE FIX ──
-    st.markdown("""
+    # ── CSS BARU UNTUK FIX UKURAN DESKTOP & MOBILE ──
+    # (Pastikan blok CSS override yang lama dihapus/diganti dengan ini)
+    st.markdown('''
+    <style>
+    /* Desktop: Kasih space kanan-kiri biar gak mentok (Gambar 2 & 3) */
+    [data-testid="stMainBlockContainer"] {
+        max-width: 1250px !important;
+        width: 95% !important;
+        margin: 0 auto !important;
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+
+    /* Mobile: Anti goyang & anti teks terpotong (Gambar 1) */
+    @media (max-width: 768px) {
+        html, body {
+            overflow-x: hidden !important; /* Kunci layar biar gak bisa digeser ke samping */
+            max-width: 100vw !important;
+        }
+        [data-testid="stMainBlockContainer"] {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding-left: 16px !important; /* Space aman teks agar tidak nempel bezel */
+            padding-right: 16px !important;
+            margin: 0 !important;
+        }
+        /* Menyesuaikan sedikit ukuran font tabel dan metrik */
+        [data-testid="stMetricValue"] { font-size: 1.15rem !important; }
+        .stDataFrame { overflow-x: auto !important; }
+    }
+    </style>
+    ''', unsafe_allow_html=True)
+    
     <style>
     /* 1. Pengaturan Desktop: Memberi space di kanan-kiri (agar tidak mentok) */
     [data-testid="stMainBlockContainer"] {
