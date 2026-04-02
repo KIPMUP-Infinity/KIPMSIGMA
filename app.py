@@ -4179,7 +4179,6 @@ if st.session_state.user is None:
 
 
 
-
 # ─────────────────────────────────────────────
 # PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
@@ -4210,25 +4209,59 @@ if current_view == "dashboard":
         st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
         st.stop()
 
-    # ── FULL-WIDTH OVERRIDE — paksa terminal pakai seluruh lebar layar ──
+    # ── CONTAINER OVERRIDE — DESKTOP SPACE & MOBILE FIX ──
     st.markdown("""
     <style>
+    /* 1. Pengaturan Desktop: Memberi space di kanan-kiri (agar tidak mentok) */
     [data-testid="stMainBlockContainer"] {
-        max-width: 100% !important;
-        width: 100% !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        margin: 0 !important;
+        max-width: 1250px !important;
+        width: 95% !important;
+        margin: 0 auto !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 2rem !important;
     }
-    [data-testid="stMain"] > div,
-    [data-testid="stAppViewBlockContainer"] {
-        max-width: 100% !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
+
+    /* 2. Pengaturan Mobile: Mencegah teks terpotong & lock scroll horizontal */
+    @media (max-width: 768px) {
+        html, body {
+            overflow-x: hidden !important;
+            position: relative;
+            max-width: 100vw !important;
+        }
+        
+        [data-testid="stMainBlockContainer"] {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding-left: 14px !important; /* Space aman agar teks tidak nempel layar */
+            padding-right: 14px !important;
+            padding-top: 1rem !important;
+            margin: 0 !important;
+        }
+
+        /* Memastikan Metric dan Card mengecil sesuai layar mobile */
+        [data-testid="stMetric"] {
+            padding: 10px 12px !important;
+        }
+        
+        [data-testid="stMetricValue"] {
+            font-size: 1.15rem !important; /* Agar angka tidak terpotong */
+        }
+        
+        /* Menghilangkan margin berlebih pada kolom mobile */
+        [data-testid="stVerticalBlock"] {
+            gap: 0.5rem !important;
+        }
+
+        /* Tabel bisa di-scroll ke samping di HP */
+        .stDataFrame {
+            width: 100% !important;
+            overflow-x: auto !important;
+        }
     }
+
     section[data-testid="stMain"] {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
+        align-items: center !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4717,8 +4750,6 @@ if current_view == "dashboard":
         else:
             st.warning("⚠️ Gagal menarik data komoditas.")
 
-        
-
         # --- KORELASI MAKRO EKONOMI ---
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KORELASI MAKRO EKONOMI — INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
@@ -5179,212 +5210,208 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
     "tp2": null,
     "tp3": null
 }}
-```
-"""
 
+                    try:
+                        ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
+                    except:
                         try:
-                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                        except:
-                            try:
-                                ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
-                            except Exception as e_gem:
-                                ai_raw_result = f"Gagal memanggil AI: {e_gem}"
+                            ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+                        except Exception as e_gem:
+                            ai_raw_result = f"Gagal memanggil AI: {e_gem}"
 
-                        # Ekstrak data JSON dari teks jawaban AI
-                        try:
-                            json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
-                            if json_match:
-                                raw_json = json.loads(json_match.group(1))
-                                # Normalize schema: support both lama (target) dan baru (tp1/tp2/tp3)
-                                ai_data = {
-                                    "entry_low":  raw_json.get("entry_low", 0),
-                                    "entry_high": raw_json.get("entry_high", 0),
-                                    "stop_loss":  raw_json.get("stop_loss", 0),
-                                    "tp1": raw_json.get("tp1") or raw_json.get("target"),
-                                    "tp2": raw_json.get("tp2"),
-                                    "tp3": raw_json.get("tp3"),
-                                }
-                                ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
-                            else:
-                                ai_text_verdict = ai_raw_result
-                        except:
-                            ai_text_verdict = ai_raw_result 
+                    # Ekstrak data JSON dari teks jawaban AI
+                    try:
+                        json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
+                        if json_match:
+                            raw_json = json.loads(json_match.group(1))
+                            # Normalize schema: support both lama (target) dan baru (tp1/tp2/tp3)
+                            ai_data = {
+                                "entry_low":  raw_json.get("entry_low", 0),
+                                "entry_high": raw_json.get("entry_high", 0),
+                                "stop_loss":  raw_json.get("stop_loss", 0),
+                                "tp1": raw_json.get("tp1") or raw_json.get("target"),
+                                "tp2": raw_json.get("tp2"),
+                                "tp3": raw_json.get("tp3"),
+                            }
+                            ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
+                        else:
+                            ai_text_verdict = ai_raw_result
+                    except:
+                        ai_text_verdict = ai_raw_result 
 
-                    except Exception as e:
-                        st.error(f"Gagal memproses analisa AI: {e}")
+                except Exception as e:
+                    st.error(f"Gagal memproses analisa AI: {e}")
 
-            # 3. Tampilkan Chart Plotly yang meniru TradingView (Gridlines off, Ada EMA, Teks Kanan)
-            st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART — {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            
-            if not df_chart.empty:
-                try:
-                    inc_color = '#089981' # Hijau khas TradingView
-                    dec_color = '#f23645' # Merah khas TradingView
-                    
-                    fig = go.Figure()
-                    
-                    # Candlestick Utama
-                    fig.add_trace(go.Candlestick(
-                        x=df_chart.index,
-                        open=df_chart['Open'], high=df_chart['High'],
-                        low=df_chart['Low'], close=df_chart['Close'],
-                        increasing_line_color=inc_color, decreasing_line_color=dec_color,
-                        name="Price"
-                    ))
+        # 3. Tampilkan Chart Plotly yang meniru TradingView (Gridlines off, Ada EMA, Teks Kanan)
+        st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART — {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        
+        if not df_chart.empty:
+            try:
+                inc_color = '#089981' # Hijau khas TradingView
+                dec_color = '#f23645' # Merah khas TradingView
+                
+                fig = go.Figure()
+                
+                # Candlestick Utama
+                fig.add_trace(go.Candlestick(
+                    x=df_chart.index,
+                    open=df_chart['Open'], high=df_chart['High'],
+                    low=df_chart['Low'], close=df_chart['Close'],
+                    increasing_line_color=inc_color, decreasing_line_color=dec_color,
+                    name="Price"
+                ))
 
-                    # Tambah Indikator EMA 13, 21, 100, 200
-                    df_chart['EMA13'] = df_chart['Close'].ewm(span=13, adjust=False).mean()
-                    df_chart['EMA21'] = df_chart['Close'].ewm(span=21, adjust=False).mean()
-                    df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
-                    df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
+                # Tambah Indikator EMA 13, 21, 100, 200
+                df_chart['EMA13'] = df_chart['Close'].ewm(span=13, adjust=False).mean()
+                df_chart['EMA21'] = df_chart['Close'].ewm(span=21, adjust=False).mean()
+                df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
+                df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
 
-                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA13'], mode='lines', line=dict(color='#00BCD4', width=1), name='EMA 13'))
-                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA21'], mode='lines', line=dict(color='#FFEB3B', width=1), name='EMA 21'))
-                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA100'], mode='lines', line=dict(color='#9C27B0', width=1.5), name='EMA 100'))
-                    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA200'], mode='lines', line=dict(color='#FFFFFF', width=1.5), name='EMA 200'))
+                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA13'], mode='lines', line=dict(color='#00BCD4', width=1), name='EMA 13'))
+                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA21'], mode='lines', line=dict(color='#FFEB3B', width=1), name='EMA 21'))
+                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA100'], mode='lines', line=dict(color='#9C27B0', width=1.5), name='EMA 100'))
+                fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['EMA200'], mode='lines', line=dict(color='#FFFFFF', width=1.5), name='EMA 200'))
 
-                    tv_bg_color = "#131722" if is_dark else "#ffffff"
-                    tv_text_color = "#b2b5be" if is_dark else "#1f2937"
-                    tv_border_color = "#2a2e39" if is_dark else "#e0e3eb"
+                tv_bg_color = "#131722" if is_dark else "#ffffff"
+                tv_text_color = "#b2b5be" if is_dark else "#1f2937"
+                tv_border_color = "#2a2e39" if is_dark else "#e0e3eb"
 
-                    # Right padding ~1 bulan (30 hari) agar candle terakhir tidak mepet batas
-                    future_date = df_chart.index[-1] + pd.Timedelta(days=30)
+                # Right padding ~1 bulan (30 hari) agar candle terakhir tidak mepet batas
+                future_date = df_chart.index[-1] + pd.Timedelta(days=30)
 
-                    # Auto Drawing garis trade plan (label di kanan, tidak terpotong)
-                    if ai_data:
-                        try:
-                            # BUY AREA — shaded zone
-                            fig.add_hrect(
-                                y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
-                                line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
+                # Auto Drawing garis trade plan (label di kanan, tidak terpotong)
+                if ai_data:
+                    try:
+                        # BUY AREA — shaded zone
+                        fig.add_hrect(
+                            y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
+                            line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
+                        )
+                        fig.add_annotation(
+                            x=future_date, xref="x",
+                            y=(float(ai_data['entry_low']) + float(ai_data['entry_high'])) / 2,
+                            text="<b>🟢 BUY AREA</b>",
+                            showarrow=False, xanchor="right", yanchor="middle",
+                            font=dict(color="#089981", size=11),
+                            bgcolor="rgba(8,153,129,0.12)", borderpad=4,
+                        )
+
+                        # STOP LOSS line
+                        fig.add_hline(
+                            y=float(ai_data['stop_loss']),
+                            line_dash="dash", line_color="#f23645", line_width=1.5,
+                        )
+                        fig.add_annotation(
+                            x=future_date, xref="x",
+                            y=float(ai_data['stop_loss']),
+                            text=f"<b>🛑 SL: {int(float(ai_data['stop_loss'])):,}</b>",
+                            showarrow=False, xanchor="right", yanchor="top",
+                            font=dict(color="#f23645", size=11),
+                            bgcolor="rgba(242,54,69,0.12)", borderpad=4,
+                        )
+
+                        # TP1 — selalu ada
+                        if ai_data.get('tp1'):
+                            fig.add_hline(
+                                y=float(ai_data['tp1']),
+                                line_dash="dash", line_color="#089981", line_width=1.5,
                             )
                             fig.add_annotation(
                                 x=future_date, xref="x",
-                                y=(float(ai_data['entry_low']) + float(ai_data['entry_high'])) / 2,
-                                text="<b>🟢 BUY AREA</b>",
-                                showarrow=False, xanchor="right", yanchor="middle",
+                                y=float(ai_data['tp1']),
+                                text=f"<b>🎯 TP1: {int(float(ai_data['tp1'])):,}</b>",
+                                showarrow=False, xanchor="right", yanchor="bottom",
                                 font=dict(color="#089981", size=11),
                                 bgcolor="rgba(8,153,129,0.12)", borderpad=4,
                             )
 
-                            # STOP LOSS line
+                        # TP2 — opsional
+                        if ai_data.get('tp2'):
                             fig.add_hline(
-                                y=float(ai_data['stop_loss']),
-                                line_dash="dash", line_color="#f23645", line_width=1.5,
+                                y=float(ai_data['tp2']),
+                                line_dash="dot", line_color="#26a69a", line_width=1.2,
                             )
                             fig.add_annotation(
                                 x=future_date, xref="x",
-                                y=float(ai_data['stop_loss']),
-                                text=f"<b>🛑 SL: {int(float(ai_data['stop_loss'])):,}</b>",
-                                showarrow=False, xanchor="right", yanchor="top",
-                                font=dict(color="#f23645", size=11),
-                                bgcolor="rgba(242,54,69,0.12)", borderpad=4,
+                                y=float(ai_data['tp2']),
+                                text=f"<b>🎯 TP2: {int(float(ai_data['tp2'])):,}</b>",
+                                showarrow=False, xanchor="right", yanchor="bottom",
+                                font=dict(color="#26a69a", size=11),
+                                bgcolor="rgba(38,166,154,0.12)", borderpad=4,
                             )
 
-                            # TP1 — selalu ada
-                            if ai_data.get('tp1'):
-                                fig.add_hline(
-                                    y=float(ai_data['tp1']),
-                                    line_dash="dash", line_color="#089981", line_width=1.5,
-                                )
-                                fig.add_annotation(
-                                    x=future_date, xref="x",
-                                    y=float(ai_data['tp1']),
-                                    text=f"<b>🎯 TP1: {int(float(ai_data['tp1'])):,}</b>",
-                                    showarrow=False, xanchor="right", yanchor="bottom",
-                                    font=dict(color="#089981", size=11),
-                                    bgcolor="rgba(8,153,129,0.12)", borderpad=4,
-                                )
+                        # TP3 — opsional
+                        if ai_data.get('tp3'):
+                            fig.add_hline(
+                                y=float(ai_data['tp3']),
+                                line_dash="dot", line_color="#80cbc4", line_width=1.2,
+                            )
+                            fig.add_annotation(
+                                x=future_date, xref="x",
+                                y=float(ai_data['tp3']),
+                                text=f"<b>🎯 TP3: {int(float(ai_data['tp3'])):,}</b>",
+                                showarrow=False, xanchor="right", yanchor="bottom",
+                                font=dict(color="#80cbc4", size=11),
+                                bgcolor="rgba(128,203,196,0.12)", borderpad=4,
+                            )
 
-                            # TP2 — opsional
-                            if ai_data.get('tp2'):
-                                fig.add_hline(
-                                    y=float(ai_data['tp2']),
-                                    line_dash="dot", line_color="#26a69a", line_width=1.2,
-                                )
-                                fig.add_annotation(
-                                    x=future_date, xref="x",
-                                    y=float(ai_data['tp2']),
-                                    text=f"<b>🎯 TP2: {int(float(ai_data['tp2'])):,}</b>",
-                                    showarrow=False, xanchor="right", yanchor="bottom",
-                                    font=dict(color="#26a69a", size=11),
-                                    bgcolor="rgba(38,166,154,0.12)", borderpad=4,
-                                )
+                    except Exception as e:
+                        st.warning("AI gagal menghasilkan kordinat harga yang pas untuk digambar otomatis.")
 
-                            # TP3 — opsional
-                            if ai_data.get('tp3'):
-                                fig.add_hline(
-                                    y=float(ai_data['tp3']),
-                                    line_dash="dot", line_color="#80cbc4", line_width=1.2,
-                                )
-                                fig.add_annotation(
-                                    x=future_date, xref="x",
-                                    y=float(ai_data['tp3']),
-                                    text=f"<b>🎯 TP3: {int(float(ai_data['tp3'])):,}</b>",
-                                    showarrow=False, xanchor="right", yanchor="bottom",
-                                    font=dict(color="#80cbc4", size=11),
-                                    bgcolor="rgba(128,203,196,0.12)", borderpad=4,
-                                )
+                fig.update_layout(
+                    template="plotly_dark" if is_dark else "plotly_white",
+                    plot_bgcolor=tv_bg_color,
+                    paper_bgcolor=tv_bg_color,
+                    font=dict(color=tv_text_color, size=11),
+                    xaxis=dict(
+                        showgrid=False,
+                        rangeslider=dict(visible=False),
+                        range=[df_chart.index[0], future_date],
+                        showline=True,           
+                        linecolor=tv_border_color,
+                        linewidth=1,
+                        mirror=False,
+                        ticks="outside",
+                        tickcolor=tv_border_color,
+                    ),
+                    yaxis=dict(
+                        showgrid=False,
+                        side="right",
+                        showline=True,           
+                        linecolor=tv_border_color,
+                        linewidth=1,
+                        mirror=False,
+                        ticks="outside",
+                        tickcolor=tv_border_color,
+                    ),
+                    margin=dict(l=0, r=60, t=10, b=40),
+                    height=550,
+                    showlegend=False
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
+        else:
+            st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
-                        except Exception as e:
-                            st.warning("AI gagal menghasilkan kordinat harga yang pas untuk digambar otomatis.")
-
-                    fig.update_layout(
-                        template="plotly_dark" if is_dark else "plotly_white",
-                        plot_bgcolor=tv_bg_color,
-                        paper_bgcolor=tv_bg_color,
-                        font=dict(color=tv_text_color, size=11),
-                        xaxis=dict(
-                            showgrid=False,
-                            rangeslider=dict(visible=False),
-                            range=[df_chart.index[0], future_date],
-                            showline=True,           # garis pembatas bawah (horizontal separator)
-                            linecolor=tv_border_color,
-                            linewidth=1,
-                            mirror=False,
-                            ticks="outside",
-                            tickcolor=tv_border_color,
-                        ),
-                        yaxis=dict(
-                            showgrid=False,
-                            side="right",
-                            showline=True,           # garis pembatas kanan (vertical separator)
-                            linecolor=tv_border_color,
-                            linewidth=1,
-                            mirror=False,
-                            ticks="outside",
-                            tickcolor=tv_border_color,
-                        ),
-                        margin=dict(l=0, r=60, t=10, b=40),
-                        height=550,
-                        showlegend=False
-                    )
-                    
-                    st.plotly_chart(fig, use_container_width=True)
-                except Exception as e:
-                    st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
-            else:
-                st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
-
-            # 4. Tampilkan Verdict Text AI di bawah Chart
-            if run_analysis and ai_text_verdict:
-                st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""
-                <div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0;">
-                    {ai_text_verdict}
-                </div>
-                """, unsafe_allow_html=True)
-            elif not run_analysis:
-                st.markdown(f"""
-                <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
-                    <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">◈</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Masukkan kode saham dan klik <span style='color:#F5C242;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume — lalu menggambar Trade Plan otomatis di Chart.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-
-
+        # 4. Tampilkan Verdict Text AI di bawah Chart
+        if run_analysis and ai_text_verdict:
+            st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0;">
+                {ai_text_verdict}
+            </div>
+            """, unsafe_allow_html=True)
+        elif not run_analysis:
+            st.markdown(f"""
+            <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">◈</div>
+                <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
+                    Masukkan kode saham dan klik <span style='color:#F5C242;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume — lalu menggambar Trade Plan otomatis di Chart.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
 
 
 
