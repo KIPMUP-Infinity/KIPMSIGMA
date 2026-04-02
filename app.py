@@ -4807,7 +4807,7 @@ if current_view == "dashboard":
             global_news_html = render_news_feed("https://www.reutersagency.com/feed/?best-topics=business&format=xml", "REUTERS")
             st.markdown(global_news_html, unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
-```[cite: 1, 2]
+            ```[cite: 1, 2]
 
 ### Apa yang Berbeda?
 1.  **Tanpa Iframe/TradingView**: Berita sekarang ditarik dalam bentuk data teks murni melalui RSS[cite: 1, 2]. Ini jauh lebih ringan dan tidak akan terkena blokir atau "Oops! Something went wrong" seperti pada gambar Anda[cite: 2].
