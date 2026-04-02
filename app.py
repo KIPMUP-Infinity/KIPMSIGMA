@@ -5409,11 +5409,10 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
                 <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
                     <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Masukkan kode saham dan klik <span style='color:#F5C242;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume — lalu menggambar Trade Plan otomatis di Chart.
+                        Masukkan kode saham dan klik <span style='color:#F5C242;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
-
 
 
 
