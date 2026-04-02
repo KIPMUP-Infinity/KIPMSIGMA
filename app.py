@@ -4612,13 +4612,13 @@ if current_view == "dashboard":
             return data
 
         indices_tickers = {
-            "IHSG": "^JKSE", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
+            "IHSG": "^JKSE","VIX": "^VIX", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
             "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
-            "Hang Seng": "^HSI", "Shanghai": "000001.SS", "VIX": "^VIX"
+            "Hang Seng": "^HSI", "Shanghai": "000001.SS",
         }
         
         commodities_tickers = {
-            "USD/IDR": "IDR=X", "Gold (oz)": "GC=F", "WTI Crude": "CL=F",
+            "USD/IDR": "IDR=X", "DXY": "DX-Y.NYB", "Gold (oz)": "GC=F", "WTI Crude": "CL=F",
             "Brent Crude": "BZ=F", "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F", "Nickel": "ALI=F"          
         }
         
@@ -4709,18 +4709,18 @@ if current_view == "dashboard":
 
 
         # =========================================================
-        # SIGMA NEWS TERMINAL - FINAL REPAIR
+        # SIGMA NEWS TERMINAL - ULTIMATE FIX
         # =========================================================
         import feedparser
 
-        # 1. Garis Pembatas & Judul Seksi
+        # 1. DIVIDER & HEADER
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        # 2. CSS STYLING (Satu-satunya cara agar rapi)
+        # 2. CSS (Dibuat sangat spesifik agar tidak bocor)
         st.markdown(f"""
         <style>
-        .news-wrapper {{
+        .news-box-final {{
             background: {met_bg};
             border: 1px solid {met_border};
             border-radius: 10px;
@@ -4730,91 +4730,91 @@ if current_view == "dashboard":
             overflow: hidden;
             margin-bottom: 20px;
         }}
-        .news-header-box {{
+        .news-header-final {{
             padding: 10px 15px;
-            background: rgba(245,194,66,0.08);
+            background: rgba(245,194,66,0.1);
             border-bottom: 1px solid {met_border};
             color: #F5C242;
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 11px;
             font-weight: bold;
-            letter-spacing: 1px;
+            font-size: 11px;
         }}
-        .news-scroll-area {{
+        .news-container-final {{
             flex: 1;
             overflow-y: auto;
             padding: 5px;
         }}
-        .news-card-link {{
+        .news-entry-final {{
             display: block;
-            padding: 10px 12px;
+            padding: 12px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             text-decoration: none !important;
-            transition: 0.2s;
         }}
-        .news-card-link:hover {{ background: rgba(245,194,66,0.05); }}
-        .news-card-title {{
+        .news-entry-final:hover {{ background: rgba(245,194,66,0.05); }}
+        .news-title-final {{
             color: {text_main};
             font-size: 13px;
             line-height: 1.4;
             margin-bottom: 4px;
         }}
-        .news-card-meta {{
+        .news-meta-final {{
             color: {text_sub};
             font-size: 10px;
             font-family: 'IBM Plex Mono', monospace;
         }}
-        .news-scroll-area::-webkit-scrollbar {{ width: 4px; }}
-        .news-scroll-area::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
         """, unsafe_allow_html=True)
 
-        # 3. FUNGSI PENYARING (PENTING: Output HARUS String HTML)
-        def build_news_feed_string(url, tag):
+        # 3. FUNGSI "THE CLEANER" (PENTING: Hanya return string HTML)
+        def get_clean_html_news(rss_url, tag_name):
             try:
-                # Ambil data
-                raw_data = feedparser.parse(url)
-                # Pastikan ini String kosong di awal
-                final_html = "" 
+                # Ambil data mentah
+                feed_data = feedparser.parse(rss_url)
+                html_output = "" # Variabel penampung string
                 
-                # Loop maksimal 12 berita
-                for entry in raw_data.entries[:12]:
-                    clean_date = entry.get('published', 'Recent')[:16]
-                    # Gabungkan jadi satu string HTML panjang
-                    final_html += f'''
-                    <a href="{entry.link}" target="_blank" class="news-card-link">
-                        <div class="news-card-title">{entry.title}</div>
-                        <div class="news-card-meta">[{tag}] • {clean_date}</div>
+                # Kita looping dan bungkus jadi HTML di sini
+                for item in feed_data.entries[:12]:
+                    # Ambil data yang dibutuhkan saja
+                    judul = str(item.get('title', 'No Title'))
+                    link_berita = str(item.get('link', '#'))
+                    waktu = str(item.get('published', 'Recent'))[:16]
+                    
+                    # Susun string HTML
+                    html_output += f'''
+                    <a href="{link_berita}" target="_blank" class="news-entry-final">
+                        <div class="news-title-final">{judul}</div>
+                        <div class="news-meta-final">[{tag_name}] • {waktu}</div>
                     </a>
                     '''
                 
-                if not final_html:
-                    return "<div style='padding:20px; color:gray;'>No news found.</div>"
-                return final_html
+                # Jika kosong, beri pesan
+                if not html_output:
+                    return "<div style='color:gray; padding:20px;'>No news available.</div>"
+                    
+                return html_output
             except:
-                return "<div style='padding:20px; color:red;'>Connection Error.</div>"
+                return "<div style='color:red; padding:20px;'>Connection error.</div>"
 
-        # 4. PROSES (Simpan ke variabel baru agar tidak bentrok dengan variabel lama)
-        # Link Global menggunakan CNBC International yang lebih stabil
-        string_domestic = build_news_feed_string("https://www.cnbcindonesia.com/market/rss", "IDX")
-        string_global = build_news_feed_string("https://www.cnbc.com/id/15839069/device/rss/rss.html", "WORLD")
+        # 4. JALANKAN FUNGSI (Hasilnya ADALAH teks HTML, bukan objek FeedParser)
+        html_indo_final = get_clean_html_news("https://www.cnbcindonesia.com/market/rss", "IDX")
+        html_glob_final = get_clean_html_news("https://www.cnbc.com/id/15839069/device/rss/rss.html", "WORLD")
 
-        # 5. TAMPILKAN (Layout Kolom)
-        col_left, col_right = st.columns(2)
+        # 5. RENDER KE KOLOM
+        c_left, c_right = st.columns(2)
 
-        with col_left:
+        with c_left:
             st.markdown(f"""
-            <div class="news-wrapper">
-                <div class="news-header-box">🇮🇩 DOMESTIC MARKET NEWS</div>
-                <div class="news-scroll-area">{string_domestic}</div>
+            <div class="news-box-final">
+                <div class="news-header-final">🇮🇩 DOMESTIC MARKET NEWS</div>
+                <div class="news-container-final">{html_indo_final}</div>
             </div>
             """, unsafe_allow_html=True)
 
-        with col_right:
+        with c_right:
             st.markdown(f"""
-            <div class="news-wrapper">
-                <div class="news-header-box">🌎 GLOBAL ECONOMIC PULSE</div>
-                <div class="news-scroll-area">{string_global}</div>
+            <div class="news-box-final">
+                <div class="news-header-final">🌎 GLOBAL ECONOMIC PULSE</div>
+                <div class="news-container-final">{html_glob_final}</div>
             </div>
             """, unsafe_allow_html=True)
 
