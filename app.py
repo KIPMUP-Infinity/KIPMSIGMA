@@ -5396,23 +5396,23 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
             st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
         # 4. Tampilkan Verdict Text AI di bawah Chart
-        if run_analysis and ai_text_verdict:
-            st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"""
-            <div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0;">
-                {ai_text_verdict}
-            </div>
-            """, unsafe_allow_html=True)
-        elif not run_analysis:
-            st.markdown(f"""
-            <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">◈</div>
-                <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                    Masukkan kode saham dan klik <span style='color:#F5C242;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume — lalu menggambar Trade Plan otomatis di Chart.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
+            if run_analysis and ai_text_verdict:
+                st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""
+                <div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0;">
+                    {ai_text_verdict}
+                </div>
+                """, unsafe_allow_html=True)
+            elif not run_analysis:
+                # Perbaikan simbol Unicode menggunakan kode HTML agar aman dari SyntaxError
+                st.markdown(f"""
+                <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Masukkan kode saham dan klik <span style='color:#F5C242;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume — lalu menggambar Trade Plan otomatis di Chart.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
 
 
 
