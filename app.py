@@ -4707,67 +4707,78 @@ if current_view == "dashboard":
             </div>
             """, unsafe_allow_html=True)
 
+
         # ---------------------------------------------------------
-        # LIVE NEWS FEED - DUAL BOX (DOMESTIC & GLOBAL)
+        # LIVE NEWS FEED - SCRAPER MODE (DOMESTIC & GLOBAL)
         # ---------------------------------------------------------
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        # CSS UNTUK KOTAK BERITA DUAL BOX DENGAN EFEK HOVER
+        # CSS UNTUK TAMPILAN LIST BERITA
         st.markdown(f"""
         <style>
-        .news-container {{
-            display: flex;
-            gap: 20px;
-            margin-bottom: 24px;
+        .news-scroll-box {{
+            height: 480px;
+            overflow-y: auto;
+            padding-right: 10px;
         }}
-        .news-box {{
-            flex: 1;
-            background: {met_bg};
-            border: 1px solid {met_border};
-            border-radius: 12px;
-            padding: 0;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            box-shadow: {met_shadow};
-        }}
-        .news-box:hover {{
-            transform: translateY(-5px);
-            border-color: #F5C242;
-            box-shadow: 0 12px 30px rgba(245,194,66,0.15);
-        }}
-        .news-header {{
-            padding: 15px 20px;
-            background: rgba(245,194,66,0.08);
+        .news-item {{
+            padding: 12px;
             border-bottom: 1px solid {met_border};
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            transition: background 0.2s;
+            text-decoration: none !important;
+            display: block;
         }}
-        .news-icon {{
-            font-size: 1.2rem;
+        .news-item:hover {{
+            background: rgba(245,194,66,0.05);
         }}
-        .news-title {{
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 0.1em;
+        .news-tag {{
+            font-size: 0.65rem;
             color: #F5C242;
-            text-transform: uppercase;
+            font-family: 'IBM Plex Mono', monospace;
+            margin-bottom: 4px;
+            display: block;
         }}
-        .news-content {{
-            height: 500px;
-            padding: 5px;
+        .news-headline {{
+            font-size: 0.9rem;
+            color: {text_main};
+            font-weight: 500;
+            line-height: 1.4;
         }}
-        @media (max-width: 768px) {{
-            .news-container {{ flex-direction: column; }}
-            .news-content {{ height: 400px; }}
+        .news-time {{
+            font-size: 0.7rem;
+            color: {text_sub};
+            margin-top: 6px;
+            display: block;
         }}
+        /* Kustomisasi Scrollbar */
+        .news-scroll-box::-webkit-scrollbar {{ width: 4px; }}
+        .news-scroll-box::-webkit-scrollbar-track {{ background: transparent; }}
+        .news-scroll-box::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
         """, unsafe_allow_html=True)
 
+        import feedparser
+
         col_news1, col_news2 = st.columns(2)
+
+        # --- FUNGSI HELPER UNTUK RENDER BERITA ---
+        def render_news_feed(url, tag_label):
+            feed = feedparser.parse(url)
+            html_content = '<div class="news-scroll-box">'
+            # Ambil 15 berita terbaru
+            for entry in feed.entries[:15]:
+                # Format waktu (biasanya ada di published)
+                time_str = entry.get('published', '')[:16] 
+                html_content += f"""
+                <a href="{entry.link}" target="_blank" class="news-item">
+                    <span class="news-tag">[{tag_label}]</span>
+                    <div class="news-headline">{entry.title}</div>
+                    <span class="news-time">{time_str}</span>
+                </a>
+                """
+            html_content += '</div>'
+            return html_content
 
         with col_news1:
             st.markdown(f"""
@@ -4776,19 +4787,12 @@ if current_view == "dashboard":
                     <span class="news-icon">🇮🇩</span>
                     <span class="news-title">Domestic Market News</span>
                 </div>
-                <div class="news-content">
             """, unsafe_allow_html=True)
             
-            # Widget Berita Indonesia (CNBC ID / IDX)
-            idx_news_widget = f"""
-            <div class="tradingview-widget-container" style="height:100%;width:100%;">
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
-              {{ "feedMode": "market", "market": "indonesia", "isTransparent": true, "displayMode": "regular", "width": "100%", "height": "100%", "colorTheme": "{news_theme}", "locale": "id" }}
-              </script>
-            </div>
-            """
-            components.html(idx_news_widget, height=490)
-            st.markdown("</div></div>", unsafe_allow_html=True)
+            # Sumber: CNBC Indonesia (Investasi)
+            id_news_html = render_news_feed("https://www.cnbcindonesia.com/market/rss", "CNBC ID")
+            st.markdown(id_news_html, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
         with col_news2:
             st.markdown(f"""
@@ -4797,8 +4801,21 @@ if current_view == "dashboard":
                     <span class="news-icon">🌎</span>
                     <span class="news-title">Global Economic Pulse</span>
                 </div>
-                <div class="news-content">
             """, unsafe_allow_html=True)
+            
+            # Sumber: Yahoo Finance (International) atau Reuters
+            global_news_html = render_news_feed("https://www.reutersagency.com/feed/?best-topics=business&format=xml", "REUTERS")
+            st.markdown(global_news_html, unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+```[cite: 1, 2]
+
+### Apa yang Berbeda?
+1.  **Tanpa Iframe/TradingView**: Berita sekarang ditarik dalam bentuk data teks murni melalui RSS[cite: 1, 2]. Ini jauh lebih ringan dan tidak akan terkena blokir atau "Oops! Something went wrong" seperti pada gambar Anda[cite: 2].
+2.  **Interactive List**: Setiap judul berita adalah *link* aktif yang akan membuka tab baru jika diklik oleh pengguna[cite: 1, 2].
+3.  **Real-Time Scraper**: Setiap kali halaman di-*refresh*, sistem akan melakukan permintaan data terbaru ke portal berita[cite: 1, 2].
+4.  **Custom Styling**: Tampilan diselaraskan dengan tema SIGMA (font IBM Plex dan aksen warna emas `#F5C242`)[cite: 2].
+
+**Catatan tambahan:** Pastikan server aplikasi Anda memiliki akses internet keluar agar fungsi `feedparser` dapat menjangkau URL RSS tersebut[cite: 1, 2].
             
             # Widget Berita Global (Wall Street / World)
             global_news_widget = f"""
