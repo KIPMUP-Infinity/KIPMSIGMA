@@ -4278,7 +4278,26 @@ if current_view == "dashboard":
     met_shadow = "0 2px 12px rgba(0,0,0,0.5)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
     met_hover  = "#F5C242"
     tv_theme   = "dark" if is_dark else "light"
-
+    # Tambahkan baris ini di bagian inisialisasi variabel dashboard Anda
+    news_theme = "dark" if is_dark else "light"
+    
+    # Sekarang variabel ini aman digunakan di bawah:
+    idx_news_widget = f"""
+    <div class="tradingview-widget-container" style="height:100%;width:100%;">
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-timeline.js" async>
+      {{ 
+        "feedMode": "market", 
+        "market": "indonesia", 
+        "isTransparent": true, 
+        "displayMode": "regular", 
+        "width": "100%", 
+        "height": "100%", 
+        "colorTheme": "{news_theme}", 
+        "locale": "id" 
+      }}
+      </script>
+    </div>
+    """
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
