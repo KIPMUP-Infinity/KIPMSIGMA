@@ -5429,9 +5429,9 @@ else:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
         st.markdown(f"""
         <div style="text-align:center;padding:10vh 0 2rem;">
-            <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} 👋</h1>
+            <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} &#128075;</h1>
             <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila. Ada yang bisa saya bantu hari ini?
-            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu panduan saya.😊</p>
+            Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu panduan saya.&#128522;</p>
         </div>
         """, unsafe_allow_html=True)
 
