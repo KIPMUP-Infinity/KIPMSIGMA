@@ -4241,61 +4241,9 @@ if current_view == "dashboard":
     }
     </style>
     ''', unsafe_allow_html=True)
-    
-    <style>
-    /* 1. Pengaturan Desktop: Memberi space di kanan-kiri (agar tidak mentok) */
-    [data-testid="stMainBlockContainer"] {
-        max-width: 1250px !important;
-        width: 95% !important;
-        margin: 0 auto !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        padding-top: 2rem !important;
-    }
-
-    /* 2. Pengaturan Mobile: Mencegah teks terpotong & lock scroll horizontal */
-    @media (max-width: 768px) {
-        html, body {
-            overflow-x: hidden !important;
-            position: relative;
-            max-width: 100vw !important;
-        }
-        
-        [data-testid="stMainBlockContainer"] {
-            max-width: 100% !important;
-            width: 100% !important;
-            padding-left: 14px !important;
-            padding-right: 14px !important;
-            padding-top: 1rem !important;
-            margin: 0 !important;
-        }
-
-        [data-testid="stMetric"] {
-            padding: 10px 12px !important;
-        }
-        
-        [data-testid="stMetricValue"] {
-            font-size: 1.15rem !important; 
-        }
-        
-        [data-testid="stVerticalBlock"] {
-            gap: 0.5rem !important;
-        }
-
-        .stDataFrame {
-            width: 100% !important;
-            overflow-x: auto !important;
-        }
-    }
-
-    section[data-testid="stMain"] {
-        align-items: center !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
     # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
     is_dark = st.session_state.get("theme", "dark") == "dark"
+    
 
     # --- VARIABEL WARNA TERMINAL ---
     text_main  = "#e8eaf0" if is_dark else "#0d1117"
