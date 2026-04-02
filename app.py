@@ -1366,22 +1366,54 @@ SCORING:
 LOGIKA ANALISA IPO (MENU 7) - WAJIB PATUHI
 ====================================
 Jika menganalisa dokumen IPO (Menu 7), SIGMA WAJIB menghitung dan menyimpulkan hal berikut:
-1. HARGA PENAWARAN vs NOMINAL: 
-   -> Bandingkan Nominal Rp vs Harga Penawaran Rp.
-   -> Rasio = Harga Penawaran / Harga Nominal.
-   -> Jika rasio > 4x lipat = Mahal/Premium. Jika rasio <= 4x lipat = Wajar/Menarik.
-2. MANAJEMEN RISIKO LOT (DISTRIBUSI):
-   -> Konversi jumlah Total Saham Ditawarkan ke dalam LOT (1 Lot = 100 lembar).
-   -> Kondisi A (Saham Beredar < 20 Juta Lot): 
-      - Risk 1 (Mulai Waspada) = Hitung 30% dari Total Lot.
-      - Risk 2 (Take Profit/Bahaya) = Hitung 50% dari Total Lot (ARA rawan bongkar/fluktuatif).
-   -> Kondisi B (Saham Beredar >= 20 Juta Lot): 
-      - Risk 1 (Mulai Waspada) = Hitung 10% dari Total Lot.
-      - Risk 2 (Take Profit/Bahaya) = Hitung 30% dari Total Lot (ARA rawan bongkar/fluktuatif).
+
+1. HARGA PENAWARAN vs NOMINAL — SKALA VALUASI GRANULAR:
+   -> DEFINISI: Nilai Nominal = harga per lembar yang tercetak di saham (biasanya Rp10, Rp25, Rp40, Rp100, dst).
+   -> RUMUS: Rasio = Harga Penawaran ÷ Nilai Nominal.
+   -> SKALA PENILAIAN (WAJIB IKUT INI, BUKAN HANYA 4X):
+      • Rasio ≤ 2x  = SANGAT MENARIK — harga penawaran sangat dekat nominal, potensi upside besar
+      • Rasio 2x–4x = MENARIK / WAJAR — masih dalam batas premium yang reasonable
+      • Rasio >4x–7x = WASPADA / MAHAL — sudah premium signifikan, perlu katalis kuat
+      • Rasio >7x    = HATI-HATI TINGGI — sangat mahal vs nominal, risiko koreksi besar pasca IPO
+   -> CONTOH: Nominal Rp40, Penawaran Rp170 → Rasio = 170÷40 = 4.25x → masuk kategori WASPADA/MAHAL
+   -> CONTOH: Nominal Rp100, Penawaran Rp150 → Rasio = 150÷100 = 1.5x → SANGAT MENARIK
+   -> Jika ada rentang harga (misal Rp150–Rp170): hitung rasio KEDUANYA dan sebutkan perbedaan kategorinya.
+
+2. MANAJEMEN RISIKO LOT (DISTRIBUSI) — KONVERSI WAJIB:
+
+   ⚠️ ATURAN KONVERSI LOT VS LEMBAR (KRITIS — JANGAN SALAH):
+   -> Di Indonesia: 1 LOT = 100 LEMBAR saham.
+   -> PDF prospektus SELALU menulis jumlah dalam LEMBAR (contoh: 1.800.000.000 lembar).
+   -> SIGMA WAJIB mengkonversi ke LOT terlebih dahulu sebelum menghitung apapun.
+   -> RUMUS KONVERSI: Total Lot = Total Lembar ÷ 100
+   -> CONTOH: 1.800.000.000 lembar ÷ 100 = 18.000.000 Lot = 18 Juta Lot
+   -> JANGAN PERNAH pakai angka lembar langsung untuk menentukan Kondisi A/B atau menghitung Risk 1/2.
+
+   LANGKAH WAJIB:
+   Step 1: Baca angka dari PDF (dalam lembar)
+   Step 2: Konversi → Total Lot = angka lembar ÷ 100
+   Step 3: Tentukan Kondisi A atau B berdasarkan Total Lot (BUKAN lembar)
+   Step 4: Hitung Risk 1 dan Risk 2 dari Total Lot
+
+   -> KONDISI A (Total Lot DITAWARKAN < 20 Juta Lot):
+      • Risk 1 (Mulai Waspada)    = 30% × Total Lot
+      • Risk 2 (Take Profit/Bahaya) = 50% × Total Lot
+      ⚠️ Contoh: 18 Juta Lot → Kondisi A → Risk 1 = 5,4 Juta Lot | Risk 2 = 9 Juta Lot
+
+   -> KONDISI B (Total Lot DITAWARKAN ≥ 20 Juta Lot):
+      • Risk 1 (Mulai Waspada)    = 10% × Total Lot
+      • Risk 2 (Take Profit/Bahaya) = 30% × Total Lot
+      ⚠️ Contoh: 50 Juta Lot → Kondisi B → Risk 1 = 5 Juta Lot | Risk 2 = 15 Juta Lot
+
+   -> SETELAH menghitung, WAJIB sebutkan dalam output:
+      "Total saham ditawarkan: [X] lembar = [Y] Juta Lot (setelah konversi ÷100)"
+
 3. JUMLAH UNDERWRITER (PENJAMIN EMISI):
    -> Jika > 2 sekuritas = Pergerakan harga cenderung TERBATAS/BERAT.
    -> Jika 1 atau 2 sekuritas = Pergerakan harga cenderung KUAT/SOLID.
+
 4. KONGLOMERASI: Periksa apakah ada afiliasi emiten dengan grup besar.
+
 5. TUJUAN DANA: Perhatikan proporsi ekspansi vs pembayaran utang (gali lubang tutup lubang).
 
 ====================================
@@ -2233,6 +2265,19 @@ VOLUME PROXY IDX (tanpa broker data):
 === CORPORATE ACTION ===
 Split/Reverse/Right Issue/Buyback dapat mengubah EPS/DPS/BV per saham.
 Selalu cek jika harga historis berbeda jauh dari data sekarang.
+
+=== ANALISA IPO — ATURAN KRITIS ===
+⚠️ LOT vs LEMBAR: PDF prospektus SELALU tulis jumlah dalam LEMBAR. WAJIB konversi dulu.
+RUMUS: Total Lot = Total Lembar ÷ 100  (1 LOT = 100 LEMBAR)
+Contoh: 1.800.000.000 lembar ÷ 100 = 18.000.000 Lot = 18 Juta Lot
+JANGAN gunakan angka lembar untuk Kondisi A/B atau Risk 1/2. Selalu pakai LOT.
+
+KONDISI A (< 20 Juta Lot): Risk1 = 30% × Lot | Risk2 = 50% × Lot
+KONDISI B (≥ 20 Juta Lot): Risk1 = 10% × Lot | Risk2 = 30% × Lot
+
+SKALA VALUASI (Harga Penawaran ÷ Nilai Nominal):
+≤2x = Sangat Menarik | 2–4x = Menarik/Wajar | >4–7x = Waspada/Mahal | >7x = Hati-Hati Tinggi
+WAJIB gunakan skala ini, BUKAN hanya batas 4x.
 
 Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya."""
 
@@ -3693,9 +3738,16 @@ Berikut adalah analisa dampak pasar untuk **{emiten}** terkait isu tersebut:
 TEMPLATE_IPO = """
 [INSTRUKSI WAJIB SYSTEM]:
 User meminta "Analisa IPO" berdasarkan dokumen PDF prospektus yang dilampirkan untuk calon emiten {emiten}.
-Tugasmu adalah membongkar isi PDF tersebut dan merangkumnya khusus untuk konsumsi Investor Ritel dengan menggunakan *Logika Analisa IPO* yang ada di system prompt (Nominal vs Harga, Perhitungan Risiko Lot, Jumlah Underwriter).
+Tugasmu adalah membongkar isi PDF dan merangkumnya untuk Investor Ritel menggunakan Logika Analisa IPO di system prompt.
 JANGAN bertele-tele. Cari data paling krusial di dalam teks PDF!
 JANGAN ubah urutan atau struktur template. Isi setiap poin dengan data dari PDF.
+
+⚠️ PERINGATAN KHUSUS SEBELUM MULAI:
+- PDF prospektus SELALU menulis jumlah saham dalam LEMBAR. Kamu WAJIB konversi ke LOT dulu.
+- RUMUS: Total Lot = Total Lembar ÷ 100  (karena 1 LOT = 100 LEMBAR)
+- CONTOH: 1.800.000.000 lembar ÷ 100 = 18.000.000 Lot = 18 Juta Lot
+- Jangan gunakan angka lembar untuk menentukan Kondisi A/B atau Risk 1/2. Selalu gunakan LOT.
+- Untuk valuasi: WAJIB gunakan skala granular (≤2x / 2-4x / >4-7x / >7x), BUKAN hanya batas 4x.
 
 [ISI TEKS PDF PROSPEKTUS]:
 {pdf_content}
@@ -3707,30 +3759,32 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 - **Harga Nominal:** Rp[X] per saham
 - **Rentang Harga Penawaran:** Rp[Y] hingga Rp[Z] per saham
 - **Rasio Harga Penawaran / Harga Nominal:**
-  - Pada harga Rp[Y]: [A]x (Rp[Y] / Rp[X])
-  - Pada harga Rp[Z]: [B]x (Rp[Z] / Rp[X])
-- **Kesimpulan:** [Jelaskan apakah menarik (<= 4x) atau mahal (>4x), dan di harga mana yang lebih wajar. Sertakan saran pertimbangan investor.]
+  - Pada harga Rp[Y]: [A]x → Kategori: [SANGAT MENARIK / MENARIK / WASPADA / HATI-HATI TINGGI]
+  - Pada harga Rp[Z]: [B]x → Kategori: [SANGAT MENARIK / MENARIK / WASPADA / HATI-HATI TINGGI]
+- **Skala Acuan:** ≤2x = Sangat Menarik | 2–4x = Menarik/Wajar | >4–7x = Waspada/Mahal | >7x = Hati-Hati Tinggi
+- **Kesimpulan:** [Jelaskan implikasi rasio ini — seberapa jauh harga penawaran dari nilai nominal, dan apa artinya bagi investor ritel. Sebutkan di harga mana yang lebih aman untuk masuk.]
 
 **2. MANAJEMEN RISIKO LOT (DISTRIBUSI)**
-- **Total Saham Ditawarkan:** [Jumlah] lembar = [Jumlah Lot] Lot
-- **Kondisi:** [Kondisi A (<20 Juta Lot) atau Kondisi B (>=20 Juta Lot)]
-- **Risk 1 (Mulai Waspada):** [30% atau 10%] dari Total Lot = [Angka] Lot. [Jelaskan arti sinyal ini]
-- **Risk 2 (Take Profit/Bahaya):** [50% atau 30%] dari Total Lot = [Angka] Lot. [Jelaskan arti sinyal dan saran aksi]
-- **Insight:** [1-2 kalimat tentang implikasi jumlah lot ini terhadap likuiditas dan pergerakan harga]
+- **Total Saham Ditawarkan:** [Jumlah] lembar ÷ 100 = **[Jumlah Lot] Lot** *(konversi wajib: 1 Lot = 100 Lembar)*
+- **Kondisi yang Berlaku:** [Kondisi A — karena < 20 Juta Lot] ATAU [Kondisi B — karena ≥ 20 Juta Lot]
+- **Risk 1 (Mulai Waspada):** [30% jika Kondisi A / 10% jika Kondisi B] × [Total Lot] = **[Hasil] Lot**
+  *Artinya: Jika volume transaksi harian mendekati angka ini, mulai pantau ketat — potensi distribusi bandar dimulai.*
+- **Risk 2 (Take Profit/Bahaya):** [50% jika Kondisi A / 30% jika Kondisi B] × [Total Lot] = **[Hasil] Lot**
+  *Artinya: Jika volume mencapai angka ini, ARA rawan dibongkar. Segera amankan profit — jangan serakah.*
+- **Insight:** [1-2 kalimat tentang implikasi ukuran float ini terhadap likuiditas, kemudahan bandar gerakkan harga, dan strategi yang direkomendasikan.]
 
 **3. JUMLAH UNDERWRITER (PENJAMIN EMISI)**
 - **Penjamin Pelaksana Emisi Efek:** [Sebutkan nama lengkap semua underwriter]
-- **Jumlah:** [N] sekuritas
-- **Kesimpulan:** [Jelaskan implikasi jumlah ini terhadap pergerakan harga. <=2 = cenderung kuat/solid. >2 = cenderung terbatas/berat.]
-- **Track Record:** [Penilaian AI tentang rekam jejak underwriter ini mengawal IPO — sering ARA berjilid atau sering banting?]
+- **Jumlah:** [N] sekuritas → Penilaian: [≤2 = Pergerakan cenderung KUAT/SOLID | >2 = Pergerakan cenderung TERBATAS/BERAT]
+- **Track Record:** [Rekam jejak underwriter ini — sering ARA berjilid atau sering banting di hari pertama?]
 
 **4. KONGLOMERASI**
-- [Jelaskan apakah ada afiliasi dengan grup konglomerasi besar atau tokoh kuat. Jika tidak ada, tulis secara eksplisit dan implikasinya.]
+- [Jelaskan apakah ada afiliasi dengan grup konglomerasi besar atau tokoh kuat. Sebutkan implikasinya bagi investor.]
 
 **5. TUJUAN DANA IPO**
 - **Alokasi Dana:**
-  [Sebutkan tiap pos penggunaan dana dan persentasenya]
-- **Penilaian SIGMA:** [Apakah produktif (ekspansi/modal kerja) atau "gali lubang tutup lubang" (mayoritas untuk bayar utang)?]
+  [Sebutkan tiap pos penggunaan dana dan persentasenya dari PDF]
+- **Penilaian SIGMA:** [Produktif (ekspansi/modal kerja) atau "gali lubang tutup lubang" (mayoritas bayar utang)?]
 
 **6. RISIKO UTAMA YANG DIUNGKAPKAN**
 [Sebutkan 2-3 risiko paling kritis dari prospektus yang wajib diperhatikan investor ritel]
@@ -3743,7 +3797,7 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 - Tanggal Distribusi Saham Elektronik: [tanggal]
 - Tanggal Pencatatan di BEI: [tanggal]
 
-**Kesimpulan Awal:** [2-3 kalimat merangkai semua poin di atas — sektor, kekuatan underwriter, valuasi, risiko utama, dan apakah layak dipertimbangkan atau dihindari. Netral dan berbasis data.]
+**Kesimpulan Awal:** [2-3 kalimat merangkai semua poin — sektor bisnis, valuasi (kategori skala), kekuatan underwriter, risiko utama, dan rekomendasi apakah layak dipertimbangkan atau dihindari. Netral dan berbasis data dari PDF.]
 
 ⚠️ *DYOR — Analisa ini berdasarkan informasi dari prospektus yang diberikan. Selalu lakukan riset mendalam dan pertimbangkan semua faktor risiko sebelum membuat keputusan investasi. Keputusan final ada di tangan investor.*
 """
