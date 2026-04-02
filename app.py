@@ -4050,12 +4050,38 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
 
 [data-testid="stMainBlockContainer"] {{ padding-top: 3rem !important; margin-top: 0 !important; }}
 [data-testid="stChatMessageContent"], [data-testid="stMarkdownContainer"] {{ text-align: left !important; }}
-/* MEMASTIKAN LIST POINT RAPI DAN TIDAK BERTUMPUK */
-[data-testid="stMarkdownContainer"] ul {{ margin-top: 6px !important; margin-bottom: 16px !important; padding-left: 20px !important; }}
-[data-testid="stMarkdownContainer"] li {{ margin-bottom: 8px !important; line-height: 1.6 !important; }}
+
+/* =========================================================
+   FIX SPASI LEBAR DI CHAT (REMOVE SPACE BEFORE PARAGRAPH) 
+   ========================================================= */
+[data-testid="stMarkdownContainer"] p {{
+    margin-top: 0 !important;
+    margin-bottom: 4px !important; /* Paksa jarak antar paragraf sangat rapat */
+    line-height: 1.5 !important;
+}}
+[data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{
+    margin-top: 4px !important;
+    margin-bottom: 12px !important;
+    padding-left: 20px !important;
+}}
+[data-testid="stMarkdownContainer"] li {{
+    margin-top: 0 !important;
+    margin-bottom: 4px !important; /* Paksa jarak antar bullet point rapat */
+    line-height: 1.5 !important;
+}}
+/* Jika AI memberikan heading, rapatkan juga dengan teks di bawahnya */
+[data-testid="stMarkdownContainer"] h1, 
+[data-testid="stMarkdownContainer"] h2, 
+[data-testid="stMarkdownContainer"] h3 {{
+    margin-top: 16px !important;
+    margin-bottom: 8px !important;
+}}
+/* Menghapus spasi ekstra jika ada tag <p> di dalam <li> */
+[data-testid="stMarkdownContainer"] li > p {{
+    margin-bottom: 0 !important;
+}}
 </style>
 """, unsafe_allow_html=True)
-
 _hist_items = ""
 for _sesi in st.session_state.sessions:
     _sid = _sesi["id"]; _is_act = _sid == st.session_state.active_id; _td = _sesi["title"][:35].replace("'","").replace("`","").replace("\\","").replace('"',""); _fw = "700" if _is_act else "400"; _bg = C['hover'] if _is_act else "transparent"
