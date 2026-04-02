@@ -4208,7 +4208,7 @@ if current_view == "dashboard":
         st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
         st.stop()
 
-    # ── CONTAINER OVERRIDE — DESKTOP SPACE & PENGUNCI LAYAR MOBILE ──
+    # ── CONTAINER OVERRIDE — DESKTOP SPACE & MOBILE FIX ──
     st.markdown("""
     <style>
     /* 1. Pengaturan Desktop: Memberi space di kanan-kiri (agar tidak mentok) */
@@ -4221,45 +4221,38 @@ if current_view == "dashboard":
         padding-top: 2rem !important;
     }
 
-    /* 2. Pengaturan Mobile: KUNCI TOTAL agar tidak terpotong & tidak bisa geser horizontal */
+    /* 2. Pengaturan Mobile: Mencegah teks terpotong & lock scroll horizontal */
     @media (max-width: 768px) {
-        html, body, .stApp {
+        html, body {
             overflow-x: hidden !important;
-            width: 100vw !important;
-            max-width: 100vw !important;
             position: relative;
+            max-width: 100vw !important;
         }
         
         [data-testid="stMainBlockContainer"] {
-            max-width: 100vw !important;
-            width: 100vw !important;
-            padding-left: 12px !important;
-            padding-right: 12px !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            padding-left: 14px !important;
+            padding-right: 14px !important;
             padding-top: 1rem !important;
             margin: 0 !important;
-            overflow-x: hidden !important;
-        }
-
-        /* Memaksa grafik dan tabel agar muat di layar */
-        canvas, .user-select-none, iframe {
-            max-width: 100% !important;
-        }
-
-        .stDataFrame {
-            width: 100% !important;
-            overflow-x: auto !important; /* Tabel boleh scroll ke samping di dalam kotaknya saja */
         }
 
         [data-testid="stMetric"] {
-            padding: 10px 10px !important;
+            padding: 10px 12px !important;
         }
         
         [data-testid="stMetricValue"] {
-            font-size: 1.1rem !important; 
+            font-size: 1.15rem !important; 
         }
         
         [data-testid="stVerticalBlock"] {
             gap: 0.5rem !important;
+        }
+
+        .stDataFrame {
+            width: 100% !important;
+            overflow-x: auto !important;
         }
     }
 
@@ -5015,13 +5008,8 @@ if current_view == "dashboard":
                         dashboard_prompt = f"Kamu adalah SIGMA AI. Analisa saham {ticker_input}.\\nHarga Terakhir: {live_price_str}\\n\\n{vol_context}\\n\\nData Fundamental:\\n{fund_context}\\n\\nBerikan format JSON di akhir jawaban dengan struktur: entry_low, entry_high, stop_loss, tp1, tp2, tp3 (isi dengan angka murni, atau null jika tidak ada)."
 
                         try:
-                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt, [])
-                        except TypeError:
-                            try:
-                                ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                            except Exception as e_groq:
-                                ai_raw_result = f"Gagal memanggil AI: {e_groq}"
-                        except Exception as e_groq_main:
+                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
+                        except:
                             try:
                                 ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
                             except Exception as e_gem:
@@ -5130,12 +5118,6 @@ if current_view == "dashboard":
                 </div>
                 """, unsafe_allow_html=True)
 
-
-
-
-
-
-        
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
@@ -5557,4 +5539,5 @@ components.html("""
     pd.body.appendChild(brand);
 })();
 </script>
+""", height=0)
 """, height=0)
