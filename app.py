@@ -5176,18 +5176,43 @@ if current_view == "dashboard":
 
                     if ai_data:
                         try:
+                            # 1. Gambar Area Entry & Teks
+                            e_low = float(ai_data['entry_low'])
+                            e_high = float(ai_data['entry_high'])
                             fig.add_hrect(
-                                y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
+                                y0=e_low, y1=e_high,
                                 line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
                             )
-                            fig.add_hline(
-                                y=float(ai_data['stop_loss']),
-                                line_dash="dash", line_color="#f23645", line_width=1.5,
+                            mid_entry = (e_low + e_high) / 2
+                            fig.add_annotation(
+                                x=1.01, y=mid_entry, xref="paper", yref="y",
+                                text=f"<b>BUY AREA</b><br>{e_low:,.0f} - {e_high:,.0f}",
+                                showarrow=False, xanchor="left", align="left",
+                                font=dict(size=10, color="#089981", family="IBM Plex Mono"),
+                                bgcolor="rgba(0,0,0,0.8)", bordercolor="#089981", borderwidth=1, padx=5, pady=3
                             )
+
+                            # 2. Gambar Stop Loss & Teks
+                            sl_val = float(ai_data['stop_loss'])
+                            fig.add_hline(y=sl_val, line_dash="dash", line_color="#f23645", line_width=1.5)
+                            fig.add_annotation(
+                                x=1.01, y=sl_val, xref="paper", yref="y",
+                                text=f"<b>STOP LOSS</b><br>{sl_val:,.0f}",
+                                showarrow=False, xanchor="left", align="left",
+                                font=dict(size=10, color="#f23645", family="IBM Plex Mono"),
+                                bgcolor="rgba(0,0,0,0.8)", bordercolor="#f23645", borderwidth=1, padx=5, pady=3
+                            )
+
+                            # 3. Gambar Target Profit (TP1) & Teks
                             if ai_data.get('tp1'):
-                                fig.add_hline(
-                                    y=float(ai_data['tp1']),
-                                    line_dash="dash", line_color="#089981", line_width=1.5,
+                                tp_val = float(ai_data['tp1'])
+                                fig.add_hline(y=tp_val, line_dash="dash", line_color="#089981", line_width=1.5)
+                                fig.add_annotation(
+                                    x=1.01, y=tp_val, xref="paper", yref="y",
+                                    text=f"<b>TARGET</b><br>{tp_val:,.0f}",
+                                    showarrow=False, xanchor="left", align="left",
+                                    font=dict(size=10, color="#089981", family="IBM Plex Mono"),
+                                    bgcolor="rgba(0,0,0,0.8)", bordercolor="#089981", borderwidth=1, padx=5, pady=3
                                 )
                         except Exception as e:
                             st.warning("AI gagal menghasilkan kordinat harga yang pas.")
@@ -5199,7 +5224,7 @@ if current_view == "dashboard":
                         font=dict(color=tv_text_color, size=11),
                         xaxis=dict(showgrid=False, rangeslider=dict(visible=False), range=[df_chart.index[0], future_date]),
                         yaxis=dict(showgrid=False, side="right"),
-                        margin=dict(l=0, r=60, t=10, b=40),
+                        margin=dict(l=0, r=90, t=10, b=40), # Margin kanan (r) diperlebar agar teks muat
                         height=550,
                         showlegend=False
                     )
