@@ -5480,29 +5480,41 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
             else:
                 st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
-            # ── Executive Summary — di bawah chart, full width ───────────
+# ── Executive Summary — di bawah chart, full width ───────────
             if run_analysis and ai_text_verdict:
                 bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f8fafc'
                 bd_color = tv_border if not df_chart.empty else 'transparent'
+                
+                # Membersihkan enter berlebih dari AI agar tidak jadi spasi raksasa
+                import re
+                verdict_clean = re.sub(r'\n{3,}', '\n\n', ai_text_verdict)
+                
                 st.markdown(f"""
-                <div style="
+                <style>
+                /* Memaksa paragraf & list di dalam box ini untuk rapat */
+                .sigma-tp-box p {{ margin: 0 0 4px 0 !important; }}
+                .sigma-tp-box ul {{ margin: 4px 0 8px 0 !important; padding-left: 20px !important; }}
+                .sigma-tp-box li {{ margin-bottom: 2px !important; }}
+                </style>
+                
+                <div class="sigma-tp-box" style="
                     background:{bg_card};
                     border:1px solid {bd_color};
                     border-left:3px solid #F5C242;
                     border-radius:0 8px 8px 0;
-                    padding:20px 24px 20px 20px;
+                    padding:16px 20px;
                     margin-top:14px;
-                    line-height:1.75;
+                    line-height:1.45; /* Diperkecil dari 1.75 biar mepet */
                     font-family:'IBM Plex Mono',monospace;
                 ">
                   <div style="font-size:0.65rem;letter-spacing:0.14em;color:#F5C242;
-                      font-weight:700;text-transform:uppercase;margin-bottom:14px;
+                      font-weight:700;text-transform:uppercase;margin-bottom:8px;
                       display:flex;align-items:center;gap:8px;">
                     📋 TRADE PLAN SIGMA
                   </div>
                   <div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'};
                       white-space:pre-wrap;word-break:break-word;">
-{ai_text_verdict}
+{verdict_clean}
                   </div>
                 </div>
                 """, unsafe_allow_html=True)
