@@ -4987,13 +4987,22 @@ if current_view == "dashboard":
 
                         dashboard_prompt = f"Kamu adalah SIGMA AI. Analisa saham {ticker_input}.\\nHarga Terakhir: {live_price_str}\\n\\n{vol_context}\\n\\nData Fundamental:\\n{fund_context}\\n\\nBerikan format JSON di akhir jawaban dengan struktur: entry_low, entry_high, stop_loss, tp1, tp2, tp3 (isi dengan angka murni, atau null jika tidak ada)."
 
+                        # --- PERBAIKAN BLOK PEMANGGILAN AI ---
                         try:
-                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                        except Exception as e_groq:
+                            # Coba panggil Groq dengan 2 parameter (prompt & history kosong)
+                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt, [])
+                        except TypeError:
                             try:
-                                ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
-                            except Exception as e_gem:
-                                ai_raw_result = f"Gagal memanggil AI: {e_gem}"
+                                # Jika ternyata Groq kamu cuma butuh 1 parameter
+                                ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
+                            except Exception as e_fallback:
+                                ai_raw_result = f"Gagal eksekusi AI Groq: {e_fallback}"
+                        except Exception as e_main:
+                            ai_raw_result = f"Sistem AI gagal merespons: {e_main}"
+                        # -------------------------------------
+
+                        # Parsing JSON
+                        try:
 
                         try:
                             json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
