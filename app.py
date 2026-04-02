@@ -4178,7 +4178,6 @@ if st.session_state.user is None:
 
 
 
-
 # ─────────────────────────────────────────────
 # PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
@@ -4209,41 +4208,69 @@ if current_view == "dashboard":
         st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
         st.stop()
 
-    # ── CSS BARU UNTUK FIX UKURAN DESKTOP & MOBILE ──
-    # (Pastikan blok CSS override yang lama dihapus/diganti dengan ini)
-    st.markdown('''
+    # ── CONTAINER OVERRIDE — DESKTOP SPACE & PENGUNCI LAYAR MOBILE ──
+    st.markdown("""
     <style>
-    /* Desktop: Kasih space kanan-kiri biar gak mentok (Gambar 2 & 3) */
+    /* 1. Pengaturan Desktop: Memberi space di kanan-kiri (agar tidak mentok) */
     [data-testid="stMainBlockContainer"] {
         max-width: 1250px !important;
         width: 95% !important;
         margin: 0 auto !important;
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 2rem !important;
     }
 
-    /* Mobile: Anti goyang & anti teks terpotong (Gambar 1) */
+    /* 2. Pengaturan Mobile: KUNCI TOTAL agar tidak terpotong & tidak bisa geser horizontal */
     @media (max-width: 768px) {
-        html, body {
-            overflow-x: hidden !important; /* Kunci layar biar gak bisa digeser ke samping */
+        html, body, .stApp {
+            overflow-x: hidden !important;
+            width: 100vw !important;
             max-width: 100vw !important;
+            position: relative;
         }
+        
         [data-testid="stMainBlockContainer"] {
-            max-width: 100% !important;
-            width: 100% !important;
-            padding-left: 16px !important; /* Space aman teks agar tidak nempel bezel */
-            padding-right: 16px !important;
+            max-width: 100vw !important;
+            width: 100vw !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+            padding-top: 1rem !important;
             margin: 0 !important;
+            overflow-x: hidden !important;
         }
-        /* Menyesuaikan sedikit ukuran font tabel dan metrik */
-        [data-testid="stMetricValue"] { font-size: 1.15rem !important; }
-        .stDataFrame { overflow-x: auto !important; }
+
+        /* Memaksa grafik dan tabel agar muat di layar */
+        canvas, .user-select-none, iframe {
+            max-width: 100% !important;
+        }
+
+        .stDataFrame {
+            width: 100% !important;
+            overflow-x: auto !important; /* Tabel boleh scroll ke samping di dalam kotaknya saja */
+        }
+
+        [data-testid="stMetric"] {
+            padding: 10px 10px !important;
+        }
+        
+        [data-testid="stMetricValue"] {
+            font-size: 1.1rem !important; 
+        }
+        
+        [data-testid="stVerticalBlock"] {
+            gap: 0.5rem !important;
+        }
+    }
+
+    section[data-testid="stMain"] {
+        align-items: center !important;
     }
     </style>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
     # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
     is_dark = st.session_state.get("theme", "dark") == "dark"
-    
 
     # --- VARIABEL WARNA TERMINAL ---
     text_main  = "#e8eaf0" if is_dark else "#0d1117"
@@ -4987,22 +5014,18 @@ if current_view == "dashboard":
 
                         dashboard_prompt = f"Kamu adalah SIGMA AI. Analisa saham {ticker_input}.\\nHarga Terakhir: {live_price_str}\\n\\n{vol_context}\\n\\nData Fundamental:\\n{fund_context}\\n\\nBerikan format JSON di akhir jawaban dengan struktur: entry_low, entry_high, stop_loss, tp1, tp2, tp3 (isi dengan angka murni, atau null jika tidak ada)."
 
-                        # --- PERBAIKAN BLOK PEMANGGILAN AI ---
                         try:
-                            # Coba panggil Groq dengan 2 parameter (prompt & history kosong)
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt, [])
                         except TypeError:
                             try:
-                                # Jika ternyata Groq kamu cuma butuh 1 parameter
                                 ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                            except Exception as e_fallback:
-                                ai_raw_result = f"Gagal eksekusi AI Groq: {e_fallback}"
-                        except Exception as e_main:
-                            ai_raw_result = f"Sistem AI gagal merespons: {e_main}"
-                        # -------------------------------------
-
-                        # Parsing JSON
-                        try:
+                            except Exception as e_groq:
+                                ai_raw_result = f"Gagal memanggil AI: {e_groq}"
+                        except Exception as e_groq_main:
+                            try:
+                                ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+                            except Exception as e_gem:
+                                ai_raw_result = f"Gagal memanggil AI: {e_gem}"
 
                         try:
                             json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
