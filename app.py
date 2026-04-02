@@ -2513,7 +2513,7 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
-[data-testid="stMainBlockContainer"] {{ max-width: 800px !important; margin: 0 auto !important; padding: 0 16px 120px !important; overflow-y: visible !important; }}
+[data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
 div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
 [data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.9rem !important; }}
@@ -3174,7 +3174,7 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
-[data-testid="stMainBlockContainer"] {{ max-width: 800px !important; margin: 0 auto !important; padding: 0 16px 120px !important; overflow-y: visible !important; }}
+[data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
 div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
 [data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.9rem !important; }}
@@ -3187,6 +3187,9 @@ hr {{ border-color: {C['border']} !important; }}
 [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
 [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
 @media (max-width: 768px) {{
+    html, body {{ overflow-x: hidden !important; max-width: 100vw !important; }}
+    .stApp {{ overflow-x: hidden !important; }}
+    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 16px 120px !important; overflow-x: hidden !important; }}
     [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 16px 120px !important; }}
     [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
     [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.25rem !important; }}
@@ -4439,8 +4442,7 @@ if current_view == "dashboard":
     }}
 
     /* ── TICKER TAPE ── */
-    .trm-ticker-wrap {{
-        overflow: hidden;
+   .trm-ticker-wrap {{ overflow: hidden; max-width: 100%;
         white-space: nowrap;
         border-top: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
         border-bottom: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
