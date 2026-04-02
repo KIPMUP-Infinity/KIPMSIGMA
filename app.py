@@ -4771,53 +4771,45 @@ if current_view == "dashboard":
         """, unsafe_allow_html=True)
 
         # 3. FUNGSI RENDER (PASTIKAN RETURN HANYA STRING HTML)
-        def get_clean_news_html(url, label_tag):
+        # --- FUNGSI NEWS (PASTIKAN RETURN STRING HTML) ---
+        def render_news_feed(url, tag_label):
+            import feedparser
             try:
                 feed = feedparser.parse(url)
-                # Variabel penampung string (HARUS STRING)
-                final_html_string = ""
-                
-                # Kita olah data mentah jadi baris HTML di sini
-                for entry in feed.entries[:12]:
-                    # Paksa ambil title & link sebagai string murni
-                    e_title = str(entry.get('title', 'No Title'))
-                    e_link = str(entry.get('link', '#'))
-                    e_date = str(entry.get('published', 'Recent'))[:16]
-                    
-                    # Tambahkan ke variabel penampung
-                    final_html_string += f'''
-                    <a href="{e_link}" target="_blank" class="news-entry-sigma">
-                        <div class="news-title-sigma">{e_title}</div>
-                        <div class="news-meta-sigma">[{label_tag}] • {e_date}</div>
-                    </a>
-                    '''
-                return final_html_string if final_html_string else "No news found."
+                html_str = ""
+                for entry in feed.entries[:10]:
+                    date_str = entry.get('published', '')[:16]
+                    # Kita susun jadi string HTML di sini agar tidak bocor coding
+                    html_str += f"""
+                    <a href='{entry.link}' target='_blank' style='text-decoration:none;'>
+                        <div style='padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);'>
+                            <div style='color:{text_main}; font-size:13px; line-height:1.4;'>{entry.title}</div>
+                            <div style='color:{text_sub}; font-size:10px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
+                        </div>
+                    </a>"""
+                return html_str if html_str else "No news found."
             except:
-                return "Failed to fetch news."
+                return "Failed to load news."
 
-        # 4. FETCHING (Simpan ke variabel baru)
-        # Global pakai CNBC International karena lebih stabil
-        domestic_html = get_clean_news_html("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
-        global_html = get_clean_news_html("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
-
-        # 5. TAMPILKAN (Layout 2 Kolom)
+        # RENDER BOX NEWS
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         col_n1, col_n2 = st.columns(2)
-
+        
         with col_n1:
+            content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
-            <div class="news-card-sigma">
-                <div class="news-header-sigma">🇮🇩 DOMESTIC MARKET NEWS</div>
-                <div class="news-scroll-sigma">{domestic_html}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='flex:1; overflow-y:auto;'>{content_id}</div>
+            </div>""", unsafe_allow_html=True)
 
         with col_n2:
+            content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
             st.markdown(f"""
-            <div class="news-card-sigma">
-                <div class="news-header-sigma">🌎 GLOBAL ECONOMIC PULSE</div>
-                <div class="news-scroll-sigma">{global_html}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🌎 GLOBAL NEWS</div>
+                <div style='flex:1; overflow-y:auto;'>{content_glob}</div>
+            </div>""", unsafe_allow_html=True)
 
 
     with tab_rotation:
