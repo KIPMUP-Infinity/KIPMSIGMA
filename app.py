@@ -4803,19 +4803,10 @@ if current_view == "dashboard":
                 </div>
             """, unsafe_allow_html=True)
             
-            # Sumber: Yahoo Finance (International) atau Reuters
+            # Sumber: Reuters Business News
             global_news_html = render_news_feed("https://www.reutersagency.com/feed/?best-topics=business&format=xml", "REUTERS")
             st.markdown(global_news_html, unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
-            ```[cite: 1, 2]
-
-### Apa yang Berbeda?
-1.  **Tanpa Iframe/TradingView**: Berita sekarang ditarik dalam bentuk data teks murni melalui RSS[cite: 1, 2]. Ini jauh lebih ringan dan tidak akan terkena blokir atau "Oops! Something went wrong" seperti pada gambar Anda[cite: 2].
-2.  **Interactive List**: Setiap judul berita adalah *link* aktif yang akan membuka tab baru jika diklik oleh pengguna[cite: 1, 2].
-3.  **Real-Time Scraper**: Setiap kali halaman di-*refresh*, sistem akan melakukan permintaan data terbaru ke portal berita[cite: 1, 2].
-4.  **Custom Styling**: Tampilan diselaraskan dengan tema SIGMA (font IBM Plex dan aksen warna emas `#F5C242`)[cite: 2].
-
-**Catatan tambahan:** Pastikan server aplikasi Anda memiliki akses internet keluar agar fungsi `feedparser` dapat menjangkau URL RSS tersebut[cite: 1, 2].
             
             # Widget Berita Global (Wall Street / World)
             global_news_widget = f"""
