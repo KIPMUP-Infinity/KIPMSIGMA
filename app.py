@@ -4156,61 +4156,246 @@ if current_view == "dashboard":
     # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
     is_dark = st.session_state.get("theme", "dark") == "dark"
 
-    # --- VARIABEL WARNA BUNGLEON ---
-    met_bg = "linear-gradient(145deg, rgba(30,30,30,0.7), rgba(15,15,15,0.9))" if is_dark else "#ffffff"
-    met_border = "rgba(245, 194, 66, 0.2)" if is_dark else "#e5e7eb"
-    met_shadow = "0 8px 20px rgba(0,0,0,0.5)" if is_dark else "0 4px 10px rgba(0,0,0,0.05)"
-    met_hover = "rgba(245, 194, 66, 0.8)" if is_dark else "#F5C242"
-    met_hshadow = "0 12px 25px rgba(245, 194, 66, 0.15)" if is_dark else "0 10px 20px rgba(245, 194, 66, 0.15)"
-    text_main = "#ffffff" if is_dark else "#111827"
-    text_sub = "#a0a0a0" if is_dark else "#6b7280"
-    title_bg = "-webkit-linear-gradient(0deg, #F5C242, #FFD700, #FFA500)" if is_dark else "none"
-    title_fill = "transparent" if is_dark else "#111827"
-    card_bg = "linear-gradient(145deg, rgba(35,35,35,0.6), rgba(20,20,20,0.8))" if is_dark else "#ffffff"
-    card_border = "rgba(255,255,255,0.1)" if is_dark else "#e5e7eb"
-    card_shadow = "0 8px 32px rgba(0,0,0,0.4)" if is_dark else "0 4px 15px rgba(0,0,0,0.03)"
-    tv_theme = "dark" if is_dark else "light"
-    tv_bg = "rgba(20, 20, 20, 1)" if is_dark else "#ffffff"
-    tv_grid = "rgba(45, 45, 45, 1)" if is_dark else "#f3f4f6"
+    # --- VARIABEL WARNA TERMINAL ---
+    text_main  = "#e8eaf0" if is_dark else "#0d1117"
+    text_sub   = "#6b7a99" if is_dark else "#64748b"
+    card_bg    = "rgba(10,14,26,0.85)" if is_dark else "#ffffff"
+    card_border= "rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"
+    card_shadow= "0 4px 24px rgba(0,0,0,0.6)" if is_dark else "0 4px 16px rgba(0,0,0,0.06)"
+    met_bg     = "rgba(8,12,22,0.9)" if is_dark else "#f8fafc"
+    met_border = "rgba(245,194,66,0.18)" if is_dark else "#e2e8f0"
+    met_shadow = "0 2px 12px rgba(0,0,0,0.5)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
+    met_hover  = "#F5C242"
+    tv_theme   = "dark" if is_dark else "light"
 
     st.markdown(f"""
     <style>
-    [data-testid="stMetric"] {{ background: {met_bg} !important; border: 1px solid {met_border} !important; border-radius: 12px; padding: 15px 20px; box-shadow: {met_shadow}; transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; margin-bottom: 15px; }}
-    [data-testid="stMetric"]:hover {{ transform: translateY(-4px); border-color: {met_hover} !important; box-shadow: {met_hshadow}; }}
-    [data-testid="stMetricValue"] {{ font-size: 1.6rem !important; font-weight: 800 !important; color: {text_main} !important; }}
-    [data-testid="stMetricLabel"] {{ color: {text_sub} !important; font-weight: 600 !important; }}
-    .sigma-title {{ text-align: center; background: {title_bg}; -webkit-background-clip: text; -webkit-text-fill-color: {title_fill}; color: {text_main}; font-weight: 900; font-size: 3rem; margin-bottom: 0px; letter-spacing: 2px; }}
-    .sigma-subtitle {{ text-align: center; color: {text_sub}; font-size: 1.1rem; letter-spacing: 1px; margin-top: -5px; margin-bottom: 20px; }}
-    .fancy-divider {{ border: 0; height: 1px; background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(245, 194, 66, 0.6), rgba(0, 0, 0, 0)); margin-bottom: 30px; margin-top: 30px; }}
-    .dynamic-card {{ background: {card_bg}; border: 1px solid {card_border}; border-radius: 16px; padding: 20px; box-shadow: {card_shadow}; height: 100%; transition: transform 0.3s ease; }}
-    .dynamic-card:hover {{ transform: translateY(-4px); border-color: {met_hover}; }}
-    
-    [data-testid="stDataFrame"] [data-testid="stElementToolbar"] {{ display: none !important; opacity: 0 !important; pointer-events: none !important; }}
-    [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display: none !important; }}
-    [data-testid="stDataFrame"] .gdg-header-action {{ display: none !important; }}
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+    /* ── GLOBAL TERMINAL FONT ── */
+    .stApp, .stApp * {{ font-family: 'IBM Plex Sans', sans-serif !important; }}
+
+    /* ── HIDE STREAMLIT CHROME ── */
+    [data-testid="stDataFrame"] [data-testid="stElementToolbar"],
+    [data-testid="stDataFrame"] [aria-haspopup="menu"],
+    [data-testid="stDataFrame"] .gdg-header-action,
     [data-testid="stDataFrame"] div[class*="header"] svg {{ display: none !important; }}
     [data-testid="stDataFrame"] div[role="button"] {{ pointer-events: none !important; }}
-    [data-testid="stDataFrame"] div[role="columnheader"] {{ cursor: pointer !important; }}
+
+    /* ── METRIC CARDS — TERMINAL STYLE ── */
+    [data-testid="stMetric"] {{
+        background: {met_bg} !important;
+        border: 1px solid {met_border} !important;
+        border-radius: 6px !important;
+        padding: 14px 18px 12px !important;
+        box-shadow: {met_shadow} !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }}
+    [data-testid="stMetric"]::before {{
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #F5C242, transparent);
+        opacity: 0;
+        transition: opacity 0.2s;
+    }}
+    [data-testid="stMetric"]:hover {{ border-color: rgba(245,194,66,0.45) !important; box-shadow: 0 0 20px rgba(245,194,66,0.08) !important; }}
+    [data-testid="stMetric"]:hover::before {{ opacity: 1; }}
+    [data-testid="stMetricValue"] {{
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 1.35rem !important;
+        font-weight: 600 !important;
+        color: {text_main} !important;
+        letter-spacing: -0.5px !important;
+    }}
+    [data-testid="stMetricLabel"] {{
+        font-size: 0.72rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+        color: {text_sub} !important;
+    }}
+    [data-testid="stMetricDelta"] {{ font-family: 'IBM Plex Mono', monospace !important; font-size: 0.8rem !important; }}
+
+    /* ── TAB NAV — TERMINAL PILL STYLE ── */
+    [data-testid="stTabs"] [role="tablist"] {{
+        background: {"rgba(6,9,18,0.95)" if is_dark else "#f1f5f9"} !important;
+        border: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"} !important;
+        border-radius: 8px !important;
+        padding: 5px !important;
+        gap: 2px !important;
+        backdrop-filter: blur(10px) !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"] {{
+        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-size: 0.78rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.05em !important;
+        text-transform: uppercase !important;
+        border-radius: 5px !important;
+        color: {"rgba(107,122,153,1)" if is_dark else "#64748b"} !important;
+        padding: 8px 16px !important;
+        border: none !important;
+        background: transparent !important;
+        transition: all 0.2s !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"]:hover {{
+        color: {"rgba(232,234,240,0.8)" if is_dark else "#334155"} !important;
+        background: {"rgba(245,194,66,0.06)" if is_dark else "rgba(0,0,0,0.04)"} !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+        background: {"rgba(245,194,66,0.12)" if is_dark else "#ffffff"} !important;
+        color: {"#F5C242" if is_dark else "#0d1117"} !important;
+        font-weight: 600 !important;
+        box-shadow: {"0 1px 8px rgba(245,194,66,0.15), inset 0 0 0 1px rgba(245,194,66,0.2)" if is_dark else "0 1px 4px rgba(0,0,0,0.1)"} !important;
+    }}
+    [data-testid="stTabs"] [role="tabpanel"] {{
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin-top: 16px !important;
+    }}
+
+    /* ── SECTION LABEL — TERMINAL CATEGORY ── */
+    .trm-section {{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 28px 0 14px;
+    }}
+    .trm-section-line {{
+        flex: 1;
+        height: 1px;
+        background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"};
+    }}
+    .trm-section-label {{
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: {"#F5C242" if is_dark else "#94a3b8"};
+        white-space: nowrap;
+        padding: 3px 10px;
+        border: 1px solid {"rgba(245,194,66,0.2)" if is_dark else "#e2e8f0"};
+        border-radius: 3px;
+        background: {"rgba(245,194,66,0.05)" if is_dark else "#f8fafc"};
+    }}
+
+    /* ── DATA CARD ── */
+    .trm-card {{
+        background: {met_bg};
+        border: 1px solid {met_border};
+        border-radius: 8px;
+        padding: 20px 22px;
+        box-shadow: {met_shadow};
+        transition: border-color 0.2s;
+        margin-bottom: 12px;
+    }}
+    .trm-card:hover {{ border-color: rgba(245,194,66,0.3); }}
+    .trm-card-title {{
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #F5C242;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }}
+
+    /* ── INSIGHT CALLOUT ── */
+    .trm-insight {{
+        background: {"rgba(245,194,66,0.05)" if is_dark else "#fffbeb"};
+        border-left: 3px solid #F5C242;
+        border-radius: 0 6px 6px 0;
+        padding: 14px 18px;
+        margin: 12px 0;
+        font-size: 0.88rem;
+        color: {text_main};
+        line-height: 1.6;
+    }}
+
+    /* ── DIVIDER ── */
+    .fancy-divider {{
+        border: 0;
+        height: 1px;
+        background: {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
+        margin: 24px 0;
+    }}
+
+    /* ── DYNAMIC CARD (backward compat) ── */
+    .dynamic-card {{
+        background: {met_bg};
+        border: 1px solid {met_border};
+        border-radius: 8px;
+        padding: 20px 22px;
+        box-shadow: {met_shadow};
+        height: 100%;
+        transition: border-color 0.2s;
+    }}
+    .dynamic-card:hover {{ border-color: rgba(245,194,66,0.3); }}
     </style>
     """, unsafe_allow_html=True)
-        
-    st.markdown("<h1 class='sigma-title'>🌐 SIGMA TERMINAL</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='sigma-subtitle'>Global Market Hub & Macro Analytics</p>", unsafe_allow_html=True)
-    st.markdown("<hr class='fancy-divider' style='margin-top:0;'>", unsafe_allow_html=True)
-    
-    # KATEGORI TAB (4 TABS)
+
+    # ── TERMINAL HEADER ──
+    from datetime import datetime as _dt
+    _now = _dt.now().strftime("%d %b %Y  %H:%M WIB")
+    st.markdown(f"""
+    <div style="
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 4px 6px;
+        border-bottom: 1px solid {'rgba(245,194,66,0.12)' if is_dark else '#e2e8f0'};
+        margin-bottom: 18px;
+    ">
+        <div style="display:flex; align-items:baseline; gap:14px;">
+            <span style="
+                font-family:'IBM Plex Mono',monospace;
+                font-size:1.45rem;
+                font-weight:700;
+                letter-spacing:0.12em;
+                color:#F5C242;
+                text-transform:uppercase;
+            ">SIGMA TERMINAL</span>
+            <span style="
+                font-family:'IBM Plex Mono',monospace;
+                font-size:0.65rem;
+                color:{'rgba(107,122,153,0.8)' if is_dark else '#94a3b8'};
+                letter-spacing:0.1em;
+                border:1px solid {'rgba(107,122,153,0.25)' if is_dark else '#e2e8f0'};
+                padding:2px 8px;
+                border-radius:3px;
+            ">KIPM — MnM</span>
+        </div>
+        <div style="
+            font-family:'IBM Plex Mono',monospace;
+            font-size:0.7rem;
+            color:{'rgba(107,122,153,0.7)' if is_dark else '#94a3b8'};
+            letter-spacing:0.08em;
+            text-align:right;
+        ">
+            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">● LIVE</span>&nbsp;&nbsp;{_now}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── TAB NAV ──
     tab_macro, tab_rotation, tab_conglo, tab_ai = st.tabs([
-        "🌍 Global, Macro & News", 
-        "🔄 Index & Sector Rotation", 
-        "👑 Conglomerate Map",
-        "🤖 AI Stock Insight"
+        "  GLOBAL MACRO & NEWS  ",
+        "  INDEX & SECTOR ROTATION  ",
+        "  CONGLOMERATE MAP  ",
+        "  AI STOCK INSIGHT  ",
     ])
 
     # ==========================================
     # TAB 1: GLOBAL, MACRO & NEWS
     # ==========================================
     with tab_macro:
-        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 15px; font-weight: 700;'>⚡ Live Market Pulse</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         @st.cache_data(ttl=300)
         def get_market_data(ticker_dict):
@@ -4248,7 +4433,7 @@ if current_view == "dashboard":
             idx_data = get_market_data(indices_tickers)
             com_data = get_market_data(commodities_tickers)
         
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🌍 Global Indices & Volatility</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>GLOBAL INDICES &amp; VOLATILITY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if idx_data:
             items_idx = list(idx_data.items())
             for i in range(0, len(items_idx), 5):
@@ -4264,7 +4449,7 @@ if current_view == "dashboard":
             
         st.markdown("<br>", unsafe_allow_html=True)
 
-        st.markdown("<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>🛢️ Commodities & Forex</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>COMMODITIES &amp; FOREX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if com_data:
             items_com = list(com_data.items())
             for i in range(0, len(items_com), 5):
@@ -4283,17 +4468,17 @@ if current_view == "dashboard":
         else:
             st.warning("⚠️ Gagal menarik data komoditas.")
 
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        
 
         # --- KORELASI MAKRO EKONOMI ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-bottom: 5px; font-weight: 700;'>📊 Korelasi Makro Ekonomi: Indonesia vs US</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size:0.95rem; margin-bottom: 25px;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KORELASI MAKRO EKONOMI — INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
 
         macro_col1, macro_col2 = st.columns(2)
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
-            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>🇮🇩 Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
                 "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
@@ -4302,7 +4487,7 @@ if current_view == "dashboard":
             st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
         with macro_col2:
-            st.markdown(f"<p style='text-align:center; color:{text_main}; font-weight:700;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>🇺🇸 Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
                 "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
@@ -4310,21 +4495,20 @@ if current_view == "dashboard":
             }, index=dates)
             st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
-        st.info("💡 **The SIGMA View:** Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan **Inflasi RI** belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.")
-        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(f"<div class='trm-insight'>💡 <b>SIGMA VIEW —</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
 
         # --- MARKET INSIGHT ---
         col1, col2 = st.columns(2)
         with col1:
             st.markdown(f"""
-            <div class="dynamic-card">
-                <h5 style='color:#F5C242; margin-top:0;'>🏗️ Fundamental & The Real Macro</h5>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>📈 GDP & PMI Manufaktur:</b><br>
-                Perekonomian ditopang konsumsi rumah tangga. Angka PMI di atas 50 menandakan ekspansi pabrik.
+            <div class="trm-card">
+                <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+                <span style='color:#F5C242;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
+                Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
                 </p>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>⚖️ Cadangan Devisa & Neraca Perdagangan:</b><br>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <span style='color:#F5C242;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
                 Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
                 </p>
             </div>
@@ -4332,27 +4516,25 @@ if current_view == "dashboard":
 
         with col2:
             st.markdown(f"""
-            <div class="dynamic-card">
-                <h5 style='color:#ff5555; margin-top:0;'>🔥 Rotasi & Kurva Imbal Hasil</h5>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>📉 Yield Curve Obligasi RI:</b><br>
+            <div class="trm-card">
+                <div class="trm-card-title" style="color:#f23645;">Rotasi &amp; Kurva Imbal Hasil</div>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+                <span style='color:#f23645;font-weight:600;'>Yield Curve Obligasi RI</span><br>
                 Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
                 </p>
-                <p style='color:{text_main}; font-size: 0.95rem; line-height: 1.6;'>
-                <b>⚠️ Sektor Fokus:</b><br>
-                Jika komoditas memanas, amati Coal & Gold. Jika suku bunga turun, uang institusi mengalir ke Big Banks dan Properti.
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
+                Komoditas memanas → Coal &amp; Gold. Suku bunga turun → Big Banks &amp; Properti.
                 </p>
             </div>
             """, unsafe_allow_html=True)
 
-        st.markdown("<br><br>", unsafe_allow_html=True)
-
         # ---------------------------------------------------------
         # LIVE NEWS FEED 
         # ---------------------------------------------------------
-        st.markdown("<hr class='fancy-divider' style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
-        st.markdown(f"<h4 style='color:#F5C242; margin-top: 10px; margin-bottom: 20px;'>📰 Live Market News</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Berita ekonomi dan pergerakan pasar saham global maupun domestik terkini.</p>", unsafe_allow_html=True)
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Berita ekonomi dan pasar saham global & domestik terkini</p>", unsafe_allow_html=True)
         
         news_theme = "dark" if is_dark else "light"
         news_widget = f"""
@@ -4381,7 +4563,7 @@ if current_view == "dashboard":
             return df_style.applymap(func, subset=subset)
 
         # --- 1. SECTOR ROTATION (RRG) ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 15px; font-weight: 700;'>🔄 Sector Rotation (RRG Concept)</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION — RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         col_rot1, col_rot2 = st.columns([1.5, 1])
         with col_rot1:
@@ -4393,12 +4575,12 @@ if current_view == "dashboard":
             st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
         
         with col_rot2:
-            st.info("🎯 **SIGMA Insight:** Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (*Weakening*) menuju sektor energi dan material dasar (*Improving/Leading*). Pantau ketat emiten yang berada di fase Improving.")
+            st.markdown(f"<div class='trm-insight'>🎯 <b>SIGMA INSIGHT —</b> Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (<i>Weakening</i>) menuju sektor energi dan material dasar (<i>Improving/Leading</i>). Pantau ketat emiten yang berada di fase Improving.</div>", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 2. MSCI INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🏆 MSCI Indonesia Index Tracker</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         msci_data = {
             "Ticker": [
@@ -4428,19 +4610,19 @@ if current_view == "dashboard":
         }
         df_msci = pd.DataFrame(msci_data)
         
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. MSCI Standard Index (The Giants)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index — The Giants</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. MSCI Small Cap Index (The Mid-Caps)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index — The Mid-Caps</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>3. Excluded / Out (Keluar dari Indeks)</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded — Keluar dari Indeks</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 3. FTSE INDEX TRACKER ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇬🇧 FTSE Global Equity Index (Indonesia)</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX — INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         ftse_data = {
             "Ticker": [
@@ -4466,16 +4648,16 @@ if current_view == "dashboard":
         }
         df_ftse = pd.DataFrame(ftse_data)
 
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. FTSE Large & Mid Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. FTSE Small Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # --- 4. LQ45 INDEX TRACKER (FIX 45 SAHAM) ---
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🇮🇩 Indeks LQ45 (Tepat 45 Saham Aktif)</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX — 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
@@ -4513,18 +4695,18 @@ if current_view == "dashboard":
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        st.markdown(f"<p style='color:#F5C242; font-size:1.05rem; font-weight:700; margin-bottom:10px;'>1. Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
-        st.markdown(f"<p style='color:#ff5555; font-size:1.05rem; font-weight:700; margin-bottom:10px; margin-top:20px;'>2. Didepak dari LQ45</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
     # ==========================================
     # TAB 3: CONGLOMERATE MAP
     # ==========================================
     with tab_conglo:
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>👑 Peta Saham Konglomerasi Indonesia</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG.</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
         
         conglo_data = [
             {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
@@ -4591,11 +4773,13 @@ if current_view == "dashboard":
         st.dataframe(df_display, use_container_width=True, hide_index=True)
         
         st.markdown(f"""
-        <div class="dynamic-card" style="margin-top: 15px;">
-            <h5 style='color:#F5C242; margin-top:0;'>💡 SIGMA Insight: The Power of Conglomerates</h5>
-            <p style='color:{text_main}; font-size: 0.92rem; line-height: 1.6;'>
-            Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.<br><br>
-            <b>Tips Trading:</b> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
+        <div class="trm-card" style="margin-top: 16px;">
+            <div class="trm-card-title">SIGMA INSIGHT — The Power of Conglomerates</div>
+            <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+            Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
+            </p>
+            <p style='color:{text_sub}; font-size: 0.85rem; line-height: 1.7; margin:10px 0 0;'>
+            <span style='color:#F5C242;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -4606,8 +4790,8 @@ if current_view == "dashboard":
     # TAB 4: AI STOCK INSIGHT (AUTO DRAWING CHART)
     # ==========================================
     with tab_ai:
-        st.markdown(f"<h4 style='color:{text_main}; margin-top: 10px; margin-bottom: 5px; font-weight: 700;'>🤖 SIGMA AI - Auto Technical & Fundamental Insight</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:{text_sub}; font-size: 0.9rem; margin-bottom: 20px;'>Analisis instan menggunakan mesin AI SIGMA dan data Live IDX, dilengkapi dengan Auto-Drawing Plan di Chart.</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI — AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan · Data Live IDX · Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
         col_input, col_btn, col_empty = st.columns([2, 1, 3])
         with col_input:
@@ -4616,7 +4800,7 @@ if current_view == "dashboard":
             st.markdown("<br>", unsafe_allow_html=True) 
             run_analysis = st.button("🚀 Analyze with SIGMA", use_container_width=True)
 
-        st.markdown("<hr class='fancy-divider' style='margin-top:10px; margin-bottom:20px;'>", unsafe_allow_html=True)
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         if ticker_input:
             df_chart = pd.DataFrame()
@@ -4935,17 +5119,19 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
 
             # 4. Tampilkan Verdict Text AI di bawah Chart
             if run_analysis and ai_text_verdict:
-                st.markdown(f"<h5 style='color:{text_main}; margin-top: 20px;'>🧠 Executive Summary</h5>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section' style='margin-top:24px;'><div class='trm-section-line'></div><span class='trm-section-label'>EXECUTIVE SUMMARY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
                 st.markdown(f"""
-                <div class="dynamic-card" style="padding: 20px; margin-top: 10px; border-left: 4px solid #F5C242;">
+                <div class="trm-card" style="border-left: 3px solid #F5C242; border-radius: 0 8px 8px 0;">
                     {ai_text_verdict}
                 </div>
                 """, unsafe_allow_html=True)
             elif not run_analysis:
                 st.markdown(f"""
-                <div class="dynamic-card" style="padding: 20px; text-align: center; margin-top: 20px;">
-                    <span style="font-size: 3rem;">🤖</span>
-                    <p style="color:{text_sub}; margin-top: 10px;">Klik <b>Analyze with SIGMA</b> untuk memproses data teknikal dan fundamental, lalu menggambar Trading Plan otomatis di atas Chart.</p>
+                <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">◈</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Masukkan kode saham dan klik <span style='color:#F5C242;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume — lalu menggambar Trade Plan otomatis di Chart.
+                    </p>
                 </div>
                 """, unsafe_allow_html=True)
 
