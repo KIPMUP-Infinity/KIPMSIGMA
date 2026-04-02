@@ -5364,12 +5364,22 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     tickvals = x_str[::step]
 
                     # ── Layout ────────────────────────────────────────────
-                    ax = dict(
+                    # Konfigurasi khusus untuk x-axis (kategori, label tanggal)
+                    ax_x = dict(
                         type='category',
                         showgrid=False,
                         showline=True, linecolor=tv_border, linewidth=1,
                         zeroline=False,
-                        tickangle=0,
+                        tickangle=-30,
+                        tickfont=dict(size=10),
+                    )
+                    # Konfigurasi khusus untuk y-axis (linear, nilai numerik)
+                    ax_y = dict(
+                        showgrid=True,
+                        gridcolor=tv_border,
+                        showline=True, linecolor=tv_border, linewidth=1,
+                        zeroline=False,
+                        tickfont=dict(size=10),
                     )
                     fig.update_layout(
                         template='plotly_dark' if is_dark else 'plotly_white',
@@ -5378,14 +5388,14 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         font=dict(color=tv_text_color, size=11),
                         height=820,
                         showlegend=False,
-                        margin=dict(l=0, r=10, t=10, b=10),
-                        xaxis =dict(**ax, rangeslider=dict(visible=False),
+                        margin=dict(l=0, r=160, t=10, b=40),
+                        xaxis =dict(**ax_x, rangeslider=dict(visible=False),
                                     range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
-                        xaxis2=dict(**ax, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
-                        xaxis3=dict(**ax, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
-                        yaxis =dict(**ax, type='linear', side='right', title=''),
-                        yaxis2=dict(**ax, type='linear', side='right', title='VOL'),
-                        yaxis3=dict(**ax, type='linear', side='right', title='RSI', range=[0,100]),
+                        xaxis2=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
+                        xaxis3=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
+                        yaxis =dict(**ax_y, type='linear', side='right', title=''),
+                        yaxis2=dict(**ax_y, type='linear', side='right', title='VOL'),
+                        yaxis3=dict(**ax_y, type='linear', side='right', title='RSI', range=[0,100]),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
@@ -5409,8 +5419,6 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
 
                 except Exception as e:
                     st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
-            else:
-                st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
             else:
                 st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
