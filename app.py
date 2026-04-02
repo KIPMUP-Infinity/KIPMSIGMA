@@ -1880,9 +1880,21 @@ R:R minimal 1:2 | fraksi BEI: <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb
 
 FORMAT TRADE PLAN:
 📊 TRADE PLAN — [SAHAM] ([TF]) | ⚡Bias:[Bull/Bear/Sideways]
-🎯Entry:[harga] | 🛑SL:[harga] | ✅TP1:[harga] | ✅TP2:[harga]
-📦Bandarmologi:[ringkasan] | ⚠️Invalidasi:[kondisi] | ⚠️DYOR
-FRAKSI BEI(wajib): <200=Rp1|200-500=Rp2|500-2rb=Rp5|2rb-5rb=Rp10|>5rb=Rp25
+🎯 Entry: Rp[X] – Rp[Y]
+🛑 SL: Rp[Z] *(invalidasi: [zona/struktur yang ditembus])*
+✅ TP1: Rp[A] *(alasan: [resistance/zona teknikal])*
+✅ TP2: Rp[B] *(alasan: [zona berikutnya])* ← hanya jika ada struktur jelas
+✅ TP3: Rp[C] *(alasan: [zona mayor])* ← hanya jika ada struktur jelas
+📦 Bandarmologi: [ringkasan flow]
+📊 Volume: [sinyal volume kunci — spike/dry-up/divergensi]
+⚠️ Invalidasi: [kondisi yang membatalkan setup]
+⚠️ #DYOR
+
+ATURAN TP WAJIB:
+- TP dari struktur teknikal: resistance, swing high, FVG unmitigated, OB bearish, level psikologis
+- DILARANG TP dari rasio matematika murni. Rasio boleh dihitung setelah TP ditentukan.
+- Jika tidak ada resistance jelas → tulis TP1 saja. Jangan paksakan TP2/TP3.
+FRAKSI BEI (wajib): <200=Rp1 | 200-500=Rp2 | 500-2rb=Rp5 | 2rb-5rb=Rp10 | >5rb=Rp25
 
 ====================================
 FRAMEWORK FUNDAMENTAL — MULTI-FRAMEWORK
@@ -2193,10 +2205,30 @@ Minyak→PGAS/MEDC/ELSA | Emas→ANTM/MDKA/BRMS
 Rate naik→BBCA/BBRI/BMRI/BBNI | Rate turun→BSDE/CTRA/SMGR
 DXY naik→Rupiah lemah | Komoditas ekspor naik→devisa masuk→Rupiah menguat
 
-=== VOLUME ANOMALI ===
-2-3x normal=perhatikan | 5x=signifikan | 10x+=KUAT | 50-100x=EKSTREM
-Estimasi posisi bandar = Volume anomali - Volume normal
-Estimasi distribusi = Posisi bandar ÷ Volume harian saat naik
+=== VOLUME INTELLIGENCE (WAJIB DIANALISA) ===
+DATA TERSEDIA: volume OHLCV (yfinance) — spike ratio vs 20-day avg, nilai transaksi, price-volume divergence.
+
+SINYAL VOLUME KRITIS:
+• Spike 2x avg   → perhatikan arah harga, institutional bisa masuk/keluar
+• Spike 5x avg   → signifikan, kemungkinan besar ada aksi korporasi atau institutional
+• Spike 10x+     → ekstrem, event besar — cek berita
+• Volume dry-up (5-bar avg < 50% dari 20-bar avg) saat sideways/koreksi → akumulasi diam-diam
+• Harga naik + volume turun → momentum lemah, waspadai reversal atau false breakout
+• Harga turun + volume spike → distribusi besar ATAU kapitulasi (cek candle: jika long wick = kapitulasi)
+• Breakout tanpa volume → false breakout di IDX — jangan langsung entry
+
+VOLUME PROXY IDX (tanpa broker data):
+• Nilai transaksi = volume × harga → proxy institutional activity
+• Nilai 5-hari vs rata-rata → naik = smart money aktif, turun = sepi/ritel saja
+• Estimasi posisi bandar = akumulasi volume anomali dari level rendah ke sekarang
+
+=== ATURAN MULTI-TARGET (KRITIS) ===
+• TP WAJIB dari struktur teknikal: resistance terdekat, swing high, FVG unmitigated, OB bearish, level psikologis (angka bulat).
+• DILARANG menentukan TP dari rasio matematika murni (1:1, 1:2, dsb). Rasio hanya boleh dihitung SETELAH TP ditentukan dari struktur.
+• Maksimal 3 TP, minimal 1. Jika tidak ada resistance jelas → tulis hanya TP1. Jangan paksakan TP2/TP3.
+• TP1 = target konservatif (resistance minor/FVG terdekat) → exit sebagian
+• TP2 = resistance berikutnya / OB bearish / swing high mayor → exit tambahan
+• TP3 = hanya jika ada level ekstrem yang jelas (ATH area, supply zone mayor, level psikologis kuat)
 
 === CORPORATE ACTION ===
 Split/Reverse/Right Issue/Buyback dapat mengubah EPS/DPS/BV per saham.
@@ -3646,40 +3678,65 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 
 TEMPLATE_TEKNIKAL = """
 [INSTRUKSI SANGAT TEGAS UNTUK AI]:
-Kamu HANYA BOLEH menjawab MENGGUNAKAN FORMAT YANG SAMA PERSIS SEPERTI DI BAWAH INI! 
+Kamu HANYA BOLEH menjawab MENGGUNAKAN FORMAT YANG SAMA PERSIS SEPERTI DI BAWAH INI!
 JANGAN MENGOCEH PANJANG LEBAR DI LUAR FORMAT! Jangan hilangkan emoji apapun!
 (Jika nama saham "SAHAM INI", BACA SENDIRI nama ticker dari gambar chart yang dilampirkan).
-Tugasmu adalah mengisi angka harga [X] dan penjelasan di dalam kurung kurawal sesuai dengan chart yang ada.
+
+ATURAN MULTI-TARGET (KRITIS):
+- TP HARUS berdasarkan struktur teknikal nyata: resistance terdekat, swing high, FVG unmitigated, OB bearish, level psikologis.
+- JANGAN menggunakan rasio matematika (1:1, 1:2) sebagai penentu TP. Rasio boleh DIHITUNG setelah TP ditentukan dari struktur.
+- Jika tidak ada resistance/zona yang jelas di atas entry → tulis hanya TP1. TP2/TP3 jangan dipaksakan.
+- Jumlah TP maksimal 3, minimal 1.
+
+ATURAN VOLUME (WAJIB DIANALISA DARI CHART):
+- Lihat histogram volume di bawah chart. Identifikasi: spike, dry-up, atau pola normal.
+- Spike volume + candle naik = konfirmasi bullish kuat.
+- Spike volume + candle turun = distribusi atau kapitulasi — waspadai.
+- Volume dry-up saat sideways/turun = akumulasi diam-diam, potensi reversal.
+- Harga breakout tanpa volume = false breakout di IDX — JANGAN langsung ikut.
+- Divergensi: harga naik tapi volume makin turun = momentum lemah.
 
 [TEMPLATE YANG WAJIB KAMU KELUARKAN SEBAGAI JAWABAN (JANGAN UBAH STRUKTURNYA)]:
 Berikut Trade Plan Teknikal (MnM Strategy+) untuk **{emiten}**:
 
 🟢 **MODEL 1 — REBOUND / MEAN REVERSION (Paling Relevan Saat Ini)**
-- **Bias:** [Jelaskan: Misal, Harga tertahan tepat di area Support kuat / IFVG Bull → Potensi technical bounce.]
-- **Entry:** Rp[X] - Rp[Y] 
-- **Stop Loss:** Rp[Z] (Ketat di bawah zona support terdekat)
-- **Target:** TP1: Rp[A] | TP2: Rp[B] 
-- **Inti Model:** Tangkap pantulan di area diskon. Exit cepat di area supply, tidak di-hold lama.
+- **Bias:** [Jelaskan: posisi harga vs IFVG/OB/Demand/EMA. Sebutkan apakah ada confluence zone yang menopang.]
+- **Volume:** [Analisa histogram volume di area support ini: spike? dry-up? konfirmasi atau tidak?]
+- **Entry:** Rp[X] – Rp[Y]
+- **Stop Loss:** Rp[Z] *(invalidasi: [sebutkan zona/candle yang di-breach]*) 
+- **Target:**
+  - TP1: Rp[A] *(alasan: [resistance/zona apa])*
+  - TP2: Rp[B] *(alasan: [sebutkan zona])* ← hapus baris ini jika tidak ada alasan teknikal
+  - TP3: Rp[C] *(alasan: [sebutkan zona])* ← hapus baris ini jika tidak ada alasan teknikal
+- **Inti Model:** Tangkap pantulan di area diskon. Exit sebagian di TP1, sisanya tunggu TP2 jika struktur konfirmasi.
 
 🔵 **MODEL 2 — CONFIRMATION / REVERSAL STRUCTURE (Paling Aman)**
-- **Bias:** [Jelaskan: Misal, Menunggu konfirmasi bahwa tekanan jual benar-benar usai dengan menjebol Resistance.]
-- **Entry:** Buy on Breakout jika harga tembus dan close di atas Rp[X].
-- **Stop Loss:** Rp[Y] (Di bawah harga breakout / retest).
-- **Target:** TP1: Rp[A] | TP2: Rp[B] 
-- **Inti Model:** Tidak menebak bottom. Fokus pada konfirmasi tren dibanding prediksi.
+- **Bias:** [Jelaskan: menunggu konfirmasi break struktur apa, di level berapa.]
+- **Volume:** [Volume seperti apa yang kamu butuhkan untuk validasi breakout ini? Sebutkan standar yang perlu dilihat.]
+- **Entry:** Buy on Breakout jika harga close di atas Rp[X] *(dengan volume di atas rata-rata)*.
+- **Stop Loss:** Rp[Y] *(di bawah candle breakout / retest level)*
+- **Target:**
+  - TP1: Rp[A] *(alasan: [resistance/zona apa])*
+  - TP2: Rp[B] *(alasan: [sebutkan zona])* ← hapus jika tidak ada
+- **Inti Model:** Tidak menebak bottom. Konfirmasi tren > prediksi. Volume breakout wajib ada.
 
 🟣 **MODEL 3 — DEEP ACCUMULATION (Spekulatif / Jika Penurunan Berlanjut)**
-- **Bias:** [Jelaskan: Misal, Antisipasi jika area Support saat ini jebol, harga akan berburu likuiditas ke base bawah.]
-- **Entry:** Rp[X] - Rp[Y] (Area Support/Demand yang lebih dalam, gunakan skema layering/cicil).
-- **Stop Loss:** Rp[Z] (Batas invalidasi tren mayor)
-- **Target:** TP1: Rp[A] | TP2: Rp[B]
-- **Inti Model:** Entry sebelum konfirmasi penuh, kompensasi dengan sizing dana yang kecil.
+- **Bias:** [Jelaskan: skenario jika support Model 1 jebol, harga hunting likuiditas ke mana.]
+- **Volume:** [Di area yang lebih dalam ini, volume dry-up atau spike seperti apa yang jadi sinyal entry?]
+- **Entry:** Rp[X] – Rp[Y] *(area support/demand lebih dalam, cicil/layering)*
+- **Stop Loss:** Rp[Z] *(batas invalidasi tren mayor)*
+- **Target:**
+  - TP1: Rp[A] *(alasan teknikal)*
+  - TP2: Rp[B] *(alasan teknikal)* ← hapus jika tidak ada
+- **Inti Model:** Entry sebelum konfirmasi penuh. Kompensasi dengan sizing kecil (max 30-50% alokasi normal).
 
-⚖️ **KESIMPULAN FINAL & KONFIRMASI**
+⚖️ **KESIMPULAN FINAL & REKOMENDASI**
 - **Struktur Saat Ini:** Mayor [Bullish/Bearish/Sideways] | Minor [Bullish/Bearish/Sideways]
-- **Konfirmasi Indikator:** [Sebutkan misal: Indikator momentum menunjukkan extreme oversold dan mulai melengkung naik. Ada divergence/tidak.]
-- **Saran Eksekusi:** Saat ini **Model [1/2/3]** paling rasional untuk dieksekusi secara taktis karena [Sebutkan alasannya dalam 1 kalimat].
-- **Conviction Score:** [X/5] [Tambahkan simbol bintang sesuai angka, cth: ⭐⭐⭐]
+- **Sinyal Volume:** [Ringkas temuan volume paling penting dari chart ini]
+- **Makro Relevan:** [Faktor makro apa yang perlu diperhatikan untuk saham ini? (BI Rate/DXY/komoditas/dll)]
+- **Konfirmasi Indikator:** [Sebutkan: divergence ada/tidak, posisi harga vs EMA 13/21/100/200]
+- **Saran Eksekusi:** Model [1/2/3] paling rasional saat ini karena [alasan 1 kalimat].
+- **Conviction Score:** [X/5] [Simbol bintang sesuai angka]
 
 ⚠️ *#DYOR. Edge ada di timing eksekusi, bukan sekadar memprediksi arah. Disiplin SL.*
 """
@@ -4512,34 +4569,113 @@ if current_view == "dashboard":
                             try: live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
                             except: pass
 
-                        # Prompt khusus meminta AI mengeluarkan output JSON murni di bagian bawah
+                        # ── VOLUME INTELLIGENCE dari OHLCV ──
+                        vol_context = ""
+                        if not df_chart.empty and 'Volume' in df_chart.columns:
+                            try:
+                                avg_vol_20 = df_chart['Volume'].rolling(20).mean().iloc[-1]
+                                avg_vol_5  = df_chart['Volume'].rolling(5).mean().iloc[-1]
+                                last_vol   = df_chart['Volume'].iloc[-1]
+                                last_close = df_chart['Close'].iloc[-1]
+                                last_value = last_vol * last_close  # nilai transaksi Rp
+
+                                # Spike ratio
+                                spike_ratio = last_vol / avg_vol_20 if avg_vol_20 > 0 else 1
+
+                                # Price-Volume divergence (5 hari)
+                                price_chg_5d = (df_chart['Close'].iloc[-1] - df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
+                                vol_chg_5d   = (avg_vol_5 - df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
+
+                                # Volume dry-up: 5-bar avg < 50% dari 20-bar avg
+                                dryup = avg_vol_5 < (avg_vol_20 * 0.5)
+
+                                # Value transaksi 5 hari (proxy institutional activity)
+                                val_5d = (df_chart['Volume'].iloc[-5:] * df_chart['Close'].iloc[-5:]).sum() if len(df_chart) >= 5 else 0
+
+                                # Label sinyal
+                                if spike_ratio >= 10:    vol_signal = "🔴 VOLUME EKSTREM (10x+) — kemungkinan besar institutional event"
+                                elif spike_ratio >= 5:   vol_signal = "🟠 VOLUME SANGAT TINGGI (5x+) — aksi korporasi atau institutional entry/exit"
+                                elif spike_ratio >= 2:   vol_signal = "🟡 VOLUME SPIKE (2x+) — perhatikan arah harga hari ini"
+                                elif dryup:              vol_signal = "🔵 VOLUME DRY-UP — tekanan jual/beli melemah, potensi akumulasi diam-diam"
+                                else:                    vol_signal = "⚪ Volume normal — tidak ada anomali signifikan"
+
+                                # Price-Volume divergence
+                                if price_chg_5d > 2 and vol_chg_5d < -20:
+                                    pvd_signal = "⚠️ DIVERGENSI: Harga naik tapi volume turun — momentum lemah, waspadai false breakout"
+                                elif price_chg_5d < -2 and vol_chg_5d < -20:
+                                    pvd_signal = "🔵 Volume turun saat harga turun — tekanan jual melemah, potensi bottom"
+                                elif price_chg_5d > 2 and vol_chg_5d > 20:
+                                    pvd_signal = "✅ Harga naik + volume naik — breakout dengan konfirmasi volume kuat"
+                                elif price_chg_5d < -2 and vol_chg_5d > 20:
+                                    pvd_signal = "⚠️ Volume spike saat turun — kemungkinan kapitulasi atau distribusi besar"
+                                else:
+                                    pvd_signal = "Volume dan harga bergerak konsisten — tidak ada divergensi signifikan"
+
+                                vol_context = f"""
+=== VOLUME INTELLIGENCE (Data OHLCV) ===
+Volume Terakhir     : {int(last_vol):,} lot
+Volume Avg 20 Hari  : {int(avg_vol_20):,} lot
+Volume Avg 5 Hari   : {int(avg_vol_5):,} lot
+Spike Ratio         : {spike_ratio:.1f}x
+Nilai Transaksi     : Rp {last_value:,.0f}
+Nilai 5 Hari        : Rp {val_5d:,.0f}
+Sinyal Volume       : {vol_signal}
+Price-Vol Divergence: {pvd_signal}
+Harga -5 hari       : {price_chg_5d:+.1f}% | Volume -5 hari: {vol_chg_5d:+.1f}%
+"""
+                            except:
+                                vol_context = ""
+
+                        # Prompt upgrade: multi-TP, volume, makro, fundamental
                         dashboard_prompt = f"""
-                        Sebagai SIGMA AI, berikan Executive Summary SINGKAT untuk saham {ticker_input}.
-                        Harga Terakhir: {live_price_str}
-                        
-                        Data Fundamental & Evaluasi:
-                        {fund_context}
-                        
-                        Berikan output dengan aturan ketat:
-                        1. Tulis penjelasan dalam format markdown biasa (Verdict, Valuasi, Teknikal, Action Plan).
-                        2. DI BAGIAN PALING BAWAH, kamu WAJIB memberikan satu blok JSON murni yang berisi angka prediksi untuk digambar di chart. JANGAN ADA TEKS LAIN DI DALAM BLOK JSON!
-                        
-                        Format Penjelasan:
-                        🎯 **VERDICT:** [BULLISH / BEARISH / WAIT & SEE]
-                        🏢 **Kondisi Bisnis & Valuasi:** (2 kalimat)
-                        📊 **Teknikal & Momentum:** (2 kalimat)
-                        💡 **Action Plan:** (Area buy, SL, Target)
-                        
-                        Format JSON Wajib (Sesuaikan angka dengan analisamu, angka HARUS INTEGER murni tanpa titik koma):
-                        ```json
-                        {{
-                            "entry_low": 5000,
-                            "entry_high": 5200,
-                            "target": 5600,
-                            "stop_loss": 4800
-                        }}
-                        ```
-                        """
+Kamu adalah SIGMA AI. Analisa saham {ticker_input} secara komprehensif dan tulis Executive Summary.
+Harga Terakhir: {live_price_str}
+
+{vol_context}
+
+Data Fundamental & Evaluasi:
+{fund_context}
+
+INSTRUKSI KETAT:
+1. Tulis analisa dalam format markdown (JANGAN keluar dari format di bawah).
+2. DI BAGIAN PALING BAWAH wajib ada satu blok JSON murni untuk auto-drawing chart.
+3. Target (TP) WAJIB berdasarkan struktur teknikal nyata: resistance terdekat, swing high, FVG unmitigated, OB, level psikologis. JANGAN pakai rasio matematika murni.
+4. Jumlah TP: buat 1 sampai 3 sesuai kondisi chart. Jika tidak ada resistance jelas di atas → jangan paksakan TP2/TP3 (isi null).
+5. Harga HARUS sesuai fraksi tick BEI. IDX = LONG ONLY (SL selalu di bawah entry).
+6. Volume: jadikan bahan analisa — spike, dry-up, divergensi. Jangan abaikan signal volume.
+
+FORMAT ANALISA (WAJIB IKUT PERSIS):
+
+🎯 **VERDICT:** [BULLISH / BEARISH / WAIT & SEE] — [1 kalimat alasan utama]
+
+📊 **TEKNIKAL & VOLUME**
+[3-4 kalimat: posisi harga vs struktur (IFVG/OB/Demand/EMA), kondisi volume (spike/dry-up/divergensi), momentum. Sebutkan level kunci yang terlihat dari data.]
+
+💰 **FUNDAMENTAL & MAKRO**
+[2-3 kalimat: kondisi bisnis, valuasi (undervalue/fair/overvalue), faktor makro yang relevan untuk sektor ini (suku bunga, kurs, komoditas, dll).]
+
+🗺️ **TRADE PLAN**
+- **Entry Area:** Rp[X] – Rp[Y]
+- **Stop Loss:** Rp[Z] *(alasan: [invalidasi struktur apa])*
+- **TP1:** Rp[A] *(alasan teknikal: [sebutkan level/zona])*
+- **TP2:** Rp[B] *(alasan: [sebutkan level/zona])* ← tulis "—" jika tidak ada alasan teknikal kuat
+- **TP3:** Rp[C] *(alasan: [sebutkan level/zona])* ← tulis "—" jika tidak ada alasan teknikal kuat
+- **Conviction:** [⭐ / ⭐⭐ / ⭐⭐⭐ / ⭐⭐⭐⭐ / ⭐⭐⭐⭐⭐]
+
+⚠️ *#DYOR. Disiplin SL. Edge ada di timing eksekusi.*
+
+FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
+```json
+{{
+    "entry_low": 0,
+    "entry_high": 0,
+    "stop_loss": 0,
+    "tp1": 0,
+    "tp2": null,
+    "tp3": null
+}}
+```
+"""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
@@ -4553,7 +4689,16 @@ if current_view == "dashboard":
                         try:
                             json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
                             if json_match:
-                                ai_data = json.loads(json_match.group(1))
+                                raw_json = json.loads(json_match.group(1))
+                                # Normalize schema: support both lama (target) dan baru (tp1/tp2/tp3)
+                                ai_data = {
+                                    "entry_low":  raw_json.get("entry_low", 0),
+                                    "entry_high": raw_json.get("entry_high", 0),
+                                    "stop_loss":  raw_json.get("stop_loss", 0),
+                                    "tp1": raw_json.get("tp1") or raw_json.get("target"),
+                                    "tp2": raw_json.get("tp2"),
+                                    "tp3": raw_json.get("tp3"),
+                                }
                                 ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
                             else:
                                 ai_text_verdict = ai_raw_result
@@ -4608,7 +4753,6 @@ if current_view == "dashboard":
                                 y0=float(ai_data['entry_low']), y1=float(ai_data['entry_high']),
                                 line_width=0, fillcolor="rgba(8,153,129,0.15)", opacity=1,
                             )
-                            # Label BUY AREA manual via annotation agar tidak terpotong margin
                             fig.add_annotation(
                                 x=future_date, xref="x",
                                 y=(float(ai_data['entry_low']) + float(ai_data['entry_high'])) / 2,
@@ -4617,19 +4761,7 @@ if current_view == "dashboard":
                                 font=dict(color="#089981", size=11),
                                 bgcolor="rgba(8,153,129,0.12)", borderpad=4,
                             )
-                            # TARGET line
-                            fig.add_hline(
-                                y=float(ai_data['target']),
-                                line_dash="dash", line_color="#089981", line_width=1.5,
-                            )
-                            fig.add_annotation(
-                                x=future_date, xref="x",
-                                y=float(ai_data['target']),
-                                text=f"<b>🎯 TP: {int(float(ai_data['target'])):,}</b>",
-                                showarrow=False, xanchor="right", yanchor="bottom",
-                                font=dict(color="#089981", size=11),
-                                bgcolor="rgba(8,153,129,0.12)", borderpad=4,
-                            )
+
                             # STOP LOSS line
                             fig.add_hline(
                                 y=float(ai_data['stop_loss']),
@@ -4643,6 +4775,52 @@ if current_view == "dashboard":
                                 font=dict(color="#f23645", size=11),
                                 bgcolor="rgba(242,54,69,0.12)", borderpad=4,
                             )
+
+                            # TP1 — selalu ada
+                            if ai_data.get('tp1'):
+                                fig.add_hline(
+                                    y=float(ai_data['tp1']),
+                                    line_dash="dash", line_color="#089981", line_width=1.5,
+                                )
+                                fig.add_annotation(
+                                    x=future_date, xref="x",
+                                    y=float(ai_data['tp1']),
+                                    text=f"<b>🎯 TP1: {int(float(ai_data['tp1'])):,}</b>",
+                                    showarrow=False, xanchor="right", yanchor="bottom",
+                                    font=dict(color="#089981", size=11),
+                                    bgcolor="rgba(8,153,129,0.12)", borderpad=4,
+                                )
+
+                            # TP2 — opsional
+                            if ai_data.get('tp2'):
+                                fig.add_hline(
+                                    y=float(ai_data['tp2']),
+                                    line_dash="dot", line_color="#26a69a", line_width=1.2,
+                                )
+                                fig.add_annotation(
+                                    x=future_date, xref="x",
+                                    y=float(ai_data['tp2']),
+                                    text=f"<b>🎯 TP2: {int(float(ai_data['tp2'])):,}</b>",
+                                    showarrow=False, xanchor="right", yanchor="bottom",
+                                    font=dict(color="#26a69a", size=11),
+                                    bgcolor="rgba(38,166,154,0.12)", borderpad=4,
+                                )
+
+                            # TP3 — opsional
+                            if ai_data.get('tp3'):
+                                fig.add_hline(
+                                    y=float(ai_data['tp3']),
+                                    line_dash="dot", line_color="#80cbc4", line_width=1.2,
+                                )
+                                fig.add_annotation(
+                                    x=future_date, xref="x",
+                                    y=float(ai_data['tp3']),
+                                    text=f"<b>🎯 TP3: {int(float(ai_data['tp3'])):,}</b>",
+                                    showarrow=False, xanchor="right", yanchor="bottom",
+                                    font=dict(color="#80cbc4", size=11),
+                                    bgcolor="rgba(128,203,196,0.12)", borderpad=4,
+                                )
+
                         except Exception as e:
                             st.warning("AI gagal menghasilkan kordinat harga yang pas untuk digambar otomatis.")
 
