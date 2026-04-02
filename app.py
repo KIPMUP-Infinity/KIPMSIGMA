@@ -4709,112 +4709,114 @@ if current_view == "dashboard":
 
 
         # =========================================================
-        # CLEAN NEWS SYSTEM - ANTI LEAK VERSION
+        # SIGMA NEWS TERMINAL - FINAL REPAIR
         # =========================================================
         import feedparser
 
-        # 1. DIVIDER & LABEL (Kembalikan batas yang hilang)
+        # 1. Garis Pembatas & Judul Seksi
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        # 2. CSS STYLING
+        # 2. CSS STYLING (Satu-satunya cara agar rapi)
         st.markdown(f"""
         <style>
-        .sigma-news-card {{
+        .news-wrapper {{
             background: {met_bg};
             border: 1px solid {met_border};
-            border-radius: 12px;
-            height: 500px;
+            border-radius: 10px;
+            height: 480px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             margin-bottom: 20px;
         }}
-        .sigma-news-header {{
-            padding: 12px 15px;
-            background: rgba(245,194,66,0.1);
+        .news-header-box {{
+            padding: 10px 15px;
+            background: rgba(245,194,66,0.08);
             border-bottom: 1px solid {met_border};
             color: #F5C242;
             font-family: 'IBM Plex Mono', monospace;
-            font-weight: 700;
             font-size: 11px;
+            font-weight: bold;
             letter-spacing: 1px;
         }}
-        .sigma-news-scroll {{
+        .news-scroll-area {{
             flex: 1;
             overflow-y: auto;
-            padding: 8px;
+            padding: 5px;
         }}
-        .sigma-news-item {{
+        .news-card-link {{
             display: block;
-            padding: 12px;
+            padding: 10px 12px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             text-decoration: none !important;
-            transition: 0.2s ease;
+            transition: 0.2s;
         }}
-        .sigma-news-item:hover {{ background: rgba(245,194,66,0.05); }}
-        .sigma-news-title {{
+        .news-card-link:hover {{ background: rgba(245,194,66,0.05); }}
+        .news-card-title {{
             color: {text_main};
             font-size: 13px;
             line-height: 1.4;
-            font-weight: 500;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }}
-        .sigma-news-meta {{
+        .news-card-meta {{
             color: {text_sub};
             font-size: 10px;
             font-family: 'IBM Plex Mono', monospace;
         }}
-        .sigma-news-scroll::-webkit-scrollbar {{ width: 4px; }}
-        .sigma-news-scroll::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
+        .news-scroll-area::-webkit-scrollbar {{ width: 4px; }}
+        .news-scroll-area::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
         """, unsafe_allow_html=True)
 
-        # 3. FUNGSI PENYARING (Memastikan output HANYA teks HTML)
-        def get_sigma_news(rss_url, label):
+        # 3. FUNGSI PENYARING (PENTING: Output HARUS String HTML)
+        def build_news_feed_string(url, tag):
             try:
-                feed = feedparser.parse(rss_url)
-                if not feed.entries:
-                    return "<div style='padding:20px; color:gray; font-size:12px;'>No recent news.</div>"
+                # Ambil data
+                raw_data = feedparser.parse(url)
+                # Pastikan ini String kosong di awal
+                final_html = "" 
                 
-                rows_html = ""
-                for entry in feed.entries[:10]:
-                    date_str = entry.get('published', '')[:16]
-                    # Kita buat satu baris HTML panjang untuk tiap berita
-                    rows_html += f'''
-                    <a href="{entry.link}" target="_blank" class="sigma-news-item">
-                        <div class="sigma-news-title">{entry.title}</div>
-                        <div class="sigma-news-meta">[{label}] • {date_str}</div>
+                # Loop maksimal 12 berita
+                for entry in raw_data.entries[:12]:
+                    clean_date = entry.get('published', 'Recent')[:16]
+                    # Gabungkan jadi satu string HTML panjang
+                    final_html += f'''
+                    <a href="{entry.link}" target="_blank" class="news-card-link">
+                        <div class="news-card-title">{entry.title}</div>
+                        <div class="news-card-meta">[{tag}] • {clean_date}</div>
                     </a>
                     '''
-                return rows_html
+                
+                if not final_html:
+                    return "<div style='padding:20px; color:gray;'>No news found.</div>"
+                return final_html
             except:
-                return "<div style='padding:20px; color:red;'>Stream error.</div>"
+                return "<div style='padding:20px; color:red;'>Connection Error.</div>"
 
-        # 4. EKSEKUSI (Simpan hasil ke variabel string)
-        # Link Global menggunakan CNBC International agar pasti ada isinya
-        data_indo = get_sigma_news("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
-        data_glob = get_sigma_news("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
+        # 4. PROSES (Simpan ke variabel baru agar tidak bentrok dengan variabel lama)
+        # Link Global menggunakan CNBC International yang lebih stabil
+        string_domestic = build_news_feed_string("https://www.cnbcindonesia.com/market/rss", "IDX")
+        string_global = build_news_feed_string("https://www.cnbc.com/id/15839069/device/rss/rss.html", "WORLD")
 
-        # 5. RENDER (PENTING: Jangan tulis nama variabel sendirian di baris baru!)
-        col_news_1, col_news_2 = st.columns(2)
+        # 5. TAMPILKAN (Layout Kolom)
+        col_left, col_right = st.columns(2)
 
-        with col_news_1:
+        with col_left:
             st.markdown(f"""
-            <div class="sigma-news-card">
-                <div class="sigma-news-header">🇮🇩 DOMESTIC MARKET PULSE</div>
-                <div class="sigma-news-scroll">{data_indo}</div>
+            <div class="news-wrapper">
+                <div class="news-header-box">🇮🇩 DOMESTIC MARKET NEWS</div>
+                <div class="news-scroll-area">{string_domestic}</div>
             </div>
             """, unsafe_allow_html=True)
 
-        with col_news_2:
+        with col_right:
             st.markdown(f"""
-            <div class="sigma-news-card">
-                <div class="sigma-news-header">🌎 GLOBAL ECONOMIC PULSE</div>
-                <div class="sigma-news-scroll">{data_glob}</div>
+            <div class="news-wrapper">
+                <div class="news-header-box">🌎 GLOBAL ECONOMIC PULSE</div>
+                <div class="news-scroll-area">{string_global}</div>
             </div>
             """, unsafe_allow_html=True)
-            
 
 
     with tab_rotation:
