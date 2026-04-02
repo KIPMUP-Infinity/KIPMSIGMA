@@ -5248,8 +5248,11 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     x_str  = df_chart.index.strftime('%d %b %y').tolist()
                     n_bars = len(x_str)
 
-                    # Tidak pakai padding — label tetap di dalam chart
-                    x_all  = x_str
+                    # Padding kanan ~30 bar agar candle tidak mepet & ada ruang label
+                    n_pad   = 30
+                    pad_str = [f"_p{i}" for i in range(n_pad)]
+                    x_all   = x_str + pad_str
+                    n_total = len(x_all)
 
                     # ── Figure 4 rows: Price / Volume / RSI / MACD ────────
                     fig = make_subplots(
@@ -5280,7 +5283,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             showlegend=False,
                         ), row=1, col=1)
 
-                    # ── Trade plan lines + labels (di dalam chart, kanan) ──
+                    # ── Trade plan lines + labels style TradingView ────────
                     if ai_data:
                         try:
                             el  = ai_data.get('entry_low')
@@ -5290,84 +5293,84 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             tp2 = ai_data.get('tp2')
                             tp3 = ai_data.get('tp3')
 
-                            # Kumpulkan semua level yang akan dibuat label
-                            # untuk deteksi tumpukan & offset
+                            # Semua level untuk deteksi tumpukan
                             all_levels = []
-                            if el and eh:
-                                all_levels.append((float(el)+float(eh))/2)
+                            if el and eh: all_levels.append((float(el)+float(eh))/2)
                             if sl:  all_levels.append(float(sl))
                             if tp1: all_levels.append(float(tp1))
                             if tp2: all_levels.append(float(tp2))
                             if tp3: all_levels.append(float(tp3))
 
-                            # Hitung range harga untuk offset minimum
                             price_range = float(df_chart['High'].max()) - float(df_chart['Low'].min())
-                            min_gap = price_range * 0.025  # 2.5% dari range = jarak minimum antar label
+                            min_gap = price_range * 0.022
 
                             def _resolve_offsets(levels, min_gap):
-                                """Geser label yang terlalu dekat agar tidak tumpuk."""
                                 if not levels: return {}
-                                sorted_lvl = sorted(set(levels))
+                                sorted_lvl = sorted(set([float(v) for v in levels]))
                                 offsets = {v: 0.0 for v in sorted_lvl}
                                 for i in range(1, len(sorted_lvl)):
-                                    prev = sorted_lvl[i-1] + offsets[sorted_lvl[i-1]]
-                                    curr = sorted_lvl[i]
-                                    if curr - prev < min_gap:
-                                        offsets[curr] = prev + min_gap - curr
+                                    prev_y = sorted_lvl[i-1] + offsets[sorted_lvl[i-1]]
+                                    curr   = sorted_lvl[i]
+                                    if curr - prev_y < min_gap:
+                                        offsets[curr] = prev_y + min_gap - curr
                                 return offsets
 
                             offsets = _resolve_offsets(all_levels, min_gap)
 
                             def _line(y, clr, dash='dash'):
-                                # Garis dari bar pertama sampai bar terakhir — menyentuh sumbu Y
+                                # Garis dari bar pertama sampai akhir padding — full width menyentuh sumbu Y
                                 fig.add_trace(go.Scatter(
-                                    x=[x_str[0], x_str[-1]],
+                                    x=[x_str[0], x_all[-1]],
                                     y=[float(y), float(y)],
                                     mode='lines',
-                                    line=dict(color=clr, width=1.5, dash=dash),
+                                    line=dict(color=clr, width=1.2, dash=dash),
                                     showlegend=False,
+                                    cliponaxis=False,
                                 ), row=1, col=1)
 
                             def _lbl(y_orig, txt, fclr, bclr, brdclr):
-                                # Label di bar ke-3 dari kanan, posisi Y pakai offset
-                                lbl_x_pos = x_str[max(0, n_bars - 4)]
-                                y_display = float(y_orig) + offsets.get(float(y_orig), 0)
+                                # Label tag gaya TradingView: menempel di tepi kanan sumbu Y
+                                y_disp = float(y_orig) + offsets.get(float(y_orig), 0)
+                                # kotak tag menempel sumbu Y, xref=paper x=1 = tepi kanan plot
                                 fig.add_annotation(
-                                    x=lbl_x_pos, y=y_display,
-                                    text=txt, showarrow=False,
-                                    xanchor='right', yanchor='middle',
-                                    font=dict(color=fclr, size=10, family='IBM Plex Mono, monospace'),
-                                    bgcolor=bclr, bordercolor=brdclr,
-                                    borderwidth=1, borderpad=4,
-                                    xref='x', yref='y',
-                                    row=1, col=1,
+                                    xref='paper', yref='y',
+                                    x=1.0, y=y_disp,
+                                    text=f"<b>{txt}</b>",
+                                    showarrow=False,
+                                    xanchor='left', yanchor='middle',
+                                    font=dict(color=fclr, size=10,
+                                              family='IBM Plex Mono, monospace'),
+                                    bgcolor=bclr,
+                                    bordercolor=brdclr,
+                                    borderwidth=1,
+                                    borderpad=3,
                                 )
 
                             if el and eh:
+                                # Shaded buy zone
                                 fig.add_trace(go.Scatter(
                                     x=x_str + x_str[::-1],
                                     y=[float(eh)]*n_bars + [float(el)]*n_bars,
                                     fill='toself', mode='lines',
-                                    fillcolor='rgba(8,153,129,0.15)',
-                                    line=dict(width=0),
-                                    showlegend=False,
+                                    fillcolor='rgba(8,153,129,0.13)',
+                                    line=dict(width=0), showlegend=False,
                                 ), row=1, col=1)
                                 _line(el, '#089981', 'dash')
                                 _line(eh, '#089981', 'dash')
                                 _lbl((float(el)+float(eh))/2,
-                                     f"BUY {float(el):,.0f}–{float(eh):,.0f}",
-                                     '#089981','rgba(8,153,129,0.25)','#089981')
+                                     f"BUY  {float(el):,.0f}–{float(eh):,.0f}",
+                                     '#089981', 'rgba(8,153,129,0.28)', '#089981')
 
                             if sl:
                                 _line(sl, '#f23645', 'dash')
                                 _lbl(sl, f"SL  {float(sl):,.0f}",
-                                     '#f23645','rgba(242,54,69,0.22)','#f23645')
+                                     '#ffffff', '#f23645', '#f23645')
 
                             for tp_v, tp_n in [(tp1,'TP1'),(tp2,'TP2'),(tp3,'TP3')]:
                                 if tp_v:
                                     _line(tp_v, '#089981', 'dot')
                                     _lbl(tp_v, f"{tp_n}  {float(tp_v):,.0f}",
-                                         '#089981','rgba(8,153,129,0.20)','#089981')
+                                         '#089981', 'rgba(8,153,129,0.22)', '#089981')
 
                         except Exception:
                             st.warning("AI gagal menghasilkan koordinat harga yang pas.")
@@ -5380,7 +5383,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         marker_color=vol_clr, showlegend=False,
                     ), row=2, col=1)
 
-                    # ── RSI (level 70/30 yang benar) ─────────────────────
+                    # ── RSI (level 70/30) ──────────────────────────────────
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['RSI'],
                         mode='lines', line=dict(color='#F5C242', width=1.2),
@@ -5420,7 +5423,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     step     = max(1, n_bars // 8)
                     tickvals = x_str[::step]
 
-                    # ── Layout: pisah ax_x (kategori) dan ax_y (linear) ──
+                    # ── Layout ────────────────────────────────────────────
                     ax_x = dict(
                         type='category',
                         showgrid=False,
@@ -5455,12 +5458,12 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         font=dict(color=tv_text_color, size=11),
                         height=980,
                         showlegend=False,
-                        margin=dict(l=0, r=65, t=10, b=40),
+                        margin=dict(l=0, r=120, t=10, b=40),
                         xaxis =dict(**ax_x, rangeslider=dict(visible=False),
-                                    range=[-0.5, n_bars-0.5], tickvals=tickvals),
-                        xaxis2=dict(**ax_x, range=[-0.5, n_bars-0.5], tickvals=tickvals, showticklabels=False),
-                        xaxis3=dict(**ax_x, range=[-0.5, n_bars-0.5], tickvals=tickvals, showticklabels=False),
-                        xaxis4=dict(**ax_x, range=[-0.5, n_bars-0.5], tickvals=tickvals),
+                                    range=[-0.5, n_total-0.5], tickvals=tickvals),
+                        xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
                         yaxis =dict(**ax_y_plain, title=''),
                         yaxis2=dict(**ax_y_grid,  title='VOL'),
                         yaxis3=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
