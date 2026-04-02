@@ -4337,6 +4337,158 @@ if current_view == "dashboard":
         transition: border-color 0.2s;
     }}
     .dynamic-card:hover {{ border-color: rgba(245,194,66,0.3); }}
+
+    /* ── FIX BUTTON VISIBILITY (dark + light mode) ── */
+    [data-testid="stTabs"] ~ div .stButton > button,
+    [data-testid="stVerticalBlock"] .stButton > button {{
+        background: {"rgba(245,194,66,0.1)" if is_dark else "rgba(245,194,66,0.08)"} !important;
+        color: {"#F5C242" if is_dark else "#92700a"} !important;
+        border: 1px solid {"rgba(245,194,66,0.3)" if is_dark else "rgba(245,194,66,0.35)"} !important;
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.78rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.06em !important;
+        text-transform: uppercase !important;
+        border-radius: 5px !important;
+        padding: 10px 18px !important;
+        transition: all 0.2s !important;
+        box-shadow: none !important;
+    }}
+    [data-testid="stTabs"] ~ div .stButton > button:hover,
+    [data-testid="stVerticalBlock"] .stButton > button:hover {{
+        background: {"rgba(245,194,66,0.18)" if is_dark else "rgba(245,194,66,0.15)"} !important;
+        border-color: {"rgba(245,194,66,0.6)" if is_dark else "rgba(245,194,66,0.6)"} !important;
+        box-shadow: 0 0 12px rgba(245,194,66,0.15) !important;
+    }}
+
+    /* ── TICKER TAPE ── */
+    .trm-ticker-wrap {{
+        overflow: hidden;
+        white-space: nowrap;
+        border-top: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
+        border-bottom: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
+        background: {"rgba(245,194,66,0.03)" if is_dark else "#fffdf0"};
+        padding: 7px 0;
+        margin: 0 0 20px;
+        position: relative;
+    }}
+    .trm-ticker-tape {{
+        display: inline-block;
+        animation: ticker-scroll 40s linear infinite;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.06em;
+        color: {"rgba(232,234,240,0.7)" if is_dark else "#64748b"};
+    }}
+    .trm-ticker-tape .up {{ color: #26a69a; }}
+    .trm-ticker-tape .dn {{ color: #f23645; }}
+    .trm-ticker-tape .sep {{ color: {"rgba(245,194,66,0.3)" if is_dark else "#d4a800"}; margin: 0 18px; }}
+    @keyframes ticker-scroll {{
+        0%   {{ transform: translateX(0); }}
+        100% {{ transform: translateX(-50%); }}
+    }}
+
+    /* ── STATUS BADGE ── */
+    .trm-badge {{
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.65rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 3px 9px;
+        border-radius: 3px;
+        border: 1px solid;
+    }}
+    .trm-badge-green {{
+        color: #26a69a;
+        border-color: rgba(38,166,154,0.3);
+        background: rgba(38,166,154,0.06);
+    }}
+    .trm-badge-gold {{
+        color: #F5C242;
+        border-color: rgba(245,194,66,0.3);
+        background: rgba(245,194,66,0.06);
+    }}
+    .trm-badge-red {{
+        color: #f23645;
+        border-color: rgba(242,54,69,0.3);
+        background: rgba(242,54,69,0.06);
+    }}
+
+    /* ── STAT ROW (horizontal KPI bar) ── */
+    .trm-stat-row {{
+        display: flex;
+        gap: 1px;
+        margin: 12px 0;
+    }}
+    .trm-stat-cell {{
+        flex: 1;
+        background: {met_bg};
+        border: 1px solid {met_border};
+        padding: 10px 14px;
+        transition: border-color 0.2s;
+    }}
+    .trm-stat-cell:first-child {{ border-radius: 6px 0 0 6px; }}
+    .trm-stat-cell:last-child  {{ border-radius: 0 6px 6px 0; }}
+    .trm-stat-cell:hover {{ border-color: rgba(245,194,66,0.35); z-index:1; }}
+    .trm-stat-label {{
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.62rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: {text_sub};
+        margin-bottom: 4px;
+    }}
+    .trm-stat-val {{
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: {text_main};
+    }}
+    .trm-stat-delta {{
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.7rem;
+        margin-top: 2px;
+    }}
+    .trm-stat-delta.up {{ color: #26a69a; }}
+    .trm-stat-delta.dn {{ color: #f23645; }}
+
+    /* ── INPUT FIELD TERMINAL STYLE ── */
+    [data-testid="stTextInput"] input {{
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.08em !important;
+        background: {met_bg} !important;
+        border: 1px solid {met_border} !important;
+        border-radius: 5px !important;
+        color: {text_main} !important;
+        padding: 10px 14px !important;
+    }}
+    [data-testid="stTextInput"] input:focus {{
+        border-color: rgba(245,194,66,0.5) !important;
+        box-shadow: 0 0 0 2px rgba(245,194,66,0.08) !important;
+    }}
+    [data-testid="stTextInput"] label {{
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.68rem !important;
+        letter-spacing: 0.1em !important;
+        text-transform: uppercase !important;
+        color: {text_sub} !important;
+        font-weight: 500 !important;
+    }}
+
+    /* ── SELECTBOX TERMINAL STYLE ── */
+    [data-testid="stSelectbox"] label {{
+        font-family: 'IBM Plex Mono', monospace !important;
+        font-size: 0.68rem !important;
+        letter-spacing: 0.1em !important;
+        text-transform: uppercase !important;
+        color: {text_sub} !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -4382,6 +4534,33 @@ if current_view == "dashboard":
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # ── TICKER TAPE ──
+    _tape_items = [
+        ("IHSG","^JKSE"), ("S&P500","^GSPC"), ("GOLD","GC=F"),
+        ("USD/IDR","IDR=X"), ("WTI","CL=F"), ("COAL","NCF=F"),
+        ("NIKKEI","^N225"), ("VIX","^VIX"),
+    ]
+    _tape_html = ""
+    for _name, _tk in _tape_items:
+        try:
+            import yfinance as _yf
+            _h = _yf.Ticker(_tk).history(period="2d")
+            if len(_h) >= 2:
+                _p  = _h['Close'].iloc[-1]
+                _pc = _h['Close'].iloc[-2]
+                _chg = (_p - _pc) / _pc * 100
+                _cls = "up" if _chg >= 0 else "dn"
+                _arr = "▲" if _chg >= 0 else "▼"
+                _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
+        except: pass
+    if _tape_html:
+        _tape_double = _tape_html * 2  # seamless loop
+        st.markdown(f"""
+        <div class="trm-ticker-wrap">
+            <div class="trm-ticker-tape">{_tape_double}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     # ── TAB NAV ──
     tab_macro, tab_rotation, tab_conglo, tab_ai = st.tabs([
@@ -4795,10 +4974,10 @@ if current_view == "dashboard":
 
         col_input, col_btn, col_empty = st.columns([2, 1, 3])
         with col_input:
-            ticker_input = st.text_input("Kode Saham (Contoh: BBCA):", "BBCA").upper()
+            ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA").upper()
         with col_btn:
-            st.markdown("<br>", unsafe_allow_html=True) 
-            run_analysis = st.button("🚀 Analyze with SIGMA", use_container_width=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+            run_analysis = st.button("▶ ANALYZE", use_container_width=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -4965,7 +5144,7 @@ FORMAT JSON WAJIB (angka INTEGER murni, null jika TP tidak ada):
                         st.error(f"Gagal memproses analisa AI: {e}")
 
             # 3. Tampilkan Chart Plotly yang meniru TradingView (Gridlines off, Ada EMA, Teks Kanan)
-            st.markdown(f"<h5 style='color:{text_main}; margin-bottom: 10px;'>📈 Technical Plan Chart: {ticker_input}</h5>", unsafe_allow_html=True)
+            st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART — {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             
             if not df_chart.empty:
                 try:
