@@ -5249,7 +5249,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     n_bars = len(x_str)
 
                     # Ruang kosong di kanan untuk label trade plan
-                    n_pad   = 35
+                    n_pad   = 12
                     pad_str = [f"_p{i}" for i in range(n_pad)]
                     x_all   = x_str + pad_str
 
@@ -5282,7 +5282,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             showlegend=False,
                         ), row=1, col=1)
 
-                    # ── Trade plan lines + labels di kanan (paper coords) ──
+                    # ── Trade plan lines + labels (paper xref = selalu di tepi kanan) ──
                     if ai_data:
                         try:
                             el  = ai_data.get('entry_low')
@@ -5293,7 +5293,6 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             tp3 = ai_data.get('tp3')
 
                             def _line(y, clr, dash='dash'):
-                                # Garis dari bar pertama sampai akhir padding (full width)
                                 fig.add_trace(go.Scatter(
                                     x=[x_str[0], x_all[-1]],
                                     y=[float(y), float(y)],
@@ -5303,7 +5302,6 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                                 ), row=1, col=1)
 
                             def _lbl(y, txt, fclr, bclr, brdclr):
-                                # Label pakai xref='paper' agar selalu nempel di tepi kanan
                                 fig.add_annotation(
                                     xref='paper', yref='y',
                                     x=1.002, y=float(y),
@@ -5351,7 +5349,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         marker_color=vol_clr, showlegend=False,
                     ), row=2, col=1)
 
-                    # ── RSI (70/30 yang benar) ────────────────────────────
+                    # ── RSI (level 70/30 yang benar) ─────────────────────
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['RSI'],
                         mode='lines', line=dict(color='#F5C242', width=1.2),
@@ -5370,19 +5368,17 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     fig.add_trace(go.Bar(
                         x=x_str, y=df_chart['MACD_hist'],
                         marker_color=macd_hist_clr, showlegend=False,
-                        name='MACD Hist',
                     ), row=4, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD'],
                         mode='lines', line=dict(color='#2196f3', width=1.2),
-                        showlegend=False, name='MACD',
+                        showlegend=False,
                     ), row=4, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD_signal'],
                         mode='lines', line=dict(color='#ff5252', width=1.2),
-                        showlegend=False, name='Signal',
+                        showlegend=False,
                     ), row=4, col=1)
-                    # Garis nol MACD
                     fig.add_trace(go.Scatter(
                         x=[x_str[0], x_str[-1]], y=[0, 0],
                         mode='lines', line=dict(color=tv_border, width=1),
@@ -5393,8 +5389,8 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     step     = max(1, n_bars // 8)
                     tickvals = x_str[::step]
 
-                    # ── Layout ────────────────────────────────────────────
-                    # x-axis: kategori (string tanggal)
+                    # ── Layout: pisah ax_x (kategori) dan ax_y (linear) ──
+                    # PENTING: jangan campur type='category' ke yaxis
                     ax_x = dict(
                         type='category',
                         showgrid=False,
@@ -5403,12 +5399,21 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         tickangle=-30,
                         tickfont=dict(size=10),
                     )
-                    # y-axis: linear numerik, NO gridlines (kecuali pembatas antar panel)
-                    ax_y = dict(
+                    ax_y_plain = dict(
                         showgrid=False,
                         showline=True, linecolor=tv_border, linewidth=1,
                         zeroline=False,
                         tickfont=dict(size=10),
+                        type='linear',
+                        side='right',
+                    )
+                    ax_y_grid = dict(
+                        showgrid=True, gridcolor=tv_border,
+                        showline=True, linecolor=tv_border, linewidth=1,
+                        zeroline=False,
+                        tickfont=dict(size=10),
+                        type='linear',
+                        side='right',
                     )
                     fig.update_layout(
                         template='plotly_dark' if is_dark else 'plotly_white',
@@ -5423,13 +5428,10 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         xaxis2=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals, showticklabels=False),
                         xaxis3=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals, showticklabels=False),
                         xaxis4=dict(**ax_x, range=[-0.5, len(x_all)-0.5], tickvals=tickvals),
-                        yaxis =dict(**ax_y, type='linear', side='right', title=''),
-                        yaxis2=dict(**ax_y, type='linear', side='right', title='VOL',
-                                    showgrid=True, gridcolor=tv_border),
-                        yaxis3=dict(**ax_y, type='linear', side='right', title='RSI', range=[0,100],
-                                    showgrid=True, gridcolor=tv_border),
-                        yaxis4=dict(**ax_y, type='linear', side='right', title='MACD',
-                                    showgrid=True, gridcolor=tv_border),
+                        yaxis =dict(**ax_y_plain, title=''),
+                        yaxis2=dict(**ax_y_grid,  title='VOL'),
+                        yaxis3=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
+                        yaxis4=dict(**ax_y_grid,  title='MACD'),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
@@ -5458,24 +5460,30 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
 
             # ── Executive Summary — di bawah chart, full width ───────────
             if run_analysis and ai_text_verdict:
+                bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f8fafc'
+                bd_color = tv_border if not df_chart.empty else 'transparent'
                 st.markdown(f"""
                 <div style="
+                    background:{bg_card};
+                    border:1px solid {bd_color};
                     border-left:3px solid #F5C242;
                     border-radius:0 8px 8px 0;
-                    background:{'rgba(10,14,26,0.85)' if is_dark else '#f8fafc'};
-                    border:1px solid {tv_border if not df_chart.empty else 'transparent'};
-                    border-left:3px solid #F5C242;
-                    padding:16px 20px;
-                    margin-top:12px;
+                    padding:20px 24px 20px 20px;
+                    margin-top:14px;
+                    line-height:1.75;
+                    font-family:'IBM Plex Mono',monospace;
                 ">
-                <div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;
-                    letter-spacing:0.12em;color:#F5C242;font-weight:700;
-                    text-transform:uppercase;margin-bottom:10px;">
+                  <div style="font-size:0.65rem;letter-spacing:0.14em;color:#F5C242;
+                      font-weight:700;text-transform:uppercase;margin-bottom:14px;
+                      display:flex;align-items:center;gap:8px;">
                     📋 TRADE PLAN SIGMA
-                </div>
+                  </div>
+                  <div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'};
+                      white-space:pre-wrap;word-break:break-word;">
+{ai_text_verdict}
+                  </div>
                 </div>
                 """, unsafe_allow_html=True)
-                st.markdown(ai_text_verdict)
             elif not run_analysis:
                 st.markdown(f"""
                 <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
