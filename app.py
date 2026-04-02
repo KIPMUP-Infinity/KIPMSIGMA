@@ -4205,13 +4205,12 @@ if current_view == "dashboard":
         import re
         import json
     except ImportError:
-        st.error("⚠️ Library 'yfinance', 'pandas', atau 'plotly' belum terinstall. Ketik di Terminal: pip install yfinance pandas plotly")
+        st.error("&#9888; Library 'yfinance', 'pandas', atau 'plotly' belum terinstall.")
         st.stop()
 
-    # ── CONTAINER OVERRIDE — DESKTOP SPACE & MOBILE FIX ──
     st.markdown("""
     <style>
-    /* 1. Pengaturan Desktop: Memberi space di kanan-kiri (agar tidak mentok) */
+    /* Desktop */
     [data-testid="stMainBlockContainer"] {
         max-width: 1250px !important;
         width: 95% !important;
@@ -4221,38 +4220,45 @@ if current_view == "dashboard":
         padding-top: 2rem !important;
     }
 
-    /* 2. Pengaturan Mobile: Mencegah teks terpotong & lock scroll horizontal */
+    /* Mobile: Kunci scroll & pastikan grafik tidak terpotong */
     @media (max-width: 768px) {
-        html, body {
+        html, body, .stApp {
             overflow-x: hidden !important;
-            position: relative;
+            width: 100vw !important;
             max-width: 100vw !important;
+            position: relative;
         }
         
         [data-testid="stMainBlockContainer"] {
-            max-width: 100% !important;
-            width: 100% !important;
-            padding-left: 14px !important;
-            padding-right: 14px !important;
+            max-width: 100vw !important;
+            width: 100vw !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
             padding-top: 1rem !important;
             margin: 0 !important;
+            overflow-x: hidden !important;
         }
 
-        [data-testid="stMetric"] {
-            padding: 10px 12px !important;
-        }
-        
-        [data-testid="stMetricValue"] {
-            font-size: 1.15rem !important; 
-        }
-        
-        [data-testid="stVerticalBlock"] {
-            gap: 0.5rem !important;
+        .stLineChart, iframe, canvas, [data-testid="stVerticalBlock"] > div {
+            max-width: 100% !important;
+            width: 100% !important;
         }
 
         .stDataFrame {
             width: 100% !important;
-            overflow-x: auto !important;
+            overflow-x: auto !important; 
+        }
+
+        [data-testid="stMetric"] {
+            padding: 10px 10px !important;
+        }
+        
+        [data-testid="stMetricValue"] {
+            font-size: 1.1rem !important; 
+        }
+        
+        [data-testid="stVerticalBlock"] {
+            gap: 0.5rem !important;
         }
     }
 
@@ -4262,10 +4268,8 @@ if current_view == "dashboard":
     </style>
     """, unsafe_allow_html=True)
 
-    # --- DETEKSI TEMA AKTIF (DYNAMIC THEME) ---
     is_dark = st.session_state.get("theme", "dark") == "dark"
 
-    # --- VARIABEL WARNA TERMINAL ---
     text_main  = "#e8eaf0" if is_dark else "#0d1117"
     text_sub   = "#6b7a99" if is_dark else "#64748b"
     card_bg    = "rgba(10,14,26,0.85)" if is_dark else "#ffffff"
@@ -4491,7 +4495,6 @@ if current_view == "dashboard":
     </style>
     """, unsafe_allow_html=True)
 
-    # ── TERMINAL HEADER ──
     from datetime import datetime as _dt
     _now = _dt.now().strftime("%d %b %Y  %H:%M WIB")
     st.markdown(f"""
@@ -4529,12 +4532,11 @@ if current_view == "dashboard":
             letter-spacing:0.08em;
             text-align:right;
         ">
-            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">● LIVE</span>&nbsp;&nbsp;{_now}
+            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">&#9679; LIVE</span>&nbsp;&nbsp;{_now}
         </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # ── TICKER TAPE ──
     _tape_items = [
         ("IHSG","^JKSE"), ("S&P500","^GSPC"), ("GOLD","GC=F"),
         ("USD/IDR","IDR=X"), ("WTI","CL=F"), ("COAL","NCF=F"),
@@ -4550,7 +4552,7 @@ if current_view == "dashboard":
                 _pc = _h['Close'].iloc[-2]
                 _chg = (_p - _pc) / _pc * 100
                 _cls = "up" if _chg >= 0 else "dn"
-                _arr = "▲" if _chg >= 0 else "▼"
+                _arr = "&#9650;" if _chg >= 0 else "&#9660;"
                 _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
         except: pass
     if _tape_html:
@@ -4561,7 +4563,6 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    # ── TAB NAV ──
     tab_macro, tab_rotation, tab_conglo, tab_ai = st.tabs([
         "  GLOBAL MACRO & NEWS  ",
         "  INDEX & SECTOR ROTATION  ",
@@ -4616,7 +4617,7 @@ if current_view == "dashboard":
                 with cols[j]:
                     st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
         else:
-            st.warning("⚠️ Gagal menarik data indeks.")
+            st.warning("&#9888; Gagal menarik data indeks.")
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>COMMODITIES &amp; FOREX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if com_data:
@@ -4630,7 +4631,7 @@ if current_view == "dashboard":
                     delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
                     st.metric(label=name, value=price_str, delta=delta_str)
         else:
-            st.warning("⚠️ Gagal menarik data komoditas.")
+            st.warning("&#9888; Gagal menarik data komoditas.")
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KORELASI MAKRO EKONOMI &mdash; INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
@@ -4691,7 +4692,7 @@ if current_view == "dashboard":
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Berita ekonomi dan pasar saham global & domestik terkini</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Berita ekonomi dan pasar saham global &amp; domestik terkini</p>", unsafe_allow_html=True)
         
         news_theme = "dark" if is_dark else "light"
         news_widget = f"""
@@ -4991,13 +4992,13 @@ if current_view == "dashboard":
                                 else:                    vol_signal = "⚪ Volume normal"
 
                                 if price_chg_5d > 2 and vol_chg_5d < -20:
-                                    pvd_signal = "⚠️ DIVERGENSI: Harga naik tapi volume turun"
+                                    pvd_signal = "&#9888; DIVERGENSI: Harga naik tapi volume turun"
                                 elif price_chg_5d < -2 and vol_chg_5d < -20:
                                     pvd_signal = "🔵 Volume turun saat harga turun"
                                 elif price_chg_5d > 2 and vol_chg_5d > 20:
                                     pvd_signal = "✅ Harga naik + volume naik"
                                 elif price_chg_5d < -2 and vol_chg_5d > 20:
-                                    pvd_signal = "⚠️ Volume spike saat turun"
+                                    pvd_signal = "&#9888; Volume spike saat turun"
                                 else:
                                     pvd_signal = "Volume dan harga konsisten"
 
@@ -5009,7 +5010,7 @@ if current_view == "dashboard":
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                        except:
+                        except Exception as e_groq:
                             try:
                                 ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
                             except Exception as e_gem:
@@ -5519,8 +5520,8 @@ components.html("""
 </script>
 """, height=0)
 
-sig_color = C["text"]
-components.html("""
+sig_color = C.get("text", "#ffffff")
+js_code = """
 <script>
 (function() {
     var pd = window.parent.document;
@@ -5539,5 +5540,6 @@ components.html("""
     pd.body.appendChild(brand);
 })();
 </script>
-""", height=0)
+"""
+components.html(js_code, height=0)
 
