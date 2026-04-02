@@ -4708,112 +4708,114 @@ if current_view == "dashboard":
             """, unsafe_allow_html=True)
 
 
-        # =========================================================
-        # SIGMA NEWS TERMINAL - FINAL REPAIR (ANTI-BOCOOR)
-        # =========================================================
+        # ---------------------------------------------------------
+        # LIVE MARKET PULSE & NEWS - FIX FINAL
+        # ---------------------------------------------------------
         import feedparser
 
-        # 1. Garis Pembatas (Fancy Divider)
+        # 1. DIVIDER & HEADER (Pagar Pembatas)
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        # 2. CSS STYLING (Sangat Ketat)
+        # 2. CSS STYLING (Pastikan Box Rapi & Tidak Bocor)
         st.markdown(f"""
         <style>
-        .box-news-sigma {{
+        .news-card-sigma {{
             background: {met_bg};
             border: 1px solid {met_border};
-            border-radius: 8px;
-            height: 450px;
-            overflow: hidden;
+            border-radius: 12px;
+            height: 500px;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
             margin-bottom: 20px;
         }}
-        .header-news-sigma {{
-            padding: 10px 15px;
+        .news-header-sigma {{
+            padding: 12px 15px;
             background: rgba(245,194,66,0.1);
             border-bottom: 1px solid {met_border};
             color: #F5C242;
-            font-weight: bold;
-            font-size: 11px;
             font-family: 'IBM Plex Mono', monospace;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 1px;
         }}
-        .scroll-news-sigma {{
+        .news-scroll-sigma {{
             flex: 1;
             overflow-y: auto;
-            padding: 5px;
-        }}
-        .item-news-sigma {{
-            display: block;
             padding: 10px;
+        }}
+        .news-entry-sigma {{
+            display: block;
+            padding: 12px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             text-decoration: none !important;
-            transition: 0.2s;
+            transition: 0.2s ease;
         }}
-        .item-news-sigma:hover {{ background: rgba(245,194,66,0.05); }}
-        .title-news-sigma {{
+        .news-entry-sigma:hover {{ background: rgba(245,194,66,0.05); }}
+        .news-title-sigma {{
             color: {text_main};
             font-size: 13px;
-            line-height: 1.4;
-            margin-bottom: 3px;
+            line-height: 1.5;
+            margin-bottom: 5px;
         }}
-        .meta-news-sigma {{
+        .news-meta-sigma {{
             color: {text_sub};
             font-size: 10px;
             font-family: 'IBM Plex Mono', monospace;
         }}
+        /* Styling Scrollbar */
+        .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
+        .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
         """, unsafe_allow_html=True)
 
-        # 3. FUNGSI PENYARING (Output DIJAMIN String HTML)
-        def generate_html_string(url, label):
+        # 3. FUNGSI RENDER (PASTIKAN RETURN HANYA STRING HTML)
+        def get_clean_news_html(url, label_tag):
             try:
-                raw_feed = feedparser.parse(url)
-                # Pastikan variabel penampung adalah STRING kosong
-                html_body = ""
+                feed = feedparser.parse(url)
+                # Variabel penampung string (HARUS STRING)
+                final_html_string = ""
                 
-                for post in raw_feed.entries[:12]:
-                    # Paksa setiap elemen jadi string agar tidak bocor objeknya
-                    p_title = str(post.get('title', 'No Title'))
-                    p_link = str(post.get('link', '#'))
-                    p_date = str(post.get('published', 'Recent'))[:16]
+                # Kita olah data mentah jadi baris HTML di sini
+                for entry in feed.entries[:12]:
+                    # Paksa ambil title & link sebagai string murni
+                    e_title = str(entry.get('title', 'No Title'))
+                    e_link = str(entry.get('link', '#'))
+                    e_date = str(entry.get('published', 'Recent'))[:16]
                     
-                    # Susun sebagai satu string panjang
-                    html_body += f'''
-                    <a href="{p_link}" target="_blank" class="item-news-sigma">
-                        <div class="title-news-sigma">{p_title}</div>
-                        <div class="meta-news-sigma">[{label}] • {p_date}</div>
+                    # Tambahkan ke variabel penampung
+                    final_html_string += f'''
+                    <a href="{e_link}" target="_blank" class="news-entry-sigma">
+                        <div class="news-title-sigma">{e_title}</div>
+                        <div class="news-meta-sigma">[{label_tag}] • {e_date}</div>
                     </a>
                     '''
-                
-                if not html_body:
-                    return "<div style='color:gray; padding:20px;'>No data.</div>"
-                return html_body
-            except Exception as e:
-                return f"<div style='color:red; padding:20px;'>Error: {str(e)}</div>"
+                return final_html_string if final_html_string else "No news found."
+            except:
+                return "Failed to fetch news."
 
-        # 4. AMBIL DATA (HASIL ADALAH STRING)
-        # Gunakan link CNBC International untuk Global agar stabil
-        string_indo = generate_html_string("https://www.cnbcindonesia.com/market/rss", "IDX")
-        string_glob = generate_html_string("https://www.cnbc.com/id/15839069/device/rss/rss.html", "WORLD")
+        # 4. FETCHING (Simpan ke variabel baru)
+        # Global pakai CNBC International karena lebih stabil
+        domestic_html = get_clean_news_html("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
+        global_html = get_clean_news_html("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
 
-        # 5. RENDER KOLOM (Pastikan tidak ada variabel tergeletak sendirian!)
-        col_kiri, col_kanan = st.columns(2)
+        # 5. TAMPILKAN (Layout 2 Kolom)
+        col_n1, col_n2 = st.columns(2)
 
-        with col_kiri:
+        with col_n1:
             st.markdown(f"""
-            <div class="box-news-sigma">
-                <div class="header-news-sigma">🇮🇩 DOMESTIC MARKET NEWS</div>
-                <div class="scroll-news-sigma">{string_indo}</div>
+            <div class="news-card-sigma">
+                <div class="news-header-sigma">🇮🇩 DOMESTIC MARKET NEWS</div>
+                <div class="news-scroll-sigma">{domestic_html}</div>
             </div>
             """, unsafe_allow_html=True)
 
-        with col_kanan:
+        with col_n2:
             st.markdown(f"""
-            <div class="box-news-sigma">
-                <div class="header-news-sigma">🌎 GLOBAL ECONOMIC PULSE</div>
-                <div class="scroll-news-sigma">{string_glob}</div>
+            <div class="news-card-sigma">
+                <div class="news-header-sigma">🌎 GLOBAL ECONOMIC PULSE</div>
+                <div class="news-scroll-sigma">{global_html}</div>
             </div>
             """, unsafe_allow_html=True)
 
