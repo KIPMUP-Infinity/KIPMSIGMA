@@ -4709,33 +4709,35 @@ if current_view == "dashboard":
 
 
         # ---------------------------------------------------------
-        # LIVE NEWS FEED - SCRAPER MODE (DOMESTIC & GLOBAL)
+        # LIVE NEWS FEED - CLEAN RENDER (DOMESTIC & GLOBAL)
         # ---------------------------------------------------------
+        import feedparser
+
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        # 1. CSS STYLING UNTUK KOTAK BERITA
+        # 1. CSS STYLING (Pastikan hanya dipanggil sekali)
         st.markdown(f"""
         <style>
         .news-box {{
             background: {met_bg};
             border: 1px solid {met_border};
             border-radius: 12px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             transition: all 0.3s ease;
             margin-bottom: 20px;
-            height: 550px;
-            display: flex;
-            flex-direction: column;
         }}
         .news-box:hover {{
             transform: translateY(-5px);
             border-color: #F5C242;
-            box-shadow: 0 8px 25px rgba(245,194,66,0.1);
+            box-shadow: 0 8px 25px rgba(245,194,66,0.15);
         }}
         .news-header {{
-            padding: 15px 20px;
-            background: rgba(245,194,66,0.08);
+            padding: 12px 15px;
+            background: rgba(245,194,66,0.1);
             border-bottom: 1px solid {met_border};
             display: flex;
             align-items: center;
@@ -4743,99 +4745,87 @@ if current_view == "dashboard":
         }}
         .news-title {{
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 700;
             color: #F5C242;
-            text-transform: uppercase;
+            letter-spacing: 1px;
         }}
         .news-scroll-box {{
             flex: 1;
             overflow-y: auto;
-            padding: 10px;
+            padding: 5px 10px;
         }}
         .news-item {{
-            padding: 12px;
-            border-bottom: 1px solid rgba(245,194,66,0.05);
-            transition: background 0.2s;
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
             text-decoration: none !important;
             display: block;
         }}
         .news-item:hover {{
             background: rgba(245,194,66,0.05);
         }}
-        .news-tag {{
-            font-size: 0.6rem;
-            color: #F5C242;
-            font-family: 'IBM Plex Mono', monospace;
-            display: block;
+        .news-headline {{
+            font-size: 0.85rem;
+            color: {text_main};
+            line-height: 1.4;
             margin-bottom: 4px;
         }}
-        .news-headline {{
-            font-size: 0.88rem;
-            color: {text_main};
-            font-weight: 500;
-            line-height: 1.4;
-        }}
-        .news-time {{
+        .news-meta {{
             font-size: 0.65rem;
             color: {text_sub};
-            margin-top: 6px;
-            display: block;
+            font-family: 'IBM Plex Mono', monospace;
         }}
+        /* Scrollbar styling */
         .news-scroll-box::-webkit-scrollbar {{ width: 4px; }}
         .news-scroll-box::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
         """, unsafe_allow_html=True)
 
-        import feedparser
-
-        # 2. FUNGSI HELPER (DIPERBAIKI)
-        def get_news_html(url, tag_label):
+        # 2. FUNGSI FETCH BERITA
+        def fetch_news_data(url, tag):
             try:
                 feed = feedparser.parse(url)
-                html = '<div class="news-scroll-box">'
-                if not feed.entries:
-                    html += '<p style="color:gray; font-size:0.8rem; padding:20px;">Berita tidak tersedia.</p>'
+                items_html = ""
                 for entry in feed.entries[:15]:
-                    date_raw = entry.get('published', entry.get('updated', ''))
-                    # Potong string tanggal agar tidak terlalu panjang
-                    date_clean = date_raw[:16] if date_raw else "Terbaru"
-                    html += f"""
+                    date = entry.get('published', '')[:16]
+                    items_html += f'''
                     <a href="{entry.link}" target="_blank" class="news-item">
-                        <span class="news-tag">[{tag_label}]</span>
                         <div class="news-headline">{entry.title}</div>
-                        <span class="news-time">{date_clean}</span>
+                        <div class="news-meta">[{tag}] • {date}</div>
                     </a>
-                    """
-                html += '</div>'
-                return html
+                    '''
+                return items_html if items_html else '<p style="padding:20px; color:gray;">No news found.</p>'
             except:
-                return '<div class="news-scroll-box"><p style="color:red;">Gagal memuat feed.</p></div>'
+                return '<p style="padding:20px; color:red;">Failed to load feed.</p>'
 
-        # 3. RENDER KOLOM
+        # 3. PROSES DATA
+        dom_content = fetch_news_data("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
+        glob_content = fetch_news_data("https://www.reutersagency.com/feed/?best-topics=business&format=xml", "GLOBAL")
+
+        # 4. RENDER KE LAYAR
         col_news1, col_news2 = st.columns(2)
 
         with col_news1:
-            # Render DOMESTIC
-            domestic_news = get_news_html("https://www.cnbcindonesia.com/market/rss", "CNBC ID")
             st.markdown(f"""
             <div class="news-box">
                 <div class="news-header">
-                    <span>🇮🇩</span> <span class="news-title">Domestic Market News</span>
+                    <span>🇮🇩</span> <span class="news-title">DOMESTIC MARKET NEWS</span>
                 </div>
-                {domestic_news}
+                <div class="news-scroll-box">
+                    {dom_content}
+                </div>
             </div>
             """, unsafe_allow_html=True)
 
         with col_news2:
-            # Render GLOBAL
-            global_news = get_news_html("https://www.reutersagency.com/feed/?best-topics=business&format=xml", "REUTERS")
             st.markdown(f"""
             <div class="news-box">
                 <div class="news-header">
-                    <span>🌎</span> <span class="news-title">Global Economic Pulse</span>
+                    <span>🌎</span> <span class="news-title">GLOBAL ECONOMIC PULSE</span>
                 </div>
-                {global_news}
+                <div class="news-scroll-box">
+                    {glob_content}
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
