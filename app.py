@@ -5293,25 +5293,24 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             tp2 = ai_data.get('tp2')
                             tp3 = ai_data.get('tp3')
 
-                            # Fungsi khusus untuk menggambar garis full & label nempel di KANAN DALAM
+                            # Fungsi Final: Garis Full Layar & Label Rata Kanan Dalam
                             def _draw_tv_level(y_val, label_text, line_color, bg_color, text_color, dash_style='dash'):
                                 if not y_val: return
                                 y_val = float(y_val)
 
-                                # 1. Garis membentang dari kiri ke ujung padding kanan
-                                fig.add_trace(go.Scatter(
-                                    x=[x_str[0], x_all[-1]],
-                                    y=[y_val, y_val],
-                                    mode='lines',
+                                # 1. Garis absolut dari kiri (0) ke kanan (1) layar penuh
+                                fig.add_shape(
+                                    type="line", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=y_val, y1=y_val,
                                     line=dict(color=line_color, width=1.5, dash=dash_style),
-                                    showlegend=False,
-                                    hoverinfo='skip'
-                                ), row=1, col=1)
+                                    layer="below"
+                                )
 
-                                # 2. Label diletakkan persis di koordinat x paling ujung kanan (x_all[-1])
-                                # xanchor='right' memaksa kotak teks merambat ke kiri, sehingga PASTI berada di DALAM chart
+                                # 2. Label dikunci di x=1.0 (batas tembok kanan) dengan xanchor='right' 
+                                # (Artinya kotak ditarik ke kiri dari tembok, jadi TIDAK MUNGKIN kepotong/keluar layar)
                                 fig.add_annotation(
-                                    x=x_all[-1], y=y_val,
+                                    xref='paper', yref='y',
+                                    x=1.0, y=y_val,
                                     text=f"<b>{label_text} {y_val:,.0f}</b>",
                                     showarrow=False,
                                     xanchor='right', yanchor='middle',
@@ -5322,28 +5321,23 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                                     borderpad=4
                                 )
 
-                            # Gambar Area BUY (Kotak hijau transparan + Garis Atas Bawah)
+                            # Area BUY (Menggunakan Shape Kotak agar mulus full width)
                             if el and eh:
-                                # Area kotak membentang penuh
-                                fig.add_trace(go.Scatter(
-                                    x=[x_str[0], x_all[-1], x_all[-1], x_str[0]],
-                                    y=[float(eh), float(eh), float(el), float(el)],
-                                    fill='toself',
-                                    fillcolor='rgba(8,153,129,0.15)', # Hijau transparan ala TV
-                                    mode='lines',
+                                fig.add_shape(
+                                    type="rect", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=float(el), y1=float(eh),
+                                    fillcolor="rgba(8,153,129,0.15)", # Hijau transparan
                                     line=dict(width=0),
-                                    showlegend=False,
-                                    hoverinfo='skip'
-                                ), row=1, col=1)
-
+                                    layer="below"
+                                )
                                 _draw_tv_level(eh, "BUY AREA", '#089981', tv_bg_color, '#089981', 'dash')
                                 _draw_tv_level(el, "BUY AREA", '#089981', tv_bg_color, '#089981', 'dash')
 
-                            # Gambar SL (Warna Merah Solid, tulisan putih background merah)
+                            # SL (Merah Solid)
                             if sl:
                                 _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
 
-                            # Gambar TP (Kuning Solid, background kuning teks hitam)
+                            # TP (Kuning Solid)
                             if tp1: _draw_tv_level(tp1, "TP1", '#F5C242', '#F5C242', '#000000', 'dot')
                             if tp2: _draw_tv_level(tp2, "TP2", '#F5C242', '#F5C242', '#000000', 'dot')
                             if tp3: _draw_tv_level(tp3, "TP3", '#F5C242', '#F5C242', '#000000', 'dot')
