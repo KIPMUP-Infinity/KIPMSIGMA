@@ -4854,8 +4854,167 @@ if current_view == "dashboard":
                 <div style='flex:1; overflow-y:auto;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
 
+        # ── ECONOMIC CALENDAR ─────────────────────────────────────
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-    with tab_rotation:
+        cal_bg      = met_bg
+        cal_border  = met_border
+        cal_text    = text_main
+        cal_sub_clr = text_sub
+
+        calendar_data = {
+            "🇮🇩 INDONESIA": [
+                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
+                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
+                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
+                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
+                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
+                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
+            ],
+            "🇺🇸 UNITED STATES": [
+                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
+                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
+                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
+                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
+                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
+                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
+            ],
+            "🇨🇳 CHINA": [
+                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
+                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
+                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
+                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
+                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
+                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
+            ],
+            "🇯🇵 JAPAN": [
+                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
+                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
+                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
+                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
+                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
+                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
+            ],
+        }
+
+        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
+        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
+
+        cal_cols = st.columns(2)
+        country_list = list(calendar_data.items())
+
+        for ci, (country, events) in enumerate(country_list):
+            col_idx = ci % 2
+            with cal_cols[col_idx]:
+                rows_html = ""
+                for ev in events:
+                    dk     = ev["dampak"]
+                    d_clr  = dampak_color.get(dk, "#b2b5be")
+                    d_bg   = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
+                    rows_html += f"""
+                    <div class='cal-row' data-keterangan="{ev['keterangan']}">
+                        <div class='cal-date'>{ev['tanggal']}</div>
+                        <div class='cal-event'>{ev['event']}</div>
+                        <div class='cal-nums'>
+                            <span class='cal-forecast'>▶ {ev['forecast']}</span>
+                            <span class='cal-prev'>Prev: {ev['prev']}</span>
+                        </div>
+                        <div class='cal-badge' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{dk}</div>
+                        <div class='cal-tooltip'>{ev['keterangan']}</div>
+                    </div>"""
+
+                st.markdown(f"""
+                <style>
+                .cal-container-{ci} {{
+                    background:{cal_bg};
+                    border:1px solid {cal_border};
+                    border-radius:12px;
+                    overflow:hidden;
+                    margin-bottom:20px;
+                    font-family:'IBM Plex Mono',monospace;
+                }}
+                .cal-header-{ci} {{
+                    padding:10px 16px;
+                    background:rgba(245,194,66,0.09);
+                    border-bottom:1px solid {cal_border};
+                    font-size:0.72rem;
+                    font-weight:700;
+                    letter-spacing:0.12em;
+                    color:#F5C242;
+                    text-transform:uppercase;
+                }}
+                .cal-row {{
+                    display:grid;
+                    grid-template-columns:90px 1fr 130px 58px;
+                    align-items:center;
+                    gap:8px;
+                    padding:9px 16px;
+                    border-bottom:1px solid {cal_border};
+                    cursor:pointer;
+                    position:relative;
+                    transition:background 0.18s;
+                }}
+                .cal-row:last-child {{ border-bottom:none; }}
+                .cal-row:hover {{ background:rgba(245,194,66,0.06); }}
+                .cal-date {{
+                    font-size:0.66rem;
+                    color:{cal_sub_clr};
+                    white-space:nowrap;
+                }}
+                .cal-event {{
+                    font-size:0.73rem;
+                    color:{cal_text};
+                    font-weight:500;
+                }}
+                .cal-nums {{
+                    display:flex;
+                    flex-direction:column;
+                    gap:2px;
+                    text-align:right;
+                }}
+                .cal-forecast {{
+                    font-size:0.71rem;
+                    color:#089981;
+                    font-weight:600;
+                }}
+                .cal-prev {{
+                    font-size:0.63rem;
+                    color:{cal_sub_clr};
+                }}
+                .cal-badge {{
+                    font-size:0.60rem;
+                    font-weight:700;
+                    letter-spacing:0.08em;
+                    padding:2px 6px;
+                    border-radius:4px;
+                    text-align:center;
+                    white-space:nowrap;
+                }}
+                .cal-tooltip {{
+                    display:none;
+                    position:absolute;
+                    left:16px; right:16px;
+                    bottom:calc(100% + 6px);
+                    background:{'#1e2433' if is_dark else '#ffffff'};
+                    border:1px solid {cal_border};
+                    border-left:3px solid #F5C242;
+                    border-radius:0 6px 6px 0;
+                    padding:8px 12px;
+                    font-size:0.70rem;
+                    color:{cal_text};
+                    line-height:1.5;
+                    z-index:9999;
+                    pointer-events:none;
+                    box-shadow:0 4px 20px rgba(0,0,0,0.35);
+                }}
+                .cal-row:hover .cal-tooltip {{ display:block; }}
+                </style>
+                <div class='cal-container-{ci}'>
+                    <div class='cal-header-{ci}'>{country} — Apr–Mei 2026</div>
+                    {rows_html}
+                </div>
+                """, unsafe_allow_html=True)
         def highlight_status(val):
             if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
             elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
@@ -4884,15 +5043,13 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown("""
-        <div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:#b2b5be;
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
-            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;'>
-        🗓️ <b style='color:#F5C242;'>Data per:</b> Feb 2025 (MSCI Semi-Annual Review)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#F5C242;'>Rebalance berikutnya:</b> Mei 2025 (estimasi)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:#b2b5be;'>Sumber: MSCI.com — diperbarui setiap review Feb & Agustus</span>
-        </div>
-        """, unsafe_allow_html=True)
+            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 28 Februari 2025 (MSCI Semi-Annual Review Feb 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Review berikutnya:</b> Agustus 2025 (pengumuman ~13 Agu, efektif 29 Agu 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari &amp; Agustus. Sumber: <b>msci.com</b></span>
+        </div>""", unsafe_allow_html=True)
         msci_data = {
             "Ticker": [
                 "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", 
@@ -4933,15 +5090,13 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown("""
-        <div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:#b2b5be;
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
-            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;'>
-        🗓️ <b style='color:#F5C242;'>Data per:</b> Mar 2025 (FTSE Quarterly Review Q1 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#F5C242;'>Review berikutnya:</b> Jun 2025 (Q2)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:#b2b5be;'>Sumber: FTSE Russell — review setiap kuartal (Mar/Jun/Sep/Des)</span>
-        </div>
-        """, unsafe_allow_html=True)
+            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 24 Maret 2025 (FTSE Quarterly Review Q1 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Review berikutnya:</b> Juni 2025 (pengumuman ~6 Jun, efektif 23 Jun 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:{text_sub};'>Jadwal: 4× setahun — Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
+        </div>""", unsafe_allow_html=True)
         
         ftse_data = {
             "Ticker": [
@@ -4976,15 +5131,13 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown("""
-        <div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:#b2b5be;
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
-            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;'>
-        🗓️ <b style='color:#F5C242;'>Data per:</b> Feb 2025 (Periode Feb–Jul 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#F5C242;'>Rebalance berikutnya:</b> Agustus 2025 (Periode Agu–Jan 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:#b2b5be;'>Sumber: BEI — diperbarui setiap Feb & Agustus</span>
-        </div>
-        """, unsafe_allow_html=True)
+            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 03 Februari 2025 (Periode Feb–Jul 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Rebalance berikutnya:</b> 01 Agustus 2025 (Periode Agu 2025–Jan 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
+        </div>""", unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
@@ -5191,23 +5344,11 @@ Harga Terakhir: {live_price_str}
 Data Fundamental:
 {fund_context}
 
-INSTRUKSI WAJIB — baca sebelum menjawab:
-
-1. Berikan analisa singkat: teknikal (tren, EMA, volume) + fundamental (valuasi, profitabilitas).
-2. Jika kondisi saham TIDAK LAYAK (tren bearish kuat tanpa sinyal reversal, fundamental buruk, tidak ada setup jelas), tulis tegas "TIDAK DIREKOMENDASIKAN SAAT INI" dan jelaskan alasannya. Tetap sertakan JSON dengan semua nilai 0 dan tp1 null.
-3. Jika LAYAK, tentukan level harga dengan aturan KETAT berikut:
-   - entry_low & entry_high: zona beli (range sempit, mendekati support terdekat)
-   - stop_loss: di bawah support kuat, WAJIB diisi
-   - TP1: SELALU diisi — resistance terdekat pertama (wajib ada)
-   - TP2: isi HANYA jika ada resistance kedua yang jelas DAN momentum/volume mendukung. Jika tidak, null.
-   - TP3: isi HANYA jika fundamental sangat kuat DAN ada resistance ketiga yang valid. Jika tidak, null.
-4. Konsistensi: hitung TP dari level teknikal nyata (resistance, EMA, round number). BUKAN dari persentase arbitrer.
-
-Di AKHIR jawaban, WAJIB sertakan blok JSON persis seperti ini (angka Rupiah murni, tanpa tanda kutip):
+Berikan analisa teknikal singkat, lalu di AKHIR jawaban WAJIB sertakan blok JSON persis seperti format ini (gunakan harga dalam Rupiah, angka murni tanpa tanda kutip):
 ```json
 {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": null, "tp3": null}}
 ```
-Semua harga HARUS mendekati harga saat ini ({live_price_str}). Jangan ubah format JSON."""
+Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harga HARUS mendekati harga saat ini ({live_price_str})."""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
