@@ -5232,67 +5232,12 @@ if current_view == "dashboard":
         if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
             st.session_state["sh_last_ticker"] = sh_ticker
 
-            import plotly.graph_objects as go
-            import pandas as pd
-            import numpy as np
             import datetime as _dt
+            import pandas as pd
 
-            # ── Fetch shareholder history from IDX ──
-            @st.cache_data(ttl=43200, show_spinner=False)
-            def fetch_shareholder_history(ticker):
-                import urllib.request, json as _j
-                result = []
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Referer": "https://www.idx.co.id/",
-                    "Accept": "application/json, text/javascript, */*"
-                }
-                # Try multiple IDX endpoints
-                urls = [
-                    f"https://www.idx.co.id/umbraco/Surface/StockData/GetShareholderHistory?code={ticker}",
-                    f"https://www.idx.co.id/umbraco/Surface/StockData/GetStockShareholder?code={ticker}&start=0&length=30",
-                    f"https://www.idx.co.id/api/stock/shareholder-history?code={ticker}",
-                ]
-                for url in urls:
-                    try:
-                        req = urllib.request.Request(url, headers=headers)
-                        with urllib.request.urlopen(req, timeout=8) as r:
-                            raw = _j.loads(r.read())
-                        # Parse berbagai format response
-                        items = []
-                        if isinstance(raw, list):
-                            items = raw
-                        elif isinstance(raw, dict):
-                            for key in ["Data", "data", "Result", "result", "Records", "records"]:
-                                if key in raw and isinstance(raw[key], list):
-                                    items = raw[key]
-                                    break
-                        for item in items:
-                            date_str = (item.get("Date") or item.get("date") or
-                                        item.get("RecordDate") or item.get("EffDate") or "")
-                            count = (item.get("Total") or item.get("total") or
-                                     item.get("ShareholderTotal") or item.get("NumberOfShareholder") or
-                                     item.get("Shareholder") or 0)
-                            if date_str and count:
-                                try:
-                                    for fmt in ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"]:
-                                        try:
-                                            dt = _dt.datetime.strptime(str(date_str)[:10], fmt[:10])
-                                            result.append({"date": dt, "shareholders": int(count)})
-                                            break
-                                        except: pass
-                                except: pass
-                        if result:
-                            break
-                    except: pass
-                return sorted(result, key=lambda x: x["date"]) if result else []
-
-            # ── Manual database 2 tahun kebelakang (data publik IDX/Stockbit) ──
-            @st.cache_data(ttl=86400, show_spinner=False)
+            # ── Manual database (data publik IDX/Stockbit) ──────────────
             def get_manual_sh_db():
-                # Sumber: data pemegang saham bulanan IDX, diperbaharui manual
-                # Periode: ~Apr 2024 - Feb 2026 (24 bulan)
-                db = {
+                return {
                     "BBCA": [
                         {"date": _dt.datetime(2024, 3, 31),  "shareholders": 155432},
                         {"date": _dt.datetime(2024, 4, 30),  "shareholders": 157810},
@@ -5380,59 +5325,117 @@ if current_view == "dashboard":
                         {"date": _dt.datetime(2026, 2, 28),  "shareholders": 108500},
                     ],
                 }
-                return db
 
-            # ── Fetch stock price history (2 tahun) ──
-            @st.cache_data(ttl=3600, show_spinner=False)
-            def fetch_stock_price_2y(ticker):
-                try:
-                    import yfinance as yf
-                    t = yf.Ticker(f"{ticker}.JK")
-                    hist = t.history(period="2y", auto_adjust=True)
-                    if not hist.empty:
-                        hist = hist[["Close"]].reset_index()
-                        hist.columns = ["date", "price"]
-                        hist["date"] = pd.to_datetime(hist["date"]).dt.tz_localize(None)
-                        return hist
-                except: pass
-                return pd.DataFrame()
+            manual_db = get_manual_sh_db()
+            sh_data = manual_db.get(sh_ticker, [])
+            has_live_data = bool(sh_data)
 
-            with st.spinner(f"Mengambil data {sh_ticker}..."):
-                # Coba IDX live dulu
-                sh_data = fetch_shareholder_history(sh_ticker)
-                data_source = "IDX Live"
-                # Fallback ke manual DB
-                if not sh_data:
-                    manual_db = get_manual_sh_db()
-                    sh_data = manual_db.get(sh_ticker, [])
-                    data_source = "Database Manual (IDX Stockbit)" if sh_data else None
-                price_df = fetch_stock_price_2y(sh_ticker)
+            if not has_live_data:
+                # ── COMING SOON STATE ──────────────────────────────────
+                st.markdown(f"""
+                <div style='
+                    background: {met_bg};
+                    border: 1px solid {met_border};
+                    border-left: 4px solid #F5C242;
+                    border-radius: 14px;
+                    padding: 48px 40px;
+                    text-align: center;
+                    margin: 24px 0;
+                    position: relative;
+                    overflow: hidden;
+                '>
+                    <div style='
+                        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+                        background: linear-gradient(90deg, transparent, #F5C242, transparent);
+                        animation: shimmer 2s infinite;
+                    '></div>
+                    <div style='font-size: 2.5rem; margin-bottom: 12px;'>📡</div>
+                    <div style='
+                        font-family: IBM Plex Mono, monospace;
+                        font-size: 1.1rem;
+                        font-weight: 700;
+                        letter-spacing: 0.15em;
+                        color: #F5C242;
+                        text-transform: uppercase;
+                        margin-bottom: 8px;
+                    '>DATA PIPELINE IN PROGRESS</div>
+                    <div style='
+                        font-family: IBM Plex Mono, monospace;
+                        font-size: 0.8rem;
+                        color: {text_sub};
+                        max-width: 520px;
+                        margin: 0 auto 24px;
+                        line-height: 1.7;
+                    '>
+                        Integrasi data pemegang saham real-time untuk <b style="color:{text_main};">{sh_ticker}</b> sedang dalam proses pengembangan.
+                        Sumber resmi IDX menerbitkan data ini setiap bulan (biasanya di atas tanggal 10).
+                        Tim SIGMA sedang membangun pipeline scraping otomatis untuk menangkap data terbaru setiap emiten.
+                    </div>
+                    <div style='
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 10px;
+                        background: rgba(245,194,66,0.08);
+                        border: 1px solid rgba(245,194,66,0.25);
+                        border-radius: 8px;
+                        padding: 10px 20px;
+                        font-family: IBM Plex Mono, monospace;
+                        font-size: 0.72rem;
+                        color: #F5C242;
+                        letter-spacing: 0.1em;
+                        text-transform: uppercase;
+                    '>
+                        <span style='width: 8px; height: 8px; background: #F5C242; border-radius: 50%; display: inline-block; animation: pulse 1.5s infinite;'></span>
+                        Saham dengan data tersedia: BBCA &nbsp;·&nbsp; BBRI &nbsp;·&nbsp; BMRI &nbsp;·&nbsp; TLKM &nbsp;·&nbsp; ASII &nbsp;·&nbsp; BREN
+                    </div>
+                </div>
+                <style>
+                @keyframes pulse {{ 0%,100%{{opacity:1}} 50%{{opacity:0.3}} }}
+                </style>
+                """, unsafe_allow_html=True)
 
-            if not sh_data:
-                st.warning(f"⚠️ Data pemegang saham **{sh_ticker}** belum tersedia di database. Saham dengan data tersedia: BBCA, BBRI, BMRI, TLKM, ASII, BREN.")
-            elif price_df.empty:
-                st.warning(f"⚠️ Data harga **{sh_ticker}** tidak tersedia dari yfinance.")
             else:
+                # ── RENDER CHART & DATA ────────────────────────────────
+                import plotly.graph_objects as go
+                import numpy as np
+
+                @st.cache_data(ttl=3600, show_spinner=False)
+                def fetch_stock_price_2y(ticker):
+                    try:
+                        import yfinance as yf
+                        t = yf.Ticker(f"{ticker}.JK")
+                        hist = t.history(period="2y", auto_adjust=True)
+                        if not hist.empty:
+                            hist = hist[["Close"]].reset_index()
+                            hist.columns = ["date", "price"]
+                            hist["date"] = pd.to_datetime(hist["date"]).dt.tz_localize(None)
+                            return hist
+                    except: pass
+                    return pd.DataFrame()
+
+                with st.spinner(f"Mengambil data harga {sh_ticker}..."):
+                    price_df = fetch_stock_price_2y(sh_ticker)
+
                 df_sh = pd.DataFrame(sh_data)
                 df_sh["date"] = pd.to_datetime(df_sh["date"])
                 df_sh = df_sh.sort_values("date").reset_index(drop=True)
                 df_sh["delta"] = df_sh["shareholders"].diff()
                 df_sh["pct_change"] = df_sh["shareholders"].pct_change() * 100
 
-                # ── Sinyal berdasarkan 6 bulan terakhir ──
+                # Sinyal
                 n_periods = min(6, len(df_sh) - 1)
                 trend_6m = df_sh["shareholders"].iloc[-1] - df_sh["shareholders"].iloc[-1 - n_periods]
                 pct_6m = (trend_6m / df_sh["shareholders"].iloc[-1 - n_periods]) * 100 if n_periods > 0 else 0
 
                 if pct_6m < -15:
                     sinyal, sinyal_color = "DISTRIBUSI KUAT", "#f23645"
-                    sinyal_desc = "Jumlah pemegang saham turun >15% dalam 6 bulan. Smart money kemungkinan besar sedang distribusi — menjual ke retail yang semakin sedikit. Waspadai tekanan jual lanjutan."
+                    sinyal_desc = "Jumlah pemegang saham turun >15% dalam 6 bulan. Smart money kemungkinan besar sedang distribusi — menjual saham ke retail yang makin sedikit. Waspadai tekanan jual lanjutan."
                 elif pct_6m < -5:
                     sinyal, sinyal_color = "DISTRIBUSI MODERAT", "#F5C242"
-                    sinyal_desc = "Pemegang saham turun 5–15%. Perlu konfirmasi dari bandarmologi dan volume. Bisa konsolidasi atau awal distribusi. Belum sinyal jual kuat."
+                    sinyal_desc = "Pemegang saham turun 5–15%. Perlu konfirmasi dari bandarmologi dan volume. Bisa konsolidasi atau awal distribusi."
                 elif pct_6m > 15:
-                    sinyal, sinyal_color = "RETAIL MASUK BESAR", "#F5C242"
-                    sinyal_desc = "Pemegang saham naik >15% — retail masuk masif. Hati-hati: ini bisa berarti euphoria puncak. Konfirmasi dengan bandarmologi apakah smart money sedang exit."
+                    sinyal, sinyal_color = "RETAIL MASUK MASIF", "#F5C242"
+                    sinyal_desc = "Pemegang saham naik >15% — retail masuk besar-besaran. Hati-hati: bisa berarti euphoria puncak. Konfirmasi dengan net broker apakah smart money sedang exit."
                 elif pct_6m > 5:
                     sinyal, sinyal_color = "AKUMULASI BERTAHAP", "#089981"
                     sinyal_desc = "Pemegang saham naik 5–15% secara gradual. Sinyal positif — kemungkinan akumulasi terstruktur. Konfirmasi dengan tren harga dan net buy asing."
@@ -5440,22 +5443,24 @@ if current_view == "dashboard":
                     sinyal, sinyal_color = "KONSOLIDASI", "#4285F4"
                     sinyal_desc = "Perubahan pemegang saham minimal. Pasar dalam fase tunggu. Monitor breakout dari range ini."
 
-                # ── Metrics ──
                 latest = df_sh.iloc[-1]
-                prev = df_sh.iloc[-2] if len(df_sh) > 1 else latest
-                peak_idx = df_sh["shareholders"].idxmax()
-                peak_val = df_sh.loc[peak_idx, "shareholders"]
-                peak_date = df_sh.loc[peak_idx, "date"].strftime("%b %Y")
-                total_chg_pct = ((latest["shareholders"] - df_sh.iloc[0]["shareholders"]) / df_sh.iloc[0]["shareholders"] * 100)
                 delta_val = latest["delta"] if not pd.isna(latest["delta"]) else 0
+                peak_idx  = df_sh["shareholders"].idxmax()
+                peak_val  = df_sh.loc[peak_idx, "shareholders"]
+                peak_date = df_sh.loc[peak_idx, "date"].strftime("%b %Y")
+                total_chg = ((latest["shareholders"] - df_sh.iloc[0]["shareholders"]) / df_sh.iloc[0]["shareholders"] * 100)
 
+                # Metrics
                 m1, m2, m3, m4 = st.columns(4)
-                for col, title, val, sub, sub_color in [
+                for col, title, val, sub, sub_c in [
                     (m1, "Pemegang Saham Terkini", f"{int(latest['shareholders']):,}",
-                     f"{'▲' if delta_val >= 0 else '▼'} {abs(int(delta_val)):,} vs bulan lalu",
+                     f"{'▲' if delta_val>=0 else '▼'} {abs(int(delta_val)):,} vs bulan lalu",
                      "#089981" if delta_val >= 0 else "#f23645"),
                     (m2, "Peak Pemegang Saham", f"{int(peak_val):,}", peak_date, text_sub),
-                    (m3, "Perubahan 6 Bulan", f"{'+'if pct_6m>=0 else ''}{pct_6m:.1f}%", f"Sejak {df_sh.iloc[-1-n_periods]['date'].strftime('%b %Y')}", "#089981" if pct_6m >= 0 else "#f23645"),
+                    (m3, "Perubahan 6 Bulan",
+                     f"{'+'if pct_6m>=0 else ''}{pct_6m:.1f}%",
+                     f"Sejak {df_sh.iloc[-1-n_periods]['date'].strftime('%b %Y')}",
+                     "#089981" if pct_6m >= 0 else "#f23645"),
                     (m4, "Sinyal", sinyal, "Berdasarkan tren 6 bulan", sinyal_color),
                 ]:
                     with col:
@@ -5463,35 +5468,35 @@ if current_view == "dashboard":
                         <div style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;'>
                             <div style='font-size:0.6rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
                             <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
-                            <div style='font-size:0.65rem;color:{sub_color};margin-top:3px;'>{sub}</div>
+                            <div style='font-size:0.65rem;color:{sub_c};margin-top:3px;'>{sub}</div>
                         </div>""", unsafe_allow_html=True)
 
-                st.markdown(f"<div style='font-size:0.62rem;color:{text_sub};text-align:right;margin:6px 0 0;font-family:IBM Plex Mono,monospace;'>Sumber: {data_source} &nbsp;|&nbsp; Update: {latest['date'].strftime('%d %b %Y')}</div>", unsafe_allow_html=True)
-                st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-size:0.62rem;color:{text_sub};text-align:right;margin:6px 0 4px;font-family:IBM Plex Mono,monospace;'>Sumber: Database Manual (IDX Stockbit) &nbsp;|&nbsp; Update: {latest['date'].strftime('%d %b %Y')}</div>", unsafe_allow_html=True)
+                st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-                # ── Align price ke bulan-bulan shareholder ──
-                price_df["ym"] = price_df["date"].dt.to_period("M")
-                price_monthly = price_df.groupby("ym")["price"].last().reset_index()
-                price_monthly["date_ts"] = price_monthly["ym"].dt.to_timestamp("M")
+                # ── Align price ke bulan shareholder ──
+                if not price_df.empty:
+                    price_df["ym"] = price_df["date"].dt.to_period("M")
+                    price_monthly = price_df.groupby("ym")["price"].last().reset_index()
+                    df_sh["ym"] = df_sh["date"].dt.to_period("M")
+                    df_merged = df_sh.merge(price_monthly[["ym", "price"]], on="ym", how="left")
+                else:
+                    df_merged = df_sh.copy()
+                    df_merged["price"] = float("nan")
 
-                df_sh["ym"] = df_sh["date"].dt.to_period("M")
-                df_merged = df_sh.merge(
-                    price_monthly[["ym", "price", "date_ts"]],
-                    on="ym", how="left"
-                )
-
-                # ── Chart: dual trace, SINGLE y-axis trick ──
-                # Normalisasi ke 100 untuk overlay bersih, tapi tampilkan nilai asli di hover
+                # ── Normalisasi min-max ──
                 sh_vals = df_sh["shareholders"].values.astype(float)
-                sh_norm = (sh_vals - sh_vals.min()) / (sh_vals.max() - sh_vals.min() + 1e-9) * 100
+                sh_norm = (sh_vals - sh_vals.min()) / max(sh_vals.max() - sh_vals.min(), 1) * 100
 
                 pr_vals = df_merged["price"].values.astype(float)
                 pr_valid = pr_vals[~np.isnan(pr_vals)]
-                pr_norm = np.where(
-                    np.isnan(pr_vals),
-                    np.nan,
-                    (pr_vals - pr_valid.min()) / (pr_valid.max() - pr_valid.min() + 1e-9) * 100
-                )
+                if len(pr_valid) > 0:
+                    pr_norm = np.where(
+                        np.isnan(pr_vals), np.nan,
+                        (pr_vals - pr_valid.min()) / max(pr_valid.max() - pr_valid.min(), 1) * 100
+                    )
+                else:
+                    pr_norm = np.full_like(pr_vals, np.nan)
 
                 chart_bg   = "rgba(0,0,0,0)"
                 chart_grid = "rgba(255,255,255,0.06)" if is_dark else "rgba(0,0,0,0.07)"
@@ -5500,40 +5505,37 @@ if current_view == "dashboard":
                 fig = go.Figure()
 
                 # Bar delta (background)
-                bar_colors = ["rgba(8,153,129,0.35)" if (v >= 0) else "rgba(242,54,69,0.35)"
-                              for v in df_sh["delta"].fillna(0)]
-                delta_norm = df_sh["delta"].fillna(0).values.astype(float)
-                d_max = max(abs(delta_norm.max()), abs(delta_norm.min()), 1)
-                delta_scaled = delta_norm / d_max * 15  # scale ke ±15 di sumbu 0-100
-
+                delta_arr = df_sh["delta"].fillna(0).values.astype(float)
+                d_max = max(abs(delta_arr).max(), 1)
+                delta_scaled = delta_arr / d_max * 15
+                bar_colors = [
+                    "rgba(8,153,129,0.40)" if v >= 0 else "rgba(242,54,69,0.40)"
+                    for v in delta_arr
+                ]
                 fig.add_trace(go.Bar(
-                    x=df_sh["date"],
-                    y=delta_scaled,
+                    x=df_sh["date"], y=delta_scaled,
                     base=0,
                     marker_color=bar_colors,
                     name="Δ Pemegang Saham",
                     hovertemplate="<b>%{x|%b %Y}</b><br>Δ: %{customdata:+,.0f}<extra></extra>",
-                    customdata=df_sh["delta"].fillna(0),
-                    showlegend=True,
-                    opacity=0.7
+                    customdata=delta_arr,
+                    showlegend=True, opacity=0.8
                 ))
 
-                # Line: harga (kuning)
-                fig.add_trace(go.Scatter(
-                    x=df_merged["date"],
-                    y=pr_norm,
-                    mode="lines",
-                    name="Harga Saham",
-                    line=dict(color="#F5C242", width=2.5, dash="dot"),
-                    hovertemplate="<b>%{x|%b %Y}</b><br>Harga: Rp%{customdata:,.0f}<extra></extra>",
-                    customdata=pr_vals,
-                    connectgaps=False
-                ))
+                # Line harga (kuning putus-putus)
+                if not np.all(np.isnan(pr_norm)):
+                    fig.add_trace(go.Scatter(
+                        x=df_merged["date"], y=pr_norm,
+                        mode="lines",
+                        name="Harga Saham",
+                        line=dict(color="#F5C242", width=2.5, dash="dot"),
+                        hovertemplate="<b>%{x|%b %Y}</b><br>Harga: Rp%{customdata:,.0f}<extra></extra>",
+                        customdata=pr_vals, connectgaps=False
+                    ))
 
-                # Line: pemegang saham (biru) — di atas semua
+                # Line pemegang saham (biru)
                 fig.add_trace(go.Scatter(
-                    x=df_sh["date"],
-                    y=sh_norm,
+                    x=df_sh["date"], y=sh_norm,
                     mode="lines+markers",
                     name="Pemegang Saham",
                     line=dict(color="#4285F4", width=3),
@@ -5543,16 +5545,15 @@ if current_view == "dashboard":
                     customdata=sh_vals,
                 ))
 
-                # Annotations: nilai aktual di tiap titik pemegang saham
-                annotations = []
-                for i, row in df_sh.iterrows():
-                    annotations.append(dict(
-                        x=row["date"], y=sh_norm[i] + 5,
-                        text=f"{int(row['shareholders']):,}",
-                        showarrow=False,
-                        font=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
-                        xanchor="center"
-                    ))
+                # Annotations nilai asli di tiap titik
+                annotations = [dict(
+                    x=df_sh.iloc[i]["date"],
+                    y=sh_norm[i] + 6,
+                    text=f"{int(sh_vals[i]):,}",
+                    showarrow=False,
+                    font=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
+                    xanchor="center"
+                ) for i in range(len(df_sh))]
 
                 fig.update_layout(
                     paper_bgcolor=chart_bg,
@@ -5567,7 +5568,7 @@ if current_view == "dashboard":
                     font=dict(family="IBM Plex Mono, monospace", color=chart_text),
                     xaxis=dict(
                         showgrid=True, gridcolor=chart_grid,
-                        tickformat="%b\n%Y",
+                        tickformat="%b %Y",
                         tickfont=dict(size=10, color=chart_text),
                         linecolor=chart_grid, zeroline=False
                     ),
@@ -5578,38 +5579,35 @@ if current_view == "dashboard":
                         range=[-20, 115],
                         tickvals=[0, 25, 50, 75, 100],
                         ticktext=["Min", "25%", "50%", "75%", "Max"],
-                        title="Nilai Ternormalisasi (Min–Max)",
+                        title="Nilai Ternormalisasi",
                         titlefont=dict(size=10, color=chart_text),
                     ),
                     annotations=annotations,
-                    bargap=0.3,
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
 
-                # ── Legenda manual ──
                 st.markdown(f"""
-                <div style='display:flex;gap:24px;font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:{text_sub};margin:-8px 0 12px;'>
-                    <span>🔵 Pemegang Saham (sumbu dinormalisasi)</span>
-                    <span style='color:#F5C242;'>— Harga Saham (ternormalisasi)</span>
+                <div style='display:flex;gap:24px;font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:{text_sub};margin:-6px 0 14px;flex-wrap:wrap;'>
+                    <span style='color:#4285F4;'>━━ Pemegang Saham (skala kiri)</span>
+                    <span style='color:#F5C242;'>┄┄ Harga Saham (ternormalisasi)</span>
                     <span>🟢🔴 Bar = Δ Bulan Ini</span>
                 </div>""", unsafe_allow_html=True)
 
-                # ── Interpretasi ──
+                # Interpretasi
                 st.markdown(f"""
-                <div class="trm-card" style="border-left:3px solid {sinyal_color};">
+                <div class="trm-card" style="border-left:3px solid {sinyal_color};margin-bottom:16px;">
                     <div class="trm-card-title" style="color:{sinyal_color};">🔍 INTERPRETASI: {sinyal}</div>
                     <p style='color:{text_main};font-size:0.88rem;line-height:1.7;margin:0;'>{sinyal_desc}</p>
                     <p style='color:{text_sub};font-size:0.82rem;line-height:1.7;margin:10px 0 0;'>
                     <span style='color:#F5C242;font-weight:600;'>⚠️ Logika Bandarmologi IDX:</span>
-                    Pemegang saham <b style='color:#f23645;'>turun</b> = semakin sedikit yang pegang = DISTRIBUSI (smart money jual ke retail, lalu retail jual juga).
-                    Pemegang saham <b style='color:#089981;'>naik bertahap</b> = spread kepemilikan = bisa AKUMULASI awal.
-                    Selalu cross-check dengan net broker dan price action.
+                    Pemegang <b style='color:#f23645;'>turun</b> = distribusi (smart money jual, retail makin sedikit yang pegang).
+                    Pemegang <b style='color:#089981;'>naik bertahap</b> = spread kepemilikan = bisa akumulasi awal.
+                    Cross-check dengan net broker dan price action.
                     </p>
                 </div>""", unsafe_allow_html=True)
 
-                # ── Tabel historis ──
-                st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+                # Tabel historis
                 st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin-bottom:8px;'>DATA HISTORIS BULANAN</p>", unsafe_allow_html=True)
                 df_disp = df_sh[["date", "shareholders", "delta", "pct_change"]].copy()
                 df_disp = df_disp.iloc[::-1].reset_index(drop=True)
@@ -5928,12 +5926,20 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         except Exception as e:
                             st.warning(f"AI gagal menggambar Trade Plan: {e}")
 
-                    # ── Volume ────────────────────────────────────────────
-                    vol_clr = [inc_color if c >= o else dec_color
-                               for c, o in zip(df_chart['Close'], df_chart['Open'])]
+                    # ── Volume (split buy/sell power) ─────────────────────
+                    hl_range = (df_chart['High'] - df_chart['Low']).replace(0, 1)
+                    buy_vol  = (df_chart['Volume'] * (df_chart['Close'] - df_chart['Low'])  / hl_range).clip(lower=0)
+                    sell_vol = (df_chart['Volume'] * (df_chart['High']  - df_chart['Close']) / hl_range).clip(lower=0)
+                    # Bar bawah: sell (merah), bar atas: buy (hijau) — stacked
                     fig.add_trace(go.Bar(
-                        x=x_str, y=df_chart['Volume'],
-                        marker_color=vol_clr, showlegend=False,
+                        x=x_str, y=sell_vol,
+                        marker_color='rgba(242,54,69,0.75)',
+                        name='Sell Power', showlegend=False,
+                    ), row=2, col=1)
+                    fig.add_trace(go.Bar(
+                        x=x_str, y=buy_vol,
+                        marker_color='rgba(8,153,129,0.85)',
+                        name='Buy Power', showlegend=False,
                     ), row=2, col=1)
 
                     # ── RSI (level 70/30) ──────────────────────────────────
@@ -6011,6 +6017,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         font=dict(color=tv_text_color, size=11),
                         height=980,
                         showlegend=False,
+                        barmode="stack",
                         margin=dict(l=0, r=120, t=10, b=40),
                         xaxis =dict(**ax_x, rangeslider=dict(visible=False),
                                     range=[-0.5, n_total-0.5], tickvals=tickvals),
