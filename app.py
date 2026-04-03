@@ -5545,13 +5545,12 @@ if current_view == "dashboard":
                     customdata=sh_vals,
                 ))
 
-                # ── GANTI ANNOTATIONS DENGAN SCATTER TEXT (ANTI-ERROR) ──
-                # Cara ini jauh lebih aman karena teks digambar sebagai trace layer
+                # Teks Angka (Pengganti Annotations yang Error)
                 fig.add_trace(go.Scatter(
                     x=df_sh["date"], 
                     y=sh_norm + 6,
                     mode="text",
-                    text=[f"{int(v):,}" for v in sh_vals],
+                    text=[f"{int(v):,}" if not pd.isna(v) else "" for v in sh_vals],
                     textfont=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
                     showlegend=False,
                     hoverinfo="skip"
@@ -5582,9 +5581,8 @@ if current_view == "dashboard":
                         tickvals=[0, 25, 50, 75, 100],
                         ticktext=["Min", "25%", "50%", "75%", "Max"],
                         title="Nilai Ternormalisasi",
-                        titlefont=dict(size=10, color=chart_text),
+                        titlefont=dict(size=10, color=chart_text)
                     )
-                    # Perhatikan: baris annotations=annotations sudah dihapus total dari sini!
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
