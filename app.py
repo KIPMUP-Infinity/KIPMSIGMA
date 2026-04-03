@@ -5498,94 +5498,40 @@ if current_view == "dashboard":
                 else:
                     pr_norm = np.full_like(pr_vals, np.nan)
 
-                chart_bg   = "rgba(0,0,0,0)"
-                chart_grid = "rgba(255,255,255,0.06)" if is_dark else "rgba(0,0,0,0.07)"
-                chart_text = "#b2b5be" if is_dark else "#555"
-
-                fig = go.Figure()
-
-                # Bar delta (background)
-                delta_arr = df_sh["delta"].fillna(0).values.astype(float)
-                d_max = max(abs(delta_arr).max(), 1)
-                delta_scaled = delta_arr / d_max * 15
-                bar_colors = [
-                    "rgba(8,153,129,0.40)" if v >= 0 else "rgba(242,54,69,0.40)"
-                    for v in delta_arr
-                ]
-                fig.add_trace(go.Bar(
-                    x=df_sh["date"], y=delta_scaled,
-                    base=0,
-                    marker_color=bar_colors,
-                    name="Δ Pemegang Saham",
-                    hovertemplate="<b>%{x|%b %Y}</b><br>Δ: %{customdata:+,.0f}<extra></extra>",
-                    customdata=delta_arr,
-                    showlegend=True, opacity=0.8
-                ))
-
-                # Line harga (kuning putus-putus)
-                if not np.all(np.isnan(pr_norm)):
-                    fig.add_trace(go.Scatter(
-                        x=df_merged["date"], y=pr_norm,
-                        mode="lines",
-                        name="Harga Saham",
-                        line=dict(color="#F5C242", width=2.5, dash="dot"),
-                        hovertemplate="<b>%{x|%b %Y}</b><br>Harga: Rp%{customdata:,.0f}<extra></extra>",
-                        customdata=pr_vals, connectgaps=False
-                    ))
-
-                # Line pemegang saham (biru)
-                fig.add_trace(go.Scatter(
-                    x=df_sh["date"], y=sh_norm,
-                    mode="lines+markers",
-                    name="Pemegang Saham",
-                    line=dict(color="#4285F4", width=3),
-                    marker=dict(size=8, color="#4285F4",
-                                line=dict(width=2, color="#ffffff" if is_dark else "#333")),
-                    hovertemplate="<b>%{x|%b %Y}</b><br>Pemegang: %{customdata:,.0f}<extra></extra>",
-                    customdata=sh_vals,
-                ))
-
-                # Teks Angka (Pengganti Annotations yang Error)
-                fig.add_trace(go.Scatter(
-                    x=df_sh["date"], 
-                    y=sh_norm + 6,
-                    mode="text",
-                    text=[f"{int(v):,}" if not pd.isna(v) else "" for v in sh_vals],
-                    textfont=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
-                    showlegend=False,
-                    hoverinfo="skip"
-                ))
-
-                fig.update_layout(
-                    paper_bgcolor=chart_bg,
-                    plot_bgcolor=chart_bg,
-                    height=430,
-                    margin=dict(l=10, r=10, t=30, b=20),
-                    legend=dict(
-                        orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-                        bgcolor="rgba(0,0,0,0)", font=dict(color=chart_text, size=11)
-                    ),
-                    hovermode="x unified",
-                    font=dict(family="IBM Plex Mono, monospace", color=chart_text),
-                    xaxis=dict(
-                        showgrid=True, gridcolor=chart_grid,
-                        tickformat="%b %Y",
-                        tickfont=dict(size=10, color=chart_text),
-                        linecolor=chart_grid, zeroline=False
-                    ),
-                    yaxis=dict(
-                        showgrid=True, gridcolor=chart_grid,
-                        tickfont=dict(size=9, color=chart_text),
-                        zeroline=True, zerolinecolor=chart_grid,
-                        range=[-20, 115],
-                        tickvals=[0, 25, 50, 75, 100],
-                        ticktext=["Min", "25%", "50%", "75%", "Max"],
-                        title="Nilai Ternormalisasi",
-                        titlefont=dict(size=10, color=chart_text)
-                    )
+                # --- MENAMPILKAN DATA 6 BULAN TERAKHIR DALAM BENTUK TABEL ---
+                
+                # Ambil 6 bulan terakhir dari dataframe df_sh
+                df_sh_6m = df_sh.tail(6).copy()
+                
+                # Format tanggal menjadi nama bulan dan tahun (misal: "March 2026")
+                df_sh_6m['Periode'] = df_sh_6m['date'].dt.strftime('%B %Y')
+                
+                # Pastikan kolom delta ada untuk melihat perubahan
+                if 'delta' not in df_sh_6m.columns:
+                    df_sh_6m['delta'] = df_sh_6m['shareholders'].diff().fillna(0)
+                
+                # Susun ulang kolom untuk ditampilkan
+                df_display = df_sh_6m[['Periode', 'shareholders', 'delta']].copy()
+                
+                st.markdown("##### 📊 Rekap 6 Bulan Terakhir")
+                
+                # Tampilkan menggunakan dataframe bawaan Streamlit yang bersih
+                st.dataframe(
+                    df_display,
+                    hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        "Periode": st.column_config.TextColumn("Bulan"),
+                        "shareholders": st.column_config.NumberColumn(
+                            "Total Pemegang Saham",
+                            format="%d"
+                        ),
+                        "delta": st.column_config.NumberColumn(
+                            "Perubahan (MoM)",
+                            format="%+d" # Menampilkan tanda + atau - otomatis
+                        )
+                    }
                 )
-
-                st.plotly_chart(fig, use_container_width=True)
 
                 st.markdown(f"""
                 <div style='display:flex;gap:24px;font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:{text_sub};margin:-6px 0 14px;flex-wrap:wrap;'>
