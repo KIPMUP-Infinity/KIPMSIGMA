@@ -4854,8 +4854,10 @@ if current_view == "dashboard":
                 <div style='flex:1; overflow-y:auto;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
 
+    # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
+    with tab_rotation:
+
         # ── ECONOMIC CALENDAR ─────────────────────────────────────
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         cal_bg      = met_bg
@@ -4901,6 +4903,36 @@ if current_view == "dashboard":
         dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
         dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
 
+        # CSS kalender — satu kali saja di luar loop
+        st.markdown(f"""<style>
+        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
+            overflow:visible; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
+        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
+            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
+            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
+        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
+            align-items:center; gap:8px; padding:9px 16px;
+            border-bottom:1px solid {cal_border}; cursor:default;
+            position:relative; transition:background 0.15s; }}
+        .cal-row:last-child {{ border-bottom:none; }}
+        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
+        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
+        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
+        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
+        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
+        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
+        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
+            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
+        .cal-tip {{ display:none; position:absolute; left:0; right:0;
+            top:calc(100% + 4px); z-index:9999;
+            background:{'#1a2035' if is_dark else '#ffffff'};
+            border:1px solid {cal_border}; border-left:3px solid #F5C242;
+            border-radius:0 6px 6px 0; padding:8px 12px;
+            font-size:0.69rem; color:{cal_text}; line-height:1.5;
+            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
+        .cal-row:hover .cal-tip {{ display:block; }}
+        </style>""", unsafe_allow_html=True)
+
         cal_cols = st.columns(2)
         country_list = list(calendar_data.items())
 
@@ -4909,112 +4941,31 @@ if current_view == "dashboard":
             with cal_cols[col_idx]:
                 rows_html = ""
                 for ev in events:
-                    dk     = ev["dampak"]
-                    d_clr  = dampak_color.get(dk, "#b2b5be")
-                    d_bg   = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
-                    rows_html += f"""
-                    <div class='cal-row' data-keterangan="{ev['keterangan']}">
-                        <div class='cal-date'>{ev['tanggal']}</div>
-                        <div class='cal-event'>{ev['event']}</div>
-                        <div class='cal-nums'>
-                            <span class='cal-forecast'>▶ {ev['forecast']}</span>
-                            <span class='cal-prev'>Prev: {ev['prev']}</span>
-                        </div>
-                        <div class='cal-badge' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{dk}</div>
-                        <div class='cal-tooltip'>{ev['keterangan']}</div>
-                    </div>"""
+                    dk    = ev["dampak"]
+                    d_clr = dampak_color.get(dk, "#b2b5be")
+                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
+                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
+                    rows_html += (
+                        f"<div class='cal-row'>"
+                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
+                        f"<div class='cal-ev'>{ev['event']}</div>"
+                        f"<div class='cal-nums'>"
+                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
+                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
+                        f"</div>"
+                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{dk}</div>"
+                        f"<div class='cal-tip'>{tip}</div>"
+                        f"</div>"
+                    )
+                st.markdown(
+                    f"<div class='cal-wrap'>"
+                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
+                    f"{rows_html}"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
 
-                st.markdown(f"""
-                <style>
-                .cal-container-{ci} {{
-                    background:{cal_bg};
-                    border:1px solid {cal_border};
-                    border-radius:12px;
-                    overflow:hidden;
-                    margin-bottom:20px;
-                    font-family:'IBM Plex Mono',monospace;
-                }}
-                .cal-header-{ci} {{
-                    padding:10px 16px;
-                    background:rgba(245,194,66,0.09);
-                    border-bottom:1px solid {cal_border};
-                    font-size:0.72rem;
-                    font-weight:700;
-                    letter-spacing:0.12em;
-                    color:#F5C242;
-                    text-transform:uppercase;
-                }}
-                .cal-row {{
-                    display:grid;
-                    grid-template-columns:90px 1fr 130px 58px;
-                    align-items:center;
-                    gap:8px;
-                    padding:9px 16px;
-                    border-bottom:1px solid {cal_border};
-                    cursor:pointer;
-                    position:relative;
-                    transition:background 0.18s;
-                }}
-                .cal-row:last-child {{ border-bottom:none; }}
-                .cal-row:hover {{ background:rgba(245,194,66,0.06); }}
-                .cal-date {{
-                    font-size:0.66rem;
-                    color:{cal_sub_clr};
-                    white-space:nowrap;
-                }}
-                .cal-event {{
-                    font-size:0.73rem;
-                    color:{cal_text};
-                    font-weight:500;
-                }}
-                .cal-nums {{
-                    display:flex;
-                    flex-direction:column;
-                    gap:2px;
-                    text-align:right;
-                }}
-                .cal-forecast {{
-                    font-size:0.71rem;
-                    color:#089981;
-                    font-weight:600;
-                }}
-                .cal-prev {{
-                    font-size:0.63rem;
-                    color:{cal_sub_clr};
-                }}
-                .cal-badge {{
-                    font-size:0.60rem;
-                    font-weight:700;
-                    letter-spacing:0.08em;
-                    padding:2px 6px;
-                    border-radius:4px;
-                    text-align:center;
-                    white-space:nowrap;
-                }}
-                .cal-tooltip {{
-                    display:none;
-                    position:absolute;
-                    left:16px; right:16px;
-                    bottom:calc(100% + 6px);
-                    background:{'#1e2433' if is_dark else '#ffffff'};
-                    border:1px solid {cal_border};
-                    border-left:3px solid #F5C242;
-                    border-radius:0 6px 6px 0;
-                    padding:8px 12px;
-                    font-size:0.70rem;
-                    color:{cal_text};
-                    line-height:1.5;
-                    z-index:9999;
-                    pointer-events:none;
-                    box-shadow:0 4px 20px rgba(0,0,0,0.35);
-                }}
-                .cal-row:hover .cal-tooltip {{ display:block; }}
-                </style>
-                <div class='cal-container-{ci}'>
-                    <div class='cal-header-{ci}'>{country} — Apr–Mei 2026</div>
-                    {rows_html}
-                </div>
-                """, unsafe_allow_html=True)
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         def highlight_status(val):
             if val == 'NEW ENTRY': return 'background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; font-weight: bold;'
             elif val == 'DOWNGRADED': return 'background-color: rgba(241, 196, 15, 0.2); color: #f1c40f;'
