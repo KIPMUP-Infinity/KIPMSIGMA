@@ -4884,7 +4884,15 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        
+        st.markdown("""
+        <div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:#b2b5be;
+            background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
+            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;'>
+        🗓️ <b style='color:#F5C242;'>Data per:</b> Feb 2025 (MSCI Semi-Annual Review)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Rebalance berikutnya:</b> Mei 2025 (estimasi)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:#b2b5be;'>Sumber: MSCI.com — diperbarui setiap review Feb & Agustus</span>
+        </div>
+        """, unsafe_allow_html=True)
         msci_data = {
             "Ticker": [
                 "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", 
@@ -4925,6 +4933,15 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:#b2b5be;
+            background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
+            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;'>
+        🗓️ <b style='color:#F5C242;'>Data per:</b> Mar 2025 (FTSE Quarterly Review Q1 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Review berikutnya:</b> Jun 2025 (Q2)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:#b2b5be;'>Sumber: FTSE Russell — review setiap kuartal (Mar/Jun/Sep/Des)</span>
+        </div>
+        """, unsafe_allow_html=True)
         
         ftse_data = {
             "Ticker": [
@@ -4959,6 +4976,15 @@ if current_view == "dashboard":
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:#b2b5be;
+            background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
+            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;'>
+        🗓️ <b style='color:#F5C242;'>Data per:</b> Feb 2025 (Periode Feb–Jul 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Rebalance berikutnya:</b> Agustus 2025 (Periode Agu–Jan 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:#b2b5be;'>Sumber: BEI — diperbarui setiap Feb & Agustus</span>
+        </div>
+        """, unsafe_allow_html=True)
         
         lq45_data = {
             "Ticker": [
@@ -5165,11 +5191,23 @@ Harga Terakhir: {live_price_str}
 Data Fundamental:
 {fund_context}
 
-Berikan analisa teknikal singkat, lalu di AKHIR jawaban WAJIB sertakan blok JSON persis seperti format ini (gunakan harga dalam Rupiah, angka murni tanpa tanda kutip):
+INSTRUKSI WAJIB — baca sebelum menjawab:
+
+1. Berikan analisa singkat: teknikal (tren, EMA, volume) + fundamental (valuasi, profitabilitas).
+2. Jika kondisi saham TIDAK LAYAK (tren bearish kuat tanpa sinyal reversal, fundamental buruk, tidak ada setup jelas), tulis tegas "TIDAK DIREKOMENDASIKAN SAAT INI" dan jelaskan alasannya. Tetap sertakan JSON dengan semua nilai 0 dan tp1 null.
+3. Jika LAYAK, tentukan level harga dengan aturan KETAT berikut:
+   - entry_low & entry_high: zona beli (range sempit, mendekati support terdekat)
+   - stop_loss: di bawah support kuat, WAJIB diisi
+   - TP1: SELALU diisi — resistance terdekat pertama (wajib ada)
+   - TP2: isi HANYA jika ada resistance kedua yang jelas DAN momentum/volume mendukung. Jika tidak, null.
+   - TP3: isi HANYA jika fundamental sangat kuat DAN ada resistance ketiga yang valid. Jika tidak, null.
+4. Konsistensi: hitung TP dari level teknikal nyata (resistance, EMA, round number). BUKAN dari persentase arbitrer.
+
+Di AKHIR jawaban, WAJIB sertakan blok JSON persis seperti ini (angka Rupiah murni, tanpa tanda kutip):
 ```json
 {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": null, "tp3": null}}
 ```
-Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harga HARUS mendekati harga saat ini ({live_price_str})."""
+Semua harga HARUS mendekati harga saat ini ({live_price_str}). Jangan ubah format JSON."""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
