@@ -5545,24 +5545,17 @@ if current_view == "dashboard":
                     customdata=sh_vals,
                 ))
 
-                # Annotations nilai asli di tiap titik
-                # --- FIX: Pembuatan Annotations Anti-Error ---
-                annotations = []
-                for i in range(len(df_sh)):
-                    y_val = sh_norm[i] + 6
-                    # Plotly butuh format string untuk tanggal agar tidak error di layout
-                    x_str_date = df_sh.iloc[i]["date"].strftime("%Y-%m-%d")
-                    
-                    # Cegah NaN merusak layout Plotly
-                    if not pd.isna(y_val):
-                        annotations.append(dict(
-                            x=x_str_date,
-                            y=float(y_val),
-                            text=f"{int(sh_vals[i]):,}",
-                            showarrow=False,
-                            font=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
-                            xanchor="center"
-                        ))
+                # ── GANTI ANNOTATIONS DENGAN SCATTER TEXT (ANTI-ERROR) ──
+                # Cara ini jauh lebih aman karena teks digambar sebagai trace layer
+                fig.add_trace(go.Scatter(
+                    x=df_sh["date"], 
+                    y=sh_norm + 6,
+                    mode="text",
+                    text=[f"{int(v):,}" for v in sh_vals],
+                    textfont=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
+                    showlegend=False,
+                    hoverinfo="skip"
+                ))
 
                 fig.update_layout(
                     paper_bgcolor=chart_bg,
@@ -5590,8 +5583,8 @@ if current_view == "dashboard":
                         ticktext=["Min", "25%", "50%", "75%", "Max"],
                         title="Nilai Ternormalisasi",
                         titlefont=dict(size=10, color=chart_text),
-                    ),
-                    annotations=annotations, # Variabel anotasi yang sudah aman
+                    )
+                    # Perhatikan: baris annotations=annotations sudah dihapus total dari sini!
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
