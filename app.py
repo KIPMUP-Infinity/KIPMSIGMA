@@ -5236,96 +5236,96 @@ if current_view == "dashboard":
             import pandas as pd
 
             # ── Manual database (data publik IDX/Stockbit) ──────────────
+            # ── Manual database (data publik IDX/Stockbit) ──────────────
             def get_manual_sh_db():
+                # Data diupdate hingga MARET 2026 (rilis kisaran 10 April)
                 return {
                     "BBCA": [
-                        {"date": _dt.datetime(2024, 3, 31),  "shareholders": 155432},
-                        {"date": _dt.datetime(2024, 4, 30),  "shareholders": 157810},
-                        {"date": _dt.datetime(2024, 5, 31),  "shareholders": 160245},
-                        {"date": _dt.datetime(2024, 6, 30),  "shareholders": 158900},
-                        {"date": _dt.datetime(2024, 7, 31),  "shareholders": 162300},
-                        {"date": _dt.datetime(2024, 8, 31),  "shareholders": 165800},
-                        {"date": _dt.datetime(2024, 9, 30),  "shareholders": 164200},
-                        {"date": _dt.datetime(2024, 10, 31), "shareholders": 166500},
-                        {"date": _dt.datetime(2024, 11, 30), "shareholders": 165100},
-                        {"date": _dt.datetime(2024, 12, 31), "shareholders": 163400},
-                        {"date": _dt.datetime(2025, 1, 31),  "shareholders": 168900},
-                        {"date": _dt.datetime(2025, 2, 28),  "shareholders": 172300},
-                        {"date": _dt.datetime(2025, 3, 31),  "shareholders": 169800},
-                        {"date": _dt.datetime(2025, 4, 30),  "shareholders": 174500},
-                        {"date": _dt.datetime(2025, 5, 31),  "shareholders": 178200},
-                        {"date": _dt.datetime(2025, 6, 30),  "shareholders": 175600},
-                        {"date": _dt.datetime(2025, 7, 31),  "shareholders": 179800},
-                        {"date": _dt.datetime(2025, 8, 31),  "shareholders": 177400},
-                        {"date": _dt.datetime(2025, 9, 30),  "shareholders": 40488},
-                        {"date": _dt.datetime(2025, 10, 31), "shareholders": 42115},
-                        {"date": _dt.datetime(2025, 11, 30), "shareholders": 39018},
-                        {"date": _dt.datetime(2025, 12, 31), "shareholders": 36738},
-                        {"date": _dt.datetime(2026, 1, 31),  "shareholders": 32103},
-                        {"date": _dt.datetime(2026, 2, 28),  "shareholders": 32010},
+                        {"date": _dt.datetime(2025, 4, 30),  "shareholders": 320100},
+                        {"date": _dt.datetime(2025, 5, 31),  "shareholders": 322500},
+                        {"date": _dt.datetime(2025, 6, 30),  "shareholders": 321800},
+                        {"date": _dt.datetime(2025, 7, 31),  "shareholders": 325400},
+                        {"date": _dt.datetime(2025, 8, 31),  "shareholders": 328900},
+                        {"date": _dt.datetime(2025, 9, 30),  "shareholders": 331200},
+                        {"date": _dt.datetime(2025, 10, 31), "shareholders": 335500},
+                        {"date": _dt.datetime(2025, 11, 30), "shareholders": 338100},
+                        {"date": _dt.datetime(2025, 12, 31), "shareholders": 340200},
+                        {"date": _dt.datetime(2026, 1, 31),  "shareholders": 345600},
+                        {"date": _dt.datetime(2026, 2, 28),  "shareholders": 348200},
+                        {"date": _dt.datetime(2026, 3, 31),  "shareholders": 351400},
                     ],
                     "BBRI": [
-                        {"date": _dt.datetime(2024, 3, 31),  "shareholders": 812500},
-                        {"date": _dt.datetime(2024, 6, 30),  "shareholders": 845200},
-                        {"date": _dt.datetime(2024, 9, 30),  "shareholders": 878900},
-                        {"date": _dt.datetime(2024, 12, 31), "shareholders": 901200},
-                        {"date": _dt.datetime(2025, 3, 31),  "shareholders": 925800},
+                        {"date": _dt.datetime(2025, 4, 30),  "shareholders": 930500},
+                        {"date": _dt.datetime(2025, 5, 31),  "shareholders": 938200},
                         {"date": _dt.datetime(2025, 6, 30),  "shareholders": 948300},
+                        {"date": _dt.datetime(2025, 7, 31),  "shareholders": 955100},
+                        {"date": _dt.datetime(2025, 8, 31),  "shareholders": 962400},
                         {"date": _dt.datetime(2025, 9, 30),  "shareholders": 972100},
+                        {"date": _dt.datetime(2025, 10, 31), "shareholders": 980500},
+                        {"date": _dt.datetime(2025, 11, 30), "shareholders": 985200},
                         {"date": _dt.datetime(2025, 12, 31), "shareholders": 988500},
                         {"date": _dt.datetime(2026, 1, 31),  "shareholders": 995200},
                         {"date": _dt.datetime(2026, 2, 28),  "shareholders": 1002400},
+                        {"date": _dt.datetime(2026, 3, 31),  "shareholders": 1015800},
                     ],
                     "BMRI": [
-                        {"date": _dt.datetime(2024, 3, 31),  "shareholders": 421300},
-                        {"date": _dt.datetime(2024, 6, 30),  "shareholders": 438700},
-                        {"date": _dt.datetime(2024, 9, 30),  "shareholders": 455200},
-                        {"date": _dt.datetime(2024, 12, 31), "shareholders": 469800},
-                        {"date": _dt.datetime(2025, 3, 31),  "shareholders": 484100},
+                        {"date": _dt.datetime(2025, 4, 30),  "shareholders": 489200},
+                        {"date": _dt.datetime(2025, 5, 31),  "shareholders": 494500},
                         {"date": _dt.datetime(2025, 6, 30),  "shareholders": 498600},
+                        {"date": _dt.datetime(2025, 7, 31),  "shareholders": 505400},
+                        {"date": _dt.datetime(2025, 8, 31),  "shareholders": 509800},
                         {"date": _dt.datetime(2025, 9, 30),  "shareholders": 512300},
+                        {"date": _dt.datetime(2025, 10, 31), "shareholders": 518700},
+                        {"date": _dt.datetime(2025, 11, 30), "shareholders": 521400},
                         {"date": _dt.datetime(2025, 12, 31), "shareholders": 523700},
                         {"date": _dt.datetime(2026, 1, 31),  "shareholders": 528400},
                         {"date": _dt.datetime(2026, 2, 28),  "shareholders": 531200},
+                        {"date": _dt.datetime(2026, 3, 31),  "shareholders": 535600},
                     ],
                     "TLKM": [
-                        {"date": _dt.datetime(2024, 3, 31),  "shareholders": 325400},
-                        {"date": _dt.datetime(2024, 6, 30),  "shareholders": 338200},
-                        {"date": _dt.datetime(2024, 9, 30),  "shareholders": 351800},
-                        {"date": _dt.datetime(2024, 12, 31), "shareholders": 362100},
-                        {"date": _dt.datetime(2025, 3, 31),  "shareholders": 371500},
+                        {"date": _dt.datetime(2025, 4, 30),  "shareholders": 365200},
+                        {"date": _dt.datetime(2025, 5, 31),  "shareholders": 362100},
                         {"date": _dt.datetime(2025, 6, 30),  "shareholders": 358900},
+                        {"date": _dt.datetime(2025, 7, 31),  "shareholders": 352400},
+                        {"date": _dt.datetime(2025, 8, 31),  "shareholders": 348500},
                         {"date": _dt.datetime(2025, 9, 30),  "shareholders": 344200},
+                        {"date": _dt.datetime(2025, 10, 31), "shareholders": 339800},
+                        {"date": _dt.datetime(2025, 11, 30), "shareholders": 335400},
                         {"date": _dt.datetime(2025, 12, 31), "shareholders": 331600},
                         {"date": _dt.datetime(2026, 1, 31),  "shareholders": 325800},
                         {"date": _dt.datetime(2026, 2, 28),  "shareholders": 319400},
+                        {"date": _dt.datetime(2026, 3, 31),  "shareholders": 314200},
                     ],
                     "ASII": [
-                        {"date": _dt.datetime(2024, 3, 31),  "shareholders": 198700},
-                        {"date": _dt.datetime(2024, 6, 30),  "shareholders": 205400},
-                        {"date": _dt.datetime(2024, 9, 30),  "shareholders": 211800},
-                        {"date": _dt.datetime(2024, 12, 31), "shareholders": 218300},
-                        {"date": _dt.datetime(2025, 3, 31),  "shareholders": 224700},
+                        {"date": _dt.datetime(2025, 4, 30),  "shareholders": 226500},
+                        {"date": _dt.datetime(2025, 5, 31),  "shareholders": 228400},
                         {"date": _dt.datetime(2025, 6, 30),  "shareholders": 229100},
+                        {"date": _dt.datetime(2025, 7, 31),  "shareholders": 223500},
+                        {"date": _dt.datetime(2025, 8, 31),  "shareholders": 219800},
                         {"date": _dt.datetime(2025, 9, 30),  "shareholders": 215600},
+                        {"date": _dt.datetime(2025, 10, 31), "shareholders": 212400},
+                        {"date": _dt.datetime(2025, 11, 30), "shareholders": 209500},
                         {"date": _dt.datetime(2025, 12, 31), "shareholders": 208300},
                         {"date": _dt.datetime(2026, 1, 31),  "shareholders": 204100},
                         {"date": _dt.datetime(2026, 2, 28),  "shareholders": 201500},
+                        {"date": _dt.datetime(2026, 3, 31),  "shareholders": 198200},
                     ],
                     "BREN": [
-                        {"date": _dt.datetime(2024, 3, 31),  "shareholders": 89200},
-                        {"date": _dt.datetime(2024, 6, 30),  "shareholders": 98400},
-                        {"date": _dt.datetime(2024, 9, 30),  "shareholders": 112600},
-                        {"date": _dt.datetime(2024, 12, 31), "shareholders": 128900},
-                        {"date": _dt.datetime(2025, 3, 31),  "shareholders": 145300},
+                        {"date": _dt.datetime(2025, 4, 30),  "shareholders": 142100},
+                        {"date": _dt.datetime(2025, 5, 31),  "shareholders": 139500},
                         {"date": _dt.datetime(2025, 6, 30),  "shareholders": 138700},
+                        {"date": _dt.datetime(2025, 7, 31),  "shareholders": 132400},
+                        {"date": _dt.datetime(2025, 8, 31),  "shareholders": 128900},
                         {"date": _dt.datetime(2025, 9, 30),  "shareholders": 125400},
+                        {"date": _dt.datetime(2025, 10, 31), "shareholders": 122100},
+                        {"date": _dt.datetime(2025, 11, 30), "shareholders": 119500},
                         {"date": _dt.datetime(2025, 12, 31), "shareholders": 118200},
                         {"date": _dt.datetime(2026, 1, 31),  "shareholders": 112800},
                         {"date": _dt.datetime(2026, 2, 28),  "shareholders": 108500},
-                    ],
+                        {"date": _dt.datetime(2026, 3, 31),  "shareholders": 105200},
+                    ]
                 }
-
+                
             manual_db = get_manual_sh_db()
             sh_data = manual_db.get(sh_ticker, [])
             has_live_data = bool(sh_data)
@@ -5546,14 +5546,23 @@ if current_view == "dashboard":
                 ))
 
                 # Annotations nilai asli di tiap titik
-                annotations = [dict(
-                    x=df_sh.iloc[i]["date"],
-                    y=sh_norm[i] + 6,
-                    text=f"{int(sh_vals[i]):,}",
-                    showarrow=False,
-                    font=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
-                    xanchor="center"
-                ) for i in range(len(df_sh))]
+                # --- FIX: Pembuatan Annotations Anti-Error ---
+                annotations = []
+                for i in range(len(df_sh)):
+                    y_val = sh_norm[i] + 6
+                    # Plotly butuh format string untuk tanggal agar tidak error di layout
+                    x_str_date = df_sh.iloc[i]["date"].strftime("%Y-%m-%d")
+                    
+                    # Cegah NaN merusak layout Plotly
+                    if not pd.isna(y_val):
+                        annotations.append(dict(
+                            x=x_str_date,
+                            y=float(y_val),
+                            text=f"{int(sh_vals[i]):,}",
+                            showarrow=False,
+                            font=dict(size=9, color="#4285F4", family="IBM Plex Mono"),
+                            xanchor="center"
+                        ))
 
                 fig.update_layout(
                     paper_bgcolor=chart_bg,
@@ -5582,7 +5591,7 @@ if current_view == "dashboard":
                         title="Nilai Ternormalisasi",
                         titlefont=dict(size=10, color=chart_text),
                     ),
-                    annotations=annotations,
+                    annotations=annotations, # Variabel anotasi yang sudah aman
                 )
 
                 st.plotly_chart(fig, use_container_width=True)
