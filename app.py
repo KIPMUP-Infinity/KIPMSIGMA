@@ -5172,8 +5172,8 @@ if current_view == "dashboard":
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#F5C242;'>Review berikutnya:</b> Agustus 2026 (pengumuman ~12 Agu, efektif 31 Agu 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari &amp; Agustus. Sumber: <b>msci.com</b></span>
+        <b style='color:#F5C242;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
         </div>""", unsafe_allow_html=True)
         msci_data = {
             "Ticker": [
@@ -6652,58 +6652,87 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
 # ─────────────────────────────────────────────
     with tab_reco:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>AI REKOMENDASI SIGMA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
-        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp = st.tabs([
-            "  📅 DAILY  ",
-            "  📆 WEEKLY  ",
-            "  🌙 BELI SORE JUAL PAGI  ",
-        ])
-
-        # ── DAFTAR LENGKAP SAHAM IDX — ALL SECTORS (150+ emiten) ──────────
+        # ── DAFTAR LENGKAP SAHAM IDX — ALL SECTORS (300+ emiten) ──────────
+        # Definisikan SEBELUM dipakai di markdown
         _WATCHLIST_RECO = [
-            # PERBANKAN BESAR
+            # PERBANKAN BESAR & MENENGAH
             "BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BTPN","BDMN","PNBN",
             "NISP","MEGA","BJBR","BJTM","BBYB","ARTO","BANK","AGRO","BACA","BBKP",
-            # TELKOM & INFRASTRUKTUR
-            "TLKM","EXCL","ISAT","FREN","TOWR","TBIG","MTEL","BTEL",
+            "BMAS","MCOR","SDRA","MAYA","BGTG","AGRS","DNAR","INPC","NOBU","BSIM",
+            # TELKOM & MENARA & INFRASTRUKTUR
+            "TLKM","EXCL","ISAT","FREN","TOWR","TBIG","MTEL","BTEL","LINK","DATA",
             # ENERGI & BATUBARA
             "ADRO","PTBA","ITMG","HRUM","BUMI","DSSA","GEMS","MBAP","INDY","MYOH",
-            "SMMT","UNTR","ESSA","MEDC","PGAS","ELSA","ENRG","RUIS","RAJA",
+            "SMMT","UNTR","ESSA","MEDC","PGAS","ELSA","ENRG","RUIS","RAJA","TOBA",
+            "BSSR","FIRE","GTBO","KKGI","PKPK","DEWA","MCOL","BYAN","ARCI","SMRU",
             # NIKEL, EMAS & MINERAL
-            "ANTM","MDKA","INCO","NCKL","BRMS","AMMN","MBMA","DKFT","CITA",
+            "ANTM","MDKA","INCO","NCKL","BRMS","AMMN","MBMA","DKFT","CITA","HILL",
+            "PSAB","IFSH","ZINC","MITI","CNKO","SMNP",
             # CPO & AGRIBISNIS
-            "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM",
-            # MATERIAL & SEMEN & KIMIA
+            "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM","TAPG",
+            "DSFI","BISI","CPRO","IIKP","MAGP",
+            # MATERIAL, SEMEN, KIMIA & BAJA
             "SMGR","INTP","TPIA","BRPT","INKP","TKIM","INAI","KRAS","WSBP","SMBR",
-            "ARNA","TOTO","MARK","ETWA",
-            # CONSUMER GOODS & FOOD
+            "ARNA","TOTO","MARK","ETWA","JPRS","LION","LMSH","ALMI","NIKL","TBMS",
+            "AGII","BAJA","CAKK","GDST","ISSP","JKSW","KICI","MLIA","PICO","SPMA",
+            # CONSUMER GOODS, FOOD & MINUMAN
             "INDF","ICBP","MYOR","UNVR","GGRM","HMSP","KLBF","SIDO","CPIN","JPFA",
-            "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","CBMF","BISI",
+            "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","BISI","AISA",
+            "CLEO","DLTA","KEJU","PCAR","PMMP","PSDN","SKBM","TBIG","TGKA","WMUU",
+            "ADES","ALTO","BTEK","CEKA","DMND","FAST","IBOS","KINO","MGNA","PANI",
             # PROPERTI & KONSTRUKSI
             "BSDE","CTRA","SMRA","LPKR","PWON","ASRI","MDLN","DILD","APLN","JRPT",
-            "WIKA","WSKT","PTPP","ADHI","NRCA","ACST",
-            # OTOMOTIF & INDUSTRI
-            "ASII","AUTO","IMAS","SMSM","GJTL","ADMG","LPIN","INDS",
-            # TEKNOLOGI & E-COMMERCE
-            "GOTO","BUKA","EMTK","MNCN","SCMA","KIOS","MTDL","DMMX","EDGE",
-            # KESEHATAN & FARMASI
-            "KLBF","KAEF","MIKA","HEAL","SILO","PRIM","IRRA","TSPC","DVLA",
+            "WIKA","WSKT","PTPP","ADHI","NRCA","ACST","BKSL","COWL","DMAS","EMDE",
+            "FORZ","GPRA","GWSA","KIJA","MKPI","MTLA","NIRO","PLIN","PPRO","RBMS",
+            "RDTX","ROCK","RODA","SMDM","TARA","URBN",
+            # OTOMOTIF & INDUSTRI MANUFAKTUR
+            "ASII","AUTO","IMAS","SMSM","GJTL","ADMG","LPIN","INDS","BOLT","DRMA",
+            "GDYR","HEXA","IMAS","MASA","MDRN","NIPS","PRAS","SRIL","SSTM","TFCO",
+            # TEKNOLOGI, E-COMMERCE & DIGITAL
+            "GOTO","BUKA","EMTK","MNCN","SCMA","KIOS","MTDL","DMMX","EDGE","ASSA",
+            "CASH","DIVA","JELO","MCAS","MSKY","NETV","TELE","WIFI","WINS",
+            # KESEHATAN, FARMASI & RUMAH SAKIT
+            "KAEF","MIKA","HEAL","SILO","PRIM","IRRA","TSPC","DVLA","INAF","PEHA",
+            "KLBF","MERK","PYFA","SCPI","SIDO","SOHO","HMSP",
             # RETAIL & KONSUMER SIKLUS
-            "MAPI","ACES","RALS","MIDI","AMRT","LPPF","HERO","RANC",
-            # TRANSPORTASI & LOGISTIK
-            "BIRD","GIAA","SMDR","TMAS","NELY","ASSA","SAFE","BPTR",
-            # BREN & ENERGI TERBARUKAN
-            "BREN","PGEO","CUAN","PTRO","HMSP",
-            # KEUANGAN NON-BANK & MULTIFINANCE
-            "BFIN","ADMF","MFIN","CFIN","VRNA","PNLF",
-            # MEDIA & ENTERTAINMENT
-            "FILM","JTPE",
-            # SMALL CAP POTENSIAL
-            "VKTR","CDIA","MDKA","SSMS","JPFA","WMUU","ERAL",
+            "MAPI","ACES","RALS","MIDI","AMRT","LPPF","HERO","RANC","CSAP","DAYA",
+            "ERAA","GLOB","KOIN","MAPA","MPPA","NFCX","SKYB","TRIO",
+            # TRANSPORTASI, LOGISTIK & PELAYARAN
+            "BIRD","GIAA","SMDR","TMAS","NELY","SAFE","BPTR","APOL","BBRM","BLTA",
+            "BULL","CANI","CMPP","DEAL","HITS","IATA","KARW","LEAD","MBSS","MIRA",
+            "PTIS","RIGS","SHIP","SMMU","SOCI","SQMI","SUPR","TPMA","TRAM","WEHA",
+            # ENERGI TERBARUKAN & GEOTHERMAL
+            "BREN","PGEO","CUAN","PTRO","CDIA","VKTR",
+            # KEUANGAN NON-BANK, MULTIFINANCE & ASURANSI
+            "BFIN","ADMF","MFIN","CFIN","VRNA","PNLF","WOMF","FUJI","ASRM","ASDM",
+            "ASJT","LPGI","MREI","PNIN","POOL","AHAP","AMAG","ASBI","ASII","ASURANSI",
+            # MEDIA, HIBURAN & IKLAN
+            "FILM","JTPE","ABBA","BLTZ","DOID","FORU","JTPE","KBLV","MNCN","TMPO",
+            # TAMBANG LAINNYA & DIVERSIFIED
+            "ANTM","CITA","CTTH","DKFT","IFSH","INCO","MITI","NCKL","PSAB","SMMT",
+            # PROPERTI INDUSTRIAL & KAWASAN
+            "BEST","DMAS","GIAA","KIJA","LPCK","NIRO","SSIA","TPMA",
+            # LAIN-LAIN LIQUID
+            "BBSI","BCIP","BGTG","BMTR","BPII","BSML","CKRA","CLPI","DERA","DGIK",
+            "DUTI","EPMT","GEMA","GOLL","HELI","HERO","HRTA","ICON","IGAR","INCI",
+            "INDO","INDR","INTA","INTD","ISSP","JECC","KBLM","KDSI","KIAS","KMTR",
+            "KPIG","LAPD","LMAS","LMPI","LPIN","LTLS","MAMI","MAPI","MASA","MFMI",
+            "MLPT","MNCN","MOLI","MPMX","MRPH","MSKY","MTSM","MYOR","NAGA","NAIZ",
+            "NELY","NFCX","NISP","NOBU","NPGF","NRCA","OCAP","OMRE","OPMS","PADI",
+            "PEGE","PGMM","PGLI","PGUN","PICO","PKPK","PLAN","PNBS","PNIN","POLA",
+            "POLY","PORT","PPGL","PRAS","PSAB","PTBA","PTRO","PUDP","RAAM","RALS",
+            "RELI","RICY","RMKE","ROTI","SAFE","SAMA","SGRO","SHIP","SIDO","SILO",
+            "SIMA","SIPD","SMAR","SMCB","SMDR","SMSM","SMSS","SONA","SOSS","SPMA",
+            "SRAJ","SRTG","SSIA","SSTM","STTP","SUGI","SULI","SUPR","TALF","TARA",
+            "TAXI","TBMS","TCID","TFCO","TGKA","TINS","TIRA","TKGA","TKIM","TLKM",
+            "TMAS","TMPO","TOPS","TOTL","TOWR","TPIA","TRAM","TRIO","TRST","TRUS",
+            "TSPC","TURI","UANG","UNIC","UNIT","UNSP","UNVR","VOKS","WIKA","WSKT",
+            "YPAS","YULE","ZBRA",
         ]
-        # Deduplikasi
-        _WATCHLIST_RECO = list(dict.fromkeys(_WATCHLIST_RECO))
+        _WATCHLIST_RECO = list(dict.fromkeys(_WATCHLIST_RECO))  # deduplikasi
+
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
@@ -6842,6 +6871,13 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                 return "\n".join(lines)
             except:
                 return "Data shareholder tidak tersedia"
+
+        # ── Definisikan tabs SEBELUM kontennya ──────────────────────────────
+        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp = st.tabs([
+            "  📅 DAILY  ",
+            "  📆 WEEKLY  ",
+            "  🌙 BELI SORE JUAL PAGI  ",
+        ])
 
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
