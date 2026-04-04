@@ -4627,7 +4627,7 @@ if current_view == "dashboard":
             width: 100% !important;
         }}
 
-        /* FTSE/MSCI table header label: truncate long text */
+        /* FTSE/MSCI table header label: allow wrap on mobile */
         .trm-section-label {{
             font-size: 0.55rem !important;
             letter-spacing: 0.05em !important;
@@ -4654,6 +4654,17 @@ if current_view == "dashboard":
         }}
         .fancy-divider {{
             margin: 14px 0 !important;
+        }}
+        /* Shareholder screening table */
+        .sh-screen-table {{
+            font-size: 0.65rem !important;
+        }}
+        .sh-screen-table th {{
+            font-size: 0.52rem !important;
+            padding: 5px 5px !important;
+        }}
+        .sh-screen-table td {{
+            padding: 5px 5px !important;
         }}
     }}
     </style>
@@ -4995,7 +5006,7 @@ if current_view == "dashboard":
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ── ECONOMIC CALENDAR ─────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         cal_bg      = met_bg
         cal_border  = met_border
@@ -5131,7 +5142,7 @@ if current_view == "dashboard":
                 return df_style.map(func, subset=subset)
             return df_style.applymap(func, subset=subset)
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         rotation_data = {
             "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
@@ -5191,7 +5202,7 @@ if current_view == "dashboard":
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
@@ -5368,22 +5379,217 @@ if current_view == "dashboard":
 
     # ── TAB: SHAREHOLDER ──────────────────────────────────────────────
     with tab_shareholder:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren jumlah pemegang saham vs harga &middot; Deteksi akumulasi & distribusi smart money &middot; Data IDX resmi</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER SCREENING</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;letter-spacing:0.06em;color:{text_sub};margin-bottom:14px;text-transform:uppercase;'>Deteksi akumulasi &amp; distribusi retail &middot; Naik/Turun 1 bulan &amp; 3 bulan berturut-turut &middot; Data IDX</p>", unsafe_allow_html=True)
 
-        col_sh_inp, col_sh_btn, col_sh_empty = st.columns([1.5, 1, 3])
+        import datetime as _dt
+        import pandas as pd
+
+        # ── Definisikan DB di scope luar agar bisa dipakai dua kali ──────
+        def get_manual_sh_db_outer():
+            return {
+                "BBCA": [
+                    {"date": _dt.datetime(2025, 4, 30),  "shareholders": 320100},
+                    {"date": _dt.datetime(2025, 5, 31),  "shareholders": 322500},
+                    {"date": _dt.datetime(2025, 6, 30),  "shareholders": 321800},
+                    {"date": _dt.datetime(2025, 7, 31),  "shareholders": 325400},
+                    {"date": _dt.datetime(2025, 8, 31),  "shareholders": 328900},
+                    {"date": _dt.datetime(2025, 9, 30),  "shareholders": 331200},
+                    {"date": _dt.datetime(2025, 10, 31), "shareholders": 335500},
+                    {"date": _dt.datetime(2025, 11, 30), "shareholders": 338100},
+                    {"date": _dt.datetime(2025, 12, 31), "shareholders": 340200},
+                    {"date": _dt.datetime(2026, 1, 31),  "shareholders": 345600},
+                    {"date": _dt.datetime(2026, 2, 28),  "shareholders": 348200},
+                    {"date": _dt.datetime(2026, 3, 31),  "shareholders": 351400},
+                ],
+                "BBRI": [
+                    {"date": _dt.datetime(2025, 4, 30),  "shareholders": 930500},
+                    {"date": _dt.datetime(2025, 5, 31),  "shareholders": 938200},
+                    {"date": _dt.datetime(2025, 6, 30),  "shareholders": 948300},
+                    {"date": _dt.datetime(2025, 7, 31),  "shareholders": 955100},
+                    {"date": _dt.datetime(2025, 8, 31),  "shareholders": 962400},
+                    {"date": _dt.datetime(2025, 9, 30),  "shareholders": 972100},
+                    {"date": _dt.datetime(2025, 10, 31), "shareholders": 980500},
+                    {"date": _dt.datetime(2025, 11, 30), "shareholders": 985200},
+                    {"date": _dt.datetime(2025, 12, 31), "shareholders": 988500},
+                    {"date": _dt.datetime(2026, 1, 31),  "shareholders": 995200},
+                    {"date": _dt.datetime(2026, 2, 28),  "shareholders": 1002400},
+                    {"date": _dt.datetime(2026, 3, 31),  "shareholders": 1015800},
+                ],
+                "BMRI": [
+                    {"date": _dt.datetime(2025, 4, 30),  "shareholders": 489200},
+                    {"date": _dt.datetime(2025, 5, 31),  "shareholders": 494500},
+                    {"date": _dt.datetime(2025, 6, 30),  "shareholders": 498600},
+                    {"date": _dt.datetime(2025, 7, 31),  "shareholders": 505400},
+                    {"date": _dt.datetime(2025, 8, 31),  "shareholders": 509800},
+                    {"date": _dt.datetime(2025, 9, 30),  "shareholders": 512300},
+                    {"date": _dt.datetime(2025, 10, 31), "shareholders": 518700},
+                    {"date": _dt.datetime(2025, 11, 30), "shareholders": 521400},
+                    {"date": _dt.datetime(2025, 12, 31), "shareholders": 523700},
+                    {"date": _dt.datetime(2026, 1, 31),  "shareholders": 528400},
+                    {"date": _dt.datetime(2026, 2, 28),  "shareholders": 531200},
+                    {"date": _dt.datetime(2026, 3, 31),  "shareholders": 535600},
+                ],
+                "TLKM": [
+                    {"date": _dt.datetime(2025, 4, 30),  "shareholders": 365200},
+                    {"date": _dt.datetime(2025, 5, 31),  "shareholders": 362100},
+                    {"date": _dt.datetime(2025, 6, 30),  "shareholders": 358900},
+                    {"date": _dt.datetime(2025, 7, 31),  "shareholders": 352400},
+                    {"date": _dt.datetime(2025, 8, 31),  "shareholders": 348500},
+                    {"date": _dt.datetime(2025, 9, 30),  "shareholders": 344200},
+                    {"date": _dt.datetime(2025, 10, 31), "shareholders": 339800},
+                    {"date": _dt.datetime(2025, 11, 30), "shareholders": 335400},
+                    {"date": _dt.datetime(2025, 12, 31), "shareholders": 331600},
+                    {"date": _dt.datetime(2026, 1, 31),  "shareholders": 325800},
+                    {"date": _dt.datetime(2026, 2, 28),  "shareholders": 319400},
+                    {"date": _dt.datetime(2026, 3, 31),  "shareholders": 314200},
+                ],
+                "ASII": [
+                    {"date": _dt.datetime(2025, 4, 30),  "shareholders": 226500},
+                    {"date": _dt.datetime(2025, 5, 31),  "shareholders": 228400},
+                    {"date": _dt.datetime(2025, 6, 30),  "shareholders": 229100},
+                    {"date": _dt.datetime(2025, 7, 31),  "shareholders": 223500},
+                    {"date": _dt.datetime(2025, 8, 31),  "shareholders": 219800},
+                    {"date": _dt.datetime(2025, 9, 30),  "shareholders": 215600},
+                    {"date": _dt.datetime(2025, 10, 31), "shareholders": 212400},
+                    {"date": _dt.datetime(2025, 11, 30), "shareholders": 209500},
+                    {"date": _dt.datetime(2025, 12, 31), "shareholders": 208300},
+                    {"date": _dt.datetime(2026, 1, 31),  "shareholders": 204100},
+                    {"date": _dt.datetime(2026, 2, 28),  "shareholders": 201500},
+                    {"date": _dt.datetime(2026, 3, 31),  "shareholders": 198200},
+                ],
+                "BREN": [
+                    {"date": _dt.datetime(2025, 4, 30),  "shareholders": 142100},
+                    {"date": _dt.datetime(2025, 5, 31),  "shareholders": 139500},
+                    {"date": _dt.datetime(2025, 6, 30),  "shareholders": 138700},
+                    {"date": _dt.datetime(2025, 7, 31),  "shareholders": 132400},
+                    {"date": _dt.datetime(2025, 8, 31),  "shareholders": 128900},
+                    {"date": _dt.datetime(2025, 9, 30),  "shareholders": 125400},
+                    {"date": _dt.datetime(2025, 10, 31), "shareholders": 122100},
+                    {"date": _dt.datetime(2025, 11, 30), "shareholders": 119500},
+                    {"date": _dt.datetime(2025, 12, 31), "shareholders": 118200},
+                    {"date": _dt.datetime(2026, 1, 31),  "shareholders": 112800},
+                    {"date": _dt.datetime(2026, 2, 28),  "shareholders": 108500},
+                    {"date": _dt.datetime(2026, 3, 31),  "shareholders": 105200},
+                ]
+            }
+
+        # ── SCREENING TABLE ──────────────────────────────────────────────
+        _sh_all = get_manual_sh_db_outer()
+        _screen_rows = []
+        for _tk, _records in _sh_all.items():
+            _df_sc = pd.DataFrame(_records).sort_values("date").reset_index(drop=True)
+            if len(_df_sc) < 2:
+                continue
+            _last  = int(_df_sc["shareholders"].iloc[-1])
+            _prev1 = int(_df_sc["shareholders"].iloc[-2])
+            _delta1 = _last - _prev1
+            _pct1   = round(_delta1 / _prev1 * 100, 2) if _prev1 else 0
+
+            # Trend 3 bulan: 3 entri terakhir, cek apakah konsisten naik/turun
+            _trend3 = "—"
+            if len(_df_sc) >= 4:
+                _v3 = _df_sc["shareholders"].iloc[-4]
+                _v2 = _df_sc["shareholders"].iloc[-3]
+                _v1 = _df_sc["shareholders"].iloc[-2]
+                _v0 = _df_sc["shareholders"].iloc[-1]
+                if _v0 > _v1 > _v2 > _v3:
+                    _trend3 = "🟢 Naik 3bln"
+                elif _v0 < _v1 < _v2 < _v3:
+                    _trend3 = "🔴 Turun 3bln"
+                elif _v0 > _v1:
+                    _trend3 = "🟡 Naik 1bln"
+                elif _v0 < _v1:
+                    _trend3 = "🔴 Turun 1bln"
+
+            # Sinyal akumulasi/distribusi
+            if "Naik 3bln" in _trend3:
+                _signal = "🔥 Akumulasi Kuat"
+            elif "Naik 1bln" in _trend3:
+                _signal = "📈 Akumulasi"
+            elif "Turun 3bln" in _trend3:
+                _signal = "❄️ Distribusi Kuat"
+            elif "Turun 1bln" in _trend3:
+                _signal = "📉 Distribusi"
+            else:
+                _signal = "—"
+
+            _screen_rows.append({
+                "Ticker": _tk,
+                "Pemegang Terakhir": f"{_last:,}",
+                "Δ 1 Bulan": f"+{_delta1:,}" if _delta1 > 0 else f"{_delta1:,}",
+                "Δ %": f"+{_pct1:.2f}%" if _pct1 > 0 else f"{_pct1:.2f}%",
+                "Tren 3 Bln": _trend3,
+                "Sinyal": _signal,
+            })
+
+        if _screen_rows:
+            _df_screen = pd.DataFrame(_screen_rows)
+            # Sort: akumulasi kuat dulu, lalu akumulasi, lalu distribusi
+            _sort_key = {"🔥 Akumulasi Kuat": 0, "📈 Akumulasi": 1, "—": 2, "📉 Distribusi": 3, "❄️ Distribusi Kuat": 4}
+            _df_screen["_sort"] = _df_screen["Sinyal"].map(_sort_key).fillna(5)
+            _df_screen = _df_screen.sort_values("_sort").drop(columns=["_sort"]).reset_index(drop=True)
+
+            # Custom HTML table — mobile-friendly
+            _tbl_accent = "#F5C242"
+            _tbl_bg     = "rgba(245,194,66,0.03)" if is_dark else "#fffdf7"
+            _tbl_border = "rgba(245,194,66,0.12)" if is_dark else "#e8d99a"
+            _tbl_head   = "rgba(245,194,66,0.10)" if is_dark else "#fef3c7"
+            _tbl_text   = text_main
+            _tbl_sub    = text_sub
+
+            _tbl_html = f"""
+<style>
+.sh-screen-table {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; }}
+.sh-screen-table th {{ background:{_tbl_head}; color:{_tbl_accent}; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; padding:8px 10px; border-bottom:1px solid {_tbl_border}; text-align:left; }}
+.sh-screen-table td {{ padding:8px 10px; border-bottom:1px solid {_tbl_border}; color:{_tbl_text}; vertical-align:middle; }}
+.sh-screen-table tr:last-child td {{ border-bottom:none; }}
+.sh-screen-table tr:hover td {{ background:rgba(245,194,66,0.04); }}
+.sh-ticker-badge {{ font-weight:700; color:{_tbl_accent}; font-size:0.78rem; }}
+.sh-up {{ color:#26a69a; font-weight:600; }}
+.sh-dn {{ color:#f23645; font-weight:600; }}
+@media (max-width:768px) {{
+  .sh-screen-table {{ font-size:0.68rem; }}
+  .sh-screen-table th {{ font-size:0.56rem; padding:6px 6px; }}
+  .sh-screen-table td {{ padding:6px 6px; }}
+  .sh-ticker-badge {{ font-size:0.7rem; }}
+}}
+</style>
+<div style="overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch;">
+<table class="sh-screen-table">
+<thead><tr>
+<th>Ticker</th><th>Pemegang</th><th>Δ 1 Bln</th><th>Δ %</th><th>Tren 3 Bln</th><th>Sinyal</th>
+</tr></thead><tbody>"""
+
+            for _, _r in _df_screen.iterrows():
+                _up = "sh-up" if "+" in str(_r["Δ 1 Bulan"]) else "sh-dn"
+                _tbl_html += f"""<tr>
+<td><span class="sh-ticker-badge">{_r['Ticker']}</span></td>
+<td>{_r['Pemegang Terakhir']}</td>
+<td class="{_up}">{_r['Δ 1 Bulan']}</td>
+<td class="{_up}">{_r['Δ %']}</td>
+<td>{_r['Tren 3 Bln']}</td>
+<td>{_r['Sinyal']}</td>
+</tr>"""
+
+            _tbl_html += "</tbody></table></div>"
+            st.markdown(_tbl_html, unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # ── SHAREHOLDER TRACKER (per-ticker detail) ──────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren jumlah pemegang saham vs harga &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi</p>", unsafe_allow_html=True)
+
+        col_sh_inp, col_sh_btn = st.columns([3, 1])
         with col_sh_inp:
             sh_ticker = st.text_input("KODE SAHAM:", "BBCA", key="sh_ticker_input").upper().strip()
         with col_sh_btn:
             st.markdown("<br>", unsafe_allow_html=True)
             sh_run = st.button("▶ LOAD DATA", key="sh_run_btn", use_container_width=True)
-        # col_sh_empty: spacer on desktop
 
         if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
             st.session_state["sh_last_ticker"] = sh_ticker
-
-            import datetime as _dt
-            import pandas as pd
 
             # ── Manual database (data publik IDX/Stockbit) ──────────────
             # ── Manual database (data publik IDX/Stockbit) ──────────────
@@ -5720,17 +5926,16 @@ if current_view == "dashboard":
 
 
     with tab_ai:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI — TECHNICAL &amp; FUNDAMENTAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
-        col_input, col_btn, col_empty = st.columns([2, 1, 3])
+        col_input, col_btn = st.columns([3, 1])
         with col_input:
             ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA").upper()
         with col_btn:
             st.markdown("<br>", unsafe_allow_html=True)
             run_analysis = st.button("▶ ANALYZE", use_container_width=True)
-        # col_empty intentionally blank (spacer on desktop)
-
+        
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         if ticker_input:
@@ -5793,19 +5998,86 @@ if current_view == "dashboard":
                             except Exception as e:
                                 vol_context = ""
 
-                        dashboard_prompt = f"""Kamu adalah SIGMA AI. Analisa saham {ticker_input}.
-Harga Terakhir: {live_price_str}
+                        # ── Shareholder context untuk ticker ini ────────────
+                        _sh_ctx = ""
+                        try:
+                            _sh_db_tp = get_manual_sh_db_outer() if 'get_manual_sh_db_outer' in dir() else {}
+                            _sh_recs = _sh_db_tp.get(ticker_input, [])
+                            if len(_sh_recs) >= 2:
+                                _sh_df2 = pd.DataFrame(_sh_recs).sort_values("date").reset_index(drop=True)
+                                _sh_last2 = int(_sh_df2["shareholders"].iloc[-1])
+                                _sh_prev2 = int(_sh_df2["shareholders"].iloc[-2])
+                                _sh_delta2 = _sh_last2 - _sh_prev2
+                                _sh_pct2 = round(_sh_delta2 / _sh_prev2 * 100, 2)
+                                _sh_trend2 = "NAIK (akumulasi retail)" if _sh_delta2 > 0 else "TURUN (distribusi retail)"
+                                if len(_sh_df2) >= 4:
+                                    _v3b = _sh_df2["shareholders"].iloc[-4]
+                                    _v2b = _sh_df2["shareholders"].iloc[-3]
+                                    _v1b = _sh_df2["shareholders"].iloc[-2]
+                                    _v0b = _sh_df2["shareholders"].iloc[-1]
+                                    if _v0b > _v1b > _v2b > _v3b:
+                                        _sh_trend2 += " | Tren 3 bulan: NAIK KONSISTEN — sinyal akumulasi kuat"
+                                    elif _v0b < _v1b < _v2b < _v3b:
+                                        _sh_trend2 += " | Tren 3 bulan: TURUN KONSISTEN — sinyal distribusi kuat"
+                                _sh_ctx = f"Data Pemegang Saham {ticker_input}: {_sh_last2:,} pemegang (Δ {_sh_delta2:+,} = {_sh_pct2:+.2f}%) | Tren: {_sh_trend2}"
+                        except:
+                            _sh_ctx = ""
 
+                        dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional. Buat TRADE PLAN LENGKAP untuk saham {ticker_input}.
+
+=== DATA HARGA & TEKNIKAL ===
+Harga Terakhir: {live_price_str}
 {vol_context}
 
-Data Fundamental:
+=== DATA FUNDAMENTAL ===
 {fund_context}
 
-Berikan analisa teknikal singkat, lalu di AKHIR jawaban WAJIB sertakan blok JSON persis seperti format ini (gunakan harga dalam Rupiah, angka murni tanpa tanda kutip):
+=== DATA PEMEGANG SAHAM ===
+{_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
+
+=== INSTRUKSI ANALISA ===
+Buat analisa komprehensif dengan STRUKTUR WAJIB berikut (jangan disingkat):
+
+1. 📊 KONDISI TEKNIKAL
+   - Posisi harga vs support/resistance utama
+   - Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
+   - Momentum: apakah ada sinyal reversal atau continuation?
+   - Volume: konfirmasi atau divergensi dari pergerakan harga?
+
+2. 🏢 KONDISI FUNDAMENTAL
+   - Valuasi saat ini (murah/wajar/mahal)?
+   - Kinerja keuangan terbaru (EPS, revenue, margin)
+   - Katalis positif atau negatif ke depan
+   - Posisi vs kompetitor sektor
+
+3. 👥 SINYAL PEMEGANG SAHAM
+   - Analisa tren jumlah pemegang saham
+   - Apakah ada akumulasi retail atau distribusi?
+   - Implikasinya terhadap supply/demand saham
+
+4. 📰 OUTLOOK SEKTOR & MAKRO
+   - Kondisi sektor {ticker_input} saat ini
+   - Faktor makro yang mempengaruhi (suku bunga, kurs, kebijakan)
+   - Risiko utama yang perlu diwaspadai
+
+5. ⚡ KESIMPULAN & BIAS
+   - Bias: BULLISH / BEARISH / SIDEWAYS (pilih satu, jelaskan)
+   - Level kunci yang harus diperhatikan
+
+6. 🎯 TRADE PLAN EKSEKUSI
+   - Skenario A (Optimis): Entry, SL, TP1, TP2
+   - Skenario B (Konservatif): Entry, SL, TP1
+   - Time horizon: berapa hari/minggu?
+   - Risk/Reward ratio masing-masing skenario
+   - Sizing rekomendasi (% portofolio)
+
+Semua harga dalam Rupiah, mendekati harga saat ini ({live_price_str}).
+Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
+
+Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
 ```json
 {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": null, "tp3": null}}
-```
-Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harga HARUS mendekati harga saat ini ({live_price_str})."""
+```"""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
@@ -5860,7 +6132,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             # Bersihkan teks dari JSON block
                             ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
                             ai_text_verdict = re.sub(r'\{[\s\S]*"entry_low"[\s\S]*\}', '', ai_text_verdict).strip()
-                            # Hapus kalimat pengantar JSON yang tertinggal di akhir teks
+                            # Hapus kalimat pengantar JSON yang tertinggal di akhir
                             ai_text_verdict = re.sub(r'\n*[^\n]*[Bb]erikut[^\n]*(JSON|json|blok|block)[^\n]*:?\s*$', '', ai_text_verdict).strip()
                             ai_text_verdict = re.sub(r'\n*[^\n]*(following|berikut)[^\n]*(JSON|blok|strategi)[^\n]*:?\s*$', '', ai_text_verdict, flags=re.IGNORECASE).strip()
                         except Exception as e:
@@ -6163,11 +6435,11 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                 verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
                 # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:16px 18px; margin-top:14px; overflow:visible; width:100%; box-sizing:border-box;">
-<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.14em;color:#F5C242; font-weight:700;text-transform:uppercase;margin-bottom:10px; display:flex;align-items:center;gap:8px;">
+                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
+<div style="font-size:0.65rem;letter-spacing:0.14em;color:#F5C242; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:8px;">
 📋 TRADE PLAN SIGMA
 </div>
-<div style="font-size:0.88rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;line-height:1.75;font-family:inherit;">
+<div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
 {verdict_clean}
 </div>
 </div>"""
@@ -6188,7 +6460,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
 # ─────────────────────────────────────────────
     with tab_reco:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>AI REKOMENDASI SIGMA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
         reco_tab_daily, reco_tab_weekly, reco_tab_bsjp = st.tabs([
             "  📅 DAILY  ",
@@ -6196,8 +6468,7 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
             "  🌙 BELI SORE JUAL PAGI  ",
         ])
 
-        # ── DAFTAR SAHAM UNTUK SCREENING ──────────────────────────────
-        _WATCHLIST = [
+        _WATCHLIST_RECO = [
             "BBCA","BBRI","BMRI","TLKM","ASII","BREN","GOTO","ANTM",
             "PGAS","KLBF","UNVR","ICBP","MDKA","INCO","ADRO","PTBA",
             "EXCL","SMGR","BSDE","CPIN","ITMG","TBIG","MTEL","ESSA"
@@ -6205,7 +6476,6 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
 
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
-            import yfinance as yf
             result = {}
             for tk in tickers:
                 try:
@@ -6216,7 +6486,6 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                         result[tk] = {
                             "price":  round(closes[-1], 0),
                             "prev":   round(closes[-2], 0),
-                            "prev2":  round(closes[-3], 0),
                             "high":   round(h["High"].iloc[-1], 0),
                             "low":    round(h["Low"].iloc[-1], 0),
                             "vol":    int(vols[-1]),
@@ -6239,21 +6508,38 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     return f"Gagal memanggil AI: {e}"
 
         def _render_reco_cards(reco_text, accent="#F5C242"):
-            """Render output AI sebagai card yang rapi."""
             bg = "rgba(245,194,66,0.04)" if is_dark else "#fffbeb"
-            border = "rgba(245,194,66,0.18)" if is_dark else "#f5c24244"
+            border = "rgba(245,194,66,0.15)" if is_dark else "#f5c24240"
             st.markdown(f"""
             <div style="background:{bg};border:1px solid {border};border-left:3px solid {accent};
-                        border-radius:0 8px 8px 0;padding:18px 20px;margin-top:12px;
+                        border-radius:0 8px 8px 0;padding:20px 20px;margin-top:12px;
                         font-size:0.88rem;color:{text_main};white-space:pre-wrap;
-                        word-break:break-word;line-height:1.75;box-sizing:border-box;width:100%;">
-            {reco_text}
+                        word-break:break-word;line-height:1.78;box-sizing:border-box;width:100%;overflow:visible;">
+{reco_text}
             </div>""", unsafe_allow_html=True)
 
-        # ── TAB DAILY ─────────────────────────────────────────────────
+        # ── Shareholder summary untuk enrichment prompt ──────────────────
+        def _sh_summary_for_reco():
+            try:
+                _db = get_manual_sh_db_outer()
+                lines = []
+                for tk, records in _db.items():
+                    _df = pd.DataFrame(records).sort_values("date").reset_index(drop=True)
+                    if len(_df) >= 2:
+                        last = int(_df["shareholders"].iloc[-1])
+                        prev = int(_df["shareholders"].iloc[-2])
+                        delta = last - prev
+                        pct   = round(delta / prev * 100, 2)
+                        trend = "naik" if delta > 0 else "turun"
+                        lines.append(f"{tk}: {last:,} pemegang (Δ {delta:+,} = {pct:+.2f}% MoM — {trend})")
+                return "\n".join(lines)
+            except:
+                return "Data shareholder tidak tersedia"
+
+        # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI HARIAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick untuk trading hari ini berdasarkan momentum, volume, dan teknikal jangka pendek.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick trading hari ini — berbasis momentum harga, volume spike, dan sinyal shareholder.</p>", unsafe_allow_html=True)
 
             col_d1, col_d2 = st.columns([3, 1])
             with col_d2:
@@ -6262,49 +6548,54 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
 
             if run_daily:
                 with st.spinner("SIGMA AI sedang menganalisis pasar untuk rekomendasi harian..."):
-                    price_data = _reco_fetch_prices(_WATCHLIST)
+                    price_data = _reco_fetch_prices(_WATCHLIST_RECO)
+                    sh_summary = _sh_summary_for_reco()
                     if price_data:
                         lines = []
                         for tk, d in price_data.items():
                             spike = d["vol"] / d["vol5"] if d["vol5"] > 0 else 1
                             lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | Vol={d['vol']:,} | VolSpike={spike:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f}")
-                        market_snapshot = "\n".join(lines)
+                        market_snap = "\n".join(lines)
                         prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional.
-Berikut data snapshot pasar IDX hari ini (24 saham likuid):
 
-{market_snapshot}
+=== DATA HARGA & VOLUME (IDX Hari Ini) ===
+{market_snap}
 
-Tugas: Pilih TOP 3-5 saham terbaik untuk trading HARIAN (intraday sampai 1-3 hari).
-Kriteria:
-- Volume spike > 1.5x (tanda aksi)
-- Momentum positif (chg%)
-- Risk/Reward menarik
+=== DATA PEMEGANG SAHAM (IDX Bulanan) ===
+{sh_summary}
 
-Format output per saham (gunakan emoji dan format yang rapi):
-🎯 [TICKER] — [Harga] | [Perubahan%]
-📊 Alasan: [1-2 kalimat singkat mengapa menarik hari ini]
-⚡ Strategi: Entry ~[harga] | SL ~[harga] | TP ~[harga]
+=== TUGAS ===
+Pilih TOP 3-5 saham terbaik untuk trading HARIAN (intraday s/d 3 hari).
+
+Kriteria pemilihan:
+- Volume spike tinggi (tanda aksi institusi)
+- Momentum positif atau potensi rebound teknikal
+- Sinyal pemegang saham mendukung (naik = akumulasi retail)
+- Risk/Reward minimal 1:2
+
+Format output WAJIB per saham:
+🎯 [TICKER] — Rp[Harga] | [Chg%]
+📊 Alasan Teknikal: [volume, momentum, level kunci]
+👥 Sinyal Pemegang: [naik/turun berapa, implikasinya]
+⚡ Entry: Rp[harga] | SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga]
+📐 R/R: [rasio] | Horizon: [X hari]
 ---
-Di akhir, tambahkan 1 kalimat ringkasan bias pasar hari ini.
+Bias pasar hari ini: [1 kalimat]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-
-                        result = _call_ai_reco(prompt)
-                        _render_reco_cards(result, accent="#F5C242")
+                        _render_reco_cards(_call_ai_reco(prompt), "#F5C242")
                     else:
-                        st.warning("Gagal mengambil data pasar. Coba lagi beberapa saat.")
+                        st.warning("Gagal mengambil data pasar. Coba lagi.")
             else:
-                st.markdown(f"""
-                <div class="trm-card" style="text-align:center;padding:32px 20px;">
+                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Klik <span style='color:#F5C242;'>Generate Daily</span> untuk mendapatkan top pick saham hari ini
-                    </p>
+                        Klik <span style='color:#F5C242;'>Generate Daily</span> untuk top pick saham hari ini</p>
                 </div>""", unsafe_allow_html=True)
 
-        # ── TAB WEEKLY ─────────────────────────────────────────────────
+        # ─── TAB WEEKLY ───────────────────────────────────────────────────
         with reco_tab_weekly:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI MINGGUAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Swing trade 1-2 minggu — fokus pada tren, support/resistance, dan katalis fundamental.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Swing trade 1-2 minggu — tren, katalis fundamental, dan tren pemegang saham.</p>", unsafe_allow_html=True)
 
             col_w1, col_w2 = st.columns([3, 1])
             with col_w2:
@@ -6313,54 +6604,59 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
 
             if run_weekly:
                 with st.spinner("SIGMA AI sedang menyusun rekomendasi mingguan..."):
-                    price_data = _reco_fetch_prices(_WATCHLIST)
+                    price_data = _reco_fetch_prices(_WATCHLIST_RECO)
+                    sh_summary = _sh_summary_for_reco()
                     if price_data:
                         lines = []
                         for tk, d in price_data.items():
                             lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg2d={d['chg2d']:+.2f}% | Vol5avg={d['vol5']:,} | VolHari={d['vol']:,}")
-                        market_snapshot = "\n".join(lines)
-                        prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional spesialis swing trading.
-Berikut data pasar IDX (24 saham likuid):
+                        market_snap = "\n".join(lines)
+                        prompt = f"""Kamu adalah SIGMA AI, analis swing trading saham Indonesia.
 
-{market_snapshot}
+=== DATA HARGA & VOLUME ===
+{market_snap}
 
-Tugas: Pilih TOP 3-5 saham terbaik untuk SWING TRADE 1-2 minggu ke depan.
+=== DATA PEMEGANG SAHAM (Tren Bulanan) ===
+{sh_summary}
+
+=== TUGAS ===
+Pilih TOP 3-5 saham terbaik untuk SWING TRADE 1-2 minggu.
+
 Kriteria:
-- Tren jelas (chg2d dan volume konsisten)
-- Potensi breakout atau rebound dari support
+- Tren harga konsisten (chg2d dan volume)
+- Pemegang saham naik 1 atau 3 bulan = sinyal positif
 - Fundamental sektor mendukung
+- Ada potensi breakout atau rebound dari support
 
 Format output per saham:
-🎯 [TICKER] — [Harga] | Target Minggu Ini
-📊 Tesis: [2-3 kalimat — tren, katalis, potensi]
-📈 Skenario: Entry ~[harga] | SL ~[harga] | TP1 ~[harga] | TP2 ~[harga] | Horizon: [X hari]
+🎯 [TICKER] — Rp[Harga]
+📊 Tesis Teknikal: [tren, support/resistance, pola]
+🏢 Fundamental: [valuasi, katalis, posisi sektor]
+👥 Tren Pemegang: [naik/turun, implikasi akumulasi/distribusi]
+📈 Skenario: Entry Rp[harga] | SL Rp[harga] | TP1 Rp[harga] | TP2 Rp[harga]
+📐 R/R: [rasio] | Horizon: [X minggu] | Sizing: [% portofolio]
 ---
-Akhiri dengan outlook sektor/market minggu ini dalam 1-2 kalimat.
+Outlook pasar minggu ini: [2-3 kalimat]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-
-                        result = _call_ai_reco(prompt)
-                        _render_reco_cards(result, accent="#26a69a")
+                        _render_reco_cards(_call_ai_reco(prompt), "#26a69a")
                     else:
-                        st.warning("Gagal mengambil data pasar. Coba lagi beberapa saat.")
+                        st.warning("Gagal mengambil data pasar. Coba lagi.")
             else:
-                st.markdown(f"""
-                <div class="trm-card" style="text-align:center;padding:32px 20px;">
+                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Klik <span style='color:#26a69a;'>Generate Weekly</span> untuk top pick swing trade minggu ini
-                    </p>
+                        Klik <span style='color:#26a69a;'>Generate Weekly</span> untuk top pick swing trade minggu ini</p>
                 </div>""", unsafe_allow_html=True)
 
-        # ── TAB BSJP ─────────────────────────────────────────────────
+        # ─── TAB BSJP ─────────────────────────────────────────────────────
         with reco_tab_bsjp:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>BELI SORE JUAL PAGI (BSJP)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:4px;'>Strategi overnight — beli menjelang penutupan BEI (15:00-15:50 WIB), jual di pre-opening atau sesi 1 besok.</p>", unsafe_allow_html=True)
-            st.markdown(f"""
-            <div class="trm-insight" style="margin-bottom:16px;">
-            ⚠️ <b>Disclaimer BSJP:</b> Strategi ini memanfaatkan gap up overnight dan momentum pembukaan. 
-            Risiko: berita negatif semalam bisa sebabkan gap down. Selalu pasang <b>SL ketat</b> dan gunakan 
-            sizing kecil (maks 5-10% portofolio per posisi).
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:8px;'>Strategi overnight — beli menjelang penutupan BEI (15:00–15:50 WIB), jual di pre-opening atau sesi 1 besok pagi.</p>", unsafe_allow_html=True)
+            st.markdown(f"""<div class="trm-insight" style="margin-bottom:16px;">
+⚠️ <b>Disclaimer BSJP:</b> Strategi ini memanfaatkan gap-up overnight dan momentum pembukaan.
+Risiko utama: berita negatif semalam bisa sebabkan gap-down. Selalu pasang <b>SL ketat</b>
+dan gunakan sizing kecil (maks 5–10% portofolio per posisi).
+</div>""", unsafe_allow_html=True)
 
             col_b1, col_b2 = st.columns([3, 1])
             with col_b2:
@@ -6368,47 +6664,50 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                 run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
 
             if run_bsjp:
-                with st.spinner("SIGMA AI sedang mencari kandidat BSJP terbaik..."):
-                    price_data = _reco_fetch_prices(_WATCHLIST)
+                with st.spinner("SIGMA AI sedang mencari kandidat BSJP..."):
+                    price_data = _reco_fetch_prices(_WATCHLIST_RECO)
+                    sh_summary = _sh_summary_for_reco()
                     if price_data:
                         lines = []
                         for tk, d in price_data.items():
                             spike = d["vol"] / d["vol5"] if d["vol5"] > 0 else 1
-                            # Filter: hanya saham dengan volume spike & chg positif atau mendekati support
                             lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | VolSpike={spike:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f}")
-                        market_snapshot = "\n".join(lines)
-                        prompt = f"""Kamu adalah SIGMA AI, spesialis strategi overnight trading Indonesia (BSJP).
-Data snapshot pasar IDX sore ini:
+                        market_snap = "\n".join(lines)
+                        prompt = f"""Kamu adalah SIGMA AI, spesialis strategi overnight trading IDX (BSJP).
 
-{market_snapshot}
+=== DATA SNAPSHOT PASAR SORE INI ===
+{market_snap}
 
-Tugas: Pilih TOP 2-3 saham terbaik untuk strategi BSJP (beli sore ini, jual pagi besok).
-Kriteria BSJP yang ideal:
-- Volume spike tinggi sore ini (tanda akumulasi bandar)
-- Harga menutup di atas high beberapa hari terakhir (momentum)
-- Tidak sedang dalam tren turun kuat
+=== DATA PEMEGANG SAHAM ===
+{sh_summary}
+
+=== TUGAS ===
+Pilih TOP 2-3 saham terbaik untuk strategi BSJP (beli sore ini, jual pagi besok).
+
+Kriteria BSJP ideal:
+- Volume spike sore (tanda akumulasi institusi menjelang closing)
+- Harga menutup di atas high beberapa hari sebelumnya
+- Pemegang saham naik = sinyal positif tambahan
 - Likuid (bisa exit cepat pagi hari)
+- Tidak sedang dalam tren turun kuat
 
 Format output per saham:
-🌙 [TICKER] — Beli ~[harga sore] | Target Pagi ~[harga]
-📊 Sinyal: [1-2 kalimat — mengapa cocok untuk BSJP malam ini]
-⚡ Eksekusi: Beli di [range harga] menjelang closing | SL pagi jika buka di bawah [harga] | Target exit [harga]
-🎯 Potensi: +[X]% overnight
+🌙 [TICKER] — Beli ~Rp[harga] sore ini
+📊 Sinyal Teknikal: [volume spike, posisi harga, momentum]
+👥 Konfirmasi Pemegang: [naik/turun, sinyal]
+⚡ Eksekusi: Beli di Rp[range] menjelang closing | SL pagi jika buka di bawah Rp[harga]
+🎯 Target pagi: Rp[harga] | Potensi: +[X]% overnight
 ---
-Akhiri dengan 1 kalimat: apakah malam ini kondusif untuk BSJP atau lebih baik wait.
+Kondisi BSJP malam ini: [KONDUSIF / WAIT] — [1 kalimat alasan]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-
-                        result = _call_ai_reco(prompt)
-                        _render_reco_cards(result, accent="#7c3aed")
+                        _render_reco_cards(_call_ai_reco(prompt), "#7c3aed")
                     else:
-                        st.warning("Gagal mengambil data pasar. Coba lagi beberapa saat.")
+                        st.warning("Gagal mengambil data pasar. Coba lagi.")
             else:
-                st.markdown(f"""
-                <div class="trm-card" style="text-align:center;padding:32px 20px;">
+                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini
-                    </p>
+                        Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini</p>
                 </div>""", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
