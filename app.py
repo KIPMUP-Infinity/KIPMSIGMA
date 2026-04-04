@@ -2279,7 +2279,19 @@ SKALA VALUASI (Harga Penawaran ÷ Nilai Nominal):
 ≤2x = Sangat Menarik | 2–4x = Menarik/Wajar | >4–7x = Waspada/Mahal | >7x = Hati-Hati Tinggi
 WAJIB gunakan skala ini, BUKAN hanya batas 4x.
 
-Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya."""
+Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya.
+
+=== ATURAN KONSISTENSI FORMAT (WAJIB — TIDAK BOLEH DILANGGAR) ===
+• SETIAP REQUEST ulang untuk TOPIK YANG SAMA → hasilkan output IDENTIK dalam struktur & urutan section.
+• DILARANG menambah, menghapus, atau memindahkan section dari template yang sudah ditentukan.
+• JIKA data kosong → tulis "N/A (est.)" bukan skip section tersebut.
+• Emoji header section WAJIB konsisten: 📋 📊 💰 🏆 ⚖️ 🔭 📈 selalu di posisi yang sama.
+• Urutan output TEKNIKAL: (1) Identifikasi Zona → (2) Confluence → (3) Bias → (4) Trade Plan → (5) DYOR. Tidak boleh dibalik.
+• Urutan output FUNDAMENTAL: (1) Harga → (2) Profitabilitas → (3) Valuasi → (4) Dividen → (5) Tren → (6) Proyeksi → (7) Verdict. Tidak boleh dibalik.
+• Urutan output BANDARMOLOGI: (1) Bar/Top → (2) Net per kategori → (3) Freq analysis → (4) Skenario → (5) Insight → (6) DYOR. Tidak boleh dibalik.
+• ANGKA HARGA: selalu format Rp dengan titik ribuan. Contoh: Rp1.234, bukan Rp1234 atau 1.234.
+• PERSENTASE: selalu 2 desimal. Contoh: 12.50%, bukan 12.5% atau 12.5.
+• DYOR selalu di baris paling akhir, dalam format: ⚠️ *DYOR — [kalimat singkat konteks]*."""
 
 
 # ─────────────────────────────────────────────
@@ -5159,8 +5171,8 @@ if current_view == "dashboard":
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 28 Februari 2025 (MSCI Semi-Annual Review Feb 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#F5C242;'>Review berikutnya:</b> Agustus 2025 (pengumuman ~13 Agu, efektif 29 Agu 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Review berikutnya:</b> Agustus 2026 (pengumuman ~12 Agu, efektif 31 Agu 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari &amp; Agustus. Sumber: <b>msci.com</b></span>
         </div>""", unsafe_allow_html=True)
         msci_data = {
@@ -5206,8 +5218,8 @@ if current_view == "dashboard":
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 24 Maret 2025 (FTSE Quarterly Review Q1 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#F5C242;'>Review berikutnya:</b> Juni 2025 (pengumuman ~6 Jun, efektif 23 Jun 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 4× setahun — Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
         </div>""", unsafe_allow_html=True)
         
@@ -5247,8 +5259,8 @@ if current_view == "dashboard":
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 03 Februari 2025 (Periode Feb–Jul 2025)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#F5C242;'>Rebalance berikutnya:</b> 01 Agustus 2025 (Periode Agu 2025–Jan 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
         </div>""", unsafe_allow_html=True)
         
@@ -6002,9 +6014,30 @@ if current_view == "dashboard":
         _acc_hist    = "#8892a4" if is_dark else "#6b7280"
 
         st.markdown(f"""<style>
-.sh2-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;}}
-.sh2-tbl th {{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 8px;border-bottom:2px solid;text-align:left;}}
-.sh2-tbl td {{padding:7px 8px;border-bottom:1px solid {_tbl_border};vertical-align:middle;}}
+.sh2-scroll-outer {{
+  width: 100%;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  margin-bottom: 24px;
+  /* Force scroll on Streamlit which tends to clip overflow */
+  display: block;
+  max-width: 100%;
+}}
+/* Scroll hint indicator on mobile */
+@media(max-width:768px){{
+  .sh2-scroll-outer::after {{
+    content: '← geser →';
+    display: block;
+    text-align: center;
+    font-size: 0.58rem;
+    color: {_acc_hist};
+    padding: 4px 0 2px;
+    letter-spacing: 0.08em;
+  }}
+}}
+.sh2-tbl {{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;}}
+.sh2-tbl th {{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid;text-align:left;white-space:nowrap;}}
+.sh2-tbl td {{padding:7px 10px;border-bottom:1px solid {_tbl_border};vertical-align:middle;white-space:nowrap;}}
 .sh2-tbl tr:last-child td {{border-bottom:none;}}
 .sh2-tbl tr:hover td {{background:rgba(255,255,255,0.03);}}
 .sh2-badge {{font-weight:700;font-size:0.8rem;}}
@@ -6017,11 +6050,11 @@ if current_view == "dashboard":
 .sh2-hist {{color:{_acc_hist};font-size:0.68rem;}}
 .sh2-hist-lbl {{font-size:0.55rem;opacity:0.7;display:block;margin-bottom:1px;}}
 @media(max-width:768px){{
-  .sh2-tbl{{font-size:0.62rem;}}
-  .sh2-tbl th{{font-size:0.48rem;padding:4px 5px;}}
-  .sh2-tbl td{{padding:4px 5px;}}
-  .sh2-badge{{font-size:0.67rem;}}
-  .sh2-hist{{font-size:0.6rem;}}
+  .sh2-tbl{{font-size:0.65rem;}}
+  .sh2-tbl th{{font-size:0.52rem;padding:5px 8px;}}
+  .sh2-tbl td{{padding:5px 8px;}}
+  .sh2-badge{{font-size:0.7rem;}}
+  .sh2-hist{{font-size:0.62rem;}}
 }}
 </style>""", unsafe_allow_html=True)
 
@@ -6049,7 +6082,7 @@ if current_view == "dashboard":
             html = f"""<div style="margin-bottom:6px;display:flex;align-items:center;gap:10px;">
 <span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:{acc};font-weight:700;">{icon} {label} — {count} EMITEN</span>
 </div>
-<div style="overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch;margin-bottom:24px;">
+<div class="sh2-scroll-outer">
 <table class="sh2-tbl"><thead><tr class="{head_cls}">
 <th>Ticker</th>
 <th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
@@ -6619,7 +6652,7 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
 # ─────────────────────────────────────────────
     with tab_reco:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>AI REKOMENDASI SIGMA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
         reco_tab_daily, reco_tab_weekly, reco_tab_bsjp = st.tabs([
             "  📅 DAILY  ",
@@ -6627,32 +6660,95 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
             "  🌙 BELI SORE JUAL PAGI  ",
         ])
 
+        # ── DAFTAR LENGKAP SAHAM IDX — ALL SECTORS (150+ emiten) ──────────
         _WATCHLIST_RECO = [
-            "BBCA","BBRI","BMRI","TLKM","ASII","BREN","GOTO","ANTM",
-            "PGAS","KLBF","UNVR","ICBP","MDKA","INCO","ADRO","PTBA",
-            "EXCL","SMGR","BSDE","CPIN","ITMG","TBIG","MTEL","ESSA"
+            # PERBANKAN BESAR
+            "BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BTPN","BDMN","PNBN",
+            "NISP","MEGA","BJBR","BJTM","BBYB","ARTO","BANK","AGRO","BACA","BBKP",
+            # TELKOM & INFRASTRUKTUR
+            "TLKM","EXCL","ISAT","FREN","TOWR","TBIG","MTEL","BTEL",
+            # ENERGI & BATUBARA
+            "ADRO","PTBA","ITMG","HRUM","BUMI","DSSA","GEMS","MBAP","INDY","MYOH",
+            "SMMT","UNTR","ESSA","MEDC","PGAS","ELSA","ENRG","RUIS","RAJA",
+            # NIKEL, EMAS & MINERAL
+            "ANTM","MDKA","INCO","NCKL","BRMS","AMMN","MBMA","DKFT","CITA",
+            # CPO & AGRIBISNIS
+            "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM",
+            # MATERIAL & SEMEN & KIMIA
+            "SMGR","INTP","TPIA","BRPT","INKP","TKIM","INAI","KRAS","WSBP","SMBR",
+            "ARNA","TOTO","MARK","ETWA",
+            # CONSUMER GOODS & FOOD
+            "INDF","ICBP","MYOR","UNVR","GGRM","HMSP","KLBF","SIDO","CPIN","JPFA",
+            "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","CBMF","BISI",
+            # PROPERTI & KONSTRUKSI
+            "BSDE","CTRA","SMRA","LPKR","PWON","ASRI","MDLN","DILD","APLN","JRPT",
+            "WIKA","WSKT","PTPP","ADHI","NRCA","ACST",
+            # OTOMOTIF & INDUSTRI
+            "ASII","AUTO","IMAS","SMSM","GJTL","ADMG","LPIN","INDS",
+            # TEKNOLOGI & E-COMMERCE
+            "GOTO","BUKA","EMTK","MNCN","SCMA","KIOS","MTDL","DMMX","EDGE",
+            # KESEHATAN & FARMASI
+            "KLBF","KAEF","MIKA","HEAL","SILO","PRIM","IRRA","TSPC","DVLA",
+            # RETAIL & KONSUMER SIKLUS
+            "MAPI","ACES","RALS","MIDI","AMRT","LPPF","HERO","RANC",
+            # TRANSPORTASI & LOGISTIK
+            "BIRD","GIAA","SMDR","TMAS","NELY","ASSA","SAFE","BPTR",
+            # BREN & ENERGI TERBARUKAN
+            "BREN","PGEO","CUAN","PTRO","HMSP",
+            # KEUANGAN NON-BANK & MULTIFINANCE
+            "BFIN","ADMF","MFIN","CFIN","VRNA","PNLF",
+            # MEDIA & ENTERTAINMENT
+            "FILM","JTPE",
+            # SMALL CAP POTENSIAL
+            "VKTR","CDIA","MDKA","SSMS","JPFA","WMUU","ERAL",
         ]
+        # Deduplikasi
+        _WATCHLIST_RECO = list(dict.fromkeys(_WATCHLIST_RECO))
 
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
+            import threading
             result = {}
-            for tk in tickers:
+            lock = threading.Lock()
+
+            def _fetch_one(tk):
                 try:
-                    h = yf.Ticker(f"{tk}.JK").history(period="10d")
-                    if len(h) >= 3:
+                    h = yf.Ticker(f"{tk}.JK").history(period="15d")
+                    if len(h) >= 5:
                         closes = h["Close"].tolist()
                         vols   = h["Volume"].tolist()
-                        result[tk] = {
-                            "price":  round(closes[-1], 0),
-                            "prev":   round(closes[-2], 0),
-                            "high":   round(h["High"].iloc[-1], 0),
-                            "low":    round(h["Low"].iloc[-1], 0),
-                            "vol":    int(vols[-1]),
-                            "vol5":   int(sum(vols[-5:]) / 5),
-                            "chg":    round((closes[-1] - closes[-2]) / closes[-2] * 100, 2),
-                            "chg2d":  round((closes[-1] - closes[-3]) / closes[-3] * 100, 2),
-                        }
+                        highs  = h["High"].tolist()
+                        lows   = h["Low"].tolist()
+                        # EMA 5 & 10 sederhana
+                        ema5  = sum(closes[-5:]) / 5
+                        ema10 = sum(closes[-10:]) / 10 if len(closes) >= 10 else ema5
+                        spike  = vols[-1] / (sum(vols[-5:]) / 5) if sum(vols[-5:]) > 0 else 1
+                        chg5d  = round((closes[-1] - closes[-6]) / closes[-6] * 100, 2) if len(closes) >= 6 else 0
+                        with lock:
+                            result[tk] = {
+                                "price":  round(closes[-1], 0),
+                                "prev":   round(closes[-2], 0),
+                                "high":   round(highs[-1], 0),
+                                "low":    round(lows[-1], 0),
+                                "vol":    int(vols[-1]),
+                                "vol5":   int(sum(vols[-5:]) / 5),
+                                "chg":    round((closes[-1] - closes[-2]) / closes[-2] * 100, 2),
+                                "chg2d":  round((closes[-1] - closes[-3]) / closes[-3] * 100, 2) if len(closes) >= 3 else 0,
+                                "chg5d":  chg5d,
+                                "ema5":   round(ema5, 0),
+                                "ema10":  round(ema10, 0),
+                                "spike":  round(spike, 2),
+                                # bullish: harga > EMA5 > EMA10 dan spike > 1
+                                "bullish_score": (1 if closes[-1] > ema5 else 0) + (1 if ema5 > ema10 else 0) + (1 if spike >= 1.5 else 0) + (1 if chg5d > 0 else 0),
+                                # bearish: harga < EMA5 < EMA10
+                                "bearish_score": (1 if closes[-1] < ema5 else 0) + (1 if ema5 < ema10 else 0) + (1 if spike >= 1.5 and closes[-1] < closes[-2] else 0) + (1 if chg5d < 0 else 0),
+                            }
                 except: pass
+
+            # Parallel fetch dengan thread pool
+            threads = [threading.Thread(target=_fetch_one, args=(tk,)) for tk in tickers]
+            for t in threads: t.start()
+            for t in threads: t.join(timeout=15)
             return result
 
         def _call_ai_reco(prompt_text):
@@ -6758,39 +6854,62 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                 run_daily = st.button("▶ GENERATE DAILY", use_container_width=True, key="btn_daily")
 
             if run_daily:
-                with st.spinner("SIGMA AI sedang menganalisis pasar untuk rekomendasi harian..."):
+                with st.spinner("SIGMA AI sedang scanning seluruh saham IDX..."):
                     price_data = _reco_fetch_prices(_WATCHLIST_RECO)
                     sh_summary = _sh_summary_for_reco()
                     if price_data:
-                        lines = []
-                        for tk, d in price_data.items():
-                            spike = d["vol"] / d["vol5"] if d["vol5"] > 0 else 1
-                            lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | Vol={d['vol']:,} | VolSpike={spike:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f}")
-                        market_snap = "\n".join(lines)
-                        prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional.
+                        # Filter TOP BULLISH (skor ≥ 3) dan TOP BEARISH (skor ≥ 3) dari seluruh universe
+                        bullish_candidates = sorted(
+                            [(tk, d) for tk, d in price_data.items() if d.get("bullish_score", 0) >= 3],
+                            key=lambda x: (x[1]["bullish_score"], x[1]["spike"]), reverse=True
+                        )[:15]
+                        bearish_candidates = sorted(
+                            [(tk, d) for tk, d in price_data.items() if d.get("bearish_score", 0) >= 3],
+                            key=lambda x: (x[1]["bearish_score"], x[1]["spike"]), reverse=True
+                        )[:10]
 
-=== DATA HARGA & VOLUME (IDX Hari Ini) ===
-{market_snap}
+                        bull_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | Chg5D={d['chg5d']:+.2f}% | VolSpike={d['spike']:.1f}x | EMA5={d['ema5']:,.0f} | BullScore={d['bullish_score']}/4"
+                                      for tk, d in bullish_candidates]
+                        bear_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | Chg5D={d['chg5d']:+.2f}% | VolSpike={d['spike']:.1f}x | EMA5={d['ema5']:,.0f} | BearScore={d['bearish_score']}/4"
+                                      for tk, d in bearish_candidates]
+
+                        prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional.
+Scanning dari universe {len(price_data)} saham IDX telah selesai.
+
+=== KANDIDAT BULLISH (Top Score dari {len(price_data)} saham) ===
+{chr(10).join(bull_lines) if bull_lines else 'Tidak ada kandidat bullish kuat hari ini.'}
+
+=== KANDIDAT BEARISH / HINDARI (dari {len(price_data)} saham) ===
+{chr(10).join(bear_lines) if bear_lines else 'Tidak ada sinyal bearish kuat hari ini.'}
 
 === DATA PEMEGANG SAHAM (IDX Bulanan) ===
 {sh_summary}
 
 === TUGAS ===
-Pilih TOP 3-5 saham terbaik untuk trading HARIAN (intraday s/d 3 hari).
+Dari data di atas, pilih:
+- TOP 3-5 saham TERBAIK untuk trading HARIAN (intraday s/d 3 hari)
+- TOP 3 saham yang HARUS DIHINDARI / berpotensi turun hari ini
 
-Kriteria pemilihan:
-- Volume spike tinggi (tanda aksi institusi)
-- Momentum positif atau potensi rebound teknikal
-- Sinyal pemegang saham mendukung (naik = akumulasi retail)
-- Risk/Reward minimal 1:2
+KRITERIA BULLISH: BullScore tinggi + volume spike tinggi + pemegang naik
+KRITERIA BEARISH: BearScore tinggi + volume spike saat turun + pemegang turun
 
-Format output WAJIB per saham (PENTING: setiap saham dimulai dari baris baru dengan 🎯):
+Format output WAJIB — bagian BULLISH per saham dimulai dengan 🎯, bagian BEARISH per saham dimulai dengan ⚠️:
+
+=== 🎯 REKOMENDASI BELI HARIAN ===
 
 🎯 [TICKER] — Rp[Harga] | [Chg%]
-📊 Teknikal: [volume, momentum, support/resistance, level kunci]
+📊 Teknikal: [volume spike, tren EMA, momentum, support/resistance]
 👥 Pemegang: [naik/turun MoM, interpretasi akumulasi/distribusi]
 ⚡ Entry: Rp[harga] | SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga]
 📐 R/R: [rasio] | Horizon: [X hari]
+
+(kosongkan 1 baris sebelum saham berikutnya)
+
+=== ⚠️ SAHAM YANG HARUS DIHINDARI ===
+
+⚠️ [TICKER] — Rp[Harga] | [Chg%]
+❌ Alasan: [volume distribusi, tren turun, sinyal bearish spesifik]
+🚫 Aksi: [jangan beli / segera exit jika pegang]
 
 (kosongkan 1 baris sebelum saham berikutnya)
 
@@ -6817,39 +6936,59 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                 run_weekly = st.button("▶ GENERATE WEEKLY", use_container_width=True, key="btn_weekly")
 
             if run_weekly:
-                with st.spinner("SIGMA AI sedang menyusun rekomendasi mingguan..."):
+                with st.spinner("SIGMA AI sedang menyusun rekomendasi mingguan dari seluruh IDX..."):
                     price_data = _reco_fetch_prices(_WATCHLIST_RECO)
                     sh_summary = _sh_summary_for_reco()
                     if price_data:
-                        lines = []
-                        for tk, d in price_data.items():
-                            lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg2d={d['chg2d']:+.2f}% | Vol5avg={d['vol5']:,} | VolHari={d['vol']:,}")
+                        # Filter kandidat terbaik untuk swing
+                        swing_candidates = sorted(
+                            [(tk, d) for tk, d in price_data.items() if d.get("bullish_score", 0) >= 2 and d.get("chg5d", 0) > -5],
+                            key=lambda x: (x[1]["bullish_score"], x[1].get("chg5d", 0)), reverse=True
+                        )[:20]
+                        bear_swing = sorted(
+                            [(tk, d) for tk, d in price_data.items() if d.get("bearish_score", 0) >= 3],
+                            key=lambda x: x[1]["bearish_score"], reverse=True
+                        )[:8]
+
+                        lines = [f"{tk}: Harga={d['price']:,.0f} | Chg2d={d['chg2d']:+.2f}% | Chg5d={d['chg5d']:+.2f}% | Vol5avg={d['vol5']:,} | EMA5={d['ema5']:,.0f} | EMA10={d['ema10']:,.0f} | BullScore={d['bullish_score']}/4"
+                                 for tk, d in swing_candidates]
+                        bear_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg5d={d['chg5d']:+.2f}% | BearScore={d['bearish_score']}/4"
+                                      for tk, d in bear_swing]
                         market_snap = "\n".join(lines)
                         prompt = f"""Kamu adalah SIGMA AI, analis swing trading saham Indonesia.
+Universe screening: {len(price_data)} saham IDX.
 
-=== DATA HARGA & VOLUME ===
+=== KANDIDAT SWING BULLISH (Top dari universe) ===
 {market_snap}
+
+=== KANDIDAT HINDARI / BEARISH ===
+{chr(10).join(bear_lines) if bear_lines else 'Tidak ada sinyal bearish dominan.'}
 
 === DATA PEMEGANG SAHAM (Tren Bulanan) ===
 {sh_summary}
 
 === TUGAS ===
-Pilih TOP 3-5 saham terbaik untuk SWING TRADE 1-2 minggu.
+Pilih:
+- TOP 3-5 saham terbaik untuk SWING TRADE 1-2 minggu
+- TOP 3 saham HINDARI minggu ini
 
-Kriteria:
-- Tren harga konsisten (chg2d dan volume)
-- Pemegang saham naik 1 atau 3 bulan = sinyal positif
-- Fundamental sektor mendukung
-- Ada potensi breakout atau rebound dari support
+Format output WAJIB — bagian BULLISH dengan 🎯, bagian HINDARI dengan ⚠️:
 
-Format output per saham (PENTING: setiap saham dimulai dari baris baru dengan 🎯):
+=== 🎯 SWING TRADE MINGGU INI ===
 
 🎯 [TICKER] — Rp[Harga]
-📊 Teknikal: [tren, support/resistance, pola chart, momentum]
-🏢 Fundamental: [valuasi, katalis, posisi vs kompetitor sektor]
+📊 Teknikal: [tren EMA, support/resistance, pola, momentum, chg5d]
+🏢 Fundamental: [valuasi estimasi, katalis, posisi sektor]
 👥 Pemegang Saham: [naik/turun berapa, tren 3 bulan, implikasi]
 📈 Skenario: Entry Rp[harga] | SL Rp[harga] | TP1 Rp[harga] | TP2 Rp[harga]
 📐 R/R: [rasio] | Horizon: [X minggu] | Sizing maks: [% portofolio]
+
+(kosongkan 1 baris sebelum saham berikutnya)
+
+=== ⚠️ SAHAM HINDARI MINGGU INI ===
+
+⚠️ [TICKER] — Rp[Harga]
+❌ Alasan: [tren bearish, distribusi, sinyal teknikal negatif]
 
 (kosongkan 1 baris sebelum saham berikutnya)
 
@@ -6881,34 +7020,53 @@ dan gunakan sizing kecil (maks 5–10% portofolio per posisi).
                 run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
 
             if run_bsjp:
-                with st.spinner("SIGMA AI sedang mencari kandidat BSJP..."):
+                with st.spinner("SIGMA AI sedang mencari kandidat BSJP dari seluruh IDX..."):
                     price_data = _reco_fetch_prices(_WATCHLIST_RECO)
                     sh_summary = _sh_summary_for_reco()
                     if price_data:
-                        lines = []
-                        for tk, d in price_data.items():
-                            spike = d["vol"] / d["vol5"] if d["vol5"] > 0 else 1
-                            lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | VolSpike={spike:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f}")
+                        # Filter: spike volume tinggi + harga tidak dalam downtrend kuat
+                        bsjp_candidates = sorted(
+                            [(tk, d) for tk, d in price_data.items()
+                             if d.get("spike", 1) >= 1.5 and d.get("chg", 0) > -3 and d.get("vol5", 0) > 0],
+                            key=lambda x: x[1]["spike"], reverse=True
+                        )[:15]
+                        # Juga sertakan saham bearish kuat sebagai hindari
+                        bsjp_avoid = sorted(
+                            [(tk, d) for tk, d in price_data.items() if d.get("bearish_score", 0) >= 3],
+                            key=lambda x: x[1]["bearish_score"], reverse=True
+                        )[:5]
+
+                        lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | VolSpike={d['spike']:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f} | BullScore={d['bullish_score']}/4"
+                                 for tk, d in bsjp_candidates]
+                        avoid_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | BearScore={d['bearish_score']}/4"
+                                       for tk, d in bsjp_avoid]
                         market_snap = "\n".join(lines)
                         prompt = f"""Kamu adalah SIGMA AI, spesialis strategi overnight trading IDX (BSJP).
+Universe screening: {len(price_data)} saham IDX.
 
-=== DATA SNAPSHOT PASAR SORE INI ===
+=== KANDIDAT BSJP — Volume Spike Tertinggi Hari Ini ===
 {market_snap}
+
+=== HINDARI MALAM INI (Sinyal Bearish Kuat) ===
+{chr(10).join(avoid_lines) if avoid_lines else 'Tidak ada sinyal bearish ekstrem.'}
 
 === DATA PEMEGANG SAHAM ===
 {sh_summary}
 
 === TUGAS ===
-Pilih TOP 2-3 saham terbaik untuk strategi BSJP (beli sore ini, jual pagi besok).
+Pilih:
+- TOP 2-3 saham terbaik untuk BSJP (beli sore ini, jual pagi besok)
+- TOP 2 saham yang JANGAN DIPEGANG MALAM INI
 
 Kriteria BSJP ideal:
 - Volume spike sore (tanda akumulasi institusi menjelang closing)
-- Harga menutup di atas high beberapa hari sebelumnya
+- Harga menutup kuat di atas rata-rata hari ini (dekat high)
 - Pemegang saham naik = sinyal positif tambahan
 - Likuid (bisa exit cepat pagi hari)
-- Tidak sedang dalam tren turun kuat
 
-Format output per saham (PENTING: setiap saham dimulai dari baris baru dengan 🌙):
+Format output (bagian BELI dimulai 🌙, bagian HINDARI dimulai ⛔):
+
+=== 🌙 BELI SORE INI ===
 
 🌙 [TICKER] — Beli ~Rp[harga] sore ini
 📊 Sinyal Teknikal: [volume spike ratio, posisi harga vs high, momentum closing]
@@ -6917,6 +7075,11 @@ Format output per saham (PENTING: setiap saham dimulai dari baris baru dengan �
 🎯 Target pagi: Rp[harga] | Potensi: +[X]% overnight | R/R: [rasio]
 
 (kosongkan 1 baris sebelum saham berikutnya)
+
+=== ⛔ JANGAN DIPEGANG MALAM INI ===
+
+⛔ [TICKER] — Rp[Harga]
+❌ Alasan: [sinyal distribusi/gap down risk]
 
 Kondisi BSJP malam ini: [KONDUSIF / WAIT] — [1 kalimat alasan]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
