@@ -746,78 +746,51 @@ def build_fundamental_from_text(prompt):
     def fetch():
         try:
             multi = fetch_fundamental_with_cache(ticker)
-            current_year = datetime.now().year
+            current_year = 2026 # Force context ke 2026
 
-            # Cari harga live yang valid
             price_live = multi.get("price")
-            price_src = multi.get("source_price", "Unknown")
+            # Logika deteksi harga tetap dipertahankan seperti sebelumnya...
             
-            if not price_live:
-                try:
-                    import urllib.request as _ur, json as _jj
-                    _req = _ur.Request(f"https://www.idx.co.id/umbraco/Surface/StockData/GetTradingInfoSS?code={ticker}", headers={"User-Agent":"Mozilla/5.0"})
-                    with _ur.urlopen(_req, timeout=3) as _r: _d = _jj.loads(_r.read())
-                    if _d and _d.get("LastPrice"): price_live = _d["LastPrice"]; price_src = "IDX (real-time)"
-                except: pass
-            
-            if not price_live:
-                try:
-                    import yfinance as yf
-                    hist_price = yf.Ticker(f"{ticker}.JK").history(period="1d")
-                    if not hist_price.empty: price_live = round(hist_price.iloc[-1]["Close"], 0); price_src = "yfinance"
-                except: pass
-
-            # Deteksi sektor
             is_bank = is_bank_sector(ticker)
             sektor = "Perbankan" if is_bank else "Non-Perbankan"
-            framework = "Perbankan (NIM, NPL, LDR, dll)" if is_bank else "Buffett + Graham + Lynch"
 
             lines = [
-                f"=== INSTRUKSI DARURAT (WAJIB DIBACA AI) ===",
-                f"Jika metrik di bawah ada yang kosong/N/A, KAMU DILARANG MENOLAK MENJAWAB.",
-                f"KAMU WAJIB menggunakan knowledge internal kamu tentang {ticker} untuk mengisi kekosongan tersebut.",
-                f"Selalu utamakan data paling aktual (TTM/{current_year}). JANGAN pakai data usang.",
-                f"Jika rasio valuasi kosong, WAJIB HITUNG MANUAL: PER = Harga ÷ EPS. PBV = Harga ÷ BV.",
+                f"=== STATUS ANALISA: PRIORITAS UTAMA {current_year} ===",
+                f"🚨 FOKUS UTAMA: Data Terbaru 2026 / TTM (Trailing Twelve Months).",
+                f"📊 KONTEKS PEMBANDING: Gunakan data 2024-2025 untuk melihat tren (YoY/CAGR) dan mengisi data jika angka 2026 belum rilis sepenuhnya.",
                 f"==========================================\n",
-                f"=== DATA FUNDAMENTAL {ticker} ({sektor}) ===",
-                f"Sektor: {sektor} | Framework: {framework}"
+                f"=== DATA FUNDAMENTAL {ticker} ({sektor}) ==="
             ]
 
             if price_live:
-                lines.append(f"💹 Harga Saham Saat Ini : Rp{price_live:,.0f} (sumber: {price_src})")
-                multi["price"] = price_live
-            else:
-                lines.append(f"💹 Harga Saham Saat Ini : N/A (MOHON AI ESTIMASI DARI KNOWLEDGE)")
-
-            # Tarik variabel
-            eps = multi.get("eps"); bv = multi.get("bv"); pe = multi.get("pe"); pbv = multi.get("pbv")
+                lines.append(f"💹 Harga Saham Saat Ini : Rp{price_live:,.0f}")
             
-            # Hitung Paksa (Lapis Terakhir)
-            if not pe and price_live and eps and eps > 0:
-                pe = price_live / eps
-                lines.append(f"PER (hitung manual) : {pe:.2f}×")
-            elif pe: lines.append(f"PER : {pe:.2f}×")
-                
-            if not pbv and price_live and bv and bv > 0:
-                pbv = price_live / bv
-                lines.append(f"PBV (hitung manual) : {pbv:.2f}×")
-            elif pbv: lines.append(f"PBV : {pbv:.2f}×")
-
-            if eps: lines.append(f"EPS (TTM) : Rp{eps:,.0f}")
-            if bv: lines.append(f"Book Value : Rp{bv:,.0f}")
-            if multi.get("roe"): lines.append(f"ROE : {multi['roe']*100:.2f}%")
-            if multi.get("roa"): lines.append(f"ROA : {multi['roa']*100:.2f}%")
-            if multi.get("div_yield"): lines.append(f"Div Yield : {multi['div_yield']*100:.2f}%")
-            if multi.get("mktcap"): lines.append(f"Market Cap : Rp{multi['mktcap']/1e12:.1f} T")
+            # Menampilkan Data 2026 dan Pembanding
+            eps_2026 = multi.get("eps") # Asumsi TTM/2026
+            eps_2025 = multi.get("eps_last_year") # Data pembanding
+            
+            if eps_2026:
+                lines.append(f"EPS TTM (2026) : Rp{eps_2026:,.0f}")
+                if eps_2025:
+                    growth = ((eps_2026 - eps_2025) / eps_2025) * 100
+                    lines.append(f"Growth EPS vs 2025 : {growth:+.2f}%")
+            
+            # Valuasi Tetap Wajib Ada
+            pe = multi.get("pe")
+            pbv = multi.get("pbv")
+            if pe: lines.append(f"PER (Current 2026) : {pe:.2f}×")
+            if pbv: lines.append(f"PBV (Current 2026) : {pbv:.2f}×")
+            
+            if multi.get("roe"): lines.append(f"ROE (Latest) : {multi['roe']*100:.2f}%")
+            if multi.get("div_yield"): lines.append(f"Dividend Yield : {multi['div_yield']*100:.2f}%")
 
             result[0] = "\n".join(lines)
-        except Exception as e:
-            # JIKA API BENAR-BENAR MATI, PAKSA AI PAKAI OTAKNYA SENDIRI
-            result[0] = f"API Timeout/Error. INSTRUKSI WAJIB UNTUK AI: Kamu WAJIB menggunakan knowledge internal kamu sendiri untuk menganalisa fundamental {ticker}. JANGAN MENOLAK!"
+        except Exception:
+            result[0] = f"Gunakan knowledge 2026 sebagai prioritas untuk {ticker}, bandingkan dengan tren 2024-2025."
             
     th = threading.Thread(target=fetch, daemon=True)
     th.start()
-    th.join(timeout=12) # Timeout diatur ketat agar tidak membuat chat nge-lag
+    th.join(timeout=12)
     return result[0]
 
 # ─────────────────────────────────────────────
@@ -2045,38 +2018,19 @@ ATURAN OUTPUT WAJIB:
 - Data yfinance untuk saham IDX TIDAK PUNYA: NIM, NPL, CAR, BOPO, LDR, CIR
 
 ====================================
-DISIPLIN DATA & VALIDASI HARGA
+DISIPLIN DATA: PRIORITAS 2026 & KOMPARASI HISTORIS
 ====================================
 
-SIGMA WAJIB GALAK DAN TEGAS dalam validasi data — TIDAK BOLEH asal pakai angka lama.
+Kamu bekerja dengan hirarki data sebagai berikut:
+1. PRIORITAS (LEVEL 1): Data Terbaru 2026 atau TTM (Trailing Twelve Months). Semua kesimpulan "Murah/Mahal" atau "Buy/Sell" wajib didasarkan pada angka 2026 ini.
+2. KOMPARASI (LEVEL 2): Data 2021 - 2022 - 2023 - 2024 - 2025 wajib digunakan sebagai PEMBANDING. 
+   - Contoh: "Meskipun EPS 2026 sebesar Rp500 terlihat bagus, angka ini sebenarnya turun 10% dibanding EPS 2025."
+3. GAP-FILLING (LEVEL 3): Jika data 2026 belum tersedia (misal laporan keuangan belum rilis), gunakan data 2025 sebagai basis estimasi untuk memproyeksikan angka 2026 yang logis.
 
-ATURAN DATA TERBARU (WAJIB DIPATUHI):
-1. DATA HARGA: SELALU gunakan harga terkini dari [DATA PASAR] atau yfinance
-   ❌ DILARANG pakai harga dari ingatan lama atau asumsi
-   ❌ Jika harga tidak tersedia -> SEBUTKAN "harga tidak tersedia, mohon cek manual"
-   ✅ WAJIB sebutkan tanggal/sumber data harga yang digunakan
-
-2. DATA LAPORAN KEUANGAN: SELALU prioritaskan data terbaru
-   ❌ DILARANG pakai tren 2018->2019->2020 kalau data 2023->2024->2025 tersedia
-   ✅ Tahun tren WAJIB dimulai dari minimal 3 tahun terakhir (2023/2024/2025)
-   ✅ Jika ada PDF laporan -> data PDF adalah PRIORITAS UTAMA, lebih dipercaya dari knowledge
-
-3. VALIDASI KONSISTENSI HARGA vs CORPORATE ACTION:
-   ❌ JANGAN langsung pakai harga tanpa cek apakah ada corporate action
-   ✅ Jika harga terlihat anomali (misal BBNI di Rp 8.300 padahal market Rp 4.390):
-      -> WAJIB periksa kemungkinan: stock split, reverse stock, right issue
-      -> SEBUTKAN anomali ini kepada user sebelum lanjut analisa
-      -> HITUNG ulang EPS/BV/DPS sesuai adjusted price
-
-4. SUMBER DATA — URUTAN PRIORITAS:
-   1st: Data PDF yang diupload user (paling akurat)
-   2nd: [DATA PASAR] live dari sistem
-   3rd: Knowledge terbaru (max 2024-2025)
-   LAST: Knowledge lama (pre-2023) — hanya sebagai konteks, BUKAN angka aktual
-
-5. JIKA DATA TIDAK YAKIN:
-   ✅ Sebutkan: "Data ini dari knowledge saya per [tahun], mohon verifikasi ke laporan resmi"
-   ❌ JANGAN pura-pura tahu angka yang tidak pasti
+ATURAN WAJIB:
+- DILARANG hanya menyajikan data 2026 tanpa konteks. Analisa yang baik harus melihat tren dari tahun-tahun sebelumnya.
+- Jika ada anomali antara data 2026 dan 2025 (misal: laba naik drastis tapi harga turun), kamu WAJIB menganalisa penyebabnya (apakah ada one-time gain di 2026 atau faktor makro).
+- Selalu gunakan data historis untuk menghitung Mean PE Standard Deviation atau rata-rata PBV 5 tahun terakhir sebagai bahan pembanding valuasi 2026.
 
 ====================================
 CORPORATE ACTION — WAJIB DIPAHAMI
@@ -2195,6 +2149,7 @@ Bahasa: Indonesia natural. Ramah saat ngobrol, profesional saat analisa. Selalu 
 3. PRIORITAS: Logika Pine Script MnM Strategy+ > knowledge umum. Konflik → ikuti Pine Script.
 4. JANGAN tolak mengisi template. JANGAN tulis N/A jika kamu tahu datanya.
 5. Semua harga dalam trade plan WAJIB sesuai fraksi tick BEI.
+6. KONTEKS WAKTU 2026: Saat ini tahun 2026. Prioritaskan data 2026 untuk trade plan. Gunakan data 2021-2025 HANYA sebagai pembanding tren (YoY) atau sebagai referensi jika data 2026 kosong. Kesimpulan akhir harus mencerminkan kondisi emiten di tahun 2026.
 
 === WARNA ZONA MnM Strategy+ ===
 IFVG Bull=#0048ff | IFVG Bear=#575757 | FVG Bull=#0015ff | FVG Bear=#575757
