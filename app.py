@@ -6602,3 +6602,124 @@ js_code = """
 </script>
 """
 components.html(js_code, height=0)
+
+# ─────────────────────────────────────────────
+# PART 11: AI TRADING SIGNALS ENGINE (DAILY, WEEKLY, BSJP)
+# ─────────────────────────────────────────────
+
+def render_ai_trading_signals():
+    """
+    Render Kategori Khusus AI Trading Signals di sebelah kanan AI STOCK INSIGHT.
+    Desain selaras dengan SIGMA Terminal UI/UX.
+    """
+    # Identifikasi tema warna dari session state agar sinkron
+    is_dark = st.session_state.get("theme", "dark") == "dark"
+    t_main  = "#e8eaf0" if is_dark else "#0d1117"
+    t_sub   = "#6b7a99" if is_dark else "#64748b"
+    m_bg    = "rgba(8,12,22,0.9)" if is_dark else "#f8fafc"
+    m_brd   = "rgba(245,194,66,0.18)" if is_dark else "#e2e8f0"
+
+    # ── CSS KHUSUS UNTUK SINYAL (Glassmorphism & Terminal Look) ──
+    st.markdown(f"""
+    <style>
+    .sig-container {{
+        background: {m_bg};
+        border: 1px solid {m_brd};
+        border-radius: 10px;
+        padding: 18px;
+        height: 100%;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        position: relative;
+        overflow: hidden;
+    }}
+    .sig-header-label {{
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.15em;
+        color: #F5C242;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }}
+    .sig-item {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 8px;
+        border-bottom: 1px solid rgba(245,194,66,0.08);
+        transition: background 0.2s;
+        border-radius: 4px;
+    }}
+    .sig-item:hover {{ background: rgba(245,194,66,0.04); }}
+    .sig-ticker {{ font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: {t_main}; font-weight: 700; }}
+    .sig-action {{ font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 600; padding: 2px 6px; border-radius: 3px; }}
+    .sig-price {{ font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #F5C242; font-weight: 700; text-align: right; }}
+    .sig-meta {{ font-size: 0.6rem; color: {t_sub}; margin-top: 2px; text-align: right; }}
+    
+    /* Status Colors */
+    .act-buy {{ background: rgba(8, 153, 129, 0.15); color: #089981; border: 1px solid #089981; }}
+    .act-acc {{ background: rgba(245, 194, 66, 0.15); color: #F5C242; border: 1px solid #F5C242; }}
+    .act-spec {{ background: rgba(66, 133, 244, 0.15); color: #4285F4; border: 1px solid #4285F4; }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── HEADER KATEGORI ──
+    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{t_sub};margin-bottom:15px;text-transform:uppercase;'>02 / AI TRADING SIGNALS</p>", unsafe_allow_html=True)
+
+    # ── MINI TABS UNTUK SINYAL ──
+    sig_tab_daily, sig_tab_weekly, sig_tab_bsjp = st.tabs(["DAILY ☀️", "WEEKLY 🚀", "BSJP 🌙"])
+
+    def render_sig_list(signals):
+        html = "<div class='sig-container'>"
+        for s in signals:
+            cls = "act-buy" if s['type'] == 'BUY' else ("act-acc" if s['type'] == 'ACCUM' else "act-spec")
+            html += f"""
+            <div class='sig-item'>
+                <div>
+                    <span class='sig-ticker'>{s['ticker']}</span><br>
+                    <span class='sig-action {cls}'>{s['type']}</span>
+                </div>
+                <div>
+                    <div class='sig-price'>Rp {s['price']:,}</div>
+                    <div class='sig-meta'>Target: {s['target']}</div>
+                </div>
+            </div>
+            """
+        html += "</div>"
+        return html
+
+    with sig_tab_daily:
+        # Contoh data (Nantinya bisa dihubungkan ke Scanner Otomatis)
+        daily_signals = [
+            {"ticker": "ADRO", "type": "BUY", "price": 2860, "target": "3,050"},
+            {"ticker": "PTRO", "type": "ACCUM", "price": 8450, "target": "9,200"},
+            {"ticker": "ANTM", "type": "BUY", "price": 1640, "target": "1,750"}
+        ]
+        st.markdown(render_sig_list(daily_signals), unsafe_allow_html=True)
+
+    with sig_tab_weekly:
+        weekly_signals = [
+            {"ticker": "BBCA", "type": "ACCUM", "price": 10250, "target": "11,500"},
+            {"ticker": "TLKM", "type": "BUY", "price": 3820, "target": "4,100"},
+            {"ticker": "BRIS", "type": "BUY", "price": 2480, "target": "2,700"}
+        ]
+        st.markdown(render_sig_list(weekly_signals), unsafe_allow_html=True)
+
+    with sig_tab_bsjp:
+        bsjp_signals = [
+            {"ticker": "GOTO", "type": "SPEC", "price": 69, "target": "74 (Open)"},
+            {"ticker": "BUMI", "type": "SPEC", "price": 142, "target": "150 (Open)"}
+        ]
+        st.markdown(render_sig_list(bsjp_signals), unsafe_allow_html=True)
+        st.markdown(f"<p style='font-size:0.6rem; color:{t_sub}; margin-top:8px; font-family:IBM Plex Mono,monospace; font-style:italic;'>*Beli Sore Jual Pagi: Entry 15:50, Exit 09:05</p>", unsafe_allow_html=True)
+
+# ── CARA PASANG DI TAB_AI (PART 9) ──
+# Di dalam `with tab_ai:`, ganti struktur kolom kamu menjadi:
+# col_left, col_right = st.columns([3.5, 2.5])
+# with col_left:
+#     # (Tempatkan input ticker & chart yang sudah ada di sini)
+# with col_right:
+#     render_ai_trading_signals()
