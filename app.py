@@ -4629,15 +4629,31 @@ if current_view == "dashboard":
 
         /* FTSE/MSCI table header label: truncate long text */
         .trm-section-label {{
-            font-size: 0.58rem !important;
-            letter-spacing: 0.08em !important;
-            padding: 2px 6px !important;
+            font-size: 0.55rem !important;
+            letter-spacing: 0.05em !important;
+            padding: 3px 6px !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            text-align: center !important;
+            line-height: 1.3 !important;
         }}
-
-        /* Trade plan / AI Stock Insight box: scrollable */
-        [data-testid="stMarkdownContainer"] > div[style*="border-left"][style*="3px solid"] {{
-            max-height: none !important;
-            overflow-y: visible !important;
+        .trm-section {{
+            margin: 20px 0 10px !important;
+            gap: 6px !important;
+        }}
+        .trm-card {{
+            padding: 12px 12px !important;
+            word-break: break-word !important;
+            margin-bottom: 10px !important;
+        }}
+        .trm-insight {{
+            font-size: 0.82rem !important;
+            padding: 10px 10px !important;
+            word-break: break-word !important;
+            margin: 8px 0 !important;
+        }}
+        .fancy-divider {{
+            margin: 14px 0 !important;
         }}
     }}
     </style>
@@ -4928,8 +4944,6 @@ if current_view == "dashboard":
                 font-size: 12px !important;
             }}
         }}
-        </style>
-        /* Styling Scrollbar */
         .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
         .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
@@ -4980,7 +4994,7 @@ if current_view == "dashboard":
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ── ECONOMIC CALENDAR ─────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         cal_bg      = met_bg
         cal_border  = met_border
@@ -5116,7 +5130,7 @@ if current_view == "dashboard":
                 return df_style.map(func, subset=subset)
             return df_style.applymap(func, subset=subset)
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         rotation_data = {
             "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
@@ -5176,7 +5190,7 @@ if current_view == "dashboard":
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
@@ -5353,7 +5367,7 @@ if current_view == "dashboard":
 
     # ── TAB: SHAREHOLDER ──────────────────────────────────────────────
     with tab_shareholder:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER — JUMLAH PEMEGANG SAHAM vs HARGA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren jumlah pemegang saham vs harga &middot; Deteksi akumulasi & distribusi smart money &middot; Data IDX resmi</p>", unsafe_allow_html=True)
 
         col_sh_inp, col_sh_btn, col_sh_empty = st.columns([1.5, 1, 3])
@@ -5705,7 +5719,7 @@ if current_view == "dashboard":
 
 
     with tab_ai:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI — TECHNICAL &amp; FUNDAMENTAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
         col_input, col_btn, col_empty = st.columns([2, 1, 3])
@@ -6145,11 +6159,11 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                 verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
                 # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-<div style="font-size:0.65rem;letter-spacing:0.14em;color:#F5C242; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:8px;">
+                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:16px 16px; margin-top:14px; line-height:1.5; overflow:visible; width:100%; box-sizing:border-box;">
+<div style="font-size:0.65rem;letter-spacing:0.14em;color:#F5C242; font-weight:700;text-transform:uppercase;margin-bottom:10px; display:flex;align-items:center;gap:8px;">
 📋 TRADE PLAN SIGMA
 </div>
-<div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
+<div style="font-size:0.88rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;line-height:1.7;">
 {verdict_clean}
 </div>
 </div>"""
