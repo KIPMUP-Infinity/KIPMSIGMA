@@ -4745,11 +4745,12 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    tab_macro, tab_rotation, tab_shareholder, tab_ai = st.tabs([
+    tab_macro, tab_rotation, tab_shareholder, tab_ai, tab_reco = st.tabs([
         "  GLOBAL MACRO & NEWS  ",
         "  INDEX & SECTOR ROTATION  ",
         "  SHAREHOLDER  ",
         "  AI STOCK INSIGHT  ",
+        "  AI REKOMENDASI  ",
     ])
 
     with tab_macro:
@@ -5859,6 +5860,9 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                             # Bersihkan teks dari JSON block
                             ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
                             ai_text_verdict = re.sub(r'\{[\s\S]*"entry_low"[\s\S]*\}', '', ai_text_verdict).strip()
+                            # Hapus kalimat pengantar JSON yang tertinggal di akhir teks
+                            ai_text_verdict = re.sub(r'\n*[^\n]*[Bb]erikut[^\n]*(JSON|json|blok|block)[^\n]*:?\s*$', '', ai_text_verdict).strip()
+                            ai_text_verdict = re.sub(r'\n*[^\n]*(following|berikut)[^\n]*(JSON|blok|strategi)[^\n]*:?\s*$', '', ai_text_verdict, flags=re.IGNORECASE).strip()
                         except Exception as e:
                             ai_data = None
                             ai_text_verdict = ai_raw_result
@@ -6159,11 +6163,11 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                 verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
                 # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:16px 16px; margin-top:14px; line-height:1.5; overflow:visible; width:100%; box-sizing:border-box;">
-<div style="font-size:0.65rem;letter-spacing:0.14em;color:#F5C242; font-weight:700;text-transform:uppercase;margin-bottom:10px; display:flex;align-items:center;gap:8px;">
+                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:16px 18px; margin-top:14px; overflow:visible; width:100%; box-sizing:border-box;">
+<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.14em;color:#F5C242; font-weight:700;text-transform:uppercase;margin-bottom:10px; display:flex;align-items:center;gap:8px;">
 📋 TRADE PLAN SIGMA
 </div>
-<div style="font-size:0.88rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;line-height:1.7;">
+<div style="font-size:0.88rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;line-height:1.75;font-family:inherit;">
 {verdict_clean}
 </div>
 </div>"""
@@ -6178,6 +6182,236 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# PART 11: AI REKOMENDASI (Daily / Weekly / BSJP)
+# ─────────────────────────────────────────────
+    with tab_reco:
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>AI REKOMENDASI SIGMA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi</p>", unsafe_allow_html=True)
+
+        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp = st.tabs([
+            "  📅 DAILY  ",
+            "  📆 WEEKLY  ",
+            "  🌙 BELI SORE JUAL PAGI  ",
+        ])
+
+        # ── DAFTAR SAHAM UNTUK SCREENING ──────────────────────────────
+        _WATCHLIST = [
+            "BBCA","BBRI","BMRI","TLKM","ASII","BREN","GOTO","ANTM",
+            "PGAS","KLBF","UNVR","ICBP","MDKA","INCO","ADRO","PTBA",
+            "EXCL","SMGR","BSDE","CPIN","ITMG","TBIG","MTEL","ESSA"
+        ]
+
+        @st.cache_data(ttl=1800, show_spinner=False)
+        def _reco_fetch_prices(tickers):
+            import yfinance as yf
+            result = {}
+            for tk in tickers:
+                try:
+                    h = yf.Ticker(f"{tk}.JK").history(period="10d")
+                    if len(h) >= 3:
+                        closes = h["Close"].tolist()
+                        vols   = h["Volume"].tolist()
+                        result[tk] = {
+                            "price":  round(closes[-1], 0),
+                            "prev":   round(closes[-2], 0),
+                            "prev2":  round(closes[-3], 0),
+                            "high":   round(h["High"].iloc[-1], 0),
+                            "low":    round(h["Low"].iloc[-1], 0),
+                            "vol":    int(vols[-1]),
+                            "vol5":   int(sum(vols[-5:]) / 5),
+                            "chg":    round((closes[-1] - closes[-2]) / closes[-2] * 100, 2),
+                            "chg2d":  round((closes[-1] - closes[-3]) / closes[-3] * 100, 2),
+                        }
+                except: pass
+            return result
+
+        def _call_ai_reco(prompt_text):
+            try:
+                result, _ = _call_groq_primary(prompt_text)
+                return result
+            except:
+                try:
+                    result, _ = _call_gemini_text([{"role":"user","content":prompt_text}])
+                    return result
+                except Exception as e:
+                    return f"Gagal memanggil AI: {e}"
+
+        def _render_reco_cards(reco_text, accent="#F5C242"):
+            """Render output AI sebagai card yang rapi."""
+            bg = "rgba(245,194,66,0.04)" if is_dark else "#fffbeb"
+            border = "rgba(245,194,66,0.18)" if is_dark else "#f5c24244"
+            st.markdown(f"""
+            <div style="background:{bg};border:1px solid {border};border-left:3px solid {accent};
+                        border-radius:0 8px 8px 0;padding:18px 20px;margin-top:12px;
+                        font-size:0.88rem;color:{text_main};white-space:pre-wrap;
+                        word-break:break-word;line-height:1.75;box-sizing:border-box;width:100%;">
+            {reco_text}
+            </div>""", unsafe_allow_html=True)
+
+        # ── TAB DAILY ─────────────────────────────────────────────────
+        with reco_tab_daily:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI HARIAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick untuk trading hari ini berdasarkan momentum, volume, dan teknikal jangka pendek.</p>", unsafe_allow_html=True)
+
+            col_d1, col_d2 = st.columns([3, 1])
+            with col_d2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                run_daily = st.button("▶ GENERATE DAILY", use_container_width=True, key="btn_daily")
+
+            if run_daily:
+                with st.spinner("SIGMA AI sedang menganalisis pasar untuk rekomendasi harian..."):
+                    price_data = _reco_fetch_prices(_WATCHLIST)
+                    if price_data:
+                        lines = []
+                        for tk, d in price_data.items():
+                            spike = d["vol"] / d["vol5"] if d["vol5"] > 0 else 1
+                            lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | Vol={d['vol']:,} | VolSpike={spike:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f}")
+                        market_snapshot = "\n".join(lines)
+                        prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional.
+Berikut data snapshot pasar IDX hari ini (24 saham likuid):
+
+{market_snapshot}
+
+Tugas: Pilih TOP 3-5 saham terbaik untuk trading HARIAN (intraday sampai 1-3 hari).
+Kriteria:
+- Volume spike > 1.5x (tanda aksi)
+- Momentum positif (chg%)
+- Risk/Reward menarik
+
+Format output per saham (gunakan emoji dan format yang rapi):
+🎯 [TICKER] — [Harga] | [Perubahan%]
+📊 Alasan: [1-2 kalimat singkat mengapa menarik hari ini]
+⚡ Strategi: Entry ~[harga] | SL ~[harga] | TP ~[harga]
+---
+Di akhir, tambahkan 1 kalimat ringkasan bias pasar hari ini.
+Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
+
+                        result = _call_ai_reco(prompt)
+                        _render_reco_cards(result, accent="#F5C242")
+                    else:
+                        st.warning("Gagal mengambil data pasar. Coba lagi beberapa saat.")
+            else:
+                st.markdown(f"""
+                <div class="trm-card" style="text-align:center;padding:32px 20px;">
+                    <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Klik <span style='color:#F5C242;'>Generate Daily</span> untuk mendapatkan top pick saham hari ini
+                    </p>
+                </div>""", unsafe_allow_html=True)
+
+        # ── TAB WEEKLY ─────────────────────────────────────────────────
+        with reco_tab_weekly:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI MINGGUAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Swing trade 1-2 minggu — fokus pada tren, support/resistance, dan katalis fundamental.</p>", unsafe_allow_html=True)
+
+            col_w1, col_w2 = st.columns([3, 1])
+            with col_w2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                run_weekly = st.button("▶ GENERATE WEEKLY", use_container_width=True, key="btn_weekly")
+
+            if run_weekly:
+                with st.spinner("SIGMA AI sedang menyusun rekomendasi mingguan..."):
+                    price_data = _reco_fetch_prices(_WATCHLIST)
+                    if price_data:
+                        lines = []
+                        for tk, d in price_data.items():
+                            lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg2d={d['chg2d']:+.2f}% | Vol5avg={d['vol5']:,} | VolHari={d['vol']:,}")
+                        market_snapshot = "\n".join(lines)
+                        prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional spesialis swing trading.
+Berikut data pasar IDX (24 saham likuid):
+
+{market_snapshot}
+
+Tugas: Pilih TOP 3-5 saham terbaik untuk SWING TRADE 1-2 minggu ke depan.
+Kriteria:
+- Tren jelas (chg2d dan volume konsisten)
+- Potensi breakout atau rebound dari support
+- Fundamental sektor mendukung
+
+Format output per saham:
+🎯 [TICKER] — [Harga] | Target Minggu Ini
+📊 Tesis: [2-3 kalimat — tren, katalis, potensi]
+📈 Skenario: Entry ~[harga] | SL ~[harga] | TP1 ~[harga] | TP2 ~[harga] | Horizon: [X hari]
+---
+Akhiri dengan outlook sektor/market minggu ini dalam 1-2 kalimat.
+Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
+
+                        result = _call_ai_reco(prompt)
+                        _render_reco_cards(result, accent="#26a69a")
+                    else:
+                        st.warning("Gagal mengambil data pasar. Coba lagi beberapa saat.")
+            else:
+                st.markdown(f"""
+                <div class="trm-card" style="text-align:center;padding:32px 20px;">
+                    <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Klik <span style='color:#26a69a;'>Generate Weekly</span> untuk top pick swing trade minggu ini
+                    </p>
+                </div>""", unsafe_allow_html=True)
+
+        # ── TAB BSJP ─────────────────────────────────────────────────
+        with reco_tab_bsjp:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>BELI SORE JUAL PAGI (BSJP)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:4px;'>Strategi overnight — beli menjelang penutupan BEI (15:00-15:50 WIB), jual di pre-opening atau sesi 1 besok.</p>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="trm-insight" style="margin-bottom:16px;">
+            ⚠️ <b>Disclaimer BSJP:</b> Strategi ini memanfaatkan gap up overnight dan momentum pembukaan. 
+            Risiko: berita negatif semalam bisa sebabkan gap down. Selalu pasang <b>SL ketat</b> dan gunakan 
+            sizing kecil (maks 5-10% portofolio per posisi).
+            </div>""", unsafe_allow_html=True)
+
+            col_b1, col_b2 = st.columns([3, 1])
+            with col_b2:
+                st.markdown("<br>", unsafe_allow_html=True)
+                run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
+
+            if run_bsjp:
+                with st.spinner("SIGMA AI sedang mencari kandidat BSJP terbaik..."):
+                    price_data = _reco_fetch_prices(_WATCHLIST)
+                    if price_data:
+                        lines = []
+                        for tk, d in price_data.items():
+                            spike = d["vol"] / d["vol5"] if d["vol5"] > 0 else 1
+                            # Filter: hanya saham dengan volume spike & chg positif atau mendekati support
+                            lines.append(f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | VolSpike={spike:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f}")
+                        market_snapshot = "\n".join(lines)
+                        prompt = f"""Kamu adalah SIGMA AI, spesialis strategi overnight trading Indonesia (BSJP).
+Data snapshot pasar IDX sore ini:
+
+{market_snapshot}
+
+Tugas: Pilih TOP 2-3 saham terbaik untuk strategi BSJP (beli sore ini, jual pagi besok).
+Kriteria BSJP yang ideal:
+- Volume spike tinggi sore ini (tanda akumulasi bandar)
+- Harga menutup di atas high beberapa hari terakhir (momentum)
+- Tidak sedang dalam tren turun kuat
+- Likuid (bisa exit cepat pagi hari)
+
+Format output per saham:
+🌙 [TICKER] — Beli ~[harga sore] | Target Pagi ~[harga]
+📊 Sinyal: [1-2 kalimat — mengapa cocok untuk BSJP malam ini]
+⚡ Eksekusi: Beli di [range harga] menjelang closing | SL pagi jika buka di bawah [harga] | Target exit [harga]
+🎯 Potensi: +[X]% overnight
+---
+Akhiri dengan 1 kalimat: apakah malam ini kondusif untuk BSJP atau lebih baik wait.
+Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
+
+                        result = _call_ai_reco(prompt)
+                        _render_reco_cards(result, accent="#7c3aed")
+                    else:
+                        st.warning("Gagal mengambil data pasar. Coba lagi beberapa saat.")
+            else:
+                st.markdown(f"""
+                <div class="trm-card" style="text-align:center;padding:32px 20px;">
+                    <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini
+                    </p>
+                </div>""", unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # PART 10: RUANG CHAT AI 
@@ -6602,124 +6836,3 @@ js_code = """
 </script>
 """
 components.html(js_code, height=0)
-
-# ─────────────────────────────────────────────
-# PART 11: AI TRADING SIGNALS ENGINE (DAILY, WEEKLY, BSJP)
-# ─────────────────────────────────────────────
-
-def render_ai_trading_signals():
-    """
-    Render Kategori Khusus AI Trading Signals di sebelah kanan AI STOCK INSIGHT.
-    Desain selaras dengan SIGMA Terminal UI/UX.
-    """
-    # Identifikasi tema warna dari session state agar sinkron
-    is_dark = st.session_state.get("theme", "dark") == "dark"
-    t_main  = "#e8eaf0" if is_dark else "#0d1117"
-    t_sub   = "#6b7a99" if is_dark else "#64748b"
-    m_bg    = "rgba(8,12,22,0.9)" if is_dark else "#f8fafc"
-    m_brd   = "rgba(245,194,66,0.18)" if is_dark else "#e2e8f0"
-
-    # ── CSS KHUSUS UNTUK SINYAL (Glassmorphism & Terminal Look) ──
-    st.markdown(f"""
-    <style>
-    .sig-container {{
-        background: {m_bg};
-        border: 1px solid {m_brd};
-        border-radius: 10px;
-        padding: 18px;
-        height: 100%;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        position: relative;
-        overflow: hidden;
-    }}
-    .sig-header-label {{
-        font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.65rem;
-        font-weight: 700;
-        letter-spacing: 0.15em;
-        color: #F5C242;
-        text-transform: uppercase;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }}
-    .sig-item {{
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 8px;
-        border-bottom: 1px solid rgba(245,194,66,0.08);
-        transition: background 0.2s;
-        border-radius: 4px;
-    }}
-    .sig-item:hover {{ background: rgba(245,194,66,0.04); }}
-    .sig-ticker {{ font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; color: {t_main}; font-weight: 700; }}
-    .sig-action {{ font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; font-weight: 600; padding: 2px 6px; border-radius: 3px; }}
-    .sig-price {{ font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: #F5C242; font-weight: 700; text-align: right; }}
-    .sig-meta {{ font-size: 0.6rem; color: {t_sub}; margin-top: 2px; text-align: right; }}
-    
-    /* Status Colors */
-    .act-buy {{ background: rgba(8, 153, 129, 0.15); color: #089981; border: 1px solid #089981; }}
-    .act-acc {{ background: rgba(245, 194, 66, 0.15); color: #F5C242; border: 1px solid #F5C242; }}
-    .act-spec {{ background: rgba(66, 133, 244, 0.15); color: #4285F4; border: 1px solid #4285F4; }}
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ── HEADER KATEGORI ──
-    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{t_sub};margin-bottom:15px;text-transform:uppercase;'>02 / AI TRADING SIGNALS</p>", unsafe_allow_html=True)
-
-    # ── MINI TABS UNTUK SINYAL ──
-    sig_tab_daily, sig_tab_weekly, sig_tab_bsjp = st.tabs(["DAILY ☀️", "WEEKLY 🚀", "BSJP 🌙"])
-
-    def render_sig_list(signals):
-        html = "<div class='sig-container'>"
-        for s in signals:
-            cls = "act-buy" if s['type'] == 'BUY' else ("act-acc" if s['type'] == 'ACCUM' else "act-spec")
-            html += f"""
-            <div class='sig-item'>
-                <div>
-                    <span class='sig-ticker'>{s['ticker']}</span><br>
-                    <span class='sig-action {cls}'>{s['type']}</span>
-                </div>
-                <div>
-                    <div class='sig-price'>Rp {s['price']:,}</div>
-                    <div class='sig-meta'>Target: {s['target']}</div>
-                </div>
-            </div>
-            """
-        html += "</div>"
-        return html
-
-    with sig_tab_daily:
-        # Contoh data (Nantinya bisa dihubungkan ke Scanner Otomatis)
-        daily_signals = [
-            {"ticker": "ADRO", "type": "BUY", "price": 2860, "target": "3,050"},
-            {"ticker": "PTRO", "type": "ACCUM", "price": 8450, "target": "9,200"},
-            {"ticker": "ANTM", "type": "BUY", "price": 1640, "target": "1,750"}
-        ]
-        st.markdown(render_sig_list(daily_signals), unsafe_allow_html=True)
-
-    with sig_tab_weekly:
-        weekly_signals = [
-            {"ticker": "BBCA", "type": "ACCUM", "price": 10250, "target": "11,500"},
-            {"ticker": "TLKM", "type": "BUY", "price": 3820, "target": "4,100"},
-            {"ticker": "BRIS", "type": "BUY", "price": 2480, "target": "2,700"}
-        ]
-        st.markdown(render_sig_list(weekly_signals), unsafe_allow_html=True)
-
-    with sig_tab_bsjp:
-        bsjp_signals = [
-            {"ticker": "GOTO", "type": "SPEC", "price": 69, "target": "74 (Open)"},
-            {"ticker": "BUMI", "type": "SPEC", "price": 142, "target": "150 (Open)"}
-        ]
-        st.markdown(render_sig_list(bsjp_signals), unsafe_allow_html=True)
-        st.markdown(f"<p style='font-size:0.6rem; color:{t_sub}; margin-top:8px; font-family:IBM Plex Mono,monospace; font-style:italic;'>*Beli Sore Jual Pagi: Entry 15:50, Exit 09:05</p>", unsafe_allow_html=True)
-
-# ── CARA PASANG DI TAB_AI (PART 9) ──
-# Di dalam `with tab_ai:`, ganti struktur kolom kamu menjadi:
-# col_left, col_right = st.columns([3.5, 2.5])
-# with col_left:
-#     # (Tempatkan input ticker & chart yang sudah ada di sini)
-# with col_right:
-#     render_ai_trading_signals()
