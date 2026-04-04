@@ -3189,8 +3189,7 @@ hr {{ border-color: {C['border']} !important; }}
 @media (max-width: 768px) {{
     html, body {{ overflow-x: hidden !important; max-width: 100vw !important; }}
     .stApp {{ overflow-x: hidden !important; }}
-    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 16px 120px !important; overflow-x: hidden !important; }}
-    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 16px 120px !important; }}
+    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 12px 120px !important; overflow-x: hidden !important; }}
     [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
     [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.25rem !important; }}
     [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.1rem !important; }}
@@ -3199,6 +3198,7 @@ hr {{ border-color: {C['border']} !important; }}
     [data-testid="stMarkdownContainer"] li {{ margin-bottom: 4px !important; }}
     [data-testid="stMarkdownContainer"] code {{ font-size: 0.85rem !important; padding: 2px 6px !important; border-radius: 4px !important; background: rgba(255,255,255,0.08) !important; }}
     [data-testid="stMarkdownContainer"] pre {{ font-size: 0.82rem !important; overflow-x: auto !important; padding: 12px !important; border-radius: 8px !important; }}
+    [data-testid="stMarkdownContainer"] div {{ max-width: 100% !important; overflow-x: hidden !important; box-sizing: border-box !important; }}
     div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 6px 8px !important; }}
     [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
     [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
@@ -4536,6 +4536,110 @@ if current_view == "dashboard":
         color: {text_sub} !important;
         font-weight: 500 !important;
     }}
+
+    /* ── MOBILE FIXES ─────────────────────────────── */
+    @media (max-width: 768px) {{
+        /* Terminal header: wrap instead of overflow */
+        [data-testid="stMainBlockContainer"] > div > div > div > div[style*="display: flex"][style*="justify-content: space-between"],
+        [data-testid="stMainBlockContainer"] > div > div > div > div[style*="display:flex"][style*="justify-content:space-between"] {{
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+            padding: 12px 4px 6px !important;
+        }}
+
+        /* Terminal header title: ukuran lebih kecil */
+        span[style*="1.45rem"] {{
+            font-size: 1.1rem !important;
+            letter-spacing: 0.08em !important;
+        }}
+        span[style*="KIPM"] {{
+            font-size: 0.58rem !important;
+        }}
+
+        /* Ticker tape: anti overflow */
+        .trm-ticker-wrap {{
+            overflow: hidden !important;
+            max-width: 100vw !important;
+        }}
+
+        /* Tabs: ukuran label lebih kecil */
+        [data-testid="stTabs"] button[role="tab"] {{
+            font-size: 0.65rem !important;
+            padding: 6px 8px !important;
+            letter-spacing: 0.02em !important;
+        }}
+
+        /* Metric cards: anti overflow */
+        [data-testid="stMetric"] {{
+            padding: 10px 10px 8px !important;
+            min-width: 0 !important;
+        }}
+        [data-testid="stMetricValue"] {{
+            font-size: 1rem !important;
+        }}
+        [data-testid="stMetricLabel"] {{
+            font-size: 0.62rem !important;
+        }}
+
+        /* Economic Calendar: stack to 1 column on mobile */
+        .cal-wrap {{
+            overflow-x: hidden !important;
+            width: 100% !important;
+        }}
+        .cal-row {{
+            grid-template-columns: 80px 1fr 90px 44px !important;
+            gap: 4px !important;
+            padding: 8px 10px !important;
+        }}
+        .cal-dt {{ font-size: 0.60rem !important; }}
+        .cal-ev {{ font-size: 0.66rem !important; }}
+        .cal-fc {{ font-size: 0.64rem !important; }}
+        .cal-pv {{ font-size: 0.58rem !important; }}
+        .cal-bdg {{ font-size: 0.55rem !important; padding: 2px 4px !important; }}
+
+        /* Sector rotation table: full width */
+        [data-testid="stDataFrame"] {{
+            width: 100% !important;
+            overflow-x: auto !important;
+        }}
+
+        /* news cards: full height, scrollable */
+        .news-card-sigma {{
+            height: 420px !important;
+        }}
+
+        /* trm-card: no horizontal overflow */
+        .trm-card {{
+            padding: 14px 14px !important;
+            word-break: break-word !important;
+        }}
+        .trm-insight {{
+            font-size: 0.82rem !important;
+            padding: 12px 12px !important;
+            word-break: break-word !important;
+        }}
+
+        /* Line charts: full width */
+        [data-testid="stVegaLiteChart"],
+        [data-testid="stArrowVegaLiteChart"],
+        canvas {{
+            max-width: 100% !important;
+            width: 100% !important;
+        }}
+
+        /* FTSE/MSCI table header label: truncate long text */
+        .trm-section-label {{
+            font-size: 0.58rem !important;
+            letter-spacing: 0.08em !important;
+            padding: 2px 6px !important;
+        }}
+
+        /* Trade plan / AI Stock Insight box: scrollable */
+        [data-testid="stMarkdownContainer"] > div[style*="border-left"][style*="3px solid"] {{
+            max-height: none !important;
+            overflow-y: visible !important;
+        }}
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -4546,22 +4650,24 @@ if current_view == "dashboard":
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 6px;
         padding: 18px 4px 6px;
         border-bottom: 1px solid {'rgba(245,194,66,0.12)' if is_dark else '#e2e8f0'};
         margin-bottom: 18px;
     ">
-        <div style="display:flex; align-items:baseline; gap:14px;">
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
             <span style="
                 font-family:'IBM Plex Mono',monospace;
-                font-size:1.45rem;
+                font-size:clamp(1.0rem, 4vw, 1.45rem);
                 font-weight:700;
-                letter-spacing:0.12em;
+                letter-spacing:0.10em;
                 color:#F5C242;
                 text-transform:uppercase;
             ">SIGMA TERMINAL</span>
             <span style="
                 font-family:'IBM Plex Mono',monospace;
-                font-size:0.65rem;
+                font-size:clamp(0.55rem, 2vw, 0.65rem);
                 color:{'rgba(107,122,153,0.8)' if is_dark else '#94a3b8'};
                 letter-spacing:0.1em;
                 border:1px solid {'rgba(107,122,153,0.25)' if is_dark else '#e2e8f0'};
@@ -4571,7 +4677,7 @@ if current_view == "dashboard":
         </div>
         <div style="
             font-family:'IBM Plex Mono',monospace;
-            font-size:0.7rem;
+            font-size:clamp(0.60rem, 2vw, 0.70rem);
             color:{'rgba(107,122,153,0.7)' if is_dark else '#94a3b8'};
             letter-spacing:0.08em;
             text-align:right;
@@ -4672,24 +4778,31 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>GLOBAL INDICES &amp; VOLATILITY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if idx_data:
             items_idx = list(idx_data.items())
-            cols = st.columns(len(items_idx))
-            for j, (name, info) in enumerate(items_idx):
-                with cols[j]:
-                    st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
+            # Chunk into rows of 3 for mobile-friendly display
+            chunk_size = 3
+            for row_start in range(0, len(items_idx), chunk_size):
+                row_items = items_idx[row_start:row_start+chunk_size]
+                cols = st.columns(len(row_items))
+                for j, (name, info) in enumerate(row_items):
+                    with cols[j]:
+                        st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
         else:
             st.warning("&#9888; Gagal menarik data indeks.")
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>COMMODITIES &amp; FOREX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if com_data:
             items_com = list(com_data.items())
-            cols = st.columns(len(items_com))
-            for j, (name, info) in enumerate(items_com):
-                with cols[j]:
-                    if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
-                    elif info['price'] == 0: price_str = "N/A"
-                    else: price_str = f"${info['price']:,.2f}"
-                    delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
-                    st.metric(label=name, value=price_str, delta=delta_str)
+            chunk_size = 4
+            for row_start in range(0, len(items_com), chunk_size):
+                row_items = items_com[row_start:row_start+chunk_size]
+                cols = st.columns(len(row_items))
+                for j, (name, info) in enumerate(row_items):
+                    with cols[j]:
+                        if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
+                        elif info['price'] == 0: price_str = "N/A"
+                        else: price_str = f"${info['price']:,.2f}"
+                        delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
+                        st.metric(label=name, value=price_str, delta=delta_str)
         else:
             st.warning("&#9888; Gagal menarik data komoditas.")
 
@@ -4807,6 +4920,15 @@ if current_view == "dashboard":
             font-size: 10px;
             font-family: 'IBM Plex Mono', monospace;
         }}
+        @media (max-width: 768px) {{
+            .news-card-sigma {{
+                height: 360px !important;
+            }}
+            .news-title-sigma {{
+                font-size: 12px !important;
+            }}
+        }}
+        </style>
         /* Styling Scrollbar */
         .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
         .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
@@ -4906,7 +5028,7 @@ if current_view == "dashboard":
         # CSS kalender — satu kali saja di luar loop
         st.markdown(f"""<style>
         .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
-            overflow:visible; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
+            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
         .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
             border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
             letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
@@ -4931,8 +5053,23 @@ if current_view == "dashboard":
             font-size:0.69rem; color:{cal_text}; line-height:1.5;
             pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
         .cal-row:hover .cal-tip {{ display:block; }}
+        @media (max-width: 768px) {{
+            .cal-row {{
+                grid-template-columns: 72px 1fr 82px 40px !important;
+                gap: 4px !important;
+                padding: 8px 10px !important;
+            }}
+            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
+            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
+            .cal-fc {{ font-size: 0.62rem !important; }}
+            .cal-pv {{ font-size: 0.55rem !important; }}
+            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
+            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
+        }}
         </style>""", unsafe_allow_html=True)
 
+        # On mobile: use 1 column; on desktop: 2 columns
+        is_mobile_cal = True  # Streamlit renders same width — we use CSS trick
         cal_cols = st.columns(2)
         country_list = list(calendar_data.items())
 
@@ -4981,17 +5118,14 @@ if current_view == "dashboard":
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
-        col_rot1, col_rot2 = st.columns([1.5, 1])
-        with col_rot1:
-            rotation_data = {
-                "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
-                "Fase Saat Ini": ["Leading", "Improving", "Weakening", "Lagging", "Lagging"],
-                "Aksi Institusi": ["Hold / Profit Run", "Accumulation", "Distribution / Wait", "Avoid", "Avoid"]
-            }
-            st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
+        rotation_data = {
+            "Sektor Utama": ["Energy (BREN, ADRO)", "Basic Materials (PTRO, TPIA)", "Finance (BBCA, BBRI)", "Infrastructure (TLKM, RAJA)", "Consumer (INDF, MYOR)"],
+            "Fase Saat Ini": ["Leading", "Improving", "Weakening", "Lagging", "Lagging"],
+            "Aksi Institusi": ["Hold / Profit Run", "Accumulation", "Distribution / Wait", "Avoid", "Avoid"]
+        }
+        st.dataframe(pd.DataFrame(rotation_data), use_container_width=True, hide_index=True)
         
-        with col_rot2:
-            st.markdown(f"<div class='trm-insight'>&#127919; <b>SIGMA INSIGHT &mdash;</b> Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (<i>Weakening</i>) menuju sektor energi dan material dasar (<i>Improving/Leading</i>). Pantau ketat emiten yang berada di fase Improving.</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='trm-insight'>&#127919; <b>SIGMA INSIGHT &mdash;</b> Dana asing (Big Money) saat ini merotasi portofolio dari perbankan (<i>Weakening</i>) menuju sektor energi dan material dasar (<i>Improving/Leading</i>). Pantau ketat emiten yang berada di fase Improving.</div>", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -5228,6 +5362,7 @@ if current_view == "dashboard":
         with col_sh_btn:
             st.markdown("<br>", unsafe_allow_html=True)
             sh_run = st.button("▶ LOAD DATA", key="sh_run_btn", use_container_width=True)
+        # col_sh_empty: spacer on desktop
 
         if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
             st.session_state["sh_last_ticker"] = sh_ticker
@@ -5579,6 +5714,7 @@ if current_view == "dashboard":
         with col_btn:
             st.markdown("<br>", unsafe_allow_html=True)
             run_analysis = st.button("▶ ANALYZE", use_container_width=True)
+        # col_empty intentionally blank (spacer on desktop)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -6009,11 +6145,11 @@ Ganti 0 dengan harga aktual. Gunakan null jika TP2/TP3 tidak relevan. Semua harg
                 verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
                 # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace;">
+                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #F5C242; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
 <div style="font-size:0.65rem;letter-spacing:0.14em;color:#F5C242; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:8px;">
 📋 TRADE PLAN SIGMA
 </div>
-<div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;">
+<div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
 {verdict_clean}
 </div>
 </div>"""
