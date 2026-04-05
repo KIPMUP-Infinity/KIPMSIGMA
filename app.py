@@ -4076,11 +4076,6 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
 [data-testid="stMarkdownContainer"] li > p {{
     margin-bottom: 0 !important;
 }}
-/* ── Kurangi gap default dari components.html (iframe) di Streamlit ── */
-[data-testid="stCustomComponentV1"] {{
-    margin-bottom: -12px !important;
-    display: block !important;
-}}
 </style>
 """, unsafe_allow_html=True)
 _hist_items = ""
@@ -4413,7 +4408,7 @@ if current_view == "dashboard":
         margin-top: 16px !important;
     }}
 
-    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; }}
+    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 28px 0 14px; }}
     .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
@@ -4465,20 +4460,6 @@ if current_view == "dashboard":
         height: 1px;
         background: {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
         margin: 24px 0;
-    }}
-
-    /* ── Kurangi gap berlebih dari st.line_chart & st.plotly_chart ── */
-    [data-testid="stArrowVegaLiteChart"] {{
-        margin-bottom: -12px !important;
-    }}
-    /* Kurangi gap berlebih dari components.html (iframe) */
-    iframe[title="st.iframe"] {{
-        display: block;
-        margin-bottom: -8px !important;
-    }}
-    /* Kurangi gap default antar blok di dalam tab */
-    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {{
-        gap: 0 !important;
     }}
 
     [data-testid="stTabs"] ~ div .stButton > button,
@@ -6094,14 +6075,6 @@ renderPage();
         if "rrg_selected" not in st.session_state:
             st.session_state["rrg_selected"] = None
 
-        # ── FUNGSI WARNA BUBBLE BERDASARKAN POSISI PLOT (rs & mom) ────
-        # Warna harus sesuai kuadran tempat bubble berada, bukan label fase sektor
-        def _rrg_bubble_color(rs, mom):
-            if rs >= 100 and mom >= 100:   return "#089981"  # Leading   — hijau (kanan-atas)
-            elif rs < 100 and mom >= 100:  return "#F5C242"  # Improving — kuning (kiri-atas)
-            elif rs >= 100 and mom < 100:  return "#f23645"  # Weakening — merah (kanan-bawah)
-            else:                           return "#4285F4"  # Lagging   — biru (kiri-bawah)
-
         # ── BUILD PLOTLY RRG BUBBLE CHART ──────────────────────────────
         fig_rrg = go.Figure()
 
@@ -6138,12 +6111,11 @@ renderPage();
             if len(trail) >= 2:
                 trail_xs = [p[0] for p in trail]
                 trail_ys = [p[1] for p in trail]
-                _trail_color = _rrg_bubble_color(sdata["rs"], sdata["mom"])
                 # Garis trail tipis
                 fig_rrg.add_trace(go.Scatter(
                     x=trail_xs, y=trail_ys,
                     mode="lines",
-                    line=dict(color=_trail_color, width=1.5, dash="dot"),
+                    line=dict(color=sdata["color"], width=1.5, dash="dot"),
                     opacity=0.45,
                     showlegend=False,
                     hoverinfo="skip",
@@ -6155,7 +6127,7 @@ renderPage();
                     fig_rrg.add_trace(go.Scatter(
                         x=[px], y=[py],
                         mode="markers",
-                        marker=dict(size=dot_size, color=_trail_color, opacity=dot_opacity),
+                        marker=dict(size=dot_size, color=sdata["color"], opacity=dot_opacity),
                         showlegend=False,
                         hoverinfo="skip",
                     ))
@@ -6164,7 +6136,6 @@ renderPage();
         for sname, sdata in rrg_sectors.items():
             is_sel = (st.session_state.get("rrg_selected") == sname)
             marker_size = 55 if is_sel else 42
-            _bubble_color = _rrg_bubble_color(sdata["rs"], sdata["mom"])
             fig_rrg.add_trace(go.Scatter(
                 x=[sdata["rs"]], y=[sdata["mom"]],
                 mode="markers+text",
@@ -6174,9 +6145,9 @@ renderPage();
                 textfont=dict(size=9, color="#ffffff", family="IBM Plex Mono"),
                 marker=dict(
                     size=marker_size,
-                    color=_bubble_color,
+                    color=sdata["color"],
                     opacity=0.85 if is_sel else 0.7,
-                    line=dict(color=_bubble_color, width=3 if is_sel else 1.5),
+                    line=dict(color=sdata["color"], width=3 if is_sel else 1.5),
                 ),
                 customdata=[sname],
                 hovertemplate=(
@@ -7711,11 +7682,9 @@ renderPage();
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 * {{ box-sizing:border-box; margin:0; padding:0; }}
-body {{ background:transparent; font-family:'IBM Plex Mono',monospace; padding-top:2px; }}
+body {{ background:transparent; font-family:'IBM Plex Mono',monospace; }}
 .lbl {{ font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase;
-        color:{acc}; font-weight:700; margin-bottom:8px; padding: 0 2px;
-        display:block; }}
-
+        color:{acc}; font-weight:700; margin-bottom:6px; padding: 0 2px; }}
 .scroll-wrap {{
   width:100%; overflow-x:scroll !important;
   -webkit-overflow-scrolling:touch !important;
@@ -7853,17 +7822,13 @@ tbody tr:hover td {{ background:rgba(255,255,255,0.03); }}
 </script>
 </body></html>"""
 
-            # Hitung tinggi tepat: label (28px) + thead (36px) + baris (42px×n) + footer (50px)
-            _row_visible = min(count, 15)
-            _sh_height = 28 + 36 + (_row_visible * 42) + 50
-            _sh_height = max(_sh_height, 180)
+            _sh_height = min(count, 15) * 44 + 120
+            _sh_height = max(_sh_height, 200)
             components.html(_sh_html, height=_sh_height, scrolling=False)
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
-        # Kurangi gap antar dua tabel screening
-        st.markdown("<div style='margin-top:-16px'></div>", unsafe_allow_html=True)
         _render_sh_table_v2(_turun_rows, is_naik=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
