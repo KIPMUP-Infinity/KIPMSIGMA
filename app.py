@@ -4944,118 +4944,184 @@ if current_view == "dashboard":
         if req_daily or req_weekly:
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
-            with st.spinner(f"Mengumpulkan data pasar & menyusun {mode_str} Market Brief..."):
+            with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
                 import feedparser as _fp
-                # ── Fetch multi-source headline ──────────────────────
-                dom_news, glob_news, eco_news = [], [], []
+                # ── Fetch multi-source headline (RSS backup) ──────────────────────
+                dom_news, glob_news = [], []
                 _rss_sources = [
                     ("https://www.cnbcindonesia.com/market/rss",          dom_news),
                     ("https://www.cnbcindonesia.com/economy/rss",         dom_news),
+                    ("https://www.cnbcindonesia.com/news/rss",            dom_news),
                     ("https://www.cnbc.com/id/15839069/device/rss/rss.html", glob_news),
                     ("https://feeds.content.dowjones.io/public/rss/mw-marketpulse", glob_news),
-                    ("https://feeds.bloomberg.com/markets/news.rss",      glob_news),
+                    ("https://www.ft.com/news-feed?format=rss",           glob_news),
+                    ("https://feeds.a.dj.com/rss/RSSMarketsMain.xml",     glob_news),
+                    ("https://www.aljazeera.com/xml/rss/all.xml",         glob_news),
+                    ("https://feeds.bbci.co.uk/news/world/rss.xml",       glob_news),
                 ]
                 for _url, _target in _rss_sources:
                     try:
-                        for _e in _fp.parse(_url).entries[:10]:
+                        for _e in _fp.parse(_url).entries[:6]:
                             _t = _e.get("title","").strip()
                             if _t and _t not in _target: _target.append(_t)
                     except: pass
 
-                # ── Build prompt — BERBEDA antara Daily dan Weekly ────────
+                # ── Anthropic API dengan web_search tool untuk data REAL-TIME ────
                 _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
+                _anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+
+                def _call_anthropic_with_search(user_prompt, max_tok=4000):
+                    """Gunakan Anthropic API + web_search untuk data real-time."""
+                    import urllib.request, json as _j
+                    _payload = {
+                        "model": "claude-opus-4-5",
+                        "max_tokens": max_tok,
+                        "tools": [{"type": "web_search_20250305", "name": "web_search"}],
+                        "messages": [{"role": "user", "content": user_prompt}]
+                    }
+                    _req = urllib.request.Request(
+                        "https://api.anthropic.com/v1/messages",
+                        data=_j.dumps(_payload).encode(),
+                        headers={
+                            "Content-Type": "application/json",
+                            "x-api-key": _anthropic_key,
+                            "anthropic-version": "2023-06-01",
+                            "anthropic-beta": "interleaved-thinking-2025-05-14"
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(_req, timeout=90) as _r:
+                        _data = _j.loads(_r.read())
+                    # Gabungkan semua text block dari response
+                    _full_text = ""
+                    for _block in _data.get("content", []):
+                        if _block.get("type") == "text":
+                            _full_text += _block.get("text", "")
+                    return _full_text.strip() if _full_text else None
+
+                # ── Build prompt — BERBEDA antara Daily dan Weekly ────────
+                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:10]]) if dom_news else "⚠ Tidak tersedia."
+                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:10]]) if glob_news else "⚠ Tidak tersedia."
 
                 if req_daily:
-                    mb_prompt = f"""Chief Market Analyst SIGMA Terminal — IDX/BEI. Tanggal: {_today}. Mode: DAILY REVIEW 24 Jam.
+                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
+Tanggal hari ini: **{_today}** | Mode: **DAILY REVIEW 24 JAM TERAKHIR**
 
-BERITA DOMESTIK (CNBC Indonesia):
-{chr(10).join([f"• {h}" for h in dom_news[:8]]) if dom_news else "⚠ Tidak tersedia."}
+INSTRUKSI KRITIS — WAJIB IKUTI:
+1. Gunakan web_search tool untuk mencari berita dan harga TERBARU hari ini sebelum menjawab.
+2. Cari minimal 4 query: "IHSG hari ini {datetime.now().strftime('%d %B %Y')}", "rupiah dolar hari ini", "harga emas hari ini", "geopolitik global hari ini tarif trump perang dagang"
+3. Semua angka harga (IHSG, USD/IDR, emas, minyak) HARUS dari hasil pencarian real-time, BUKAN asumsi.
+4. Geopolitik WAJIB dibahas secara spesifik — tarif Trump, perang Rusia-Ukraina, ketegangan China-Taiwan, konflik Timur Tengah, dan dampaknya ke pasar EM/IDX.
 
-BERITA GLOBAL (CNBC/Bloomberg/MarketWatch):
-{chr(10).join([f"• {h}" for h in glob_news[:8]]) if glob_news else "⚠ Tidak tersedia."}
+DATA BACKUP (RSS — gunakan jika web search gagal untuk topik ini):
+Domestik: {_rss_dom_str}
+Global: {_rss_glob_str}
 
-FORMAT (Bahasa Indonesia, maks 500 kata, Markdown):
+FORMAT OUTPUT — Bahasa Indonesia, maks 600 kata, Markdown:
 
 ## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
-IHSG, Rupiah, sentimen lokal, saham/sektor bergerak. (2 paragraf)
+IHSG (level aktual + % perubahan), Rupiah vs USD (kurs aktual), sentimen lokal terkini, saham/sektor bergerak. Data HARUS real-time. (2 paragraf)
 
 ## 🌍 KATALIS GLOBAL 24 JAM
-Wall Street, data AS (CPI/NFP/FOMC), Asia pagi ini. (1-2 paragraf)
+Wall Street terkini, data makro AS (CPI/NFP/FOMC), Asia pagi ini. Harga spesifik dari hasil search. (1-2 paragraf)
 
-## 💱 FOREX & KOMODITAS
-USD/IDR, DXY, emas, minyak, batu bara. Sektor IDX terdampak?
+## ⚔️ GEOPOLITIK & RISIKO GLOBAL
+**WAJIB SPESIFIK**: Kebijakan tarif Trump terbaru, perkembangan perang Rusia-Ukraina, eskalasi China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza), sanksi komoditas. Dampak langsung ke IDX, Rupiah, dan komoditas. (2 paragraf)
+
+## 💱 FOREX & KOMODITAS (Harga Aktual)
+USD/IDR aktual, DXY, emas (XAU/USD aktual), minyak WTI/Brent aktual, batu bara. Sektor IDX terdampak?
 
 ## 📊 SENTIMENT METER
 - IHSG: [skor]/100 — [label]
 - Global Risk: [skor]/100 — [Risk-On/Mixed/Risk-Off]
-- IDR: [Rendah/Sedang/Tinggi]
+- Geopolitik Risk: [Tinggi/Sedang/Rendah]
+- IDR: [Rendah/Sedang/Tinggi tekanan]
 
 ## ⚡ TACTICAL VIEW
 Stance + support/resistance IHSG + 1-2 sektor pantau.
 
 ## 🎯 WATCHLIST SEKTORAL (3 sektor)
-(✅/⚠/❌) Sektor — status — 1 kalimat.
+(✅/⚠/❌) Sektor — status — 1 kalimat alasan.
 
-Padat & actionable. Hindari basa-basi."""
+Padat & actionable. Semua harga HARUS aktual dari web search. Hindari basa-basi."""
 
                 else:  # weekly
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
-Tanggal: {_today} | Mode: WEEKLY REVIEW (7 Hari Terakhir)
+Tanggal: **{_today}** | Mode: **WEEKLY REVIEW (7 Hari Terakhir)**
 
-BERITA DOMESTIK (CNBC Indonesia):
-{chr(10).join([f"• {h}" for h in dom_news[:12]]) if dom_news else "⚠ Tidak tersedia."}
+INSTRUKSI KRITIS — WAJIB IKUTI:
+1. Gunakan web_search tool untuk mencari rekap pasar MINGGU INI sebelum menjawab.
+2. Cari minimal 5 query: "IHSG minggu ini rekap {datetime.now().strftime('%B %Y')}", "rupiah pekan ini", "Wall Street weekly recap", "harga emas minyak batu bara pekan ini", "geopolitik global minggu ini tarif trump perang"
+3. Semua data pergerakan HARUS dari hasil pencarian real-time terbaru.
+4. Geopolitik WAJIB dibahas detail — perkembangan terbaru tarif Trump/perang dagang, Rusia-Ukraina, China, Timur Tengah minggu ini dan dampaknya ke pasar global & IDX.
 
-BERITA GLOBAL (CNBC/Bloomberg/MarketWatch):
-{chr(10).join([f"• {h}" for h in glob_news[:12]]) if glob_news else "⚠ Tidak tersedia."}
+DATA BACKUP (RSS):
+Domestik: {_rss_dom_str}
+Global: {_rss_glob_str}
 
-FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 700 kata total.
+FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 800 kata total.
 
 ## 📅 REKAP IHSG MINGGU INI
-Tren IHSG 5 hari, sektor outperformer vs underperformer, event makro domestik signifikan. (2-3 paragraf)
+Tren IHSG 5 hari (level awal vs akhir + % net change), sektor outperformer vs underperformer, foreign flow net buy/sell, event makro domestik signifikan. Data aktual. (2-3 paragraf)
 
 ## 🌍 KATALIS GLOBAL MINGGU INI
-Rangkuman Wall Street, keputusan Fed/data AS, China/Asia, geopolitik, komoditas kunci (minyak, emas, batu bara, CPO). (2 paragraf)
+Rangkuman Wall Street, keputusan Fed/data AS, China/Asia, komoditas kunci (minyak, emas, batu bara, CPO) dengan angka aktual. (2 paragraf)
+
+## ⚔️ GEOPOLITIK MINGGU INI — ANALISIS MENDALAM
+**WAJIB DETAIL**: Setiap perkembangan signifikan tarif/perang dagang Trump, eskalasi atau de-eskalasi Rusia-Ukraina, perkembangan China (Taiwan/ekonomi/regulasi), konflik Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
 
 ## 📊 SENTIMENT METER MINGGUAN
 - **IHSG:** [angka]/100 — [label]
-- **Foreign Flow:** [Net Buy/Sell/Mixed]
+- **Foreign Flow:** [Net Buy/Sell/Mixed] — estimasi nilai
 - **Global Risk:** [angka]/100 — [label]
+- **Geopolitik Risk:** [Tinggi/Sedang/Rendah]
 - **IDR:** [Menguat/Melemah/Stabil]
 
 ## 🔮 OUTLOOK & TACTICAL VIEW MINGGU DEPAN
-Event penting + stance (Aggressive/Selective/Defensive/Wait & See) + 2-3 sektor rotasi. (2 paragraf)
+Event penting calendar (FOMC, rilis data AS, dll) + stance (Aggressive/Selective/Defensive/Wait & See) + 2-3 sektor rotasi + risiko utama yang perlu dipantau. (2 paragraf)
 
 ## 🎯 WATCHLIST SEKTORAL (5 sektor)
-(✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham
+(✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham — Alasan geopolitik/makro
 
-Gunakan Markdown. Padat & actionable. Hindari basa-basi."""
+Gunakan Markdown. Semua harga HARUS aktual dari web search. Padat & actionable."""
 
-                try:
-                    _max_tok = 3000 if mode_key == "daily" else 5000
-                    mb_res, _ = _call_groq_primary(mb_prompt, max_tokens=_max_tok)
-                    if mode_key == "daily":
-                        st.session_state["mb_daily_content"]   = mb_res
-                        st.session_state["mb_daily_timestamp"] = _today
-                    else:
-                        st.session_state["mb_weekly_content"]   = mb_res
-                        st.session_state["mb_weekly_timestamp"] = _today
-                    # backward compat — tetap simpan ke mb_content juga
-                    st.session_state["mb_content"]    = mb_res
-                    st.session_state["mb_mode"]       = mode_str
-                    st.session_state["mb_timestamp"]  = _today
-                    st.session_state["mb_mode_key"]   = mode_key
-                except Exception as e:
-                    _err_msg = f"⚠ Gagal generate Market Brief: {e}"
-                    if mode_key == "daily":
-                        st.session_state["mb_daily_content"]   = _err_msg
-                        st.session_state["mb_daily_timestamp"] = _today
-                    else:
-                        st.session_state["mb_weekly_content"]   = _err_msg
-                        st.session_state["mb_weekly_timestamp"] = _today
-                    st.session_state["mb_content"]    = _err_msg
-                    st.session_state["mb_mode"]       = mode_str
-                    st.session_state["mb_timestamp"]  = _today
-                    st.session_state["mb_mode_key"]   = mode_key
+                # ── Eksekusi: Coba Anthropic API dulu (dengan web search), fallback ke Groq ──
+                mb_res = None
+                _source_used = "Groq"
+
+                if _anthropic_key:
+                    try:
+                        mb_res = _call_anthropic_with_search(mb_prompt, max_tok=5000 if mode_key == "weekly" else 4000)
+                        if mb_res:
+                            _source_used = "Anthropic+WebSearch"
+                    except Exception as _ae:
+                        mb_res = None  # fallback ke Groq
+
+                if not mb_res:
+                    try:
+                        _max_tok = 3000 if mode_key == "daily" else 5000
+                        mb_res, _ = _call_groq_primary(mb_prompt, max_tokens=_max_tok)
+                        _source_used = "Groq"
+                    except Exception as e:
+                        mb_res = f"⚠ Gagal generate Market Brief: {e}"
+                        _source_used = "Error"
+
+                # Tambahkan watermark sumber data
+                if mb_res and not mb_res.startswith("⚠"):
+                    _src_badge = "🌐 Real-time Web Search" if _source_used == "Anthropic+WebSearch" else "📡 RSS Feeds"
+                    mb_res = mb_res + f"\n\n---\n*Sumber data: {_src_badge} · {_today}*"
+
+                if mode_key == "daily":
+                    st.session_state["mb_daily_content"]   = mb_res
+                    st.session_state["mb_daily_timestamp"] = _today
+                else:
+                    st.session_state["mb_weekly_content"]   = mb_res
+                    st.session_state["mb_weekly_timestamp"] = _today
+                # backward compat
+                st.session_state["mb_content"]    = mb_res
+                st.session_state["mb_mode"]       = mode_str
+                st.session_state["mb_timestamp"]  = _today
+                st.session_state["mb_mode_key"]   = mode_key
 
         # ── Render Daily Brief (jika ada) ──────────────────────────────────
         def _render_mb_block(content, ts, mode_key):
@@ -5819,70 +5885,94 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         _dir_color = {"cut": "#089981", "hold": "#4285F4", "hike": "#f23645"}
         _dir_label = {"cut": "CUT", "hold": "HOLD", "hike": "HIKE"}
 
-        fed_cols = st.columns(3)
+        # ── Build semua card HTML sekaligus, pakai CSS grid responsive ──
+        _all_cards_html = ""
         for fi, mtg in enumerate(_fed_meetings):
-            with fed_cols[fi]:
-                # Build bar rows
-                _bars_html = ""
-                for sc in mtg["scenarios"]:
-                    _bc = _dir_color.get(sc["dir"], "#b2b5be")
-                    _bar_w = max(sc["prob"], 2)
-                    _pd_str = f'{sc["prev_day"]:.1f}%' if sc["prev_day"] is not None else "—"
-                    _pw_str = f'{sc["prev_week"]:.1f}%' if sc["prev_week"] is not None else "—"
-                    _bars_html += f"""
-                    <div style='margin-bottom:10px;'>
-                        <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;'>
-                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_main};'>{sc['range']}</span>
-                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.65rem;font-weight:700;color:{_bc};'>{sc['prob']:.1f}%</span>
-                        </div>
-                        <div style='background:rgba(255,255,255,0.06);border-radius:3px;height:6px;'>
-                            <div style='background:{_bc};width:{_bar_w}%;height:100%;border-radius:3px;opacity:0.85;'></div>
-                        </div>
-                    </div>"""
+            _bars_html = ""
+            for sc in mtg["scenarios"]:
+                _bc = _dir_color.get(sc["dir"], "#b2b5be")
+                _bar_w = max(sc["prob"], 2)
+                _bars_html += f"""
+                <div style='margin-bottom:10px;'>
+                    <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;'>
+                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_main};'>{sc['range']}</span>
+                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.65rem;font-weight:700;color:{_bc};'>{sc['prob']:.1f}%</span>
+                    </div>
+                    <div style='background:rgba(255,255,255,0.06);border-radius:3px;height:6px;'>
+                        <div style='background:{_bc};width:{_bar_w}%;height:100%;border-radius:3px;opacity:0.85;'></div>
+                    </div>
+                </div>"""
 
-                # Build table rows
-                _tbl_rows = ""
-                for sc in mtg["scenarios"]:
-                    _bc = _dir_color.get(sc["dir"], "#b2b5be")
-                    _pd_str = f'{sc["prev_day"]:.1f}%' if sc["prev_day"] is not None else "—"
-                    _pw_str = f'{sc["prev_week"]:.1f}%' if sc["prev_week"] is not None else "—"
-                    _tbl_rows += f"""<tr>
-                        <td style='padding:5px 8px;white-space:nowrap;color:{text_sub};font-size:0.62rem;'>{sc['range']}</td>
-                        <td style='padding:5px 8px;text-align:right;font-weight:700;color:{_bc};font-size:0.65rem;'>{sc['prob']:.1f}%</td>
-                        <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pd_str}</td>
-                        <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pw_str}</td>
-                    </tr>"""
+            _tbl_rows = ""
+            for sc in mtg["scenarios"]:
+                _bc = _dir_color.get(sc["dir"], "#b2b5be")
+                _pd_str = f'{sc["prev_day"]:.1f}%' if sc["prev_day"] is not None else "—"
+                _pw_str = f'{sc["prev_week"]:.1f}%' if sc["prev_week"] is not None else "—"
+                _tbl_rows += f"""<tr>
+                    <td style='padding:5px 8px;white-space:nowrap;color:{text_sub};font-size:0.62rem;'>{sc['range']}</td>
+                    <td style='padding:5px 8px;text-align:right;font-weight:700;color:{_bc};font-size:0.65rem;'>{sc['prob']:.1f}%</td>
+                    <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pd_str}</td>
+                    <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pw_str}</td>
+                </tr>"""
 
-                st.markdown(f"""
-                <div style='background:{met_bg};border:1px solid {met_border};border-radius:12px;overflow:hidden;margin-bottom:16px;'>
-                    <div style='background:rgba(245,194,66,0.08);border-bottom:1px solid {met_border};padding:10px 14px;'>
-                        <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;color:#F5C242;letter-spacing:0.08em;'>{mtg['date']}</div>
-                        <div style='display:flex;justify-content:space-between;margin-top:4px;'>
-                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:{text_sub};'>Future: {mtg['future_price']}</span>
-                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:rgba(61,220,132,0.8);'>⏱ {mtg['countdown']}</span>
-                        </div>
-                    </div>
-                    <div style='padding:12px 14px;'>
-                        {_bars_html}
-                    </div>
-                    <div style='border-top:1px solid {met_border};overflow-x:auto;'>
-                        <table style='width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;'>
-                            <thead>
-                                <tr style='background:rgba(255,255,255,0.03);'>
-                                    <th style='padding:5px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>TARGET RATE</th>
-                                    <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>NOW%</th>
-                                    <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>YDAY%</th>
-                                    <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>WEEK%</th>
-                                </tr>
-                            </thead>
-                            <tbody>{_tbl_rows}</tbody>
-                        </table>
-                    </div>
-                    <div style='padding:5px 14px 8px;font-family:IBM Plex Mono,monospace;font-size:0.53rem;color:{text_sub};opacity:0.7;text-align:right;'>
-                        Updated: {datetime.now().strftime("%b %d, %Y %I:%M%p")} WIB · Source: CME FedWatch
+            _all_cards_html += f"""
+            <div class='fed-card'>
+                <div style='background:rgba(245,194,66,0.08);border-bottom:1px solid {met_border};padding:10px 14px;'>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;font-weight:700;color:#F5C242;letter-spacing:0.08em;'>{mtg['date']}</div>
+                    <div style='display:flex;justify-content:space-between;margin-top:4px;'>
+                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:{text_sub};'>Future: {mtg['future_price']}</span>
+                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:rgba(61,220,132,0.8);'>⏱ {mtg['countdown']}</span>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                <div style='padding:12px 14px;'>
+                    {_bars_html}
+                </div>
+                <div style='border-top:1px solid {met_border};overflow-x:auto;'>
+                    <table style='width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;'>
+                        <thead>
+                            <tr style='background:rgba(255,255,255,0.03);'>
+                                <th style='padding:5px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>TARGET RATE</th>
+                                <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>NOW%</th>
+                                <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>YDAY%</th>
+                                <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>WEEK%</th>
+                            </tr>
+                        </thead>
+                        <tbody>{_tbl_rows}</tbody>
+                    </table>
+                </div>
+                <div style='padding:5px 14px 8px;font-family:IBM Plex Mono,monospace;font-size:0.53rem;color:{text_sub};opacity:0.7;text-align:right;'>
+                    Updated: {datetime.now().strftime("%b %d, %Y %I:%M%p")} WIB · CME FedWatch
+                </div>
+            </div>"""
+
+        st.markdown(f"""
+        <style>
+        .fed-grid {{
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }}
+        .fed-card {{
+            background: {met_bg};
+            border: 1px solid {met_border};
+            border-radius: 12px;
+            overflow: hidden;
+        }}
+        @media (max-width: 900px) {{
+            .fed-grid {{
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }}
+            .fed-card {{
+                width: 100%;
+            }}
+        }}
+        </style>
+        <div class='fed-grid'>
+            {_all_cards_html}
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown(f"""
         <div style='background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.18);border-left:3px solid #4285F4;
