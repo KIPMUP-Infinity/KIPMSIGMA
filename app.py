@@ -1057,25 +1057,29 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Mengurangi jarak vertikal antar elemen (box/tabel/text) */
-    div[data-testid="stVerticalBlock"] {
-        gap: 0.5rem !important;
+    /* 1. Paksa jarak (gap) di semua blok vertikal & horizontal jadi sangat kecil */
+    [data-testid="stVerticalBlock"] {
+        gap: 0rem !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        gap: 0rem !important;
     }
     
-    /* Mengurangi jarak di dalam kolom jika kamu pakai st.columns */
-    div[data-testid="stHorizontalBlock"] {
-        gap: 0.5rem !important;
+    /* 2. Pangkas habis jarak bawah dari setiap elemen individu (tabel, metrik, chart) */
+    .element-container {
+        margin-bottom: 0rem !important;
+        padding-bottom: 0rem !important;
     }
     
-    /* Mengurangi margin bawah dari elemen teks/header agar lebih mepet ke box */
+    /* 3. Kurangi jarak bawaan dari teks atau markdown */
     div[data-testid="stMarkdownContainer"] p {
-        margin-bottom: 0.2rem !important;
+        margin-bottom: 0rem !important;
     }
     
-    /* Sedikit merapikan padding halaman utama agar tidak terlalu banyak ruang kosong di atas/bawah */
+    /* 4. Tarik seluruh konten agar lebih ke atas (mengurangi ruang kosong di header) */
     .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 2rem !important;
+        padding-top: 1.5rem !important;
+        gap: 0rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
