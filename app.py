@@ -4945,70 +4945,68 @@ USD/IDR, DXY, harga minyak, emas, batu bara hari ini. Sektor IDX mana yang palin
 Gunakan Markdown. Singkat, padat, langsung ke poin. Hindari basa-basi."""
 
                 else:  # weekly
-                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
-Tanggal & waktu sekarang: {_today}
-Mode: WEEKLY REVIEW (7 Hari Terakhir — Rekap Mingguan)
+                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
+Tanggal: {_today} | Mode: WEEKLY REVIEW (7 Hari Terakhir)
 
-═══════════════════════════════════════════════════════
-HEADLINE BERITA DALAM NEGERI (DOMESTIK — CNBC Indonesia):
-═══════════════════════════════════════════════════════
-{chr(10).join([f"• {h}" for h in dom_news[:20]]) if dom_news else "⚠ Data tidak tersedia."}
+BERITA DOMESTIK (CNBC Indonesia):
+{chr(10).join([f"• {h}" for h in dom_news[:12]]) if dom_news else "⚠ Tidak tersedia."}
 
-═══════════════════════════════════════════════════════
-HEADLINE BERITA LUAR NEGERI (GLOBAL — CNBC/Bloomberg/MarketWatch):
-═══════════════════════════════════════════════════════
-{chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Data tidak tersedia."}
+BERITA GLOBAL (CNBC/Bloomberg/MarketWatch):
+{chr(10).join([f"• {h}" for h in glob_news[:12]]) if glob_news else "⚠ Tidak tersedia."}
 
-═══════════════════════════════════════════════════════
-INSTRUKSI FORMAT — WEEKLY REVIEW — Bahasa Indonesia, komprehensif & strategis:
-═══════════════════════════════════════════════════════
+FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 700 kata total.
 
-## 📅 REKAP PASAR MINGGU INI — IHSG & DOMESTIK
-Rekap performa IHSG selama 5 hari perdagangan terakhir: tren, level tertinggi/terendah minggu ini, sektor outperformer vs underperformer. Peristiwa makro domestik paling signifikan minggu ini (kebijakan BI, data ekonomi RI, sentimen Rupiah). Minimal 4-5 paragraf mendalam.
+## 📅 REKAP IHSG MINGGU INI
+Tren IHSG 5 hari, sektor outperformer vs underperformer, event makro domestik signifikan. (2-3 paragraf)
 
-## 🌍 REKAP GLOBAL MINGGU INI — KATALIS EKSTERNAL
-Rangkuman lengkap Wall Street 5 hari terakhir, highlight keputusan The Fed/data ekonomi AS yang dirilis minggu ini, pergerakan China/Asia, konflik geopolitik yang mempengaruhi market, pergerakan komoditas kunci (minyak, emas, batu bara, CPO, nikel) selama seminggu. Minimal 4-5 paragraf.
-
-## 💱 TREN FOREX & KOMODITAS MINGGUAN
-Tren USD/IDR, DXY selama seminggu: melemah/menguat berapa persen? Komoditas mana yang trending naik/turun minggu ini? Dampak kumulatif ke sektor-sektor IDX.
+## 🌍 KATALIS GLOBAL MINGGU INI
+Rangkuman Wall Street, keputusan Fed/data AS, China/Asia, geopolitik, komoditas kunci (minyak, emas, batu bara, CPO). (2 paragraf)
 
 ## 📊 SENTIMENT METER MINGGUAN
-- **IHSG Minggu Ini:** [angka]/100 — [Bullish/Cautious Bullish/Neutral/Cautious Bearish/Bearish]
-- **Tren Net Foreign Flow:** [Net Buy/Net Sell/Mixed] — estimasi volume
-- **Global Risk Appetite:** [angka]/100 — [Risk-On/Mixed/Risk-Off]
-- **IDR Minggu Ini:** [Menguat/Melemah/Stabil] vs USD
+- **IHSG:** [angka]/100 — [label]
+- **Foreign Flow:** [Net Buy/Sell/Mixed]
+- **Global Risk:** [angka]/100 — [label]
+- **IDR:** [Menguat/Melemah/Stabil]
 
-## 🔮 OUTLOOK MINGGU DEPAN — FORWARD LOOKING
-Analisis prospek minggu depan: event calendar yang wajib dipantau (rilis data ekonomi AS/RI, earnings, FOMC, rapat BI), potensi katalis positif dan negatif, level IHSG yang perlu diperhatikan. 3-4 paragraf strategis.
+## 🔮 OUTLOOK & TACTICAL VIEW MINGGU DEPAN
+Event penting + stance (Aggressive/Selective/Defensive/Wait & See) + 2-3 sektor rotasi. (2 paragraf)
 
-## ⚡ SIGMA TACTICAL VIEW MINGGUAN
-Stance minggu depan (Aggressive/Selective/Defensive/Wait & See) dengan reasoning detail. Sektor rotasi yang terdeteksi. Rekomendasi posisi: sektor mana yang layak diakumulasi, mana yang harus dihindari, dengan alasan fundamental/teknikal. 2-3 paragraf.
+## 🎯 WATCHLIST SEKTORAL (5 sektor)
+(✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham
 
-## 🎯 WATCHLIST SEKTORAL MINGGUAN
-5-7 sektor dengan evaluasi mingguan lengkap:
-(✅/⚠/❌) **Nama Sektor** — Status Minggu Ini — Outlook Minggu Depan — Contoh saham representative
-
-Gunakan Markdown. Komprehensif seperti laporan riset mingguan profesional. Sertakan angka dan fakta spesifik dari berita yang tersedia."""
+Gunakan Markdown. Padat & actionable. Hindari basa-basi."""
 
                 try:
                     mb_res, _ = _call_groq_primary(mb_prompt)
+                    if mode_key == "daily":
+                        st.session_state["mb_daily_content"]   = mb_res
+                        st.session_state["mb_daily_timestamp"] = _today
+                    else:
+                        st.session_state["mb_weekly_content"]   = mb_res
+                        st.session_state["mb_weekly_timestamp"] = _today
+                    # backward compat — tetap simpan ke mb_content juga
                     st.session_state["mb_content"]    = mb_res
                     st.session_state["mb_mode"]       = mode_str
                     st.session_state["mb_timestamp"]  = _today
                     st.session_state["mb_mode_key"]   = mode_key
                 except Exception as e:
-                    st.session_state["mb_content"]    = f"⚠ Gagal generate Market Brief: {e}"
+                    _err_msg = f"⚠ Gagal generate Market Brief: {e}"
+                    if mode_key == "daily":
+                        st.session_state["mb_daily_content"]   = _err_msg
+                        st.session_state["mb_daily_timestamp"] = _today
+                    else:
+                        st.session_state["mb_weekly_content"]   = _err_msg
+                        st.session_state["mb_weekly_timestamp"] = _today
+                    st.session_state["mb_content"]    = _err_msg
                     st.session_state["mb_mode"]       = mode_str
                     st.session_state["mb_timestamp"]  = _today
                     st.session_state["mb_mode_key"]   = mode_key
 
-        if st.session_state.get("mb_content"):
-            _mb_ts    = st.session_state.get("mb_timestamp", "")
-            _mb_mode  = st.session_state.get("mb_mode", "")
-            _mb_key   = st.session_state.get("mb_mode_key", "daily")
-            _mb_icon  = "🔄" if _mb_key == "daily" else "🗓️"
-            _mb_color = "#4285F4" if _mb_key == "daily" else "#F5C242"
-            _mb_title = "DAILY MARKET BRIEF — 24 JAM TERAKHIR" if _mb_key == "daily" else "WEEKLY MARKET BRIEF — REKAP 7 HARI"
+        # ── Render Daily Brief (jika ada) ──────────────────────────────────
+        def _render_mb_block(content, ts, mode_key):
+            _mb_icon  = "🔄" if mode_key == "daily" else "🗓️"
+            _mb_color = "#4285F4" if mode_key == "daily" else "#F5C242"
+            _mb_title = "DAILY MARKET BRIEF — 24 JAM TERAKHIR" if mode_key == "daily" else "WEEKLY MARKET BRIEF — REKAP 7 HARI"
             st.markdown(f"""
             <style>
             .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid {_mb_color};
@@ -5021,22 +5019,33 @@ Gunakan Markdown. Komprehensif seperti laporan riset mingguan profesional. Serta
             .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:{text_sub};
                 background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px;
                 border:1px solid {met_border}; white-space:nowrap; }}
-            .mb-body {{ padding:20px 22px; font-size:0.86rem; color:{text_main}; line-height:1.8; }}
             @media (max-width: 768px) {{
                 .mb-header {{ padding:10px 14px; }}
                 .mb-title {{ font-size:0.7rem; }}
-                .mb-body {{ padding:14px 14px; font-size:0.82rem; }}
             }}
             </style>
             <div class='mb-container'>
                 <div class='mb-header'>
                     <span class='mb-title'>{_mb_icon} {_mb_title}</span>
-                    <span class='mb-badge'>🕐 {_mb_ts}</span>
+                    <span class='mb-badge'>🕐 {ts}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            # Render konten markdown di luar HTML agar Streamlit parse markdown dengan benar
-            st.markdown(st.session_state["mb_content"])
+            st.markdown(content)
+
+        if st.session_state.get("mb_daily_content"):
+            _render_mb_block(
+                st.session_state["mb_daily_content"],
+                st.session_state.get("mb_daily_timestamp", ""),
+                "daily"
+            )
+
+        if st.session_state.get("mb_weekly_content"):
+            _render_mb_block(
+                st.session_state["mb_weekly_content"],
+                st.session_state.get("mb_weekly_timestamp", ""),
+                "weekly"
+            )
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -5434,11 +5443,10 @@ Gunakan Markdown. Komprehensif seperti laporan riset mingguan profesional. Serta
         """, unsafe_allow_html=True)
 
         # ── Render table ──────────────────────────────────────────
-        ca_html = f"<div style='overflow-x:auto; background:{met_bg}; border-radius:10px; border:1px solid {met_border};'><table class='ca-tbl'>"
-        ca_html += "<tr><th>TANGGAL</th><th>TICKER</th><th>EVENT</th><th>KETERANGAN</th></tr>"
+        ca_rows_html = ""
         for row in ca_data_filtered:
             _clr, _bg = _get_ev_color(row["Event"])
-            ca_html += (
+            ca_rows_html += (
                 f"<tr>"
                 f"<td style='white-space:nowrap;font-weight:500;'>{row['Tanggal']}</td>"
                 f"<td><span class='ca-badge' style='background:rgba(66,133,244,0.15);color:#4285F4;border:1px solid rgba(66,133,244,0.3);'>{row['Ticker']}</span></td>"
@@ -5447,9 +5455,131 @@ Gunakan Markdown. Komprehensif seperti laporan riset mingguan profesional. Serta
                 f"</tr>"
             )
         if not ca_data_filtered:
-            ca_html += f"<tr><td colspan='4' style='text-align:center;padding:24px;color:{text_sub};'>Tidak ada data yang cocok dengan filter.</td></tr>"
-        ca_html += "</table></div>"
-        st.markdown(ca_html, unsafe_allow_html=True)
+            ca_rows_html += f"<tr><td colspan='4' style='text-align:center;padding:24px;color:{text_sub};'>Tidak ada data yang cocok dengan filter.</td></tr>"
+
+        # Hitung tinggi: header(42) + 10 baris(40px each) + footer hint(28) + border
+        _ca_row_h = min(len(ca_data_filtered), 10) * 40
+        _ca_total_h = 42 + _ca_row_h + 28 + 6
+        _ca_total_h = max(_ca_total_h, 120)
+
+        import json as _caj
+        _ca_all_rows = []
+        for row in ca_data_filtered:
+            _clr, _bg = _get_ev_color(row["Event"])
+            _ca_all_rows.append({
+                "tanggal": row["Tanggal"],
+                "ticker": row["Ticker"],
+                "event": row["Event"],
+                "keterangan": row["Keterangan"],
+                "clr": _clr, "bg": _bg
+            })
+        _ca_rows_json = _caj.dumps(_ca_all_rows, ensure_ascii=False)
+
+        ca_html_widget = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
+.ca-wrap{{background:{met_bg};border-radius:10px;border:1px solid {met_border};overflow:hidden;}}
+.hint{{display:none;text-align:center;font-size:0.55rem;color:{text_sub};
+       padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {met_border};}}
+.scroll-box{{
+  width:100%;
+  max-height:400px;
+  overflow-x:auto !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  scrollbar-width:thin;
+  scrollbar-color:{met_border} transparent;
+}}
+.scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
+.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+table{{width:max-content;min-width:100%;border-collapse:collapse;
+       font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
+thead th{{
+  position:sticky;top:0;z-index:2;
+  background:rgba(245,194,66,0.10);color:#F5C242;
+  padding:10px 12px;text-align:left;
+  border-bottom:1px solid {met_border};
+  letter-spacing:0.06em;font-weight:700;font-size:0.65rem;
+  white-space:nowrap;
+}}
+tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
+          color:{text_main};vertical-align:middle;white-space:nowrap;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
+.ca-badge{{padding:3px 8px;border-radius:4px;font-weight:700;font-size:0.65rem;letter-spacing:0.04em;}}
+.ca-ev-badge{{padding:3px 8px;border-radius:4px;font-size:0.65rem;font-weight:600;white-space:nowrap;}}
+.ca-info{{color:{text_sub};font-size:0.7rem;white-space:normal;max-width:280px;}}
+.pg-bar{{display:flex;align-items:center;justify-content:space-between;
+         padding:6px 12px;border-top:1px solid {met_border};
+         background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:4px;}}
+.pg-info{{font-size:0.58rem;color:{text_sub};}}
+.pg-btns{{display:flex;gap:5px;}}
+.pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
+         border:1px solid {met_border};border-radius:4px;
+         padding:4px 11px;font-family:'IBM Plex Mono',monospace;
+         font-size:0.58rem;cursor:pointer;transition:background 0.15s;}}
+.pg-btn:hover{{background:rgba(255,255,255,0.12);}}
+.pg-btn:disabled{{opacity:0.3;cursor:default;}}
+@media(max-width:600px){{
+  .hint{{display:block;}}
+  table{{font-size:0.65rem;}}
+  thead th{{font-size:0.6rem;padding:8px 8px;}}
+  tbody td{{padding:7px 8px;font-size:0.65rem;}}
+  .ca-badge{{font-size:0.58rem;padding:2px 5px;}}
+  .ca-ev-badge{{font-size:0.58rem;padding:2px 5px;}}
+  .ca-info{{font-size:0.62rem;max-width:180px;}}
+}}
+</style></head><body>
+<div class="ca-wrap">
+  <div class="hint">← geser kiri / kanan →</div>
+  <div class="scroll-box" id="ca-sb">
+    <table>
+      <thead><tr>
+        <th>TANGGAL</th><th>TICKER</th><th>EVENT</th><th>KETERANGAN</th>
+      </tr></thead>
+      <tbody id="ca-tb"></tbody>
+    </table>
+  </div>
+  <div class="pg-bar">
+    <span class="pg-info" id="ca-pi"></span>
+    <div class="pg-btns">
+      <button class="pg-btn" id="ca-pp" onclick="caPg(-1)">&#9664; Prev</button>
+      <button class="pg-btn" id="ca-pn" onclick="caPg(+1)">Next &#9654;</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){{
+  var ROWS={_ca_rows_json}, PER=10, page=0;
+  function render(){{
+    var tot=ROWS.length, maxPg=Math.max(0,Math.ceil(tot/PER)-1);
+    var s=page*PER, e=Math.min(s+PER,tot);
+    var h='';
+    ROWS.slice(s,e).forEach(function(r){{
+      h+='<tr>'+
+        '<td style="white-space:nowrap;font-weight:500;">'+r.tanggal+'</td>'+
+        '<td><span class="ca-badge" style="background:rgba(66,133,244,0.15);color:#4285F4;border:1px solid rgba(66,133,244,0.3);">'+r.ticker+'</span></td>'+
+        '<td><span class="ca-ev-badge" style="background:'+r.bg+';color:'+r.clr+';border:1px solid '+r.clr+'44;">'+r.event+'</span></td>'+
+        '<td class="ca-info">'+r.keterangan+'</td>'+
+        '</tr>';
+    }});
+    document.getElementById('ca-tb').innerHTML=h;
+    document.getElementById('ca-pi').textContent='Baris '+(s+1)+'–'+e+' dari '+tot;
+    document.getElementById('ca-pp').disabled=(page<=0);
+    document.getElementById('ca-pn').disabled=(page>=maxPg);
+    document.getElementById('ca-sb').scrollTop=0;
+  }}
+  window.caPg=function(d){{
+    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
+    page=Math.max(0,Math.min(page+d,maxPg));render();
+  }};
+  render();
+}})();
+</script></body></html>"""
+
+        components.html(ca_html_widget, height=_ca_total_h + 60, scrolling=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -7452,7 +7582,7 @@ Gunakan Markdown. Komprehensif seperti laporan riset mingguan profesional. Serta
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:2px 0 4px;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
 .lbl{{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
 .wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
@@ -7594,7 +7724,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
-        st.markdown("<div style='margin-top:-14px'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;'></div>", unsafe_allow_html=True)
         _render_sh_table_v2(_turun_rows, is_naik=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -8434,10 +8564,18 @@ Format output WAJIB — bagian BULLISH per saham dimulai dengan 🎯, bagian BEA
 
 Bias pasar hari ini: [1 kalimat ringkas]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _render_reco_cards(_call_ai_reco(prompt), "#F5C242")
+                        _daily_result = _call_ai_reco(prompt)
+                        st.session_state["reco_daily_result"] = _daily_result
+                        st.session_state["reco_daily_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
-            else:
+
+            if st.session_state.get("reco_daily_result"):
+                _ts = st.session_state.get("reco_daily_ts", "")
+                if _ts:
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
+                _render_reco_cards(st.session_state["reco_daily_result"], "#F5C242")
+            elif not run_daily:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
@@ -8513,10 +8651,18 @@ Format output WAJIB — bagian BULLISH dengan 🎯, bagian HINDARI dengan ⚠️
 
 Outlook pasar minggu ini: [2-3 kalimat]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _render_reco_cards(_call_ai_reco(prompt), "#26a69a")
+                        _weekly_result = _call_ai_reco(prompt)
+                        st.session_state["reco_weekly_result"] = _weekly_result
+                        st.session_state["reco_weekly_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
-            else:
+
+            if st.session_state.get("reco_weekly_result"):
+                _ts = st.session_state.get("reco_weekly_ts", "")
+                if _ts:
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
+                _render_reco_cards(st.session_state["reco_weekly_result"], "#26a69a")
+            elif not run_weekly:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
@@ -8602,10 +8748,18 @@ Format output (bagian BELI dimulai 🌙, bagian HINDARI dimulai ⛔):
 
 Kondisi BSJP malam ini: [KONDUSIF / WAIT] — [1 kalimat alasan]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _render_reco_cards(_call_ai_reco(prompt), "#7c3aed")
+                        _bsjp_result = _call_ai_reco(prompt)
+                        st.session_state["reco_bsjp_result"] = _bsjp_result
+                        st.session_state["reco_bsjp_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
-            else:
+
+            if st.session_state.get("reco_bsjp_result"):
+                _ts = st.session_state.get("reco_bsjp_ts", "")
+                if _ts:
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
+                _render_reco_cards(st.session_state["reco_bsjp_result"], "#7c3aed")
+            elif not run_bsjp:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
