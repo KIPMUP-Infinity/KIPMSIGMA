@@ -2828,6 +2828,45 @@ body {{ background: #080c14; }}
 .sigma-terminal .card-cta {{ background:linear-gradient(135deg,#F5C242,#e0a820); color:#07090f; box-shadow:0 6px 24px rgba(245,194,66,0.26); }}
 .card-cta:hover {{ opacity:0.88; transform:translateY(-1px); }}
 
+/* ── CHAT PREVIEW (AI Chat card) ── */
+.chat-preview {{
+    background:rgba(0,0,0,0.40);
+    border:1px solid rgba(0,157,255,0.14);
+    border-radius:10px;
+    padding:0;
+    margin-bottom:16px;
+    overflow:hidden;
+}}
+.cp-header {{
+    background:rgba(0,157,255,0.07);
+    border-bottom:1px solid rgba(0,157,255,0.1);
+    padding:7px 10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}}
+.cp-dot {{ width:6px; height:6px; border-radius:50%; display:inline-block; }}
+.cp-dot-1 {{ background:#f87171; }}
+.cp-dot-2 {{ background:#facc15; }}
+.cp-dot-3 {{ background:#4ade80; }}
+.cp-title {{
+    font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
+    font-size:0.52rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
+    text-transform:uppercase; margin-left:2px;
+}}
+.cp-body {{ padding:8px 10px; display:flex; flex-direction:column; gap:4px; }}
+.cp-cmd {{
+    font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
+    font-size:0.60rem; color:rgba(255,255,255,0.45);
+    display:flex; align-items:center; gap:8px; padding:3px 0;
+    border-bottom:1px solid rgba(255,255,255,0.04);
+    line-height:1.4;
+}}
+.cp-cmd:last-child {{ border-bottom:none; }}
+.cp-num {{
+    color:#009dff; min-width:14px; font-weight:700; opacity:0.8;
+}}
+
 .sys-footer {{ margin-top:48px; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
 
 @media (max-width:768px) {{
@@ -2872,12 +2911,24 @@ body {{ background: #080c14; }}
             <div class="card-name">SIGMA AI Chat</div>
             <div class="card-tagline">AI Trading Assistant</div>
             <div class="card-desc">Asisten analisa pasar berbasis AI &#8212; teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
+
+            <div class="chat-preview">
+                <div class="cp-header"><span class="cp-dot cp-dot-1"></span><span class="cp-dot cp-dot-2"></span><span class="cp-dot cp-dot-3"></span><span class="cp-title">SIGMA AI &mdash; 7 ALPHA COMMAND</span></div>
+                <div class="cp-body">
+                    <div class="cp-cmd"><span class="cp-num">1</span> Kesimpulan Dampak Makro</div>
+                    <div class="cp-cmd"><span class="cp-num">2</span> Kesimpulan Dampak Emiten</div>
+                    <div class="cp-cmd"><span class="cp-num">3</span> Bandarmologi</div>
+                    <div class="cp-cmd"><span class="cp-num">4</span> Fundamental</div>
+                    <div class="cp-cmd"><span class="cp-num">5</span> Teknikal</div>
+                    <div class="cp-cmd"><span class="cp-num">6</span> Analisa Lengkap (Quad)</div>
+                    <div class="cp-cmd"><span class="cp-num">7</span> Analisa IPO</div>
+                </div>
+            </div>
+
             <ul class="card-features">
-                <li><span class="feat-dot"></span>Analisa teknikal MnM Strategy+</li>
-                <li><span class="feat-dot"></span>Bandarmologi &amp; broker summary IDX</li>
-                <li><span class="feat-dot"></span>Fundamental multi-source real-time</li>
-                <li><span class="feat-dot"></span>Dampak makro global &#8594; emiten IDX</li>
                 <li><span class="feat-dot"></span>Upload chart &amp; PDF prospektus</li>
+                <li><span class="feat-dot"></span>Multi-source data real-time IDX</li>
+                <li><span class="feat-dot"></span>Gemini Vision + Groq LLaMA</li>
             </ul>
             <button class="card-cta" onclick="event.stopPropagation(); selectChat()">Masuk ke AI Chat &#8594;</button>
         </div>
@@ -2908,11 +2959,11 @@ body {{ background: #080c14; }}
             </div>
 
             <ul class="card-features">
-                <li><span class="feat-dot"></span>Market Overview &#8212; IHSG &amp; indeks sektoral</li>
-                <li><span class="feat-dot"></span>Broker Summary real-time IDX</li>
-                <li><span class="feat-dot"></span>Stock Screener dengan filter custom</li>
-                <li><span class="feat-dot"></span>Watchlist personal dengan alert</li>
-                <li><span class="feat-dot"></span>Data langsung dari BEI</li>
+                <li><span class="feat-dot"></span>Global Macro &amp; News &#8212; Live Market Pulse</li>
+                <li><span class="feat-dot"></span>Index &amp; Sector Rotation &#8212; IDX Heatmap</li>
+                <li><span class="feat-dot"></span>Shareholder &#8212; Foreign Flow &amp; Ownership</li>
+                <li><span class="feat-dot"></span>AI Stock Insight &#8212; Screener &amp; Analisa</li>
+                <li><span class="feat-dot"></span>AI Rekomendasi &#8212; Watchlist &amp; Alert</li>
             </ul>
             <button class="card-cta" onclick="event.stopPropagation(); selectTerminal()">Masuk ke Terminal &#8594;</button>
         </div>
@@ -4654,6 +4705,17 @@ if current_view == "dashboard":
         .ca-stat-val {{ font-size: 1.05rem !important; }}
         .ca-stat-lbl {{ font-size: 0.55rem !important; }}
 
+        /* Economic Calendar: compact on mobile */
+        .ecocal-row {
+            grid-template-columns: 80px 1fr 80px 44px !important;
+            gap: 4px !important;
+            padding: 8px 10px !important;
+        }
+        .ecocal-dt { font-size: 0.58rem !important; }
+        .ecocal-ev { font-size: 0.68rem !important; }
+        .ecocal-fc { font-size: 0.60rem !important; }
+        .ecocal-imp { font-size: 0.52rem !important; padding: 2px 4px !important; }
+
         /* Market Brief container: full-width, no padding bleed */
         .mb-container {{ margin: 0 0 16px !important; }}
         .mb-header {{ padding: 10px 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }}
@@ -4904,45 +4966,37 @@ if current_view == "dashboard":
                 _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
 
                 if req_daily:
-                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
-Tanggal & waktu sekarang: {_today}
-Mode: DAILY REVIEW (24 Jam Terakhir)
+                    mb_prompt = f"""Chief Market Analyst SIGMA Terminal — IDX/BEI. Tanggal: {_today}. Mode: DAILY REVIEW 24 Jam.
 
-═══════════════════════════════════════════════════════
-HEADLINE BERITA DALAM NEGERI (DOMESTIK — CNBC Indonesia):
-═══════════════════════════════════════════════════════
-{chr(10).join([f"• {h}" for h in dom_news[:20]]) if dom_news else "⚠ Data tidak tersedia."}
+BERITA DOMESTIK (CNBC Indonesia):
+{chr(10).join([f"• {h}" for h in dom_news[:8]]) if dom_news else "⚠ Tidak tersedia."}
 
-═══════════════════════════════════════════════════════
-HEADLINE BERITA LUAR NEGERI (GLOBAL — CNBC/Bloomberg/MarketWatch):
-═══════════════════════════════════════════════════════
-{chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Data tidak tersedia."}
+BERITA GLOBAL (CNBC/Bloomberg/MarketWatch):
+{chr(10).join([f"• {h}" for h in glob_news[:8]]) if glob_news else "⚠ Tidak tersedia."}
 
-═══════════════════════════════════════════════════════
-INSTRUKSI FORMAT — DAILY REVIEW — Bahasa Indonesia, tajam & actionable:
-═══════════════════════════════════════════════════════
+FORMAT (Bahasa Indonesia, maks 500 kata, Markdown):
 
 ## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
-Fokus pada pergerakan IHSG hari ini, sesi yang akan datang, kebijakan BI terbaru, Rupiah (IDR/USD), dan sentimen pasar lokal. Sebutkan saham/sektor spesifik yang bergerak hari ini. 2-3 paragraf padat.
+IHSG, Rupiah, sentimen lokal, saham/sektor bergerak. (2 paragraf)
 
-## 🌍 KATALIS GLOBAL 24 JAM TERAKHIR
-Highlight singkat Wall Street semalam (S&P 500, Nasdaq), data ekonomi AS yang dirilis hari ini/kemarin (CPI, NFP, FOMC minutes), sentimen Asia pagi ini (Nikkei, HSI, Shanghai). 2-3 paragraf.
+## 🌍 KATALIS GLOBAL 24 JAM
+Wall Street, data AS (CPI/NFP/FOMC), Asia pagi ini. (1-2 paragraf)
 
-## 💱 FOREX & KOMODITAS — DAMPAK LANGSUNG KE IDX
-USD/IDR, DXY, harga minyak, emas, batu bara hari ini. Sektor IDX mana yang paling terdampak hari ini?
+## 💱 FOREX & KOMODITAS
+USD/IDR, DXY, emas, minyak, batu bara. Sektor IDX terdampak?
 
-## 📊 SENTIMENT METER HARIAN
-- **IHSG Hari Ini:** [angka]/100 — [Bullish/Cautious Bullish/Neutral/Cautious Bearish/Bearish]
-- **Global Risk Appetite:** [angka]/100 — [Risk-On/Mixed/Risk-Off]
-- **IDR Pressure:** [Rendah/Sedang/Tinggi]
+## 📊 SENTIMENT METER
+- IHSG: [skor]/100 — [label]
+- Global Risk: [skor]/100 — [Risk-On/Mixed/Risk-Off]
+- IDR: [Rendah/Sedang/Tinggi]
 
-## ⚡ TACTICAL VIEW HARI INI
-1 paragraf singkat: stance hari ini (Aggressive/Selective/Defensive/Wait & See), level support/resistance IHSG kritis, 1-2 sektor yang harus dipantau ketat sesi ini.
+## ⚡ TACTICAL VIEW
+Stance + support/resistance IHSG + 1-2 sektor pantau.
 
-## 🎯 WATCHLIST SEKTORAL HARI INI
-3-4 sektor: (✅/⚠/❌) Sektor — status — 1 kalimat reasoning spesifik hari ini.
+## 🎯 WATCHLIST SEKTORAL (3 sektor)
+(✅/⚠/❌) Sektor — status — 1 kalimat.
 
-Gunakan Markdown. Singkat, padat, langsung ke poin. Hindari basa-basi."""
+Padat & actionable. Hindari basa-basi."""
 
                 else:  # weekly
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
@@ -4977,7 +5031,8 @@ Event penting + stance (Aggressive/Selective/Defensive/Wait & See) + 2-3 sektor 
 Gunakan Markdown. Padat & actionable. Hindari basa-basi."""
 
                 try:
-                    mb_res, _ = _call_groq_primary(mb_prompt)
+                    _max_tok = 3000 if mode_key == "daily" else 5000
+                    mb_res, _ = _call_groq_primary(mb_prompt, max_tokens=_max_tok)
                     if mode_key == "daily":
                         st.session_state["mb_daily_content"]   = mb_res
                         st.session_state["mb_daily_timestamp"] = _today
@@ -5050,67 +5105,9 @@ Gunakan Markdown. Padat & actionable. Hindari basa-basi."""
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
-
-        macro_col1, macro_col2 = st.columns(2)
-        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
-
-        with macro_col1:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
-            macro_id = pd.DataFrame({
-                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
-                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
-                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
-            }, index=dates)
-            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
-
-        with macro_col2:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
-            macro_us = pd.DataFrame({
-                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
-                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
-                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
-            }, index=dates)
-            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
-
-        st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div class="trm-card">
-                <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
-                <span style='color:#F5C242;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
-                Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
-                </p>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#F5C242;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
-                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col2:
-            st.markdown(f"""
-            <div class="trm-card">
-                <div class="trm-card-title" style="color:#f23645;">Rotasi &amp; Kurva Imbal Hasil</div>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
-                <span style='color:#f23645;font-weight:600;'>Yield Curve Obligasi RI</span><br>
-                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
-                </p>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
-                Komoditas memanas &rarr; Coal &amp; Gold. Suku bunga turun &rarr; Big Banks &amp; Properti.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
         # ---------------------------------------------------------
-        # LIVE MARKET PULSE & NEWS - FIX FINAL
+        # LIVE MARKET PULSE & NEWS  (moved up — before MAKRO)
         # ---------------------------------------------------------
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         st.markdown(f"""
@@ -5180,6 +5177,157 @@ Gunakan Markdown. Padat & actionable. Hindari basa-basi."""
                 <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # ---------------------------------------------------------
+        # MAKRO INDONESIA vs US  (moved down — after news)
+        # ---------------------------------------------------------
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
+
+        macro_col1, macro_col2 = st.columns(2)
+        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
+
+        with macro_col1:
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
+            macro_id = pd.DataFrame({
+                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
+                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
+                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
+            }, index=dates)
+            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        with macro_col2:
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
+            macro_us = pd.DataFrame({
+                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
+                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
+                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
+            }, index=dates)
+            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div class="trm-card">
+                <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+                <span style='color:#F5C242;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
+                Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
+                </p>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <span style='color:#F5C242;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
+                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="trm-card">
+                <div class="trm-card-title" style="color:#f23645;">Rotasi &amp; Kurva Imbal Hasil</div>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <span style='color:#f23645;font-weight:600;'>Yield Curve Obligasi RI</span><br>
+                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
+                </p>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
+                Komoditas memanas &rarr; Coal &amp; Gold. Suku bunga turun &rarr; Big Banks &amp; Properti.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # ---------------------------------------------------------
+        # ECONOMIC CALENDAR — ID · US · CN · JP  (NEW SECTION)
+        # ---------------------------------------------------------
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR &mdash; ID &middot; US &middot; CN &middot; JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <style>
+        .ecocal-wrap {{ width:100%; overflow-x:auto; }}
+        .ecocal-tabs {{ display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }}
+        .ecocal-tab {{
+            font-family:'IBM Plex Mono',monospace; font-size:0.62rem; letter-spacing:1px;
+            padding:5px 14px; border-radius:20px; border:1px solid {met_border};
+            background:rgba(255,255,255,0.04); color:{text_sub}; cursor:pointer;
+            transition:background 0.2s, color 0.2s;
+        }}
+        .ecocal-tab.active {{ background:rgba(245,194,66,0.12); color:#F5C242; border-color:rgba(245,194,66,0.3); }}
+        .ecocal-row {{
+            display:grid; grid-template-columns:100px 1fr 110px 56px;
+            gap:8px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.04);
+            align-items:center;
+        }}
+        .ecocal-row:last-child {{ border-bottom:none; }}
+        .ecocal-dt {{ font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:{text_sub}; }}
+        .ecocal-ev {{ font-size:0.78rem; color:{text_main}; line-height:1.4; }}
+        .ecocal-fc {{ font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:{text_sub}; }}
+        .ecocal-imp {{ display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.55rem;
+            font-family:'IBM Plex Mono',monospace; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; }}
+        .ecocal-high {{ background:rgba(242,54,69,0.14); color:#f23645; border:1px solid rgba(242,54,69,0.2); }}
+        .ecocal-med  {{ background:rgba(245,194,66,0.12); color:#F5C242; border:1px solid rgba(245,194,66,0.2); }}
+        .ecocal-low  {{ background:rgba(178,181,190,0.08); color:#b2b5be; border:1px solid rgba(178,181,190,0.15); }}
+        @media(max-width:768px) {{
+            .ecocal-row {{ grid-template-columns:82px 1fr 80px 44px; gap:4px; padding:8px 10px; }}
+            .ecocal-dt {{ font-size:0.58rem; }}
+            .ecocal-ev {{ font-size:0.70rem; }}
+            .ecocal-fc {{ font-size:0.60rem; }}
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+
+        _ecocal_events = [
+            # ID
+            {"dt":"07 Apr 2026","country":"🇮🇩 ID","event":"Rilis Inflasi CPI Maret 2026","forecast":"2.45%","impact":"high"},
+            {"dt":"16 Apr 2026","country":"🇮🇩 ID","event":"Rapat Dewan Gubernur BI — BI Rate","forecast":"4.75%","impact":"high"},
+            {"dt":"05 Mei 2026","country":"🇮🇩 ID","event":"Neraca Perdagangan April 2026","forecast":"USD 3.1B","impact":"med"},
+            {"dt":"15 Mei 2026","country":"🇮🇩 ID","event":"PMI Manufaktur April 2026","forecast":"52.0","impact":"med"},
+            {"dt":"05 Jun 2026","country":"🇮🇩 ID","event":"Pertumbuhan GDP Q1 2026","forecast":"5.0%","impact":"high"},
+            # US
+            {"dt":"10 Apr 2026","country":"🇺🇸 US","event":"CPI Inflation March 2026","forecast":"2.5%","impact":"high"},
+            {"dt":"11 Apr 2026","country":"🇺🇸 US","event":"PPI March 2026","forecast":"0.2%","impact":"med"},
+            {"dt":"07 Mei 2026","country":"🇺🇸 US","event":"FOMC Rate Decision — May","forecast":"3.75%","impact":"high"},
+            {"dt":"09 Mei 2026","country":"🇺🇸 US","event":"Non-Farm Payroll April 2026","forecast":"175K","impact":"high"},
+            {"dt":"14 Mei 2026","country":"🇺🇸 US","event":"Retail Sales April 2026","forecast":"0.4%","impact":"med"},
+            # CN
+            {"dt":"16 Apr 2026","country":"🇨🇳 CN","event":"GDP Growth Q1 2026","forecast":"5.2%","impact":"high"},
+            {"dt":"16 Apr 2026","country":"🇨🇳 CN","event":"Industrial Production March","forecast":"6.5% YoY","impact":"med"},
+            {"dt":"20 Apr 2026","country":"🇨🇳 CN","event":"LPR Rate Decision April","forecast":"3.35%","impact":"high"},
+            {"dt":"09 Mei 2026","country":"🇨🇳 CN","event":"Trade Balance April 2026","forecast":"USD 62B","impact":"med"},
+            # JP
+            {"dt":"09 Apr 2026","country":"🇯🇵 JP","event":"Bank of Japan — Policy Rate","forecast":"0.5%","impact":"high"},
+            {"dt":"14 Apr 2026","country":"🇯🇵 JP","event":"PPI March 2026","forecast":"0.3%","impact":"low"},
+            {"dt":"23 Apr 2026","country":"🇯🇵 JP","event":"CPI Nationwide March 2026","forecast":"2.8%","impact":"med"},
+        ]
+
+        _imp_cls = {"high":"ecocal-high","med":"ecocal-med","low":"ecocal-low"}
+        _imp_lbl = {"high":"HIGH","med":"MED","low":"LOW"}
+        _cal_rows = ""
+        for ev in _ecocal_events:
+            _cls = _imp_cls.get(ev["impact"],"ecocal-low")
+            _lbl = _imp_lbl.get(ev["impact"],"LOW")
+            _cal_rows += f"""<div class='ecocal-row'>
+                <div class='ecocal-dt'>{ev['dt']}<br><span style='opacity:0.6'>{ev['country']}</span></div>
+                <div class='ecocal-ev'>{ev['event']}</div>
+                <div class='ecocal-fc'>{ev['forecast']}</div>
+                <div><span class='ecocal-imp {_cls}'>{_lbl}</span></div>
+            </div>"""
+
+        st.markdown(f"""
+        <div class='ecocal-wrap'>
+            <div style='background:{met_bg}; border:1px solid {met_border}; border-radius:12px; overflow:hidden; margin-bottom:20px;'>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.07); border-bottom:1px solid {met_border};
+                    font-family:IBM Plex Mono,monospace; font-size:0.65rem; color:#F5C242; letter-spacing:1px; font-weight:700;'>
+                    📅 UPCOMING ECONOMIC EVENTS &mdash; Apr–Jun 2026
+                </div>
+                {_cal_rows}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         
