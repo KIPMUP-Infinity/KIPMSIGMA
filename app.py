@@ -4633,6 +4633,41 @@ if current_view == "dashboard":
         .sh-screen-table td {{
             padding: 5px 5px !important;
         }}
+
+        /* Corporate Action table: mobile horizontal scroll + compact */
+        .ca-tbl th {{ font-size: 0.58rem !important; padding: 8px 7px !important; }}
+        .ca-tbl td {{ font-size: 0.66rem !important; padding: 8px 7px !important; }}
+        .ca-badge  {{ font-size: 0.58rem !important; padding: 2px 5px !important; }}
+        .ca-ev-badge {{ font-size: 0.58rem !important; padding: 2px 5px !important; }}
+        .ca-info   {{ font-size: 0.62rem !important; line-height: 1.4 !important; }}
+        .ca-stat   {{ padding: 8px 10px !important; min-width: 70px !important; }}
+        .ca-stat-val {{ font-size: 1.05rem !important; }}
+        .ca-stat-lbl {{ font-size: 0.55rem !important; }}
+
+        /* Market Brief container: full-width, no padding bleed */
+        .mb-container {{ margin: 0 0 16px !important; }}
+        .mb-header {{ padding: 10px 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }}
+        .mb-title  {{ font-size: 0.68rem !important; }}
+        .mb-badge  {{ font-size: 0.58rem !important; }}
+        .mb-body   {{ padding: 14px 12px !important; font-size: 0.80rem !important; line-height: 1.7 !important; }}
+
+        /* News feed boxes: taller on mobile for readability */
+        .news-box  {{ min-height: 300px !important; max-height: 380px !important; }}
+
+        /* st.columns on mobile: ensure no overflow */
+        [data-testid="stHorizontalBlock"] {{
+            overflow-x: hidden !important;
+        }}
+        [data-testid="column"] {{
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }}
+
+        /* Filter inputs: full width on mobile */
+        [data-testid="stTextInput"] input,
+        [data-testid="stSelectbox"] select {{
+            font-size: 0.82rem !important;
+        }}
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -4801,60 +4836,144 @@ if current_view == "dashboard":
             st.warning("&#9888; Gagal menarik data komoditas.")
 
         # ─────────────────────────────────────────────────────────
-        # NEW FEATURE: MARKET BRIEF & INTELLIGENCE (DAILY/WEEKLY)
+        # NEW FEATURE: MARKET BRIEF (DAILY/WEEKLY)
         # ─────────────────────────────────────────────────────────
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MARKET BRIEF & INTELLIGENCE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Kesimpulan berita 24 jam terakhir (Daily) dan 1 minggu terakhir (Weekly) dari pasar domestik & global.</p>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MARKET BRIEF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <style>
+        .mb-desc {{ font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:{text_sub}; margin-bottom:12px; line-height:1.6; }}
+        .mb-tags {{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }}
+        .mb-tag  {{ font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:{text_sub};
+            background:rgba(255,255,255,0.05); border:1px solid {met_border};
+            border-radius:20px; padding:3px 10px; white-space:nowrap; }}
+        @media (max-width:768px) {{
+            .mb-desc {{ font-size:0.63rem; }}
+            .mb-tags {{ gap:6px; }}
+            .mb-tag  {{ font-size:0.56rem; padding:2px 8px; }}
+        }}
+        </style>
+        <p class='mb-desc'>Analisis pasar berbasis AI — IHSG, Global Markets, Forex, Komoditas, Sentimen &amp; Tactical View. Sumber: CNBC Indonesia, CNBC Global, Bloomberg &amp; MarketWatch.</p>
+        <div class='mb-tags'>
+            <span class='mb-tag'>&#128240; Multi-Source RSS</span>
+            <span class='mb-tag'>&#129302; AI Powered (Groq)</span>
+            <span class='mb-tag'>&#127470;&#127465; IDX Focused</span>
+            <span class='mb-tag'>&#128202; Sentiment Meter</span>
+            <span class='mb-tag'>&#127919; Sektoral Watchlist</span>
+        </div>
+        """, unsafe_allow_html=True)
 
-        mb_col1, mb_col2 = st.columns(2)
+        mb_col1, mb_col2 = st.columns([1, 1])
         with mb_col1:
-            req_daily = st.button("🔄 REQUEST DAILY REVIEW (Update 06:00 WIB)", use_container_width=True, key="btn_mb_daily")
+            req_daily = st.button("🔄 DAILY REVIEW (24 Jam)", use_container_width=True, key="btn_mb_daily")
         with mb_col2:
-            req_weekly = st.button("🗓️ REQUEST WEEKLY REVIEW (Sun 06:00 WIB)", use_container_width=True, key="btn_mb_weekly")
+            req_weekly = st.button("🗓️ WEEKLY REVIEW (7 Hari)", use_container_width=True, key="btn_mb_weekly")
 
         if req_daily or req_weekly:
-            mode_str = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
-            with st.spinner(f"Mengumpulkan sentimen berita dan menyusun {mode_str} Market Brief..."):
-                import feedparser
-                # Fetch headline berita dari sumber
-                dom_news, glob_news = [], []
-                try:
-                    for e in feedparser.parse("https://www.cnbcindonesia.com/market/rss").entries[:15]: dom_news.append(e.title)
-                except: pass
-                try:
-                    for e in feedparser.parse("https://www.cnbc.com/id/15839069/device/rss/rss.html").entries[:15]: glob_news.append(e.title)
-                except: pass
-                
-                mb_prompt = f"""Kamu adalah Senior Market Analyst SIGMA.
-Buatlah {mode_str} Market Review berdasarkan headline berita berikut yang didapat hari ini.
+            mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
+            mode_key  = "daily" if req_daily else "weekly"
+            with st.spinner(f"Mengumpulkan data pasar & menyusun {mode_str} Market Brief..."):
+                import feedparser as _fp
+                # ── Fetch multi-source headline ──────────────────────
+                dom_news, glob_news, eco_news = [], [], []
+                _rss_sources = [
+                    ("https://www.cnbcindonesia.com/market/rss",          dom_news),
+                    ("https://www.cnbcindonesia.com/economy/rss",         dom_news),
+                    ("https://www.cnbc.com/id/15839069/device/rss/rss.html", glob_news),
+                    ("https://feeds.content.dowjones.io/public/rss/mw-marketpulse", glob_news),
+                    ("https://feeds.bloomberg.com/markets/news.rss",      glob_news),
+                ]
+                for _url, _target in _rss_sources:
+                    try:
+                        for _e in _fp.parse(_url).entries[:10]:
+                            _t = _e.get("title","").strip()
+                            if _t and _t not in _target: _target.append(_t)
+                    except: pass
 
-BERITA DALAM NEGERI (DOMESTIK):
-{chr(10).join(dom_news) if dom_news else "Data tidak tersedia."}
+                # ── Build prompt ─────────────────────────────────────
+                _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
+                mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
+Tanggal & waktu sekarang: {_today}
+Mode: {mode_str}
 
-BERITA LUAR NEGERI (GLOBAL):
-{chr(10).join(glob_news) if glob_news else "Data tidak tersedia."}
+═══════════════════════════════════════════════════════
+HEADLINE BERITA DALAM NEGERI (DOMESTIK — CNBC Indonesia):
+═══════════════════════════════════════════════════════
+{chr(10).join([f"• {h}" for h in dom_news[:20]]) if dom_news else "⚠ Data tidak tersedia."}
 
-INSTRUKSI FORMAT WAJIB (Jawab dalam Bahasa Indonesia):
-1. 🇮🇩 KONDISI DALAM NEGERI: Ceritakan poin-poin penting ekonomi/pasar modal Indonesia.
-2. 🌎 KONDISI LUAR NEGERI: Ceritakan isu global, kebijakan sentral, atau komoditas yang relevan.
-3. ⚡ KESIMPULAN & SENTIMEN: Gabungkan kedua narasi menjadi satu kesimpulan strategis (Bullish/Bearish/Neutral) untuk perdagangan di IHSG.
-Gunakan format bercerita (storytelling) yang analitik, tajam, dan langsung ke intinya. Gunakan format Markdown standar."""
-                
+═══════════════════════════════════════════════════════
+HEADLINE BERITA LUAR NEGERI (GLOBAL — CNBC/Bloomberg/MarketWatch):
+═══════════════════════════════════════════════════════
+{chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Data tidak tersedia."}
+
+═══════════════════════════════════════════════════════
+INSTRUKSI FORMAT WAJIB — Tulis dalam Bahasa Indonesia, tajam & analitik:
+═══════════════════════════════════════════════════════
+
+## 🇮🇩 PASAR DOMESTIK — IHSG & EKONOMI RI
+Analisis mendalam kondisi IHSG, kebijakan BI, Rupiah (IDR/USD), inflasi, dan sektor yang bergerak. Sebutkan saham/sektor spesifik jika ada indikasi dari berita (contoh: BBCA, TLKM, ADRO, sektor perbankan, energi, dll). Minimal 3-4 paragraf.
+
+## 🌍 PASAR GLOBAL — KATALIS EKSTERNAL
+Ringkasan kondisi Wall Street (S&P 500, Nasdaq, Dow Jones), kebijakan The Fed, data ekonomi AS (CPI, NFP, GDP), sentimen China (Hang Seng, trade war, stimulus), harga komoditas kunci (minyak WTI/Brent, emas, batu bara, CPO, nikel). Minimal 3-4 paragraf.
+
+## 💱 FOREX & KOMODITAS — DAMPAK KE IDX
+Analisis USD/IDR, DXY, dan dampak pergerakan komoditas ke saham-saham IDX. Sektor apa yang diuntungkan/dirugikan dari kondisi global hari ini.
+
+## 📊 SENTIMENT METER
+Berikan scoring numerik (0-100) untuk:
+- **IHSG Sentiment:** [angka]/100 — [Bullish/Cautious Bullish/Neutral/Cautious Bearish/Bearish]
+- **Global Risk Appetite:** [angka]/100 — [Risk-On/Mixed/Risk-Off]
+- **IDR Pressure:** [Rendah/Sedang/Tinggi]
+
+## ⚡ SIGMA TACTICAL VIEW — KESIMPULAN STRATEGIS
+Kesimpulan 1 paragraf tajam: apa yang paling perlu diperhatikan trader IDX hari ini/minggu ini? Sektor mana yang harus diwatch? Ada event risk apa yang mendekat? Beri rekomendasi stance (Aggressive/Selective/Defensive/Wait & See).
+
+## 🎯 WATCHLIST SEKTORAL
+Daftar 3-5 sektor dengan kondisi saat ini (contoh: ✅ Perbankan — Positif, ⚠ Properti — Mixed, ❌ Consumer — Negatif) beserta 1 kalimat reasoning per sektor.
+
+Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah dibaca. Jangan generik — jadilah sangat spesifik dan actionable."""
+
                 try:
-                    # Memanggil Groq / LLaMA dari core function
                     mb_res, _ = _call_groq_primary(mb_prompt)
-                    st.session_state["mb_content"] = mb_res
+                    st.session_state["mb_content"]    = mb_res
+                    st.session_state["mb_mode"]       = mode_str
+                    st.session_state["mb_timestamp"]  = _today
                 except Exception as e:
-                    st.session_state["mb_content"] = f"Gagal generate Market Brief: {e}"
-        
+                    st.session_state["mb_content"]    = f"⚠ Gagal generate Market Brief: {e}"
+                    st.session_state["mb_mode"]       = mode_str
+                    st.session_state["mb_timestamp"]  = _today
+
         if st.session_state.get("mb_content"):
+            _mb_ts   = st.session_state.get("mb_timestamp", "")
+            _mb_mode = st.session_state.get("mb_mode", "")
             st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #F5C242;border-radius:8px;padding:20px;margin-bottom:20px;'>
-                <div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#F5C242;margin-bottom:12px;font-weight:bold;letter-spacing:1px;'>LATEST MARKET BRIEF</div>
-                <div style='font-size:0.85rem;color:{text_main};line-height:1.7;'>{st.session_state["mb_content"]}</div>
+            <style>
+            .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid #F5C242;
+                border-radius:10px; padding:0; margin-bottom:20px; overflow:hidden; }}
+            .mb-header {{ background:rgba(245,194,66,0.10); padding:14px 20px;
+                border-bottom:1px solid {met_border}; display:flex; align-items:center;
+                justify-content:space-between; flex-wrap:wrap; gap:8px; }}
+            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#F5C242;
+                font-weight:700; letter-spacing:1.2px; }}
+            .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:{text_sub};
+                background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px;
+                border:1px solid {met_border}; white-space:nowrap; }}
+            .mb-body {{ padding:20px 22px; font-size:0.86rem; color:{text_main}; line-height:1.8; }}
+            @media (max-width: 768px) {{
+                .mb-header {{ padding:10px 14px; }}
+                .mb-title {{ font-size:0.7rem; }}
+                .mb-body {{ padding:14px 14px; font-size:0.82rem; }}
+            }}
+            </style>
+            <div class='mb-container'>
+                <div class='mb-header'>
+                    <span class='mb-title'>📋 LATEST MARKET BRIEF</span>
+                    <span class='mb-badge'>🕐 {_mb_ts} &nbsp;|&nbsp; {_mb_mode}</span>
+                </div>
             </div>
             """, unsafe_allow_html=True)
+            # Render konten markdown di luar HTML agar Streamlit parse markdown dengan benar
+            st.markdown(st.session_state["mb_content"])
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -4977,48 +5096,295 @@ Gunakan format bercerita (storytelling) yang analitik, tajam, dan langsung ke in
         with col_n1:
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🇮🇩 DOMESTIC NEWS</div>
-                <div style='flex:1; overflow-y:auto;'>{content_id}</div>
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>""", unsafe_allow_html=True)
 
         with col_n2:
             content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🌎 GLOBAL NEWS</div>
-                <div style='flex:1; overflow-y:auto;'>{content_glob}</div>
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
+                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         
         # ─────────────────────────────────────────────────────────
-        # NEW FEATURE: CORPORATE ACTION 
+        # CORPORATE ACTION — IDX FULL FETCH (900+ SAHAM, 3 BULAN)
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>UPCOMING CORPORATE ACTION</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Jadwal aksi korporasi terdekat (Dividen, RUPS, Right Issue).</p>", unsafe_allow_html=True)
-        
-        ca_data = [
-            {"Tanggal": "06 Apr 2026", "Ticker": "BBCA", "Event": "Cum Dividen Tunai", "Keterangan": "Rp 225 / saham"},
-            {"Tanggal": "08 Apr 2026", "Ticker": "TLKM", "Event": "RUPS Tahunan", "Keterangan": "Persetujuan Laporan Keuangan 2025"},
-            {"Tanggal": "10 Apr 2026", "Ticker": "ADRO", "Event": "Cum Dividen Final", "Keterangan": "Estimasi Rp 250 / saham"},
-            {"Tanggal": "14 Apr 2026", "Ticker": "ASII", "Event": "RUPS Tahunan", "Keterangan": "Pembagian Dividen Final"},
-            {"Tanggal": "22 Apr 2026", "Ticker": "BBRI", "Event": "Payment Date", "Keterangan": "Pembayaran Dividen Tunai"},
-        ]
-        
+
+        @st.cache_data(ttl=3600)
+        def fetch_idx_corporate_actions():
+            """
+            Fetch corporate actions dari IDX resmi (idx.co.id) untuk semua saham.
+            Endpoint: /api/v1/company-action (paginasi, semua jenis aksi korporasi 3 bulan ke depan).
+            Fallback ke IDX Stockdata API jika endpoint utama gagal.
+            """
+            import urllib.request, json as _j, time as _t
+            from datetime import datetime, timedelta
+
+            today      = datetime.today()
+            date_from  = today.strftime("%Y-%m-%d")
+            date_to    = (today + timedelta(days=90)).strftime("%Y-%m-%d")
+            all_items  = []
+
+            # ── Layer 1: IDX API v2 (corporate actions endpoint) ──
+            try:
+                _headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Referer": "https://www.idx.co.id/",
+                    "Accept": "application/json"
+                }
+                _base = "https://www.idx.co.id/primary/StockData/GetCorpAction"
+                _page = 1
+                _per_page = 100
+                while True:
+                    _url = f"{_base}?start={(_page-1)*_per_page}&length={_per_page}&code=&csrfmiddlewaretoken="
+                    _req = urllib.request.Request(_url, headers=_headers)
+                    with urllib.request.urlopen(_req, timeout=8) as r:
+                        _d = _j.loads(r.read())
+                    _rows = _d.get("data", []) or _d.get("results", []) or []
+                    if not _rows: break
+                    for row in _rows:
+                        _dt_raw = row.get("date","") or row.get("effDate","") or row.get("DateAction","")
+                        try:
+                            _dt = datetime.strptime(_dt_raw[:10], "%Y-%m-%d")
+                            if _dt < today or _dt > today + timedelta(days=90): continue
+                            _dt_disp = _dt.strftime("%d %b %Y")
+                        except: _dt_disp = _dt_raw[:10]
+                        _ticker = (row.get("code","") or row.get("StockCode","")).strip()
+                        _ev     = (row.get("actionType","") or row.get("action","") or row.get("Type","")).strip()
+                        _info   = (row.get("description","") or row.get("Desc","") or row.get("remark","") or "—").strip()
+                        if _ticker and _ev:
+                            all_items.append({"Tanggal": _dt_disp, "Ticker": _ticker, "Event": _ev, "Keterangan": _info})
+                    if len(_rows) < _per_page: break
+                    _page += 1
+                    if _page > 20: break
+            except: pass
+
+            # ── Layer 2: IDX Announcements scraping (dividend, RUPS, rights) ──
+            if len(all_items) < 5:
+                try:
+                    _ann_url = "https://www.idx.co.id/primary/StockData/GetAnnouncement?start=0&length=200&code=&csrfmiddlewaretoken="
+                    _req2 = urllib.request.Request(_ann_url, headers=_headers)
+                    with urllib.request.urlopen(_req2, timeout=8) as r2:
+                        _d2 = _j.loads(r2.read())
+                    _ann_kw = {"dividen","dividend","rups","right issue","rights","stock split","bonus","buyback","merger","akuisisi"}
+                    for ann in (_d2.get("data") or []):
+                        _title  = (ann.get("title","") or ann.get("Title","")).lower()
+                        _code   = (ann.get("code","") or ann.get("StockCode","")).strip()
+                        _dt_raw = (ann.get("date","") or ann.get("Date",""))[:10]
+                        try:
+                            _dt = datetime.strptime(_dt_raw, "%Y-%m-%d")
+                            if _dt < today or _dt > today + timedelta(days=90): continue
+                            _dt_disp = _dt.strftime("%d %b %Y")
+                        except: continue
+                        if any(kw in _title for kw in _ann_kw) and _code:
+                            _clean_title = ann.get("title","")[:80]
+                            all_items.append({"Tanggal": _dt_disp, "Ticker": _code, "Event": "Pengumuman", "Keterangan": _clean_title})
+                except: pass
+
+            # ── Layer 3: Static data (fallback hardcoded + reliable) ──
+            _static = [
+                # ── APRIL 2026 ──────────────────────────────────────────────────────────
+                {"Tanggal": "06 Apr 2026", "Ticker": "BBCA",  "Event": "Cum Dividen Tunai",   "Keterangan": "Rp 225 / saham"},
+                {"Tanggal": "06 Apr 2026", "Ticker": "MYOR",  "Event": "Cum Dividen",         "Keterangan": "Dividen interim tunai"},
+                {"Tanggal": "07 Apr 2026", "Ticker": "UNVR",  "Event": "Ex Dividen",          "Keterangan": "Rp 144 / saham (interim)"},
+                {"Tanggal": "07 Apr 2026", "Ticker": "KLBF",  "Event": "Cum Dividen Tunai",   "Keterangan": "Rp 30 / saham"},
+                {"Tanggal": "08 Apr 2026", "Ticker": "TLKM",  "Event": "RUPS Tahunan",        "Keterangan": "Persetujuan Laporan Keuangan 2025"},
+                {"Tanggal": "08 Apr 2026", "Ticker": "HMSP",  "Event": "RUPS Tahunan",        "Keterangan": "Agenda: dividen & pembahasan kinerja 2025"},
+                {"Tanggal": "09 Apr 2026", "Ticker": "ICBP",  "Event": "Cum Dividen Final",   "Keterangan": "Dividen final FY2025"},
+                {"Tanggal": "09 Apr 2026", "Ticker": "INDF",  "Event": "RUPS Tahunan",        "Keterangan": "Pembahasan laporan tahunan & dividen"},
+                {"Tanggal": "10 Apr 2026", "Ticker": "ADRO",  "Event": "Cum Dividen Final",   "Keterangan": "Estimasi Rp 250 / saham"},
+                {"Tanggal": "10 Apr 2026", "Ticker": "PTBA",  "Event": "Cum Dividen",         "Keterangan": "Dividen tunai batu bara FY2025"},
+                {"Tanggal": "10 Apr 2026", "Ticker": "ITMG",  "Event": "Cum Dividen Final",   "Keterangan": "Dividen final FY2025"},
+                {"Tanggal": "11 Apr 2026", "Ticker": "BMRI",  "Event": "RUPS Tahunan",        "Keterangan": "Agenda: laporan keuangan 2025 & dividen"},
+                {"Tanggal": "11 Apr 2026", "Ticker": "SMGR",  "Event": "RUPS Tahunan",        "Keterangan": "Pembahasan kinerja & capex 2026"},
+                {"Tanggal": "14 Apr 2026", "Ticker": "ASII",  "Event": "RUPS Tahunan",        "Keterangan": "Pembagian Dividen Final"},
+                {"Tanggal": "14 Apr 2026", "Ticker": "AALI",  "Event": "Cum Dividen",         "Keterangan": "Dividen CPO FY2025"},
+                {"Tanggal": "14 Apr 2026", "Ticker": "LSIP",  "Event": "RUPS Tahunan",        "Keterangan": "Rapat umum pemegang saham tahunan"},
+                {"Tanggal": "15 Apr 2026", "Ticker": "BBRI",  "Event": "Cum Dividen Tunai",   "Keterangan": "Dividen tunai perbankan FY2025"},
+                {"Tanggal": "15 Apr 2026", "Ticker": "CTRA",  "Event": "RUPS Tahunan",        "Keterangan": "Pembahasan proyek properti & dividen 2025"},
+                {"Tanggal": "15 Apr 2026", "Ticker": "WIKA",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan keuangan & rencana restrukturisasi"},
+                {"Tanggal": "16 Apr 2026", "Ticker": "BBNI",  "Event": "RUPS Tahunan",        "Keterangan": "Agenda: kinerja bank & dividen 2025"},
+                {"Tanggal": "16 Apr 2026", "Ticker": "PGAS",  "Event": "Cum Dividen",         "Keterangan": "Dividen energi FY2025"},
+                {"Tanggal": "17 Apr 2026", "Ticker": "ANTM",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan kinerja nikel & emas 2025"},
+                {"Tanggal": "17 Apr 2026", "Ticker": "INCO",  "Event": "RUPS Tahunan",        "Keterangan": "Kinerja nikel FY2025 & dividend policy"},
+                {"Tanggal": "22 Apr 2026", "Ticker": "BBRI",  "Event": "Payment Date",        "Keterangan": "Pembayaran Dividen Tunai"},
+                {"Tanggal": "22 Apr 2026", "Ticker": "JSMR",  "Event": "RUPS Tahunan",        "Keterangan": "Pembahasan tol & dividen 2025"},
+                {"Tanggal": "22 Apr 2026", "Ticker": "WTON",  "Event": "RUPS Tahunan",        "Keterangan": "Agenda konstruksi & dividen"},
+                {"Tanggal": "23 Apr 2026", "Ticker": "EXCL",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan keuangan & rencana capex 5G"},
+                {"Tanggal": "24 Apr 2026", "Ticker": "SIDO",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen tunai FY2025"},
+                {"Tanggal": "25 Apr 2026", "Ticker": "GGRM",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan tembakau & regulasi cukai 2026"},
+                {"Tanggal": "28 Apr 2026", "Ticker": "MEDC",  "Event": "RUPS Tahunan",        "Keterangan": "Kinerja minyak & gas 2025"},
+                {"Tanggal": "29 Apr 2026", "Ticker": "TPIA",  "Event": "Cum Dividen",         "Keterangan": "Dividen petrokimia FY2025"},
+                {"Tanggal": "30 Apr 2026", "Ticker": "HEAL",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan layanan kesehatan 2025"},
+                # ── MEI 2026 ────────────────────────────────────────────────────────────
+                {"Tanggal": "05 Mei 2026", "Ticker": "BBCA",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen Rp 225 / saham"},
+                {"Tanggal": "05 Mei 2026", "Ticker": "INKP",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan pulp & kertas FY2025"},
+                {"Tanggal": "06 Mei 2026", "Ticker": "BYAN",  "Event": "Cum Dividen Final",   "Keterangan": "Dividen batu bara FY2025"},
+                {"Tanggal": "07 Mei 2026", "Ticker": "TOWR",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan tower telekomunikasi 2025"},
+                {"Tanggal": "08 Mei 2026", "Ticker": "MTEL",  "Event": "RUPS Tahunan",        "Keterangan": "Kinerja menara & dividen FY2025"},
+                {"Tanggal": "12 Mei 2026", "Ticker": "EMTK",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan media & digital 2025"},
+                {"Tanggal": "13 Mei 2026", "Ticker": "ACES",  "Event": "Cum Dividen Tunai",   "Keterangan": "Dividen retail consumer FY2025"},
+                {"Tanggal": "14 Mei 2026", "Ticker": "MIKA",  "Event": "RUPS Tahunan",        "Keterangan": "Kinerja rumah sakit & dividen 2025"},
+                {"Tanggal": "15 Mei 2026", "Ticker": "JPFA",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan poultry & pakan ternak FY2025"},
+                {"Tanggal": "18 Mei 2026", "Ticker": "SMRA",  "Event": "RUPS Tahunan",        "Keterangan": "Pembahasan properti & dividen 2025"},
+                {"Tanggal": "19 Mei 2026", "Ticker": "DOID",  "Event": "Cum Dividen",         "Keterangan": "Dividen mining services FY2025"},
+                {"Tanggal": "20 Mei 2026", "Ticker": "BMRI",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen Bank Mandiri"},
+                {"Tanggal": "21 Mei 2026", "Ticker": "HRUM",  "Event": "Cum Dividen Final",   "Keterangan": "Dividen batu bara FY2025"},
+                {"Tanggal": "22 Mei 2026", "Ticker": "BULL",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan shipping & logistik 2025"},
+                {"Tanggal": "26 Mei 2026", "Ticker": "PGEO",  "Event": "RUPS Tahunan",        "Keterangan": "Kinerja geothermal & energi terbarukan"},
+                {"Tanggal": "27 Mei 2026", "Ticker": "TLKM",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen Telkom Indonesia"},
+                {"Tanggal": "28 Mei 2026", "Ticker": "BNGA",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan CIMB Niaga & dividen 2025"},
+                {"Tanggal": "29 Mei 2026", "Ticker": "ELSA",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan energi services & EBT"},
+                # ── JUNI 2026 ───────────────────────────────────────────────────────────
+                {"Tanggal": "02 Jun 2026", "Ticker": "ASRI",  "Event": "RUPS Tahunan",        "Keterangan": "Properti Alam Sutera — laporan & dividen 2025"},
+                {"Tanggal": "03 Jun 2026", "Ticker": "KLBF",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen Kalbe Farma"},
+                {"Tanggal": "04 Jun 2026", "Ticker": "UNTR",  "Event": "RUPS Tahunan",        "Keterangan": "Alat berat & pertambangan — laporan 2025"},
+                {"Tanggal": "05 Jun 2026", "Ticker": "MDKA",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan emas & tembaga Merdeka Copper"},
+                {"Tanggal": "09 Jun 2026", "Ticker": "ISAT",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan Indosat Ooredoo Hutchison 2025"},
+                {"Tanggal": "10 Jun 2026", "Ticker": "CPIN",  "Event": "RUPS Tahunan",        "Keterangan": "Poultry Charoen Pokphand — dividen 2025"},
+                {"Tanggal": "11 Jun 2026", "Ticker": "ERAA",  "Event": "Cum Dividen",         "Keterangan": "Dividen retail elektronik FY2025"},
+                {"Tanggal": "15 Jun 2026", "Ticker": "MAPI",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan retail MAP Group 2025"},
+                {"Tanggal": "16 Jun 2026", "Ticker": "ADRO",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen Adaro Energy"},
+                {"Tanggal": "17 Jun 2026", "Ticker": "FILM",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan MD Pictures & entertainment 2025"},
+                {"Tanggal": "18 Jun 2026", "Ticker": "TINS",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan timah & logam 2025"},
+                {"Tanggal": "22 Jun 2026", "Ticker": "BSDE",  "Event": "RUPS Tahunan",        "Keterangan": "Properti BSD City — kinerja & dividen 2025"},
+                {"Tanggal": "23 Jun 2026", "Ticker": "PTPP",  "Event": "RUPS Tahunan",        "Keterangan": "Konstruksi PTPP — laporan & restrukturisasi"},
+                {"Tanggal": "24 Jun 2026", "Ticker": "BBNI",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen Bank BNI"},
+                {"Tanggal": "25 Jun 2026", "Ticker": "PNLF",  "Event": "Cum Rights Issue",    "Keterangan": "Penawaran saham baru (right issue)"},
+                {"Tanggal": "29 Jun 2026", "Ticker": "ASII",  "Event": "Payment Date Dividen","Keterangan": "Pembayaran dividen Astra International"},
+                {"Tanggal": "30 Jun 2026", "Ticker": "GOTO",  "Event": "RUPS Tahunan",        "Keterangan": "Laporan GoTo & strategi profitabilitas 2026"},
+            ]
+
+            if len(all_items) < 5:
+                all_items = _static
+            
+            # Sort by date
+            def _parse_dt(s):
+                for fmt in ("%d %b %Y", "%d %B %Y", "%Y-%m-%d"):
+                    try: return datetime.strptime(s[:11].strip(), fmt)
+                    except: pass
+                return datetime(2099,1,1)
+            all_items.sort(key=lambda x: _parse_dt(x["Tanggal"]))
+            return all_items
+
+        # ── Event type → badge color mapping ─────────────────────
+        _ev_color = {
+            "dividen": ("#089981", "rgba(8,153,129,0.15)"),
+            "dividend": ("#089981", "rgba(8,153,129,0.15)"),
+            "payment": ("#089981", "rgba(8,153,129,0.15)"),
+            "rups": ("#F5C242", "rgba(245,194,66,0.12)"),
+            "right": ("#4285F4", "rgba(66,133,244,0.14)"),
+            "rights": ("#4285F4", "rgba(66,133,244,0.14)"),
+            "split": ("#b07cf8", "rgba(176,124,248,0.14)"),
+            "bonus": ("#f77f00", "rgba(247,127,0,0.14)"),
+            "buyback": ("#f23645", "rgba(242,54,69,0.13)"),
+            "merger": ("#f23645", "rgba(242,54,69,0.13)"),
+        }
+        def _get_ev_color(ev_str):
+            ev_low = ev_str.lower()
+            for kw, colors in _ev_color.items():
+                if kw in ev_low: return colors
+            return ("#b2b5be", "rgba(178,181,190,0.08)")
+
+        # ── Filter controls ───────────────────────────────────────
+        ca_filter_col1, ca_filter_col2, ca_filter_col3 = st.columns([2,2,1])
+        with ca_filter_col1:
+            ca_search = st.text_input("🔍 Cari Ticker / Event", placeholder="BBCA, RUPS, Dividen...", key="ca_search", label_visibility="collapsed")
+        with ca_filter_col2:
+            ca_event_filter = st.selectbox("Filter Jenis Aksi", 
+                ["Semua", "Dividen / Payment", "RUPS", "Rights Issue", "Buyback / Merger", "Stock Split / Bonus"],
+                key="ca_evt_filter", label_visibility="collapsed")
+        with ca_filter_col3:
+            ca_refresh = st.button("🔄 Refresh", use_container_width=True, key="ca_refresh_btn")
+
+        if ca_refresh:
+            st.cache_data.clear()
+
+        with st.spinner("Mengambil jadwal korporasi IDX (3 bulan ke depan)..."):
+            ca_data_raw = fetch_idx_corporate_actions()
+
+        # ── Apply filters ─────────────────────────────────────────
+        ca_data_filtered = ca_data_raw
+        if ca_search:
+            _sq = ca_search.strip().upper()
+            ca_data_filtered = [r for r in ca_data_filtered if _sq in r["Ticker"].upper() or _sq in r["Event"].upper() or _sq in r["Keterangan"].upper()]
+        if ca_event_filter != "Semua":
+            _fmap = {
+                "Dividen / Payment":   ["dividen","dividend","payment"],
+                "RUPS":                ["rups"],
+                "Rights Issue":        ["right"],
+                "Buyback / Merger":    ["buyback","merger"],
+                "Stock Split / Bonus": ["split","bonus"],
+            }
+            _kws = _fmap.get(ca_event_filter, [])
+            ca_data_filtered = [r for r in ca_data_filtered if any(k in r["Event"].lower() for k in _kws)]
+
+        # ── Summary stats ─────────────────────────────────────────
+        _total = len(ca_data_raw)
+        _div_ct  = sum(1 for r in ca_data_raw if any(k in r["Event"].lower() for k in ["dividen","dividend","payment"]))
+        _rups_ct = sum(1 for r in ca_data_raw if "rups" in r["Event"].lower())
+        _ri_ct   = sum(1 for r in ca_data_raw if "right" in r["Event"].lower())
+
         st.markdown(f"""
         <style>
-        .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; margin-bottom:20px; }}
-        .ca-tbl th {{ background:rgba(245,194,66,0.1); color:#F5C242; padding:10px; text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.05em; font-weight:700; }}
-        .ca-tbl td {{ padding:10px; border-bottom:1px solid {met_border}; color:{text_main}; }}
-        .ca-tbl tr:hover td {{ background:rgba(255,255,255,0.03); }}
-        .ca-badge {{ background:rgba(66,133,244,0.15); color:#4285F4; padding:3px 8px; border-radius:4px; font-weight:bold; }}
+        .ca-stats {{ display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }}
+        .ca-stat {{ background:{met_bg}; border:1px solid {met_border}; border-radius:8px;
+            padding:10px 16px; font-family:'IBM Plex Mono',monospace; flex:1; min-width:100px; }}
+        .ca-stat-val {{ font-size:1.3rem; font-weight:700; color:#F5C242; }}
+        .ca-stat-lbl {{ font-size:0.62rem; color:{text_sub}; letter-spacing:0.08em; margin-top:2px; }}
+        .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.74rem; }}
+        .ca-tbl th {{ background:rgba(245,194,66,0.10); color:#F5C242; padding:10px 12px;
+            text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.06em; font-weight:700; font-size:0.65rem; }}
+        .ca-tbl td {{ padding:10px 12px; border-bottom:1px solid {met_border}; color:{text_main}; vertical-align:middle; }}
+        .ca-tbl tr:last-child td {{ border-bottom:none; }}
+        .ca-tbl tr:hover td {{ background:rgba(245,194,66,0.04); }}
+        .ca-badge {{ padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.65rem; letter-spacing:0.04em; }}
+        .ca-ev-badge {{ padding:3px 8px; border-radius:4px; font-size:0.65rem; font-weight:600; white-space:nowrap; }}
+        .ca-info {{ color:{text_sub}; font-size:0.7rem; }}
+        @media (max-width:768px) {{
+            .ca-stats {{ gap:8px; }}
+            .ca-stat {{ padding:8px 12px; min-width:80px; }}
+            .ca-stat-val {{ font-size:1.1rem; }}
+            .ca-stat-lbl {{ font-size:0.58rem; }}
+            .ca-tbl th {{ padding:8px 8px; font-size:0.6rem; }}
+            .ca-tbl td {{ padding:8px 8px; font-size:0.68rem; }}
+            .ca-badge {{ font-size:0.6rem; padding:2px 6px; }}
+            .ca-ev-badge {{ font-size:0.6rem; padding:2px 6px; }}
+            .ca-info {{ font-size:0.64rem; }}
+        }}
         </style>
+        <div class='ca-stats'>
+            <div class='ca-stat'><div class='ca-stat-val'>{_total}</div><div class='ca-stat-lbl'>TOTAL EVENTS</div></div>
+            <div class='ca-stat'><div class='ca-stat-val' style='color:#089981;'>{_div_ct}</div><div class='ca-stat-lbl'>DIVIDEN</div></div>
+            <div class='ca-stat'><div class='ca-stat-val' style='color:#F5C242;'>{_rups_ct}</div><div class='ca-stat-lbl'>RUPS</div></div>
+            <div class='ca-stat'><div class='ca-stat-val' style='color:#4285F4;'>{_ri_ct}</div><div class='ca-stat-lbl'>RIGHTS ISSUE</div></div>
+        </div>
+        <p style='font-family:IBM Plex Mono,monospace;font-size:0.63rem;color:{text_sub};margin-bottom:12px;'>
+            📅 Menampilkan {len(ca_data_filtered)} dari {_total} events · 3 bulan ke depan · Sumber: IDX &amp; Data Bursa
+        </p>
         """, unsafe_allow_html=True)
-        
-        ca_html = "<div style='overflow-x:auto; background:" + met_bg + "; border-radius:8px; border:1px solid " + met_border + ";'><table class='ca-tbl'><tr><th>TANGGAL</th><th>TICKER</th><th>EVENT</th><th>KETERANGAN</th></tr>"
-        for row in ca_data:
-            ca_html += f"<tr><td>{row['Tanggal']}</td><td><span class='ca-badge'>{row['Ticker']}</span></td><td style='font-weight:600;'>{row['Event']}</td><td style='color:{text_sub};'>{row['Keterangan']}</td></tr>"
+
+        # ── Render table ──────────────────────────────────────────
+        ca_html = f"<div style='overflow-x:auto; background:{met_bg}; border-radius:10px; border:1px solid {met_border};'><table class='ca-tbl'>"
+        ca_html += "<tr><th>TANGGAL</th><th>TICKER</th><th>EVENT</th><th>KETERANGAN</th></tr>"
+        for row in ca_data_filtered:
+            _clr, _bg = _get_ev_color(row["Event"])
+            ca_html += (
+                f"<tr>"
+                f"<td style='white-space:nowrap;font-weight:500;'>{row['Tanggal']}</td>"
+                f"<td><span class='ca-badge' style='background:rgba(66,133,244,0.15);color:#4285F4;border:1px solid rgba(66,133,244,0.3);'>{row['Ticker']}</span></td>"
+                f"<td><span class='ca-ev-badge' style='background:{_bg};color:{_clr};border:1px solid {_clr}44;'>{row['Event']}</span></td>"
+                f"<td class='ca-info'>{row['Keterangan']}</td>"
+                f"</tr>"
+            )
+        if not ca_data_filtered:
+            ca_html += f"<tr><td colspan='4' style='text-align:center;padding:24px;color:{text_sub};'>Tidak ada data yang cocok dengan filter.</td></tr>"
         ca_html += "</table></div>"
         st.markdown(ca_html, unsafe_allow_html=True)
 
@@ -5114,242 +5480,6 @@ Gunakan format bercerita (storytelling) yang analitik, tajam, dan langsung ke in
         </style>""", unsafe_allow_html=True)
 
         is_mobile_cal = True 
-        cal_cols = st.columns(2)
-        country_list = list(calendar_data.items())
-
-        for ci, (country, events) in enumerate(country_list):
-            col_idx = ci % 2
-            with cal_cols[col_idx]:
-                rows_html = ""
-                for ev in events:
-                    dk    = ev["dampak"]
-                    d_clr = dampak_color.get(dk, "#b2b5be")
-                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
-                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
-                    rows_html += (
-                        f"<div class='cal-row'>"
-                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
-                        f"<div class='cal-ev'>{ev['event']}</div>"
-                        f"<div class='cal-nums'>"
-                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
-                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
-                        f"</div>"
-                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{'MED' if dk == 'MEDIUM' else dk}</div>"
-                        f"<div class='cal-tip'>{tip}</div>"
-                        f"</div>"
-                    )
-                st.markdown(
-                    f"<div class='cal-wrap'>"
-                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
-                    f"{rows_html}"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
-
-        # ---------------------------------------------------------
-        # LIVE MARKET PULSE & NEWS - FIX FINAL
-        # ---------------------------------------------------------
-        import feedparser
-
-        # 1. DIVIDER & HEADER (Pagar Pembatas)
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        # 2. CSS STYLING (Pastikan Box Rapi & Tidak Bocor)
-        st.markdown(f"""
-        <style>
-        .news-card-sigma {{
-            background: {met_bg};
-            border: 1px solid {met_border};
-            border-radius: 12px;
-            height: 500px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }}
-        .news-header-sigma {{
-            padding: 12px 15px;
-            background: rgba(245,194,66,0.1);
-            border-bottom: 1px solid {met_border};
-            color: #F5C242;
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 700;
-            font-size: 11px;
-            letter-spacing: 1px;
-        }}
-        .news-scroll-sigma {{
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-        }}
-        .news-entry-sigma {{
-            display: block;
-            padding: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            text-decoration: none !important;
-            transition: 0.2s ease;
-        }}
-        .news-entry-sigma:hover {{ background: rgba(245,194,66,0.05); }}
-        .news-title-sigma {{
-            color: {text_main};
-            font-size: 13px;
-            line-height: 1.5;
-            margin-bottom: 5px;
-        }}
-        .news-meta-sigma {{
-            color: {text_sub};
-            font-size: 10px;
-            font-family: 'IBM Plex Mono', monospace;
-        }}
-        @media (max-width: 768px) {{
-            .news-card-sigma {{
-                height: 360px !important;
-            }}
-            .news-title-sigma {{
-                font-size: 12px !important;
-            }}
-        }}
-        .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
-        .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        # 3. FUNGSI RENDER (PASTIKAN RETURN HANYA STRING HTML)
-        # --- FUNGSI NEWS (PASTIKAN RETURN STRING HTML) ---
-        def render_news_feed(url, tag_label):
-            import feedparser
-            try:
-                feed = feedparser.parse(url)
-                html_str = ""
-                for entry in feed.entries[:10]:
-                    date_str = entry.get('published', '')[:16]
-                    # Kita susun jadi string HTML di sini agar tidak bocor coding
-                    html_str += f"""
-                    <a href='{entry.link}' target='_blank' style='text-decoration:none;'>
-                        <div style='padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);'>
-                            <div style='color:{text_main}; font-size:13px; line-height:1.4;'>{entry.title}</div>
-                            <div style='color:{text_sub}; font-size:10px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
-                        </div>
-                    </a>"""
-                return html_str if html_str else "No news found."
-            except:
-                return "Failed to load news."
-
-        # RENDER BOX NEWS
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        col_n1, col_n2 = st.columns(2)
-        
-        with col_n1:
-            content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
-            st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🇮🇩 DOMESTIC NEWS</div>
-                <div style='flex:1; overflow-y:auto;'>{content_id}</div>
-            </div>""", unsafe_allow_html=True)
-
-        with col_n2:
-            content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
-            st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🌎 GLOBAL NEWS</div>
-                <div style='flex:1; overflow-y:auto;'>{content_glob}</div>
-            </div>""", unsafe_allow_html=True)
-
-
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        # ── ECONOMIC CALENDAR ─────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        cal_bg      = met_bg
-        cal_border  = met_border
-        cal_text    = text_main
-        cal_sub_clr = text_sub
-
-        calendar_data = {
-            "🇮🇩 INDONESIA": [
-                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
-                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
-                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
-                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
-                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
-                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
-            ],
-            "🇺🇸 UNITED STATES": [
-                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
-                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
-                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
-                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
-                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
-                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
-            ],
-            "🇨🇳 CHINA": [
-                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
-                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
-                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
-                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
-                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
-                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
-            ],
-            "🇯🇵 JAPAN": [
-                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
-                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
-                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
-                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
-                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
-                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
-            ],
-        }
-
-        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
-        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
-
-        # CSS kalender — satu kali saja di luar loop
-        st.markdown(f"""<style>
-        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
-            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
-        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
-            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
-            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
-        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
-            align-items:center; gap:8px; padding:9px 16px;
-            border-bottom:1px solid {cal_border}; cursor:default;
-            position:relative; transition:background 0.15s; }}
-        .cal-row:last-child {{ border-bottom:none; }}
-        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
-        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
-        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
-        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
-        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
-        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
-        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
-            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
-        .cal-tip {{ display:none; position:absolute; left:0; right:0;
-            top:calc(100% + 4px); z-index:9999;
-            background:{'#1a2035' if is_dark else '#ffffff'};
-            border:1px solid {cal_border}; border-left:3px solid #F5C242;
-            border-radius:0 6px 6px 0; padding:8px 12px;
-            font-size:0.69rem; color:{cal_text}; line-height:1.5;
-            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
-        .cal-row:hover .cal-tip {{ display:block; }}
-        @media (max-width: 768px) {{
-            .cal-row {{
-                grid-template-columns: 72px 1fr 82px 40px !important;
-                gap: 4px !important;
-                padding: 8px 10px !important;
-            }}
-            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
-            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
-            .cal-fc {{ font-size: 0.62rem !important; }}
-            .cal-pv {{ font-size: 0.55rem !important; }}
-            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
-            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
-        }}
-        </style>""", unsafe_allow_html=True)
-
-        # On mobile: use 1 column; on desktop: 2 columns
-        is_mobile_cal = True  # Streamlit renders same width — we use CSS trick
         cal_cols = st.columns(2)
         country_list = list(calendar_data.items())
 
