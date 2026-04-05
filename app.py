@@ -844,9 +844,10 @@ EMITEN_MAP = {
     "bsde": "BSDE", "summarecon": "SMRA",
 }
 
-# Ticker yang diketahui sebagai bank
+# Ticker yang diketahui sebagai bank (digabung dari seluruh referensi)
 BANK_TICKERS = {"BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN",
-                "BNLI","PNBN","BJTM","BJBR","BMAS","MEGA","NISP","BTPN"}
+                "BNLI","PNBN","BJTM","BJBR","BMAS","MEGA","NISP","BTPN",
+                "ARTO","BBYB","AGRO","BSIM","BBKP","MCOR","SDRA","MAYA"}
 
 def is_bank_sector(ticker, info=None):
     """Deteksi apakah emiten adalah bank."""
@@ -3517,9 +3518,6 @@ def _compress_image_file(file_obj):
         file_obj.seek(0)
         return base64.b64encode(file_obj.read()).decode(), "image/png" if file_obj.name.endswith(".png") else "image/jpeg"
 
-# ─── DAFTAR SAHAM PERBANKAN UNTUK FILTERING ───
-BANK_TICKERS = ["BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BDMN","PNBN","ARTO","BBYB","AGRO","BJBR","BSIM","BBKP","BTPN","NISP","MEGA","MCOR","SDRA","MAYA"]
-
 # ─── KUMPULAN TEMPLATE SIGMA ───
 
 TEMPLATE_NON_BANK = """
@@ -3979,7 +3977,6 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     import urllib.request, json as _j
     keys = _get_gemini_keys()
     if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
-    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
     for api_key in keys:
@@ -4048,11 +4045,44 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
 [data-testid="stChatMessageContent"], [data-testid="stMarkdownContainer"] {{ text-align: left !important; }}
 
 /* =========================================================
+   FIX GLOBAL: KURANGI GAP ANTAR ELEMEN STREAMLIT
+   ========================================================= */
+
+/* Gap antar blok vertikal (penyebab utama jarak besar antar tabel) */
+[data-testid="stVerticalBlock"] {{ gap: 0.5rem !important; }}
+[data-testid="stVerticalBlockBorderWrapper"] {{ padding: 0 !important; }}
+
+/* Hapus margin default stElement yang menyebabkan gap besar */
+[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {{
+    gap: 0.4rem !important;
+}}
+
+/* iFrame / components.html: hapus margin atas-bawah default */
+iframe {{ display: block !important; margin: 0 !important; }}
+
+/* Kurangi default padding blok utama di dalam tab */
+[data-testid="stTabs"] [role="tabpanel"] > [data-testid="stVerticalBlock"] {{
+    gap: 0.5rem !important;
+}}
+
+/* Hapus gap kosong yang sering muncul di antara st.markdown dan tabel */
+[data-testid="stMarkdownContainer"] + [data-testid="stVerticalBlock"],
+[data-testid="stVerticalBlock"] + [data-testid="stMarkdownContainer"] {{
+    margin-top: 0 !important;
+}}
+
+/* Mobile: Agresif kurangi gap */
+@media (max-width: 768px) {{
+    [data-testid="stVerticalBlock"] {{ gap: 0.35rem !important; }}
+    [data-testid="stMainBlockContainer"] {{ padding-top: 2.5rem !important; }}
+}}
+
+/* =========================================================
    FIX SPASI LEBAR DI CHAT (REMOVE SPACE BEFORE PARAGRAPH) 
    ========================================================= */
 [data-testid="stMarkdownContainer"] p {{
     margin-top: 0 !important;
-    margin-bottom: 4px !important; /* Paksa jarak antar paragraf sangat rapat */
+    margin-bottom: 4px !important;
     line-height: 1.5 !important;
 }}
 [data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{
@@ -4062,17 +4092,15 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
 }}
 [data-testid="stMarkdownContainer"] li {{
     margin-top: 0 !important;
-    margin-bottom: 4px !important; /* Paksa jarak antar bullet point rapat */
+    margin-bottom: 4px !important;
     line-height: 1.5 !important;
 }}
-/* Jika AI memberikan heading, rapatkan juga dengan teks di bawahnya */
 [data-testid="stMarkdownContainer"] h1, 
 [data-testid="stMarkdownContainer"] h2, 
 [data-testid="stMarkdownContainer"] h3 {{
     margin-top: 16px !important;
     margin-bottom: 8px !important;
 }}
-/* Menghapus spasi ekstra jika ada tag <p> di dalam <li> */
 [data-testid="stMarkdownContainer"] li > p {{
     margin-bottom: 0 !important;
 }}
@@ -4180,7 +4208,7 @@ if user:
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat"), "selected_system": st.session_state.get("selected_system", "chat"),
+        "current_view": st.session_state.get("current_view", "chat"),
         "selected_system": st.session_state.get("selected_system", "chat")
     })
 _new_token = st.session_state.pop("new_token", None)
@@ -4240,16 +4268,14 @@ if current_view == "dashboard":
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         margin: 0 auto !important;
+        overflow-x: hidden !important;
+    }
+    section[data-testid="stMain"] {
+        align-items: center !important;
     }
     /* Mobile: Paksa grafik mengecil & anti geser */
     @media (max-width: 768px) {
         .stApp, html, body { overflow-x: hidden !important; width: 100vw !important; }
-        [data-testid="stMainBlockContainer"] { padding-left: 12px !important; padding-right: 12px !important; }
-        .stLineChart, canvas, iframe, [data-testid="stVerticalBlock"] > div { max-width: 100% !important; width: 100% !important; }
-        .stDataFrame { overflow-x: auto !important; }
-    }
-
-        
         [data-testid="stMainBlockContainer"] {
             max-width: 100vw !important;
             width: 100vw !important;
@@ -4259,32 +4285,12 @@ if current_view == "dashboard":
             margin: 0 !important;
             overflow-x: hidden !important;
         }
-
-        .stLineChart, iframe, canvas, [data-testid="stVerticalBlock"] > div {
-            max-width: 100% !important;
-            width: 100% !important;
-        }
-
-        .stDataFrame {
-            width: 100% !important;
-            overflow-x: auto !important; 
-        }
-
-        [data-testid="stMetric"] {
-            padding: 10px 10px !important;
-        }
-        
-        [data-testid="stMetricValue"] {
-            font-size: 1.1rem !important; 
-        }
-        
-        [data-testid="stVerticalBlock"] {
-            gap: 0.5rem !important;
-        }
-    }
-
-    section[data-testid="stMain"] {
-        align-items: center !important;
+        .stLineChart, canvas, [data-testid="stVerticalBlock"] > div { max-width: 100% !important; width: 100% !important; }
+        iframe { max-width: 100% !important; width: 100% !important; margin: 0 !important; }
+        .stDataFrame { width: 100% !important; overflow-x: auto !important; }
+        [data-testid="stMetric"] { padding: 10px 10px !important; }
+        [data-testid="stMetricValue"] { font-size: 1.1rem !important; }
+        [data-testid="stVerticalBlock"] { gap: 0.35rem !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -4405,10 +4411,15 @@ if current_view == "dashboard":
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
-        margin-top: 16px !important;
+        margin-top: 8px !important;
     }}
 
-    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 28px 0 14px; }}
+    /* ── GAP ANTAR ELEMEN DALAM DASHBOARD ── */
+    [data-testid="stVerticalBlock"] {{ gap: 0.5rem !important; }}
+    [data-testid="stVerticalBlockBorderWrapper"] {{ padding: 0 !important; }}
+    iframe {{ display: block !important; margin: 0 !important; }}
+
+    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }}
     .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
@@ -4431,7 +4442,7 @@ if current_view == "dashboard":
         padding: 20px 22px;
         box-shadow: {met_shadow};
         transition: border-color 0.2s;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
     }}
     .trm-card:hover {{ border-color: rgba(245,194,66,0.3); }}
     .trm-card-title {{
@@ -4459,7 +4470,7 @@ if current_view == "dashboard":
         border: 0;
         height: 1px;
         background: {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
-        margin: 24px 0;
+        margin: 14px 0;
     }}
 
     [data-testid="stTabs"] ~ div .stButton > button,
@@ -4490,7 +4501,7 @@ if current_view == "dashboard":
         border-bottom: 1px solid {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
         background: {"rgba(245,194,66,0.03)" if is_dark else "#fffdf0"};
         padding: 7px 0;
-        margin: 0 0 20px;
+        margin: 0 0 12px;
         position: relative;
     }}
     .trm-ticker-tape {{
@@ -4599,9 +4610,9 @@ if current_view == "dashboard":
             overflow-x: auto !important;
         }}
 
-        /* news cards: full height, scrollable */
+        /* news cards: reduce height on mobile */
         .news-card-sigma {{
-            height: 420px !important;
+            height: 360px !important;
         }}
 
         /* trm-card: no horizontal overflow */
@@ -4634,7 +4645,7 @@ if current_view == "dashboard":
             line-height: 1.3 !important;
         }}
         .trm-section {{
-            margin: 20px 0 10px !important;
+            margin: 12px 0 8px !important;
             gap: 6px !important;
         }}
         .trm-card {{
@@ -4649,7 +4660,7 @@ if current_view == "dashboard":
             margin: 8px 0 !important;
         }}
         .fancy-divider {{
-            margin: 14px 0 !important;
+            margin: 10px 0 !important;
         }}
         /* Shareholder screening table */
         .sh-screen-table {{
@@ -4712,7 +4723,7 @@ if current_view == "dashboard":
         gap: 6px;
         padding: 18px 4px 6px;
         border-bottom: 1px solid {'rgba(245,194,66,0.12)' if is_dark else '#e2e8f0'};
-        margin-bottom: 18px;
+        margin-bottom: 10px;
     ">
         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
             <span style="
@@ -5028,7 +5039,7 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
             st.markdown(f"""
             <style>
             .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid #F5C242;
-                border-radius:10px; padding:0; margin-bottom:20px; overflow:hidden; }}
+                border-radius:10px; padding:0; margin-bottom:10px; overflow:hidden; }}
             .mb-header {{ background:rgba(245,194,66,0.10); padding:14px 20px;
                 border-bottom:1px solid {met_border}; display:flex; align-items:center;
                 justify-content:space-between; flex-wrap:wrap; gap:8px; }}
@@ -5130,7 +5141,7 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }}
         .news-header-sigma {{
             padding: 12px 15px;
@@ -5172,39 +5183,29 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
                 return "Failed to load news."
 
         col_n1, col_n2 = st.columns(2)
-
         with col_n1:
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:12px; padding:16px; margin-bottom: 35px;'>
-                <div style='display:flex; align-items:center; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;'>
-                    <div style='background:rgba(245,194,66,0.15); color:#F5C242; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;'>🇮🇩 DOMESTIC NEWS</div>
-                </div>
-                <div style='height:300px; overflow-y:auto; padding-right:6px;'>
-                    {content_id}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
+            </div>""", unsafe_allow_html=True)
+
         with col_n2:
-            content_ig = render_news_feed("https://feeds.reuters.com/reuters/businessNews", "GLOBAL")
+            content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:12px; padding:16px; margin-bottom: 35px;'>
-                <div style='display:flex; align-items:center; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;'>
-                    <div style='background:rgba(66,133,244,0.15); color:#4285F4; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;'>🌍 GLOBAL NEWS</div>
-                </div>
-                <div style='height:300px; overflow-y:auto; padding-right:6px;'>
-                    {content_ig}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-                    
-            
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
+                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        
         # ─────────────────────────────────────────────────────────
         # CORPORATE ACTION — IDX FULL FETCH (900+ SAHAM, 3 BULAN)
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>UPCOMING CORPORATE ACTION</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown("<div style='height: 35px; width: 100%; display: block;'></div>", unsafe_allow_html=True)
+
         @st.cache_data(ttl=3600)
         def fetch_idx_corporate_actions():
             """
@@ -5750,7 +5751,7 @@ renderPage();
 
         st.markdown(f"""<style>
         .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
-            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
+            overflow:hidden; margin-bottom:12px; font-family:'IBM Plex Mono',monospace; }}
         .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
             border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
             letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
@@ -5777,16 +5778,17 @@ renderPage();
         .cal-row:hover .cal-tip {{ display:block; }}
         @media (max-width: 768px) {{
             .cal-row {{
-                grid-template-columns: 72px 1fr 82px 40px !important;
+                grid-template-columns: 68px 1fr 76px 36px !important;
                 gap: 4px !important;
-                padding: 8px 10px !important;
+                padding: 7px 8px !important;
             }}
-            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
-            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
-            .cal-fc {{ font-size: 0.62rem !important; }}
-            .cal-pv {{ font-size: 0.55rem !important; }}
-            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
-            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
+            .cal-dt {{ font-size: 0.56rem !important; white-space: normal !important; line-height: 1.3 !important; }}
+            .cal-ev {{ font-size: 0.62rem !important; line-height: 1.3 !important; }}
+            .cal-fc {{ font-size: 0.60rem !important; }}
+            .cal-pv {{ font-size: 0.54rem !important; }}
+            .cal-bdg {{ font-size: 0.50rem !important; padding: 2px 3px !important; }}
+            .cal-hdr {{ font-size: 0.62rem !important; padding: 7px 8px !important; letter-spacing: 0.06em !important; }}
+            .cal-wrap {{ margin-bottom: 8px !important; }}
         }}
         </style>""", unsafe_allow_html=True)
 
