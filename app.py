@@ -1055,35 +1055,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.markdown("""
-<style>
-    /* 1. Paksa jarak (gap) di semua blok vertikal & horizontal jadi sangat kecil */
-    [data-testid="stVerticalBlock"] {
-        gap: 0rem !important;
-    }
-    [data-testid="stHorizontalBlock"] {
-        gap: 0rem !important;
-    }
-    
-    /* 2. Pangkas habis jarak bawah dari setiap elemen individu (tabel, metrik, chart) */
-    .element-container {
-        margin-bottom: 0rem !important;
-        padding-bottom: 0rem !important;
-    }
-    
-    /* 3. Kurangi jarak bawaan dari teks atau markdown */
-    div[data-testid="stMarkdownContainer"] p {
-        margin-bottom: 0rem !important;
-    }
-    
-    /* 4. Tarik seluruh konten agar lebih ke atas (mengurangi ruang kosong di header) */
-    .block-container {
-        padding-top: 1.5rem !important;
-        gap: 0rem !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".sigma_data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -4901,92 +4872,42 @@ if current_view == "dashboard":
         if req_daily or req_weekly:
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
-            _window_hours = 24 if req_daily else 168  # 24h atau 7 hari
-
             with st.spinner(f"Mengumpulkan data pasar & menyusun {mode_str} Market Brief..."):
                 import feedparser as _fp
-                from email.utils import parsedate_to_datetime
-                import pytz as _pytz
-
-                _wib = _pytz.timezone("Asia/Jakarta")
-                _now_wib = datetime.now(_wib)
-                _cutoff  = _now_wib - __import__('datetime').timedelta(hours=_window_hours)
-
-                def _parse_entry_time(entry):
-                    """Parse published time dari RSS entry, return aware datetime atau None."""
-                    for key in ("published_parsed", "updated_parsed"):
-                        try:
-                            import time as _time
-                            t = entry.get(key)
-                            if t:
-                                import calendar
-                                ts = calendar.timegm(t)
-                                return __import__('datetime').datetime.fromtimestamp(ts, tz=_pytz.utc).astimezone(_wib)
-                        except: pass
-                    for key in ("published", "updated"):
-                        try:
-                            raw = entry.get(key, "")
-                            if raw:
-                                dt = parsedate_to_datetime(raw)
-                                if dt.tzinfo is None:
-                                    dt = _pytz.utc.localize(dt)
-                                return dt.astimezone(_wib)
-                        except: pass
-                    return None
-
-                # ── Fetch multi-source headline — filtered by time window ──
-                dom_news, glob_news = [], []
+                # ── Fetch multi-source headline ──────────────────────
+                dom_news, glob_news, eco_news = [], [], []
                 _rss_sources = [
-                    ("https://www.cnbcindonesia.com/market/rss",             dom_news),
-                    ("https://www.cnbcindonesia.com/economy/rss",            dom_news),
+                    ("https://www.cnbcindonesia.com/market/rss",          dom_news),
+                    ("https://www.cnbcindonesia.com/economy/rss",         dom_news),
                     ("https://www.cnbc.com/id/15839069/device/rss/rss.html", glob_news),
                     ("https://feeds.content.dowjones.io/public/rss/mw-marketpulse", glob_news),
-                    ("https://feeds.bloomberg.com/markets/news.rss",         glob_news),
+                    ("https://feeds.bloomberg.com/markets/news.rss",      glob_news),
                 ]
-                _included, _excluded = 0, 0
                 for _url, _target in _rss_sources:
                     try:
-                        for _e in _fp.parse(_url).entries[:20]:
-                            _t = _e.get("title", "").strip()
-                            if not _t: continue
-                            _entry_dt = _parse_entry_time(_e)
-                            # Jika bisa parse waktu, filter ketat; kalau tidak bisa parse, tetap masukkan
-                            if _entry_dt is not None:
-                                if _entry_dt < _cutoff:
-                                    _excluded += 1
-                                    continue
-                            _included += 1
-                            if _t not in _target:
-                                _target.append(_t)
+                        for _e in _fp.parse(_url).entries[:10]:
+                            _t = _e.get("title","").strip()
+                            if _t and _t not in _target: _target.append(_t)
                     except: pass
 
-                _window_label = f"24 jam terakhir (sejak {_cutoff.strftime('%d %b %Y %H:%M WIB')})" if req_daily else f"7 hari terakhir (sejak {_cutoff.strftime('%d %b %Y')})"
-
-                # ── Build prompt ─────────────────────────────────────────
-                _today = _now_wib.strftime("%d %B %Y, %H:%M WIB")
+                # ── Build prompt ─────────────────────────────────────
+                _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
                 mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
 Tanggal & waktu sekarang: {_today}
 Mode: {mode_str}
-Window berita: {_window_label}
-Jumlah headline terkumpul: {len(dom_news)} domestik, {len(glob_news)} global (berita di luar window SUDAH difilter)
 
 ═══════════════════════════════════════════════════════
 HEADLINE BERITA DALAM NEGERI (DOMESTIK — CNBC Indonesia):
-Window: {_window_label}
 ═══════════════════════════════════════════════════════
-{chr(10).join([f"• {h}" for h in dom_news[:20]]) if dom_news else "⚠ Tidak ada berita baru dalam window waktu ini dari sumber domestik."}
+{chr(10).join([f"• {h}" for h in dom_news[:20]]) if dom_news else "⚠ Data tidak tersedia."}
 
 ═══════════════════════════════════════════════════════
 HEADLINE BERITA LUAR NEGERI (GLOBAL — CNBC/Bloomberg/MarketWatch):
-Window: {_window_label}
 ═══════════════════════════════════════════════════════
-{chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Tidak ada berita baru dalam window waktu ini dari sumber global."}
+{chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Data tidak tersedia."}
 
 ═══════════════════════════════════════════════════════
-INSTRUKSI PENTING:
-{"⚠ INI ADALAH DAILY REVIEW: Fokus HANYA pada berita dan pergerakan pasar dalam 24 JAM TERAKHIR. Jangan bahas hal-hal yang lebih lama dari itu. Mulai dari kondisi pembukaan pasar hari ini (06:00 WIB) sampai sekarang. Jika ada event penting kemarin yang masih relevan hari ini, boleh disebut singkat." if req_daily else "⚠ INI ADALAH WEEKLY REVIEW: Rekap komprehensif 1 MINGGU terakhir. Bahas arc cerita dari senin sampai sekarang: tema besar apa yang dominan? Bagaimana sentimen berevolusi? Event apa yang paling market-moving minggu ini?"}
-═══════════════════════════════════════════════════════
-FORMAT WAJIB — Tulis dalam Bahasa Indonesia, tajam & analitik:
+INSTRUKSI FORMAT WAJIB — Tulis dalam Bahasa Indonesia, tajam & analitik:
 ═══════════════════════════════════════════════════════
 
 ## 🇮🇩 PASAR DOMESTIK — IHSG & EKONOMI RI
@@ -5010,7 +4931,7 @@ Kesimpulan 1 paragraf tajam: apa yang paling perlu diperhatikan trader IDX hari 
 ## 🎯 WATCHLIST SEKTORAL
 Daftar 3-5 sektor dengan kondisi saat ini (contoh: ✅ Perbankan — Positif, ⚠ Properti — Mixed, ❌ Consumer — Negatif) beserta 1 kalimat reasoning per sektor.
 
-Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah dibaca. Jangan generik — jadilah sangat spesifik dan actionable berdasarkan berita dalam window waktu {_window_label}."""
+Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah dibaca. Jangan generik — jadilah sangat spesifik dan actionable."""
 
                 try:
                     mb_res, _ = _call_groq_primary(mb_prompt)
@@ -5449,245 +5370,23 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
         </p>
         """, unsafe_allow_html=True)
 
-        # ── Render table via components.html — TRUE mobile scroll ──
-        _ca_rows_json = []
+        # ── Render table ──────────────────────────────────────────
+        ca_html = f"<div style='overflow-x:auto; background:{met_bg}; border-radius:10px; border:1px solid {met_border};'><table class='ca-tbl'>"
+        ca_html += "<tr><th>TANGGAL</th><th>TICKER</th><th>EVENT</th><th>KETERANGAN</th></tr>"
         for row in ca_data_filtered:
             _clr, _bg = _get_ev_color(row["Event"])
-            _ca_rows_json.append({
-                "tanggal": row["Tanggal"],
-                "ticker": row["Ticker"],
-                "event": row["Event"],
-                "info": row["Keterangan"],
-                "ev_clr": _clr,
-                "ev_bg": _bg,
-            })
-
-        import json as _json
-        _ca_rows_str = _json.dumps(_ca_rows_json)
-        _rows_per_page = 15
-        _total_filtered = len(ca_data_filtered)
-
-        _ca_component_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
-
-  .ca-wrap {{
-    background: {met_bg};
-    border: 1px solid {met_border};
-    border-radius: 10px;
-    overflow: hidden;
-  }}
-
-  /* THE KEY FIX: outer scroll container with touch enabled */
-  .ca-scroll {{
-    width: 100%;
-    overflow-x: scroll !important;
-    -webkit-overflow-scrolling: touch !important;
-    overflow-y: hidden;
-    cursor: grab;
-  }}
-  .ca-scroll:active {{ cursor: grabbing; }}
-
-  /* Scroll hint bar */
-  .ca-scroll-hint {{
-    display: none;
-    text-align: center;
-    font-size: 0.58rem;
-    color: {text_sub};
-    padding: 4px 0;
-    letter-spacing: 0.1em;
-    border-top: 1px solid {met_border};
-    background: rgba(255,255,255,0.02);
-  }}
-
-  table {{
-    width: max-content;
-    min-width: 100%;
-    border-collapse: collapse;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.74rem;
-  }}
-  thead th {{
-    background: rgba(245,194,66,0.10);
-    color: #F5C242;
-    padding: 10px 12px;
-    text-align: left;
-    border-bottom: 1px solid {met_border};
-    letter-spacing: 0.06em;
-    font-weight: 700;
-    font-size: 0.64rem;
-    white-space: nowrap;
-  }}
-  tbody td {{
-    padding: 10px 12px;
-    border-bottom: 1px solid {met_border};
-    color: {text_main};
-    vertical-align: middle;
-    white-space: nowrap;
-  }}
-  tbody tr:last-child td {{ border-bottom: none; }}
-  tbody tr:hover td {{ background: rgba(245,194,66,0.04); }}
-
-  .tk-badge {{
-    background: rgba(66,133,244,0.15);
-    color: #4285F4;
-    border: 1px solid rgba(66,133,244,0.3);
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-weight: 700;
-    font-size: 0.64rem;
-    white-space: nowrap;
-  }}
-  .ev-badge {{
-    padding: 3px 9px;
-    border-radius: 4px;
-    font-size: 0.64rem;
-    font-weight: 600;
-    white-space: nowrap;
-  }}
-  .ca-info {{ color: {text_sub}; font-size: 0.70rem; white-space: normal; max-width: 280px; }}
-  .empty-msg {{ text-align: center; padding: 24px; color: {text_sub}; }}
-
-  /* Pagination */
-  .pg-bar {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
-    border-top: 1px solid {met_border};
-    background: rgba(255,255,255,0.02);
-    flex-wrap: wrap;
-    gap: 8px;
-  }}
-  .pg-info {{
-    font-size: 0.62rem;
-    color: {text_sub};
-    letter-spacing: 0.06em;
-  }}
-  .pg-btns {{ display: flex; gap: 6px; }}
-  .pg-btn {{
-    background: rgba(245,194,66,0.10);
-    color: #F5C242;
-    border: 1px solid rgba(245,194,66,0.25);
-    border-radius: 5px;
-    padding: 5px 14px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.64rem;
-    cursor: pointer;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    transition: background 0.15s;
-  }}
-  .pg-btn:hover {{ background: rgba(245,194,66,0.20); }}
-  .pg-btn:disabled {{ opacity: 0.35; cursor: default; }}
-
-  @media (max-width: 600px) {{
-    .ca-scroll-hint {{ display: block; }}
-    table {{ font-size: 0.68rem; }}
-    thead th {{ font-size: 0.58rem; padding: 8px 9px; }}
-    tbody td {{ padding: 8px 9px; font-size: 0.66rem; }}
-    .tk-badge {{ font-size: 0.58rem; padding: 2px 6px; }}
-    .ev-badge {{ font-size: 0.58rem; padding: 2px 6px; }}
-    .ca-info  {{ font-size: 0.62rem; max-width: 180px; }}
-    .pg-info  {{ font-size: 0.58rem; }}
-    .pg-btn   {{ padding: 4px 10px; font-size: 0.58rem; }}
-  }}
-</style>
-</head>
-<body>
-<div class="ca-wrap">
-  <div class="ca-scroll" id="caScroll">
-    <table>
-      <thead>
-        <tr>
-          <th>TANGGAL</th>
-          <th>TICKER</th>
-          <th>EVENT</th>
-          <th>KETERANGAN</th>
-        </tr>
-      </thead>
-      <tbody id="caTbody"></tbody>
-    </table>
-  </div>
-  <div class="ca-scroll-hint">← geser kiri / kanan →</div>
-  <div class="pg-bar">
-    <span class="pg-info" id="pgInfo"></span>
-    <div class="pg-btns">
-      <button class="pg-btn" id="pgPrev" onclick="changePage(-1)">&#9664; Prev</button>
-      <button class="pg-btn" id="pgNext" onclick="changePage(+1)">Next &#9654;</button>
-    </div>
-  </div>
-</div>
-
-<script>
-const ROWS = {_ca_rows_str};
-const PER_PAGE = {_rows_per_page};
-let page = 0;
-
-function renderPage() {{
-  const total = ROWS.length;
-  const maxPage = Math.ceil(total / PER_PAGE) - 1;
-  const start = page * PER_PAGE;
-  const end = Math.min(start + PER_PAGE, total);
-  const slice = ROWS.slice(start, end);
-
-  let html = '';
-  if (total === 0) {{
-    html = '<tr><td colspan="4" class="empty-msg">Tidak ada data yang cocok dengan filter.</td></tr>';
-  }} else {{
-    slice.forEach(r => {{
-      html += `<tr>
-        <td style="font-weight:500;">${{r.tanggal}}</td>
-        <td><span class="tk-badge">${{r.ticker}}</span></td>
-        <td><span class="ev-badge" style="background:${{r.ev_bg}};color:${{r.ev_clr}};border:1px solid ${{r.ev_clr}}55;">${{r.event}}</span></td>
-        <td class="ca-info">${{r.info}}</td>
-      </tr>`;
-    }});
-  }}
-  document.getElementById('caTbody').innerHTML = html;
-  document.getElementById('pgInfo').textContent = total > 0
-    ? `Baris ${{start+1}}–${{end}} dari ${{total}} events`
-    : '0 events';
-  document.getElementById('pgPrev').disabled = page <= 0;
-  document.getElementById('pgNext').disabled = page >= maxPage || total === 0;
-  // Reset scroll position to left on page change
-  document.getElementById('caScroll').scrollLeft = 0;
-}}
-
-function changePage(dir) {{
-  const total = ROWS.length;
-  const maxPage = Math.ceil(total / PER_PAGE) - 1;
-  page = Math.max(0, Math.min(page + dir, maxPage));
-  renderPage();
-}}
-
-// Mouse drag-to-scroll for desktop
-const scrollEl = document.getElementById('caScroll');
-let isDown = false, startX, scrollLeft;
-scrollEl.addEventListener('mousedown', e => {{ isDown = true; startX = e.pageX - scrollEl.offsetLeft; scrollLeft = scrollEl.scrollLeft; scrollEl.style.cursor='grabbing'; }});
-scrollEl.addEventListener('mouseleave', () => {{ isDown = false; scrollEl.style.cursor='grab'; }});
-scrollEl.addEventListener('mouseup', () => {{ isDown = false; scrollEl.style.cursor='grab'; }});
-scrollEl.addEventListener('mousemove', e => {{
-  if (!isDown) return;
-  e.preventDefault();
-  const x = e.pageX - scrollEl.offsetLeft;
-  scrollEl.scrollLeft = scrollLeft - (x - startX);
-}});
-
-renderPage();
-</script>
-</body>
-</html>
-"""
-        # Hitung tinggi komponen: 15 rows * ~45px + header + pagination
-        _ca_height = min(_total_filtered, _rows_per_page) * 47 + 130
-        _ca_height = max(_ca_height, 200)
-        components.html(_ca_component_html, height=_ca_height, scrolling=False)
+            ca_html += (
+                f"<tr>"
+                f"<td style='white-space:nowrap;font-weight:500;'>{row['Tanggal']}</td>"
+                f"<td><span class='ca-badge' style='background:rgba(66,133,244,0.15);color:#4285F4;border:1px solid rgba(66,133,244,0.3);'>{row['Ticker']}</span></td>"
+                f"<td><span class='ca-ev-badge' style='background:{_bg};color:{_clr};border:1px solid {_clr}44;'>{row['Event']}</span></td>"
+                f"<td class='ca-info'>{row['Keterangan']}</td>"
+                f"</tr>"
+            )
+        if not ca_data_filtered:
+            ca_html += f"<tr><td colspan='4' style='text-align:center;padding:24px;color:{text_sub};'>Tidak ada data yang cocok dengan filter.</td></tr>"
+        ca_html += "</table></div>"
+        st.markdown(ca_html, unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -7649,182 +7348,42 @@ renderPage();
             sinyal_weak   = "📈 Naik 1 Bulan"   if is_naik else "🔴 Turun 1 Bulan"
             count = len(rows_sorted)
 
+            # Ambil label bulan dari baris pertama
             sample = rows_sorted[0]
-            lbl_m1 = sample["_m1_lbl"]
-            lbl_m2 = sample["_m2_lbl"]
-            lbl_m3 = sample["_m3_lbl"]
+            lbl_now  = "Terkini"
+            lbl_m1   = sample["_m1_lbl"]
+            lbl_m2   = sample["_m2_lbl"]
+            lbl_m3   = sample["_m3_lbl"]
 
-            # Build rows JSON for JS renderer
-            import json as _json2
-            _sh_rows = []
+            html = f"""<div style="margin-bottom:6px;display:flex;align-items:center;gap:10px;">
+<span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:{acc};font-weight:700;">{icon} {label} — {count} EMITEN</span>
+</div>
+<div class="sh2-scroll-outer">
+<table class="sh2-tbl"><thead><tr class="{head_cls}">
+<th>Ticker</th>
+<th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
+<th>Δ 1 Bln</th><th>Δ %</th>
+<th style="color:{_acc_hist};">{lbl_m1}</th>
+<th style="color:{_acc_hist};">{lbl_m2}</th>
+<th style="color:{_acc_hist};">{lbl_m3}</th>
+<th>Tren 3 Bln</th><th>Sinyal</th>
+</tr></thead><tbody>"""
             for r in rows_sorted:
                 t3  = r["Tren 3 Bln"]
                 sig = sinyal_strong if "3bln" in t3 else sinyal_weak
-                _sh_rows.append({
-                    "ticker": r["Ticker"],
-                    "pemegang": r["Pemegang"],
-                    "d1bln": r["Δ 1 Bln"],
-                    "dpct": r["Δ %"],
-                    "m1": r["_m1_val"],
-                    "m2": r["_m2_val"],
-                    "m3": r["_m3_val"],
-                    "tren": t3,
-                    "sinyal": sig,
-                    "is_naik": is_naik,
-                })
-            _sh_rows_str = _json2.dumps(_sh_rows)
-
-            _head_bg  = "rgba(38,166,154,0.12)" if is_naik else "rgba(242,54,69,0.10)"
-            _head_clr = _acc_up if is_naik else _acc_dn
-            _head_bdr = f"{_acc_up}33" if is_naik else f"{_acc_dn}33"
-
-            _sh_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-* {{ box-sizing:border-box; margin:0; padding:0; }}
-body {{ background:transparent; font-family:'IBM Plex Mono',monospace; }}
-.lbl {{ font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase;
-        color:{acc}; font-weight:700; margin-bottom:6px; padding: 0 2px; }}
-.scroll-wrap {{
-  width:100%; overflow-x:scroll !important;
-  -webkit-overflow-scrolling:touch !important;
-  overflow-y:hidden; cursor:grab; margin-bottom:2px;
-}}
-.scroll-wrap:active {{ cursor:grabbing; }}
-.scroll-hint {{
-  display:none; text-align:center; font-size:0.56rem;
-  color:{_acc_hist}; padding:3px 0; letter-spacing:0.08em;
-  border-bottom:1px solid {_tbl_border};
-}}
-table {{ width:max-content; min-width:100%; border-collapse:collapse;
-         font-family:'IBM Plex Mono',monospace; font-size:0.74rem; }}
-thead th {{
-  font-size:0.57rem; letter-spacing:0.1em; text-transform:uppercase;
-  padding:8px 10px; border-bottom:2px solid {_head_bdr};
-  text-align:left; white-space:nowrap;
-  background:{_head_bg}; color:{_head_clr};
-}}
-tbody td {{
-  padding:7px 10px; border-bottom:1px solid {_tbl_border};
-  vertical-align:middle; white-space:nowrap; color:{text_main};
-}}
-tbody tr:last-child td {{ border-bottom:none; }}
-tbody tr:hover td {{ background:rgba(255,255,255,0.03); }}
-.tk {{ font-weight:700; font-size:0.78rem; color:{acc}; }}
-.up {{ color:{_acc_up}; font-weight:600; }}
-.dn {{ color:{_acc_dn}; font-weight:600; }}
-.hist {{ color:{_acc_hist}; font-size:0.68rem; }}
-/* Pagination */
-.pg-bar {{ display:flex; align-items:center; justify-content:space-between;
-           padding:8px 12px; border-top:1px solid {_tbl_border};
-           background:rgba(255,255,255,0.02); flex-wrap:wrap; gap:6px; }}
-.pg-info {{ font-size:0.60rem; color:{_acc_hist}; }}
-.pg-btns {{ display:flex; gap:5px; }}
-.pg-btn {{ background:rgba(255,255,255,0.06); color:{text_main};
-           border:1px solid {_tbl_border}; border-radius:4px;
-           padding:4px 12px; font-family:'IBM Plex Mono',monospace;
-           font-size:0.60rem; cursor:pointer; transition:background 0.15s; }}
-.pg-btn:hover {{ background:rgba(255,255,255,0.12); }}
-.pg-btn:disabled {{ opacity:0.3; cursor:default; }}
-@media(max-width:600px) {{
-  .scroll-hint {{ display:block; }}
-  table {{ font-size:0.65rem; }}
-  thead th {{ font-size:0.52rem; padding:6px 8px; }}
-  tbody td {{ padding:6px 8px; font-size:0.65rem; }}
-  .tk {{ font-size:0.70rem; }}
-  .hist {{ font-size:0.60rem; }}
-  .pg-info {{ font-size:0.56rem; }}
-  .pg-btn {{ padding:3px 9px; font-size:0.56rem; }}
-}}
-</style></head><body>
-<div class="lbl">{icon} {label} — {count} EMITEN</div>
-<div style="background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;">
-  <div class="scroll-wrap" id="sh_scroll_{id(rows_sorted)}">
-    <table><thead><tr>
-      <th>Ticker</th><th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
-      <th>Δ 1 Bln</th><th>Δ %</th>
-      <th style="color:{_acc_hist};">{lbl_m1}</th>
-      <th style="color:{_acc_hist};">{lbl_m2}</th>
-      <th style="color:{_acc_hist};">{lbl_m3}</th>
-      <th>Tren 3 Bln</th><th>Sinyal</th>
-    </tr></thead>
-    <tbody id="shTbody_{id(rows_sorted)}"></tbody>
-    </table>
-  </div>
-  <div class="scroll-hint">← geser kiri / kanan →</div>
-  <div class="pg-bar">
-    <span class="pg-info" id="shPgInfo_{id(rows_sorted)}"></span>
-    <div class="pg-btns">
-      <button class="pg-btn" id="shPrev_{id(rows_sorted)}" onclick="changePg_{id(rows_sorted)}(-1)">&#9664; Prev</button>
-      <button class="pg-btn" id="shNext_{id(rows_sorted)}" onclick="changePg_{id(rows_sorted)}(+1)">Next &#9654;</button>
-    </div>
-  </div>
-</div>
-<script>
-(function() {{
-  var ROWS = {_sh_rows_str};
-  var PER = 15;
-  var page = 0;
-  var tbodyId   = 'shTbody_{id(rows_sorted)}';
-  var infoId    = 'shPgInfo_{id(rows_sorted)}';
-  var prevId    = 'shPrev_{id(rows_sorted)}';
-  var nextId    = 'shNext_{id(rows_sorted)}';
-  var scrollId  = 'sh_scroll_{id(rows_sorted)}';
-
-  function render() {{
-    var total = ROWS.length;
-    var maxPg = Math.max(0, Math.ceil(total / PER) - 1);
-    var start = page * PER;
-    var end = Math.min(start + PER, total);
-    var slice = ROWS.slice(start, end);
-    var html = '';
-    slice.forEach(function(r) {{
-      var dc = r.is_naik ? 'up' : 'dn';
-      html += '<tr>' +
-        '<td><span class="tk">' + r.ticker + '</span></td>' +
-        '<td style="font-weight:600;">' + r.pemegang + '</td>' +
-        '<td class="' + dc + '">' + r.d1bln + '</td>' +
-        '<td class="' + dc + '">' + r.dpct + '</td>' +
-        '<td class="hist">' + r.m1 + '</td>' +
-        '<td class="hist">' + r.m2 + '</td>' +
-        '<td class="hist">' + r.m3 + '</td>' +
-        '<td>' + r.tren + '</td>' +
-        '<td>' + r.sinyal + '</td>' +
-        '</tr>';
-    }});
-    document.getElementById(tbodyId).innerHTML = html;
-    document.getElementById(infoId).textContent = 'Baris ' + (start+1) + '–' + end + ' dari ' + total;
-    document.getElementById(prevId).disabled = page <= 0;
-    document.getElementById(nextId).disabled = page >= maxPg;
-    document.getElementById(scrollId).scrollLeft = 0;
-  }}
-
-  window['changePg_{id(rows_sorted)}'] = function(dir) {{
-    var total = ROWS.length;
-    var maxPg = Math.max(0, Math.ceil(total / PER) - 1);
-    page = Math.max(0, Math.min(page + dir, maxPg));
-    render();
-  }};
-
-  // Drag scroll for desktop
-  var el = document.getElementById(scrollId);
-  var isDown = false, startX, scrollLeft;
-  el.addEventListener('mousedown', function(e) {{ isDown=true; startX=e.pageX-el.offsetLeft; scrollLeft=el.scrollLeft; el.style.cursor='grabbing'; }});
-  el.addEventListener('mouseleave', function() {{ isDown=false; el.style.cursor='grab'; }});
-  el.addEventListener('mouseup', function() {{ isDown=false; el.style.cursor='grab'; }});
-  el.addEventListener('mousemove', function(e) {{
-    if (!isDown) return; e.preventDefault();
-    el.scrollLeft = scrollLeft - (e.pageX - el.offsetLeft - startX);
-  }});
-
-  render();
-}})();
-</script>
-</body></html>"""
-
-            _sh_height = min(count, 15) * 44 + 120
-            _sh_height = max(_sh_height, 200)
-            components.html(_sh_html, height=_sh_height, scrolling=False)
+                html += f"""<tr>
+<td><span class="sh2-badge {badge_cls}">{r['Ticker']}</span></td>
+<td style="color:{text_main};font-weight:600;">{r['Pemegang']}</td>
+<td class="{delta_cls}">{r['Δ 1 Bln']}</td>
+<td class="{delta_cls}">{r['Δ %']}</td>
+<td class="sh2-hist">{r['_m1_val']}</td>
+<td class="sh2-hist">{r['_m2_val']}</td>
+<td class="sh2-hist">{r['_m3_val']}</td>
+<td style="color:{text_main};">{t3}</td>
+<td style="color:{text_main};">{sig}</td>
+</tr>"""
+            html += "</tbody></table></div>"
+            st.markdown(html, unsafe_allow_html=True)
 
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
