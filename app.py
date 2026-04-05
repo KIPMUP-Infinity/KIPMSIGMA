@@ -5110,201 +5110,238 @@ if current_view == "dashboard":
             return df_style.applymap(func, subset=subset)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kanan-bawah = Improving, Kiri-atas = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
-        # ── DATA SEKTOR + SAHAM PER SEKTOR (20-25 per sektor) ──────────
-        # ATURAN FASE (wajib konsisten dengan koordinat RS & Mom):
-        #   RS>100 & Mom>100 = Leading   | RS<100 & Mom>100 = Improving
-        #   RS>100 & Mom<100 = Weakening | RS<100 & Mom<100 = Lagging
-        # Trail = posisi 4 minggu terakhir [(rs_4wk_ago, mom_4wk_ago), ...]
+        # ── DATA SEKTOR + SAHAM PER SEKTOR ──────────────────────────────
+        # ── ATURAN KONSISTENSI FASE vs POSISI PLOT (WAJIB) ──────────────
+        # Leading   = rs > 100 DAN mom > 100  (kanan-atas)
+        # Improving = rs < 100 DAN mom > 100  (kiri-atas)
+        # Weakening = rs > 100 DAN mom < 100  (kanan-bawah)
+        # Lagging   = rs < 100 DAN mom < 100  (kiri-bawah)
+        # ─────────────────────────────────────────────────────────────────
         rrg_sectors = {
             "Energy": {
                 "fase": "Leading", "rs": 108.2, "mom": 102.1, "color": "#089981",
                 "aksi": "Hold / Profit Run", "icon": "⚡",
-                "trail": [(105.1,99.8),(106.4,100.5),(107.3,101.2),(108.2,102.1)],
+                # trail = posisi 4 minggu terakhir (terlama → terkini), titik terakhir = posisi sekarang
+                "trail": [(104.0,99.5),(105.8,100.2),(107.1,101.0),(108.2,102.1)],
                 "saham": [
-                    {"ticker":"BREN","nama":"Barito Renewables",     "rs":112.0,"mom":105.0, "trail":[(108,102),(109,103),(111,104),(112,105)]},
-                    {"ticker":"ADRO","nama":"Adaro Energy",           "rs":109.0,"mom":103.0, "trail":[(106,100),(107,101),(108,102),(109,103)]},
-                    {"ticker":"BYAN","nama":"Bayan Resources",        "rs":110.0,"mom":104.0, "trail":[(107,101),(108,102),(109,103),(110,104)]},
-                    {"ticker":"PTBA","nama":"Bukit Asam",             "rs":107.0,"mom":101.0, "trail":[(104,99),(105,100),(106,101),(107,101)]},
-                    {"ticker":"RAJA","nama":"Rukun Raharja",          "rs":108.0,"mom":103.0, "trail":[(105,100),(106,101),(107,102),(108,103)]},
-                    {"ticker":"ITMG","nama":"Indo Tambangraya",       "rs":106.0,"mom":104.0, "trail":[(103,101),(104,102),(105,103),(106,104)]},
-                    {"ticker":"MEDC","nama":"Medco Energi",           "rs":105.0,"mom":102.0, "trail":[(102,99),(103,100),(104,101),(105,102)]},
-                    {"ticker":"PGEO","nama":"Pertamina Geothermal",   "rs":104.0,"mom":101.0, "trail":[(101,98),(102,99),(103,100),(104,101)]},
-                    {"ticker":"HRUM","nama":"Harum Energy",           "rs":103.0,"mom":102.0, "trail":[(100,99),(101,100),(102,101),(103,102)]},
-                    {"ticker":"ESSA","nama":"ESSA Industries",        "rs":102.0,"mom":101.0, "trail":[(99,98),(100,99),(101,100),(102,101)]},
-                    {"ticker":"GEMS","nama":"Golden Energy Mines",    "rs":103.0,"mom":100.5, "trail":[(100,97),(101,99),(102,100),(103,101)]},
-                    {"ticker":"TOBA","nama":"TBS Energi Utama",       "rs":102.0,"mom":101.0, "trail":[(99,98),(100,99),(101,100),(102,101)]},
-                    {"ticker":"ELSA","nama":"Elnusa",                 "rs":101.0,"mom":100.5, "trail":[(98,97),(99,99),(100,100),(101,101)]},
-                    {"ticker":"SMRU","nama":"SMR Utama",              "rs":101.5,"mom":100.8, "trail":[(98,97),(99,99),(100,100),(101,101)]},
-                    {"ticker":"PTIS","nama":"Pratama Interdelta",     "rs":102.5,"mom":101.5, "trail":[(99,98),(100,100),(101,101),(103,102)]},
-                    {"ticker":"PGAS","nama":"Perusahaan Gas Negara",  "rs": 98.0,"mom": 97.0, "trail":[(101,101),(100,100),(99,98),(98,97)]},
-                    {"ticker":"DSSA","nama":"Dian Swastatika Sentosa","rs": 97.0,"mom": 96.0, "trail":[(101,101),(100,99),(98,97),(97,96)]},
-                    {"ticker":"ENRG","nama":"Energi Mega Persada",    "rs": 94.0,"mom": 93.0, "trail":[(97,97),(96,95),(95,94),(94,93)]},
-                    {"ticker":"RUIS","nama":"Radiant Utama Interinsco","rs":93.0,"mom":92.0,  "trail":[(96,96),(95,94),(94,93),(93,92)]},
-                    {"ticker":"MYOH","nama":"Samindo Resources",      "rs": 91.0,"mom": 90.0, "trail":[(94,94),(93,92),(92,91),(91,90)]},
+                    # Leading: rs>100 DAN mom>100
+                    {"ticker":"BREN","nama":"Barito Renewables",      "fase":"Leading",   "rs":112,"mom":105},
+                    {"ticker":"ADRO","nama":"Adaro Energy",            "fase":"Leading",   "rs":109,"mom":103},
+                    {"ticker":"PTBA","nama":"Bukit Asam",              "fase":"Leading",   "rs":107,"mom":101},
+                    {"ticker":"ITMG","nama":"Indo Tambangraya",        "fase":"Leading",   "rs":106,"mom":104},
+                    {"ticker":"MEDC","nama":"Medco Energi",            "fase":"Leading",   "rs":105,"mom":102},
+                    {"ticker":"RAJA","nama":"Rukun Raharja",           "fase":"Leading",   "rs":108,"mom":103},
+                    {"ticker":"BYAN","nama":"Bayan Resources",         "fase":"Leading",   "rs":110,"mom":104},
+                    {"ticker":"PTRO","nama":"Petrosea",                "fase":"Leading",   "rs":108,"mom":102},
+                    # Improving: rs<100 DAN mom>100
+                    {"ticker":"HRUM","nama":"Harum Energy",            "fase":"Improving", "rs":98, "mom":102},
+                    {"ticker":"ESSA","nama":"ESSA Industries",         "fase":"Improving", "rs":97, "mom":101},
+                    {"ticker":"ELSA","nama":"Elnusa",                  "fase":"Improving", "rs":99, "mom":101},
+                    {"ticker":"PGEO","nama":"Pertamina Geothermal",    "fase":"Improving", "rs":98, "mom":102},
+                    {"ticker":"GEMS","nama":"Golden Energy Mines",     "fase":"Improving", "rs":99, "mom":103},
+                    {"ticker":"TOBA","nama":"TBS Energi Utama",        "fase":"Improving", "rs":98, "mom":101},
+                    # Weakening: rs>100 DAN mom<100
+                    {"ticker":"ENRG","nama":"Energi Mega Persada",     "fase":"Weakening", "rs":102,"mom":98},
+                    {"ticker":"ARTI","nama":"Ratu Prabu Energi",       "fase":"Weakening", "rs":101,"mom":97},
+                    # Lagging: rs<100 DAN mom<100
+                    {"ticker":"DSSA","nama":"Dian Swastatika",         "fase":"Lagging",   "rs":97, "mom":96},
+                    {"ticker":"PGAS","nama":"Perusahaan Gas",          "fase":"Lagging",   "rs":98, "mom":97},
+                    {"ticker":"FIRE","nama":"Alfa Energi Investama",   "fase":"Lagging",   "rs":95, "mom":94},
+                    {"ticker":"BIPI","nama":"Astrindo Nusantara",      "fase":"Lagging",   "rs":94, "mom":95},
                 ]
             },
             "Basic Materials": {
                 "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#F5C242",
                 "aksi": "Accumulation", "icon": "🏗️",
-                "trail": [(99.8,98.2),(101.1,99.5),(102.3,100.7),(103.5,101.8)],
+                "trail": [(99.0,99.0),(100.5,100.1),(101.8,101.0),(103.5,101.8)],
                 "saham": [
-                    {"ticker":"AMMN","nama":"Amman Mineral",          "rs":109.0,"mom":104.0, "trail":[(105,101),(106,102),(108,103),(109,104)]},
-                    {"ticker":"NCKL","nama":"Trimegah Bangun Persada","rs":107.0,"mom":103.0, "trail":[(103,100),(104,101),(106,102),(107,103)]},
-                    {"ticker":"PTRO","nama":"Petrosea",               "rs":108.0,"mom":104.0, "trail":[(104,101),(105,102),(107,103),(108,104)]},
-                    {"ticker":"CUAN","nama":"Petrindo Jaya Kreasi",   "rs":107.0,"mom":103.0, "trail":[(103,100),(104,101),(106,102),(107,103)]},
-                    {"ticker":"MDKA","nama":"Merdeka Copper Gold",    "rs":105.0,"mom":103.0, "trail":[(101,100),(102,101),(104,102),(105,103)]},
-                    {"ticker":"TPIA","nama":"Chandra Asri",           "rs":106.0,"mom":103.0, "trail":[(102,100),(103,101),(105,102),(106,103)]},
-                    {"ticker":"BRPT","nama":"Barito Pacific",         "rs":104.0,"mom":102.0, "trail":[(100,99),(101,100),(103,101),(104,102)]},
-                    {"ticker":"ANTM","nama":"Aneka Tambang",          "rs":103.0,"mom":101.0, "trail":[(99,98),(100,99),(102,100),(103,101)]},
-                    {"ticker":"BRMS","nama":"Bumi Resources Minerals","rs":104.0,"mom":102.0, "trail":[(100,99),(101,100),(103,101),(104,102)]},
-                    {"ticker":"MBMA","nama":"Merdeka Battery",        "rs":103.0,"mom":101.0, "trail":[(99,98),(100,99),(102,100),(103,101)]},
-                    {"ticker":"INCO","nama":"Vale Indonesia",         "rs":102.0,"mom":101.0, "trail":[(98,98),(99,99),(101,100),(102,101)]},
-                    {"ticker":"DKFT","nama":"Central Omega Resources","rs":101.5,"mom":100.5, "trail":[(98,97),(99,99),(100,100),(102,101)]},
-                    {"ticker":"PSAB","nama":"J Resources Asia Pasifik","rs":101.0,"mom":100.2,"trail":[(98,97),(99,98),(100,99),(101,100)]},
-                    {"ticker":"HILL","nama":"Humpuss Intermoda",      "rs":100.5,"mom":100.2, "trail":[(97,97),(98,98),(99,99),(101,100)]},
-                    {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","rs": 98.0,"mom": 97.0, "trail":[(102,102),(100,100),(99,98),(98,97)]},
-                    {"ticker":"TKIM","nama":"Tjiwi Kimia",            "rs": 97.5,"mom": 96.5, "trail":[(101,101),(100,99),(98,97),(98,97)]},
-                    {"ticker":"SPMA","nama":"Suparma",                "rs": 97.0,"mom": 96.0, "trail":[(100,100),(99,98),(98,97),(97,96)]},
-                    {"ticker":"SMGR","nama":"Semen Indonesia",        "rs": 94.0,"mom": 95.0, "trail":[(96,97),(95,96),(95,95),(94,95)]},
-                    {"ticker":"INTP","nama":"Indocement",             "rs": 93.0,"mom": 94.0, "trail":[(96,96),(95,95),(94,95),(93,94)]},
-                    {"ticker":"SMBR","nama":"Semen Baturaja",         "rs": 91.0,"mom": 92.0, "trail":[(94,94),(93,93),(92,92),(91,92)]},
+                    # Leading: rs>100 DAN mom>100
+                    {"ticker":"AMMN","nama":"Amman Mineral",           "fase":"Leading",   "rs":109,"mom":104},
+                    {"ticker":"NCKL","nama":"Trimegah Bangun",         "fase":"Leading",   "rs":107,"mom":103},
+                    {"ticker":"PTRO","nama":"Petrosea",                "fase":"Leading",   "rs":108,"mom":104},
+                    {"ticker":"CUAN","nama":"Petrindo Jaya Kreasi",    "fase":"Leading",   "rs":107,"mom":103},
+                    # Improving: rs<100 DAN mom>100
+                    {"ticker":"TPIA","nama":"Chandra Asri",            "fase":"Improving", "rs":99, "mom":103},
+                    {"ticker":"BRPT","nama":"Barito Pacific",          "fase":"Improving", "rs":98, "mom":102},
+                    {"ticker":"ANTM","nama":"Aneka Tambang",           "fase":"Improving", "rs":99, "mom":101},
+                    {"ticker":"MDKA","nama":"Merdeka Copper Gold",     "fase":"Improving", "rs":99, "mom":103},
+                    {"ticker":"INCO","nama":"Vale Indonesia",          "fase":"Improving", "rs":98, "mom":101},
+                    {"ticker":"BRMS","nama":"Bumi Resources Minerals", "fase":"Improving", "rs":99, "mom":102},
+                    {"ticker":"MBMA","nama":"Merdeka Battery",         "fase":"Improving", "rs":98, "mom":101},
+                    {"ticker":"DKFT","nama":"Central Omega Resources", "fase":"Improving", "rs":97, "mom":102},
+                    # Weakening: rs>100 DAN mom<100
+                    {"ticker":"INCI","nama":"Intanwijaya International","fase":"Weakening","rs":101,"mom":99},
+                    {"ticker":"EKAD","nama":"Ekadharma International", "fase":"Weakening", "rs":102,"mom":98},
+                    # Lagging: rs<100 DAN mom<100
+                    {"ticker":"INKP","nama":"Indah Kiat Pulp",         "fase":"Lagging",   "rs":98, "mom":97},
+                    {"ticker":"SMGR","nama":"Semen Indonesia",         "fase":"Lagging",   "rs":94, "mom":95},
+                    {"ticker":"INTP","nama":"Indocement",              "fase":"Lagging",   "rs":93, "mom":94},
+                    {"ticker":"TKIM","nama":"Pabrik Kertas Tjiwi Kimia","fase":"Lagging",  "rs":96, "mom":96},
+                    {"ticker":"FASW","nama":"Fajar Surya Wisesa",      "fase":"Lagging",   "rs":95, "mom":95},
+                    {"ticker":"SMBR","nama":"Semen Baturaja",          "fase":"Lagging",   "rs":91, "mom":92},
                 ]
             },
             "Finance": {
-                "fase": "Weakening", "rs": 97.4, "mom": 98.2, "color": "#f23645",
+                "fase": "Weakening", "rs": 102.4, "mom": 98.2, "color": "#f23645",
                 "aksi": "Distribution / Wait", "icon": "🏦",
-                "trail": [(101.5,101.8),(100.1,100.5),(98.7,99.3),(97.4,98.2)],
+                # Weakening = rs>100, mom<100
+                "trail": [(105.0,103.0),(104.1,101.5),(103.2,99.8),(102.4,98.2)],
                 "saham": [
-                    {"ticker":"BRIS","nama":"Bank Syariah Indonesia", "rs":102.0,"mom":101.0, "trail":[(98,98),(99,99),(101,100),(102,101)]},
-                    {"ticker":"ARTO","nama":"Bank Jago",              "rs":103.0,"mom":102.0, "trail":[(99,99),(100,100),(102,101),(103,102)]},
-                    {"ticker":"BTPS","nama":"Bank BTPN Syariah",      "rs":101.5,"mom":100.5, "trail":[(97,98),(99,99),(100,100),(102,101)]},
-                    {"ticker":"BFIN","nama":"BFI Finance",            "rs":100.5,"mom":100.2, "trail":[(101,102),(101,101),(100,100),(101,100)]},
-                    {"ticker":"BBCA","nama":"Bank Central Asia",      "rs": 96.0,"mom": 98.0, "trail":[(103,103),(101,101),(99,99),(96,98)]},
-                    {"ticker":"BMRI","nama":"Bank Mandiri",           "rs": 97.0,"mom": 98.0, "trail":[(103,103),(101,101),(99,99),(97,98)]},
-                    {"ticker":"BNGA","nama":"Bank CIMB Niaga",        "rs": 97.0,"mom": 98.0, "trail":[(102,102),(100,100),(99,99),(97,98)]},
-                    {"ticker":"MEGA","nama":"Bank Mega",              "rs": 96.0,"mom": 97.0, "trail":[(101,101),(100,100),(98,99),(96,97)]},
-                    {"ticker":"ADMF","nama":"Adira Finance",          "rs": 97.0,"mom": 98.0, "trail":[(101,102),(100,100),(98,99),(97,98)]},
-                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia",  "rs": 95.0,"mom": 97.0, "trail":[(103,103),(101,101),(98,99),(95,97)]},
-                    {"ticker":"NISP","nama":"Bank OCBC NISP",         "rs": 96.5,"mom": 97.5, "trail":[(101,102),(100,100),(98,99),(97,98)]},
-                    {"ticker":"PNBN","nama":"Bank Panin",             "rs": 95.5,"mom": 97.0, "trail":[(101,101),(100,100),(97,98),(96,97)]},
-                    {"ticker":"BBNI","nama":"Bank Negara Indonesia",  "rs": 93.0,"mom": 95.0, "trail":[(101,101),(98,99),(95,97),(93,95)]},
-                    {"ticker":"BDMN","nama":"Bank Danamon",           "rs": 93.5,"mom": 95.5, "trail":[(100,101),(97,99),(95,97),(94,96)]},
-                    {"ticker":"BJBR","nama":"Bank BJB",               "rs": 91.0,"mom": 93.0, "trail":[(98,99),(96,97),(93,95),(91,93)]},
-                    {"ticker":"BBTN","nama":"Bank Tabungan Negara",   "rs": 92.0,"mom": 94.0, "trail":[(98,99),(96,97),(94,96),(92,94)]},
-                    {"ticker":"BJTM","nama":"Bank Jatim",             "rs": 91.5,"mom": 93.5, "trail":[(97,98),(95,96),(93,95),(92,94)]},
-                    {"ticker":"BBYB","nama":"Bank Neo Commerce",      "rs": 90.0,"mom": 92.0, "trail":[(96,97),(94,95),(92,93),(90,92)]},
-                    {"ticker":"PNLF","nama":"Panin Financial",        "rs": 89.0,"mom": 91.0, "trail":[(95,96),(93,94),(91,92),(89,91)]},
-                    {"ticker":"MFIN","nama":"Mandala Multifinance",   "rs": 90.5,"mom": 92.5, "trail":[(95,96),(93,94),(91,93),(91,93)]},
+                    # Weakening: rs>100 DAN mom<100
+                    {"ticker":"BBCA","nama":"Bank Central Asia",       "fase":"Weakening", "rs":104,"mom":98},
+                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia",   "fase":"Weakening", "rs":103,"mom":97},
+                    {"ticker":"BMRI","nama":"Bank Mandiri",            "fase":"Weakening", "rs":105,"mom":98},
+                    {"ticker":"BNGA","nama":"Bank CIMB Niaga",         "fase":"Weakening", "rs":102,"mom":98},
+                    {"ticker":"MEGA","nama":"Bank Mega",               "fase":"Weakening", "rs":101,"mom":97},
+                    {"ticker":"BFIN","nama":"BFI Finance",             "fase":"Weakening", "rs":102,"mom":99},
+                    {"ticker":"ADMF","nama":"Adira Finance",           "fase":"Weakening", "rs":101,"mom":98},
+                    {"ticker":"PNBN","nama":"Bank Panin",              "fase":"Weakening", "rs":103,"mom":99},
+                    # Lagging: rs<100 DAN mom<100
+                    {"ticker":"BBNI","nama":"Bank Negara Indonesia",   "fase":"Lagging",   "rs":93, "mom":95},
+                    {"ticker":"BBTN","nama":"Bank Tabungan Negara",    "fase":"Lagging",   "rs":92, "mom":94},
+                    {"ticker":"BJBR","nama":"Bank BJB",                "fase":"Lagging",   "rs":91, "mom":93},
+                    {"ticker":"BGTG","nama":"Bank Ganesha",            "fase":"Lagging",   "rs":94, "mom":95},
+                    {"ticker":"NISP","nama":"Bank OCBC NISP",          "fase":"Lagging",   "rs":95, "mom":96},
+                    # Improving: rs<100 DAN mom>100
+                    {"ticker":"BRIS","nama":"Bank Syariah Indonesia",  "fase":"Improving", "rs":99, "mom":101},
+                    {"ticker":"ARTO","nama":"Bank Jago",               "fase":"Improving", "rs":98, "mom":102},
+                    {"ticker":"BTPS","nama":"Bank BTPN Syariah",       "fase":"Improving", "rs":97, "mom":101},
+                    # Leading: rs>100 DAN mom>100
+                    {"ticker":"BBYB","nama":"Bank Neo Commerce",       "fase":"Leading",   "rs":106,"mom":104},
+                    {"ticker":"BNLI","nama":"Bank Permata",            "fase":"Leading",   "rs":103,"mom":101},
+                    {"ticker":"AGRO","nama":"Bank Raya Indonesia",     "fase":"Leading",   "rs":104,"mom":102},
+                    {"ticker":"BCIC","nama":"Bank J Trust Indonesia",  "fase":"Leading",   "rs":102,"mom":101},
                 ]
             },
             "Infrastructure": {
                 "fase": "Lagging", "rs": 92.1, "mom": 94.5, "color": "#4285F4",
                 "aksi": "Avoid / Monitor", "icon": "📡",
-                "trail": [(96.5,98.2),(95.1,97.0),(93.6,95.8),(92.1,94.5)],
+                "trail": [(96.0,97.5),(94.8,96.5),(93.2,95.3),(92.1,94.5)],
                 "saham": [
-                    {"ticker":"ISAT","nama":"Indosat Ooredoo",        "rs":101.0,"mom":100.0, "trail":[(97,97),(98,98),(100,99),(101,100)]},
-                    {"ticker":"MTEL","nama":"Mitratel",               "rs": 99.0,"mom": 99.5, "trail":[(102,102),(101,101),(100,100),(99,100)]},
-                    {"ticker":"LINK","nama":"Link Net",               "rs": 98.5,"mom": 98.0, "trail":[(102,102),(101,100),(100,99),(99,98)]},
-                    {"ticker":"EXCL","nama":"XL Axiata",              "rs": 93.0,"mom": 95.0, "trail":[(98,99),(96,97),(95,96),(93,95)]},
-                    {"ticker":"TOWR","nama":"Sarana Menara Nusantara","rs": 92.0,"mom": 94.0, "trail":[(97,99),(95,97),(94,96),(92,94)]},
-                    {"ticker":"TBIG","nama":"Tower Bersama",          "rs": 91.0,"mom": 93.0, "trail":[(96,98),(94,96),(93,95),(91,93)]},
-                    {"ticker":"TLKM","nama":"Telkom Indonesia",       "rs": 91.0,"mom": 94.0, "trail":[(97,99),(95,97),(93,96),(91,94)]},
-                    {"ticker":"FREN","nama":"Smartfren Telecom",      "rs": 90.5,"mom": 93.0, "trail":[(96,97),(94,95),(92,94),(91,93)]},
-                    {"ticker":"DATA","nama":"Surge",                  "rs": 93.5,"mom": 95.5, "trail":[(97,98),(95,97),(94,96),(94,96)]},
-                    {"ticker":"JSMR","nama":"Jasa Marga",             "rs": 94.0,"mom": 96.0, "trail":[(98,99),(97,98),(96,97),(94,96)]},
-                    {"ticker":"PJAA","nama":"Pembangunan Jaya Ancol", "rs": 92.5,"mom": 94.5, "trail":[(96,97),(95,96),(93,95),(93,95)]},
-                    {"ticker":"WSKT","nama":"Waskita Karya",          "rs": 88.0,"mom": 91.0, "trail":[(94,95),(92,93),(90,92),(88,91)]},
-                    {"ticker":"PTPP","nama":"PP (Persero)",           "rs": 89.0,"mom": 92.0, "trail":[(94,95),(92,94),(91,93),(89,92)]},
-                    {"ticker":"WIKA","nama":"Wijaya Karya",           "rs": 88.0,"mom": 91.0, "trail":[(93,94),(91,93),(90,92),(88,91)]},
-                    {"ticker":"ADHI","nama":"Adhi Karya",             "rs": 88.0,"mom": 91.0, "trail":[(93,94),(91,93),(89,92),(88,91)]},
-                    {"ticker":"ACST","nama":"Acset Indonusa",         "rs": 87.0,"mom": 90.0, "trail":[(92,93),(90,92),(89,91),(87,90)]},
-                    {"ticker":"NRCA","nama":"Nusa Raya Cipta",        "rs": 90.0,"mom": 92.0, "trail":[(93,94),(92,93),(91,92),(90,92)]},
-                    {"ticker":"TOTL","nama":"Total Bangun Persada",   "rs": 91.0,"mom": 93.0, "trail":[(94,95),(93,94),(92,93),(91,93)]},
-                    {"ticker":"DGIK","nama":"Daya Mulia Turangga",    "rs": 89.5,"mom": 91.5, "trail":[(93,93),(92,92),(90,91),(90,92)]},
-                    {"ticker":"IDPR","nama":"Indonesia Pondasi Raya", "rs": 90.0,"mom": 92.5, "trail":[(93,94),(92,93),(91,92),(90,93)]},
+                    # Lagging: rs<100 DAN mom<100
+                    {"ticker":"TLKM","nama":"Telkom Indonesia",        "fase":"Lagging",   "rs":91, "mom":94},
+                    {"ticker":"EXCL","nama":"XL Axiata",               "fase":"Lagging",   "rs":93, "mom":95},
+                    {"ticker":"TOWR","nama":"Sarana Menara",           "fase":"Lagging",   "rs":92, "mom":94},
+                    {"ticker":"TBIG","nama":"Tower Bersama",           "fase":"Lagging",   "rs":91, "mom":93},
+                    {"ticker":"WIKA","nama":"Wijaya Karya",            "fase":"Lagging",   "rs":88, "mom":91},
+                    {"ticker":"PTPP","nama":"PP (Persero)",            "fase":"Lagging",   "rs":89, "mom":92},
+                    {"ticker":"ADHI","nama":"Adhi Karya",              "fase":"Lagging",   "rs":88, "mom":91},
+                    {"ticker":"WSKT","nama":"Waskita Karya",           "fase":"Lagging",   "rs":87, "mom":90},
+                    {"ticker":"JSMR","nama":"Jasa Marga",              "fase":"Lagging",   "rs":93, "mom":95},
+                    {"ticker":"CASS","nama":"Cardig Aero Services",    "fase":"Lagging",   "rs":94, "mom":96},
+                    # Weakening: rs>100 DAN mom<100
+                    {"ticker":"MTEL","nama":"Mitratel",                "fase":"Weakening", "rs":102,"mom":98},
+                    {"ticker":"FREN","nama":"Smartfren Telecom",       "fase":"Weakening", "rs":101,"mom":97},
+                    # Improving: rs<100 DAN mom>100
+                    {"ticker":"ISAT","nama":"Indosat Ooredoo",         "fase":"Improving", "rs":98, "mom":101},
+                    {"ticker":"LINK","nama":"Link Net",                "fase":"Improving", "rs":97, "mom":102},
+                    {"ticker":"CENT","nama":"Centratama Telekomunikasi","fase":"Improving","rs":96, "mom":101},
+                    # Leading: rs>100 DAN mom>100
+                    {"ticker":"SUPR","nama":"Solusi Tunas Pratama",    "fase":"Leading",   "rs":104,"mom":102},
+                    {"ticker":"IPCC","nama":"Indonesia Kendaraan Terminal","fase":"Leading","rs":103,"mom":101},
+                    {"ticker":"MTDL","nama":"Metrodata Electronics",   "fase":"Leading",   "rs":102,"mom":101},
+                    {"ticker":"BIRD","nama":"Blue Bird",               "fase":"Leading",   "rs":101,"mom":102},
+                    {"ticker":"GIAA","nama":"Garuda Indonesia",        "fase":"Leading",   "rs":105,"mom":103},
                 ]
             },
             "Consumer": {
                 "fase": "Lagging", "rs": 91.8, "mom": 93.7, "color": "#9b59b6",
-                "aksi": "Avoid / Selective", "icon": "🛒",
-                "trail": [(96.2,97.5),(94.5,96.2),(93.0,95.0),(91.8,93.7)],
+                "aksi": "Avoid", "icon": "🛒",
+                "trail": [(95.0,97.0),(93.8,96.0),(92.5,94.8),(91.8,93.7)],
                 "saham": [
-                    {"ticker":"HEAL","nama":"Medikaloka Hermina",     "rs":104.0,"mom":103.0, "trail":[(100,100),(101,101),(103,102),(104,103)]},
-                    {"ticker":"MIKA","nama":"Mitra Keluarga",         "rs":103.0,"mom":102.0, "trail":[(99,99),(100,100),(102,101),(103,102)]},
-                    {"ticker":"MIDI","nama":"Midi Utama Indonesia",   "rs":103.0,"mom":102.0, "trail":[(99,99),(100,100),(101,101),(103,102)]},
-                    {"ticker":"JPFA","nama":"JAPFA Comfeed",          "rs":102.0,"mom":101.0, "trail":[(98,98),(99,99),(100,100),(102,101)]},
-                    {"ticker":"CPIN","nama":"Charoen Pokphand",       "rs":101.0,"mom":100.0, "trail":[(97,97),(98,98),(100,99),(101,100)]},
-                    {"ticker":"SSMS","nama":"Sawit Sumbermas Sarana", "rs":101.5,"mom":100.5, "trail":[(97,97),(98,98),(100,99),(102,101)]},
-                    {"ticker":"KLBF","nama":"Kalbe Farma",            "rs": 96.0,"mom": 97.0, "trail":[(101,102),(100,100),(98,99),(96,97)]},
-                    {"ticker":"MAPI","nama":"Mitra Adiperkasa",       "rs": 97.0,"mom": 98.0, "trail":[(102,102),(100,100),(99,99),(97,98)]},
-                    {"ticker":"AMRT","nama":"Alfamart",               "rs": 96.0,"mom": 97.0, "trail":[(101,101),(100,100),(98,99),(96,97)]},
-                    {"ticker":"SIDO","nama":"Sido Muncul",            "rs": 95.5,"mom": 96.5, "trail":[(101,101),(99,100),(97,98),(96,97)]},
-                    {"ticker":"KAEF","nama":"Kimia Farma",            "rs": 95.0,"mom": 96.0, "trail":[(100,101),(99,99),(97,98),(95,96)]},
-                    {"ticker":"ACES","nama":"ACE Hardware",           "rs": 93.0,"mom": 95.0, "trail":[(99,100),(97,98),(95,97),(93,95)]},
-                    {"ticker":"INDF","nama":"Indofood Sukses Makmur", "rs": 92.0,"mom": 94.0, "trail":[(98,99),(96,97),(94,96),(92,94)]},
-                    {"ticker":"ICBP","nama":"Indofood CBP",           "rs": 91.0,"mom": 93.0, "trail":[(97,98),(95,96),(93,95),(91,93)]},
-                    {"ticker":"LPPF","nama":"Matahari Department",    "rs": 91.5,"mom": 93.5, "trail":[(96,97),(95,96),(93,94),(92,94)]},
-                    {"ticker":"MYOR","nama":"Mayora Indah",           "rs": 90.0,"mom": 92.0, "trail":[(96,97),(94,95),(92,93),(90,92)]},
-                    {"ticker":"HMSP","nama":"HM Sampoerna",           "rs": 89.0,"mom": 91.0, "trail":[(95,96),(93,94),(91,92),(89,91)]},
-                    {"ticker":"UNVR","nama":"Unilever Indonesia",     "rs": 88.0,"mom": 90.0, "trail":[(95,96),(92,94),(90,92),(88,90)]},
-                    {"ticker":"GGRM","nama":"Gudang Garam",           "rs": 87.0,"mom": 89.0, "trail":[(93,94),(91,92),(89,91),(87,89)]},
-                    {"ticker":"ROTI","nama":"Nippon Indosari",        "rs": 92.5,"mom": 94.5, "trail":[(96,97),(95,96),(94,95),(93,95)]},
+                    # Lagging: rs<100 DAN mom<100
+                    {"ticker":"INDF","nama":"Indofood Sukses",         "fase":"Lagging",   "rs":92, "mom":94},
+                    {"ticker":"ICBP","nama":"Indofood CBP",            "fase":"Lagging",   "rs":91, "mom":93},
+                    {"ticker":"MYOR","nama":"Mayora Indah",            "fase":"Lagging",   "rs":90, "mom":92},
+                    {"ticker":"UNVR","nama":"Unilever Indonesia",      "fase":"Lagging",   "rs":88, "mom":90},
+                    {"ticker":"ACES","nama":"ACE Hardware",            "fase":"Lagging",   "rs":93, "mom":95},
+                    {"ticker":"LPPF","nama":"Matahari Department Store","fase":"Lagging",  "rs":89, "mom":91},
+                    {"ticker":"GGRM","nama":"Gudang Garam",            "fase":"Lagging",   "rs":91, "mom":93},
+                    {"ticker":"HMSP","nama":"HM Sampoerna",            "fase":"Lagging",   "rs":90, "mom":92},
+                    # Weakening: rs>100 DAN mom<100
+                    {"ticker":"KLBF","nama":"Kalbe Farma",             "fase":"Weakening", "rs":103,"mom":97},
+                    {"ticker":"MAPI","nama":"Mitra Adiperkasa",        "fase":"Weakening", "rs":101,"mom":98},
+                    {"ticker":"AMRT","nama":"Alfamart",                "fase":"Weakening", "rs":102,"mom":97},
+                    {"ticker":"RALS","nama":"Ramayana Lestari",        "fase":"Weakening", "rs":101,"mom":99},
+                    # Improving: rs<100 DAN mom>100
+                    {"ticker":"CPIN","nama":"Charoen Pokphand",        "fase":"Improving", "rs":98, "mom":101},
+                    {"ticker":"JPFA","nama":"JAPFA Comfeed",           "fase":"Improving", "rs":99, "mom":102},
+                    {"ticker":"MIDI","nama":"Midi Utama",              "fase":"Improving", "rs":98, "mom":103},
+                    {"ticker":"MIKA","nama":"Mitra Keluarga",          "fase":"Improving", "rs":97, "mom":102},
+                    # Leading: rs>100 DAN mom>100
+                    {"ticker":"HEAL","nama":"Medikaloka Hermina",      "fase":"Leading",   "rs":104,"mom":103},
+                    {"ticker":"SIDO","nama":"Industri Jamu SIDO MUNCUL","fase":"Leading",  "rs":103,"mom":102},
+                    {"ticker":"ULTJ","nama":"Ultra Jaya Milk",         "fase":"Leading",   "rs":102,"mom":101},
+                    {"ticker":"DLTA","nama":"Delta Djakarta",          "fase":"Leading",   "rs":101,"mom":101},
                 ]
             },
             "Technology": {
-                "fase": "Improving", "rs": 101.2, "mom": 100.5, "color": "#00bcd4",
+                "fase": "Improving", "rs": 98.8, "mom": 101.5, "color": "#00bcd4",
                 "aksi": "Selective Buy", "icon": "💻",
-                "trail": [(97.5,96.8),(98.8,98.0),(100.1,99.2),(101.2,100.5)],
+                # Improving = rs<100, mom>100
+                "trail": [(95.0,98.5),(96.5,99.5),(97.8,100.5),(98.8,101.5)],
                 "saham": [
-                    {"ticker":"DMMX","nama":"Digital Mediatama Maxima","rs":105.0,"mom":103.0,"trail":[(101,100),(102,101),(104,102),(105,103)]},
-                    {"ticker":"GOTO","nama":"GoTo Gojek Tokopedia",   "rs":103.0,"mom":102.0, "trail":[(99,99),(100,100),(102,101),(103,102)]},
-                    {"ticker":"MTDL","nama":"Metrodata Electronics",  "rs":102.0,"mom":101.0, "trail":[(98,98),(99,99),(101,100),(102,101)]},
-                    {"ticker":"MLPT","nama":"Multipolar Technology",  "rs":101.5,"mom":100.5, "trail":[(97,97),(99,98),(100,99),(102,101)]},
-                    {"ticker":"KIOS","nama":"Kioson Komersial",       "rs":101.0,"mom":100.0, "trail":[(97,96),(98,98),(100,99),(101,100)]},
-                    {"ticker":"EDGE","nama":"EDGE Indonesia",         "rs":100.5,"mom":100.2, "trail":[(97,96),(98,98),(99,99),(101,100)]},
-                    {"ticker":"WINS","nama":"Wintermar Offshore",     "rs":100.0,"mom":100.0, "trail":[(96,96),(97,97),(99,98),(100,100)]},
-                    {"ticker":"MCAS","nama":"M Cash Integrasi",       "rs": 99.5,"mom": 99.8, "trail":[(101,101),(100,100),(100,100),(100,100)]},
-                    {"ticker":"EMTK","nama":"Elang Mahkota",          "rs": 97.0,"mom": 98.0, "trail":[(102,102),(100,101),(99,99),(97,98)]},
-                    {"ticker":"NETV","nama":"Net Visi Media",         "rs": 97.5,"mom": 98.5, "trail":[(101,102),(100,100),(99,99),(98,99)]},
-                    {"ticker":"MNCN","nama":"Media Nusantara Citra",  "rs": 96.0,"mom": 97.0, "trail":[(101,102),(99,100),(98,99),(96,97)]},
-                    {"ticker":"SCMA","nama":"Surya Citra Media",      "rs": 95.5,"mom": 96.5, "trail":[(101,101),(99,99),(97,98),(96,97)]},
-                    {"ticker":"BUKA","nama":"Bukalapak",              "rs": 90.0,"mom": 92.0, "trail":[(95,96),(93,94),(91,93),(90,92)]},
-                    {"ticker":"WIFI","nama":"Solusi Sinergi Digital", "rs": 93.0,"mom": 94.5, "trail":[(96,97),(95,96),(94,95),(93,95)]},
-                    {"ticker":"CASH","nama":"Cashlez Worldwide",      "rs": 92.0,"mom": 94.0, "trail":[(95,96),(94,95),(93,94),(92,94)]},
+                    # Improving: rs<100 DAN mom>100
+                    {"ticker":"GOTO","nama":"GoTo Gojek Tokopedia",    "fase":"Improving", "rs":99, "mom":103},
+                    {"ticker":"DMMX","nama":"Digital Mediatama",       "fase":"Improving", "rs":98, "mom":104},
+                    {"ticker":"MTDL","nama":"Metrodata Electronics",   "fase":"Improving", "rs":99, "mom":102},
+                    {"ticker":"MCAS","nama":"M Cash Integrasi",        "fase":"Improving", "rs":97, "mom":103},
+                    {"ticker":"PTSN","nama":"Sat Nusapersada",         "fase":"Improving", "rs":98, "mom":101},
+                    # Leading: rs>100 DAN mom>100
+                    {"ticker":"BOLA","nama":"Bola Kreasi Nusantara",   "fase":"Leading",   "rs":106,"mom":104},
+                    {"ticker":"KIOS","nama":"Kioson Komersial Indonesia","fase":"Leading",  "rs":104,"mom":102},
+                    {"ticker":"TELE","nama":"Tiphone Mobile Indonesia", "fase":"Leading",   "rs":103,"mom":101},
+                    {"ticker":"AXIO","nama":"Axiata Group Berhad IDX", "fase":"Leading",   "rs":105,"mom":103},
+                    # Weakening: rs>100 DAN mom<100
+                    {"ticker":"EMTK","nama":"Elang Mahkota",           "fase":"Weakening", "rs":103,"mom":98},
+                    {"ticker":"MNCN","nama":"Media Nusantara Citra",   "fase":"Weakening", "rs":102,"mom":97},
+                    {"ticker":"SCMA","nama":"Surya Citra Media",       "fase":"Weakening", "rs":101,"mom":99},
+                    # Lagging: rs<100 DAN mom<100
+                    {"ticker":"BUKA","nama":"Bukalapak",               "fase":"Lagging",   "rs":90, "mom":92},
+                    {"ticker":"DCII","nama":"DCI Indonesia",           "fase":"Lagging",   "rs":95, "mom":96},
+                    {"ticker":"ATIC","nama":"Anabatic Technologies",   "fase":"Lagging",   "rs":93, "mom":94},
+                    {"ticker":"LCKM","nama":"LCK Global Kedaton",      "fase":"Lagging",   "rs":92, "mom":93},
+                    {"ticker":"IBOS","nama":"Indo Boga Sukses",        "fase":"Lagging",   "rs":94, "mom":95},
+                    {"ticker":"PPRE","nama":"PP Presisi",              "fase":"Lagging",   "rs":93, "mom":94},
+                    {"ticker":"MLPT","nama":"Multipolar Technology",   "fase":"Lagging",   "rs":91, "mom":93},
+                    {"ticker":"BNBR","nama":"Bakrie & Brothers",       "fase":"Lagging",   "rs":89, "mom":91},
                 ]
             },
             "Property": {
-                "fase": "Weakening", "rs": 96.3, "mom": 97.8, "color": "#ff9800",
+                "fase": "Weakening", "rs": 102.3, "mom": 97.8, "color": "#ff9800",
                 "aksi": "Wait / Monitor", "icon": "🏠",
-                "trail": [(100.5,101.2),(99.1,100.0),(97.6,98.9),(96.3,97.8)],
+                # Weakening = rs>100, mom<100
+                "trail": [(104.5,102.5),(104.0,100.8),(103.2,99.1),(102.3,97.8)],
                 "saham": [
-                    {"ticker":"BEST","nama":"Bekasi Fajar Industrial", "rs":102.0,"mom":101.0, "trail":[(98,98),(99,99),(100,100),(102,101)]},
-                    {"ticker":"DMAS","nama":"Puradelta Lestari",       "rs":101.0,"mom":100.0, "trail":[(97,97),(98,98),(100,99),(101,100)]},
-                    {"ticker":"SSIA","nama":"Surya Semesta Internusa", "rs":101.5,"mom":100.5, "trail":[(97,97),(98,98),(100,99),(102,101)]},
-                    {"ticker":"KIJA","nama":"Kawasan Industri Jababeka","rs":100.5,"mom":100.2,"trail":[(96,97),(98,98),(99,99),(101,100)]},
-                    {"ticker":"LPCK","nama":"Lippo Cikarang",          "rs":100.0,"mom":100.0, "trail":[(96,97),(97,98),(99,99),(100,100)]},
-                    {"ticker":"PWON","nama":"Pakuwon Jati",            "rs": 97.0,"mom": 98.0, "trail":[(101,102),(100,100),(99,99),(97,98)]},
-                    {"ticker":"BSDE","nama":"Bumi Serpong Damai",      "rs": 96.0,"mom": 97.0, "trail":[(101,102),(100,100),(98,99),(96,97)]},
-                    {"ticker":"CTRA","nama":"Ciputra Development",     "rs": 95.0,"mom": 96.0, "trail":[(101,102),(99,100),(97,98),(95,96)]},
-                    {"ticker":"MKPI","nama":"Metropolitan Kentjana",   "rs": 96.5,"mom": 97.5, "trail":[(101,101),(99,100),(98,99),(97,98)]},
-                    {"ticker":"GPRA","nama":"Perdana Gapuraprima",     "rs": 95.5,"mom": 96.5, "trail":[(100,101),(98,100),(97,98),(96,97)]},
-                    {"ticker":"MTLA","nama":"Metropolitan Land",       "rs": 95.0,"mom": 96.5, "trail":[(100,101),(98,99),(97,98),(95,97)]},
-                    {"ticker":"RDTX","nama":"Roda Vivatex",            "rs": 94.5,"mom": 96.0, "trail":[(99,100),(97,99),(96,98),(95,96)]},
-                    {"ticker":"SMRA","nama":"Summarecon Agung",        "rs": 92.0,"mom": 94.0, "trail":[(98,99),(96,97),(94,96),(92,94)]},
-                    {"ticker":"LPKR","nama":"Lippo Karawaci",          "rs": 90.0,"mom": 92.0, "trail":[(96,98),(94,95),(92,93),(90,92)]},
-                    {"ticker":"ASRI","nama":"Alam Sutera Realty",      "rs": 91.0,"mom": 93.0, "trail":[(96,97),(94,96),(93,94),(91,93)]},
-                    {"ticker":"APLN","nama":"Agung Podomoro Land",     "rs": 90.5,"mom": 92.5, "trail":[(95,97),(93,95),(92,93),(91,93)]},
-                    {"ticker":"DILD","nama":"Intiland Development",    "rs": 90.0,"mom": 92.0, "trail":[(95,96),(93,95),(91,93),(90,92)]},
-                    {"ticker":"MDLN","nama":"Modernland Realty",       "rs": 89.0,"mom": 91.0, "trail":[(94,96),(92,94),(90,92),(89,91)]},
-                    {"ticker":"NIRO","nama":"Nirvana Development",     "rs": 89.5,"mom": 91.5, "trail":[(94,96),(92,94),(91,92),(90,92)]},
-                    {"ticker":"PPRO","nama":"PP Properti",             "rs": 88.0,"mom": 90.0, "trail":[(93,95),(91,93),(89,91),(88,90)]},
+                    # Weakening: rs>100 DAN mom<100
+                    {"ticker":"BSDE","nama":"Bumi Serpong Damai",      "fase":"Weakening", "rs":104,"mom":97},
+                    {"ticker":"CTRA","nama":"Ciputra Development",     "fase":"Weakening", "rs":103,"mom":96},
+                    {"ticker":"PWON","nama":"Pakuwon Jati",            "fase":"Weakening", "rs":105,"mom":98},
+                    {"ticker":"ASRI","nama":"Alam Sutera Realty",      "fase":"Weakening", "rs":101,"mom":97},
+                    {"ticker":"APLN","nama":"Agung Podomoro Land",     "fase":"Weakening", "rs":102,"mom":98},
+                    # Lagging: rs<100 DAN mom<100
+                    {"ticker":"SMRA","nama":"Summarecon Agung",        "fase":"Lagging",   "rs":92, "mom":94},
+                    {"ticker":"LPKR","nama":"Lippo Karawaci",          "fase":"Lagging",   "rs":90, "mom":92},
+                    {"ticker":"KIJA","nama":"Kawasan Industri Jababeka","fase":"Lagging",  "rs":93, "mom":95},
+                    {"ticker":"MDLN","nama":"Modernland Realty",       "fase":"Lagging",   "rs":88, "mom":90},
+                    {"ticker":"BKSL","nama":"Sentul City",             "fase":"Lagging",   "rs":89, "mom":91},
+                    {"ticker":"COWL","nama":"Cowell Development",      "fase":"Lagging",   "rs":87, "mom":89},
+                    {"ticker":"MMLP","nama":"Mega Manunggal Property", "fase":"Lagging",   "rs":94, "mom":95},
+                    # Improving: rs<100 DAN mom>100
+                    {"ticker":"DMAS","nama":"Puradelta Lestari",       "fase":"Improving", "rs":98, "mom":101},
+                    {"ticker":"BEST","nama":"Bekasi Fajar",            "fase":"Improving", "rs":99, "mom":102},
+                    {"ticker":"PANI","nama":"Pratama Abadi Nusa",      "fase":"Improving", "rs":97, "mom":103},
+                    {"ticker":"RODA","nama":"Pikko Land Development",  "fase":"Improving", "rs":98, "mom":102},
+                    # Leading: rs>100 DAN mom>100
+                    {"ticker":"MKPI","nama":"Metropolitan Kentjana",   "fase":"Leading",   "rs":104,"mom":102},
+                    {"ticker":"LPCK","nama":"Lippo Cikarang",          "fase":"Leading",   "rs":103,"mom":101},
+                    {"ticker":"BIPP","nama":"Bhuwanatala Indah Permai","fase":"Leading",   "rs":102,"mom":103},
+                    {"ticker":"MTLA","nama":"Metropolitan Land",       "fase":"Leading",   "rs":101,"mom":101},
                 ]
             },
         }
-
-
 
         fase_colors = {
             "Leading":   "#089981",
@@ -5349,6 +5386,33 @@ if current_view == "dashboard":
             fig_rrg.add_annotation(x=x, y=y, text=f"<b>{lbl}</b>",
                 showarrow=False, font=dict(size=11, color=c, family="IBM Plex Mono"),
                 opacity=0.7)
+
+        # Plot trails (jejak pergerakan 4 minggu terakhir) — SEBELUM bubble
+        for sname, sdata in rrg_sectors.items():
+            trail = sdata.get("trail", [])
+            if len(trail) >= 2:
+                trail_xs = [p[0] for p in trail]
+                trail_ys = [p[1] for p in trail]
+                # Garis trail tipis
+                fig_rrg.add_trace(go.Scatter(
+                    x=trail_xs, y=trail_ys,
+                    mode="lines",
+                    line=dict(color=sdata["color"], width=1.5, dash="dot"),
+                    opacity=0.45,
+                    showlegend=False,
+                    hoverinfo="skip",
+                ))
+                # Titik-titik jejak (kecil, makin tua makin kecil)
+                for pi, (px, py) in enumerate(trail[:-1]):  # kecualikan titik terakhir (itu bubble utama)
+                    dot_size = 5 + pi * 1.5
+                    dot_opacity = 0.25 + pi * 0.12
+                    fig_rrg.add_trace(go.Scatter(
+                        x=[px], y=[py],
+                        mode="markers",
+                        marker=dict(size=dot_size, color=sdata["color"], opacity=dot_opacity),
+                        showlegend=False,
+                        hoverinfo="skip",
+                    ))
 
         # Plot each sector
         for sname, sdata in rrg_sectors.items():
@@ -5470,10 +5534,10 @@ if current_view == "dashboard":
             </div>""", unsafe_allow_html=True)
 
             # Mini stats 4 kuadran
-            leading_n  = sum(1 for s in sd["saham"] if s["fase"]=="Leading")
-            improving_n= sum(1 for s in sd["saham"] if s["fase"]=="Improving")
-            weakening_n= sum(1 for s in sd["saham"] if s["fase"]=="Weakening")
-            lagging_n  = sum(1 for s in sd["saham"] if s["fase"]=="Lagging")
+            leading_n  = sum(1 for s in sd["saham"] if s.get("fase","")=="Leading")
+            improving_n= sum(1 for s in sd["saham"] if s.get("fase","")=="Improving")
+            weakening_n= sum(1 for s in sd["saham"] if s.get("fase","")=="Weakening")
+            lagging_n  = sum(1 for s in sd["saham"] if s.get("fase","")=="Lagging")
 
             mc1, mc2, mc3, mc4 = st.columns(4)
             for col, lbl, val, c in [
@@ -5510,77 +5574,42 @@ if current_view == "dashboard":
                                ("WEAKENING",112,87,"#f23645"),("LAGGING",88,87,"#4285F4")]:
                 fig_mini.add_annotation(x=x,y=y,text=f"<b>{lbl}</b>",showarrow=False,
                     font=dict(size=8,color=c,family="IBM Plex Mono"),opacity=0.8)
-            # Saham dots + TRAIL (jejak pergerakan 4 minggu terakhir)
-            for stk in sd["saham"]:
-                # AUTO-COMPUTE fase dari koordinat rs & mom (sumber kebenaran tunggal)
-                stk_rs  = stk["rs"]
-                stk_mom = stk["mom"]
-                if stk_rs >= 100 and stk_mom >= 100:
-                    auto_fase = "Leading"
-                elif stk_rs < 100 and stk_mom >= 100:
-                    auto_fase = "Improving"
-                elif stk_rs >= 100 and stk_mom < 100:
-                    auto_fase = "Weakening"
-                else:
-                    auto_fase = "Lagging"
-                sc = fase_colors.get(auto_fase, "#888")
-
-                # Trail line (jejak 4 minggu lalu → sekarang)
-                trail = stk.get("trail", [])
-                if trail and len(trail) >= 2:
-                    trail_x = [t[0] for t in trail]
-                    trail_y = [t[1] for t in trail]
-                    # Line trail (tipis, transparan)
-                    fig_mini.add_trace(go.Scatter(
-                        x=trail_x, y=trail_y,
-                        mode="lines",
-                        line=dict(color=sc, width=1.5, dash="dot"),
-                        opacity=0.45,
-                        showlegend=False,
-                        hoverinfo="skip",
-                    ))
-                    # Dots trail (makin pudar ke belakang)
-                    for ti, (tx, ty) in enumerate(trail[:-1]):
-                        alpha = 0.15 + 0.15 * ti
-                        fig_mini.add_trace(go.Scatter(
-                            x=[tx], y=[ty],
-                            mode="markers",
-                            marker=dict(size=4+ti, color=sc, opacity=alpha,
-                                        line=dict(color=sc, width=0.5)),
-                            showlegend=False, hoverinfo="skip",
-                        ))
-
-                # Dot utama (posisi terkini)
+            # Saham dots — tambah trail sector centroid dulu
+            trail_mini = sd.get("trail", [])
+            if len(trail_mini) >= 2:
+                tx = [p[0] for p in trail_mini]
+                ty = [p[1] for p in trail_mini]
                 fig_mini.add_trace(go.Scatter(
-                    x=[stk_rs], y=[stk_mom],
+                    x=tx, y=ty, mode="lines",
+                    line=dict(color=sd["color"], width=1.5, dash="dot"),
+                    opacity=0.4, showlegend=False, hoverinfo="skip",
+                ))
+                for pi, (px, py) in enumerate(trail_mini[:-1]):
+                    fig_mini.add_trace(go.Scatter(
+                        x=[px], y=[py], mode="markers",
+                        marker=dict(size=5+pi*1.5, color=sd["color"], opacity=0.2+pi*0.15),
+                        showlegend=False, hoverinfo="skip",
+                    ))
+            for stk in sd["saham"]:
+                sc = fase_colors.get(stk.get("fase",""), "#888")
+                fig_mini.add_trace(go.Scatter(
+                    x=[stk["rs"]], y=[stk["mom"]],
                     mode="markers+text",
                     text=[stk["ticker"]],
                     textposition="top center",
-                    textfont=dict(size=8, color=sc, family="IBM Plex Mono"),
-                    marker=dict(size=11, color=sc, opacity=0.9,
-                                line=dict(color="#ffffff", width=1)),
-                    hovertemplate=(f"<b>{stk['ticker']}</b><br>{stk['nama']}<br>"
-                                   f"Fase: <b>{auto_fase}</b><br>"
-                                   f"RS:{stk_rs} &nbsp; Mom:{stk_mom}<extra></extra>"),
+                    textfont=dict(size=8,color=sc,family="IBM Plex Mono"),
+                    marker=dict(size=10,color=sc,opacity=0.85,
+                        line=dict(color=sc,width=1.5)),
+                    hovertemplate=f"<b>{stk['ticker']}</b><br>{stk['nama']}<br>Fase: {stk['fase']}<br>RS:{stk['rs']} Mom:{stk['mom']}<extra></extra>",
                     showlegend=False,
                 ))
-            # Sector centroid + trail sektor
-            sec_trail = sd.get("trail", [])
-            if sec_trail and len(sec_trail) >= 2:
-                fig_mini.add_trace(go.Scatter(
-                    x=[t[0] for t in sec_trail],
-                    y=[t[1] for t in sec_trail],
-                    mode="lines",
-                    line=dict(color=sd["color"], width=2.5),
-                    opacity=0.6,
-                    showlegend=False, hoverinfo="skip",
-                ))
+            # Sector centroid
             fig_mini.add_trace(go.Scatter(
                 x=[sd["rs"]], y=[sd["mom"]],
                 mode="markers",
-                marker=dict(size=22,color=sd["color"],opacity=0.25,
-                    line=dict(color=sd["color"],width=2.5),symbol="circle-open"),
-                hovertemplate=f"<b>{sel} sektor (centroid)</b><br>RS:{sd['rs']} Mom:{sd['mom']}<extra></extra>",
+                marker=dict(size=20,color=sd["color"],opacity=0.3,
+                    line=dict(color=sd["color"],width=2),symbol="circle-open"),
+                hovertemplate=f"<b>{sel} (centroid)</b><extra></extra>",
                 showlegend=False,
             ))
             fig_mini.update_layout(
@@ -5604,22 +5633,17 @@ if current_view == "dashboard":
 
             with tbl_col:
                 st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM — {sel.upper()} ({len(sd['saham'])} emiten)</p>", unsafe_allow_html=True)
-                # Build HTML table — fase di-compute dari koordinat bukan dari field "fase"
+                # Build HTML table
                 tbl_rows = ""
                 for stk in sorted(sd["saham"], key=lambda x: x["rs"], reverse=True):
-                    _rs, _mom = stk["rs"], stk["mom"]
-                    if _rs >= 100 and _mom >= 100:   _fase = "Leading"
-                    elif _rs < 100 and _mom >= 100:  _fase = "Improving"
-                    elif _rs >= 100 and _mom < 100:  _fase = "Weakening"
-                    else:                             _fase = "Lagging"
-                    fc2 = fase_colors.get(_fase, "#888")
+                    fc2 = fase_colors.get(stk.get("fase",""), "#888")
                     rs_pct = max(0, min(100, (stk["rs"] - 85) / 30 * 100))
                     tbl_rows += f"""<tr>
                         <td style='font-weight:700;color:{fc2};font-family:IBM Plex Mono,monospace;font-size:12px;'>{stk["ticker"]}</td>
                         <td style='font-size:11px;color:{text_sub};'>{stk["nama"]}</td>
                         <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
                             font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;
-                            font-family:IBM Plex Mono,monospace;'>{_fase}</span></td>
+                            font-family:IBM Plex Mono,monospace;'>{stk["fase"]}</span></td>
                         <td style='font-size:11px;'>
                             <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
                             <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
