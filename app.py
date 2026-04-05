@@ -4076,18 +4076,6 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
 [data-testid="stMarkdownContainer"] li > p {{
     margin-bottom: 0 !important;
 }}
-
-/* =========================================================
-   FIX GAP ANTAR TABEL (HANYA INI YANG DIUBAH)
-   ========================================================= */
-/* Kurangi gap default Streamlit antar blok — penyebab utama jarak besar */
-[data-testid="stVerticalBlock"] {{ gap: 0.5rem !important; }}
-/* iFrame (components.html) tidak punya margin tambahan */
-iframe {{ display: block !important; margin-top: 0 !important; margin-bottom: 0 !important; }}
-/* Mobile: gap lebih rapat */
-@media (max-width: 768px) {{
-    [data-testid="stVerticalBlock"] {{ gap: 0.3rem !important; }}
-}}
 </style>
 """, unsafe_allow_html=True)
 _hist_items = ""
@@ -5070,28 +5058,28 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
         # ─────────────────────────────────────────────────────────
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:12px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
 
         macro_col1, macro_col2 = st.columns(2)
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin:0 0 6px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
                 "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
                 "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
             }, index=dates)
-            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=280, use_container_width=True)
 
         with macro_col2:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin:0 0 6px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
                 "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
                 "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
             }, index=dates)
-            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=280, use_container_width=True)
 
         st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
 
@@ -5486,7 +5474,7 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
+  body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; overflow: hidden; }}
 
   .ca-wrap {{
     background: {met_bg};
@@ -5697,7 +5685,8 @@ renderPage();
 </html>
 """
         # Hitung tinggi komponen: 15 rows * ~45px + header + pagination
-        _ca_height = min(_total_filtered, _rows_per_page) * 47 + 130
+        # Hitung tinggi komponen: rows * ~45px + header + pagination
+        _ca_height = min(_total_filtered, _rows_per_page) * 47 + 95
         _ca_height = max(_ca_height, 200)
         components.html(_ca_component_html, height=_ca_height, scrolling=False)
 
@@ -5883,7 +5872,7 @@ renderPage();
                 ]
             },
             "Basic Materials": {
-                "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#F5C242",
+                "fase": "Leading", "rs": 103.5, "mom": 101.8, "color": "#089981",
                 "aksi": "Accumulation", "icon": "🏗️",
                 "trail": [(99.0,99.0),(100.5,100.1),(101.8,101.0),(103.5,101.8)],
                 "saham": [
@@ -7694,7 +7683,7 @@ renderPage();
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 * {{ box-sizing:border-box; margin:0; padding:0; }}
-body {{ background:transparent; font-family:'IBM Plex Mono',monospace; }}
+body {{ background:transparent; font-family:'IBM Plex Mono',monospace; overflow:hidden; }}
 .lbl {{ font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase;
         color:{acc}; font-weight:700; margin-bottom:6px; padding: 0 2px; }}
 .scroll-wrap {{
@@ -7834,7 +7823,7 @@ tbody tr:hover td {{ background:rgba(255,255,255,0.03); }}
 </script>
 </body></html>"""
 
-            _sh_height = min(count, 15) * 44 + 120
+            _sh_height = min(count, 15) * 44 + 80
             _sh_height = max(_sh_height, 200)
             components.html(_sh_html, height=_sh_height, scrolling=False)
 
