@@ -5620,41 +5620,169 @@ if current_view == "dashboard":
         _sh_all_db = get_manual_sh_db_full()
 
         # ════════════════════════════════════════════════════════════════
+        # LIVE FETCH PEMEGANG SAHAM DARI IDX — UNTUK SEMUA SAHAM BEI
+        # ════════════════════════════════════════════════════════════════
+        @st.cache_data(ttl=3600*6, show_spinner=False)
+        def fetch_sh_from_idx(ticker):
+            """
+            Fetch data pemegang saham langsung dari IDX API.
+            Mendukung seluruh emiten BEI, bukan hanya daftar manual.
+            Sumber: idx.co.id/api/issuer/shareholders
+            Return: list of {date, shareholders} atau [] jika gagal.
+            """
+            import urllib.request, json as _j, datetime as _dtx
+            results = []
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Referer": "https://www.idx.co.id/",
+                "Accept": "application/json",
+            }
+            # Coba endpoint 1: IDX Shareholder API (pemegang saham per bulan)
+            try:
+                url1 = f"https://www.idx.co.id/api/issuer/shareholders?kodeEmiten={ticker}&limit=24"
+                req1 = urllib.request.Request(url1, headers=headers)
+                with urllib.request.urlopen(req1, timeout=8) as r:
+                    data1 = _j.loads(r.read())
+                if data1 and isinstance(data1, dict):
+                    rows = data1.get("data") or data1.get("Data") or data1.get("shareholders") or []
+                    if isinstance(rows, list):
+                        for row in rows:
+                            dt_str = row.get("date") or row.get("Date") or row.get("periode") or ""
+                            sh_val  = row.get("shareholders") or row.get("Shareholders") or row.get("jumlahPemegang") or 0
+                            if dt_str and sh_val:
+                                try:
+                                    dt = _dtx.datetime.strptime(str(dt_str)[:10], "%Y-%m-%d")
+                                    results.append({"date": dt, "shareholders": int(sh_val)})
+                                except: pass
+            except: pass
+
+            # Coba endpoint 2: Ringkasan emiten (stockdata)
+            if not results:
+                try:
+                    url2 = f"https://www.idx.co.id/umbraco/Surface/StockData/GetCompanyProfiles?start=0&length=1&code={ticker}"
+                    req2 = urllib.request.Request(url2, headers=headers)
+                    with urllib.request.urlopen(req2, timeout=8) as r:
+                        data2 = _j.loads(r.read())
+                    if data2 and isinstance(data2, dict):
+                        records = data2.get("data") or data2.get("Data") or []
+                        if records and isinstance(records, list):
+                            d = records[0]
+                            sh_val = d.get("Shareholders") or d.get("shareholders") or d.get("NumberOfShareholders") or 0
+                            if sh_val:
+                                now = _dtx.datetime.now().replace(day=1)
+                                results.append({"date": now, "shareholders": int(sh_val)})
+                except: pass
+
+            # Coba endpoint 3: Profile emiten dari idx.co.id/data-pasar
+            if not results:
+                try:
+                    url3 = f"https://www.idx.co.id/umbraco/Surface/Helper/GetEmiten?kodeEmiten={ticker}"
+                    req3 = urllib.request.Request(url3, headers=headers)
+                    with urllib.request.urlopen(req3, timeout=8) as r:
+                        data3 = _j.loads(r.read())
+                    if data3 and isinstance(data3, list) and len(data3) > 0:
+                        d = data3[0]
+                        sh_val = d.get("Shareholders") or d.get("NumberOfShareholder") or 0
+                        if sh_val:
+                            now = _dtx.datetime.now().replace(day=1)
+                            results.append({"date": now, "shareholders": int(sh_val)})
+                except: pass
+
+            return sorted(results, key=lambda x: x["date"]) if results else []
+
+        @st.cache_data(ttl=3600*2, show_spinner=False)
+        def fetch_sh_history_yfinance(ticker):
+            """
+            Fallback: estimasi tren pemegang dari data publik lain.
+            Kalau IDX API tidak tersedia, coba ambil dari sumber lain.
+            """
+            import urllib.request, json as _j, datetime as _dtx
+            results = []
+            # Coba dari Stockbit/KSEI API jika tersedia
+            try:
+                url = f"https://ksei.co.id/api/v1/securities/{ticker}/shareholders"
+                req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    data = _j.loads(r.read())
+                if data and isinstance(data, list):
+                    for row in data:
+                        dt_str = row.get("date","")
+                        sh = row.get("count") or row.get("shareholders") or 0
+                        if dt_str and sh:
+                            try:
+                                dt = _dtx.datetime.strptime(str(dt_str)[:10], "%Y-%m-%d")
+                                results.append({"date": dt, "shareholders": int(sh)})
+                            except: pass
+            except: pass
+            return sorted(results, key=lambda x: x["date"]) if results else []
+
+        # ════════════════════════════════════════════════════════════════
         # SECTION 1: SHAREHOLDER TRACKER  (di atas screening)
         # ════════════════════════════════════════════════════════════════
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
 
         col_sh_inp, col_sh_btn = st.columns([3, 1])
         with col_sh_inp:
-            sh_ticker = st.text_input("KODE SAHAM:", "BBCA", key="sh_ticker_input").upper().strip()
+            sh_ticker = st.text_input("KODE SAHAM (seluruh BEI):", "BBCA", key="sh_ticker_input").upper().strip()
         with col_sh_btn:
             st.markdown("<br>", unsafe_allow_html=True)
             sh_run = st.button("▶ LOAD DATA", key="sh_run_btn", use_container_width=True)
 
         if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
             st.session_state["sh_last_ticker"] = sh_ticker
+
+            # LANGKAH 1: Cek database manual dulu (data terlengkap & terverifikasi)
             sh_data = _sh_all_db.get(sh_ticker, [])
-            has_live_data = bool(sh_data)
+            data_source = "Database SIGMA (Terverifikasi)"
+
+            # LANGKAH 2: Jika tidak ada di manual DB → fetch live dari IDX API
+            if not sh_data:
+                with st.spinner(f"Mengambil data pemegang saham {sh_ticker} dari IDX..."):
+                    sh_data = fetch_sh_from_idx(sh_ticker)
+                    if sh_data:
+                        data_source = "IDX API (Live)"
+
+            # LANGKAH 3: Jika IDX API juga gagal → coba sumber lain
+            if not sh_data:
+                with st.spinner(f"Mencoba sumber alternatif untuk {sh_ticker}..."):
+                    sh_data = fetch_sh_history_yfinance(sh_ticker)
+                    if sh_data:
+                        data_source = "KSEI/Sumber Alternatif"
+
+            has_live_data = bool(sh_data) and len(sh_data) >= 2
 
             if not has_live_data:
-                all_available = ", ".join(sorted(_sh_all_db.keys()))
+                # Tidak ada data sama sekali — tampilkan info yang BERGUNA bukan "pipeline"
                 st.markdown(f"""
-                <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #F5C242;border-radius:14px;padding:48px 40px;text-align:center;margin:24px 0;position:relative;overflow:hidden;'>
-                    <div style='font-size:2.5rem;margin-bottom:12px;'>📡</div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:1.1rem;font-weight:700;letter-spacing:0.15em;color:#F5C242;text-transform:uppercase;margin-bottom:8px;'>DATA PIPELINE IN PROGRESS</div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};max-width:520px;margin:0 auto 24px;line-height:1.7;'>
-                        Data pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> sedang dalam proses integrasi.
-                        IDX merilis data ini setiap bulan. Tim SIGMA sedang membangun pipeline scraping otomatis.
+                <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #F5C242;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
+                    <div style='font-size:2rem;margin-bottom:12px;'>📡</div>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:1rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};max-width:560px;margin:0 auto 20px;line-height:1.8;'>
+                        Data historis pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> belum tersedia.<br>
+                        Kemungkinan sebab: saham baru IPO, emiten delisting, atau IDX belum merilis data bulan ini.
                     </div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#F5C242;letter-spacing:0.08em;'>
-                        ● Ticker tersedia: {all_available}
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
+                        💡 <b style="color:#F5C242;">Cara alternatif verifikasi data pemegang saham:</b><br>
+                        1. Buka <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}" target="_blank" style="color:#4285F4;">{sh_ticker} di idx.co.id</a><br>
+                        2. Cek tab "Profil Pemegang Saham" di Stockbit atau RTI Business<br>
+                        3. Data KSEI diperbarui setiap awal bulan dari hasil kliring bursa
+                    </div>
+                    <div style='margin-top:20px;font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};'>
+                        ● Ticker dengan data terverifikasi: {", ".join(sorted(_sh_all_db.keys()))}
                     </div>
                 </div>""", unsafe_allow_html=True)
             else:
                 import plotly.graph_objects as go
                 from plotly.subplots import make_subplots
                 import numpy as np
+
+                # Badge sumber data
+                src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else "#F5C242")
+                st.markdown(f"""<div style='display:inline-block;font-family:IBM Plex Mono,monospace;font-size:0.62rem;
+                    letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
+                    background:{src_color}11;padding:3px 10px;border-radius:4px;margin-bottom:12px;'>
+                    ● SUMBER DATA: {data_source}</div>""", unsafe_allow_html=True)
 
                 @st.cache_data(ttl=3600, show_spinner=False)
                 def fetch_price_1y(ticker):
