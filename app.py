@@ -4379,7 +4379,7 @@ if current_view == "dashboard":
         margin-top: 16px !important;
     }}
 
-    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 28px 0 14px; }}
+    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; }}
     .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
@@ -4430,7 +4430,17 @@ if current_view == "dashboard":
         border: 0;
         height: 1px;
         background: {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
-        margin: 24px 0;
+        margin: 20px 0;
+    }}
+
+    /* ── Kurangi gap berlebih dari components.html (iframe) ── */
+    [data-testid="stCustomComponentV1"] {{
+        margin-bottom: -10px !important;
+        display: block !important;
+    }}
+    /* Kurangi gap berlebih dari st.line_chart */
+    [data-testid="stArrowVegaLiteChart"] {{
+        margin-bottom: -10px !important;
     }}
 
     [data-testid="stTabs"] ~ div .stButton > button,
@@ -4890,11 +4900,13 @@ if current_view == "dashboard":
                             if _t and _t not in _target: _target.append(_t)
                     except: pass
 
-                # ── Build prompt ─────────────────────────────────────
+                # ── Build prompt — BERBEDA antara Daily dan Weekly ────────
                 _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
-                mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
+
+                if req_daily:
+                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
 Tanggal & waktu sekarang: {_today}
-Mode: {mode_str}
+Mode: DAILY REVIEW (24 Jam Terakhir)
 
 ═══════════════════════════════════════════════════════
 HEADLINE BERITA DALAM NEGERI (DOMESTIK — CNBC Indonesia):
@@ -4907,53 +4919,104 @@ HEADLINE BERITA LUAR NEGERI (GLOBAL — CNBC/Bloomberg/MarketWatch):
 {chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Data tidak tersedia."}
 
 ═══════════════════════════════════════════════════════
-INSTRUKSI FORMAT WAJIB — Tulis dalam Bahasa Indonesia, tajam & analitik:
+INSTRUKSI FORMAT — DAILY REVIEW — Bahasa Indonesia, tajam & actionable:
 ═══════════════════════════════════════════════════════
 
-## 🇮🇩 PASAR DOMESTIK — IHSG & EKONOMI RI
-Analisis mendalam kondisi IHSG, kebijakan BI, Rupiah (IDR/USD), inflasi, dan sektor yang bergerak. Sebutkan saham/sektor spesifik jika ada indikasi dari berita (contoh: BBCA, TLKM, ADRO, sektor perbankan, energi, dll). Minimal 3-4 paragraf.
+## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
+Fokus pada pergerakan IHSG hari ini, sesi yang akan datang, kebijakan BI terbaru, Rupiah (IDR/USD), dan sentimen pasar lokal. Sebutkan saham/sektor spesifik yang bergerak hari ini. 2-3 paragraf padat.
 
-## 🌍 PASAR GLOBAL — KATALIS EKSTERNAL
-Ringkasan kondisi Wall Street (S&P 500, Nasdaq, Dow Jones), kebijakan The Fed, data ekonomi AS (CPI, NFP, GDP), sentimen China (Hang Seng, trade war, stimulus), harga komoditas kunci (minyak WTI/Brent, emas, batu bara, CPO, nikel). Minimal 3-4 paragraf.
+## 🌍 KATALIS GLOBAL 24 JAM TERAKHIR
+Highlight singkat Wall Street semalam (S&P 500, Nasdaq), data ekonomi AS yang dirilis hari ini/kemarin (CPI, NFP, FOMC minutes), sentimen Asia pagi ini (Nikkei, HSI, Shanghai). 2-3 paragraf.
 
-## 💱 FOREX & KOMODITAS — DAMPAK KE IDX
-Analisis USD/IDR, DXY, dan dampak pergerakan komoditas ke saham-saham IDX. Sektor apa yang diuntungkan/dirugikan dari kondisi global hari ini.
+## 💱 FOREX & KOMODITAS — DAMPAK LANGSUNG KE IDX
+USD/IDR, DXY, harga minyak, emas, batu bara hari ini. Sektor IDX mana yang paling terdampak hari ini?
 
-## 📊 SENTIMENT METER
-Berikan scoring numerik (0-100) untuk:
-- **IHSG Sentiment:** [angka]/100 — [Bullish/Cautious Bullish/Neutral/Cautious Bearish/Bearish]
+## 📊 SENTIMENT METER HARIAN
+- **IHSG Hari Ini:** [angka]/100 — [Bullish/Cautious Bullish/Neutral/Cautious Bearish/Bearish]
 - **Global Risk Appetite:** [angka]/100 — [Risk-On/Mixed/Risk-Off]
 - **IDR Pressure:** [Rendah/Sedang/Tinggi]
 
-## ⚡ SIGMA TACTICAL VIEW — KESIMPULAN STRATEGIS
-Kesimpulan 1 paragraf tajam: apa yang paling perlu diperhatikan trader IDX hari ini/minggu ini? Sektor mana yang harus diwatch? Ada event risk apa yang mendekat? Beri rekomendasi stance (Aggressive/Selective/Defensive/Wait & See).
+## ⚡ TACTICAL VIEW HARI INI
+1 paragraf singkat: stance hari ini (Aggressive/Selective/Defensive/Wait & See), level support/resistance IHSG kritis, 1-2 sektor yang harus dipantau ketat sesi ini.
 
-## 🎯 WATCHLIST SEKTORAL
-Daftar 3-5 sektor dengan kondisi saat ini (contoh: ✅ Perbankan — Positif, ⚠ Properti — Mixed, ❌ Consumer — Negatif) beserta 1 kalimat reasoning per sektor.
+## 🎯 WATCHLIST SEKTORAL HARI INI
+3-4 sektor: (✅/⚠/❌) Sektor — status — 1 kalimat reasoning spesifik hari ini.
 
-Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah dibaca. Jangan generik — jadilah sangat spesifik dan actionable."""
+Gunakan Markdown. Singkat, padat, langsung ke poin. Hindari basa-basi."""
+
+                else:  # weekly
+                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
+Tanggal & waktu sekarang: {_today}
+Mode: WEEKLY REVIEW (7 Hari Terakhir — Rekap Mingguan)
+
+═══════════════════════════════════════════════════════
+HEADLINE BERITA DALAM NEGERI (DOMESTIK — CNBC Indonesia):
+═══════════════════════════════════════════════════════
+{chr(10).join([f"• {h}" for h in dom_news[:20]]) if dom_news else "⚠ Data tidak tersedia."}
+
+═══════════════════════════════════════════════════════
+HEADLINE BERITA LUAR NEGERI (GLOBAL — CNBC/Bloomberg/MarketWatch):
+═══════════════════════════════════════════════════════
+{chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Data tidak tersedia."}
+
+═══════════════════════════════════════════════════════
+INSTRUKSI FORMAT — WEEKLY REVIEW — Bahasa Indonesia, komprehensif & strategis:
+═══════════════════════════════════════════════════════
+
+## 📅 REKAP PASAR MINGGU INI — IHSG & DOMESTIK
+Rekap performa IHSG selama 5 hari perdagangan terakhir: tren, level tertinggi/terendah minggu ini, sektor outperformer vs underperformer. Peristiwa makro domestik paling signifikan minggu ini (kebijakan BI, data ekonomi RI, sentimen Rupiah). Minimal 4-5 paragraf mendalam.
+
+## 🌍 REKAP GLOBAL MINGGU INI — KATALIS EKSTERNAL
+Rangkuman lengkap Wall Street 5 hari terakhir, highlight keputusan The Fed/data ekonomi AS yang dirilis minggu ini, pergerakan China/Asia, konflik geopolitik yang mempengaruhi market, pergerakan komoditas kunci (minyak, emas, batu bara, CPO, nikel) selama seminggu. Minimal 4-5 paragraf.
+
+## 💱 TREN FOREX & KOMODITAS MINGGUAN
+Tren USD/IDR, DXY selama seminggu: melemah/menguat berapa persen? Komoditas mana yang trending naik/turun minggu ini? Dampak kumulatif ke sektor-sektor IDX.
+
+## 📊 SENTIMENT METER MINGGUAN
+- **IHSG Minggu Ini:** [angka]/100 — [Bullish/Cautious Bullish/Neutral/Cautious Bearish/Bearish]
+- **Tren Net Foreign Flow:** [Net Buy/Net Sell/Mixed] — estimasi volume
+- **Global Risk Appetite:** [angka]/100 — [Risk-On/Mixed/Risk-Off]
+- **IDR Minggu Ini:** [Menguat/Melemah/Stabil] vs USD
+
+## 🔮 OUTLOOK MINGGU DEPAN — FORWARD LOOKING
+Analisis prospek minggu depan: event calendar yang wajib dipantau (rilis data ekonomi AS/RI, earnings, FOMC, rapat BI), potensi katalis positif dan negatif, level IHSG yang perlu diperhatikan. 3-4 paragraf strategis.
+
+## ⚡ SIGMA TACTICAL VIEW MINGGUAN
+Stance minggu depan (Aggressive/Selective/Defensive/Wait & See) dengan reasoning detail. Sektor rotasi yang terdeteksi. Rekomendasi posisi: sektor mana yang layak diakumulasi, mana yang harus dihindari, dengan alasan fundamental/teknikal. 2-3 paragraf.
+
+## 🎯 WATCHLIST SEKTORAL MINGGUAN
+5-7 sektor dengan evaluasi mingguan lengkap:
+(✅/⚠/❌) **Nama Sektor** — Status Minggu Ini — Outlook Minggu Depan — Contoh saham representative
+
+Gunakan Markdown. Komprehensif seperti laporan riset mingguan profesional. Sertakan angka dan fakta spesifik dari berita yang tersedia."""
 
                 try:
                     mb_res, _ = _call_groq_primary(mb_prompt)
                     st.session_state["mb_content"]    = mb_res
                     st.session_state["mb_mode"]       = mode_str
                     st.session_state["mb_timestamp"]  = _today
+                    st.session_state["mb_mode_key"]   = mode_key
                 except Exception as e:
                     st.session_state["mb_content"]    = f"⚠ Gagal generate Market Brief: {e}"
                     st.session_state["mb_mode"]       = mode_str
                     st.session_state["mb_timestamp"]  = _today
+                    st.session_state["mb_mode_key"]   = mode_key
 
         if st.session_state.get("mb_content"):
-            _mb_ts   = st.session_state.get("mb_timestamp", "")
-            _mb_mode = st.session_state.get("mb_mode", "")
+            _mb_ts    = st.session_state.get("mb_timestamp", "")
+            _mb_mode  = st.session_state.get("mb_mode", "")
+            _mb_key   = st.session_state.get("mb_mode_key", "daily")
+            _mb_icon  = "🔄" if _mb_key == "daily" else "🗓️"
+            _mb_color = "#4285F4" if _mb_key == "daily" else "#F5C242"
+            _mb_title = "DAILY MARKET BRIEF — 24 JAM TERAKHIR" if _mb_key == "daily" else "WEEKLY MARKET BRIEF — REKAP 7 HARI"
             st.markdown(f"""
             <style>
-            .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid #F5C242;
+            .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid {_mb_color};
                 border-radius:10px; padding:0; margin-bottom:20px; overflow:hidden; }}
             .mb-header {{ background:rgba(245,194,66,0.10); padding:14px 20px;
                 border-bottom:1px solid {met_border}; display:flex; align-items:center;
                 justify-content:space-between; flex-wrap:wrap; gap:8px; }}
-            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#F5C242;
+            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:{_mb_color};
                 font-weight:700; letter-spacing:1.2px; }}
             .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:{text_sub};
                 background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px;
@@ -4967,8 +5030,8 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
             </style>
             <div class='mb-container'>
                 <div class='mb-header'>
-                    <span class='mb-title'>📋 LATEST MARKET BRIEF</span>
-                    <span class='mb-badge'>🕐 {_mb_ts} &nbsp;|&nbsp; {_mb_mode}</span>
+                    <span class='mb-title'>{_mb_icon} {_mb_title}</span>
+                    <span class='mb-badge'>🕐 {_mb_ts}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -5774,6 +5837,15 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
         if "rrg_selected" not in st.session_state:
             st.session_state["rrg_selected"] = None
 
+        # ── WARNA BUBBLE BERDASARKAN POSISI PLOT (rs & mom) ────────────
+        # Warna mengikuti kuadran tempat bubble BERADA, bukan label fase
+        # Leading=hijau, Improving=kuning, Weakening=merah, Lagging=biru
+        def _rrg_bubble_color(rs, mom):
+            if   rs >= 100 and mom >= 100: return "#089981"  # Leading   — hijau (kanan-atas)
+            elif rs <  100 and mom >= 100: return "#F5C242"  # Improving — kuning (kiri-atas)
+            elif rs >= 100 and mom <  100: return "#f23645"  # Weakening — merah (kanan-bawah)
+            else:                          return "#4285F4"  # Lagging   — biru  (kiri-bawah)
+
         # ── BUILD PLOTLY RRG BUBBLE CHART ──────────────────────────────
         fig_rrg = go.Figure()
 
@@ -5810,11 +5882,12 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
             if len(trail) >= 2:
                 trail_xs = [p[0] for p in trail]
                 trail_ys = [p[1] for p in trail]
+                _trail_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
                 # Garis trail tipis
                 fig_rrg.add_trace(go.Scatter(
                     x=trail_xs, y=trail_ys,
                     mode="lines",
-                    line=dict(color=sdata["color"], width=1.5, dash="dot"),
+                    line=dict(color=_trail_clr, width=1.5, dash="dot"),
                     opacity=0.45,
                     showlegend=False,
                     hoverinfo="skip",
@@ -5826,7 +5899,7 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
                     fig_rrg.add_trace(go.Scatter(
                         x=[px], y=[py],
                         mode="markers",
-                        marker=dict(size=dot_size, color=sdata["color"], opacity=dot_opacity),
+                        marker=dict(size=dot_size, color=_trail_clr, opacity=dot_opacity),
                         showlegend=False,
                         hoverinfo="skip",
                     ))
@@ -5835,6 +5908,7 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
         for sname, sdata in rrg_sectors.items():
             is_sel = (st.session_state.get("rrg_selected") == sname)
             marker_size = 55 if is_sel else 42
+            _bubble_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
             fig_rrg.add_trace(go.Scatter(
                 x=[sdata["rs"]], y=[sdata["mom"]],
                 mode="markers+text",
@@ -5844,9 +5918,9 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
                 textfont=dict(size=9, color="#ffffff", family="IBM Plex Mono"),
                 marker=dict(
                     size=marker_size,
-                    color=sdata["color"],
+                    color=_bubble_clr,
                     opacity=0.85 if is_sel else 0.7,
-                    line=dict(color=sdata["color"], width=3 if is_sel else 1.5),
+                    line=dict(color=_bubble_clr, width=3 if is_sel else 1.5),
                 ),
                 customdata=[sname],
                 hovertemplate=(
@@ -7338,56 +7412,189 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
             if not rows:
                 return
             rows_sorted = sorted(rows, key=lambda x: abs(x["_pct"]), reverse=True)
-            acc = _acc_up if is_naik else _acc_dn
-            head_cls   = "sh2-head-up" if is_naik else "sh2-head-dn"
-            badge_cls  = "sh2-badge-up" if is_naik else "sh2-badge-dn"
-            delta_cls  = "sh2-up" if is_naik else "sh2-dn"
-            icon  = "📈" if is_naik else "📉"
-            label = "AKUMULASI RETAIL" if is_naik else "DISTRIBUSI RETAIL"
+            acc        = _acc_up if is_naik else _acc_dn
+            delta_cls  = "up"  if is_naik else "dn"
+            icon       = "📈"  if is_naik else "📉"
+            label      = "AKUMULASI RETAIL" if is_naik else "DISTRIBUSI RETAIL"
             sinyal_strong = "🔥 Akumulasi Kuat" if is_naik else "❄️ Distribusi Kuat"
             sinyal_weak   = "📈 Naik 1 Bulan"   if is_naik else "🔴 Turun 1 Bulan"
             count = len(rows_sorted)
 
-            # Ambil label bulan dari baris pertama
             sample = rows_sorted[0]
-            lbl_now  = "Terkini"
-            lbl_m1   = sample["_m1_lbl"]
-            lbl_m2   = sample["_m2_lbl"]
-            lbl_m3   = sample["_m3_lbl"]
+            lbl_m1 = sample["_m1_lbl"]
+            lbl_m2 = sample["_m2_lbl"]
+            lbl_m3 = sample["_m3_lbl"]
 
-            html = f"""<div style="margin-bottom:6px;display:flex;align-items:center;gap:10px;">
-<span style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:{acc};font-weight:700;">{icon} {label} — {count} EMITEN</span>
-</div>
-<div class="sh2-scroll-outer">
-<table class="sh2-tbl"><thead><tr class="{head_cls}">
-<th>Ticker</th>
-<th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
-<th>Δ 1 Bln</th><th>Δ %</th>
-<th style="color:{_acc_hist};">{lbl_m1}</th>
-<th style="color:{_acc_hist};">{lbl_m2}</th>
-<th style="color:{_acc_hist};">{lbl_m3}</th>
-<th>Tren 3 Bln</th><th>Sinyal</th>
-</tr></thead><tbody>"""
+            import json as _json2
+            _sh_rows = []
             for r in rows_sorted:
                 t3  = r["Tren 3 Bln"]
                 sig = sinyal_strong if "3bln" in t3 else sinyal_weak
-                html += f"""<tr>
-<td><span class="sh2-badge {badge_cls}">{r['Ticker']}</span></td>
-<td style="color:{text_main};font-weight:600;">{r['Pemegang']}</td>
-<td class="{delta_cls}">{r['Δ 1 Bln']}</td>
-<td class="{delta_cls}">{r['Δ %']}</td>
-<td class="sh2-hist">{r['_m1_val']}</td>
-<td class="sh2-hist">{r['_m2_val']}</td>
-<td class="sh2-hist">{r['_m3_val']}</td>
-<td style="color:{text_main};">{t3}</td>
-<td style="color:{text_main};">{sig}</td>
-</tr>"""
-            html += "</tbody></table></div>"
-            st.markdown(html, unsafe_allow_html=True)
+                _sh_rows.append({
+                    "ticker": r["Ticker"],
+                    "pemegang": r["Pemegang"],
+                    "d1bln": r["Δ 1 Bln"],
+                    "dpct":  r["Δ %"],
+                    "m1": r["_m1_val"],
+                    "m2": r["_m2_val"],
+                    "m3": r["_m3_val"],
+                    "tren": t3,
+                    "sinyal": sig,
+                })
+            _rows_json = _json2.dumps(_sh_rows)
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
+            _head_bg  = "rgba(38,166,154,0.12)"  if is_naik else "rgba(242,54,69,0.10)"
+            _head_clr = _acc_up if is_naik else _acc_dn
+            _head_bdr = f"{_acc_up}44"           if is_naik else f"{_acc_dn}44"
+            _uid      = str(abs(hash(label)))[:8]
+
+            _html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:2px 0 4px;}}
+.lbl{{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
+      color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
+.wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
+/* === SCROLL CONTAINER: vertikal + horizontal === */
+.scroll-box{{
+  width:100%;
+  max-height:660px;          /* ≈15 baris × 44px = 660px */
+  overflow-x:auto !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  cursor:grab;
+  scrollbar-width:thin;
+  scrollbar-color:{_tbl_border} transparent;
+}}
+.scroll-box:active{{cursor:grabbing;}}
+.scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
+.scroll-box::-webkit-scrollbar-thumb{{background:{_tbl_border};border-radius:10px;}}
+table{{width:max-content;min-width:100%;border-collapse:collapse;
+       font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
+/* Sticky header saat scroll vertikal */
+thead th{{
+  position:sticky;top:0;z-index:2;
+  font-size:0.57rem;letter-spacing:0.1em;text-transform:uppercase;
+  padding:8px 10px;border-bottom:2px solid {_head_bdr};
+  text-align:left;white-space:nowrap;
+  background:{_head_bg};color:{_head_clr};
+}}
+tbody td{{
+  padding:7px 10px;border-bottom:1px solid {_tbl_border};
+  vertical-align:middle;white-space:nowrap;color:{text_main};
+}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
+.tk{{font-weight:700;font-size:0.78rem;color:{acc};}}
+.up{{color:{_acc_up};font-weight:600;}}
+.dn{{color:{_acc_dn};font-weight:600;}}
+.hist{{color:{_acc_hist};font-size:0.68rem;}}
+/* Footer: info baris + navigasi halaman */
+.pg-bar{{display:flex;align-items:center;justify-content:space-between;
+         padding:7px 12px;border-top:1px solid {_tbl_border};
+         background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:5px;}}
+.pg-info{{font-size:0.58rem;color:{_acc_hist};}}
+.pg-btns{{display:flex;gap:5px;}}
+.pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
+         border:1px solid {_tbl_border};border-radius:4px;
+         padding:4px 11px;font-family:'IBM Plex Mono',monospace;
+         font-size:0.58rem;cursor:pointer;transition:background 0.15s;}}
+.pg-btn:hover{{background:rgba(255,255,255,0.12);}}
+.pg-btn:disabled{{opacity:0.3;cursor:default;}}
+/* Scroll hint mobile */
+.hint{{display:none;text-align:center;font-size:0.55rem;color:{_acc_hist};
+       padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {_tbl_border};}}
+@media(max-width:600px){{
+  .hint{{display:block;}}
+  table{{font-size:0.65rem;}}
+  thead th{{font-size:0.52rem;padding:6px 8px;}}
+  tbody td{{padding:5px 8px;font-size:0.65rem;}}
+  .tk{{font-size:0.70rem;}}
+  .hist{{font-size:0.60rem;}}
+  .pg-info{{font-size:0.54rem;}}
+  .pg-btn{{padding:3px 9px;font-size:0.54rem;}}
+}}
+</style></head><body>
+<span class="lbl">{icon} {label} — {count} EMITEN</span>
+<div class="wrap">
+  <div class="hint">← geser kiri / kanan →</div>
+  <div class="scroll-box" id="sb_{_uid}">
+    <table>
+      <thead><tr>
+        <th>Ticker</th>
+        <th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
+        <th>Δ 1 Bln</th><th>Δ %</th>
+        <th style="color:{_acc_hist};">{lbl_m1}</th>
+        <th style="color:{_acc_hist};">{lbl_m2}</th>
+        <th style="color:{_acc_hist};">{lbl_m3}</th>
+        <th>Tren 3 Bln</th><th>Sinyal</th>
+      </tr></thead>
+      <tbody id="tb_{_uid}"></tbody>
+    </table>
+  </div>
+  <div class="pg-bar">
+    <span class="pg-info" id="pi_{_uid}"></span>
+    <div class="pg-btns">
+      <button class="pg-btn" id="pp_{_uid}" onclick="pg_{_uid}(-1)">&#9664; Prev</button>
+      <button class="pg-btn" id="pn_{_uid}" onclick="pg_{_uid}(+1)">Next &#9654;</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){{
+  var ROWS={_rows_json}, PER=15, page=0;
+  var dc='{delta_cls}';
+  function render(){{
+    var tot=ROWS.length, maxPg=Math.max(0,Math.ceil(tot/PER)-1);
+    var s=page*PER, e=Math.min(s+PER,tot);
+    var h='';
+    ROWS.slice(s,e).forEach(function(r){{
+      h+='<tr>'+
+        '<td><span class="tk">'+r.ticker+'</span></td>'+
+        '<td style="font-weight:600;">'+r.pemegang+'</td>'+
+        '<td class="'+dc+'">'+r.d1bln+'</td>'+
+        '<td class="'+dc+'">'+r.dpct+'</td>'+
+        '<td class="hist">'+r.m1+'</td>'+
+        '<td class="hist">'+r.m2+'</td>'+
+        '<td class="hist">'+r.m3+'</td>'+
+        '<td>'+r.tren+'</td>'+
+        '<td>'+r.sinyal+'</td>'+
+        '</tr>';
+    }});
+    document.getElementById('tb_{_uid}').innerHTML=h;
+    document.getElementById('pi_{_uid}').textContent='Baris '+(s+1)+'–'+e+' dari '+tot;
+    document.getElementById('pp_{_uid}').disabled=(page<=0);
+    document.getElementById('pn_{_uid}').disabled=(page>=maxPg);
+    document.getElementById('sb_{_uid}').scrollTop=0;
+    document.getElementById('sb_{_uid}').scrollLeft=0;
+  }}
+  window['pg_{_uid}']=function(d){{
+    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
+    page=Math.max(0,Math.min(page+d,maxPg));render();
+  }};
+  // Drag-scroll desktop (horizontal)
+  var el=document.getElementById('sb_{_uid}'),isD=false,sX,sL;
+  el.addEventListener('mousedown',function(e){{isD=true;sX=e.pageX-el.offsetLeft;sL=el.scrollLeft;el.style.cursor='grabbing';}});
+  el.addEventListener('mouseleave',function(){{isD=false;el.style.cursor='grab';}});
+  el.addEventListener('mouseup',function(){{isD=false;el.style.cursor='grab';}});
+  el.addEventListener('mousemove',function(e){{
+    if(!isD)return;e.preventDefault();
+    el.scrollLeft=sL-(e.pageX-el.offsetLeft-sX);
+  }});
+  render();
+}})();
+</script></body></html>"""
+
+            # Hitung tinggi presisi: label(28) + hint(0/20) + thead(36) + baris(42×15) + footer(44)
+            _h = 28 + 36 + (min(count, 15) * 42) + 44
+            _h = max(_h, 200)
+            components.html(_html, height=_h, scrolling=False)
+
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
+        st.markdown("<div style='margin-top:-14px'></div>", unsafe_allow_html=True)
         _render_sh_table_v2(_turun_rows, is_naik=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
