@@ -1055,6 +1055,31 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.markdown("""
+<style>
+    /* Mengurangi jarak vertikal antar elemen (box/tabel/text) */
+    div[data-testid="stVerticalBlock"] {
+        gap: 0.5rem !important;
+    }
+    
+    /* Mengurangi jarak di dalam kolom jika kamu pakai st.columns */
+    div[data-testid="stHorizontalBlock"] {
+        gap: 0.5rem !important;
+    }
+    
+    /* Mengurangi margin bawah dari elemen teks/header agar lebih mepet ke box */
+    div[data-testid="stMarkdownContainer"] p {
+        margin-bottom: 0.2rem !important;
+    }
+    
+    /* Sedikit merapikan padding halaman utama agar tidak terlalu banyak ruang kosong di atas/bawah */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".sigma_data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
