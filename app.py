@@ -4966,8 +4966,79 @@ if current_view == "dashboard":
                             if _t and _t not in _target: _target.append(_t)
                     except: pass
 
-                # ── Anthropic API dengan web_search tool untuk data REAL-TIME ────
+                # ── FETCH HARGA REAL-TIME — diinjeksikan ke prompt sebagai FAKTA ──
+                # Ini KRITIS: tanpa ini, Groq akan karang harga dari training data (LAMA)
                 _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
+                _rt_data = {}
+
+                def _fetch_realtime_prices():
+                    import urllib.request, json as _rj, threading as _rt
+                    _res = {}
+                    def _get():
+                        try:
+                            import yfinance as _yf
+                            for _sym2, _key2 in [("^JKSE","ihsg"), ("USDIDR=X","usdidr"), ("GC=F","gold"),
+                                                  ("CL=F","wti"), ("BZ=F","brent"), ("^GSPC","spx"),
+                                                  ("^DJI","dji"), ("^N225","nikkei")]:
+                                try:
+                                    _tw = _yf.Ticker(_sym2)
+                                    _hw = _tw.history(period="5d")
+                                    if not _hw.empty:
+                                        _lw = float(_hw['Close'].iloc[-1])
+                                        _pw = float(_hw['Close'].iloc[-2]) if len(_hw)>1 else _lw
+                                        _cw = ((_lw-_pw)/_pw*100) if _pw else 0
+                                        _res[f"{_key2}_price"] = round(_lw, 2)
+                                        _res[f"{_key2}_chg"]   = round(_cw, 2)
+                                except: pass
+                        except: pass
+                        # Komoditas fallback via FMP
+                        try:
+                            _fmp_k = st.secrets.get("FMP_KEY","")
+                            if _fmp_k and not _res.get("gold_price"):
+                                _url = f"https://financialmodelingprep.com/api/v3/quote/GCUSD,CLUSD,BZUSD?apikey={_fmp_k}"
+                                _req = urllib.request.Request(_url, headers={"User-Agent":"Mozilla/5.0"})
+                                with urllib.request.urlopen(_req, timeout=6) as _r3:
+                                    _d3 = _rj.loads(_r3.read())
+                                for _item in _d3:
+                                    _sym = _item.get("symbol","")
+                                    _px  = _item.get("price")
+                                    _cx  = round(_item.get("changesPercentage") or 0, 2)
+                                    if _sym=="GCUSD" and _px: _res["gold_price"]=_px; _res["gold_chg"]=_cx
+                                    elif _sym=="CLUSD" and _px: _res["wti_price"]=_px; _res["wti_chg"]=_cx
+                                    elif _sym=="BZUSD" and _px: _res["brent_price"]=_px; _res["brent_chg"]=_cx
+                        except: pass
+                    _th = _rt.Thread(target=_get, daemon=True)
+                    _th.start()
+                    _th.join(timeout=14)
+                    return _res
+
+                _rt_data = _fetch_realtime_prices()
+
+                def _fmt_price_block(d):
+                    lines = []
+                    pairs = [
+                        ("ihsg_price","ihsg_chg","IHSG","",""),
+                        ("usdidr_price","usdidr_chg","USD/IDR","Rp ",""),
+                        ("gold_price","gold_chg","Gold XAU/USD","$",""),
+                        ("wti_price","wti_chg","WTI Crude Oil","$","/bbl"),
+                        ("brent_price","brent_chg","Brent Crude","$","/bbl"),
+                        ("spx_price","spx_chg","S&P 500","",""),
+                        ("dji_price","dji_chg","Dow Jones","",""),
+                        ("nikkei_price","nikkei_chg","Nikkei 225","",""),
+                    ]
+                    for pk,ck,name,prefix,suffix in pairs:
+                        if d.get(pk):
+                            _c = d.get(ck,0)
+                            _arrow = "▲" if _c>=0 else "▼"
+                            if pk=="usdidr_price":
+                                lines.append(f"• {name}: {prefix}{d[pk]:,.0f}{suffix} ({_arrow}{abs(_c):.2f}%)")
+                            else:
+                                lines.append(f"• {name}: {prefix}{d[pk]:,.2f}{suffix} ({_arrow}{abs(_c):.2f}%)")
+                    return "\n".join(lines) if lines else "⚠ Harga real-time tidak berhasil di-fetch, gunakan estimasi terbaru."
+
+                _rt_block = _fmt_price_block(_rt_data)
+
+                # ── Anthropic API dengan web_search tool untuk data REAL-TIME ────
                 _anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
 
                 def _call_anthropic_with_search(user_prompt, max_tok=4000):
@@ -5007,83 +5078,83 @@ if current_view == "dashboard":
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
 Tanggal hari ini: **{_today}** | Mode: **DAILY REVIEW 24 JAM TERAKHIR**
 
-INSTRUKSI KRITIS — WAJIB IKUTI:
-1. Gunakan web_search tool untuk mencari berita dan harga TERBARU hari ini sebelum menjawab.
-2. Cari minimal 4 query: "IHSG hari ini {datetime.now().strftime('%d %B %Y')}", "rupiah dolar hari ini", "harga emas hari ini", "geopolitik global hari ini tarif trump perang dagang"
-3. Semua angka harga (IHSG, USD/IDR, emas, minyak) HARUS dari hasil pencarian real-time, BUKAN asumsi.
-4. Geopolitik WAJIB dibahas secara spesifik — tarif Trump, perang Rusia-Ukraina, ketegangan China-Taiwan, konflik Timur Tengah, dan dampaknya ke pasar EM/IDX.
+═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
+{_rt_block}
+⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
+Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
+═══════════════════════════════════════════════════════════════════════════
 
-DATA BACKUP (RSS — gunakan jika web search gagal untuk topik ini):
+BERITA TERKINI (RSS — jadikan konteks narasi):
 Domestik: {_rss_dom_str}
 Global: {_rss_glob_str}
 
 FORMAT OUTPUT — Bahasa Indonesia, maks 600 kata, Markdown:
 
 ## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
-IHSG (level aktual + % perubahan), Rupiah vs USD (kurs aktual), sentimen lokal terkini, saham/sektor bergerak. Data HARUS real-time. (2 paragraf)
+Gunakan harga IHSG dan USD/IDR dari DATA REAL-TIME di atas. Tambahkan konteks: sentimen lokal, saham/sektor bergerak berdasarkan berita RSS. (2 paragraf)
 
 ## 🌍 KATALIS GLOBAL 24 JAM
-Wall Street terkini, data makro AS (CPI/NFP/FOMC), Asia pagi ini. Harga spesifik dari hasil search. (1-2 paragraf)
+Gunakan harga S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME di atas. Tambahkan konteks makro dari berita RSS. (1-2 paragraf)
 
 ## ⚔️ GEOPOLITIK & RISIKO GLOBAL
-**WAJIB SPESIFIK**: Kebijakan tarif Trump terbaru, perkembangan perang Rusia-Ukraina, eskalasi China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza), sanksi komoditas. Dampak langsung ke IDX, Rupiah, dan komoditas. (2 paragraf)
+**WAJIB SPESIFIK dari berita RSS**: Kebijakan tarif Trump terbaru, perang Rusia-Ukraina, China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza). Dampak ke IDX, Rupiah, komoditas. (2 paragraf)
 
 ## 💱 FOREX & KOMODITAS (Harga Aktual)
-USD/IDR aktual, DXY, emas (XAU/USD aktual), minyak WTI/Brent aktual, batu bara. Sektor IDX terdampak?
+Gunakan USD/IDR, Gold, WTI, Brent dari DATA REAL-TIME di atas. Sektor IDX terdampak?
 
 ## 📊 SENTIMENT METER
-- IHSG: [skor]/100 — [label]
+- IHSG: [skor]/100 — [label berdasarkan data real-time]
 - Global Risk: [skor]/100 — [Risk-On/Mixed/Risk-Off]
 - Geopolitik Risk: [Tinggi/Sedang/Rendah]
 - IDR: [Rendah/Sedang/Tinggi tekanan]
 
 ## ⚡ TACTICAL VIEW
-Stance + support/resistance IHSG + 1-2 sektor pantau.
+Stance + support/resistance IHSG (berdasarkan level real-time di atas) + 1-2 sektor pantau.
 
 ## 🎯 WATCHLIST SEKTORAL (3 sektor)
 (✅/⚠/❌) Sektor — status — 1 kalimat alasan.
 
-Padat & actionable. Semua harga HARUS aktual dari web search. Hindari basa-basi."""
+Padat & actionable. Hindari basa-basi. JANGAN UBAH ANGKA DARI DATA REAL-TIME."""
 
                 else:  # weekly
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
 Tanggal: **{_today}** | Mode: **WEEKLY REVIEW (7 Hari Terakhir)**
 
-INSTRUKSI KRITIS — WAJIB IKUTI:
-1. Gunakan web_search tool untuk mencari rekap pasar MINGGU INI sebelum menjawab.
-2. Cari minimal 5 query: "IHSG minggu ini rekap {datetime.now().strftime('%B %Y')}", "rupiah pekan ini", "Wall Street weekly recap", "harga emas minyak batu bara pekan ini", "geopolitik global minggu ini tarif trump perang"
-3. Semua data pergerakan HARUS dari hasil pencarian real-time terbaru.
-4. Geopolitik WAJIB dibahas detail — perkembangan terbaru tarif Trump/perang dagang, Rusia-Ukraina, China, Timur Tengah minggu ini dan dampaknya ke pasar global & IDX.
+═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
+{_rt_block}
+⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
+Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
+═══════════════════════════════════════════════════════════════════════════
 
-DATA BACKUP (RSS):
+BERITA TERKINI (RSS — jadikan konteks narasi & analisis):
 Domestik: {_rss_dom_str}
 Global: {_rss_glob_str}
 
 FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 800 kata total.
 
 ## 📅 REKAP IHSG MINGGU INI
-Tren IHSG 5 hari (level awal vs akhir + % net change), sektor outperformer vs underperformer, foreign flow net buy/sell, event makro domestik signifikan. Data aktual. (2-3 paragraf)
+Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
 
 ## 🌍 KATALIS GLOBAL MINGGU INI
-Rangkuman Wall Street, keputusan Fed/data AS, China/Asia, komoditas kunci (minyak, emas, batu bara, CPO) dengan angka aktual. (2 paragraf)
+Gunakan S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME. Tambahkan konteks: keputusan Fed/data AS, China/Asia, komoditas (gold, WTI, Brent) dengan ANGKA DARI DATA REAL-TIME. (2 paragraf)
 
 ## ⚔️ GEOPOLITIK MINGGU INI — ANALISIS MENDALAM
-**WAJIB DETAIL**: Setiap perkembangan signifikan tarif/perang dagang Trump, eskalasi atau de-eskalasi Rusia-Ukraina, perkembangan China (Taiwan/ekonomi/regulasi), konflik Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
+**WAJIB DETAIL dari berita RSS**: Perkembangan tarif/perang dagang Trump, eskalasi Rusia-Ukraina, China (Taiwan/regulasi/ekonomi), Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
 
 ## 📊 SENTIMENT METER MINGGUAN
-- **IHSG:** [angka]/100 — [label]
-- **Foreign Flow:** [Net Buy/Sell/Mixed] — estimasi nilai
+- **IHSG:** [angka]/100 — [label — berdasarkan level real-time]
+- **Foreign Flow:** [Net Buy/Sell/Mixed] — estimasi arah
 - **Global Risk:** [angka]/100 — [label]
 - **Geopolitik Risk:** [Tinggi/Sedang/Rendah]
-- **IDR:** [Menguat/Melemah/Stabil]
+- **IDR:** [Menguat/Melemah/Stabil — berdasarkan data real-time]
 
 ## 🔮 OUTLOOK & TACTICAL VIEW MINGGU DEPAN
-Event penting calendar (FOMC, rilis data AS, dll) + stance (Aggressive/Selective/Defensive/Wait & See) + 2-3 sektor rotasi + risiko utama yang perlu dipantau. (2 paragraf)
+Event penting (FOMC, data AS, dll) + stance + 2-3 sektor rotasi + risiko utama. (2 paragraf)
 
 ## 🎯 WATCHLIST SEKTORAL (5 sektor)
 (✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham — Alasan geopolitik/makro
 
-Gunakan Markdown. Semua harga HARUS aktual dari web search. Padat & actionable."""
+Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
 
                 # ── Eksekusi: Coba Anthropic API dulu (dengan web search), fallback ke Groq ──
                 mb_res = None
@@ -5841,148 +5912,366 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         st.markdown(f"""
         <p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
         Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
-        Data diperbarui real-time oleh TradingView. Rate saat ini: <b style='color:#F5C242;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>29 Apr 2026</b>
+        Rate saat ini: <b style='color:#F5C242;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>29 Apr 2026</b>
         </p>
         """, unsafe_allow_html=True)
 
-        # Fed Rate Monitor — 3 upcoming FOMC meetings side by side
+        # ── Data FOMC meetings ──────────────────────────────────
         _fed_meetings = [
             {
                 "date": "Apr 29, 2026",
-                "current_rate": "3.50–3.75",
+                "meeting_time": "Apr 29, 2026 02:00PM ET",
                 "future_price": "96.358",
-                "countdown": "3W 3D 1H",
+                "countdown_weeks": 3, "countdown_days": 3, "countdown_hours": 1, "countdown_mins": 34,
                 "scenarios": [
-                    {"range": "3.50–3.75", "prob": 98.9, "prev_day": 97.9, "prev_week": 95.7, "dir": "hold"},
-                    {"range": "3.75–4.00", "prob":  1.1, "prev_day":  2.1, "prev_week":  4.3, "dir": "hike"},
+                    {"range": "3.50-3.75", "prob": 98.9, "prev_day": 97.9, "prev_week": 95.7, "dir": "hold"},
+                    {"range": "3.75-4.00", "prob":  1.1, "prev_day":  2.1, "prev_week":  4.3, "dir": "hike"},
                 ]
             },
             {
                 "date": "Jun 17, 2026",
-                "current_rate": "3.50–3.75",
+                "meeting_time": "Jun 17, 2026 02:00PM ET",
                 "future_price": "96.360",
-                "countdown": "11W 1D",
+                "countdown_weeks": 11, "countdown_days": 1, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
-                    {"range": "3.25–3.50", "prob":  5.9, "prev_day":  9.6, "prev_week": None, "dir": "cut"},
-                    {"range": "3.50–3.75", "prob": 93.1, "prev_day": 88.5, "prev_week": 92.1, "dir": "hold"},
-                    {"range": "3.75–4.00", "prob":  1.0, "prev_day":  1.9, "prev_week":  7.7, "dir": "hike"},
+                    {"range": "3.25-3.50", "prob":  5.9, "prev_day":  9.6, "prev_week": None, "dir": "cut"},
+                    {"range": "3.50-3.75", "prob": 93.1, "prev_day": 88.5, "prev_week": 92.1, "dir": "hold"},
+                    {"range": "3.75-4.00", "prob":  1.0, "prev_day":  1.9, "prev_week":  7.7, "dir": "hike"},
                 ]
             },
             {
                 "date": "Jul 29, 2026",
-                "current_rate": "3.50–3.75",
+                "meeting_time": "Jul 29, 2026 02:00PM ET",
                 "future_price": "96.490",
-                "countdown": "16W 3D",
+                "countdown_weeks": 16, "countdown_days": 3, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
-                    {"range": "3.00–3.25", "prob":  1.2, "prev_day":  1.0, "prev_week": None, "dir": "cut"},
-                    {"range": "3.25–3.50", "prob": 14.3, "prev_day": 18.2, "prev_week": None, "dir": "cut"},
-                    {"range": "3.50–3.75", "prob": 78.1, "prev_day": 74.5, "prev_week": None, "dir": "hold"},
-                    {"range": "3.75–4.00", "prob":  6.4, "prev_day":  6.3, "prev_week": None, "dir": "hike"},
+                    {"range": "3.00-3.25", "prob":  1.2, "prev_day":  1.0, "prev_week": None, "dir": "cut"},
+                    {"range": "3.25-3.50", "prob": 14.3, "prev_day": 18.2, "prev_week": None, "dir": "cut"},
+                    {"range": "3.50-3.75", "prob": 78.1, "prev_day": 74.5, "prev_week": None, "dir": "hold"},
+                    {"range": "3.75-4.00", "prob":  6.4, "prev_day":  6.3, "prev_week": None, "dir": "hike"},
                 ]
             },
         ]
 
-        _dir_color = {"cut": "#089981", "hold": "#4285F4", "hike": "#f23645"}
-        _dir_label = {"cut": "CUT", "hold": "HOLD", "hike": "HIKE"}
+        # ── Serialize data ke JSON untuk dipakai di JS ──────────
+        import json as _json
+        _fed_json = _json.dumps(_fed_meetings)
+        _is_dark_js = "true" if is_dark else "false"
+        _updated_str = datetime.now().strftime("%b %d, %Y %I:%M%p") + " WIB"
 
-        # ── Build semua card HTML sekaligus, pakai CSS grid responsive ──
-        _all_cards_html = ""
-        for fi, mtg in enumerate(_fed_meetings):
-            _bars_html = ""
-            for sc in mtg["scenarios"]:
-                _bc = _dir_color.get(sc["dir"], "#b2b5be")
-                _bar_w = max(sc["prob"], 2)
-                _bars_html += f"""
-                <div style='margin-bottom:10px;'>
-                    <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;'>
-                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_main};'>{sc['range']}</span>
-                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.65rem;font-weight:700;color:{_bc};'>{sc['prob']:.1f}%</span>
-                    </div>
-                    <div style='background:rgba(255,255,255,0.06);border-radius:3px;height:6px;'>
-                        <div style='background:{_bc};width:{_bar_w}%;height:100%;border-radius:3px;opacity:0.85;'></div>
-                    </div>
-                </div>"""
+        # ── Render via components.html — BYPASS Streamlit markdown sanitizer ──
+        components.html(f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
 
-            _tbl_rows = ""
-            for sc in mtg["scenarios"]:
-                _bc = _dir_color.get(sc["dir"], "#b2b5be")
-                _pd_str = f'{sc["prev_day"]:.1f}%' if sc["prev_day"] is not None else "—"
-                _pw_str = f'{sc["prev_week"]:.1f}%' if sc["prev_week"] is not None else "—"
-                _tbl_rows += f"""<tr>
-                    <td style='padding:5px 8px;white-space:nowrap;color:{text_sub};font-size:0.62rem;'>{sc['range']}</td>
-                    <td style='padding:5px 8px;text-align:right;font-weight:700;color:{_bc};font-size:0.65rem;'>{sc['prob']:.1f}%</td>
-                    <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pd_str}</td>
-                    <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pw_str}</td>
-                </tr>"""
+  .frm-wrap {{ width: 100%; padding: 0; }}
 
-            _all_cards_html += f"""
-            <div class='fed-card'>
-                <div style='background:rgba(245,194,66,0.08);border-bottom:1px solid {met_border};padding:10px 14px;'>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;font-weight:700;color:#F5C242;letter-spacing:0.08em;'>{mtg['date']}</div>
-                    <div style='display:flex;justify-content:space-between;margin-top:4px;'>
-                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:{text_sub};'>Future: {mtg['future_price']}</span>
-                        <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:rgba(61,220,132,0.8);'>⏱ {mtg['countdown']}</span>
-                    </div>
-                </div>
-                <div style='padding:12px 14px;'>
-                    {_bars_html}
-                </div>
-                <div style='border-top:1px solid {met_border};overflow-x:auto;'>
-                    <table style='width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;'>
-                        <thead>
-                            <tr style='background:rgba(255,255,255,0.03);'>
-                                <th style='padding:5px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>TARGET RATE</th>
-                                <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>NOW%</th>
-                                <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>YDAY%</th>
-                                <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>WEEK%</th>
-                            </tr>
-                        </thead>
-                        <tbody>{_tbl_rows}</tbody>
-                    </table>
-                </div>
-                <div style='padding:5px 14px 8px;font-family:IBM Plex Mono,monospace;font-size:0.53rem;color:{text_sub};opacity:0.7;text-align:right;'>
-                    Updated: {datetime.now().strftime("%b %d, %Y %I:%M%p")} WIB · CME FedWatch
-                </div>
-            </div>"""
+  /* Countdown banner */
+  .frm-countdown {{
+    background: rgba(242,54,69,0.08);
+    border: 1px solid rgba(242,54,69,0.22);
+    border-radius: 10px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }}
+  .frm-cd-label {{
+    font-size: 0.65rem;
+    color: #a0aec0;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }}
+  .frm-cd-title {{
+    font-size: 0.72rem;
+    color: #f23645;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }}
+  .frm-cd-boxes {{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }}
+  .frm-cd-box {{
+    text-align: center;
+    min-width: 48px;
+  }}
+  .frm-cd-num {{
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e8eaf0;
+    line-height: 1;
+  }}
+  .frm-cd-unit {{
+    font-size: 0.55rem;
+    color: #6b7a99;
+    letter-spacing: 0.06em;
+    margin-top: 3px;
+    text-transform: uppercase;
+  }}
+  .frm-cd-sep {{
+    font-size: 1.4rem;
+    color: #4285F4;
+    font-weight: 700;
+    padding-bottom: 8px;
+  }}
 
-        st.markdown(f"""
-        <style>
-        .fed-grid {{
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 16px;
-        }}
-        .fed-card {{
-            background: {met_bg};
-            border: 1px solid {met_border};
-            border-radius: 12px;
-            overflow: hidden;
-        }}
-        @media (max-width: 900px) {{
-            .fed-grid {{
-                grid-template-columns: 1fr;
-                gap: 12px;
-            }}
-            .fed-card {{
-                width: 100%;
-            }}
-        }}
-        </style>
-        <div class='fed-grid'>
-            {_all_cards_html}
-        </div>
-        """, unsafe_allow_html=True)
+  /* Grid */
+  .frm-grid {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }}
 
-        st.markdown(f"""
-        <div style='background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.18);border-left:3px solid #4285F4;
-            border-radius:8px;padding:10px 14px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_main};line-height:1.6;'>
-        💡 <b style='color:#4285F4;'>SIGMA INSIGHT —</b> 
-        Probabilitas 98.9% pasar memproyeksikan Fed <b>HOLD</b> di 3.50–3.75% pada FOMC April 2026.
-        Ekspektasi cut baru mulai terlihat di FOMC Juni (5.9% prob cut ke 3.25–3.50%).
-        Implikasi ke IDX: <span style='color:#089981;font-weight:600;'>Rupiah relatif stabil</span>, hot money tetap di EM, sektor perbankan &amp; properti mendapat sentimen positif dari ekspektasi suku bunga rendah jangka menengah.
-        </div>
-        """, unsafe_allow_html=True)
+  /* Card */
+  .frm-card {{
+    background: {'rgba(8,12,22,0.9)' if is_dark else '#f8fafc'};
+    border: 1px solid {'rgba(245,194,66,0.18)' if is_dark else '#e2e8f0'};
+    border-radius: 12px;
+    overflow: hidden;
+  }}
+  .frm-card-header {{
+    background: rgba(245,194,66,0.07);
+    border-bottom: 1px solid {'rgba(245,194,66,0.18)' if is_dark else '#e2e8f0'};
+    padding: 12px 16px;
+  }}
+  .frm-card-date {{
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #F5C242;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }}
+  .frm-card-meta {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }}
+  .frm-card-future {{
+    font-size: 0.6rem;
+    color: {'#6b7a99' if is_dark else '#64748b'};
+  }}
+  .frm-card-time {{
+    font-size: 0.58rem;
+    color: #089981;
+  }}
+
+  /* Bars section */
+  .frm-bars {{ padding: 14px 16px 8px; }}
+  .frm-bar-row {{ margin-bottom: 12px; }}
+  .frm-bar-top {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }}
+  .frm-bar-label {{ font-size: 0.68rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; }}
+  .frm-bar-pct {{ font-size: 0.72rem; font-weight: 700; }}
+  .frm-bar-track {{
+    height: 8px;
+    border-radius: 4px;
+    background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
+    overflow: hidden;
+  }}
+  .frm-bar-fill {{
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }}
+
+  /* Table section */
+  .frm-tbl-wrap {{
+    border-top: 1px solid {'rgba(245,194,66,0.18)' if is_dark else '#e2e8f0'};
+    overflow-x: auto;
+  }}
+  .frm-tbl {{
+    width: 100%;
+    border-collapse: collapse;
+  }}
+  .frm-tbl thead tr {{
+    background: {'rgba(255,255,255,0.03)' if is_dark else 'rgba(0,0,0,0.02)'};
+  }}
+  .frm-tbl th {{
+    padding: 7px 10px;
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    color: {'#6b7a99' if is_dark else '#64748b'};
+    white-space: nowrap;
+  }}
+  .frm-tbl th:first-child {{ text-align: left; }}
+  .frm-tbl th:not(:first-child) {{ text-align: right; }}
+  .frm-tbl td {{
+    padding: 7px 10px;
+    font-size: 0.65rem;
+    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+    white-space: nowrap;
+  }}
+  .frm-tbl td:first-child {{
+    text-align: left;
+    color: {'#9ca3af' if is_dark else '#64748b'};
+  }}
+  .frm-tbl td:not(:first-child) {{ text-align: right; color: {'#6b7a99' if is_dark else '#9ca3af'}; }}
+  .frm-dir-badge {{
+    display: inline-block;
+    font-size: 0.52rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+    margin-left: 4px;
+    vertical-align: middle;
+  }}
+  .frm-tbl-footer {{
+    padding: 5px 10px 8px;
+    font-size: 0.52rem;
+    color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
+    text-align: right;
+    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+  }}
+
+  /* Insight box */
+  .frm-insight {{
+    background: rgba(66,133,244,0.07);
+    border: 1px solid rgba(66,133,244,0.20);
+    border-left: 3px solid #4285F4;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.72rem;
+    color: {'#e8eaf0' if is_dark else '#1a202c'};
+    line-height: 1.65;
+  }}
+
+  /* Mobile */
+  @media (max-width: 860px) {{
+    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+    .frm-countdown {{ padding: 12px 14px; }}
+    .frm-cd-num {{ font-size: 1.3rem; }}
+    .frm-cd-box {{ min-width: 38px; }}
+  }}
+</style>
+</head>
+<body>
+<div class="frm-wrap">
+
+  <!-- Countdown Banner (first meeting) -->
+  <div class="frm-countdown">
+    <div>
+      <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
+      <div class="frm-cd-title">Apr 29, 2026 &nbsp;·&nbsp; 02:00PM ET</div>
+    </div>
+    <div class="frm-cd-boxes" id="frm-cd"></div>
+  </div>
+
+  <!-- Cards Grid -->
+  <div class="frm-grid" id="frm-grid"></div>
+
+  <!-- Insight -->
+  <div class="frm-insight">
+    💡 <b style="color:#4285F4;">SIGMA INSIGHT —</b>
+    Probabilitas 98.9% pasar memproyeksikan Fed <b>HOLD</b> di 3.50–3.75% pada FOMC April 2026.
+    Ekspektasi cut mulai muncul di FOMC Juni (5.9% cut ke 3.25–3.50%).
+    Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah relatif stabil</span>,
+    hot money tetap di EM, sentimen positif untuk sektor perbankan &amp; properti.
+  </div>
+
+</div>
+
+<script>
+var DATA = {_fed_json};
+var UPDATED = "{_updated_str}";
+
+var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
+var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
+var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
+
+// Countdown (static display from data)
+(function() {{
+  var m = DATA[0];
+  var cd = document.getElementById('frm-cd');
+  var parts = [
+    [m.countdown_weeks, "Weeks"],
+    [m.countdown_days, "Days"],
+    [m.countdown_hours, "Hours"],
+    [m.countdown_mins, "Minutes"]
+  ];
+  var html = '';
+  parts.forEach(function(p, i) {{
+    if (i > 0) html += '<div class="frm-cd-sep">:</div>';
+    html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
+  }});
+  cd.innerHTML = html;
+}})();
+
+// Build cards
+(function() {{
+  var grid = document.getElementById('frm-grid');
+  var html = '';
+
+  DATA.forEach(function(mtg) {{
+    // Bars
+    var bars = '';
+    mtg.scenarios.forEach(function(sc) {{
+      var c = DIR_COLOR[sc.dir] || '#b2b5be';
+      var w = Math.max(sc.prob, 1.5);
+      bars += '<div class="frm-bar-row">';
+      bars += '<div class="frm-bar-top">';
+      bars += '<span class="frm-bar-label">' + sc.range + '</span>';
+      bars += '<span class="frm-bar-pct" style="color:' + c + '">' + sc.prob.toFixed(1) + '%</span>';
+      bars += '</div>';
+      bars += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:' + w + '%;background:' + c + ';opacity:0.85;"></div></div>';
+      bars += '</div>';
+    }});
+
+    // Table rows
+    var rows = '';
+    mtg.scenarios.forEach(function(sc) {{
+      var c = DIR_COLOR[sc.dir] || '#b2b5be';
+      var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
+      var pd = sc.prev_day !== null ? sc.prev_day.toFixed(1) + '%' : '—';
+      var pw = sc.prev_week !== null ? sc.prev_week.toFixed(1) + '%' : '—';
+      var badge = '<span class="frm-dir-badge" style="color:' + c + ';background:' + bc + '">' + DIR_LABEL[sc.dir] + '</span>';
+      rows += '<tr>';
+      rows += '<td>' + sc.range + badge + '</td>';
+      rows += '<td style="font-weight:700;color:' + c + '">' + sc.prob.toFixed(1) + '%</td>';
+      rows += '<td>' + pd + '</td>';
+      rows += '<td>' + pw + '</td>';
+      rows += '</tr>';
+    }});
+
+    html += '<div class="frm-card">';
+    html += '<div class="frm-card-header">';
+    html += '<div class="frm-card-date">' + mtg.date + '</div>';
+    html += '<div class="frm-card-meta">';
+    html += '<span class="frm-card-future">Future: ' + mtg.future_price + '</span>';
+    html += '<span class="frm-card-time">Meeting: ' + mtg.meeting_time + '</span>';
+    html += '</div></div>';
+    html += '<div class="frm-bars">' + bars + '</div>';
+    html += '<div class="frm-tbl-wrap"><table class="frm-tbl">';
+    html += '<thead><tr><th>TARGET RATE</th><th>NOW %</th><th>YDAY %</th><th>WEEK %</th></tr></thead>';
+    html += '<tbody>' + rows + '</tbody>';
+    html += '</table></div>';
+    html += '<div class="frm-tbl-footer">Updated: ' + UPDATED + ' · Source: CME FedWatch</div>';
+    html += '</div>';
+  }});
+
+  grid.innerHTML = html;
+}})();
+</script>
+</body>
+</html>
+        """, height=860, scrolling=False)
 
     # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
     with tab_rotation:
