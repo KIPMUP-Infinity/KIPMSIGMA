@@ -5172,42 +5172,31 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
                 return "Failed to load news."
 
         col_n1, col_n2 = st.columns(2)
+
         with col_n1:
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:12px; padding:16px; margin-bottom: 24px;'>
-                <div style='display:flex; align-items:center; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;'>
-                    <div style='background:rgba(245,194,66,0.15); color:#F5C242; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;'>DOMESTIC NEWS</div>
-                </div>
-                <div style='height:280px; overflow-y:auto; padding-right:6px;'>
-                    {content_id}
-                </div>
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column; margin-bottom: 30px;'>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>
             """, unsafe_allow_html=True)
-            # Tambahan jeda untuk HP
-            st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
-    
+        
         with col_n2:
-            # PENTING: Lakukan hal yang sama untuk col_n2 (Global News)
-            content_id_global = render_news_feed("https://feeds.reuters.com/reuters/businessNews", "GLOBAL") # (URL ini contoh, biarkan url aslimu)
+            content_ig = render_news_feed("https://feeds.reuters.com/reuters/businessNews", "GLOBAL")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:12px; padding:16px; margin-bottom: 24px;'>
-                <div style='display:flex; align-items:center; gap:8px; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;'>
-                    <div style='background:rgba(66,133,244,0.15); color:#4285F4; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;'>GLOBAL NEWS</div>
-                </div>
-                <div style='height:280px; overflow-y:auto; padding-right:6px;'>
-                    {{ganti dengan variabel konten aslimu, misal {content_id_global}}}
-                </div>
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column; margin-bottom: 30px;'>
+                <div style='padding:10px 14px; background:rgba(66,133,244,0.1); border-bottom:1px solid {met_border}; color:#4285F4; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌍 GLOBAL NEWS</div>
+                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_ig}</div>
             </div>
             """, unsafe_allow_html=True)
-            # Tambahan jeda untuk HP
-            st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+                    
             
         # ─────────────────────────────────────────────────────────
         # CORPORATE ACTION — IDX FULL FETCH (900+ SAHAM, 3 BULAN)
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>UPCOMING CORPORATE ACTION</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown('<div style="margin-bottom: 30px;"></div>', unsafe_allow_html=True)
+        st.markdown("<div style='height: 35px; width: 100%; display: block;'></div>", unsafe_allow_html=True)
         @st.cache_data(ttl=3600)
         def fetch_idx_corporate_actions():
             """
