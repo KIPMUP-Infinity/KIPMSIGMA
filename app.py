@@ -4773,7 +4773,6 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>GLOBAL INDICES &amp; VOLATILITY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         if idx_data:
             items_idx = list(idx_data.items())
-            # Chunk into rows of 3 for mobile-friendly display
             chunk_size = 3
             for row_start in range(0, len(items_idx), chunk_size):
                 row_items = items_idx[row_start:row_start+chunk_size]
@@ -4800,6 +4799,65 @@ if current_view == "dashboard":
                         st.metric(label=name, value=price_str, delta=delta_str)
         else:
             st.warning("&#9888; Gagal menarik data komoditas.")
+
+        # ─────────────────────────────────────────────────────────
+        # NEW FEATURE: MARKET BRIEF & INTELLIGENCE (DAILY/WEEKLY)
+        # ─────────────────────────────────────────────────────────
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MARKET BRIEF & INTELLIGENCE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Kesimpulan berita 24 jam terakhir (Daily) dan 1 minggu terakhir (Weekly) dari pasar domestik & global.</p>", unsafe_allow_html=True)
+
+        mb_col1, mb_col2 = st.columns(2)
+        with mb_col1:
+            req_daily = st.button("🔄 REQUEST DAILY REVIEW (Update 06:00 WIB)", use_container_width=True, key="btn_mb_daily")
+        with mb_col2:
+            req_weekly = st.button("🗓️ REQUEST WEEKLY REVIEW (Sun 06:00 WIB)", use_container_width=True, key="btn_mb_weekly")
+
+        if req_daily or req_weekly:
+            mode_str = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
+            with st.spinner(f"Mengumpulkan sentimen berita dan menyusun {mode_str} Market Brief..."):
+                import feedparser
+                # Fetch headline berita dari sumber
+                dom_news, glob_news = [], []
+                try:
+                    for e in feedparser.parse("https://www.cnbcindonesia.com/market/rss").entries[:15]: dom_news.append(e.title)
+                except: pass
+                try:
+                    for e in feedparser.parse("https://www.cnbc.com/id/15839069/device/rss/rss.html").entries[:15]: glob_news.append(e.title)
+                except: pass
+                
+                mb_prompt = f"""Kamu adalah Senior Market Analyst SIGMA.
+Buatlah {mode_str} Market Review berdasarkan headline berita berikut yang didapat hari ini.
+
+BERITA DALAM NEGERI (DOMESTIK):
+{chr(10).join(dom_news) if dom_news else "Data tidak tersedia."}
+
+BERITA LUAR NEGERI (GLOBAL):
+{chr(10).join(glob_news) if glob_news else "Data tidak tersedia."}
+
+INSTRUKSI FORMAT WAJIB (Jawab dalam Bahasa Indonesia):
+1. 🇮🇩 KONDISI DALAM NEGERI: Ceritakan poin-poin penting ekonomi/pasar modal Indonesia.
+2. 🌎 KONDISI LUAR NEGERI: Ceritakan isu global, kebijakan sentral, atau komoditas yang relevan.
+3. ⚡ KESIMPULAN & SENTIMEN: Gabungkan kedua narasi menjadi satu kesimpulan strategis (Bullish/Bearish/Neutral) untuk perdagangan di IHSG.
+Gunakan format bercerita (storytelling) yang analitik, tajam, dan langsung ke intinya. Gunakan format Markdown standar."""
+                
+                try:
+                    # Memanggil Groq / LLaMA dari core function
+                    mb_res, _ = _call_groq_primary(mb_prompt)
+                    st.session_state["mb_content"] = mb_res
+                except Exception as e:
+                    st.session_state["mb_content"] = f"Gagal generate Market Brief: {e}"
+        
+        if st.session_state.get("mb_content"):
+            st.markdown(f"""
+            <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #F5C242;border-radius:8px;padding:20px;margin-bottom:20px;'>
+                <div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#F5C242;margin-bottom:12px;font-weight:bold;letter-spacing:1px;'>LATEST MARKET BRIEF</div>
+                <div style='font-size:0.85rem;color:{text_main};line-height:1.7;'>{st.session_state["mb_content"]}</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        # ─────────────────────────────────────────────────────────
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
@@ -4858,6 +4916,235 @@ if current_view == "dashboard":
             </div>
             """, unsafe_allow_html=True)
 
+        # ---------------------------------------------------------
+        # LIVE MARKET PULSE & NEWS - FIX FINAL
+        # ---------------------------------------------------------
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <style>
+        .news-card-sigma {{
+            background: {met_bg};
+            border: 1px solid {met_border};
+            border-radius: 12px;
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }}
+        .news-header-sigma {{
+            padding: 12px 15px;
+            background: rgba(245,194,66,0.1);
+            border-bottom: 1px solid {met_border};
+            color: #F5C242;
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 700;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }}
+        .news-scroll-sigma {{ flex: 1; overflow-y: auto; padding: 10px; }}
+        .news-entry-sigma {{ display: block; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none !important; transition: 0.2s ease; }}
+        .news-entry-sigma:hover {{ background: rgba(245,194,66,0.05); }}
+        .news-title-sigma {{ color: {text_main}; font-size: 13px; line-height: 1.5; margin-bottom: 5px; }}
+        .news-meta-sigma {{ color: {text_sub}; font-size: 10px; font-family: 'IBM Plex Mono', monospace; }}
+        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; }} .news-title-sigma {{ font-size: 12px !important; }} }}
+        .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
+        .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
+        </style>
+        """, unsafe_allow_html=True)
+
+        def render_news_feed(url, tag_label):
+            import feedparser
+            try:
+                feed = feedparser.parse(url)
+                html_str = ""
+                for entry in feed.entries[:10]:
+                    date_str = entry.get('published', '')[:16]
+                    html_str += f"""
+                    <a href='{entry.link}' target='_blank' style='text-decoration:none;'>
+                        <div style='padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);'>
+                            <div style='color:{text_main}; font-size:13px; line-height:1.4;'>{entry.title}</div>
+                            <div style='color:{text_sub}; font-size:10px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
+                        </div>
+                    </a>"""
+                return html_str if html_str else "No news found."
+            except:
+                return "Failed to load news."
+
+        col_n1, col_n2 = st.columns(2)
+        with col_n1:
+            content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
+            st.markdown(f"""
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='flex:1; overflow-y:auto;'>{content_id}</div>
+            </div>""", unsafe_allow_html=True)
+
+        with col_n2:
+            content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
+            st.markdown(f"""
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; height:450px; overflow:hidden; display:flex; flex-direction:column;'>
+                <div style='padding:10px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px;'>🌎 GLOBAL NEWS</div>
+                <div style='flex:1; overflow-y:auto;'>{content_glob}</div>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        
+        # ─────────────────────────────────────────────────────────
+        # NEW FEATURE: CORPORATE ACTION 
+        # ─────────────────────────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>UPCOMING CORPORATE ACTION</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Jadwal aksi korporasi terdekat (Dividen, RUPS, Right Issue).</p>", unsafe_allow_html=True)
+        
+        ca_data = [
+            {"Tanggal": "06 Apr 2026", "Ticker": "BBCA", "Event": "Cum Dividen Tunai", "Keterangan": "Rp 225 / saham"},
+            {"Tanggal": "08 Apr 2026", "Ticker": "TLKM", "Event": "RUPS Tahunan", "Keterangan": "Persetujuan Laporan Keuangan 2025"},
+            {"Tanggal": "10 Apr 2026", "Ticker": "ADRO", "Event": "Cum Dividen Final", "Keterangan": "Estimasi Rp 250 / saham"},
+            {"Tanggal": "14 Apr 2026", "Ticker": "ASII", "Event": "RUPS Tahunan", "Keterangan": "Pembagian Dividen Final"},
+            {"Tanggal": "22 Apr 2026", "Ticker": "BBRI", "Event": "Payment Date", "Keterangan": "Pembayaran Dividen Tunai"},
+        ]
+        
+        st.markdown(f"""
+        <style>
+        .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.75rem; margin-bottom:20px; }}
+        .ca-tbl th {{ background:rgba(245,194,66,0.1); color:#F5C242; padding:10px; text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.05em; font-weight:700; }}
+        .ca-tbl td {{ padding:10px; border-bottom:1px solid {met_border}; color:{text_main}; }}
+        .ca-tbl tr:hover td {{ background:rgba(255,255,255,0.03); }}
+        .ca-badge {{ background:rgba(66,133,244,0.15); color:#4285F4; padding:3px 8px; border-radius:4px; font-weight:bold; }}
+        </style>
+        """, unsafe_allow_html=True)
+        
+        ca_html = "<div style='overflow-x:auto; background:" + met_bg + "; border-radius:8px; border:1px solid " + met_border + ";'><table class='ca-tbl'><tr><th>TANGGAL</th><th>TICKER</th><th>EVENT</th><th>KETERANGAN</th></tr>"
+        for row in ca_data:
+            ca_html += f"<tr><td>{row['Tanggal']}</td><td><span class='ca-badge'>{row['Ticker']}</span></td><td style='font-weight:600;'>{row['Event']}</td><td style='color:{text_sub};'>{row['Keterangan']}</td></tr>"
+        ca_html += "</table></div>"
+        st.markdown(ca_html, unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        # ─────────────────────────────────────────────────────────
+
+        # ── ECONOMIC CALENDAR ─────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        cal_bg      = met_bg
+        cal_border  = met_border
+        cal_text    = text_main
+        cal_sub_clr = text_sub
+
+        calendar_data = {
+            "🇮🇩 INDONESIA": [
+                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
+                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
+                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
+                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
+                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
+                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
+            ],
+            "🇺🇸 UNITED STATES": [
+                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
+                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
+                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
+                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
+                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
+                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
+            ],
+            "🇨🇳 CHINA": [
+                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
+                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
+                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
+                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
+                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
+                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
+            ],
+            "🇯🇵 JAPAN": [
+                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
+                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
+                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
+                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
+                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
+                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
+            ],
+        }
+
+        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
+        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
+
+        st.markdown(f"""<style>
+        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
+            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
+        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
+            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
+            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
+        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
+            align-items:center; gap:8px; padding:9px 16px;
+            border-bottom:1px solid {cal_border}; cursor:default;
+            position:relative; transition:background 0.15s; }}
+        .cal-row:last-child {{ border-bottom:none; }}
+        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
+        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
+        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
+        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
+        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
+        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
+        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
+            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
+        .cal-tip {{ display:none; position:absolute; left:0; right:0;
+            top:calc(100% + 4px); z-index:9999;
+            background:{'#1a2035' if is_dark else '#ffffff'};
+            border:1px solid {cal_border}; border-left:3px solid #F5C242;
+            border-radius:0 6px 6px 0; padding:8px 12px;
+            font-size:0.69rem; color:{cal_text}; line-height:1.5;
+            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
+        .cal-row:hover .cal-tip {{ display:block; }}
+        @media (max-width: 768px) {{
+            .cal-row {{
+                grid-template-columns: 72px 1fr 82px 40px !important;
+                gap: 4px !important;
+                padding: 8px 10px !important;
+            }}
+            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
+            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
+            .cal-fc {{ font-size: 0.62rem !important; }}
+            .cal-pv {{ font-size: 0.55rem !important; }}
+            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
+            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
+        }}
+        </style>""", unsafe_allow_html=True)
+
+        is_mobile_cal = True 
+        cal_cols = st.columns(2)
+        country_list = list(calendar_data.items())
+
+        for ci, (country, events) in enumerate(country_list):
+            col_idx = ci % 2
+            with cal_cols[col_idx]:
+                rows_html = ""
+                for ev in events:
+                    dk    = ev["dampak"]
+                    d_clr = dampak_color.get(dk, "#b2b5be")
+                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
+                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
+                    rows_html += (
+                        f"<div class='cal-row'>"
+                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
+                        f"<div class='cal-ev'>{ev['event']}</div>"
+                        f"<div class='cal-nums'>"
+                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
+                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
+                        f"</div>"
+                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{'MED' if dk == 'MEDIUM' else dk}</div>"
+                        f"<div class='cal-tip'>{tip}</div>"
+                        f"</div>"
+                    )
+                st.markdown(
+                    f"<div class='cal-wrap'>"
+                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
+                    f"{rows_html}"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
 
         # ---------------------------------------------------------
         # LIVE MARKET PULSE & NEWS - FIX FINAL
