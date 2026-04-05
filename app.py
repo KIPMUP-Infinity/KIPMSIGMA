@@ -5171,8 +5171,8 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
             except:
                 return "Failed to load news."
 
-    col_n1, col_n2 = st.columns(2)
-    with col_n1:
+        col_n1, col_n2 = st.columns(2)
+        with col_n1:
         content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
         st.markdown(f"""
         <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:12px; padding:16px; margin-bottom: 24px;'>
@@ -5187,7 +5187,7 @@ Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah 
         # Tambahan jeda untuk HP
         st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
-    with col_n2:
+        with col_n2:
         # PENTING: Lakukan hal yang sama untuk col_n2 (Global News)
         content_id_global = render_news_feed("https://feeds.reuters.com/reuters/businessNews", "GLOBAL") # (URL ini contoh, biarkan url aslimu)
         st.markdown(f"""
