@@ -4706,15 +4706,15 @@ if current_view == "dashboard":
         .ca-stat-lbl {{ font-size: 0.55rem !important; }}
 
         /* Economic Calendar: compact on mobile */
-        .ecocal-row {
+        .ecocal-row {{
             grid-template-columns: 80px 1fr 80px 44px !important;
             gap: 4px !important;
             padding: 8px 10px !important;
-        }
-        .ecocal-dt { font-size: 0.58rem !important; }
-        .ecocal-ev { font-size: 0.68rem !important; }
-        .ecocal-fc { font-size: 0.60rem !important; }
-        .ecocal-imp { font-size: 0.52rem !important; padding: 2px 4px !important; }
+        }}
+        .ecocal-dt {{ font-size: 0.58rem !important; }}
+        .ecocal-ev {{ font-size: 0.68rem !important; }}
+        .ecocal-fc {{ font-size: 0.60rem !important; }}
+        .ecocal-imp {{ font-size: 0.52rem !important; padding: 2px 4px !important; }}
 
         /* Market Brief container: full-width, no padding bleed */
         .mb-container {{ margin: 0 0 16px !important; }}
