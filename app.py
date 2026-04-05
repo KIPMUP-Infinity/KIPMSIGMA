@@ -5241,96 +5241,130 @@ Gunakan Markdown. Padat & actionable. Hindari basa-basi."""
             """, unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        
+        # ─────────────────────────────────────────────────────────
+        # ECONOMIC CALENDAR — ID · US · CN · JP
+        # ─────────────────────────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        # ---------------------------------------------------------
-        # ECONOMIC CALENDAR — ID · US · CN · JP  (NEW SECTION)
-        # ---------------------------------------------------------
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR &mdash; ID &middot; US &middot; CN &middot; JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <style>
-        .ecocal-wrap {{ width:100%; overflow-x:auto; }}
-        .ecocal-tabs {{ display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }}
-        .ecocal-tab {{
-            font-family:'IBM Plex Mono',monospace; font-size:0.62rem; letter-spacing:1px;
-            padding:5px 14px; border-radius:20px; border:1px solid {met_border};
-            background:rgba(255,255,255,0.04); color:{text_sub}; cursor:pointer;
-            transition:background 0.2s, color 0.2s;
+        cal_bg      = met_bg
+        cal_border  = met_border
+        cal_text    = text_main
+        cal_sub_clr = text_sub
+
+        calendar_data = {
+            "🇮🇩 INDONESIA": [
+                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
+                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
+                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
+                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
+                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
+                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
+            ],
+            "🇺🇸 UNITED STATES": [
+                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
+                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
+                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
+                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
+                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
+                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
+            ],
+            "🇨🇳 CHINA": [
+                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
+                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
+                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
+                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
+                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
+                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
+            ],
+            "🇯🇵 JAPAN": [
+                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
+                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
+                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
+                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
+                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
+                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
+            ],
+        }
+
+        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
+        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
+
+        st.markdown(f"""<style>
+        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
+            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
+        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
+            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
+            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
+        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
+            align-items:center; gap:8px; padding:9px 16px;
+            border-bottom:1px solid {cal_border}; cursor:default;
+            position:relative; transition:background 0.15s; }}
+        .cal-row:last-child {{ border-bottom:none; }}
+        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
+        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
+        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
+        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
+        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
+        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
+        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
+            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
+        .cal-tip {{ display:none; position:absolute; left:0; right:0;
+            top:calc(100% + 4px); z-index:9999;
+            background:{'#1a2035' if is_dark else '#ffffff'};
+            border:1px solid {cal_border}; border-left:3px solid #F5C242;
+            border-radius:0 6px 6px 0; padding:8px 12px;
+            font-size:0.69rem; color:{cal_text}; line-height:1.5;
+            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
+        .cal-row:hover .cal-tip {{ display:block; }}
+        @media (max-width: 768px) {{
+            .cal-row {{
+                grid-template-columns: 72px 1fr 82px 40px !important;
+                gap: 4px !important;
+                padding: 8px 10px !important;
+            }}
+            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
+            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
+            .cal-fc {{ font-size: 0.62rem !important; }}
+            .cal-pv {{ font-size: 0.55rem !important; }}
+            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
+            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
         }}
-        .ecocal-tab.active {{ background:rgba(245,194,66,0.12); color:#F5C242; border-color:rgba(245,194,66,0.3); }}
-        .ecocal-row {{
-            display:grid; grid-template-columns:100px 1fr 110px 56px;
-            gap:8px; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.04);
-            align-items:center;
-        }}
-        .ecocal-row:last-child {{ border-bottom:none; }}
-        .ecocal-dt {{ font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:{text_sub}; }}
-        .ecocal-ev {{ font-size:0.78rem; color:{text_main}; line-height:1.4; }}
-        .ecocal-fc {{ font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:{text_sub}; }}
-        .ecocal-imp {{ display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.55rem;
-            font-family:'IBM Plex Mono',monospace; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; }}
-        .ecocal-high {{ background:rgba(242,54,69,0.14); color:#f23645; border:1px solid rgba(242,54,69,0.2); }}
-        .ecocal-med  {{ background:rgba(245,194,66,0.12); color:#F5C242; border:1px solid rgba(245,194,66,0.2); }}
-        .ecocal-low  {{ background:rgba(178,181,190,0.08); color:#b2b5be; border:1px solid rgba(178,181,190,0.15); }}
-        @media(max-width:768px) {{
-            .ecocal-row {{ grid-template-columns:82px 1fr 80px 44px; gap:4px; padding:8px 10px; }}
-            .ecocal-dt {{ font-size:0.58rem; }}
-            .ecocal-ev {{ font-size:0.70rem; }}
-            .ecocal-fc {{ font-size:0.60rem; }}
-        }}
-        </style>
-        """, unsafe_allow_html=True)
+        </style>""", unsafe_allow_html=True)
 
-        _ecocal_events = [
-            # ID
-            {"dt":"07 Apr 2026","country":"🇮🇩 ID","event":"Rilis Inflasi CPI Maret 2026","forecast":"2.45%","impact":"high"},
-            {"dt":"16 Apr 2026","country":"🇮🇩 ID","event":"Rapat Dewan Gubernur BI — BI Rate","forecast":"4.75%","impact":"high"},
-            {"dt":"05 Mei 2026","country":"🇮🇩 ID","event":"Neraca Perdagangan April 2026","forecast":"USD 3.1B","impact":"med"},
-            {"dt":"15 Mei 2026","country":"🇮🇩 ID","event":"PMI Manufaktur April 2026","forecast":"52.0","impact":"med"},
-            {"dt":"05 Jun 2026","country":"🇮🇩 ID","event":"Pertumbuhan GDP Q1 2026","forecast":"5.0%","impact":"high"},
-            # US
-            {"dt":"10 Apr 2026","country":"🇺🇸 US","event":"CPI Inflation March 2026","forecast":"2.5%","impact":"high"},
-            {"dt":"11 Apr 2026","country":"🇺🇸 US","event":"PPI March 2026","forecast":"0.2%","impact":"med"},
-            {"dt":"07 Mei 2026","country":"🇺🇸 US","event":"FOMC Rate Decision — May","forecast":"3.75%","impact":"high"},
-            {"dt":"09 Mei 2026","country":"🇺🇸 US","event":"Non-Farm Payroll April 2026","forecast":"175K","impact":"high"},
-            {"dt":"14 Mei 2026","country":"🇺🇸 US","event":"Retail Sales April 2026","forecast":"0.4%","impact":"med"},
-            # CN
-            {"dt":"16 Apr 2026","country":"🇨🇳 CN","event":"GDP Growth Q1 2026","forecast":"5.2%","impact":"high"},
-            {"dt":"16 Apr 2026","country":"🇨🇳 CN","event":"Industrial Production March","forecast":"6.5% YoY","impact":"med"},
-            {"dt":"20 Apr 2026","country":"🇨🇳 CN","event":"LPR Rate Decision April","forecast":"3.35%","impact":"high"},
-            {"dt":"09 Mei 2026","country":"🇨🇳 CN","event":"Trade Balance April 2026","forecast":"USD 62B","impact":"med"},
-            # JP
-            {"dt":"09 Apr 2026","country":"🇯🇵 JP","event":"Bank of Japan — Policy Rate","forecast":"0.5%","impact":"high"},
-            {"dt":"14 Apr 2026","country":"🇯🇵 JP","event":"PPI March 2026","forecast":"0.3%","impact":"low"},
-            {"dt":"23 Apr 2026","country":"🇯🇵 JP","event":"CPI Nationwide March 2026","forecast":"2.8%","impact":"med"},
-        ]
-
-        _imp_cls = {"high":"ecocal-high","med":"ecocal-med","low":"ecocal-low"}
-        _imp_lbl = {"high":"HIGH","med":"MED","low":"LOW"}
-        _cal_rows = ""
-        for ev in _ecocal_events:
-            _cls = _imp_cls.get(ev["impact"],"ecocal-low")
-            _lbl = _imp_lbl.get(ev["impact"],"LOW")
-            _cal_rows += f"""<div class='ecocal-row'>
-                <div class='ecocal-dt'>{ev['dt']}<br><span style='opacity:0.6'>{ev['country']}</span></div>
-                <div class='ecocal-ev'>{ev['event']}</div>
-                <div class='ecocal-fc'>{ev['forecast']}</div>
-                <div><span class='ecocal-imp {_cls}'>{_lbl}</span></div>
-            </div>"""
-
-        st.markdown(f"""
-        <div class='ecocal-wrap'>
-            <div style='background:{met_bg}; border:1px solid {met_border}; border-radius:12px; overflow:hidden; margin-bottom:20px;'>
-                <div style='padding:10px 14px; background:rgba(245,194,66,0.07); border-bottom:1px solid {met_border};
-                    font-family:IBM Plex Mono,monospace; font-size:0.65rem; color:#F5C242; letter-spacing:1px; font-weight:700;'>
-                    📅 UPCOMING ECONOMIC EVENTS &mdash; Apr–Jun 2026
-                </div>
-                {_cal_rows}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        cal_cols = st.columns(2)
+        country_list = list(calendar_data.items())
+        for ci, (country, events) in enumerate(country_list):
+            col_idx = ci % 2
+            with cal_cols[col_idx]:
+                rows_html = ""
+                for ev in events:
+                    dk    = ev["dampak"]
+                    d_clr = dampak_color.get(dk, "#b2b5be")
+                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
+                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
+                    rows_html += (
+                        f"<div class='cal-row'>"
+                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
+                        f"<div class='cal-ev'>{ev['event']}</div>"
+                        f"<div class='cal-nums'>"
+                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
+                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
+                        f"</div>"
+                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{'MED' if dk == 'MEDIUM' else dk}</div>"
+                        f"<div class='cal-tip'>{tip}</div>"
+                        f"</div>"
+                    )
+                st.markdown(
+                    f"<div class='cal-wrap'>"
+                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
+                    f"{rows_html}"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        
+
         # ─────────────────────────────────────────────────────────
         # CORPORATE ACTION — IDX FULL FETCH (900+ SAHAM, 3 BULAN)
         # ─────────────────────────────────────────────────────────
@@ -5732,126 +5766,133 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
 
-        # ── ECONOMIC CALENDAR ─────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        cal_bg      = met_bg
-        cal_border  = met_border
-        cal_text    = text_main
-        cal_sub_clr = text_sub
+        # ─────────────────────────────────────────────────────────
+        # FED RATE MONITOR TOOL
+        # ─────────────────────────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
+        Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
+        Data diperbarui real-time oleh TradingView. Rate saat ini: <b style='color:#F5C242;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>29 Apr 2026</b>
+        </p>
+        """, unsafe_allow_html=True)
 
-        calendar_data = {
-            "🇮🇩 INDONESIA": [
-                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
-                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
-                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
-                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
-                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
-                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
-            ],
-            "🇺🇸 UNITED STATES": [
-                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
-                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
-                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
-                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
-                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
-                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
-            ],
-            "🇨🇳 CHINA": [
-                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
-                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
-                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
-                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
-                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
-                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
-            ],
-            "🇯🇵 JAPAN": [
-                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
-                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
-                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
-                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
-                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
-                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
-            ],
-        }
+        # Fed Rate Monitor — 3 upcoming FOMC meetings side by side
+        _fed_meetings = [
+            {
+                "date": "Apr 29, 2026",
+                "current_rate": "3.50–3.75",
+                "future_price": "96.358",
+                "countdown": "3W 3D 1H",
+                "scenarios": [
+                    {"range": "3.50–3.75", "prob": 98.9, "prev_day": 97.9, "prev_week": 95.7, "dir": "hold"},
+                    {"range": "3.75–4.00", "prob":  1.1, "prev_day":  2.1, "prev_week":  4.3, "dir": "hike"},
+                ]
+            },
+            {
+                "date": "Jun 17, 2026",
+                "current_rate": "3.50–3.75",
+                "future_price": "96.360",
+                "countdown": "11W 1D",
+                "scenarios": [
+                    {"range": "3.25–3.50", "prob":  5.9, "prev_day":  9.6, "prev_week": None, "dir": "cut"},
+                    {"range": "3.50–3.75", "prob": 93.1, "prev_day": 88.5, "prev_week": 92.1, "dir": "hold"},
+                    {"range": "3.75–4.00", "prob":  1.0, "prev_day":  1.9, "prev_week":  7.7, "dir": "hike"},
+                ]
+            },
+            {
+                "date": "Jul 29, 2026",
+                "current_rate": "3.50–3.75",
+                "future_price": "96.490",
+                "countdown": "16W 3D",
+                "scenarios": [
+                    {"range": "3.00–3.25", "prob":  1.2, "prev_day":  1.0, "prev_week": None, "dir": "cut"},
+                    {"range": "3.25–3.50", "prob": 14.3, "prev_day": 18.2, "prev_week": None, "dir": "cut"},
+                    {"range": "3.50–3.75", "prob": 78.1, "prev_day": 74.5, "prev_week": None, "dir": "hold"},
+                    {"range": "3.75–4.00", "prob":  6.4, "prev_day":  6.3, "prev_week": None, "dir": "hike"},
+                ]
+            },
+        ]
 
-        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
-        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
+        _dir_color = {"cut": "#089981", "hold": "#4285F4", "hike": "#f23645"}
+        _dir_label = {"cut": "CUT", "hold": "HOLD", "hike": "HIKE"}
 
-        st.markdown(f"""<style>
-        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
-            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
-        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
-            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
-            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
-        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
-            align-items:center; gap:8px; padding:9px 16px;
-            border-bottom:1px solid {cal_border}; cursor:default;
-            position:relative; transition:background 0.15s; }}
-        .cal-row:last-child {{ border-bottom:none; }}
-        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
-        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
-        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
-        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
-        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
-        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
-        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
-            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
-        .cal-tip {{ display:none; position:absolute; left:0; right:0;
-            top:calc(100% + 4px); z-index:9999;
-            background:{'#1a2035' if is_dark else '#ffffff'};
-            border:1px solid {cal_border}; border-left:3px solid #F5C242;
-            border-radius:0 6px 6px 0; padding:8px 12px;
-            font-size:0.69rem; color:{cal_text}; line-height:1.5;
-            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
-        .cal-row:hover .cal-tip {{ display:block; }}
-        @media (max-width: 768px) {{
-            .cal-row {{
-                grid-template-columns: 72px 1fr 82px 40px !important;
-                gap: 4px !important;
-                padding: 8px 10px !important;
-            }}
-            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
-            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
-            .cal-fc {{ font-size: 0.62rem !important; }}
-            .cal-pv {{ font-size: 0.55rem !important; }}
-            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
-            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
-        }}
-        </style>""", unsafe_allow_html=True)
+        fed_cols = st.columns(3)
+        for fi, mtg in enumerate(_fed_meetings):
+            with fed_cols[fi]:
+                # Build bar rows
+                _bars_html = ""
+                for sc in mtg["scenarios"]:
+                    _bc = _dir_color.get(sc["dir"], "#b2b5be")
+                    _bar_w = max(sc["prob"], 2)
+                    _pd_str = f'{sc["prev_day"]:.1f}%' if sc["prev_day"] is not None else "—"
+                    _pw_str = f'{sc["prev_week"]:.1f}%' if sc["prev_week"] is not None else "—"
+                    _bars_html += f"""
+                    <div style='margin-bottom:10px;'>
+                        <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;'>
+                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_main};'>{sc['range']}</span>
+                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.65rem;font-weight:700;color:{_bc};'>{sc['prob']:.1f}%</span>
+                        </div>
+                        <div style='background:rgba(255,255,255,0.06);border-radius:3px;height:6px;'>
+                            <div style='background:{_bc};width:{_bar_w}%;height:100%;border-radius:3px;opacity:0.85;'></div>
+                        </div>
+                    </div>"""
 
-        is_mobile_cal = True 
-        cal_cols = st.columns(2)
-        country_list = list(calendar_data.items())
+                # Build table rows
+                _tbl_rows = ""
+                for sc in mtg["scenarios"]:
+                    _bc = _dir_color.get(sc["dir"], "#b2b5be")
+                    _pd_str = f'{sc["prev_day"]:.1f}%' if sc["prev_day"] is not None else "—"
+                    _pw_str = f'{sc["prev_week"]:.1f}%' if sc["prev_week"] is not None else "—"
+                    _tbl_rows += f"""<tr>
+                        <td style='padding:5px 8px;white-space:nowrap;color:{text_sub};font-size:0.62rem;'>{sc['range']}</td>
+                        <td style='padding:5px 8px;text-align:right;font-weight:700;color:{_bc};font-size:0.65rem;'>{sc['prob']:.1f}%</td>
+                        <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pd_str}</td>
+                        <td style='padding:5px 8px;text-align:right;color:{text_sub};font-size:0.60rem;'>{_pw_str}</td>
+                    </tr>"""
 
-        for ci, (country, events) in enumerate(country_list):
-            col_idx = ci % 2
-            with cal_cols[col_idx]:
-                rows_html = ""
-                for ev in events:
-                    dk    = ev["dampak"]
-                    d_clr = dampak_color.get(dk, "#b2b5be")
-                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
-                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
-                    rows_html += (
-                        f"<div class='cal-row'>"
-                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
-                        f"<div class='cal-ev'>{ev['event']}</div>"
-                        f"<div class='cal-nums'>"
-                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
-                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
-                        f"</div>"
-                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{'MED' if dk == 'MEDIUM' else dk}</div>"
-                        f"<div class='cal-tip'>{tip}</div>"
-                        f"</div>"
-                    )
-                st.markdown(
-                    f"<div class='cal-wrap'>"
-                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
-                    f"{rows_html}"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"""
+                <div style='background:{met_bg};border:1px solid {met_border};border-radius:12px;overflow:hidden;margin-bottom:16px;'>
+                    <div style='background:rgba(245,194,66,0.08);border-bottom:1px solid {met_border};padding:10px 14px;'>
+                        <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;color:#F5C242;letter-spacing:0.08em;'>{mtg['date']}</div>
+                        <div style='display:flex;justify-content:space-between;margin-top:4px;'>
+                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:{text_sub};'>Future: {mtg['future_price']}</span>
+                            <span style='font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:rgba(61,220,132,0.8);'>⏱ {mtg['countdown']}</span>
+                        </div>
+                    </div>
+                    <div style='padding:12px 14px;'>
+                        {_bars_html}
+                    </div>
+                    <div style='border-top:1px solid {met_border};overflow-x:auto;'>
+                        <table style='width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;'>
+                            <thead>
+                                <tr style='background:rgba(255,255,255,0.03);'>
+                                    <th style='padding:5px 8px;text-align:left;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>TARGET RATE</th>
+                                    <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>NOW%</th>
+                                    <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>YDAY%</th>
+                                    <th style='padding:5px 8px;text-align:right;font-size:0.55rem;letter-spacing:0.08em;color:{text_sub};font-weight:600;'>WEEK%</th>
+                                </tr>
+                            </thead>
+                            <tbody>{_tbl_rows}</tbody>
+                        </table>
+                    </div>
+                    <div style='padding:5px 14px 8px;font-family:IBM Plex Mono,monospace;font-size:0.53rem;color:{text_sub};opacity:0.7;text-align:right;'>
+                        Updated: {datetime.now().strftime("%b %d, %Y %I:%M%p")} WIB · Source: CME FedWatch
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style='background:rgba(66,133,244,0.07);border:1px solid rgba(66,133,244,0.18);border-left:3px solid #4285F4;
+            border-radius:8px;padding:10px 14px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_main};line-height:1.6;'>
+        💡 <b style='color:#4285F4;'>SIGMA INSIGHT —</b> 
+        Probabilitas 98.9% pasar memproyeksikan Fed <b>HOLD</b> di 3.50–3.75% pada FOMC April 2026.
+        Ekspektasi cut baru mulai terlihat di FOMC Juni (5.9% prob cut ke 3.25–3.50%).
+        Implikasi ke IDX: <span style='color:#089981;font-weight:600;'>Rupiah relatif stabil</span>, hot money tetap di EM, sektor perbankan &amp; properti mendapat sentimen positif dari ekspektasi suku bunga rendah jangka menengah.
+        </div>
+        """, unsafe_allow_html=True)
 
     # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
     with tab_rotation:
