@@ -5110,9 +5110,9 @@ if current_view == "dashboard":
             return df_style.applymap(func, subset=subset)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di grafik atau tabel untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Update Mingguan</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kanan-bawah = Improving, Kiri-atas = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
-        # ── DATA SEKTOR + SAHAM PER SEKTOR (maks 30 per sektor) ──
+        # ── DATA SEKTOR + SAHAM PER SEKTOR ──────────────────────────────
         rrg_sectors = {
             "Energy": {
                 "fase": "Leading", "rs": 108.2, "mom": 102.1, "color": "#089981",
@@ -5124,7 +5124,6 @@ if current_view == "dashboard":
                     {"ticker":"ITMG","nama":"Indo Tambangraya","fase":"Leading","rs":106,"mom":104},
                     {"ticker":"HRUM","nama":"Harum Energy","fase":"Improving","rs":103,"mom":102},
                     {"ticker":"ESSA","nama":"ESSA Industries","fase":"Improving","rs":102,"mom":101},
-                    {"ticker":"PGAS","nama":"Perusahaan Gas","fase":"Weakening","rs":98,"mom":97},
                     {"ticker":"MEDC","nama":"Medco Energi","fase":"Leading","rs":105,"mom":102},
                     {"ticker":"ELSA","nama":"Elnusa","fase":"Improving","rs":101,"mom":100},
                     {"ticker":"RAJA","nama":"Rukun Raharja","fase":"Leading","rs":108,"mom":103},
@@ -5133,6 +5132,7 @@ if current_view == "dashboard":
                     {"ticker":"BYAN","nama":"Bayan Resources","fase":"Leading","rs":110,"mom":104},
                     {"ticker":"DSSA","nama":"Dian Swastatika","fase":"Weakening","rs":97,"mom":96},
                     {"ticker":"TOBA","nama":"TBS Energi Utama","fase":"Improving","rs":102,"mom":101},
+                    {"ticker":"PGAS","nama":"Perusahaan Gas","fase":"Weakening","rs":98,"mom":97},
                 ]
             },
             "Basic Materials": {
@@ -5145,7 +5145,7 @@ if current_view == "dashboard":
                     {"ticker":"ANTM","nama":"Aneka Tambang","fase":"Improving","rs":103,"mom":101},
                     {"ticker":"MDKA","nama":"Merdeka Copper Gold","fase":"Improving","rs":105,"mom":103},
                     {"ticker":"INCO","nama":"Vale Indonesia","fase":"Improving","rs":102,"mom":101},
-                    {"ticker":"NCKL","nama":"Trimegah Bangun Persada","fase":"Leading","rs":107,"mom":103},
+                    {"ticker":"NCKL","nama":"Trimegah Bangun","fase":"Leading","rs":107,"mom":103},
                     {"ticker":"BRMS","nama":"Bumi Resources Minerals","fase":"Improving","rs":104,"mom":102},
                     {"ticker":"MBMA","nama":"Merdeka Battery","fase":"Improving","rs":103,"mom":101},
                     {"ticker":"INKP","nama":"Indah Kiat Pulp","fase":"Weakening","rs":98,"mom":97},
@@ -5164,7 +5164,6 @@ if current_view == "dashboard":
                     {"ticker":"BMRI","nama":"Bank Mandiri","fase":"Weakening","rs":97,"mom":98},
                     {"ticker":"BBNI","nama":"Bank Negara Indonesia","fase":"Lagging","rs":93,"mom":95},
                     {"ticker":"BRIS","nama":"Bank Syariah Indonesia","fase":"Improving","rs":102,"mom":101},
-                    {"ticker":"BTPS","nama":"Bank BTPN Syariah","fase":"Improving","rs":101,"mom":100},
                     {"ticker":"ARTO","nama":"Bank Jago","fase":"Improving","rs":103,"mom":102},
                     {"ticker":"BBTN","nama":"Bank Tabungan Negara","fase":"Lagging","rs":92,"mom":94},
                     {"ticker":"BNGA","nama":"Bank CIMB Niaga","fase":"Weakening","rs":97,"mom":98},
@@ -5172,7 +5171,6 @@ if current_view == "dashboard":
                     {"ticker":"BJBR","nama":"Bank BJB","fase":"Lagging","rs":91,"mom":93},
                     {"ticker":"BFIN","nama":"BFI Finance","fase":"Weakening","rs":98,"mom":99},
                     {"ticker":"ADMF","nama":"Adira Finance","fase":"Weakening","rs":97,"mom":98},
-                    {"ticker":"PNLF","nama":"Panin Financial","fase":"Lagging","rs":90,"mom":92},
                 ]
             },
             "Infrastructure": {
@@ -5186,11 +5184,8 @@ if current_view == "dashboard":
                     {"ticker":"TBIG","nama":"Tower Bersama","fase":"Lagging","rs":91,"mom":93},
                     {"ticker":"MTEL","nama":"Mitratel","fase":"Weakening","rs":97,"mom":98},
                     {"ticker":"WIKA","nama":"Wijaya Karya","fase":"Lagging","rs":88,"mom":91},
-                    {"ticker":"WSKT","nama":"Waskita Karya","fase":"Lagging","rs":87,"mom":90},
                     {"ticker":"PTPP","nama":"PP (Persero)","fase":"Lagging","rs":89,"mom":92},
                     {"ticker":"ADHI","nama":"Adhi Karya","fase":"Lagging","rs":88,"mom":91},
-                    {"ticker":"JSMR","nama":"Jasa Marga","fase":"Weakening","rs":96,"mom":97},
-                    {"ticker":"PGAS","nama":"Perusahaan Gas Negara","fase":"Weakening","rs":97,"mom":98},
                 ]
             },
             "Consumer": {
@@ -5202,27 +5197,25 @@ if current_view == "dashboard":
                     {"ticker":"MYOR","nama":"Mayora Indah","fase":"Lagging","rs":90,"mom":92},
                     {"ticker":"UNVR","nama":"Unilever Indonesia","fase":"Lagging","rs":88,"mom":90},
                     {"ticker":"KLBF","nama":"Kalbe Farma","fase":"Weakening","rs":96,"mom":97},
-                    {"ticker":"SIDO","nama":"Sido Muncul","fase":"Weakening","rs":95,"mom":96},
                     {"ticker":"CPIN","nama":"Charoen Pokphand","fase":"Improving","rs":101,"mom":100},
                     {"ticker":"JPFA","nama":"JAPFA Comfeed","fase":"Improving","rs":102,"mom":101},
                     {"ticker":"MAPI","nama":"Mitra Adiperkasa","fase":"Weakening","rs":97,"mom":98},
-                    {"ticker":"ACES","nama":"ACE Hardware","fase":"Lagging","rs":93,"mom":95},
-                    {"ticker":"AMRT","nama":"Alfamart","fase":"Weakening","rs":96,"mom":97},
                     {"ticker":"MIDI","nama":"Midi Utama","fase":"Improving","rs":103,"mom":102},
                     {"ticker":"HEAL","nama":"Medikaloka Hermina","fase":"Improving","rs":104,"mom":103},
                     {"ticker":"MIKA","nama":"Mitra Keluarga","fase":"Improving","rs":103,"mom":102},
+                    {"ticker":"AMRT","nama":"Alfamart","fase":"Weakening","rs":96,"mom":97},
+                    {"ticker":"ACES","nama":"ACE Hardware","fase":"Lagging","rs":93,"mom":95},
                 ]
             },
             "Technology": {
                 "fase": "Improving", "rs": 101.2, "mom": 100.5, "color": "#00bcd4",
-                "aksi": "Selective Accumulation", "icon": "💻",
+                "aksi": "Selective Buy", "icon": "💻",
                 "saham": [
                     {"ticker":"GOTO","nama":"GoTo Gojek Tokopedia","fase":"Improving","rs":103,"mom":102},
                     {"ticker":"BUKA","nama":"Bukalapak","fase":"Lagging","rs":90,"mom":92},
                     {"ticker":"EMTK","nama":"Elang Mahkota","fase":"Weakening","rs":97,"mom":98},
                     {"ticker":"DMMX","nama":"Digital Mediatama","fase":"Improving","rs":105,"mom":103},
                     {"ticker":"MTDL","nama":"Metrodata Electronics","fase":"Improving","rs":102,"mom":101},
-                    {"ticker":"KIOS","nama":"Kioson Komersial","fase":"Lagging","rs":91,"mom":93},
                 ]
             },
             "Property": {
@@ -5234,343 +5227,296 @@ if current_view == "dashboard":
                     {"ticker":"SMRA","nama":"Summarecon Agung","fase":"Lagging","rs":92,"mom":94},
                     {"ticker":"LPKR","nama":"Lippo Karawaci","fase":"Lagging","rs":90,"mom":92},
                     {"ticker":"PWON","nama":"Pakuwon Jati","fase":"Weakening","rs":97,"mom":98},
-                    {"ticker":"ASRI","nama":"Alam Sutera","fase":"Lagging","rs":91,"mom":93},
-                    {"ticker":"MDLN","nama":"Modernland Realty","fase":"Lagging","rs":88,"mom":91},
                     {"ticker":"DMAS","nama":"Puradelta Lestari","fase":"Improving","rs":101,"mom":100},
                     {"ticker":"BEST","nama":"Bekasi Fajar","fase":"Improving","rs":102,"mom":101},
                 ]
             },
         }
 
-        # ── MAPPING FASE → KUADRAN RRG ──
-        fase_map = {
-            "Leading":   {"q": "leading",   "label": "LEADING",   "color": "#089981", "desc": "RS & Momentum tinggi"},
-            "Improving": {"q": "improving", "label": "IMPROVING", "color": "#F5C242", "desc": "RS rendah, Momentum naik"},
-            "Weakening": {"q": "weakening", "label": "WEAKENING", "color": "#f23645", "desc": "RS tinggi, Momentum turun"},
-            "Lagging":   {"q": "lagging",   "label": "LAGGING",   "color": "#4285F4", "desc": "RS & Momentum rendah"},
+        fase_colors = {
+            "Leading":   "#089981",
+            "Improving": "#F5C242",
+            "Weakening": "#f23645",
+            "Lagging":   "#4285F4",
         }
 
-        # ── BUAT RRG BUBBLE CHART INTERAKTIF (HTML/JS) ──
-        import json as _json
-        _sectors_json = _json.dumps(rrg_sectors)
-        _fase_json = _json.dumps(fase_map)
-        _dark = "true" if is_dark else "false"
+        # ── PILIH SEKTOR ──
+        sector_names = list(rrg_sectors.keys())
+        
+        # Session state untuk selected sector
+        if "rrg_selected" not in st.session_state:
+            st.session_state["rrg_selected"] = None
 
-        rrg_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-* {{ box-sizing: border-box; margin: 0; padding: 0; font-family: 'IBM Plex Mono', monospace; }}
-body {{ background: transparent; }}
-.rrg-container {{ width: 100%; position: relative; }}
-.rrg-chart-wrap {{ width: 100%; aspect-ratio: 1.4/1; min-height: 380px; position: relative; cursor: pointer; }}
-canvas#rrg {{ width: 100%; height: 100%; display: block; }}
-.rrg-legend {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }}
-.rrg-legend-item {{ display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); transition: all 0.2s; }}
-.rrg-legend-item:hover {{ background: rgba(255,255,255,0.1); }}
-.rrg-legend-dot {{ width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }}
+        # ── BUILD PLOTLY RRG BUBBLE CHART ──────────────────────────────
+        fig_rrg = go.Figure()
 
-/* MODAL */
-.rrg-modal-overlay {{ display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); z-index: 99999; align-items: center; justify-content: center; }}
-.rrg-modal-overlay.active {{ display: flex; }}
-.rrg-modal {{ background: {"#0d1117" if is_dark else "#ffffff"}; border: 1px solid {"rgba(245,194,66,0.3)" if is_dark else "#e2e8f0"}; border-radius: 16px; width: 92vw; max-width: 900px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 24px 80px rgba(0,0,0,0.6); }}
-.rrg-modal-close {{ position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: {"rgba(13,17,23,0.95)" if is_dark else "rgba(255,255,255,0.95)"}; border-bottom: 1px solid {"rgba(245,194,66,0.15)" if is_dark else "#e2e8f0"}; backdrop-filter: blur(8px); z-index: 2; border-radius: 16px 16px 0 0; }}
-.close-btn {{ cursor: pointer; font-size: 20px; color: {"#8892a4" if is_dark else "#64748b"}; border: none; background: none; padding: 4px 8px; border-radius: 6px; }}
-.close-btn:hover {{ background: rgba(255,255,255,0.1); color: {"#e8eaf0" if is_dark else "#1e293b"}; }}
-.modal-body {{ padding: 20px; }}
+        # Shaded quadrants
+        fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=100, y1=116,
+            fillcolor="rgba(8,153,129,0.10)", line_width=0, layer="below")
+        fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=100, y1=116,
+            fillcolor="rgba(245,194,66,0.08)", line_width=0, layer="below")
+        fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=84, y1=100,
+            fillcolor="rgba(242,54,69,0.08)", line_width=0, layer="below")
+        fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=84, y1=100,
+            fillcolor="rgba(66,133,244,0.08)", line_width=0, layer="below")
 
-/* MINI RRG inside modal */
-.mini-rrg-wrap {{ width: 100%; aspect-ratio: 1/1; max-width: 360px; margin: 0 auto 20px; position: relative; }}
-canvas#mini-rrg {{ width: 100%; height: 100%; display: block; }}
+        # Center lines
+        fig_rrg.add_shape(type="line", x0=100, x1=100, y0=84, y1=116,
+            line=dict(color="rgba(255,255,255,0.2)", width=1, dash="dot"))
+        fig_rrg.add_shape(type="line", x0=84, x1=116, y0=100, y1=100,
+            line=dict(color="rgba(255,255,255,0.2)", width=1, dash="dot"))
 
-/* Stock table in modal */
-.stock-table {{ width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }}
-.stock-table th {{ font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 10px; border-bottom: 2px solid {"rgba(245,194,66,0.2)" if is_dark else "#e2e8f0"}; text-align: left; color: {"#F5C242" if is_dark else "#92700a"}; background: {"rgba(245,194,66,0.05)" if is_dark else "#fffdf0"}; }}
-.stock-table td {{ padding: 7px 10px; border-bottom: 1px solid {"rgba(255,255,255,0.05)" if is_dark else "#f1f5f9"}; color: {"#e8eaf0" if is_dark else "#1e293b"}; }}
-.stock-table tr:hover td {{ background: {"rgba(255,255,255,0.03)" if is_dark else "rgba(0,0,0,0.02)"}; }}
-.fase-badge {{ font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }}
-.ticker-label {{ font-weight: 700; font-size: 12px; }}
-.rs-bar {{ height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); margin-top: 3px; }}
-.rs-fill {{ height: 100%; border-radius: 3px; transition: width 0.4s; }}
-</style>
-</head>
-<body>
-<div class="rrg-container">
-  <div class="rrg-chart-wrap">
-    <canvas id="rrg"></canvas>
-  </div>
-  <div class="rrg-legend" id="rrg-legend"></div>
-</div>
+        # Quadrant labels
+        for lbl, x, y, c in [
+            ("LEADING",   113, 114, "#089981"),
+            ("IMPROVING", 87,  114, "#F5C242"),
+            ("WEAKENING", 113, 86,  "#f23645"),
+            ("LAGGING",   87,  86,  "#4285F4"),
+        ]:
+            fig_rrg.add_annotation(x=x, y=y, text=f"<b>{lbl}</b>",
+                showarrow=False, font=dict(size=11, color=c, family="IBM Plex Mono"),
+                opacity=0.7)
 
-<!-- MODAL -->
-<div class="rrg-modal-overlay" id="modal-overlay">
-  <div class="rrg-modal" id="modal-box">
-    <div class="rrg-modal-close">
-      <div>
-        <span id="modal-title" style="font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:{"#F5C242" if is_dark else "#92700a"};"></span>
-        <span id="modal-fase-badge" style="margin-left:10px;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;"></span>
-      </div>
-      <button class="close-btn" onclick="closeModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;">
-        <div class="mini-rrg-wrap"><canvas id="mini-rrg"></canvas></div>
-        <div style="flex:1;min-width:220px;">
-          <div id="modal-desc" style="font-size:12px;color:{"#8892a4" if is_dark else "#64748b"};margin-bottom:12px;line-height:1.7;"></div>
-          <div id="modal-aksi-card" style="border-left:3px solid;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:16px;">
-            <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;opacity:0.7;">AKSI INSTITUSI</div>
-            <div id="modal-aksi" style="font-size:14px;font-weight:700;"></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" id="modal-metrics"></div>
-        </div>
-      </div>
-      <div style="margin-top:16px;">
-        <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:{"#F5C242" if is_dark else "#92700a"};margin-bottom:8px;font-weight:700;">DAFTAR SAHAM DI SEKTOR INI</div>
-        <table class="stock-table">
-          <thead><tr>
-            <th>Ticker</th><th>Nama</th><th>Fase</th>
-            <th>RS Score</th><th>Momentum</th>
-          </tr></thead>
-          <tbody id="modal-stock-table"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
+        # Plot each sector
+        for sname, sdata in rrg_sectors.items():
+            is_sel = (st.session_state.get("rrg_selected") == sname)
+            marker_size = 55 if is_sel else 42
+            fig_rrg.add_trace(go.Scatter(
+                x=[sdata["rs"]], y=[sdata["mom"]],
+                mode="markers+text",
+                name=sname,
+                text=[f"{sdata['icon']} {sname}"],
+                textposition="middle center",
+                textfont=dict(size=9, color="#ffffff", family="IBM Plex Mono"),
+                marker=dict(
+                    size=marker_size,
+                    color=sdata["color"],
+                    opacity=0.85 if is_sel else 0.7,
+                    line=dict(color=sdata["color"], width=3 if is_sel else 1.5),
+                ),
+                customdata=[sname],
+                hovertemplate=(
+                    f"<b>{sdata['icon']} {sname}</b><br>"
+                    f"Fase: <b>{sdata['fase']}</b><br>"
+                    f"RS Score: {sdata['rs']}<br>"
+                    f"Momentum: {sdata['mom']}<br>"
+                    f"Aksi: {sdata['aksi']}<br>"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+            ))
 
-<script>
-const DARK = {_dark};
-const SECTORS = {_sectors_json};
-const FASE_MAP = {_fase_json};
+        fig_rrg.update_layout(
+            height=460,
+            margin=dict(l=40, r=20, t=30, b=50),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(8,12,22,0.6)" if is_dark else "rgba(248,250,252,0.8)",
+            xaxis=dict(
+                title="RS Ratio (Kekuatan Relatif vs IHSG)",
+                range=[84, 116], showgrid=True,
+                gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                tickfont=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                title_font=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                zeroline=False,
+            ),
+            yaxis=dict(
+                title="Momentum (Arah RS)",
+                range=[84, 116], showgrid=True,
+                gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                tickfont=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                title_font=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                zeroline=False,
+            ),
+            font=dict(family="IBM Plex Mono", color=text_main),
+            clickmode="event+select",
+        )
 
-const TEXT_CLR  = DARK ? "#e8eaf0" : "#1e293b";
-const SUB_CLR   = DARK ? "#6b7a99" : "#64748b";
-const GRID_CLR  = DARK ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
-const BG_CLR    = DARK ? "rgba(10,14,26,0)" : "rgba(255,255,255,0)";
-const AX_CLR    = DARK ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.15)";
+        # ── TAMPILKAN CHART + HANDLE KLIK ──────────────────────────────
+        chart_event = st.plotly_chart(
+            fig_rrg,
+            use_container_width=True,
+            on_select="rerun",
+            key="rrg_chart",
+        )
 
-// ── DRAW MAIN RRG ──
-function drawRRG(canvasId, activeSector, scale=1) {{
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  const W = canvas.offsetWidth * window.devicePixelRatio;
-  const H = canvas.offsetHeight * window.devicePixelRatio;
-  canvas.width = W; canvas.height = H;
-  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  const pad = 40 * scale;
+        # Deteksi klik sektor dari chart
+        if chart_event and hasattr(chart_event, "selection") and chart_event.selection:
+            pts = chart_event.selection.get("points", [])
+            if pts:
+                clicked_trace = pts[0].get("curve_number", 0)
+                clicked_sector = sector_names[clicked_trace] if clicked_trace < len(sector_names) else None
+                if clicked_sector:
+                    st.session_state["rrg_selected"] = clicked_sector
 
-  // Background quads
-  const qColors = [
-    ["rgba(8,153,129,0.12)", "rgba(245,194,66,0.10)"],
-    ["rgba(66,133,244,0.10)", "rgba(242,54,69,0.10)"]
-  ];
-  const midX = w/2, midY = h/2;
-  ctx.fillStyle = qColors[0][0]; ctx.fillRect(pad, pad, midX-pad, midY-pad);        // Leading (TR)
-  ctx.fillStyle = qColors[0][1]; ctx.fillRect(midX, pad, w-midX-pad, midY-pad);     // Improving (BR — note: flipped)
-  ctx.fillStyle = qColors[1][1]; ctx.fillRect(midX, midY, w-midX-pad, h-midY-pad);  // Weakening (bottom-right)
-  ctx.fillStyle = qColors[1][0]; ctx.fillRect(pad, midY, midX-pad, h-midY-pad);     // Lagging (bottom-left)
+        # ── TOMBOL SEKTOR (fallback klik) ──────────────────────────────
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
+        btn_cols = st.columns(len(sector_names))
+        for i, sname in enumerate(sector_names):
+            sdata = rrg_sectors[sname]
+            is_active = st.session_state.get("rrg_selected") == sname
+            with btn_cols[i]:
+                btn_label = f"{sdata['icon']} {sname[:6]}"
+                if st.button(btn_label, key=f"rrg_btn_{sname}",
+                             use_container_width=True,
+                             type="primary" if is_active else "secondary"):
+                    if is_active:
+                        st.session_state["rrg_selected"] = None
+                    else:
+                        st.session_state["rrg_selected"] = sname
+                    st.rerun()
 
-  // Quadrant labels
-  const qlabels = [
-    {{x:pad+8, y:pad+18,   t:"LEADING",   c:"#089981"}},
-    {{x:midX+6, y:pad+18,  t:"IMPROVING", c:"#F5C242"}},
-    {{x:pad+8, y:h-pad-6,  t:"LAGGING",   c:"#4285F4"}},
-    {{x:midX+6, y:h-pad-6, t:"WEAKENING", c:"#f23645"}},
-  ];
-  qlabels.forEach(q => {{
-    ctx.font = `bold ${{9*scale}}px IBM Plex Mono, monospace`;
-    ctx.fillStyle = q.c; ctx.globalAlpha=0.7;
-    ctx.fillText(q.t, q.x, q.y);
-    ctx.globalAlpha=1;
-  }});
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-  // Axes
-  ctx.strokeStyle = AX_CLR; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(midX, pad); ctx.lineTo(midX, h-pad); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(pad, midY); ctx.lineTo(w-pad, midY); ctx.stroke();
+        # ── DETAIL POPUP (in-page, muncul saat sektor dipilih) ─────────
+        sel = st.session_state.get("rrg_selected")
+        if sel and sel in rrg_sectors:
+            sd = rrg_sectors[sel]
+            fc = fase_colors.get(sd["fase"], "#F5C242")
 
-  // Axis labels
-  ctx.fillStyle = SUB_CLR; ctx.font = `${{9*scale}}px IBM Plex Mono`;
-  ctx.fillText("RS Ratio →", w-pad-60, midY-6);
-  ctx.fillText("← Momentum", pad+2, midY-6);
-  ctx.save(); ctx.translate(pad-12, h/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText("Momentum", -30, 0); ctx.restore();
+            # Header card
+            st.markdown(f"""
+            <div style='background:{met_bg};border:1px solid {fc}44;border-left:4px solid {fc};
+                border-radius:12px;padding:16px 20px;margin-bottom:16px;'>
+                <div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap;'>
+                    <div style='font-size:1.8rem;'>{sd["icon"]}</div>
+                    <div>
+                        <div style='font-family:IBM Plex Mono,monospace;font-size:1rem;font-weight:700;
+                            color:{text_main};letter-spacing:0.05em;'>{sel} Sector</div>
+                        <div style='font-size:0.72rem;color:{text_sub};margin-top:2px;'>
+                            RS: <b style="color:{fc}">{sd["rs"]}</b> &nbsp;|&nbsp;
+                            Momentum: <b style="color:{fc}">{sd["mom"]}</b> &nbsp;|&nbsp;
+                            Fase: <b style="color:{fc}">{sd["fase"].upper()}</b>
+                        </div>
+                    </div>
+                    <div style='margin-left:auto;background:{fc}22;border:1px solid {fc}44;
+                        border-radius:8px;padding:8px 16px;text-align:center;'>
+                        <div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.1em;'>AKSI</div>
+                        <div style='font-size:0.85rem;font-weight:700;color:{fc};'>{sd["aksi"]}</div>
+                    </div>
+                </div>
+            </div>""", unsafe_allow_html=True)
 
-  // Plot each sector bubble
-  const sectorKeys = Object.keys(SECTORS);
-  sectorKeys.forEach(name => {{
-    const s = SECTORS[name];
-    // Map RS (80-120 range) to x, Momentum (80-120 range) to y (inverted)
-    const rsRange = [88, 115], momRange = [88, 115];
-    const x = pad + ((s.rs - rsRange[0]) / (rsRange[1]-rsRange[0])) * (w - 2*pad);
-    const y = (h-pad) - ((s.mom - momRange[0]) / (momRange[1]-momRange[0])) * (h - 2*pad);
-    const r = (activeSector === name ? 26 : 20) * scale;
+            # Mini stats 4 kuadran
+            leading_n  = sum(1 for s in sd["saham"] if s["fase"]=="Leading")
+            improving_n= sum(1 for s in sd["saham"] if s["fase"]=="Improving")
+            weakening_n= sum(1 for s in sd["saham"] if s["fase"]=="Weakening")
+            lagging_n  = sum(1 for s in sd["saham"] if s["fase"]=="Lagging")
 
-    // Glow for active
-    if (activeSector === name) {{
-      ctx.shadowColor = s.color; ctx.shadowBlur = 20;
-    }}
+            mc1, mc2, mc3, mc4 = st.columns(4)
+            for col, lbl, val, c in [
+                (mc1, "LEADING",   leading_n,   "#089981"),
+                (mc2, "IMPROVING", improving_n, "#F5C242"),
+                (mc3, "WEAKENING", weakening_n, "#f23645"),
+                (mc4, "LAGGING",   lagging_n,   "#4285F4"),
+            ]:
+                with col:
+                    st.markdown(f"""<div style='background:{c}11;border:1px solid {c}33;
+                        border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;'>
+                        <div style='font-size:0.55rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
+                        <div style='font-size:1.6rem;font-weight:700;color:{text_main};'>{val}</div>
+                        <div style='font-size:0.6rem;color:{text_sub};'>saham</div>
+                    </div>""", unsafe_allow_html=True)
 
-    // Circle
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fillStyle = s.color + (activeSector === name ? "ee" : "99");
-    ctx.fill();
-    ctx.strokeStyle = s.color; ctx.lineWidth = activeSector===name ? 2.5 : 1.5;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+            # Mini RRG untuk sektor ini (plotly kecil, tampilkan saham-saham di dalamnya)
+            fig_mini = go.Figure()
+            # Quadrants
+            for x0,x1,y0,y1,clr in [
+                (100,115,100,115,"rgba(8,153,129,0.12)"),
+                (85,100,100,115,"rgba(245,194,66,0.10)"),
+                (100,115,85,100,"rgba(242,54,69,0.10)"),
+                (85,100,85,100,"rgba(66,133,244,0.10)"),
+            ]:
+                fig_mini.add_shape(type="rect",x0=x0,x1=x1,y0=y0,y1=y1,
+                    fillcolor=clr,line_width=0,layer="below")
+            # Lines
+            fig_mini.add_shape(type="line",x0=100,x1=100,y0=85,y1=115,
+                line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
+            fig_mini.add_shape(type="line",x0=85,x1=115,y0=100,y1=100,
+                line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
+            for lbl,x,y,c in [("LEADING",112,113,"#089981"),("IMPROVING",88,113,"#F5C242"),
+                               ("WEAKENING",112,87,"#f23645"),("LAGGING",88,87,"#4285F4")]:
+                fig_mini.add_annotation(x=x,y=y,text=f"<b>{lbl}</b>",showarrow=False,
+                    font=dict(size=8,color=c,family="IBM Plex Mono"),opacity=0.8)
+            # Saham dots
+            for stk in sd["saham"]:
+                sc = fase_colors.get(stk["fase"], "#888")
+                fig_mini.add_trace(go.Scatter(
+                    x=[stk["rs"]], y=[stk["mom"]],
+                    mode="markers+text",
+                    text=[stk["ticker"]],
+                    textposition="top center",
+                    textfont=dict(size=8,color=sc,family="IBM Plex Mono"),
+                    marker=dict(size=10,color=sc,opacity=0.85,
+                        line=dict(color=sc,width=1.5)),
+                    hovertemplate=f"<b>{stk['ticker']}</b><br>{stk['nama']}<br>Fase: {stk['fase']}<br>RS:{stk['rs']} Mom:{stk['mom']}<extra></extra>",
+                    showlegend=False,
+                ))
+            # Sector centroid
+            fig_mini.add_trace(go.Scatter(
+                x=[sd["rs"]], y=[sd["mom"]],
+                mode="markers",
+                marker=dict(size=20,color=sd["color"],opacity=0.3,
+                    line=dict(color=sd["color"],width=2),symbol="circle-open"),
+                hovertemplate=f"<b>{sel} (centroid)</b><extra></extra>",
+                showlegend=False,
+            ))
+            fig_mini.update_layout(
+                height=300, margin=dict(l=30,r=10,t=10,b=30),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(8,12,22,0.5)" if is_dark else "rgba(248,250,252,0.8)",
+                xaxis=dict(range=[85,115],title="RS Ratio",showgrid=True,
+                    gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                    tickfont=dict(family="IBM Plex Mono",size=8,color=text_sub),
+                    title_font=dict(family="IBM Plex Mono",size=8,color=text_sub),zeroline=False),
+                yaxis=dict(range=[85,115],title="Momentum",showgrid=True,
+                    gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                    tickfont=dict(family="IBM Plex Mono",size=8,color=text_sub),
+                    title_font=dict(family="IBM Plex Mono",size=8,color=text_sub),zeroline=False),
+            )
 
-    // Sector icon + name
-    ctx.fillStyle = "#ffffff"; ctx.font = `bold ${{10*scale}}px IBM Plex Mono`;
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(s.icon, x, y-3);
-    ctx.font = `bold ${{8*scale}}px IBM Plex Mono`;
-    ctx.fillText(name.length > 8 ? name.slice(0,8) : name, x, y+8);
-    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-  }});
-}}
+            mini_col, tbl_col = st.columns([1, 1.4])
+            with mini_col:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI</p>", unsafe_allow_html=True)
+                st.plotly_chart(fig_mini, use_container_width=True, config={"displayModeBar": False}, key=f"mini_rrg_{sel}")
 
-// ── DRAW MINI RRG (inside modal, highlight 1 sector) ──
-function drawMiniRRG(activeSector) {{
-  drawRRG("mini-rrg", activeSector, 0.85);
-}}
+            with tbl_col:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM — {sel.upper()} ({len(sd['saham'])} emiten)</p>", unsafe_allow_html=True)
+                # Build HTML table
+                tbl_rows = ""
+                for stk in sorted(sd["saham"], key=lambda x: x["rs"], reverse=True):
+                    fc2 = fase_colors.get(stk["fase"], "#888")
+                    rs_pct = max(0, min(100, (stk["rs"] - 85) / 30 * 100))
+                    tbl_rows += f"""<tr>
+                        <td style='font-weight:700;color:{fc2};font-family:IBM Plex Mono,monospace;font-size:12px;'>{stk["ticker"]}</td>
+                        <td style='font-size:11px;color:{text_sub};'>{stk["nama"]}</td>
+                        <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
+                            font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;
+                            font-family:IBM Plex Mono,monospace;'>{stk["fase"]}</span></td>
+                        <td style='font-size:11px;'>
+                            <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
+                            <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
+                                <div style='height:100%;width:{rs_pct:.0f}%;background:{fc2};border-radius:2px;'></div>
+                            </div>
+                        </td>
+                        <td style='font-size:11px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
+                    </tr>"""
 
-// ── BUILD LEGEND ──
-function buildLegend() {{
-  const lg = document.getElementById("rrg-legend");
-  lg.innerHTML = "";
-  Object.keys(SECTORS).forEach(name => {{
-    const s = SECTORS[name];
-    const item = document.createElement("div");
-    item.className = "rrg-legend-item";
-    item.innerHTML = `<div class="rrg-legend-dot" style="background:${{s.color}}"></div>
-      <span style="color:${{TEXT_CLR}}">${{s.icon}} ${{name}}</span>
-      <span style="color:${{FASE_MAP[s.fase]?.color || s.color}};font-size:9px;margin-left:4px;">[${{s.fase}}]</span>`;
-    item.onclick = () => openModal(name);
-    lg.appendChild(item);
-  }});
-}}
+                st.markdown(f"""<div style='overflow-y:auto;max-height:280px;border:1px solid {met_border};border-radius:8px;'>
+                <table style='width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;'>
+                <thead><tr style='background:{met_bg};position:sticky;top:0;'>
+                    <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{"#F5C242" if is_dark else "#92700a"};text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
+                    <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
+                    <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
+                    <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>RS</th>
+                    <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>MOM</th>
+                </tr></thead>
+                <tbody>{tbl_rows}</tbody>
+                </table></div>""", unsafe_allow_html=True)
 
-// ── OPEN MODAL ──
-function openModal(sectorName) {{
-  const s = SECTORS[sectorName];
-  if (!s) return;
-  const faseInfo = FASE_MAP[s.fase] || {{}};
+            st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#F5C242;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
 
-  document.getElementById("modal-title").textContent = `${{s.icon}} ${{sectorName}} Sector`;
-  const badge = document.getElementById("modal-fase-badge");
-  badge.textContent = s.fase.toUpperCase();
-  badge.style.background = faseInfo.color + "22";
-  badge.style.color = faseInfo.color;
-  badge.style.border = `1px solid ${{faseInfo.color}}44`;
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-  document.getElementById("modal-desc").innerHTML = 
-    `RS Score: <b>${{s.rs}}</b> &nbsp;|&nbsp; Momentum: <b>${{s.mom}}</b><br>
-     Fase: <b style="color:${{faseInfo.color}}">${{s.fase}}</b> — ${{faseInfo.desc || ""}}`;
-
-  const aksiCard = document.getElementById("modal-aksi-card");
-  aksiCard.style.borderColor = s.color;
-  aksiCard.style.background = s.color + "11";
-  document.getElementById("modal-aksi").textContent = s.aksi;
-  document.getElementById("modal-aksi").style.color = s.color;
-
-  // Metrics
-  const mEl = document.getElementById("modal-metrics");
-  const leading = s.saham.filter(x => x.fase==="Leading").length;
-  const improving = s.saham.filter(x => x.fase==="Improving").length;
-  const weakening = s.saham.filter(x => x.fase==="Weakening").length;
-  const lagging = s.saham.filter(x => x.fase==="Lagging").length;
-  mEl.innerHTML = [
-    ["LEADING", leading, "#089981"],
-    ["IMPROVING", improving, "#F5C242"],
-    ["WEAKENING", weakening, "#f23645"],
-    ["LAGGING", lagging, "#4285F4"],
-  ].map(([l,v,c]) => `
-    <div style="background:${{c}}11;border:1px solid ${{c}}33;border-radius:8px;padding:8px 12px;">
-      <div style="font-size:9px;color:${{c}};letter-spacing:0.1em;">${{l}}</div>
-      <div style="font-size:20px;font-weight:700;color:${{TEXT_CLR}}">${{v}}</div>
-      <div style="font-size:9px;color:${{SUB_CLR}}">saham</div>
-    </div>`).join("");
-
-  // Stock table
-  const tbody = document.getElementById("modal-stock-table");
-  const sorted = [...s.saham].sort((a,b) => b.rs - a.rs);
-  tbody.innerHTML = sorted.map(st => {{
-    const fi = FASE_MAP[st.fase] || {{}};
-    const rsFill = Math.max(0, Math.min(100, (st.rs - 85) / 30 * 100));
-    const momFill = Math.max(0, Math.min(100, (st.mom - 85) / 30 * 100));
-    return `<tr>
-      <td><span class="ticker-label" style="color:${{fi.color || TEXT_CLR}}">${{st.ticker}}</span></td>
-      <td style="font-size:11px;color:${{SUB_CLR}}">${{st.nama}}</td>
-      <td><span class="fase-badge" style="background:${{fi.color || "#888"}}22;color:${{fi.color || "#888"}};border:1px solid ${{fi.color || "#888"}}44;">${{st.fase}}</span></td>
-      <td>
-        <div style="font-size:11px;font-weight:600;color:${{TEXT_CLR}}">${{st.rs}}</div>
-        <div class="rs-bar"><div class="rs-fill" style="width:${{rsFill}}%;background:${{fi.color}}"></div></div>
-      </td>
-      <td>
-        <div style="font-size:11px;font-weight:600;color:${{TEXT_CLR}}">${{st.mom}}</div>
-        <div class="rs-bar"><div class="rs-fill" style="width:${{momFill}}%;background:${{fi.color}}88"></div></div>
-      </td>
-    </tr>`;
-  }}).join("");
-
-  document.getElementById("modal-overlay").classList.add("active");
-  setTimeout(() => {{
-    const mc = document.getElementById("mini-rrg");
-    if (mc) drawMiniRRG(sectorName);
-  }}, 50);
-}}
-
-function closeModal() {{
-  document.getElementById("modal-overlay").classList.remove("active");
-}}
-
-// Close on overlay click
-document.getElementById("modal-overlay").addEventListener("click", function(e) {{
-  if (e.target === this) closeModal();
-}});
-
-// ── CANVAS CLICK HANDLER ──
-function setupCanvasClick(canvasId) {{
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-  canvas.addEventListener("click", function(e) {{
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    const w = canvas.offsetWidth, h = canvas.offsetHeight;
-    const pad = 40;
-    const rsRange = [88, 115], momRange = [88, 115];
-    let closest = null, minDist = Infinity;
-    Object.keys(SECTORS).forEach(name => {{
-      const s = SECTORS[name];
-      const x = pad + ((s.rs - rsRange[0]) / (rsRange[1]-rsRange[0])) * (w-2*pad);
-      const y = (h-pad) - ((s.mom - momRange[0]) / (momRange[1]-momRange[0])) * (h-2*pad);
-      const dist = Math.hypot(mx-x, my-y);
-      if (dist < minDist) {{ minDist = dist; closest = name; }}
-    }});
-    if (closest && minDist < 50) openModal(closest);
-  }});
-  canvas.style.cursor = "pointer";
-}}
-
-// ── INIT ──
-function init() {{
-  buildLegend();
-  drawRRG("rrg", null);
-  setupCanvasClick("rrg");
-  window.addEventListener("resize", () => {{ drawRRG("rrg", null); }});
-}}
-
-window.addEventListener("load", init);
-document.addEventListener("DOMContentLoaded", init);
-setTimeout(init, 200);
-</script>
-</body>
-</html>"""
-
-        components.html(rrg_html, height=520, scrolling=False)
 
         st.markdown(f"<div class='trm-insight'>&#127919; <b>SIGMA INSIGHT &mdash;</b> Klik bubble sektor atau klik nama sektor di bawah chart untuk melihat detail saham dan posisi rotasi. Dana asing (Big Money) saat ini merotasi dari perbankan (<i>Weakening</i>) menuju energi dan material dasar (<i>Improving/Leading</i>).</div>", unsafe_allow_html=True)
 
