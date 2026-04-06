@@ -47,10 +47,11 @@ def _fetch_all_data(tickers):
                     }
             except: pass
 
-        # Layer 2: Finnhub — reliable, adjusted
+        # Layer 2: Finnhub — reliable, adjusted (rotate KEY s/d KEY6)
         try:
             import urllib.request as _ufh, json as _jfh
-            _fh_key = st.secrets.get("FINNHUB_KEY", "")
+            _fh_keys = _get_all_finnhub_keys() or [st.secrets.get("FINNHUB_KEY", "")]
+            _fh_key = next((k for k in _fh_keys if k and len(k) > 10), "")
             if _fh_key:
                 for tk in tickers[:3]:
                     if tk not in result["prices"]:
@@ -73,10 +74,11 @@ def _fetch_all_data(tickers):
                         except: pass
         except: pass
 
-        # Layer 3: FMP — financial data provider
+        # Layer 3: FMP — financial data provider (rotate KEY s/d KEY6)
         try:
             import urllib.request as _ufmp, json as _jfmp
-            _fmp_key = st.secrets.get("FMP_KEY", "")
+            _fmp_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY", "")]
+            _fmp_key = next((k for k in _fmp_keys if k and len(k) > 10), "")
             if _fmp_key:
                 for tk in tickers[:3]:
                     if tk not in result["prices"]:
@@ -222,131 +224,143 @@ def _fetch_all_data(tickers):
 # PART 2: FUNDAMENTAL APIs
 # ─────────────────────────────────────────────
 def _fetch_finnhub(ticker, api_key=None):
-    """Fetch fundamental data dari Finnhub."""
-    api_key = api_key or st.secrets.get("FINNHUB_KEY", "")
-    try:
-        import urllib.request, json as _j
-        url = f"https://finnhub.io/api/v1/stock/metric?symbol={ticker}.JK&metric=all&token={api_key}"
-        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=5) as r:
-            data = _j.loads(r.read())
-        metrics = data.get("metric", {})
-        result = {}
-        mapping = {
-            "revenueGrowthTTMYoy": "revenue_growth",
-            "roeTTM": "roe",
-            "roaTTM": "roa",
-            "netProfitMarginTTM": "net_margin",
-            "peBasicExclExtraTTM": "pe",
-            "pbAnnual": "pbv",
-            "dividendYieldIndicatedAnnual": "div_yield",
-            "epsBasicExclExtraItemsTTM": "eps",
-            "totalDebt/totalEquityAnnual": "der",
-            "currentRatioAnnual": "current_ratio",
-            "52WeekHigh": "w52h",
-            "52WeekLow": "w52l",
-        }
-        for fh_key, our_key in mapping.items():
-            if metrics.get(fh_key) is not None:
-                result[our_key] = metrics[fh_key]
-        return result
-    except:
-        return {}
-
-def _fetch_alphavantage(ticker, api_key=None):
-    """Fetch fundamental data dari Alpha Vantage."""
-    api_key = api_key or st.secrets.get("ALPHAVANTAGE_KEY", "")
-    try:
-        import urllib.request, json as _j
-        result = {}
-        url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={ticker}.JK&apikey={api_key}"
-        req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=5) as r:
-            data = _j.loads(r.read())
-        if data and "Symbol" in data:
-            if data.get("PERatio") and data["PERatio"] != "None": result["pe"] = float(data["PERatio"])
-            if data.get("PriceToBookRatio") and data["PriceToBookRatio"] != "None": result["pbv"] = float(data["PriceToBookRatio"])
-            if data.get("EPS") and data["EPS"] != "None": result["eps"] = float(data["EPS"])
-            if data.get("ReturnOnEquityTTM") and data["ReturnOnEquityTTM"] != "None": result["roe"] = float(data["ReturnOnEquityTTM"])
-            if data.get("ReturnOnAssetsTTM") and data["ReturnOnAssetsTTM"] != "None": result["roa"] = float(data["ReturnOnAssetsTTM"])
-            if data.get("DividendYield") and data["DividendYield"] != "None": result["div_yield"] = float(data["DividendYield"])
-            if data.get("MarketCapitalization") and data["MarketCapitalization"] != "None": result["mktcap"] = float(data["MarketCapitalization"])
-            if data.get("52WeekHigh") and data["52WeekHigh"] != "None": result["w52h"] = float(data["52WeekHigh"])
-            if data.get("52WeekLow") and data["52WeekLow"] != "None": result["w52l"] = float(data["52WeekLow"])
-            if data.get("Description"): result["description"] = data["Description"][:200]
-        return result
-    except:
-        return {}
-
-def _fetch_fmp(ticker, api_key=None):
-    """Fetch fundamental dari Financial Modeling Prep."""
-    api_key = api_key or st.secrets.get("FMP_KEY", "")
-    try:
-        import urllib.request, json as _j
-        result = {}
-        base = "https://financialmodelingprep.com/api/v3"
-
+    """Fetch fundamental data dari Finnhub — auto-rotate KEY s/d KEY6."""
+    import urllib.request, json as _j
+    keys = [api_key] if api_key else _get_all_finnhub_keys()
+    if not keys:
+        keys = [st.secrets.get("FINNHUB_KEY", "")]
+    mapping = {
+        "revenueGrowthTTMYoy": "revenue_growth",
+        "roeTTM": "roe", "roaTTM": "roa",
+        "netProfitMarginTTM": "net_margin",
+        "peBasicExclExtraTTM": "pe", "pbAnnual": "pbv",
+        "dividendYieldIndicatedAnnual": "div_yield",
+        "epsBasicExclExtraItemsTTM": "eps",
+        "totalDebt/totalEquityAnnual": "der",
+        "currentRatioAnnual": "current_ratio",
+        "52WeekHigh": "w52h", "52WeekLow": "w52l",
+    }
+    for key in keys:
+        if not key or len(key) < 10: continue
         try:
-            url = f"{base}/profile/{ticker}.JK?apikey={api_key}"
-            req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0"})
+            url = f"https://finnhub.io/api/v1/stock/metric?symbol={ticker}.JK&metric=all&token={key}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=5) as r:
                 data = _j.loads(r.read())
-            if data and isinstance(data, list) and len(data) > 0:
-                d = data[0]
-                if d.get("price"): result["price"] = d["price"]
-                if d.get("mktCap"): result["mktcap"] = d["mktCap"]
-                if d.get("pe"): result["pe"] = d["pe"]
-                if d.get("eps"): result["eps"] = d["eps"]
-                if d.get("beta"): result["beta"] = d["beta"]
-                if d.get("sector"): result["sector"] = d["sector"]
-                if d.get("industry"): result["industry"] = d["industry"]
-                if d.get("description"): result["description"] = d["description"][:300]
-        except: pass
+            metrics = data.get("metric", {})
+            result = {}
+            for fh_key, our_key in mapping.items():
+                if metrics.get(fh_key) is not None:
+                    result[our_key] = metrics[fh_key]
+            if result: return result
+        except Exception as e:
+            err = str(e).lower()
+            if "429" in err or "rate" in err or "limit" in err: continue
+            break
+    return {}
 
+def _fetch_alphavantage(ticker, api_key=None):
+    """Fetch fundamental data dari Alpha Vantage — auto-rotate KEY s/d KEY6."""
+    import urllib.request, json as _j
+    keys = [api_key] if api_key else _get_all_av_keys()
+    if not keys:
+        keys = [st.secrets.get("ALPHAVANTAGE_KEY", "")]
+    def _safe(val): return float(val) if val and val != "None" else None
+    for key in keys:
+        if not key or len(key) < 5: continue
         try:
-            url2 = f"{base}/key-metrics-ttm/{ticker}.JK?apikey={api_key}"
-            req2 = urllib.request.Request(url2, headers={"User-Agent":"Mozilla/5.0"})
-            with urllib.request.urlopen(req2, timeout=5) as r2:
-                data2 = _j.loads(r2.read())
-            if data2 and isinstance(data2, list) and len(data2) > 0:
-                m = data2[0]
-                if m.get("roeTTM"): result["roe"] = m["roeTTM"]
-                if m.get("roaTTM"): result["roa"] = m["roaTTM"]
-                if m.get("pbRatioTTM"): result["pbv"] = m["pbRatioTTM"]
-                if m.get("peRatioTTM"): result["pe"] = result.get("pe") or m["peRatioTTM"]
-                if m.get("dividendYieldTTM"): result["div_yield"] = m["dividendYieldTTM"]
-                if m.get("debtToEquityTTM"): result["der"] = m["debtToEquityTTM"]
-                if m.get("currentRatioTTM"): result["current_ratio"] = m["currentRatioTTM"]
-                if m.get("netProfitMarginTTM"): result["net_margin"] = m["netProfitMarginTTM"]
-                if m.get("bookValuePerShareTTM"): result["bv"] = m["bookValuePerShareTTM"]
-                if m.get("earningsYieldTTM"): result["earnings_yield"] = m["earningsYieldTTM"]
-                if m.get("freeCashFlowPerShareTTM"): result["fcf_per_share"] = m["freeCashFlowPerShareTTM"]
-        except: pass
+            result = {}
+            url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={ticker}.JK&apikey={key}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=5) as r:
+                data = _j.loads(r.read())
+            if data.get("Note") or data.get("Information"): continue  # rate limited
+            if data and "Symbol" in data:
+                if _safe(data.get("PERatio")): result["pe"] = _safe(data["PERatio"])
+                if _safe(data.get("PriceToBookRatio")): result["pbv"] = _safe(data["PriceToBookRatio"])
+                if _safe(data.get("EPS")): result["eps"] = _safe(data["EPS"])
+                if _safe(data.get("ReturnOnEquityTTM")): result["roe"] = _safe(data["ReturnOnEquityTTM"])
+                if _safe(data.get("ReturnOnAssetsTTM")): result["roa"] = _safe(data["ReturnOnAssetsTTM"])
+                if _safe(data.get("DividendYield")): result["div_yield"] = _safe(data["DividendYield"])
+                if _safe(data.get("MarketCapitalization")): result["mktcap"] = _safe(data["MarketCapitalization"])
+                if _safe(data.get("52WeekHigh")): result["w52h"] = _safe(data["52WeekHigh"])
+                if _safe(data.get("52WeekLow")): result["w52l"] = _safe(data["52WeekLow"])
+                if data.get("Description"): result["description"] = data["Description"][:200]
+            if result: return result
+        except: continue
+    return {}
 
+def _fetch_fmp(ticker, api_key=None):
+    """Fetch fundamental dari Financial Modeling Prep — auto-rotate KEY s/d KEY6."""
+    import urllib.request, json as _j
+    keys = [api_key] if api_key else _get_all_fmp_keys()
+    if not keys:
+        keys = [st.secrets.get("FMP_KEY", "")]
+    base = "https://financialmodelingprep.com/api/v3"
+    for key in keys:
+        if not key or len(key) < 10: continue
         try:
-            url3 = f"{base}/income-statement/{ticker}.JK?limit=4&apikey={api_key}"
-            req3 = urllib.request.Request(url3, headers={"User-Agent":"Mozilla/5.0"})
-            with urllib.request.urlopen(req3, timeout=5) as r3:
-                data3 = _j.loads(r3.read())
-            if data3 and isinstance(data3, list):
-                hist_ni, hist_eps, hist_rev = [], [], []
-                for row in data3[:4]:
-                    yr = str(row.get("date",""))[:4]
-                    ni = row.get("netIncome")
-                    eps = row.get("eps")
-                    rev = row.get("revenue")
-                    if ni: hist_ni.append((yr, ni))
-                    if eps: hist_eps.append((yr, eps))
-                    if rev: hist_rev.append((yr, rev))
-                if hist_ni: result["hist_ni"] = hist_ni
-                if hist_eps: result["hist_eps"] = hist_eps
-                if hist_rev: result["hist_rev"] = hist_rev
-        except: pass
-
-        if result: result["source"] = "FMP"
-        return result
-    except:
-        return {}
+            result = {}
+            try:
+                url = f"{base}/profile/{ticker}.JK?apikey={key}"
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    data = _j.loads(r.read())
+                if data and isinstance(data, list) and len(data) > 0:
+                    d = data[0]
+                    if d.get("price"): result["price"] = d["price"]
+                    if d.get("mktCap"): result["mktcap"] = d["mktCap"]
+                    if d.get("pe"): result["pe"] = d["pe"]
+                    if d.get("eps"): result["eps"] = d["eps"]
+                    if d.get("beta"): result["beta"] = d["beta"]
+                    if d.get("sector"): result["sector"] = d["sector"]
+                    if d.get("industry"): result["industry"] = d["industry"]
+                    if d.get("description"): result["description"] = d["description"][:300]
+            except: pass
+            try:
+                url2 = f"{base}/key-metrics-ttm/{ticker}.JK?apikey={key}"
+                req2 = urllib.request.Request(url2, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req2, timeout=5) as r2:
+                    data2 = _j.loads(r2.read())
+                if data2 and isinstance(data2, list) and len(data2) > 0:
+                    m = data2[0]
+                    if m.get("roeTTM"): result["roe"] = m["roeTTM"]
+                    if m.get("roaTTM"): result["roa"] = m["roaTTM"]
+                    if m.get("pbRatioTTM"): result["pbv"] = m["pbRatioTTM"]
+                    if m.get("peRatioTTM"): result["pe"] = result.get("pe") or m["peRatioTTM"]
+                    if m.get("dividendYieldTTM"): result["div_yield"] = m["dividendYieldTTM"]
+                    if m.get("debtToEquityTTM"): result["der"] = m["debtToEquityTTM"]
+                    if m.get("currentRatioTTM"): result["current_ratio"] = m["currentRatioTTM"]
+                    if m.get("netProfitMarginTTM"): result["net_margin"] = m["netProfitMarginTTM"]
+                    if m.get("bookValuePerShareTTM"): result["bv"] = m["bookValuePerShareTTM"]
+                    if m.get("earningsYieldTTM"): result["earnings_yield"] = m["earningsYieldTTM"]
+                    if m.get("freeCashFlowPerShareTTM"): result["fcf_per_share"] = m["freeCashFlowPerShareTTM"]
+            except: pass
+            try:
+                url3 = f"{base}/income-statement/{ticker}.JK?limit=4&apikey={key}"
+                req3 = urllib.request.Request(url3, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req3, timeout=5) as r3:
+                    data3 = _j.loads(r3.read())
+                if data3 and isinstance(data3, list):
+                    hist_ni, hist_eps, hist_rev = [], [], []
+                    for row in data3[:4]:
+                        yr = str(row.get("date", ""))[:4]
+                        ni = row.get("netIncome"); eps = row.get("eps"); rev = row.get("revenue")
+                        if ni: hist_ni.append((yr, ni))
+                        if eps: hist_eps.append((yr, eps))
+                        if rev: hist_rev.append((yr, rev))
+                    if hist_ni: result["hist_ni"] = hist_ni
+                    if hist_eps: result["hist_eps"] = hist_eps
+                    if hist_rev: result["hist_rev"] = hist_rev
+            except: pass
+            if result:
+                result["source"] = "FMP"
+                return result
+        except Exception as e:
+            err = str(e).lower()
+            if "429" in err or "limit" in err: continue
+            break
+    return {}
 
 # PENGAMAN LIMIT API: Menyimpan memori selama 1 jam (3600 detik)
 @st.cache_data(ttl=3600)
@@ -432,7 +446,9 @@ def _fetch_multi_fundamental(ticker):
 def _fetch_commodities(api_key=None):
     try:
         import urllib.request, json as _j
-        api_key = api_key or st.secrets.get("FMP_KEY", "")
+        if not api_key:
+            _fmp_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY", "")]
+            api_key = next((k for k in _fmp_keys if k and len(k) > 10), "")
         result = {}
         symbols = {
             "GCUSD": "Gold (Emas)", "SIUSD": "Silver (Perak)", "CLUSD": "WTI Crude Oil",
@@ -2254,13 +2270,28 @@ Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya.
 # ─────────────────────────────────────────────
 def _get_all_groq_keys():
     """Kumpulkan semua Groq API key yang tersedia (GROQ_API_KEY s/d GROQ_API_KEY13)."""
-    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
+    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(2, 14)]
     valid = []
     for key_name in key_names:
         key = st.secrets.get(key_name, "")
         if key and len(key) > 10:
             valid.append((key_name, key))
     return valid  # list of (name, key)
+
+def _get_all_finnhub_keys():
+    """Rotation FINNHUB_KEY s/d FINNHUB_KEY6."""
+    names = ["FINNHUB_KEY"] + [f"FINNHUB_KEY{i}" for i in range(2, 7)]
+    return [st.secrets.get(n, "") for n in names if st.secrets.get(n, "") and len(st.secrets.get(n, "")) > 10]
+
+def _get_all_av_keys():
+    """Rotation ALPHAVANTAGE_KEY s/d ALPHAVANTAGE_KEY6."""
+    names = ["ALPHAVANTAGE_KEY"] + [f"ALPHAVANTAGE_KEY{i}" for i in range(2, 7)]
+    return [st.secrets.get(n, "") for n in names if st.secrets.get(n, "") and len(st.secrets.get(n, "")) > 10]
+
+def _get_all_fmp_keys():
+    """Rotation FMP_KEY s/d FMP_KEY6."""
+    names = ["FMP_KEY"] + [f"FMP_KEY{i}" for i in range(2, 7)]
+    return [st.secrets.get(n, "") for n in names if st.secrets.get(n, "") and len(st.secrets.get(n, "")) > 10]
 
 
 def _get_groq_client_and_key():
@@ -2372,6 +2403,58 @@ def _call_groq_fallback(full_prompt):
             raise e
 
     raise Exception(f"Semua Groq key kena rate limit (8B). Error terakhir: {last_err}")
+
+
+def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
+    """
+    Cerebras — FALLBACK KE-2 setelah Groq 70B gagal semua key.
+    Model: llama-3.3-70b (throughput sangat tinggi, cocok saat Groq overload).
+    """
+    import urllib.request, json as _j
+
+    MAX_CHARS = 20000
+    if len(full_prompt) > MAX_CHARS:
+        cutoff = full_prompt[:MAX_CHARS].rfind('\n')
+        if cutoff < int(MAX_CHARS * 0.8):
+            cutoff = full_prompt[:MAX_CHARS].rfind('. ')
+        full_prompt = full_prompt[:cutoff if cutoff > 0 else MAX_CHARS] + "\n\n[... data dipotong]"
+
+    cerebras_key = st.secrets.get("CEREBRAS_API_KEY", "")
+    if not cerebras_key or len(cerebras_key) < 10:
+        raise Exception("CEREBRAS_API_KEY tidak ditemukan di Secrets")
+
+    messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
+    if history_msgs:
+        hist_clean = [
+            {"role": m["role"], "content": (m.get("content") or "")[:2000]}
+            for m in history_msgs
+            if m.get("role") in ("user", "assistant")
+        ][-4:]
+        if hist_clean and hist_clean[-1]["role"] == "user":
+            hist_clean = hist_clean[:-1]
+        messages.extend(hist_clean)
+    messages.append({"role": "user", "content": full_prompt})
+
+    payload = {
+        "model": "llama-3.3-70b",
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": max_tokens
+    }
+    req = urllib.request.Request(
+        "https://api.cerebras.ai/v1/chat/completions",
+        data=_j.dumps(payload).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {cerebras_key}"
+        }
+    )
+    with urllib.request.urlopen(req, timeout=45) as r:
+        data = _j.loads(r.read())
+    content_text = data["choices"][0]["message"]["content"]
+    if not content_text:
+        raise Exception("Cerebras mengembalikan respons kosong")
+    return content_text, "Cerebras/Llama70B"
 
 
 # ─────────────────────────────────────────────
@@ -3118,6 +3201,58 @@ if st.session_state.user and not st.session_state.get("selected_system"):
 init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
+
+def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
+    """
+    Cerebras — FALLBACK KE-2 setelah Groq 70B gagal semua key.
+    Model: llama-3.3-70b (throughput sangat tinggi, cocok saat Groq overload).
+    """
+    import urllib.request, json as _j
+
+    MAX_CHARS = 20000
+    if len(full_prompt) > MAX_CHARS:
+        cutoff = full_prompt[:MAX_CHARS].rfind('\n')
+        if cutoff < int(MAX_CHARS * 0.8):
+            cutoff = full_prompt[:MAX_CHARS].rfind('. ')
+        full_prompt = full_prompt[:cutoff if cutoff > 0 else MAX_CHARS] + "\n\n[... data dipotong]"
+
+    cerebras_key = st.secrets.get("CEREBRAS_API_KEY", "")
+    if not cerebras_key or len(cerebras_key) < 10:
+        raise Exception("CEREBRAS_API_KEY tidak ditemukan di Secrets")
+
+    messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
+    if history_msgs:
+        hist_clean = [
+            {"role": m["role"], "content": (m.get("content") or "")[:2000]}
+            for m in history_msgs
+            if m.get("role") in ("user", "assistant")
+        ][-4:]
+        if hist_clean and hist_clean[-1]["role"] == "user":
+            hist_clean = hist_clean[:-1]
+        messages.extend(hist_clean)
+    messages.append({"role": "user", "content": full_prompt})
+
+    payload = {
+        "model": "llama-3.3-70b",
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": max_tokens
+    }
+    req = urllib.request.Request(
+        "https://api.cerebras.ai/v1/chat/completions",
+        data=_j.dumps(payload).encode(),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {cerebras_key}"
+        }
+    )
+    with urllib.request.urlopen(req, timeout=45) as r:
+        data = _j.loads(r.read())
+    content_text = data["choices"][0]["message"]["content"]
+    if not content_text:
+        raise Exception("Cerebras mengembalikan respons kosong")
+    return content_text, "Cerebras/Llama70B"
+
 
 # ─────────────────────────────────────────────
 # PART 7: SESSION HANDLERS, AUTH & UI (CSS/LOGIN)
@@ -4027,9 +4162,9 @@ def _get_gemini_keys():
     """
     key_names = (
         ["GEMINI_API_KEY"] +
-        [f"GEMINI_API_KEY{i}" for i in range(2, 6)] +   # GEMINI_API_KEY2 s/d GEMINI_API_KEY5
+        [f"GEMINI_API_KEY{i}" for i in range(2, 7)] +   # GEMINI_API_KEY2 s/d GEMINI_API_KEY6
         ["GEMINI_KEY"] +
-        [f"GEMINI_KEY{i}" for i in range(2, 6)] +        # GEMINI_KEY2 s/d GEMINI_KEY5
+        [f"GEMINI_KEY{i}" for i in range(2, 7)] +        # GEMINI_KEY2 s/d GEMINI_KEY6
         ["GOOGLE_API_KEY"]
     )
     keys = []
@@ -4226,6 +4361,8 @@ if "do" in st.query_params:
         st.stop()
     elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_ai": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "go_home": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_light": st.session_state.theme = "light"; st.query_params.pop("do", None); st.rerun()
     elif _do == "newchat":
@@ -9989,6 +10126,7 @@ else:
                             )
 
                     elif has_pdf and not has_image:
+                        # PDF: Gemini → Cerebras → Groq Primary → Groq 8B
                         try:
                             ans_bersih, _ = _call_gemini_text(
                                 _history_msgs[-6:] + [{"role": "user", "content": full_prompt}]
@@ -9997,29 +10135,44 @@ else:
                         except Exception as e_pdf:
                             debug_info.append(f"Gemini PDF: {str(e_pdf)}")
                             try:
-                                ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
-                                simbol_ai = "\n\n*(&#9889; Groq - PDF Fallback)*"
-                            except Exception as e_groq_pdf:
-                                debug_info.append(f"Groq PDF fallback: {str(e_groq_pdf)}")
+                                ans_bersih, _ = _call_cerebras(full_prompt, _history_msgs)
+                                simbol_ai = "\n\n*(&#9889; Cerebras - PDF Fallback)*"
+                            except Exception as e_cbr_pdf:
+                                debug_info.append(f"Cerebras PDF: {str(e_cbr_pdf)}")
+                                try:
+                                    ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
+                                    simbol_ai = "\n\n*(&#9889; Groq - PDF Fallback)*"
+                                except Exception as e_groq_pdf:
+                                    debug_info.append(f"Groq PDF fallback: {str(e_groq_pdf)}")
 
                     else:
+                        # Layer 1: Groq 70B (rotate 13 key)
                         try:
                             ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
                             simbol_ai = "\n\n*(&#9889; Groq/Llama)*"
                         except Exception as e_groq70:
                             debug_info.append(f"Groq 70B: {str(e_groq70)}")
 
+                            # Layer 2: Cerebras 70B (throughput tinggi, fallback cepat)
                             try:
-                                ans_bersih, _ = _call_gemini_text(_history_msgs[-6:])
-                                simbol_ai = "\n\n*(&#10024; Gemini)*"
-                            except Exception as e_gemini:
-                                debug_info.append(f"Gemini Text: {str(e_gemini)}")
+                                ans_bersih, _ = _call_cerebras(full_prompt, _history_msgs)
+                                simbol_ai = "\n\n*(&#9889; Cerebras/Llama)*"
+                            except Exception as e_cerebras:
+                                debug_info.append(f"Cerebras: {str(e_cerebras)}")
 
+                                # Layer 3: Gemini Text (rotate 6 key)
                                 try:
-                                    ans_bersih, _ = _call_groq_fallback(full_prompt)
-                                    simbol_ai = "\n\n*(&#9889; Groq/Mini)*"
-                                except Exception as e_groq8:
-                                    debug_info.append(f"Groq 8B: {str(e_groq8)}")
+                                    ans_bersih, _ = _call_gemini_text(_history_msgs[-6:])
+                                    simbol_ai = "\n\n*(&#10024; Gemini)*"
+                                except Exception as e_gemini:
+                                    debug_info.append(f"Gemini Text: {str(e_gemini)}")
+
+                                    # Layer 4: Groq 8B (last resort)
+                                    try:
+                                        ans_bersih, _ = _call_groq_fallback(full_prompt)
+                                        simbol_ai = "\n\n*(&#9889; Groq/Mini)*"
+                                    except Exception as e_groq8:
+                                        debug_info.append(f"Groq 8B: {str(e_groq8)}")
 
                     if not ans_bersih:
                         err_summary = " | ".join(debug_info)
