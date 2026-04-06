@@ -2928,7 +2928,7 @@ body {{ background: #080c14; }}
             <ul class="card-features">
                 <li><span class="feat-dot"></span>Upload chart &amp; PDF prospektus</li>
                 <li><span class="feat-dot"></span>Multi-source data real-time IDX</li>
-                <li><span class="feat-dot"></span>Gemini Vision + Groq LLaMA</li>
+                <li><span class="feat-dot"></span>Multi-Model AI Engine</li>
             </ul>
             <button class="card-cta" onclick="event.stopPropagation(); selectChat()">Masuk ke AI Chat &#8594;</button>
         </div>
@@ -6156,9 +6156,19 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   /* Mobile */
   @media (max-width: 860px) {{
     .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
-    .frm-countdown {{ padding: 12px 14px; }}
+    .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
     .frm-cd-num {{ font-size: 1.3rem; }}
     .frm-cd-box {{ min-width: 38px; }}
+    .frm-cd-boxes {{ justify-content: flex-start; }}
+    .frm-card-meta {{ flex-direction: column; gap: 2px; align-items: flex-start; }}
+    .frm-card-time {{ font-size: 0.56rem; }}
+    .frm-card-date {{ font-size: 0.76rem; }}
+    .frm-bars {{ padding: 12px 14px 6px; }}
+    .frm-bar-label {{ font-size: 0.66rem; }}
+    .frm-bar-pct {{ font-size: 0.70rem; }}
+    .frm-tbl th {{ padding: 6px 8px; font-size: 0.56rem; }}
+    .frm-tbl td {{ padding: 6px 8px; font-size: 0.63rem; }}
+    .frm-insight {{ font-size: 0.68rem; padding: 10px 14px; }}
   }}
 </style>
 </head>
@@ -6267,11 +6277,21 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
   }});
 
   grid.innerHTML = html;
+  // Auto-resize iframe to actual content height (fixes mobile cutoff)
+  function sendHeight() {{
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height:h}}, '*');
+  }}
+  // Send after render + small delay for fonts/images
+  sendHeight();
+  setTimeout(sendHeight, 200);
+  setTimeout(sendHeight, 600);
+  window.addEventListener('resize', sendHeight);
 }})();
 </script>
 </body>
 </html>
-        """, height=860, scrolling=False)
+        """, height=1100, scrolling=True)
 
     # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
     with tab_rotation:
