@@ -4941,6 +4941,26 @@ if current_view == "dashboard":
         with mb_col2:
             req_weekly = st.button("🗓️ WEEKLY REVIEW (7 Hari)", use_container_width=True, key="btn_mb_weekly")
 
+        # ── Smart cache check — jangan re-generate jika masih valid ──────
+        _now_dt = datetime.now()
+        _today_date  = _now_dt.strftime("%Y-%m-%d")            # "2026-04-06"
+        _this_week   = _now_dt.strftime("%Y-W%W")              # "2026-W14"
+
+        _daily_cached_date  = st.session_state.get("mb_daily_cache_date", "")
+        _weekly_cached_week = st.session_state.get("mb_weekly_cache_week", "")
+
+        _daily_fresh  = (_daily_cached_date  == _today_date)   and bool(st.session_state.get("mb_daily_content"))
+        _weekly_fresh = (_weekly_cached_week == _this_week)    and bool(st.session_state.get("mb_weekly_content"))
+
+        # Jika user klik tapi cache sudah ada hari ini → tampilkan info & tawarkan force refresh
+        if req_daily and _daily_fresh:
+            st.info(f"✅ Daily Brief sudah tersedia untuk hari ini ({_today_date}). Gunakan tombol lagi untuk refresh paksa.", icon="💡")
+            req_daily = False  # jangan generate ulang
+
+        if req_weekly and _weekly_fresh:
+            st.info(f"✅ Weekly Brief sudah tersedia untuk minggu ini. Gunakan tombol lagi untuk refresh paksa.", icon="💡")
+            req_weekly = False
+
         if req_daily or req_weekly:
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
@@ -4954,7 +4974,6 @@ if current_view == "dashboard":
                     ("https://www.cnbcindonesia.com/news/rss",            dom_news),
                     ("https://www.cnbc.com/id/15839069/device/rss/rss.html", glob_news),
                     ("https://feeds.content.dowjones.io/public/rss/mw-marketpulse", glob_news),
-                    ("https://www.ft.com/news-feed?format=rss",           glob_news),
                     ("https://feeds.a.dj.com/rss/RSSMarketsMain.xml",     glob_news),
                     ("https://www.aljazeera.com/xml/rss/all.xml",         glob_news),
                     ("https://feeds.bbci.co.uk/news/world/rss.xml",       glob_news),
@@ -5071,8 +5090,8 @@ if current_view == "dashboard":
                     return _full_text.strip() if _full_text else None
 
                 # ── Build prompt — BERBEDA antara Daily dan Weekly ────────
-                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:10]]) if dom_news else "⚠ Tidak tersedia."
-                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:10]]) if glob_news else "⚠ Tidak tersedia."
+                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:8]])  if dom_news  else "⚠ Tidak tersedia."
+                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:8]]) if glob_news else "⚠ Tidak tersedia."
 
                 if req_daily:
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
@@ -5183,11 +5202,13 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
                     mb_res = mb_res + f"\n\n---\n*Sumber data: {_src_badge} · {_today}*"
 
                 if mode_key == "daily":
-                    st.session_state["mb_daily_content"]   = mb_res
-                    st.session_state["mb_daily_timestamp"] = _today
+                    st.session_state["mb_daily_content"]    = mb_res
+                    st.session_state["mb_daily_timestamp"]  = _today
+                    st.session_state["mb_daily_cache_date"] = _today_date   # cache key: tanggal
                 else:
-                    st.session_state["mb_weekly_content"]   = mb_res
-                    st.session_state["mb_weekly_timestamp"] = _today
+                    st.session_state["mb_weekly_content"]    = mb_res
+                    st.session_state["mb_weekly_timestamp"]  = _today
+                    st.session_state["mb_weekly_cache_week"] = _this_week   # cache key: minggu
                 # backward compat
                 st.session_state["mb_content"]    = mb_res
                 st.session_state["mb_mode"]       = mode_str
@@ -5920,7 +5941,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         _fed_meetings = [
             {
                 "date": "Apr 29, 2026",
-                "meeting_time": "Apr 29, 2026 02:00PM ET",
+                "meeting_time": "Apr 29, 2026 &nbsp;|&nbsp; 01:00 WIB",
                 "future_price": "96.358",
                 "countdown_weeks": 3, "countdown_days": 3, "countdown_hours": 1, "countdown_mins": 34,
                 "scenarios": [
@@ -5930,7 +5951,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
             },
             {
                 "date": "Jun 17, 2026",
-                "meeting_time": "Jun 17, 2026 02:00PM ET",
+                "meeting_time": "Jun 17, 2026 &nbsp;|&nbsp; 01:00 WIB",
                 "future_price": "96.360",
                 "countdown_weeks": 11, "countdown_days": 1, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
@@ -5941,7 +5962,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
             },
             {
                 "date": "Jul 29, 2026",
-                "meeting_time": "Jul 29, 2026 02:00PM ET",
+                "meeting_time": "Jul 29, 2026 &nbsp;|&nbsp; 01:00 WIB",
                 "future_price": "96.490",
                 "countdown_weeks": 16, "countdown_days": 3, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
@@ -5957,7 +5978,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         import json as _json
         _fed_json = _json.dumps(_fed_meetings)
         _is_dark_js = "true" if is_dark else "false"
-        _updated_str = datetime.now().strftime("%b %d, %Y %I:%M%p") + " WIB"
+        _updated_str = datetime.now().strftime("%d %b %Y, %H:%M") + " WIB (GMT+7)"
 
         # ── Render via components.html — BYPASS Streamlit markdown sanitizer ──
         components.html(f"""
@@ -6179,7 +6200,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   <div class="frm-countdown">
     <div>
       <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
-      <div class="frm-cd-title">Apr 29, 2026 &nbsp;·&nbsp; 02:00PM ET</div>
+      <div class="frm-cd-title">Apr 29, 2026 &nbsp;·&nbsp; 01:00 WIB (02:00PM ET)</div>
     </div>
     <div class="frm-cd-boxes" id="frm-cd"></div>
   </div>
@@ -6206,22 +6227,51 @@ var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
 var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
 var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
 
-// Countdown (static display from data)
+// ── LIVE COUNTDOWN (ticks every second, WIB GMT+7) ──────────────
 (function() {{
-  var m = DATA[0];
-  var cd = document.getElementById('frm-cd');
-  var parts = [
-    [m.countdown_weeks, "Weeks"],
-    [m.countdown_days, "Days"],
-    [m.countdown_hours, "Hours"],
-    [m.countdown_mins, "Minutes"]
-  ];
-  var html = '';
-  parts.forEach(function(p, i) {{
-    if (i > 0) html += '<div class="frm-cd-sep">:</div>';
-    html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
-  }});
-  cd.innerHTML = html;
+  // FOMC target: Apr 29, 2026 02:00 PM ET = 14:00 ET = UTC-4 (EDT) → 21:00 UTC → 04:00 WIB +1 hari
+  // Apr 29 14:00 ET (EDT=UTC-4) → UTC: Apr 29 18:00 → WIB (UTC+7): Apr 30 01:00
+  var TARGET_UTC_MS = Date.UTC(2026, 3, 29, 18, 0, 0); // Apr 29 2026 18:00 UTC (= 14:00 EDT = 01:00 WIB Apr 30)
+
+  function pad(n) {{ return n < 10 ? '0' + n : String(n); }}
+
+  function tick() {{
+    var now = Date.now();
+    var diff = TARGET_UTC_MS - now;
+    var cd = document.getElementById('frm-cd');
+    if (!cd) return;
+
+    if (diff <= 0) {{
+      cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:1rem;color:#089981;">MEETING BERLANGSUNG</div></div>';
+      return;
+    }}
+
+    var totalSec   = Math.floor(diff / 1000);
+    var secs       = totalSec % 60;
+    var totalMin   = Math.floor(totalSec / 60);
+    var mins       = totalMin % 60;
+    var totalHours = Math.floor(totalMin / 60);
+    var hours      = totalHours % 24;
+    var totalDays  = Math.floor(totalHours / 24);
+    var weeks      = Math.floor(totalDays / 7);
+    var days       = totalDays % 7;
+
+    var parts = [
+      [weeks, "WEEKS"],
+      [days,  "DAYS"],
+      [hours, "HOURS"],
+      [mins,  "MINS"]
+    ];
+    var html = '';
+    parts.forEach(function(p, i) {{
+      if (i > 0) html += '<div class="frm-cd-sep">:</div>';
+      html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
+    }});
+    cd.innerHTML = html;
+  }}
+
+  tick();
+  setInterval(tick, 1000);
 }})();
 
 // Build cards
