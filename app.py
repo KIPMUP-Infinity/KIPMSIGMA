@@ -2439,8 +2439,11 @@ ALLOWED_EMAILS = [
     "yordan.nandini@gmail.com",
     "nisrinazakiyahr@gmail.com",
     "uploaddt969@gmail.com",
-    "fabianalaziz.9e@gmail.com"
-] # Silakan isi dengan daftar email yang boleh masuk
+    "fabianalaziz.9e@gmail.com",
+    "tehnikalkipm@gmail.com",
+    "tehnikalkipm2@gmail.com",
+    "tehnikalkipm3@gmail.com"
+] 
 
 # ─── AUTENTIKASI GOOGLE ───
 if "code" in st.query_params and st.session_state.user is None:
