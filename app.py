@@ -2252,39 +2252,31 @@ Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya.
 # ─────────────────────────────────────────────
 # GROQ KEY ROTATION — AUTO SCAN KEY 1-13
 # ─────────────────────────────────────────────
-def _get_all_groq_keys():
-    """
-    Kumpulkan SEMUA Groq API key yang valid dari Secrets (KEY s/d KEY13).
-    Return list of (key_name, api_key).
-    """
-    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
-    keys = []
-    for key_name in key_names:
-        key = st.secrets.get(key_name, "")
-        if key and len(key) > 10 and key not in [k[1] for k in keys]:
-            keys.append((key_name, key))
-    return keys
-
 def _get_groq_client_and_key():
     """
     Auto-rotate melalui GROQ_API_KEY s/d GROQ_API_KEY13.
     Return (client, key_name) dari key pertama yang valid.
     """
     from groq import Groq
-    keys = _get_all_groq_keys()
-    if not keys:
-        raise Exception("Semua Groq API key tidak tersedia (scan KEY s/d KEY13)")
-    key_name, key = keys[0]
-    return Groq(api_key=key), key_name
+    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
+    for key_name in key_names:
+        key = st.secrets.get(key_name, "")
+        if key and len(key) > 10:
+            try:
+                client = Groq(api_key=key)
+                return client, key_name
+            except Exception:
+                continue
+    raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
 
 
 def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
     """
     Groq PRIMARY — LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
-    Rotasi otomatis ke key berikutnya jika key saat ini kena rate limit (429).
+    Dipakai untuk semua request TEXT. Key rotation otomatis 1-13.
+    Prompt dipotong cerdas di batas baris/kalimat.
     """
-    from groq import Groq
-    import time as _time
+    client, used_key = _get_groq_client_and_key()
 
     MAX_PROMPT_CHARS = 20000
     if len(full_prompt) > MAX_PROMPT_CHARS:
@@ -2296,6 +2288,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
         full_prompt = full_prompt[:cutoff] + "\n\n[... data dipotong karena terlalu panjang]"
 
     messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
+
     if history_msgs:
         hist_clean = [
             {"role": m["role"], "content": (m.get("content") or "")[:2000]}
@@ -2305,64 +2298,40 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
         if hist_clean and hist_clean[-1]["role"] == "user":
             hist_clean = hist_clean[:-1]
         messages.extend(hist_clean)
+
     messages.append({"role": "user", "content": full_prompt})
 
-    all_keys = _get_all_groq_keys()
-    last_err = None
-    for key_name, api_key in all_keys:
-        try:
-            client = Groq(api_key=api_key)
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=messages,
-                temperature=0.7,
-                max_tokens=max_tokens
-            )
-            return response.choices[0].message.content, f"Groq/Llama70B({key_name})"
-        except Exception as e:
-            err_str = str(e)
-            # Kalau 429 rate limit → coba key berikutnya
-            if "429" in err_str or "rate_limit" in err_str.lower():
-                last_err = e
-                continue
-            # Error lain (network, dll) → langsung raise
-            raise e
-
-    raise Exception(f"Semua Groq key kena rate limit: {last_err}")
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=messages,
+        temperature=0.7,
+        max_tokens=max_tokens
+    )
+    return response.choices[0].message.content, f"Groq/Llama70B({used_key})"
 
 
 def _call_groq_fallback(full_prompt):
     """
     Groq LAST RESORT — LLaMA 3.1 8B Instant.
-    Rotasi key otomatis jika kena 429.
+    Dipakai jika Gemini dan Groq 70B keduanya gagal.
     """
-    from groq import Groq
+    client, used_key = _get_groq_client_and_key()
+
     MAX_CHARS = 8000
     if len(full_prompt) > MAX_CHARS:
         cutoff = full_prompt[:MAX_CHARS].rfind('\n')
         full_prompt = full_prompt[:cutoff] if cutoff > 0 else full_prompt[:MAX_CHARS]
 
-    all_keys = _get_all_groq_keys()
-    last_err = None
-    for key_name, api_key in all_keys:
-        try:
-            client = Groq(api_key=api_key)
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": GROQ_SYSTEM_PROMPT},
-                    {"role": "user", "content": full_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=6000
-            )
-            return response.choices[0].message.content, f"Groq/Llama8B({key_name})"
-        except Exception as e:
-            if "429" in str(e) or "rate_limit" in str(e).lower():
-                last_err = e
-                continue
-            raise e
-    raise Exception(f"Semua Groq key fallback kena rate limit: {last_err}")
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": GROQ_SYSTEM_PROMPT},
+            {"role": "user", "content": full_prompt}
+        ],
+        temperature=0.7,
+        max_tokens=6000
+    )
+    return response.choices[0].message.content, f"Groq/Llama8B({used_key})"
 
 
 # ─────────────────────────────────────────────
@@ -5101,80 +5070,93 @@ if current_view == "dashboard":
                             _full_text += _block.get("text", "")
                     return _full_text.strip() if _full_text else None
 
-                # ── Build prompt — LEAN version untuk hemat TPD ────────
-                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:7]])  if dom_news  else "⚠ Tidak tersedia."
-                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:7]]) if glob_news else "⚠ Tidak tersedia."
-
-                # Harga real-time hanya disertakan jika berhasil di-fetch (untuk hemat token jika gagal)
-                _rt_section = ""
-                if _rt_block and "tidak berhasil" not in _rt_block:
-                    _rt_section = f"DATA HARGA LIVE:\n{_rt_block}\n"
+                # ── Build prompt — BERBEDA antara Daily dan Weekly ────────
+                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:10]]) if dom_news else "⚠ Tidak tersedia."
+                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:10]]) if glob_news else "⚠ Tidak tersedia."
 
                 if req_daily:
-                    mb_prompt = f"""SIGMA Market Analyst — IDX/BEI. Tanggal: {_today}. Mode: DAILY REVIEW.
+                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
+Tanggal hari ini: **{_today}** | Mode: **DAILY REVIEW 24 JAM TERAKHIR**
 
-{_rt_section}BERITA DOMESTIK:
-{_rss_dom_str}
+═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
+{_rt_block}
+⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
+Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
+═══════════════════════════════════════════════════════════════════════════
 
-BERITA GLOBAL:
-{_rss_glob_str}
+BERITA TERKINI (RSS — jadikan konteks narasi):
+Domestik: {_rss_dom_str}
+Global: {_rss_glob_str}
 
-OUTPUT (Bahasa Indonesia, maks 450 kata, Markdown):
+FORMAT OUTPUT — Bahasa Indonesia, maks 600 kata, Markdown:
 
-## 🇮🇩 IHSG & DOMESTIK
-Pergerakan IHSG, Rupiah, sentimen lokal, sektor/saham bergerak. (2 paragraf)
+## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
+Gunakan harga IHSG dan USD/IDR dari DATA REAL-TIME di atas. Tambahkan konteks: sentimen lokal, saham/sektor bergerak berdasarkan berita RSS. (2 paragraf)
 
-## 🌍 KATALIS GLOBAL
-Wall Street, Asia, data makro AS relevan. (1 paragraf)
+## 🌍 KATALIS GLOBAL 24 JAM
+Gunakan harga S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME di atas. Tambahkan konteks makro dari berita RSS. (1-2 paragraf)
 
-## ⚔️ GEOPOLITIK
-Isu utama dari berita: tarif/Trump, konflik global, dampak ke IDX & komoditas. (1 paragraf)
+## ⚔️ GEOPOLITIK & RISIKO GLOBAL
+**WAJIB SPESIFIK dari berita RSS**: Kebijakan tarif Trump terbaru, perang Rusia-Ukraina, China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza). Dampak ke IDX, Rupiah, komoditas. (2 paragraf)
 
-## 📊 SENTIMENT
-- IHSG: [skor]/100 [label]
-- Global Risk: [skor]/100 [label]
-- IDR: [Rendah/Sedang/Tinggi]
+## 💱 FOREX & KOMODITAS (Harga Aktual)
+Gunakan USD/IDR, Gold, WTI, Brent dari DATA REAL-TIME di atas. Sektor IDX terdampak?
+
+## 📊 SENTIMENT METER
+- IHSG: [skor]/100 — [label berdasarkan data real-time]
+- Global Risk: [skor]/100 — [Risk-On/Mixed/Risk-Off]
+- Geopolitik Risk: [Tinggi/Sedang/Rendah]
+- IDR: [Rendah/Sedang/Tinggi tekanan]
 
 ## ⚡ TACTICAL VIEW
-Stance + level IHSG kritis + 2 sektor pantau.
+Stance + support/resistance IHSG (berdasarkan level real-time di atas) + 1-2 sektor pantau.
 
-Padat. Hindari basa-basi."""
+## 🎯 WATCHLIST SEKTORAL (3 sektor)
+(✅/⚠/❌) Sektor — status — 1 kalimat alasan.
+
+Padat & actionable. Hindari basa-basi. JANGAN UBAH ANGKA DARI DATA REAL-TIME."""
 
                 else:  # weekly
-                    mb_prompt = f"""SIGMA Market Analyst — IDX/BEI. Tanggal: {_today}. Mode: WEEKLY REVIEW.
+                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
+Tanggal: **{_today}** | Mode: **WEEKLY REVIEW (7 Hari Terakhir)**
 
-BERITA DOMESTIK MINGGU INI:
-{_rss_dom_str}
+═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
+{_rt_block}
+⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
+Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
+═══════════════════════════════════════════════════════════════════════════
 
-BERITA GLOBAL MINGGU INI:
-{_rss_glob_str}
+BERITA TERKINI (RSS — jadikan konteks narasi & analisis):
+Domestik: {_rss_dom_str}
+Global: {_rss_glob_str}
 
-OUTPUT (Bahasa Indonesia, maks 550 kata, Markdown):
+FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 800 kata total.
 
 ## 📅 REKAP IHSG MINGGU INI
-Tren 5 hari, sektor outperformer vs underperformer, foreign flow, event domestik. (2 paragraf)
+Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
 
-## 🌍 KATALIS GLOBAL
-Wall Street, Fed/data AS, China/Asia, komoditas kunci. (1-2 paragraf)
+## 🌍 KATALIS GLOBAL MINGGU INI
+Gunakan S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME. Tambahkan konteks: keputusan Fed/data AS, China/Asia, komoditas (gold, WTI, Brent) dengan ANGKA DARI DATA REAL-TIME. (2 paragraf)
 
-## ⚔️ GEOPOLITIK MINGGU INI
-Perkembangan tarif Trump, konflik global, dampak ke IDX. Rating HIGH/MED/LOW. (1 paragraf)
+## ⚔️ GEOPOLITIK MINGGU INI — ANALISIS MENDALAM
+**WAJIB DETAIL dari berita RSS**: Perkembangan tarif/perang dagang Trump, eskalasi Rusia-Ukraina, China (Taiwan/regulasi/ekonomi), Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
 
-## 📊 SENTIMENT MINGGUAN
-- IHSG: [skor]/100 [label]
-- Foreign Flow: [Net Buy/Sell/Mixed]
-- Global Risk: [skor]/100 [label]
-- IDR: [Menguat/Melemah/Stabil]
+## 📊 SENTIMENT METER MINGGUAN
+- **IHSG:** [angka]/100 — [label — berdasarkan level real-time]
+- **Foreign Flow:** [Net Buy/Sell/Mixed] — estimasi arah
+- **Global Risk:** [angka]/100 — [label]
+- **Geopolitik Risk:** [Tinggi/Sedang/Rendah]
+- **IDR:** [Menguat/Melemah/Stabil — berdasarkan data real-time]
 
-## 🔮 OUTLOOK MINGGU DEPAN
-Event penting + stance + 3 sektor rotasi.
+## 🔮 OUTLOOK & TACTICAL VIEW MINGGU DEPAN
+Event penting (FOMC, data AS, dll) + stance + 2-3 sektor rotasi + risiko utama. (2 paragraf)
 
-## 🎯 WATCHLIST (4 sektor)
-(✅/⚠/❌) Sektor — Status — Contoh saham
+## 🎯 WATCHLIST SEKTORAL (5 sektor)
+(✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham — Alasan geopolitik/makro
 
-Padat & actionable."""
+Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
 
-                # ── Eksekusi: Coba Anthropic API dulu, fallback ke Groq (dengan key rotation) ──
+                # ── Eksekusi: Coba Anthropic API dulu (dengan web search), fallback ke Groq ──
                 mb_res = None
                 _source_used = "Groq"
 
@@ -5188,7 +5170,7 @@ Padat & actionable."""
 
                 if not mb_res:
                     try:
-                        _max_tok = 2500 if mode_key == "daily" else 3500
+                        _max_tok = 3000 if mode_key == "daily" else 5000
                         mb_res, _ = _call_groq_primary(mb_prompt, max_tokens=_max_tok)
                         _source_used = "Groq"
                     except Exception as e:
@@ -5930,15 +5912,16 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         st.markdown(f"""
         <p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
         Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
-        Rate saat ini: <b style='color:#F5C242;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>29 Apr 2026</b>
+        Rate saat ini: <b style='color:#F5C242;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
         </p>
         """, unsafe_allow_html=True)
 
         # ── Data FOMC meetings ──────────────────────────────────
         _fed_meetings = [
             {
-                "date": "Apr 29, 2026",
-                "meeting_time": "Apr 29, 2026 · 01:00 WIB",
+                "date": "30 Apr 2026",
+                "date_wib": "30 Apr 2026 · 01:00 WIB",
+                "meeting_time": "30 Apr 2026 · 01:00 WIB",
                 "future_price": "96.358",
                 "countdown_weeks": 3, "countdown_days": 3, "countdown_hours": 1, "countdown_mins": 34,
                 "scenarios": [
@@ -5947,8 +5930,9 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
                 ]
             },
             {
-                "date": "Jun 17, 2026",
-                "meeting_time": "Jun 17, 2026 · 01:00 WIB",
+                "date": "18 Jun 2026",
+                "date_wib": "18 Jun 2026 · 01:00 WIB",
+                "meeting_time": "18 Jun 2026 · 01:00 WIB",
                 "future_price": "96.360",
                 "countdown_weeks": 11, "countdown_days": 1, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
@@ -5958,8 +5942,9 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
                 ]
             },
             {
-                "date": "Jul 29, 2026",
-                "meeting_time": "Jul 29, 2026 · 01:00 WIB",
+                "date": "30 Jul 2026",
+                "date_wib": "30 Jul 2026 · 01:00 WIB",
+                "meeting_time": "30 Jul 2026 · 01:00 WIB",
                 "future_price": "96.490",
                 "countdown_weeks": 16, "countdown_days": 3, "countdown_hours": 0, "countdown_mins": 0,
                 "scenarios": [
@@ -6197,7 +6182,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   <div class="frm-countdown">
     <div>
       <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
-      <div class="frm-cd-title">Apr 29, 2026 &nbsp;·&nbsp; 01:00 WIB</div>
+      <div class="frm-cd-title">30 Apr 2026 &nbsp;·&nbsp; 01:00 WIB</div>
     </div>
     <div class="frm-cd-boxes" id="frm-cd"></div>
   </div>
@@ -6224,22 +6209,34 @@ var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
 var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
 var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
 
-// Countdown (static display from data)
+// ── LIVE COUNTDOWN — target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC ──
 (function() {{
-  var m = DATA[0];
-  var cd = document.getElementById('frm-cd');
-  var parts = [
-    [m.countdown_weeks, "Weeks"],
-    [m.countdown_days, "Days"],
-    [m.countdown_hours, "Hours"],
-    [m.countdown_mins, "Minutes"]
-  ];
-  var html = '';
-  parts.forEach(function(p, i) {{
-    if (i > 0) html += '<div class="frm-cd-sep">:</div>';
-    html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
-  }});
-  cd.innerHTML = html;
+  // Apr 29 2026 14:00 EDT (UTC-4) = Apr 29 2026 18:00 UTC = Apr 30 2026 01:00 WIB (UTC+7)
+  var TARGET_UTC_MS = Date.UTC(2026, 3, 29, 18, 0, 0);
+
+  function tick() {{
+    var diff = TARGET_UTC_MS - Date.now();
+    var cd = document.getElementById('frm-cd');
+    if (!cd) return;
+    if (diff <= 0) {{
+      cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:0.9rem;color:#089981;">BERLANGSUNG</div></div>';
+      return;
+    }}
+    var totalSec = Math.floor(diff / 1000);
+    var mins     = Math.floor(totalSec / 60) % 60;
+    var hours    = Math.floor(totalSec / 3600) % 24;
+    var days     = Math.floor(totalSec / 86400) % 7;
+    var weeks    = Math.floor(totalSec / 604800);
+    var parts = [[weeks,"WEEKS"],[days,"DAYS"],[hours,"HOURS"],[mins,"MINS"]];
+    var html = '';
+    parts.forEach(function(p, i) {{
+      if (i > 0) html += '<div class="frm-cd-sep">:</div>';
+      html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
+    }});
+    cd.innerHTML = html;
+  }}
+  tick();
+  setInterval(tick, 1000);
 }})();
 
 // Build cards
@@ -6280,7 +6277,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
     html += '<div class="frm-card">';
     html += '<div class="frm-card-header">';
-    html += '<div class="frm-card-date">' + mtg.date + '</div>';
+    html += '<div class="frm-card-date">' + (mtg.date_wib || mtg.date) + '</div>';
     html += '<div class="frm-card-meta">';
     html += '<span class="frm-card-future">Future: ' + mtg.future_price + '</span>';
     html += '<span class="frm-card-time">Meeting: ' + mtg.meeting_time + '</span>';
