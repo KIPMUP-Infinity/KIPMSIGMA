@@ -2252,31 +2252,37 @@ Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya.
 # ─────────────────────────────────────────────
 # GROQ KEY ROTATION — AUTO SCAN KEY 1-13
 # ─────────────────────────────────────────────
+def _get_all_groq_keys():
+    """Kumpulkan semua Groq API key yang tersedia (GROQ_API_KEY s/d GROQ_API_KEY13)."""
+    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
+    valid = []
+    for key_name in key_names:
+        key = st.secrets.get(key_name, "")
+        if key and len(key) > 10:
+            valid.append((key_name, key))
+    return valid  # list of (name, key)
+
+
 def _get_groq_client_and_key():
     """
     Auto-rotate melalui GROQ_API_KEY s/d GROQ_API_KEY13.
     Return (client, key_name) dari key pertama yang valid.
     """
     from groq import Groq
-    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
-    for key_name in key_names:
-        key = st.secrets.get(key_name, "")
-        if key and len(key) > 10:
-            try:
-                client = Groq(api_key=key)
-                return client, key_name
-            except Exception:
-                continue
-    raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
+    valid_keys = _get_all_groq_keys()
+    if not valid_keys:
+        raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
+    key_name, key = valid_keys[0]
+    client = Groq(api_key=key)
+    return client, key_name
 
 
 def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
     """
     Groq PRIMARY — LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
-    Dipakai untuk semua request TEXT. Key rotation otomatis 1-13.
-    Prompt dipotong cerdas di batas baris/kalimat.
+    Key rotation otomatis saat 429 rate limit — coba semua key sebelum menyerah.
     """
-    client, used_key = _get_groq_client_and_key()
+    from groq import Groq
 
     MAX_PROMPT_CHARS = 20000
     if len(full_prompt) > MAX_PROMPT_CHARS:
@@ -2301,37 +2307,71 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
 
     messages.append({"role": "user", "content": full_prompt})
 
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=messages,
-        temperature=0.7,
-        max_tokens=max_tokens
-    )
-    return response.choices[0].message.content, f"Groq/Llama70B({used_key})"
+    valid_keys = _get_all_groq_keys()
+    if not valid_keys:
+        raise Exception("Semua Groq API key tidak tersedia")
+
+    last_err = None
+    for key_name, key in valid_keys:
+        try:
+            client = Groq(api_key=key)
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=max_tokens
+            )
+            return response.choices[0].message.content, f"Groq/Llama70B({key_name})"
+        except Exception as e:
+            err_str = str(e).lower()
+            # 429 rate limit → coba key berikutnya
+            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str:
+                last_err = e
+                continue
+            # Error lain (bukan limit) → langsung raise
+            raise e
+
+    raise Exception(f"Semua Groq key kena rate limit. Error terakhir: {last_err}")
 
 
 def _call_groq_fallback(full_prompt):
     """
     Groq LAST RESORT — LLaMA 3.1 8B Instant.
-    Dipakai jika Gemini dan Groq 70B keduanya gagal.
+    Juga rotate semua key saat 429.
     """
-    client, used_key = _get_groq_client_and_key()
+    from groq import Groq
 
     MAX_CHARS = 8000
     if len(full_prompt) > MAX_CHARS:
         cutoff = full_prompt[:MAX_CHARS].rfind('\n')
         full_prompt = full_prompt[:cutoff] if cutoff > 0 else full_prompt[:MAX_CHARS]
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {"role": "system", "content": GROQ_SYSTEM_PROMPT},
-            {"role": "user", "content": full_prompt}
-        ],
-        temperature=0.7,
-        max_tokens=6000
-    )
-    return response.choices[0].message.content, f"Groq/Llama8B({used_key})"
+    valid_keys = _get_all_groq_keys()
+    if not valid_keys:
+        raise Exception("Semua Groq API key tidak tersedia")
+
+    last_err = None
+    for key_name, key in valid_keys:
+        try:
+            client = Groq(api_key=key)
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": GROQ_SYSTEM_PROMPT},
+                    {"role": "user", "content": full_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=6000
+            )
+            return response.choices[0].message.content, f"Groq/Llama8B({key_name})"
+        except Exception as e:
+            err_str = str(e).lower()
+            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str:
+                last_err = e
+                continue
+            raise e
+
+    raise Exception(f"Semua Groq key kena rate limit (8B). Error terakhir: {last_err}")
 
 
 # ─────────────────────────────────────────────
@@ -4744,8 +4784,6 @@ if current_view == "dashboard":
     </style>
     """, unsafe_allow_html=True)
 
-    from datetime import datetime as _dt
-    _now = _dt.now().strftime("%d %b %Y  %H:%M WIB")
     st.markdown(f"""
     <div style="
         display: flex;
@@ -4783,9 +4821,34 @@ if current_view == "dashboard":
             letter-spacing:0.08em;
             text-align:right;
         ">
-            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">&#9679; LIVE</span>&nbsp;&nbsp;{_now}
+            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">&#9679; LIVE</span>&nbsp;&nbsp;<span id="sigma-live-clock" style="font-family:'IBM Plex Mono',monospace;">loading...</span>
         </div>
     </div>
+    <script>
+    (function() {{
+        function updateClock() {{
+            var now = new Date();
+            // Konversi ke WIB (UTC+7)
+            var wib = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            var d  = wib.getUTCDate();
+            var mo = months[wib.getUTCMonth()];
+            var y  = wib.getUTCFullYear();
+            var h  = String(wib.getUTCHours()).padStart(2,'0');
+            var m  = String(wib.getUTCMinutes()).padStart(2,'0');
+            var s  = String(wib.getUTCSeconds()).padStart(2,'0');
+            var str = d + ' ' + mo + ' ' + y + '  ' + h + ':' + m + ':' + s + ' WIB';
+
+            // Try to find clock in parent frame (Streamlit iframe structure)
+            var el = null;
+            try {{ el = window.parent.document.getElementById('sigma-live-clock'); }} catch(e) {{}}
+            if (!el) {{ el = document.getElementById('sigma-live-clock'); }}
+            if (el) {{ el.textContent = str; }}
+        }}
+        updateClock();
+        setInterval(updateClock, 1000);
+    }})();
+    </script>
     """, unsafe_allow_html=True)
 
     _tape_items = [
