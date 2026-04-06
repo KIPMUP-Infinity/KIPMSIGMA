@@ -4821,16 +4821,19 @@ if current_view == "dashboard":
             letter-spacing:0.08em;
             text-align:right;
         ">
-            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">&#9679; LIVE</span>&nbsp;&nbsp;<span id="sigma-live-clock" style="font-family:'IBM Plex Mono',monospace;">loading...</span>
+            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">&#9679; LIVE</span>&nbsp;&nbsp;<span id="sigma-wib-clock" style="font-family:'IBM Plex Mono',monospace;">--:--:-- WIB</span>
         </div>
     </div>
+    """, unsafe_allow_html=True)
+
+    # Live clock WIB via components.html (satu-satunya cara jalankan JS di Streamlit)
+    components.html("""
     <script>
-    (function() {{
-        function updateClock() {{
+    (function() {
+        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        function updateClock() {
             var now = new Date();
-            // Konversi ke WIB (UTC+7)
             var wib = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             var d  = wib.getUTCDate();
             var mo = months[wib.getUTCMonth()];
             var y  = wib.getUTCFullYear();
@@ -4838,18 +4841,17 @@ if current_view == "dashboard":
             var m  = String(wib.getUTCMinutes()).padStart(2,'0');
             var s  = String(wib.getUTCSeconds()).padStart(2,'0');
             var str = d + ' ' + mo + ' ' + y + '  ' + h + ':' + m + ':' + s + ' WIB';
-
-            // Try to find clock in parent frame (Streamlit iframe structure)
+            // Cari di parent document (Streamlit render di dalam iframe)
             var el = null;
-            try {{ el = window.parent.document.getElementById('sigma-live-clock'); }} catch(e) {{}}
-            if (!el) {{ el = document.getElementById('sigma-live-clock'); }}
-            if (el) {{ el.textContent = str; }}
-        }}
+            try { el = window.parent.document.getElementById('sigma-wib-clock'); } catch(e) {}
+            if (!el) { el = document.getElementById('sigma-wib-clock'); }
+            if (el) { el.textContent = str; }
+        }
         updateClock();
         setInterval(updateClock, 1000);
-    }})();
+    })();
     </script>
-    """, unsafe_allow_html=True)
+    """, height=0)
 
     _tape_items = [
         # GLOBAL INDICES & VOLATILITY
@@ -9152,10 +9154,11 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                 return "Data shareholder tidak tersedia"
 
         # ── Definisikan tabs SEBELUM kontennya ──────────────────────────────
-        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp = st.tabs([
+        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_fundamental = st.tabs([
             "  📅 DAILY  ",
             "  📆 WEEKLY  ",
             "  🌙 BELI SORE JUAL PAGI  ",
+            "  📊 FUNDAMENTAL SCREENER  ",
         ])
 
         # ─── TAB DAILY ────────────────────────────────────────────────────
@@ -9432,10 +9435,312 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                         Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini</p>
                 </div>""", unsafe_allow_html=True)
 
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
+        with reco_tab_fundamental:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER — WARREN BUFFETT STYLE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental — ROE, DER, Net Margin, Current Ratio, PBV, EPS. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
 
-# ─────────────────────────────────────────────
-# PART 10: RUANG CHAT AI 
+            _fs_accent = "#26a69a"
+
+            st.markdown(f"""
+            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};line-height:1.9;'>
+            <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING</span><br>
+            ✅ <b>ROE ≥ 15%</b> — Return on Equity kuat (Buffett: konsisten ≥15% = moat sesungguhnya) &nbsp;|&nbsp;
+            ✅ <b>DER ≤ 1.0x</b> — Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
+            ✅ <b>Net Margin ≥ 10%</b> — Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
+            ✅ <b>Current Ratio ≥ 1.5x</b> — Likuiditas jangka pendek aman &nbsp;|&nbsp;
+            ✅ <b>PBV 0.5–3.0x</b> — Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
+            ✅ <b>EPS positif</b> — Perusahaan benar-benar profitable
+            </div>
+            """, unsafe_allow_html=True)
+
+            _fs_universe = [
+                "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
+                "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
+                "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
+                "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
+                "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
+                "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
+                "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
+                "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
+            ]
+            _sektor_map = {
+                "Perbankan":       ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR"],
+                "Energi & Tambang":["PTBA","ADRO","ITMG","INCO","MDKA","NCKL","MEDC","PGAS","ANTM","AMMN","BRMS","MBMA","HRUM","GEMS","ELSA","RAJA"],
+                "Consumer Goods":  ["UNVR","KLBF","ICBP","INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","MIDI","RALS","AMRT","MAPI","ACES"],
+                "Properti":        ["BSDE","CTRA","SMRA","PWON","DMAS","BEST"],
+                "Teknologi":       ["TLKM","GOTO","EMTK","TBIG","TOWR","LINK","MCAS"],
+                "Kesehatan":       ["HEAL","MIKA","SILO","KAEF","TSPC","DVLA"],
+                "Infrastruktur":   ["PGEO","PTRO","CUAN","VKTR","TMAS","SMDR","BIRD"],
+                "Agribisnis":      ["AALI","LSIP","SIMP","TBLA"],
+                "Industri":        ["ASII","SMGR","INTP","TPIA","BRPT","UNTR","BFIN","ADMF"],
+            }
+
+            _fsc1, _fsc2, _fsc3 = st.columns([2, 2, 1])
+            with _fsc1:
+                _fs_sektor = st.selectbox("Filter Sektor:", ["Semua Sektor"] + list(_sektor_map.keys()), key="fs_sektor")
+            with _fsc2:
+                _fs_sort = st.selectbox("Urutkan:", [
+                    "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
+                    "DER (Terendah)","Current Ratio (Tertinggi)"
+                ], key="fs_sort")
+            with _fsc3:
+                st.markdown("<br>", unsafe_allow_html=True)
+                _fs_run = st.button("🔍 SCREEN", use_container_width=True, key="btn_fs_screen")
+
+            _fs_tickers = _sektor_map.get(_fs_sektor, _fs_universe) if _fs_sektor != "Semua Sektor" else _fs_universe
+
+            if _fs_run or st.session_state.get("fs_results"):
+                if _fs_run:
+                    with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX..."):
+                        @st.cache_data(ttl=3600, show_spinner=False)
+                        def _fetch_fundamental_batch(tickers_tuple):
+                            import yfinance as _yf2, threading as _thr
+                            results = {}
+                            lock = _thr.Lock()
+                            def _one(tk):
+                                try:
+                                    t   = _yf2.Ticker(f"{tk}.JK")
+                                    inf = t.info
+                                    price     = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
+                                    roe       = (inf.get("returnOnEquity") or 0) * 100
+                                    roa       = (inf.get("returnOnAssets") or 0) * 100
+                                    npm       = (inf.get("profitMargins") or 0) * 100
+                                    der       = inf.get("debtToEquity") or 0
+                                    cr        = inf.get("currentRatio") or 0
+                                    pbv       = inf.get("priceToBook") or 0
+                                    pe        = inf.get("trailingPE") or 0
+                                    eps       = inf.get("trailingEps") or 0
+                                    div       = (inf.get("dividendYield") or 0) * 100
+                                    mkcap     = inf.get("marketCap") or 0
+                                    w52h      = inf.get("fiftyTwoWeekHigh") or 0
+                                    w52l      = inf.get("fiftyTwoWeekLow") or 0
+                                    rpos      = ((price - w52l)/(w52h - w52l)*100) if w52h > w52l else 0
+                                    eps_fwd   = inf.get("forwardEps") or 0
+                                    eps_g     = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
+                                    score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
+                                    with lock:
+                                        results[tk] = {
+                                            "name": (inf.get("shortName") or tk)[:22],
+                                            "price":price,"roe":roe,"roa":roa,"npm":npm,
+                                            "der":der,"cr":cr,"pbv":pbv,"pe":pe,"eps":eps,
+                                            "eps_g":eps_g,"div":div,"mkcap":mkcap,
+                                            "rpos":rpos,"score":score,
+                                        }
+                                except: pass
+                            ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in tickers_tuple]
+                            for t in ths: t.start()
+                            for t in ths: t.join(timeout=18)
+                            return results
+
+                        _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
+                        st.session_state["fs_results"]  = _fs_data
+                        st.session_state["fs_ts"]       = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        st.session_state["fs_sort_key"] = _fs_sort
+
+                _fs_data = st.session_state.get("fs_results", {})
+                _fs_ts   = st.session_state.get("fs_ts", "")
+                _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
+
+                if _fs_data:
+                    _sfn = {
+                        "ROE (Tertinggi)":          lambda x: x[1].get("roe",0),
+                        "PBV (Terendah)":           lambda x: -(x[1].get("pbv",99) or 99),
+                        "Net Margin (Tertinggi)":   lambda x: x[1].get("npm",0),
+                        "DER (Terendah)":           lambda x: -(x[1].get("der",999) or 999),
+                        "Current Ratio (Tertinggi)":lambda x: x[1].get("cr",0),
+                    }.get(_fs_sk, lambda x: x[1].get("roe",0))
+
+                    _fs_sorted = sorted(_fs_data.items(), key=_sfn, reverse=True)
+                    _fs_pass   = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) >= 4]
+                    _fs_watch  = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) in (2,3)]
+
+                    # Summary metric cards
+                    _sm1, _sm2, _sm3, _sm4 = st.columns(4)
+                    _avg_roe = sum(d.get("roe",0) for _,d in _fs_data.items()) / max(len(_fs_data),1)
+                    with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
+                    with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:#F5C242;'>{len(_fs_watch)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
+                    with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
+                    with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
+
+                    if _fs_ts:
+                        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
+
+                    def _render_fs_table(rows, title, accent, icon):
+                        if not rows: return
+                        import json as _fsjson
+                        _rd = []
+                        for tk, d in rows[:30]:
+                            sc = d.get("score",0)
+                            mc = d.get("mkcap",0)
+                            cap_s = f"{mc/1e12:.1f}T" if mc >= 1e12 else (f"{mc/1e9:.0f}B" if mc >= 1e9 else "—")
+                            _rd.append({
+                                "tk":tk, "name":d.get("name","—"),
+                                "price": f"Rp {d['price']:,.0f}" if d.get("price") else "—",
+                                "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "—",
+                                "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "—",
+                                "npm":  f"{d['npm']:.1f}%" if d.get("npm") else "—",
+                                "cr":   f"{d['cr']:.1f}x" if d.get("cr") else "—",
+                                "pbv":  f"{d['pbv']:.2f}x" if d.get("pbv") else "—",
+                                "pe":   f"{d['pe']:.1f}x" if d.get("pe") and d["pe"]>0 else "—",
+                                "div":  f"{d['div']:.1f}%" if d.get("div") else "—",
+                                "cap":  cap_s, "score": sc,
+                                "rpos": f"{d['rpos']:.0f}%" if d.get("rpos") else "—",
+                                "roe_ok": d.get("roe",0)>=15,
+                                "der_ok": 0 < d.get("der",99)<=1.0,
+                                "npm_ok": d.get("npm",0)>=10,
+                                "cr_ok":  d.get("cr",0)>=1.5,
+                                "pbv_ok": 0.5<=d.get("pbv",0)<=3.0 and d.get("pbv",0)>0,
+                                "eps_ok": d.get("eps",0)>0,
+                            })
+                        _rj  = _fsjson.dumps(_rd, ensure_ascii=False)
+                        _uid = str(abs(hash(title)) % 99999)
+                        _row_h = min(len(rows), 15) * 40
+                        _tot_h = 36 + 36 + _row_h + 44
+                        _html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
+.lbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{accent};font-weight:700;margin-bottom:8px;display:block;}}
+.wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
+.hint{{display:none;text-align:center;font-size:0.55rem;color:{text_sub};padding:3px 0;border-bottom:1px solid {met_border};}}
+.sb{{width:100%;max-height:520px;overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.sb::-webkit-scrollbar{{width:5px;height:5px;}}
+.sb::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+table{{width:max-content;min-width:100%;border-collapse:collapse;font-size:0.72rem;}}
+thead th{{position:sticky;top:0;z-index:2;background:rgba(38,166,154,0.10);color:{accent};padding:8px 10px;text-align:left;border-bottom:2px solid {accent}44;white-space:nowrap;font-size:0.56rem;letter-spacing:0.09em;text-transform:uppercase;}}
+tbody td{{padding:7px 10px;border-bottom:1px solid {met_border};vertical-align:middle;white-space:nowrap;color:{text_main};}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
+.tk{{font-weight:700;font-size:0.78rem;color:{accent};}}
+.ok{{color:#26a69a;font-weight:600;}}
+.ng{{color:#f23645;}}
+.neu{{color:{text_sub};}}
+.pg-bar{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:1px solid {met_border};background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:4px;}}
+.pg-info{{font-size:0.58rem;color:{text_sub};}}
+.pg-btns{{display:flex;gap:5px;}}
+.pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};border:1px solid {met_border};border-radius:4px;padding:4px 11px;font-family:'IBM Plex Mono',monospace;font-size:0.58rem;cursor:pointer;}}
+.pg-btn:hover{{background:rgba(255,255,255,0.12);}}
+.pg-btn:disabled{{opacity:0.3;cursor:default;}}
+@media(max-width:600px){{.hint{{display:block;}}table{{font-size:0.62rem;}}thead th{{font-size:0.5rem;padding:6px 6px;}}tbody td{{padding:5px 6px;font-size:0.62rem;}}}}
+</style></head><body>
+<span class="lbl">{icon} {title} — {len(rows)} SAHAM</span>
+<div class="wrap">
+  <div class="hint">← geser kiri / kanan →</div>
+  <div class="sb" id="sb{_uid}">
+    <table>
+      <thead><tr>
+        <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+        <th title="Return on Equity ≥15%">ROE</th>
+        <th title="Debt/Equity ≤1.0x">DER</th>
+        <th title="Net Profit Margin ≥10%">NET MARGIN</th>
+        <th title="Current Ratio ≥1.5x">CURR RATIO</th>
+        <th title="Price/Book Value 0.5-3x">PBV</th>
+        <th title="Price/Earnings">PER</th>
+        <th title="Dividend Yield">DIV YIELD</th>
+        <th title="Market Capitalization">MKT CAP</th>
+        <th title="Posisi vs 52 Minggu High/Low">52W POS</th>
+        <th title="Skor 6 kriteria Buffett">SKOR</th>
+      </tr></thead>
+      <tbody id="tb{_uid}"></tbody>
+    </table>
+  </div>
+  <div class="pg-bar">
+    <span class="pg-info" id="pi{_uid}"></span>
+    <div class="pg-btns">
+      <button class="pg-btn" id="pp{_uid}" onclick="pgF{_uid}(-1)">&#9664; Prev</button>
+      <button class="pg-btn" id="pn{_uid}" onclick="pgF{_uid}(+1)">Next &#9654;</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){{
+  var ROWS={_rj},PER=15,page=0;
+  function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
+  function dots(s){{
+    var h='';
+    for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(255,255,255,0.15)')+'">&#9679;</span>';
+    return h+' <span style="font-size:0.6rem;color:{text_sub};">'+s+'/6</span>';
+  }}
+  function render(){{
+    var tot=ROWS.length,maxPg=Math.max(0,Math.ceil(tot/PER)-1);
+    var s=page*PER,e=Math.min(s+PER,tot),h='';
+    ROWS.slice(s,e).forEach(function(r){{
+      h+='<tr>'+
+        '<td><span class="tk">'+r.tk+'</span></td>'+
+        '<td style="font-size:0.64rem;color:{text_sub};">'+r.name+'</td>'+
+        '<td style="font-weight:600;">'+r.price+'</td>'+
+        '<td>'+c(r.roe,r.roe_ok)+'</td>'+
+        '<td>'+c(r.der,r.der_ok)+'</td>'+
+        '<td>'+c(r.npm,r.npm_ok)+'</td>'+
+        '<td>'+c(r.cr,r.cr_ok)+'</td>'+
+        '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
+        '<td class="neu">'+r.pe+'</td>'+
+        '<td style="color:#F5C242;">'+r.div+'</td>'+
+        '<td class="neu">'+r.cap+'</td>'+
+        '<td class="neu">'+r.rpos+'</td>'+
+        '<td>'+dots(r.score)+'</td>'+
+        '</tr>';
+    }});
+    document.getElementById('tb{_uid}').innerHTML=h;
+    document.getElementById('pi{_uid}').textContent='Baris '+(s+1)+'–'+e+' dari '+tot;
+    document.getElementById('pp{_uid}').disabled=(page<=0);
+    document.getElementById('pn{_uid}').disabled=(page>=maxPg);
+    document.getElementById('sb{_uid}').scrollTop=0;
+  }}
+  window['pgF{_uid}']=function(d){{
+    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
+    page=Math.max(0,Math.min(page+d,maxPg));render();
+  }};
+  render();
+}})();
+</script></body></html>"""
+                        components.html(_html, height=max(_tot_h + 60, 200), scrolling=False)
+
+                    if _fs_pass:
+                        _render_fs_table(_fs_pass, "LOLOS KRITERIA BUFFETT", _fs_accent, "✅")
+                        st.markdown("<div style='margin:6px 0;'></div>", unsafe_allow_html=True)
+                    if _fs_watch:
+                        _render_fs_table(_fs_watch, "WATCHLIST — PERLU PEMANTAUAN", "#F5C242", "⚠️")
+                    if not _fs_pass and not _fs_watch:
+                        st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
+
+                    # AI Insight
+                    if _fs_pass:
+                        if st.button("🤖 ANALISA AI DARI HASIL SCREENER", use_container_width=True, key="btn_fs_ai"):
+                            with st.spinner("SIGMA AI menganalisa hasil screener fundamental..."):
+                                _top5 = _fs_pass[:5]
+                                _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
+                                _fp   = f"""Kamu adalah SIGMA AI — analis fundamental saham IDX.
+
+5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria):
+{chr(10).join(_fsl)}
+
+Kriteria: ROE≥15%|DER≤1.0x|NetMargin≥10%|CurrentRatio≥1.5x|PBV 0.5-3x|EPS positif
+
+Analisa mendalam:
+1. Peringkat kualitas fundamental — mana paling unggul dan mengapa
+2. Apakah valuasi (PBV/PER) masih wajar atau sudah mahal?
+3. Risiko fundamental yang perlu diwaspadai
+4. SIGMA VIEW: 1-2 saham terbaik untuk akumulasi jangka menengah (3-6 bulan) + reasoning
+
+Bahasa Indonesia. Markdown. Padat & actionable. Jangan ulang data mentah."""
+                                _fs_ai = _call_ai_reco(_fp)
+                                st.session_state["fs_ai_result"] = _fs_ai
+
+                    if st.session_state.get("fs_ai_result"):
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.86rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+
+            else:
+                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
+                    <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;">📊</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Pilih sektor &amp; urutan, lalu klik <span style='color:{_fs_accent};'>SCREEN</span><br>
+                        <span style="opacity:0.5;font-size:0.65rem;">Screening {len(_fs_universe)} saham IDX · 6 Kriteria Warren Buffett · Data Live</span></p>
+                </div>""", unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
 # ─────────────────────────────────────────────
 else:
     if not active["messages"][1:]:
