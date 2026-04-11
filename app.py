@@ -1055,6 +1055,35 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.markdown("""
+<style>
+    /* 1. Paksa jarak (gap) di semua blok vertikal & horizontal jadi sangat kecil */
+    [data-testid="stVerticalBlock"] {
+        gap: 0rem !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        gap: 0rem !important;
+    }
+    
+    /* 2. Pangkas habis jarak bawah dari setiap elemen individu (tabel, metrik, chart) */
+    .element-container {
+        margin-bottom: 0rem !important;
+        padding-bottom: 0rem !important;
+    }
+    
+    /* 3. Kurangi jarak bawaan dari teks atau markdown */
+    div[data-testid="stMarkdownContainer"] p {
+        margin-bottom: 0rem !important;
+    }
+    
+    /* 4. Tarik seluruh konten agar lebih ke atas (mengurangi ruang kosong di header) */
+    .block-container {
+        padding-top: 1.5rem !important;
+        gap: 0rem !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 DATA_DIR = os.path.join(os.path.expanduser("~"), ".sigma_data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -2252,37 +2281,31 @@ Jawab Bahasa Indonesia. Isi template yang diberikan tanpa diubah strukturnya.
 # ─────────────────────────────────────────────
 # GROQ KEY ROTATION — AUTO SCAN KEY 1-13
 # ─────────────────────────────────────────────
-def _get_all_groq_keys():
-    """Kumpulkan semua Groq API key yang tersedia (GROQ_API_KEY s/d GROQ_API_KEY13)."""
-    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
-    valid = []
-    for key_name in key_names:
-        key = st.secrets.get(key_name, "")
-        if key and len(key) > 10:
-            valid.append((key_name, key))
-    return valid  # list of (name, key)
-
-
 def _get_groq_client_and_key():
     """
     Auto-rotate melalui GROQ_API_KEY s/d GROQ_API_KEY13.
     Return (client, key_name) dari key pertama yang valid.
     """
     from groq import Groq
-    valid_keys = _get_all_groq_keys()
-    if not valid_keys:
-        raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
-    key_name, key = valid_keys[0]
-    client = Groq(api_key=key)
-    return client, key_name
+    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(1, 14)]
+    for key_name in key_names:
+        key = st.secrets.get(key_name, "")
+        if key and len(key) > 10:
+            try:
+                client = Groq(api_key=key)
+                return client, key_name
+            except Exception:
+                continue
+    raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
 
 
 def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
     """
     Groq PRIMARY — LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
-    Key rotation otomatis saat 429 rate limit — coba semua key sebelum menyerah.
+    Dipakai untuk semua request TEXT. Key rotation otomatis 1-13.
+    Prompt dipotong cerdas di batas baris/kalimat.
     """
-    from groq import Groq
+    client, used_key = _get_groq_client_and_key()
 
     MAX_PROMPT_CHARS = 20000
     if len(full_prompt) > MAX_PROMPT_CHARS:
@@ -2307,71 +2330,37 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
 
     messages.append({"role": "user", "content": full_prompt})
 
-    valid_keys = _get_all_groq_keys()
-    if not valid_keys:
-        raise Exception("Semua Groq API key tidak tersedia")
-
-    last_err = None
-    for key_name, key in valid_keys:
-        try:
-            client = Groq(api_key=key)
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=messages,
-                temperature=0.7,
-                max_tokens=max_tokens
-            )
-            return response.choices[0].message.content, f"Groq/Llama70B({key_name})"
-        except Exception as e:
-            err_str = str(e).lower()
-            # 429 rate limit → coba key berikutnya
-            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str:
-                last_err = e
-                continue
-            # Error lain (bukan limit) → langsung raise
-            raise e
-
-    raise Exception(f"Semua Groq key kena rate limit. Error terakhir: {last_err}")
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=messages,
+        temperature=0.7,
+        max_tokens=max_tokens
+    )
+    return response.choices[0].message.content, f"Groq/Llama70B({used_key})"
 
 
 def _call_groq_fallback(full_prompt):
     """
     Groq LAST RESORT — LLaMA 3.1 8B Instant.
-    Juga rotate semua key saat 429.
+    Dipakai jika Gemini dan Groq 70B keduanya gagal.
     """
-    from groq import Groq
+    client, used_key = _get_groq_client_and_key()
 
     MAX_CHARS = 8000
     if len(full_prompt) > MAX_CHARS:
         cutoff = full_prompt[:MAX_CHARS].rfind('\n')
         full_prompt = full_prompt[:cutoff] if cutoff > 0 else full_prompt[:MAX_CHARS]
 
-    valid_keys = _get_all_groq_keys()
-    if not valid_keys:
-        raise Exception("Semua Groq API key tidak tersedia")
-
-    last_err = None
-    for key_name, key in valid_keys:
-        try:
-            client = Groq(api_key=key)
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": GROQ_SYSTEM_PROMPT},
-                    {"role": "user", "content": full_prompt}
-                ],
-                temperature=0.7,
-                max_tokens=6000
-            )
-            return response.choices[0].message.content, f"Groq/Llama8B({key_name})"
-        except Exception as e:
-            err_str = str(e).lower()
-            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str:
-                last_err = e
-                continue
-            raise e
-
-    raise Exception(f"Semua Groq key kena rate limit (8B). Error terakhir: {last_err}")
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": GROQ_SYSTEM_PROMPT},
+            {"role": "user", "content": full_prompt}
+        ],
+        temperature=0.7,
+        max_tokens=6000
+    )
+    return response.choices[0].message.content, f"Groq/Llama8B({used_key})"
 
 
 # ─────────────────────────────────────────────
@@ -2439,11 +2428,8 @@ ALLOWED_EMAILS = [
     "yordan.nandini@gmail.com",
     "nisrinazakiyahr@gmail.com",
     "uploaddt969@gmail.com",
-    "fabianalaziz.9e@gmail.com",
-    "tehnikalkipm@gmail.com",
-    "tehnikalkipm2@gmail.com",
-    "tehnikalkipm3@gmail.com"
-] 
+    "fabianalaziz.9e@gmail.com"
+] # Silakan isi dengan daftar email yang boleh masuk
 
 # ─── AUTENTIKASI GOOGLE ───
 if "code" in st.query_params and st.session_state.user is None:
@@ -2871,45 +2857,6 @@ body {{ background: #080c14; }}
 .sigma-terminal .card-cta {{ background:linear-gradient(135deg,#F5C242,#e0a820); color:#07090f; box-shadow:0 6px 24px rgba(245,194,66,0.26); }}
 .card-cta:hover {{ opacity:0.88; transform:translateY(-1px); }}
 
-/* ── CHAT PREVIEW (AI Chat card) ── */
-.chat-preview {{
-    background:rgba(0,0,0,0.40);
-    border:1px solid rgba(0,157,255,0.14);
-    border-radius:10px;
-    padding:0;
-    margin-bottom:16px;
-    overflow:hidden;
-}}
-.cp-header {{
-    background:rgba(0,157,255,0.07);
-    border-bottom:1px solid rgba(0,157,255,0.1);
-    padding:7px 10px;
-    display:flex;
-    align-items:center;
-    gap:6px;
-}}
-.cp-dot {{ width:6px; height:6px; border-radius:50%; display:inline-block; }}
-.cp-dot-1 {{ background:#f87171; }}
-.cp-dot-2 {{ background:#facc15; }}
-.cp-dot-3 {{ background:#4ade80; }}
-.cp-title {{
-    font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.52rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
-    text-transform:uppercase; margin-left:2px;
-}}
-.cp-body {{ padding:8px 10px; display:flex; flex-direction:column; gap:4px; }}
-.cp-cmd {{
-    font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.60rem; color:rgba(255,255,255,0.45);
-    display:flex; align-items:center; gap:8px; padding:3px 0;
-    border-bottom:1px solid rgba(255,255,255,0.04);
-    line-height:1.4;
-}}
-.cp-cmd:last-child {{ border-bottom:none; }}
-.cp-num {{
-    color:#009dff; min-width:14px; font-weight:700; opacity:0.8;
-}}
-
 .sys-footer {{ margin-top:48px; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
 
 @media (max-width:768px) {{
@@ -2954,24 +2901,12 @@ body {{ background: #080c14; }}
             <div class="card-name">SIGMA AI Chat</div>
             <div class="card-tagline">AI Trading Assistant</div>
             <div class="card-desc">Asisten analisa pasar berbasis AI &#8212; teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
-
-            <div class="chat-preview">
-                <div class="cp-header"><span class="cp-dot cp-dot-1"></span><span class="cp-dot cp-dot-2"></span><span class="cp-dot cp-dot-3"></span><span class="cp-title">SIGMA AI &mdash; 7 ALPHA COMMAND</span></div>
-                <div class="cp-body">
-                    <div class="cp-cmd"><span class="cp-num">1</span> Kesimpulan Dampak Makro</div>
-                    <div class="cp-cmd"><span class="cp-num">2</span> Kesimpulan Dampak Emiten</div>
-                    <div class="cp-cmd"><span class="cp-num">3</span> Bandarmologi</div>
-                    <div class="cp-cmd"><span class="cp-num">4</span> Fundamental</div>
-                    <div class="cp-cmd"><span class="cp-num">5</span> Teknikal</div>
-                    <div class="cp-cmd"><span class="cp-num">6</span> Analisa Lengkap (Quad)</div>
-                    <div class="cp-cmd"><span class="cp-num">7</span> Analisa IPO</div>
-                </div>
-            </div>
-
             <ul class="card-features">
+                <li><span class="feat-dot"></span>Analisa teknikal MnM Strategy+</li>
+                <li><span class="feat-dot"></span>Bandarmologi &amp; broker summary IDX</li>
+                <li><span class="feat-dot"></span>Fundamental multi-source real-time</li>
+                <li><span class="feat-dot"></span>Dampak makro global &#8594; emiten IDX</li>
                 <li><span class="feat-dot"></span>Upload chart &amp; PDF prospektus</li>
-                <li><span class="feat-dot"></span>Multi-source data real-time IDX</li>
-                <li><span class="feat-dot"></span>Multi-Model AI Engine</li>
             </ul>
             <button class="card-cta" onclick="event.stopPropagation(); selectChat()">Masuk ke AI Chat &#8594;</button>
         </div>
@@ -3002,11 +2937,11 @@ body {{ background: #080c14; }}
             </div>
 
             <ul class="card-features">
-                <li><span class="feat-dot"></span>Global Macro &amp; News &#8212; Live Market Pulse</li>
-                <li><span class="feat-dot"></span>Index &amp; Sector Rotation &#8212; IDX Heatmap</li>
-                <li><span class="feat-dot"></span>Shareholder &#8212; Foreign Flow &amp; Ownership</li>
-                <li><span class="feat-dot"></span>AI Stock Insight &#8212; Screener &amp; Analisa</li>
-                <li><span class="feat-dot"></span>AI Rekomendasi &#8212; Watchlist &amp; Alert</li>
+                <li><span class="feat-dot"></span>Market Overview &#8212; IHSG &amp; indeks sektoral</li>
+                <li><span class="feat-dot"></span>Broker Summary real-time IDX</li>
+                <li><span class="feat-dot"></span>Stock Screener dengan filter custom</li>
+                <li><span class="feat-dot"></span>Watchlist personal dengan alert</li>
+                <li><span class="feat-dot"></span>Data langsung dari BEI</li>
             </ul>
             <button class="card-cta" onclick="event.stopPropagation(); selectTerminal()">Masuk ke Terminal &#8594;</button>
         </div>
@@ -4473,7 +4408,7 @@ if current_view == "dashboard":
         margin-top: 16px !important;
     }}
 
-    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; }}
+    .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 28px 0 14px; }}
     .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
@@ -4524,17 +4459,7 @@ if current_view == "dashboard":
         border: 0;
         height: 1px;
         background: {"rgba(245,194,66,0.1)" if is_dark else "#e2e8f0"};
-        margin: 20px 0;
-    }}
-
-    /* ── Kurangi gap berlebih dari components.html (iframe) ── */
-    [data-testid="stCustomComponentV1"] {{
-        margin-bottom: -10px !important;
-        display: block !important;
-    }}
-    /* Kurangi gap berlebih dari st.line_chart */
-    [data-testid="stArrowVegaLiteChart"] {{
-        margin-bottom: -10px !important;
+        margin: 24px 0;
     }}
 
     [data-testid="stTabs"] ~ div .stButton > button,
@@ -4748,17 +4673,6 @@ if current_view == "dashboard":
         .ca-stat-val {{ font-size: 1.05rem !important; }}
         .ca-stat-lbl {{ font-size: 0.55rem !important; }}
 
-        /* Economic Calendar: compact on mobile */
-        .ecocal-row {{
-            grid-template-columns: 80px 1fr 80px 44px !important;
-            gap: 4px !important;
-            padding: 8px 10px !important;
-        }}
-        .ecocal-dt {{ font-size: 0.58rem !important; }}
-        .ecocal-ev {{ font-size: 0.68rem !important; }}
-        .ecocal-fc {{ font-size: 0.60rem !important; }}
-        .ecocal-imp {{ font-size: 0.52rem !important; padding: 2px 4px !important; }}
-
         /* Market Brief container: full-width, no padding bleed */
         .mb-container {{ margin: 0 0 16px !important; }}
         .mb-header {{ padding: 10px 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }}
@@ -4787,6 +4701,8 @@ if current_view == "dashboard":
     </style>
     """, unsafe_allow_html=True)
 
+    from datetime import datetime as _dt
+    _now = _dt.now().strftime("%d %b %Y  %H:%M WIB")
     st.markdown(f"""
     <div style="
         display: flex;
@@ -4824,37 +4740,10 @@ if current_view == "dashboard":
             letter-spacing:0.08em;
             text-align:right;
         ">
-            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">&#9679; LIVE</span>&nbsp;&nbsp;<span id="sigma-wib-clock" style="font-family:'IBM Plex Mono',monospace;">--:--:-- WIB</span>
+            <span style="color:{'#3ddc84' if is_dark else '#16a34a'}">&#9679; LIVE</span>&nbsp;&nbsp;{_now}
         </div>
     </div>
     """, unsafe_allow_html=True)
-
-    # Live clock WIB via components.html (satu-satunya cara jalankan JS di Streamlit)
-    components.html("""
-    <script>
-    (function() {
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        function updateClock() {
-            var now = new Date();
-            var wib = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-            var d  = wib.getUTCDate();
-            var mo = months[wib.getUTCMonth()];
-            var y  = wib.getUTCFullYear();
-            var h  = String(wib.getUTCHours()).padStart(2,'0');
-            var m  = String(wib.getUTCMinutes()).padStart(2,'0');
-            var s  = String(wib.getUTCSeconds()).padStart(2,'0');
-            var str = d + ' ' + mo + ' ' + y + '  ' + h + ':' + m + ':' + s + ' WIB';
-            // Cari di parent document (Streamlit render di dalam iframe)
-            var el = null;
-            try { el = window.parent.document.getElementById('sigma-wib-clock'); } catch(e) {}
-            if (!el) { el = document.getElementById('sigma-wib-clock'); }
-            if (el) { el.textContent = str; }
-        }
-        updateClock();
-        setInterval(updateClock, 1000);
-    })();
-    </script>
-    """, height=0)
 
     _tape_items = [
         # GLOBAL INDICES & VOLATILITY
@@ -5012,307 +4901,223 @@ if current_view == "dashboard":
         if req_daily or req_weekly:
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
-            with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
+            _window_hours = 24 if req_daily else 168  # 24h atau 7 hari
+
+            with st.spinner(f"Mengumpulkan data pasar & menyusun {mode_str} Market Brief..."):
                 import feedparser as _fp
-                # ── Fetch multi-source headline (RSS backup) ──────────────────────
+                from email.utils import parsedate_to_datetime
+                import pytz as _pytz
+
+                _wib = _pytz.timezone("Asia/Jakarta")
+                _now_wib = datetime.now(_wib)
+                _cutoff  = _now_wib - __import__('datetime').timedelta(hours=_window_hours)
+
+                def _parse_entry_time(entry):
+                    """Parse published time dari RSS entry, return aware datetime atau None."""
+                    for key in ("published_parsed", "updated_parsed"):
+                        try:
+                            import time as _time
+                            t = entry.get(key)
+                            if t:
+                                import calendar
+                                ts = calendar.timegm(t)
+                                return __import__('datetime').datetime.fromtimestamp(ts, tz=_pytz.utc).astimezone(_wib)
+                        except: pass
+                    for key in ("published", "updated"):
+                        try:
+                            raw = entry.get(key, "")
+                            if raw:
+                                dt = parsedate_to_datetime(raw)
+                                if dt.tzinfo is None:
+                                    dt = _pytz.utc.localize(dt)
+                                return dt.astimezone(_wib)
+                        except: pass
+                    return None
+
+                # ── Fetch multi-source headline — filtered by time window ──
                 dom_news, glob_news = [], []
                 _rss_sources = [
-                    ("https://www.cnbcindonesia.com/market/rss",          dom_news),
-                    ("https://www.cnbcindonesia.com/economy/rss",         dom_news),
-                    ("https://www.cnbcindonesia.com/news/rss",            dom_news),
+                    ("https://www.cnbcindonesia.com/market/rss",             dom_news),
+                    ("https://www.cnbcindonesia.com/economy/rss",            dom_news),
                     ("https://www.cnbc.com/id/15839069/device/rss/rss.html", glob_news),
                     ("https://feeds.content.dowjones.io/public/rss/mw-marketpulse", glob_news),
-                    ("https://www.ft.com/news-feed?format=rss",           glob_news),
-                    ("https://feeds.a.dj.com/rss/RSSMarketsMain.xml",     glob_news),
-                    ("https://www.aljazeera.com/xml/rss/all.xml",         glob_news),
-                    ("https://feeds.bbci.co.uk/news/world/rss.xml",       glob_news),
+                    ("https://feeds.bloomberg.com/markets/news.rss",         glob_news),
                 ]
+                _included, _excluded = 0, 0
                 for _url, _target in _rss_sources:
                     try:
-                        for _e in _fp.parse(_url).entries[:6]:
-                            _t = _e.get("title","").strip()
-                            if _t and _t not in _target: _target.append(_t)
+                        for _e in _fp.parse(_url).entries[:20]:
+                            _t = _e.get("title", "").strip()
+                            if not _t: continue
+                            _entry_dt = _parse_entry_time(_e)
+                            # Jika bisa parse waktu, filter ketat; kalau tidak bisa parse, tetap masukkan
+                            if _entry_dt is not None:
+                                if _entry_dt < _cutoff:
+                                    _excluded += 1
+                                    continue
+                            _included += 1
+                            if _t not in _target:
+                                _target.append(_t)
                     except: pass
 
-                # ── FETCH HARGA REAL-TIME — diinjeksikan ke prompt sebagai FAKTA ──
-                # Ini KRITIS: tanpa ini, Groq akan karang harga dari training data (LAMA)
-                _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
-                _rt_data = {}
+                _window_label = f"24 jam terakhir (sejak {_cutoff.strftime('%d %b %Y %H:%M WIB')})" if req_daily else f"7 hari terakhir (sejak {_cutoff.strftime('%d %b %Y')})"
 
-                def _fetch_realtime_prices():
-                    import urllib.request, json as _rj, threading as _rt
-                    _res = {}
-                    def _get():
-                        try:
-                            import yfinance as _yf
-                            for _sym2, _key2 in [("^JKSE","ihsg"), ("USDIDR=X","usdidr"), ("GC=F","gold"),
-                                                  ("CL=F","wti"), ("BZ=F","brent"), ("^GSPC","spx"),
-                                                  ("^DJI","dji"), ("^N225","nikkei")]:
-                                try:
-                                    _tw = _yf.Ticker(_sym2)
-                                    _hw = _tw.history(period="5d")
-                                    if not _hw.empty:
-                                        _lw = float(_hw['Close'].iloc[-1])
-                                        _pw = float(_hw['Close'].iloc[-2]) if len(_hw)>1 else _lw
-                                        _cw = ((_lw-_pw)/_pw*100) if _pw else 0
-                                        _res[f"{_key2}_price"] = round(_lw, 2)
-                                        _res[f"{_key2}_chg"]   = round(_cw, 2)
-                                except: pass
-                        except: pass
-                        # Komoditas fallback via FMP
-                        try:
-                            _fmp_k = st.secrets.get("FMP_KEY","")
-                            if _fmp_k and not _res.get("gold_price"):
-                                _url = f"https://financialmodelingprep.com/api/v3/quote/GCUSD,CLUSD,BZUSD?apikey={_fmp_k}"
-                                _req = urllib.request.Request(_url, headers={"User-Agent":"Mozilla/5.0"})
-                                with urllib.request.urlopen(_req, timeout=6) as _r3:
-                                    _d3 = _rj.loads(_r3.read())
-                                for _item in _d3:
-                                    _sym = _item.get("symbol","")
-                                    _px  = _item.get("price")
-                                    _cx  = round(_item.get("changesPercentage") or 0, 2)
-                                    if _sym=="GCUSD" and _px: _res["gold_price"]=_px; _res["gold_chg"]=_cx
-                                    elif _sym=="CLUSD" and _px: _res["wti_price"]=_px; _res["wti_chg"]=_cx
-                                    elif _sym=="BZUSD" and _px: _res["brent_price"]=_px; _res["brent_chg"]=_cx
-                        except: pass
-                    _th = _rt.Thread(target=_get, daemon=True)
-                    _th.start()
-                    _th.join(timeout=14)
-                    return _res
+                # ── Build prompt ─────────────────────────────────────────
+                _today = _now_wib.strftime("%d %B %Y, %H:%M WIB")
+                mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
+Tanggal & waktu sekarang: {_today}
+Mode: {mode_str}
+Window berita: {_window_label}
+Jumlah headline terkumpul: {len(dom_news)} domestik, {len(glob_news)} global (berita di luar window SUDAH difilter)
 
-                _rt_data = _fetch_realtime_prices()
+═══════════════════════════════════════════════════════
+HEADLINE BERITA DALAM NEGERI (DOMESTIK — CNBC Indonesia):
+Window: {_window_label}
+═══════════════════════════════════════════════════════
+{chr(10).join([f"• {h}" for h in dom_news[:20]]) if dom_news else "⚠ Tidak ada berita baru dalam window waktu ini dari sumber domestik."}
 
-                def _fmt_price_block(d):
-                    lines = []
-                    pairs = [
-                        ("ihsg_price","ihsg_chg","IHSG","",""),
-                        ("usdidr_price","usdidr_chg","USD/IDR","Rp ",""),
-                        ("gold_price","gold_chg","Gold XAU/USD","$",""),
-                        ("wti_price","wti_chg","WTI Crude Oil","$","/bbl"),
-                        ("brent_price","brent_chg","Brent Crude","$","/bbl"),
-                        ("spx_price","spx_chg","S&P 500","",""),
-                        ("dji_price","dji_chg","Dow Jones","",""),
-                        ("nikkei_price","nikkei_chg","Nikkei 225","",""),
-                    ]
-                    for pk,ck,name,prefix,suffix in pairs:
-                        if d.get(pk):
-                            _c = d.get(ck,0)
-                            _arrow = "▲" if _c>=0 else "▼"
-                            if pk=="usdidr_price":
-                                lines.append(f"• {name}: {prefix}{d[pk]:,.0f}{suffix} ({_arrow}{abs(_c):.2f}%)")
-                            else:
-                                lines.append(f"• {name}: {prefix}{d[pk]:,.2f}{suffix} ({_arrow}{abs(_c):.2f}%)")
-                    return "\n".join(lines) if lines else "⚠ Harga real-time tidak berhasil di-fetch, gunakan estimasi terbaru."
+═══════════════════════════════════════════════════════
+HEADLINE BERITA LUAR NEGERI (GLOBAL — CNBC/Bloomberg/MarketWatch):
+Window: {_window_label}
+═══════════════════════════════════════════════════════
+{chr(10).join([f"• {h}" for h in glob_news[:20]]) if glob_news else "⚠ Tidak ada berita baru dalam window waktu ini dari sumber global."}
 
-                _rt_block = _fmt_price_block(_rt_data)
+═══════════════════════════════════════════════════════
+INSTRUKSI PENTING:
+{"⚠ INI ADALAH DAILY REVIEW: Fokus HANYA pada berita dan pergerakan pasar dalam 24 JAM TERAKHIR. Jangan bahas hal-hal yang lebih lama dari itu. Mulai dari kondisi pembukaan pasar hari ini (06:00 WIB) sampai sekarang. Jika ada event penting kemarin yang masih relevan hari ini, boleh disebut singkat." if req_daily else "⚠ INI ADALAH WEEKLY REVIEW: Rekap komprehensif 1 MINGGU terakhir. Bahas arc cerita dari senin sampai sekarang: tema besar apa yang dominan? Bagaimana sentimen berevolusi? Event apa yang paling market-moving minggu ini?"}
+═══════════════════════════════════════════════════════
+FORMAT WAJIB — Tulis dalam Bahasa Indonesia, tajam & analitik:
+═══════════════════════════════════════════════════════
 
-                # ── Anthropic API dengan web_search tool untuk data REAL-TIME ────
-                _anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+## 🇮🇩 PASAR DOMESTIK — IHSG & EKONOMI RI
+Analisis mendalam kondisi IHSG, kebijakan BI, Rupiah (IDR/USD), inflasi, dan sektor yang bergerak. Sebutkan saham/sektor spesifik jika ada indikasi dari berita (contoh: BBCA, TLKM, ADRO, sektor perbankan, energi, dll). Minimal 3-4 paragraf.
 
-                def _call_anthropic_with_search(user_prompt, max_tok=4000):
-                    """Gunakan Anthropic API + web_search untuk data real-time."""
-                    import urllib.request, json as _j
-                    _payload = {
-                        "model": "claude-opus-4-5",
-                        "max_tokens": max_tok,
-                        "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                        "messages": [{"role": "user", "content": user_prompt}]
-                    }
-                    _req = urllib.request.Request(
-                        "https://api.anthropic.com/v1/messages",
-                        data=_j.dumps(_payload).encode(),
-                        headers={
-                            "Content-Type": "application/json",
-                            "x-api-key": _anthropic_key,
-                            "anthropic-version": "2023-06-01",
-                            "anthropic-beta": "interleaved-thinking-2025-05-14"
-                        },
-                        method="POST"
-                    )
-                    with urllib.request.urlopen(_req, timeout=90) as _r:
-                        _data = _j.loads(_r.read())
-                    # Gabungkan semua text block dari response
-                    _full_text = ""
-                    for _block in _data.get("content", []):
-                        if _block.get("type") == "text":
-                            _full_text += _block.get("text", "")
-                    return _full_text.strip() if _full_text else None
+## 🌍 PASAR GLOBAL — KATALIS EKSTERNAL
+Ringkasan kondisi Wall Street (S&P 500, Nasdaq, Dow Jones), kebijakan The Fed, data ekonomi AS (CPI, NFP, GDP), sentimen China (Hang Seng, trade war, stimulus), harga komoditas kunci (minyak WTI/Brent, emas, batu bara, CPO, nikel). Minimal 3-4 paragraf.
 
-                # ── Build prompt — BERBEDA antara Daily dan Weekly ────────
-                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:10]]) if dom_news else "⚠ Tidak tersedia."
-                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:10]]) if glob_news else "⚠ Tidak tersedia."
-
-                if req_daily:
-                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
-Tanggal hari ini: **{_today}** | Mode: **DAILY REVIEW 24 JAM TERAKHIR**
-
-═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
-{_rt_block}
-⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
-Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
-═══════════════════════════════════════════════════════════════════════════
-
-BERITA TERKINI (RSS — jadikan konteks narasi):
-Domestik: {_rss_dom_str}
-Global: {_rss_glob_str}
-
-FORMAT OUTPUT — Bahasa Indonesia, maks 600 kata, Markdown:
-
-## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
-Gunakan harga IHSG dan USD/IDR dari DATA REAL-TIME di atas. Tambahkan konteks: sentimen lokal, saham/sektor bergerak berdasarkan berita RSS. (2 paragraf)
-
-## 🌍 KATALIS GLOBAL 24 JAM
-Gunakan harga S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME di atas. Tambahkan konteks makro dari berita RSS. (1-2 paragraf)
-
-## ⚔️ GEOPOLITIK & RISIKO GLOBAL
-**WAJIB SPESIFIK dari berita RSS**: Kebijakan tarif Trump terbaru, perang Rusia-Ukraina, China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza). Dampak ke IDX, Rupiah, komoditas. (2 paragraf)
-
-## 💱 FOREX & KOMODITAS (Harga Aktual)
-Gunakan USD/IDR, Gold, WTI, Brent dari DATA REAL-TIME di atas. Sektor IDX terdampak?
+## 💱 FOREX & KOMODITAS — DAMPAK KE IDX
+Analisis USD/IDR, DXY, dan dampak pergerakan komoditas ke saham-saham IDX. Sektor apa yang diuntungkan/dirugikan dari kondisi global hari ini.
 
 ## 📊 SENTIMENT METER
-- IHSG: [skor]/100 — [label berdasarkan data real-time]
-- Global Risk: [skor]/100 — [Risk-On/Mixed/Risk-Off]
-- Geopolitik Risk: [Tinggi/Sedang/Rendah]
-- IDR: [Rendah/Sedang/Tinggi tekanan]
+Berikan scoring numerik (0-100) untuk:
+- **IHSG Sentiment:** [angka]/100 — [Bullish/Cautious Bullish/Neutral/Cautious Bearish/Bearish]
+- **Global Risk Appetite:** [angka]/100 — [Risk-On/Mixed/Risk-Off]
+- **IDR Pressure:** [Rendah/Sedang/Tinggi]
 
-## ⚡ TACTICAL VIEW
-Stance + support/resistance IHSG (berdasarkan level real-time di atas) + 1-2 sektor pantau.
+## ⚡ SIGMA TACTICAL VIEW — KESIMPULAN STRATEGIS
+Kesimpulan 1 paragraf tajam: apa yang paling perlu diperhatikan trader IDX hari ini/minggu ini? Sektor mana yang harus diwatch? Ada event risk apa yang mendekat? Beri rekomendasi stance (Aggressive/Selective/Defensive/Wait & See).
 
-## 🎯 WATCHLIST SEKTORAL (3 sektor)
-(✅/⚠/❌) Sektor — status — 1 kalimat alasan.
+## 🎯 WATCHLIST SEKTORAL
+Daftar 3-5 sektor dengan kondisi saat ini (contoh: ✅ Perbankan — Positif, ⚠ Properti — Mixed, ❌ Consumer — Negatif) beserta 1 kalimat reasoning per sektor.
 
-Padat & actionable. Hindari basa-basi. JANGAN UBAH ANGKA DARI DATA REAL-TIME."""
+Gunakan Markdown. Gunakan emoji secukupnya. Buat spasi antar section agar mudah dibaca. Jangan generik — jadilah sangat spesifik dan actionable berdasarkan berita dalam window waktu {_window_label}."""
 
-                else:  # weekly
-                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
-Tanggal: **{_today}** | Mode: **WEEKLY REVIEW (7 Hari Terakhir)**
+                try:
+                    mb_res, _ = _call_groq_primary(mb_prompt)
+                    st.session_state["mb_content"]    = mb_res
+                    st.session_state["mb_mode"]       = mode_str
+                    st.session_state["mb_timestamp"]  = _today
+                except Exception as e:
+                    st.session_state["mb_content"]    = f"⚠ Gagal generate Market Brief: {e}"
+                    st.session_state["mb_mode"]       = mode_str
+                    st.session_state["mb_timestamp"]  = _today
 
-═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
-{_rt_block}
-⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
-Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
-═══════════════════════════════════════════════════════════════════════════
-
-BERITA TERKINI (RSS — jadikan konteks narasi & analisis):
-Domestik: {_rss_dom_str}
-Global: {_rss_glob_str}
-
-FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 800 kata total.
-
-## 📅 REKAP IHSG MINGGU INI
-Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
-
-## 🌍 KATALIS GLOBAL MINGGU INI
-Gunakan S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME. Tambahkan konteks: keputusan Fed/data AS, China/Asia, komoditas (gold, WTI, Brent) dengan ANGKA DARI DATA REAL-TIME. (2 paragraf)
-
-## ⚔️ GEOPOLITIK MINGGU INI — ANALISIS MENDALAM
-**WAJIB DETAIL dari berita RSS**: Perkembangan tarif/perang dagang Trump, eskalasi Rusia-Ukraina, China (Taiwan/regulasi/ekonomi), Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
-
-## 📊 SENTIMENT METER MINGGUAN
-- **IHSG:** [angka]/100 — [label — berdasarkan level real-time]
-- **Foreign Flow:** [Net Buy/Sell/Mixed] — estimasi arah
-- **Global Risk:** [angka]/100 — [label]
-- **Geopolitik Risk:** [Tinggi/Sedang/Rendah]
-- **IDR:** [Menguat/Melemah/Stabil — berdasarkan data real-time]
-
-## 🔮 OUTLOOK & TACTICAL VIEW MINGGU DEPAN
-Event penting (FOMC, data AS, dll) + stance + 2-3 sektor rotasi + risiko utama. (2 paragraf)
-
-## 🎯 WATCHLIST SEKTORAL (5 sektor)
-(✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham — Alasan geopolitik/makro
-
-Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
-
-                # ── Eksekusi: Coba Anthropic API dulu (dengan web search), fallback ke Groq ──
-                mb_res = None
-                _source_used = "Groq"
-
-                if _anthropic_key:
-                    try:
-                        mb_res = _call_anthropic_with_search(mb_prompt, max_tok=5000 if mode_key == "weekly" else 4000)
-                        if mb_res:
-                            _source_used = "Anthropic+WebSearch"
-                    except Exception as _ae:
-                        mb_res = None  # fallback ke Groq
-
-                if not mb_res:
-                    try:
-                        _max_tok = 3000 if mode_key == "daily" else 5000
-                        mb_res, _ = _call_groq_primary(mb_prompt, max_tokens=_max_tok)
-                        _source_used = "Groq"
-                    except Exception as e:
-                        mb_res = f"⚠ Gagal generate Market Brief: {e}"
-                        _source_used = "Error"
-
-                # Tambahkan watermark sumber data
-                if mb_res and not mb_res.startswith("⚠"):
-                    _src_badge = "🌐 Real-time Web Search" if _source_used == "Anthropic+WebSearch" else "📡 RSS Feeds"
-                    mb_res = mb_res + f"\n\n---\n*Sumber data: {_src_badge} · {_today}*"
-
-                if mode_key == "daily":
-                    st.session_state["mb_daily_content"]   = mb_res
-                    st.session_state["mb_daily_timestamp"] = _today
-                else:
-                    st.session_state["mb_weekly_content"]   = mb_res
-                    st.session_state["mb_weekly_timestamp"] = _today
-                # backward compat
-                st.session_state["mb_content"]    = mb_res
-                st.session_state["mb_mode"]       = mode_str
-                st.session_state["mb_timestamp"]  = _today
-                st.session_state["mb_mode_key"]   = mode_key
-
-        # ── Render Daily Brief (jika ada) ──────────────────────────────────
-        def _render_mb_block(content, ts, mode_key):
-            _mb_icon  = "🔄" if mode_key == "daily" else "🗓️"
-            _mb_color = "#4285F4" if mode_key == "daily" else "#F5C242"
-            _mb_title = "DAILY MARKET BRIEF — 24 JAM TERAKHIR" if mode_key == "daily" else "WEEKLY MARKET BRIEF — REKAP 7 HARI"
+        if st.session_state.get("mb_content"):
+            _mb_ts   = st.session_state.get("mb_timestamp", "")
+            _mb_mode = st.session_state.get("mb_mode", "")
             st.markdown(f"""
             <style>
-            .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid {_mb_color};
+            .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid #F5C242;
                 border-radius:10px; padding:0; margin-bottom:20px; overflow:hidden; }}
             .mb-header {{ background:rgba(245,194,66,0.10); padding:14px 20px;
                 border-bottom:1px solid {met_border}; display:flex; align-items:center;
                 justify-content:space-between; flex-wrap:wrap; gap:8px; }}
-            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:{_mb_color};
+            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#F5C242;
                 font-weight:700; letter-spacing:1.2px; }}
             .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:{text_sub};
                 background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px;
                 border:1px solid {met_border}; white-space:nowrap; }}
+            .mb-body {{ padding:20px 22px; font-size:0.86rem; color:{text_main}; line-height:1.8; }}
             @media (max-width: 768px) {{
                 .mb-header {{ padding:10px 14px; }}
                 .mb-title {{ font-size:0.7rem; }}
+                .mb-body {{ padding:14px 14px; font-size:0.82rem; }}
             }}
             </style>
             <div class='mb-container'>
                 <div class='mb-header'>
-                    <span class='mb-title'>{_mb_icon} {_mb_title}</span>
-                    <span class='mb-badge'>🕐 {ts}</span>
+                    <span class='mb-title'>📋 LATEST MARKET BRIEF</span>
+                    <span class='mb-badge'>🕐 {_mb_ts} &nbsp;|&nbsp; {_mb_mode}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            st.markdown(content)
-
-        if st.session_state.get("mb_daily_content"):
-            _render_mb_block(
-                st.session_state["mb_daily_content"],
-                st.session_state.get("mb_daily_timestamp", ""),
-                "daily"
-            )
-
-        if st.session_state.get("mb_weekly_content"):
-            _render_mb_block(
-                st.session_state["mb_weekly_content"],
-                st.session_state.get("mb_weekly_timestamp", ""),
-                "weekly"
-            )
+            # Render konten markdown di luar HTML agar Streamlit parse markdown dengan benar
+            st.markdown(st.session_state["mb_content"])
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
 
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
+
+        macro_col1, macro_col2 = st.columns(2)
+        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
+
+        with macro_col1:
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
+            macro_id = pd.DataFrame({
+                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
+                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
+                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
+            }, index=dates)
+            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        with macro_col2:
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
+            macro_us = pd.DataFrame({
+                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
+                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
+                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
+            }, index=dates)
+            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
+
+        st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div class="trm-card">
+                <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+                <span style='color:#F5C242;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
+                Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
+                </p>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <span style='color:#F5C242;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
+                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="trm-card">
+                <div class="trm-card-title" style="color:#f23645;">Rotasi &amp; Kurva Imbal Hasil</div>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+                <span style='color:#f23645;font-weight:600;'>Yield Curve Obligasi RI</span><br>
+                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
+                </p>
+                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
+                Komoditas memanas &rarr; Coal &amp; Gold. Suku bunga turun &rarr; Big Banks &amp; Properti.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
         # ---------------------------------------------------------
-        # LIVE MARKET PULSE & NEWS  (moved up — before MAKRO)
+        # LIVE MARKET PULSE & NEWS - FIX FINAL
         # ---------------------------------------------------------
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         st.markdown(f"""
@@ -5384,192 +5189,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # ---------------------------------------------------------
-        # MAKRO INDONESIA vs US  (moved down — after news)
-        # ---------------------------------------------------------
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
-
-        macro_col1, macro_col2 = st.columns(2)
-        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
-
-        with macro_col1:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
-            macro_id = pd.DataFrame({
-                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
-                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
-                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
-            }, index=dates)
-            st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
-
-        with macro_col2:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
-            macro_us = pd.DataFrame({
-                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
-                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
-                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
-            }, index=dates)
-            st.line_chart(macro_us, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
-
-        st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div class="trm-card">
-                <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
-                <span style='color:#F5C242;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
-                Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
-                </p>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#F5C242;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
-                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col2:
-            st.markdown(f"""
-            <div class="trm-card">
-                <div class="trm-card-title" style="color:#f23645;">Rotasi &amp; Kurva Imbal Hasil</div>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#f23645;font-weight:600;'>Yield Curve Obligasi RI</span><br>
-                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
-                </p>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
-                Komoditas memanas &rarr; Coal &amp; Gold. Suku bunga turun &rarr; Big Banks &amp; Properti.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         
-        # ─────────────────────────────────────────────────────────
-        # ECONOMIC CALENDAR — ID · US · CN · JP
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        cal_bg      = met_bg
-        cal_border  = met_border
-        cal_text    = text_main
-        cal_sub_clr = text_sub
-
-        calendar_data = {
-            "🇮🇩 INDONESIA": [
-                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
-                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
-                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
-                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
-                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
-                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
-            ],
-            "🇺🇸 UNITED STATES": [
-                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
-                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
-                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
-                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
-                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
-                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
-            ],
-            "🇨🇳 CHINA": [
-                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
-                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
-                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
-                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
-                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
-                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
-            ],
-            "🇯🇵 JAPAN": [
-                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
-                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
-                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
-                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
-                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
-                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
-            ],
-        }
-
-        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
-        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
-
-        st.markdown(f"""<style>
-        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
-            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
-        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
-            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
-            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
-        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
-            align-items:center; gap:8px; padding:9px 16px;
-            border-bottom:1px solid {cal_border}; cursor:default;
-            position:relative; transition:background 0.15s; }}
-        .cal-row:last-child {{ border-bottom:none; }}
-        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
-        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
-        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
-        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
-        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
-        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
-        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
-            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
-        .cal-tip {{ display:none; position:absolute; left:0; right:0;
-            top:calc(100% + 4px); z-index:9999;
-            background:{'#1a2035' if is_dark else '#ffffff'};
-            border:1px solid {cal_border}; border-left:3px solid #F5C242;
-            border-radius:0 6px 6px 0; padding:8px 12px;
-            font-size:0.69rem; color:{cal_text}; line-height:1.5;
-            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
-        .cal-row:hover .cal-tip {{ display:block; }}
-        @media (max-width: 768px) {{
-            .cal-row {{
-                grid-template-columns: 72px 1fr 82px 40px !important;
-                gap: 4px !important;
-                padding: 8px 10px !important;
-            }}
-            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
-            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
-            .cal-fc {{ font-size: 0.62rem !important; }}
-            .cal-pv {{ font-size: 0.55rem !important; }}
-            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
-            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
-        }}
-        </style>""", unsafe_allow_html=True)
-
-        cal_cols = st.columns(2)
-        country_list = list(calendar_data.items())
-        for ci, (country, events) in enumerate(country_list):
-            col_idx = ci % 2
-            with cal_cols[col_idx]:
-                rows_html = ""
-                for ev in events:
-                    dk    = ev["dampak"]
-                    d_clr = dampak_color.get(dk, "#b2b5be")
-                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
-                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
-                    rows_html += (
-                        f"<div class='cal-row'>"
-                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
-                        f"<div class='cal-ev'>{ev['event']}</div>"
-                        f"<div class='cal-nums'>"
-                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
-                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
-                        f"</div>"
-                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{'MED' if dk == 'MEDIUM' else dk}</div>"
-                        f"<div class='cal-tip'>{tip}</div>"
-                        f"</div>"
-                    )
-                st.markdown(
-                    f"<div class='cal-wrap'>"
-                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
-                    f"{rows_html}"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
         # ─────────────────────────────────────────────────────────
         # CORPORATE ACTION — IDX FULL FETCH (900+ SAHAM, 3 BULAN)
         # ─────────────────────────────────────────────────────────
@@ -5829,209 +5449,25 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
         </p>
         """, unsafe_allow_html=True)
 
-        # ── Render table ──────────────────────────────────────────
-        ca_rows_html = ""
+        # ── Render table via components.html — TRUE mobile scroll ──
+        _ca_rows_json = []
         for row in ca_data_filtered:
             _clr, _bg = _get_ev_color(row["Event"])
-            ca_rows_html += (
-                f"<tr>"
-                f"<td style='white-space:nowrap;font-weight:500;'>{row['Tanggal']}</td>"
-                f"<td><span class='ca-badge' style='background:rgba(66,133,244,0.15);color:#4285F4;border:1px solid rgba(66,133,244,0.3);'>{row['Ticker']}</span></td>"
-                f"<td><span class='ca-ev-badge' style='background:{_bg};color:{_clr};border:1px solid {_clr}44;'>{row['Event']}</span></td>"
-                f"<td class='ca-info'>{row['Keterangan']}</td>"
-                f"</tr>"
-            )
-        if not ca_data_filtered:
-            ca_rows_html += f"<tr><td colspan='4' style='text-align:center;padding:24px;color:{text_sub};'>Tidak ada data yang cocok dengan filter.</td></tr>"
-
-        # Hitung tinggi: header(42) + 10 baris(40px each) + footer hint(28) + border
-        _ca_row_h = min(len(ca_data_filtered), 10) * 40
-        _ca_total_h = 42 + _ca_row_h + 28 + 6
-        _ca_total_h = max(_ca_total_h, 120)
-
-        import json as _caj
-        _ca_all_rows = []
-        for row in ca_data_filtered:
-            _clr, _bg = _get_ev_color(row["Event"])
-            _ca_all_rows.append({
+            _ca_rows_json.append({
                 "tanggal": row["Tanggal"],
                 "ticker": row["Ticker"],
                 "event": row["Event"],
-                "keterangan": row["Keterangan"],
-                "clr": _clr, "bg": _bg
+                "info": row["Keterangan"],
+                "ev_clr": _clr,
+                "ev_bg": _bg,
             })
-        _ca_rows_json = _caj.dumps(_ca_all_rows, ensure_ascii=False)
 
-        ca_html_widget = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
-.ca-wrap{{background:{met_bg};border-radius:10px;border:1px solid {met_border};overflow:hidden;}}
-.hint{{display:none;text-align:center;font-size:0.55rem;color:{text_sub};
-       padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {met_border};}}
-.scroll-box{{
-  width:100%;
-  max-height:400px;
-  overflow-x:auto !important;
-  overflow-y:auto !important;
-  -webkit-overflow-scrolling:touch !important;
-  scrollbar-width:thin;
-  scrollbar-color:{met_border} transparent;
-}}
-.scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
-.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:max-content;min-width:100%;border-collapse:collapse;
-       font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
-thead th{{
-  position:sticky;top:0;z-index:2;
-  background:rgba(245,194,66,0.10);color:#F5C242;
-  padding:10px 12px;text-align:left;
-  border-bottom:1px solid {met_border};
-  letter-spacing:0.06em;font-weight:700;font-size:0.65rem;
-  white-space:nowrap;
-}}
-tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
-          color:{text_main};vertical-align:middle;white-space:nowrap;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
-.ca-badge{{padding:3px 8px;border-radius:4px;font-weight:700;font-size:0.65rem;letter-spacing:0.04em;}}
-.ca-ev-badge{{padding:3px 8px;border-radius:4px;font-size:0.65rem;font-weight:600;white-space:nowrap;}}
-.ca-info{{color:{text_sub};font-size:0.7rem;white-space:normal;max-width:280px;}}
-.pg-bar{{display:flex;align-items:center;justify-content:space-between;
-         padding:6px 12px;border-top:1px solid {met_border};
-         background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:4px;}}
-.pg-info{{font-size:0.58rem;color:{text_sub};}}
-.pg-btns{{display:flex;gap:5px;}}
-.pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
-         border:1px solid {met_border};border-radius:4px;
-         padding:4px 11px;font-family:'IBM Plex Mono',monospace;
-         font-size:0.58rem;cursor:pointer;transition:background 0.15s;}}
-.pg-btn:hover{{background:rgba(255,255,255,0.12);}}
-.pg-btn:disabled{{opacity:0.3;cursor:default;}}
-@media(max-width:600px){{
-  .hint{{display:block;}}
-  table{{font-size:0.65rem;}}
-  thead th{{font-size:0.6rem;padding:8px 8px;}}
-  tbody td{{padding:7px 8px;font-size:0.65rem;}}
-  .ca-badge{{font-size:0.58rem;padding:2px 5px;}}
-  .ca-ev-badge{{font-size:0.58rem;padding:2px 5px;}}
-  .ca-info{{font-size:0.62rem;max-width:180px;}}
-}}
-</style></head><body>
-<div class="ca-wrap">
-  <div class="hint">← geser kiri / kanan →</div>
-  <div class="scroll-box" id="ca-sb">
-    <table>
-      <thead><tr>
-        <th>TANGGAL</th><th>TICKER</th><th>EVENT</th><th>KETERANGAN</th>
-      </tr></thead>
-      <tbody id="ca-tb"></tbody>
-    </table>
-  </div>
-  <div class="pg-bar">
-    <span class="pg-info" id="ca-pi"></span>
-    <div class="pg-btns">
-      <button class="pg-btn" id="ca-pp" onclick="caPg(-1)">&#9664; Prev</button>
-      <button class="pg-btn" id="ca-pn" onclick="caPg(+1)">Next &#9654;</button>
-    </div>
-  </div>
-</div>
-<script>
-(function(){{
-  var ROWS={_ca_rows_json}, PER=10, page=0;
-  function render(){{
-    var tot=ROWS.length, maxPg=Math.max(0,Math.ceil(tot/PER)-1);
-    var s=page*PER, e=Math.min(s+PER,tot);
-    var h='';
-    ROWS.slice(s,e).forEach(function(r){{
-      h+='<tr>'+
-        '<td style="white-space:nowrap;font-weight:500;">'+r.tanggal+'</td>'+
-        '<td><span class="ca-badge" style="background:rgba(66,133,244,0.15);color:#4285F4;border:1px solid rgba(66,133,244,0.3);">'+r.ticker+'</span></td>'+
-        '<td><span class="ca-ev-badge" style="background:'+r.bg+';color:'+r.clr+';border:1px solid '+r.clr+'44;">'+r.event+'</span></td>'+
-        '<td class="ca-info">'+r.keterangan+'</td>'+
-        '</tr>';
-    }});
-    document.getElementById('ca-tb').innerHTML=h;
-    document.getElementById('ca-pi').textContent='Baris '+(s+1)+'–'+e+' dari '+tot;
-    document.getElementById('ca-pp').disabled=(page<=0);
-    document.getElementById('ca-pn').disabled=(page>=maxPg);
-    document.getElementById('ca-sb').scrollTop=0;
-  }}
-  window.caPg=function(d){{
-    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
-    page=Math.max(0,Math.min(page+d,maxPg));render();
-  }};
-  render();
-}})();
-</script></body></html>"""
-
-        components.html(ca_html_widget, height=_ca_total_h + 60, scrolling=False)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        # ─────────────────────────────────────────────────────────
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # ─────────────────────────────────────────────────────────
-        # FED RATE MONITOR TOOL
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
-        Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
-        Rate saat ini: <b style='color:#F5C242;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
-        </p>
-        """, unsafe_allow_html=True)
-
-        # ── Data FOMC meetings ──────────────────────────────────
-        _fed_meetings = [
-            {
-                "date": "30 Apr 2026",
-                "date_wib": "30 Apr 2026 · 01:00 WIB",
-                "meeting_time": "30 Apr 2026 · 01:00 WIB",
-                "future_price": "96.358",
-                "countdown_weeks": 3, "countdown_days": 3, "countdown_hours": 1, "countdown_mins": 34,
-                "scenarios": [
-                    {"range": "3.50-3.75", "prob": 98.9, "prev_day": 97.9, "prev_week": 95.7, "dir": "hold"},
-                    {"range": "3.75-4.00", "prob":  1.1, "prev_day":  2.1, "prev_week":  4.3, "dir": "hike"},
-                ]
-            },
-            {
-                "date": "18 Jun 2026",
-                "date_wib": "18 Jun 2026 · 01:00 WIB",
-                "meeting_time": "18 Jun 2026 · 01:00 WIB",
-                "future_price": "96.360",
-                "countdown_weeks": 11, "countdown_days": 1, "countdown_hours": 0, "countdown_mins": 0,
-                "scenarios": [
-                    {"range": "3.25-3.50", "prob":  5.9, "prev_day":  9.6, "prev_week": None, "dir": "cut"},
-                    {"range": "3.50-3.75", "prob": 93.1, "prev_day": 88.5, "prev_week": 92.1, "dir": "hold"},
-                    {"range": "3.75-4.00", "prob":  1.0, "prev_day":  1.9, "prev_week":  7.7, "dir": "hike"},
-                ]
-            },
-            {
-                "date": "30 Jul 2026",
-                "date_wib": "30 Jul 2026 · 01:00 WIB",
-                "meeting_time": "30 Jul 2026 · 01:00 WIB",
-                "future_price": "96.490",
-                "countdown_weeks": 16, "countdown_days": 3, "countdown_hours": 0, "countdown_mins": 0,
-                "scenarios": [
-                    {"range": "3.00-3.25", "prob":  1.2, "prev_day":  1.0, "prev_week": None, "dir": "cut"},
-                    {"range": "3.25-3.50", "prob": 14.3, "prev_day": 18.2, "prev_week": None, "dir": "cut"},
-                    {"range": "3.50-3.75", "prob": 78.1, "prev_day": 74.5, "prev_week": None, "dir": "hold"},
-                    {"range": "3.75-4.00", "prob":  6.4, "prev_day":  6.3, "prev_week": None, "dir": "hike"},
-                ]
-            },
-        ]
-
-        # ── Serialize data ke JSON untuk dipakai di JS ──────────
         import json as _json
-        _fed_json = _json.dumps(_fed_meetings)
-        _is_dark_js = "true" if is_dark else "false"
-        _updated_str = datetime.now().strftime("%b %d, %Y %I:%M%p") + " WIB"
+        _ca_rows_str = _json.dumps(_ca_rows_json)
+        _rows_per_page = 15
+        _total_filtered = len(ca_data_filtered)
 
-        # ── Render via components.html — BYPASS Streamlit markdown sanitizer ──
-        components.html(f"""
+        _ca_component_html = f"""
 <!DOCTYPE html>
 <html>
 <head>
@@ -6040,341 +5476,342 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{ background: transparent; font-family: 'IBM Plex Mono', monospace; }}
 
-  .frm-wrap {{ width: 100%; padding: 0; }}
-
-  /* Countdown banner */
-  .frm-countdown {{
-    background: rgba(242,54,69,0.08);
-    border: 1px solid rgba(242,54,69,0.22);
+  .ca-wrap {{
+    background: {met_bg};
+    border: 1px solid {met_border};
     border-radius: 10px;
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 18px;
-  }}
-  .frm-cd-label {{
-    font-size: 0.65rem;
-    color: #a0aec0;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }}
-  .frm-cd-title {{
-    font-size: 0.72rem;
-    color: #f23645;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }}
-  .frm-cd-boxes {{
-    display: flex;
-    gap: 10px;
-    align-items: center;
-  }}
-  .frm-cd-box {{
-    text-align: center;
-    min-width: 48px;
-  }}
-  .frm-cd-num {{
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #e8eaf0;
-    line-height: 1;
-  }}
-  .frm-cd-unit {{
-    font-size: 0.55rem;
-    color: #6b7a99;
-    letter-spacing: 0.06em;
-    margin-top: 3px;
-    text-transform: uppercase;
-  }}
-  .frm-cd-sep {{
-    font-size: 1.4rem;
-    color: #4285F4;
-    font-weight: 700;
-    padding-bottom: 8px;
-  }}
-
-  /* Grid */
-  .frm-grid {{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin-bottom: 16px;
-  }}
-
-  /* Card */
-  .frm-card {{
-    background: {'rgba(8,12,22,0.9)' if is_dark else '#f8fafc'};
-    border: 1px solid {'rgba(245,194,66,0.18)' if is_dark else '#e2e8f0'};
-    border-radius: 12px;
     overflow: hidden;
   }}
-  .frm-card-header {{
-    background: rgba(245,194,66,0.07);
-    border-bottom: 1px solid {'rgba(245,194,66,0.18)' if is_dark else '#e2e8f0'};
-    padding: 12px 16px;
-  }}
-  .frm-card-date {{
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: #F5C242;
-    letter-spacing: 0.06em;
-    margin-bottom: 4px;
-  }}
-  .frm-card-meta {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }}
-  .frm-card-future {{
-    font-size: 0.6rem;
-    color: {'#6b7a99' if is_dark else '#64748b'};
-  }}
-  .frm-card-time {{
-    font-size: 0.58rem;
-    color: #089981;
-  }}
 
-  /* Bars section */
-  .frm-bars {{ padding: 14px 16px 8px; }}
-  .frm-bar-row {{ margin-bottom: 12px; }}
-  .frm-bar-top {{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-  }}
-  .frm-bar-label {{ font-size: 0.68rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; }}
-  .frm-bar-pct {{ font-size: 0.72rem; font-weight: 700; }}
-  .frm-bar-track {{
-    height: 8px;
-    border-radius: 4px;
-    background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
-    overflow: hidden;
-  }}
-  .frm-bar-fill {{
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.4s ease;
-  }}
-
-  /* Table section */
-  .frm-tbl-wrap {{
-    border-top: 1px solid {'rgba(245,194,66,0.18)' if is_dark else '#e2e8f0'};
-    overflow-x: auto;
-  }}
-  .frm-tbl {{
+  /* THE KEY FIX: outer scroll container with touch enabled */
+  .ca-scroll {{
     width: 100%;
-    border-collapse: collapse;
+    overflow-x: scroll !important;
+    -webkit-overflow-scrolling: touch !important;
+    overflow-y: hidden;
+    cursor: grab;
   }}
-  .frm-tbl thead tr {{
-    background: {'rgba(255,255,255,0.03)' if is_dark else 'rgba(0,0,0,0.02)'};
-  }}
-  .frm-tbl th {{
-    padding: 7px 10px;
+  .ca-scroll:active {{ cursor: grabbing; }}
+
+  /* Scroll hint bar */
+  .ca-scroll-hint {{
+    display: none;
+    text-align: center;
     font-size: 0.58rem;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    color: {'#6b7a99' if is_dark else '#64748b'};
-    white-space: nowrap;
+    color: {text_sub};
+    padding: 4px 0;
+    letter-spacing: 0.1em;
+    border-top: 1px solid {met_border};
+    background: rgba(255,255,255,0.02);
   }}
-  .frm-tbl th:first-child {{ text-align: left; }}
-  .frm-tbl th:not(:first-child) {{ text-align: right; }}
-  .frm-tbl td {{
-    padding: 7px 10px;
-    font-size: 0.65rem;
-    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-    white-space: nowrap;
+
+  table {{
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.74rem;
   }}
-  .frm-tbl td:first-child {{
+  thead th {{
+    background: rgba(245,194,66,0.10);
+    color: #F5C242;
+    padding: 10px 12px;
     text-align: left;
-    color: {'#9ca3af' if is_dark else '#64748b'};
-  }}
-  .frm-tbl td:not(:first-child) {{ text-align: right; color: {'#6b7a99' if is_dark else '#9ca3af'}; }}
-  .frm-dir-badge {{
-    display: inline-block;
-    font-size: 0.52rem;
+    border-bottom: 1px solid {met_border};
+    letter-spacing: 0.06em;
     font-weight: 700;
-    padding: 1px 5px;
-    border-radius: 3px;
-    letter-spacing: 0.05em;
-    margin-left: 4px;
+    font-size: 0.64rem;
+    white-space: nowrap;
+  }}
+  tbody td {{
+    padding: 10px 12px;
+    border-bottom: 1px solid {met_border};
+    color: {text_main};
     vertical-align: middle;
+    white-space: nowrap;
   }}
-  .frm-tbl-footer {{
-    padding: 5px 10px 8px;
-    font-size: 0.52rem;
-    color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
-    text-align: right;
-    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-  }}
+  tbody tr:last-child td {{ border-bottom: none; }}
+  tbody tr:hover td {{ background: rgba(245,194,66,0.04); }}
 
-  /* Insight box */
-  .frm-insight {{
-    background: rgba(66,133,244,0.07);
-    border: 1px solid rgba(66,133,244,0.20);
-    border-left: 3px solid #4285F4;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 0.72rem;
-    color: {'#e8eaf0' if is_dark else '#1a202c'};
-    line-height: 1.65;
+  .tk-badge {{
+    background: rgba(66,133,244,0.15);
+    color: #4285F4;
+    border: 1px solid rgba(66,133,244,0.3);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.64rem;
+    white-space: nowrap;
   }}
+  .ev-badge {{
+    padding: 3px 9px;
+    border-radius: 4px;
+    font-size: 0.64rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }}
+  .ca-info {{ color: {text_sub}; font-size: 0.70rem; white-space: normal; max-width: 280px; }}
+  .empty-msg {{ text-align: center; padding: 24px; color: {text_sub}; }}
 
-  /* Mobile */
-  @media (max-width: 860px) {{
-    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
-    .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
-    .frm-cd-num {{ font-size: 1.3rem; }}
-    .frm-cd-box {{ min-width: 38px; }}
-    .frm-cd-boxes {{ justify-content: flex-start; }}
-    .frm-card-meta {{ flex-direction: column; gap: 2px; align-items: flex-start; }}
-    .frm-card-time {{ font-size: 0.56rem; }}
-    .frm-card-date {{ font-size: 0.76rem; }}
-    .frm-bars {{ padding: 12px 14px 6px; }}
-    .frm-bar-label {{ font-size: 0.66rem; }}
-    .frm-bar-pct {{ font-size: 0.70rem; }}
-    .frm-tbl th {{ padding: 6px 8px; font-size: 0.56rem; }}
-    .frm-tbl td {{ padding: 6px 8px; font-size: 0.63rem; }}
-    .frm-insight {{ font-size: 0.68rem; padding: 10px 14px; }}
+  /* Pagination */
+  .pg-bar {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-top: 1px solid {met_border};
+    background: rgba(255,255,255,0.02);
+    flex-wrap: wrap;
+    gap: 8px;
+  }}
+  .pg-info {{
+    font-size: 0.62rem;
+    color: {text_sub};
+    letter-spacing: 0.06em;
+  }}
+  .pg-btns {{ display: flex; gap: 6px; }}
+  .pg-btn {{
+    background: rgba(245,194,66,0.10);
+    color: #F5C242;
+    border: 1px solid rgba(245,194,66,0.25);
+    border-radius: 5px;
+    padding: 5px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.64rem;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    transition: background 0.15s;
+  }}
+  .pg-btn:hover {{ background: rgba(245,194,66,0.20); }}
+  .pg-btn:disabled {{ opacity: 0.35; cursor: default; }}
+
+  @media (max-width: 600px) {{
+    .ca-scroll-hint {{ display: block; }}
+    table {{ font-size: 0.68rem; }}
+    thead th {{ font-size: 0.58rem; padding: 8px 9px; }}
+    tbody td {{ padding: 8px 9px; font-size: 0.66rem; }}
+    .tk-badge {{ font-size: 0.58rem; padding: 2px 6px; }}
+    .ev-badge {{ font-size: 0.58rem; padding: 2px 6px; }}
+    .ca-info  {{ font-size: 0.62rem; max-width: 180px; }}
+    .pg-info  {{ font-size: 0.58rem; }}
+    .pg-btn   {{ padding: 4px 10px; font-size: 0.58rem; }}
   }}
 </style>
 </head>
 <body>
-<div class="frm-wrap">
-
-  <!-- Countdown Banner (first meeting) -->
-  <div class="frm-countdown">
-    <div>
-      <div class="frm-cd-label">FED INTEREST RATE DECISION</div>
-      <div class="frm-cd-title">30 Apr 2026 &nbsp;·&nbsp; 01:00 WIB</div>
+<div class="ca-wrap">
+  <div class="ca-scroll" id="caScroll">
+    <table>
+      <thead>
+        <tr>
+          <th>TANGGAL</th>
+          <th>TICKER</th>
+          <th>EVENT</th>
+          <th>KETERANGAN</th>
+        </tr>
+      </thead>
+      <tbody id="caTbody"></tbody>
+    </table>
+  </div>
+  <div class="ca-scroll-hint">← geser kiri / kanan →</div>
+  <div class="pg-bar">
+    <span class="pg-info" id="pgInfo"></span>
+    <div class="pg-btns">
+      <button class="pg-btn" id="pgPrev" onclick="changePage(-1)">&#9664; Prev</button>
+      <button class="pg-btn" id="pgNext" onclick="changePage(+1)">Next &#9654;</button>
     </div>
-    <div class="frm-cd-boxes" id="frm-cd"></div>
   </div>
-
-  <!-- Cards Grid -->
-  <div class="frm-grid" id="frm-grid"></div>
-
-  <!-- Insight -->
-  <div class="frm-insight">
-    💡 <b style="color:#4285F4;">SIGMA INSIGHT —</b>
-    Probabilitas 98.9% pasar memproyeksikan Fed <b>HOLD</b> di 3.50–3.75% pada FOMC April 2026.
-    Ekspektasi cut mulai muncul di FOMC Juni (5.9% cut ke 3.25–3.50%).
-    Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah relatif stabil</span>,
-    hot money tetap di EM, sentimen positif untuk sektor perbankan &amp; properti.
-  </div>
-
 </div>
 
 <script>
-var DATA = {_fed_json};
-var UPDATED = "{_updated_str}";
+const ROWS = {_ca_rows_str};
+const PER_PAGE = {_rows_per_page};
+let page = 0;
 
-var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
-var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
-var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
+function renderPage() {{
+  const total = ROWS.length;
+  const maxPage = Math.ceil(total / PER_PAGE) - 1;
+  const start = page * PER_PAGE;
+  const end = Math.min(start + PER_PAGE, total);
+  const slice = ROWS.slice(start, end);
 
-// ── LIVE COUNTDOWN — target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC ──
-(function() {{
-  // Apr 29 2026 14:00 EDT (UTC-4) = Apr 29 2026 18:00 UTC = Apr 30 2026 01:00 WIB (UTC+7)
-  var TARGET_UTC_MS = Date.UTC(2026, 3, 29, 18, 0, 0);
-
-  function tick() {{
-    var diff = TARGET_UTC_MS - Date.now();
-    var cd = document.getElementById('frm-cd');
-    if (!cd) return;
-    if (diff <= 0) {{
-      cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:0.9rem;color:#089981;">BERLANGSUNG</div></div>';
-      return;
-    }}
-    var totalSec = Math.floor(diff / 1000);
-    var mins     = Math.floor(totalSec / 60) % 60;
-    var hours    = Math.floor(totalSec / 3600) % 24;
-    var days     = Math.floor(totalSec / 86400) % 7;
-    var weeks    = Math.floor(totalSec / 604800);
-    var parts = [[weeks,"WEEKS"],[days,"DAYS"],[hours,"HOURS"],[mins,"MINS"]];
-    var html = '';
-    parts.forEach(function(p, i) {{
-      if (i > 0) html += '<div class="frm-cd-sep">:</div>';
-      html += '<div class="frm-cd-box"><div class="frm-cd-num">' + p[0] + '</div><div class="frm-cd-unit">' + p[1] + '</div></div>';
+  let html = '';
+  if (total === 0) {{
+    html = '<tr><td colspan="4" class="empty-msg">Tidak ada data yang cocok dengan filter.</td></tr>';
+  }} else {{
+    slice.forEach(r => {{
+      html += `<tr>
+        <td style="font-weight:500;">${{r.tanggal}}</td>
+        <td><span class="tk-badge">${{r.ticker}}</span></td>
+        <td><span class="ev-badge" style="background:${{r.ev_bg}};color:${{r.ev_clr}};border:1px solid ${{r.ev_clr}}55;">${{r.event}}</span></td>
+        <td class="ca-info">${{r.info}}</td>
+      </tr>`;
     }});
-    cd.innerHTML = html;
   }}
-  tick();
-  setInterval(tick, 1000);
-}})();
+  document.getElementById('caTbody').innerHTML = html;
+  document.getElementById('pgInfo').textContent = total > 0
+    ? `Baris ${{start+1}}–${{end}} dari ${{total}} events`
+    : '0 events';
+  document.getElementById('pgPrev').disabled = page <= 0;
+  document.getElementById('pgNext').disabled = page >= maxPage || total === 0;
+  // Reset scroll position to left on page change
+  document.getElementById('caScroll').scrollLeft = 0;
+}}
 
-// Build cards
-(function() {{
-  var grid = document.getElementById('frm-grid');
-  var html = '';
+function changePage(dir) {{
+  const total = ROWS.length;
+  const maxPage = Math.ceil(total / PER_PAGE) - 1;
+  page = Math.max(0, Math.min(page + dir, maxPage));
+  renderPage();
+}}
 
-  DATA.forEach(function(mtg) {{
-    // Bars
-    var bars = '';
-    mtg.scenarios.forEach(function(sc) {{
-      var c = DIR_COLOR[sc.dir] || '#b2b5be';
-      var w = Math.max(sc.prob, 1.5);
-      bars += '<div class="frm-bar-row">';
-      bars += '<div class="frm-bar-top">';
-      bars += '<span class="frm-bar-label">' + sc.range + '</span>';
-      bars += '<span class="frm-bar-pct" style="color:' + c + '">' + sc.prob.toFixed(1) + '%</span>';
-      bars += '</div>';
-      bars += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:' + w + '%;background:' + c + ';opacity:0.85;"></div></div>';
-      bars += '</div>';
-    }});
+// Mouse drag-to-scroll for desktop
+const scrollEl = document.getElementById('caScroll');
+let isDown = false, startX, scrollLeft;
+scrollEl.addEventListener('mousedown', e => {{ isDown = true; startX = e.pageX - scrollEl.offsetLeft; scrollLeft = scrollEl.scrollLeft; scrollEl.style.cursor='grabbing'; }});
+scrollEl.addEventListener('mouseleave', () => {{ isDown = false; scrollEl.style.cursor='grab'; }});
+scrollEl.addEventListener('mouseup', () => {{ isDown = false; scrollEl.style.cursor='grab'; }});
+scrollEl.addEventListener('mousemove', e => {{
+  if (!isDown) return;
+  e.preventDefault();
+  const x = e.pageX - scrollEl.offsetLeft;
+  scrollEl.scrollLeft = scrollLeft - (x - startX);
+}});
 
-    // Table rows
-    var rows = '';
-    mtg.scenarios.forEach(function(sc) {{
-      var c = DIR_COLOR[sc.dir] || '#b2b5be';
-      var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
-      var pd = sc.prev_day !== null ? sc.prev_day.toFixed(1) + '%' : '—';
-      var pw = sc.prev_week !== null ? sc.prev_week.toFixed(1) + '%' : '—';
-      var badge = '<span class="frm-dir-badge" style="color:' + c + ';background:' + bc + '">' + DIR_LABEL[sc.dir] + '</span>';
-      rows += '<tr>';
-      rows += '<td>' + sc.range + badge + '</td>';
-      rows += '<td style="font-weight:700;color:' + c + '">' + sc.prob.toFixed(1) + '%</td>';
-      rows += '<td>' + pd + '</td>';
-      rows += '<td>' + pw + '</td>';
-      rows += '</tr>';
-    }});
-
-    html += '<div class="frm-card">';
-    html += '<div class="frm-card-header">';
-    html += '<div class="frm-card-date">' + (mtg.date_wib || mtg.date) + '</div>';
-    html += '<div class="frm-card-meta">';
-    html += '<span class="frm-card-future">Future: ' + mtg.future_price + '</span>';
-    html += '<span class="frm-card-time">Meeting: ' + mtg.meeting_time + '</span>';
-    html += '</div></div>';
-    html += '<div class="frm-bars">' + bars + '</div>';
-    html += '<div class="frm-tbl-wrap"><table class="frm-tbl">';
-    html += '<thead><tr><th>TARGET RATE</th><th>NOW %</th><th>YDAY %</th><th>WEEK %</th></tr></thead>';
-    html += '<tbody>' + rows + '</tbody>';
-    html += '</table></div>';
-    html += '<div class="frm-tbl-footer">Updated: ' + UPDATED + ' · Source: CME FedWatch</div>';
-    html += '</div>';
-  }});
-
-  grid.innerHTML = html;
-  // Auto-resize iframe to actual content height (fixes mobile cutoff)
-  function sendHeight() {{
-    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height:h}}, '*');
-  }}
-  // Send after render + small delay for fonts/images
-  sendHeight();
-  setTimeout(sendHeight, 200);
-  setTimeout(sendHeight, 600);
-  window.addEventListener('resize', sendHeight);
-}})();
+renderPage();
 </script>
 </body>
 </html>
-        """, height=1100, scrolling=True)
+"""
+        # Hitung tinggi komponen: 15 rows * ~45px + header + pagination
+        _ca_height = min(_total_filtered, _rows_per_page) * 47 + 130
+        _ca_height = max(_ca_height, 200)
+        components.html(_ca_component_html, height=_ca_height, scrolling=False)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        # ─────────────────────────────────────────────────────────
+
+        # ── ECONOMIC CALENDAR ─────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        cal_bg      = met_bg
+        cal_border  = met_border
+        cal_text    = text_main
+        cal_sub_clr = text_sub
+
+        calendar_data = {
+            "🇮🇩 INDONESIA": [
+                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
+                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
+                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
+                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
+                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
+                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
+            ],
+            "🇺🇸 UNITED STATES": [
+                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
+                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
+                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
+                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
+                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
+                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
+            ],
+            "🇨🇳 CHINA": [
+                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
+                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
+                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
+                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
+                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
+                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
+            ],
+            "🇯🇵 JAPAN": [
+                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
+                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
+                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
+                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
+                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
+                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
+            ],
+        }
+
+        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
+        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
+
+        st.markdown(f"""<style>
+        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
+            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
+        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
+            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
+            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
+        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
+            align-items:center; gap:8px; padding:9px 16px;
+            border-bottom:1px solid {cal_border}; cursor:default;
+            position:relative; transition:background 0.15s; }}
+        .cal-row:last-child {{ border-bottom:none; }}
+        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
+        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
+        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
+        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
+        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
+        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
+        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
+            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
+        .cal-tip {{ display:none; position:absolute; left:0; right:0;
+            top:calc(100% + 4px); z-index:9999;
+            background:{'#1a2035' if is_dark else '#ffffff'};
+            border:1px solid {cal_border}; border-left:3px solid #F5C242;
+            border-radius:0 6px 6px 0; padding:8px 12px;
+            font-size:0.69rem; color:{cal_text}; line-height:1.5;
+            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
+        .cal-row:hover .cal-tip {{ display:block; }}
+        @media (max-width: 768px) {{
+            .cal-row {{
+                grid-template-columns: 72px 1fr 82px 40px !important;
+                gap: 4px !important;
+                padding: 8px 10px !important;
+            }}
+            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
+            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
+            .cal-fc {{ font-size: 0.62rem !important; }}
+            .cal-pv {{ font-size: 0.55rem !important; }}
+            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
+            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
+        }}
+        </style>""", unsafe_allow_html=True)
+
+        is_mobile_cal = True 
+        cal_cols = st.columns(2)
+        country_list = list(calendar_data.items())
+
+        for ci, (country, events) in enumerate(country_list):
+            col_idx = ci % 2
+            with cal_cols[col_idx]:
+                rows_html = ""
+                for ev in events:
+                    dk    = ev["dampak"]
+                    d_clr = dampak_color.get(dk, "#b2b5be")
+                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
+                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
+                    rows_html += (
+                        f"<div class='cal-row'>"
+                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
+                        f"<div class='cal-ev'>{ev['event']}</div>"
+                        f"<div class='cal-nums'>"
+                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
+                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
+                        f"</div>"
+                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{'MED' if dk == 'MEDIUM' else dk}</div>"
+                        f"<div class='cal-tip'>{tip}</div>"
+                        f"</div>"
+                    )
+                st.markdown(
+                    f"<div class='cal-wrap'>"
+                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
+                    f"{rows_html}"
+                    f"</div>",
+                    unsafe_allow_html=True
+                )
 
     # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
     with tab_rotation:
@@ -6638,15 +6075,6 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         if "rrg_selected" not in st.session_state:
             st.session_state["rrg_selected"] = None
 
-        # ── WARNA BUBBLE BERDASARKAN POSISI PLOT (rs & mom) ────────────
-        # Warna mengikuti kuadran tempat bubble BERADA, bukan label fase
-        # Leading=hijau, Improving=kuning, Weakening=merah, Lagging=biru
-        def _rrg_bubble_color(rs, mom):
-            if   rs >= 100 and mom >= 100: return "#089981"  # Leading   — hijau (kanan-atas)
-            elif rs <  100 and mom >= 100: return "#F5C242"  # Improving — kuning (kiri-atas)
-            elif rs >= 100 and mom <  100: return "#f23645"  # Weakening — merah (kanan-bawah)
-            else:                          return "#4285F4"  # Lagging   — biru  (kiri-bawah)
-
         # ── BUILD PLOTLY RRG BUBBLE CHART ──────────────────────────────
         fig_rrg = go.Figure()
 
@@ -6683,12 +6111,11 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             if len(trail) >= 2:
                 trail_xs = [p[0] for p in trail]
                 trail_ys = [p[1] for p in trail]
-                _trail_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
                 # Garis trail tipis
                 fig_rrg.add_trace(go.Scatter(
                     x=trail_xs, y=trail_ys,
                     mode="lines",
-                    line=dict(color=_trail_clr, width=1.5, dash="dot"),
+                    line=dict(color=sdata["color"], width=1.5, dash="dot"),
                     opacity=0.45,
                     showlegend=False,
                     hoverinfo="skip",
@@ -6700,7 +6127,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     fig_rrg.add_trace(go.Scatter(
                         x=[px], y=[py],
                         mode="markers",
-                        marker=dict(size=dot_size, color=_trail_clr, opacity=dot_opacity),
+                        marker=dict(size=dot_size, color=sdata["color"], opacity=dot_opacity),
                         showlegend=False,
                         hoverinfo="skip",
                     ))
@@ -6709,7 +6136,6 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         for sname, sdata in rrg_sectors.items():
             is_sel = (st.session_state.get("rrg_selected") == sname)
             marker_size = 55 if is_sel else 42
-            _bubble_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
             fig_rrg.add_trace(go.Scatter(
                 x=[sdata["rs"]], y=[sdata["mom"]],
                 mode="markers+text",
@@ -6719,9 +6145,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 textfont=dict(size=9, color="#ffffff", family="IBM Plex Mono"),
                 marker=dict(
                     size=marker_size,
-                    color=_bubble_clr,
+                    color=sdata["color"],
                     opacity=0.85 if is_sel else 0.7,
-                    line=dict(color=_bubble_clr, width=3 if is_sel else 1.5),
+                    line=dict(color=sdata["color"], width=3 if is_sel else 1.5),
                 ),
                 customdata=[sname],
                 hovertemplate=(
@@ -8213,10 +7639,12 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             if not rows:
                 return
             rows_sorted = sorted(rows, key=lambda x: abs(x["_pct"]), reverse=True)
-            acc        = _acc_up if is_naik else _acc_dn
-            delta_cls  = "up"  if is_naik else "dn"
-            icon       = "📈"  if is_naik else "📉"
-            label      = "AKUMULASI RETAIL" if is_naik else "DISTRIBUSI RETAIL"
+            acc = _acc_up if is_naik else _acc_dn
+            head_cls   = "sh2-head-up" if is_naik else "sh2-head-dn"
+            badge_cls  = "sh2-badge-up" if is_naik else "sh2-badge-dn"
+            delta_cls  = "sh2-up" if is_naik else "sh2-dn"
+            icon  = "📈" if is_naik else "📉"
+            label = "AKUMULASI RETAIL" if is_naik else "DISTRIBUSI RETAIL"
             sinyal_strong = "🔥 Akumulasi Kuat" if is_naik else "❄️ Distribusi Kuat"
             sinyal_weak   = "📈 Naik 1 Bulan"   if is_naik else "🔴 Turun 1 Bulan"
             count = len(rows_sorted)
@@ -8226,6 +7654,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             lbl_m2 = sample["_m2_lbl"]
             lbl_m3 = sample["_m3_lbl"]
 
+            # Build rows JSON for JS renderer
             import json as _json2
             _sh_rows = []
             for r in rows_sorted:
@@ -8235,167 +7664,171 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     "ticker": r["Ticker"],
                     "pemegang": r["Pemegang"],
                     "d1bln": r["Δ 1 Bln"],
-                    "dpct":  r["Δ %"],
+                    "dpct": r["Δ %"],
                     "m1": r["_m1_val"],
                     "m2": r["_m2_val"],
                     "m3": r["_m3_val"],
                     "tren": t3,
                     "sinyal": sig,
+                    "is_naik": is_naik,
                 })
-            _rows_json = _json2.dumps(_sh_rows)
+            _sh_rows_str = _json2.dumps(_sh_rows)
 
-            _head_bg  = "rgba(38,166,154,0.12)"  if is_naik else "rgba(242,54,69,0.10)"
+            _head_bg  = "rgba(38,166,154,0.12)" if is_naik else "rgba(242,54,69,0.10)"
             _head_clr = _acc_up if is_naik else _acc_dn
-            _head_bdr = f"{_acc_up}44"           if is_naik else f"{_acc_dn}44"
-            _uid      = str(abs(hash(label)))[:8]
+            _head_bdr = f"{_acc_up}33" if is_naik else f"{_acc_dn}33"
 
-            _html = f"""<!DOCTYPE html><html><head>
+            _sh_html = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
-.lbl{{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
-      color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
-.wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
-/* === SCROLL CONTAINER: vertikal + horizontal === */
-.scroll-box{{
-  width:100%;
-  max-height:660px;          /* ≈15 baris × 44px = 660px */
-  overflow-x:auto !important;
-  overflow-y:auto !important;
+* {{ box-sizing:border-box; margin:0; padding:0; }}
+body {{ background:transparent; font-family:'IBM Plex Mono',monospace; }}
+.lbl {{ font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase;
+        color:{acc}; font-weight:700; margin-bottom:6px; padding: 0 2px; }}
+.scroll-wrap {{
+  width:100%; overflow-x:scroll !important;
   -webkit-overflow-scrolling:touch !important;
-  cursor:grab;
-  scrollbar-width:thin;
-  scrollbar-color:{_tbl_border} transparent;
+  overflow-y:hidden; cursor:grab; margin-bottom:2px;
 }}
-.scroll-box:active{{cursor:grabbing;}}
-.scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
-.scroll-box::-webkit-scrollbar-thumb{{background:{_tbl_border};border-radius:10px;}}
-table{{width:max-content;min-width:100%;border-collapse:collapse;
-       font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
-/* Sticky header saat scroll vertikal */
-thead th{{
-  position:sticky;top:0;z-index:2;
-  font-size:0.57rem;letter-spacing:0.1em;text-transform:uppercase;
-  padding:8px 10px;border-bottom:2px solid {_head_bdr};
-  text-align:left;white-space:nowrap;
-  background:{_head_bg};color:{_head_clr};
+.scroll-wrap:active {{ cursor:grabbing; }}
+.scroll-hint {{
+  display:none; text-align:center; font-size:0.56rem;
+  color:{_acc_hist}; padding:3px 0; letter-spacing:0.08em;
+  border-bottom:1px solid {_tbl_border};
 }}
-tbody td{{
-  padding:7px 10px;border-bottom:1px solid {_tbl_border};
-  vertical-align:middle;white-space:nowrap;color:{text_main};
+table {{ width:max-content; min-width:100%; border-collapse:collapse;
+         font-family:'IBM Plex Mono',monospace; font-size:0.74rem; }}
+thead th {{
+  font-size:0.57rem; letter-spacing:0.1em; text-transform:uppercase;
+  padding:8px 10px; border-bottom:2px solid {_head_bdr};
+  text-align:left; white-space:nowrap;
+  background:{_head_bg}; color:{_head_clr};
 }}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
-.tk{{font-weight:700;font-size:0.78rem;color:{acc};}}
-.up{{color:{_acc_up};font-weight:600;}}
-.dn{{color:{_acc_dn};font-weight:600;}}
-.hist{{color:{_acc_hist};font-size:0.68rem;}}
-/* Footer: info baris + navigasi halaman */
-.pg-bar{{display:flex;align-items:center;justify-content:space-between;
-         padding:7px 12px;border-top:1px solid {_tbl_border};
-         background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:5px;}}
-.pg-info{{font-size:0.58rem;color:{_acc_hist};}}
-.pg-btns{{display:flex;gap:5px;}}
-.pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
-         border:1px solid {_tbl_border};border-radius:4px;
-         padding:4px 11px;font-family:'IBM Plex Mono',monospace;
-         font-size:0.58rem;cursor:pointer;transition:background 0.15s;}}
-.pg-btn:hover{{background:rgba(255,255,255,0.12);}}
-.pg-btn:disabled{{opacity:0.3;cursor:default;}}
-/* Scroll hint mobile */
-.hint{{display:none;text-align:center;font-size:0.55rem;color:{_acc_hist};
-       padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {_tbl_border};}}
-@media(max-width:600px){{
-  .hint{{display:block;}}
-  table{{font-size:0.65rem;}}
-  thead th{{font-size:0.52rem;padding:6px 8px;}}
-  tbody td{{padding:5px 8px;font-size:0.65rem;}}
-  .tk{{font-size:0.70rem;}}
-  .hist{{font-size:0.60rem;}}
-  .pg-info{{font-size:0.54rem;}}
-  .pg-btn{{padding:3px 9px;font-size:0.54rem;}}
+tbody td {{
+  padding:7px 10px; border-bottom:1px solid {_tbl_border};
+  vertical-align:middle; white-space:nowrap; color:{text_main};
+}}
+tbody tr:last-child td {{ border-bottom:none; }}
+tbody tr:hover td {{ background:rgba(255,255,255,0.03); }}
+.tk {{ font-weight:700; font-size:0.78rem; color:{acc}; }}
+.up {{ color:{_acc_up}; font-weight:600; }}
+.dn {{ color:{_acc_dn}; font-weight:600; }}
+.hist {{ color:{_acc_hist}; font-size:0.68rem; }}
+/* Pagination */
+.pg-bar {{ display:flex; align-items:center; justify-content:space-between;
+           padding:8px 12px; border-top:1px solid {_tbl_border};
+           background:rgba(255,255,255,0.02); flex-wrap:wrap; gap:6px; }}
+.pg-info {{ font-size:0.60rem; color:{_acc_hist}; }}
+.pg-btns {{ display:flex; gap:5px; }}
+.pg-btn {{ background:rgba(255,255,255,0.06); color:{text_main};
+           border:1px solid {_tbl_border}; border-radius:4px;
+           padding:4px 12px; font-family:'IBM Plex Mono',monospace;
+           font-size:0.60rem; cursor:pointer; transition:background 0.15s; }}
+.pg-btn:hover {{ background:rgba(255,255,255,0.12); }}
+.pg-btn:disabled {{ opacity:0.3; cursor:default; }}
+@media(max-width:600px) {{
+  .scroll-hint {{ display:block; }}
+  table {{ font-size:0.65rem; }}
+  thead th {{ font-size:0.52rem; padding:6px 8px; }}
+  tbody td {{ padding:6px 8px; font-size:0.65rem; }}
+  .tk {{ font-size:0.70rem; }}
+  .hist {{ font-size:0.60rem; }}
+  .pg-info {{ font-size:0.56rem; }}
+  .pg-btn {{ padding:3px 9px; font-size:0.56rem; }}
 }}
 </style></head><body>
-<span class="lbl">{icon} {label} — {count} EMITEN</span>
-<div class="wrap">
-  <div class="hint">← geser kiri / kanan →</div>
-  <div class="scroll-box" id="sb_{_uid}">
-    <table>
-      <thead><tr>
-        <th>Ticker</th>
-        <th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
-        <th>Δ 1 Bln</th><th>Δ %</th>
-        <th style="color:{_acc_hist};">{lbl_m1}</th>
-        <th style="color:{_acc_hist};">{lbl_m2}</th>
-        <th style="color:{_acc_hist};">{lbl_m3}</th>
-        <th>Tren 3 Bln</th><th>Sinyal</th>
-      </tr></thead>
-      <tbody id="tb_{_uid}"></tbody>
+<div class="lbl">{icon} {label} — {count} EMITEN</div>
+<div style="background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;">
+  <div class="scroll-wrap" id="sh_scroll_{id(rows_sorted)}">
+    <table><thead><tr>
+      <th>Ticker</th><th>Pemegang<br><span style="font-weight:400;opacity:0.7;">(Terkini)</span></th>
+      <th>Δ 1 Bln</th><th>Δ %</th>
+      <th style="color:{_acc_hist};">{lbl_m1}</th>
+      <th style="color:{_acc_hist};">{lbl_m2}</th>
+      <th style="color:{_acc_hist};">{lbl_m3}</th>
+      <th>Tren 3 Bln</th><th>Sinyal</th>
+    </tr></thead>
+    <tbody id="shTbody_{id(rows_sorted)}"></tbody>
     </table>
   </div>
+  <div class="scroll-hint">← geser kiri / kanan →</div>
   <div class="pg-bar">
-    <span class="pg-info" id="pi_{_uid}"></span>
+    <span class="pg-info" id="shPgInfo_{id(rows_sorted)}"></span>
     <div class="pg-btns">
-      <button class="pg-btn" id="pp_{_uid}" onclick="pg_{_uid}(-1)">&#9664; Prev</button>
-      <button class="pg-btn" id="pn_{_uid}" onclick="pg_{_uid}(+1)">Next &#9654;</button>
+      <button class="pg-btn" id="shPrev_{id(rows_sorted)}" onclick="changePg_{id(rows_sorted)}(-1)">&#9664; Prev</button>
+      <button class="pg-btn" id="shNext_{id(rows_sorted)}" onclick="changePg_{id(rows_sorted)}(+1)">Next &#9654;</button>
     </div>
   </div>
 </div>
 <script>
-(function(){{
-  var ROWS={_rows_json}, PER=15, page=0;
-  var dc='{delta_cls}';
-  function render(){{
-    var tot=ROWS.length, maxPg=Math.max(0,Math.ceil(tot/PER)-1);
-    var s=page*PER, e=Math.min(s+PER,tot);
-    var h='';
-    ROWS.slice(s,e).forEach(function(r){{
-      h+='<tr>'+
-        '<td><span class="tk">'+r.ticker+'</span></td>'+
-        '<td style="font-weight:600;">'+r.pemegang+'</td>'+
-        '<td class="'+dc+'">'+r.d1bln+'</td>'+
-        '<td class="'+dc+'">'+r.dpct+'</td>'+
-        '<td class="hist">'+r.m1+'</td>'+
-        '<td class="hist">'+r.m2+'</td>'+
-        '<td class="hist">'+r.m3+'</td>'+
-        '<td>'+r.tren+'</td>'+
-        '<td>'+r.sinyal+'</td>'+
+(function() {{
+  var ROWS = {_sh_rows_str};
+  var PER = 15;
+  var page = 0;
+  var tbodyId   = 'shTbody_{id(rows_sorted)}';
+  var infoId    = 'shPgInfo_{id(rows_sorted)}';
+  var prevId    = 'shPrev_{id(rows_sorted)}';
+  var nextId    = 'shNext_{id(rows_sorted)}';
+  var scrollId  = 'sh_scroll_{id(rows_sorted)}';
+
+  function render() {{
+    var total = ROWS.length;
+    var maxPg = Math.max(0, Math.ceil(total / PER) - 1);
+    var start = page * PER;
+    var end = Math.min(start + PER, total);
+    var slice = ROWS.slice(start, end);
+    var html = '';
+    slice.forEach(function(r) {{
+      var dc = r.is_naik ? 'up' : 'dn';
+      html += '<tr>' +
+        '<td><span class="tk">' + r.ticker + '</span></td>' +
+        '<td style="font-weight:600;">' + r.pemegang + '</td>' +
+        '<td class="' + dc + '">' + r.d1bln + '</td>' +
+        '<td class="' + dc + '">' + r.dpct + '</td>' +
+        '<td class="hist">' + r.m1 + '</td>' +
+        '<td class="hist">' + r.m2 + '</td>' +
+        '<td class="hist">' + r.m3 + '</td>' +
+        '<td>' + r.tren + '</td>' +
+        '<td>' + r.sinyal + '</td>' +
         '</tr>';
     }});
-    document.getElementById('tb_{_uid}').innerHTML=h;
-    document.getElementById('pi_{_uid}').textContent='Baris '+(s+1)+'–'+e+' dari '+tot;
-    document.getElementById('pp_{_uid}').disabled=(page<=0);
-    document.getElementById('pn_{_uid}').disabled=(page>=maxPg);
-    document.getElementById('sb_{_uid}').scrollTop=0;
-    document.getElementById('sb_{_uid}').scrollLeft=0;
+    document.getElementById(tbodyId).innerHTML = html;
+    document.getElementById(infoId).textContent = 'Baris ' + (start+1) + '–' + end + ' dari ' + total;
+    document.getElementById(prevId).disabled = page <= 0;
+    document.getElementById(nextId).disabled = page >= maxPg;
+    document.getElementById(scrollId).scrollLeft = 0;
   }}
-  window['pg_{_uid}']=function(d){{
-    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
-    page=Math.max(0,Math.min(page+d,maxPg));render();
+
+  window['changePg_{id(rows_sorted)}'] = function(dir) {{
+    var total = ROWS.length;
+    var maxPg = Math.max(0, Math.ceil(total / PER) - 1);
+    page = Math.max(0, Math.min(page + dir, maxPg));
+    render();
   }};
-  // Drag-scroll desktop (horizontal)
-  var el=document.getElementById('sb_{_uid}'),isD=false,sX,sL;
-  el.addEventListener('mousedown',function(e){{isD=true;sX=e.pageX-el.offsetLeft;sL=el.scrollLeft;el.style.cursor='grabbing';}});
-  el.addEventListener('mouseleave',function(){{isD=false;el.style.cursor='grab';}});
-  el.addEventListener('mouseup',function(){{isD=false;el.style.cursor='grab';}});
-  el.addEventListener('mousemove',function(e){{
-    if(!isD)return;e.preventDefault();
-    el.scrollLeft=sL-(e.pageX-el.offsetLeft-sX);
+
+  // Drag scroll for desktop
+  var el = document.getElementById(scrollId);
+  var isDown = false, startX, scrollLeft;
+  el.addEventListener('mousedown', function(e) {{ isDown=true; startX=e.pageX-el.offsetLeft; scrollLeft=el.scrollLeft; el.style.cursor='grabbing'; }});
+  el.addEventListener('mouseleave', function() {{ isDown=false; el.style.cursor='grab'; }});
+  el.addEventListener('mouseup', function() {{ isDown=false; el.style.cursor='grab'; }});
+  el.addEventListener('mousemove', function(e) {{
+    if (!isDown) return; e.preventDefault();
+    el.scrollLeft = scrollLeft - (e.pageX - el.offsetLeft - startX);
   }});
+
   render();
 }})();
-</script></body></html>"""
+</script>
+</body></html>"""
 
-            # Hitung tinggi presisi: label(28) + hint(0/20) + thead(36) + baris(42×15) + footer(44)
-            _h = 28 + 36 + (min(count, 15) * 42) + 44
-            _h = max(_h, 200)
-            components.html(_html, height=_h, scrolling=False)
+            _sh_height = min(count, 15) * 44 + 120
+            _sh_height = max(_sh_height, 200)
+            components.html(_sh_html, height=_sh_height, scrolling=False)
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
-        st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;'></div>", unsafe_allow_html=True)
         _render_sh_table_v2(_turun_rows, is_naik=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -9157,11 +8590,10 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                 return "Data shareholder tidak tersedia"
 
         # ── Definisikan tabs SEBELUM kontennya ──────────────────────────────
-        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_fundamental = st.tabs([
+        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp = st.tabs([
             "  📅 DAILY  ",
             "  📆 WEEKLY  ",
             "  🌙 BELI SORE JUAL PAGI  ",
-            "  📊 FUNDAMENTAL SCREENER  ",
         ])
 
         # ─── TAB DAILY ────────────────────────────────────────────────────
@@ -9236,18 +8668,10 @@ Format output WAJIB — bagian BULLISH per saham dimulai dengan 🎯, bagian BEA
 
 Bias pasar hari ini: [1 kalimat ringkas]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _daily_result = _call_ai_reco(prompt)
-                        st.session_state["reco_daily_result"] = _daily_result
-                        st.session_state["reco_daily_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        _render_reco_cards(_call_ai_reco(prompt), "#F5C242")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
-
-            if st.session_state.get("reco_daily_result"):
-                _ts = st.session_state.get("reco_daily_ts", "")
-                if _ts:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_daily_result"], "#F5C242")
-            elif not run_daily:
+            else:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
@@ -9323,18 +8747,10 @@ Format output WAJIB — bagian BULLISH dengan 🎯, bagian HINDARI dengan ⚠️
 
 Outlook pasar minggu ini: [2-3 kalimat]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _weekly_result = _call_ai_reco(prompt)
-                        st.session_state["reco_weekly_result"] = _weekly_result
-                        st.session_state["reco_weekly_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        _render_reco_cards(_call_ai_reco(prompt), "#26a69a")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
-
-            if st.session_state.get("reco_weekly_result"):
-                _ts = st.session_state.get("reco_weekly_ts", "")
-                if _ts:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_weekly_result"], "#26a69a")
-            elif not run_weekly:
+            else:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
@@ -9420,330 +8836,20 @@ Format output (bagian BELI dimulai 🌙, bagian HINDARI dimulai ⛔):
 
 Kondisi BSJP malam ini: [KONDUSIF / WAIT] — [1 kalimat alasan]
 Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _bsjp_result = _call_ai_reco(prompt)
-                        st.session_state["reco_bsjp_result"] = _bsjp_result
-                        st.session_state["reco_bsjp_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        _render_reco_cards(_call_ai_reco(prompt), "#7c3aed")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
-
-            if st.session_state.get("reco_bsjp_result"):
-                _ts = st.session_state.get("reco_bsjp_ts", "")
-                if _ts:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_bsjp_result"], "#7c3aed")
-            elif not run_bsjp:
+            else:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
                         Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini</p>
                 </div>""", unsafe_allow_html=True)
 
-        # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
-        with reco_tab_fundamental:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER — WARREN BUFFETT STYLE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental — ROE, DER, Net Margin, Current Ratio, PBV, EPS. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-            _fs_accent = "#26a69a"
-
-            st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};line-height:1.9;'>
-            <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING</span><br>
-            ✅ <b>ROE ≥ 15%</b> — Return on Equity kuat (Buffett: konsisten ≥15% = moat sesungguhnya) &nbsp;|&nbsp;
-            ✅ <b>DER ≤ 1.0x</b> — Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
-            ✅ <b>Net Margin ≥ 10%</b> — Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
-            ✅ <b>Current Ratio ≥ 1.5x</b> — Likuiditas jangka pendek aman &nbsp;|&nbsp;
-            ✅ <b>PBV 0.5–3.0x</b> — Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
-            ✅ <b>EPS positif</b> — Perusahaan benar-benar profitable
-            </div>
-            """, unsafe_allow_html=True)
-
-            _fs_universe = [
-                "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
-                "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
-                "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
-                "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
-                "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
-                "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
-                "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
-                "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
-            ]
-            _sektor_map = {
-                "Perbankan":       ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR"],
-                "Energi & Tambang":["PTBA","ADRO","ITMG","INCO","MDKA","NCKL","MEDC","PGAS","ANTM","AMMN","BRMS","MBMA","HRUM","GEMS","ELSA","RAJA"],
-                "Consumer Goods":  ["UNVR","KLBF","ICBP","INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","MIDI","RALS","AMRT","MAPI","ACES"],
-                "Properti":        ["BSDE","CTRA","SMRA","PWON","DMAS","BEST"],
-                "Teknologi":       ["TLKM","GOTO","EMTK","TBIG","TOWR","LINK","MCAS"],
-                "Kesehatan":       ["HEAL","MIKA","SILO","KAEF","TSPC","DVLA"],
-                "Infrastruktur":   ["PGEO","PTRO","CUAN","VKTR","TMAS","SMDR","BIRD"],
-                "Agribisnis":      ["AALI","LSIP","SIMP","TBLA"],
-                "Industri":        ["ASII","SMGR","INTP","TPIA","BRPT","UNTR","BFIN","ADMF"],
-            }
-
-            _fsc1, _fsc2, _fsc3 = st.columns([2, 2, 1])
-            with _fsc1:
-                _fs_sektor = st.selectbox("Filter Sektor:", ["Semua Sektor"] + list(_sektor_map.keys()), key="fs_sektor")
-            with _fsc2:
-                _fs_sort = st.selectbox("Urutkan:", [
-                    "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
-                    "DER (Terendah)","Current Ratio (Tertinggi)"
-                ], key="fs_sort")
-            with _fsc3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                _fs_run = st.button("🔍 SCREEN", use_container_width=True, key="btn_fs_screen")
-
-            _fs_tickers = _sektor_map.get(_fs_sektor, _fs_universe) if _fs_sektor != "Semua Sektor" else _fs_universe
-
-            if _fs_run or st.session_state.get("fs_results"):
-                if _fs_run:
-                    with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX..."):
-                        @st.cache_data(ttl=3600, show_spinner=False)
-                        def _fetch_fundamental_batch(tickers_tuple):
-                            import yfinance as _yf2, threading as _thr
-                            results = {}
-                            lock = _thr.Lock()
-                            def _one(tk):
-                                try:
-                                    t   = _yf2.Ticker(f"{tk}.JK")
-                                    inf = t.info
-                                    price     = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
-                                    roe       = (inf.get("returnOnEquity") or 0) * 100
-                                    roa       = (inf.get("returnOnAssets") or 0) * 100
-                                    npm       = (inf.get("profitMargins") or 0) * 100
-                                    der       = inf.get("debtToEquity") or 0
-                                    cr        = inf.get("currentRatio") or 0
-                                    pbv       = inf.get("priceToBook") or 0
-                                    pe        = inf.get("trailingPE") or 0
-                                    eps       = inf.get("trailingEps") or 0
-                                    div       = (inf.get("dividendYield") or 0) * 100
-                                    mkcap     = inf.get("marketCap") or 0
-                                    w52h      = inf.get("fiftyTwoWeekHigh") or 0
-                                    w52l      = inf.get("fiftyTwoWeekLow") or 0
-                                    rpos      = ((price - w52l)/(w52h - w52l)*100) if w52h > w52l else 0
-                                    eps_fwd   = inf.get("forwardEps") or 0
-                                    eps_g     = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
-                                    score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
-                                    with lock:
-                                        results[tk] = {
-                                            "name": (inf.get("shortName") or tk)[:22],
-                                            "price":price,"roe":roe,"roa":roa,"npm":npm,
-                                            "der":der,"cr":cr,"pbv":pbv,"pe":pe,"eps":eps,
-                                            "eps_g":eps_g,"div":div,"mkcap":mkcap,
-                                            "rpos":rpos,"score":score,
-                                        }
-                                except: pass
-                            ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in tickers_tuple]
-                            for t in ths: t.start()
-                            for t in ths: t.join(timeout=18)
-                            return results
-
-                        _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
-                        st.session_state["fs_results"]  = _fs_data
-                        st.session_state["fs_ts"]       = datetime.now().strftime("%d %b %Y, %H:%M WIB")
-                        st.session_state["fs_sort_key"] = _fs_sort
-
-                _fs_data = st.session_state.get("fs_results", {})
-                _fs_ts   = st.session_state.get("fs_ts", "")
-                _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
-
-                if _fs_data:
-                    _sfn = {
-                        "ROE (Tertinggi)":          lambda x: x[1].get("roe",0),
-                        "PBV (Terendah)":           lambda x: -(x[1].get("pbv",99) or 99),
-                        "Net Margin (Tertinggi)":   lambda x: x[1].get("npm",0),
-                        "DER (Terendah)":           lambda x: -(x[1].get("der",999) or 999),
-                        "Current Ratio (Tertinggi)":lambda x: x[1].get("cr",0),
-                    }.get(_fs_sk, lambda x: x[1].get("roe",0))
-
-                    _fs_sorted = sorted(_fs_data.items(), key=_sfn, reverse=True)
-                    _fs_pass   = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) >= 4]
-                    _fs_watch  = [(tk,d) for tk,d in _fs_sorted if d.get("score",0) in (2,3)]
-
-                    # Summary metric cards
-                    _sm1, _sm2, _sm3, _sm4 = st.columns(4)
-                    _avg_roe = sum(d.get("roe",0) for _,d in _fs_data.items()) / max(len(_fs_data),1)
-                    with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
-                    with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:#F5C242;'>{len(_fs_watch)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
-                    with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
-                    with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
-
-                    if _fs_ts:
-                        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
-
-                    def _render_fs_table(rows, title, accent, icon):
-                        if not rows: return
-                        import json as _fsjson
-                        _rd = []
-                        for tk, d in rows[:30]:
-                            sc = d.get("score",0)
-                            mc = d.get("mkcap",0)
-                            cap_s = f"{mc/1e12:.1f}T" if mc >= 1e12 else (f"{mc/1e9:.0f}B" if mc >= 1e9 else "—")
-                            _rd.append({
-                                "tk":tk, "name":d.get("name","—"),
-                                "price": f"Rp {d['price']:,.0f}" if d.get("price") else "—",
-                                "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "—",
-                                "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "—",
-                                "npm":  f"{d['npm']:.1f}%" if d.get("npm") else "—",
-                                "cr":   f"{d['cr']:.1f}x" if d.get("cr") else "—",
-                                "pbv":  f"{d['pbv']:.2f}x" if d.get("pbv") else "—",
-                                "pe":   f"{d['pe']:.1f}x" if d.get("pe") and d["pe"]>0 else "—",
-                                "div":  f"{d['div']:.1f}%" if d.get("div") else "—",
-                                "cap":  cap_s, "score": sc,
-                                "rpos": f"{d['rpos']:.0f}%" if d.get("rpos") else "—",
-                                "roe_ok": d.get("roe",0)>=15,
-                                "der_ok": 0 < d.get("der",99)<=1.0,
-                                "npm_ok": d.get("npm",0)>=10,
-                                "cr_ok":  d.get("cr",0)>=1.5,
-                                "pbv_ok": 0.5<=d.get("pbv",0)<=3.0 and d.get("pbv",0)>0,
-                                "eps_ok": d.get("eps",0)>0,
-                            })
-                        _rj  = _fsjson.dumps(_rd, ensure_ascii=False)
-                        _uid = str(abs(hash(title)) % 99999)
-                        _row_h = min(len(rows), 15) * 40
-                        _tot_h = 36 + 36 + _row_h + 44
-                        _html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
-.lbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{accent};font-weight:700;margin-bottom:8px;display:block;}}
-.wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.hint{{display:none;text-align:center;font-size:0.55rem;color:{text_sub};padding:3px 0;border-bottom:1px solid {met_border};}}
-.sb{{width:100%;max-height:520px;overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
-.sb::-webkit-scrollbar{{width:5px;height:5px;}}
-.sb::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:max-content;min-width:100%;border-collapse:collapse;font-size:0.72rem;}}
-thead th{{position:sticky;top:0;z-index:2;background:rgba(38,166,154,0.10);color:{accent};padding:8px 10px;text-align:left;border-bottom:2px solid {accent}44;white-space:nowrap;font-size:0.56rem;letter-spacing:0.09em;text-transform:uppercase;}}
-tbody td{{padding:7px 10px;border-bottom:1px solid {met_border};vertical-align:middle;white-space:nowrap;color:{text_main};}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
-.tk{{font-weight:700;font-size:0.78rem;color:{accent};}}
-.ok{{color:#26a69a;font-weight:600;}}
-.ng{{color:#f23645;}}
-.neu{{color:{text_sub};}}
-.pg-bar{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:1px solid {met_border};background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:4px;}}
-.pg-info{{font-size:0.58rem;color:{text_sub};}}
-.pg-btns{{display:flex;gap:5px;}}
-.pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};border:1px solid {met_border};border-radius:4px;padding:4px 11px;font-family:'IBM Plex Mono',monospace;font-size:0.58rem;cursor:pointer;}}
-.pg-btn:hover{{background:rgba(255,255,255,0.12);}}
-.pg-btn:disabled{{opacity:0.3;cursor:default;}}
-@media(max-width:600px){{.hint{{display:block;}}table{{font-size:0.62rem;}}thead th{{font-size:0.5rem;padding:6px 6px;}}tbody td{{padding:5px 6px;font-size:0.62rem;}}}}
-</style></head><body>
-<span class="lbl">{icon} {title} — {len(rows)} SAHAM</span>
-<div class="wrap">
-  <div class="hint">← geser kiri / kanan →</div>
-  <div class="sb" id="sb{_uid}">
-    <table>
-      <thead><tr>
-        <th>TICKER</th><th>NAMA</th><th>HARGA</th>
-        <th title="Return on Equity ≥15%">ROE</th>
-        <th title="Debt/Equity ≤1.0x">DER</th>
-        <th title="Net Profit Margin ≥10%">NET MARGIN</th>
-        <th title="Current Ratio ≥1.5x">CURR RATIO</th>
-        <th title="Price/Book Value 0.5-3x">PBV</th>
-        <th title="Price/Earnings">PER</th>
-        <th title="Dividend Yield">DIV YIELD</th>
-        <th title="Market Capitalization">MKT CAP</th>
-        <th title="Posisi vs 52 Minggu High/Low">52W POS</th>
-        <th title="Skor 6 kriteria Buffett">SKOR</th>
-      </tr></thead>
-      <tbody id="tb{_uid}"></tbody>
-    </table>
-  </div>
-  <div class="pg-bar">
-    <span class="pg-info" id="pi{_uid}"></span>
-    <div class="pg-btns">
-      <button class="pg-btn" id="pp{_uid}" onclick="pgF{_uid}(-1)">&#9664; Prev</button>
-      <button class="pg-btn" id="pn{_uid}" onclick="pgF{_uid}(+1)">Next &#9654;</button>
-    </div>
-  </div>
-</div>
-<script>
-(function(){{
-  var ROWS={_rj},PER=15,page=0;
-  function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
-  function dots(s){{
-    var h='';
-    for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(255,255,255,0.15)')+'">&#9679;</span>';
-    return h+' <span style="font-size:0.6rem;color:{text_sub};">'+s+'/6</span>';
-  }}
-  function render(){{
-    var tot=ROWS.length,maxPg=Math.max(0,Math.ceil(tot/PER)-1);
-    var s=page*PER,e=Math.min(s+PER,tot),h='';
-    ROWS.slice(s,e).forEach(function(r){{
-      h+='<tr>'+
-        '<td><span class="tk">'+r.tk+'</span></td>'+
-        '<td style="font-size:0.64rem;color:{text_sub};">'+r.name+'</td>'+
-        '<td style="font-weight:600;">'+r.price+'</td>'+
-        '<td>'+c(r.roe,r.roe_ok)+'</td>'+
-        '<td>'+c(r.der,r.der_ok)+'</td>'+
-        '<td>'+c(r.npm,r.npm_ok)+'</td>'+
-        '<td>'+c(r.cr,r.cr_ok)+'</td>'+
-        '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
-        '<td class="neu">'+r.pe+'</td>'+
-        '<td style="color:#F5C242;">'+r.div+'</td>'+
-        '<td class="neu">'+r.cap+'</td>'+
-        '<td class="neu">'+r.rpos+'</td>'+
-        '<td>'+dots(r.score)+'</td>'+
-        '</tr>';
-    }});
-    document.getElementById('tb{_uid}').innerHTML=h;
-    document.getElementById('pi{_uid}').textContent='Baris '+(s+1)+'–'+e+' dari '+tot;
-    document.getElementById('pp{_uid}').disabled=(page<=0);
-    document.getElementById('pn{_uid}').disabled=(page>=maxPg);
-    document.getElementById('sb{_uid}').scrollTop=0;
-  }}
-  window['pgF{_uid}']=function(d){{
-    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
-    page=Math.max(0,Math.min(page+d,maxPg));render();
-  }};
-  render();
-}})();
-</script></body></html>"""
-                        components.html(_html, height=max(_tot_h + 60, 200), scrolling=False)
-
-                    if _fs_pass:
-                        _render_fs_table(_fs_pass, "LOLOS KRITERIA BUFFETT", _fs_accent, "✅")
-                        st.markdown("<div style='margin:6px 0;'></div>", unsafe_allow_html=True)
-                    if _fs_watch:
-                        _render_fs_table(_fs_watch, "WATCHLIST — PERLU PEMANTAUAN", "#F5C242", "⚠️")
-                    if not _fs_pass and not _fs_watch:
-                        st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
-
-                    # AI Insight
-                    if _fs_pass:
-                        if st.button("🤖 ANALISA AI DARI HASIL SCREENER", use_container_width=True, key="btn_fs_ai"):
-                            with st.spinner("SIGMA AI menganalisa hasil screener fundamental..."):
-                                _top5 = _fs_pass[:5]
-                                _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
-                                _fp   = f"""Kamu adalah SIGMA AI — analis fundamental saham IDX.
-
-5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria):
-{chr(10).join(_fsl)}
-
-Kriteria: ROE≥15%|DER≤1.0x|NetMargin≥10%|CurrentRatio≥1.5x|PBV 0.5-3x|EPS positif
-
-Analisa mendalam:
-1. Peringkat kualitas fundamental — mana paling unggul dan mengapa
-2. Apakah valuasi (PBV/PER) masih wajar atau sudah mahal?
-3. Risiko fundamental yang perlu diwaspadai
-4. SIGMA VIEW: 1-2 saham terbaik untuk akumulasi jangka menengah (3-6 bulan) + reasoning
-
-Bahasa Indonesia. Markdown. Padat & actionable. Jangan ulang data mentah."""
-                                _fs_ai = _call_ai_reco(_fp)
-                                st.session_state["fs_ai_result"] = _fs_ai
-
-                    if st.session_state.get("fs_ai_result"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.86rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
-
-            else:
-                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
-                    <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;">📊</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Pilih sektor &amp; urutan, lalu klik <span style='color:{_fs_accent};'>SCREEN</span><br>
-                        <span style="opacity:0.5;font-size:0.65rem;">Screening {len(_fs_universe)} saham IDX · 6 Kriteria Warren Buffett · Data Live</span></p>
-                </div>""", unsafe_allow_html=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
+# ─────────────────────────────────────────────
+# PART 10: RUANG CHAT AI 
 # ─────────────────────────────────────────────
 else:
     if not active["messages"][1:]:
