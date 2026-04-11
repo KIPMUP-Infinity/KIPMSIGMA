@@ -2606,6 +2606,13 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+
+/* ── USER BUBBLE: biru, rata kanan ── */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{ display: flex !important; flex-direction: row-reverse !important; justify-content: flex-start !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 10px 16px !important; max-width: 75% !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; }}
+
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
 div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
@@ -3370,6 +3377,13 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+
+/* ── USER BUBBLE: biru, rata kanan ── */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{ display: flex !important; flex-direction: row-reverse !important; justify-content: flex-start !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 10px 16px !important; max-width: 75% !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; }}
+
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
 div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
