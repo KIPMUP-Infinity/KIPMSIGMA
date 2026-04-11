@@ -1978,15 +1978,28 @@ section[data-testid="stSidebar"] .stButton > button span {{
     background: transparent !important;
 }}
 
-/* User message bubble — subtle box */
+/* User message bubble — biru, rata kanan */
 [data-testid="stChatMessage"][data-testid*="user"] [data-testid="stMarkdownContainer"],
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{
-    background: {C['user_msg_bg']} !important;
-    border-radius: 18px !important;
+    background: #1a6ed8 !important;
+    color: #ffffff !important;
+    border-radius: 18px 18px 4px 18px !important;
     padding: 12px 16px !important;
     display: inline-block !important;
     max-width: 85% !important;
     float: right !important;
+    text-align: right !important;
+    margin-left: auto !important;
+}}
+[data-testid="stChatMessage"][data-testid*="user"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{
+    color: #ffffff !important;
+    text-align: right !important;
+}}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{
+    display: flex !important;
+    justify-content: flex-end !important;
+    flex-direction: row-reverse !important;
 }}
 
 /* Main content area */
@@ -2533,6 +2546,7 @@ body {{ background: #080c14; }}
             <div class="card-desc">Dashboard pasar real-time &#8212; Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
 
             <div class="term-preview">
+                <div class="cp-header" style="background:rgba(245,194,66,0.07);border-bottom:1px solid rgba(245,194,66,0.1);padding:7px 10px;display:flex;align-items:center;gap:6px;margin:-10px -12px 10px -12px;border-radius:9px 9px 0 0;"><span class="cp-dot cp-dot-1"></span><span class="cp-dot cp-dot-2"></span><span class="cp-dot cp-dot-3"></span><span style="font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:rgba(245,194,66,0.5);letter-spacing:1.5px;text-transform:uppercase;margin-left:2px;">SIGMA TERMINAL &mdash; LIVE</span></div>
                 <div class="t-row"><span class="t-prompt">$</span><span class="t-cmd"> sigma.fetch --market IDX --live</span></div>
                 <div class="t-row"><span class="t-label">IHSG </span><span class="t-up">&#9650; 7,421  +0.74%</span></div>
                 <div class="t-row"><span class="t-label">LQ45 </span><span class="t-dn">&#9660; 862.3  -0.31%</span></div>
@@ -3357,11 +3371,11 @@ sp.innerHTML = `
 `;
 pd.body.appendChild(sp);
 
-// ── SIGMA BRAND CENTER ────────────────────────────────────────
+// ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
 if (!pd.getElementById('sigma-top-brand')) {{
   var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
   brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  brand.style.cssText = 'position:fixed;top:14px;left:16px;z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
   pd.body.appendChild(brand);
 }}
 
@@ -4234,11 +4248,11 @@ sp.innerHTML = `
 `;
 pd.body.appendChild(sp);
 
-// ── SIGMA BRAND CENTER ────────────────────────────────────────
+// ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
 if (!pd.getElementById('sigma-top-brand')) {{
   var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
   brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  brand.style.cssText = 'position:fixed;top:14px;left:16px;z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
   pd.body.appendChild(brand);
 }}
 
@@ -10390,11 +10404,11 @@ sp.innerHTML = `
 `;
 pd.body.appendChild(sp);
 
-// ── SIGMA BRAND CENTER ────────────────────────────────────────
+// ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
 if (!pd.getElementById('sigma-top-brand')) {{
   var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
   brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  brand.style.cssText = 'position:fixed;top:14px;left:16px;z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
   pd.body.appendChild(brand);
 }}
 
