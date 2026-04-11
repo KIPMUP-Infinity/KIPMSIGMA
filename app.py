@@ -3120,32 +3120,34 @@ for _sesi in st.session_state.sessions:
 }})();
 """
 
+_c_sb  = C["sidebar_bg"]; _c_tx  = C["text"]; _c_bd = C["border"]; _c_hv = C["hover"]; _c_tm = C["text_muted"]
+_dk_c  = "✓" if st.session_state.theme=="dark" else ""; _lt_c = "✓" if st.session_state.theme=="light" else ""
 components.html(f"""
 <script>
-(function(){{{{
+(function(){{
 var pd=window.parent.document;
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
- 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{{{ var el=pd.getElementById(id); if(el) el.remove(); }}}});
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
-  background:{{C["sidebar_bg"]}};color:{{C["text"]}};border:1px solid {{C["border"]}};
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{_c_sb};color:{_c_tx};border:1px solid {_c_bd};
   cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}}}
-#spbtn:hover{{{{transform:scale(1.08);background:{{C["hover"]}};}}}}
-#spmenu,#sphist{{{{position:fixed;left:20px;bottom:85px;background:{{C["sidebar_bg"]}};
-  border:1px solid {{C["border"]}};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
-  z-index:999998;display:none;overflow:hidden;min-width:260px;}}}}
-#sphist{{{{max-height:55vh;overflow-y:auto;}}}}
-.smi{{{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
-  color:{{C["text"]}};cursor:pointer;border:none;background:transparent;width:100%;
-  text-align:left;text-decoration:none;transition:background 0.2s;}}}}
-.smi:hover{{{{background:{{C["hover"]}}}}}}
-.smico{{{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:16px;background:{{C["hover"]}};flex-shrink:0;}}}}
-.smsp{{{{border:none;border-top:1px solid {{C["border"]}};margin:4px 0;}}}}
-.smhd{{{{padding:8px 18px 4px;font-size:0.68rem;color:{{C["text_muted"]}};font-weight:600;letter-spacing:1px;}}}}
-.smred{{{{color:#f55!important}}}}
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
+#spbtn:hover{{transform:scale(1.08);background:{_c_hv};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{_c_sb};
+  border:1px solid {_c_bd};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{_c_tx};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}
+.smi:hover{{background:{_c_hv}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{_c_hv};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {_c_bd};margin:4px 0;}}
+.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{_c_tm};font-weight:600;letter-spacing:1px;}}
+.smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
@@ -3157,32 +3159,32 @@ m.innerHTML=`
   <div class="smsp"></div><div class="smhd">NAVIGASI</div>
   <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
   <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {{"✓" if st.session_state.theme=="dark" else ""}}</a>
-  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {{"✓" if st.session_state.theme=="light" else ""}}</a>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {_dk_c}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {_lt_c}</a>
   <div class="smsp"></div>
   <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div'); h.id='sphist';
 h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{{_hist_items}} pd.body.appendChild(h);
-btn.onclick=function(e){{{{
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{
   e.preventDefault(); e.stopPropagation();
   m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
-}}}};
-(function(){{{{
+}};
+(function(){{
   var u;
   u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-  pd.getElementById('smi-hist').onclick=function(){{{{m.style.display='none';h.style.display='block';}}}};
+  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
   u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}}}})();
-pd.addEventListener('click',function(e){{{{
+}})();
+pd.addEventListener('click',function(e){{
   if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
   if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
-}}}});
-}}}})();
+}});
+}})();
 </script>
 """, height=0)
 
@@ -3774,32 +3776,34 @@ for _sesi in st.session_state.sessions:
 }})();
 """
 
+_c_sb2=C["sidebar_bg"];_c_tx2=C["text"];_c_bd2=C["border"];_c_hv2=C["hover"];_c_tm2=C["text_muted"]
+_dk_c2="✓" if st.session_state.theme=="dark" else "";_lt_c2="✓" if st.session_state.theme=="light" else ""
 components.html(f"""
 <script>
-(function(){{{{
+(function(){{
 var pd=window.parent.document;
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
- 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{{{ var el=pd.getElementById(id); if(el) el.remove(); }}}});
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
-  background:{{C["sidebar_bg"]}};color:{{C["text"]}};border:1px solid {{C["border"]}};
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{_c_sb2};color:{_c_tx2};border:1px solid {_c_bd2};
   cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}}}
-#spbtn:hover{{{{transform:scale(1.08);background:{{C["hover"]}};}}}}
-#spmenu,#sphist{{{{position:fixed;left:20px;bottom:85px;background:{{C["sidebar_bg"]}};
-  border:1px solid {{C["border"]}};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
-  z-index:999998;display:none;overflow:hidden;min-width:260px;}}}}
-#sphist{{{{max-height:55vh;overflow-y:auto;}}}}
-.smi{{{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
-  color:{{C["text"]}};cursor:pointer;border:none;background:transparent;width:100%;
-  text-align:left;text-decoration:none;transition:background 0.2s;}}}}
-.smi:hover{{{{background:{{C["hover"]}}}}}}
-.smico{{{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:16px;background:{{C["hover"]}};flex-shrink:0;}}}}
-.smsp{{{{border:none;border-top:1px solid {{C["border"]}};margin:4px 0;}}}}
-.smhd{{{{padding:8px 18px 4px;font-size:0.68rem;color:{{C["text_muted"]}};font-weight:600;letter-spacing:1px;}}}}
-.smred{{{{color:#f55!important}}}}
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
+#spbtn:hover{{transform:scale(1.08);background:{_c_hv2};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{_c_sb2};
+  border:1px solid {_c_bd2};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{_c_tx2};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}
+.smi:hover{{background:{_c_hv2}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{_c_hv2};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {_c_bd2};margin:4px 0;}}
+.smhd{{padding:8px 18px 4pt;font-size:0.68rem;color:{_c_tm2};font-weight:600;letter-spacing:1px;}}
+.smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
@@ -3811,32 +3815,32 @@ m.innerHTML=`
   <div class="smsp"></div><div class="smhd">NAVIGASI</div>
   <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
   <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {{"✓" if st.session_state.theme=="dark" else ""}}</a>
-  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {{"✓" if st.session_state.theme=="light" else ""}}</a>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {_dk_c2}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {_lt_c2}</a>
   <div class="smsp"></div>
   <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div'); h.id='sphist';
 h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{{_hist_items}} pd.body.appendChild(h);
-btn.onclick=function(e){{{{
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{
   e.preventDefault(); e.stopPropagation();
   m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
-}}}};
-(function(){{{{
+}};
+(function(){{
   var u;
   u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-  pd.getElementById('smi-hist').onclick=function(){{{{m.style.display='none';h.style.display='block';}}}};
+  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
   u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}}}})();
-pd.addEventListener('click',function(e){{{{
+}})();
+pd.addEventListener('click',function(e){{
   if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
   if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
-}}}});
-}}}})();
+}});
+}})();
 </script>
 """, height=0)
 
@@ -8882,10 +8886,13 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
                     entry_line      = next((l for l in body.splitlines() if "⚡" in l or "entry" in l.lower()), "")
                     rr_line         = next((l for l in body.splitlines() if "📐" in l or "r/r" in l.lower()), "")
 
-                    entry = _trade(body, r"entry")
+                    entry = _trade(body, r"entry|area.beli|zona.beli")
                     sl    = _trade(body, r"sl\b|stop.?loss")
                     tp1   = _trade(body, r"tp\s*1|target\s*1|tp1")
                     tp2   = _trade(body, r"tp\s*2|target\s*2|tp2")
+                    tp3   = _trade(body, r"tp\s*3|target\s*3|tp3")
+                    abeli_m = _re.search(r'area[\s.]*beli[\s:]*Rp\.?\s*([\d,.\s\-–]+?)(?:\s*\||$|\n)', body, _re.IGNORECASE)
+                    abeli = f"Rp {abeli_m.group(1).strip()}" if abeli_m else entry
                     rrm   = _re.search(r'r/?r[\s:]*([\d.]+(?::[.\d]+)?)', body, _re.IGNORECASE)
                     rr_s  = rrm.group(1) if rrm else "—"
                     hzm   = _re.search(r'horizon[\s:]*([^\n|]{2,20})', body, _re.IGNORECASE)
@@ -8928,10 +8935,11 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
       <div class="gm-action-val">{"BUY — HOLD OVERNIGHT" if is_bs else "BUY — WAITING CONFIRMATION"}</div>
     </div>
     <div class="gm-trade-grid">
-      <div class="gm-tc"><div class="gm-tl">Entry</div><div class="gm-tv" style="color:{accent};">{entry}</div></div>
-      <div class="gm-tc"><div class="gm-tl">Stop Loss</div><div class="gm-tv" style="color:#f23645;">{sl}</div></div>
-      <div class="gm-tc"><div class="gm-tl">TP 1</div><div class="gm-tv" style="color:#26a69a;">{tp1}</div></div>
-      <div class="gm-tc"><div class="gm-tl">TP 2</div><div class="gm-tv" style="color:#26a69a;">{tp2}</div></div>
+      <div class="gm-tc" style="border-left:3px solid #22d3ee;"><div class="gm-tl">📍 Area Beli</div><div class="gm-tv" style="color:#22d3ee;">{abeli}</div></div>
+      <div class="gm-tc" style="border-left:3px solid #f23645;"><div class="gm-tl">🛑 Stop Loss</div><div class="gm-tv" style="color:#f23645;">{sl}</div></div>
+      <div class="gm-tc" style="border-left:3px solid #26a69a;"><div class="gm-tl">🎯 TP 1</div><div class="gm-tv" style="color:#26a69a;">{tp1}</div></div>
+      <div class="gm-tc" style="border-left:3px solid #26a69a;"><div class="gm-tl">🎯 TP 2</div><div class="gm-tv" style="color:#26a69a;">{tp2}</div></div>
+      <div class="gm-tc" style="border-left:3px solid #60a5fa;"><div class="gm-tl">🎯 TP 3</div><div class="gm-tv" style="color:#60a5fa;">{tp3}</div></div>
       <div class="gm-tc"><div class="gm-tl">R/R</div><div class="gm-tv">{rr_s}</div></div>
       <div class="gm-tc"><div class="gm-tl">Horizon</div><div class="gm-tv">{hz_s}</div></div>
     </div>
@@ -9022,31 +9030,30 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
                 b_col  = tp if is_bs else tg
                 b_lbl  = "BSJP" if is_bs else "BUY"
 
+                # Parse nama perusahaan dari body
+                namam  = _re.search(r'nama[\s:]+([^\n|]{3,50})', body, _re.IGNORECASE)
+                nama_s = namam.group(1).strip().rstrip('.') if namam else ""
+
                 # Build Volara signal bars
                 sig_bars = []
-                # RSI
                 rsim = _re.search(r'rsi\s*[:\s]*(\d+)', bl)
                 if rsim:
                     rv = int(rsim.group(1))
                     rc = "#f23645" if rv > 70 else ("#26a69a" if rv < 40 else "#F5C242")
                     sig_bars.append(_sig_bar("RSI", f"{rv} ({'overbought' if rv>70 else 'neutral' if rv<60 else 'bullish'})", rc))
-                # MACD
                 if "macd" in bl:
                     mc = "#26a69a" if any(k in bl for k in ["macd positif","macd bullish","golden","macd naik"]) else "#F5C242"
                     mv = "Bullish momentum" if any(k in bl for k in ["bullish","positif","naik"]) else "Divergence"
                     sig_bars.append(_sig_bar("MACD", mv, mc))
-                # EMA/SMA
                 if any(k in bl for k in ["ema","sma","golden cross"]):
                     ec = "#26a69a" if any(k in bl for k in ["ema5 > ema10","golden cross","sma20 > sma50","di atas","above","bullish cross"]) else "#f23645"
                     ev = "Golden Cross" if "golden" in bl else ("EMA Bullish" if any(k in bl for k in ["ema5 > ema10","di atas ema"]) else "EMA Cross")
                     sig_bars.append(_sig_bar("EMA/SMA", ev, ec))
-                # Volume
                 if any(k in bl for k in ["volume","vol"]):
                     volm = _re.search(r'([\d.]+)\s*x\s*(?:avg|rata)', bl)
-                    vv = f"High ({volm.group(1)}x avg)" if volm else ("High (spike)" if any(k in bl for k in ["spike","tinggi","tinggi"]) else "Normal")
+                    vv = f"High ({volm.group(1)}x avg)" if volm else ("High (spike)" if any(k in bl for k in ["spike","tinggi"]) else "Normal")
                     vc_col = "#26a69a" if "spike" in bl or (volm and float(volm.group(1)) >= 1.5) else "#F5C242"
                     sig_bars.append(_sig_bar("Volume", vv, vc_col))
-                # Fundamental specific
                 for fk, fn in [("roe","ROE"),("pbv","PBV"),("per","PER"),("p/b","P/B"),("eps","EPS"),("der","DER")]:
                     fm = _re.search(fk + r'[\s:=]*([\d.]+)', bl)
                     if fm:
@@ -9054,41 +9061,56 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
                         fc = "#26a69a" if fk in ["roe","eps"] else "#F5C242"
                         sig_bars.append(_sig_bar(fn, fv, fc))
                         if len(sig_bars) >= 6: break
-                # Pemegang saham
                 if any(k in bl for k in ["pemegang naik","akumulasi","accumulation","sh naik"]):
                     sig_bars.append(_sig_bar("Pemegang Saham", "Naik / Akumulasi", "#26a69a"))
                 elif any(k in bl for k in ["pemegang turun","distribusi"]):
                     sig_bars.append(_sig_bar("Pemegang Saham", "Turun / Distribusi", "#f23645"))
 
-                # Trade values
+                # Trade values — tambah TP3 & Area Beli
                 entry = _trade(body, r"entry")
                 sl    = _trade(body, r"sl\b|stop.?loss")
                 tp1   = _trade(body, r"tp\s*1|target\s*1|tp1")
                 tp2   = _trade(body, r"tp\s*2|target\s*2|tp2")
+                tp3   = _trade(body, r"tp\s*3|target\s*3|tp3")
+                abeli_m = _re.search(r'(?:area[\s.]*beli|beli[\s.]*area|zona[\s.]*beli|range[\s.]*beli)[\s:]*Rp\.?\s*([\d,.\s\-–]+?)(?:\s*\||$|\n)', body, _re.IGNORECASE)
+                abeli = f"Rp {abeli_m.group(1).strip()}" if abeli_m else _trade(body, r"area.beli|zona.beli|range.beli")
                 rrm2  = _re.search(r'r/?r[\s:]*([\d.]+(?::[.\d]+)?)', body, _re.IGNORECASE)
                 rr_s  = rrm2.group(1) if rrm2 else "—"
                 hzm   = _re.search(r'horizon[\s:]*([^\n|]{2,20})', body, _re.IGNORECASE)
                 hz_s  = hzm.group(1).strip().rstrip('|').strip() if hzm else "—"
+                sizm  = _re.search(r'sizing[\s:maks]*([^\n|]{2,15})', body, _re.IGNORECASE)
+                siz_s = sizm.group(1).strip() if sizm else "—"
 
-                skip = ["entry","stop loss","sl:","sl |","tp1","tp2","r/r","horizon","sizing"]
+                skip = ["entry","stop loss","sl:","sl |","tp1","tp2","tp3","r/r","horizon","sizing","area beli","zona beli","nama:"]
                 body_clean = "\n".join(l for l in body.splitlines()
                                        if not any(k in l.lower() for k in skip)).strip()
 
                 sigs_html = "".join(sig_bars[:6])
-                has_trade = any(v != "—" for v in [entry, sl, tp1, tp2])
+                has_trade = any(v != "—" for v in [entry, sl, tp1, tp2, abeli])
                 trade_html = f"""<div class="vc-grid">
-  <div class="vc-cell"><div class="vc-cl">Entry</div><div class="vc-cv" style="color:{accent};">{entry}</div></div>
-  <div class="vc-cell"><div class="vc-cl">Stop Loss</div><div class="vc-cv" style="color:#f23645;">{sl}</div></div>
-  <div class="vc-cell"><div class="vc-cl">TP 1</div><div class="vc-cv" style="color:#26a69a;">{tp1}</div></div>
-  <div class="vc-cell"><div class="vc-cl">TP 2</div><div class="vc-cv" style="color:#26a69a;">{tp2}</div></div>
+  <div class="vc-cell" style="border-left:3px solid #22d3ee;"><div class="vc-cl">📍 Area Beli</div><div class="vc-cv" style="color:#22d3ee;">{abeli}</div></div>
+  <div class="vc-cell" style="border-left:3px solid #f23645;"><div class="vc-cl">🛑 Stop Loss</div><div class="vc-cv" style="color:#f23645;">{sl}</div></div>
+  <div class="vc-cell" style="border-left:3px solid #26a69a;"><div class="vc-cl">🎯 TP 1</div><div class="vc-cv" style="color:#26a69a;">{tp1}</div></div>
+  <div class="vc-cell" style="border-left:3px solid #26a69a;"><div class="vc-cl">🎯 TP 2</div><div class="vc-cv" style="color:#26a69a;">{tp2}</div></div>
+  <div class="vc-cell" style="border-left:3px solid #60a5fa;"><div class="vc-cl">🎯 TP 3</div><div class="vc-cv" style="color:#60a5fa;">{tp3}</div></div>
   <div class="vc-cell"><div class="vc-cl">R/R</div><div class="vc-cv">{rr_s}</div></div>
   <div class="vc-cell"><div class="vc-cl">Horizon</div><div class="vc-cv">{hz_s}</div></div>
+  <div class="vc-cell"><div class="vc-cl">Sizing</div><div class="vc-cv">{siz_s}</div></div>
 </div>""" if has_trade else ""
+
+                nama_html = f'<div style="font-family:IBM Plex Mono,monospace;font-size:0.58rem;color:{text_sub};letter-spacing:0.04em;margin-top:2px;opacity:0.75;">{nama_s}</div>' if nama_s else ""
+                chg_color = "#26a69a" if chg_s.startswith("+") else "#f23645"
+                chg_html  = f'<span style="font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{chg_color};margin-left:10px;font-weight:600;">{chg_s}</span>' if chg_s else ""
 
                 st.markdown(f"""
 <div class="vc">
   <div class="vc-hd">
-    <div><span class="vc-tk">{ticker}</span><span class="vc-pr">{price}</span></div>
+    <div>
+      <div style="display:flex;align-items:baseline;gap:4px;">
+        <span class="vc-tk">{ticker}</span><span class="vc-pr">{price}</span>{chg_html}
+      </div>
+      {nama_html}
+    </div>
     {_badge(b_lbl, b_col)}
   </div>
   <div class="vc-body">
@@ -9192,10 +9214,11 @@ Format output WAJIB — bagian BULLISH per saham dimulai dengan 🎯, bagian BEA
 
 === 🎯 REKOMENDASI BELI HARIAN ===
 
-🎯 [TICKER] — Rp[Harga] | [Chg%]
+🎯 [TICKER] — Rp[Harga Last Price] | [+/-%]
 📊 Teknikal: [volume spike, tren EMA, momentum, support/resistance]
 👥 Pemegang: [naik/turun MoM, interpretasi akumulasi/distribusi]
-⚡ Entry: Rp[harga] | SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga]
+📍 Area Beli: Rp[range bawah] – Rp[range atas]
+⚡ SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga] | TP3: Rp[harga]
 📐 R/R: [rasio] | Horizon: [X hari]
 
 (kosongkan 1 baris sebelum saham berikutnya)
@@ -9279,12 +9302,14 @@ Format output WAJIB — bagian BULLISH dengan 🎯, bagian HINDARI dengan ⚠️
 
 === 🎯 SWING TRADE MINGGU INI ===
 
-🎯 [TICKER] — Rp[Harga]
-📊 Teknikal: [tren EMA, support/resistance, pola, momentum, chg5d]
-🏢 Fundamental: [valuasi estimasi, katalis, posisi sektor]
-👥 Pemegang Saham: [naik/turun berapa, tren 3 bulan, implikasi]
-📈 Skenario: Entry Rp[harga] | SL Rp[harga] | TP1 Rp[harga] | TP2 Rp[harga]
-📐 R/R: [rasio] | Horizon: [X minggu] | Sizing maks: [% portofolio]
+🎯 [TICKER] — Rp[Harga Last Price] | [+/-%]
+Nama: [PT Nama Perusahaan Tbk]
+📊 Teknikal: [tren EMA, support/resistance, pola candle, momentum, chg5d]
+🏢 Fundamental: [valuasi estimasi PER/PBV, katalis, posisi sektor]
+👥 Pemegang Saham: [naik/turun berapa, tren 3 bulan, implikasi akumulasi/distribusi]
+📍 Area Beli: Rp[harga bawah] – Rp[harga atas]
+⚡ SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga] | TP3: Rp[harga]
+📐 R/R: [rasio] | Horizon: [X minggu] | Sizing: [% portofolio]
 
 (kosongkan 1 baris sebelum saham berikutnya)
 
@@ -9688,7 +9713,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         if st.button("🤖 ANALISA AI DARI HASIL SCREENER", use_container_width=True, key="btn_fs_ai"):
                             with st.spinner("SIGMA AI menganalisa hasil screener fundamental..."):
                                 _top5 = _fs_pass[:5]
-                                _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
+                                _fsl  = [f"{tk} ({d.get('name','—')}): ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|Price=Rp{d.get('price',0):,.0f}|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
                                 _fp   = f"""Kamu adalah SIGMA AI — analis fundamental saham IDX.
 
 5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria):
@@ -9696,18 +9721,27 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
 Kriteria: ROE≥15%|DER≤1.0x|NetMargin≥10%|CurrentRatio≥1.5x|PBV 0.5-3x|EPS positif
 
-Analisa mendalam:
-1. Peringkat kualitas fundamental — mana paling unggul dan mengapa
-2. Apakah valuasi (PBV/PER) masih wajar atau sudah mahal?
-3. Risiko fundamental yang perlu diwaspadai
-4. SIGMA VIEW: 1-2 saham terbaik untuk akumulasi jangka menengah (3-6 bulan) + reasoning
+Tugas: Buat rekomendasi terstruktur dalam format berikut WAJIB — bagian per saham dimulai 🎯:
 
-Bahasa Indonesia. Markdown. Padat & actionable. Jangan ulang data mentah."""
+=== 🎯 TOP PICK FUNDAMENTAL ===
+
+🎯 [TICKER] — Rp[Harga Last Price]
+Nama: [PT Nama Perusahaan Tbk]
+📊 Teknikal: [estimasi posisi harga vs 52W, momentum]
+🏢 Fundamental: [highlight ROE/DER/PBV/NetMargin, kekuatan bisnis, moat]
+👥 Katalis: [potensi katalis naik 3-6 bulan]
+📍 Area Beli: Rp[range bawah] – Rp[range atas]
+⚡ SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga] | TP3: Rp[harga]
+📐 R/R: [rasio] | Horizon: [3-6 bulan] | Sizing: [% portofolio]
+
+(kosongkan 1 baris sebelum saham berikutnya)
+
+Bahasa Indonesia. Padat & actionable. Jangan ulang data mentah. Jangan tambahkan JSON."""
                                 _fs_ai = _call_ai_reco(_fp)
                                 st.session_state["fs_ai_result"] = _fs_ai
 
                     if st.session_state.get("fs_ai_result"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.86rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+                        _render_reco_cards(st.session_state["fs_ai_result"], "#26a69a", mode="volara")
 
             else:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
@@ -10041,32 +10075,40 @@ _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
 if st.session_state.user is None: components.html("<script>(function() { try { var token = localStorage.getItem('sigma_token'); if (token) { var url = window.parent.location.href.split('?')[0]; window.parent.location.replace(url + '?sigma_token=' + token); } } catch(e) {} })();</script>", height=0)
 
+_c_sidebar_bg  = C["sidebar_bg"]
+_c_text        = C["text"]
+_c_border      = C["border"]
+_c_hover       = C["hover"]
+_c_text_muted  = C["text_muted"]
+_dark_chk      = "✓" if st.session_state.theme == "dark" else ""
+_light_chk     = "✓" if st.session_state.theme == "light" else ""
+
 components.html(f"""
 <script>
-(function(){{{{
+(function(){{
 var pd=window.parent.document;
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
- 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{{{ var el=pd.getElementById(id); if(el) el.remove(); }}}});
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
-  background:{{C["sidebar_bg"]}};color:{{C["text"]}};border:1px solid {{C["border"]}};
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{_c_sidebar_bg};color:{_c_text};border:1px solid {_c_border};
   cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}}}
-#spbtn:hover{{{{transform:scale(1.08);background:{{C["hover"]}};}}}}
-#spmenu,#sphist{{{{position:fixed;left:20px;bottom:85px;background:{{C["sidebar_bg"]}};
-  border:1px solid {{C["border"]}};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
-  z-index:999998;display:none;overflow:hidden;min-width:260px;}}}}
-#sphist{{{{max-height:55vh;overflow-y:auto;}}}}
-.smi{{{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
-  color:{{C["text"]}};cursor:pointer;border:none;background:transparent;width:100%;
-  text-align:left;text-decoration:none;transition:background 0.2s;}}}}
-.smi:hover{{{{background:{{C["hover"]}}}}}}
-.smico{{{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:16px;background:{{C["hover"]}};flex-shrink:0;}}}}
-.smsp{{{{border:none;border-top:1px solid {{C["border"]}};margin:4px 0;}}}}
-.smhd{{{{padding:8px 18px 4px;font-size:0.68rem;color:{{C["text_muted"]}};font-weight:600;letter-spacing:1px;}}}}
-.smred{{{{color:#f55!important}}}}
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
+#spbtn:hover{{transform:scale(1.08);background:{_c_hover};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{_c_sidebar_bg};
+  border:1px solid {_c_border};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{_c_text};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}
+.smi:hover{{background:{_c_hover}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{_c_hover};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {_c_border};margin:4px 0;}}
+.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{_c_text_muted};font-weight:600;letter-spacing:1px;}}
+.smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
@@ -10078,32 +10120,32 @@ m.innerHTML=`
   <div class="smsp"></div><div class="smhd">NAVIGASI</div>
   <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
   <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {{"✓" if st.session_state.theme=="dark" else ""}}</a>
-  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {{"✓" if st.session_state.theme=="light" else ""}}</a>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {_dark_chk}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {_light_chk}</a>
   <div class="smsp"></div>
   <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div'); h.id='sphist';
 h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{{_hist_items}} pd.body.appendChild(h);
-btn.onclick=function(e){{{{
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{
   e.preventDefault(); e.stopPropagation();
   m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
-}}}};
-(function(){{{{
+}};
+(function(){{
   var u;
   u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-  pd.getElementById('smi-hist').onclick=function(){{{{m.style.display='none';h.style.display='block';}}}};
+  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
   u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}}}})();
-pd.addEventListener('click',function(e){{{{
+}})();
+pd.addEventListener('click',function(e){{
   if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
   if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
-}}}});
-}}}})();
+}});
+}})();
 </script>
 """, height=0)
 
