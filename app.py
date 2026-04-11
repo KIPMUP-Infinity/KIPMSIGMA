@@ -1967,7 +1967,8 @@ section[data-testid="stSidebar"] .stButton > button span {{
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 8px 0 !important;
+    padding: 6px 0 !important;
+    overflow: hidden !important;
 }}
 [data-testid="stChatMessageAvatarUser"],
 [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
@@ -1979,20 +1980,32 @@ section[data-testid="stSidebar"] .stButton > button span {{
     background: transparent !important;
 }}
 
-/* User message bubble — biru nyaman */
+/* ── User bubble: kanan, teks rata kanan ── */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    justify-content: flex-start !important;
+    align-items: flex-end !important;
+}}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) > div {{
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+}}
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{
     background: {C['user_msg_bg']} !important;
     color: {C['user_msg_text']} !important;
-    border-radius: 18px 18px 4px 18px !important;
+    border-radius: 18px 4px 18px 18px !important;
     padding: 11px 16px !important;
     display: inline-block !important;
     max-width: 82% !important;
-    float: right !important;
-    clear: both !important;
+    text-align: right !important;
+    margin-left: auto !important;
 }}
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p,
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] span {{
     color: {C['user_msg_text']} !important;
+    text-align: right !important;
 }}
 
 /* Main content area */
@@ -3109,30 +3122,30 @@ for _sesi in st.session_state.sessions:
 
 components.html(f"""
 <script>
-(function(){{
+(function(){{{{
 var pd=window.parent.document;
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
- 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{{{ var el=pd.getElementById(id); if(el) el.remove(); }}}});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
-  background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
+#spbtn{{{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{{C["sidebar_bg"]}};color:{{C["text"]}};border:1px solid {{C["border"]}};
   cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
-#spbtn:hover{{transform:scale(1.08);background:{C["hover"]};}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{C["sidebar_bg"]};
-  border:1px solid {C["border"]};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
-  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
-#sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
-  color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;
-  text-align:left;text-decoration:none;transition:background 0.2s;}}
-.smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:16px;background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}}
-.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]};font-weight:600;letter-spacing:1px;}}
-.smred{{color:#f55!important}}
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}}}
+#spbtn:hover{{{{transform:scale(1.08);background:{{C["hover"]}};}}}}
+#spmenu,#sphist{{{{position:fixed;left:20px;bottom:85px;background:{{C["sidebar_bg"]}};
+  border:1px solid {{C["border"]}};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}}}
+#sphist{{{{max-height:55vh;overflow-y:auto;}}}}
+.smi{{{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{{C["text"]}};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}}}
+.smi:hover{{{{background:{{C["hover"]}}}}}}
+.smico{{{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{{C["hover"]}};flex-shrink:0;}}}}
+.smsp{{{{border:none;border-top:1px solid {{C["border"]}};margin:4px 0;}}}}
+.smhd{{{{padding:8px 18px 4px;font-size:0.68rem;color:{{C["text_muted"]}};font-weight:600;letter-spacing:1px;}}}}
+.smred{{{{color:#f55!important}}}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
@@ -3144,32 +3157,32 @@ m.innerHTML=`
   <div class="smsp"></div><div class="smhd">NAVIGASI</div>
   <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
   <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {"✓" if st.session_state.theme=="dark" else ""}</a>
-  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {"✓" if st.session_state.theme=="light" else ""}</a>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {{"✓" if st.session_state.theme=="dark" else ""}}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {{"✓" if st.session_state.theme=="light" else ""}}</a>
   <div class="smsp"></div>
   <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div'); h.id='sphist';
 h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-btn.onclick=function(e){{
+{{_hist_items}} pd.body.appendChild(h);
+btn.onclick=function(e){{{{
   e.preventDefault(); e.stopPropagation();
   m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
-}};
-(function(){{
+}}}};
+(function(){{{{
   var u;
   u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+  pd.getElementById('smi-hist').onclick=function(){{{{m.style.display='none';h.style.display='block';}}}};
   u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}})();
-pd.addEventListener('click',function(e){{
+}}}})();
+pd.addEventListener('click',function(e){{{{
   if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
   if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
-}});
-}})();
+}}}});
+}}}})();
 </script>
 """, height=0)
 
@@ -3763,30 +3776,30 @@ for _sesi in st.session_state.sessions:
 
 components.html(f"""
 <script>
-(function(){{
+(function(){{{{
 var pd=window.parent.document;
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
- 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{{{ var el=pd.getElementById(id); if(el) el.remove(); }}}});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
-  background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
+#spbtn{{{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{{C["sidebar_bg"]}};color:{{C["text"]}};border:1px solid {{C["border"]}};
   cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
-#spbtn:hover{{transform:scale(1.08);background:{C["hover"]};}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{C["sidebar_bg"]};
-  border:1px solid {C["border"]};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
-  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
-#sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
-  color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;
-  text-align:left;text-decoration:none;transition:background 0.2s;}}
-.smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:16px;background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}}
-.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]};font-weight:600;letter-spacing:1px;}}
-.smred{{color:#f55!important}}
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}}}
+#spbtn:hover{{{{transform:scale(1.08);background:{{C["hover"]}};}}}}
+#spmenu,#sphist{{{{position:fixed;left:20px;bottom:85px;background:{{C["sidebar_bg"]}};
+  border:1px solid {{C["border"]}};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}}}
+#sphist{{{{max-height:55vh;overflow-y:auto;}}}}
+.smi{{{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{{C["text"]}};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}}}
+.smi:hover{{{{background:{{C["hover"]}}}}}}
+.smico{{{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{{C["hover"]}};flex-shrink:0;}}}}
+.smsp{{{{border:none;border-top:1px solid {{C["border"]}};margin:4px 0;}}}}
+.smhd{{{{padding:8px 18px 4px;font-size:0.68rem;color:{{C["text_muted"]}};font-weight:600;letter-spacing:1px;}}}}
+.smred{{{{color:#f55!important}}}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
@@ -3798,32 +3811,32 @@ m.innerHTML=`
   <div class="smsp"></div><div class="smhd">NAVIGASI</div>
   <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
   <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {"✓" if st.session_state.theme=="dark" else ""}</a>
-  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {"✓" if st.session_state.theme=="light" else ""}</a>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {{"✓" if st.session_state.theme=="dark" else ""}}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {{"✓" if st.session_state.theme=="light" else ""}}</a>
   <div class="smsp"></div>
   <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div'); h.id='sphist';
 h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-btn.onclick=function(e){{
+{{_hist_items}} pd.body.appendChild(h);
+btn.onclick=function(e){{{{
   e.preventDefault(); e.stopPropagation();
   m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
-}};
-(function(){{
+}}}};
+(function(){{{{
   var u;
   u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+  pd.getElementById('smi-hist').onclick=function(){{{{m.style.display='none';h.style.display='block';}}}};
   u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}})();
-pd.addEventListener('click',function(e){{
+}}}})();
+pd.addEventListener('click',function(e){{{{
   if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
   if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
-}});
-}})();
+}}}});
+}}}})();
 </script>
 """, height=0)
 
@@ -8649,10 +8662,10 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
   <div style="font-size:0.9rem;font-weight:600;color:{text_main};margin-bottom:4px;">Rekomendasi Real-Time dari {len(_WATCHLIST_RECO)}+ Saham IDX</div>
   <div style="font-size:0.74rem;color:{text_sub};line-height:1.7;">Berbasis momentum harga &middot; volume spike &middot; EMA cross &middot; shareholder tracker &middot; fundamental Buffett</div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:11px;">
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(16,163,127,0.12)" if is_dark else "#dcfce7"};color:{"#26a69a" if is_dark else "#166534"};border:1px solid {"rgba(16,163,127,0.25)" if is_dark else "#bbf7d0"};">● DAILY PICK</span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(96,165,250,0.1)" if is_dark else "#dbeafe"};color:{"#60a5fa" if is_dark else "#1d4ed8"};border:1px solid {"rgba(96,165,250,0.2)" if is_dark else "#bfdbfe"};">● SWING WEEKLY</span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(167,139,250,0.1)" if is_dark else "#ede9fe"};color:{"#a78bfa" if is_dark else "#6d28d9"};border:1px solid {"rgba(167,139,250,0.2)" if is_dark else "#ddd6fe"};">● BSJP OVERNIGHT</span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(245,194,66,0.1)" if is_dark else "#fef9c3"};color:{"#F5C242" if is_dark else "#92400e"};border:1px solid {"rgba(245,194,66,0.2)" if is_dark else "#fde68a"};">● FUNDAMENTAL BUFFETT</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(245,194,66,0.12)" if is_dark else "#fef9c3"};color:{"#F5C242" if is_dark else "#92400e"};border:1px solid {"rgba(245,194,66,0.25)" if is_dark else "#fde68a"};">⚡ DAILY — GOD MODE STYLE</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(96,165,250,0.1)" if is_dark else "#dbeafe"};color:{"#60a5fa" if is_dark else "#1d4ed8"};border:1px solid {"rgba(96,165,250,0.2)" if is_dark else "#bfdbfe"};">📊 WEEKLY — SIGNAL BARS</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(167,139,250,0.1)" if is_dark else "#ede9fe"};color:{"#a78bfa" if is_dark else "#6d28d9"};border:1px solid {"rgba(167,139,250,0.2)" if is_dark else "#ddd6fe"};">🌙 BSJP — GOD MODE STYLE</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(16,163,127,0.1)" if is_dark else "#dcfce7"};color:{"#26a69a" if is_dark else "#166534"};border:1px solid {"rgba(16,163,127,0.2)" if is_dark else "#bbf7d0"};">📋 FUNDAMENTAL — SIGNAL BARS</span>
   </div>
 </div>""", unsafe_allow_html=True)
 
@@ -8713,25 +8726,237 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
                 except Exception as e:
                     return f"Gagal memanggil AI: {e}"
 
-        def _render_reco_cards(reco_text, accent="#F5C242"):
-            """Volara-style card renderer — setiap saham 1 card modern dengan signal pills & trade grid."""
+        def _render_reco_cards(reco_text, accent="#F5C242", mode="volara"):
+            """
+            mode="godmode"  → GOD MODE style (daily): harga besar, multi-trend dots, sinyal aktif
+            mode="volara"   → Volara.id style (weekly/fundamental): signal bars + trade grid
+            """
             import re as _re
 
             bg_card = "rgba(14,20,36,0.92)"   if is_dark else "#ffffff"
             bg_head = "rgba(255,255,255,0.04)" if is_dark else "rgba(0,0,0,0.035)"
             try:
                 _r=int(accent[1:3],16); _g=int(accent[3:5],16); _b=int(accent[5:7],16)
-                border_c = f"rgba({_r},{_g},{_b},0.22)"
+                border_c = f"rgba({_r},{_g},{_b},0.25)"
             except:
-                border_c = "rgba(245,194,66,0.22)"
+                border_c = "rgba(245,194,66,0.25)"
 
-            # Color pairs: (bg, fg)
-            tg = ("rgba(16,163,127,0.12)","#26a69a") if is_dark else ("#dcfce7","#166534")
-            tr = ("rgba(242,54,69,0.12)","#f23645")  if is_dark else ("#fee2e2","#991b1b")
-            tgo= ("rgba(245,194,66,0.1)","#F5C242")  if is_dark else ("#fef9c3","#92400e")
-            tb = ("rgba(96,165,250,0.1)","#60a5fa")  if is_dark else ("#dbeafe","#1d4ed8")
-            tp = ("rgba(167,139,250,0.1)","#a78bfa") if is_dark else ("#ede9fe","#6d28d9")
+            tg  = ("rgba(16,163,127,0.15)","#26a69a")  if is_dark else ("#dcfce7","#166534")
+            tr  = ("rgba(242,54,69,0.12)","#f23645")   if is_dark else ("#fee2e2","#991b1b")
+            tgo = ("rgba(245,194,66,0.12)","#F5C242")  if is_dark else ("#fef9c3","#92400e")
+            tb  = ("rgba(96,165,250,0.12)","#60a5fa")  if is_dark else ("#dbeafe","#1d4ed8")
+            tp  = ("rgba(167,139,250,0.12)","#a78bfa") if is_dark else ("#ede9fe","#6d28d9")
+            tcy = ("rgba(6,182,212,0.12)","#22d3ee")   if is_dark else ("#cffafe","#0e7490")
 
+            def _badge(label, cpair):
+                bg,fg = cpair
+                return f'<span style="font-size:0.58rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding:4px 12px;border-radius:20px;border:1px solid {fg}44;background:{bg};color:{fg};">{label}</span>'
+
+            def _price_parse(txt):
+                m = _re.search(r'Rp\.?\s*([\d,.]+)', txt)
+                return f"Rp {m.group(1)}" if m else ""
+
+            def _trade(txt, key):
+                m = _re.search(key + r'[\s:]*Rp\.?\s*([\d,.]+)', txt, _re.IGNORECASE)
+                if m: return f"Rp {m.group(1)}"
+                m2 = _re.search(key + r'[\s:]*([\d,.]+)', txt, _re.IGNORECASE)
+                return m2.group(1) if m2 else "—"
+
+            # Parse sections
+            parts  = _re.split(r'(?m)^(?=(?:🎯|🌙|⚠️)\s)', reco_text.strip())
+            parts  = [p.strip() for p in parts if p.strip()]
+            bulls  = [p for p in parts if p.startswith(("🎯","🌙"))]
+            avoids = [p for p in parts if p.startswith("⚠️")]
+            tails  = [p for p in parts if not p.startswith(("🎯","🌙","⚠️"))]
+
+            if not bulls and not avoids:
+                st.markdown(f'<div style="background:{bg_card};border:1px solid {border_c};border-left:4px solid {accent};border-radius:0 10px 10px 0;padding:18px;font-size:0.86rem;color:{text_main};white-space:pre-wrap;line-height:1.8;">{reco_text}</div>', unsafe_allow_html=True)
+                return
+
+            # ═══════════════════════════════════════════════════════════════
+            # GOD MODE STYLE — Daily (harga besar, multi-trend, status panel)
+            # ═══════════════════════════════════════════════════════════════
+            if mode == "godmode":
+                st.markdown(f"""<style>
+.gm-card{{background:{bg_card};border:1px solid {border_c};border-radius:14px;
+  padding:0;margin-bottom:18px;overflow:hidden;
+  box-shadow:{"0 4px 24px rgba(0,0,0,0.5)" if is_dark else "0 2px 14px rgba(0,0,0,0.08)"}}}
+.gm-top{{background:{bg_head};border-bottom:1px solid {border_c};padding:14px 20px 12px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}}
+.gm-ticker{{font-family:'IBM Plex Mono',monospace;font-size:1rem;font-weight:700;
+  letter-spacing:0.08em;color:{text_sub}}}
+.gm-session{{font-size:0.62rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:#22d3ee;background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.25);
+  padding:3px 10px;border-radius:20px}}
+.gm-price-wrap{{padding:16px 20px 10px;text-align:center;border-bottom:1px solid {border_c}}}
+.gm-price{{font-family:'IBM Plex Mono',monospace;font-size:2.4rem;font-weight:700;
+  color:{accent};letter-spacing:-0.5px;line-height:1}}
+.gm-signal-label{{font-size:0.72rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:{text_sub};margin-top:6px}}
+.gm-body{{padding:14px 20px 16px}}
+.gm-trend-row{{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}}
+.gm-trend-label{{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:{text_sub};
+  letter-spacing:0.08em;text-transform:uppercase;min-width:80px}}
+.gm-dot-group{{display:flex;align-items:center;gap:8px}}
+.gm-dot-item{{display:flex;flex-direction:column;align-items:center;gap:3px}}
+.gm-dot{{width:12px;height:12px;border-radius:50%;display:block}}
+.gm-dot-lbl{{font-size:0.48rem;letter-spacing:0.06em;text-transform:uppercase;color:{text_sub};white-space:nowrap}}
+.gm-signals{{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}}
+.gm-sig-row{{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;
+  background:{"rgba(255,255,255,0.03)" if is_dark else "rgba(0,0,0,0.025)"};
+  border-radius:7px;border:1px solid {"rgba(255,255,255,0.06)" if is_dark else "#f0f0f0"}}}
+.gm-sig-ico{{font-size:0.75rem;flex-shrink:0;margin-top:1px}}
+.gm-sig-lbl{{font-size:0.6rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  color:{text_sub};margin-bottom:1px}}
+.gm-sig-val{{font-size:0.78rem;color:{text_main};line-height:1.4}}
+.gm-action-box{{background:rgba(16,163,127,0.12);border:1px solid rgba(16,163,127,0.3);
+  border-radius:10px;padding:12px 16px;margin-bottom:12px;text-align:center}}
+.gm-action-label{{font-family:'IBM Plex Mono',monospace;font-size:0.62rem;letter-spacing:0.1em;
+  text-transform:uppercase;color:#26a69a;margin-bottom:4px}}
+.gm-action-val{{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:700;color:#26a69a}}
+.gm-trade-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:7px}}
+.gm-tc{{background:{"rgba(255,255,255,0.04)" if is_dark else "#f8fafc"};
+  border:1px solid {"rgba(255,255,255,0.07)" if is_dark else "#e2e8f0"};
+  border-radius:8px;padding:9px 10px}}
+.gm-tl{{font-size:0.5rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin-bottom:3px}}
+.gm-tv{{font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:700;color:{text_main}}}
+.gm-avoid-box{{background:rgba(242,54,69,0.07);border:1px solid rgba(242,54,69,0.22);
+  border-radius:10px;padding:12px 16px;margin-bottom:11px}}
+.gm-avoid-hd{{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;font-weight:700;
+  color:#f23645;margin-bottom:7px;letter-spacing:0.05em;display:block}}
+@media(max-width:768px){{
+  .gm-price{{font-size:1.9rem}}.gm-body{{padding:12px 14px 14px}}
+  .gm-signals{{grid-template-columns:1fr}}.gm-top{{padding:11px 14px}}
+  .gm-trade-grid{{grid-template-columns:repeat(3,1fr)}}
+}}
+</style>""", unsafe_allow_html=True)
+
+                for ct in bulls:
+                    lns    = ct.strip().splitlines()
+                    hl     = lns[0] if lns else ""
+                    body   = "\n".join(lns[1:]).strip()
+                    bl     = body.lower()
+
+                    tkm    = _re.search(r'(?:🎯|🌙)\s+([A-Z]{2,6})', hl)
+                    ticker = tkm.group(1) if tkm else "—"
+                    price  = _price_parse(hl)
+                    chgm   = _re.search(r'([+-][\d.]+%)', hl)
+                    chg_s  = chgm.group(1) if chgm else ""
+                    is_bs  = hl.startswith("🌙")
+
+                    # Detect signal label (pola candle / tren)
+                    signal_names = []
+                    if any(k in bl for k in ["pin bar","pinbar"]): signal_names.append("BULLISH PIN BAR")
+                    elif any(k in bl for k in ["engulfing"]): signal_names.append("BULLISH ENGULFING")
+                    elif any(k in bl for k in ["hammer"]): signal_names.append("HAMMER")
+                    elif any(k in bl for k in ["breakout","break out"]): signal_names.append("BREAKOUT")
+                    elif any(k in bl for k in ["uptrend","tren naik"]): signal_names.append("UPTREND CONFIRMED")
+                    else: signal_names.append("MOMENTUM BULLISH")
+                    signal_txt = signal_names[0]
+
+                    # Multi-trend dots: Micro(EMA9), Mini(EMA20), Macro(EMA50), Daily
+                    def _dot(bl, keys_up, keys_dn):
+                        if any(k in bl for k in keys_up): return "#26a69a"
+                        if any(k in bl for k in keys_dn): return "#f23645"
+                        return "#F5C242"
+
+                    dot_micro = _dot(bl, ["ema5","ema9","ema 5","ema 9","micro","1m uptrend"], ["micro downtrend","1m down"])
+                    dot_mini  = _dot(bl, ["ema20","ema 20","mini","5m uptrend","ema10"], ["mini downtrend","5m down"])
+                    dot_macro = _dot(bl, ["ema50","ema 50","macro","h1 uptrend","ema50"], ["macro downtrend","h1 down"])
+                    dot_daily = _dot(bl, ["daily","harian","tren harian","daily uptrend","long term"], ["daily downtrend"])
+
+                    trend_html = f"""
+<div class="gm-trend-row">
+  <span class="gm-trend-label">MULTI-TREND</span>
+  <div class="gm-dot-group">
+    <div class="gm-dot-item"><span class="gm-dot" style="background:{dot_micro};box-shadow:0 0 6px {dot_micro}88;"></span><span class="gm-dot-lbl">MICRO</span></div>
+    <div class="gm-dot-item"><span class="gm-dot" style="background:{dot_mini};box-shadow:0 0 6px {dot_mini}88;"></span><span class="gm-dot-lbl">MINI</span></div>
+    <div class="gm-dot-item"><span class="gm-dot" style="background:{dot_macro};box-shadow:0 0 6px {dot_macro}88;"></span><span class="gm-dot-lbl">MACRO</span></div>
+    <div class="gm-dot-item"><span class="gm-dot" style="background:{dot_daily};box-shadow:0 0 6px {dot_daily}88;"></span><span class="gm-dot-lbl">DAILY</span></div>
+  </div>
+</div>"""
+
+                    # Parse signal sections from body
+                    teknikal_line   = next((l for l in body.splitlines() if "📊" in l or "teknikal" in l.lower()), "")
+                    pemegang_line   = next((l for l in body.splitlines() if "👥" in l or "pemegang" in l.lower()), "")
+                    entry_line      = next((l for l in body.splitlines() if "⚡" in l or "entry" in l.lower()), "")
+                    rr_line         = next((l for l in body.splitlines() if "📐" in l or "r/r" in l.lower()), "")
+
+                    entry = _trade(body, r"entry")
+                    sl    = _trade(body, r"sl\b|stop.?loss")
+                    tp1   = _trade(body, r"tp\s*1|target\s*1|tp1")
+                    tp2   = _trade(body, r"tp\s*2|target\s*2|tp2")
+                    rrm   = _re.search(r'r/?r[\s:]*([\d.]+(?::[.\d]+)?)', body, _re.IGNORECASE)
+                    rr_s  = rrm.group(1) if rrm else "—"
+                    hzm   = _re.search(r'horizon[\s:]*([^\n|]{2,20})', body, _re.IGNORECASE)
+                    hz_s  = hzm.group(1).strip().rstrip('|').strip() if hzm else "—"
+
+                    # Signal grid (4 cells)
+                    sig_cells = []
+                    if teknikal_line:
+                        sig_cells.append(("📊","TEKNIKAL", teknikal_line.split(":",1)[-1].strip()[:120]))
+                    if pemegang_line:
+                        sig_cells.append(("👥","PEMEGANG SAHAM", pemegang_line.split(":",1)[-1].strip()[:80]))
+                    if entry_line and "entry" in entry_line.lower():
+                        sig_cells.append(("⚡","ENTRY / SL / TP", entry_line.split(":",1)[-1].strip()[:80] if ":" in entry_line else entry_line[:80]))
+                    if rr_line:
+                        sig_cells.append(("📐","R/R & HORIZON", rr_line.split(":",1)[-1].strip()[:60]))
+
+                    sigs_html = "".join(f'<div class="gm-sig-row"><span class="gm-sig-ico">{ico}</span><div><div class="gm-sig-lbl">{lbl}</div><div class="gm-sig-val">{val}</div></div></div>' for ico,lbl,val in sig_cells)
+
+                    chg_color = "#26a69a" if (chg_s.startswith("+") or (chg_s and not chg_s.startswith("-"))) else "#f23645"
+                    price_color = accent
+
+                    st.markdown(f"""
+<div class="gm-card">
+  <div class="gm-top">
+    <div>
+      <span class="gm-ticker">{ticker}</span>
+      {f'<span style="font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};margin-left:10px;">{chg_s}</span>' if chg_s else ""}
+    </div>
+    <span class="gm-session">{"🌙 BSJP" if is_bs else "● TRADING SESSION"}</span>
+  </div>
+  <div class="gm-price-wrap">
+    <div class="gm-price" style="color:{price_color};">{price}</div>
+    <div class="gm-signal-label">{signal_txt}</div>
+  </div>
+  <div class="gm-body">
+    {trend_html}
+    {f'<div class="gm-signals">{sigs_html}</div>' if sigs_html else ""}
+    <div class="gm-action-box">
+      <div class="gm-action-label">{"BELI SORE JUAL PAGI" if is_bs else "REKOMENDASI AKSI"}</div>
+      <div class="gm-action-val">{"BUY — HOLD OVERNIGHT" if is_bs else "BUY — WAITING CONFIRMATION"}</div>
+    </div>
+    <div class="gm-trade-grid">
+      <div class="gm-tc"><div class="gm-tl">Entry</div><div class="gm-tv" style="color:{accent};">{entry}</div></div>
+      <div class="gm-tc"><div class="gm-tl">Stop Loss</div><div class="gm-tv" style="color:#f23645;">{sl}</div></div>
+      <div class="gm-tc"><div class="gm-tl">TP 1</div><div class="gm-tv" style="color:#26a69a;">{tp1}</div></div>
+      <div class="gm-tc"><div class="gm-tl">TP 2</div><div class="gm-tv" style="color:#26a69a;">{tp2}</div></div>
+      <div class="gm-tc"><div class="gm-tl">R/R</div><div class="gm-tv">{rr_s}</div></div>
+      <div class="gm-tc"><div class="gm-tl">Horizon</div><div class="gm-tv">{hz_s}</div></div>
+    </div>
+  </div>
+</div>""", unsafe_allow_html=True)
+
+                # Avoid cards
+                if avoids:
+                    st.markdown(f'<p style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;margin:12px 0 6px;">⚠️ SAHAM YANG HARUS DIHINDARI</p>', unsafe_allow_html=True)
+                    for ap in avoids:
+                        alns = ap.strip().splitlines()
+                        ah   = alns[0] if alns else ""
+                        abody= "\n".join(alns[1:]).strip()
+                        atkm = _re.search(r'⚠️\s+([A-Z]{2,6})', ah)
+                        atk  = atkm.group(1) if atkm else ""
+                        apr  = _price_parse(ah)
+                        st.markdown(f'<div class="gm-avoid-box"><span class="gm-avoid-hd">⚠️ {atk} {apr} &nbsp; {_badge("HINDARI", tr)}</span><div style="font-size:0.82rem;color:{text_main};line-height:1.75;white-space:pre-wrap;">{abody}</div></div>', unsafe_allow_html=True)
+
+                if tails:
+                    st.markdown(f'<div style="background:{"rgba(255,255,255,0.02)" if is_dark else "#f8fafc"};border:1px solid {border_c};border-radius:10px;padding:13px 18px;margin-top:6px;font-size:0.82rem;color:{text_sub};line-height:1.75;white-space:pre-wrap;word-break:break-word;"><span style="font-size:0.57rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};font-weight:700;display:block;margin-bottom:6px;">OUTLOOK &amp; BIAS PASAR</span>' + "\n\n".join(tails) + '</div>', unsafe_allow_html=True)
+                return
+
+            # ═══════════════════════════════════════════════════════════════
+            # VOLARA STYLE — Weekly & Fundamental (signal bars + trade grid)
+            # ═══════════════════════════════════════════════════════════════
             st.markdown(f"""<style>
 .vc{{background:{bg_card};border:1px solid {border_c};border-radius:14px;
   padding:0;margin-bottom:16px;overflow:hidden;box-sizing:border-box;width:100%;
@@ -8743,35 +8968,33 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
   color:{accent};letter-spacing:0.06em}}
 .vc-pr{{font-family:'IBM Plex Mono',monospace;font-size:0.86rem;
   color:{text_main};margin-left:9px;opacity:0.8}}
-.vc-badge{{font-size:0.58rem;font-weight:700;letter-spacing:0.12em;
-  text-transform:uppercase;padding:3px 10px;border-radius:20px;border:1px solid}}
 .vc-body{{padding:13px 18px 16px}}
-.vc-pills{{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}}
-.vc-pill{{font-family:'IBM Plex Mono',monospace;font-size:0.59rem;font-weight:600;
-  padding:3px 9px;border-radius:6px;letter-spacing:0.05em;
-  display:inline-flex;align-items:center;gap:3px;white-space:nowrap;border:1px solid}}
-.vc-lbl{{font-family:'IBM Plex Mono',monospace;font-size:0.53rem;font-weight:700;
-  letter-spacing:0.14em;text-transform:uppercase;color:{text_sub};margin:9px 0 4px;display:block}}
+.vc-sig-list{{margin-bottom:12px}}
+.vc-sig-bar{{display:flex;align-items:stretch;margin-bottom:5px;border-radius:6px;overflow:hidden;}}
+.vc-sig-color{{width:4px;flex-shrink:0;border-radius:4px 0 0 4px}}
+.vc-sig-inner{{display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;flex:1;
+  background:{"rgba(255,255,255,0.03)" if is_dark else "rgba(0,0,0,0.025)"};
+  border:1px solid {"rgba(255,255,255,0.06)" if is_dark else "#f0f0f0"};
+  border-left:none;border-radius:0 6px 6px 0;}}
+.vc-sig-name{{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;
+  font-weight:600;color:{text_main};letter-spacing:0.04em}}
+.vc-sig-value{{font-size:0.68rem;color:{text_sub};text-align:right;max-width:55%}}
 .vc-txt{{font-size:0.83rem;color:{text_main};line-height:1.76;
-  white-space:pre-wrap;word-break:break-word}}
-.vc-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));
-  gap:7px;margin-top:12px}}
+  white-space:pre-wrap;word-break:break-word;margin-bottom:10px}}
+.vc-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:7px;margin-top:11px}}
 .vc-cell{{background:{"rgba(255,255,255,0.04)" if is_dark else "rgba(0,0,0,0.03)"};
   border:1px solid {"rgba(255,255,255,0.07)" if is_dark else "#e2e8f0"};
   border-radius:8px;padding:8px 10px}}
-.vc-cl{{font-size:0.51rem;letter-spacing:0.12em;text-transform:uppercase;
-  color:{text_sub};margin-bottom:3px}}
-.vc-cv{{font-family:'IBM Plex Mono',monospace;font-size:0.79rem;
-  font-weight:700;color:{text_main}}}
+.vc-cl{{font-size:0.51rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin-bottom:3px}}
+.vc-cv{{font-family:'IBM Plex Mono',monospace;font-size:0.79rem;font-weight:700;color:{text_main}}}
 .vc-tail{{background:{"rgba(255,255,255,0.02)" if is_dark else "#f8fafc"};
   border:1px solid {border_c};border-radius:10px;padding:13px 18px;margin-top:6px;
-  font-size:0.82rem;color:{text_sub};line-height:1.75;
-  white-space:pre-wrap;word-break:break-word}}
+  font-size:0.82rem;color:{text_sub};line-height:1.75;white-space:pre-wrap;word-break:break-word}}
 .vc-avoid{{background:{"rgba(180,20,20,0.07)" if is_dark else "#fff5f5"};
   border:1px solid {"rgba(242,54,69,0.25)" if is_dark else "#fecaca"};
   border-radius:10px;padding:13px 18px;margin-bottom:11px;
-  font-size:0.83rem;color:{text_main};line-height:1.75;
-  white-space:pre-wrap;word-break:break-word}}
+  font-size:0.83rem;color:{text_main};line-height:1.75;white-space:pre-wrap;word-break:break-word}}
 .vc-avoid-hd{{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
   font-weight:700;color:#f23645;margin-bottom:7px;letter-spacing:0.05em;display:block}}
 @media(max-width:768px){{
@@ -8780,42 +9003,10 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
 }}
 </style>""", unsafe_allow_html=True)
 
-            def _pill(label, cpair, dot="●"):
-                bg,fg = cpair
-                return f'<span class="vc-pill" style="background:{bg};color:{fg};border-color:{fg}44;">{dot} {label}</span>'
+            def _sig_bar(name, value, color):
+                """Volara-style signal bar dengan warna indikator di kiri."""
+                return f'<div class="vc-sig-bar"><div class="vc-sig-color" style="background:{color};"></div><div class="vc-sig-inner"><span class="vc-sig-name">{name}</span><span class="vc-sig-value">{value}</span></div></div>'
 
-            def _badge(label, cpair):
-                bg,fg = cpair
-                return f'<span class="vc-badge" style="background:{bg};color:{fg};border-color:{fg}44;">{label}</span>'
-
-            def _price(txt):
-                m = _re.search(r'Rp\.?\s*([\d,.]+)', txt)
-                return f"Rp {m.group(1)}" if m else ""
-
-            def _trade(txt, key):
-                m = _re.search(key + r'[\s:]*Rp\.?\s*([\d,.]+)', txt, _re.IGNORECASE)
-                if m: return f"Rp {m.group(1)}"
-                m2 = _re.search(key + r'[\s:]*([\d,.]+)', txt, _re.IGNORECASE)
-                return m2.group(1) if m2 else "—"
-
-            # Parse sections
-            parts = _re.split(r'(?m)^(?=(?:🎯|🌙|⚠️)\s)', reco_text.strip())
-            parts = [p.strip() for p in parts if p.strip()]
-            bulls  = [p for p in parts if p.startswith(("🎯","🌙"))]
-            avoids = [p for p in parts if p.startswith("⚠️")]
-            tails  = [p for p in parts if not p.startswith(("🎯","🌙","⚠️"))]
-
-            # Fallback
-            if not bulls and not avoids:
-                bg_fb = "rgba(30,35,50,0.7)" if is_dark else "#ffffff"
-                st.markdown(f'<div style="background:{bg_fb};border:1px solid {border_c};'
-                    f'border-left:4px solid {accent};border-radius:0 10px 10px 0;'
-                    f'padding:18px;font-size:0.86rem;color:{text_main};'
-                    f'white-space:pre-wrap;line-height:1.8;">{reco_text}</div>',
-                    unsafe_allow_html=True)
-                return
-
-            # ── Bullish cards ─────────────────────────────────────────────────
             for ct in bulls:
                 lns    = ct.strip().splitlines()
                 hl     = lns[0] if lns else ""
@@ -8824,52 +9015,68 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
 
                 tkm    = _re.search(r'(?:🎯|🌙)\s+([A-Z]{2,6})', hl)
                 ticker = tkm.group(1) if tkm else "—"
-                price  = _price(hl)
+                price  = _price_parse(hl)
                 chgm   = _re.search(r'([+-][\d.]+%)', hl)
                 chg_s  = chgm.group(1) if chgm else ""
                 is_bs  = hl.startswith("🌙")
                 b_col  = tp if is_bs else tg
                 b_lbl  = "BSJP" if is_bs else "BUY"
 
-                # Signal pills
-                pills = []
-                if any(k in bl for k in ["bullish","uptrend","naik","momentum positif","hijau"]):
-                    pills.append(_pill("Bullish", tg))
-                if any(k in bl for k in ["volume spike","vol spike","lonjakan vol","volume tinggi","spike"]):
-                    pills.append(_pill("Vol Spike", tb, "📊"))
-                if any(k in bl for k in ["ema","sma","golden cross","ma5","ma10","cross"]):
-                    pills.append(_pill("EMA Cross", tgo, "📈"))
-                if any(k in bl for k in ["akumulasi","pemegang naik","accumulation","sh naik"]):
-                    pills.append(_pill("Akumulasi", tg, "👥"))
-                if any(k in bl for k in ["overnight","bsjp","gap-up","pre-opening","sore"]):
-                    pills.append(_pill("Overnight", tp, "🌙"))
-                if any(k in bl for k in ["fundamental","roe","pbv","eps"]):
-                    pills.append(_pill("Fundamental", tgo, "📋"))
-                if chg_s:
-                    try:
-                        cv = float(chg_s.replace("%","").replace("+",""))
-                        pills.append(_pill(chg_s, tg if cv>=0 else tr, "▲" if cv>=0 else "▼"))
-                    except: pass
+                # Build Volara signal bars
+                sig_bars = []
+                # RSI
+                rsim = _re.search(r'rsi\s*[:\s]*(\d+)', bl)
+                if rsim:
+                    rv = int(rsim.group(1))
+                    rc = "#f23645" if rv > 70 else ("#26a69a" if rv < 40 else "#F5C242")
+                    sig_bars.append(_sig_bar("RSI", f"{rv} ({'overbought' if rv>70 else 'neutral' if rv<60 else 'bullish'})", rc))
+                # MACD
+                if "macd" in bl:
+                    mc = "#26a69a" if any(k in bl for k in ["macd positif","macd bullish","golden","macd naik"]) else "#F5C242"
+                    mv = "Bullish momentum" if any(k in bl for k in ["bullish","positif","naik"]) else "Divergence"
+                    sig_bars.append(_sig_bar("MACD", mv, mc))
+                # EMA/SMA
+                if any(k in bl for k in ["ema","sma","golden cross"]):
+                    ec = "#26a69a" if any(k in bl for k in ["ema5 > ema10","golden cross","sma20 > sma50","di atas","above","bullish cross"]) else "#f23645"
+                    ev = "Golden Cross" if "golden" in bl else ("EMA Bullish" if any(k in bl for k in ["ema5 > ema10","di atas ema"]) else "EMA Cross")
+                    sig_bars.append(_sig_bar("EMA/SMA", ev, ec))
+                # Volume
+                if any(k in bl for k in ["volume","vol"]):
+                    volm = _re.search(r'([\d.]+)\s*x\s*(?:avg|rata)', bl)
+                    vv = f"High ({volm.group(1)}x avg)" if volm else ("High (spike)" if any(k in bl for k in ["spike","tinggi","tinggi"]) else "Normal")
+                    vc_col = "#26a69a" if "spike" in bl or (volm and float(volm.group(1)) >= 1.5) else "#F5C242"
+                    sig_bars.append(_sig_bar("Volume", vv, vc_col))
+                # Fundamental specific
+                for fk, fn in [("roe","ROE"),("pbv","PBV"),("per","PER"),("p/b","P/B"),("eps","EPS"),("der","DER")]:
+                    fm = _re.search(fk + r'[\s:=]*([\d.]+)', bl)
+                    if fm:
+                        fv = fm.group(1)
+                        fc = "#26a69a" if fk in ["roe","eps"] else "#F5C242"
+                        sig_bars.append(_sig_bar(fn, fv, fc))
+                        if len(sig_bars) >= 6: break
+                # Pemegang saham
+                if any(k in bl for k in ["pemegang naik","akumulasi","accumulation","sh naik"]):
+                    sig_bars.append(_sig_bar("Pemegang Saham", "Naik / Akumulasi", "#26a69a"))
+                elif any(k in bl for k in ["pemegang turun","distribusi"]):
+                    sig_bars.append(_sig_bar("Pemegang Saham", "Turun / Distribusi", "#f23645"))
 
                 # Trade values
                 entry = _trade(body, r"entry")
-                sl    = _trade(body, r"sl\b|stop.?loss|stoploss")
+                sl    = _trade(body, r"sl\b|stop.?loss")
                 tp1   = _trade(body, r"tp\s*1|target\s*1|tp1")
                 tp2   = _trade(body, r"tp\s*2|target\s*2|tp2")
-                rrm   = _re.search(r'r/?r[\s:]*([\d.]+(?::[.\d]+)?)', body, _re.IGNORECASE)
-                rr_s  = rrm.group(1) if rrm else "—"
-                hzm   = _re.search(r'horizon[\s:]*([^\n|]{2,25})', body, _re.IGNORECASE)
+                rrm2  = _re.search(r'r/?r[\s:]*([\d.]+(?::[.\d]+)?)', body, _re.IGNORECASE)
+                rr_s  = rrm2.group(1) if rrm2 else "—"
+                hzm   = _re.search(r'horizon[\s:]*([^\n|]{2,20})', body, _re.IGNORECASE)
                 hz_s  = hzm.group(1).strip().rstrip('|').strip() if hzm else "—"
 
-                # Body clean: remove trade lines
                 skip = ["entry","stop loss","sl:","sl |","tp1","tp2","r/r","horizon","sizing"]
                 body_clean = "\n".join(l for l in body.splitlines()
                                        if not any(k in l.lower() for k in skip)).strip()
 
-                pills_html = "".join(pills)
-                has_trade  = any(v != "—" for v in [entry, sl, tp1, tp2])
-                trade_html = f"""
-<div class="vc-grid">
+                sigs_html = "".join(sig_bars[:6])
+                has_trade = any(v != "—" for v in [entry, sl, tp1, tp2])
+                trade_html = f"""<div class="vc-grid">
   <div class="vc-cell"><div class="vc-cl">Entry</div><div class="vc-cv" style="color:{accent};">{entry}</div></div>
   <div class="vc-cell"><div class="vc-cl">Stop Loss</div><div class="vc-cv" style="color:#f23645;">{sl}</div></div>
   <div class="vc-cell"><div class="vc-cl">TP 1</div><div class="vc-cv" style="color:#26a69a;">{tp1}</div></div>
@@ -8885,39 +9092,25 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
     {_badge(b_lbl, b_col)}
   </div>
   <div class="vc-body">
-    {f'<div class="vc-pills">{pills_html}</div>' if pills_html else ""}
+    {f'<div class="vc-sig-list">{sigs_html}</div>' if sigs_html else ""}
     <div class="vc-txt">{body_clean}</div>
     {trade_html}
   </div>
 </div>""", unsafe_allow_html=True)
 
-            # ── Hindari cards ─────────────────────────────────────────────────
             if avoids:
-                st.markdown(f'<p style="font-family:\'IBM Plex Mono\',monospace;font-size:0.6rem;'
-                    f'font-weight:700;letter-spacing:0.14em;text-transform:uppercase;'
-                    f'color:#f23645;margin:12px 0 6px;">⚠️ SAHAM YANG HARUS DIHINDARI</p>',
-                    unsafe_allow_html=True)
+                st.markdown(f'<p style="font-family:IBM Plex Mono,monospace;font-size:0.6rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;margin:12px 0 6px;">⚠️ SAHAM YANG HARUS DIHINDARI</p>', unsafe_allow_html=True)
                 for ap in avoids:
                     alns = ap.strip().splitlines()
                     ah   = alns[0] if alns else ""
                     abody= "\n".join(alns[1:]).strip()
                     atkm = _re.search(r'⚠️\s+([A-Z]{2,6})', ah)
                     atk  = atkm.group(1) if atkm else ""
-                    apr  = _price(ah)
-                    st.markdown(f"""
-<div class="vc-avoid">
-  <span class="vc-avoid-hd">⚠️ {atk} {apr} &nbsp; {_badge("HINDARI", tr)}</span>
-  <div class="vc-txt" style="font-size:0.81rem;">{abody}</div>
-</div>""", unsafe_allow_html=True)
+                    apr  = _price_parse(ah)
+                    st.markdown(f'<div class="vc-avoid"><span class="vc-avoid-hd">⚠️ {atk} {apr} &nbsp; {_badge("HINDARI", tr)}</span><div style="font-size:0.81rem;color:{text_main};line-height:1.75;white-space:pre-wrap;">{abody}</div></div>', unsafe_allow_html=True)
 
-            # ── Outlook / tail ────────────────────────────────────────────────
             if tails:
-                tail_combined = "\n\n".join(tails)
-                st.markdown(f'<div class="vc-tail">'
-                    f'<span style="font-size:0.57rem;letter-spacing:0.12em;text-transform:uppercase;'
-                    f'color:{text_sub};font-weight:700;display:block;margin-bottom:6px;">'
-                    f'OUTLOOK &amp; BIAS PASAR</span>'
-                    + tail_combined + '</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="vc-tail"><span style="font-size:0.57rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};font-weight:700;display:block;margin-bottom:6px;">OUTLOOK &amp; BIAS PASAR</span>' + "\n\n".join(tails) + '</div>', unsafe_allow_html=True)
 
         # ── Shareholder summary untuk enrichment prompt ──────────────────
         def _sh_summary_for_reco():
@@ -9027,7 +9220,7 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                 _ts = st.session_state.get("reco_daily_ts", "")
                 if _ts:
                     st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_daily_result"], "#F5C242")
+                _render_reco_cards(st.session_state["reco_daily_result"], "#F5C242", mode="godmode")
             elif not run_daily:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
@@ -9114,7 +9307,7 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                 _ts = st.session_state.get("reco_weekly_ts", "")
                 if _ts:
                     st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_weekly_result"], "#26a69a")
+                _render_reco_cards(st.session_state["reco_weekly_result"], "#26a69a", mode="volara")
             elif not run_weekly:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
@@ -9211,7 +9404,7 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                 _ts = st.session_state.get("reco_bsjp_ts", "")
                 if _ts:
                     st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_bsjp_result"], "#7c3aed")
+                _render_reco_cards(st.session_state["reco_bsjp_result"], "#7c3aed", mode="godmode")
             elif not run_bsjp:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
@@ -9850,30 +10043,30 @@ if st.session_state.user is None: components.html("<script>(function() { try { v
 
 components.html(f"""
 <script>
-(function(){{
+(function(){{{{
 var pd=window.parent.document;
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
- 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{{{ var el=pd.getElementById(id); if(el) el.remove(); }}}});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
-  background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
+#spbtn{{{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{{C["sidebar_bg"]}};color:{{C["text"]}};border:1px solid {{C["border"]}};
   cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
-#spbtn:hover{{transform:scale(1.08);background:{C["hover"]};}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{C["sidebar_bg"]};
-  border:1px solid {C["border"]};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
-  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
-#sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
-  color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;
-  text-align:left;text-decoration:none;transition:background 0.2s;}}
-.smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
-  justify-content:center;font-size:16px;background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}}
-.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]};font-weight:600;letter-spacing:1px;}}
-.smred{{color:#f55!important}}
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}}}
+#spbtn:hover{{{{transform:scale(1.08);background:{{C["hover"]}};}}}}
+#spmenu,#sphist{{{{position:fixed;left:20px;bottom:85px;background:{{C["sidebar_bg"]}};
+  border:1px solid {{C["border"]}};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}}}
+#sphist{{{{max-height:55vh;overflow-y:auto;}}}}
+.smi{{{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{{C["text"]}};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}}}
+.smi:hover{{{{background:{{C["hover"]}}}}}}
+.smico{{{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{{C["hover"]}};flex-shrink:0;}}}}
+.smsp{{{{border:none;border-top:1px solid {{C["border"]}};margin:4px 0;}}}}
+.smhd{{{{padding:8px 18px 4px;font-size:0.68rem;color:{{C["text_muted"]}};font-weight:600;letter-spacing:1px;}}}}
+.smred{{{{color:#f55!important}}}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
@@ -9885,32 +10078,32 @@ m.innerHTML=`
   <div class="smsp"></div><div class="smhd">NAVIGASI</div>
   <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
   <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {"✓" if st.session_state.theme=="dark" else ""}</a>
-  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {"✓" if st.session_state.theme=="light" else ""}</a>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {{"✓" if st.session_state.theme=="dark" else ""}}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {{"✓" if st.session_state.theme=="light" else ""}}</a>
   <div class="smsp"></div>
   <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div'); h.id='sphist';
 h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-btn.onclick=function(e){{
+{{_hist_items}} pd.body.appendChild(h);
+btn.onclick=function(e){{{{
   e.preventDefault(); e.stopPropagation();
   m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
-}};
-(function(){{
+}}}};
+(function(){{{{
   var u;
   u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+  pd.getElementById('smi-hist').onclick=function(){{{{m.style.display='none';h.style.display='block';}}}};
   u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
   u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}})();
-pd.addEventListener('click',function(e){{
+}}}})();
+pd.addEventListener('click',function(e){{{{
   if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
   if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
-}});
-}})();
+}}}});
+}}}})();
 </script>
 """, height=0)
 
