@@ -2460,15 +2460,17 @@ body {{ background: #080c14; }}
 .cp-header {{
     background:rgba(0,157,255,0.07);
     border-bottom:1px solid rgba(0,157,255,0.1);
-    padding:7px 10px;
-    display:flex;
-    align-items:center;
-    gap:6px;
+    padding:8px 12px;
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    gap:7px !important;
+    min-height:28px !important;
 }}
-.cp-dot {{ width:10px !important; height:10px !important; min-width:10px !important; min-height:10px !important; border-radius:50% !important; display:inline-block !important; flex-shrink:0 !important; }}
-.cp-dot-1 {{ background:#f87171 !important; }}
-.cp-dot-2 {{ background:#facc15 !important; }}
-.cp-dot-3 {{ background:#4ade80 !important; }}
+.cp-dot {{ width:11px !important; height:11px !important; min-width:11px !important; min-height:11px !important; border-radius:50% !important; display:block !important; flex-shrink:0 !important; }}
+.cp-dot-1 {{ background:#ff5f57 !important; }}
+.cp-dot-2 {{ background:#febc2e !important; }}
+.cp-dot-3 {{ background:#28c840 !important; }}
 .cp-title {{
     font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
     font-size:0.52rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
@@ -3396,7 +3398,7 @@ pd.body.appendChild(sp);
     var b = pd2.getElementById('sigma-top-brand');
     if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
     b.textContent = 'SIGMA';
-    b.style.cssText = 'position:fixed;top:15px;left:18px;z-index:99999;font-size:0.85rem;font-weight:600;color:' + _bc + ';letter-spacing:0.08em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
+    b.style.cssText = 'position:fixed;top:14px;left:18px;z-index:99999;font-size:1rem;font-weight:700;color:' + _bc + ';letter-spacing:0.04em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
   }}
   injectBrand();
   setInterval(injectBrand, 800);
@@ -4279,7 +4281,7 @@ pd.body.appendChild(sp);
     var b = pd2.getElementById('sigma-top-brand');
     if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
     b.textContent = 'SIGMA';
-    b.style.cssText = 'position:fixed;top:15px;left:18px;z-index:99999;font-size:0.85rem;font-weight:600;color:' + _bc + ';letter-spacing:0.08em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
+    b.style.cssText = 'position:fixed;top:14px;left:18px;z-index:99999;font-size:1rem;font-weight:700;color:' + _bc + ';letter-spacing:0.04em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
   }}
   injectBrand();
   setInterval(injectBrand, 800);
@@ -10441,7 +10443,7 @@ pd.body.appendChild(sp);
     var b = pd2.getElementById('sigma-top-brand');
     if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
     b.textContent = 'SIGMA';
-    b.style.cssText = 'position:fixed;top:15px;left:18px;z-index:99999;font-size:0.85rem;font-weight:600;color:' + _bc + ';letter-spacing:0.08em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
+    b.style.cssText = 'position:fixed;top:14px;left:18px;z-index:99999;font-size:1rem;font-weight:700;color:' + _bc + ';letter-spacing:0.04em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
   }}
   injectBrand();
   setInterval(injectBrand, 800);
