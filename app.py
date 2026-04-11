@@ -3174,14 +3174,14 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
+if(!pd.getElementById('sigma-brand-css')){{
+var scss=pd.createElement('style');scss.id='sigma-brand-css';
+scss.textContent='#sigma-top-brand{{position:fixed!important;top:14px!important;left:18px!important;z-index:99999!important;font-family:monospace!important;font-size:1rem!important;font-weight:700!important;color:#F5C242!important;letter-spacing:0.1em!important;pointer-events:none!important;text-shadow:0 2px 8px rgba(0,0,0,0.6)!important;background:transparent!important;border:none!important;padding:0!important;margin:0!important;}}';
+pd.head.appendChild(scss);
+}}
 var tbrand=pd.getElementById('sigma-top-brand');
 if(!tbrand){{tbrand=pd.createElement('div');tbrand.id='sigma-top-brand';
-tbrand.style.position='fixed';tbrand.style.top='14px';tbrand.style.left='18px';
-tbrand.style.zIndex='99999';tbrand.style.fontFamily='IBM Plex Mono,monospace';
-tbrand.style.fontSize='1rem';tbrand.style.fontWeight='700';tbrand.style.color='#F5C242';
-tbrand.style.letterSpacing='0.12em';tbrand.style.pointerEvents='none';
-tbrand.style.textShadow='0 2px 8px rgba(0,0,0,0.5)';
-tbrand.innerHTML='&#931; SIGMA';pd.body.appendChild(tbrand);}}
+tbrand.innerHTML='&Sigma; SIGMA';pd.body.appendChild(tbrand);}}
 var m=pd.createElement('div'); m.id='spmenu';
 m.innerHTML=`
   <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
@@ -3216,6 +3216,7 @@ pd.addEventListener('click',function(e){{{{
 }}}});
 }}}})();
 </script>
+<style>html,body{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}</style>
 """, height=0)
 
 active = get_active()
@@ -3836,14 +3837,14 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
+if(!pd.getElementById('sigma-brand-css')){{
+var scss=pd.createElement('style');scss.id='sigma-brand-css';
+scss.textContent='#sigma-top-brand{{position:fixed!important;top:14px!important;left:18px!important;z-index:99999!important;font-family:monospace!important;font-size:1rem!important;font-weight:700!important;color:#F5C242!important;letter-spacing:0.1em!important;pointer-events:none!important;text-shadow:0 2px 8px rgba(0,0,0,0.6)!important;background:transparent!important;border:none!important;padding:0!important;margin:0!important;}}';
+pd.head.appendChild(scss);
+}}
 var tbrand=pd.getElementById('sigma-top-brand');
 if(!tbrand){{tbrand=pd.createElement('div');tbrand.id='sigma-top-brand';
-tbrand.style.position='fixed';tbrand.style.top='14px';tbrand.style.left='18px';
-tbrand.style.zIndex='99999';tbrand.style.fontFamily='IBM Plex Mono,monospace';
-tbrand.style.fontSize='1rem';tbrand.style.fontWeight='700';tbrand.style.color='#F5C242';
-tbrand.style.letterSpacing='0.12em';tbrand.style.pointerEvents='none';
-tbrand.style.textShadow='0 2px 8px rgba(0,0,0,0.5)';
-tbrand.innerHTML='&#931; SIGMA';pd.body.appendChild(tbrand);}}
+tbrand.innerHTML='&Sigma; SIGMA';pd.body.appendChild(tbrand);}}
 var m=pd.createElement('div'); m.id='spmenu';
 m.innerHTML=`
   <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
@@ -3878,6 +3879,7 @@ pd.addEventListener('click',function(e){{{{
 }}}});
 }}}})();
 </script>
+<style>html,body{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}</style>
 """, height=0)
 
 if "del" in st.query_params:
@@ -9455,6 +9457,92 @@ tbody tr:nth-child(even) td{{background:{"rgba(255,255,255,0.012)" if is_dark el
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
 # ─────────────────────────────────────────────
 else:
+    # ── SIGMA brand + dot menu — native Streamlit injection (lebih reliable dari iframe) ──
+    _theme_val = st.session_state.get("theme", "dark")
+    _sb_bg = C["sidebar_bg"]
+    _sb_border = C["border"]
+    _sb_hover = C["hover"]
+    _sb_text = C["text"]
+    _sb_muted = C["text_muted"]
+    _newchat_url = "?do=newchat"
+    _home_url = "?do=go_home"
+    _dark_url = "?do=theme_dark"
+    _light_url = "?do=theme_light"
+    _logout_url = "?do=logout"
+    _dark_check = "✓" if _theme_val == "dark" else ""
+    _light_check = "✓" if _theme_val == "light" else ""
+    st.markdown(f"""
+<style>
+#sigma-fixed-brand {{
+    position: fixed; top: 14px; left: 18px; z-index: 999999;
+    font-family: 'IBM Plex Mono', monospace; font-size: 1rem; font-weight: 700;
+    color: #F5C242 !important; letter-spacing: 0.12em; pointer-events: none;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7); background: transparent !important;
+}}
+#sigma-dot-btn {{
+    position: fixed; bottom: 22px; left: 22px; z-index: 999999;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: {_sb_bg}; color: {_sb_text}; border: 1px solid {_sb_border};
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.55); transition: transform 0.18s, background 0.18s;
+    padding: 0;
+}}
+#sigma-dot-btn:hover {{ transform: scale(1.08); background: {_sb_hover}; }}
+#sigma-dot-menu {{
+    position: fixed; bottom: 80px; left: 22px; z-index: 999998;
+    background: {_sb_bg}; border: 1px solid {_sb_border}; border-radius: 16px;
+    box-shadow: 0 -4px 28px rgba(0,0,0,0.55); display: none;
+    min-width: 240px; overflow: hidden;
+}}
+.sdm-item {{
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 18px; font-size: 0.95rem; color: {_sb_text};
+    text-decoration: none; background: transparent; border: none;
+    width: 100%; text-align: left; cursor: pointer; transition: background 0.15s;
+    font-family: -apple-system, sans-serif;
+}}
+.sdm-item:hover {{ background: {_sb_hover}; }}
+.sdm-ico {{ width: 30px; height: 30px; border-radius: 8px; display: flex;
+    align-items: center; justify-content: center; font-size: 15px;
+    background: {_sb_hover}; flex-shrink: 0; }}
+.sdm-sep {{ border: none; border-top: 1px solid {_sb_border}; margin: 4px 0; }}
+.sdm-hd {{ padding: 6px 18px 2px; font-size: 0.65rem; color: {_sb_muted};
+    font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; }}
+.sdm-red {{ color: #ff5555 !important; }}
+</style>
+
+<div id="sigma-fixed-brand">&#931; SIGMA</div>
+
+<button id="sigma-dot-btn" onclick="document.getElementById('sigma-dot-menu').style.display=document.getElementById('sigma-dot-menu').style.display==='block'?'none':'block'">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="{_sb_text}">
+    <circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/>
+  </svg>
+</button>
+
+<div id="sigma-dot-menu">
+  <a class="sdm-item" href="{_newchat_url}"><span class="sdm-ico">✏️</span>Percakapan Baru</a>
+  <div class="sdm-sep"></div>
+  <div class="sdm-hd">NAVIGASI</div>
+  <a class="sdm-item" href="{_home_url}"><span class="sdm-ico">🏠</span>Kembali ke Home</a>
+  <div class="sdm-sep"></div>
+  <div class="sdm-hd">PENAMPILAN</div>
+  <a class="sdm-item" href="{_dark_url}"><span class="sdm-ico">🌃</span>Dark Mode {_dark_check}</a>
+  <a class="sdm-item" href="{_light_url}"><span class="sdm-ico">☀️</span>Light Mode {_light_check}</a>
+  <div class="sdm-sep"></div>
+  <a class="sdm-item sdm-red" href="{_logout_url}"><span class="sdm-ico">🚪</span>Sign Out</a>
+</div>
+
+<script>
+document.addEventListener('click', function(e) {{
+    var btn = document.getElementById('sigma-dot-btn');
+    var menu = document.getElementById('sigma-dot-menu');
+    if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {{
+        menu.style.display = 'none';
+    }}
+}});
+</script>
+""", unsafe_allow_html=True)
+
     if not active["messages"][1:]:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
         st.markdown(f"""
@@ -9806,14 +9894,14 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
+if(!pd.getElementById('sigma-brand-css')){{
+var scss=pd.createElement('style');scss.id='sigma-brand-css';
+scss.textContent='#sigma-top-brand{{position:fixed!important;top:14px!important;left:18px!important;z-index:99999!important;font-family:monospace!important;font-size:1rem!important;font-weight:700!important;color:#F5C242!important;letter-spacing:0.1em!important;pointer-events:none!important;text-shadow:0 2px 8px rgba(0,0,0,0.6)!important;background:transparent!important;border:none!important;padding:0!important;margin:0!important;}}';
+pd.head.appendChild(scss);
+}}
 var tbrand=pd.getElementById('sigma-top-brand');
 if(!tbrand){{tbrand=pd.createElement('div');tbrand.id='sigma-top-brand';
-tbrand.style.position='fixed';tbrand.style.top='14px';tbrand.style.left='18px';
-tbrand.style.zIndex='99999';tbrand.style.fontFamily='IBM Plex Mono,monospace';
-tbrand.style.fontSize='1rem';tbrand.style.fontWeight='700';tbrand.style.color='#F5C242';
-tbrand.style.letterSpacing='0.12em';tbrand.style.pointerEvents='none';
-tbrand.style.textShadow='0 2px 8px rgba(0,0,0,0.5)';
-tbrand.innerHTML='&#931; SIGMA';pd.body.appendChild(tbrand);}}
+tbrand.innerHTML='&Sigma; SIGMA';pd.body.appendChild(tbrand);}}
 var m=pd.createElement('div'); m.id='spmenu';
 m.innerHTML=`
   <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
@@ -9848,6 +9936,7 @@ pd.addEventListener('click',function(e){{{{
 }}}});
 }}}})();
 </script>
+<style>html,body{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}</style>
 """, height=0)
 
 components.html("""
