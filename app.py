@@ -2536,12 +2536,7 @@ body {{ background: #080c14; }}
             <div class="card-desc">Asisten analisa pasar berbasis AI &#8212; teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
 
             <div class="chat-preview">
-                <div style="background:rgba(0,157,255,0.07);border-bottom:1px solid rgba(0,157,255,0.1);padding:8px 12px;display:flex;flex-direction:row;align-items:center;gap:7px;min-height:30px;">
-                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#ff5f57"/></svg>
-                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#febc2e"/></svg>
-                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#28c840"/></svg>
-                  <span style="font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:rgba(0,157,255,0.5);letter-spacing:1.5px;text-transform:uppercase;margin-left:2px;">SIGMA AI &mdash; 7 ALPHA COMMAND</span>
-                </div>
+                <div id="dots-chat" style="padding:8px 12px;min-height:30px;background:rgba(0,157,255,0.07);border-bottom:1px solid rgba(0,157,255,0.1);"></div>
                 <div class="cp-body">
                     <div class="cp-cmd"><span class="cp-num">1</span> Kesimpulan Dampak Makro</div>
                     <div class="cp-cmd"><span class="cp-num">2</span> Kesimpulan Dampak Emiten</div>
@@ -2571,12 +2566,7 @@ body {{ background: #080c14; }}
             <div class="card-desc">Dashboard pasar real-time &#8212; Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
 
             <div class="term-preview">
-                <div style="background:rgba(245,194,66,0.07);border-bottom:1px solid rgba(245,194,66,0.1);padding:8px 12px;display:flex;flex-direction:row;align-items:center;gap:7px;min-height:30px;margin:-10px -12px 10px -12px;border-radius:9px 9px 0 0;">
-                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#ff5f57"/></svg>
-                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#febc2e"/></svg>
-                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#28c840"/></svg>
-                  <span style="font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:rgba(245,194,66,0.5);letter-spacing:1.5px;text-transform:uppercase;margin-left:2px;">SIGMA TERMINAL &mdash; LIVE</span>
-                </div>
+                <div id="dots-term" style="padding:8px 12px;min-height:30px;background:rgba(245,194,66,0.07);border-bottom:1px solid rgba(245,194,66,0.1);margin:-10px -12px 10px -12px;border-radius:9px 9px 0 0;"></div>
                 <div class="t-row"><span class="t-prompt">$</span><span class="t-cmd"> sigma.fetch --market IDX --live</span></div>
                 <div class="t-row"><span class="t-label">IHSG </span><span class="t-up">&#9650; 7,421  +0.74%</span></div>
                 <div class="t-row"><span class="t-label">LQ45 </span><span class="t-dn">&#9660; 862.3  -0.31%</span></div>
@@ -2654,6 +2644,38 @@ function selectTerminal() {{
         }} catch(e) {{}}
     }}, 150);
 }}
+</script>
+
+<script>
+(function() {{
+  function drawDots(divId, labelColor) {{
+    var d = document.getElementById(divId);
+    if (!d) return;
+    d.innerHTML = '';
+    d.style.display = 'flex';
+    d.style.flexDirection = 'row';
+    d.style.alignItems = 'center';
+    d.style.gap = '7px';
+    var colors = ['#ff5f57','#febc2e','#28c840'];
+    colors.forEach(function(c) {{
+      var cv = document.createElement('canvas');
+      cv.width = 12; cv.height = 12;
+      cv.style.flexShrink = '0';
+      var ctx = cv.getContext('2d');
+      ctx.beginPath();
+      ctx.arc(6, 6, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = c;
+      ctx.fill();
+      d.appendChild(cv);
+    }});
+    var lbl = document.createElement('span');
+    lbl.textContent = divId === 'dots-chat' ? 'SIGMA AI \u2014 7 ALPHA COMMAND' : 'SIGMA TERMINAL \u2014 LIVE';
+    lbl.style.cssText = "font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:" + labelColor + ";letter-spacing:1.5px;text-transform:uppercase;margin-left:4px;";
+    d.appendChild(lbl);
+  }}
+  drawDots('dots-chat', 'rgba(0,157,255,0.5)');
+  drawDots('dots-term', 'rgba(245,194,66,0.5)');
+}})();
 </script>
 
 </body>
