@@ -564,6 +564,12 @@ def build_global_context(prompt):
         "rebalancing","capital outflow","capital inflow",
         "risk on","risk off","bullish","bearish","accumulate",
     ]
+    # Jangan trigger untuk kalimat pendek/kasual meski ada kata umum
+    if len(_p.split()) <= 4 and not any(k in _p for k in [
+        "ihsg","saham","rupiah","emas","minyak","coal","batubara","fed","perang",
+        "nasdaq","sp500","bitcoin","inflasi","komoditas","china","amerika"
+    ]):
+        return ""
     if not any(k in _p for k in global_kw): return ""
 
     result = [{}]
@@ -660,13 +666,19 @@ def build_context(prompt):
                             "ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL","DENGAN",
                             "MINTA","ANALISIS","APAKAH","BAGAIMANA","KENAPA"}][:3]
     _p = prompt.lower()
-    _kw = ["analisa","saham","ihsg","entry","beli","jual","teknikal","fundamental",
+    # Keywords yang memicu context injection — "analisa" alone tidak cukup, harus ada pasar/ticker
+    _kw = ["saham","ihsg","entry","beli","jual","teknikal","fundamental",
            "harga","support","resistance","chart","bandar","volume","valuasi",
            "berita","news","perang","ekonomi","inflasi","rupiah","market","pasar",
            "global","china","amerika","fed","trump","tarif","ekspor","impor",
            "geopolitik","dividen","ipo","ojk","bei","idx","makro","mikro"]
-    _skip = ["hai","halo","selamat","makasih","oke","tugas","pr ","essay","apa itu","pengertian"]
+    _skip = ["hai","halo","selamat","makasih","oke","tugas","pr ","essay","apa itu","pengertian",
+             "bisa?","bisa kah","apakah bisa","bantu","apa yang","bisa aku","bisa kamu",
+             "boleh","gimana cara","cara pakai","cara menggunakan","apa itu sigma","sigma itu"]
     if any(k in _p for k in _skip) and not tickers:
+        return ""
+    # Kalimat terlalu pendek (<= 3 kata) tanpa ticker = kasual, tidak perlu data pasar
+    if not tickers and len(_p.split()) <= 3:
         return ""
     if not tickers and not any(k in _p for k in _kw):
         return ""
@@ -2647,10 +2659,10 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 
 /* ── USER BUBBLE: biru, rata kanan ── */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{ display: flex !important; flex-direction: row-reverse !important; justify-content: flex-start !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 12px 20px !important; max-width: 85% !important; min-width: 120px !important; text-align: right !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; text-align: right !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; text-align: right !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{ text-align: right !important; margin: 0 !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 12px 20px !important; max-width: 75% !important; width: fit-content !important; margin-left: auto !important; display: block !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{ margin: 0 !important; white-space: pre-wrap !important; word-break: break-word !important; }}
 
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
@@ -3419,10 +3431,10 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 
 /* ── USER BUBBLE: biru, rata kanan ── */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{ display: flex !important; flex-direction: row-reverse !important; justify-content: flex-start !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 12px 20px !important; max-width: 85% !important; min-width: 120px !important; text-align: right !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; text-align: right !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; text-align: right !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{ text-align: right !important; margin: 0 !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 12px 20px !important; max-width: 75% !important; width: fit-content !important; margin-left: auto !important; display: block !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{ margin: 0 !important; white-space: pre-wrap !important; word-break: break-word !important; }}
 
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
