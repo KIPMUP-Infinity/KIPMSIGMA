@@ -1978,28 +1978,15 @@ section[data-testid="stSidebar"] .stButton > button span {{
     background: transparent !important;
 }}
 
-/* User message bubble — biru, rata kanan */
+/* User message bubble — subtle box */
 [data-testid="stChatMessage"][data-testid*="user"] [data-testid="stMarkdownContainer"],
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{
-    background: #1a6ed8 !important;
-    color: #ffffff !important;
-    border-radius: 18px 18px 4px 18px !important;
+    background: {C['user_msg_bg']} !important;
+    border-radius: 18px !important;
     padding: 12px 16px !important;
     display: inline-block !important;
     max-width: 85% !important;
     float: right !important;
-    text-align: right !important;
-    margin-left: auto !important;
-}}
-[data-testid="stChatMessage"][data-testid*="user"] [data-testid="stMarkdownContainer"] p,
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{
-    color: #ffffff !important;
-    text-align: right !important;
-}}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{
-    display: flex !important;
-    justify-content: flex-end !important;
-    flex-direction: row-reverse !important;
 }}
 
 /* Main content area */
@@ -2062,22 +2049,6 @@ div[data-testid="stChatInputContainer"]:focus-within {{
 footer, #MainMenu {{ visibility: hidden !important; }}
 hr {{ border-color: {C['border']} !important; margin: 16px 0 !important; }}
 
-/* SIGMA brand pojok kiri atas — selalu tampil */
-#sigma-brand-fixed {{
-    position: fixed !important;
-    top: 15px !important;
-    left: 18px !important;
-    z-index: 99999 !important;
-    font-size: 0.85rem !important;
-    font-weight: 600 !important;
-    color: {C['text']} !important;
-    letter-spacing: 0.08em !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important;
-    user-select: none !important;
-    pointer-events: none !important;
-    line-height: 1 !important;
-}}
-
 /* Typography */
 [data-testid="stMarkdownContainer"] *,
 [data-testid="stMarkdownContainer"] p,
@@ -2135,7 +2106,6 @@ hr {{ border-color: {C['border']} !important; margin: 16px 0 !important; }}
     [data-testid="stMainBlockContainer"] {{ padding: 0 12px 130px !important; }}
 }}
 </style>
-<div id="sigma-brand-fixed">SIGMA</div>
 """, unsafe_allow_html=True)
 
 def show_login():
@@ -2301,7 +2271,6 @@ def show_system_selector():
 <meta charset="utf-8">
 <style>
 * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }}
-span[style*="border-radius:50%"] {{ display:inline-block !important; width:11px !important; height:11px !important; min-width:11px !important; min-height:11px !important; flex-shrink:0 !important; overflow:visible !important; }}
 body {{ background: #080c14; }}
 
 .sys-wrapper {{
@@ -2461,17 +2430,15 @@ body {{ background: #080c14; }}
 .cp-header {{
     background:rgba(0,157,255,0.07);
     border-bottom:1px solid rgba(0,157,255,0.1);
-    padding:8px 12px;
-    display:flex !important;
-    flex-direction:row !important;
-    align-items:center !important;
-    gap:7px !important;
-    min-height:28px !important;
+    padding:7px 10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
 }}
-.cp-dot {{ width:11px !important; height:11px !important; min-width:11px !important; min-height:11px !important; border-radius:50% !important; display:block !important; flex-shrink:0 !important; }}
-.cp-dot-1 {{ background:#ff5f57 !important; }}
-.cp-dot-2 {{ background:#febc2e !important; }}
-.cp-dot-3 {{ background:#28c840 !important; }}
+.cp-dot {{ width:6px; height:6px; border-radius:50%; display:inline-block; }}
+.cp-dot-1 {{ background:#f87171; }}
+.cp-dot-2 {{ background:#facc15; }}
+.cp-dot-3 {{ background:#4ade80; }}
 .cp-title {{
     font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
     font-size:0.52rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
@@ -2536,7 +2503,7 @@ body {{ background: #080c14; }}
             <div class="card-desc">Asisten analisa pasar berbasis AI &#8212; teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
 
             <div class="chat-preview">
-                <div id="dots-chat" style="padding:8px 12px;min-height:30px;background:rgba(0,157,255,0.07);border-bottom:1px solid rgba(0,157,255,0.1);"></div>
+                <div class="cp-header"><span class="cp-dot cp-dot-1"></span><span class="cp-dot cp-dot-2"></span><span class="cp-dot cp-dot-3"></span><span class="cp-title">SIGMA AI &mdash; 7 ALPHA COMMAND</span></div>
                 <div class="cp-body">
                     <div class="cp-cmd"><span class="cp-num">1</span> Kesimpulan Dampak Makro</div>
                     <div class="cp-cmd"><span class="cp-num">2</span> Kesimpulan Dampak Emiten</div>
@@ -2566,7 +2533,6 @@ body {{ background: #080c14; }}
             <div class="card-desc">Dashboard pasar real-time &#8212; Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
 
             <div class="term-preview">
-                <div id="dots-term" style="padding:8px 12px;min-height:30px;background:rgba(245,194,66,0.07);border-bottom:1px solid rgba(245,194,66,0.1);margin:-10px -12px 10px -12px;border-radius:9px 9px 0 0;"></div>
                 <div class="t-row"><span class="t-prompt">$</span><span class="t-cmd"> sigma.fetch --market IDX --live</span></div>
                 <div class="t-row"><span class="t-label">IHSG </span><span class="t-up">&#9650; 7,421  +0.74%</span></div>
                 <div class="t-row"><span class="t-label">LQ45 </span><span class="t-dn">&#9660; 862.3  -0.31%</span></div>
@@ -2644,38 +2610,6 @@ function selectTerminal() {{
         }} catch(e) {{}}
     }}, 150);
 }}
-</script>
-
-<script>
-(function() {{
-  function drawDots(divId, labelColor) {{
-    var d = document.getElementById(divId);
-    if (!d) return;
-    d.innerHTML = '';
-    d.style.display = 'flex';
-    d.style.flexDirection = 'row';
-    d.style.alignItems = 'center';
-    d.style.gap = '7px';
-    var colors = ['#ff5f57','#febc2e','#28c840'];
-    colors.forEach(function(c) {{
-      var cv = document.createElement('canvas');
-      cv.width = 12; cv.height = 12;
-      cv.style.flexShrink = '0';
-      var ctx = cv.getContext('2d');
-      ctx.beginPath();
-      ctx.arc(6, 6, 5.5, 0, Math.PI * 2);
-      ctx.fillStyle = c;
-      ctx.fill();
-      d.appendChild(cv);
-    }});
-    var lbl = document.createElement('span');
-    lbl.textContent = divId === 'dots-chat' ? 'SIGMA AI \u2014 7 ALPHA COMMAND' : 'SIGMA TERMINAL \u2014 LIVE';
-    lbl.style.cssText = "font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:" + labelColor + ";letter-spacing:1.5px;text-transform:uppercase;margin-left:4px;";
-    d.appendChild(lbl);
-  }}
-  drawDots('dots-chat', 'rgba(0,157,255,0.5)');
-  drawDots('dots-term', 'rgba(245,194,66,0.5)');
-}})();
 </script>
 
 </body>
@@ -3423,19 +3357,13 @@ sp.innerHTML = `
 `;
 pd.body.appendChild(sp);
 
-// ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
-(function keepBrand() {{
-  var _bc = '{C["text"]}';
-  function injectBrand() {{
-    var pd2 = window.parent ? window.parent.document : document;
-    var b = pd2.getElementById('sigma-top-brand');
-    if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
-    b.textContent = 'SIGMA';
-    b.style.cssText = 'position:fixed;top:14px;left:18px;z-index:99999;font-size:1rem;font-weight:700;color:' + _bc + ';letter-spacing:0.04em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
-  }}
-  injectBrand();
-  setInterval(injectBrand, 800);
-}})();
+// ── SIGMA BRAND CENTER ────────────────────────────────────────
+if (!pd.getElementById('sigma-top-brand')) {{
+  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
+  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
+  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  pd.body.appendChild(brand);
+}}
 
 // ── EVENTS ────────────────────────────────────────────────────
 function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
@@ -4306,19 +4234,13 @@ sp.innerHTML = `
 `;
 pd.body.appendChild(sp);
 
-// ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
-(function keepBrand() {{
-  var _bc = '{C["text"]}';
-  function injectBrand() {{
-    var pd2 = window.parent ? window.parent.document : document;
-    var b = pd2.getElementById('sigma-top-brand');
-    if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
-    b.textContent = 'SIGMA';
-    b.style.cssText = 'position:fixed;top:14px;left:18px;z-index:99999;font-size:1rem;font-weight:700;color:' + _bc + ';letter-spacing:0.04em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
-  }}
-  injectBrand();
-  setInterval(injectBrand, 800);
-}})();
+// ── SIGMA BRAND CENTER ────────────────────────────────────────
+if (!pd.getElementById('sigma-top-brand')) {{
+  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
+  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
+  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  pd.body.appendChild(brand);
+}}
 
 // ── EVENTS ────────────────────────────────────────────────────
 function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
@@ -10468,19 +10390,13 @@ sp.innerHTML = `
 `;
 pd.body.appendChild(sp);
 
-// ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
-(function keepBrand() {{
-  var _bc = '{C["text"]}';
-  function injectBrand() {{
-    var pd2 = window.parent ? window.parent.document : document;
-    var b = pd2.getElementById('sigma-top-brand');
-    if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
-    b.textContent = 'SIGMA';
-    b.style.cssText = 'position:fixed;top:14px;left:18px;z-index:99999;font-size:1rem;font-weight:700;color:' + _bc + ';letter-spacing:0.04em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
-  }}
-  injectBrand();
-  setInterval(injectBrand, 800);
-}})();
+// ── SIGMA BRAND CENTER ────────────────────────────────────────
+if (!pd.getElementById('sigma-top-brand')) {{
+  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
+  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
+  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  pd.body.appendChild(brand);
+}}
 
 // ── EVENTS ────────────────────────────────────────────────────
 function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
