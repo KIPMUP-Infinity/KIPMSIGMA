@@ -1173,7 +1173,8 @@ def get_colors(theme="dark"):
         "btn_bg":       "#676767" if dark else "#bbbbb8",
         # AI response background  
         "ai_msg_bg":    "transparent",
-        "user_msg_bg":  "#2f2f2f" if dark else "#f0f0f0",
+        "user_msg_bg":  "#1a3a5c" if dark else "#dbeafe",
+        "user_msg_text":"#cce4ff" if dark else "#1e3a5f",
     }
 
 # =========================================================
@@ -1978,15 +1979,20 @@ section[data-testid="stSidebar"] .stButton > button span {{
     background: transparent !important;
 }}
 
-/* User message bubble — subtle box */
-[data-testid="stChatMessage"][data-testid*="user"] [data-testid="stMarkdownContainer"],
+/* User message bubble — biru nyaman */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{
     background: {C['user_msg_bg']} !important;
-    border-radius: 18px !important;
-    padding: 12px 16px !important;
+    color: {C['user_msg_text']} !important;
+    border-radius: 18px 18px 4px 18px !important;
+    padding: 11px 16px !important;
     display: inline-block !important;
-    max-width: 85% !important;
+    max-width: 82% !important;
     float: right !important;
+    clear: both !important;
+}}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p,
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] span {{
+    color: {C['user_msg_text']} !important;
 }}
 
 /* Main content area */
@@ -3105,287 +3111,64 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay','sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
-
-var isDark = '{st.session_state.theme}' === 'dark';
-var bg     = isDark ? '#171717' : '#f9f9f9';
-var text   = isDark ? '#ececec' : '#0d0d0d';
-var border = isDark ? '#2f2f2f' : '#e5e5e5';
-var hover  = isDark ? '#2a2a2a' : '#ebebeb';
-var active = isDark ? '#383838' : '#e0e0e0';
-var muted  = isDark ? '#8e8ea0' : '#6e6e80';
-var gold   = '#F5C242';
-var green  = '#10a37f';
-var red    = '#ef4444';
-
-var s = pd.createElement('style'); s.id = 'sigma-mobile-css';
-s.textContent = `
-#spbtn {{
-  position:fixed;top:13px;left:13px;width:36px;height:36px;border-radius:8px;
-  background:transparent;color:${{text}};border:none;cursor:pointer;z-index:999999;
-  display:flex;align-items:center;justify-content:center;transition:background 0.15s;padding:0;
-}}
-#spbtn:hover {{ background:${{hover}}; }}
-#sigma-overlay {{
-  position:fixed;inset:0;z-index:999990;background:rgba(0,0,0,0.45);display:none;
-}}
-#sigma-sidebar {{
-  position:fixed;top:0;left:0;bottom:0;width:268px;z-index:999995;
-  background:${{bg}};border-right:1px solid ${{border}};
-  display:flex;flex-direction:column;
-  transform:translateX(-100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
-}}
-#sigma-sidebar.sigma-open {{ transform:translateX(0); }}
-.sb-header {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:13px 14px 12px;border-bottom:1px solid ${{border}};flex-shrink:0;
-}}
-.sb-brand {{ font-size:0.95rem;font-weight:700;color:${{gold}};letter-spacing:0.12em; }}
-.sb-close-btn {{
-  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
-  cursor:pointer;color:${{muted}};font-size:16px;display:flex;align-items:center;justify-content:center;
-  transition:background 0.12s;
-}}
-.sb-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
-.sb-newchat {{
-  display:flex;align-items:center;gap:9px;margin:10px 8px 2px;padding:9px 12px;
-  border-radius:8px;cursor:pointer;color:${{text}};font-size:0.84rem;font-weight:500;
-  text-decoration:none;border:1px solid ${{border}};transition:background 0.12s;background:transparent;
-}}
-.sb-newchat:hover {{ background:${{hover}}; }}
-.sb-section-label {{
-  font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
-  color:${{muted}};padding:10px 14px 3px;
-}}
-#sigma-hist-list {{ flex:1;overflow-y:auto;padding:0 4px 4px; }}
-#sigma-hist-list::-webkit-scrollbar {{ width:3px; }}
-#sigma-hist-list::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
-.sb-hist-row {{
-  display:flex;align-items:center;border-radius:7px;margin:1px 0;transition:background 0.1s;
-}}
-.sb-hist-row:hover {{ background:${{hover}}; }}
-.sb-hist-row.sb-active {{ background:${{active}}; }}
-.sb-hist-link {{
-  flex:1;padding:8px 10px;font-size:0.81rem;color:${{text}};text-decoration:none;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}}
-.sb-hist-del {{
-  padding:7px 9px;background:transparent;border:none;cursor:pointer;
-  color:${{muted}};font-size:0.85rem;opacity:0;border-radius:5px;flex-shrink:0;transition:opacity 0.1s;
-}}
-.sb-hist-row:hover .sb-hist-del {{ opacity:0.7; }}
-.sb-hist-del:hover {{ color:${{red}};opacity:1!important; }}
-.sb-footer {{ border-top:1px solid ${{border}};padding:6px 4px;flex-shrink:0; }}
-.sb-footer-btn {{
-  display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:7px;
-  cursor:pointer;width:100%;color:${{text}};font-size:0.84rem;background:transparent;
-  border:none;text-align:left;text-decoration:none;transition:background 0.12s;
-}}
-.sb-footer-btn:hover {{ background:${{hover}}; }}
-.sb-footer-ico {{
-  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;background:${{hover}};font-size:0.88rem;flex-shrink:0;
-}}
-#sigma-settings-panel {{
-  position:fixed;top:0;right:0;bottom:0;width:308px;z-index:999996;
-  background:${{bg}};border-left:1px solid ${{border}};
-  display:flex;flex-direction:column;
-  transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
-  box-shadow:-4px 0 30px rgba(0,0,0,0.25);
-}}
-#sigma-settings-panel.sigma-open {{ transform:translateX(0); }}
-.sp-header {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;border-bottom:1px solid ${{border}};flex-shrink:0;
-}}
-.sp-title {{ font-size:0.92rem;font-weight:600;color:${{text}}; }}
-.sp-close-btn {{
-  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
-  cursor:pointer;color:${{muted}};font-size:16px;
-  display:flex;align-items:center;justify-content:center;
-}}
-.sp-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
-.sp-body {{ flex:1;overflow-y:auto;padding:14px; }}
-.sp-body::-webkit-scrollbar {{ width:3px; }}
-.sp-body::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
-.sp-group {{ margin-bottom:20px; }}
-.sp-group-label {{
-  font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
-  color:${{muted}};margin-bottom:8px;
-}}
-.sp-user-row {{
-  display:flex;align-items:center;gap:11px;padding:12px;border-radius:9px;
-  background:${{isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}};
-  border:1px solid ${{border}};
-}}
-.sp-user-avatar {{
-  width:36px;height:36px;border-radius:50%;background:${{gold}};
-  display:flex;align-items:center;justify-content:center;
-  font-size:0.9rem;font-weight:700;color:#000;flex-shrink:0;
-}}
-.sp-user-name {{ font-size:0.87rem;font-weight:600;color:${{text}}; }}
-.sp-user-email {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
-.sp-item {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 12px;border-radius:9px;margin-bottom:5px;
-  background:${{isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}};
-  border:1px solid ${{border}};text-decoration:none;transition:border-color 0.15s;
-}}
-.sp-item:hover {{ border-color:${{isDark ? '#555' : '#ccc'}}; }}
-.sp-item-info {{ display:flex;align-items:center;gap:10px; }}
-.sp-item-ico {{
-  width:32px;height:32px;border-radius:7px;background:${{hover}};
-  display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0;
-}}
-.sp-item-label {{ font-size:0.85rem;color:${{text}};font-weight:500; }}
-.sp-item-sub {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
-.sp-item-right {{ font-size:0.78rem;color:${{muted}}; }}
-.sp-badge {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(245,194,66,0.14);color:${{gold}}; }}
-.sp-badge-on {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,163,127,0.15);color:${{green}}; }}
-.sp-divider {{ border:none;border-top:1px solid ${{border}};margin:8px 0 14px; }}
+['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+var s=pd.createElement('style'); s.id='sigma-mobile-css';
+s.textContent=`
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
+  cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
+#spbtn:hover{{transform:scale(1.08);background:{C["hover"]};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{C["sidebar_bg"]};
+  border:1px solid {C["border"]};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}
+.smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}}
+.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]};font-weight:600;letter-spacing:1px;}}
+.smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
-
-// History
-var histHTML = '';
-{_hist_items}
-
-// ── SIDEBAR ────────────────────────────────────────────────────
-var sidebar = pd.createElement('div'); sidebar.id = 'sigma-sidebar';
-var uNewChat = new URL(window.parent.location.href); uNewChat.searchParams.set('do','newchat');
-sidebar.innerHTML = `
-<div class="sb-header">
-  <span class="sb-brand">SIGMA Σ</span>
-  <button class="sb-close-btn" id="sb-close-btn">✕</button>
-</div>
-<a class="sb-newchat" href="${{uNewChat.toString()}}">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-  Percakapan Baru
-</a>
-<div class="sb-section-label">Riwayat</div>
-<div id="sigma-hist-list">${{histHTML}}</div>
-<div class="sb-footer">
-  <button class="sb-footer-btn" id="sb-settings-btn">
-    <span class="sb-footer-ico">⚙</span>Pengaturan
-  </button>
-  <button class="sb-footer-btn" id="sb-terminal-btn">
-    <span class="sb-footer-ico">📊</span>SIGMA Terminal
-  </button>
-  <button class="sb-footer-btn" id="sb-logout-btn" style="color:${{red}};">
-    <span class="sb-footer-ico" style="background:rgba(239,68,68,0.1);">⬡</span>Keluar
-  </button>
-</div>
-`;
-pd.body.appendChild(sidebar);
-
-// ── OVERLAY ────────────────────────────────────────────────────
-var overlay = pd.createElement('div'); overlay.id = 'sigma-overlay';
-pd.body.appendChild(overlay);
-
-// ── HAMBURGER ─────────────────────────────────────────────────
-var btn = pd.createElement('button'); btn.id = 'spbtn';
-btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="4" x2="16" y2="4"/><line x1="1" y1="8.5" x2="16" y2="8.5"/><line x1="1" y1="13" x2="16" y2="13"/></svg>';
+var btn=pd.createElement('button'); btn.id='spbtn';
+btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
-
-// ── SETTINGS PANEL ────────────────────────────────────────────
-var userName  = '{(user.get("name","User") if user else "User").replace(chr(39), " ").replace(chr(34), " ")}';
-var userEmail = '{(user.get("email","") if user else "").replace(chr(39), " ")}';
-var userInit  = userName.charAt(0).toUpperCase();
-var isDarkNow = '{st.session_state.theme}' === 'dark';
-var uDark  = new URL(window.parent.location.href); uDark.searchParams.set('do','theme_dark');
-var uLight = new URL(window.parent.location.href); uLight.searchParams.set('do','theme_light');
-var uHome  = new URL(window.parent.location.href); uHome.searchParams.set('do','go_home');
-var uOut   = new URL(window.parent.location.href); uOut.searchParams.delete('sigma_token'); uOut.searchParams.set('do','logout');
-
-var sp = pd.createElement('div'); sp.id = 'sigma-settings-panel';
-sp.innerHTML = `
-<div class="sp-header">
-  <span class="sp-title">⚙ Pengaturan</span>
-  <button class="sp-close-btn" id="sp-close-btn">✕</button>
-</div>
-<div class="sp-body">
-  <div class="sp-group">
-    <div class="sp-group-label">Akun</div>
-    <div class="sp-user-row">
-      <div class="sp-user-avatar">${{userInit}}</div>
-      <div><div class="sp-user-name">${{userName}}</div><div class="sp-user-email">${{userEmail}}</div></div>
-    </div>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Tampilan</div>
-    <a class="sp-item" href="${{uDark.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">🌙</div>
-        <div><div class="sp-item-label">Dark Mode</div><div class="sp-item-sub">Latar gelap nyaman di malam hari</div></div>
-      </div>
-      ${{isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
-    </a>
-    <a class="sp-item" href="${{uLight.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">☀️</div>
-        <div><div class="sp-item-label">Light Mode</div><div class="sp-item-sub">Latar terang untuk siang hari</div></div>
-      </div>
-      ${{!isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
-    </a>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Navigasi</div>
-    <a class="sp-item" href="${{uHome.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">🏠</div>
-        <div><div class="sp-item-label">Kembali ke Home</div><div class="sp-item-sub">Pilih SIGMA AI Chat atau Terminal</div></div>
-      </div>
-      <span class="sp-item-right">›</span>
-    </a>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Tentang</div>
-    <div class="sp-item" style="cursor:default;">
-      <div class="sp-item-info"><div class="sp-item-ico" style="font-weight:900;font-size:1rem;color:${{gold}};">Σ</div>
-        <div><div class="sp-item-label">SIGMA AI v2.1</div><div class="sp-item-sub">KIPM-UP × MarketnMocha</div></div>
-      </div>
-      <span class="sp-badge">AI</span>
-    </div>
-  </div>
-  <hr class="sp-divider">
-  <div class="sp-group">
-    <div class="sp-group-label" style="color:${{red}}">Zona Bahaya</div>
-    <a class="sp-item" href="${{uOut.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico" style="background:rgba(239,68,68,0.1);">🚪</div>
-        <div><div class="sp-item-label" style="color:${{red}}">Sign Out</div><div class="sp-item-sub">Keluar dari akun SIGMA</div></div>
-      </div>
-      <span style="color:${{red}};font-size:0.78rem;">›</span>
-    </a>
-  </div>
-</div>
-`;
-pd.body.appendChild(sp);
-
-// ── SIGMA BRAND CENTER ────────────────────────────────────────
-if (!pd.getElementById('sigma-top-brand')) {{
-  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
-  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
-  pd.body.appendChild(brand);
-}}
-
-// ── EVENTS ────────────────────────────────────────────────────
-function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
-function closeSidebar() {{ sidebar.classList.remove('sigma-open'); if(!sp.classList.contains('sigma-open')) overlay.style.display='none'; }}
-function openSettings() {{ sp.classList.add('sigma-open'); overlay.style.display='block'; sidebar.classList.remove('sigma-open'); }}
-function closeSettings() {{ sp.classList.remove('sigma-open'); overlay.style.display='none'; }}
-
-btn.onclick = function(e) {{ e.stopPropagation(); openSidebar(); }};
-overlay.onclick = function() {{ closeSidebar(); closeSettings(); overlay.style.display='none'; }};
-pd.getElementById('sb-close-btn').onclick  = function() {{ closeSidebar(); }};
-pd.getElementById('sp-close-btn').onclick  = function() {{ closeSettings(); }};
-pd.getElementById('sb-settings-btn').onclick = function(e) {{ e.preventDefault(); openSettings(); }};
-
-var termUrl = '{st.secrets.get("SIGMA_TERMINAL_URL","") if hasattr(st,"secrets") else ""}';
-pd.getElementById('sb-terminal-btn').onclick = function(e) {{
-  e.preventDefault(); closeSidebar();
-  if(termUrl) {{ window.parent.location.href = termUrl; }}
-  else {{ var u2=new URL(window.parent.location.href); u2.searchParams.set('do','view_stats'); window.parent.location.href=u2.toString(); }}
+var m=pd.createElement('div'); m.id='spmenu';
+m.innerHTML=`
+  <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
+  <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
+  <div class="smsp"></div><div class="smhd">NAVIGASI</div>
+  <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
+  <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {"✓" if st.session_state.theme=="dark" else ""}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {"✓" if st.session_state.theme=="light" else ""}</a>
+  <div class="smsp"></div>
+  <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
+`; pd.body.appendChild(m);
+var h=pd.createElement('div'); h.id='sphist';
+h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{
+  e.preventDefault(); e.stopPropagation();
+  m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
 }};
-pd.getElementById('sb-logout-btn').onclick = function(e) {{
-  e.preventDefault(); window.parent.location.href=uOut.toString();
-}};
+(function(){{
+  var u;
+  u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+  u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+}})();
+pd.addEventListener('click',function(e){{
+  if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
+  if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
+}});
 }})();
 </script>
 """, height=0)
@@ -3982,287 +3765,64 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay','sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
-
-var isDark = '{st.session_state.theme}' === 'dark';
-var bg     = isDark ? '#171717' : '#f9f9f9';
-var text   = isDark ? '#ececec' : '#0d0d0d';
-var border = isDark ? '#2f2f2f' : '#e5e5e5';
-var hover  = isDark ? '#2a2a2a' : '#ebebeb';
-var active = isDark ? '#383838' : '#e0e0e0';
-var muted  = isDark ? '#8e8ea0' : '#6e6e80';
-var gold   = '#F5C242';
-var green  = '#10a37f';
-var red    = '#ef4444';
-
-var s = pd.createElement('style'); s.id = 'sigma-mobile-css';
-s.textContent = `
-#spbtn {{
-  position:fixed;top:13px;left:13px;width:36px;height:36px;border-radius:8px;
-  background:transparent;color:${{text}};border:none;cursor:pointer;z-index:999999;
-  display:flex;align-items:center;justify-content:center;transition:background 0.15s;padding:0;
-}}
-#spbtn:hover {{ background:${{hover}}; }}
-#sigma-overlay {{
-  position:fixed;inset:0;z-index:999990;background:rgba(0,0,0,0.45);display:none;
-}}
-#sigma-sidebar {{
-  position:fixed;top:0;left:0;bottom:0;width:268px;z-index:999995;
-  background:${{bg}};border-right:1px solid ${{border}};
-  display:flex;flex-direction:column;
-  transform:translateX(-100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
-}}
-#sigma-sidebar.sigma-open {{ transform:translateX(0); }}
-.sb-header {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:13px 14px 12px;border-bottom:1px solid ${{border}};flex-shrink:0;
-}}
-.sb-brand {{ font-size:0.95rem;font-weight:700;color:${{gold}};letter-spacing:0.12em; }}
-.sb-close-btn {{
-  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
-  cursor:pointer;color:${{muted}};font-size:16px;display:flex;align-items:center;justify-content:center;
-  transition:background 0.12s;
-}}
-.sb-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
-.sb-newchat {{
-  display:flex;align-items:center;gap:9px;margin:10px 8px 2px;padding:9px 12px;
-  border-radius:8px;cursor:pointer;color:${{text}};font-size:0.84rem;font-weight:500;
-  text-decoration:none;border:1px solid ${{border}};transition:background 0.12s;background:transparent;
-}}
-.sb-newchat:hover {{ background:${{hover}}; }}
-.sb-section-label {{
-  font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
-  color:${{muted}};padding:10px 14px 3px;
-}}
-#sigma-hist-list {{ flex:1;overflow-y:auto;padding:0 4px 4px; }}
-#sigma-hist-list::-webkit-scrollbar {{ width:3px; }}
-#sigma-hist-list::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
-.sb-hist-row {{
-  display:flex;align-items:center;border-radius:7px;margin:1px 0;transition:background 0.1s;
-}}
-.sb-hist-row:hover {{ background:${{hover}}; }}
-.sb-hist-row.sb-active {{ background:${{active}}; }}
-.sb-hist-link {{
-  flex:1;padding:8px 10px;font-size:0.81rem;color:${{text}};text-decoration:none;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}}
-.sb-hist-del {{
-  padding:7px 9px;background:transparent;border:none;cursor:pointer;
-  color:${{muted}};font-size:0.85rem;opacity:0;border-radius:5px;flex-shrink:0;transition:opacity 0.1s;
-}}
-.sb-hist-row:hover .sb-hist-del {{ opacity:0.7; }}
-.sb-hist-del:hover {{ color:${{red}};opacity:1!important; }}
-.sb-footer {{ border-top:1px solid ${{border}};padding:6px 4px;flex-shrink:0; }}
-.sb-footer-btn {{
-  display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:7px;
-  cursor:pointer;width:100%;color:${{text}};font-size:0.84rem;background:transparent;
-  border:none;text-align:left;text-decoration:none;transition:background 0.12s;
-}}
-.sb-footer-btn:hover {{ background:${{hover}}; }}
-.sb-footer-ico {{
-  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;background:${{hover}};font-size:0.88rem;flex-shrink:0;
-}}
-#sigma-settings-panel {{
-  position:fixed;top:0;right:0;bottom:0;width:308px;z-index:999996;
-  background:${{bg}};border-left:1px solid ${{border}};
-  display:flex;flex-direction:column;
-  transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
-  box-shadow:-4px 0 30px rgba(0,0,0,0.25);
-}}
-#sigma-settings-panel.sigma-open {{ transform:translateX(0); }}
-.sp-header {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;border-bottom:1px solid ${{border}};flex-shrink:0;
-}}
-.sp-title {{ font-size:0.92rem;font-weight:600;color:${{text}}; }}
-.sp-close-btn {{
-  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
-  cursor:pointer;color:${{muted}};font-size:16px;
-  display:flex;align-items:center;justify-content:center;
-}}
-.sp-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
-.sp-body {{ flex:1;overflow-y:auto;padding:14px; }}
-.sp-body::-webkit-scrollbar {{ width:3px; }}
-.sp-body::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
-.sp-group {{ margin-bottom:20px; }}
-.sp-group-label {{
-  font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
-  color:${{muted}};margin-bottom:8px;
-}}
-.sp-user-row {{
-  display:flex;align-items:center;gap:11px;padding:12px;border-radius:9px;
-  background:${{isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}};
-  border:1px solid ${{border}};
-}}
-.sp-user-avatar {{
-  width:36px;height:36px;border-radius:50%;background:${{gold}};
-  display:flex;align-items:center;justify-content:center;
-  font-size:0.9rem;font-weight:700;color:#000;flex-shrink:0;
-}}
-.sp-user-name {{ font-size:0.87rem;font-weight:600;color:${{text}}; }}
-.sp-user-email {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
-.sp-item {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 12px;border-radius:9px;margin-bottom:5px;
-  background:${{isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}};
-  border:1px solid ${{border}};text-decoration:none;transition:border-color 0.15s;
-}}
-.sp-item:hover {{ border-color:${{isDark ? '#555' : '#ccc'}}; }}
-.sp-item-info {{ display:flex;align-items:center;gap:10px; }}
-.sp-item-ico {{
-  width:32px;height:32px;border-radius:7px;background:${{hover}};
-  display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0;
-}}
-.sp-item-label {{ font-size:0.85rem;color:${{text}};font-weight:500; }}
-.sp-item-sub {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
-.sp-item-right {{ font-size:0.78rem;color:${{muted}}; }}
-.sp-badge {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(245,194,66,0.14);color:${{gold}}; }}
-.sp-badge-on {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,163,127,0.15);color:${{green}}; }}
-.sp-divider {{ border:none;border-top:1px solid ${{border}};margin:8px 0 14px; }}
+['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+var s=pd.createElement('style'); s.id='sigma-mobile-css';
+s.textContent=`
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
+  cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
+#spbtn:hover{{transform:scale(1.08);background:{C["hover"]};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{C["sidebar_bg"]};
+  border:1px solid {C["border"]};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}
+.smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}}
+.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]};font-weight:600;letter-spacing:1px;}}
+.smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
-
-// History
-var histHTML = '';
-{_hist_items}
-
-// ── SIDEBAR ────────────────────────────────────────────────────
-var sidebar = pd.createElement('div'); sidebar.id = 'sigma-sidebar';
-var uNewChat = new URL(window.parent.location.href); uNewChat.searchParams.set('do','newchat');
-sidebar.innerHTML = `
-<div class="sb-header">
-  <span class="sb-brand">SIGMA Σ</span>
-  <button class="sb-close-btn" id="sb-close-btn">✕</button>
-</div>
-<a class="sb-newchat" href="${{uNewChat.toString()}}">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-  Percakapan Baru
-</a>
-<div class="sb-section-label">Riwayat</div>
-<div id="sigma-hist-list">${{histHTML}}</div>
-<div class="sb-footer">
-  <button class="sb-footer-btn" id="sb-settings-btn">
-    <span class="sb-footer-ico">⚙</span>Pengaturan
-  </button>
-  <button class="sb-footer-btn" id="sb-terminal-btn">
-    <span class="sb-footer-ico">📊</span>SIGMA Terminal
-  </button>
-  <button class="sb-footer-btn" id="sb-logout-btn" style="color:${{red}};">
-    <span class="sb-footer-ico" style="background:rgba(239,68,68,0.1);">⬡</span>Keluar
-  </button>
-</div>
-`;
-pd.body.appendChild(sidebar);
-
-// ── OVERLAY ────────────────────────────────────────────────────
-var overlay = pd.createElement('div'); overlay.id = 'sigma-overlay';
-pd.body.appendChild(overlay);
-
-// ── HAMBURGER ─────────────────────────────────────────────────
-var btn = pd.createElement('button'); btn.id = 'spbtn';
-btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="4" x2="16" y2="4"/><line x1="1" y1="8.5" x2="16" y2="8.5"/><line x1="1" y1="13" x2="16" y2="13"/></svg>';
+var btn=pd.createElement('button'); btn.id='spbtn';
+btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
-
-// ── SETTINGS PANEL ────────────────────────────────────────────
-var userName  = '{(user.get("name","User") if user else "User").replace(chr(39), " ").replace(chr(34), " ")}';
-var userEmail = '{(user.get("email","") if user else "").replace(chr(39), " ")}';
-var userInit  = userName.charAt(0).toUpperCase();
-var isDarkNow = '{st.session_state.theme}' === 'dark';
-var uDark  = new URL(window.parent.location.href); uDark.searchParams.set('do','theme_dark');
-var uLight = new URL(window.parent.location.href); uLight.searchParams.set('do','theme_light');
-var uHome  = new URL(window.parent.location.href); uHome.searchParams.set('do','go_home');
-var uOut   = new URL(window.parent.location.href); uOut.searchParams.delete('sigma_token'); uOut.searchParams.set('do','logout');
-
-var sp = pd.createElement('div'); sp.id = 'sigma-settings-panel';
-sp.innerHTML = `
-<div class="sp-header">
-  <span class="sp-title">⚙ Pengaturan</span>
-  <button class="sp-close-btn" id="sp-close-btn">✕</button>
-</div>
-<div class="sp-body">
-  <div class="sp-group">
-    <div class="sp-group-label">Akun</div>
-    <div class="sp-user-row">
-      <div class="sp-user-avatar">${{userInit}}</div>
-      <div><div class="sp-user-name">${{userName}}</div><div class="sp-user-email">${{userEmail}}</div></div>
-    </div>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Tampilan</div>
-    <a class="sp-item" href="${{uDark.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">🌙</div>
-        <div><div class="sp-item-label">Dark Mode</div><div class="sp-item-sub">Latar gelap nyaman di malam hari</div></div>
-      </div>
-      ${{isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
-    </a>
-    <a class="sp-item" href="${{uLight.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">☀️</div>
-        <div><div class="sp-item-label">Light Mode</div><div class="sp-item-sub">Latar terang untuk siang hari</div></div>
-      </div>
-      ${{!isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
-    </a>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Navigasi</div>
-    <a class="sp-item" href="${{uHome.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">🏠</div>
-        <div><div class="sp-item-label">Kembali ke Home</div><div class="sp-item-sub">Pilih SIGMA AI Chat atau Terminal</div></div>
-      </div>
-      <span class="sp-item-right">›</span>
-    </a>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Tentang</div>
-    <div class="sp-item" style="cursor:default;">
-      <div class="sp-item-info"><div class="sp-item-ico" style="font-weight:900;font-size:1rem;color:${{gold}};">Σ</div>
-        <div><div class="sp-item-label">SIGMA AI v2.1</div><div class="sp-item-sub">KIPM-UP × MarketnMocha</div></div>
-      </div>
-      <span class="sp-badge">AI</span>
-    </div>
-  </div>
-  <hr class="sp-divider">
-  <div class="sp-group">
-    <div class="sp-group-label" style="color:${{red}}">Zona Bahaya</div>
-    <a class="sp-item" href="${{uOut.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico" style="background:rgba(239,68,68,0.1);">🚪</div>
-        <div><div class="sp-item-label" style="color:${{red}}">Sign Out</div><div class="sp-item-sub">Keluar dari akun SIGMA</div></div>
-      </div>
-      <span style="color:${{red}};font-size:0.78rem;">›</span>
-    </a>
-  </div>
-</div>
-`;
-pd.body.appendChild(sp);
-
-// ── SIGMA BRAND CENTER ────────────────────────────────────────
-if (!pd.getElementById('sigma-top-brand')) {{
-  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
-  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
-  pd.body.appendChild(brand);
-}}
-
-// ── EVENTS ────────────────────────────────────────────────────
-function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
-function closeSidebar() {{ sidebar.classList.remove('sigma-open'); if(!sp.classList.contains('sigma-open')) overlay.style.display='none'; }}
-function openSettings() {{ sp.classList.add('sigma-open'); overlay.style.display='block'; sidebar.classList.remove('sigma-open'); }}
-function closeSettings() {{ sp.classList.remove('sigma-open'); overlay.style.display='none'; }}
-
-btn.onclick = function(e) {{ e.stopPropagation(); openSidebar(); }};
-overlay.onclick = function() {{ closeSidebar(); closeSettings(); overlay.style.display='none'; }};
-pd.getElementById('sb-close-btn').onclick  = function() {{ closeSidebar(); }};
-pd.getElementById('sp-close-btn').onclick  = function() {{ closeSettings(); }};
-pd.getElementById('sb-settings-btn').onclick = function(e) {{ e.preventDefault(); openSettings(); }};
-
-var termUrl = '{st.secrets.get("SIGMA_TERMINAL_URL","") if hasattr(st,"secrets") else ""}';
-pd.getElementById('sb-terminal-btn').onclick = function(e) {{
-  e.preventDefault(); closeSidebar();
-  if(termUrl) {{ window.parent.location.href = termUrl; }}
-  else {{ var u2=new URL(window.parent.location.href); u2.searchParams.set('do','view_stats'); window.parent.location.href=u2.toString(); }}
+var m=pd.createElement('div'); m.id='spmenu';
+m.innerHTML=`
+  <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
+  <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
+  <div class="smsp"></div><div class="smhd">NAVIGASI</div>
+  <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
+  <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {"✓" if st.session_state.theme=="dark" else ""}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {"✓" if st.session_state.theme=="light" else ""}</a>
+  <div class="smsp"></div>
+  <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
+`; pd.body.appendChild(m);
+var h=pd.createElement('div'); h.id='sphist';
+h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{
+  e.preventDefault(); e.stopPropagation();
+  m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
 }};
-pd.getElementById('sb-logout-btn').onclick = function(e) {{
-  e.preventDefault(); window.parent.location.href=uOut.toString();
-}};
+(function(){{
+  var u;
+  u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+  u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+}})();
+pd.addEventListener('click',function(e){{
+  if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
+  if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
+}});
 }})();
 </script>
 """, height=0)
@@ -9083,7 +8643,18 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
         ]
         _WATCHLIST_RECO = list(dict.fromkeys(_WATCHLIST_RECO))  # deduplikasi
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
+        st.markdown(f"""
+<div style="background:{"rgba(10,22,46,0.85)" if is_dark else "#f0f7ff"};border:1px solid {"rgba(96,165,250,0.2)" if is_dark else "#bfdbfe"};border-radius:14px;padding:18px 22px;margin-bottom:20px;">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:{"#60a5fa" if is_dark else "#2563eb"};font-weight:700;margin-bottom:6px;">⚡ SIGMA AI &nbsp;&middot;&nbsp; STOCK SCREENER OTOMATIS</div>
+  <div style="font-size:0.9rem;font-weight:600;color:{text_main};margin-bottom:4px;">Rekomendasi Real-Time dari {len(_WATCHLIST_RECO)}+ Saham IDX</div>
+  <div style="font-size:0.74rem;color:{text_sub};line-height:1.7;">Berbasis momentum harga &middot; volume spike &middot; EMA cross &middot; shareholder tracker &middot; fundamental Buffett</div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:11px;">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(16,163,127,0.12)" if is_dark else "#dcfce7"};color:{"#26a69a" if is_dark else "#166534"};border:1px solid {"rgba(16,163,127,0.25)" if is_dark else "#bbf7d0"};">● DAILY PICK</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(96,165,250,0.1)" if is_dark else "#dbeafe"};color:{"#60a5fa" if is_dark else "#1d4ed8"};border:1px solid {"rgba(96,165,250,0.2)" if is_dark else "#bfdbfe"};">● SWING WEEKLY</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(167,139,250,0.1)" if is_dark else "#ede9fe"};color:{"#a78bfa" if is_dark else "#6d28d9"};border:1px solid {"rgba(167,139,250,0.2)" if is_dark else "#ddd6fe"};">● BSJP OVERNIGHT</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.57rem;font-weight:600;padding:3px 10px;border-radius:20px;background:{"rgba(245,194,66,0.1)" if is_dark else "#fef9c3"};color:{"#F5C242" if is_dark else "#92400e"};border:1px solid {"rgba(245,194,66,0.2)" if is_dark else "#fde68a"};">● FUNDAMENTAL BUFFETT</span>
+  </div>
+</div>""", unsafe_allow_html=True)
 
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
@@ -9143,67 +8714,210 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
                     return f"Gagal memanggil AI: {e}"
 
         def _render_reco_cards(reco_text, accent="#F5C242"):
-            bg_card  = "rgba(30,35,50,0.7)" if is_dark else "#ffffff"
-            bg_wrap  = "rgba(245,194,66,0.02)" if is_dark else "#fffdf7"
-            border_c = "rgba(245,194,66,0.12)" if is_dark else "#e8d99a"
-
-            # Split teks per saham — pisah berdasarkan baris yang dimulai dengan emoji 🎯/🌙
+            """Volara-style card renderer — setiap saham 1 card modern dengan signal pills & trade grid."""
             import re as _re
-            # Split at stock-entry markers (🎯 or 🌙 at start of line)
-            parts = _re.split(r'(?m)^(?=(?:🎯|🌙)\s)', reco_text.strip())
-            parts = [p.strip() for p in parts if p.strip()]
 
-            # Cek apakah ada bagian bias/akhir (tidak dimulai emoji saham)
-            stock_parts = []
-            tail_parts  = []
-            for p in parts:
-                if p.startswith(("🎯", "🌙")):
-                    stock_parts.append(p)
-                else:
-                    tail_parts.append(p)
+            bg_card = "rgba(14,20,36,0.92)"   if is_dark else "#ffffff"
+            bg_head = "rgba(255,255,255,0.04)" if is_dark else "rgba(0,0,0,0.035)"
+            try:
+                _r=int(accent[1:3],16); _g=int(accent[3:5],16); _b=int(accent[5:7],16)
+                border_c = f"rgba({_r},{_g},{_b},0.22)"
+            except:
+                border_c = "rgba(245,194,66,0.22)"
 
-            # Jika tidak bisa split (format berbeda), render as-is
-            if not stock_parts:
-                st.markdown(f"""<div style="background:{bg_wrap};border:1px solid {border_c};border-left:3px solid {accent};
-border-radius:0 8px 8px 0;padding:20px 20px;margin-top:12px;font-size:0.88rem;color:{text_main};
-white-space:pre-wrap;word-break:break-word;line-height:1.78;box-sizing:border-box;width:100%;overflow:visible;">
-{reco_text}
-</div>""", unsafe_allow_html=True)
-                return
+            # Color pairs: (bg, fg)
+            tg = ("rgba(16,163,127,0.12)","#26a69a") if is_dark else ("#dcfce7","#166534")
+            tr = ("rgba(242,54,69,0.12)","#f23645")  if is_dark else ("#fee2e2","#991b1b")
+            tgo= ("rgba(245,194,66,0.1)","#F5C242")  if is_dark else ("#fef9c3","#92400e")
+            tb = ("rgba(96,165,250,0.1)","#60a5fa")  if is_dark else ("#dbeafe","#1d4ed8")
+            tp = ("rgba(167,139,250,0.1)","#a78bfa") if is_dark else ("#ede9fe","#6d28d9")
 
-            # Render setiap saham sebagai card terpisah
             st.markdown(f"""<style>
-.reco-stock-card {{
-  background:{bg_card};
-  border:1px solid {border_c};
-  border-left:4px solid {accent};
-  border-radius:0 10px 10px 0;
-  padding:16px 18px;
-  margin-bottom:14px;
-  font-size:0.88rem;
-  color:{text_main};
-  white-space:pre-wrap;
-  word-break:break-word;
-  line-height:1.82;
-  box-sizing:border-box;
-  width:100%;
-}}
+.vc{{background:{bg_card};border:1px solid {border_c};border-radius:14px;
+  padding:0;margin-bottom:16px;overflow:hidden;box-sizing:border-box;width:100%;
+  box-shadow:{"0 4px 20px rgba(0,0,0,0.45)" if is_dark else "0 2px 12px rgba(0,0,0,0.08)"}}}
+.vc-hd{{background:{bg_head};border-bottom:1px solid {border_c};
+  padding:12px 18px 10px;display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:6px}}
+.vc-tk{{font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:700;
+  color:{accent};letter-spacing:0.06em}}
+.vc-pr{{font-family:'IBM Plex Mono',monospace;font-size:0.86rem;
+  color:{text_main};margin-left:9px;opacity:0.8}}
+.vc-badge{{font-size:0.58rem;font-weight:700;letter-spacing:0.12em;
+  text-transform:uppercase;padding:3px 10px;border-radius:20px;border:1px solid}}
+.vc-body{{padding:13px 18px 16px}}
+.vc-pills{{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}}
+.vc-pill{{font-family:'IBM Plex Mono',monospace;font-size:0.59rem;font-weight:600;
+  padding:3px 9px;border-radius:6px;letter-spacing:0.05em;
+  display:inline-flex;align-items:center;gap:3px;white-space:nowrap;border:1px solid}}
+.vc-lbl{{font-family:'IBM Plex Mono',monospace;font-size:0.53rem;font-weight:700;
+  letter-spacing:0.14em;text-transform:uppercase;color:{text_sub};margin:9px 0 4px;display:block}}
+.vc-txt{{font-size:0.83rem;color:{text_main};line-height:1.76;
+  white-space:pre-wrap;word-break:break-word}}
+.vc-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));
+  gap:7px;margin-top:12px}}
+.vc-cell{{background:{"rgba(255,255,255,0.04)" if is_dark else "rgba(0,0,0,0.03)"};
+  border:1px solid {"rgba(255,255,255,0.07)" if is_dark else "#e2e8f0"};
+  border-radius:8px;padding:8px 10px}}
+.vc-cl{{font-size:0.51rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:{text_sub};margin-bottom:3px}}
+.vc-cv{{font-family:'IBM Plex Mono',monospace;font-size:0.79rem;
+  font-weight:700;color:{text_main}}}
+.vc-tail{{background:{"rgba(255,255,255,0.02)" if is_dark else "#f8fafc"};
+  border:1px solid {border_c};border-radius:10px;padding:13px 18px;margin-top:6px;
+  font-size:0.82rem;color:{text_sub};line-height:1.75;
+  white-space:pre-wrap;word-break:break-word}}
+.vc-avoid{{background:{"rgba(180,20,20,0.07)" if is_dark else "#fff5f5"};
+  border:1px solid {"rgba(242,54,69,0.25)" if is_dark else "#fecaca"};
+  border-radius:10px;padding:13px 18px;margin-bottom:11px;
+  font-size:0.83rem;color:{text_main};line-height:1.75;
+  white-space:pre-wrap;word-break:break-word}}
+.vc-avoid-hd{{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;
+  font-weight:700;color:#f23645;margin-bottom:7px;letter-spacing:0.05em;display:block}}
 @media(max-width:768px){{
-  .reco-stock-card{{padding:12px 13px;font-size:0.82rem;line-height:1.75;}}
+  .vc-tk{{font-size:0.95rem}}.vc-body{{padding:10px 13px 13px}}
+  .vc-hd{{padding:9px 13px}}.vc-txt{{font-size:0.79rem}}.vc-cv{{font-size:0.74rem}}
 }}
 </style>""", unsafe_allow_html=True)
 
-            for sp in stock_parts:
-                st.markdown(f'<div class="reco-stock-card">{sp}</div>', unsafe_allow_html=True)
+            def _pill(label, cpair, dot="●"):
+                bg,fg = cpair
+                return f'<span class="vc-pill" style="background:{bg};color:{fg};border-color:{fg}44;">{dot} {label}</span>'
 
-            # Render tail (bias, outlook, kesimpulan)
-            if tail_parts:
-                tail_text = "\n\n".join(tail_parts)
-                st.markdown(f"""<div style="background:rgba(245,194,66,0.05);border:1px solid {border_c};
-border-radius:8px;padding:14px 16px;margin-top:4px;font-size:0.85rem;color:{text_sub};
-white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-box;width:100%;">
-{tail_text}
+            def _badge(label, cpair):
+                bg,fg = cpair
+                return f'<span class="vc-badge" style="background:{bg};color:{fg};border-color:{fg}44;">{label}</span>'
+
+            def _price(txt):
+                m = _re.search(r'Rp\.?\s*([\d,.]+)', txt)
+                return f"Rp {m.group(1)}" if m else ""
+
+            def _trade(txt, key):
+                m = _re.search(key + r'[\s:]*Rp\.?\s*([\d,.]+)', txt, _re.IGNORECASE)
+                if m: return f"Rp {m.group(1)}"
+                m2 = _re.search(key + r'[\s:]*([\d,.]+)', txt, _re.IGNORECASE)
+                return m2.group(1) if m2 else "—"
+
+            # Parse sections
+            parts = _re.split(r'(?m)^(?=(?:🎯|🌙|⚠️)\s)', reco_text.strip())
+            parts = [p.strip() for p in parts if p.strip()]
+            bulls  = [p for p in parts if p.startswith(("🎯","🌙"))]
+            avoids = [p for p in parts if p.startswith("⚠️")]
+            tails  = [p for p in parts if not p.startswith(("🎯","🌙","⚠️"))]
+
+            # Fallback
+            if not bulls and not avoids:
+                bg_fb = "rgba(30,35,50,0.7)" if is_dark else "#ffffff"
+                st.markdown(f'<div style="background:{bg_fb};border:1px solid {border_c};'
+                    f'border-left:4px solid {accent};border-radius:0 10px 10px 0;'
+                    f'padding:18px;font-size:0.86rem;color:{text_main};'
+                    f'white-space:pre-wrap;line-height:1.8;">{reco_text}</div>',
+                    unsafe_allow_html=True)
+                return
+
+            # ── Bullish cards ─────────────────────────────────────────────────
+            for ct in bulls:
+                lns    = ct.strip().splitlines()
+                hl     = lns[0] if lns else ""
+                body   = "\n".join(lns[1:]).strip()
+                bl     = body.lower()
+
+                tkm    = _re.search(r'(?:🎯|🌙)\s+([A-Z]{2,6})', hl)
+                ticker = tkm.group(1) if tkm else "—"
+                price  = _price(hl)
+                chgm   = _re.search(r'([+-][\d.]+%)', hl)
+                chg_s  = chgm.group(1) if chgm else ""
+                is_bs  = hl.startswith("🌙")
+                b_col  = tp if is_bs else tg
+                b_lbl  = "BSJP" if is_bs else "BUY"
+
+                # Signal pills
+                pills = []
+                if any(k in bl for k in ["bullish","uptrend","naik","momentum positif","hijau"]):
+                    pills.append(_pill("Bullish", tg))
+                if any(k in bl for k in ["volume spike","vol spike","lonjakan vol","volume tinggi","spike"]):
+                    pills.append(_pill("Vol Spike", tb, "📊"))
+                if any(k in bl for k in ["ema","sma","golden cross","ma5","ma10","cross"]):
+                    pills.append(_pill("EMA Cross", tgo, "📈"))
+                if any(k in bl for k in ["akumulasi","pemegang naik","accumulation","sh naik"]):
+                    pills.append(_pill("Akumulasi", tg, "👥"))
+                if any(k in bl for k in ["overnight","bsjp","gap-up","pre-opening","sore"]):
+                    pills.append(_pill("Overnight", tp, "🌙"))
+                if any(k in bl for k in ["fundamental","roe","pbv","eps"]):
+                    pills.append(_pill("Fundamental", tgo, "📋"))
+                if chg_s:
+                    try:
+                        cv = float(chg_s.replace("%","").replace("+",""))
+                        pills.append(_pill(chg_s, tg if cv>=0 else tr, "▲" if cv>=0 else "▼"))
+                    except: pass
+
+                # Trade values
+                entry = _trade(body, r"entry")
+                sl    = _trade(body, r"sl\b|stop.?loss|stoploss")
+                tp1   = _trade(body, r"tp\s*1|target\s*1|tp1")
+                tp2   = _trade(body, r"tp\s*2|target\s*2|tp2")
+                rrm   = _re.search(r'r/?r[\s:]*([\d.]+(?::[.\d]+)?)', body, _re.IGNORECASE)
+                rr_s  = rrm.group(1) if rrm else "—"
+                hzm   = _re.search(r'horizon[\s:]*([^\n|]{2,25})', body, _re.IGNORECASE)
+                hz_s  = hzm.group(1).strip().rstrip('|').strip() if hzm else "—"
+
+                # Body clean: remove trade lines
+                skip = ["entry","stop loss","sl:","sl |","tp1","tp2","r/r","horizon","sizing"]
+                body_clean = "\n".join(l for l in body.splitlines()
+                                       if not any(k in l.lower() for k in skip)).strip()
+
+                pills_html = "".join(pills)
+                has_trade  = any(v != "—" for v in [entry, sl, tp1, tp2])
+                trade_html = f"""
+<div class="vc-grid">
+  <div class="vc-cell"><div class="vc-cl">Entry</div><div class="vc-cv" style="color:{accent};">{entry}</div></div>
+  <div class="vc-cell"><div class="vc-cl">Stop Loss</div><div class="vc-cv" style="color:#f23645;">{sl}</div></div>
+  <div class="vc-cell"><div class="vc-cl">TP 1</div><div class="vc-cv" style="color:#26a69a;">{tp1}</div></div>
+  <div class="vc-cell"><div class="vc-cl">TP 2</div><div class="vc-cv" style="color:#26a69a;">{tp2}</div></div>
+  <div class="vc-cell"><div class="vc-cl">R/R</div><div class="vc-cv">{rr_s}</div></div>
+  <div class="vc-cell"><div class="vc-cl">Horizon</div><div class="vc-cv">{hz_s}</div></div>
+</div>""" if has_trade else ""
+
+                st.markdown(f"""
+<div class="vc">
+  <div class="vc-hd">
+    <div><span class="vc-tk">{ticker}</span><span class="vc-pr">{price}</span></div>
+    {_badge(b_lbl, b_col)}
+  </div>
+  <div class="vc-body">
+    {f'<div class="vc-pills">{pills_html}</div>' if pills_html else ""}
+    <div class="vc-txt">{body_clean}</div>
+    {trade_html}
+  </div>
 </div>""", unsafe_allow_html=True)
+
+            # ── Hindari cards ─────────────────────────────────────────────────
+            if avoids:
+                st.markdown(f'<p style="font-family:\'IBM Plex Mono\',monospace;font-size:0.6rem;'
+                    f'font-weight:700;letter-spacing:0.14em;text-transform:uppercase;'
+                    f'color:#f23645;margin:12px 0 6px;">⚠️ SAHAM YANG HARUS DIHINDARI</p>',
+                    unsafe_allow_html=True)
+                for ap in avoids:
+                    alns = ap.strip().splitlines()
+                    ah   = alns[0] if alns else ""
+                    abody= "\n".join(alns[1:]).strip()
+                    atkm = _re.search(r'⚠️\s+([A-Z]{2,6})', ah)
+                    atk  = atkm.group(1) if atkm else ""
+                    apr  = _price(ah)
+                    st.markdown(f"""
+<div class="vc-avoid">
+  <span class="vc-avoid-hd">⚠️ {atk} {apr} &nbsp; {_badge("HINDARI", tr)}</span>
+  <div class="vc-txt" style="font-size:0.81rem;">{abody}</div>
+</div>""", unsafe_allow_html=True)
+
+            # ── Outlook / tail ────────────────────────────────────────────────
+            if tails:
+                tail_combined = "\n\n".join(tails)
+                st.markdown(f'<div class="vc-tail">'
+                    f'<span style="font-size:0.57rem;letter-spacing:0.12em;text-transform:uppercase;'
+                    f'color:{text_sub};font-weight:700;display:block;margin-bottom:6px;">'
+                    f'OUTLOOK &amp; BIAS PASAR</span>'
+                    + tail_combined + '</div>', unsafe_allow_html=True)
 
         # ── Shareholder summary untuk enrichment prompt ──────────────────
         def _sh_summary_for_reco():
@@ -10138,287 +9852,64 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay','sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
-
-var isDark = '{st.session_state.theme}' === 'dark';
-var bg     = isDark ? '#171717' : '#f9f9f9';
-var text   = isDark ? '#ececec' : '#0d0d0d';
-var border = isDark ? '#2f2f2f' : '#e5e5e5';
-var hover  = isDark ? '#2a2a2a' : '#ebebeb';
-var active = isDark ? '#383838' : '#e0e0e0';
-var muted  = isDark ? '#8e8ea0' : '#6e6e80';
-var gold   = '#F5C242';
-var green  = '#10a37f';
-var red    = '#ef4444';
-
-var s = pd.createElement('style'); s.id = 'sigma-mobile-css';
-s.textContent = `
-#spbtn {{
-  position:fixed;top:13px;left:13px;width:36px;height:36px;border-radius:8px;
-  background:transparent;color:${{text}};border:none;cursor:pointer;z-index:999999;
-  display:flex;align-items:center;justify-content:center;transition:background 0.15s;padding:0;
-}}
-#spbtn:hover {{ background:${{hover}}; }}
-#sigma-overlay {{
-  position:fixed;inset:0;z-index:999990;background:rgba(0,0,0,0.45);display:none;
-}}
-#sigma-sidebar {{
-  position:fixed;top:0;left:0;bottom:0;width:268px;z-index:999995;
-  background:${{bg}};border-right:1px solid ${{border}};
-  display:flex;flex-direction:column;
-  transform:translateX(-100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
-}}
-#sigma-sidebar.sigma-open {{ transform:translateX(0); }}
-.sb-header {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:13px 14px 12px;border-bottom:1px solid ${{border}};flex-shrink:0;
-}}
-.sb-brand {{ font-size:0.95rem;font-weight:700;color:${{gold}};letter-spacing:0.12em; }}
-.sb-close-btn {{
-  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
-  cursor:pointer;color:${{muted}};font-size:16px;display:flex;align-items:center;justify-content:center;
-  transition:background 0.12s;
-}}
-.sb-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
-.sb-newchat {{
-  display:flex;align-items:center;gap:9px;margin:10px 8px 2px;padding:9px 12px;
-  border-radius:8px;cursor:pointer;color:${{text}};font-size:0.84rem;font-weight:500;
-  text-decoration:none;border:1px solid ${{border}};transition:background 0.12s;background:transparent;
-}}
-.sb-newchat:hover {{ background:${{hover}}; }}
-.sb-section-label {{
-  font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
-  color:${{muted}};padding:10px 14px 3px;
-}}
-#sigma-hist-list {{ flex:1;overflow-y:auto;padding:0 4px 4px; }}
-#sigma-hist-list::-webkit-scrollbar {{ width:3px; }}
-#sigma-hist-list::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
-.sb-hist-row {{
-  display:flex;align-items:center;border-radius:7px;margin:1px 0;transition:background 0.1s;
-}}
-.sb-hist-row:hover {{ background:${{hover}}; }}
-.sb-hist-row.sb-active {{ background:${{active}}; }}
-.sb-hist-link {{
-  flex:1;padding:8px 10px;font-size:0.81rem;color:${{text}};text-decoration:none;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}}
-.sb-hist-del {{
-  padding:7px 9px;background:transparent;border:none;cursor:pointer;
-  color:${{muted}};font-size:0.85rem;opacity:0;border-radius:5px;flex-shrink:0;transition:opacity 0.1s;
-}}
-.sb-hist-row:hover .sb-hist-del {{ opacity:0.7; }}
-.sb-hist-del:hover {{ color:${{red}};opacity:1!important; }}
-.sb-footer {{ border-top:1px solid ${{border}};padding:6px 4px;flex-shrink:0; }}
-.sb-footer-btn {{
-  display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:7px;
-  cursor:pointer;width:100%;color:${{text}};font-size:0.84rem;background:transparent;
-  border:none;text-align:left;text-decoration:none;transition:background 0.12s;
-}}
-.sb-footer-btn:hover {{ background:${{hover}}; }}
-.sb-footer-ico {{
-  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
-  justify-content:center;background:${{hover}};font-size:0.88rem;flex-shrink:0;
-}}
-#sigma-settings-panel {{
-  position:fixed;top:0;right:0;bottom:0;width:308px;z-index:999996;
-  background:${{bg}};border-left:1px solid ${{border}};
-  display:flex;flex-direction:column;
-  transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
-  box-shadow:-4px 0 30px rgba(0,0,0,0.25);
-}}
-#sigma-settings-panel.sigma-open {{ transform:translateX(0); }}
-.sp-header {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;border-bottom:1px solid ${{border}};flex-shrink:0;
-}}
-.sp-title {{ font-size:0.92rem;font-weight:600;color:${{text}}; }}
-.sp-close-btn {{
-  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
-  cursor:pointer;color:${{muted}};font-size:16px;
-  display:flex;align-items:center;justify-content:center;
-}}
-.sp-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
-.sp-body {{ flex:1;overflow-y:auto;padding:14px; }}
-.sp-body::-webkit-scrollbar {{ width:3px; }}
-.sp-body::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
-.sp-group {{ margin-bottom:20px; }}
-.sp-group-label {{
-  font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
-  color:${{muted}};margin-bottom:8px;
-}}
-.sp-user-row {{
-  display:flex;align-items:center;gap:11px;padding:12px;border-radius:9px;
-  background:${{isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}};
-  border:1px solid ${{border}};
-}}
-.sp-user-avatar {{
-  width:36px;height:36px;border-radius:50%;background:${{gold}};
-  display:flex;align-items:center;justify-content:center;
-  font-size:0.9rem;font-weight:700;color:#000;flex-shrink:0;
-}}
-.sp-user-name {{ font-size:0.87rem;font-weight:600;color:${{text}}; }}
-.sp-user-email {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
-.sp-item {{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:11px 12px;border-radius:9px;margin-bottom:5px;
-  background:${{isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}};
-  border:1px solid ${{border}};text-decoration:none;transition:border-color 0.15s;
-}}
-.sp-item:hover {{ border-color:${{isDark ? '#555' : '#ccc'}}; }}
-.sp-item-info {{ display:flex;align-items:center;gap:10px; }}
-.sp-item-ico {{
-  width:32px;height:32px;border-radius:7px;background:${{hover}};
-  display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0;
-}}
-.sp-item-label {{ font-size:0.85rem;color:${{text}};font-weight:500; }}
-.sp-item-sub {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
-.sp-item-right {{ font-size:0.78rem;color:${{muted}}; }}
-.sp-badge {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(245,194,66,0.14);color:${{gold}}; }}
-.sp-badge-on {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,163,127,0.15);color:${{green}}; }}
-.sp-divider {{ border:none;border-top:1px solid ${{border}};margin:8px 0 14px; }}
+['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay',
+ 'sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+var s=pd.createElement('style'); s.id='sigma-mobile-css';
+s.textContent=`
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%;
+  background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]};
+  cursor:pointer;z-index:999999;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s,background 0.2s;}}
+#spbtn:hover{{transform:scale(1.08);background:{C["hover"]};}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px;background:{C["sidebar_bg"]};
+  border:1px solid {C["border"]};border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);
+  z-index:999998;display:none;overflow:hidden;min-width:260px;}}
+#sphist{{max-height:55vh;overflow-y:auto;}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;
+  color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;
+  text-align:left;text-decoration:none;transition:background 0.2s;}}
+.smi:hover{{background:{C["hover"]}}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;font-size:16px;background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}}
+.smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]};font-weight:600;letter-spacing:1px;}}
+.smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
-
-// History
-var histHTML = '';
-{_hist_items}
-
-// ── SIDEBAR ────────────────────────────────────────────────────
-var sidebar = pd.createElement('div'); sidebar.id = 'sigma-sidebar';
-var uNewChat = new URL(window.parent.location.href); uNewChat.searchParams.set('do','newchat');
-sidebar.innerHTML = `
-<div class="sb-header">
-  <span class="sb-brand">SIGMA Σ</span>
-  <button class="sb-close-btn" id="sb-close-btn">✕</button>
-</div>
-<a class="sb-newchat" href="${{uNewChat.toString()}}">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-  Percakapan Baru
-</a>
-<div class="sb-section-label">Riwayat</div>
-<div id="sigma-hist-list">${{histHTML}}</div>
-<div class="sb-footer">
-  <button class="sb-footer-btn" id="sb-settings-btn">
-    <span class="sb-footer-ico">⚙</span>Pengaturan
-  </button>
-  <button class="sb-footer-btn" id="sb-terminal-btn">
-    <span class="sb-footer-ico">📊</span>SIGMA Terminal
-  </button>
-  <button class="sb-footer-btn" id="sb-logout-btn" style="color:${{red}};">
-    <span class="sb-footer-ico" style="background:rgba(239,68,68,0.1);">⬡</span>Keluar
-  </button>
-</div>
-`;
-pd.body.appendChild(sidebar);
-
-// ── OVERLAY ────────────────────────────────────────────────────
-var overlay = pd.createElement('div'); overlay.id = 'sigma-overlay';
-pd.body.appendChild(overlay);
-
-// ── HAMBURGER ─────────────────────────────────────────────────
-var btn = pd.createElement('button'); btn.id = 'spbtn';
-btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="4" x2="16" y2="4"/><line x1="1" y1="8.5" x2="16" y2="8.5"/><line x1="1" y1="13" x2="16" y2="13"/></svg>';
+var btn=pd.createElement('button'); btn.id='spbtn';
+btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
-
-// ── SETTINGS PANEL ────────────────────────────────────────────
-var userName  = '{(user.get("name","User") if user else "User").replace(chr(39), " ").replace(chr(34), " ")}';
-var userEmail = '{(user.get("email","") if user else "").replace(chr(39), " ")}';
-var userInit  = userName.charAt(0).toUpperCase();
-var isDarkNow = '{st.session_state.theme}' === 'dark';
-var uDark  = new URL(window.parent.location.href); uDark.searchParams.set('do','theme_dark');
-var uLight = new URL(window.parent.location.href); uLight.searchParams.set('do','theme_light');
-var uHome  = new URL(window.parent.location.href); uHome.searchParams.set('do','go_home');
-var uOut   = new URL(window.parent.location.href); uOut.searchParams.delete('sigma_token'); uOut.searchParams.set('do','logout');
-
-var sp = pd.createElement('div'); sp.id = 'sigma-settings-panel';
-sp.innerHTML = `
-<div class="sp-header">
-  <span class="sp-title">⚙ Pengaturan</span>
-  <button class="sp-close-btn" id="sp-close-btn">✕</button>
-</div>
-<div class="sp-body">
-  <div class="sp-group">
-    <div class="sp-group-label">Akun</div>
-    <div class="sp-user-row">
-      <div class="sp-user-avatar">${{userInit}}</div>
-      <div><div class="sp-user-name">${{userName}}</div><div class="sp-user-email">${{userEmail}}</div></div>
-    </div>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Tampilan</div>
-    <a class="sp-item" href="${{uDark.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">🌙</div>
-        <div><div class="sp-item-label">Dark Mode</div><div class="sp-item-sub">Latar gelap nyaman di malam hari</div></div>
-      </div>
-      ${{isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
-    </a>
-    <a class="sp-item" href="${{uLight.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">☀️</div>
-        <div><div class="sp-item-label">Light Mode</div><div class="sp-item-sub">Latar terang untuk siang hari</div></div>
-      </div>
-      ${{!isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
-    </a>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Navigasi</div>
-    <a class="sp-item" href="${{uHome.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico">🏠</div>
-        <div><div class="sp-item-label">Kembali ke Home</div><div class="sp-item-sub">Pilih SIGMA AI Chat atau Terminal</div></div>
-      </div>
-      <span class="sp-item-right">›</span>
-    </a>
-  </div>
-  <div class="sp-group">
-    <div class="sp-group-label">Tentang</div>
-    <div class="sp-item" style="cursor:default;">
-      <div class="sp-item-info"><div class="sp-item-ico" style="font-weight:900;font-size:1rem;color:${{gold}};">Σ</div>
-        <div><div class="sp-item-label">SIGMA AI v2.1</div><div class="sp-item-sub">KIPM-UP × MarketnMocha</div></div>
-      </div>
-      <span class="sp-badge">AI</span>
-    </div>
-  </div>
-  <hr class="sp-divider">
-  <div class="sp-group">
-    <div class="sp-group-label" style="color:${{red}}">Zona Bahaya</div>
-    <a class="sp-item" href="${{uOut.toString()}}">
-      <div class="sp-item-info"><div class="sp-item-ico" style="background:rgba(239,68,68,0.1);">🚪</div>
-        <div><div class="sp-item-label" style="color:${{red}}">Sign Out</div><div class="sp-item-sub">Keluar dari akun SIGMA</div></div>
-      </div>
-      <span style="color:${{red}};font-size:0.78rem;">›</span>
-    </a>
-  </div>
-</div>
-`;
-pd.body.appendChild(sp);
-
-// ── SIGMA BRAND CENTER ────────────────────────────────────────
-if (!pd.getElementById('sigma-top-brand')) {{
-  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
-  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
-  pd.body.appendChild(brand);
-}}
-
-// ── EVENTS ────────────────────────────────────────────────────
-function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
-function closeSidebar() {{ sidebar.classList.remove('sigma-open'); if(!sp.classList.contains('sigma-open')) overlay.style.display='none'; }}
-function openSettings() {{ sp.classList.add('sigma-open'); overlay.style.display='block'; sidebar.classList.remove('sigma-open'); }}
-function closeSettings() {{ sp.classList.remove('sigma-open'); overlay.style.display='none'; }}
-
-btn.onclick = function(e) {{ e.stopPropagation(); openSidebar(); }};
-overlay.onclick = function() {{ closeSidebar(); closeSettings(); overlay.style.display='none'; }};
-pd.getElementById('sb-close-btn').onclick  = function() {{ closeSidebar(); }};
-pd.getElementById('sp-close-btn').onclick  = function() {{ closeSettings(); }};
-pd.getElementById('sb-settings-btn').onclick = function(e) {{ e.preventDefault(); openSettings(); }};
-
-var termUrl = '{st.secrets.get("SIGMA_TERMINAL_URL","") if hasattr(st,"secrets") else ""}';
-pd.getElementById('sb-terminal-btn').onclick = function(e) {{
-  e.preventDefault(); closeSidebar();
-  if(termUrl) {{ window.parent.location.href = termUrl; }}
-  else {{ var u2=new URL(window.parent.location.href); u2.searchParams.set('do','view_stats'); window.parent.location.href=u2.toString(); }}
+var m=pd.createElement('div'); m.id='spmenu';
+m.innerHTML=`
+  <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
+  <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
+  <div class="smsp"></div><div class="smhd">NAVIGASI</div>
+  <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
+  <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
+  <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {"✓" if st.session_state.theme=="dark" else ""}</a>
+  <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {"✓" if st.session_state.theme=="light" else ""}</a>
+  <div class="smsp"></div>
+  <a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
+`; pd.body.appendChild(m);
+var h=pd.createElement('div'); h.id='sphist';
+h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
+{_hist_items} pd.body.appendChild(h);
+btn.onclick=function(e){{
+  e.preventDefault(); e.stopPropagation();
+  m.style.display=(m.style.display==='block')?'none':'block'; h.style.display='none';
 }};
-pd.getElementById('sb-logout-btn').onclick = function(e) {{
-  e.preventDefault(); window.parent.location.href=uOut.toString();
-}};
+(function(){{
+  var u;
+  u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+  pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+  u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+  u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+}})();
+pd.addEventListener('click',function(e){{
+  if(!btn.contains(e.target)&&!m.contains(e.target)) m.style.display='none';
+  if(!btn.contains(e.target)&&!h.contains(e.target)&&!m.contains(e.target)) h.style.display='none';
+}});
 }})();
 </script>
 """, height=0)
