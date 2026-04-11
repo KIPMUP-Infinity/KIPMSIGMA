@@ -36,6 +36,12 @@ def _fetch_all_data(tickers):
                 with urllib.request.urlopen(req, timeout=5) as r:
                     d = _j.loads(r.read())
                 if d and d.get("LastPrice") and d["LastPrice"] > 0:
+                    # Deteksi suspend: harga 0 / volume 0 seharian / flag IDX
+                    is_suspend = (
+                        d.get("LastPrice", 0) == 0 or
+                        (d.get("OpenPrice", 0) == 0 and d.get("Volume", 0) == 0) or
+                        str(d.get("TradingStatus", "")).upper() in ("SUSPEND", "S", "HALT")
+                    )
                     result["prices"][tk] = {
                         "price": d["LastPrice"],
                         "chg": d.get("ChangePercentage", 0),
@@ -43,7 +49,9 @@ def _fetch_all_data(tickers):
                         "high": d.get("HighPrice", 0),
                         "low": d.get("LowPrice", 0),
                         "vol": d.get("Volume", 0),
-                        "source": "IDX"
+                        "source": "IDX",
+                        "suspend": is_suspend,
+                        "trading_status": d.get("TradingStatus", ""),
                     }
             except: pass
 
@@ -362,8 +370,8 @@ def _fetch_fmp(ticker, api_key=None):
             break
     return {}
 
-# PENGAMAN LIMIT API: Menyimpan memori selama 1 jam (3600 detik)
-@st.cache_data(ttl=3600)
+# PENGAMAN LIMIT API: Cache 5 menit (harga live + fundamental)
+@st.cache_data(ttl=300)
 def _fetch_multi_fundamental(ticker):
     """Fetch fundamental berlapis — saling melengkapi."""
     import threading
@@ -640,7 +648,7 @@ def build_global_context(prompt):
 # ─────────────────────────────────────────────
 
 def fetch_fundamental_with_cache(ticker):
-    """Fetch fundamental langsung — selalu fresh, tanpa cache."""
+    """Fetch fundamental — cache 5 menit untuk hemat API limit, harga dari IDX real-time."""
     data = _fetch_multi_fundamental(ticker)
     data["_from_cache"] = False
     return data
@@ -679,7 +687,17 @@ def build_context(prompt):
         if d.get("pbv"): line += f" PBV:{d['pbv']:.1f}x"
         if d.get("roe"): line += f" ROE:{d['roe']*100:.1f}%"
         if d.get("eps"): line += f" EPS:Rp{d['eps']:,.0f}"
+        # ⚠️ Suspend flag — wajib disampaikan ke AI
+        if d.get("suspend"):
+            line += f" ⚠️ SUSPEND/HALT — saham tidak dapat diperdagangkan saat ini"
+        elif d.get("trading_status") and str(d.get("trading_status","")).upper() not in ("", "REGULAR", "R"):
+            line += f" [Status:{d['trading_status']}]"
         lines.append(line)
+        # Corporate Action awareness (harga historis berbeda jauh = kemungkinan ada corp action)
+        if d.get("price") and d.get("prev_close"):
+            gap_pct = abs(d["price"] - d["prev_close"]) / d["prev_close"] * 100 if d["prev_close"] else 0
+            if gap_pct > 20:
+                lines.append(f"  ⚡ CORP ACTION ALERT {tk}: gap harga {gap_pct:.1f}% — kemungkinan split/reverse/right issue/ex-dividend. Cek IDX announcement.")
         vol_today = d.get("vol", 0)
         avg_vol = d.get("avg_vol", 0)
         if vol_today and vol_today > 0:
@@ -1160,6 +1178,7 @@ def init_session():
 
 init_session()
 
+# C initialized here; refreshed at runtime after auth checks
 C = get_colors(st.session_state.theme)
 
 # =========================================================
@@ -2147,7 +2166,15 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 - Tren dan proyeksi: WAJIB isi dengan estimasi dari knowledge, beri label "(est.)"
 - NO FABRICATION: jika data tidak tersedia dan tidak tahu -> tulis "N/A"
   Jangan karang angka — lebih baik jujur tidak ada data daripada salah
-- Jawab Bahasa Indonesia. Gambar/PDF -> analisa langsung."""
+- Jawab Bahasa Indonesia. Gambar/PDF -> analisa langsung.
+
+=== SUSPEND & CORPORATE ACTION (WAJIB) ===
+• Jika konteks data memuat flag "SUSPEND" atau "HALT" → WAJIB sampaikan ke user.
+  Saham suspend TIDAK BISA diperdagangkan. Trade plan TIDAK RELEVAN saat suspend.
+  Tetap analisa fundamentalnya jika diminta, tapi selalu tegaskan status suspend.
+• CORP ACTION ALERT (gap harga >20%): kemungkinan split/reverse/right issue/ex-dividen.
+  Sampaikan kemungkinan ini, sarankan cek IDX announcement & corporate action calendar.
+  Jangan bandingkan harga pre- dan post-corp action tanpa koreksi faktor."""
 }
 
 
@@ -2233,9 +2260,20 @@ VOLUME PROXY IDX (tanpa broker data):
 • TP2 = resistance berikutnya / OB bearish / swing high mayor → exit tambahan
 • TP3 = hanya jika ada level ekstrem yang jelas (ATH area, supply zone mayor, level psikologis kuat)
 
-=== CORPORATE ACTION ===
+=== CORPORATE ACTION & SUSPEND ===
 Split/Reverse/Right Issue/Buyback dapat mengubah EPS/DPS/BV per saham.
 Selalu cek jika harga historis berbeda jauh dari data sekarang.
+
+SUSPEND / HALT SAHAM:
+• Jika konteks data menampilkan flag "SUSPEND" atau "HALT" → WAJIB informasikan ke user secara eksplisit.
+• Saham suspend TIDAK BISA diperdagangkan. Trade plan TIDAK RELEVAN selama suspend berlangsung.
+• Tetap analisa fundamentalnya jika diminta, tapi tegaskan: "Saham ini sedang suspend — tidak bisa entry/exit."
+• Cek penyebab suspend: umumnya menunggu keterbukaan informasi, masalah keuangan, atau prosedur bursa.
+
+CORP ACTION ALERT (gap harga >20%):
+• Kemungkinan besar ada split, reverse split, right issue, atau ex-dividend besar.
+• Sampaikan kemungkinan ini dan sarankan user cek IDX announcement / corporate action calendar.
+• Jangan bandingkan harga pre- dan post-corp action tanpa koreksi faktor.
 
 === ANALISA IPO — ATURAN KRITIS ===
 ⚠️ LOT vs LEMBAR: PDF prospektus SELALU tulis jumlah dalam LEMBAR. WAJIB konversi dulu.
@@ -2609,9 +2647,10 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 
 /* ── USER BUBBLE: biru, rata kanan ── */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{ display: flex !important; flex-direction: row-reverse !important; justify-content: flex-start !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 10px 16px !important; max-width: 75% !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 12px 20px !important; max-width: 85% !important; min-width: 120px !important; text-align: right !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; text-align: right !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; text-align: right !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{ text-align: right !important; margin: 0 !important; }}
 
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
@@ -3207,7 +3246,7 @@ if st.session_state.user and not st.session_state.get("selected_system"):
 
 init_chat()
 user = st.session_state.user
-C = get_colors(st.session_state.theme)
+# C refreshed below after full auth check
 
 def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
     """
@@ -3380,9 +3419,10 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 
 /* ── USER BUBBLE: biru, rata kanan ── */
 [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {{ display: flex !important; flex-direction: row-reverse !important; justify-content: flex-start !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 10px 16px !important; max-width: 75% !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; }}
-[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {{ background: #2563EB !important; border-radius: 18px 18px 4px 18px !important; padding: 12px 20px !important; max-width: 85% !important; min-width: 120px !important; text-align: right !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{ background: transparent !important; color: #ffffff !important; text-align: right !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] * {{ color: #ffffff !important; text-align: right !important; }}
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] p {{ text-align: right !important; margin: 0 !important; }}
 
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
@@ -3412,7 +3452,7 @@ hr {{ border-color: {C['border']} !important; }}
     div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 6px 8px !important; }}
     [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
     [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
-    .navy-pill {{ max-width: 82% !important; font-size: 1rem !important; line-height: 1.7 !important; padding: 12px 16px !important; }}
+    .navy-pill {{ max-width: 88% !important; font-size: 1rem !important; line-height: 1.7 !important; padding: 12px 20px !important; text-align: right !important; }}
 }}
 </style>
 """, unsafe_allow_html=True)
