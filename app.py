@@ -3216,7 +3216,7 @@ pd.addEventListener('click',function(e){{{{
 }}}});
 }}}})();
 </script>
-<style>html,body{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}</style>
+<style>html,body{{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}}</style>
 """, height=0)
 
 active = get_active()
@@ -3879,7 +3879,7 @@ pd.addEventListener('click',function(e){{{{
 }}}});
 }}}})();
 </script>
-<style>html,body{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}</style>
+<style>html,body{{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}}</style>
 """, height=0)
 
 if "del" in st.query_params:
@@ -9936,7 +9936,7 @@ pd.addEventListener('click',function(e){{{{
 }}}});
 }}}})();
 </script>
-<style>html,body{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}</style>
+<style>html,body{{margin:0!important;padding:0!important;height:0!important;overflow:hidden!important;visibility:hidden!important;}}</style>
 """, height=0)
 
 components.html("""
