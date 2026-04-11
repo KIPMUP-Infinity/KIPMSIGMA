@@ -1126,18 +1126,28 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap (mirip background menu)
-        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk membedakan sidebar
-        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan (cool white) agar lebih tajam
-        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
-        "border":       "#132545" if dark else "#d0d0d0",       # Border dengan highlight biru navy
-        "hover":        "#0d1c36" if dark else "#d0d0d0",       # Efek hover kebiruan
-        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat warna deep blue
-        "bubble":       "#1B2A4A",
-        "bubble_text":  "#ffffff",
-        "divider":      "#132545" if dark else "#d0d0d0",       # Garis pemisah biru navy
+        # Base backgrounds — ChatGPT style clean dark
+        "bg":           "#212121" if dark else "#ffffff",
+        "sidebar_bg":   "#171717" if dark else "#f9f9f9",
+        "text":         "#ececec" if dark else "#0d0d0d",
+        "text_muted":   "#8e8ea0" if dark else "#6e6e80",
+        "border":       "#2f2f2f" if dark else "#e5e5e5",
+        "hover":        "#2a2a2a" if dark else "#f0f0f0",
+        "input_bg":     "#2f2f2f" if dark else "#ffffff",
+        # Chat bubbles
+        "bubble":       "#2f2f2f" if dark else "#f0f0f0",
+        "bubble_text":  "#ececec" if dark else "#0d0d0d",
+        # Accent
+        "divider":      "#2f2f2f" if dark else "#e5e5e5",
         "gold":         "#F5C242",
-        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
+        "active_bg":    "#2a2a2a" if dark else "#ebebeb",
+        # Sidebar item active
+        "active_item":  "#383838" if dark else "#e0e0e0",
+        # Input send button
+        "btn_bg":       "#676767" if dark else "#bbbbb8",
+        # AI response background  
+        "ai_msg_bg":    "transparent",
+        "user_msg_bg":  "#2f2f2f" if dark else "#f0f0f0",
     }
 
 # =========================================================
@@ -2594,30 +2604,194 @@ C = get_colors(st.session_state.theme)
 
 st.markdown(f"""
 <style>
-* {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
-.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
-section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
-section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
-section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
-[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; }}
-section[data-testid="stSidebar"] .stButton > button:hover {{ background: {C['hover']} !important; }}
-section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
-[data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
-[data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
-[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
-[data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
-[data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
-div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
-[data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.9rem !important; }}
-[data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
-[data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
+/* ─── SIGMA CHAT UI — ChatGPT Style ─────────────────────────── */
+*, *::before, *::after {{ box-sizing: border-box; }}
+html, body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; }}
+
+/* App backgrounds */
+.stApp, [data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > section,
+section[data-testid="stMain"],
+[data-testid="stMainBlockContainer"],
+[data-testid="stBottom"],
+[data-testid="stBottom"] > div {{
+    background: {C['bg']} !important;
+}}
+
+/* Sidebar */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] > div > div,
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarUserContent"],
+[data-testid="stSidebarUserContent"] > div {{
+    background: {C['sidebar_bg']} !important;
+    box-shadow: none !important;
+}}
+section[data-testid="stSidebar"] {{
+    border-right: 1px solid {C['border']} !important;
+}}
+section[data-testid="stSidebar"] > div,
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarUserContent"] {{
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}}
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+
+/* Sidebar buttons */
+section[data-testid="stSidebar"] .stButton > button {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: {C['text']} !important;
+    font-size: 0.875rem !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    min-height: 40px !important;
+    transition: background 0.15s !important;
+}}
+section[data-testid="stSidebar"] .stButton > button:hover {{
+    background: {C['hover']} !important;
+}}
+section[data-testid="stSidebar"] .stButton > button p,
+section[data-testid="stSidebar"] .stButton > button span {{
+    margin: 0 !important;
+    text-align: left !important;
+    color: inherit !important;
+    width: 100% !important;
+}}
+
+/* Chat messages — clean, no borders */
+[data-testid="stChatMessage"] {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 8px 0 !important;
+}}
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
+
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{
+    font-size: 0.93rem !important;
+    line-height: 1.75 !important;
+    color: {C['text']} !important;
+    background: transparent !important;
+}}
+
+/* User message bubble — subtle box */
+[data-testid="stChatMessage"][data-testid*="user"] [data-testid="stMarkdownContainer"],
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stMarkdownContainer"] {{
+    background: {C['user_msg_bg']} !important;
+    border-radius: 18px !important;
+    padding: 12px 16px !important;
+    display: inline-block !important;
+    max-width: 85% !important;
+    float: right !important;
+}}
+
+/* Main content area */
+[data-testid="stMainBlockContainer"] {{
+    max-width: 720px !important;
+    margin: 0 auto !important;
+    padding: 0 20px 140px !important;
+    overflow-y: visible !important;
+}}
+[data-testid="stMainBlockContainer"] p,
+[data-testid="stMainBlockContainer"] li,
+[data-testid="stMainBlockContainer"] h1,
+[data-testid="stMainBlockContainer"] h2,
+[data-testid="stMainBlockContainer"] h3 {{
+    color: {C['text']} !important;
+}}
+
+/* Chat input — ChatGPT pill style */
+div[data-testid="stChatInputContainer"] {{
+    border: 1px solid {C['border']} !important;
+    background: {C['input_bg']} !important;
+    border-radius: 16px !important;
+    padding: 4px 8px !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15) !important;
+    transition: border-color 0.2s !important;
+}}
+div[data-testid="stChatInputContainer"]:focus-within {{
+    border-color: #676767 !important;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2) !important;
+}}
+[data-testid="stChatInput"] textarea {{
+    background: {C['input_bg']} !important;
+    color: {C['text']} !important;
+    font-size: 0.93rem !important;
+    border: none !important;
+    outline: none !important;
+    resize: none !important;
+}}
+[data-testid="stChatInput"] textarea::placeholder {{
+    color: {C['text_muted']} !important;
+}}
+[data-testid="stChatInputContainer"] textarea:focus {{
+    box-shadow: none !important;
+    outline: none !important;
+}}
+
+/* Send button */
+[data-testid="stChatInputSubmitButton"] button {{
+    background: {C['btn_bg']} !important;
+    border-radius: 8px !important;
+    border: none !important;
+    color: {C['text']} !important;
+    transition: background 0.15s !important;
+}}
+[data-testid="stChatInputSubmitButton"] button:hover {{
+    background: #888 !important;
+}}
+
+/* Hide Streamlit chrome */
 footer, #MainMenu {{ visibility: hidden !important; }}
-hr {{ border-color: {C['border']} !important; }}
-[data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.95rem !important; line-height: 1.8 !important; }}
-[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }}
-[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
-[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
+hr {{ border-color: {C['border']} !important; margin: 16px 0 !important; }}
+
+/* Typography */
+[data-testid="stMarkdownContainer"] *,
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] span,
+[data-testid="stMarkdownContainer"] div {{
+    font-size: 0.93rem !important;
+    line-height: 1.78 !important;
+}}
+[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.35rem !important; font-weight: 700 !important; margin: 20px 0 10px !important; }}
+[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.18rem !important; font-weight: 600 !important; margin: 16px 0 8px !important; }}
+[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.04rem !important; font-weight: 600 !important; margin: 14px 0 6px !important; }}
+[data-testid="stMarkdownContainer"] p {{ margin-bottom: 6px !important; margin-top: 0 !important; }}
+[data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ margin: 4px 0 10px !important; padding-left: 20px !important; }}
+[data-testid="stMarkdownContainer"] li {{ margin-bottom: 4px !important; line-height: 1.6 !important; }}
+[data-testid="stMarkdownContainer"] li > p {{ margin-bottom: 0 !important; }}
+[data-testid="stMarkdownContainer"] code {{
+    background: rgba(255,255,255,0.08) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.86rem !important;
+    font-family: "SF Mono", "Fira Code", monospace !important;
+}}
+[data-testid="stMarkdownContainer"] pre {{
+    background: rgba(0,0,0,0.3) !important;
+    border: 1px solid {C['border']} !important;
+    border-radius: 8px !important;
+    padding: 14px 16px !important;
+    overflow-x: auto !important;
+}}
+
+/* Status widget */
+[data-testid="stStatusWidget"] {{
+    display: flex !important; visibility: visible !important;
+    height: auto !important; overflow: visible !important; opacity: 1 !important;
+}}
 
 @media (max-width:768px) {{
     .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
@@ -2625,21 +2799,18 @@ hr {{ border-color: {C['border']} !important; }}
     .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
     .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
     .sys-subtitle {{ font-size: 0.75rem; }}
-    .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
-    
     .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
     .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
-    
     .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
     .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
     .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
     .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
     .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
-    
     .card-features {{ margin-bottom: 20px; }}
     .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
     .card-cta {{ padding: 12px; font-size: 0.85rem; }}
     .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
+    [data-testid="stMainBlockContainer"] {{ padding: 0 12px 130px !important; }}
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -3641,47 +3812,287 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
-var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
-['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
-var s=pd.createElement('style'); s.id='sigma-mobile-css';
-s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
-#sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay','sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+
+var isDark = '{st.session_state.theme}' === 'dark';
+var bg     = isDark ? '#171717' : '#f9f9f9';
+var text   = isDark ? '#ececec' : '#0d0d0d';
+var border = isDark ? '#2f2f2f' : '#e5e5e5';
+var hover  = isDark ? '#2a2a2a' : '#ebebeb';
+var active = isDark ? '#383838' : '#e0e0e0';
+var muted  = isDark ? '#8e8ea0' : '#6e6e80';
+var gold   = '#F5C242';
+var green  = '#10a37f';
+var red    = '#ef4444';
+
+var s = pd.createElement('style'); s.id = 'sigma-mobile-css';
+s.textContent = `
+#spbtn {{
+  position:fixed;top:13px;left:13px;width:36px;height:36px;border-radius:8px;
+  background:transparent;color:${{text}};border:none;cursor:pointer;z-index:999999;
+  display:flex;align-items:center;justify-content:center;transition:background 0.15s;padding:0;
+}}
+#spbtn:hover {{ background:${{hover}}; }}
+#sigma-overlay {{
+  position:fixed;inset:0;z-index:999990;background:rgba(0,0,0,0.45);display:none;
+}}
+#sigma-sidebar {{
+  position:fixed;top:0;left:0;bottom:0;width:268px;z-index:999995;
+  background:${{bg}};border-right:1px solid ${{border}};
+  display:flex;flex-direction:column;
+  transform:translateX(-100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+}}
+#sigma-sidebar.sigma-open {{ transform:translateX(0); }}
+.sb-header {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 14px 12px;border-bottom:1px solid ${{border}};flex-shrink:0;
+}}
+.sb-brand {{ font-size:0.95rem;font-weight:700;color:${{gold}};letter-spacing:0.12em; }}
+.sb-close-btn {{
+  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
+  cursor:pointer;color:${{muted}};font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:background 0.12s;
+}}
+.sb-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
+.sb-newchat {{
+  display:flex;align-items:center;gap:9px;margin:10px 8px 2px;padding:9px 12px;
+  border-radius:8px;cursor:pointer;color:${{text}};font-size:0.84rem;font-weight:500;
+  text-decoration:none;border:1px solid ${{border}};transition:background 0.12s;background:transparent;
+}}
+.sb-newchat:hover {{ background:${{hover}}; }}
+.sb-section-label {{
+  font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:${{muted}};padding:10px 14px 3px;
+}}
+#sigma-hist-list {{ flex:1;overflow-y:auto;padding:0 4px 4px; }}
+#sigma-hist-list::-webkit-scrollbar {{ width:3px; }}
+#sigma-hist-list::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
+.sb-hist-row {{
+  display:flex;align-items:center;border-radius:7px;margin:1px 0;transition:background 0.1s;
+}}
+.sb-hist-row:hover {{ background:${{hover}}; }}
+.sb-hist-row.sb-active {{ background:${{active}}; }}
+.sb-hist-link {{
+  flex:1;padding:8px 10px;font-size:0.81rem;color:${{text}};text-decoration:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}}
+.sb-hist-del {{
+  padding:7px 9px;background:transparent;border:none;cursor:pointer;
+  color:${{muted}};font-size:0.85rem;opacity:0;border-radius:5px;flex-shrink:0;transition:opacity 0.1s;
+}}
+.sb-hist-row:hover .sb-hist-del {{ opacity:0.7; }}
+.sb-hist-del:hover {{ color:${{red}};opacity:1!important; }}
+.sb-footer {{ border-top:1px solid ${{border}};padding:6px 4px;flex-shrink:0; }}
+.sb-footer-btn {{
+  display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:7px;
+  cursor:pointer;width:100%;color:${{text}};font-size:0.84rem;background:transparent;
+  border:none;text-align:left;text-decoration:none;transition:background 0.12s;
+}}
+.sb-footer-btn:hover {{ background:${{hover}}; }}
+.sb-footer-ico {{
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;background:${{hover}};font-size:0.88rem;flex-shrink:0;
+}}
+#sigma-settings-panel {{
+  position:fixed;top:0;right:0;bottom:0;width:308px;z-index:999996;
+  background:${{bg}};border-left:1px solid ${{border}};
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:-4px 0 30px rgba(0,0,0,0.25);
+}}
+#sigma-settings-panel.sigma-open {{ transform:translateX(0); }}
+.sp-header {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid ${{border}};flex-shrink:0;
+}}
+.sp-title {{ font-size:0.92rem;font-weight:600;color:${{text}}; }}
+.sp-close-btn {{
+  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
+  cursor:pointer;color:${{muted}};font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}}
+.sp-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
+.sp-body {{ flex:1;overflow-y:auto;padding:14px; }}
+.sp-body::-webkit-scrollbar {{ width:3px; }}
+.sp-body::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
+.sp-group {{ margin-bottom:20px; }}
+.sp-group-label {{
+  font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:${{muted}};margin-bottom:8px;
+}}
+.sp-user-row {{
+  display:flex;align-items:center;gap:11px;padding:12px;border-radius:9px;
+  background:${{isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}};
+  border:1px solid ${{border}};
+}}
+.sp-user-avatar {{
+  width:36px;height:36px;border-radius:50%;background:${{gold}};
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.9rem;font-weight:700;color:#000;flex-shrink:0;
+}}
+.sp-user-name {{ font-size:0.87rem;font-weight:600;color:${{text}}; }}
+.sp-user-email {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
+.sp-item {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 12px;border-radius:9px;margin-bottom:5px;
+  background:${{isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}};
+  border:1px solid ${{border}};text-decoration:none;transition:border-color 0.15s;
+}}
+.sp-item:hover {{ border-color:${{isDark ? '#555' : '#ccc'}}; }}
+.sp-item-info {{ display:flex;align-items:center;gap:10px; }}
+.sp-item-ico {{
+  width:32px;height:32px;border-radius:7px;background:${{hover}};
+  display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0;
+}}
+.sp-item-label {{ font-size:0.85rem;color:${{text}};font-weight:500; }}
+.sp-item-sub {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
+.sp-item-right {{ font-size:0.78rem;color:${{muted}}; }}
+.sp-badge {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(245,194,66,0.14);color:${{gold}}; }}
+.sp-badge-on {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,163,127,0.15);color:${{green}}; }}
+.sp-divider {{ border:none;border-top:1px solid ${{border}};margin:8px 0 14px; }}
 `; pd.head.appendChild(s);
-var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
-var m=pd.createElement('div');m.id='spmenu';
-m.innerHTML=`
-    <a class="smi" id="smi-new"><span class="smico">✎</span>Percakapan Baru</a>
-    <button class="smi" id="smi-hist"><span class="smico">☰</span>History</button>
-    <div class="smsp"></div><div class="smhd">FITUR</div>
-    <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
-    <a class="smi" id="smi-stats"><span class="smico">📊</span>SIGMA Terminal</a>
-    <a class="smi" id="smi-diag"><span class="smico">🔧</span>Diagnostik API</a>
-    <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
-    <a class="smi" id="smi-light"><span class="smico">☀️</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
-    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Sign Out</a>
-`; pd.body.appendChild(m);
-var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; h.style.display = 'none'; }};
-(function(){{
-    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','view_diag'); pd.getElementById('smi-diag').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}})();
-pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
+
+// History
+var histHTML = '';
+{_hist_items}
+
+// ── SIDEBAR ────────────────────────────────────────────────────
+var sidebar = pd.createElement('div'); sidebar.id = 'sigma-sidebar';
+var uNewChat = new URL(window.parent.location.href); uNewChat.searchParams.set('do','newchat');
+sidebar.innerHTML = `
+<div class="sb-header">
+  <span class="sb-brand">SIGMA Σ</span>
+  <button class="sb-close-btn" id="sb-close-btn">✕</button>
+</div>
+<a class="sb-newchat" href="${{uNewChat.toString()}}">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  Percakapan Baru
+</a>
+<div class="sb-section-label">Riwayat</div>
+<div id="sigma-hist-list">${{histHTML}}</div>
+<div class="sb-footer">
+  <button class="sb-footer-btn" id="sb-settings-btn">
+    <span class="sb-footer-ico">⚙</span>Pengaturan
+  </button>
+  <button class="sb-footer-btn" id="sb-terminal-btn">
+    <span class="sb-footer-ico">📊</span>SIGMA Terminal
+  </button>
+  <button class="sb-footer-btn" id="sb-logout-btn" style="color:${{red}};">
+    <span class="sb-footer-ico" style="background:rgba(239,68,68,0.1);">⬡</span>Keluar
+  </button>
+</div>
+`;
+pd.body.appendChild(sidebar);
+
+// ── OVERLAY ────────────────────────────────────────────────────
+var overlay = pd.createElement('div'); overlay.id = 'sigma-overlay';
+pd.body.appendChild(overlay);
+
+// ── HAMBURGER ─────────────────────────────────────────────────
+var btn = pd.createElement('button'); btn.id = 'spbtn';
+btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="4" x2="16" y2="4"/><line x1="1" y1="8.5" x2="16" y2="8.5"/><line x1="1" y1="13" x2="16" y2="13"/></svg>';
+pd.body.appendChild(btn);
+
+// ── SETTINGS PANEL ────────────────────────────────────────────
+var userName  = '{(user.get("name","User") if user else "User").replace(chr(39), " ").replace(chr(34), " ")}';
+var userEmail = '{(user.get("email","") if user else "").replace(chr(39), " ")}';
+var userInit  = userName.charAt(0).toUpperCase();
+var isDarkNow = '{st.session_state.theme}' === 'dark';
+var uDark  = new URL(window.parent.location.href); uDark.searchParams.set('do','theme_dark');
+var uLight = new URL(window.parent.location.href); uLight.searchParams.set('do','theme_light');
+var uHome  = new URL(window.parent.location.href); uHome.searchParams.set('do','go_home');
+var uOut   = new URL(window.parent.location.href); uOut.searchParams.delete('sigma_token'); uOut.searchParams.set('do','logout');
+
+var sp = pd.createElement('div'); sp.id = 'sigma-settings-panel';
+sp.innerHTML = `
+<div class="sp-header">
+  <span class="sp-title">⚙ Pengaturan</span>
+  <button class="sp-close-btn" id="sp-close-btn">✕</button>
+</div>
+<div class="sp-body">
+  <div class="sp-group">
+    <div class="sp-group-label">Akun</div>
+    <div class="sp-user-row">
+      <div class="sp-user-avatar">${{userInit}}</div>
+      <div><div class="sp-user-name">${{userName}}</div><div class="sp-user-email">${{userEmail}}</div></div>
+    </div>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Tampilan</div>
+    <a class="sp-item" href="${{uDark.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">🌙</div>
+        <div><div class="sp-item-label">Dark Mode</div><div class="sp-item-sub">Latar gelap nyaman di malam hari</div></div>
+      </div>
+      ${{isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
+    </a>
+    <a class="sp-item" href="${{uLight.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">☀️</div>
+        <div><div class="sp-item-label">Light Mode</div><div class="sp-item-sub">Latar terang untuk siang hari</div></div>
+      </div>
+      ${{!isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
+    </a>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Navigasi</div>
+    <a class="sp-item" href="${{uHome.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">🏠</div>
+        <div><div class="sp-item-label">Kembali ke Home</div><div class="sp-item-sub">Pilih SIGMA AI Chat atau Terminal</div></div>
+      </div>
+      <span class="sp-item-right">›</span>
+    </a>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Tentang</div>
+    <div class="sp-item" style="cursor:default;">
+      <div class="sp-item-info"><div class="sp-item-ico" style="font-weight:900;font-size:1rem;color:${{gold}};">Σ</div>
+        <div><div class="sp-item-label">SIGMA AI v2.1</div><div class="sp-item-sub">KIPM-UP × MarketnMocha</div></div>
+      </div>
+      <span class="sp-badge">AI</span>
+    </div>
+  </div>
+  <hr class="sp-divider">
+  <div class="sp-group">
+    <div class="sp-group-label" style="color:${{red}}">Zona Bahaya</div>
+    <a class="sp-item" href="${{uOut.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico" style="background:rgba(239,68,68,0.1);">🚪</div>
+        <div><div class="sp-item-label" style="color:${{red}}">Sign Out</div><div class="sp-item-sub">Keluar dari akun SIGMA</div></div>
+      </div>
+      <span style="color:${{red}};font-size:0.78rem;">›</span>
+    </a>
+  </div>
+</div>
+`;
+pd.body.appendChild(sp);
+
+// ── SIGMA BRAND CENTER ────────────────────────────────────────
+if (!pd.getElementById('sigma-top-brand')) {{
+  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
+  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
+  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  pd.body.appendChild(brand);
+}}
+
+// ── EVENTS ────────────────────────────────────────────────────
+function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
+function closeSidebar() {{ sidebar.classList.remove('sigma-open'); if(!sp.classList.contains('sigma-open')) overlay.style.display='none'; }}
+function openSettings() {{ sp.classList.add('sigma-open'); overlay.style.display='block'; sidebar.classList.remove('sigma-open'); }}
+function closeSettings() {{ sp.classList.remove('sigma-open'); overlay.style.display='none'; }}
+
+btn.onclick = function(e) {{ e.stopPropagation(); openSidebar(); }};
+overlay.onclick = function() {{ closeSidebar(); closeSettings(); overlay.style.display='none'; }};
+pd.getElementById('sb-close-btn').onclick  = function() {{ closeSidebar(); }};
+pd.getElementById('sp-close-btn').onclick  = function() {{ closeSettings(); }};
+pd.getElementById('sb-settings-btn').onclick = function(e) {{ e.preventDefault(); openSettings(); }};
+
+var termUrl = '{st.secrets.get("SIGMA_TERMINAL_URL","") if hasattr(st,"secrets") else ""}';
+pd.getElementById('sb-terminal-btn').onclick = function(e) {{
+  e.preventDefault(); closeSidebar();
+  if(termUrl) {{ window.parent.location.href = termUrl; }}
+  else {{ var u2=new URL(window.parent.location.href); u2.searchParams.set('do','view_stats'); window.parent.location.href=u2.toString(); }}
+}};
+pd.getElementById('sb-logout-btn').onclick = function(e) {{
+  e.preventDefault(); window.parent.location.href=uOut.toString();
+}};
 }})();
 </script>
 """, height=0)
@@ -4229,53 +4640,37 @@ def _call_gemini_text(messages):
                 last_err = str(e); continue
     raise Exception(f"Gemini Text gagal semua model/key: {last_err}")
 
-# ─── PENGATURAN UI CSS KHUSUS ───
+# ─── PENGATURAN UI CSS KHUSUS (CHAT VIEW) ───
 st.markdown(f"""
 <style>
-/* PENANGKAL ERROR COPY PASTE: MEMAKSA STATUS UPLOAD UNTUK TETAP TERLIHAT */
-[data-testid="stStatusWidget"] {{ display: flex !important; visibility: visible !important; height: auto !important; overflow: visible !important; opacity: 1 !important; }}
-
-section[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-[data-testid="stToolbar"], .viewerBadge_container__r5tak, [class*="viewerBadge"], .stDeployButton, #MainMenu, footer {{ display: none !important; }}
-
-/* FIX: MENGHILANGKAN GARIS/GAP PUTIH DI ATAS SECARA TOTAL */
-header[data-testid="stHeader"] {{ display: none !important; height: 0 !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important; visibility: hidden !important; border: none !important; background: transparent !important; }}
-div[data-testid="stDecoration"] {{ display: none !important; height: 0 !important; visibility: hidden !important; border: none !important; background: transparent !important; }}
-.stApp > header {{ display: none !important; background: transparent !important; border: none !important; }}
+/* Hide Streamlit chrome elements */
+section[data-testid="stSidebar"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+[data-testid="stToolbar"],
+.viewerBadge_container__r5tak,
+[class*="viewerBadge"],
+.stDeployButton,
+#MainMenu, footer {{ display: none !important; }}
+header[data-testid="stHeader"],
+div[data-testid="stDecoration"],
+.stApp > header {{
+    display: none !important; height: 0 !important; min-height: 0 !important;
+    padding: 0 !important; margin: 0 !important; visibility: hidden !important;
+    border: none !important; background: transparent !important;
+}}
 .stAppViewContainer {{ padding-top: 0 !important; margin-top: 0 !important; }}
 
+/* Chat container top padding */
 [data-testid="stMainBlockContainer"] {{ padding-top: 3rem !important; margin-top: 0 !important; }}
 [data-testid="stChatMessageContent"], [data-testid="stMarkdownContainer"] {{ text-align: left !important; }}
 
-/* =========================================================
-   FIX SPASI LEBAR DI CHAT (REMOVE SPACE BEFORE PARAGRAPH) 
-   ========================================================= */
-[data-testid="stMarkdownContainer"] p {{
-    margin-top: 0 !important;
-    margin-bottom: 4px !important; /* Paksa jarak antar paragraf sangat rapat */
-    line-height: 1.5 !important;
-}}
-[data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{
-    margin-top: 4px !important;
-    margin-bottom: 12px !important;
-    padding-left: 20px !important;
-}}
-[data-testid="stMarkdownContainer"] li {{
-    margin-top: 0 !important;
-    margin-bottom: 4px !important; /* Paksa jarak antar bullet point rapat */
-    line-height: 1.5 !important;
-}}
-/* Jika AI memberikan heading, rapatkan juga dengan teks di bawahnya */
-[data-testid="stMarkdownContainer"] h1, 
-[data-testid="stMarkdownContainer"] h2, 
-[data-testid="stMarkdownContainer"] h3 {{
-    margin-top: 16px !important;
-    margin-bottom: 8px !important;
-}}
-/* Menghapus spasi ekstra jika ada tag <p> di dalam <li> */
-[data-testid="stMarkdownContainer"] li > p {{
-    margin-bottom: 0 !important;
-}}
+/* Compact paragraph spacing */
+[data-testid="stMarkdownContainer"] p {{ margin-top: 0 !important; margin-bottom: 5px !important; line-height: 1.72 !important; }}
+[data-testid="stMarkdownContainer"] ul, [data-testid="stMarkdownContainer"] ol {{ margin-top: 4px !important; margin-bottom: 10px !important; padding-left: 20px !important; }}
+[data-testid="stMarkdownContainer"] li {{ margin-top: 0 !important; margin-bottom: 4px !important; line-height: 1.6 !important; }}
+[data-testid="stMarkdownContainer"] h1, [data-testid="stMarkdownContainer"] h2, [data-testid="stMarkdownContainer"] h3 {{ margin-top: 16px !important; margin-bottom: 8px !important; }}
+[data-testid="stMarkdownContainer"] li > p {{ margin-bottom: 0 !important; }}
 </style>
 """, unsafe_allow_html=True)
 _hist_items = ""
@@ -4294,45 +4689,287 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
-var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
-['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
-var s=pd.createElement('style'); s.id='sigma-mobile-css';
-s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
-#sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay','sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+
+var isDark = '{st.session_state.theme}' === 'dark';
+var bg     = isDark ? '#171717' : '#f9f9f9';
+var text   = isDark ? '#ececec' : '#0d0d0d';
+var border = isDark ? '#2f2f2f' : '#e5e5e5';
+var hover  = isDark ? '#2a2a2a' : '#ebebeb';
+var active = isDark ? '#383838' : '#e0e0e0';
+var muted  = isDark ? '#8e8ea0' : '#6e6e80';
+var gold   = '#F5C242';
+var green  = '#10a37f';
+var red    = '#ef4444';
+
+var s = pd.createElement('style'); s.id = 'sigma-mobile-css';
+s.textContent = `
+#spbtn {{
+  position:fixed;top:13px;left:13px;width:36px;height:36px;border-radius:8px;
+  background:transparent;color:${{text}};border:none;cursor:pointer;z-index:999999;
+  display:flex;align-items:center;justify-content:center;transition:background 0.15s;padding:0;
+}}
+#spbtn:hover {{ background:${{hover}}; }}
+#sigma-overlay {{
+  position:fixed;inset:0;z-index:999990;background:rgba(0,0,0,0.45);display:none;
+}}
+#sigma-sidebar {{
+  position:fixed;top:0;left:0;bottom:0;width:268px;z-index:999995;
+  background:${{bg}};border-right:1px solid ${{border}};
+  display:flex;flex-direction:column;
+  transform:translateX(-100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+}}
+#sigma-sidebar.sigma-open {{ transform:translateX(0); }}
+.sb-header {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 14px 12px;border-bottom:1px solid ${{border}};flex-shrink:0;
+}}
+.sb-brand {{ font-size:0.95rem;font-weight:700;color:${{gold}};letter-spacing:0.12em; }}
+.sb-close-btn {{
+  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
+  cursor:pointer;color:${{muted}};font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:background 0.12s;
+}}
+.sb-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
+.sb-newchat {{
+  display:flex;align-items:center;gap:9px;margin:10px 8px 2px;padding:9px 12px;
+  border-radius:8px;cursor:pointer;color:${{text}};font-size:0.84rem;font-weight:500;
+  text-decoration:none;border:1px solid ${{border}};transition:background 0.12s;background:transparent;
+}}
+.sb-newchat:hover {{ background:${{hover}}; }}
+.sb-section-label {{
+  font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:${{muted}};padding:10px 14px 3px;
+}}
+#sigma-hist-list {{ flex:1;overflow-y:auto;padding:0 4px 4px; }}
+#sigma-hist-list::-webkit-scrollbar {{ width:3px; }}
+#sigma-hist-list::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
+.sb-hist-row {{
+  display:flex;align-items:center;border-radius:7px;margin:1px 0;transition:background 0.1s;
+}}
+.sb-hist-row:hover {{ background:${{hover}}; }}
+.sb-hist-row.sb-active {{ background:${{active}}; }}
+.sb-hist-link {{
+  flex:1;padding:8px 10px;font-size:0.81rem;color:${{text}};text-decoration:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}}
+.sb-hist-del {{
+  padding:7px 9px;background:transparent;border:none;cursor:pointer;
+  color:${{muted}};font-size:0.85rem;opacity:0;border-radius:5px;flex-shrink:0;transition:opacity 0.1s;
+}}
+.sb-hist-row:hover .sb-hist-del {{ opacity:0.7; }}
+.sb-hist-del:hover {{ color:${{red}};opacity:1!important; }}
+.sb-footer {{ border-top:1px solid ${{border}};padding:6px 4px;flex-shrink:0; }}
+.sb-footer-btn {{
+  display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:7px;
+  cursor:pointer;width:100%;color:${{text}};font-size:0.84rem;background:transparent;
+  border:none;text-align:left;text-decoration:none;transition:background 0.12s;
+}}
+.sb-footer-btn:hover {{ background:${{hover}}; }}
+.sb-footer-ico {{
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;background:${{hover}};font-size:0.88rem;flex-shrink:0;
+}}
+#sigma-settings-panel {{
+  position:fixed;top:0;right:0;bottom:0;width:308px;z-index:999996;
+  background:${{bg}};border-left:1px solid ${{border}};
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:-4px 0 30px rgba(0,0,0,0.25);
+}}
+#sigma-settings-panel.sigma-open {{ transform:translateX(0); }}
+.sp-header {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid ${{border}};flex-shrink:0;
+}}
+.sp-title {{ font-size:0.92rem;font-weight:600;color:${{text}}; }}
+.sp-close-btn {{
+  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
+  cursor:pointer;color:${{muted}};font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}}
+.sp-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
+.sp-body {{ flex:1;overflow-y:auto;padding:14px; }}
+.sp-body::-webkit-scrollbar {{ width:3px; }}
+.sp-body::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
+.sp-group {{ margin-bottom:20px; }}
+.sp-group-label {{
+  font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:${{muted}};margin-bottom:8px;
+}}
+.sp-user-row {{
+  display:flex;align-items:center;gap:11px;padding:12px;border-radius:9px;
+  background:${{isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}};
+  border:1px solid ${{border}};
+}}
+.sp-user-avatar {{
+  width:36px;height:36px;border-radius:50%;background:${{gold}};
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.9rem;font-weight:700;color:#000;flex-shrink:0;
+}}
+.sp-user-name {{ font-size:0.87rem;font-weight:600;color:${{text}}; }}
+.sp-user-email {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
+.sp-item {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 12px;border-radius:9px;margin-bottom:5px;
+  background:${{isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}};
+  border:1px solid ${{border}};text-decoration:none;transition:border-color 0.15s;
+}}
+.sp-item:hover {{ border-color:${{isDark ? '#555' : '#ccc'}}; }}
+.sp-item-info {{ display:flex;align-items:center;gap:10px; }}
+.sp-item-ico {{
+  width:32px;height:32px;border-radius:7px;background:${{hover}};
+  display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0;
+}}
+.sp-item-label {{ font-size:0.85rem;color:${{text}};font-weight:500; }}
+.sp-item-sub {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
+.sp-item-right {{ font-size:0.78rem;color:${{muted}}; }}
+.sp-badge {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(245,194,66,0.14);color:${{gold}}; }}
+.sp-badge-on {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,163,127,0.15);color:${{green}}; }}
+.sp-divider {{ border:none;border-top:1px solid ${{border}};margin:8px 0 14px; }}
 `; pd.head.appendChild(s);
-var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
-var m=pd.createElement('div');m.id='spmenu';
-m.innerHTML=`
-    <a class="smi" id="smi-new"><span class="smico">✎</span>Percakapan Baru</a>
-    <button class="smi" id="smi-hist"><span class="smico">☰</span>History</button>
-    <div class="smsp"></div><div class="smhd">FITUR</div>
-    <a class="smi" id="smi-ai"><span class="smico">🤖</span>SIGMA AI Chat</a>
-    <a class="smi" id="smi-stats"><span class="smico">📊</span>SIGMA Terminal</a>
-    <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-    <a class="smi" id="smi-dark"><span class="smico">🌙</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
-    <a class="smi" id="smi-light"><span class="smico">☀️</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
-    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">🚪</span>Sign Out</a>
-`; pd.body.appendChild(m);
-var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; h.style.display = 'none'; }};
-(function(){{
-    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}})();
-pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
+
+// History
+var histHTML = '';
+{_hist_items}
+
+// ── SIDEBAR ────────────────────────────────────────────────────
+var sidebar = pd.createElement('div'); sidebar.id = 'sigma-sidebar';
+var uNewChat = new URL(window.parent.location.href); uNewChat.searchParams.set('do','newchat');
+sidebar.innerHTML = `
+<div class="sb-header">
+  <span class="sb-brand">SIGMA Σ</span>
+  <button class="sb-close-btn" id="sb-close-btn">✕</button>
+</div>
+<a class="sb-newchat" href="${{uNewChat.toString()}}">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  Percakapan Baru
+</a>
+<div class="sb-section-label">Riwayat</div>
+<div id="sigma-hist-list">${{histHTML}}</div>
+<div class="sb-footer">
+  <button class="sb-footer-btn" id="sb-settings-btn">
+    <span class="sb-footer-ico">⚙</span>Pengaturan
+  </button>
+  <button class="sb-footer-btn" id="sb-terminal-btn">
+    <span class="sb-footer-ico">📊</span>SIGMA Terminal
+  </button>
+  <button class="sb-footer-btn" id="sb-logout-btn" style="color:${{red}};">
+    <span class="sb-footer-ico" style="background:rgba(239,68,68,0.1);">⬡</span>Keluar
+  </button>
+</div>
+`;
+pd.body.appendChild(sidebar);
+
+// ── OVERLAY ────────────────────────────────────────────────────
+var overlay = pd.createElement('div'); overlay.id = 'sigma-overlay';
+pd.body.appendChild(overlay);
+
+// ── HAMBURGER ─────────────────────────────────────────────────
+var btn = pd.createElement('button'); btn.id = 'spbtn';
+btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="4" x2="16" y2="4"/><line x1="1" y1="8.5" x2="16" y2="8.5"/><line x1="1" y1="13" x2="16" y2="13"/></svg>';
+pd.body.appendChild(btn);
+
+// ── SETTINGS PANEL ────────────────────────────────────────────
+var userName  = '{(user.get("name","User") if user else "User").replace(chr(39), " ").replace(chr(34), " ")}';
+var userEmail = '{(user.get("email","") if user else "").replace(chr(39), " ")}';
+var userInit  = userName.charAt(0).toUpperCase();
+var isDarkNow = '{st.session_state.theme}' === 'dark';
+var uDark  = new URL(window.parent.location.href); uDark.searchParams.set('do','theme_dark');
+var uLight = new URL(window.parent.location.href); uLight.searchParams.set('do','theme_light');
+var uHome  = new URL(window.parent.location.href); uHome.searchParams.set('do','go_home');
+var uOut   = new URL(window.parent.location.href); uOut.searchParams.delete('sigma_token'); uOut.searchParams.set('do','logout');
+
+var sp = pd.createElement('div'); sp.id = 'sigma-settings-panel';
+sp.innerHTML = `
+<div class="sp-header">
+  <span class="sp-title">⚙ Pengaturan</span>
+  <button class="sp-close-btn" id="sp-close-btn">✕</button>
+</div>
+<div class="sp-body">
+  <div class="sp-group">
+    <div class="sp-group-label">Akun</div>
+    <div class="sp-user-row">
+      <div class="sp-user-avatar">${{userInit}}</div>
+      <div><div class="sp-user-name">${{userName}}</div><div class="sp-user-email">${{userEmail}}</div></div>
+    </div>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Tampilan</div>
+    <a class="sp-item" href="${{uDark.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">🌙</div>
+        <div><div class="sp-item-label">Dark Mode</div><div class="sp-item-sub">Latar gelap nyaman di malam hari</div></div>
+      </div>
+      ${{isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
+    </a>
+    <a class="sp-item" href="${{uLight.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">☀️</div>
+        <div><div class="sp-item-label">Light Mode</div><div class="sp-item-sub">Latar terang untuk siang hari</div></div>
+      </div>
+      ${{!isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
+    </a>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Navigasi</div>
+    <a class="sp-item" href="${{uHome.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">🏠</div>
+        <div><div class="sp-item-label">Kembali ke Home</div><div class="sp-item-sub">Pilih SIGMA AI Chat atau Terminal</div></div>
+      </div>
+      <span class="sp-item-right">›</span>
+    </a>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Tentang</div>
+    <div class="sp-item" style="cursor:default;">
+      <div class="sp-item-info"><div class="sp-item-ico" style="font-weight:900;font-size:1rem;color:${{gold}};">Σ</div>
+        <div><div class="sp-item-label">SIGMA AI v2.1</div><div class="sp-item-sub">KIPM-UP × MarketnMocha</div></div>
+      </div>
+      <span class="sp-badge">AI</span>
+    </div>
+  </div>
+  <hr class="sp-divider">
+  <div class="sp-group">
+    <div class="sp-group-label" style="color:${{red}}">Zona Bahaya</div>
+    <a class="sp-item" href="${{uOut.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico" style="background:rgba(239,68,68,0.1);">🚪</div>
+        <div><div class="sp-item-label" style="color:${{red}}">Sign Out</div><div class="sp-item-sub">Keluar dari akun SIGMA</div></div>
+      </div>
+      <span style="color:${{red}};font-size:0.78rem;">›</span>
+    </a>
+  </div>
+</div>
+`;
+pd.body.appendChild(sp);
+
+// ── SIGMA BRAND CENTER ────────────────────────────────────────
+if (!pd.getElementById('sigma-top-brand')) {{
+  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
+  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
+  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  pd.body.appendChild(brand);
+}}
+
+// ── EVENTS ────────────────────────────────────────────────────
+function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
+function closeSidebar() {{ sidebar.classList.remove('sigma-open'); if(!sp.classList.contains('sigma-open')) overlay.style.display='none'; }}
+function openSettings() {{ sp.classList.add('sigma-open'); overlay.style.display='block'; sidebar.classList.remove('sigma-open'); }}
+function closeSettings() {{ sp.classList.remove('sigma-open'); overlay.style.display='none'; }}
+
+btn.onclick = function(e) {{ e.stopPropagation(); openSidebar(); }};
+overlay.onclick = function() {{ closeSidebar(); closeSettings(); overlay.style.display='none'; }};
+pd.getElementById('sb-close-btn').onclick  = function() {{ closeSidebar(); }};
+pd.getElementById('sp-close-btn').onclick  = function() {{ closeSettings(); }};
+pd.getElementById('sb-settings-btn').onclick = function(e) {{ e.preventDefault(); openSettings(); }};
+
+var termUrl = '{st.secrets.get("SIGMA_TERMINAL_URL","") if hasattr(st,"secrets") else ""}';
+pd.getElementById('sb-terminal-btn').onclick = function(e) {{
+  e.preventDefault(); closeSidebar();
+  if(termUrl) {{ window.parent.location.href = termUrl; }}
+  else {{ var u2=new URL(window.parent.location.href); u2.searchParams.set('do','view_stats'); window.parent.location.href=u2.toString(); }}
+}};
+pd.getElementById('sb-logout-btn').onclick = function(e) {{
+  e.preventDefault(); window.parent.location.href=uOut.toString();
+}};
 }})();
 </script>
 """, height=0)
@@ -10209,43 +10846,287 @@ components.html(f"""
 <script>
 (function(){{
 var pd=window.parent.document;
-var kipmLogo = pd.getElementById('kipm-mobile-logo'); if (kipmLogo) kipmLogo.style.display = 'none !important';
-var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipmStyle.remove();
-['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
-var s=pd.createElement('style'); s.id='sigma-mobile-css';
-s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
-#sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+['spbtn','spmenu','sphist','spui','sigma-mobile-css','sigma-sidebar','sigma-overlay','sigma-settings-panel','sigma-top-brand'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
+
+var isDark = '{st.session_state.theme}' === 'dark';
+var bg     = isDark ? '#171717' : '#f9f9f9';
+var text   = isDark ? '#ececec' : '#0d0d0d';
+var border = isDark ? '#2f2f2f' : '#e5e5e5';
+var hover  = isDark ? '#2a2a2a' : '#ebebeb';
+var active = isDark ? '#383838' : '#e0e0e0';
+var muted  = isDark ? '#8e8ea0' : '#6e6e80';
+var gold   = '#F5C242';
+var green  = '#10a37f';
+var red    = '#ef4444';
+
+var s = pd.createElement('style'); s.id = 'sigma-mobile-css';
+s.textContent = `
+#spbtn {{
+  position:fixed;top:13px;left:13px;width:36px;height:36px;border-radius:8px;
+  background:transparent;color:${{text}};border:none;cursor:pointer;z-index:999999;
+  display:flex;align-items:center;justify-content:center;transition:background 0.15s;padding:0;
+}}
+#spbtn:hover {{ background:${{hover}}; }}
+#sigma-overlay {{
+  position:fixed;inset:0;z-index:999990;background:rgba(0,0,0,0.45);display:none;
+}}
+#sigma-sidebar {{
+  position:fixed;top:0;left:0;bottom:0;width:268px;z-index:999995;
+  background:${{bg}};border-right:1px solid ${{border}};
+  display:flex;flex-direction:column;
+  transform:translateX(-100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+}}
+#sigma-sidebar.sigma-open {{ transform:translateX(0); }}
+.sb-header {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 14px 12px;border-bottom:1px solid ${{border}};flex-shrink:0;
+}}
+.sb-brand {{ font-size:0.95rem;font-weight:700;color:${{gold}};letter-spacing:0.12em; }}
+.sb-close-btn {{
+  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
+  cursor:pointer;color:${{muted}};font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:background 0.12s;
+}}
+.sb-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
+.sb-newchat {{
+  display:flex;align-items:center;gap:9px;margin:10px 8px 2px;padding:9px 12px;
+  border-radius:8px;cursor:pointer;color:${{text}};font-size:0.84rem;font-weight:500;
+  text-decoration:none;border:1px solid ${{border}};transition:background 0.12s;background:transparent;
+}}
+.sb-newchat:hover {{ background:${{hover}}; }}
+.sb-section-label {{
+  font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:${{muted}};padding:10px 14px 3px;
+}}
+#sigma-hist-list {{ flex:1;overflow-y:auto;padding:0 4px 4px; }}
+#sigma-hist-list::-webkit-scrollbar {{ width:3px; }}
+#sigma-hist-list::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
+.sb-hist-row {{
+  display:flex;align-items:center;border-radius:7px;margin:1px 0;transition:background 0.1s;
+}}
+.sb-hist-row:hover {{ background:${{hover}}; }}
+.sb-hist-row.sb-active {{ background:${{active}}; }}
+.sb-hist-link {{
+  flex:1;padding:8px 10px;font-size:0.81rem;color:${{text}};text-decoration:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}}
+.sb-hist-del {{
+  padding:7px 9px;background:transparent;border:none;cursor:pointer;
+  color:${{muted}};font-size:0.85rem;opacity:0;border-radius:5px;flex-shrink:0;transition:opacity 0.1s;
+}}
+.sb-hist-row:hover .sb-hist-del {{ opacity:0.7; }}
+.sb-hist-del:hover {{ color:${{red}};opacity:1!important; }}
+.sb-footer {{ border-top:1px solid ${{border}};padding:6px 4px;flex-shrink:0; }}
+.sb-footer-btn {{
+  display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:7px;
+  cursor:pointer;width:100%;color:${{text}};font-size:0.84rem;background:transparent;
+  border:none;text-align:left;text-decoration:none;transition:background 0.12s;
+}}
+.sb-footer-btn:hover {{ background:${{hover}}; }}
+.sb-footer-ico {{
+  width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+  justify-content:center;background:${{hover}};font-size:0.88rem;flex-shrink:0;
+}}
+#sigma-settings-panel {{
+  position:fixed;top:0;right:0;bottom:0;width:308px;z-index:999996;
+  background:${{bg}};border-left:1px solid ${{border}};
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform 0.22s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:-4px 0 30px rgba(0,0,0,0.25);
+}}
+#sigma-settings-panel.sigma-open {{ transform:translateX(0); }}
+.sp-header {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid ${{border}};flex-shrink:0;
+}}
+.sp-title {{ font-size:0.92rem;font-weight:600;color:${{text}}; }}
+.sp-close-btn {{
+  width:28px;height:28px;border-radius:6px;background:transparent;border:none;
+  cursor:pointer;color:${{muted}};font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}}
+.sp-close-btn:hover {{ background:${{hover}};color:${{text}}; }}
+.sp-body {{ flex:1;overflow-y:auto;padding:14px; }}
+.sp-body::-webkit-scrollbar {{ width:3px; }}
+.sp-body::-webkit-scrollbar-thumb {{ background:${{border}};border-radius:3px; }}
+.sp-group {{ margin-bottom:20px; }}
+.sp-group-label {{
+  font-size:0.66rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;
+  color:${{muted}};margin-bottom:8px;
+}}
+.sp-user-row {{
+  display:flex;align-items:center;gap:11px;padding:12px;border-radius:9px;
+  background:${{isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'}};
+  border:1px solid ${{border}};
+}}
+.sp-user-avatar {{
+  width:36px;height:36px;border-radius:50%;background:${{gold}};
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.9rem;font-weight:700;color:#000;flex-shrink:0;
+}}
+.sp-user-name {{ font-size:0.87rem;font-weight:600;color:${{text}}; }}
+.sp-user-email {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
+.sp-item {{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 12px;border-radius:9px;margin-bottom:5px;
+  background:${{isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.025)'}};
+  border:1px solid ${{border}};text-decoration:none;transition:border-color 0.15s;
+}}
+.sp-item:hover {{ border-color:${{isDark ? '#555' : '#ccc'}}; }}
+.sp-item-info {{ display:flex;align-items:center;gap:10px; }}
+.sp-item-ico {{
+  width:32px;height:32px;border-radius:7px;background:${{hover}};
+  display:flex;align-items:center;justify-content:center;font-size:0.88rem;flex-shrink:0;
+}}
+.sp-item-label {{ font-size:0.85rem;color:${{text}};font-weight:500; }}
+.sp-item-sub {{ font-size:0.7rem;color:${{muted}};margin-top:1px; }}
+.sp-item-right {{ font-size:0.78rem;color:${{muted}}; }}
+.sp-badge {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(245,194,66,0.14);color:${{gold}}; }}
+.sp-badge-on {{ font-size:0.63rem;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(16,163,127,0.15);color:${{green}}; }}
+.sp-divider {{ border:none;border-top:1px solid ${{border}};margin:8px 0 14px; }}
 `; pd.head.appendChild(s);
-var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
-var m=pd.createElement('div');m.id='spmenu';
-m.innerHTML=`
-    <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
-    <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
-    <div class="smsp"></div><div class="smhd">NAVIGASI</div>
-    <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
-    <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-    <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {'✓' if st.session_state.theme=='dark' else ''}</a>
-    <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {'✓' if st.session_state.theme=='light' else ''}</a>
-    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
-`; pd.body.appendChild(m);
-var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
-{_hist_items} pd.body.appendChild(h);
-btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; h.style.display = 'none'; }};
-(function(){{
-    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
-}})();
-pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
+
+// History
+var histHTML = '';
+{_hist_items}
+
+// ── SIDEBAR ────────────────────────────────────────────────────
+var sidebar = pd.createElement('div'); sidebar.id = 'sigma-sidebar';
+var uNewChat = new URL(window.parent.location.href); uNewChat.searchParams.set('do','newchat');
+sidebar.innerHTML = `
+<div class="sb-header">
+  <span class="sb-brand">SIGMA Σ</span>
+  <button class="sb-close-btn" id="sb-close-btn">✕</button>
+</div>
+<a class="sb-newchat" href="${{uNewChat.toString()}}">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  Percakapan Baru
+</a>
+<div class="sb-section-label">Riwayat</div>
+<div id="sigma-hist-list">${{histHTML}}</div>
+<div class="sb-footer">
+  <button class="sb-footer-btn" id="sb-settings-btn">
+    <span class="sb-footer-ico">⚙</span>Pengaturan
+  </button>
+  <button class="sb-footer-btn" id="sb-terminal-btn">
+    <span class="sb-footer-ico">📊</span>SIGMA Terminal
+  </button>
+  <button class="sb-footer-btn" id="sb-logout-btn" style="color:${{red}};">
+    <span class="sb-footer-ico" style="background:rgba(239,68,68,0.1);">⬡</span>Keluar
+  </button>
+</div>
+`;
+pd.body.appendChild(sidebar);
+
+// ── OVERLAY ────────────────────────────────────────────────────
+var overlay = pd.createElement('div'); overlay.id = 'sigma-overlay';
+pd.body.appendChild(overlay);
+
+// ── HAMBURGER ─────────────────────────────────────────────────
+var btn = pd.createElement('button'); btn.id = 'spbtn';
+btn.innerHTML = '<svg width="17" height="17" viewBox="0 0 17 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="1" y1="4" x2="16" y2="4"/><line x1="1" y1="8.5" x2="16" y2="8.5"/><line x1="1" y1="13" x2="16" y2="13"/></svg>';
+pd.body.appendChild(btn);
+
+// ── SETTINGS PANEL ────────────────────────────────────────────
+var userName  = '{(user.get("name","User") if user else "User").replace(chr(39), " ").replace(chr(34), " ")}';
+var userEmail = '{(user.get("email","") if user else "").replace(chr(39), " ")}';
+var userInit  = userName.charAt(0).toUpperCase();
+var isDarkNow = '{st.session_state.theme}' === 'dark';
+var uDark  = new URL(window.parent.location.href); uDark.searchParams.set('do','theme_dark');
+var uLight = new URL(window.parent.location.href); uLight.searchParams.set('do','theme_light');
+var uHome  = new URL(window.parent.location.href); uHome.searchParams.set('do','go_home');
+var uOut   = new URL(window.parent.location.href); uOut.searchParams.delete('sigma_token'); uOut.searchParams.set('do','logout');
+
+var sp = pd.createElement('div'); sp.id = 'sigma-settings-panel';
+sp.innerHTML = `
+<div class="sp-header">
+  <span class="sp-title">⚙ Pengaturan</span>
+  <button class="sp-close-btn" id="sp-close-btn">✕</button>
+</div>
+<div class="sp-body">
+  <div class="sp-group">
+    <div class="sp-group-label">Akun</div>
+    <div class="sp-user-row">
+      <div class="sp-user-avatar">${{userInit}}</div>
+      <div><div class="sp-user-name">${{userName}}</div><div class="sp-user-email">${{userEmail}}</div></div>
+    </div>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Tampilan</div>
+    <a class="sp-item" href="${{uDark.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">🌙</div>
+        <div><div class="sp-item-label">Dark Mode</div><div class="sp-item-sub">Latar gelap nyaman di malam hari</div></div>
+      </div>
+      ${{isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
+    </a>
+    <a class="sp-item" href="${{uLight.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">☀️</div>
+        <div><div class="sp-item-label">Light Mode</div><div class="sp-item-sub">Latar terang untuk siang hari</div></div>
+      </div>
+      ${{!isDarkNow ? '<span class="sp-badge-on">● Aktif</span>' : '<span class="sp-item-right">›</span>'}}
+    </a>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Navigasi</div>
+    <a class="sp-item" href="${{uHome.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico">🏠</div>
+        <div><div class="sp-item-label">Kembali ke Home</div><div class="sp-item-sub">Pilih SIGMA AI Chat atau Terminal</div></div>
+      </div>
+      <span class="sp-item-right">›</span>
+    </a>
+  </div>
+  <div class="sp-group">
+    <div class="sp-group-label">Tentang</div>
+    <div class="sp-item" style="cursor:default;">
+      <div class="sp-item-info"><div class="sp-item-ico" style="font-weight:900;font-size:1rem;color:${{gold}};">Σ</div>
+        <div><div class="sp-item-label">SIGMA AI v2.1</div><div class="sp-item-sub">KIPM-UP × MarketnMocha</div></div>
+      </div>
+      <span class="sp-badge">AI</span>
+    </div>
+  </div>
+  <hr class="sp-divider">
+  <div class="sp-group">
+    <div class="sp-group-label" style="color:${{red}}">Zona Bahaya</div>
+    <a class="sp-item" href="${{uOut.toString()}}">
+      <div class="sp-item-info"><div class="sp-item-ico" style="background:rgba(239,68,68,0.1);">🚪</div>
+        <div><div class="sp-item-label" style="color:${{red}}">Sign Out</div><div class="sp-item-sub">Keluar dari akun SIGMA</div></div>
+      </div>
+      <span style="color:${{red}};font-size:0.78rem;">›</span>
+    </a>
+  </div>
+</div>
+`;
+pd.body.appendChild(sp);
+
+// ── SIGMA BRAND CENTER ────────────────────────────────────────
+if (!pd.getElementById('sigma-top-brand')) {{
+  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
+  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
+  brand.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
+  pd.body.appendChild(brand);
+}}
+
+// ── EVENTS ────────────────────────────────────────────────────
+function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
+function closeSidebar() {{ sidebar.classList.remove('sigma-open'); if(!sp.classList.contains('sigma-open')) overlay.style.display='none'; }}
+function openSettings() {{ sp.classList.add('sigma-open'); overlay.style.display='block'; sidebar.classList.remove('sigma-open'); }}
+function closeSettings() {{ sp.classList.remove('sigma-open'); overlay.style.display='none'; }}
+
+btn.onclick = function(e) {{ e.stopPropagation(); openSidebar(); }};
+overlay.onclick = function() {{ closeSidebar(); closeSettings(); overlay.style.display='none'; }};
+pd.getElementById('sb-close-btn').onclick  = function() {{ closeSidebar(); }};
+pd.getElementById('sp-close-btn').onclick  = function() {{ closeSettings(); }};
+pd.getElementById('sb-settings-btn').onclick = function(e) {{ e.preventDefault(); openSettings(); }};
+
+var termUrl = '{st.secrets.get("SIGMA_TERMINAL_URL","") if hasattr(st,"secrets") else ""}';
+pd.getElementById('sb-terminal-btn').onclick = function(e) {{
+  e.preventDefault(); closeSidebar();
+  if(termUrl) {{ window.parent.location.href = termUrl; }}
+  else {{ var u2=new URL(window.parent.location.href); u2.searchParams.set('do','view_stats'); window.parent.location.href=u2.toString(); }}
+}};
+pd.getElementById('sb-logout-btn').onclick = function(e) {{
+  e.preventDefault(); window.parent.location.href=uOut.toString();
+}};
 }})();
 </script>
 """, height=0)
@@ -10296,25 +11177,4 @@ components.html("""
 </script>
 """, height=0)
 
-sig_color = C.get("text", "#ffffff")
-js_code = """
-<script>
-(function() {
-    var pd = window.parent.document;
-    if (pd.getElementById('sigma-desktop-brand')) return;
-    
-    var brand = pd.createElement('div');
-    brand.id = 'sigma-desktop-brand';
-    
-    brand.innerHTML = 'SIGMA';
-    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
-    
-    var style = pd.createElement('style');
-    style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
-    pd.head.appendChild(style);
-    
-    pd.body.appendChild(brand);
-})();
-</script>
-"""
-components.html(js_code, height=0)
+# UI sidebar & brand injection handled above via sigma-mobile-css component
