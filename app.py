@@ -2062,6 +2062,22 @@ div[data-testid="stChatInputContainer"]:focus-within {{
 footer, #MainMenu {{ visibility: hidden !important; }}
 hr {{ border-color: {C['border']} !important; margin: 16px 0 !important; }}
 
+/* SIGMA brand pojok kiri atas — selalu tampil */
+#sigma-brand-fixed {{
+    position: fixed !important;
+    top: 15px !important;
+    left: 18px !important;
+    z-index: 99999 !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: {C['text']} !important;
+    letter-spacing: 0.08em !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !important;
+    user-select: none !important;
+    pointer-events: none !important;
+    line-height: 1 !important;
+}}
+
 /* Typography */
 [data-testid="stMarkdownContainer"] *,
 [data-testid="stMarkdownContainer"] p,
@@ -2119,6 +2135,7 @@ hr {{ border-color: {C['border']} !important; margin: 16px 0 !important; }}
     [data-testid="stMainBlockContainer"] {{ padding: 0 12px 130px !important; }}
 }}
 </style>
+<div id="sigma-brand-fixed">SIGMA</div>
 """, unsafe_allow_html=True)
 
 def show_login():
@@ -2448,10 +2465,10 @@ body {{ background: #080c14; }}
     align-items:center;
     gap:6px;
 }}
-.cp-dot {{ width:6px; height:6px; border-radius:50%; display:inline-block; }}
-.cp-dot-1 {{ background:#f87171; }}
-.cp-dot-2 {{ background:#facc15; }}
-.cp-dot-3 {{ background:#4ade80; }}
+.cp-dot {{ width:10px !important; height:10px !important; min-width:10px !important; min-height:10px !important; border-radius:50% !important; display:inline-block !important; flex-shrink:0 !important; }}
+.cp-dot-1 {{ background:#f87171 !important; }}
+.cp-dot-2 {{ background:#facc15 !important; }}
+.cp-dot-3 {{ background:#4ade80 !important; }}
 .cp-title {{
     font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
     font-size:0.52rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
@@ -3372,12 +3389,18 @@ sp.innerHTML = `
 pd.body.appendChild(sp);
 
 // ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
-if (!pd.getElementById('sigma-top-brand')) {{
-  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
-  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:16px;z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
-  pd.body.appendChild(brand);
-}}
+(function keepBrand() {{
+  var _bc = '{C["text"]}';
+  function injectBrand() {{
+    var pd2 = window.parent ? window.parent.document : document;
+    var b = pd2.getElementById('sigma-top-brand');
+    if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
+    b.textContent = 'SIGMA';
+    b.style.cssText = 'position:fixed;top:15px;left:18px;z-index:99999;font-size:0.85rem;font-weight:600;color:' + _bc + ';letter-spacing:0.08em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
+  }}
+  injectBrand();
+  setInterval(injectBrand, 800);
+}})();
 
 // ── EVENTS ────────────────────────────────────────────────────
 function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
@@ -4249,12 +4272,18 @@ sp.innerHTML = `
 pd.body.appendChild(sp);
 
 // ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
-if (!pd.getElementById('sigma-top-brand')) {{
-  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
-  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:16px;z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
-  pd.body.appendChild(brand);
-}}
+(function keepBrand() {{
+  var _bc = '{C["text"]}';
+  function injectBrand() {{
+    var pd2 = window.parent ? window.parent.document : document;
+    var b = pd2.getElementById('sigma-top-brand');
+    if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
+    b.textContent = 'SIGMA';
+    b.style.cssText = 'position:fixed;top:15px;left:18px;z-index:99999;font-size:0.85rem;font-weight:600;color:' + _bc + ';letter-spacing:0.08em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
+  }}
+  injectBrand();
+  setInterval(injectBrand, 800);
+}})();
 
 // ── EVENTS ────────────────────────────────────────────────────
 function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
@@ -10405,12 +10434,18 @@ sp.innerHTML = `
 pd.body.appendChild(sp);
 
 // ── SIGMA BRAND KIRI ATAS ───────────────────────────────────
-if (!pd.getElementById('sigma-top-brand')) {{
-  var brand = pd.createElement('div'); brand.id = 'sigma-top-brand';
-  brand.innerHTML = 'SIGMA <span style="color:{C.get("gold","#F5C242")}">Σ</span>';
-  brand.style.cssText = 'position:fixed;top:14px;left:16px;z-index:99990;font-size:0.88rem;font-weight:700;color:{C["text"]};letter-spacing:0.15em;user-select:none;pointer-events:none;';
-  pd.body.appendChild(brand);
-}}
+(function keepBrand() {{
+  var _bc = '{C["text"]}';
+  function injectBrand() {{
+    var pd2 = window.parent ? window.parent.document : document;
+    var b = pd2.getElementById('sigma-top-brand');
+    if (!b) {{ b = pd2.createElement('div'); b.id = 'sigma-top-brand'; pd2.body.appendChild(b); }}
+    b.textContent = 'SIGMA';
+    b.style.cssText = 'position:fixed;top:15px;left:18px;z-index:99999;font-size:0.85rem;font-weight:600;color:' + _bc + ';letter-spacing:0.08em;user-select:none;pointer-events:none;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;';
+  }}
+  injectBrand();
+  setInterval(injectBrand, 800);
+}})();
 
 // ── EVENTS ────────────────────────────────────────────────────
 function openSidebar()  {{ sidebar.classList.add('sigma-open'); overlay.style.display='block'; }}
