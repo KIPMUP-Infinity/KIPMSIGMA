@@ -1152,25 +1152,25 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        # Base backgrounds — ChatGPT style clean dark
-        "bg":           "#212121" if dark else "#ffffff",
-        "sidebar_bg":   "#171717" if dark else "#f9f9f9",
+        # Base backgrounds — Navy dark
+        "bg":           "#0d1b2a" if dark else "#ffffff",
+        "sidebar_bg":   "#0a1520" if dark else "#f9f9f9",
         "text":         "#ececec" if dark else "#0d0d0d",
         "text_muted":   "#8e8ea0" if dark else "#6e6e80",
-        "border":       "#2f2f2f" if dark else "#e5e5e5",
-        "hover":        "#2a2a2a" if dark else "#f0f0f0",
-        "input_bg":     "#2f2f2f" if dark else "#ffffff",
+        "border":       "#1e3a5c" if dark else "#e5e5e5",
+        "hover":        "#112236" if dark else "#f0f0f0",
+        "input_bg":     "#112236" if dark else "#ffffff",
         # Chat bubbles
-        "bubble":       "#2f2f2f" if dark else "#f0f0f0",
+        "bubble":       "#112236" if dark else "#f0f0f0",
         "bubble_text":  "#ececec" if dark else "#0d0d0d",
         # Accent
-        "divider":      "#2f2f2f" if dark else "#e5e5e5",
+        "divider":      "#1e3a5c" if dark else "#e5e5e5",
         "gold":         "#F5C242",
-        "active_bg":    "#2a2a2a" if dark else "#ebebeb",
+        "active_bg":    "#112236" if dark else "#ebebeb",
         # Sidebar item active
-        "active_item":  "#383838" if dark else "#e0e0e0",
+        "active_item":  "#1a3a5c" if dark else "#e0e0e0",
         # Input send button
-        "btn_bg":       "#676767" if dark else "#bbbbb8",
+        "btn_bg":       "#2a5080" if dark else "#bbbbb8",
         # AI response background  
         "ai_msg_bg":    "transparent",
         "user_msg_bg":  "#1a3a5c" if dark else "#dbeafe",
@@ -1971,6 +1971,16 @@ section[data-testid="stSidebar"] .stButton > button span {{
     width: 100% !important;
     display: block !important;
     overflow: hidden !important;
+}}
+[data-testid="stChatMessage"] > div {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+[data-testid="stChatMessageContent"] {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }}
 [data-testid="stChatMessageAvatarUser"],
 [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
@@ -2863,6 +2873,8 @@ section[data-testid="stSidebar"] .stButton > button {{ background: transparent !
 section[data-testid="stSidebar"] .stButton > button:hover {{ background: {C['hover']} !important; }}
 section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
+[data-testid="stChatMessage"] > div {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
+[data-testid="stChatMessageContent"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
@@ -3162,6 +3174,14 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
+var tbrand=pd.getElementById('sigma-top-brand');
+if(!tbrand){{tbrand=pd.createElement('div');tbrand.id='sigma-top-brand';
+tbrand.style.position='fixed';tbrand.style.top='14px';tbrand.style.left='18px';
+tbrand.style.zIndex='99999';tbrand.style.fontFamily='IBM Plex Mono,monospace';
+tbrand.style.fontSize='1rem';tbrand.style.fontWeight='700';tbrand.style.color='#F5C242';
+tbrand.style.letterSpacing='0.12em';tbrand.style.pointerEvents='none';
+tbrand.style.textShadow='0 2px 8px rgba(0,0,0,0.5)';
+tbrand.innerHTML='&#931; SIGMA';pd.body.appendChild(tbrand);}}
 var m=pd.createElement('div'); m.id='spmenu';
 m.innerHTML=`
   <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
@@ -3816,6 +3836,14 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
+var tbrand=pd.getElementById('sigma-top-brand');
+if(!tbrand){{tbrand=pd.createElement('div');tbrand.id='sigma-top-brand';
+tbrand.style.position='fixed';tbrand.style.top='14px';tbrand.style.left='18px';
+tbrand.style.zIndex='99999';tbrand.style.fontFamily='IBM Plex Mono,monospace';
+tbrand.style.fontSize='1rem';tbrand.style.fontWeight='700';tbrand.style.color='#F5C242';
+tbrand.style.letterSpacing='0.12em';tbrand.style.pointerEvents='none';
+tbrand.style.textShadow='0 2px 8px rgba(0,0,0,0.5)';
+tbrand.innerHTML='&#931; SIGMA';pd.body.appendChild(tbrand);}}
 var m=pd.createElement('div'); m.id='spmenu';
 m.innerHTML=`
   <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
@@ -8857,18 +8885,42 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
             else: rating,rc,rl = "HOLD","rgba(245,194,66,0.1)","#F5C242"
             badge_cls = "badge-buy" if rating=="BUY" else ("badge-sell" if rating=="SELL" else "badge-hold")
 
-            # AI insight parse
-            entry = "—"; sl = "—"; tp1 = "—"; tp2 = "—"
-            if ai_analysis:
-                def _tv(txt, key):
-                    m = _re2.search(key+r'[\s:]*Rp\.?\s*([\d,.]+)', txt, _re2.IGNORECASE)
-                    if m: return f"Rp {m.group(1)}"
-                    m2 = _re2.search(key+r'[\s:]*(Rp[\s]*[\d,.]+)', txt, _re2.IGNORECASE)
-                    return m2.group(1) if m2 else "—"
-                entry = _tv(ai_analysis, r"entry")
-                sl    = _tv(ai_analysis, r"sl\b|stop.?loss")
-                tp1   = _tv(ai_analysis, r"tp\s*1|target\s*1")
-                tp2   = _tv(ai_analysis, r"tp\s*2|target\s*2")
+            # AI insight parse — robust regex, fallback ke kalkulasi harga
+            def _tv(txt, key):
+                # Pattern 1: "Entry Rp 120" atau "Entry: Rp120"
+                m = _re2.search(key + r'[\s:]*Rp\.?\s*([\d,]+)', txt, _re2.IGNORECASE)
+                if m: return f"Rp {m.group(1).replace(',', '').strip()}"
+                # Pattern 2: "Entry 120" (tanpa Rp, angka langsung)
+                m2 = _re2.search(key + r'[\s:]*([0-9]{2,6}(?:[,\.][0-9]{3})*)', txt, _re2.IGNORECASE)
+                if m2:
+                    raw = m2.group(1).replace(',', '')
+                    try:
+                        val = float(raw)
+                        if 10 < val < 100000000:
+                            return f"Rp {int(val):,}"
+                    except: pass
+                return None
+
+            entry_raw = _tv(ai_analysis, r"entry") if ai_analysis else None
+            sl_raw    = _tv(ai_analysis, r"sl\b|stop.?loss") if ai_analysis else None
+            tp1_raw   = _tv(ai_analysis, r"tp\s*1|target\s*1|take.?profit.?1") if ai_analysis else None
+            tp2_raw   = _tv(ai_analysis, r"tp\s*2|target\s*2|take.?profit.?2") if ai_analysis else None
+            tp3_raw   = _tv(ai_analysis, r"tp\s*3|target\s*3|take.?profit.?3") if ai_analysis else None
+
+            # Fallback kalkulasi otomatis dari harga jika parse gagal
+            entry = entry_raw or f"Rp {price:,.0f}"
+            sl    = sl_raw    or f"Rp {round(price*0.93, 0):,.0f}"
+            tp1   = tp1_raw   or f"Rp {round(price*1.06, 0):,.0f}"
+            tp2   = tp2_raw   or f"Rp {round(price*1.12, 0):,.0f}"
+            tp3   = tp3_raw   or f"Rp {round(price*1.18, 0):,.0f}"
+
+            # Bersihkan ai_analysis dari baris skenario agar tidak duplikat di teks card
+            ai_display = ai_analysis
+            if ai_display:
+                ai_display = _re2.sub(
+                    r'(?m)^.*(?:Entry|SL|TP\s*\d|Stop.?Loss|Take.?Profit|Skenario|R/R|Horizon|Sizing).*$',
+                    '', ai_display, flags=_re2.IGNORECASE
+                ).strip()
 
             sigs_html = "".join(sigs_tech[:6])
             ta_score  = round((bull_s/5)*100 - (bear_s/5)*50, 1)
@@ -8903,20 +8955,20 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
   <div class="rc-pred">
     <span class="rc-pred-badge" style="background:{pred_bg};color:{pred_col};">{pred_lbl}</span>
     <span style="color:{text_sub};font-size:0.72rem;">{conf}% confidence</span>
-    {f"&nbsp;·&nbsp; TP1: Rp{tp1} &nbsp; TP2: Rp{tp2} &nbsp; SL: Rp{sl}" if entry!="—" else ""}
   </div>
   <div class="rc-sig-section">
     <div class="rc-sig-title">TECHNICAL SIGNALS</div>
     <div class="rc-sig-grid">{sigs_html}</div>
-    {f'<div style="font-size:0.8rem;color:{text_main};white-space:pre-wrap;line-height:1.7;padding:6px 0;">{ai_analysis[:600]}</div>' if ai_analysis else ""}
+    {f'<div style="font-size:0.78rem;color:{text_main};white-space:pre-wrap;line-height:1.65;padding:8px 0 2px;">{ai_display[:500]}</div>' if ai_display else ""}
   </div>
   <div class="rc-trade">
-    <div class="rc-tc"><div class="rc-tl">Entry</div><div class="rc-tv" style="color:{accent};">{entry}</div></div>
-    <div class="rc-tc"><div class="rc-tl">Stop Loss</div><div class="rc-tv" style="color:#f23645;">{sl}</div></div>
+    <div class="rc-tc"><div class="rc-tl">ENTRY</div><div class="rc-tv" style="color:{accent};">{entry}</div></div>
+    <div class="rc-tc"><div class="rc-tl">STOP LOSS</div><div class="rc-tv" style="color:#f23645;">{sl}</div></div>
     <div class="rc-tc"><div class="rc-tl">TP 1</div><div class="rc-tv" style="color:#26a69a;">{tp1}</div></div>
     <div class="rc-tc"><div class="rc-tl">TP 2</div><div class="rc-tv" style="color:#26a69a;">{tp2}</div></div>
-    <div class="rc-tc"><div class="rc-tl">Bull Score</div><div class="rc-tv">{bull_s}/5</div></div>
-    <div class="rc-tc"><div class="rc-tl">5D Change</div><div class="rc-tv" style="color:{"#26a69a" if data.get("chg5d",0)>=0 else "#f23645"};">{data.get("chg5d",0):+.1f}%</div></div>
+    <div class="rc-tc"><div class="rc-tl">TP 3</div><div class="rc-tv" style="color:#26a69a;">{tp3}</div></div>
+    <div class="rc-tc"><div class="rc-tl">BULL SCORE</div><div class="rc-tv">{bull_s}/5</div></div>
+    <div class="rc-tc"><div class="rc-tl">5D CHANGE</div><div class="rc-mv" style="color:{"#26a69a" if data.get("chg5d",0)>=0 else "#f23645"};">{data.get("chg5d",0):+.1f}%</div></div>
   </div>
   <div class="rc-zone">
     <div style="font-family:'IBM Plex Mono',monospace;font-size:0.52rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin-bottom:6px;">SUPPLY / DEMAND ZONES</div>
@@ -8926,69 +8978,17 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
 </div>""", unsafe_allow_html=True)
 
         # ══════════════════════════════════════════════════════════════════
-        # 5 TABS: ANALYZE · DAILY PICK · SWING WEEKLY · BSJP · SCREENER
+        # 4 TABS: DAILY PICK · SWING WEEKLY · BSJP · SCREENER
+        # (ANALYZE SAHAM dipindah ke AI STOCK INSIGHT)
         # ══════════════════════════════════════════════════════════════════
-        reco_tab_analyze, reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_screener = st.tabs([
-            "  🔍 ANALYZE SAHAM  ",
+        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_screener = st.tabs([
             "  📅 DAILY PICK  ",
             "  📆 SWING WEEKLY  ",
             "  🌙 BSJP OVERNIGHT  ",
             "  📊 SMART SCREENER  ",
         ])
 
-        # ─── TAB 1: ANALYZE SAHAM (Volara-style per-ticker) ───────────────
-        with reco_tab_analyze:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;letter-spacing:0.08em;text-transform:uppercase;'>Analisis mendalam per saham — TA Score, Sinyal Teknikal, Fundamental, Prediksi, Supply/Demand</p>", unsafe_allow_html=True)
-            col_a1, col_a2, col_a3 = st.columns([2, 1, 1])
-            with col_a1:
-                _analyze_ticker = st.text_input("KODE SAHAM (TICKER IDX):", "BBCA", key="reco_analyze_ticker").upper().strip()
-            with col_a2:
-                st.markdown("<br>", unsafe_allow_html=True)
-                _run_analyze = st.button("🔍 ANALYZE", use_container_width=True, key="btn_reco_analyze")
-            with col_a3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                _run_ai_insight = st.button("🤖 AI INSIGHT", use_container_width=True, key="btn_reco_ai")
-
-            if _run_analyze or _run_ai_insight:
-                with st.spinner(f"Mengambil data {_analyze_ticker}..."):
-                    _pd = _reco_fetch_prices([_analyze_ticker])
-                    if _analyze_ticker in _pd:
-                        st.session_state["reco_analyze_data"] = {_analyze_ticker: _pd[_analyze_ticker]}
-                        st.session_state["reco_analyze_ticker"] = _analyze_ticker
-                        if _run_ai_insight:
-                            d = _pd[_analyze_ticker]
-                            _ap = f"""Kamu adalah SIGMA AI — analis saham IDX profesional.
-Analisis saham {_analyze_ticker}:
-Harga: Rp{d["price"]:,.0f} | Chg: {d["chg"]:+.2f}% | Chg5D: {d["chg5d"]:+.2f}%
-RSI: {d["rsi"]} | EMA5: {d["ema5"]:,.0f} | EMA10: {d["ema10"]:,.0f}
-Vol Spike: {d["spike"]:.1f}x | BullScore: {d["bullish_score"]}/5 | BearScore: {d["bearish_score"]}/5
-
-Berikan:
-1. Rating: BUY/HOLD/SELL + alasan singkat
-2. Entry: Rp[harga] | SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga]
-3. Analisa teknikal singkat (RSI, EMA, volume, momentum)
-4. Risiko utama
-
-Jawab ringkas, Bahasa Indonesia, maksimal 200 kata."""
-                            _ai_res = _call_ai_reco(_ap)
-                            st.session_state["reco_analyze_ai"] = _ai_res
-                    else:
-                        st.warning(f"Tidak dapat mengambil data {_analyze_ticker}. Cek ticker dan coba lagi.")
-
-            if st.session_state.get("reco_analyze_data") and st.session_state.get("reco_analyze_ticker"):
-                _atk = st.session_state["reco_analyze_ticker"]
-                _adata = st.session_state["reco_analyze_data"]
-                if _atk in _adata:
-                    _ai_txt = st.session_state.get("reco_analyze_ai", "")
-                    _render_stock_card(_atk, _adata[_atk], _ai_txt, "#F5C242")
-            else:
-                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
-                    <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;">🔍</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                    Masukkan ticker saham IDX lalu klik <span style="color:#F5C242;">ANALYZE</span> atau <span style="color:#26a69a;">AI INSIGHT</span></p>
-                </div>""", unsafe_allow_html=True)
-
-        # ─── TAB 2: DAILY PICK ───────────────────────────────────────────
+        # ─── TAB 1: DAILY PICK ───────────────────────────────────────────
         with reco_tab_daily:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI HARIAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick trading hari ini — momentum harga, volume spike, sinyal teknikal.</p>", unsafe_allow_html=True)
@@ -9806,6 +9806,14 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn';
 btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>';
 pd.body.appendChild(btn);
+var tbrand=pd.getElementById('sigma-top-brand');
+if(!tbrand){{tbrand=pd.createElement('div');tbrand.id='sigma-top-brand';
+tbrand.style.position='fixed';tbrand.style.top='14px';tbrand.style.left='18px';
+tbrand.style.zIndex='99999';tbrand.style.fontFamily='IBM Plex Mono,monospace';
+tbrand.style.fontSize='1rem';tbrand.style.fontWeight='700';tbrand.style.color='#F5C242';
+tbrand.style.letterSpacing='0.12em';tbrand.style.pointerEvents='none';
+tbrand.style.textShadow='0 2px 8px rgba(0,0,0,0.5)';
+tbrand.innerHTML='&#931; SIGMA';pd.body.appendChild(tbrand);}}
 var m=pd.createElement('div'); m.id='spmenu';
 m.innerHTML=`
   <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
