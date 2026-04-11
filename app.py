@@ -2301,6 +2301,7 @@ def show_system_selector():
 <meta charset="utf-8">
 <style>
 * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }}
+span[style*="border-radius:50%"] {{ display:inline-block !important; width:11px !important; height:11px !important; min-width:11px !important; min-height:11px !important; flex-shrink:0 !important; overflow:visible !important; }}
 body {{ background: #080c14; }}
 
 .sys-wrapper {{
@@ -2535,7 +2536,12 @@ body {{ background: #080c14; }}
             <div class="card-desc">Asisten analisa pasar berbasis AI &#8212; teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
 
             <div class="chat-preview">
-                <div style="background:rgba(0,157,255,0.07);border-bottom:1px solid rgba(0,157,255,0.1);padding:8px 12px;display:flex;flex-direction:row;align-items:center;gap:7px;min-height:28px;"><span style="width:11px;height:11px;min-width:11px;min-height:11px;border-radius:50%;background:#ff5f57;display:inline-block;flex-shrink:0;"></span><span style="width:11px;height:11px;min-width:11px;min-height:11px;border-radius:50%;background:#febc2e;display:inline-block;flex-shrink:0;"></span><span style="width:11px;height:11px;min-width:11px;min-height:11px;border-radius:50%;background:#28c840;display:inline-block;flex-shrink:0;"></span><span style="font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:rgba(0,157,255,0.5);letter-spacing:1.5px;text-transform:uppercase;margin-left:2px;">SIGMA AI &mdash; 7 ALPHA COMMAND</span></div>
+                <div style="background:rgba(0,157,255,0.07);border-bottom:1px solid rgba(0,157,255,0.1);padding:8px 12px;display:flex;flex-direction:row;align-items:center;gap:7px;min-height:30px;">
+                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#ff5f57"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#febc2e"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#28c840"/></svg>
+                  <span style="font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:rgba(0,157,255,0.5);letter-spacing:1.5px;text-transform:uppercase;margin-left:2px;">SIGMA AI &mdash; 7 ALPHA COMMAND</span>
+                </div>
                 <div class="cp-body">
                     <div class="cp-cmd"><span class="cp-num">1</span> Kesimpulan Dampak Makro</div>
                     <div class="cp-cmd"><span class="cp-num">2</span> Kesimpulan Dampak Emiten</div>
@@ -2565,7 +2571,12 @@ body {{ background: #080c14; }}
             <div class="card-desc">Dashboard pasar real-time &#8212; Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
 
             <div class="term-preview">
-                <div style="background:rgba(245,194,66,0.07);border-bottom:1px solid rgba(245,194,66,0.1);padding:8px 12px;display:flex;flex-direction:row;align-items:center;gap:7px;min-height:28px;margin:-10px -12px 10px -12px;border-radius:9px 9px 0 0;"><span style="width:11px;height:11px;min-width:11px;min-height:11px;border-radius:50%;background:#ff5f57;display:inline-block;flex-shrink:0;"></span><span style="width:11px;height:11px;min-width:11px;min-height:11px;border-radius:50%;background:#febc2e;display:inline-block;flex-shrink:0;"></span><span style="width:11px;height:11px;min-width:11px;min-height:11px;border-radius:50%;background:#28c840;display:inline-block;flex-shrink:0;"></span><span style="font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:rgba(245,194,66,0.5);letter-spacing:1.5px;text-transform:uppercase;margin-left:2px;">SIGMA TERMINAL &mdash; LIVE</span></div>
+                <div style="background:rgba(245,194,66,0.07);border-bottom:1px solid rgba(245,194,66,0.1);padding:8px 12px;display:flex;flex-direction:row;align-items:center;gap:7px;min-height:30px;margin:-10px -12px 10px -12px;border-radius:9px 9px 0 0;">
+                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#ff5f57"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#febc2e"/></svg>
+                  <svg width="11" height="11" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="5.5" fill="#28c840"/></svg>
+                  <span style="font-family:'SF Mono','Fira Code',monospace;font-size:0.52rem;color:rgba(245,194,66,0.5);letter-spacing:1.5px;text-transform:uppercase;margin-left:2px;">SIGMA TERMINAL &mdash; LIVE</span>
+                </div>
                 <div class="t-row"><span class="t-prompt">$</span><span class="t-cmd"> sigma.fetch --market IDX --live</span></div>
                 <div class="t-row"><span class="t-label">IHSG </span><span class="t-up">&#9650; 7,421  +0.74%</span></div>
                 <div class="t-row"><span class="t-label">LQ45 </span><span class="t-dn">&#9660; 862.3  -0.31%</span></div>
