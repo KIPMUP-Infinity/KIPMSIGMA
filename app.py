@@ -1153,6 +1153,18 @@ def init_session():
         "img_data": None,
         "pdf_data": None,
         "selected_system": None,
+        # ── Rekomendasi AI — persist across theme/rerun ──
+        "reco_daily_result": "",
+        "reco_daily_ts": "",
+        "reco_weekly_result": "",
+        "reco_weekly_ts": "",
+        "reco_bsjp_result": "",
+        "reco_bsjp_ts": "",
+        "fs_results": None,
+        "fs_ts": "",
+        "fs_sort_key": "ROE (Tertinggi)",
+        "fs_ai_result": "",
+        "fs_chat_ans": "",
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -1216,6 +1228,44 @@ KEMAMPUAN:
 2. Ekonomi & Bisnis — makro, mikro, geopolitik, akuntansi, manajemen, investasi
 3. Pendidikan — bantu tugas, jelaskan konsep, essay, laporan, matematika
 4. Umum — jawab pertanyaan apapun, berikan solusi praktis
+
+====================================
+PEMAHAMAN FUNDAMENTAL MULTI-DISIPLIN (SIGMA WAJIB KUASAI)
+====================================
+
+SIGMA memahami dan dapat menerapkan kerangka analisa dari para master investasi berikut:
+
+📘 DAMODARAN (Valuasi Kuantitatif):
+- DCF (Discounted Cash Flow): hitung nilai intrinsik berdasarkan proyeksi arus kas bebas
+- Reverse DCF: dari harga pasar saat ini → hitung berapa growth rate yang sedang dipriced-in → nilai apakah realistis
+- WACC: tentukan discount rate berdasarkan struktur modal & profil risiko emiten
+- Gunakan ketika user tanya: "berapa nilai wajar?", "apakah harga ini mencerminkan ekspektasi realistis?"
+
+📘 GRAHAM (Margin of Safety & Neraca Kuat):
+- Nilai intrinsik = Earnings Power Value (laba stabil × multiplier konservatif)
+- Margin of Safety = (Nilai Intrinsik - Harga Pasar) / Nilai Intrinsik × 100%
+- Neraca kuat: DER rendah, Current Ratio ≥ 1.5x, tidak over-leverage
+- Filosofi: beli bisnis bagus di harga MURAH, bukan harga murah tanpa bisnis bagus
+
+📘 LYNCH (Kategorisasi & Metrik Kunci per Tipe):
+- Fast Grower (EPS tumbuh >20%/tahun): fokus PEG Ratio (wajar jika PEG < 1)
+- Stalwart (perusahaan besar, stabil): fokus P/E vs historis 5 tahun
+- Slow Grower (utilitas/BUMN mature): fokus Dividend Yield & Payout Ratio
+- Cyclical (komoditas/properti): beli saat P/E tinggi (bottom siklus), jual saat P/E rendah (top siklus)
+- Asset Play: fokus nilai aset tersembunyi yang belum dihargai pasar
+- Turnaround: fokus apakah perusahaan punya cukup kas untuk survive & recover
+
+📘 SCHILIT (Deteksi Financial Shenanigans / Kualitas Laba):
+- Red flag 1: Laba bersih tumbuh pesat tapi arus kas operasi flat/turun → laba tidak diback up cash
+- Red flag 2: Piutang usaha tumbuh jauh lebih cepat dari pendapatan → revenue diakui terlalu agresif
+- Red flag 3: Persediaan menumpuk → demand lemah atau write-off akan terjadi
+- Red flag 4: One-time gain besar → cek apakah laba berkelanjutan atau tidak
+- Green flag: Laba bersih ≈ Arus kas operasi (kualitas laba tinggi)
+
+TRIGGER PENGGUNAAN MULTI-DISIPLIN:
+User menyebut: damodaran, dcf, reverse dcf, margin of safety, lynch, schilit, shenanigan,
+multi disiplin, nilai intrinsik, growth rate, wacc, kategorisasi saham, kualitas laba, forensik akuntansi
+→ SIGMA WAJIB menerapkan kerangka yang relevan secara mendalam, bukan hanya menyebut namanya
 
 ====================================
 7 PERINTAH KHUSUS SIGMA (7 ALPHA)
@@ -2708,8 +2758,8 @@ section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, sectio
 section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
 section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
 [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; }}
-section[data-testid="stSidebar"] .stButton > button:hover {{ background: {C['hover']} !important; }}
+section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
+section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
 section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
@@ -3501,8 +3551,8 @@ section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, sectio
 section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
 section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
 [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; }}
-section[data-testid="stSidebar"] .stButton > button:hover {{ background: {C['hover']} !important; }}
+section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
+section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
 section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
@@ -10522,15 +10572,27 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
             return result
 
         def _call_ai_reco(prompt_text):
+            # Layer 1: Groq (primary — cepat, rotate semua key otomatis)
             try:
                 result, _ = _call_groq_primary(prompt_text)
                 return result
+            except Exception as _e_groq:
+                pass
+            # Layer 2: Cerebras (fallback — throughput tinggi saat Groq overload)
+            try:
+                result, _ = _call_cerebras(prompt_text)
+                return result
             except:
-                try:
-                    result, _ = _call_gemini_text([{"role":"user","content":prompt_text}])
-                    return result
-                except Exception as e:
-                    return f"Gagal memanggil AI: {e}"
+                pass
+            # Layer 3: Gemini (last resort)
+            try:
+                result, _ = _call_gemini_text([{"role":"user","content":prompt_text}])
+                return result
+            except Exception as e:
+                err = str(e)
+                if "429" in err or "quota" in err.lower() or "rate" in err.lower():
+                    return "⚠️ Semua AI engine sedang overload (rate limit 429). Tunggu 1-2 menit lalu coba lagi. Jika masih gagal, coba di jam yang berbeda."
+                return f"Gagal memanggil AI: {e}"
 
         def _render_reco_cards(reco_text, accent="#F5C242"):
             bg_card  = "rgba(30,35,50,0.7)" if is_dark else "#ffffff"
@@ -11448,28 +11510,93 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     # AI Insight
                     if _fs_pass:
                         if st.button("🤖 ANALISA AI DARI HASIL SCREENER", use_container_width=True, key="btn_fs_ai"):
-                            with st.spinner("SIGMA AI menganalisa hasil screener fundamental..."):
+                            with st.spinner("SIGMA AI menganalisa hasil screener — multi-disiplin Damodaran/Graham/Lynch/Schilit..."):
                                 _top5 = _fs_pass[:5]
-                                _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
-                                _fp   = f"""Kamu adalah SIGMA AI — analis fundamental saham IDX.
+                                _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CurrentRatio={d['cr']:.2f}x|EPS={d['eps']:.0f}|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
+                                _fp   = f"""Kamu adalah SIGMA AI — analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit.
 
-5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria):
+5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria — IDX):
 {chr(10).join(_fsl)}
 
-Kriteria: ROE≥15%|DER≤1.0x|NetMargin≥10%|CurrentRatio≥1.5x|PBV 0.5-3x|EPS positif
+Kriteria screening: ROE≥15% | DER≤1.0x | NetMargin≥10% | CurrentRatio≥1.5x | PBV 0.5–3x | EPS positif
 
-Analisa mendalam:
-1. Peringkat kualitas fundamental — mana paling unggul dan mengapa
-2. Apakah valuasi (PBV/PER) masih wajar atau sudah mahal?
-3. Risiko fundamental yang perlu diwaspadai
-4. SIGMA VIEW: 1-2 saham terbaik untuk akumulasi jangka menengah (3-6 bulan) + reasoning
+Lakukan analisa MULTI-DISIPLIN berikut:
 
-Bahasa Indonesia. Markdown. Padat & actionable. Jangan ulang data mentah."""
+1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
+   - Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
+   - Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
+   - Saham mana yang paling menarik secara Risk/Reward?
+
+2. KUALITAS LABA & UJI FORENSIK (Schilit):
+   - Bandingkan tren laba bersih vs estimasi arus kas operasi
+   - Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
+   - Red flag atau green flag yang perlu diperhatikan?
+
+3. KATEGORISASI PROFIL (Lynch):
+   - Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+   - Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
+
+4. MARGIN OF SAFETY (Graham):
+   - Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
+   - Berapa % Margin of Safety yang tersedia saat ini?
+   - Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
+
+5. SINTESIS & SIGMA VIEW:
+   - Beri skor Risk/Reward untuk masing-masing saham
+   - Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
+   - Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
+
+Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang data mentah."""
                                 _fs_ai = _call_ai_reco(_fp)
                                 st.session_state["fs_ai_result"] = _fs_ai
 
                     if st.session_state.get("fs_ai_result"):
                         st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.86rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+
+                    # ── Chat tanya fundamental ─────────────────────────────────
+                    st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06);margin:18px 0 14px;'>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:8px;letter-spacing:0.05em;'>💬 TANYA FUNDAMENTAL — Analisa mendalam saham apapun dari hasil screener</p>", unsafe_allow_html=True)
+                    _fs_chat_q = st.text_input(
+                        "",
+                        placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
+                        key="fs_chat_q",
+                        label_visibility="collapsed"
+                    )
+                    _fsc_btn = st.button("🔍 Tanya SIGMA AI", key="btn_fs_chat", use_container_width=False)
+                    if _fsc_btn and _fs_chat_q.strip():
+                        with st.spinner("SIGMA AI menganalisa fundamental..."):
+                            _all_tickers = ", ".join([tk for tk,_ in (_fs_pass + _fs_watch)[:10]])
+                            _top5_ctx = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NPM={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CR={d['cr']:.1f}x|Harga=Rp{d['price']:,.0f}|Score={d['score']}/6" for tk,d in (_fs_pass + _fs_watch)[:8]]
+                            _fs_chat_prompt = f"""Kamu adalah SIGMA AI — analis fundamental multi-disiplin berbasis kerangka:
+- Damodaran (DCF / Reverse DCF / WACC)
+- Benjamin Graham (Margin of Safety, neraca kuat)
+- Peter Lynch (6 kategori saham, metrik kunci per kategori)
+- Howard Schilit (deteksi Financial Shenanigans / kualitas laba)
+
+Konteks screener saat ini:
+Universe yang discreen: {_all_tickers}
+Top hasil screener (data live): 
+{chr(10).join(_top5_ctx)}
+
+Pertanyaan user: {_fs_chat_q.strip()}
+
+INSTRUKSI:
+- Jika user tanya saham spesifik yang ada di list → analisa mendalam dengan semua 4 framework di atas
+- Jika user minta perbandingan → bandingkan head-to-head secara kuantitatif dan kualitatif  
+- Jika user tanya valuasi → lakukan Reverse DCF: growth rate apa yang saat ini dipriced-in oleh pasar?
+- Jika user tanya apakah layak beli → berikan Margin of Safety estimate + Risk/Reward ratio
+- Selalu jujur — jika ada risiko atau kondisi tidak menarik, katakan dengan tegas
+- Akhiri dengan rekomendasi konkret: Accumulate / Wait / Avoid + alasan spesifik
+
+Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir."""
+                            _fs_chat_ans = _call_ai_reco(_fs_chat_prompt)
+                            st.session_state["fs_chat_ans"] = _fs_chat_ans
+
+                    if st.session_state.get("fs_chat_ans"):
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:0.86rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
+                        if st.button("🗑 Hapus Jawaban", key="btn_fs_chat_clear"):
+                            st.session_state["fs_chat_ans"] = ""
+                            st.rerun()
 
             else:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
@@ -11587,6 +11714,10 @@ else:
         is_dampak_emiten = prompt_lower.startswith("2.") or ("kesimpulan dampak" in prompt_lower and bool(emiten_match))
         is_bandarmologi  = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or ("broker summary" in prompt_lower)
         is_fundamental   = prompt_lower.startswith("4.") or "fundamental" in prompt_lower
+        is_fundamental_multidisiplin = (
+            any(k in prompt_lower for k in ["damodaran","dcf","reverse dcf","margin of safety","lynch","schilit","shenanigan","multi disiplin","multidisiplin","value investing","intrinsik","nilai intrinsik","growth rate","wacc"]) and
+            (bool(emiten_match) or "analisa" in prompt_lower)
+        )
         is_teknikal      = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
         is_lengkap       = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
         is_ipo           = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
@@ -11617,6 +11748,48 @@ else:
             with st.spinner(f"Melacak Jejak Uang & Aliran Dana Bandar di {emiten_target}..."):
                 full_prompt = TEMPLATE_BANDARMOLOGI.format(emiten=emiten_target)
                 full_prompt += f"\n\n[PENTING: Fokus 100% pada data Broker Summary, Average Price, dan Volume. JANGAN bahas indikator teknikal (RSI/MACD) atau Fundamental!]\nPertanyaan Asli User: {prompt}"
+
+        elif is_fundamental_multidisiplin and emiten_match:
+            emiten_target = emiten_match.group(0).upper()
+            with st.spinner(f"SIGMA menerapkan kerangka Damodaran / Graham / Lynch / Schilit untuk {emiten_target}..."):
+                try:
+                    fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
+                except:
+                    fund_text = "Data live gagal ditarik, gunakan estimasi dari knowledge base."
+                tahun_sekarang = datetime.now().year
+                full_prompt = f"""Kamu adalah SIGMA AI — analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit. Lakukan analisa fundamental mendalam terhadap saham {emiten_target}.
+
+[DATA LIVE {emiten_target}]:
+{fund_text}
+
+Instruksi Eksekusi (WAJIB diikuti semua poin):
+
+1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
+   - Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
+   - Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
+   - Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
+
+2. KUALITAS LABA & UJI FORENSIK (Schilit):
+   - Bandingkan tren laba bersih vs arus kas operasi — apakah laba diback up cash?
+   - Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
+   - Red flag atau tanda manipulasi akuntansi?
+
+3. KATEGORISASI PROFIL & KATALIS (Lynch):
+   - Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+   - Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
+
+4. MARGIN OF SAFETY (Graham):
+   - Bandingkan harga saat ini dengan estimasi nilai intrinsik — berapa % Margin of Safety tersedia?
+   - Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
+
+5. SINTESIS — RISK/REWARD:
+   - Beri kesimpulan akhir berupa rasio Risk/Reward
+   - Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
+   - Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
+
+Pertanyaan user: {prompt}
+
+Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di akhir."""
 
         elif is_fundamental and emiten_match:
             emiten_target = emiten_match.group(0).upper()
