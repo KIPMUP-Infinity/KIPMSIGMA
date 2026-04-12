@@ -4943,7 +4943,7 @@ if current_view == "dashboard":
         }
         
         [data-testid="stMetricValue"] {
-            font-size: 1.1rem !important; 
+            font-size: 1.3rem !important; 
         }
         
         [data-testid="stVerticalBlock"] {
@@ -5024,19 +5024,19 @@ if current_view == "dashboard":
     [data-testid="stMetric"]:hover::before {{ opacity: 1; }}
     [data-testid="stMetricValue"] {{
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 1.35rem !important;
+        font-size: 1.55rem !important;
         font-weight: 600 !important;
         color: {text_main} !important;
         letter-spacing: -0.5px !important;
     }}
     [data-testid="stMetricLabel"] {{
-        font-size: 0.72rem !important;
+        font-size: 0.92rem !important;
         font-weight: 500 !important;
         letter-spacing: 0.08em !important;
         text-transform: uppercase !important;
         color: {text_sub} !important;
     }}
-    [data-testid="stMetricDelta"] {{ font-family: 'IBM Plex Mono', monospace !important; font-size: 0.8rem !important; }}
+    [data-testid="stMetricDelta"] {{ font-family: 'IBM Plex Mono', monospace !important; font-size: 1.0rem !important; }}
 
     [data-testid="stTabs"] [role="tablist"] {{
         background: {"rgba(6,9,18,0.95)" if is_dark else "#f1f5f9"} !important;
@@ -5048,7 +5048,7 @@ if current_view == "dashboard":
     }}
     [data-testid="stTabs"] button[role="tab"] {{
         font-family: 'IBM Plex Sans', sans-serif !important;
-        font-size: 0.78rem !important;
+        font-size: 0.98rem !important;
         font-weight: 500 !important;
         letter-spacing: 0.05em !important;
         text-transform: uppercase !important;
@@ -5080,7 +5080,7 @@ if current_view == "dashboard":
     .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.88rem;
+        font-size: 1.08rem;
         font-weight: 600;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -5104,7 +5104,7 @@ if current_view == "dashboard":
     .trm-card:hover {{ border-color: rgba(245,194,66,0.3); }}
     .trm-card-title {{
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.7rem;
+        font-size: 0.9rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
         color: #F5C242;
@@ -5118,7 +5118,7 @@ if current_view == "dashboard":
         border-radius: 0 6px 6px 0;
         padding: 14px 18px;
         margin: 12px 0;
-        font-size: 0.88rem;
+        font-size: 1.08rem;
         color: {text_main};
         line-height: 1.6;
     }}
@@ -5146,7 +5146,7 @@ if current_view == "dashboard":
         color: {"#F5C242" if is_dark else "#92700a"} !important;
         border: 1px solid {"rgba(245,194,66,0.3)" if is_dark else "rgba(245,194,66,0.35)"} !important;
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.78rem !important;
+        font-size: 0.98rem !important;
         font-weight: 600 !important;
         letter-spacing: 0.06em !important;
         text-transform: uppercase !important;
@@ -5175,7 +5175,7 @@ if current_view == "dashboard":
         display: inline-block;
         animation: ticker-scroll 40s linear infinite;
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.72rem;
+        font-size: 0.92rem;
         letter-spacing: 0.06em;
         color: {"rgba(232,234,240,0.7)" if is_dark else "#64748b"};
     }}
@@ -5189,7 +5189,7 @@ if current_view == "dashboard":
 
     [data-testid="stTextInput"] input {{
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.95rem !important;
+        font-size: 1.15rem !important;
         font-weight: 600 !important;
         letter-spacing: 0.08em !important;
         background: {met_bg} !important;
@@ -5204,7 +5204,7 @@ if current_view == "dashboard":
     }}
     [data-testid="stTextInput"] label, [data-testid="stSelectbox"] label {{
         font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 0.68rem !important;
+        font-size: 0.88rem !important;
         letter-spacing: 0.1em !important;
         text-transform: uppercase !important;
         color: {text_sub} !important;
@@ -5223,11 +5223,11 @@ if current_view == "dashboard":
 
         /* Terminal header title: ukuran lebih kecil */
         span[style*="1.45rem"] {{
-            font-size: 1.1rem !important;
+            font-size: 1.3rem !important;
             letter-spacing: 0.08em !important;
         }}
         span[style*="KIPM"] {{
-            font-size: 0.58rem !important;
+            font-size: 0.78rem !important;
         }}
 
         /* Ticker tape: anti overflow */
@@ -5238,7 +5238,7 @@ if current_view == "dashboard":
 
         /* Tabs: ukuran label lebih kecil */
         [data-testid="stTabs"] button[role="tab"] {{
-            font-size: 0.65rem !important;
+            font-size: 0.85rem !important;
             padding: 6px 8px !important;
             letter-spacing: 0.02em !important;
         }}
@@ -5249,10 +5249,10 @@ if current_view == "dashboard":
             min-width: 0 !important;
         }}
         [data-testid="stMetricValue"] {{
-            font-size: 1rem !important;
+            font-size: 1.2rem !important;
         }}
         [data-testid="stMetricLabel"] {{
-            font-size: 0.62rem !important;
+            font-size: 0.82rem !important;
         }}
 
         /* Economic Calendar: stack to 1 column on mobile */
@@ -5265,11 +5265,11 @@ if current_view == "dashboard":
             gap: 4px !important;
             padding: 8px 10px !important;
         }}
-        .cal-dt {{ font-size: 0.60rem !important; }}
-        .cal-ev {{ font-size: 0.66rem !important; }}
-        .cal-fc {{ font-size: 0.64rem !important; }}
-        .cal-pv {{ font-size: 0.58rem !important; }}
-        .cal-bdg {{ font-size: 0.55rem !important; padding: 2px 4px !important; }}
+        .cal-dt {{ font-size: 0.8rem !important; }}
+        .cal-ev {{ font-size: 0.86rem !important; }}
+        .cal-fc {{ font-size: 0.84rem !important; }}
+        .cal-pv {{ font-size: 0.78rem !important; }}
+        .cal-bdg {{ font-size: 0.75rem !important; padding: 2px 4px !important; }}
 
         /* Sector rotation table: full width */
         [data-testid="stDataFrame"] {{
@@ -5288,7 +5288,7 @@ if current_view == "dashboard":
             word-break: break-word !important;
         }}
         .trm-insight {{
-            font-size: 0.82rem !important;
+            font-size: 1.02rem !important;
             padding: 12px 12px !important;
             word-break: break-word !important;
         }}
@@ -5303,7 +5303,7 @@ if current_view == "dashboard":
 
         /* FTSE/MSCI table header label: allow wrap on mobile */
         .trm-section-label {{
-            font-size: 0.75rem !important;
+            font-size: 0.95rem !important;
             letter-spacing: 0.05em !important;
             padding: 3px 6px !important;
             white-space: normal !important;
@@ -5321,7 +5321,7 @@ if current_view == "dashboard":
             margin-bottom: 10px !important;
         }}
         .trm-insight {{
-            font-size: 0.82rem !important;
+            font-size: 1.02rem !important;
             padding: 10px 10px !important;
             word-break: break-word !important;
             margin: 8px 0 !important;
@@ -5331,10 +5331,10 @@ if current_view == "dashboard":
         }}
         /* Shareholder screening table */
         .sh-screen-table {{
-            font-size: 0.65rem !important;
+            font-size: 0.85rem !important;
         }}
         .sh-screen-table th {{
-            font-size: 0.52rem !important;
+            font-size: 0.72rem !important;
             padding: 5px 5px !important;
         }}
         .sh-screen-table td {{
@@ -5342,14 +5342,14 @@ if current_view == "dashboard":
         }}
 
         /* Corporate Action table: mobile horizontal scroll + compact */
-        .ca-tbl th {{ font-size: 0.58rem !important; padding: 8px 7px !important; }}
-        .ca-tbl td {{ font-size: 0.66rem !important; padding: 8px 7px !important; }}
-        .ca-badge  {{ font-size: 0.58rem !important; padding: 2px 5px !important; }}
-        .ca-ev-badge {{ font-size: 0.58rem !important; padding: 2px 5px !important; }}
-        .ca-info   {{ font-size: 0.62rem !important; line-height: 1.4 !important; }}
+        .ca-tbl th {{ font-size: 0.78rem !important; padding: 8px 7px !important; }}
+        .ca-tbl td {{ font-size: 0.86rem !important; padding: 8px 7px !important; }}
+        .ca-badge  {{ font-size: 0.78rem !important; padding: 2px 5px !important; }}
+        .ca-ev-badge {{ font-size: 0.78rem !important; padding: 2px 5px !important; }}
+        .ca-info   {{ font-size: 0.82rem !important; line-height: 1.4 !important; }}
         .ca-stat   {{ padding: 8px 10px !important; min-width: 70px !important; }}
-        .ca-stat-val {{ font-size: 1.05rem !important; }}
-        .ca-stat-lbl {{ font-size: 0.55rem !important; }}
+        .ca-stat-val {{ font-size: 1.25rem !important; }}
+        .ca-stat-lbl {{ font-size: 0.75rem !important; }}
 
         /* Economic Calendar: compact on mobile */
         .ecocal-row {{
@@ -5357,17 +5357,17 @@ if current_view == "dashboard":
             gap: 4px !important;
             padding: 8px 10px !important;
         }}
-        .ecocal-dt {{ font-size: 0.58rem !important; }}
-        .ecocal-ev {{ font-size: 0.68rem !important; }}
-        .ecocal-fc {{ font-size: 0.60rem !important; }}
-        .ecocal-imp {{ font-size: 0.52rem !important; padding: 2px 4px !important; }}
+        .ecocal-dt {{ font-size: 0.78rem !important; }}
+        .ecocal-ev {{ font-size: 0.88rem !important; }}
+        .ecocal-fc {{ font-size: 0.8rem !important; }}
+        .ecocal-imp {{ font-size: 0.72rem !important; padding: 2px 4px !important; }}
 
         /* Market Brief container: full-width, no padding bleed */
         .mb-container {{ margin: 0 0 16px !important; }}
         .mb-header {{ padding: 10px 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 4px !important; }}
-        .mb-title  {{ font-size: 0.68rem !important; }}
-        .mb-badge  {{ font-size: 0.58rem !important; }}
-        .mb-body   {{ padding: 14px 12px !important; font-size: 0.80rem !important; line-height: 1.7 !important; }}
+        .mb-title  {{ font-size: 0.88rem !important; }}
+        .mb-badge  {{ font-size: 0.78rem !important; }}
+        .mb-body   {{ padding: 14px 12px !important; font-size: 1.0rem !important; line-height: 1.7 !important; }}
 
         /* News feed boxes: taller on mobile for readability */
         .news-box  {{ min-height: 300px !important; max-height: 380px !important; }}
@@ -5384,7 +5384,7 @@ if current_view == "dashboard":
         /* Filter inputs: full width on mobile */
         [data-testid="stTextInput"] input,
         [data-testid="stSelectbox"] select {{
-            font-size: 0.82rem !important;
+            font-size: 1.02rem !important;
         }}
     }}
     </style>
@@ -5566,25 +5566,25 @@ if current_view == "dashboard":
         # ── Shared table CSS (same style as Corporate Action) ───────────────
         st.markdown(f"""<style>
         .mkt-wrap {{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;}}
-        .mkt-hdr {{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
-        .mkt-hdr-badge {{font-size:0.55rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
+        .mkt-hdr {{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.92rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
+        .mkt-hdr-badge {{font-size:0.75rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
         .mkt-scroll {{width:100%;overflow-x:auto;overflow-y:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
         .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
         .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-        table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
-        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.64rem;white-space:nowrap;}}
+        table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
+        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.84rem;white-space:nowrap;}}
         table.mkt-tbl tbody td {{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
         table.mkt-tbl tbody tr:last-child td {{border-bottom:none;}}
         table.mkt-tbl tbody tr:hover td {{background:rgba(245,194,66,0.04);}}
-        .mkt-name {{font-weight:600;font-size:0.73rem;}}
-        .mkt-price {{font-size:0.78rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+        .mkt-name {{font-weight:600;font-size:0.93rem;}}
+        .mkt-price {{font-size:0.98rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
         .mkt-up {{color:#089981;}}
         .mkt-dn {{color:#f23645;}}
         .mkt-na {{color:{text_sub};}}
-        .mkt-chg-badge {{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.64rem;font-weight:700;}}
+        .mkt-chg-badge {{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.84rem;font-weight:700;}}
         @media(max-width:600px){{
-            table.mkt-tbl thead th {{font-size:0.58rem;padding:7px 8px;}}
-            table.mkt-tbl tbody td {{font-size:0.65rem;padding:7px 8px;}}
+            table.mkt-tbl thead th {{font-size:0.78rem;padding:7px 8px;}}
+            table.mkt-tbl tbody td {{font-size:0.85rem;padding:7px 8px;}}
         }}
         </style>""", unsafe_allow_html=True)
 
@@ -5691,29 +5691,29 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;}}
 .col{{flex:1;min-width:0;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;height:100%;}}
-.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.90rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
-.mkt-badge{{font-size:0.73rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.mkt-badge{{font-size:0.93rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;min-width:320px;}}
-thead th{{position:static;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.82rem;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.13rem;min-width:320px;}}
+thead th{{position:static;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
 tbody td{{padding:8px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
-.nm{{font-weight:600;font-size:0.91rem;color:{text_main};}}
-.flag{{margin-right:5px;font-size:0.95rem;}}
-.price{{font-size:0.95rem;font-weight:700;}}
-.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.82rem;font-weight:700;}}
-.ccy{{font-size:0.77rem;color:{text_sub};}}
+.nm{{font-weight:600;font-size:1.11rem;color:{text_main};}}
+.flag{{margin-right:5px;font-size:1.15rem;}}
+.price{{font-size:1.15rem;font-weight:700;}}
+.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:1.02rem;font-weight:700;}}
+.ccy{{font-size:0.97rem;color:{text_sub};}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:10px;}}
-  .mkt-hdr{{font-size:0.70rem;padding:8px 10px;}}
-  thead th{{font-size:0.67rem;padding:7px 8px;}}
-  tbody td{{font-size:0.73rem;padding:7px 8px;}}
-  .badge{{font-size:0.67rem;padding:2px 5px;}}
-  .nm{{font-size:0.73rem;}}
-  .price{{font-size:0.75rem;}}
+  .mkt-hdr{{font-size:0.9rem;padding:8px 10px;}}
+  thead th{{font-size:0.87rem;padding:7px 8px;}}
+  tbody td{{font-size:0.93rem;padding:7px 8px;}}
+  .badge{{font-size:0.87rem;padding:2px 5px;}}
+  .nm{{font-size:0.93rem;}}
+  .price{{font-size:0.95rem;}}
 }}
 </style></head><body>
 <div class="row">
@@ -5756,7 +5756,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
     var h='';
     data.forEach(function(r){{
       if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.72rem;color:rgba(245,194,66,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(245,194,66,0.15);background:rgba(245,194,66,0.03);">'+r.label+'</td></tr>';
+        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.92rem;color:rgba(245,194,66,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(245,194,66,0.15);background:rgba(245,194,66,0.03);">'+r.label+'</td></tr>';
         return;
       }}
       var up = r.cls==='mkt-up';
@@ -5821,15 +5821,15 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MARKET BRIEF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""
         <style>
-        .mb-desc {{ font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:{text_sub}; margin-bottom:12px; line-height:1.6; }}
+        .mb-desc {{ font-family:'IBM Plex Mono',monospace; font-size:0.88rem; color:{text_sub}; margin-bottom:12px; line-height:1.6; }}
         .mb-tags {{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }}
-        .mb-tag  {{ font-family:'IBM Plex Mono',monospace; font-size:0.6rem; color:{text_sub};
+        .mb-tag  {{ font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:{text_sub};
             background:rgba(255,255,255,0.05); border:1px solid {met_border};
             border-radius:20px; padding:3px 10px; white-space:nowrap; }}
         @media (max-width:768px) {{
-            .mb-desc {{ font-size:0.63rem; }}
+            .mb-desc {{ font-size:0.83rem; }}
             .mb-tags {{ gap:6px; }}
-            .mb-tag  {{ font-size:0.56rem; padding:2px 8px; }}
+            .mb-tag  {{ font-size:0.76rem; padding:2px 8px; }}
         }}
         </style>
         <p class='mb-desc'>Analisis pasar berbasis AI — IHSG, Global Markets, Forex, Komoditas, Sentimen &amp; Tactical View. Sumber: CNBC Indonesia, CNBC Global, Bloomberg &amp; MarketWatch.</p>
@@ -6143,14 +6143,14 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             .mb-header {{ background:rgba(245,194,66,0.10); padding:14px 20px;
                 border-bottom:1px solid {met_border}; display:flex; align-items:center;
                 justify-content:space-between; flex-wrap:wrap; gap:8px; }}
-            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:{_mb_color};
+            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.98rem; color:{_mb_color};
                 font-weight:700; letter-spacing:1.2px; }}
-            .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.62rem; color:{text_sub};
+            .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:{text_sub};
                 background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px;
                 border:1px solid {met_border}; white-space:nowrap; }}
             @media (max-width: 768px) {{
                 .mb-header {{ padding:10px 14px; }}
-                .mb-title {{ font-size:0.7rem; }}
+                .mb-title {{ font-size:0.9rem; }}
             }}
             </style>
             <div class='mb-container'>
@@ -6203,15 +6203,15 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             color: #F5C242;
             font-family: 'IBM Plex Mono', monospace;
             font-weight: 700;
-            font-size: 11px;
+            font-size: 13px;
             letter-spacing: 1px;
         }}
         .news-scroll-sigma {{ flex: 1; overflow-y: auto; padding: 10px; }}
         .news-entry-sigma {{ display: block; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none !important; transition: 0.2s ease; }}
         .news-entry-sigma:hover {{ background: rgba(245,194,66,0.05); }}
-        .news-title-sigma {{ color: {text_main}; font-size: 13px; line-height: 1.5; margin-bottom: 5px; }}
-        .news-meta-sigma {{ color: {text_sub}; font-size: 10px; font-family: 'IBM Plex Mono', monospace; }}
-        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; }} .news-title-sigma {{ font-size: 12px !important; }} }}
+        .news-title-sigma {{ color: {text_main}; font-size: 15px; line-height: 1.5; margin-bottom: 5px; }}
+        .news-meta-sigma {{ color: {text_sub}; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }}
+        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; }} .news-title-sigma {{ font-size: 14px !important; }} }}
         .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
         .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
@@ -6227,8 +6227,8 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     html_str += f"""
                     <a href='{entry.link}' target='_blank' style='text-decoration:none;'>
                         <div style='padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);'>
-                            <div style='color:{text_main}; font-size:13px; line-height:1.4;'>{entry.title}</div>
-                            <div style='color:{text_sub}; font-size:10px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
+                            <div style='color:{text_main}; font-size:15px; line-height:1.4;'>{entry.title}</div>
+                            <div style='color:{text_sub}; font-size:12px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
                         </div>
                     </a>"""
                 return html_str if html_str else "No news found."
@@ -6240,7 +6240,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:13px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -6248,7 +6248,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:11px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
+                <div style='padding:10px 14px; background:rgba(245,194,66,0.1); border-bottom:1px solid {met_border}; color:#F5C242; font-weight:bold; font-size:13px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -6258,13 +6258,13 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         # MAKRO INDONESIA vs US  (moved down — after news)
         # ---------------------------------------------------------
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
 
         macro_col1, macro_col2 = st.columns(2)
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
                 "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
@@ -6273,7 +6273,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             st.line_chart(macro_id, color=["#F5C242", "#4285F4", "#ff5555"], height=320)
 
         with macro_col2:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;color:#F5C242;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
                 "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
@@ -6288,11 +6288,11 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             st.markdown(f"""
             <div class="trm-card">
                 <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
                 <span style='color:#F5C242;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
                 Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
                 </p>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
                 <span style='color:#F5C242;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
                 Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
                 </p>
@@ -6303,11 +6303,11 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             st.markdown(f"""
             <div class="trm-card">
                 <div class="trm-card-title" style="color:#f23645;">Rotasi &amp; Kurva Imbal Hasil</div>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
                 <span style='color:#f23645;font-weight:600;'>Yield Curve Obligasi RI</span><br>
                 Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
                 </p>
-                <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:10px 0 0;'>
+                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
                 <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
                 Komoditas memanas &rarr; Coal &amp; Gold. Suku bunga turun &rarr; Big Banks &amp; Properti.
                 </p>
@@ -6387,21 +6387,21 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;align-items:flex-start;}}
 .col{{flex:1;min-width:0;}}
 .cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.cal-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.90rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
-.cal-sub{{font-size:0.72rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.cal-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.cal-sub{{font-size:0.92rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .scroll-box{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.92rem;min-width:340px;}}
-thead th{{position:static;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.82rem;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.12rem;min-width:340px;}}
+thead th{{position:static;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
-.dt{{font-size:0.83rem;color:{text_sub};}}
-.ev{{font-size:0.91rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
-.fc{{font-size:0.89rem;color:#089981;font-weight:600;display:block;}}
-.pv{{font-size:0.79rem;color:{text_sub};display:block;}}
-.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.80rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
+.dt{{font-size:1.03rem;color:{text_sub};}}
+.ev{{font-size:1.11rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
+.fc{{font-size:1.09rem;color:#089981;font-weight:600;display:block;}}
+.pv{{font-size:0.99rem;color:{text_sub};display:block;}}
+.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:1.0rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
 /* Tooltip */
 .tip-wrap{{position:relative;}}
 .tip-wrap:hover .tip{{display:block;}}
@@ -6409,18 +6409,18 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
   background:{'#1a2035' if is_dark else '#ffffff'};
   border:1px solid {met_border};border-left:3px solid #F5C242;
   border-radius:0 6px 6px 0;padding:8px 12px;
-  font-size:0.67rem;color:{text_main};line-height:1.5;
+  font-size:0.87rem;color:{text_main};line-height:1.5;
   pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,0.4);
   white-space:normal;min-width:220px;max-width:360px;}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:10px;}}
-  .cal-hdr{{font-size:0.70rem;padding:8px 10px;}}
-  thead th{{font-size:0.67rem;padding:7px 8px;}}
-  tbody td{{font-size:0.73rem;padding:7px 8px;}}
-  .bdg{{font-size:0.65rem;padding:2px 4px;}}
-  .ev{{font-size:0.73rem;}}
-  .fc{{font-size:0.72rem;}}
-  .pv{{font-size:0.65rem;}}
+  .cal-hdr{{font-size:0.9rem;padding:8px 10px;}}
+  thead th{{font-size:0.87rem;padding:7px 8px;}}
+  tbody td{{font-size:0.93rem;padding:7px 8px;}}
+  .bdg{{font-size:0.85rem;padding:2px 4px;}}
+  .ev{{font-size:0.93rem;}}
+  .fc{{font-size:0.92rem;}}
+  .pv{{font-size:0.85rem;}}
 }}
 </style></head><body>
 <div class="row">
@@ -6701,27 +6701,27 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
         .ca-stats {{ display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }}
         .ca-stat {{ background:{met_bg}; border:1px solid {met_border}; border-radius:8px;
             padding:10px 16px; font-family:'IBM Plex Mono',monospace; flex:1; min-width:100px; }}
-        .ca-stat-val {{ font-size:1.3rem; font-weight:700; color:#F5C242; }}
-        .ca-stat-lbl {{ font-size:0.62rem; color:{text_sub}; letter-spacing:0.08em; margin-top:2px; }}
-        .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.74rem; }}
+        .ca-stat-val {{ font-size:1.5rem; font-weight:700; color:#F5C242; }}
+        .ca-stat-lbl {{ font-size:0.82rem; color:{text_sub}; letter-spacing:0.08em; margin-top:2px; }}
+        .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.94rem; }}
         .ca-tbl th {{ background:rgba(245,194,66,0.10); color:#F5C242; padding:10px 12px;
-            text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.06em; font-weight:700; font-size:0.65rem; }}
+            text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.06em; font-weight:700; font-size:0.85rem; }}
         .ca-tbl td {{ padding:10px 12px; border-bottom:1px solid {met_border}; color:{text_main}; vertical-align:middle; }}
         .ca-tbl tr:last-child td {{ border-bottom:none; }}
         .ca-tbl tr:hover td {{ background:rgba(245,194,66,0.04); }}
-        .ca-badge {{ padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.65rem; letter-spacing:0.04em; }}
-        .ca-ev-badge {{ padding:3px 8px; border-radius:4px; font-size:0.65rem; font-weight:600; white-space:nowrap; }}
-        .ca-info {{ color:{text_sub}; font-size:0.7rem; }}
+        .ca-badge {{ padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.85rem; letter-spacing:0.04em; }}
+        .ca-ev-badge {{ padding:3px 8px; border-radius:4px; font-size:0.85rem; font-weight:600; white-space:nowrap; }}
+        .ca-info {{ color:{text_sub}; font-size:0.9rem; }}
         @media (max-width:768px) {{
             .ca-stats {{ gap:8px; }}
             .ca-stat {{ padding:8px 12px; min-width:80px; }}
-            .ca-stat-val {{ font-size:1.1rem; }}
-            .ca-stat-lbl {{ font-size:0.58rem; }}
-            .ca-tbl th {{ padding:8px 8px; font-size:0.6rem; }}
-            .ca-tbl td {{ padding:8px 8px; font-size:0.68rem; }}
-            .ca-badge {{ font-size:0.6rem; padding:2px 6px; }}
-            .ca-ev-badge {{ font-size:0.6rem; padding:2px 6px; }}
-            .ca-info {{ font-size:0.64rem; }}
+            .ca-stat-val {{ font-size:1.3rem; }}
+            .ca-stat-lbl {{ font-size:0.78rem; }}
+            .ca-tbl th {{ padding:8px 8px; font-size:0.8rem; }}
+            .ca-tbl td {{ padding:8px 8px; font-size:0.88rem; }}
+            .ca-badge {{ font-size:0.8rem; padding:2px 6px; }}
+            .ca-ev-badge {{ font-size:0.8rem; padding:2px 6px; }}
+            .ca-info {{ font-size:0.84rem; }}
         }}
         </style>
         <div class='ca-stats'>
@@ -6730,7 +6730,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
             <div class='ca-stat'><div class='ca-stat-val' style='color:#F5C242;'>{_rups_ct}</div><div class='ca-stat-lbl'>RUPS</div></div>
             <div class='ca-stat'><div class='ca-stat-val' style='color:#4285F4;'>{_ri_ct}</div><div class='ca-stat-lbl'>RIGHTS ISSUE</div></div>
         </div>
-        <p style='font-family:IBM Plex Mono,monospace;font-size:0.63rem;color:{text_sub};margin-bottom:12px;'>
+        <p style='font-family:IBM Plex Mono,monospace;font-size:0.83rem;color:{text_sub};margin-bottom:12px;'>
             📅 Menampilkan {len(ca_data_filtered)} dari {_total} events · 3 bulan ke depan · Sumber: IDX &amp; Data Bursa
         </p>
         """, unsafe_allow_html=True)
@@ -6774,7 +6774,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .ca-wrap{{background:{met_bg};border-radius:10px;border:1px solid {met_border};overflow:hidden;}}
-.hint{{display:none;text-align:center;font-size:0.55rem;color:{text_sub};
+.hint{{display:none;text-align:center;font-size:0.75rem;color:{text_sub};
        padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {met_border};}}
 .scroll-box{{
   width:100%;
@@ -6788,41 +6788,41 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:max-content;min-width:100%;border-collapse:collapse;
-       font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
+       font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
 thead th{{
   position:sticky;top:0;z-index:2;
   background:rgba(245,194,66,0.10);color:#F5C242;
   padding:10px 12px;text-align:left;
   border-bottom:1px solid {met_border};
-  letter-spacing:0.06em;font-weight:700;font-size:0.65rem;
+  letter-spacing:0.06em;font-weight:700;font-size:0.85rem;
   white-space:nowrap;
 }}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
           color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
-.ca-badge{{padding:3px 8px;border-radius:4px;font-weight:700;font-size:0.65rem;letter-spacing:0.04em;}}
-.ca-ev-badge{{padding:3px 8px;border-radius:4px;font-size:0.65rem;font-weight:600;white-space:nowrap;}}
-.ca-info{{color:{text_sub};font-size:0.7rem;white-space:normal;max-width:280px;}}
+.ca-badge{{padding:3px 8px;border-radius:4px;font-weight:700;font-size:0.85rem;letter-spacing:0.04em;}}
+.ca-ev-badge{{padding:3px 8px;border-radius:4px;font-size:0.85rem;font-weight:600;white-space:nowrap;}}
+.ca-info{{color:{text_sub};font-size:0.9rem;white-space:normal;max-width:280px;}}
 .pg-bar{{display:flex;align-items:center;justify-content:space-between;
          padding:6px 12px;border-top:1px solid {met_border};
          background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:4px;}}
-.pg-info{{font-size:0.58rem;color:{text_sub};}}
+.pg-info{{font-size:0.78rem;color:{text_sub};}}
 .pg-btns{{display:flex;gap:5px;}}
 .pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
          border:1px solid {met_border};border-radius:4px;
          padding:4px 11px;font-family:'IBM Plex Mono',monospace;
-         font-size:0.58rem;cursor:pointer;transition:background 0.15s;}}
+         font-size:0.78rem;cursor:pointer;transition:background 0.15s;}}
 .pg-btn:hover{{background:rgba(255,255,255,0.12);}}
 .pg-btn:disabled{{opacity:0.3;cursor:default;}}
 @media(max-width:600px){{
   .hint{{display:block;}}
-  table{{font-size:0.65rem;}}
-  thead th{{font-size:0.6rem;padding:8px 8px;}}
-  tbody td{{padding:7px 8px;font-size:0.65rem;}}
-  .ca-badge{{font-size:0.58rem;padding:2px 5px;}}
-  .ca-ev-badge{{font-size:0.58rem;padding:2px 5px;}}
-  .ca-info{{font-size:0.62rem;max-width:180px;}}
+  table{{font-size:0.85rem;}}
+  thead th{{font-size:0.8rem;padding:8px 8px;}}
+  tbody td{{padding:7px 8px;font-size:0.85rem;}}
+  .ca-badge{{font-size:0.78rem;padding:2px 5px;}}
+  .ca-ev-badge{{font-size:0.78rem;padding:2px 5px;}}
+  .ca-info{{font-size:0.82rem;max-width:180px;}}
 }}
 </style></head><body>
 <div class="ca-wrap">
@@ -6881,7 +6881,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""
-        <p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
+        <p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
         Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
         Rate saat ini: <b style='color:#F5C242;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
         </p>
@@ -6959,14 +6959,14 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
     margin-bottom: 18px;
   }}
   .frm-cd-label {{
-    font-size: 0.65rem;
+    font-size: 0.85rem;
     color: #a0aec0;
     letter-spacing: 0.08em;
     font-weight: 600;
     margin-bottom: 6px;
   }}
   .frm-cd-title {{
-    font-size: 0.72rem;
+    font-size: 0.92rem;
     color: #f23645;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -6987,7 +6987,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
     line-height: 1;
   }}
   .frm-cd-unit {{
-    font-size: 0.55rem;
+    font-size: 0.75rem;
     color: #6b7a99;
     letter-spacing: 0.06em;
     margin-top: 3px;
@@ -7021,7 +7021,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
     padding: 12px 16px;
   }}
   .frm-card-date {{
-    font-size: 0.82rem;
+    font-size: 1.02rem;
     font-weight: 700;
     color: #F5C242;
     letter-spacing: 0.06em;
@@ -7033,11 +7033,11 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
     align-items: center;
   }}
   .frm-card-future {{
-    font-size: 0.6rem;
+    font-size: 0.8rem;
     color: {'#6b7a99' if is_dark else '#64748b'};
   }}
   .frm-card-time {{
-    font-size: 0.58rem;
+    font-size: 0.78rem;
     color: #089981;
   }}
 
@@ -7050,8 +7050,8 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
     align-items: center;
     margin-bottom: 5px;
   }}
-  .frm-bar-label {{ font-size: 0.68rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; }}
-  .frm-bar-pct {{ font-size: 0.72rem; font-weight: 700; }}
+  .frm-bar-label {{ font-size: 0.88rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; }}
+  .frm-bar-pct {{ font-size: 0.92rem; font-weight: 700; }}
   .frm-bar-track {{
     height: 8px;
     border-radius: 4px;
@@ -7078,7 +7078,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   }}
   .frm-tbl th {{
     padding: 7px 10px;
-    font-size: 0.58rem;
+    font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0.07em;
     color: {'#6b7a99' if is_dark else '#64748b'};
@@ -7088,7 +7088,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   .frm-tbl th:not(:first-child) {{ text-align: right; }}
   .frm-tbl td {{
     padding: 7px 10px;
-    font-size: 0.65rem;
+    font-size: 0.85rem;
     border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
     white-space: nowrap;
   }}
@@ -7099,7 +7099,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   .frm-tbl td:not(:first-child) {{ text-align: right; color: {'#6b7a99' if is_dark else '#9ca3af'}; }}
   .frm-dir-badge {{
     display: inline-block;
-    font-size: 0.52rem;
+    font-size: 0.72rem;
     font-weight: 700;
     padding: 1px 5px;
     border-radius: 3px;
@@ -7109,7 +7109,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   }}
   .frm-tbl-footer {{
     padding: 5px 10px 8px;
-    font-size: 0.52rem;
+    font-size: 0.72rem;
     color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
     text-align: right;
     border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
@@ -7122,7 +7122,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
     border-left: 3px solid #4285F4;
     border-radius: 8px;
     padding: 12px 16px;
-    font-size: 0.72rem;
+    font-size: 0.92rem;
     color: {'#e8eaf0' if is_dark else '#1a202c'};
     line-height: 1.65;
   }}
@@ -7131,18 +7131,18 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   @media (max-width: 860px) {{
     .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
     .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
-    .frm-cd-num {{ font-size: 1.3rem; }}
+    .frm-cd-num {{ font-size: 1.5rem; }}
     .frm-cd-box {{ min-width: 38px; }}
     .frm-cd-boxes {{ justify-content: flex-start; }}
     .frm-card-meta {{ flex-direction: column; gap: 2px; align-items: flex-start; }}
-    .frm-card-time {{ font-size: 0.56rem; }}
-    .frm-card-date {{ font-size: 0.76rem; }}
+    .frm-card-time {{ font-size: 0.76rem; }}
+    .frm-card-date {{ font-size: 0.96rem; }}
     .frm-bars {{ padding: 12px 14px 6px; }}
-    .frm-bar-label {{ font-size: 0.66rem; }}
-    .frm-bar-pct {{ font-size: 0.70rem; }}
-    .frm-tbl th {{ padding: 6px 8px; font-size: 0.56rem; }}
-    .frm-tbl td {{ padding: 6px 8px; font-size: 0.63rem; }}
-    .frm-insight {{ font-size: 0.68rem; padding: 10px 14px; }}
+    .frm-bar-label {{ font-size: 0.86rem; }}
+    .frm-bar-pct {{ font-size: 0.9rem; }}
+    .frm-tbl th {{ padding: 6px 8px; font-size: 0.76rem; }}
+    .frm-tbl td {{ padding: 6px 8px; font-size: 0.83rem; }}
+    .frm-insight {{ font-size: 0.88rem; padding: 10px 14px; }}
   }}
 </style>
 </head>
@@ -7190,7 +7190,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
     var cd = document.getElementById('frm-cd');
     if (!cd) return;
     if (diff <= 0) {{
-      cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:0.9rem;color:#089981;">BERLANGSUNG</div></div>';
+      cd.innerHTML = '<div class="frm-cd-box"><div class="frm-cd-num" style="font-size:1.1rem;color:#089981;">BERLANGSUNG</div></div>';
       return;
     }}
     var totalSec = Math.floor(diff / 1000);
@@ -7294,7 +7294,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             return df_style.applymap(func, subset=subset)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
         # ── AUTO-UPDATE: slot update 13:00 & 21:00 WIB ─────────────────
         # Cache key berubah tiap slot → data otomatis refresh 2x sehari
@@ -7376,7 +7376,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         # Tampilkan badge update time
         _badge_color = "#089981"
         st.markdown(f"""<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>
-            <span style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};'>
+            <span style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};'>
             🕐 Data RRG: update jam <b style="color:#F5C242">13:00</b> & <b style="color:#F5C242">21:00</b> WIB
             &nbsp;·&nbsp; Slot aktif: <b style="color:{_badge_color}">{_update_slot}</b>
             &nbsp;·&nbsp; Next update: <b style="color:#F5C242">{_next_update} WIB</b>
@@ -7797,7 +7797,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     st.session_state["rrg_selected"] = clicked_sector
 
         # ── TOMBOL SEKTOR (fallback klik) ──────────────────────────────
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
         btn_cols = st.columns(len(sector_names))
         for i, sname in enumerate(sector_names):
             sdata = rrg_sectors[sname]
@@ -7828,9 +7828,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 <div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap;'>
                     <div style='font-size:1.8rem;'>{sd["icon"]}</div>
                     <div>
-                        <div style='font-family:IBM Plex Mono,monospace;font-size:1rem;font-weight:700;
+                        <div style='font-family:IBM Plex Mono,monospace;font-size:1.2rem;font-weight:700;
                             color:{text_main};letter-spacing:0.05em;'>{sel} Sector</div>
-                        <div style='font-size:0.72rem;color:{text_sub};margin-top:2px;'>
+                        <div style='font-size:0.92rem;color:{text_sub};margin-top:2px;'>
                             RS: <b style="color:{fc}">{sd["rs"]}</b> &nbsp;|&nbsp;
                             Momentum: <b style="color:{fc}">{sd["mom"]}</b> &nbsp;|&nbsp;
                             Fase: <b style="color:{fc}">{sd["fase"].upper()}</b>
@@ -7838,8 +7838,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     </div>
                     <div style='margin-left:auto;background:{fc}22;border:1px solid {fc}44;
                         border-radius:8px;padding:8px 16px;text-align:center;'>
-                        <div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.1em;'>AKSI</div>
-                        <div style='font-size:0.85rem;font-weight:700;color:{fc};'>{sd["aksi"]}</div>
+                        <div style='font-size:0.8rem;color:{text_sub};letter-spacing:0.1em;'>AKSI</div>
+                        <div style='font-size:1.05rem;font-weight:700;color:{fc};'>{sd["aksi"]}</div>
                     </div>
                 </div>
             </div>""", unsafe_allow_html=True)
@@ -7860,9 +7860,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 with col:
                     st.markdown(f"""<div style='background:{c}11;border:1px solid {c}33;
                         border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;'>
-                        <div style='font-size:0.55rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
+                        <div style='font-size:0.75rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
                         <div style='font-size:1.6rem;font-weight:700;color:{text_main};'>{val}</div>
-                        <div style='font-size:0.6rem;color:{text_sub};'>saham</div>
+                        <div style='font-size:0.8rem;color:{text_sub};'>saham</div>
                     </div>""", unsafe_allow_html=True)
 
             # Mini RRG untuk sektor ini (plotly kecil, tampilkan saham-saham di dalamnya)
@@ -7938,42 +7938,42 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 font=dict(family="IBM Plex Mono", color=text_main),
             )
 
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#F5C242;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#F5C242;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
             st.plotly_chart(fig_mini, use_container_width=True,
                 config={"displayModeBar": True, "modeBarButtonsToAdd": ["toggleFullscreen"],
                         "modeBarButtonsToRemove": ["lasso2d","select2d"],
                         "displaylogo": False, "scrollZoom": True},
                 key=f"mini_rrg_{sel}")
 
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM — {sel.upper()} ({len(sd['saham'])} emiten)</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM — {sel.upper()} ({len(sd['saham'])} emiten)</p>", unsafe_allow_html=True)
             # Build HTML table
             tbl_rows = ""
             for stk in sorted(sd["saham"], key=lambda x: x["rs"], reverse=True):
                 fc2 = fase_colors.get(stk.get("fase",""), "#888")
                 rs_pct = max(0, min(100, (stk["rs"] - 85) / 30 * 100))
                 tbl_rows += f"""<tr>
-                    <td style='font-weight:700;color:{fc2};font-family:IBM Plex Mono,monospace;font-size:12px;'>{stk["ticker"]}</td>
-                    <td style='font-size:11px;color:{text_sub};'>{stk["nama"]}</td>
+                    <td style='font-weight:700;color:{fc2};font-family:IBM Plex Mono,monospace;font-size:14px;'>{stk["ticker"]}</td>
+                    <td style='font-size:13px;color:{text_sub};'>{stk["nama"]}</td>
                     <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
-                        font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;
+                        font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
                         font-family:IBM Plex Mono,monospace;'>{stk.get("fase","")}</span></td>
-                    <td style='font-size:11px;'>
+                    <td style='font-size:13px;'>
                         <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
                         <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
                             <div style='height:100%;width:{rs_pct:.0f}%;background:{fc2};border-radius:2px;'></div>
                         </div>
                     </td>
-                    <td style='font-size:11px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
+                    <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
                 </tr>"""
 
             st.markdown(f"""<div style='overflow-y:auto;max-height:320px;border:1px solid {met_border};border-radius:8px;'>
             <table style='width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;'>
             <thead><tr style='background:{met_bg};position:sticky;top:0;'>
-                <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{"#F5C242" if is_dark else "#92700a"};text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
-                <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
-                <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
-                <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>RS</th>
-                <th style='padding:6px 10px;font-size:9px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>MOM</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{"#F5C242" if is_dark else "#92700a"};text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>RS</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>MOM</th>
             </tr></thead>
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
@@ -7988,7 +7988,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -8023,19 +8023,19 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_msci = pd.DataFrame(msci_data)
         
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -8067,16 +8067,16 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_ftse = pd.DataFrame(ftse_data)
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -8120,16 +8120,16 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         # ─── IDX30 INDEX ─────────────────────────────────────────────────
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
             background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -8168,13 +8168,13 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             ],
         }
         df_idx30 = pd.DataFrame(idx30_data)
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
         
         conglo_data = [
             {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
@@ -8238,15 +8238,15 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         else:
             df_display = df_conglo
             
-        st.dataframe(df_display, use_container_width=True, hide_index=True)
+        st.dataframe(df_display, use_container_width=True, hide_index=True, on_select="ignore")
         
         st.markdown(f"""
         <div class="trm-card" style="margin-top: 16px;">
             <div class="trm-card-title">SIGMA INSIGHT &mdash; The Power of Conglomerates</div>
-            <p style='color:{text_main}; font-size: 0.88rem; line-height: 1.7; margin:0;'>
+            <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
             Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
             </p>
-            <p style='color:{text_sub}; font-size: 0.85rem; line-height: 1.7; margin:10px 0 0;'>
+            <p style='color:{text_sub}; font-size: 1.05rem; line-height: 1.7; margin:10px 0 0;'>
             <span style='color:#F5C242;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
             </p>
         </div>
@@ -8730,7 +8730,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         # SECTION 1: SHAREHOLDER TRACKER  (di atas screening)
         # ════════════════════════════════════════════════════════════════
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
 
         col_sh_inp, col_sh_btn = st.columns([3, 1])
         with col_sh_inp:
@@ -8769,18 +8769,18 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 st.markdown(f"""
                 <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #F5C242;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
                     <div style='font-size:2rem;margin-bottom:12px;'>📡</div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:1rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};max-width:560px;margin:0 auto 20px;line-height:1.8;'>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:1.2rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:1.0rem;color:{text_sub};max-width:560px;margin:0 auto 20px;line-height:1.8;'>
                         Data historis pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> belum tersedia.<br>
                         Kemungkinan sebab: saham baru IPO, emiten delisting, atau IDX belum merilis data bulan ini.
                     </div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
                         💡 <b style="color:#F5C242;">Cara alternatif verifikasi data pemegang saham:</b><br>
                         1. Buka <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}" target="_blank" style="color:#4285F4;">{sh_ticker} di idx.co.id</a><br>
                         2. Cek tab "Profil Pemegang Saham" di Stockbit atau RTI Business<br>
                         3. Data KSEI diperbarui setiap awal bulan dari hasil kliring bursa
                     </div>
-                    <div style='margin-top:20px;font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};'>
+                    <div style='margin-top:20px;font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};'>
                         ● Ticker dengan data terverifikasi: {", ".join(sorted(_sh_all_db.keys()))}
                     </div>
                 </div>""", unsafe_allow_html=True)
@@ -8791,7 +8791,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
                 # Badge sumber data
                 src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#F5C242" if "SIGMA" in data_source else "#9b59b6"))
-                st.markdown(f"""<div style='display:inline-block;font-family:IBM Plex Mono,monospace;font-size:0.62rem;
+                st.markdown(f"""<div style='display:inline-block;font-family:IBM Plex Mono,monospace;font-size:0.82rem;
                     letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
                     background:{src_color}11;padding:3px 10px;border-radius:4px;margin-bottom:8px;'>
                     ● SUMBER: {data_source}</div>""", unsafe_allow_html=True)
@@ -8800,7 +8800,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 if is_estimated:
                     st.markdown(f"""<div style='background:rgba(155,89,182,0.08);border:1px solid rgba(155,89,182,0.3);
                         border-left:3px solid #9b59b6;border-radius:0 6px 6px 0;
-                        padding:10px 16px;margin-bottom:12px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>
+                        padding:10px 16px;margin-bottom:12px;font-family:IBM Plex Mono,monospace;font-size:0.92rem;color:{text_sub};'>
                         ⚠️ <b style='color:#9b59b6;'>DATA ESTIMASI</b> — {sh_ticker} tidak tersedia di database IDX resmi.
                         Chart di bawah adalah estimasi berbasis data publik yfinance + pola industri.
                         Untuk data akurat, cek langsung di
@@ -8873,9 +8873,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     with col:
                         st.markdown(f"""
                         <div style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;'>
-                            <div style='font-size:0.6rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
+                            <div style='font-size:0.8rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
                             <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
-                            <div style='font-size:0.65rem;color:{sub_c};margin-top:3px;'>{sub}</div>
+                            <div style='font-size:0.85rem;color:{sub_c};margin-top:3px;'>{sub}</div>
                         </div>""", unsafe_allow_html=True)
 
                 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
@@ -8993,7 +8993,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 )
 
                 st.markdown(f"""
-                <div style='display:flex;gap:20px;font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
+                <div style='display:flex;gap:20px;font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
                     <span style='color:{price_color};font-weight:600;'>━━ Harga {sh_ticker} (Rp) — Skala Kanan</span>
                     <span style='color:#4285F4;font-weight:600;'>━━ Total Pemegang — Skala Kiri</span>
                     <span style='color:{sh_up_color};'>█ Δ Naik</span>
@@ -9006,8 +9006,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 st.markdown(f"""
                 <div class="trm-card" style="border-left:3px solid {sinyal_color};margin-bottom:16px;">
                     <div class="trm-card-title" style="color:{sinyal_color};">🔍 INTERPRETASI: {sinyal}</div>
-                    <p style='color:{text_main};font-size:0.88rem;line-height:1.7;margin:0;'>{sinyal_desc}</p>
-                    <p style='color:{text_sub};font-size:0.82rem;line-height:1.7;margin:10px 0 0;'>
+                    <p style='color:{text_main};font-size:1.08rem;line-height:1.7;margin:0;'>{sinyal_desc}</p>
+                    <p style='color:{text_sub};font-size:1.02rem;line-height:1.7;margin:10px 0 0;'>
                     <span style='color:#F5C242;font-weight:600;'>⚠️ Logika Bandarmologi IDX:</span>
                     Pemegang <b style='color:#f23645;'>turun</b> = distribusi (smart money jual).
                     Pemegang <b style='color:#089981;'>naik bertahap</b> = akumulasi awal.
@@ -9016,7 +9016,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 </div>""", unsafe_allow_html=True)
 
                 # ── Tabel data per bulan ──
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin-bottom:8px;'>DATA HISTORIS BULANAN</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin-bottom:8px;'>DATA HISTORIS BULANAN</p>", unsafe_allow_html=True)
                 df_disp = df_sh[["date", "shareholders", "delta", "pct_change"]].copy()
 
                 # Merge harga bulanan ke tabel
@@ -9040,7 +9040,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
                 df_show = df_disp[["date_str","sh_str","delta_str","pct_str","price_str"]].copy()
                 df_show.columns = ["Bulan", "Pemegang Saham", "Δ MoM", "Δ %", "Harga Akhir Bulan"]
-                st.dataframe(df_show, use_container_width=True, hide_index=True)
+                st.dataframe(df_show, use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -9158,7 +9158,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         _full_screen_db = build_full_screening_db(_sh_all_db)
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;letter-spacing:0.06em;color:{text_sub};margin-bottom:14px;text-transform:uppercase;'>Deteksi akumulasi &amp; distribusi retail &middot; Naik/Turun 1 bulan &amp; 3 bulan berturut-turut &middot; Data IDX &middot; {len(_full_screen_db)} emiten terpantau</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;letter-spacing:0.06em;color:{text_sub};margin-bottom:14px;text-transform:uppercase;'>Deteksi akumulasi &amp; distribusi retail &middot; Naik/Turun 1 bulan &amp; 3 bulan berturut-turut &middot; Data IDX &middot; {len(_full_screen_db)} emiten terpantau</p>", unsafe_allow_html=True)
 
         # ── Build screening rows dari database gabungan ──
         _naik_rows = []
@@ -9246,32 +9246,32 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
     content: '← geser →';
     display: block;
     text-align: center;
-    font-size: 0.58rem;
+    font-size: 0.78rem;
     color: {_acc_hist};
     padding: 4px 0 2px;
     letter-spacing: 0.08em;
   }}
 }}
-.sh2-tbl {{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.76rem;}}
-.sh2-tbl th {{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid;text-align:left;white-space:nowrap;}}
+.sh2-tbl {{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.96rem;}}
+.sh2-tbl th {{font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid;text-align:left;white-space:nowrap;}}
 .sh2-tbl td {{padding:7px 10px;border-bottom:1px solid {_tbl_border};vertical-align:middle;white-space:nowrap;}}
 .sh2-tbl tr:last-child td {{border-bottom:none;}}
 .sh2-tbl tr:hover td {{background:rgba(255,255,255,0.03);}}
-.sh2-badge {{font-weight:700;font-size:0.8rem;}}
+.sh2-badge {{font-weight:700;font-size:1.0rem;}}
 .sh2-up {{color:{_acc_up};font-weight:600;}}
 .sh2-dn {{color:{_acc_dn};font-weight:600;}}
 .sh2-head-up {{background:{_tbl_head_up};color:{_acc_up};border-color:{_acc_up}33;}}
 .sh2-head-dn {{background:{_tbl_head_dn};color:{_acc_dn};border-color:{_acc_dn}33;}}
 .sh2-badge-up {{color:{_acc_up};}}
 .sh2-badge-dn {{color:{_acc_dn};}}
-.sh2-hist {{color:{_acc_hist};font-size:0.68rem;}}
-.sh2-hist-lbl {{font-size:0.55rem;opacity:0.7;display:block;margin-bottom:1px;}}
+.sh2-hist {{color:{_acc_hist};font-size:0.88rem;}}
+.sh2-hist-lbl {{font-size:0.75rem;opacity:0.7;display:block;margin-bottom:1px;}}
 @media(max-width:768px){{
-  .sh2-tbl{{font-size:0.65rem;}}
-  .sh2-tbl th{{font-size:0.52rem;padding:5px 8px;}}
+  .sh2-tbl{{font-size:0.85rem;}}
+  .sh2-tbl th{{font-size:0.72rem;padding:5px 8px;}}
   .sh2-tbl td{{padding:5px 8px;}}
-  .sh2-badge{{font-size:0.7rem;}}
-  .sh2-hist{{font-size:0.62rem;}}
+  .sh2-badge{{font-size:0.9rem;}}
+  .sh2-hist{{font-size:0.82rem;}}
 }}
 </style>""", unsafe_allow_html=True)
 
@@ -9320,7 +9320,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
-.lbl{{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;
+.lbl{{font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
 .wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
 /* === SCROLL CONTAINER: vertikal + horizontal === */
@@ -9338,11 +9338,11 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
 .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{_tbl_border};border-radius:10px;}}
 table{{width:max-content;min-width:100%;border-collapse:collapse;
-       font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
+       font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
 /* Sticky header saat scroll vertikal */
 thead th{{
   position:sticky;top:0;z-index:2;
-  font-size:0.57rem;letter-spacing:0.1em;text-transform:uppercase;
+  font-size:0.77rem;letter-spacing:0.1em;text-transform:uppercase;
   padding:8px 10px;border-bottom:2px solid {_head_bdr};
   text-align:left;white-space:nowrap;
   background:{_head_bg};color:{_head_clr};
@@ -9353,34 +9353,34 @@ tbody td{{
 }}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
-.tk{{font-weight:700;font-size:0.78rem;color:{acc};}}
+.tk{{font-weight:700;font-size:0.98rem;color:{acc};}}
 .up{{color:{_acc_up};font-weight:600;}}
 .dn{{color:{_acc_dn};font-weight:600;}}
-.hist{{color:{_acc_hist};font-size:0.68rem;}}
+.hist{{color:{_acc_hist};font-size:0.88rem;}}
 /* Footer: info baris + navigasi halaman */
 .pg-bar{{display:flex;align-items:center;justify-content:space-between;
          padding:7px 12px;border-top:1px solid {_tbl_border};
          background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:5px;}}
-.pg-info{{font-size:0.58rem;color:{_acc_hist};}}
+.pg-info{{font-size:0.78rem;color:{_acc_hist};}}
 .pg-btns{{display:flex;gap:5px;}}
 .pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
          border:1px solid {_tbl_border};border-radius:4px;
          padding:4px 11px;font-family:'IBM Plex Mono',monospace;
-         font-size:0.58rem;cursor:pointer;transition:background 0.15s;}}
+         font-size:0.78rem;cursor:pointer;transition:background 0.15s;}}
 .pg-btn:hover{{background:rgba(255,255,255,0.12);}}
 .pg-btn:disabled{{opacity:0.3;cursor:default;}}
 /* Scroll hint mobile */
-.hint{{display:none;text-align:center;font-size:0.55rem;color:{_acc_hist};
+.hint{{display:none;text-align:center;font-size:0.75rem;color:{_acc_hist};
        padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {_tbl_border};}}
 @media(max-width:600px){{
   .hint{{display:block;}}
-  table{{font-size:0.65rem;}}
-  thead th{{font-size:0.52rem;padding:6px 8px;}}
-  tbody td{{padding:5px 8px;font-size:0.65rem;}}
-  .tk{{font-size:0.70rem;}}
-  .hist{{font-size:0.60rem;}}
-  .pg-info{{font-size:0.54rem;}}
-  .pg-btn{{padding:3px 9px;font-size:0.54rem;}}
+  table{{font-size:0.85rem;}}
+  thead th{{font-size:0.72rem;padding:6px 8px;}}
+  tbody td{{padding:5px 8px;font-size:0.85rem;}}
+  .tk{{font-size:0.9rem;}}
+  .hist{{font-size:0.8rem;}}
+  .pg-info{{font-size:0.74rem;}}
+  .pg-btn{{padding:3px 9px;font-size:0.74rem;}}
 }}
 </style></head><body>
 <span class="lbl">{icon} {label} — {count} EMITEN</span>
@@ -9458,7 +9458,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
             _h = max(_h, 200)
             components.html(_html, height=_h, scrolling=False)
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
         st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;'></div>", unsafe_allow_html=True)
