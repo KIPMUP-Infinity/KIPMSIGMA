@@ -10420,45 +10420,64 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 components.html("""
 <script>
 (function() {
+    var _boundTextarea = null;
+
+    function pasteHandler(e) {
+        var doc = window.parent.document;
+        // Re-fetch fileInput fresh on every paste — Streamlit replaces DOM nodes after rerun
+        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+        if (!fileInput) return;
+
+        if (e.clipboardData && e.clipboardData.items) {
+            var items = e.clipboardData.items;
+            var dt = new DataTransfer();
+            var hasNewImage = false;
+
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    var file = items[i].getAsFile();
+                    var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
+                    dt.items.add(newFile);
+                    hasNewImage = true;
+                }
+            }
+
+            if (hasNewImage) {
+                e.preventDefault();
+                // Reset first so Streamlit always sees a fresh change event
+                var emptyDt = new DataTransfer();
+                fileInput.files = emptyDt.files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                // Short delay then assign actual image
+                setTimeout(function() {
+                    var fi2 = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+                    if (fi2) {
+                        fi2.files = dt.files;
+                        fi2.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }, 60);
+            }
+        }
+    }
+
     function injectPastePolyfill() {
         var doc = window.parent.document;
         var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-        
-        if (textarea && fileInput && !textarea.dataset.pastePolyfill) {
-            textarea.dataset.pastePolyfill = "true";
-            
-            textarea.addEventListener('paste', function(e) {
-                if (e.clipboardData && e.clipboardData.items) {
-                    var items = e.clipboardData.items;
-                    var dt = new DataTransfer();
-                    var hasNewImage = false;
-                    
-                    if (fileInput.files) {
-                        for (var i=0; i<fileInput.files.length; i++) {
-                            dt.items.add(fileInput.files[i]);
-                        }
-                    }
-                    
-                    for (var i=0; i<items.length; i++) {
-                        if (items[i].type.indexOf('image') !== -1) {
-                            var file = items[i].getAsFile();
-                            var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
-                            dt.items.add(newFile);
-                            hasNewImage = true;
-                        }
-                    }
-                    
-                    if (hasNewImage) {
-                        e.preventDefault();
-                        fileInput.files = dt.files;
-                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }
-            });
+        if (!textarea) return;
+
+        // Streamlit replaces the textarea DOM node on every rerun.
+        // Detect node change and rebind — do NOT rely on dataset flag.
+        if (textarea !== _boundTextarea) {
+            if (_boundTextarea) {
+                _boundTextarea.removeEventListener('paste', pasteHandler);
+            }
+            textarea.addEventListener('paste', pasteHandler);
+            _boundTextarea = textarea;
         }
     }
-    setInterval(injectPastePolyfill, 1000);
+
+    // Poll at 300ms to catch Streamlit reruns quickly
+    setInterval(injectPastePolyfill, 300);
 })();
 </script>
 """, height=0)
