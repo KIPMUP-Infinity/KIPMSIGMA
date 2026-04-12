@@ -5080,7 +5080,7 @@ if current_view == "dashboard":
     .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.68rem;
+        font-size: 0.78rem;
         font-weight: 600;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -5303,7 +5303,7 @@ if current_view == "dashboard":
 
         /* FTSE/MSCI table header label: allow wrap on mobile */
         .trm-section-label {{
-            font-size: 0.55rem !important;
+            font-size: 0.65rem !important;
             letter-spacing: 0.05em !important;
             padding: 3px 6px !important;
             white-space: normal !important;
@@ -5510,7 +5510,7 @@ if current_view == "dashboard":
     ])
 
     with tab_macro:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         @st.cache_data(ttl=300)
         def get_market_data(ticker_dict):
@@ -5669,29 +5669,29 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;}}
 .col{{flex:1;min-width:0;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;height:100%;}}
-.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.70rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
-.mkt-badge{{font-size:0.53rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.80rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.mkt-badge{{font-size:0.63rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.73rem;min-width:320px;}}
-thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.62rem;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.83rem;min-width:320px;}}
+thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.72rem;white-space:nowrap;}}
 tbody td{{padding:8px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
-.nm{{font-weight:600;font-size:0.71rem;color:{text_main};}}
-.flag{{margin-right:5px;font-size:0.85rem;}}
-.price{{font-size:0.75rem;font-weight:700;}}
-.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.62rem;font-weight:700;}}
-.ccy{{font-size:0.57rem;color:{text_sub};}}
+.nm{{font-weight:600;font-size:0.81rem;color:{text_main};}}
+.flag{{margin-right:5px;font-size:0.95rem;}}
+.price{{font-size:0.85rem;font-weight:700;}}
+.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;}}
+.ccy{{font-size:0.67rem;color:{text_sub};}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:10px;}}
-  .mkt-hdr{{font-size:0.60rem;padding:8px 10px;}}
-  thead th{{font-size:0.57rem;padding:7px 8px;}}
-  tbody td{{font-size:0.63rem;padding:7px 8px;}}
-  .badge{{font-size:0.57rem;padding:2px 5px;}}
-  .nm{{font-size:0.63rem;}}
-  .price{{font-size:0.65rem;}}
+  .mkt-hdr{{font-size:0.70rem;padding:8px 10px;}}
+  thead th{{font-size:0.67rem;padding:7px 8px;}}
+  tbody td{{font-size:0.73rem;padding:7px 8px;}}
+  .badge{{font-size:0.67rem;padding:2px 5px;}}
+  .nm{{font-size:0.73rem;}}
+  .price{{font-size:0.75rem;}}
 }}
 </style></head><body>
 <div class="row">
@@ -6153,7 +6153,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         # ---------------------------------------------------------
         # LIVE MARKET NEWS
         # ---------------------------------------------------------
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         st.markdown(f"""
         <style>
@@ -6346,7 +6346,9 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         _cal_id_json = _cal_json.dumps(_cal_id, ensure_ascii=False)
         _cal_us_json = _cal_json.dumps(_cal_us, ensure_ascii=False)
 
-        _cal_total_h = max(42 + len(_cal_id)*40 + 28, 42 + len(_cal_us)*40 + 28) + 20
+        _cal_id_row_h = 42 + len(_cal_id)*42 + 28
+        _cal_us_scroll_h = 380 + 42 + 28  # header + scrollbox(380px) + padding
+        _cal_total_h = max(_cal_id_row_h, _cal_us_scroll_h) + 30
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -6356,21 +6358,21 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;align-items:flex-start;}}
 .col{{flex:1;min-width:0;}}
 .cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.cal-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.70rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
-.cal-sub{{font-size:0.52rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
-.scroll-box{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.cal-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.80rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.cal-sub{{font-size:0.62rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.scroll-box{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;min-width:340px;}}
-thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.62rem;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;min-width:340px;}}
+thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.72rem;white-space:nowrap;}}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
-.dt{{font-size:0.63rem;color:{text_sub};}}
-.ev{{font-size:0.71rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
-.fc{{font-size:0.69rem;color:#089981;font-weight:600;display:block;}}
-.pv{{font-size:0.59rem;color:{text_sub};display:block;}}
-.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.60rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
+.dt{{font-size:0.73rem;color:{text_sub};}}
+.ev{{font-size:0.81rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
+.fc{{font-size:0.79rem;color:#089981;font-weight:600;display:block;}}
+.pv{{font-size:0.69rem;color:{text_sub};display:block;}}
+.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.70rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
 /* Tooltip */
 .tip-wrap{{position:relative;}}
 .tip-wrap:hover .tip{{display:block;}}
@@ -6383,13 +6385,13 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
   white-space:normal;min-width:220px;max-width:360px;}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:10px;}}
-  .cal-hdr{{font-size:0.60rem;padding:8px 10px;}}
-  thead th{{font-size:0.57rem;padding:7px 8px;}}
-  tbody td{{font-size:0.63rem;padding:7px 8px;}}
-  .bdg{{font-size:0.55rem;padding:2px 4px;}}
-  .ev{{font-size:0.63rem;}}
-  .fc{{font-size:0.62rem;}}
-  .pv{{font-size:0.55rem;}}
+  .cal-hdr{{font-size:0.70rem;padding:8px 10px;}}
+  thead th{{font-size:0.67rem;padding:7px 8px;}}
+  tbody td{{font-size:0.73rem;padding:7px 8px;}}
+  .bdg{{font-size:0.65rem;padding:2px 4px;}}
+  .ev{{font-size:0.73rem;}}
+  .fc{{font-size:0.72rem;}}
+  .pv{{font-size:0.65rem;}}
 }}
 </style></head><body>
 <div class="row">
@@ -6399,7 +6401,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
         <span>🇮🇩 INDONESIA</span>
         <span class="cal-sub">Apr–Jul 2026 · WIB</span>
       </div>
-      <div class="scroll-box">
+      <div class="scroll-box" style="max-height:380px;">
         <table><thead><tr>
           <th>TANGGAL</th><th>EVENT</th><th>FORECAST / PREV</th><th>DAMPAK</th>
         </tr></thead>
@@ -6413,7 +6415,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
         <span>🇺🇸 UNITED STATES</span>
         <span class="cal-sub">Apr–Jun 2026 · WIB</span>
       </div>
-      <div class="scroll-box">
+      <div class="scroll-box" style="max-height:380px;overflow-y:auto;">
         <table><thead><tr>
           <th>TANGGAL</th><th>EVENT</th><th>FORECAST / PREV</th><th>DAMPAK</th>
         </tr></thead>
@@ -6441,7 +6443,7 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
   buildCal(ID,'id-tb');
   buildCal(US,'us-tb');
 }})();
-</script></body></html>""", height=_cal_total_h, scrolling=False)
+</script></body></html>""", height=_cal_total_h, scrolling=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
