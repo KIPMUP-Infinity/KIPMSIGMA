@@ -5539,6 +5539,7 @@ if current_view == "dashboard":
             "LQ45":        "^JKLQ45",
             "IDX30":       "^JKIDX30",
             "IDX80":       "^JKIDX80",
+            "KOMPAS100":   "^JKKLCI",
             "IDXBUMN20":   "^JKBUMN20",
             "IDXHIDIV20":  "^JKHIDIV20",
             "IDXSMC-LIQ":  "^JKSMC",
@@ -5592,14 +5593,14 @@ if current_view == "dashboard":
         _idx_labels = {
             "IHSG":        ("🇮🇩", "IDR"), "LQ45":       ("🇮🇩", "IDR"),
             "IDX30":       ("🇮🇩", "IDR"), "IDX80":      ("🇮🇩", "IDR"),
-            "IDXBUMN20":   ("🇮🇩", "IDR"), "IDXHIDIV20": ("🇮🇩", "IDR"),
-            "IDXSMC-LIQ":  ("🇮🇩", "IDR"),
+            "KOMPAS100":   ("🇮🇩", "IDR"), "IDXBUMN20":  ("🇮🇩", "IDR"),
+            "IDXHIDIV20":  ("🇮🇩", "IDR"), "IDXSMC-LIQ": ("🇮🇩", "IDR"),
             "VIX": ("📊", "pts"), "S&P 500": ("🇺🇸", "USD"),
             "Dow Jones": ("🇺🇸", "USD"), "Nasdaq": ("🇺🇸", "USD"), "FTSE": ("🇬🇧", "GBP"),
             "Nikkei": ("🇯🇵", "JPY"), "Hang Seng": ("🇭🇰", "HKD"), "Shanghai": ("🇨🇳", "CNY"),
         }
         # Names that are Indonesian sub-indices (for visual grouping)
-        _idx_indonesia_names = {"IHSG","LQ45","IDX30","IDX80","IDXBUMN20","IDXHIDIV20","IDXSMC-LIQ"}
+        _idx_indonesia_names = {"IHSG","LQ45","IDX30","IDX80","KOMPAS100","IDXBUMN20","IDXHIDIV20","IDXSMC-LIQ"}
         _global_divider_added = False
         for name, info in idx_data.items():
             flag, ccy = _idx_labels.get(name, ("🌐", ""))
@@ -7295,6 +7296,92 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
+        # ── AUTO-UPDATE: slot update 13:00 & 21:00 WIB ─────────────────
+        # Cache key berubah tiap slot → data otomatis refresh 2x sehari
+        from datetime import timezone as _tz, timedelta as _tdelta
+        _wib = _tz(_tdelta(hours=7))
+        _now_wib = datetime.now(_wib)
+        _h = _now_wib.hour
+        # Tentukan slot aktif: 0–12 → slot pagi (update jam 13:00), 13–20 → slot siang, 21–23 → slot malam
+        _update_slot = f"{_now_wib.strftime('%Y%m%d')}_{'PM' if _h >= 13 else 'AM'}"
+        if _h >= 21:
+            _update_slot = f"{_now_wib.strftime('%Y%m%d')}_NIGHT"
+
+        @st.cache_data(ttl=3600, show_spinner=False)
+        def _compute_rrg_live(slot_key: str):
+            """
+            Hitung RS ratio & momentum tiap sektor vs IHSG secara real-time.
+            Dipanggil max sekali per slot (cache TTL 1 jam, key berubah di 13:00 & 21:00).
+            RS  = harga_sektor_today / MA20_sektor  ÷  harga_ihsg_today / MA20_ihsg  × 100
+            Mom = RS_today / RS_5hari_lalu × 100
+            """
+            import yfinance as _yf
+            import numpy as _np
+
+            # Mapping sektor → ETF/proxy ticker yfinance terdekat
+            _sector_proxy = {
+                "Energy":           "ADRO.JK",
+                "Basic Materials":  "AMMN.JK",
+                "Finance":          "BBCA.JK",
+                "Infrastructure":   "TLKM.JK",
+                "Consumer":         "ICBP.JK",
+                "Property":         "BSDE.JK",
+                "Healthcare":       "KLBF.JK",
+                "Technology":       "GOTO.JK",
+            }
+            _ihsg_tk = "^JKSE"
+            _results = {}
+            try:
+                _ihsg = _yf.Ticker(_ihsg_tk).history(period="40d")
+                if len(_ihsg) < 20:
+                    return {}
+                _ihsg_close = _ihsg["Close"]
+                _ihsg_ma20  = _ihsg_close.rolling(20).mean().iloc[-1]
+                _ihsg_now   = _ihsg_close.iloc[-1]
+                _ihsg_rs_now   = _ihsg_now / _ihsg_ma20 if _ihsg_ma20 > 0 else 1
+                _ihsg_rs_5ago  = (_ihsg_close.iloc[-5] / _ihsg_close.rolling(20).mean().iloc[-5]) if len(_ihsg_close) > 25 else _ihsg_rs_now
+            except:
+                return {}
+
+            for _sname, _proxy in _sector_proxy.items():
+                try:
+                    _sh = _yf.Ticker(_proxy).history(period="40d")
+                    if len(_sh) < 20:
+                        continue
+                    _sc  = _sh["Close"]
+                    _ma20 = _sc.rolling(20).mean().iloc[-1]
+                    _now  = _sc.iloc[-1]
+                    if _ma20 == 0 or _ihsg_ma20 == 0:
+                        continue
+                    _rs_now  = (_now / _ma20) / (_ihsg_now / _ihsg_ma20) * 100
+                    # RS 5 hari lalu
+                    _ma20_5 = _sc.rolling(20).mean().iloc[-5] if len(_sc) > 25 else _ma20
+                    _now_5  = _sc.iloc[-5] if len(_sc) > 5 else _now
+                    _ih_ma20_5 = _ihsg_close.rolling(20).mean().iloc[-5] if len(_ihsg_close) > 25 else _ihsg_ma20
+                    _ih_5 = _ihsg_close.iloc[-5] if len(_ihsg_close) > 5 else _ihsg_now
+                    _rs_5ago = (_now_5 / _ma20_5) / (_ih_5 / _ih_ma20_5) * 100 if (_ma20_5 > 0 and _ih_ma20_5 > 0) else _rs_now
+                    _mom = _rs_now / _rs_5ago * 100 if _rs_5ago > 0 else 100
+                    # Clamp ke range chart [84,116]
+                    _rs_f  = round(min(max(float(_rs_now), 84.5), 115.5), 1)
+                    _mom_f = round(min(max(float(_mom), 84.5), 115.5), 1)
+                    _results[_sname] = {"rs": _rs_f, "mom": _mom_f}
+                except:
+                    pass
+            return _results
+
+        _live_rrg = _compute_rrg_live(_update_slot)
+        _last_update_slot = "13:00" if _update_slot.endswith("PM") else ("21:00" if _update_slot.endswith("NIGHT") else "sebelum 13:00")
+        _next_update = "21:00" if _update_slot.endswith("PM") else ("13:00 besok" if _update_slot.endswith("NIGHT") else "13:00")
+
+        # Tampilkan badge update time
+        _badge_color = "#089981"
+        st.markdown(f"""<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;'>
+            <span style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};'>
+            🕐 Data RRG: update jam <b style="color:#F5C242">13:00</b> & <b style="color:#F5C242">21:00</b> WIB
+            &nbsp;·&nbsp; Slot aktif: <b style="color:{_badge_color}">{_update_slot}</b>
+            &nbsp;·&nbsp; Next update: <b style="color:#F5C242">{_next_update} WIB</b>
+            </span></div>""", unsafe_allow_html=True)
+
         # ── DATA SEKTOR + SAHAM PER SEKTOR ──────────────────────────────
         # ── ATURAN KONSISTENSI FASE vs POSISI PLOT (WAJIB) ──────────────
         # Leading   = rs > 100 DAN mom > 100  (kanan-atas)
@@ -7525,6 +7612,36 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 ]
             },
         }
+
+        # ── APPLY LIVE RS/MOM DATA (override static values) ─────────────
+        for _sn, _live in _live_rrg.items():
+            if _sn in rrg_sectors:
+                _old_rs  = rrg_sectors[_sn]["rs"]
+                _old_mom = rrg_sectors[_sn]["mom"]
+                _new_rs  = _live["rs"]
+                _new_mom = _live["mom"]
+                # Update trail: geser 1 slot, tambah posisi baru
+                _trail = rrg_sectors[_sn].get("trail", [])
+                if len(_trail) >= 4:
+                    _trail = _trail[1:] + [(_new_rs, _new_mom)]
+                else:
+                    _trail.append((_new_rs, _new_mom))
+                rrg_sectors[_sn]["rs"]    = _new_rs
+                rrg_sectors[_sn]["mom"]   = _new_mom
+                rrg_sectors[_sn]["trail"] = _trail
+                # Update fase sesuai kuadran baru
+                if   _new_rs >= 100 and _new_mom >= 100: rrg_sectors[_sn]["fase"] = "Leading"
+                elif _new_rs <  100 and _new_mom >= 100: rrg_sectors[_sn]["fase"] = "Improving"
+                elif _new_rs >= 100 and _new_mom <  100: rrg_sectors[_sn]["fase"] = "Weakening"
+                else:                                     rrg_sectors[_sn]["fase"] = "Lagging"
+                # Update aksi sesuai fase baru
+                _aksi_map = {
+                    "Leading":   "Hold / Profit Run",
+                    "Improving": "Accumulation",
+                    "Weakening": "Distribution / Wait",
+                    "Lagging":   "Avoid / Monitor",
+                }
+                rrg_sectors[_sn]["aksi"] = _aksi_map[rrg_sectors[_sn]["fase"]]
 
         fase_colors = {
             "Leading":   "#089981",
@@ -8008,6 +8125,53 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+
+        # ─── IDX30 INDEX ─────────────────────────────────────────────────
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.70rem;color:{text_sub};
+            background:rgba(245,194,66,0.07);border-left:3px solid #F5C242;
+            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+        🗓️ <b style='color:#F5C242;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#F5C242;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='color:{text_sub};'>Subset 30 saham paling likuid dari LQ45. Sumber: <b>idx.co.id</b></span>
+        </div>""", unsafe_allow_html=True)
+
+        idx30_data = {
+            "Ticker": [
+                "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI",
+                "BBRI", "BBTN", "BMRI", "BRIS", "BRPT", "CPIN", "ESSA", "EXCL", "GOTO",
+                "ICBP", "INCO", "INDF", "ISAT", "ITMG", "KLBF", "MBMA", "MDKA", "MEDC",
+                "PGAS", "PTBA", "TLKM",
+                "EMTK", "SCMA",
+            ],
+            "Kategori": [
+                "Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                "Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                "Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                "Active","Active","Active",
+                "Excluded","Excluded",
+            ],
+            "Status": [
+                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                "Existing","Existing","Existing",
+                "OUT","OUT",
+            ],
+            "Sektor": [
+                "Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
+                "Finance","Finance","Finance","Finance","Materials","Consumer","Materials","Infra","Technology",
+                "Consumer","Materials","Consumer","Infra","Energy","Healthcare","Materials","Materials","Energy",
+                "Energy","Energy","Infra",
+                "Technology","Consumer",
+            ],
+        }
+        df_idx30 = pd.DataFrame(idx30_data)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#F5C242;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
+        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
