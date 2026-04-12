@@ -3828,8 +3828,8 @@ for _sesi in st.session_state.sessions:
     u.searchParams.delete('del');
     a.href=u.toString(); 
     a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; 
-    a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; 
-    a.onmouseleave=function(){{this.style.background='{_bg}'}};
+    a.onmouseenter=function(){{this.style.background='linear-gradient(135deg,rgba(124,58,237,0.18),rgba(59,130,246,0.16))';this.style.borderLeft='2px solid rgba(124,58,237,0.55)';this.style.color='#a78bfa';}}; 
+    a.onmouseleave=function(){{this.style.background='{_bg}';this.style.borderLeft='2px solid transparent';this.style.color='{C["text"]}';}};
     
     // PERBAIKAN: Mengubah tombol hapus menjadi Link (Tag a) agar bebas blokir dari browser
     var del=pd.createElement('a'); 
@@ -3870,10 +3870,10 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
 #spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
+#spbtn:hover{{transform:scale(1.08); background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(59,130,246,0.18));}}
 #spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
 .smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
 .smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
@@ -4800,7 +4800,7 @@ for _sesi in st.session_state.sessions:
     _hist_items += f"""
 (function(){{
     var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
-    var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='{C["hover"]}'}}; a.onmouseleave=function(){{this.style.background='{_bg}'}};
+    var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='linear-gradient(135deg,rgba(124,58,237,0.18),rgba(59,130,246,0.16))';this.style.borderLeft='2px solid rgba(124,58,237,0.55)';this.style.color='#a78bfa';}}; a.onmouseleave=function(){{this.style.background='{_bg}';this.style.borderLeft='2px solid transparent';this.style.color='{C["text"]}';}};
     var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; del.onclick=function(e){{ e.preventDefault();e.stopPropagation(); if(confirm('Hapus obrolan ini?')){{ var u2=new URL(window.parent.location.href); u2.searchParams.set('del','{_sid}'); u2.searchParams.delete('do'); window.parent.location.href=u2.toString(); }} }};
     row.appendChild(a); row.appendChild(del); h.appendChild(row);
 }})();
@@ -4816,10 +4816,10 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
 #spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
+#spbtn:hover{{transform:scale(1.08); background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(59,130,246,0.18));}}
 #spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
 .smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
 .smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
@@ -5017,7 +5017,7 @@ if current_view == "dashboard":
     met_bg     = "rgba(8,12,22,0.9)" if is_dark else "#f8fafc"
     met_border = "rgba(245,194,66,0.18)" if is_dark else "#e2e8f0"
     met_shadow = "0 2px 12px rgba(0,0,0,0.5)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
-    met_hover  = "#F5C242"
+    met_hover  = "rgba(124,58,237,0.7)"
     tv_theme   = "dark" if is_dark else "light"
     # Tambahkan baris ini di bagian inisialisasi variabel dashboard Anda
     news_theme = "dark" if is_dark else "light"
@@ -5110,8 +5110,8 @@ if current_view == "dashboard":
         transition: all 0.2s !important;
     }}
     [data-testid="stTabs"] button[role="tab"]:hover {{
-        color: {"rgba(232,234,240,0.8)" if is_dark else "#334155"} !important;
-        background: {"rgba(245,194,66,0.06)" if is_dark else "rgba(0,0,0,0.04)"} !important;
+        color: {"#a78bfa" if is_dark else "#7c3aed"} !important;
+        background: {"rgba(124,58,237,0.10)" if is_dark else "rgba(124,58,237,0.06)"} !important;
     }}
     [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
         background: {"rgba(245,194,66,0.12)" if is_dark else "#ffffff"} !important;
@@ -5207,9 +5207,10 @@ if current_view == "dashboard":
     }}
     [data-testid="stTabs"] ~ div .stButton > button:hover,
     [data-testid="stVerticalBlock"] .stButton > button:hover {{
-        background: {"rgba(245,194,66,0.18)" if is_dark else "rgba(245,194,66,0.15)"} !important;
-        border-color: {"rgba(245,194,66,0.6)" if is_dark else "rgba(245,194,66,0.6)"} !important;
-        box-shadow: 0 0 12px rgba(245,194,66,0.15) !important;
+        background: {"linear-gradient(135deg,rgba(124,58,237,0.22),rgba(59,130,246,0.20))" if is_dark else "linear-gradient(135deg,rgba(124,58,237,0.14),rgba(59,130,246,0.12))"} !important;
+        border-color: {"rgba(124,58,237,0.65)" if is_dark else "rgba(124,58,237,0.5)"} !important;
+        color: {"#a78bfa" if is_dark else "#7c3aed"} !important;
+        box-shadow: 0 0 14px rgba(124,58,237,0.18) !important;
     }}
 
    .trm-ticker-wrap {{ overflow: hidden; max-width: 100%;
@@ -10571,16 +10572,20 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
             for t in threads: t.join(timeout=15)
             return result
 
-        def _call_ai_reco(prompt_text):
+        def _call_ai_reco(prompt_text, max_tok=4000):
+            # Potong prompt jika terlalu panjang — cegah 429 token limit
+            MAX_PROMPT = 12000
+            if len(prompt_text) > MAX_PROMPT:
+                prompt_text = prompt_text[:MAX_PROMPT] + "\n\n[... data dipotong. Lanjutkan analisa dengan data di atas.]"
             # Layer 1: Groq (primary — cepat, rotate semua key otomatis)
             try:
-                result, _ = _call_groq_primary(prompt_text)
+                result, _ = _call_groq_primary(prompt_text, max_tokens=max_tok)
                 return result
             except Exception as _e_groq:
                 pass
             # Layer 2: Cerebras (fallback — throughput tinggi saat Groq overload)
             try:
-                result, _ = _call_cerebras(prompt_text)
+                result, _ = _call_cerebras(prompt_text, max_tokens=max_tok)
                 return result
             except:
                 pass
@@ -11039,13 +11044,13 @@ Format JSON WAJIB:
                         swing_candidates = sorted(
                             [(tk, d) for tk, d in price_data.items() if d.get("bullish_score", 0) >= 2 and d.get("chg5d", 0) > -5],
                             key=lambda x: (x[1]["bullish_score"], x[1].get("chg5d", 0)), reverse=True
-                        )[:20]
+                        )[:12]
                         bear_swing = sorted(
                             [(tk, d) for tk, d in price_data.items() if d.get("bearish_score", 0) >= 3],
                             key=lambda x: x[1]["bearish_score"], reverse=True
-                        )[:8]
+                        )[:5]
 
-                        lines = [f"{tk}: Harga={d['price']:,.0f} | Chg2d={d['chg2d']:+.2f}% | Chg5d={d['chg5d']:+.2f}% | Vol5avg={d['vol5']:,} | EMA5={d['ema5']:,.0f} | EMA10={d['ema10']:,.0f} | BullScore={d['bullish_score']}/4"
+                        lines = [f"{tk}:P={d['price']:,.0f}|C5={d['chg5d']:+.2f}%|Spk={d['spike']:.1f}x|Bl={d['bullish_score']}/4"
                                  for tk, d in swing_candidates]
                         bear_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg5d={d['chg5d']:+.2f}% | BearScore={d['bearish_score']}/4"
                                       for tk, d in bear_swing]
@@ -11101,7 +11106,7 @@ Format JSON WAJIB:
   "outlook": "Outlook pasar minggu ini dalam 1-2 kalimat."
 }}"""
 
-                        _weekly_raw = _call_ai_reco(prompt)
+                        _weekly_raw = _call_ai_reco(prompt, max_tok=3500)
                         st.session_state["reco_weekly_result"] = _weekly_raw
                         st.session_state["reco_weekly_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                     else:
@@ -11367,16 +11372,24 @@ Format JSON WAJIB:
                     if _fs_ts:
                         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
 
-                    def _render_fs_table(rows, title, accent, icon):
-                        if not rows: return
+                    def _render_fs_table_bsjp(pass_rows, watch_rows, accent):
+                        """Render Fundamental Screener dalam format tabel BSJP — dua section + avoid."""
+                        if not pass_rows and not watch_rows: return
                         import json as _fsjson
-                        _rd = []
-                        for tk, d in rows[:30]:
-                            sc = d.get("score",0)
+
+                        def _build_row(tk, d, tier):
                             mc = d.get("mkcap",0)
                             cap_s = f"{mc/1e12:.1f}T" if mc >= 1e12 else (f"{mc/1e9:.0f}B" if mc >= 1e9 else "—")
-                            _rd.append({
-                                "tk":tk, "name":d.get("name","—"),
+                            sc = d.get("score",0)
+                            # Hitung implied PEG sederhana
+                            peg = "—"
+                            try:
+                                if d.get("pe",0)>0 and d.get("roe",0)>5:
+                                    _peg = d["pe"] / d["roe"]
+                                    peg = f"{_peg:.2f}"
+                            except: pass
+                            return {
+                                "tk":tk,"name":d.get("name","—")[:22],"tier":tier,
                                 "price": f"Rp {d['price']:,.0f}" if d.get("price") else "—",
                                 "roe":  f"{d['roe']:.1f}%" if d.get("roe") else "—",
                                 "der":  f"{d['der']:.2f}x" if d.get("der") is not None else "—",
@@ -11385,7 +11398,7 @@ Format JSON WAJIB:
                                 "pbv":  f"{d['pbv']:.2f}x" if d.get("pbv") else "—",
                                 "pe":   f"{d['pe']:.1f}x" if d.get("pe") and d["pe"]>0 else "—",
                                 "div":  f"{d['div']:.1f}%" if d.get("div") else "—",
-                                "cap":  cap_s, "score": sc,
+                                "cap":  cap_s, "score": sc, "peg": peg,
                                 "rpos": f"{d['rpos']:.0f}%" if d.get("rpos") else "—",
                                 "roe_ok": d.get("roe",0)>=15,
                                 "der_ok": 0 < d.get("der",99)<=1.0,
@@ -11393,84 +11406,97 @@ Format JSON WAJIB:
                                 "cr_ok":  d.get("cr",0)>=1.5,
                                 "pbv_ok": 0.5<=d.get("pbv",0)<=3.0 and d.get("pbv",0)>0,
                                 "eps_ok": d.get("eps",0)>0,
-                            })
-                        _rj  = _fsjson.dumps(_rd, ensure_ascii=False)
-                        _uid = str(abs(hash(title)) % 99999)
-                        _row_h = min(len(rows), 15) * 40
-                        _tot_h = 36 + 36 + _row_h + 44
+                            }
+
+                        _pass_data  = [_build_row(tk,d,"PASS")  for tk,d in pass_rows[:30]]
+                        _watch_data = [_build_row(tk,d,"WATCH") for tk,d in watch_rows[:20]]
+                        _all_data   = _pass_data + _watch_data
+
+                        _rj = _fsjson.dumps(_all_data, ensure_ascii=False)
+                        _uid = "fs_bsjp"
+                        _table_bg  = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
+                        _hdr_bg    = f"rgba(38,166,154,0.08)" if is_dark else "#f8fafc"
+                        _border_c  = "rgba(38,166,154,0.18)" if is_dark else "#e2e8f0"
+                        _n_pass    = len(_pass_data)
+                        _n_watch   = len(_watch_data)
+                        _total_h   = 56 + (_n_pass*42+100) + (_n_watch*42+100) + 40
+
                         _html = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
-.lbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{accent};font-weight:700;margin-bottom:8px;display:block;}}
-.wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.hint{{display:none;text-align:center;font-size:0.55rem;color:{text_sub};padding:3px 0;border-bottom:1px solid {met_border};}}
-.sb{{width:100%;max-height:520px;overflow-x:auto!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch!important;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
-.sb::-webkit-scrollbar{{width:5px;height:5px;}}
-.sb::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:max-content;min-width:100%;border-collapse:collapse;font-size:0.72rem;}}
-thead th{{position:sticky;top:0;z-index:2;background:rgba(38,166,154,0.10);color:{accent};padding:8px 10px;text-align:left;border-bottom:2px solid {accent}44;white-space:nowrap;font-size:0.56rem;letter-spacing:0.09em;text-transform:uppercase;}}
-tbody td{{padding:7px 10px;border-bottom:1px solid {met_border};vertical-align:middle;white-space:nowrap;color:{text_main};}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;}}
+.sec-lbl{{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
+.card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
+.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
+.scroll::-webkit-scrollbar{{height:4px;}}
+.scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
+table{{width:100%;border-collapse:collapse;min-width:900px;}}
+thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.75rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
-.tk{{font-weight:700;font-size:0.78rem;color:{accent};}}
+tbody tr:hover td{{background:rgba(124,58,237,0.06);}}
+.tk{{font-weight:700;font-size:0.84rem;color:{accent};}}
+.nm{{font-size:0.68rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
 .ok{{color:#26a69a;font-weight:600;}}
 .ng{{color:#f23645;}}
 .neu{{color:{text_sub};}}
-.pg-bar{{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-top:1px solid {met_border};background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:4px;}}
-.pg-info{{font-size:0.58rem;color:{text_sub};}}
-.pg-btns{{display:flex;gap:5px;}}
-.pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};border:1px solid {met_border};border-radius:4px;padding:4px 11px;font-family:'IBM Plex Mono',monospace;font-size:0.58rem;cursor:pointer;}}
-.pg-btn:hover{{background:rgba(255,255,255,0.12);}}
-.pg-btn:disabled{{opacity:0.3;cursor:default;}}
-@media(max-width:600px){{.hint{{display:block;}}table{{font-size:0.62rem;}}thead th{{font-size:0.5rem;padding:6px 6px;}}tbody td{{padding:5px 6px;font-size:0.62rem;}}}}
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.6rem;font-weight:700;letter-spacing:0.05em;}}
+.bdg-pass{{background:rgba(38,166,154,0.15);color:#26a69a;border:1px solid rgba(38,166,154,0.5);}}
+.bdg-watch{{background:rgba(245,194,66,0.12);color:#F5C242;border:1px solid rgba(245,194,66,0.5);}}
+.dots span{{font-size:0.7rem;}}
+@media(max-width:640px){{thead th{{font-size:0.5rem;padding:6px 7px;}}tbody td{{font-size:0.68rem;padding:6px 7px;}}}}
 </style></head><body>
-<span class="lbl">{icon} {title} — {len(rows)} SAHAM</span>
-<div class="wrap">
-  <div class="hint">← geser kiri / kanan →</div>
-  <div class="sb" id="sb{_uid}">
-    <table>
-      <thead><tr>
-        <th>TICKER</th><th>NAMA</th><th>HARGA</th>
-        <th title="Return on Equity ≥15%">ROE</th>
-        <th title="Debt/Equity ≤1.0x">DER</th>
-        <th title="Net Profit Margin ≥10%">NET MARGIN</th>
-        <th title="Current Ratio ≥1.5x">CURR RATIO</th>
-        <th title="Price/Book Value 0.5-3x">PBV</th>
-        <th title="Price/Earnings">PER</th>
-        <th title="Dividend Yield">DIV YIELD</th>
-        <th title="Market Capitalization">MKT CAP</th>
-        <th title="Posisi vs 52 Minggu High/Low">52W POS</th>
-        <th title="Skor 6 kriteria Buffett">SKOR</th>
-      </tr></thead>
-      <tbody id="tb{_uid}"></tbody>
-    </table>
-  </div>
-  <div class="pg-bar">
-    <span class="pg-info" id="pi{_uid}"></span>
-    <div class="pg-btns">
-      <button class="pg-btn" id="pp{_uid}" onclick="pgF{_uid}(-1)">&#9664; Prev</button>
-      <button class="pg-btn" id="pn{_uid}" onclick="pgF{_uid}(+1)">Next &#9654;</button>
-    </div>
-  </div>
-</div>
+
+<span class="sec-lbl">✅ LOLOS BUFFETT — {_n_pass} SAHAM (SKOR ≥4/6)</span>
+<div class="card"><div class="scroll"><table>
+<thead><tr>
+  <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+  <th title="ROE ≥15%">ROE</th>
+  <th title="DER ≤1.0x">DER</th>
+  <th title="Net Margin ≥10%">NET MARGIN</th>
+  <th title="Current Ratio ≥1.5x">CURR RATIO</th>
+  <th title="PBV 0.5-3x">PBV</th>
+  <th title="PER">PER</th>
+  <th title="PEG = PER / ROE — wajar jika &lt;1">PEG</th>
+  <th title="Dividend Yield">DIV</th>
+  <th title="Market Cap">MKT CAP</th>
+  <th title="Posisi 52W">52W POS</th>
+  <th title="Skor Buffett">SKOR</th>
+</tr></thead>
+<tbody id="pass-tb"></tbody>
+</table></div></div>
+
+<span class="sec-lbl">⚠️ WATCHLIST — {_n_watch} SAHAM (SKOR 2–3/6)</span>
+<div class="card"><div class="scroll"><table>
+<thead><tr>
+  <th>TICKER</th><th>NAMA</th><th>HARGA</th>
+  <th>ROE</th><th>DER</th><th>NET MARGIN</th>
+  <th>CURR RATIO</th><th>PBV</th><th>PER</th><th>PEG</th>
+  <th>DIV</th><th>MKT CAP</th><th>52W POS</th><th>SKOR</th>
+</tr></thead>
+<tbody id="watch-tb"></tbody>
+</table></div></div>
+
 <script>
 (function(){{
-  var ROWS={_rj},PER=15,page=0;
+  var ALL={_rj};
+  var PASS=ALL.filter(function(r){{return r.tier==='PASS';}});
+  var WATCH=ALL.filter(function(r){{return r.tier==='WATCH';}});
+
   function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
   function dots(s){{
     var h='';
-    for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(255,255,255,0.15)')+'">&#9679;</span>';
-    return h+' <span style="font-size:0.6rem;color:{text_sub};">'+s+'/6</span>';
+    for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(200,200,200,0.18)')+'">&#9679;</span>';
+    return h+'<span style="font-size:0.58rem;color:{text_sub};margin-left:3px;">'+s+'/6</span>';
   }}
-  function render(){{
-    var tot=ROWS.length,maxPg=Math.max(0,Math.ceil(tot/PER)-1);
-    var s=page*PER,e=Math.min(s+PER,tot),h='';
-    ROWS.slice(s,e).forEach(function(r){{
+  function buildRows(arr,tbId){{
+    var h='';
+    arr.forEach(function(r){{
+      var tier=r.tier==='PASS'?'<span class="bdg bdg-pass">LOLOS</span>':'<span class="bdg bdg-watch">WATCH</span>';
       h+='<tr>'+
         '<td><span class="tk">'+r.tk+'</span></td>'+
-        '<td style="font-size:0.64rem;color:{text_sub};">'+r.name+'</td>'+
+        '<td><span class="nm">'+r.name+'</span></td>'+
         '<td style="font-weight:600;">'+r.price+'</td>'+
         '<td>'+c(r.roe,r.roe_ok)+'</td>'+
         '<td>'+c(r.der,r.der_ok)+'</td>'+
@@ -11478,32 +11504,25 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         '<td>'+c(r.cr,r.cr_ok)+'</td>'+
         '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
         '<td class="neu">'+r.pe+'</td>'+
+        '<td style="color:'+(r.peg!=='—'&&parseFloat(r.peg)<1?'#26a69a':'#F5C242')+';">'+r.peg+'</td>'+
         '<td style="color:#F5C242;">'+r.div+'</td>'+
         '<td class="neu">'+r.cap+'</td>'+
         '<td class="neu">'+r.rpos+'</td>'+
         '<td>'+dots(r.score)+'</td>'+
         '</tr>';
     }});
-    document.getElementById('tb{_uid}').innerHTML=h;
-    document.getElementById('pi{_uid}').textContent='Baris '+(s+1)+'–'+e+' dari '+tot;
-    document.getElementById('pp{_uid}').disabled=(page<=0);
-    document.getElementById('pn{_uid}').disabled=(page>=maxPg);
-    document.getElementById('sb{_uid}').scrollTop=0;
+    var el=document.getElementById(tbId);
+    if(el) el.innerHTML=h;
   }}
-  window['pgF{_uid}']=function(d){{
-    var maxPg=Math.max(0,Math.ceil(ROWS.length/PER)-1);
-    page=Math.max(0,Math.min(page+d,maxPg));render();
-  }};
-  render();
+  buildRows(PASS,'pass-tb');
+  buildRows(WATCH,'watch-tb');
 }})();
-</script></body></html>"""
-                        components.html(_html, height=max(_tot_h + 60, 200), scrolling=False)
+</script>
+</body></html>"""
+                        components.html(_html, height=min(_total_h, 1600), scrolling=True)
 
-                    if _fs_pass:
-                        _render_fs_table(_fs_pass, "LOLOS KRITERIA BUFFETT", _fs_accent, "✅")
-                        st.markdown("<div style='margin:6px 0;'></div>", unsafe_allow_html=True)
-                    if _fs_watch:
-                        _render_fs_table(_fs_watch, "WATCHLIST — PERLU PEMANTAUAN", "#F5C242", "⚠️")
+                    if _fs_pass or _fs_watch:
+                        _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
                     if not _fs_pass and not _fs_watch:
                         st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
 
@@ -11996,10 +12015,10 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
 #spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:{C["hover"]};}}
+#spbtn:hover{{transform:scale(1.08); background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(59,130,246,0.18));}}
 #spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px; font-size:1rem;color:{C["text"]};cursor:pointer;border:none; background:transparent;width:100%;text-align:left;text-decoration:none;transition:background 0.2s;}} .smi:hover{{background:{C["hover"]}}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
 .smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
 .smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
