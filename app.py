@@ -10144,10 +10144,15 @@ Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisi
 - WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
 - HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
 
-⛔ ATURAN TRADE PLAN:
+⛔ ATURAN TRADE PLAN & RISK LEVEL:
 - Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
 - Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
 - Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
+
+🎯 SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
+- HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
+- MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
+- LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
 - IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
 
 ────────────────────────────────────────────────
@@ -10188,7 +10193,14 @@ STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
    ⛔ JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
       "⛔ TRADE PLAN TIDAK TERSEDIA — [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
    
-   Jika LAYAK:
+   Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
+   - 🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
+   - 🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
+   - 🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
+
+   Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] — [alasan singkat 1 kalimat]
+
+   Lanjutkan:
    - Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
    - Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
    - TP1: Rp[A] → resistance minor / FVG terdekat
@@ -10200,10 +10212,11 @@ Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGA
 
 Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
 ```json
-{{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null}}
+{{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null, "risk_level": "HIGH"}}
 ```
 PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) — JANGAN gambar trade plan di chart.
-Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str})."""
+Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str}).
+Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental oke. Jika tidak ada trade plan, isi "NONE"."""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
@@ -10239,6 +10252,7 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                                 "tp1": _safe_float(raw_json.get("tp1") or raw_json.get("target")),
                                 "tp2": _safe_float(raw_json.get("tp2")),
                                 "tp3": _safe_float(raw_json.get("tp3")),
+                                "risk_level": str(raw_json.get("risk_level", "HIGH")).upper(),
                             }
                             # Validasi: semua harga harus > 0 dan masuk akal
                             last_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0
@@ -10356,12 +10370,12 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                     x_all   = x_str + pad_str
                     n_total = len(x_all)
 
-                    # ── Figure 4 rows: Price / Volume / RSI / MACD ────────
+                    # ── Figure 5 rows: Price / Vol Normal / Vol Delta / RSI / MACD ────────
                     fig = make_subplots(
-                        rows=4, cols=1,
+                        rows=5, cols=1,
                         shared_xaxes=True,
-                        row_heights=[0.52, 0.16, 0.16, 0.16],
-                        vertical_spacing=0.012,
+                        row_heights=[0.46, 0.12, 0.14, 0.14, 0.14],
+                        vertical_spacing=0.010,
                     )
 
                     # ── Candlestick ───────────────────────────────────────
@@ -10479,7 +10493,25 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                         except Exception as e:
                             st.warning(f"AI gagal menggambar Trade Plan: {e}")
 
-                    # ── Volume (split buy/sell power) ─────────────────────
+                    # ── Volume Normal (hijau/merah ikut candle) ───────────
+                    vol_clr_normal = [
+                        inc_color if c >= o else dec_color
+                        for c, o in zip(df_chart['Close'], df_chart['Open'])
+                    ]
+                    fig.add_trace(go.Bar(
+                        x=x_str, y=df_chart['Volume'],
+                        marker_color=[c.replace(')', ',0.65)').replace('rgb(','rgba(').replace('#089981','rgba(8,153,129,0.65)').replace('#f23645','rgba(242,54,69,0.65)') for c in vol_clr_normal],
+                        showlegend=False, name='Volume',
+                    ), row=2, col=1)
+                    # Garis rata-rata volume 20-bar
+                    vol_ma20 = df_chart['Volume'].rolling(20).mean()
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=vol_ma20,
+                        mode='lines', line=dict(color='#f5a623', width=1.2, dash='dot'),
+                        showlegend=False, name='Vol MA20',
+                    ), row=2, col=1)
+
+                    # ── Volume Delta (split buy/sell power) ───────────────
                     hl_range = (df_chart['High'] - df_chart['Low']).replace(0, 1)
                     buy_vol  = (df_chart['Volume'] * (df_chart['Close'] - df_chart['Low'])  / hl_range).clip(lower=0)
                     sell_vol = (df_chart['Volume'] * (df_chart['High']  - df_chart['Close']) / hl_range).clip(lower=0)
@@ -10488,25 +10520,25 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                         x=x_str, y=sell_vol,
                         marker_color='rgba(242,54,69,0.75)',
                         name='Sell Power', showlegend=False,
-                    ), row=2, col=1)
+                    ), row=3, col=1)
                     fig.add_trace(go.Bar(
                         x=x_str, y=buy_vol,
                         marker_color='rgba(8,153,129,0.85)',
                         name='Buy Power', showlegend=False,
-                    ), row=2, col=1)
+                    ), row=3, col=1)
 
                     # ── RSI (level 70/30) ──────────────────────────────────
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['RSI'],
                         mode='lines', line=dict(color='#a78bfa', width=1.2),
                         showlegend=False,
-                    ), row=3, col=1)
+                    ), row=4, col=1)
                     for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
                         fig.add_trace(go.Scatter(
                             x=[x_str[0], x_str[-1]], y=[lvl, lvl],
                             mode='lines', line=dict(color=clr, width=1, dash='dot'),
                             showlegend=False,
-                        ), row=3, col=1)
+                        ), row=4, col=1)
 
                     # ── MACD ──────────────────────────────────────────────
                     macd_hist_clr = [inc_color if v >= 0 else dec_color
@@ -10514,22 +10546,22 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                     fig.add_trace(go.Bar(
                         x=x_str, y=df_chart['MACD_hist'],
                         marker_color=macd_hist_clr, showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD'],
                         mode='lines', line=dict(color='#2196f3', width=1.2),
                         showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD_signal'],
                         mode='lines', line=dict(color='#ff5252', width=1.2),
                         showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
                     fig.add_trace(go.Scatter(
                         x=[x_str[0], x_str[-1]], y=[0, 0],
                         mode='lines', line=dict(color=tv_border, width=1),
                         showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
 
                     # ── Tick labels: ambil ~8 titik merata ───────────────
                     step     = max(1, n_bars // 8)
@@ -10568,7 +10600,7 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
                         font=dict(color=tv_text_color, size=11),
-                        height=980,
+                        height=1080,
                         showlegend=False,
                         barmode="stack",
                         margin=dict(l=0, r=120, t=10, b=40),
@@ -10576,11 +10608,13 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                                     range=[-0.5, n_total-0.5], tickvals=tickvals),
                         xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
                         xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
+                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis5=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
                         yaxis =dict(**ax_y_plain, title=''),
                         yaxis2=dict(**ax_y_grid,  title='VOL'),
-                        yaxis3=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
-                        yaxis4=dict(**ax_y_grid,  title='MACD'),
+                        yaxis3=dict(**ax_y_grid,  title='DELTA'),
+                        yaxis4=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
+                        yaxis5=dict(**ax_y_grid,  title='MACD'),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
@@ -10591,6 +10625,7 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                         ('#ff0000','EMA 21 — Signal'),
                         ('#cc00ff','EMA 100 — Mid Trend'),
                         ('#a78bfa','EMA 200 — Major Trend'),
+                        ('#f5a623','Vol MA20 — Avg Volume'),
                     ]
                     leg = "<div style='display:flex;flex-wrap:wrap;gap:18px;padding:6px 4px;margin-top:-6px;'>"
                     for clr, lbl in ema_items:
@@ -10599,6 +10634,17 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                                 f"background:{clr};border-radius:2px;'></span>"
                                 f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
                                 f"color:{tv_text_color};'>{lbl}</span></span>")
+                    # Volume Delta legend
+                    leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
+                            f"<span style='display:inline-block;width:14px;height:10px;"
+                            f"background:rgba(8,153,129,0.85);border-radius:2px;'></span>"
+                            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                            f"color:{tv_text_color};'>Buy Power (Delta)</span></span>")
+                    leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
+                            f"<span style='display:inline-block;width:14px;height:10px;"
+                            f"background:rgba(242,54,69,0.75);border-radius:2px;'></span>"
+                            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                            f"color:{tv_text_color};'>Sell Power (Delta)</span></span>")
                     leg += "</div>"
                     st.markdown(leg, unsafe_allow_html=True)
 
@@ -10612,13 +10658,24 @@ Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawa
                 bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f8fafc'
                 bd_color = tv_border if not df_chart.empty else 'transparent'
                 
+                # Risk level badge
+                _rl = (ai_data or {}).get("risk_level", "NONE")
+                if _rl == "LOW":
+                    _rl_badge = "<span style='background:#089981;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟢 LOW RISK</span>"
+                elif _rl == "MID":
+                    _rl_badge = "<span style='background:#f5a623;color:#000;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟡 MID RISK</span>"
+                elif _rl == "HIGH":
+                    _rl_badge = "<span style='background:#f23645;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🔴 HIGH RISK</span>"
+                else:
+                    _rl_badge = ""
+
                 # Memastikan enter dari AI tidak terlalu lebar (maksimal 2 enter)
                 verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
                 # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
                 html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #a78bfa; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-<div style="font-size:0.65rem;letter-spacing:0.14em;color:#a78bfa; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:8px;">
-📋 TRADE PLAN SIGMA
+<div style="font-size:0.65rem;letter-spacing:0.14em;color:#a78bfa; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
+📋 TRADE PLAN SIGMA {_rl_badge}
 </div>
 <div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
 {verdict_clean}
@@ -13257,151 +13314,406 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.93rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0;}}
 .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
 .sec-icon{{font-size:1.6rem;}}
-.sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.sec-title{{font-size:1.15rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.85rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
 .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
-.feat-title{{font-size:1.05rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.28);}}
+.feat-title{{font-size:1.02rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
 .feat.blue .feat-title{{color:{_B};}}
 .feat.green .feat-title{{color:{_G};}}
 .feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
 .steps{{margin:10px 0 6px;}}
 .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
 .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.stext{{font-size:0.91rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
 .stext .dn{{color:{_R};font-weight:700;}}
 .stext .yl{{color:{_Y};font-weight:700;}}
-.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.86rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.86rem;color:{_TXT};line-height:1.72;}}
 .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
 .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
 .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
 .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
 .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
 .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.red{{border-color:rgba(242,54,69,0.35);background:rgba(242,54,69,0.06);}}
+.gcard-title{{font-size:0.76rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
 .gcard.green .gcard-title{{color:{_G};}}
 .gcard.blue .gcard-title{{color:{_B};}}
 .gcard.yellow .gcard-title{{color:{_Y};}}
-.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
-.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
+.gcard.red .gcard-title{{color:{_R};}}
+.gcard-val{{font-size:0.86rem;color:{_TXT};line-height:1.6;}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.70rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
 .badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
 .badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
 .badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
 .badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
 .badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
-@media(max-width:640px){{.grid2,.grid3{{grid-template-columns:1fr;}}}}
+/* Chart Illustration SVG wrapper */
+.chart-illus{{width:100%;background:#0d1117;border:1.5px solid rgba(124,58,237,0.3);border-radius:10px;padding:10px 6px 6px;margin:14px 0;overflow:hidden;}}
+.chart-illus svg{{width:100%;display:block;}}
+/* Risk level badges */
+.rl-row{{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;}}
+.rl-badge{{flex:1;min-width:120px;border-radius:8px;padding:12px 14px;text-align:center;}}
+.rl-badge.low{{background:rgba(8,153,129,0.14);border:2px solid rgba(8,153,129,0.45);}}
+.rl-badge.mid{{background:rgba(245,166,35,0.12);border:2px solid rgba(245,166,35,0.45);}}
+.rl-badge.high{{background:rgba(242,54,69,0.11);border:2px solid rgba(242,54,69,0.4);}}
+.rl-badge .rl-label{{font-size:0.80rem;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;}}
+.rl-badge.low .rl-label{{color:#089981;}}
+.rl-badge.mid .rl-label{{color:#f5a623;}}
+.rl-badge.high .rl-label{{color:#f23645;}}
+.rl-badge .rl-cond{{font-size:0.76rem;color:{_SUB};line-height:1.5;margin-top:4px;}}
+.ind-row{{display:flex;align-items:center;gap:10px;margin:7px 0;}}
+.ind-line{{width:32px;height:4px;border-radius:2px;flex-shrink:0;}}
+.ind-dot{{width:14px;height:14px;border-radius:3px;flex-shrink:0;}}
+.ind-desc{{font-size:0.85rem;color:{_TXT};line-height:1.55;}}
+.ind-desc b{{font-weight:700;}}
+@media(max-width:640px){{.grid2,.grid3{{grid-template-columns:1fr;}}.rl-row{{flex-direction:column;}}}}
 </style></head><body><div class="wrap">
 
+<!-- HEADER -->
 <div class="sec-head"><div class="sec-icon">🤖</div>
-<div><div class="sec-title">AI STOCK INSIGHT — Panduan Lengkap</div>
-<div class="sec-desc">Analisa komprehensif saham IDX berbasis AI: Chart Teknikal, Fundamental, Trade Plan, Volume Intelligence, dan Fundamental Screener.</div>
+<div><div class="sec-title">AI STOCK INSIGHT — Panduan Visual Lengkap</div>
+<div class="sec-desc">Analisa saham IDX berbasis AI: Chart Interaktif, Volume Dual-Panel, Risk Level Trade Plan, dan Fundamental Screener.</div>
 </div></div>
 
+<!-- APA ITU -->
 <div class="feat">
 <div class="feat-title">📌 Apa itu AI Stock Insight?</div>
-<div class="stext">AI Stock Insight adalah engine analisa terpadu SIGMA Terminal. Cukup masukkan kode saham, sistem akan secara otomatis menarik data harga, fundamental, dan konteks makro — lalu AI membuat analisa lengkap termasuk <span class="hi">candlestick chart interaktif</span>, <span class="ok">trade plan tervisualisasi</span>, dan <span class="yl">Volume Intelligence Engine</span>.</div>
+<div class="stext">Engine analisa terpadu SIGMA Terminal. Masukkan kode saham → sistem otomatis tarik data harga, volume, fundamental, dan makro → AI generate analisa lengkap dengan <span class="hi">chart 5-panel interaktif</span>, <span class="ok">trade plan tervisualisasi</span>, <span class="yl">risk level otomatis</span>, dan Volume Intelligence Engine.</div>
 </div>
 
-<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📊</div>
-<div><div class="sec-title">FITUR 1 — Analisa Chart & Trade Plan</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-head" style="margin-top:22px;"><div class="sec-icon">📊</div>
+<div><div class="sec-title">STRUKTUR CHART — 5 Panel Interaktif</div>
+<div class="sec-desc">Setiap panel punya fungsi berbeda. Baca dari atas ke bawah untuk membaca sinyal secara sistematis.</div>
+</div></div>
+
+<!-- CHART ILLUSTRATION SVG -->
+<div class="chart-illus">
+<svg viewBox="0 0 700 480" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono,monospace">
+  <!-- BG panels -->
+  <rect width="700" height="480" fill="#131722"/>
+  <!-- Panel dividers -->
+  <line x1="0" y1="220" x2="700" y2="220" stroke="#2a2e39" stroke-width="1"/>
+  <line x1="0" y1="283" x2="700" y2="283" stroke="#2a2e39" stroke-width="1"/>
+  <line x1="0" y1="346" x2="700" y2="346" stroke="#2a2e39" stroke-width="1"/>
+  <line x1="0" y1="413" x2="700" y2="413" stroke="#2a2e39" stroke-width="1"/>
+
+  <!-- PANEL LABELS -->
+  <text x="10" y="18" font-size="9" fill="#7c3aed" letter-spacing="1" font-weight="700">① CANDLESTICK + EMA</text>
+  <text x="10" y="232" font-size="9" fill="#60a5fa" letter-spacing="1" font-weight="700">② VOLUME NORMAL</text>
+  <text x="10" y="295" font-size="9" fill="#26a69a" letter-spacing="1" font-weight="700">③ VOLUME DELTA (BUY/SELL POWER)</text>
+  <text x="10" y="358" font-size="9" fill="#a78bfa" letter-spacing="1" font-weight="700">④ RSI</text>
+  <text x="10" y="425" font-size="9" fill="#2196f3" letter-spacing="1" font-weight="700">⑤ MACD</text>
+
+  <!-- ══ PANEL 1: CANDLESTICK ══ -->
+  <!-- Fake candles -->
+  <rect x="38" y="120" width="10" height="55" fill="#f23645" rx="1"/>
+  <line x1="43" y1="108" x2="43" y2="180" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="60" y="100" width="10" height="50" fill="#089981" rx="1"/>
+  <line x1="65" y1="90" x2="65" y2="157" stroke="#089981" stroke-width="1.5"/>
+  <rect x="82" y="85" width="10" height="60" fill="#f23645" rx="1"/>
+  <line x1="87" y1="75" x2="87" y2="152" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="104" y="75" width="10" height="40" fill="#089981" rx="1"/>
+  <line x1="109" y1="65" x2="109" y2="120" stroke="#089981" stroke-width="1.5"/>
+  <rect x="126" y="62" width="10" height="45" fill="#089981" rx="1"/>
+  <line x1="131" y1="52" x2="131" y2="114" stroke="#089981" stroke-width="1.5"/>
+  <rect x="148" y="70" width="10" height="55" fill="#f23645" rx="1"/>
+  <line x1="153" y1="60" x2="153" y2="135" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="170" y="78" width="10" height="42" fill="#089981" rx="1"/>
+  <line x1="175" y1="68" x2="175" y2="125" stroke="#089981" stroke-width="1.5"/>
+  <rect x="192" y="55" width="10" height="38" fill="#089981" rx="1"/>
+  <line x1="197" y1="45" x2="197" y2="98" stroke="#089981" stroke-width="1.5"/>
+  <rect x="214" y="48" width="10" height="32" fill="#089981" rx="1"/>
+  <line x1="219" y1="38" x2="219" y2="85" stroke="#089981" stroke-width="1.5"/>
+  <rect x="236" y="60" width="10" height="44" fill="#f23645" rx="1"/>
+  <line x1="241" y1="50" x2="241" y2="110" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="258" y="52" width="10" height="36" fill="#089981" rx="1"/>
+  <line x1="263" y1="42" x2="263" y2="93" stroke="#089981" stroke-width="1.5"/>
+  <rect x="280" y="40" width="10" height="30" fill="#089981" rx="1"/>
+  <line x1="285" y1="32" x2="285" y2="75" stroke="#089981" stroke-width="1.5"/>
+  <rect x="302" y="55" width="10" height="50" fill="#f23645" rx="1"/>
+  <line x1="307" y1="45" x2="307" y2="112" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="324" y="62" width="10" height="42" fill="#089981" rx="1"/>
+  <line x1="329" y1="52" x2="329" y2="110" stroke="#089981" stroke-width="1.5"/>
+  <rect x="346" y="50" width="10" height="38" fill="#089981" rx="1"/>
+  <line x1="351" y1="40" x2="351" y2="92" stroke="#089981" stroke-width="1.5"/>
+
+  <!-- EMAs overlaid -->
+  <polyline points="38,155 65,140 87,128 109,115 131,102 153,110 175,105 197,88 219,78 241,88 263,75 285,62 307,75 329,80 351,70" fill="none" stroke="#009dff" stroke-width="1.5"/>
+  <polyline points="38,162 65,148 87,136 109,124 131,112 153,120 175,115 197,100 219,91 241,99 263,87 285,75 307,85 329,90 351,80" fill="none" stroke="#ff0000" stroke-width="1.5"/>
+  <polyline points="38,175 65,168 87,160 109,152 131,145 153,148 175,144 197,134 219,128 241,133 263,124 285,115 307,122 329,126 351,118" fill="none" stroke="#cc00ff" stroke-width="1.5"/>
+  <polyline points="38,188 65,183 87,178 109,172 131,167 153,169 175,166 197,158 219,154 241,158 263,151 285,144 307,149 329,152 351,146" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+
+  <!-- BUY ZONE highlight -->
+  <rect x="30" y="60" width="340" height="30" fill="rgba(8,153,129,0.15)" rx="0"/>
+  <line x1="30" y1="60" x2="370" y2="60" stroke="#089981" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="30" y1="90" x2="370" y2="90" stroke="#089981" stroke-width="1.2"/>
+
+  <!-- TP / SL lines -->
+  <line x1="30" y1="35" x2="580" y2="35" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="30" y1="20" x2="580" y2="20" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="30" y1="200" x2="580" y2="200" stroke="#f23645" stroke-width="1.5"/>
+
+  <!-- Labels kanan -->
+  <rect x="582" y="26" width="62" height="16" fill="#a78bfa" rx="3"/>
+  <text x="613" y="38" font-size="8" fill="#000" text-anchor="middle" font-weight="700">TP2 5.250</text>
+  <rect x="582" y="11" width="62" height="16" fill="#a78bfa" rx="3"/>
+  <text x="613" y="23" font-size="8" fill="#000" text-anchor="middle" font-weight="700">TP1 4.980</text>
+  <rect x="582" y="55" width="76" height="16" fill="#089981" rx="3"/>
+  <text x="620" y="67" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">BUY 4.600-4.750</text>
+  <rect x="582" y="194" width="62" height="16" fill="#f23645" rx="3"/>
+  <text x="613" y="206" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">SL  4.250</text>
+
+  <!-- EMA Legend mini -->
+  <line x1="400" y1="180" x2="420" y2="180" stroke="#009dff" stroke-width="2"/>
+  <text x="424" y="184" font-size="8" fill="#009dff">EMA 13</text>
+  <line x1="400" y1="193" x2="420" y2="193" stroke="#ff0000" stroke-width="2"/>
+  <text x="424" y="197" font-size="8" fill="#ff0000">EMA 21</text>
+  <line x1="470" y1="180" x2="490" y2="180" stroke="#cc00ff" stroke-width="2"/>
+  <text x="494" y="184" font-size="8" fill="#cc00ff">EMA 100</text>
+  <line x1="470" y1="193" x2="490" y2="193" stroke="#a78bfa" stroke-width="2"/>
+  <text x="494" y="197" font-size="8" fill="#a78bfa">EMA 200</text>
+
+  <!-- ══ PANEL 2: VOLUME NORMAL ══ -->
+  <!-- Volume bars hijau/merah -->
+  <rect x="38" y="260" width="10" height="14" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="60" y="253" width="10" height="21" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="82" y="256" width="10" height="18" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="104" y="248" width="10" height="26" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="126" y="243" width="10" height="31" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="148" y="251" width="10" height="23" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="170" y="246" width="10" height="28" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="192" y="234" width="10" height="40" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="214" y="228" width="10" height="46" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="236" y="239" width="10" height="35" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="258" y="244" width="10" height="30" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="280" y="236" width="10" height="38" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="302" y="255" width="10" height="19" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="324" y="247" width="10" height="27" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="346" y="241" width="10" height="33" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <!-- Vol MA20 line (orange dotted) -->
+  <polyline points="38,256 65,254 87,253 109,252 131,251 153,252 175,251 197,249 219,247 241,249 263,248 285,246 307,250 329,249 351,247" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="358" y="248" font-size="7.5" fill="#f5a623">Vol MA20</text>
+
+  <!-- ══ PANEL 3: VOLUME DELTA ══ -->
+  <!-- Stacked buy (hijau atas) + sell (merah bawah) -->
+  <rect x="38" y="325" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="38" y="315" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="60" y="320" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="60" y="306" width="10" height="14" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="82" y="322" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="82" y="312" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="104" y="316" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="104" y="298" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="126" y="310" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="126" y="292" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="148" y="318" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="148" y="308" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="170" y="313" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="170" y="295" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="192" y="305" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="192" y="284" width="10" height="21" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="214" y="300" width="10" height="7" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="214" y="280" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="236" y="312" width="10" height="14" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="236" y="300" width="10" height="12" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="258" y="308" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="258" y="290" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="280" y="304" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="280" y="284" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="302" y="316" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="302" y="306" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="324" y="310" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="324" y="292" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="346" y="305" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="346" y="285" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <!-- Legend -->
+  <rect x="400" y="296" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <text x="415" y="306" font-size="8" fill="#089981">Buy Power</text>
+  <rect x="400" y="312" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <text x="415" y="322" font-size="8" fill="#f23645">Sell Power</text>
+
+  <!-- ══ PANEL 4: RSI ══ -->
+  <!-- RSI line -->
+  <polyline points="38,395 65,390 87,385 109,378 131,370 153,375 175,372 197,362 219,355 241,363 263,356 285,348 307,358 329,362 351,352" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+  <!-- Level 70 -->
+  <line x1="30" y1="358" x2="580" y2="358" stroke="rgba(242,54,69,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="586" y="362" font-size="7.5" fill="rgba(242,54,69,0.8)">70</text>
+  <!-- Level 30 -->
+  <line x1="30" y1="400" x2="580" y2="400" stroke="rgba(8,153,129,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="586" y="404" font-size="7.5" fill="rgba(8,153,129,0.8)">30</text>
+
+  <!-- ══ PANEL 5: MACD ══ -->
+  <!-- Histogram bars -->
+  <rect x="38" y="430" width="10" height="8" fill="#089981" rx="1"/>
+  <rect x="60" y="428" width="10" height="10" fill="#089981" rx="1"/>
+  <rect x="82" y="432" width="10" height="7" fill="#f23645" rx="1"/>
+  <rect x="104" y="427" width="10" height="11" fill="#089981" rx="1"/>
+  <rect x="126" y="424" width="10" height="14" fill="#089981" rx="1"/>
+  <rect x="148" y="429" width="10" height="9" fill="#f23645" rx="1"/>
+  <rect x="170" y="426" width="10" height="12" fill="#089981" rx="1"/>
+  <rect x="192" y="422" width="10" height="16" fill="#089981" rx="1"/>
+  <rect x="214" y="420" width="10" height="18" fill="#089981" rx="1"/>
+  <rect x="236" y="425" width="10" height="12" fill="#f23645" rx="1"/>
+  <rect x="258" y="421" width="10" height="17" fill="#089981" rx="1"/>
+  <rect x="280" y="418" width="10" height="20" fill="#089981" rx="1"/>
+  <rect x="302" y="426" width="10" height="12" fill="#f23645" rx="1"/>
+  <rect x="324" y="422" width="10" height="16" fill="#089981" rx="1"/>
+  <rect x="346" y="419" width="10" height="19" fill="#089981" rx="1"/>
+  <!-- MACD line -->
+  <polyline points="38,432 65,430 87,433 109,429 131,426 153,430 175,428 197,424 219,422 241,427 263,423 285,420 307,427 329,424 351,421" fill="none" stroke="#2196f3" stroke-width="1.5"/>
+  <!-- Signal line -->
+  <polyline points="38,434 65,432 87,434 109,431 131,428 153,432 175,430 197,427 219,425 241,429 263,426 285,423 307,429 329,427 351,424" fill="none" stroke="#ff5252" stroke-width="1.5"/>
+  <!-- Zero line -->
+  <line x1="30" y1="438" x2="580" y2="438" stroke="#2a2e39" stroke-width="1"/>
+</svg>
+</div>
+<div class="tip">💡 <b>Cara baca chart dari atas ke bawah:</b> Panel ① lihat tren + area trade plan → Panel ② cek apakah volume hari ini di atas/bawah rata-rata (garis oranye) → Panel ③ cek dominasi buy atau sell power → Panel ④ RSI overbought/oversold → Panel ⑤ MACD konfirmasi momentum.</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📈</div>
+<div><div class="sec-title">INDIKATOR — Fungsi & Cara Baca</div>
 </div></div>
 
 <div class="feat blue">
-<div class="feat-title">🕯️ Cara Menggunakan Chart Analysis</div>
-<div class="steps">
-<div class="step"><div class="snum">1</div><div class="stext">Pilih tab <b>AI Stock Insight</b> dari navigasi atas SIGMA Terminal.</div></div>
-<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>kode emiten</b> di kolom input (contoh: <span class="hi">BBRI</span>, <span class="hi">TLKM</span>, <span class="hi">ASII</span>).</div></div>
-<div class="step"><div class="snum">3</div><div class="stext">Pilih <b>periode analisa</b>: 3 Bulan / 6 Bulan / 1 Tahun / 2 Tahun. Gunakan periode lebih panjang untuk sinyal lebih kuat dan minim false breakout.</div></div>
-<div class="step"><div class="snum">4</div><div class="stext">Klik <b>"Analisa Sekarang"</b> — AI akan memproses dan menampilkan chart candlestick + EMA overlay (13/21/100/200) + RSI + Volume subplot.</div></div>
-<div class="step"><div class="snum">5</div><div class="stext">Baca <b>Trade Plan</b> yang divisualisasi langsung di chart: area BUY ZONE (hijau), TP1/TP2/TP3 (gradien hijau), dan SL (merah) dengan label di sisi kanan chart.</div></div>
-</div>
-<div class="tip">💡 <b>EMA Legend:</b> EMA13 (biru muda) = momentum cepat | EMA21 (oranye) = konfirmasi jangka pendek | EMA100 (ungu) = tren medium | EMA200 (merah) = tren jangka panjang. Buy di atas EMA200 = safer long.</div>
+<div class="feat-title">🕯️ Panel ① — Candlestick + EMA (Harga & Tren)</div>
+<div class="ind-row"><div class="ind-line" style="background:#009dff;"></div><div class="ind-desc"><b style="color:#009dff">EMA 13</b> — Moving average cepat. Harga di atas = momentum naik jangka pendek.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#ff0000;"></div><div class="ind-desc"><b style="color:#ff0000">EMA 21</b> — Konfirmasi sinyal. Crossover EMA13/EMA21 = sinyal entry awal.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#cc00ff;"></div><div class="ind-desc"><b style="color:#cc00ff">EMA 100</b> — Tren menengah (1–3 bulan). Support dinamis penting.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#a78bfa;"></div><div class="ind-desc"><b style="color:#a78bfa">EMA 200</b> — Tren jangka panjang. Harga di atas EMA200 = Bull Market. Di bawah = Bear Market.</div></div>
+<div class="tip">💡 Setup terkuat: Harga di atas EMA200, EMA13 baru cross EMA21 ke atas, volume konfirmasi.</div>
 </div>
 
 <div class="feat green">
-<div class="feat-title">📐 Membaca Trade Plan Tervisualisasi</div>
-<div class="grid2">
-<div class="gcard green">
-<div class="gcard-title">✅ BUY AREA</div>
-<div class="gcard-val">Zona hijau di chart = area entry ideal berdasarkan support teknikal + MnM Strategy+ (FVG/IFVG/OB/Demand Zone)</div>
+<div class="feat-title">📊 Panel ② — Volume Normal (Total Transaksi per Hari)</div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.65);"></div><div class="ind-desc"><b style="color:#089981">Bar Hijau</b> — Candle tutup naik (Close > Open). Volume tinggi = banyak yang beli.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.65);"></div><div class="ind-desc"><b style="color:#f23645">Bar Merah</b> — Candle tutup turun (Close &lt; Open). Volume tinggi = banyak yang jual.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#f5a623;"></div><div class="ind-desc"><b style="color:#f5a623">Garis Oranye (Vol MA20)</b> — Rata-rata volume 20 hari. Bar di atas garis ini = volume lebih dari biasanya = aktivitas tinggi.</div></div>
+<div class="tip">💡 Volume naik + harga naik = konfirmasi bullish kuat. Volume tinggi + harga turun = distribusi/jual besar.</div>
 </div>
-<div class="gcard blue">
-<div class="gcard-title">🎯 TP1 / TP2 / TP3</div>
-<div class="gcard-val">Target profit bertingkat berdasarkan struktur teknikal: resistance, supply zone, dan fibonacci extension</div>
-</div>
-<div class="gcard yellow">
-<div class="gcard-title">🔢 R:R Ratio</div>
-<div class="gcard-val">Risk-Reward Ratio otomatis dihitung AI. Minimal R:R yang disarankan adalah 1:2 untuk setiap entry position</div>
-</div>
-<div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
-<div class="gcard-title" style="color:{_R};">🛑 STOP LOSS</div>
-<div class="gcard-val">Garis merah di bawah BUY AREA = batas maksimal kerugian. Selalu hormati SL — disiplin adalah kunci survival.</div>
-</div>
-</div>
-</div>
-
-<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">⚡</div>
-<div><div class="sec-title">FITUR 2 — Volume Intelligence Engine</div>
-</div></div>
 
 <div class="feat">
-<div class="feat-title">📉 Membaca Volume Intelligence</div>
-<div class="stext" style="margin-bottom:12px;">Volume Intelligence Engine secara otomatis mendeteksi pola volume abnormal dan memberikan insight kontekstual di bawah chart.</div>
+<div class="feat-title">⚡ Panel ③ — Volume Delta (Buy vs Sell Power)</div>
+<div class="stext" style="margin-bottom:10px;">Memisahkan volume menjadi dua komponen: tekanan beli dan tekanan jual dalam satu bar hari.</div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.85);"></div><div class="ind-desc"><b style="color:#089981">Buy Power (Hijau)</b> — Porsi volume yang terjadi di sisi beli: dihitung dari (Close−Low)/(High−Low) × Volume. Makin tinggi = makin banyak beli.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.75);"></div><div class="ind-desc"><b style="color:#f23645">Sell Power (Merah)</b> — Porsi volume di sisi jual: (High−Close)/(High−Low) × Volume. Makin tinggi = makin banyak jual.</div></div>
+<div class="tip">💡 Buy Power >> Sell Power secara konsisten = akumulasi. Sell Power mendadak melonjak = distribusi atau panic sell.</div>
+</div>
+
+<div class="feat">
+<div class="feat-title" style="color:#a78bfa;">〰️ Panel ④ — RSI (Relative Strength Index)</div>
+<div class="stext" style="margin-bottom:10px;">Mengukur kekuatan/kelemahan relatif harga dalam rentang 0–100.</div>
 <div class="grid3">
-<div class="gcard">
-<div class="gcard-title">⚡ Volume Spike</div>
-<div class="gcard-val">Volume hari ini &gt;2× rata-rata. Sinyal masuknya big player atau berita material. Cek arah harga — naik = bullish, turun = bearish.</div>
+<div class="gcard red"><div class="gcard-title">RSI &gt; 70</div><div class="gcard-val">Overbought — harga sudah naik terlalu cepat. Potensi koreksi atau reversal.</div></div>
+<div class="gcard green"><div class="gcard-title">RSI &lt; 30</div><div class="gcard-val">Oversold — harga sudah turun terlalu dalam. Potensi pantulan atau reversal naik.</div></div>
+<div class="gcard blue"><div class="gcard-title">RSI 40–60</div><div class="gcard-val">Zona netral / sideways. Tunggu konfirmasi arah sebelum entry.</div></div>
 </div>
-<div class="gcard blue">
-<div class="gcard-title">🌊 Volume Dry-Up</div>
-<div class="gcard-val">Volume sangat rendah vs rata-rata. Bisa berarti konsolidasi (akumulasi senyap) atau kejenuhan jual. Tunggu breakout dengan volume.</div>
-</div>
-<div class="gcard yellow">
-<div class="gcard-title">⚠️ Divergensi</div>
-<div class="gcard-val">Harga naik tapi volume turun = kenaikan lemah (potensi reversal). Harga turun + volume turun = selling pressure melemah.</div>
-</div>
-</div>
-<div class="tip">💡 Konfluensi terkuat: Volume Spike + area Buy Zone MnM Strategy+ = probabilitas reversal tertinggi.</div>
-</div>
-
-<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🧮</div>
-<div><div class="sec-title">FITUR 3 — Fundamental Screener (Warren Buffett Criteria)</div>
-</div></div>
-
-<div class="feat yellow">
-<div class="feat-title">📋 Cara Menggunakan Fundamental Screener</div>
-<div class="steps">
-<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab AI Stock Insight.</div></div>
-<div class="step"><div class="snum">2</div><div class="stext">Pilih <b>filter sektor</b> (All / Banking / Property / Energy / Consumer, dst.) untuk mempersempit pencarian.</div></div>
-<div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> — sistem akan mengevaluasi ratusan saham IDX berdasarkan 6 kriteria Buffett: <span class="hi">ROE ≥15%</span>, <span class="ok">DER ≤1.5×</span>, <span class="yl">Net Margin ≥10%</span>, Current Ratio ≥1.5, <span class="hi">PBV ≤3×</span>, EPS positif.</div></div>
-<div class="step"><div class="snum">4</div><div class="stext">Urutkan hasil dengan dropdown <b>"Sort By"</b>: ROE Tertinggi / DER Terendah / Net Margin / PBV.</div></div>
-<div class="step"><div class="snum">5</div><div class="stext">Pilih saham dari hasil screener, lalu klik <b>"Analisa AI"</b> untuk mendapat ringkasan fundamental dari AI Groq/Gemini.</div></div>
-</div>
-<div class="warn">⚠️ Screener berbasis fundamental historis — tidak menjamin performa masa depan. Kombinasikan dengan analisa teknikal sebelum keputusan entry.</div>
+<div class="tip">💡 Divergence RSI: harga buat higher high tapi RSI lower high = bearish divergence (sinyal lemah/reversal). Sebaliknya = bullish divergence.</div>
 </div>
 
 <div class="feat blue">
-<div class="feat-title">💬 Fitur Chat dalam AI Stock Insight</div>
-<div class="stext">Setelah analisa di-generate, tersedia kolom <b>tanya AI</b> untuk bertanya lebih spesifik tentang saham yang dianalisa. Contoh pertanyaan efektif:</div>
+<div class="feat-title">📉 Panel ⑤ — MACD (Moving Average Convergence Divergence)</div>
+<div class="stext" style="margin-bottom:10px;">Konfirmasi momentum tren dengan dua moving average dan histogram.</div>
+<div class="ind-row"><div class="ind-line" style="background:#2196f3;"></div><div class="ind-desc"><b style="color:#2196f3">MACD Line (Biru)</b> — EMA12 minus EMA26. Refleksi momentum jangka pendek vs menengah.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#ff5252;"></div><div class="ind-desc"><b style="color:#ff5252">Signal Line (Merah)</b> — EMA9 dari MACD Line. Crossover = sinyal beli/jual.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:#089981;"></div><div class="ind-desc"><b style="color:#089981">Histogram Hijau</b> — MACD > Signal. Momentum bullish. Makin tinggi = makin kuat.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:#f23645;"></div><div class="ind-desc"><b style="color:#f23645">Histogram Merah</b> — MACD < Signal. Momentum bearish atau melemah.</div></div>
+<div class="tip">💡 Sinyal terkuat: MACD cross Signal dari bawah + histogram baru jadi hijau + RSI di bawah 50 → awal rally baru.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🎯</div>
+<div><div class="sec-title">TRADE PLAN — Visualisasi & Risk Level</div>
+<div class="sec-desc">AI otomatis gambar trade plan di chart dan tentukan risk level berdasarkan kondisi pasar.</div>
+</div></div>
+
+<div class="feat green">
+<div class="feat-title">📐 Elemen Trade Plan di Chart</div>
+<div class="grid2">
+<div class="gcard green">
+<div class="gcard-title">✅ BUY ZONE (Area Hijau)</div>
+<div class="gcard-val">Zona entry ideal. Ditentukan dari support teknikal: FVG, IFVG, Order Block, Demand Zone, atau area MA penting.</div>
+</div>
+<div class="gcard red">
+<div class="gcard-title">🛑 STOP LOSS (Garis Merah)</div>
+<div class="gcard-val">Batas kerugian maksimal — di bawah BUY ZONE. Minimal 1.5× ATR dari entry bawah. WAJIB dihormati.</div>
+</div>
+<div class="gcard" style="border-color:rgba(167,139,250,0.35);background:rgba(167,139,250,0.07);">
+<div class="gcard-title" style="color:#a78bfa;">🎯 TP1 / TP2 / TP3 (Titik-Titik Ungu)</div>
+<div class="gcard-val">Target profit bertingkat. TP1 = resistance terdekat. TP2 = resistance mayor. TP3 = extended target fibonacci.</div>
+</div>
+<div class="gcard yellow">
+<div class="gcard-title">⚖️ Risk-Reward Ratio</div>
+<div class="gcard-val">Dihitung otomatis AI. Minimal R:R 1:2 sebelum entry. R:R 1:3 ke atas = setup ideal.</div>
+</div>
+</div>
+</div>
+
+<div class="feat yellow">
+<div class="feat-title">⚡ Risk Level — Syarat & Arti</div>
+<div class="stext" style="margin-bottom:12px;">AI menentukan risk level otomatis berdasarkan berapa "pilar" yang konfirmasi setup. Semakin banyak pilar, semakin rendah risiko.</div>
+<div class="rl-row">
+<div class="rl-badge high">
+<div class="rl-label">🔴 HIGH RISK</div>
+<div style="font-size:0.9rem;font-weight:700;color:#f23645;margin:4px 0;">Teknikal ✅</div>
+<div class="rl-cond">Setup teknikal ada (EMA, support, pattern) tapi volume belum konfirmasi atau fundamental lemah/tidak tersedia. Risiko tertinggi — position sizing kecil, wajib ketat di SL.</div>
+</div>
+<div class="rl-badge mid">
+<div class="rl-label">🟡 MID RISK</div>
+<div style="font-size:0.9rem;font-weight:700;color:#f5a623;margin:4px 0;">Teknikal ✅ + Volume ✅</div>
+<div class="rl-cond">Teknikal bullish PLUS volume konfirmasi: volume di atas MA20, buy power dominan, tidak ada distribusi besar. Fundamental netral atau kurang data.</div>
+</div>
+<div class="rl-badge low">
+<div class="rl-label">🟢 LOW RISK</div>
+<div style="font-size:0.9rem;font-weight:700;color:#089981;margin:4px 0;">Teknikal ✅ + Volume ✅ + Fundamental ✅</div>
+<div class="rl-cond">Triple konfirmasi lengkap: teknikal bullish + volume mendukung + fundamental sehat (ROE positif, PBV wajar, EPS tumbuh). Setup paling aman untuk full position.</div>
+</div>
+</div>
+<div class="warn">⚠️ Jika kondisi saham BEARISH KUAT / HINDARI, Trade Plan TIDAK ditampilkan — AI akan menjelaskan alasan dan kondisi yang harus terpenuhi dulu sebelum bisa entry.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🧮</div>
+<div><div class="sec-title">FITUR LAIN — Fundamental Screener & Chat</div>
+</div></div>
+
+<div class="feat yellow">
+<div class="feat-title">📋 Fundamental Screener (Buffett Criteria)</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab AI Stock Insight.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Pilih <b>filter sektor</b> (All / Banking / Property / Energy / Consumer) untuk mempersempit pencarian.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> — sistem evaluasi ratusan saham IDX berdasarkan: <span class="hi">ROE ≥15%</span>, <span class="ok">DER ≤1.5×</span>, <span class="yl">Net Margin ≥10%</span>, Current Ratio ≥1.5, <span class="hi">PBV ≤3×</span>, EPS positif.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Urutkan hasil dengan <b>"Sort By"</b>: ROE Tertinggi / DER Terendah / Net Margin / PBV.</div></div>
+<div class="step"><div class="snum">5</div><div class="stext">Pilih saham → klik <b>"Analisa AI"</b> untuk ringkasan fundamental lengkap dari AI.</div></div>
+</div>
+<div class="warn">⚠️ Screener berbasis fundamental historis. Kombinasikan dengan analisa teknikal sebelum keputusan entry.</div>
+</div>
+
+<div class="feat blue">
+<div class="feat-title">💬 Chat Lanjutan setelah Analisa</div>
+<div class="stext">Setelah analisa di-generate, ketik pertanyaan lanjutan. Contoh efektif:</div>
 <div class="steps" style="margin-top:10px;">
-<div class="step"><div class="snum">→</div><div class="stext"><span class="hi">"Apakah ROE BBRI wajar dibanding sektor?"</span></div></div>
+<div class="step"><div class="snum">→</div><div class="stext"><span class="hi">"Apakah ROE BBRI wajar dibanding sektor perbankan?"</span></div></div>
 <div class="step"><div class="snum">→</div><div class="stext"><span class="ok">"Apa risiko utama jika entry di area BUY ZONE ini?"</span></div></div>
-<div class="step"><div class="snum">→</div><div class="stext"><span class="yl">"Bandingkan valuasi TLKM vs EXCL dari sisi PBV dan ROE."</span></div></div>
+<div class="step"><div class="snum">→</div><div class="stext"><span class="yl">"Ubah menjadi trade plan konservatif dengan SL lebih ketat."</span></div></div>
 </div>
 </div>
 
 </div></body></html>"""
-            components.html(_guide_html_4, height=2400, scrolling=True)
+            components.html(_guide_html_4, height=4200, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
         # PANDUAN 5 — AI REKOMENDASI
