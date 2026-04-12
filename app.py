@@ -5510,7 +5510,7 @@ if current_view == "dashboard":
     ])
 
     with tab_macro:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         @st.cache_data(ttl=300)
         def get_market_data(ticker_dict):
@@ -5547,36 +5547,200 @@ if current_view == "dashboard":
         with st.spinner("Mendeteksi denyut pasar global..."):
             idx_data = get_market_data(indices_tickers)
             com_data = get_market_data(commodities_tickers)
-        
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>GLOBAL INDICES &amp; VOLATILITY</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        if idx_data:
-            items_idx = list(idx_data.items())
-            chunk_size = 3
-            for row_start in range(0, len(items_idx), chunk_size):
-                row_items = items_idx[row_start:row_start+chunk_size]
-                cols = st.columns(len(row_items))
-                for j, (name, info) in enumerate(row_items):
-                    with cols[j]:
-                        st.metric(label=name, value=f"{info['price']:,.2f}", delta=f"{info['pct']:.2f}%")
-        else:
-            st.warning("&#9888; Gagal menarik data indeks.")
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>COMMODITIES &amp; FOREX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        if com_data:
-            items_com = list(com_data.items())
-            chunk_size = 4
-            for row_start in range(0, len(items_com), chunk_size):
-                row_items = items_com[row_start:row_start+chunk_size]
-                cols = st.columns(len(row_items))
-                for j, (name, info) in enumerate(row_items):
-                    with cols[j]:
-                        if name == "USD/IDR": price_str = f"Rp {info['price']:,.0f}"
-                        elif info['price'] == 0: price_str = "N/A"
-                        else: price_str = f"${info['price']:,.2f}"
-                        delta_str = f"{info['pct']:.2f}%" if info['price'] != 0 else "0.00%"
-                        st.metric(label=name, value=price_str, delta=delta_str)
-        else:
-            st.warning("&#9888; Gagal menarik data komoditas.")
+        import json as _mkt_json
+
+        # ── Shared table CSS (same style as Corporate Action) ───────────────
+        st.markdown(f"""<style>
+        .mkt-wrap {{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;}}
+        .mkt-hdr {{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
+        .mkt-hdr-badge {{font-size:0.55rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
+        .mkt-scroll {{width:100%;overflow-x:auto;overflow-y:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+        .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
+        .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+        table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
+        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.64rem;white-space:nowrap;}}
+        table.mkt-tbl tbody td {{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
+        table.mkt-tbl tbody tr:last-child td {{border-bottom:none;}}
+        table.mkt-tbl tbody tr:hover td {{background:rgba(245,194,66,0.04);}}
+        .mkt-name {{font-weight:600;font-size:0.73rem;}}
+        .mkt-price {{font-size:0.78rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+        .mkt-up {{color:#089981;}}
+        .mkt-dn {{color:#f23645;}}
+        .mkt-na {{color:{text_sub};}}
+        .mkt-chg-badge {{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.64rem;font-weight:700;}}
+        @media(max-width:600px){{
+            table.mkt-tbl thead th {{font-size:0.58rem;padding:7px 8px;}}
+            table.mkt-tbl tbody td {{font-size:0.65rem;padding:7px 8px;}}
+        }}
+        </style>""", unsafe_allow_html=True)
+
+        # ── Build indices table rows ────────────────────────────────────────
+        _idx_rows = []
+        _idx_labels = {
+            "IHSG": ("🇮🇩", "IDR"), "VIX": ("📊", "pts"), "S&P 500": ("🇺🇸", "USD"),
+            "Dow Jones": ("🇺🇸", "USD"), "Nasdaq": ("🇺🇸", "USD"), "FTSE": ("🇬🇧", "GBP"),
+            "Nikkei": ("🇯🇵", "JPY"), "Hang Seng": ("🇭🇰", "HKD"), "Shanghai": ("🇨🇳", "CNY"),
+        }
+        for name, info in idx_data.items():
+            flag, ccy = _idx_labels.get(name, ("🌐", ""))
+            px = info['price']
+            pct = info['pct']
+            if px == 0:
+                px_str = "N/A"
+                pct_str = "—"
+                cls = "mkt-na"
+                arrow = ""
+            else:
+                px_str = f"{px:,.2f}"
+                pct_str = f"{abs(pct):.2f}%"
+                cls = "mkt-up" if pct >= 0 else "mkt-dn"
+                arrow = "▲" if pct >= 0 else "▼"
+            bg = "rgba(8,153,129,0.12)" if (pct >= 0 and px > 0) else ("rgba(242,54,69,0.10)" if px > 0 else "rgba(178,181,190,0.06)")
+            bdr = "#089981" if (pct >= 0 and px > 0) else ("#f23645" if px > 0 else "#b2b5be")
+            _idx_rows.append({
+                "flag": flag, "name": name, "ccy": ccy,
+                "price": px_str, "pct": pct_str, "arrow": arrow,
+                "cls": cls, "bg": bg, "bdr": bdr
+            })
+        _idx_json = _mkt_json.dumps(_idx_rows)
+
+        # ── Build commodities table rows ────────────────────────────────────
+        _com_rows = []
+        _com_labels = {
+            "USD/IDR": ("💱", "Rp"), "DXY": ("💵", "pts"), "Gold (oz)": ("🥇", "USD"),
+            "WTI Crude": ("🛢️", "USD"), "Brent Crude": ("🛢️", "USD"),
+            "Newcastle Coal": ("⚫", "USD"), "Palm Oil": ("🌴", "MYR"), "Nickel": ("🔩", "USD"),
+        }
+        for name, info in com_data.items():
+            icon, ccy = _com_labels.get(name, ("📦", ""))
+            px = info['price']
+            pct = info['pct']
+            if px == 0:
+                px_str = "N/A"
+                pct_str = "—"
+                cls = "mkt-na"
+                arrow = ""
+            else:
+                if name == "USD/IDR":
+                    px_str = f"Rp {px:,.0f}"
+                else:
+                    px_str = f"${px:,.2f}"
+                pct_str = f"{abs(pct):.2f}%"
+                cls = "mkt-up" if pct >= 0 else "mkt-dn"
+                arrow = "▲" if pct >= 0 else "▼"
+            bg = "rgba(8,153,129,0.12)" if (pct >= 0 and px > 0) else ("rgba(242,54,69,0.10)" if px > 0 else "rgba(178,181,190,0.06)")
+            bdr = "#089981" if (pct >= 0 and px > 0) else ("#f23645" if px > 0 else "#b2b5be")
+            _com_rows.append({
+                "icon": icon, "name": name, "ccy": ccy,
+                "price": px_str, "pct": pct_str, "arrow": arrow,
+                "cls": cls, "bg": bg, "bdr": bdr
+            })
+        _com_json = _mkt_json.dumps(_com_rows)
+
+        _now_wib_str = datetime.now().strftime("%d %b %Y · %H:%M WIB")
+        _is_dk = "true" if is_dark else "false"
+
+        # ── Render both tables via components.html ─────────────────────────
+        components.html(f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
+.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;}}
+.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
+.mkt-badge{{font-size:0.55rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
+.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:visible;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
+.mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
+thead th{{background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.64rem;white-space:nowrap;}}
+tbody td{{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
+.nm{{font-weight:600;font-size:0.73rem;color:{text_main};}}
+.flag{{margin-right:5px;}}
+.price{{font-size:0.78rem;font-weight:700;}}
+.badge{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.64rem;font-weight:700;}}
+.ccy{{font-size:0.58rem;color:{text_sub};margin-left:4px;}}
+@media(max-width:600px){{
+  .mkt-hdr{{font-size:0.62rem;padding:8px 10px;letter-spacing:0.08em;}}
+  thead th{{font-size:0.58rem;padding:7px 8px;}}
+  tbody td{{font-size:0.65rem;padding:7px 8px;}}
+  .badge{{font-size:0.58rem;padding:2px 5px;}}
+}}
+</style></head><body>
+
+<div class="mkt-wrap" id="idx-wrap">
+  <div class="mkt-hdr">
+    <span>📈 GLOBAL INDICES &amp; VOLATILITY</span>
+    <span class="mkt-badge" id="idx-ts">{_now_wib_str}</span>
+  </div>
+  <div class="mkt-scroll">
+    <table><thead><tr>
+      <th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>MATA UANG</th>
+    </tr></thead>
+    <tbody id="idx-tb"></tbody></table>
+  </div>
+</div>
+
+<div class="mkt-wrap" id="com-wrap">
+  <div class="mkt-hdr">
+    <span>💱 COMMODITIES &amp; FOREX</span>
+    <span class="mkt-badge" id="com-ts">{_now_wib_str}</span>
+  </div>
+  <div class="mkt-scroll">
+    <table><thead><tr>
+      <th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
+    </tr></thead>
+    <tbody id="com-tb"></tbody></table>
+  </div>
+</div>
+
+<script>
+(function(){{
+  var IDX={_idx_json};
+  var COM={_com_json};
+
+  function buildRows(data, tbId, nameKey, flagKey){{
+    var h='';
+    data.forEach(function(r){{
+      var up = r.cls === 'mkt-up';
+      var na = r.cls === 'mkt-na';
+      var clr = na ? '{text_sub}' : (up ? '#089981' : '#f23645');
+      var bg  = na ? 'rgba(178,181,190,0.06)' : (up ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.10)');
+      var bdr = na ? '#b2b5be' : (up ? '#089981' : '#f23645');
+      var arrow = na ? '' : (up ? '▲' : '▼');
+      var pct = na ? '—' : (arrow + ' ' + r.pct);
+      var fl = r[flagKey] || '';
+      h += '<tr>'+
+        '<td><span class="flag">'+fl+'</span><span class="nm">'+r.name+'</span></td>'+
+        '<td><span class="price" style="color:'+clr+'">'+r.price+'</span></td>'+
+        '<td><span class="badge" style="background:'+bg+';color:'+clr+';border:1px solid '+bdr+'44;">'+pct+'</span></td>'+
+        '<td><span class="ccy">'+r.ccy+'</span></td>'+
+        '</tr>';
+    }});
+    document.getElementById(tbId).innerHTML = h;
+  }}
+
+  buildRows(IDX, 'idx-tb', 'name', 'flag');
+  buildRows(COM, 'com-tb', 'name', 'icon');
+
+  // Auto-refresh timestamp
+  function updateTs(){{
+    var now = new Date();
+    var wib = new Date(now.getTime() + (7*60*60*1000));
+    var d = wib.toISOString();
+    var parts = d.split('T');
+    var date = parts[0].split('-');
+    var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    var str = date[2]+' '+months[parseInt(date[1])-1]+' '+date[0]+' · '+parts[1].substring(0,5)+' WIB';
+    var e1=document.getElementById('idx-ts'); if(e1) e1.textContent=str;
+    var e2=document.getElementById('com-ts'); if(e2) e2.textContent=str;
+  }}
+  setInterval(updateTs, 60000);
+}})();
+</script></body></html>""", height=620, scrolling=False)
 
         # ─────────────────────────────────────────────────────────
         # NEW FEATURE: MARKET BRIEF (DAILY/WEEKLY)
@@ -5612,7 +5776,7 @@ if current_view == "dashboard":
         with mb_col2:
             req_weekly = st.button("🗓️ WEEKLY REVIEW (7 Hari)", use_container_width=True, key="btn_mb_weekly")
 
-                if req_daily or req_weekly:
+        if req_daily or req_weekly:
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
             with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
@@ -5944,9 +6108,9 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         # ─────────────────────────────────────────────────────────
 
         # ---------------------------------------------------------
-        # LIVE MARKET PULSE & NEWS  (moved up — before MAKRO)
+        # LIVE MARKET NEWS
         # ---------------------------------------------------------
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET PULSE & NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         st.markdown(f"""
         <style>
