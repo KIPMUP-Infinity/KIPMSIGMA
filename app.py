@@ -2159,6 +2159,14 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 GROQ_SYSTEM_PROMPT = """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by MarketnMocha (MnM).
 Bahasa: Indonesia natural. Ramah saat ngobrol, profesional saat analisa. Selalu akhiri analisa dengan DYOR.
 
+=== DISIPLIN ABSOLUT — BACA SEBELUM APAPUN ===
+• SIGMA WAJIB mengikuti template yang ditetapkan — TIDAK BOLEH improvisasi atau mengubah struktur section.
+• Jika tidak tahu data → tulis "(est.)" atau "N/A", jangan skip section dan jangan karang angka.
+• Konsistensi format LEBIH PENTING dari variasi gaya penulisan.
+• Kalau ada konflik antara instruksi umum dan template yang dikirim sistem → IKUTI TEMPLATE.
+• JANGAN merespons di luar topik saat template aktif. Selesaikan template dulu, baru jawab pertanyaan lain.
+• Satu request = satu output lengkap. Jangan potong di tengah. Jangan minta konfirmasi sebelum output.
+
 === ATURAN WAJIB ===
 1. PASAR IDX = LONG ONLY. SL selalu di bawah entry, TP selalu di atas entry. Bias BEARISH = WAIT, bukan short.
 2. CONFLUENCE: IFVG > FVG > OB > Supply/Demand > EMA. Sebutkan semua komponen yang bertumpuk.
@@ -2606,6 +2614,33 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+
+/* ── USER BUBBLE — Gemini style ── */
+[data-testid="stChatMessage"][class*="user"] {{
+    display: flex !important;
+    justify-content: flex-end !important;
+}}
+[data-testid="stChatMessage"][class*="user"] [data-testid="stChatMessageContent"] {{
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+}}
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] {{
+    background: {C['bubble']} !important;
+    color: {C['bubble_text']} !important;
+    border-radius: 20px 20px 4px 20px !important;
+    padding: 10px 16px !important;
+    max-width: 75% !important;
+    margin-left: auto !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}}
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] span,
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] strong {{
+    color: {C['bubble_text']} !important;
+    font-size: 0.9rem !important;
+}}
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
 div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
@@ -3370,6 +3405,33 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+
+/* ── USER BUBBLE — Gemini style ── */
+[data-testid="stChatMessage"][class*="user"] {{
+    display: flex !important;
+    justify-content: flex-end !important;
+}}
+[data-testid="stChatMessage"][class*="user"] [data-testid="stChatMessageContent"] {{
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+}}
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] {{
+    background: {C['bubble']} !important;
+    color: {C['bubble_text']} !important;
+    border-radius: 20px 20px 4px 20px !important;
+    padding: 10px 16px !important;
+    max-width: 75% !important;
+    margin-left: auto !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}}
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] span,
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] li,
+[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] strong {{
+    color: {C['bubble_text']} !important;
+    font-size: 0.9rem !important;
+}}
 [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
 [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
 div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
@@ -3399,6 +3461,13 @@ hr {{ border-color: {C['border']} !important; }}
     [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
     [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
     .navy-pill {{ max-width: 82% !important; font-size: 1rem !important; line-height: 1.7 !important; padding: 12px 16px !important; }}
+    /* User bubble mobile */
+    [data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] {{
+        max-width: 88% !important;
+        padding: 9px 13px !important;
+        border-radius: 16px 16px 3px 16px !important;
+        font-size: 1rem !important;
+    }}
 }}
 </style>
 """, unsafe_allow_html=True)
