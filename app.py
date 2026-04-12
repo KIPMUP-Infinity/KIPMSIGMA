@@ -9870,7 +9870,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             _sh_ctx = f"Data pemegang saham tidak dapat diambil saat ini."
 
                         dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
-Buat analisa komprehensif untuk saham {ticker_input} dengan STRUKTUR WAJIB berikut (urutan tidak boleh diubah):
+Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA.
 
 === DATA HARGA & TEKNIKAL ===
 Harga Terakhir: {live_price_str}
@@ -9883,20 +9883,37 @@ Harga Terakhir: {live_price_str}
 {_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
 
 ────────────────────────────────────────────────
+ATURAN UTAMA — WAJIB DIPATUHI:
+────────────────────────────────────────────────
+
+⚠️ PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
+Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
+- LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
+- WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
+- HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
+
+⛔ ATURAN TRADE PLAN:
+- Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
+- Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
+- Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
+- IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
+
+────────────────────────────────────────────────
 STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
 ────────────────────────────────────────────────
 
 1. 📊 NARASI TEKNIKAL
-   - Posisi harga saat ini vs struktur support/resistance utama (bukan angka random, harus dari struktur chart)
+   - Posisi harga saat ini vs struktur support/resistance utama
    - Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
    - Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
    - Volume: konfirmasi atau divergensi dari price action?
    - EMA: posisi harga vs EMA 13/21/100/200 → arah trend
+   - JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
 
 2. 🏢 NARASI FUNDAMENTAL
-   - Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE)
-   - Kinerja keuangan (EPS, margin, pertumbuhan revenue)
-   - Katalis positif/negatif ke depan
+   - Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) — jujur jika overvalued
+   - Kinerja keuangan (EPS, margin, pertumbuhan revenue) — sebutkan jika memburuk
+   - Katalis positif/negatif ke depan — jangan sembunyikan risiko
    - Posisi vs kompetitor sektor
 
 3. 👥 SINYAL PEMEGANG SAHAM
@@ -9906,20 +9923,26 @@ STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
 4. 📰 OUTLOOK SEKTOR & MAKRO
    - Kondisi sektor saat ini
    - Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
-   - Risiko utama
+   - Risiko utama — JANGAN diremehkan
 
-5. ⚡ KESIMPULAN & BIAS
+5. ⚡ KESIMPULAN & VERDICT (JUJUR & TEGAS)
    - Bias tunggal: BULLISH / BEARISH / SIDEWAYS — satu pilihan, jelaskan alasan utama
-   - Level kunci yang wajib diperhatikan trader
+   - Rating: BELI / WASPADA / HINDARI
+   - Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini — sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
+   - Level kunci yang wajib diperhatikan
 
-6. 🎯 TRADE PLAN (WAJIB ADA, berbasis struktur teknikal murni — BUKAN berdasarkan ratio 1:2 atau RR apapun)
+6. 🎯 TRADE PLAN
+   ⚠️ HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
+   ⛔ JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
+      "⛔ TRADE PLAN TIDAK TERSEDIA — [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
+   
+   Jika LAYAK:
    - Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
-   - Stop Loss: Rp[Z] → wajib di BAWAH support struktural terdekat, BUKAN hanya beberapa tick di bawah entry. SL harus berdasarkan INVALIDASI STRUKTUR (di bawah swing low, di bawah demand zone, di bawah OB). Minimal jarak SL = 1.5× ATR dari batas bawah entry zone.
-   - TP1: Rp[A] → resistance minor / FVG terdekat / zona distribusi pertama
-   - TP2: Rp[B] → WAJIB ADA jika ada resistance mayor / swing high / OB bearish di atas TP1. Tulis "TP2 belum teridentifikasi" HANYA jika benar-benar tidak ada struktur apapun di atas TP1.
+   - Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
+   - TP1: Rp[A] → resistance minor / FVG terdekat
+   - TP2: Rp[B] → resistance mayor jika ada struktur
    - Timeframe: perkiraan berapa hari/minggu
-   - Trigger masuk: kondisi spesifik yang harus terpenuhi sebelum entry (candle close, volume konfirmasi, dll)
-   - Catatan: IDX = LONG ONLY. Bias BEARISH = WAIT / tidak ada posisi. Jangan paksakan trade.
+   - Trigger masuk: kondisi spesifik sebelum entry
 
 Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
 
@@ -9927,7 +9950,8 @@ Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
 ```json
 {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null}}
 ```
-WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WAJIB di bawah entry_low. tp1 WAJIB di atas entry_high. tp2 WAJIB diisi angka nyata jika ada struktur (bukan null). Semua angka harus mendekati harga saat ini ({live_price_str}). Jangan isi 0 kecuali benar-benar tidak ada nilainya."""
+PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) — JANGAN gambar trade plan di chart.
+Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str})."""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
@@ -10080,13 +10104,12 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                     x_all   = x_str + pad_str
                     n_total = len(x_all)
 
-                    # ── Figure 5 rows: Price / Raw Vol / Buy-Sell Delta / RSI / MACD ──
+                    # ── Figure 4 rows: Price / Volume / RSI / MACD ────────
                     fig = make_subplots(
-                        rows=5, cols=1,
+                        rows=4, cols=1,
                         shared_xaxes=True,
-                        row_heights=[0.48, 0.13, 0.13, 0.13, 0.13],
-                        vertical_spacing=0.010,
-                        row_titles=['', 'VOL', 'DELTA', 'RSI', 'MACD'],
+                        row_heights=[0.52, 0.16, 0.16, 0.16],
+                        vertical_spacing=0.012,
                     )
 
                     # ── Candlestick ───────────────────────────────────────
@@ -10204,29 +10227,7 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                         except Exception as e:
                             st.warning(f"AI gagal menggambar Trade Plan: {e}")
 
-                    # ── ROW 2: Raw Volume — warna hijau/merah sesuai candle ──────
-                    raw_vol_colors = [
-                        'rgba(8,153,129,0.80)' if c >= o else 'rgba(242,54,69,0.75)'
-                        for c, o in zip(df_chart['Close'], df_chart['Open'])
-                    ]
-                    fig.add_trace(go.Bar(
-                        x=x_str,
-                        y=df_chart['Volume'],
-                        marker_color=raw_vol_colors,
-                        name='Volume', showlegend=False,
-                        hovertemplate='<b>%{x}</b><br>Volume: %{y:,.0f}<extra></extra>',
-                    ), row=2, col=1)
-                    # MA Volume 20 — garis referensi rata-rata
-                    vol_ma20 = df_chart['Volume'].rolling(20, min_periods=1).mean()
-                    fig.add_trace(go.Scatter(
-                        x=x_str, y=vol_ma20,
-                        mode='lines',
-                        line=dict(color='rgba(245,194,66,0.7)', width=1.0, dash='dot'),
-                        name='Vol MA20', showlegend=False,
-                        hovertemplate='MA20: %{y:,.0f}<extra></extra>',
-                    ), row=2, col=1)
-
-                    # ── ROW 3: Buy/Sell Power Delta ───────────────────────────
+                    # ── Volume (split buy/sell power) ─────────────────────
                     hl_range = (df_chart['High'] - df_chart['Low']).replace(0, 1)
                     buy_vol  = (df_chart['Volume'] * (df_chart['Close'] - df_chart['Low'])  / hl_range).clip(lower=0)
                     sell_vol = (df_chart['Volume'] * (df_chart['High']  - df_chart['Close']) / hl_range).clip(lower=0)
@@ -10235,25 +10236,25 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                         x=x_str, y=sell_vol,
                         marker_color='rgba(242,54,69,0.75)',
                         name='Sell Power', showlegend=False,
-                    ), row=3, col=1)
+                    ), row=2, col=1)
                     fig.add_trace(go.Bar(
                         x=x_str, y=buy_vol,
                         marker_color='rgba(8,153,129,0.85)',
                         name='Buy Power', showlegend=False,
-                    ), row=3, col=1)
+                    ), row=2, col=1)
 
                     # ── RSI (level 70/30) ──────────────────────────────────
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['RSI'],
                         mode='lines', line=dict(color='#F5C242', width=1.2),
                         showlegend=False,
-                    ), row=4, col=1)
+                    ), row=3, col=1)
                     for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
                         fig.add_trace(go.Scatter(
                             x=[x_str[0], x_str[-1]], y=[lvl, lvl],
                             mode='lines', line=dict(color=clr, width=1, dash='dot'),
                             showlegend=False,
-                        ), row=4, col=1)
+                        ), row=3, col=1)
 
                     # ── MACD ──────────────────────────────────────────────
                     macd_hist_clr = [inc_color if v >= 0 else dec_color
@@ -10261,22 +10262,22 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                     fig.add_trace(go.Bar(
                         x=x_str, y=df_chart['MACD_hist'],
                         marker_color=macd_hist_clr, showlegend=False,
-                    ), row=5, col=1)
+                    ), row=4, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD'],
                         mode='lines', line=dict(color='#2196f3', width=1.2),
                         showlegend=False,
-                    ), row=5, col=1)
+                    ), row=4, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD_signal'],
                         mode='lines', line=dict(color='#ff5252', width=1.2),
                         showlegend=False,
-                    ), row=5, col=1)
+                    ), row=4, col=1)
                     fig.add_trace(go.Scatter(
                         x=[x_str[0], x_str[-1]], y=[0, 0],
                         mode='lines', line=dict(color=tv_border, width=1),
                         showlegend=False,
-                    ), row=5, col=1)
+                    ), row=4, col=1)
 
                     # ── Tick labels: ambil ~8 titik merata ───────────────
                     step     = max(1, n_bars // 8)
@@ -10315,7 +10316,7 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
                         font=dict(color=tv_text_color, size=11),
-                        height=1100,
+                        height=980,
                         showlegend=False,
                         barmode="stack",
                         margin=dict(l=0, r=120, t=10, b=40),
@@ -10323,13 +10324,11 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                                     range=[-0.5, n_total-0.5], tickvals=tickvals),
                         xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
                         xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                        xaxis5=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
+                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
                         yaxis =dict(**ax_y_plain, title=''),
-                        yaxis2=dict(**ax_y_grid,  title='VOL',   tickformat='.2s'),
-                        yaxis3=dict(**ax_y_grid,  title='DELTA', tickformat='.2s'),
-                        yaxis4=dict(**ax_y_grid,  title='RSI',   range=[0, 100]),
-                        yaxis5=dict(**ax_y_grid,  title='MACD'),
+                        yaxis2=dict(**ax_y_grid,  title='VOL'),
+                        yaxis3=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
+                        yaxis4=dict(**ax_y_grid,  title='MACD'),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
@@ -10715,7 +10714,7 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
         # ─── TAB WEEKLY ───────────────────────────────────────────────────
         with reco_tab_weekly:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI MINGGUAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Swing trade 1-2 minggu — tren, katalis fundamental, dan tren pemegang saham.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Swing trade 1-2 minggu — tren, katalis fundamental, dan tren pemegang saham. Format tabel detail langsung.</p>", unsafe_allow_html=True)
 
             col_w1, col_w2 = st.columns([3, 1])
             with col_w2:
@@ -10742,7 +10741,8 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                         bear_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg5d={d['chg5d']:+.2f}% | BearScore={d['bearish_score']}/4"
                                       for tk, d in bear_swing]
                         market_snap = "\n".join(lines)
-                        prompt = f"""Kamu adalah SIGMA AI, analis swing trading saham Indonesia.
+
+                        prompt = f"""Kamu adalah SIGMA AI, analis swing trading saham Indonesia profesional.
 Universe screening: {len(price_data)} saham IDX.
 
 === KANDIDAT SWING BULLISH (Top dari universe) ===
@@ -10755,34 +10755,45 @@ Universe screening: {len(price_data)} saham IDX.
 {sh_summary}
 
 === TUGAS ===
-Pilih:
-- TOP 3-5 saham terbaik untuk SWING TRADE 1-2 minggu
-- TOP 3 saham HINDARI minggu ini
+Pilih TOP 5-8 saham terbaik untuk SWING TRADE mingguan + TOP 3 saham HINDARI.
 
-Format output WAJIB — bagian BULLISH dengan 🎯, bagian HINDARI dengan ⚠️:
+PENTING: Jawab HANYA dalam format JSON di bawah ini. JANGAN tambahkan teks narasi apapun di luar JSON.
+Semua field harus diisi. Gunakan angka nyata berdasarkan data di atas.
 
-=== 🎯 SWING TRADE MINGGU INI ===
+Isi field berikut:
+- ticker: kode saham (4 huruf)
+- name: nama singkat perusahaan (max 30 karakter)
+- price: harga saat ini dalam Rupiah (integer)
+- ta_score: Technical Analysis score 0-100 (berdasarkan BullScore, EMA, volume spike, chg5d)
+- fa_score: Fundamental Analysis score 0-100 (estimasi berdasarkan sektor, valuasi, posisi)
+- combined: rata-rata weighted (TA 60% + FA 40%), bulatkan ke 1 desimal
+- wyckoff: fase Wyckoff estimasi ("Accumulation", "Markup", "Distribution", "Markdown", "Re-accumulation")
+- wyckoff_pct: confidence % wyckoff (10-90)
+- rsi: estimasi RSI saat ini (30-70 range normal)
+- macd: sinyal MACD ("Bullish momentum", "Bearish momentum", "Divergence bullish", "Neutral")
+- rel_volume: rasio volume vs rata-rata (format "0.8x", "1.5x", "2.3x" dll)
+- pe: estimasi P/E ratio (float, atau null jika tidak diketahui)
+- rating: "BUY", "HOLD", atau "AVOID"
+- tp1: target harga 1 (integer, dalam Rupiah)
+- tp2: target harga 2 (integer, dalam Rupiah, atau null)
+- sl: stop loss (integer, dalam Rupiah)
+- horizon: "1-2 minggu" atau "2-4 minggu"
 
-🎯 [TICKER] — Rp[Harga]
-📊 Teknikal: [tren EMA, support/resistance, pola, momentum, chg5d]
-🏢 Fundamental: [valuasi estimasi, katalis, posisi sektor]
-👥 Pemegang Saham: [naik/turun berapa, tren 3 bulan, implikasi]
-📈 Skenario: Entry Rp[harga] | SL Rp[harga] | TP1 Rp[harga] | TP2 Rp[harga]
-📐 R/R: [rasio] | Horizon: [X minggu] | Sizing maks: [% portofolio]
+Format JSON yang WAJIB dikembalikan (TIDAK BOLEH ada teks di luar ini):
+{{
+  "weekly": [
+    {{"ticker": "XXXX", "name": "Nama Perusahaan", "price": 0, "ta_score": 0, "fa_score": 0, "combined": 0.0, "wyckoff": "Accumulation", "wyckoff_pct": 40, "rsi": 50.0, "macd": "Bullish momentum", "rel_volume": "1.0x", "pe": null, "rating": "BUY", "tp1": 0, "tp2": null, "sl": 0, "horizon": "1-2 minggu"}},
+    ...lebih banyak saham...
+  ],
+  "avoid": [
+    {{"ticker": "YYYY", "name": "Nama Perusahaan", "price": 0, "ta_score": 0, "fa_score": 0, "combined": 0.0, "rating": "AVOID", "reason": "Alasan singkat kenapa dihindari (max 80 karakter)"}},
+    ...
+  ],
+  "outlook": "Outlook pasar minggu ini dalam 1-2 kalimat singkat."
+}}"""
 
-(kosongkan 1 baris sebelum saham berikutnya)
-
-=== ⚠️ SAHAM HINDARI MINGGU INI ===
-
-⚠️ [TICKER] — Rp[Harga]
-❌ Alasan: [tren bearish, distribusi, sinyal teknikal negatif]
-
-(kosongkan 1 baris sebelum saham berikutnya)
-
-Outlook pasar minggu ini: [2-3 kalimat]
-Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _weekly_result = _call_ai_reco(prompt)
-                        st.session_state["reco_weekly_result"] = _weekly_result
+                        _weekly_raw = _call_ai_reco(prompt)
+                        st.session_state["reco_weekly_result"] = _weekly_raw
                         st.session_state["reco_weekly_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
@@ -10791,12 +10802,242 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
                 _ts = st.session_state.get("reco_weekly_ts", "")
                 if _ts:
                     st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_weekly_result"], "#26a69a")
+
+                # Parse JSON result dan render tabel
+                import re as _re_w, json as _json_w
+                _raw = st.session_state["reco_weekly_result"]
+                _weekly_data = None
+                try:
+                    # Coba parse JSON langsung
+                    _json_match = _re_w.search(r'\{[\s\S]*\}', _raw)
+                    if _json_match:
+                        _weekly_data = _json_w.loads(_json_match.group(0))
+                except:
+                    pass
+
+                if _weekly_data and _weekly_data.get("weekly"):
+                    _wrows = _weekly_data["weekly"]
+                    _arows = _weekly_data.get("avoid", [])
+                    _outlook = _weekly_data.get("outlook", "")
+
+                    # === RENDER SUMMARY TABLE (like the image) ===
+                    _table_bg   = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
+                    _hdr_bg     = "rgba(245,194,66,0.08)" if is_dark else "#f8fafc"
+                    _border_c   = "rgba(245,194,66,0.15)" if is_dark else "#e2e8f0"
+                    _txt        = text_main
+                    _sub        = text_sub
+
+                    # Build table rows JSON
+                    import json as _jw2
+                    _rows_json = _jw2.dumps(_wrows, ensure_ascii=False)
+                    _avoid_json = _jw2.dumps(_arows, ensure_ascii=False)
+
+                    _weekly_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;}}
+.section-lbl{{font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:#F5C242;font-weight:700;margin:0 0 8px;display:block;}}
+.card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:16px;}}
+.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
+.scroll::-webkit-scrollbar{{height:4px;}}
+.scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
+table{{width:100%;border-collapse:collapse;min-width:780px;}}
+thead th{{background:{_hdr_bg};color:#F5C242;padding:10px 12px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{_txt};}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(245,194,66,0.03);}}
+.tk{{font-weight:700;font-size:0.85rem;color:#F5C242;}}
+.nm{{font-size:0.72rem;color:{_sub};max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
+.pr{{font-weight:600;font-size:0.82rem;}}
+.score-green{{color:#089981;font-weight:700;}}
+.score-yellow{{color:#F5C242;font-weight:700;}}
+.score-red{{color:#f23645;font-weight:700;}}
+.badge{{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;}}
+.badge-buy{{background:rgba(8,153,129,0.15);color:#089981;border:1px solid #089981;}}
+.badge-hold{{background:rgba(245,194,66,0.12);color:#F5C242;border:1px solid #F5C242;}}
+.badge-avoid{{background:rgba(242,54,69,0.12);color:#f23645;border:1px solid #f23645;}}
+.sub-txt{{font-size:0.68rem;color:{_sub};}}
+.outlook-box{{background:rgba(245,194,66,0.05);border:1px solid rgba(245,194,66,0.15);border-left:3px solid #F5C242;border-radius:0 8px 8px 0;padding:12px 16px;font-size:0.78rem;color:{_txt};line-height:1.7;margin-bottom:12px;}}
+@media(max-width:640px){{
+  thead th{{font-size:0.52rem;padding:7px 8px;}}
+  tbody td{{font-size:0.72rem;padding:7px 8px;}}
+  .tk{{font-size:0.78rem;}}
+  .nm{{max-width:90px;}}
+}}
+</style></head><body>
+
+<span class="section-lbl">📊 SUMMARY — WEEKLY PICK</span>
+<div class="card">
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>NAME</th>
+          <th>PRICE</th>
+          <th>TA SCORE</th>
+          <th>FA SCORE</th>
+          <th>COMBINED</th>
+          <th>RSI</th>
+          <th>MACD</th>
+          <th>REL VOLUME</th>
+          <th>WYCKOFF</th>
+          <th>P/E</th>
+          <th>RATING</th>
+        </tr>
+      </thead>
+      <tbody id="main-tb"></tbody>
+    </table>
+  </div>
+</div>
+
+<span class="section-lbl" style="margin-top:4px;">📈 DETAIL TRADE PLAN</span>
+<div class="card">
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>PRICE</th>
+          <th>TP1</th>
+          <th>TP2</th>
+          <th>SL</th>
+          <th>UPSIDE TP1</th>
+          <th>HORIZON</th>
+          <th>RATING</th>
+        </tr>
+      </thead>
+      <tbody id="plan-tb"></tbody>
+    </table>
+  </div>
+</div>
+
+<span class="section-lbl" style="margin-top:4px;">⛔ HINDARI MINGGU INI</span>
+<div class="card">
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>NAME</th>
+          <th>PRICE</th>
+          <th>TA SCORE</th>
+          <th>FA SCORE</th>
+          <th>COMBINED</th>
+          <th>RATING</th>
+          <th>ALASAN</th>
+        </tr>
+      </thead>
+      <tbody id="avoid-tb"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="outlook-box" id="outlook-box"></div>
+
+<script>
+(function(){{
+  var ROWS = {_rows_json};
+  var AVOID = {_avoid_json};
+  var OUTLOOK = {_jw2.dumps(_outlook, ensure_ascii=False)};
+
+  function scoreColor(v) {{
+    if (v >= 60) return 'score-green';
+    if (v >= 35) return 'score-yellow';
+    return 'score-red';
+  }}
+  function badge(r) {{
+    if (!r) return '';
+    var cls = r==='BUY'?'badge-buy':r==='HOLD'?'badge-hold':'badge-avoid';
+    return '<span class="badge '+cls+'">'+r+'</span>';
+  }}
+  function fmt(n) {{ return n ? 'Rp ' + parseInt(n).toLocaleString('id-ID') : '—'; }}
+  function upside(price, tp) {{
+    if (!price || !tp) return '—';
+    var pct = ((tp - price) / price * 100).toFixed(1);
+    var clr = pct >= 0 ? '#089981' : '#f23645';
+    return '<span style="color:'+clr+';font-weight:600;">+'+ pct +'%</span>';
+  }}
+
+  // Main summary table
+  var h = '';
+  ROWS.forEach(function(r) {{
+    var sc = parseFloat(r.combined) || 0;
+    var wyckoffTxt = r.wyckoff || '—';
+    if (r.wyckoff_pct) wyckoffTxt += ' ('+r.wyckoff_pct+'%)';
+    h += '<tr>'+
+      '<td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td><span class="nm">'+r.name+'</span></td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td><span class="'+scoreColor(r.ta_score)+'">'+r.ta_score+'</span></td>'+
+      '<td><span class="'+scoreColor(r.fa_score)+'">'+r.fa_score+'</span></td>'+
+      '<td><span class="'+scoreColor(sc)+'">'+sc.toFixed(1)+'</span></td>'+
+      '<td class="sub-txt">'+(r.rsi ? parseFloat(r.rsi).toFixed(1) : '—')+'</td>'+
+      '<td class="sub-txt" style="max-width:130px;white-space:normal;">'+(r.macd||'—')+'</td>'+
+      '<td class="sub-txt">'+(r.rel_volume||'—')+'</td>'+
+      '<td class="sub-txt" style="max-width:120px;white-space:normal;">'+wyckoffTxt+'</td>'+
+      '<td class="sub-txt">'+(r.pe ? parseFloat(r.pe).toFixed(1) : '—')+'</td>'+
+      '<td>'+badge(r.rating)+'</td>'+
+      '</tr>';
+  }});
+  document.getElementById('main-tb').innerHTML = h;
+
+  // Trade plan table
+  var h2 = '';
+  ROWS.forEach(function(r) {{
+    h2 += '<tr>'+
+      '<td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td style="color:#089981;font-weight:600;">'+fmt(r.tp1)+'</td>'+
+      '<td class="sub-txt">'+(r.tp2 ? fmt(r.tp2) : '—')+'</td>'+
+      '<td style="color:#f23645;font-weight:600;">'+fmt(r.sl)+'</td>'+
+      '<td>'+upside(r.price, r.tp1)+'</td>'+
+      '<td class="sub-txt">'+(r.horizon||'—')+'</td>'+
+      '<td>'+badge(r.rating)+'</td>'+
+      '</tr>';
+  }});
+  document.getElementById('plan-tb').innerHTML = h2;
+
+  // Avoid table
+  var h3 = '';
+  AVOID.forEach(function(r) {{
+    var sc = parseFloat(r.combined) || 0;
+    h3 += '<tr>'+
+      '<td><span class="tk" style="color:#f23645;">'+r.ticker+'</span></td>'+
+      '<td><span class="nm">'+r.name+'</span></td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td><span class="score-red">'+(r.ta_score||'—')+'</span></td>'+
+      '<td><span class="score-red">'+(r.fa_score||'—')+'</span></td>'+
+      '<td><span class="score-red">'+(sc ? sc.toFixed(1) : '—')+'</span></td>'+
+      '<td>'+badge('AVOID')+'</td>'+
+      '<td class="sub-txt" style="max-width:200px;white-space:normal;color:#f23645;">'+(r.reason||'—')+'</td>'+
+      '</tr>';
+  }});
+  document.getElementById('avoid-tb').innerHTML = h3;
+
+  // Outlook
+  if (OUTLOOK) document.getElementById('outlook-box').innerHTML = '🗓️ <b>Outlook Minggu Ini:</b> ' + OUTLOOK;
+}})();
+</script>
+</body></html>"""
+
+                    # Hitung tinggi yang dibutuhkan
+                    _n_main  = len(_wrows)
+                    _n_avoid = len(_arows)
+                    _total_h = 60 + (_n_main * 42 + 80) + (_n_main * 42 + 80) + (_n_avoid * 42 + 80) + 70
+                    components.html(_weekly_html, height=min(_total_h, 1400), scrolling=True)
+
+                else:
+                    # Fallback: render as-is jika JSON parsing gagal
+                    _render_reco_cards(_raw, "#26a69a")
+
             elif not run_weekly:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Klik <span style='color:#26a69a;'>Generate Weekly</span> untuk top pick swing trade minggu ini</p>
+                        Klik <span style='color:#26a69a;'>Generate Weekly</span> untuk top pick swing trade minggu ini<br>
+                        <span style="opacity:0.5;font-size:0.62rem;">Format tabel detail: TA Score · FA Score · Combined · Wyckoff · MACD · Trade Plan</span></p>
                 </div>""", unsafe_allow_html=True)
 
         # ─── TAB BSJP ─────────────────────────────────────────────────────
