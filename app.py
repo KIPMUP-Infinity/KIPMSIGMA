@@ -8532,6 +8532,41 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         _sh_all_db = get_manual_sh_db_full()
 
         # ════════════════════════════════════════════════════════════════
+        # DAFTAR SAHAM SUSPEND IDX (tidak diperdagangkan > 1 bulan)
+        # Update manual jika BEI mencabut/menambah suspend
+        # ════════════════════════════════════════════════════════════════
+        IDX_SUSPENDED_TICKERS = {
+            # KONSTRUKSI BUMN — restrukturisasi hutang / PKPU
+            "WIKA",  # Wijaya Karya — suspend sejak 2024, PKPU
+            "WSKT",  # Waskita Karya — suspend panjang, restrukturisasi
+            "PPRO",  # PP Properti — suspend
+            "ACST",  # Acset Indonusa — suspend
+            # PENERBANGAN
+            "IATA",  # My Indo Airlines — suspend
+            # PELAYARAN / SHIPPING
+            "BLTA",  # Berlian Laju Tanker — suspend lama
+            "MIRA",  # Mira International — suspend
+            "SAFE",  # Steady Safe — tidak aktif/suspend
+            "KARW",  # Karya Bersama Anugerah — suspend
+            # TEKSTIL & GARMEN
+            "SRIL",  # Sri Rejeki Isman — suspend PKPU
+            "SUGI",  # Sugih Energy — suspend
+            "SULI",  # Sumalindo Lestari — suspend
+            # LAINNYA
+            "TAXI",  # Express Transindo — suspend
+            "CNKO",  # Exploitasi Energi — suspend
+            "PKPK",  # Perdana Karya — suspend
+            "POLY",  # Asia Pacific Fibers — suspend lama
+            "RAAM",  # Rama Agung — suspend
+            "BCIP",  # Bumi Citra — suspend
+            "BPII",  # Batavia Prosperindo — suspend
+            "LAPD",  # Leyand International — suspend
+            "DERA",  # Derajat Prima — suspend
+            "BSML",  # Bintang Sarana — suspend
+            "APOL",  # Arpeni Pratama — suspend lama
+        }
+
+        # ════════════════════════════════════════════════════════════════
         # LIVE FETCH PEMEGANG SAHAM — MULTI-SOURCE UNTUK SEMUA SAHAM BEI
         # ════════════════════════════════════════════════════════════════
         @st.cache_data(ttl=3600*6, show_spinner=False)
@@ -8741,6 +8776,24 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         if sh_run or st.session_state.get("sh_last_ticker") == sh_ticker:
             st.session_state["sh_last_ticker"] = sh_ticker
+
+            # ── Cek suspend sebelum proses ──
+            if sh_ticker in IDX_SUSPENDED_TICKERS:
+                st.markdown(f"""
+                <div style='background:#f2364511;border:1px solid #f2364544;border-left:4px solid #f23645;
+                    border-radius:12px;padding:20px 24px;margin:12px 0 20px;'>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:1.0rem;font-weight:700;
+                        letter-spacing:0.1em;color:#f23645;text-transform:uppercase;margin-bottom:8px;'>
+                        ⛔ SAHAM SUSPEND — TIDAK DIPERDAGANGKAN
+                    </div>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;color:{text_sub};line-height:1.8;'>
+                        <b style='color:{text_main};'>{sh_ticker}</b> saat ini dalam status <b style='color:#f23645;'>SUSPEND</b> 
+                        di Bursa Efek Indonesia (tidak diperdagangkan lebih dari 1 bulan).<br>
+                        Data pemegang saham untuk saham suspend tidak relevan karena tidak ada price discovery aktif.<br>
+                        <span style='color:#F5C242;'>Pilih emiten lain yang aktif diperdagangkan.</span>
+                    </div>
+                </div>""", unsafe_allow_html=True)
+                st.stop()
 
             # LANGKAH 1: Database manual SIGMA (data terverifikasi 31 emiten utama)
             sh_data = _sh_all_db.get(sh_ticker, [])
@@ -9154,9 +9207,16 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             for tk, data in extra.items():
                 if tk not in combined:
                     combined[tk] = data
+            # Hapus saham suspend dari hasil akhir
+            try:
+                combined = {k: v for k, v in combined.items() if k not in IDX_SUSPENDED_TICKERS}
+            except NameError:
+                pass
             return combined
 
         _full_screen_db = build_full_screening_db(_sh_all_db)
+        # ── Hapus saham suspend dari screening database ──
+        _full_screen_db = {tk: v for tk, v in _full_screen_db.items() if tk not in IDX_SUSPENDED_TICKERS}
 
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;letter-spacing:0.06em;color:{text_sub};margin-bottom:14px;text-transform:uppercase;'>Deteksi akumulasi &amp; distribusi retail &middot; Naik/Turun 1 bulan &amp; 3 bulan berturut-turut &middot; Data IDX &middot; {len(_full_screen_db)} emiten terpantau</p>", unsafe_allow_html=True)
 
@@ -10003,84 +10063,88 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
     with tab_reco:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>AI REKOMENDASI SIGMA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-        # ── DAFTAR LENGKAP SAHAM IDX — ALL SECTORS (300+ emiten) ──────────
-        # Definisikan SEBELUM dipakai di markdown
+        # ── DAFTAR SAHAM IDX — TOP 500 MARKET CAP, AKTIF DIPERDAGANGKAN ──
+        # Sudah dikurasi: hapus saham suspend >1 bln & micro-speculative tidak relevan
         _WATCHLIST_RECO = [
             # PERBANKAN BESAR & MENENGAH
             "BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BTPN","BDMN","PNBN",
             "NISP","MEGA","BJBR","BJTM","BBYB","ARTO","BANK","AGRO","BACA","BBKP",
-            "BMAS","MCOR","SDRA","MAYA","BGTG","AGRS","DNAR","INPC","NOBU","BSIM",
+            "BMAS","MCOR","SDRA","MAYA","AGRS","DNAR","INPC","NOBU","BSIM",
             # TELKOM & MENARA & INFRASTRUKTUR
-            "TLKM","EXCL","ISAT","FREN","TOWR","TBIG","MTEL","BTEL","LINK","DATA",
+            "TLKM","EXCL","ISAT","FREN","TOWR","TBIG","MTEL","LINK","DATA",
             # ENERGI & BATUBARA
             "ADRO","PTBA","ITMG","HRUM","BUMI","DSSA","GEMS","MBAP","INDY","MYOH",
             "SMMT","UNTR","ESSA","MEDC","PGAS","ELSA","ENRG","RUIS","RAJA","TOBA",
-            "BSSR","FIRE","GTBO","KKGI","PKPK","DEWA","MCOL","BYAN","ARCI","SMRU",
+            "BSSR","FIRE","GTBO","KKGI","DEWA","MCOL","BYAN","ARCI","SMRU",
             # NIKEL, EMAS & MINERAL
             "ANTM","MDKA","INCO","NCKL","BRMS","AMMN","MBMA","DKFT","CITA","HILL",
-            "PSAB","IFSH","ZINC","MITI","CNKO","SMNP",
+            "PSAB","IFSH","ZINC","MITI","SMNP",
             # CPO & AGRIBISNIS
             "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM","TAPG",
             "DSFI","BISI","CPRO","IIKP","MAGP",
             # MATERIAL, SEMEN, KIMIA & BAJA
             "SMGR","INTP","TPIA","BRPT","INKP","TKIM","INAI","KRAS","WSBP","SMBR",
             "ARNA","TOTO","MARK","ETWA","JPRS","LION","LMSH","ALMI","NIKL","TBMS",
-            "AGII","BAJA","CAKK","GDST","ISSP","JKSW","KICI","MLIA","PICO","SPMA",
+            "AGII","BAJA","CAKK","GDST","ISSP","KICI","MLIA","PICO","SPMA",
             # CONSUMER GOODS, FOOD & MINUMAN
             "INDF","ICBP","MYOR","UNVR","GGRM","HMSP","KLBF","SIDO","CPIN","JPFA",
-            "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","BISI","AISA",
-            "CLEO","DLTA","KEJU","PCAR","PMMP","PSDN","SKBM","TBIG","TGKA","WMUU",
-            "ADES","ALTO","BTEK","CEKA","DMND","FAST","IBOS","KINO","MGNA","PANI",
-            # PROPERTI & KONSTRUKSI
+            "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","AISA",
+            "CLEO","DLTA","KEJU","PMMP","PSDN","SKBM","TGKA",
+            "ADES","ALTO","CEKA","DMND","FAST","KINO","MGNA","PANI",
+            # PROPERTI & KONSTRUKSI (hapus yang suspend: WIKA,WSKT,PPRO,ACST)
             "BSDE","CTRA","SMRA","LPKR","PWON","ASRI","MDLN","DILD","APLN","JRPT",
-            "WIKA","WSKT","PTPP","ADHI","NRCA","ACST","BKSL","COWL","DMAS","EMDE",
-            "FORZ","GPRA","GWSA","KIJA","MKPI","MTLA","NIRO","PLIN","PPRO","RBMS",
-            "RDTX","ROCK","RODA","SMDM","TARA","URBN",
-            # OTOMOTIF & INDUSTRI MANUFAKTUR
+            "PTPP","ADHI","NRCA","DMAS","EMDE",
+            "FORZ","GPRA","GWSA","KIJA","MKPI","MTLA","NIRO","PLIN","RBMS",
+            "RDTX","ROCK","RODA","SMDM","TARA","URBN","BKSL","COWL",
+            # OTOMOTIF & INDUSTRI MANUFAKTUR (hapus SRIL suspend)
             "ASII","AUTO","IMAS","SMSM","GJTL","ADMG","LPIN","INDS","BOLT","DRMA",
-            "GDYR","HEXA","IMAS","MASA","MDRN","NIPS","PRAS","SRIL","SSTM","TFCO",
+            "GDYR","HEXA","MASA","MDRN","NIPS","PRAS","SSTM","TFCO",
             # TEKNOLOGI, E-COMMERCE & DIGITAL
             "GOTO","BUKA","EMTK","MNCN","SCMA","KIOS","MTDL","DMMX","EDGE","ASSA",
             "CASH","DIVA","JELO","MCAS","MSKY","NETV","TELE","WIFI","WINS",
             # KESEHATAN, FARMASI & RUMAH SAKIT
             "KAEF","MIKA","HEAL","SILO","PRIM","IRRA","TSPC","DVLA","INAF","PEHA",
-            "KLBF","MERK","PYFA","SCPI","SIDO","SOHO","HMSP",
+            "MERK","PYFA","SCPI","SOHO",
             # RETAIL & KONSUMER SIKLUS
             "MAPI","ACES","RALS","MIDI","AMRT","LPPF","HERO","RANC","CSAP","DAYA",
             "ERAA","GLOB","KOIN","MAPA","MPPA","NFCX","SKYB","TRIO",
-            # TRANSPORTASI, LOGISTIK & PELAYARAN
-            "BIRD","GIAA","SMDR","TMAS","NELY","SAFE","BPTR","APOL","BBRM","BLTA",
-            "BULL","CANI","CMPP","DEAL","HITS","IATA","KARW","LEAD","MBSS","MIRA",
+            # TRANSPORTASI, LOGISTIK & PELAYARAN (hapus: IATA,BLTA,MIRA,SAFE,KARW suspend)
+            "BIRD","GIAA","SMDR","TMAS","NELY","BPTR","BBRM",
+            "BULL","CANI","CMPP","DEAL","HITS","LEAD","MBSS",
             "PTIS","RIGS","SHIP","SMMU","SOCI","SQMI","SUPR","TPMA","TRAM","WEHA",
             # ENERGI TERBARUKAN & GEOTHERMAL
             "BREN","PGEO","CUAN","PTRO","CDIA","VKTR",
             # KEUANGAN NON-BANK, MULTIFINANCE & ASURANSI
             "BFIN","ADMF","MFIN","CFIN","VRNA","PNLF","WOMF","FUJI","ASRM","ASDM",
-            "ASJT","LPGI","MREI","PNIN","POOL","AHAP","AMAG","ASBI","ASII","ASURANSI",
+            "ASJT","LPGI","MREI","PNIN","POOL","AHAP","AMAG","ASBI",
             # MEDIA, HIBURAN & IKLAN
-            "FILM","JTPE","ABBA","BLTZ","DOID","FORU","JTPE","KBLV","MNCN","TMPO",
-            # TAMBANG LAINNYA & DIVERSIFIED
-            "ANTM","CITA","CTTH","DKFT","IFSH","INCO","MITI","NCKL","PSAB","SMMT",
+            "FILM","JTPE","ABBA","BLTZ","DOID","FORU","KBLV","TMPO",
             # PROPERTI INDUSTRIAL & KAWASAN
-            "BEST","DMAS","GIAA","KIJA","LPCK","NIRO","SSIA","TPMA",
-            # LAIN-LAIN LIQUID
-            "BBSI","BCIP","BGTG","BMTR","BPII","BSML","CKRA","CLPI","DERA","DGIK",
-            "DUTI","EPMT","GEMA","GOLL","HELI","HERO","HRTA","ICON","IGAR","INCI",
-            "INDO","INDR","INTA","INTD","ISSP","JECC","KBLM","KDSI","KIAS","KMTR",
-            "KPIG","LAPD","LMAS","LMPI","LPIN","LTLS","MAMI","MAPI","MASA","MFMI",
-            "MLPT","MNCN","MOLI","MPMX","MRPH","MSKY","MTSM","MYOR","NAGA","NAIZ",
+            "BEST","KIJA","LPCK","SSIA",
+            # LIQUID MID-CAP AKTIF (hapus: BCIP,BPII,LAPD,DERA,BSML,PKPK,POLY,RAAM,TAXI,SUGI,SULI suspend)
+            "BBSI","BGTG","BMTR","CKRA","CLPI","DGIK",
+            "DUTI","EPMT","GEMA","GOLL","HELI","HRTA","ICON","IGAR","INCI",
+            "INDO","INDR","INTA","ISSP","JECC","KBLM","KDSI","KIAS","KMTR",
+            "KPIG","LMAS","LMPI","LTLS","MAMI","MASA","MFMI",
+            "MLPT","MOLI","MPMX","MRPH","MTSM","NAGA","NAIZ",
             "NELY","NFCX","NISP","NOBU","NPGF","NRCA","OCAP","OMRE","OPMS","PADI",
-            "PEGE","PGMM","PGLI","PGUN","PICO","PKPK","PLAN","PNBS","PNIN","POLA",
-            "POLY","PORT","PPGL","PRAS","PSAB","PTBA","PTRO","PUDP","RAAM","RALS",
-            "RELI","RICY","RMKE","ROTI","SAFE","SAMA","SGRO","SHIP","SIDO","SILO",
+            "PEGE","PGMM","PGLI","PGUN","PLAN","PNBS","PNIN","POLA",
+            "PORT","PPGL","PRAS","PSAB","PTBA","PTRO","PUDP","RALS",
+            "RELI","RICY","RMKE","ROTI","SAMA","SGRO","SHIP","SIDO","SILO",
             "SIMA","SIPD","SMAR","SMCB","SMDR","SMSM","SMSS","SONA","SOSS","SPMA",
-            "SRAJ","SRTG","SSIA","SSTM","STTP","SUGI","SULI","SUPR","TALF","TARA",
-            "TAXI","TBMS","TCID","TFCO","TGKA","TINS","TIRA","TKGA","TKIM","TLKM",
+            "SRAJ","SRTG","SSIA","SSTM","STTP","SUPR","TALF","TARA",
+            "TBMS","TCID","TFCO","TGKA","TINS","TIRA","TKGA","TKIM","TLKM",
             "TMAS","TMPO","TOPS","TOTL","TOWR","TPIA","TRAM","TRIO","TRST","TRUS",
-            "TSPC","TURI","UANG","UNIC","UNIT","UNSP","UNVR","VOKS","WIKA","WSKT",
+            "TSPC","TURI","UNIC","UNIT","UNVR","VOKS",
             "YPAS","YULE","ZBRA",
         ]
         _WATCHLIST_RECO = list(dict.fromkeys(_WATCHLIST_RECO))  # deduplikasi
+        # ── Filter saham suspend dari watchlist rekomendasi ──
+        # IDX_SUSPENDED_TICKERS didefinisikan di Shareholder section (Part 10)
+        try:
+            _WATCHLIST_RECO = [tk for tk in _WATCHLIST_RECO if tk not in IDX_SUSPENDED_TICKERS]
+        except NameError:
+            pass  # IDX_SUSPENDED_TICKERS belum tersedia di context ini (aman)
 
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
