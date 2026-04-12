@@ -10621,10 +10621,241 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
             "  📊 FUNDAMENTAL SCREENER  ",
         ])
 
+        # ─── SHARED TABLE RENDERER ─────────────────────────────────────────
+        def _render_table_reco(session_key_result, session_key_ts, accent_color,
+                               summary_label, plan_label, avoid_label, context_label,
+                               plan_horizon_label="HORIZON"):
+            """Render tabel rekomendasi universal — dipakai Daily, Weekly, BSJP."""
+            import re as _re_t, json as _json_t
+            _raw_t = st.session_state.get(session_key_result, "")
+            _ts_t  = st.session_state.get(session_key_ts, "")
+            if not _raw_t:
+                return
+            if _ts_t:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts_t}</p>", unsafe_allow_html=True)
+
+            _tdata = None
+            try:
+                _jmatch = _re_t.search(r'\{[\s\S]*\}', _raw_t)
+                if _jmatch:
+                    _tdata = _json_t.loads(_jmatch.group(0))
+            except:
+                pass
+
+            # Cek key utama — bisa "daily", "weekly", atau "bsjp"
+            _main_key = None
+            for _k in ("daily", "weekly", "bsjp"):
+                if _tdata and _tdata.get(_k):
+                    _main_key = _k
+                    break
+
+            if not _tdata or not _main_key:
+                _render_reco_cards(_raw_t, accent_color)
+                return
+
+            _wrows  = _tdata[_main_key]
+            _arows  = _tdata.get("avoid", [])
+            _outlook= _tdata.get("outlook", _tdata.get("kondisi", ""))
+
+            _table_bg = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
+            _hdr_bg   = f"rgba(245,194,66,0.08)" if is_dark else "#f8fafc"
+            _border_c = "rgba(245,194,66,0.15)" if is_dark else "#e2e8f0"
+            _txt      = text_main
+            _sub_c    = text_sub
+
+            import json as _jt2
+            _rows_json  = _jt2.dumps(_wrows, ensure_ascii=False)
+            _avoid_json = _jt2.dumps(_arows, ensure_ascii=False)
+            _outlook_js = _jt2.dumps(_outlook, ensure_ascii=False)
+            _acc        = accent_color
+            _sum_lbl    = summary_label
+            _plan_lbl   = plan_label
+            _avoid_lbl  = avoid_label
+            _ctx_lbl    = context_label
+            _hor_lbl    = plan_horizon_label
+            _n_main     = len(_wrows)
+            _n_avoid    = len(_arows)
+            _total_h    = 56 + (_n_main*42+90)*2 + (_n_avoid*42+90) + 80
+
+            _thtml = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;}}
+.sec-lbl{{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:{_acc};font-weight:700;margin:0 0 7px;display:block;}}
+.card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
+.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
+.scroll::-webkit-scrollbar{{height:4px;}}
+.scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
+table{{width:100%;border-collapse:collapse;min-width:820px;}}
+thead th{{background:{_hdr_bg};color:{_acc};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{_txt};font-size:0.75rem;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(255,255,255,0.02);}}
+.tk{{font-weight:700;font-size:0.84rem;color:{_acc};}}
+.nm{{font-size:0.7rem;color:{_sub_c};max-width:130px;overflow:hidden;text-overflow:ellipsis;}}
+.pr{{font-weight:600;}}
+.sg{{color:#089981;font-weight:700;}}
+.sy{{color:#F5C242;font-weight:700;}}
+.sr{{color:#f23645;font-weight:700;}}
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;}}
+.bdg-buy{{background:rgba(8,153,129,0.15);color:#089981;border:1px solid rgba(8,153,129,0.5);}}
+.bdg-hold{{background:rgba(245,194,66,0.12);color:#F5C242;border:1px solid rgba(245,194,66,0.5);}}
+.bdg-avoid{{background:rgba(242,54,69,0.12);color:#f23645;border:1px solid rgba(242,54,69,0.5);}}
+.vol-hi{{color:#089981;font-weight:700;}}
+.vol-lo{{color:#f23645;font-weight:600;}}
+.vol-ok{{color:{_sub_c};}}
+.freq-smart{{color:#089981;font-size:0.65rem;}}
+.freq-noise{{color:{_sub_c};font-size:0.65rem;}}
+.reason-cell{{max-width:200px;white-space:normal;line-height:1.4;font-size:0.68rem;color:#f23645;}}
+.buy-txt{{font-size:0.68rem;color:{_txt};max-width:180px;white-space:normal;line-height:1.35;}}
+.outlook-box{{background:rgba(245,194,66,0.05);border:1px solid rgba(245,194,66,0.18);border-left:3px solid {_acc};border-radius:0 8px 8px 0;padding:11px 15px;font-size:0.76rem;color:{_txt};line-height:1.65;margin-bottom:10px;}}
+@media(max-width:640px){{
+  thead th{{font-size:0.5rem;padding:6px 7px;}}
+  tbody td{{font-size:0.68rem;padding:6px 7px;}}
+  .tk{{font-size:0.78rem;}}
+  .nm{{max-width:80px;}}
+}}
+</style></head><body>
+
+<span class="sec-lbl">📊 {_sum_lbl}</span>
+<div class="card"><div class="scroll"><table>
+<thead><tr>
+  <th>TICKER</th><th>NAME</th><th>PRICE</th>
+  <th>TA SCORE</th><th>FA SCORE</th><th>COMBINED</th>
+  <th title="Volume hari ini vs rata-rata 5 hari — makin tinggi makin signifikan">VOL SPIKE</th>
+  <th title="Freq rendah + Lot besar = Smart Money / Block Trade">VOL TYPE</th>
+  <th>RSI</th><th>MACD</th><th>WYCKOFF</th><th>RATING</th>
+</tr></thead>
+<tbody id="sum-tb"></tbody>
+</table></div></div>
+
+<span class="sec-lbl">📈 {_plan_lbl}</span>
+<div class="card"><div class="scroll"><table>
+<thead><tr>
+  <th>TICKER</th><th>PRICE</th><th>ENTRY ZONE</th>
+  <th>TP1</th><th>TP2</th><th>SL</th>
+  <th>UPSIDE TP1</th><th>{_hor_lbl}</th>
+  <th>WHY BUY</th><th>RATING</th>
+</tr></thead>
+<tbody id="plan-tb"></tbody>
+</table></div></div>
+
+<span class="sec-lbl">⛔ {_avoid_lbl}</span>
+<div class="card"><div class="scroll"><table>
+<thead><tr>
+  <th>TICKER</th><th>NAME</th><th>PRICE</th>
+  <th>TA SCORE</th><th>FA SCORE</th><th>COMBINED</th>
+  <th>VOL SIGNAL</th><th>RATING</th><th>ALASAN</th>
+</tr></thead>
+<tbody id="avoid-tb"></tbody>
+</table></div></div>
+
+<div class="outlook-box" id="outlook-box"></div>
+
+<script>
+(function(){{
+  var ROWS={_rows_json};
+  var AVOID={_avoid_json};
+  var OUTLOOK={_outlook_js};
+
+  function scCls(v){{ return v>=60?'sg':v>=35?'sy':'sr'; }}
+  function bdg(r){{
+    if(!r) return '';
+    var c=r==='BUY'?'bdg-buy':r==='HOLD'?'bdg-hold':'bdg-avoid';
+    return '<span class="bdg '+c+'">'+r+'</span>';
+  }}
+  function fmt(n){{ return n?'Rp '+parseInt(n).toLocaleString('id-ID'):'—'; }}
+  function upside(p,t){{
+    if(!p||!t) return '—';
+    var pct=((t-p)/p*100).toFixed(1);
+    return '<span style="color:'+(pct>=0?'#089981':'#f23645')+';font-weight:600;">+'+(pct)+'%</span>';
+  }}
+  function volClass(spike){{
+    var s=parseFloat(spike)||1;
+    if(s>=5) return 'vol-hi';
+    if(s>=2) return 'vol-hi';
+    if(s<0.7) return 'vol-lo';
+    return 'vol-ok';
+  }}
+  function freqLabel(vtype){{
+    if(!vtype) return '—';
+    var v=vtype.toLowerCase();
+    if(v.indexOf('block')>=0||v.indexOf('smart')>=0||v.indexOf('institusi')>=0)
+      return '<span class="freq-smart">🏦 '+vtype+'</span>';
+    if(v.indexOf('ritel')>=0||v.indexOf('noise')>=0||v.indexOf('retail')>=0)
+      return '<span class="freq-noise">👥 '+vtype+'</span>';
+    return '<span class="vol-ok">'+vtype+'</span>';
+  }}
+
+  var h='';
+  ROWS.forEach(function(r){{
+    var sc=parseFloat(r.combined)||0;
+    var wy=(r.wyckoff||'—')+(r.wyckoff_pct?' ('+r.wyckoff_pct+'%)':'');
+    h+='<tr>'+
+      '<td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td><span class="nm">'+r.name+'</span></td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td><span class="'+scCls(r.ta_score)+'">'+r.ta_score+'</span></td>'+
+      '<td><span class="'+scCls(r.fa_score)+'">'+r.fa_score+'</span></td>'+
+      '<td><span class="'+scCls(sc)+'">'+sc.toFixed(1)+'</span></td>'+
+      '<td><span class="'+volClass(r.vol_spike)+'">'+( r.vol_spike||'—')+'</span></td>'+
+      '<td>'+freqLabel(r.vol_type)+'</td>'+
+      '<td class="vol-ok">'+(r.rsi?parseFloat(r.rsi).toFixed(1):'—')+'</td>'+
+      '<td style="font-size:0.65rem;max-width:130px;white-space:normal;">'+(r.macd||'—')+'</td>'+
+      '<td style="font-size:0.65rem;max-width:120px;white-space:normal;">'+wy+'</td>'+
+      '<td>'+bdg(r.rating)+'</td>'+
+      '</tr>';
+  }});
+  document.getElementById('sum-tb').innerHTML=h;
+
+  var h2='';
+  ROWS.forEach(function(r){{
+    var ez=r.entry_low&&r.entry_high?fmt(r.entry_low)+' – '+fmt(r.entry_high):(r.entry_zone||fmt(r.price));
+    var why=r.why_buy||r.alasan_beli||'—';
+    var hor=r.horizon||r.waktu||'—';
+    h2+='<tr>'+
+      '<td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td style="color:#F5C242;font-weight:600;">'+ez+'</td>'+
+      '<td style="color:#089981;font-weight:600;">'+fmt(r.tp1)+'</td>'+
+      '<td class="vol-ok">'+(r.tp2?fmt(r.tp2):'—')+'</td>'+
+      '<td style="color:#f23645;font-weight:600;">'+fmt(r.sl)+'</td>'+
+      '<td>'+upside(r.price,r.tp1)+'</td>'+
+      '<td class="vol-ok">'+hor+'</td>'+
+      '<td><span class="buy-txt">'+why+'</span></td>'+
+      '<td>'+bdg(r.rating)+'</td>'+
+      '</tr>';
+  }});
+  document.getElementById('plan-tb').innerHTML=h2;
+
+  var h3='';
+  AVOID.forEach(function(r){{
+    var sc=parseFloat(r.combined)||0;
+    h3+='<tr>'+
+      '<td><span class="tk" style="color:#f23645;">'+r.ticker+'</span></td>'+
+      '<td><span class="nm">'+r.name+'</span></td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td><span class="sr">'+(r.ta_score||'—')+'</span></td>'+
+      '<td><span class="sr">'+(r.fa_score||'—')+'</span></td>'+
+      '<td><span class="sr">'+(sc?sc.toFixed(1):'—')+'</span></td>'+
+      '<td style="font-size:0.65rem;color:#f23645;">'+(r.vol_signal||'Distribusi')+'</td>'+
+      '<td>'+bdg('AVOID')+'</td>'+
+      '<td class="reason-cell">'+(r.reason||r.alasan||'—')+'</td>'+
+      '</tr>';
+  }});
+  document.getElementById('avoid-tb').innerHTML=h3;
+
+  if(OUTLOOK) document.getElementById('outlook-box').innerHTML='🗓️ <b>{_ctx_lbl}:</b> '+OUTLOOK;
+}})();
+</script>
+</body></html>"""
+            components.html(_thtml, height=min(_total_h, 1500), scrolling=True)
+
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI HARIAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick trading hari ini — berbasis momentum harga, volume spike, dan sinyal shareholder.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick trading hari ini — berbasis volume intelligence, frekuensi transaksi, block trade detection, dan sinyal shareholder.</p>", unsafe_allow_html=True)
 
             col_d1, col_d2 = st.columns([3, 1])
             with col_d2:
@@ -10636,7 +10867,6 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                     price_data = _reco_fetch_prices(_WATCHLIST_RECO)
                     sh_summary = _sh_summary_for_reco()
                     if price_data:
-                        # Filter TOP BULLISH (skor ≥ 3) dan TOP BEARISH (skor ≥ 3) dari seluruh universe
                         bullish_candidates = sorted(
                             [(tk, d) for tk, d in price_data.items() if d.get("bullish_score", 0) >= 3],
                             key=lambda x: (x[1]["bullish_score"], x[1]["spike"]), reverse=True
@@ -10646,69 +10876,86 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                             key=lambda x: (x[1]["bearish_score"], x[1]["spike"]), reverse=True
                         )[:10]
 
-                        bull_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | Chg5D={d['chg5d']:+.2f}% | VolSpike={d['spike']:.1f}x | EMA5={d['ema5']:,.0f} | BullScore={d['bullish_score']}/4"
+                        bull_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|Chg5D={d['chg5d']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|AvgVol5={d['vol5']:,}|EMA5={d['ema5']:,.0f}|BullScore={d['bullish_score']}/4"
                                       for tk, d in bullish_candidates]
-                        bear_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | Chg5D={d['chg5d']:+.2f}% | VolSpike={d['spike']:.1f}x | EMA5={d['ema5']:,.0f} | BearScore={d['bearish_score']}/4"
+                        bear_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|Chg5D={d['chg5d']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|BearScore={d['bearish_score']}/4"
                                       for tk, d in bearish_candidates]
 
                         prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional.
 Scanning dari universe {len(price_data)} saham IDX telah selesai.
+Fokus utama: VOLUME INTELLIGENCE & FREKUENSI TRANSAKSI.
+
+=== TEORI VOLUME & FREKUENSI (WAJIB DITERAPKAN) ===
+BLOCK TRADE (Smart Money): Nilai BESAR + Lot BESAR + Frekuensi KECIL → institusi masuk diam-diam → SINYAL KUAT
+NOISE (Ritel): Nilai KECIL + Lot KECIL + Frekuensi BESAR → abaikan sebagai sinyal
+BIAS: Nilai BESAR + Lot BESAR + Frekuensi BESAR → Algo/HFT → perlu konfirmasi
+Volume Spike ≥ 5x normal = anomali kuat — wajib diperhatikan siapa yang dominan
+Harga naik + Volume turun = WEAKNESS / distribusi tersembunyi
+Harga turun + Volume turun drastis = SELLER EXHAUSTION → potensi bottom
+Harga naik + Volume naik = GENUINE BREAKOUT / akumulasi valid
 
 === KANDIDAT BULLISH (Top Score dari {len(price_data)} saham) ===
 {chr(10).join(bull_lines) if bull_lines else 'Tidak ada kandidat bullish kuat hari ini.'}
 
-=== KANDIDAT BEARISH / HINDARI (dari {len(price_data)} saham) ===
+=== KANDIDAT BEARISH / HINDARI ===
 {chr(10).join(bear_lines) if bear_lines else 'Tidak ada sinyal bearish kuat hari ini.'}
 
 === DATA PEMEGANG SAHAM (IDX Bulanan) ===
 {sh_summary}
 
 === TUGAS ===
-Dari data di atas, pilih:
-- TOP 3-5 saham TERBAIK untuk trading HARIAN (intraday s/d 3 hari)
-- TOP 3 saham yang HARUS DIHINDARI / berpotensi turun hari ini
+Pilih TOP 4-6 saham BELI harian + TOP 3 HINDARI.
+Prioritaskan saham dengan volume spike tinggi TAPI frekuensi rendah (block trade — smart money).
+Hindari saham dengan volume spike dari ritel kecil-kecil (noise).
 
-KRITERIA BULLISH: BullScore tinggi + volume spike tinggi + pemegang naik
-KRITERIA BEARISH: BearScore tinggi + volume spike saat turun + pemegang turun
+PENTING: Jawab HANYA dalam format JSON. Jangan ada teks di luar JSON.
 
-Format output WAJIB — bagian BULLISH per saham dimulai dengan 🎯, bagian BEARISH per saham dimulai dengan ⚠️:
+Field untuk setiap saham BELI:
+- ticker, name (max 28 karakter), price (integer Rupiah)
+- ta_score (0-100): skor teknikal harian
+- fa_score (0-100): estimasi kualitas fundamental
+- combined (float): weighted TA60%+FA40%
+- vol_spike: rasio volume hari ini vs avg5 (format "3.2x", "8.5x", dll)
+- vol_type: jenis volume — "Block Trade / Smart Money" | "Ritel (Noise)" | "Mixed / Bias" | "Algo/HFT"
+- vol_trend: tren volume + harga — "Harga naik + Vol naik ✅" | "Harga naik + Vol turun ⚠️" | "Vol spike + Harga diam" | "Seller exhaustion"
+- rsi (float), macd (string singkat)
+- wyckoff (string), wyckoff_pct (int 10-90)
+- entry_low (integer), entry_high (integer): zona beli
+- tp1 (integer), tp2 (integer atau null), sl (integer)
+- horizon: "Intraday" | "1-3 hari" | "3-5 hari"
+- why_buy: alasan singkat kenapa layak dibeli (max 80 karakter, fokus volume+frekuensi)
+- rating: "BUY" atau "HOLD"
 
-=== 🎯 REKOMENDASI BELI HARIAN ===
+Field untuk setiap saham HINDARI:
+- ticker, name, price, ta_score, fa_score, combined
+- vol_signal: sinyal volume berbahaya (max 60 karakter)
+- reason: alasan singkat hindari (max 80 karakter)
+- rating: "AVOID"
 
-🎯 [TICKER] — Rp[Harga] | [Chg%]
-📊 Teknikal: [volume spike, tren EMA, momentum, support/resistance]
-👥 Pemegang: [naik/turun MoM, interpretasi akumulasi/distribusi]
-⚡ Entry: Rp[harga] | SL: Rp[harga] | TP1: Rp[harga] | TP2: Rp[harga]
-📐 R/R: [rasio] | Horizon: [X hari]
-
-(kosongkan 1 baris sebelum saham berikutnya)
-
-=== ⚠️ SAHAM YANG HARUS DIHINDARI ===
-
-⚠️ [TICKER] — Rp[Harga] | [Chg%]
-❌ Alasan: [volume distribusi, tren turun, sinyal bearish spesifik]
-🚫 Aksi: [jangan beli / segera exit jika pegang]
-
-(kosongkan 1 baris sebelum saham berikutnya)
-
-Bias pasar hari ini: [1 kalimat ringkas]
-Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _daily_result = _call_ai_reco(prompt)
-                        st.session_state["reco_daily_result"] = _daily_result
+Format JSON WAJIB:
+{{
+  "daily": [ ...array saham beli... ],
+  "avoid": [ ...array saham hindari... ],
+  "outlook": "Bias pasar hari ini dalam 1 kalimat."
+}}"""
+                        _daily_raw = _call_ai_reco(prompt)
+                        st.session_state["reco_daily_result"] = _daily_raw
                         st.session_state["reco_daily_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
 
             if st.session_state.get("reco_daily_result"):
-                _ts = st.session_state.get("reco_daily_ts", "")
-                if _ts:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_daily_result"], "#F5C242")
+                _render_table_reco(
+                    "reco_daily_result", "reco_daily_ts", "#F5C242",
+                    "SUMMARY — DAILY PICK", "DETAIL TRADE PLAN HARIAN", "HINDARI HARI INI",
+                    "Bias Pasar Hari Ini", "HORIZON"
+                )
             elif not run_daily:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Klik <span style='color:#F5C242;'>Generate Daily</span> untuk top pick saham hari ini</p>
+                        Klik <span style='color:#F5C242;'>Generate Daily</span> untuk top pick saham hari ini<br>
+                        <span style="opacity:0.5;font-size:0.62rem;">Format tabel: TA Score · FA Score · Vol Spike · Vol Type (Block/Ritel) · Trade Plan</span></p>
                 </div>""", unsafe_allow_html=True)
 
         # ─── TAB WEEKLY ───────────────────────────────────────────────────
@@ -10744,6 +10991,16 @@ Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
 
                         prompt = f"""Kamu adalah SIGMA AI, analis swing trading saham Indonesia profesional.
 Universe screening: {len(price_data)} saham IDX.
+Fokus: VOLUME INTELLIGENCE + FREKUENSI TRANSAKSI untuk swing trade mingguan.
+
+=== TEORI VOLUME & FREKUENSI (WAJIB DITERAPKAN) ===
+BLOCK TRADE (Smart Money): Nilai BESAR + Lot BESAR + Frekuensi KECIL → institusi masuk → SINYAL KUAT ✅
+NOISE (Ritel): Nilai KECIL + Lot KECIL + Frekuensi BESAR → abaikan
+BIAS: Nilai BESAR + Frekuensi BESAR → Algo/HFT → butuh konfirmasi ⚠️
+Volume Spike ≥ 5x normal + Frekuensi Rendah = Smart Money akumulasi stealth → PRIORITAS UTAMA
+HH + Volume TURUN = weakness/distribusi → HINDARI
+LL + Volume TURUN drastis = seller exhaustion → potensi reversal
+HH + Volume NAIK = genuine breakout → BUY valid
 
 === KANDIDAT SWING BULLISH (Top dari universe) ===
 {market_snap}
@@ -10755,41 +11012,31 @@ Universe screening: {len(price_data)} saham IDX.
 {sh_summary}
 
 === TUGAS ===
-Pilih TOP 5-8 saham terbaik untuk SWING TRADE mingguan + TOP 3 saham HINDARI.
+Pilih TOP 5-8 saham terbaik untuk SWING TRADE mingguan + TOP 3 HINDARI.
+Prioritaskan saham dengan tanda block trade / smart money dari analisa volume.
 
-PENTING: Jawab HANYA dalam format JSON di bawah ini. JANGAN tambahkan teks narasi apapun di luar JSON.
-Semua field harus diisi. Gunakan angka nyata berdasarkan data di atas.
+PENTING: Jawab HANYA dalam format JSON. Jangan ada teks di luar JSON.
 
-Isi field berikut:
-- ticker: kode saham (4 huruf)
-- name: nama singkat perusahaan (max 30 karakter)
-- price: harga saat ini dalam Rupiah (integer)
-- ta_score: Technical Analysis score 0-100 (berdasarkan BullScore, EMA, volume spike, chg5d)
-- fa_score: Fundamental Analysis score 0-100 (estimasi berdasarkan sektor, valuasi, posisi)
-- combined: rata-rata weighted (TA 60% + FA 40%), bulatkan ke 1 desimal
-- wyckoff: fase Wyckoff estimasi ("Accumulation", "Markup", "Distribution", "Markdown", "Re-accumulation")
-- wyckoff_pct: confidence % wyckoff (10-90)
-- rsi: estimasi RSI saat ini (30-70 range normal)
-- macd: sinyal MACD ("Bullish momentum", "Bearish momentum", "Divergence bullish", "Neutral")
-- rel_volume: rasio volume vs rata-rata (format "0.8x", "1.5x", "2.3x" dll)
-- pe: estimasi P/E ratio (float, atau null jika tidak diketahui)
-- rating: "BUY", "HOLD", atau "AVOID"
-- tp1: target harga 1 (integer, dalam Rupiah)
-- tp2: target harga 2 (integer, dalam Rupiah, atau null)
-- sl: stop loss (integer, dalam Rupiah)
-- horizon: "1-2 minggu" atau "2-4 minggu"
+Field saham BELI:
+- ticker, name (max 28 kar), price (integer)
+- ta_score (0-100), fa_score (0-100), combined (float TA60+FA40)
+- vol_spike: rasio volume (format "3.2x"), vol_type: "Block Trade / Smart Money" | "Ritel (Noise)" | "Mixed / Bias"
+- vol_trend: "Harga naik + Vol naik ✅" | "Harga naik + Vol turun ⚠️" | "Vol spike + Harga diam" | "Seller exhaustion"
+- wyckoff (string), wyckoff_pct (int), rsi (float), macd (string singkat)
+- entry_low (integer), entry_high (integer), tp1 (integer), tp2 (integer/null), sl (integer)
+- horizon: "1-2 minggu" | "2-4 minggu"
+- why_buy: alasan singkat (max 80 karakter, fokus volume+frekuensi)
+- rating: "BUY" atau "HOLD"
 
-Format JSON yang WAJIB dikembalikan (TIDAK BOLEH ada teks di luar ini):
+Field saham HINDARI:
+- ticker, name, price, ta_score, fa_score, combined
+- vol_signal: sinyal berbahaya (max 60 kar), reason: alasan (max 80 kar), rating: "AVOID"
+
+Format JSON WAJIB:
 {{
-  "weekly": [
-    {{"ticker": "XXXX", "name": "Nama Perusahaan", "price": 0, "ta_score": 0, "fa_score": 0, "combined": 0.0, "wyckoff": "Accumulation", "wyckoff_pct": 40, "rsi": 50.0, "macd": "Bullish momentum", "rel_volume": "1.0x", "pe": null, "rating": "BUY", "tp1": 0, "tp2": null, "sl": 0, "horizon": "1-2 minggu"}},
-    ...lebih banyak saham...
-  ],
-  "avoid": [
-    {{"ticker": "YYYY", "name": "Nama Perusahaan", "price": 0, "ta_score": 0, "fa_score": 0, "combined": 0.0, "rating": "AVOID", "reason": "Alasan singkat kenapa dihindari (max 80 karakter)"}},
-    ...
-  ],
-  "outlook": "Outlook pasar minggu ini dalam 1-2 kalimat singkat."
+  "weekly": [ ...array saham beli... ],
+  "avoid": [ ...array saham hindari... ],
+  "outlook": "Outlook pasar minggu ini dalam 1-2 kalimat."
 }}"""
 
                         _weekly_raw = _call_ai_reco(prompt)
@@ -10799,239 +11046,11 @@ Format JSON yang WAJIB dikembalikan (TIDAK BOLEH ada teks di luar ini):
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
 
             if st.session_state.get("reco_weekly_result"):
-                _ts = st.session_state.get("reco_weekly_ts", "")
-                if _ts:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-
-                # Parse JSON result dan render tabel
-                import re as _re_w, json as _json_w
-                _raw = st.session_state["reco_weekly_result"]
-                _weekly_data = None
-                try:
-                    # Coba parse JSON langsung
-                    _json_match = _re_w.search(r'\{[\s\S]*\}', _raw)
-                    if _json_match:
-                        _weekly_data = _json_w.loads(_json_match.group(0))
-                except:
-                    pass
-
-                if _weekly_data and _weekly_data.get("weekly"):
-                    _wrows = _weekly_data["weekly"]
-                    _arows = _weekly_data.get("avoid", [])
-                    _outlook = _weekly_data.get("outlook", "")
-
-                    # === RENDER SUMMARY TABLE (like the image) ===
-                    _table_bg   = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
-                    _hdr_bg     = "rgba(245,194,66,0.08)" if is_dark else "#f8fafc"
-                    _border_c   = "rgba(245,194,66,0.15)" if is_dark else "#e2e8f0"
-                    _txt        = text_main
-                    _sub        = text_sub
-
-                    # Build table rows JSON
-                    import json as _jw2
-                    _rows_json = _jw2.dumps(_wrows, ensure_ascii=False)
-                    _avoid_json = _jw2.dumps(_arows, ensure_ascii=False)
-
-                    _weekly_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;}}
-.section-lbl{{font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:#F5C242;font-weight:700;margin:0 0 8px;display:block;}}
-.card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:16px;}}
-.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
-.scroll::-webkit-scrollbar{{height:4px;}}
-.scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;min-width:780px;}}
-thead th{{background:{_hdr_bg};color:#F5C242;padding:10px 12px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-tbody td{{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{_txt};}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(245,194,66,0.03);}}
-.tk{{font-weight:700;font-size:0.85rem;color:#F5C242;}}
-.nm{{font-size:0.72rem;color:{_sub};max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}}
-.pr{{font-weight:600;font-size:0.82rem;}}
-.score-green{{color:#089981;font-weight:700;}}
-.score-yellow{{color:#F5C242;font-weight:700;}}
-.score-red{{color:#f23645;font-weight:700;}}
-.badge{{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.65rem;font-weight:700;letter-spacing:0.06em;}}
-.badge-buy{{background:rgba(8,153,129,0.15);color:#089981;border:1px solid #089981;}}
-.badge-hold{{background:rgba(245,194,66,0.12);color:#F5C242;border:1px solid #F5C242;}}
-.badge-avoid{{background:rgba(242,54,69,0.12);color:#f23645;border:1px solid #f23645;}}
-.sub-txt{{font-size:0.68rem;color:{_sub};}}
-.outlook-box{{background:rgba(245,194,66,0.05);border:1px solid rgba(245,194,66,0.15);border-left:3px solid #F5C242;border-radius:0 8px 8px 0;padding:12px 16px;font-size:0.78rem;color:{_txt};line-height:1.7;margin-bottom:12px;}}
-@media(max-width:640px){{
-  thead th{{font-size:0.52rem;padding:7px 8px;}}
-  tbody td{{font-size:0.72rem;padding:7px 8px;}}
-  .tk{{font-size:0.78rem;}}
-  .nm{{max-width:90px;}}
-}}
-</style></head><body>
-
-<span class="section-lbl">📊 SUMMARY — WEEKLY PICK</span>
-<div class="card">
-  <div class="scroll">
-    <table>
-      <thead>
-        <tr>
-          <th>TICKER</th>
-          <th>NAME</th>
-          <th>PRICE</th>
-          <th>TA SCORE</th>
-          <th>FA SCORE</th>
-          <th>COMBINED</th>
-          <th>RSI</th>
-          <th>MACD</th>
-          <th>REL VOLUME</th>
-          <th>WYCKOFF</th>
-          <th>P/E</th>
-          <th>RATING</th>
-        </tr>
-      </thead>
-      <tbody id="main-tb"></tbody>
-    </table>
-  </div>
-</div>
-
-<span class="section-lbl" style="margin-top:4px;">📈 DETAIL TRADE PLAN</span>
-<div class="card">
-  <div class="scroll">
-    <table>
-      <thead>
-        <tr>
-          <th>TICKER</th>
-          <th>PRICE</th>
-          <th>TP1</th>
-          <th>TP2</th>
-          <th>SL</th>
-          <th>UPSIDE TP1</th>
-          <th>HORIZON</th>
-          <th>RATING</th>
-        </tr>
-      </thead>
-      <tbody id="plan-tb"></tbody>
-    </table>
-  </div>
-</div>
-
-<span class="section-lbl" style="margin-top:4px;">⛔ HINDARI MINGGU INI</span>
-<div class="card">
-  <div class="scroll">
-    <table>
-      <thead>
-        <tr>
-          <th>TICKER</th>
-          <th>NAME</th>
-          <th>PRICE</th>
-          <th>TA SCORE</th>
-          <th>FA SCORE</th>
-          <th>COMBINED</th>
-          <th>RATING</th>
-          <th>ALASAN</th>
-        </tr>
-      </thead>
-      <tbody id="avoid-tb"></tbody>
-    </table>
-  </div>
-</div>
-
-<div class="outlook-box" id="outlook-box"></div>
-
-<script>
-(function(){{
-  var ROWS = {_rows_json};
-  var AVOID = {_avoid_json};
-  var OUTLOOK = {_jw2.dumps(_outlook, ensure_ascii=False)};
-
-  function scoreColor(v) {{
-    if (v >= 60) return 'score-green';
-    if (v >= 35) return 'score-yellow';
-    return 'score-red';
-  }}
-  function badge(r) {{
-    if (!r) return '';
-    var cls = r==='BUY'?'badge-buy':r==='HOLD'?'badge-hold':'badge-avoid';
-    return '<span class="badge '+cls+'">'+r+'</span>';
-  }}
-  function fmt(n) {{ return n ? 'Rp ' + parseInt(n).toLocaleString('id-ID') : '—'; }}
-  function upside(price, tp) {{
-    if (!price || !tp) return '—';
-    var pct = ((tp - price) / price * 100).toFixed(1);
-    var clr = pct >= 0 ? '#089981' : '#f23645';
-    return '<span style="color:'+clr+';font-weight:600;">+'+ pct +'%</span>';
-  }}
-
-  // Main summary table
-  var h = '';
-  ROWS.forEach(function(r) {{
-    var sc = parseFloat(r.combined) || 0;
-    var wyckoffTxt = r.wyckoff || '—';
-    if (r.wyckoff_pct) wyckoffTxt += ' ('+r.wyckoff_pct+'%)';
-    h += '<tr>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td><span class="nm">'+r.name+'</span></td>'+
-      '<td class="pr">'+fmt(r.price)+'</td>'+
-      '<td><span class="'+scoreColor(r.ta_score)+'">'+r.ta_score+'</span></td>'+
-      '<td><span class="'+scoreColor(r.fa_score)+'">'+r.fa_score+'</span></td>'+
-      '<td><span class="'+scoreColor(sc)+'">'+sc.toFixed(1)+'</span></td>'+
-      '<td class="sub-txt">'+(r.rsi ? parseFloat(r.rsi).toFixed(1) : '—')+'</td>'+
-      '<td class="sub-txt" style="max-width:130px;white-space:normal;">'+(r.macd||'—')+'</td>'+
-      '<td class="sub-txt">'+(r.rel_volume||'—')+'</td>'+
-      '<td class="sub-txt" style="max-width:120px;white-space:normal;">'+wyckoffTxt+'</td>'+
-      '<td class="sub-txt">'+(r.pe ? parseFloat(r.pe).toFixed(1) : '—')+'</td>'+
-      '<td>'+badge(r.rating)+'</td>'+
-      '</tr>';
-  }});
-  document.getElementById('main-tb').innerHTML = h;
-
-  // Trade plan table
-  var h2 = '';
-  ROWS.forEach(function(r) {{
-    h2 += '<tr>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td class="pr">'+fmt(r.price)+'</td>'+
-      '<td style="color:#089981;font-weight:600;">'+fmt(r.tp1)+'</td>'+
-      '<td class="sub-txt">'+(r.tp2 ? fmt(r.tp2) : '—')+'</td>'+
-      '<td style="color:#f23645;font-weight:600;">'+fmt(r.sl)+'</td>'+
-      '<td>'+upside(r.price, r.tp1)+'</td>'+
-      '<td class="sub-txt">'+(r.horizon||'—')+'</td>'+
-      '<td>'+badge(r.rating)+'</td>'+
-      '</tr>';
-  }});
-  document.getElementById('plan-tb').innerHTML = h2;
-
-  // Avoid table
-  var h3 = '';
-  AVOID.forEach(function(r) {{
-    var sc = parseFloat(r.combined) || 0;
-    h3 += '<tr>'+
-      '<td><span class="tk" style="color:#f23645;">'+r.ticker+'</span></td>'+
-      '<td><span class="nm">'+r.name+'</span></td>'+
-      '<td class="pr">'+fmt(r.price)+'</td>'+
-      '<td><span class="score-red">'+(r.ta_score||'—')+'</span></td>'+
-      '<td><span class="score-red">'+(r.fa_score||'—')+'</span></td>'+
-      '<td><span class="score-red">'+(sc ? sc.toFixed(1) : '—')+'</span></td>'+
-      '<td>'+badge('AVOID')+'</td>'+
-      '<td class="sub-txt" style="max-width:200px;white-space:normal;color:#f23645;">'+(r.reason||'—')+'</td>'+
-      '</tr>';
-  }});
-  document.getElementById('avoid-tb').innerHTML = h3;
-
-  // Outlook
-  if (OUTLOOK) document.getElementById('outlook-box').innerHTML = '🗓️ <b>Outlook Minggu Ini:</b> ' + OUTLOOK;
-}})();
-</script>
-</body></html>"""
-
-                    # Hitung tinggi yang dibutuhkan
-                    _n_main  = len(_wrows)
-                    _n_avoid = len(_arows)
-                    _total_h = 60 + (_n_main * 42 + 80) + (_n_main * 42 + 80) + (_n_avoid * 42 + 80) + 70
-                    components.html(_weekly_html, height=min(_total_h, 1400), scrolling=True)
-
-                else:
-                    # Fallback: render as-is jika JSON parsing gagal
-                    _render_reco_cards(_raw, "#26a69a")
-
+                _render_table_reco(
+                    "reco_weekly_result", "reco_weekly_ts", "#26a69a",
+                    "SUMMARY — WEEKLY PICK", "DETAIL TRADE PLAN MINGGUAN", "HINDARI MINGGU INI",
+                    "Outlook Pasar Minggu Ini", "HORIZON"
+                )
             elif not run_weekly:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
@@ -11045,9 +11064,9 @@ tbody tr:hover td{{background:rgba(245,194,66,0.03);}}
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>BELI SORE JUAL PAGI (BSJP)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:8px;'>Strategi overnight — beli menjelang penutupan BEI (15:00–15:50 WIB), jual di pre-opening atau sesi 1 besok pagi.</p>", unsafe_allow_html=True)
             st.markdown(f"""<div class="trm-insight" style="margin-bottom:16px;">
-⚠️ <b>Disclaimer BSJP:</b> Strategi ini memanfaatkan gap-up overnight dan momentum pembukaan.
-Risiko utama: berita negatif semalam bisa sebabkan gap-down. Selalu pasang <b>SL ketat</b>
-dan gunakan sizing kecil (maks 5–10% portofolio per posisi).
+⚠️ <b>Disclaimer BSJP:</b> Strategi overnight memanfaatkan gap-up dan momentum pembukaan.
+Kunci: cari saham dengan <b>volume spike menjelang closing + frekuensi transaksi RENDAH</b> (block trade institusi).
+Risiko: berita negatif semalam → gap-down. Sizing maks <b>5–10% portofolio</b> per posisi.
 </div>""", unsafe_allow_html=True)
 
             col_b1, col_b2 = st.columns([3, 1])
@@ -11060,27 +11079,40 @@ dan gunakan sizing kecil (maks 5–10% portofolio per posisi).
                     price_data = _reco_fetch_prices(_WATCHLIST_RECO)
                     sh_summary = _sh_summary_for_reco()
                     if price_data:
-                        # Filter: spike volume tinggi + harga tidak dalam downtrend kuat
                         bsjp_candidates = sorted(
                             [(tk, d) for tk, d in price_data.items()
                              if d.get("spike", 1) >= 1.5 and d.get("chg", 0) > -3 and d.get("vol5", 0) > 0],
                             key=lambda x: x[1]["spike"], reverse=True
                         )[:15]
-                        # Juga sertakan saham bearish kuat sebagai hindari
                         bsjp_avoid = sorted(
                             [(tk, d) for tk, d in price_data.items() if d.get("bearish_score", 0) >= 3],
                             key=lambda x: x[1]["bearish_score"], reverse=True
                         )[:5]
 
-                        lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | VolSpike={d['spike']:.1f}x | High={d['high']:,.0f} | Low={d['low']:,.0f} | BullScore={d['bullish_score']}/4"
+                        lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|AvgVol5={d['vol5']:,}|High={d['high']:,.0f}|Low={d['low']:,.0f}|BullScore={d['bullish_score']}/4"
                                  for tk, d in bsjp_candidates]
-                        avoid_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg={d['chg']:+.2f}% | BearScore={d['bearish_score']}/4"
+                        avoid_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|BearScore={d['bearish_score']}/4"
                                        for tk, d in bsjp_avoid]
                         market_snap = "\n".join(lines)
+
                         prompt = f"""Kamu adalah SIGMA AI, spesialis strategi overnight trading IDX (BSJP).
 Universe screening: {len(price_data)} saham IDX.
+FOKUS UTAMA: Volume spike menjelang closing + analisa frekuensi transaksi.
 
-=== KANDIDAT BSJP — Volume Spike Tertinggi Hari Ini ===
+=== TEORI VOLUME & FREKUENSI UNTUK BSJP ===
+SINYAL BSJP IDEAL:
+1. Volume spike sore ≥ 3x normal → institusi/bandar sedang kumpul menjelang closing
+2. Frekuensi transaksi RENDAH + Lot per transaksi BESAR = BLOCK TRADE = smart money masuk diam-diam ✅
+3. Frekuensi TINGGI + Lot kecil-kecil = ritel / noise = BUKAN sinyal BSJP
+4. Harga menutup KUAT di dekat HIGH hari ini = buying pressure kuat menjelang closing
+5. Pemegang saham naik MoM = konfirmasi positif tambahan
+
+SINYAL BAHAYA BSJP:
+- Volume spike besar TAPI harga tutup di bawah tengah range = distribusi menjelang closing → JANGAN BSJP
+- Frekuensi transaksi SANGAT TINGGI tapi lot kecil = ritel FOMO, bukan smart money → risiko gap down
+- BearScore tinggi = downtrend aktif → gap down risk
+
+=== KANDIDAT BSJP — Volume Spike Tertinggi ===
 {market_snap}
 
 === HINDARI MALAM INI (Sinyal Bearish Kuat) ===
@@ -11090,51 +11122,56 @@ Universe screening: {len(price_data)} saham IDX.
 {sh_summary}
 
 === TUGAS ===
-Pilih:
-- TOP 2-3 saham terbaik untuk BSJP (beli sore ini, jual pagi besok)
-- TOP 2 saham yang JANGAN DIPEGANG MALAM INI
+Pilih TOP 3-5 saham BSJP terbaik + TOP 2-3 JANGAN DIPEGANG malam ini.
+Prioritaskan yang volume spike sore + indikasi block trade (frekuensi rendah).
 
-Kriteria BSJP ideal:
-- Volume spike sore (tanda akumulasi institusi menjelang closing)
-- Harga menutup kuat di atas rata-rata hari ini (dekat high)
-- Pemegang saham naik = sinyal positif tambahan
-- Likuid (bisa exit cepat pagi hari)
+PENTING: Jawab HANYA dalam format JSON. Jangan ada teks di luar JSON.
 
-Format output (bagian BELI dimulai 🌙, bagian HINDARI dimulai ⛔):
+Field saham BSJP (beli):
+- ticker, name (max 28 kar), price (integer)
+- ta_score (0-100), fa_score (0-100), combined (float)
+- vol_spike: rasio volume (format "4.2x")
+- vol_type: "Block Trade / Smart Money" | "Ritel (Noise)" | "Mixed / Bias"
+- vol_trend: posisi close vs range hari ini — "Tutup dekat HIGH ✅" | "Tutup tengah range ⚠️" | "Tutup dekat LOW ❌"
+- wyckoff, wyckoff_pct, rsi (float), macd (string singkat)
+- entry_low (integer), entry_high (integer): zona beli sore (15:30-15:50 WIB)
+- tp1 (integer): target jual pagi besok
+- tp2 (integer atau null): target lebih jauh jika gap-up kuat
+- sl (integer): SL jika buka di bawah level ini besok pagi
+- horizon: "Overnight" | "1-2 hari"
+- why_buy: alasan singkat kenapa layak BSJP (max 80 karakter)
+- rating: "BUY"
 
-=== 🌙 BELI SORE INI ===
+Field saham HINDARI malam ini:
+- ticker, name, price, ta_score, fa_score, combined
+- vol_signal: sinyal bahaya volume (max 60 kar)
+- reason: alasan jangan dipegang (max 80 kar)
+- rating: "AVOID"
 
-🌙 [TICKER] — Beli ~Rp[harga] sore ini
-📊 Sinyal Teknikal: [volume spike ratio, posisi harga vs high, momentum closing]
-👥 Konfirmasi Pemegang: [naik/turun berapa, sinyal akumulasi/distribusi]
-⚡ Eksekusi: Beli Rp[range] menjelang 15.30 WIB | SL pagi jika buka di bawah Rp[harga]
-🎯 Target pagi: Rp[harga] | Potensi: +[X]% overnight | R/R: [rasio]
-
-(kosongkan 1 baris sebelum saham berikutnya)
-
-=== ⛔ JANGAN DIPEGANG MALAM INI ===
-
-⛔ [TICKER] — Rp[Harga]
-❌ Alasan: [sinyal distribusi/gap down risk]
-
-Kondisi BSJP malam ini: [KONDUSIF / WAIT] — [1 kalimat alasan]
-Jawab dalam Bahasa Indonesia. Jangan tambahkan JSON."""
-                        _bsjp_result = _call_ai_reco(prompt)
-                        st.session_state["reco_bsjp_result"] = _bsjp_result
+Format JSON WAJIB:
+{{
+  "bsjp": [ ...array saham beli... ],
+  "avoid": [ ...array saham hindari... ],
+  "kondisi": "Kondisi BSJP malam ini: KONDUSIF / WAIT — alasan 1 kalimat."
+}}"""
+                        _bsjp_raw = _call_ai_reco(prompt)
+                        st.session_state["reco_bsjp_result"] = _bsjp_raw
                         st.session_state["reco_bsjp_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
 
             if st.session_state.get("reco_bsjp_result"):
-                _ts = st.session_state.get("reco_bsjp_ts", "")
-                if _ts:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts}</p>", unsafe_allow_html=True)
-                _render_reco_cards(st.session_state["reco_bsjp_result"], "#7c3aed")
+                _render_table_reco(
+                    "reco_bsjp_result", "reco_bsjp_ts", "#7c3aed",
+                    "SUMMARY — BELI SORE INI", "DETAIL EKSEKUSI BSJP", "JANGAN DIPEGANG MALAM INI",
+                    "Kondisi BSJP Malam Ini", "WAKTU JUAL"
+                )
             elif not run_bsjp:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
                     <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini</p>
+                        Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini<br>
+                        <span style="opacity:0.5;font-size:0.62rem;">Format tabel: Vol Spike · Block Trade / Ritel · Entry Zone · Target Pagi · SL</span></p>
                 </div>""", unsafe_allow_html=True)
 
         # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
