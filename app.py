@@ -5080,7 +5080,7 @@ if current_view == "dashboard":
     .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(245,194,66,0.12)" if is_dark else "#e2e8f0"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
-        font-size: 0.78rem;
+        font-size: 0.88rem;
         font-weight: 600;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -5303,7 +5303,7 @@ if current_view == "dashboard":
 
         /* FTSE/MSCI table header label: allow wrap on mobile */
         .trm-section-label {{
-            font-size: 0.65rem !important;
+            font-size: 0.75rem !important;
             letter-spacing: 0.05em !important;
             padding: 3px 6px !important;
             white-space: normal !important;
@@ -5534,7 +5534,16 @@ if current_view == "dashboard":
             return data
 
         indices_tickers = {
-            "IHSG": "^JKSE","VIX": "^VIX", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
+            # ── Indonesia ──────────────────────────────────────────
+            "IHSG":        "^JKSE",
+            "LQ45":        "^JKLQ45",
+            "IDX30":       "^JKIDX30",
+            "IDX80":       "^JKIDX80",
+            "IDXBUMN20":   "^JKBUMN20",
+            "IDXHIDIV20":  "^JKHIDIV20",
+            "IDXSMC-LIQ":  "^JKSMC",
+            # ── Global ─────────────────────────────────────────────
+            "VIX": "^VIX", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
             "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
             "Hang Seng": "^HSI", "Shanghai": "000001.SS",
         }
@@ -5581,14 +5590,26 @@ if current_view == "dashboard":
         # ── Build indices table rows ────────────────────────────────────────
         _idx_rows = []
         _idx_labels = {
-            "IHSG": ("🇮🇩", "IDR"), "VIX": ("📊", "pts"), "S&P 500": ("🇺🇸", "USD"),
+            "IHSG":        ("🇮🇩", "IDR"), "LQ45":       ("🇮🇩", "IDR"),
+            "IDX30":       ("🇮🇩", "IDR"), "IDX80":      ("🇮🇩", "IDR"),
+            "IDXBUMN20":   ("🇮🇩", "IDR"), "IDXHIDIV20": ("🇮🇩", "IDR"),
+            "IDXSMC-LIQ":  ("🇮🇩", "IDR"),
+            "VIX": ("📊", "pts"), "S&P 500": ("🇺🇸", "USD"),
             "Dow Jones": ("🇺🇸", "USD"), "Nasdaq": ("🇺🇸", "USD"), "FTSE": ("🇬🇧", "GBP"),
             "Nikkei": ("🇯🇵", "JPY"), "Hang Seng": ("🇭🇰", "HKD"), "Shanghai": ("🇨🇳", "CNY"),
         }
+        # Names that are Indonesian sub-indices (for visual grouping)
+        _idx_indonesia_names = {"IHSG","LQ45","IDX30","IDX80","IDXBUMN20","IDXHIDIV20","IDXSMC-LIQ"}
+        _global_divider_added = False
         for name, info in idx_data.items():
             flag, ccy = _idx_labels.get(name, ("🌐", ""))
             px = info['price']
             pct = info['pct']
+            is_id = name in _idx_indonesia_names
+            # Add separator row before first global index
+            if not is_id and not _global_divider_added:
+                _idx_rows.append({"_divider": True, "label": "── GLOBAL ─────────────"})
+                _global_divider_added = True
             if px == 0:
                 px_str = "N/A"
                 pct_str = "—"
@@ -5604,7 +5625,7 @@ if current_view == "dashboard":
             _idx_rows.append({
                 "flag": flag, "name": name, "ccy": ccy,
                 "price": px_str, "pct": pct_str, "arrow": arrow,
-                "cls": cls, "bg": bg, "bdr": bdr
+                "cls": cls, "bg": bg, "bdr": bdr, "is_id": is_id
             })
         _idx_json = _mkt_json.dumps(_idx_rows)
 
@@ -5657,9 +5678,9 @@ if current_view == "dashboard":
         _now_wib_str = datetime.now().strftime("%d %b %Y · %H:%M WIB")
 
         # ── Render both tables via components.html ─────────────────────────
-        _idx_total_h = 42 + len(_idx_rows) * 38 + 4
-        _com_total_h = 42 + len(_com_rows) * 38 + 4
-        _tbl_h = max(_idx_total_h, _com_total_h) + 20
+        _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
+        _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
+        _tbl_h = max(_idx_total_h, _com_total_h) + 30
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -5669,21 +5690,21 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;}}
 .col{{flex:1;min-width:0;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;height:100%;}}
-.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.80rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
-.mkt-badge{{font-size:0.63rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.90rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.mkt-badge{{font-size:0.73rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.83rem;min-width:320px;}}
-thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.72rem;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;min-width:320px;}}
+thead th{{position:static;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.82rem;white-space:nowrap;}}
 tbody td{{padding:8px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
-.nm{{font-weight:600;font-size:0.81rem;color:{text_main};}}
+.nm{{font-weight:600;font-size:0.91rem;color:{text_main};}}
 .flag{{margin-right:5px;font-size:0.95rem;}}
-.price{{font-size:0.85rem;font-weight:700;}}
-.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;}}
-.ccy{{font-size:0.67rem;color:{text_sub};}}
+.price{{font-size:0.95rem;font-weight:700;}}
+.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.82rem;font-weight:700;}}
+.ccy{{font-size:0.77rem;color:{text_sub};}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:10px;}}
   .mkt-hdr{{font-size:0.70rem;padding:8px 10px;}}
@@ -5733,6 +5754,10 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   function buildRows(data, tbId, flagKey){{
     var h='';
     data.forEach(function(r){{
+      if(r._divider){{
+        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.72rem;color:rgba(245,194,66,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(245,194,66,0.15);background:rgba(245,194,66,0.03);">'+r.label+'</td></tr>';
+        return;
+      }}
       var up = r.cls==='mkt-up';
       var na = r.cls==='mkt-na';
       var clr = na ? TEXT_SUB : (up ? '#089981' : '#f23645');
@@ -5741,7 +5766,8 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
       var arrow = na ? '' : (up ? '▲' : '▼');
       var pct = na ? '—' : (arrow+' '+r.pct);
       var fl = r[flagKey] || '';
-      h += '<tr>'+
+      var rowBg = r.is_id ? 'rgba(245,194,66,0.025)' : '';
+      h += '<tr style="background:'+rowBg+'">'+
         '<td><span class="flag">'+fl+'</span><span class="nm">'+r.name+'</span></td>'+
         '<td><span class="price" style="color:'+clr+'">'+r.price+'</span></td>'+
         '<td><span class="badge" style="background:'+bg+';color:'+clr+';border:1px solid '+bdr+'44;">'+pct+'</span></td>'+
@@ -5754,18 +5780,20 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
   buildRows(IDX, 'idx-tb', 'flag');
   buildRows(COM, 'com-tb', 'icon');
 
-  // Equalise scroll heights
+  // Equalise scroll heights — cap at 520px to keep both cols same size
   function setHeights(){{
     var idxS = document.getElementById('idx-scroll');
     var comS = document.getElementById('com-scroll');
     if(!idxS||!comS) return;
-    var h = Math.max(idxS.scrollHeight, comS.scrollHeight);
+    // Remove max-height first to measure natural height
+    idxS.style.maxHeight = 'none'; comS.style.maxHeight = 'none';
+    var h = Math.min(Math.max(idxS.scrollHeight, comS.scrollHeight), 560);
     idxS.style.maxHeight = h+'px';
     comS.style.maxHeight = h+'px';
-    idxS.style.overflowY = h > 400 ? 'auto' : 'visible';
-    comS.style.overflowY = h > 400 ? 'auto' : 'visible';
+    idxS.style.overflowY = 'auto';
+    comS.style.overflowY = 'auto';
   }}
-  setHeights();
+  setTimeout(setHeights, 50);
 
   function updateTs(){{
     var now = new Date();
@@ -6153,7 +6181,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         # ---------------------------------------------------------
         # LIVE MARKET NEWS
         # ---------------------------------------------------------
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         st.markdown(f"""
         <style>
@@ -6358,21 +6386,21 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;align-items:flex-start;}}
 .col{{flex:1;min-width:0;}}
 .cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.cal-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.80rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
-.cal-sub{{font-size:0.62rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.cal-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.90rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.cal-sub{{font-size:0.72rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .scroll-box{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;min-width:340px;}}
-thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.72rem;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.92rem;min-width:340px;}}
+thead th{{position:static;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.82rem;white-space:nowrap;}}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
-.dt{{font-size:0.73rem;color:{text_sub};}}
-.ev{{font-size:0.81rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
-.fc{{font-size:0.79rem;color:#089981;font-weight:600;display:block;}}
-.pv{{font-size:0.69rem;color:{text_sub};display:block;}}
-.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.70rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
+.dt{{font-size:0.83rem;color:{text_sub};}}
+.ev{{font-size:0.91rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
+.fc{{font-size:0.89rem;color:#089981;font-weight:600;display:block;}}
+.pv{{font-size:0.79rem;color:{text_sub};display:block;}}
+.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.80rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
 /* Tooltip */
 .tip-wrap{{position:relative;}}
 .tip-wrap:hover .tip{{display:block;}}
