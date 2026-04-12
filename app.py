@@ -1130,12 +1130,12 @@ def get_colors(theme="dark"):
         "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk membedakan sidebar
         "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan (cool white) agar lebih tajam
         "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
-        "border":       "#132545" if dark else "#d0d0d0",       # Border dengan highlight biru navy
-        "hover":        "#0d1c36" if dark else "#d0d0d0",       # Efek hover kebiruan
+        "border":       "#132545" if dark else "#8a8aaa",       # Border dengan highlight biru navy (light: lebih gelap agar jelas)
+        "hover":        "#0d1c36" if dark else "#c4c4d8",       # Efek hover kebiruan
         "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat warna deep blue
         "bubble":       "#1B2A4A",
         "bubble_text":  "#ffffff",
-        "divider":      "#132545" if dark else "#d0d0d0",       # Garis pemisah biru navy
+        "divider":      "#132545" if dark else "#8a8aaa",       # Garis pemisah (light: gelap agar terbaca)
         "gold":         "#a78bfa",
         "active_bg":    "#0d1c36" if dark else "#c8c8c8",
     }
@@ -12534,9 +12534,13 @@ function calculate() {{
 </style>""", unsafe_allow_html=True)
 
         # ── Sub-tabs Panduan ─────────────────────────────────────────────
-        pg_tab1, pg_tab2 = st.tabs([
+        pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6 = st.tabs([
             "  🌍 Global Macro & News  ",
             "  🔄 Index & Sector Rotation  ",
+            "  👥 Shareholder  ",
+            "  🤖 AI Stock Insight  ",
+            "  🎯 AI Rekomendasi  ",
+            "  🧮 Kalkulator  ",
         ])
 
         # ══════════════════════════════════════════════════════════════
@@ -13120,6 +13124,549 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div></body></html>"""
 
             components.html(_guide_html_2, height=3400, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 3 — SHAREHOLDER
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab3:
+            _guide_html_3 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
+.feat-title{{font-size:1.05rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
+.badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
+.badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
+.badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
+.badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
+.badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
+@media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head"><div class="sec-icon">👥</div>
+<div><div class="sec-title">SHAREHOLDER — Panduan Lengkap</div>
+<div class="sec-desc">Lacak komposisi pemegang saham & deteksi perubahan kepemilikan institusional secara real-time.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title">📌 Apa itu Tab Shareholder?</div>
+<div class="stext">Tab Shareholder terdiri dari dua bagian utama: <span class="hi">Shareholder Tracker</span> (grafik perubahan jumlah pemegang saham) dan <span class="hi">Shareholder Screening</span> (tabel komposisi top holder 60+ emiten IDX). Ini adalah alat bantu untuk mendeteksi sinyal akumulasi atau distribusi oleh smart money.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📈</div>
+<div><div class="sec-title">SECTION 1 — Shareholder Tracker</div>
+<div class="sec-desc">Grafik dual-axis: perubahan jumlah pemegang saham vs pergerakan harga saham.</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title">🔍 Cara Menggunakan Shareholder Tracker</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>SHAREHOLDER TRACKER</b> di dalam tab Shareholder.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>kode emiten IDX</b> (contoh: <span class="hi">BBCA</span>, <span class="hi">GOTO</span>, <span class="hi">BRMS</span>) di kolom input yang tersedia.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Klik tombol <b>"Tampilkan Tracker"</b> — sistem akan mengambil data historis pemegang saham dan harga secara otomatis.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Baca grafik: <span class="hi">Sumbu kiri</span> = jumlah pemegang saham | <span class="ok">Sumbu kanan</span> = harga saham (Rp).</div></div>
+<div class="step"><div class="snum">5</div><div class="stext">Identifikasi pola: apakah jumlah holder naik saat harga turun? Ini sinyal <b class="ok">DISTRIBUSI ke retail</b>. Atau holder turun saat harga naik? Ini sinyal <b class="hi">AKUMULASI oleh institusi</b>.</div></div>
+</div>
+<div class="tip">💡 <b>Interpretasi Cepat:</b> Holder ↑ + Harga ↓ = Smart money jual ke retail (distribusi). Holder ↓ + Harga ↑ = Institusi konsolidasi posisi (akumulasi diam-diam).</div>
+</div>
+
+<div class="feat green">
+<div class="feat-title">🧠 Membaca Sinyal dari Grafik</div>
+<div class="grid2">
+<div class="gcard green">
+<div class="gcard-title">✅ Sinyal Akumulasi</div>
+<div class="gcard-val">Jumlah holder <b>turun</b> + Harga <b>sideways / naik pelan</b> → Institusi beli, retail jual (takut). Smart money mengumpulkan di bawah.</div>
+</div>
+<div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
+<div class="gcard-title" style="color:{_R};">⚠️ Sinyal Distribusi</div>
+<div class="gcard-val">Jumlah holder <b>naik tajam</b> + Harga <b>turun atau stagnan</b> → Smart money jual, retail beli FOMO. Waspada breakdown.</div>
+</div>
+</div>
+<div class="tip">💡 Gunakan bersama data <b>Broker Summary</b> di SIGMA AI Chat untuk konfirmasi bandarmologi sebelum entry.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🔎</div>
+<div><div class="sec-title">SECTION 2 — Shareholder Screening</div>
+<div class="sec-desc">Tabel komposisi kepemilikan 60+ emiten: Publik, Institusi Asing, dan Promotor/Pemerintah.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title">📊 Cara Membaca Tabel Screening</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Tabel menampilkan kolom: <b>Emiten</b>, <b>% Publik</b>, <b>% Institusi Asing</b>, <b>% Promotor / Pemerintah</b>, dan informasi tambahan lainnya.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Scroll horizontal di mobile untuk melihat semua kolom — tabel sudah mobile-responsive dengan sticky header.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Perhatikan <b>% Institusi Asing</b>: saham dengan porsi asing tinggi lebih sensitif terhadap sentimen global dan pergerakan MSCI/FTSE rebalancing.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Bandingkan <b>% Publik</b>: float rendah (publik kecil) = saham lebih mudah digerakkan oleh bandar dengan modal lebih kecil.</div></div>
+</div>
+<div class="warn">⚠️ <b>Penting:</b> Data shareholder bersumber dari laporan publik IDX dan diperbarui secara berkala. Data real-time bisa berbeda dengan kondisi pasar hari ini.</div>
+</div>
+
+<div class="feat yellow">
+<div class="feat-title">🎯 Strategi Penggunaan Optimal</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext"><b>Screening awal:</b> Filter saham dengan float publik rendah (&lt;30%) dan kepemilikan asing tinggi (&gt;30%) — ini kandidat saham yang rawan digerakkan.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext"><b>Tracker confirmation:</b> Setelah dapat kandidat, masukkan ke Tracker untuk lihat tren jumlah holder 3-6 bulan terakhir.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext"><b>Korelasi teknikal:</b> Crossing holder turun + harga di support kuat = area entry potensial. Kirim ke <b>AI Stock Insight</b> untuk konfirmasi teknikal lengkap.</div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_3, height=1800, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 4 — AI STOCK INSIGHT
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab4:
+            _guide_html_4 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat-title{{font-size:1.05rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
+.badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
+.badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
+.badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
+.badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
+.badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
+@media(max-width:640px){{.grid2,.grid3{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head"><div class="sec-icon">🤖</div>
+<div><div class="sec-title">AI STOCK INSIGHT — Panduan Lengkap</div>
+<div class="sec-desc">Analisa komprehensif saham IDX berbasis AI: Chart Teknikal, Fundamental, Trade Plan, Volume Intelligence, dan Fundamental Screener.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title">📌 Apa itu AI Stock Insight?</div>
+<div class="stext">AI Stock Insight adalah engine analisa terpadu SIGMA Terminal. Cukup masukkan kode saham, sistem akan secara otomatis menarik data harga, fundamental, dan konteks makro — lalu AI membuat analisa lengkap termasuk <span class="hi">candlestick chart interaktif</span>, <span class="ok">trade plan tervisualisasi</span>, dan <span class="yl">Volume Intelligence Engine</span>.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📊</div>
+<div><div class="sec-title">FITUR 1 — Analisa Chart & Trade Plan</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title">🕯️ Cara Menggunakan Chart Analysis</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Pilih tab <b>AI Stock Insight</b> dari navigasi atas SIGMA Terminal.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>kode emiten</b> di kolom input (contoh: <span class="hi">BBRI</span>, <span class="hi">TLKM</span>, <span class="hi">ASII</span>).</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Pilih <b>periode analisa</b>: 3 Bulan / 6 Bulan / 1 Tahun / 2 Tahun. Gunakan periode lebih panjang untuk sinyal lebih kuat dan minim false breakout.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Klik <b>"Analisa Sekarang"</b> — AI akan memproses dan menampilkan chart candlestick + EMA overlay (13/21/100/200) + RSI + Volume subplot.</div></div>
+<div class="step"><div class="snum">5</div><div class="stext">Baca <b>Trade Plan</b> yang divisualisasi langsung di chart: area BUY ZONE (hijau), TP1/TP2/TP3 (gradien hijau), dan SL (merah) dengan label di sisi kanan chart.</div></div>
+</div>
+<div class="tip">💡 <b>EMA Legend:</b> EMA13 (biru muda) = momentum cepat | EMA21 (oranye) = konfirmasi jangka pendek | EMA100 (ungu) = tren medium | EMA200 (merah) = tren jangka panjang. Buy di atas EMA200 = safer long.</div>
+</div>
+
+<div class="feat green">
+<div class="feat-title">📐 Membaca Trade Plan Tervisualisasi</div>
+<div class="grid2">
+<div class="gcard green">
+<div class="gcard-title">✅ BUY AREA</div>
+<div class="gcard-val">Zona hijau di chart = area entry ideal berdasarkan support teknikal + MnM Strategy+ (FVG/IFVG/OB/Demand Zone)</div>
+</div>
+<div class="gcard blue">
+<div class="gcard-title">🎯 TP1 / TP2 / TP3</div>
+<div class="gcard-val">Target profit bertingkat berdasarkan struktur teknikal: resistance, supply zone, dan fibonacci extension</div>
+</div>
+<div class="gcard yellow">
+<div class="gcard-title">🔢 R:R Ratio</div>
+<div class="gcard-val">Risk-Reward Ratio otomatis dihitung AI. Minimal R:R yang disarankan adalah 1:2 untuk setiap entry position</div>
+</div>
+<div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
+<div class="gcard-title" style="color:{_R};">🛑 STOP LOSS</div>
+<div class="gcard-val">Garis merah di bawah BUY AREA = batas maksimal kerugian. Selalu hormati SL — disiplin adalah kunci survival.</div>
+</div>
+</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">⚡</div>
+<div><div class="sec-title">FITUR 2 — Volume Intelligence Engine</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title">📉 Membaca Volume Intelligence</div>
+<div class="stext" style="margin-bottom:12px;">Volume Intelligence Engine secara otomatis mendeteksi pola volume abnormal dan memberikan insight kontekstual di bawah chart.</div>
+<div class="grid3">
+<div class="gcard">
+<div class="gcard-title">⚡ Volume Spike</div>
+<div class="gcard-val">Volume hari ini &gt;2× rata-rata. Sinyal masuknya big player atau berita material. Cek arah harga — naik = bullish, turun = bearish.</div>
+</div>
+<div class="gcard blue">
+<div class="gcard-title">🌊 Volume Dry-Up</div>
+<div class="gcard-val">Volume sangat rendah vs rata-rata. Bisa berarti konsolidasi (akumulasi senyap) atau kejenuhan jual. Tunggu breakout dengan volume.</div>
+</div>
+<div class="gcard yellow">
+<div class="gcard-title">⚠️ Divergensi</div>
+<div class="gcard-val">Harga naik tapi volume turun = kenaikan lemah (potensi reversal). Harga turun + volume turun = selling pressure melemah.</div>
+</div>
+</div>
+<div class="tip">💡 Konfluensi terkuat: Volume Spike + area Buy Zone MnM Strategy+ = probabilitas reversal tertinggi.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🧮</div>
+<div><div class="sec-title">FITUR 3 — Fundamental Screener (Warren Buffett Criteria)</div>
+</div></div>
+
+<div class="feat yellow">
+<div class="feat-title">📋 Cara Menggunakan Fundamental Screener</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab AI Stock Insight.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Pilih <b>filter sektor</b> (All / Banking / Property / Energy / Consumer, dst.) untuk mempersempit pencarian.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> — sistem akan mengevaluasi ratusan saham IDX berdasarkan 6 kriteria Buffett: <span class="hi">ROE ≥15%</span>, <span class="ok">DER ≤1.5×</span>, <span class="yl">Net Margin ≥10%</span>, Current Ratio ≥1.5, <span class="hi">PBV ≤3×</span>, EPS positif.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Urutkan hasil dengan dropdown <b>"Sort By"</b>: ROE Tertinggi / DER Terendah / Net Margin / PBV.</div></div>
+<div class="step"><div class="snum">5</div><div class="stext">Pilih saham dari hasil screener, lalu klik <b>"Analisa AI"</b> untuk mendapat ringkasan fundamental dari AI Groq/Gemini.</div></div>
+</div>
+<div class="warn">⚠️ Screener berbasis fundamental historis — tidak menjamin performa masa depan. Kombinasikan dengan analisa teknikal sebelum keputusan entry.</div>
+</div>
+
+<div class="feat blue">
+<div class="feat-title">💬 Fitur Chat dalam AI Stock Insight</div>
+<div class="stext">Setelah analisa di-generate, tersedia kolom <b>tanya AI</b> untuk bertanya lebih spesifik tentang saham yang dianalisa. Contoh pertanyaan efektif:</div>
+<div class="steps" style="margin-top:10px;">
+<div class="step"><div class="snum">→</div><div class="stext"><span class="hi">"Apakah ROE BBRI wajar dibanding sektor?"</span></div></div>
+<div class="step"><div class="snum">→</div><div class="stext"><span class="ok">"Apa risiko utama jika entry di area BUY ZONE ini?"</span></div></div>
+<div class="step"><div class="snum">→</div><div class="stext"><span class="yl">"Bandingkan valuasi TLKM vs EXCL dari sisi PBV dan ROE."</span></div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_4, height=2400, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 5 — AI REKOMENDASI
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab5:
+            _guide_html_5 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
+.feat-title{{font-size:1.05rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.alert{{background:rgba(242,54,69,0.09);border:1px solid rgba(242,54,69,0.25);border-left:3px solid {_R};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
+@media(max-width:640px){{.grid3{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head"><div class="sec-icon">🎯</div>
+<div><div class="sec-title">AI REKOMENDASI — Panduan Lengkap</div>
+<div class="sec-desc">Rekomendasi saham harian, mingguan, dan watchlist Buy-Sell-JP berbasis AI dengan konteks fundamental + teknikal + makro.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title">📌 Apa itu AI Rekomendasi?</div>
+<div class="stext">Tab AI Rekomendasi adalah fitur kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam tiga mode: <span class="hi">Harian</span>, <span class="yl">Mingguan</span>, dan <span class="ok">Buy-Sell-JP (BSJP)</span>.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📅</div>
+<div><div class="sec-title">MODE 1 — Rekomendasi Harian</div>
+<div class="sec-desc">Watchlist saham untuk trading dalam 1-3 hari ke depan berdasarkan sentimen pasar hari ini.</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title">🌅 Cara Menggunakan Rekomendasi Harian</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>AI Rekomendasi</b> dari navigasi atas SIGMA Terminal.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Klik tombol <b>"🌅 Generate Rekomendasi Harian"</b> — AI akan memproses kondisi makro hari ini + sinyal teknikal intraday.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Output berisi: <span class="ok">daftar saham</span> + <span class="hi">alasan singkat</span> + <span class="yl">level entry estimasi</span> + <span class="dn">catatan risiko</span>.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Hasil disimpan otomatis di <b>session state</b> — tidak hilang saat kamu pindah tab lalu kembali.</div></div>
+</div>
+<div class="tip">💡 Best practice: Generate di pagi hari sebelum market buka (08.30–09.00 WIB) untuk mendapat konteks pre-market yang relevan.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📆</div>
+<div><div class="sec-title">MODE 2 — Rekomendasi Mingguan</div>
+<div class="sec-desc">Swing trade watchlist untuk horizon 1-4 minggu berdasarkan rotasi sektor dan fundamental jangka menengah.</div>
+</div></div>
+
+<div class="feat green">
+<div class="feat-title">📈 Cara Menggunakan Rekomendasi Mingguan</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"📆 Generate Rekomendasi Mingguan"</b> di tab AI Rekomendasi.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">AI mempertimbangkan: rotasi sektor dari RRG, sentimen makro minggu ini, jadwal corporate action, dan momentum fundamental.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Output lebih detail dari harian: menyertakan <b>target price</b>, <b>stop loss</b>, <b>time horizon</b>, dan konteks sektoral.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Cocok untuk <b>swing trader</b> MnM Strategy+ yang ingin entry di awal minggu dan holding beberapa hari.</div></div>
+</div>
+<div class="tip">💡 Generate tiap Senin pagi atau Jumat sore setelah market tutup untuk perencanaan week ahead.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🔄</div>
+<div><div class="sec-title">MODE 3 — Buy / Sell / JP (BSJP)</div>
+<div class="sec-desc">Klasifikasi posisi: saham mana yang layak dibeli, dijual, atau hold (Jaga Posisi) berdasarkan kondisi terkini.</div>
+</div></div>
+
+<div class="feat yellow">
+<div class="feat-title">🔁 Cara Menggunakan BSJP</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"🔄 Generate Buy-Sell-JP"</b> — AI akan mengklasifikasi saham ke tiga kategori berdasarkan kondisi teknikal + makro terkini.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Output tiga kolom: <span class="ok">BUY</span> (entry potensial), <span class="dn">SELL / REDUCE</span> (kurangi atau keluar), <span class="yl">JP / HOLD</span> (tahan posisi, jangan panik jual).</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Setiap saham disertai <b>reasoning singkat AI</b> — bukan hanya listing nama, tapi konteks kenapa masuk kategori tersebut.</div></div>
+</div>
+<div class="grid3">
+<div class="gcard green">
+<div class="gcard-title">✅ BUY</div>
+<div class="gcard-val">Saham di area support kuat, volume meningkat, sentimen sektoral positif, atau mendekati breakout dari konsolidasi.</div>
+</div>
+<div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
+<div class="gcard-title" style="color:{_R};">⬇️ SELL/REDUCE</div>
+<div class="gcard-val">Saham di area resistance, volume distribusi, sentimen negatif, atau sudah mencapai TP — pertimbangkan profit taking.</div>
+</div>
+<div class="gcard yellow">
+<div class="gcard-title">⏸️ JP / HOLD</div>
+<div class="gcard-val">Masih dalam tren tapi belum konfirmasi. Tahan posisi, set trailing stop, tunggu sinyal lebih jelas sebelum action.</div>
+</div>
+</div>
+</div>
+
+<div class="feat red">
+<div class="feat-title">⚠️ Disclaimer Penting — Wajib Dibaca</div>
+<div class="stext">Semua output AI Rekomendasi adalah <b>bahan riset dan referensi analisa</b>, BUKAN sinyal trading resmi atau financial advice. SIGMA tidak menjamin akurasi prediksi. Keputusan trading sepenuhnya tanggung jawab trader masing-masing. <span class="dn">Selalu DYOR (Do Your Own Research)</span> dan konfirmasi dengan analisa mandiri sebelum eksekusi.</div>
+<div class="alert">🚨 IDX = <b>Long Only Market</b>. Profit hanya dari kenaikan harga. Tidak ada short selling konvensional untuk retail. Pastikan entry hanya saat tren mendukung — jangan fight the trend.</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_5, height=2000, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 6 — KALKULATOR
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab6:
+            _guide_html_6 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat-title{{font-size:1.05rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
+.formula{{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:10px 16px;margin:8px 0;font-size:0.9rem;color:{_P};font-weight:700;letter-spacing:0.03em;}}
+@media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head"><div class="sec-icon">🧮</div>
+<div><div class="sec-title">KALKULATOR — Panduan Lengkap</div>
+<div class="sec-desc">Alat kalkulasi trading IDX: Profit/Loss, Position Sizing, Modal Lot, Brokerage Fee, dan Break Even Point.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title">📌 Apa itu Tab Kalkulator?</div>
+<div class="stext">Tab Kalkulator adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual — masukkan angka, hasilnya otomatis.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">💰</div>
+<div><div class="sec-title">KALKULATOR 1 — Profit / Loss (P&L)</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title">📊 Cara Menghitung Profit/Loss</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Harga Beli</b> per lembar (contoh: 1.500)</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>Harga Jual</b> per lembar (contoh: 1.750)</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Jumlah Lot</b> yang dibeli (contoh: 10 lot = 1.000 lembar)</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Sistem otomatis menghitung: P&L kotor, biaya beli, biaya jual + pajak, dan <span class="ok">Net P&L bersih</span> yang kamu benar-benar terima.</div></div>
+</div>
+<div class="formula">Net P&L = (Harga Jual − Harga Beli) × Lot × 100 − Total Biaya Broker</div>
+<div class="tip">💡 <b>Konvensi IDX:</b> Selalu kalikan jumlah lot dengan 100 untuk mendapat jumlah lembar. P&L di trading journal Google Sheets MnM juga menggunakan formula yang sama.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📐</div>
+<div><div class="sec-title">KALKULATOR 2 — Position Sizing & Modal</div>
+</div></div>
+
+<div class="feat green">
+<div class="feat-title">🎯 Cara Menghitung Position Size</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Total Modal</b> yang tersedia (contoh: Rp 10.000.000)</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>% Risiko per Trade</b> — standar konservatif: 1-2% per posisi (contoh: 2% = Rp 200.000 maksimal rugi)</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Harga Entry</b> dan <b>Harga Stop Loss</b> — jarak inilah yang menentukan berapa lot yang aman dibeli.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Kalkulator menampilkan: <span class="ok">jumlah lot optimal</span>, <span class="hi">modal yang dipakai</span>, dan <span class="yl">% dari total portofolio</span>.</div></div>
+</div>
+<div class="formula">Jumlah Lot = (Modal × % Risiko) ÷ ((Entry − SL) × 100)</div>
+<div class="grid2" style="margin-top:12px;">
+<div class="gcard green">
+<div class="gcard-title">✅ Risiko Konservatif</div>
+<div class="gcard-val">1-2% modal per posisi. Cocok untuk pemula atau kondisi market volatile. Max drawdown terkontrol.</div>
+</div>
+<div class="gcard yellow">
+<div class="gcard-title">⚡ Risiko Agresif</div>
+<div class="gcard-val">3-5% modal per posisi. Hanya untuk trader berpengalaman dengan conviction tinggi dan setup sangat jelas.</div>
+</div>
+</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon">💳</div>
+<div><div class="sec-title">KALKULATOR 3 — Biaya Broker & Break Even</div>
+</div></div>
+
+<div class="feat yellow">
+<div class="feat-title">🏦 Memahami Struktur Biaya IDX</div>
+<div class="stext" style="margin-bottom:12px;">Setiap transaksi di IDX dikenai biaya broker dan pajak yang mempengaruhi Break Even Point (BEP) kamu.</div>
+<div class="grid2">
+<div class="gcard blue">
+<div class="gcard-title">📥 Biaya Beli</div>
+<div class="gcard-val">Umumnya 0.15% - 0.19% dari nilai transaksi (tergantung broker). Beberapa broker offer 0% fee beli untuk saham tertentu.</div>
+</div>
+<div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
+<div class="gcard-title" style="color:{_R};">📤 Biaya Jual</div>
+<div class="gcard-val">Fee jual ~0.25% + Pajak penjualan 0.1% = total ~0.35% dari nilai transaksi jual.</div>
+</div>
+</div>
+<div class="formula">BEP = Harga Beli × (1 + Fee Beli) × (1 + Fee Jual + Pajak)</div>
+<div class="steps" style="margin-top:12px;">
+<div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Harga Beli</b> dan <b>% Fee Broker</b> yang kamu gunakan.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Kalkulator menampilkan <span class="hi">harga BEP</span> — harga minimum jual agar tidak rugi setelah dipotong semua biaya.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Gunakan BEP sebagai patokan — jangan jual di bawah BEP kecuali memang sudah keputusan cut loss terencana.</div></div>
+</div>
+<div class="warn">⚠️ Fee broker berbeda-beda tiap platform. Pastikan kamu tahu fee broker yang kamu pakai dan masukkan angka yang akurat agar BEP terhitung tepat.</div>
+</div>
+
+<div class="feat">
+<div class="feat-title">💡 Tips Penggunaan Kalkulator Optimal</div>
+<div class="steps">
+<div class="step"><div class="snum">→</div><div class="stext">Selalu hitung <span class="hi">position size</span> <b>sebelum</b> entry — bukan setelah. Emosi saat market buka sering membuat trader over-leverage.</div></div>
+<div class="step"><div class="snum">→</div><div class="stext">Gunakan <span class="ok">P&L Calculator</span> untuk simulasi skenario: "jika harga naik ke TP1, berapa yang aku dapat? Jika kena SL, berapa yang hilang?"</div></div>
+<div class="step"><div class="snum">→</div><div class="stext">Catat semua trade di <span class="yl">Trading Journal Google Sheets MnM</span> — kombinasikan dengan kalkulator untuk evaluasi performa bulanan.</div></div>
+<div class="step"><div class="snum">→</div><div class="stext">R:R (Risk-Reward) minimum yang disarankan MnM Strategy+ adalah <span class="hi">1:2</span> — artinya untuk setiap 1 risiko, target minimal 2 profit.</div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_6, height=2200, scrolling=True)
 
 # ─────────────────────────────────────────────
 else:
