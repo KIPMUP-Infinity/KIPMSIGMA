@@ -10748,39 +10748,41 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;}}
-.sec-lbl{{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:{_acc};font-weight:700;margin:0 0 7px;display:block;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;}}
+.sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{_acc};font-weight:700;margin:0 0 7px;display:block;}}
 .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
 .scroll::-webkit-scrollbar{{height:4px;}}
 .scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;min-width:820px;}}
-thead th{{background:{_hdr_bg};color:{_acc};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{_txt};font-size:0.75rem;}}
+thead th{{background:{_hdr_bg};color:{_acc};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{_txt};font-size:0.93rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(255,255,255,0.02);}}
-.tk{{font-weight:700;font-size:0.84rem;color:{_acc};}}
-.nm{{font-size:0.7rem;color:{_sub_c};max-width:130px;overflow:hidden;text-overflow:ellipsis;}}
+tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
+tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
+tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
+.tk{{font-weight:700;font-size:0.93rem;color:{_acc};}}
+.nm{{font-size:0.80rem;color:{_sub_c};max-width:130px;overflow:hidden;text-overflow:ellipsis;}}
 .pr{{font-weight:600;}}
 .sg{{color:#089981;font-weight:700;}}
 .sy{{color:#F5C242;font-weight:700;}}
 .sr{{color:#f23645;font-weight:700;}}
-.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.62rem;font-weight:700;letter-spacing:0.05em;}}
-.bdg-buy{{background:rgba(8,153,129,0.15);color:#089981;border:1px solid rgba(8,153,129,0.5);}}
-.bdg-hold{{background:rgba(245,194,66,0.12);color:#F5C242;border:1px solid rgba(245,194,66,0.5);}}
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.78rem;font-weight:700;letter-spacing:0.05em;}}
+.bdg-buy{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
+.bdg-hold{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
 .bdg-avoid{{background:rgba(242,54,69,0.12);color:#f23645;border:1px solid rgba(242,54,69,0.5);}}
-.vol-hi{{color:#089981;font-weight:700;}}
+.vol-hi{{color:#a78bfa;font-weight:700;}}
 .vol-lo{{color:#f23645;font-weight:600;}}
 .vol-ok{{color:{_sub_c};}}
-.freq-smart{{color:#089981;font-size:0.65rem;}}
-.freq-noise{{color:{_sub_c};font-size:0.65rem;}}
-.reason-cell{{max-width:200px;white-space:normal;line-height:1.4;font-size:0.68rem;color:#f23645;}}
-.buy-txt{{font-size:0.68rem;color:{_txt};max-width:180px;white-space:normal;line-height:1.35;}}
-.outlook-box{{background:rgba(245,194,66,0.05);border:1px solid rgba(245,194,66,0.18);border-left:3px solid {_acc};border-radius:0 8px 8px 0;padding:11px 15px;font-size:0.76rem;color:{_txt};line-height:1.65;margin-bottom:10px;}}
+.freq-smart{{color:#60a5fa;font-size:0.80rem;}}
+.freq-noise{{color:{_sub_c};font-size:0.80rem;}}
+.reason-cell{{max-width:200px;white-space:normal;line-height:1.4;font-size:0.80rem;color:#f23645;}}
+.buy-txt{{font-size:0.80rem;color:{_txt};max-width:180px;white-space:normal;line-height:1.35;}}
+.outlook-box{{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.20);border-left:3px solid {_acc};border-radius:0 8px 8px 0;padding:11px 15px;font-size:0.93rem;color:{_txt};line-height:1.65;margin-bottom:10px;}}
 @media(max-width:640px){{
-  thead th{{font-size:0.5rem;padding:6px 7px;}}
-  tbody td{{font-size:0.68rem;padding:6px 7px;}}
-  .tk{{font-size:0.78rem;}}
+  thead th{{font-size:0.55rem;padding:6px 7px;}}
+  tbody td{{font-size:0.82rem;padding:6px 7px;}}
+  .tk{{font-size:0.86rem;}}
   .nm{{max-width:80px;}}
 }}
 </style></head><body>
@@ -11243,20 +11245,26 @@ Format JSON WAJIB:
 
         # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
         with reco_tab_fundamental:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER — WARREN BUFFETT STYLE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental — ROE, DER, Net Margin, Current Ratio, PBV, EPS. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER — BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental — ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
 
             _fs_accent = "#26a69a"
 
             st.markdown(f"""
             <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};line-height:1.9;'>
-            <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING</span><br>
+            <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING (BASIS SCREENING)</span><br>
             ✅ <b>ROE ≥ 15%</b> — Return on Equity kuat (Buffett: konsisten ≥15% = moat sesungguhnya) &nbsp;|&nbsp;
             ✅ <b>DER ≤ 1.0x</b> — Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
             ✅ <b>Net Margin ≥ 10%</b> — Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
             ✅ <b>Current Ratio ≥ 1.5x</b> — Likuiditas jangka pendek aman &nbsp;|&nbsp;
             ✅ <b>PBV 0.5–3.0x</b> — Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
-            ✅ <b>EPS positif</b> — Perusahaan benar-benar profitable
+            ✅ <b>EPS positif</b> — Perusahaan benar-benar profitable<br><br>
+            <span style='color:#a78bfa;font-weight:700;letter-spacing:0.08em;'>📐 OPSI URUTAN TAMBAHAN (GRAHAM · DAMODARAN · LYNCH)</span><br>
+            🔢 <b>Buffett Score</b> — Skor total 0–6 kriteria terpenuhi &nbsp;|&nbsp;
+            📐 <b>Graham Number MoS</b> — √(22.5 × EPS × Book Value) vs harga pasar: makin besar = makin undervalue &nbsp;|&nbsp;
+            📈 <b>EPS Growth</b> — Pertumbuhan laba per saham (Lynch: Fast Grower jika EPS growth &gt;20%) &nbsp;|&nbsp;
+            💰 <b>Dividend Yield</b> — Yield dividen tertinggi (Slow Grower / income stock) &nbsp;|&nbsp;
+            ⚖️ <b>PEG Ratio</b> — PER ÷ ROE: &lt;1.0 = undervalue relatif growth (Damodaran/Lynch rule of thumb)
             </div>
             """, unsafe_allow_html=True)
 
@@ -11288,7 +11296,10 @@ Format JSON WAJIB:
             with _fsc2:
                 _fs_sort = st.selectbox("Urutkan:", [
                     "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
-                    "DER (Terendah)","Current Ratio (Tertinggi)"
+                    "DER (Terendah)","Current Ratio (Tertinggi)",
+                    "Buffett Score (Tertinggi)","Graham Number (Margin of Safety)",
+                    "EPS Growth (Tertinggi)","Dividend Yield (Tertinggi)",
+                    "PEG Ratio (Terendah)"
                 ], key="fs_sort")
             with _fsc3:
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -11349,12 +11360,50 @@ Format JSON WAJIB:
                 _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
 
                 if _fs_data:
+                    def _graham_mos(x):
+                        """Graham Number = sqrt(22.5 * EPS * BV_per_share).
+                           Proxy: sqrt(22.5 * EPS * (Price/PBV)) jika BV tidak ada.
+                           Makin besar selisih Graham Number vs harga = MoS makin besar."""
+                        d = x[1]
+                        try:
+                            eps = d.get("eps", 0) or 0
+                            pbv = d.get("pbv", 0) or 0
+                            price = d.get("price", 0) or 0
+                            if eps > 0 and pbv > 0 and price > 0:
+                                bv_proxy = price / pbv
+                                gn = (22.5 * eps * bv_proxy) ** 0.5
+                                return gn / price  # rasio: >1 = undervalue (Graham)
+                        except: pass
+                        return 0
+
+                    def _peg_ratio(x):
+                        """PEG = PER / ROE (proxy growth). Makin kecil makin baik."""
+                        d = x[1]
+                        try:
+                            pe = d.get("pe", 0) or 0
+                            roe = d.get("roe", 0) or 0
+                            if pe > 0 and roe > 5:
+                                return -(pe / roe)  # negatif agar sort descending = terkecil dulu
+                        except: pass
+                        return -999
+
+                    def _eps_growth(x):
+                        d = x[1]
+                        try:
+                            return d.get("eps_g", 0) or 0
+                        except: return 0
+
                     _sfn = {
-                        "ROE (Tertinggi)":          lambda x: x[1].get("roe",0),
-                        "PBV (Terendah)":           lambda x: -(x[1].get("pbv",99) or 99),
-                        "Net Margin (Tertinggi)":   lambda x: x[1].get("npm",0),
-                        "DER (Terendah)":           lambda x: -(x[1].get("der",999) or 999),
-                        "Current Ratio (Tertinggi)":lambda x: x[1].get("cr",0),
+                        "ROE (Tertinggi)":             lambda x: x[1].get("roe",0),
+                        "PBV (Terendah)":              lambda x: -(x[1].get("pbv",99) or 99),
+                        "Net Margin (Tertinggi)":      lambda x: x[1].get("npm",0),
+                        "DER (Terendah)":              lambda x: -(x[1].get("der",999) or 999),
+                        "Current Ratio (Tertinggi)":   lambda x: x[1].get("cr",0),
+                        "Buffett Score (Tertinggi)":   lambda x: x[1].get("score",0),
+                        "Graham Number (Margin of Safety)": _graham_mos,
+                        "EPS Growth (Tertinggi)":      _eps_growth,
+                        "Dividend Yield (Tertinggi)":  lambda x: x[1].get("div",0),
+                        "PEG Ratio (Terendah)":        _peg_ratio,
                     }.get(_fs_sk, lambda x: x[1].get("roe",0))
 
                     _fs_sorted = sorted(_fs_data.items(), key=_sfn, reverse=True)
@@ -11425,27 +11474,29 @@ Format JSON WAJIB:
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;}}
-.sec-lbl{{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;}}
+.sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
 .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
 .scroll::-webkit-scrollbar{{height:4px;}}
 .scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;min-width:900px;}}
-thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.75rem;}}
+thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.93rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.06);}}
-.tk{{font-weight:700;font-size:0.84rem;color:{accent};}}
-.nm{{font-size:0.68rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
-.ok{{color:#26a69a;font-weight:600;}}
+tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
+tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
+tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
+.tk{{font-weight:700;font-size:0.93rem;color:{accent};}}
+.nm{{font-size:0.80rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
+.ok{{color:#a78bfa;font-weight:600;}}
 .ng{{color:#f23645;}}
 .neu{{color:{text_sub};}}
-.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.6rem;font-weight:700;letter-spacing:0.05em;}}
-.bdg-pass{{background:rgba(38,166,154,0.15);color:#26a69a;border:1px solid rgba(38,166,154,0.5);}}
-.bdg-watch{{background:rgba(245,194,66,0.12);color:#F5C242;border:1px solid rgba(245,194,66,0.5);}}
-.dots span{{font-size:0.7rem;}}
-@media(max-width:640px){{thead th{{font-size:0.5rem;padding:6px 7px;}}tbody td{{font-size:0.68rem;padding:6px 7px;}}}}
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;}}
+.bdg-pass{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
+.bdg-watch{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
+.dots span{{font-size:0.80rem;}}
+@media(max-width:640px){{thead th{{font-size:0.55rem;padding:6px 7px;}}tbody td{{font-size:0.82rem;padding:6px 7px;}}}}
 </style></head><body>
 
 <span class="sec-lbl">✅ LOLOS BUFFETT — {_n_pass} SAHAM (SKOR ≥4/6)</span>
@@ -11570,7 +11621,7 @@ Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang 
                                 st.session_state["fs_ai_result"] = _fs_ai
 
                     if st.session_state.get("fs_ai_result"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.86rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.93rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
 
                     # ── Chat tanya fundamental ─────────────────────────────────
                     st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06);margin:18px 0 14px;'>", unsafe_allow_html=True)
@@ -11612,7 +11663,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                             st.session_state["fs_chat_ans"] = _fs_chat_ans
 
                     if st.session_state.get("fs_chat_ans"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:0.86rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:0.93rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
                         if st.button("🗑 Hapus Jawaban", key="btn_fs_chat_clear"):
                             st.session_state["fs_chat_ans"] = ""
                             st.rerun()
