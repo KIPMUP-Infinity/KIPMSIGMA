@@ -5540,8 +5540,11 @@ if current_view == "dashboard":
         }
         
         commodities_tickers = {
-            "USD/IDR": "IDR=X", "DXY": "DX-Y.NYB", "Gold (oz)": "GC=F", "WTI Crude": "CL=F",
-            "Brent Crude": "BZ=F", "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F", "Nickel": "ALI=F"          
+            "USD/IDR": "IDR=X", "DXY": "DX-Y.NYB", "EUR/USD": "EURUSD=X", "GBP/USD": "GBPUSD=X",
+            "Gold (oz)": "GC=F", "Silver (oz)": "SI=F", "Copper": "HG=F",
+            "WTI Crude": "CL=F", "Brent Crude": "BZ=F", "Natural Gas": "NG=F",
+            "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F", "Nickel": "ALI=F",
+            "Aluminum": "ALI=F", "Tin": "SN=F", "Soybeans": "ZS=F",
         }
         
         with st.spinner("Mendeteksi denyut pasar global..."):
@@ -5608,9 +5611,22 @@ if current_view == "dashboard":
         # ── Build commodities table rows ────────────────────────────────────
         _com_rows = []
         _com_labels = {
-            "USD/IDR": ("💱", "Rp"), "DXY": ("💵", "pts"), "Gold (oz)": ("🥇", "USD"),
-            "WTI Crude": ("🛢️", "USD"), "Brent Crude": ("🛢️", "USD"),
-            "Newcastle Coal": ("⚫", "USD"), "Palm Oil": ("🌴", "MYR"), "Nickel": ("🔩", "USD"),
+            "USD/IDR":       ("💱", "Rp / USD"),
+            "DXY":           ("💵", "Index"),
+            "EUR/USD":       ("🇪🇺", "EUR/USD"),
+            "GBP/USD":       ("🇬🇧", "GBP/USD"),
+            "Gold (oz)":     ("🥇", "USD/oz"),
+            "Silver (oz)":   ("🥈", "USD/oz"),
+            "Copper":        ("🔶", "USD/lb"),
+            "WTI Crude":     ("🛢️", "USD/bbl"),
+            "Brent Crude":   ("🛢️", "USD/bbl"),
+            "Natural Gas":   ("🔥", "USD/MMBtu"),
+            "Newcastle Coal":("⚫", "USD/ton"),
+            "Palm Oil":      ("🌴", "MYR/ton"),
+            "Nickel":        ("🔩", "USD/lb"),
+            "Aluminum":      ("⚙️", "USD/lb"),
+            "Tin":           ("🪙", "USD/ton"),
+            "Soybeans":      ("🌿", "USD/bu"),
         }
         for name, info in com_data.items():
             icon, ccy = _com_labels.get(name, ("📦", ""))
@@ -5639,79 +5655,91 @@ if current_view == "dashboard":
         _com_json = _mkt_json.dumps(_com_rows)
 
         _now_wib_str = datetime.now().strftime("%d %b %Y · %H:%M WIB")
-        _is_dk = "true" if is_dark else "false"
 
         # ── Render both tables via components.html ─────────────────────────
+        _idx_total_h = 42 + len(_idx_rows) * 38 + 4
+        _com_total_h = 42 + len(_com_rows) * 38 + 4
+        _tbl_h = max(_idx_total_h, _com_total_h) + 20
+
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
-.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;}}
-.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
-.mkt-badge{{font-size:0.55rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
-.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:visible;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.row{{display:flex;gap:14px;width:100%;}}
+.col{{flex:1;min-width:0;}}
+.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;height:100%;}}
+.mkt-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.70rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.mkt-badge{{font-size:0.53rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.74rem;}}
-thead th{{background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.64rem;white-space:nowrap;}}
-tbody td{{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.73rem;min-width:320px;}}
+thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.62rem;white-space:nowrap;}}
+tbody td{{padding:8px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
-.nm{{font-weight:600;font-size:0.73rem;color:{text_main};}}
-.flag{{margin-right:5px;}}
-.price{{font-size:0.78rem;font-weight:700;}}
-.badge{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.64rem;font-weight:700;}}
-.ccy{{font-size:0.58rem;color:{text_sub};margin-left:4px;}}
+tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
+.nm{{font-weight:600;font-size:0.71rem;color:{text_main};}}
+.flag{{margin-right:5px;font-size:0.85rem;}}
+.price{{font-size:0.75rem;font-weight:700;}}
+.badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.62rem;font-weight:700;}}
+.ccy{{font-size:0.57rem;color:{text_sub};}}
 @media(max-width:600px){{
-  .mkt-hdr{{font-size:0.62rem;padding:8px 10px;letter-spacing:0.08em;}}
-  thead th{{font-size:0.58rem;padding:7px 8px;}}
-  tbody td{{font-size:0.65rem;padding:7px 8px;}}
-  .badge{{font-size:0.58rem;padding:2px 5px;}}
+  .row{{flex-direction:column;gap:10px;}}
+  .mkt-hdr{{font-size:0.60rem;padding:8px 10px;}}
+  thead th{{font-size:0.57rem;padding:7px 8px;}}
+  tbody td{{font-size:0.63rem;padding:7px 8px;}}
+  .badge{{font-size:0.57rem;padding:2px 5px;}}
+  .nm{{font-size:0.63rem;}}
+  .price{{font-size:0.65rem;}}
 }}
 </style></head><body>
-
-<div class="mkt-wrap" id="idx-wrap">
-  <div class="mkt-hdr">
-    <span>📈 GLOBAL INDICES &amp; VOLATILITY</span>
-    <span class="mkt-badge" id="idx-ts">{_now_wib_str}</span>
+<div class="row">
+  <div class="col">
+    <div class="mkt-wrap">
+      <div class="mkt-hdr">
+        <span>📈 GLOBAL INDICES &amp; VOLATILITY</span>
+        <span class="mkt-badge" id="idx-ts">{_now_wib_str}</span>
+      </div>
+      <div class="mkt-scroll" id="idx-scroll">
+        <table><thead><tr>
+          <th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>CCY</th>
+        </tr></thead>
+        <tbody id="idx-tb"></tbody></table>
+      </div>
+    </div>
   </div>
-  <div class="mkt-scroll">
-    <table><thead><tr>
-      <th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>MATA UANG</th>
-    </tr></thead>
-    <tbody id="idx-tb"></tbody></table>
+  <div class="col">
+    <div class="mkt-wrap">
+      <div class="mkt-hdr">
+        <span>💱 COMMODITIES &amp; FOREX</span>
+        <span class="mkt-badge" id="com-ts">{_now_wib_str}</span>
+      </div>
+      <div class="mkt-scroll" id="com-scroll">
+        <table><thead><tr>
+          <th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
+        </tr></thead>
+        <tbody id="com-tb"></tbody></table>
+      </div>
+    </div>
   </div>
 </div>
-
-<div class="mkt-wrap" id="com-wrap">
-  <div class="mkt-hdr">
-    <span>💱 COMMODITIES &amp; FOREX</span>
-    <span class="mkt-badge" id="com-ts">{_now_wib_str}</span>
-  </div>
-  <div class="mkt-scroll">
-    <table><thead><tr>
-      <th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
-    </tr></thead>
-    <tbody id="com-tb"></tbody></table>
-  </div>
-</div>
-
 <script>
 (function(){{
   var IDX={_idx_json};
   var COM={_com_json};
+  var TEXT_SUB='{text_sub}';
 
-  function buildRows(data, tbId, nameKey, flagKey){{
+  function buildRows(data, tbId, flagKey){{
     var h='';
     data.forEach(function(r){{
-      var up = r.cls === 'mkt-up';
-      var na = r.cls === 'mkt-na';
-      var clr = na ? '{text_sub}' : (up ? '#089981' : '#f23645');
+      var up = r.cls==='mkt-up';
+      var na = r.cls==='mkt-na';
+      var clr = na ? TEXT_SUB : (up ? '#089981' : '#f23645');
       var bg  = na ? 'rgba(178,181,190,0.06)' : (up ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.10)');
       var bdr = na ? '#b2b5be' : (up ? '#089981' : '#f23645');
       var arrow = na ? '' : (up ? '▲' : '▼');
-      var pct = na ? '—' : (arrow + ' ' + r.pct);
+      var pct = na ? '—' : (arrow+' '+r.pct);
       var fl = r[flagKey] || '';
       h += '<tr>'+
         '<td><span class="flag">'+fl+'</span><span class="nm">'+r.name+'</span></td>'+
@@ -5723,24 +5751,39 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
     document.getElementById(tbId).innerHTML = h;
   }}
 
-  buildRows(IDX, 'idx-tb', 'name', 'flag');
-  buildRows(COM, 'com-tb', 'name', 'icon');
+  buildRows(IDX, 'idx-tb', 'flag');
+  buildRows(COM, 'com-tb', 'icon');
 
-  // Auto-refresh timestamp
+  // Equalise scroll heights
+  function setHeights(){{
+    var idxS = document.getElementById('idx-scroll');
+    var comS = document.getElementById('com-scroll');
+    if(!idxS||!comS) return;
+    var h = Math.max(idxS.scrollHeight, comS.scrollHeight);
+    idxS.style.maxHeight = h+'px';
+    comS.style.maxHeight = h+'px';
+    idxS.style.overflowY = h > 400 ? 'auto' : 'visible';
+    comS.style.overflowY = h > 400 ? 'auto' : 'visible';
+  }}
+  setHeights();
+
   function updateTs(){{
     var now = new Date();
-    var wib = new Date(now.getTime() + (7*60*60*1000));
-    var d = wib.toISOString();
-    var parts = d.split('T');
-    var date = parts[0].split('-');
-    var months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    var str = date[2]+' '+months[parseInt(date[1])-1]+' '+date[0]+' · '+parts[1].substring(0,5)+' WIB';
+    // WIB = UTC+7
+    var wibMs = now.getTime() + (7*60*60*1000) - now.getTimezoneOffset()*60000;
+    // just use UTC offset trick
+    var wib = new Date(now.getTime());
+    var ofs = now.getTimezoneOffset(); // local offset in mins
+    var wibLocal = new Date(now.getTime() + (ofs+420)*60000);
+    var months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    var str=wibLocal.getDate()+' '+months[wibLocal.getMonth()]+' '+wibLocal.getFullYear()
+      +' · '+String(wibLocal.getHours()).padStart(2,'0')+':'+String(wibLocal.getMinutes()).padStart(2,'0')+' WIB';
     var e1=document.getElementById('idx-ts'); if(e1) e1.textContent=str;
     var e2=document.getElementById('com-ts'); if(e2) e2.textContent=str;
   }}
   setInterval(updateTs, 60000);
 }})();
-</script></body></html>""", height=620, scrolling=False)
+</script></body></html>""", height=_tbl_h, scrolling=False)
 
         # ─────────────────────────────────────────────────────────
         # NEW FEATURE: MARKET BRIEF (DAILY/WEEKLY)
@@ -6281,78 +6324,124 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         dampak_color = {"HIGH": "#f23645", "MEDIUM": "#F5C242", "LOW": "#4285F4"}
         dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(245,194,66,0.10)", "LOW": "rgba(66,133,244,0.10)"}
 
-        st.markdown(f"""<style>
-        .cal-wrap {{ background:{cal_bg}; border:1px solid {cal_border}; border-radius:12px;
-            overflow:hidden; margin-bottom:20px; font-family:'IBM Plex Mono',monospace; }}
-        .cal-hdr {{ padding:10px 16px; background:rgba(245,194,66,0.09);
-            border-bottom:1px solid {cal_border}; font-size:0.72rem; font-weight:700;
-            letter-spacing:0.12em; color:#F5C242; text-transform:uppercase; }}
-        .cal-row {{ display:grid; grid-template-columns:92px 1fr 120px 56px;
-            align-items:center; gap:8px; padding:9px 16px;
-            border-bottom:1px solid {cal_border}; cursor:default;
-            position:relative; transition:background 0.15s; }}
-        .cal-row:last-child {{ border-bottom:none; }}
-        .cal-row:hover {{ background:rgba(245,194,66,0.07); }}
-        .cal-dt {{ font-size:0.65rem; color:{cal_sub_clr}; white-space:nowrap; }}
-        .cal-ev {{ font-size:0.73rem; color:{cal_text}; font-weight:500; }}
-        .cal-nums {{ display:flex; flex-direction:column; gap:2px; text-align:right; }}
-        .cal-fc {{ font-size:0.71rem; color:#089981; font-weight:600; }}
-        .cal-pv {{ font-size:0.62rem; color:{cal_sub_clr}; }}
-        .cal-bdg {{ font-size:0.59rem; font-weight:700; letter-spacing:0.07em;
-            padding:2px 5px; border-radius:4px; text-align:center; white-space:nowrap; }}
-        .cal-tip {{ display:none; position:absolute; left:0; right:0;
-            top:calc(100% + 4px); z-index:9999;
-            background:{'#1a2035' if is_dark else '#ffffff'};
-            border:1px solid {cal_border}; border-left:3px solid #F5C242;
-            border-radius:0 6px 6px 0; padding:8px 12px;
-            font-size:0.69rem; color:{cal_text}; line-height:1.5;
-            pointer-events:none; box-shadow:0 6px 24px rgba(0,0,0,0.4); }}
-        .cal-row:hover .cal-tip {{ display:block; }}
-        @media (max-width: 768px) {{
-            .cal-row {{
-                grid-template-columns: 72px 1fr 82px 40px !important;
-                gap: 4px !important;
-                padding: 8px 10px !important;
-            }}
-            .cal-dt {{ font-size: 0.58rem !important; white-space: normal !important; line-height: 1.3 !important; }}
-            .cal-ev {{ font-size: 0.64rem !important; line-height: 1.3 !important; }}
-            .cal-fc {{ font-size: 0.62rem !important; }}
-            .cal-pv {{ font-size: 0.55rem !important; }}
-            .cal-bdg {{ font-size: 0.52rem !important; padding: 2px 3px !important; }}
-            .cal-hdr {{ font-size: 0.65rem !important; padding: 8px 10px !important; letter-spacing: 0.08em !important; }}
-        }}
-        </style>""", unsafe_allow_html=True)
+        # ── Build JSON for each country ──────────────────────────────────
+        import json as _cal_json
+        _cal_all = []
+        for country, events in calendar_data.items():
+            for ev in events:
+                dk = ev["dampak"]
+                _cal_all.append({
+                    "country": country,
+                    "tanggal": ev["tanggal"],
+                    "event":   ev["event"],
+                    "fc":      ev["forecast"],
+                    "prev":    ev["prev"],
+                    "dampak":  "MED" if dk == "MEDIUM" else dk,
+                    "d_clr":   dampak_color.get(dk, "#b2b5be"),
+                    "d_bg":    dampak_bg.get(dk, "rgba(178,181,190,0.08)"),
+                    "tip":     ev["keterangan"].replace('"','&quot;').replace("'","&#39;"),
+                })
+        _cal_id = [r for r in _cal_all if "INDONESIA" in r["country"]]
+        _cal_us = [r for r in _cal_all if "UNITED" in r["country"]]
+        _cal_id_json = _cal_json.dumps(_cal_id, ensure_ascii=False)
+        _cal_us_json = _cal_json.dumps(_cal_us, ensure_ascii=False)
 
-        cal_cols = st.columns(2)
-        country_list = list(calendar_data.items())
-        for ci, (country, events) in enumerate(country_list):
-            col_idx = ci % 2
-            with cal_cols[col_idx]:
-                rows_html = ""
-                for ev in events:
-                    dk    = ev["dampak"]
-                    d_clr = dampak_color.get(dk, "#b2b5be")
-                    d_bg  = dampak_bg.get(dk, "rgba(178,181,190,0.08)")
-                    tip   = ev["keterangan"].replace("'", "&#39;").replace('"', "&quot;")
-                    rows_html += (
-                        f"<div class='cal-row'>"
-                        f"<div class='cal-dt'>{ev['tanggal']}</div>"
-                        f"<div class='cal-ev'>{ev['event']}</div>"
-                        f"<div class='cal-nums'>"
-                        f"<span class='cal-fc'>&#9654; {ev['forecast']}</span>"
-                        f"<span class='cal-pv'>Prev: {ev['prev']}</span>"
-                        f"</div>"
-                        f"<div class='cal-bdg' style='background:{d_bg};color:{d_clr};border:1px solid {d_clr};'>{'MED' if dk == 'MEDIUM' else dk}</div>"
-                        f"<div class='cal-tip'>{tip}</div>"
-                        f"</div>"
-                    )
-                st.markdown(
-                    f"<div class='cal-wrap'>"
-                    f"<div class='cal-hdr'>{country} — Apr–Jun 2026 · Waktu WIB</div>"
-                    f"{rows_html}"
-                    f"</div>",
-                    unsafe_allow_html=True
-                )
+        _cal_total_h = max(42 + len(_cal_id)*40 + 28, 42 + len(_cal_us)*40 + 28) + 20
+
+        components.html(f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
+.row{{display:flex;gap:14px;width:100%;align-items:flex-start;}}
+.col{{flex:1;min-width:0;}}
+.cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
+.cal-hdr{{padding:10px 16px;background:rgba(245,194,66,0.09);border-bottom:1px solid {met_border};font-size:0.70rem;font-weight:700;letter-spacing:0.12em;color:#F5C242;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.cal-sub{{font-size:0.52rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.scroll-box{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
+.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;min-width:340px;}}
+thead th{{position:sticky;top:0;z-index:2;background:rgba(245,194,66,0.10);color:#F5C242;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.62rem;white-space:nowrap;}}
+tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(245,194,66,0.04);cursor:default;}}
+.dt{{font-size:0.63rem;color:{text_sub};}}
+.ev{{font-size:0.71rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
+.fc{{font-size:0.69rem;color:#089981;font-weight:600;display:block;}}
+.pv{{font-size:0.59rem;color:{text_sub};display:block;}}
+.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:0.60rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
+/* Tooltip */
+.tip-wrap{{position:relative;}}
+.tip-wrap:hover .tip{{display:block;}}
+.tip{{display:none;position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:9999;
+  background:{'#1a2035' if is_dark else '#ffffff'};
+  border:1px solid {met_border};border-left:3px solid #F5C242;
+  border-radius:0 6px 6px 0;padding:8px 12px;
+  font-size:0.67rem;color:{text_main};line-height:1.5;
+  pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,0.4);
+  white-space:normal;min-width:220px;max-width:360px;}}
+@media(max-width:600px){{
+  .row{{flex-direction:column;gap:10px;}}
+  .cal-hdr{{font-size:0.60rem;padding:8px 10px;}}
+  thead th{{font-size:0.57rem;padding:7px 8px;}}
+  tbody td{{font-size:0.63rem;padding:7px 8px;}}
+  .bdg{{font-size:0.55rem;padding:2px 4px;}}
+  .ev{{font-size:0.63rem;}}
+  .fc{{font-size:0.62rem;}}
+  .pv{{font-size:0.55rem;}}
+}}
+</style></head><body>
+<div class="row">
+  <div class="col">
+    <div class="cal-wrap">
+      <div class="cal-hdr">
+        <span>🇮🇩 INDONESIA</span>
+        <span class="cal-sub">Apr–Jul 2026 · WIB</span>
+      </div>
+      <div class="scroll-box">
+        <table><thead><tr>
+          <th>TANGGAL</th><th>EVENT</th><th>FORECAST / PREV</th><th>DAMPAK</th>
+        </tr></thead>
+        <tbody id="id-tb"></tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="cal-wrap">
+      <div class="cal-hdr">
+        <span>🇺🇸 UNITED STATES</span>
+        <span class="cal-sub">Apr–Jun 2026 · WIB</span>
+      </div>
+      <div class="scroll-box">
+        <table><thead><tr>
+          <th>TANGGAL</th><th>EVENT</th><th>FORECAST / PREV</th><th>DAMPAK</th>
+        </tr></thead>
+        <tbody id="us-tb"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){{
+  var ID={_cal_id_json};
+  var US={_cal_us_json};
+  function buildCal(data, tbId){{
+    var h='';
+    data.forEach(function(r){{
+      h+='<tr class="tip-wrap">'+
+        '<td class="dt">'+r.tanggal+'</td>'+
+        '<td class="ev">'+r.event+'<div class="tip">'+r.tip+'</div></td>'+
+        '<td><span class="fc">&#9654; '+r.fc+'</span><span class="pv">Prev: '+r.prev+'</span></td>'+
+        '<td><span class="bdg" style="background:'+r.d_bg+';color:'+r.d_clr+';border:1px solid '+r.d_clr+';">'+r.dampak+'</span></td>'+
+        '</tr>';
+    }});
+    document.getElementById(tbId).innerHTML=h;
+  }}
+  buildCal(ID,'id-tb');
+  buildCal(US,'us-tb');
+}})();
+</script></body></html>""", height=_cal_total_h, scrolling=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -6753,9 +6842,6 @@ tbody tr:hover td{{background:rgba(245,194,66,0.04);}}
 </script></body></html>"""
 
         components.html(ca_html_widget, height=_ca_total_h + 60, scrolling=False)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        # ─────────────────────────────────────────────────────────
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
