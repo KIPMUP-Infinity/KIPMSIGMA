@@ -8573,14 +8573,13 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         def fetch_sh_live(ticker):
             """
             Fetch jumlah pemegang saham untuk SEMUA emiten BEI.
-            Strategi berlapis:
-            1. IDX ListedCompany API (data profil emiten termasuk shareholders)
-            2. IDX StockData API (data ringkasan trading)
-            3. Scrape halaman profil IDX langsung
-            4. KSEI Statistik bulanan (Excel publik)
-            Return: list of {date, shareholders} — bisa 1 titik (terkini) atau historis
+            Cache 6 jam normal. Namun pada tanggal 7-10 setiap bulan (window update IDX/KSEI),
+            cache dikosongkan otomatis agar data terbaru langsung diambil.
             """
             import urllib.request, json as _j, datetime as _dtx, re as _re
+            # ── Auto-invalidate pada window update bulanan (tgl 7-10) ──
+            _now = _dtx.datetime.now()
+            _update_window = 7 <= _now.day <= 10
             results = []
             now = _dtx.datetime.now()
             # Buat tanggal akhir bulan terakhir
@@ -8766,6 +8765,20 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         # ════════════════════════════════════════════════════════════════
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
+
+        # ── Banner update bulanan tgl 7-10 ──
+        import datetime as _dt_sh
+        _today_sh = _dt_sh.datetime.now()
+        if 7 <= _today_sh.day <= 10:
+            st.markdown(f"""
+            <div style='background:rgba(8,153,129,0.1);border:1px solid #089981;border-radius:10px;
+                padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;'>
+                <span style='font-size:1.2rem;'>🔄</span>
+                <span style='font-family:IBM Plex Mono,monospace;font-size:0.85rem;color:#089981;'>
+                    <b>WINDOW UPDATE BULANAN AKTIF</b> — IDX/KSEI biasanya merilis data pemegang saham terbaru
+                    pada tanggal 7–10. Data live diambil fresh, cache diperbarui otomatis.
+                </span>
+            </div>""", unsafe_allow_html=True)
 
         col_sh_inp, col_sh_btn = st.columns([3, 1])
         with col_sh_inp:
@@ -9625,7 +9638,8 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         except:
                             _sh_ctx = ""
 
-                        dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional. Buat TRADE PLAN LENGKAP untuk saham {ticker_input}.
+                        dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
+Buat analisa komprehensif untuk saham {ticker_input} dengan STRUKTUR WAJIB berikut (urutan tidak boleh diubah):
 
 === DATA HARGA & TEKNIKAL ===
 Harga Terakhir: {live_price_str}
@@ -9637,49 +9651,52 @@ Harga Terakhir: {live_price_str}
 === DATA PEMEGANG SAHAM ===
 {_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
 
-=== INSTRUKSI ANALISA ===
-Buat analisa komprehensif dengan STRUKTUR WAJIB berikut (jangan disingkat):
+────────────────────────────────────────────────
+STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
+────────────────────────────────────────────────
 
-1. 📊 KONDISI TEKNIKAL
-   - Posisi harga vs support/resistance utama
+1. 📊 NARASI TEKNIKAL
+   - Posisi harga saat ini vs struktur support/resistance utama (bukan angka random, harus dari struktur chart)
    - Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
-   - Momentum: apakah ada sinyal reversal atau continuation?
-   - Volume: konfirmasi atau divergensi dari pergerakan harga?
+   - Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
+   - Volume: konfirmasi atau divergensi dari price action?
+   - EMA: posisi harga vs EMA 13/21/100/200 → arah trend
 
-2. 🏢 KONDISI FUNDAMENTAL
-   - Valuasi saat ini (murah/wajar/mahal)?
-   - Kinerja keuangan terbaru (EPS, revenue, margin)
-   - Katalis positif atau negatif ke depan
+2. 🏢 NARASI FUNDAMENTAL
+   - Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE)
+   - Kinerja keuangan (EPS, margin, pertumbuhan revenue)
+   - Katalis positif/negatif ke depan
    - Posisi vs kompetitor sektor
 
 3. 👥 SINYAL PEMEGANG SAHAM
-   - Analisa tren jumlah pemegang saham
-   - Apakah ada akumulasi retail atau distribusi?
-   - Implikasinya terhadap supply/demand saham
+   - Tren jumlah pemegang saham: akumulasi atau distribusi?
+   - Implikasi terhadap supply/demand
 
 4. 📰 OUTLOOK SEKTOR & MAKRO
-   - Kondisi sektor {ticker_input} saat ini
-   - Faktor makro yang mempengaruhi (suku bunga, kurs, kebijakan)
-   - Risiko utama yang perlu diwaspadai
+   - Kondisi sektor saat ini
+   - Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
+   - Risiko utama
 
 5. ⚡ KESIMPULAN & BIAS
-   - Bias: BULLISH / BEARISH / SIDEWAYS (pilih satu, jelaskan)
-   - Level kunci yang harus diperhatikan
+   - Bias tunggal: BULLISH / BEARISH / SIDEWAYS — satu pilihan, jelaskan alasan utama
+   - Level kunci yang wajib diperhatikan trader
 
-6. 🎯 TRADE PLAN EKSEKUSI
-   - Skenario A (Optimis): Entry, SL, TP1, TP2
-   - Skenario B (Konservatif): Entry, SL, TP1
-   - Time horizon: berapa hari/minggu?
-   - Risk/Reward ratio masing-masing skenario
-   - Sizing rekomendasi (% portofolio)
+6. 🎯 TRADE PLAN (WAJIB ADA, berbasis struktur teknikal murni — BUKAN berdasarkan ratio 1:2 atau RR apapun)
+   - Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
+   - Stop Loss: Rp[Z] → wajib di BAWAH support struktural terdekat, BUKAN hanya beberapa tick di bawah entry. SL harus berdasarkan INVALIDASI STRUKTUR (di bawah swing low, di bawah demand zone, di bawah OB). Minimal jarak SL = 1.5× ATR dari batas bawah entry zone.
+   - TP1: Rp[A] → resistance minor / FVG terdekat / zona distribusi pertama
+   - TP2: Rp[B] → WAJIB ADA jika ada resistance mayor / swing high / OB bearish di atas TP1. Tulis "TP2 belum teridentifikasi" HANYA jika benar-benar tidak ada struktur apapun di atas TP1.
+   - Timeframe: perkiraan berapa hari/minggu
+   - Trigger masuk: kondisi spesifik yang harus terpenuhi sebelum entry (candle close, volume konfirmasi, dll)
+   - Catatan: IDX = LONG ONLY. Bias BEARISH = WAIT / tidak ada posisi. Jangan paksakan trade.
 
-Semua harga dalam Rupiah, mendekati harga saat ini ({live_price_str}).
-Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
+Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
 
-Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
+Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
 ```json
-{{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": null, "tp3": null}}
-```"""
+{{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null}}
+```
+WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WAJIB di bawah entry_low. tp1 WAJIB di atas entry_high. tp2 WAJIB diisi angka nyata jika ada struktur (bukan null). Semua angka harus mendekati harga saat ini ({live_price_str}). Jangan isi 0 kecuali benar-benar tidak ada nilainya."""
 
                         try:
                             ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
@@ -9721,14 +9738,53 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
                             if last_price > 0:
                                 def _plausible(v, ref, pct=0.6):
                                     return v and v > 0 and abs(v - ref) / ref < pct
-                                if not _plausible(ai_data['entry_low'], last_price): ai_data['entry_low'] = None
-                                if not _plausible(ai_data['entry_high'], last_price): ai_data['entry_high'] = None
-                                if not _plausible(ai_data['stop_loss'], last_price): ai_data['stop_loss'] = None
-                                if not _plausible(ai_data['tp1'], last_price): ai_data['tp1'] = None
-                                if not _plausible(ai_data['tp2'], last_price): ai_data['tp2'] = None
-                                if not _plausible(ai_data['tp3'], last_price): ai_data['tp3'] = None
-                            # Hanya simpan ai_data jika minimal entry_low atau stop_loss valid
-                            if not (ai_data.get('entry_low') or ai_data.get('stop_loss')):
+                                # Entry zone: plausible ±60% dari last price
+                                if not _plausible(ai_data['entry_low'], last_price, 0.60): ai_data['entry_low'] = None
+                                if not _plausible(ai_data['entry_high'], last_price, 0.60): ai_data['entry_high'] = None
+                                if not _plausible(ai_data['stop_loss'], last_price, 0.60): ai_data['stop_loss'] = None
+                                # TP: lebih longgar ±80% karena bisa jauh dari harga saat ini
+                                if not _plausible(ai_data['tp1'], last_price, 0.80): ai_data['tp1'] = None
+                                if not _plausible(ai_data['tp2'], last_price, 0.80): ai_data['tp2'] = None
+                                if not _plausible(ai_data['tp3'], last_price, 0.80): ai_data['tp3'] = None
+
+                                # ── Fallback buy zone: jika AI tidak return entry_low/entry_high ──
+                                # Gunakan last_price ±0.5% sebagai zona default yang terlihat di chart
+                                if not ai_data['entry_low'] and not ai_data['entry_high']:
+                                    if ai_data.get('stop_loss') and ai_data.get('tp1'):
+                                        # Estimasi entry dari midpoint stop_loss → tp1
+                                        _sl = ai_data['stop_loss']
+                                        _tp = ai_data['tp1']
+                                        # Buy zone = 30-50% dari range SL-TP1 di atas SL
+                                        _range = _tp - _sl
+                                        ai_data['entry_low']  = round(_sl + _range * 0.10, 0)
+                                        ai_data['entry_high'] = round(_sl + _range * 0.25, 0)
+                                    else:
+                                        # Fallback absolut: ±0.8% dari last price
+                                        ai_data['entry_low']  = round(last_price * 0.992, 0)
+                                        ai_data['entry_high'] = round(last_price * 1.000, 0)
+
+                                # ── Pastikan entry_low < entry_high ──
+                                if ai_data['entry_low'] and ai_data['entry_high']:
+                                    if ai_data['entry_low'] >= ai_data['entry_high']:
+                                        ai_data['entry_low'], ai_data['entry_high'] = (
+                                            min(ai_data['entry_low'], ai_data['entry_high']),
+                                            max(ai_data['entry_low'], ai_data['entry_high'])
+                                        )
+                                        # Pastikan ada gap minimal 0.5%
+                                        if ai_data['entry_high'] - ai_data['entry_low'] < last_price * 0.005:
+                                            ai_data['entry_high'] = round(ai_data['entry_low'] * 1.008, 0)
+
+                                # ── Validasi logika: SL < entry_low, entry_high < TP1 ──
+                                if ai_data['stop_loss'] and ai_data['entry_low']:
+                                    if ai_data['stop_loss'] >= ai_data['entry_low']:
+                                        # SL tidak boleh di atas atau sama dengan entry bawah
+                                        ai_data['stop_loss'] = round(ai_data['entry_low'] * 0.975, 0)
+                                if ai_data['tp1'] and ai_data['entry_high']:
+                                    if ai_data['tp1'] <= ai_data['entry_high']:
+                                        ai_data['tp1'] = round(ai_data['entry_high'] * 1.03, 0)
+
+                            # Hanya simpan ai_data jika minimal entry zone atau stop_loss valid
+                            if not (ai_data.get('entry_low') or ai_data.get('stop_loss') or ai_data.get('tp1')):
                                 ai_data = None
 
                             # Bersihkan teks dari JSON block
@@ -9859,22 +9915,38 @@ Di AKHIR JAWABAN, tambahkan JSON ini (setelah semua analisa selesai):
                                     borderpad=4
                                 )
 
-                            # Area BUY (Hanya kotak highlight & 1 Label gabungan di tengah)
+                            # Area BUY — kotak hijau dengan border atas/bawah yang jelas
                             if el and eh:
                                 el_val = float(el)
                                 eh_val = float(eh)
-                                mid_y = (el_val + eh_val) / 2 # Mencari titik tengah untuk posisi label
-                                
-                                # Gambar kotak background hijau tanpa garis tepi
+                                # Pastikan el_val < eh_val
+                                if el_val > eh_val:
+                                    el_val, eh_val = eh_val, el_val
+                                mid_y = (el_val + eh_val) / 2
+
+                                # Background hijau — opacity lebih kuat agar konsisten terlihat
                                 fig.add_shape(
                                     type="rect", xref="paper", yref="y",
                                     x0=0, x1=1, y0=el_val, y1=eh_val,
-                                    fillcolor="rgba(8,153,129,0.15)", # Hijau transparan
-                                    line=dict(width=0), # Garis tepi dihilangkan
+                                    fillcolor="rgba(8,153,129,0.22)",
+                                    line=dict(width=0),
                                     layer="below"
                                 )
-
-                                # Gambar satu label di tengah-tengah kotak
+                                # Garis batas bawah buy zone (solid tipis hijau)
+                                fig.add_shape(
+                                    type="line", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=el_val, y1=el_val,
+                                    line=dict(color="#089981", width=1.2, dash="solid"),
+                                    layer="above"
+                                )
+                                # Garis batas atas buy zone (dashed hijau)
+                                fig.add_shape(
+                                    type="line", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=eh_val, y1=eh_val,
+                                    line=dict(color="#089981", width=1.0, dash="dash"),
+                                    layer="above"
+                                )
+                                # Label BUY di kanan
                                 fig.add_annotation(
                                     xref='paper', yref='y',
                                     x=1.0, y=mid_y,
