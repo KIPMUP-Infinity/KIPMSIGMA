@@ -10140,10 +10140,19 @@ else:
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
         else:
             full_prompt = prompt
-            try:
-                ctx = build_combined_context(prompt)
-                if ctx: full_prompt = f"{ctx}\n\n{prompt}"
-            except: pass
+            # Hanya inject market context jika user memang request analisa/data pasar
+            # Bukan untuk chat biasa / obrolan umum
+            _analisa_keywords = [
+                "analisa", "saham", "ihsg", "harga", "ticker", "emiten", "idx", "beli", "jual",
+                "teknikal", "fundamental", "bandarmologi", "bursa", "investasi", "trading",
+                "dampak", "makro", "market", "rupiah", "berita pasar", "laporan", "bantu aku analisa"
+            ]
+            _is_analisa_request = any(kw in prompt_lower for kw in _analisa_keywords) or bool(emiten_match)
+            if _is_analisa_request:
+                try:
+                    ctx = build_combined_context(prompt)
+                    if ctx: full_prompt = f"{ctx}\n\n{prompt}"
+                except: pass
 
         if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
@@ -10387,9 +10396,14 @@ _bubble_css = """
     border-radius: 20px 20px 4px 20px !important;
     padding: 10px 16px !important;
     max-width: 75% !important;
+    width: fit-content !important;
+    min-width: 0 !important;
     margin-left: auto !important;
+    margin-right: 0 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
     font-size: 0.9rem !important;
+    text-align: left !important;
+    display: inline-block !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] p,
 .sigma-user-msg [data-testid="stMarkdownContainer"] span,
@@ -10397,6 +10411,7 @@ _bubble_css = """
 .sigma-user-msg [data-testid="stMarkdownContainer"] strong {
     color: """ + C['bubble_text'] + """ !important;
     font-size: 0.9rem !important;
+    text-align: left !important;
 }
 @media (max-width: 768px) {
     .sigma-user-msg [data-testid="stMarkdownContainer"] {
