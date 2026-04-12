@@ -10080,12 +10080,13 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                     x_all   = x_str + pad_str
                     n_total = len(x_all)
 
-                    # ── Figure 4 rows: Price / Volume / RSI / MACD ────────
+                    # ── Figure 5 rows: Price / Raw Vol / Buy-Sell Delta / RSI / MACD ──
                     fig = make_subplots(
-                        rows=4, cols=1,
+                        rows=5, cols=1,
                         shared_xaxes=True,
-                        row_heights=[0.52, 0.16, 0.16, 0.16],
-                        vertical_spacing=0.012,
+                        row_heights=[0.48, 0.13, 0.13, 0.13, 0.13],
+                        vertical_spacing=0.010,
+                        row_titles=['', 'VOL', 'DELTA', 'RSI', 'MACD'],
                     )
 
                     # ── Candlestick ───────────────────────────────────────
@@ -10203,7 +10204,29 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                         except Exception as e:
                             st.warning(f"AI gagal menggambar Trade Plan: {e}")
 
-                    # ── Volume (split buy/sell power) ─────────────────────
+                    # ── ROW 2: Raw Volume — warna hijau/merah sesuai candle ──────
+                    raw_vol_colors = [
+                        'rgba(8,153,129,0.80)' if c >= o else 'rgba(242,54,69,0.75)'
+                        for c, o in zip(df_chart['Close'], df_chart['Open'])
+                    ]
+                    fig.add_trace(go.Bar(
+                        x=x_str,
+                        y=df_chart['Volume'],
+                        marker_color=raw_vol_colors,
+                        name='Volume', showlegend=False,
+                        hovertemplate='<b>%{x}</b><br>Volume: %{y:,.0f}<extra></extra>',
+                    ), row=2, col=1)
+                    # MA Volume 20 — garis referensi rata-rata
+                    vol_ma20 = df_chart['Volume'].rolling(20, min_periods=1).mean()
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=vol_ma20,
+                        mode='lines',
+                        line=dict(color='rgba(245,194,66,0.7)', width=1.0, dash='dot'),
+                        name='Vol MA20', showlegend=False,
+                        hovertemplate='MA20: %{y:,.0f}<extra></extra>',
+                    ), row=2, col=1)
+
+                    # ── ROW 3: Buy/Sell Power Delta ───────────────────────────
                     hl_range = (df_chart['High'] - df_chart['Low']).replace(0, 1)
                     buy_vol  = (df_chart['Volume'] * (df_chart['Close'] - df_chart['Low'])  / hl_range).clip(lower=0)
                     sell_vol = (df_chart['Volume'] * (df_chart['High']  - df_chart['Close']) / hl_range).clip(lower=0)
@@ -10212,25 +10235,25 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                         x=x_str, y=sell_vol,
                         marker_color='rgba(242,54,69,0.75)',
                         name='Sell Power', showlegend=False,
-                    ), row=2, col=1)
+                    ), row=3, col=1)
                     fig.add_trace(go.Bar(
                         x=x_str, y=buy_vol,
                         marker_color='rgba(8,153,129,0.85)',
                         name='Buy Power', showlegend=False,
-                    ), row=2, col=1)
+                    ), row=3, col=1)
 
                     # ── RSI (level 70/30) ──────────────────────────────────
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['RSI'],
                         mode='lines', line=dict(color='#F5C242', width=1.2),
                         showlegend=False,
-                    ), row=3, col=1)
+                    ), row=4, col=1)
                     for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
                         fig.add_trace(go.Scatter(
                             x=[x_str[0], x_str[-1]], y=[lvl, lvl],
                             mode='lines', line=dict(color=clr, width=1, dash='dot'),
                             showlegend=False,
-                        ), row=3, col=1)
+                        ), row=4, col=1)
 
                     # ── MACD ──────────────────────────────────────────────
                     macd_hist_clr = [inc_color if v >= 0 else dec_color
@@ -10238,22 +10261,22 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                     fig.add_trace(go.Bar(
                         x=x_str, y=df_chart['MACD_hist'],
                         marker_color=macd_hist_clr, showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD'],
                         mode='lines', line=dict(color='#2196f3', width=1.2),
                         showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
                     fig.add_trace(go.Scatter(
                         x=x_str, y=df_chart['MACD_signal'],
                         mode='lines', line=dict(color='#ff5252', width=1.2),
                         showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
                     fig.add_trace(go.Scatter(
                         x=[x_str[0], x_str[-1]], y=[0, 0],
                         mode='lines', line=dict(color=tv_border, width=1),
                         showlegend=False,
-                    ), row=4, col=1)
+                    ), row=5, col=1)
 
                     # ── Tick labels: ambil ~8 titik merata ───────────────
                     step     = max(1, n_bars // 8)
@@ -10292,7 +10315,7 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                         plot_bgcolor=tv_bg_color,
                         paper_bgcolor=tv_bg_color,
                         font=dict(color=tv_text_color, size=11),
-                        height=980,
+                        height=1100,
                         showlegend=False,
                         barmode="stack",
                         margin=dict(l=0, r=120, t=10, b=40),
@@ -10300,11 +10323,13 @@ WAJIB: entry_low dan entry_high adalah batas bawah & atas BUY ZONE. stop_loss WA
                                     range=[-0.5, n_total-0.5], tickvals=tickvals),
                         xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
                         xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
+                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis5=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
                         yaxis =dict(**ax_y_plain, title=''),
-                        yaxis2=dict(**ax_y_grid,  title='VOL'),
-                        yaxis3=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
-                        yaxis4=dict(**ax_y_grid,  title='MACD'),
+                        yaxis2=dict(**ax_y_grid,  title='VOL',   tickformat='.2s'),
+                        yaxis3=dict(**ax_y_grid,  title='DELTA', tickformat='.2s'),
+                        yaxis4=dict(**ax_y_grid,  title='RSI',   range=[0, 100]),
+                        yaxis5=dict(**ax_y_grid,  title='MACD'),
                     )
 
                     st.plotly_chart(fig, use_container_width=True)
