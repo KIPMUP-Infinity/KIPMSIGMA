@@ -2316,7 +2316,7 @@ def _get_groq_client_and_key():
     return client, key_name
 
 
-def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
+def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
     """
     Groq PRIMARY — LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
     Key rotation otomatis saat 429 rate limit — coba semua key sebelum menyerah.
@@ -2339,7 +2339,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=8000):
             {"role": m["role"], "content": (m.get("content") or "")[:2000]}
             for m in history_msgs
             if m.get("role") in ("user", "assistant")
-        ][-4:]
+        ][-6:]
         if hist_clean and hist_clean[-1]["role"] == "user":
             hist_clean = hist_clean[:-1]
         messages.extend(hist_clean)
@@ -2400,7 +2400,7 @@ def _call_groq_fallback(full_prompt):
                     {"role": "user", "content": full_prompt}
                 ],
                 temperature=0.7,
-                max_tokens=6000
+                max_tokens=8000
             )
             return response.choices[0].message.content, f"Groq/Llama8B({key_name})"
         except Exception as e:
@@ -2437,7 +2437,7 @@ def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
             {"role": m["role"], "content": (m.get("content") or "")[:2000]}
             for m in history_msgs
             if m.get("role") in ("user", "assistant")
-        ][-4:]
+        ][-6:]
         if hist_clean and hist_clean[-1]["role"] == "user":
             hist_clean = hist_clean[:-1]
         messages.extend(hist_clean)
@@ -2615,17 +2615,18 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
 
-/* ── USER BUBBLE — Gemini style ── */
-[data-testid="stChatMessage"][class*="user"] {{
+/* ── USER BUBBLE — Gemini style (applied via JS class injection) ── */
+.sigma-user-msg {{
     display: flex !important;
     justify-content: flex-end !important;
+    padding-right: 0 !important;
 }}
-[data-testid="stChatMessage"][class*="user"] [data-testid="stChatMessageContent"] {{
+.sigma-user-msg [data-testid="stChatMessageContent"] {{
     display: flex !important;
     justify-content: flex-end !important;
     width: 100% !important;
 }}
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] {{
+.sigma-user-msg [data-testid="stMarkdownContainer"] {{
     background: {C['bubble']} !important;
     color: {C['bubble_text']} !important;
     border-radius: 20px 20px 4px 20px !important;
@@ -2633,11 +2634,12 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
     max-width: 75% !important;
     margin-left: auto !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    font-size: 0.9rem !important;
 }}
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] p,
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] span,
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] li,
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] strong {{
+.sigma-user-msg [data-testid="stMarkdownContainer"] p,
+.sigma-user-msg [data-testid="stMarkdownContainer"] span,
+.sigma-user-msg [data-testid="stMarkdownContainer"] li,
+.sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
     color: {C['bubble_text']} !important;
     font-size: 0.9rem !important;
 }}
@@ -3261,7 +3263,7 @@ def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
             {"role": m["role"], "content": (m.get("content") or "")[:2000]}
             for m in history_msgs
             if m.get("role") in ("user", "assistant")
-        ][-4:]
+        ][-6:]
         if hist_clean and hist_clean[-1]["role"] == "user":
             hist_clean = hist_clean[:-1]
         messages.extend(hist_clean)
@@ -3406,17 +3408,18 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
 [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.9rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
 
-/* ── USER BUBBLE — Gemini style ── */
-[data-testid="stChatMessage"][class*="user"] {{
+/* ── USER BUBBLE — Gemini style (applied via JS class injection) ── */
+.sigma-user-msg {{
     display: flex !important;
     justify-content: flex-end !important;
+    padding-right: 0 !important;
 }}
-[data-testid="stChatMessage"][class*="user"] [data-testid="stChatMessageContent"] {{
+.sigma-user-msg [data-testid="stChatMessageContent"] {{
     display: flex !important;
     justify-content: flex-end !important;
     width: 100% !important;
 }}
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] {{
+.sigma-user-msg [data-testid="stMarkdownContainer"] {{
     background: {C['bubble']} !important;
     color: {C['bubble_text']} !important;
     border-radius: 20px 20px 4px 20px !important;
@@ -3424,11 +3427,12 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
     max-width: 75% !important;
     margin-left: auto !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    font-size: 0.9rem !important;
 }}
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] p,
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] span,
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] li,
-[data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] strong {{
+.sigma-user-msg [data-testid="stMarkdownContainer"] p,
+.sigma-user-msg [data-testid="stMarkdownContainer"] span,
+.sigma-user-msg [data-testid="stMarkdownContainer"] li,
+.sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
     color: {C['bubble_text']} !important;
     font-size: 0.9rem !important;
 }}
@@ -3462,7 +3466,7 @@ hr {{ border-color: {C['border']} !important; }}
     [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
     .navy-pill {{ max-width: 82% !important; font-size: 1rem !important; line-height: 1.7 !important; padding: 12px 16px !important; }}
     /* User bubble mobile */
-    [data-testid="stChatMessage"][class*="user"] [data-testid="stMarkdownContainer"] {{
+    .sigma-user-msg [data-testid="stMarkdownContainer"] {{
         max-width: 88% !important;
         padding: 9px 13px !important;
         border-radius: 16px 16px 3px 16px !important;
@@ -4260,7 +4264,7 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 elif img_b64 and img_mime: _parts.append({"inlineData": {"mimeType": img_mime, "data": img_b64}})
                 teks_gabungan = f"{SYSTEM_PROMPT['content']}\n\n[PERTANYAAN USER]:\n{prompt}"
                 _parts.append({"text": teks_gabungan})
-                payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192}}
+                payload = {"contents": [{"role": "user", "parts": _parts}], "generationConfig": {"temperature": 0.7, "maxOutputTokens": 16384}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=45) as r: data = _j.loads(r.read())
@@ -4289,7 +4293,7 @@ def _call_gemini_text(messages):
                     elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
                 if not gemini_contents: gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
                 gemini_contents[0]["parts"][0]["text"] = f"{SYSTEM_PROMPT['content']}\n\n{gemini_contents[0]['parts'][0]['text']}"
-                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192}}
+                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 16384}}
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=35) as r: data = _j.loads(r.read())
@@ -10217,7 +10221,7 @@ else:
                     else:
                         # Layer 1: Groq 70B (rotate 13 key)
                         try:
-                            ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
+                            ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs, max_tokens=16000)
                             simbol_ai = "\n\n*(&#9889; Groq/Llama)*"
                         except Exception as e_groq70:
                             debug_info.append(f"Groq 70B: {str(e_groq70)}")
@@ -10362,6 +10366,99 @@ components.html("""
     }
     setInterval(injectPastePolyfill, 1000);
 })();
+</script>
+""", height=0)
+
+
+# ── USER BUBBLE JS INJECTOR ──
+_bubble_css = """
+.sigma-user-msg {
+    display: flex !important;
+    justify-content: flex-end !important;
+}
+.sigma-user-msg [data-testid="stChatMessageContent"] {
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
+}
+.sigma-user-msg [data-testid="stMarkdownContainer"] {
+    background: """ + C['bubble'] + """ !important;
+    color: """ + C['bubble_text'] + """ !important;
+    border-radius: 20px 20px 4px 20px !important;
+    padding: 10px 16px !important;
+    max-width: 75% !important;
+    margin-left: auto !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    font-size: 0.9rem !important;
+}
+.sigma-user-msg [data-testid="stMarkdownContainer"] p,
+.sigma-user-msg [data-testid="stMarkdownContainer"] span,
+.sigma-user-msg [data-testid="stMarkdownContainer"] li,
+.sigma-user-msg [data-testid="stMarkdownContainer"] strong {
+    color: """ + C['bubble_text'] + """ !important;
+    font-size: 0.9rem !important;
+}
+@media (max-width: 768px) {
+    .sigma-user-msg [data-testid="stMarkdownContainer"] {
+        max-width: 88% !important;
+        padding: 9px 13px !important;
+        border-radius: 16px 16px 3px 16px !important;
+    }
+}
+"""
+components.html(f"""
+<script>
+(function() {{
+    var pd = window.parent.document;
+
+    // Inject bubble CSS once
+    if (!pd.getElementById('sigma-bubble-css')) {{
+        var st = pd.createElement('style');
+        st.id = 'sigma-bubble-css';
+        st.textContent = `{_bubble_css}`;
+        pd.head.appendChild(st);
+    }}
+
+    function markUserBubbles() {{
+        var msgs = pd.querySelectorAll('[data-testid="stChatMessage"]');
+        msgs.forEach(function(el) {{
+            if (el.dataset.bubbleChecked === '1') return;
+            var isUser = false;
+            // Method 1: check data-testid avatar user (most reliable)
+            if (el.querySelector('[data-testid="stChatMessageAvatarUser"]')) {{
+                isUser = true;
+            }}
+            // Method 2: check aria-label contains "user"
+            else if ((el.getAttribute('aria-label') || '').toLowerCase().indexOf('user') >= 0) {{
+                isUser = true;
+            }}
+            // Method 3: Streamlit adds role info to avatar img alt text
+            else {{
+                var imgs = el.querySelectorAll('img');
+                for (var i = 0; i < imgs.length; i++) {{
+                    if ((imgs[i].getAttribute('alt') || '').toLowerCase().indexOf('user') >= 0) {{
+                        isUser = true; break;
+                    }}
+                }}
+            }}
+            // Method 4: innerHTML string check - stChatMessageAvatarUser in DOM
+            if (!isUser) {{
+                var html = el.innerHTML || '';
+                if (html.indexOf('AvatarUser') >= 0) isUser = true;
+                // If neither avatar found yet, can't determine - retry later
+                else if (html.indexOf('AvatarAssistant') < 0 && html.indexOf('AvatarUser') < 0) {{
+                    return; // retry on next interval
+                }}
+            }}
+            if (isUser) el.classList.add('sigma-user-msg');
+            el.dataset.bubbleChecked = '1';
+        }});
+    }}
+
+    // Run immediately and on interval
+    markUserBubbles();
+    setInterval(markUserBubbles, 500);
+}})();
 </script>
 """, height=0)
 
