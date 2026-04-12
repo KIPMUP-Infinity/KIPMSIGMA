@@ -5612,11 +5612,18 @@ if current_view == "dashboard":
         with mb_col2:
             req_weekly = st.button("🗓️ WEEKLY REVIEW (7 Hari)", use_container_width=True, key="btn_mb_weekly")
 
-        if req_daily or req_weekly:
+                if req_daily or req_weekly:
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
             with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
                 import feedparser as _fp
+                from datetime import timezone, timedelta as _td
+                _wib = timezone(_td(hours=7))
+                _now_wib = datetime.now(_wib)
+                _cutoff_daily  = _now_wib - _td(hours=24)
+                _cutoff_weekly = _now_wib - _td(days=7)
+                _cutoff = _cutoff_daily if req_daily else _cutoff_weekly
+
                 # ── Fetch multi-source headline (RSS backup) ──────────────────────
                 dom_news, glob_news = [], []
                 _rss_sources = [
@@ -5630,11 +5637,30 @@ if current_view == "dashboard":
                     ("https://www.aljazeera.com/xml/rss/all.xml",         glob_news),
                     ("https://feeds.bbci.co.uk/news/world/rss.xml",       glob_news),
                 ]
+                import time as _time
+                import email.utils as _eu
                 for _url, _target in _rss_sources:
                     try:
-                        for _e in _fp.parse(_url).entries[:6]:
+                        _feed = _fp.parse(_url)
+                        for _e in _feed.entries[:15]:
                             _t = _e.get("title","").strip()
-                            if _t and _t not in _target: _target.append(_t)
+                            if not _t or _t in _target:
+                                continue
+                            # Coba parse tanggal entry untuk filter waktu
+                            _pub = None
+                            for _attr in ("published_parsed","updated_parsed"):
+                                _pv = getattr(_e, _attr, None)
+                                if _pv:
+                                    try:
+                                        _pub = datetime(*_pv[:6], tzinfo=timezone.utc)
+                                        break
+                                    except: pass
+                            # Jika ada tanggal dan lebih lama dari cutoff, skip
+                            if _pub and _pub < _cutoff.astimezone(timezone.utc):
+                                continue
+                            _target.append(_t)
+                            if len(_target) >= 15:
+                                break
                     except: pass
 
                 # ── FETCH HARGA REAL-TIME — diinjeksikan ke prompt sebagai FAKTA ──
@@ -5742,12 +5768,14 @@ if current_view == "dashboard":
                     return _full_text.strip() if _full_text else None
 
                 # ── Build prompt — BERBEDA antara Daily dan Weekly ────────
-                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:10]]) if dom_news else "⚠ Tidak tersedia."
-                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:10]]) if glob_news else "⚠ Tidak tersedia."
+                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:15]]) if dom_news else "⚠ Tidak tersedia."
+                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:15]]) if glob_news else "⚠ Tidak tersedia."
 
                 if req_daily:
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
-Tanggal hari ini: **{_today}** | Mode: **DAILY REVIEW 24 JAM TERAKHIR**
+Tanggal & waktu sekarang: **{_today}** | Mode: **DAILY REVIEW — 24 JAM TERAKHIR SAJA**
+
+⚠️ PERINTAH WAKTU KERAS: Kamu HANYA boleh membahas berita, data, dan peristiwa yang terjadi dalam 24 JAM TERAKHIR (sejak {_today}). Gunakan web search untuk memverifikasi berita terkini hari ini. JANGAN bahas berita yang lebih dari 24 jam lalu.
 
 ═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
 {_rt_block}
@@ -5755,22 +5783,22 @@ Tanggal hari ini: **{_today}** | Mode: **DAILY REVIEW 24 JAM TERAKHIR**
 Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
 ═══════════════════════════════════════════════════════════════════════════
 
-BERITA TERKINI (RSS — jadikan konteks narasi):
+BERITA RSS 24 JAM TERAKHIR (gunakan sebagai konteks, cari yang paling baru):
 Domestik: {_rss_dom_str}
 Global: {_rss_glob_str}
 
 FORMAT OUTPUT — Bahasa Indonesia, maks 600 kata, Markdown:
 
 ## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
-Gunakan harga IHSG dan USD/IDR dari DATA REAL-TIME di atas. Tambahkan konteks: sentimen lokal, saham/sektor bergerak berdasarkan berita RSS. (2 paragraf)
+Gunakan harga IHSG dan USD/IDR dari DATA REAL-TIME di atas. Tambahkan konteks: sentimen lokal, saham/sektor bergerak berdasarkan berita RSS hari ini. (2 paragraf)
 
-## 🌍 KATALIS GLOBAL 24 JAM
-Gunakan harga S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME di atas. Tambahkan konteks makro dari berita RSS. (1-2 paragraf)
+## 🌍 KATALIS GLOBAL 24 JAM TERAKHIR
+Gunakan harga S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME di atas. Tambahkan konteks makro dari berita terkini hari ini. (1-2 paragraf)
 
-## ⚔️ GEOPOLITIK & RISIKO GLOBAL
-**WAJIB SPESIFIK dari berita RSS**: Kebijakan tarif Trump terbaru, perang Rusia-Ukraina, China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza). Dampak ke IDX, Rupiah, komoditas. (2 paragraf)
+## ⚔️ GEOPOLITIK & RISIKO GLOBAL (24 Jam Terakhir)
+**WAJIB SPESIFIK dari berita RSS hari ini**: Kebijakan tarif Trump terbaru, perang Rusia-Ukraina, China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza). Dampak ke IDX, Rupiah, komoditas. (2 paragraf)
 
-## 💱 FOREX & KOMODITAS (Harga Aktual)
+## 💱 FOREX & KOMODITAS (Harga Aktual — WIB)
 Gunakan USD/IDR, Gold, WTI, Brent dari DATA REAL-TIME di atas. Sektor IDX terdampak?
 
 ## 📊 SENTIMENT METER
@@ -5785,11 +5813,13 @@ Stance + support/resistance IHSG (berdasarkan level real-time di atas) + 1-2 sek
 ## 🎯 WATCHLIST SEKTORAL (3 sektor)
 (✅/⚠/❌) Sektor — status — 1 kalimat alasan.
 
-Padat & actionable. Hindari basa-basi. JANGAN UBAH ANGKA DARI DATA REAL-TIME."""
+Padat & actionable. Hindari basa-basi. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Semua waktu dalam WIB."""
 
                 else:  # weekly
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
-Tanggal: **{_today}** | Mode: **WEEKLY REVIEW (7 Hari Terakhir)**
+Tanggal & waktu sekarang: **{_today}** | Mode: **WEEKLY REVIEW — 7 HARI TERAKHIR**
+
+⚠️ PERINTAH WAKTU KERAS: Kamu HANYA boleh membahas berita, data, dan peristiwa yang terjadi dalam 7 HARI TERAKHIR (sejak 7 hari sebelum {_today}). Gunakan web search untuk mencari dan memverifikasi perkembangan penting minggu ini. JANGAN bahas berita yang lebih dari 7 hari lalu.
 
 ═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
 {_rt_block}
@@ -5797,20 +5827,20 @@ Tanggal: **{_today}** | Mode: **WEEKLY REVIEW (7 Hari Terakhir)**
 Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
 ═══════════════════════════════════════════════════════════════════════════
 
-BERITA TERKINI (RSS — jadikan konteks narasi & analisis):
+BERITA RSS 7 HARI TERAKHIR (konteks narasi & analisis minggu ini):
 Domestik: {_rss_dom_str}
 Global: {_rss_glob_str}
 
 FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 800 kata total.
 
-## 📅 REKAP IHSG MINGGU INI
-Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
+## 📅 REKAP IHSG MINGGU INI (7 Hari Terakhir)
+Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS minggu ini (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
 
 ## 🌍 KATALIS GLOBAL MINGGU INI
 Gunakan S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME. Tambahkan konteks: keputusan Fed/data AS, China/Asia, komoditas (gold, WTI, Brent) dengan ANGKA DARI DATA REAL-TIME. (2 paragraf)
 
-## ⚔️ GEOPOLITIK MINGGU INI — ANALISIS MENDALAM
-**WAJIB DETAIL dari berita RSS**: Perkembangan tarif/perang dagang Trump, eskalasi Rusia-Ukraina, China (Taiwan/regulasi/ekonomi), Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
+## ⚔️ GEOPOLITIK MINGGU INI — ANALISIS MENDALAM (7 Hari Terakhir)
+**WAJIB DETAIL dari berita RSS minggu ini**: Perkembangan tarif/perang dagang Trump, eskalasi Rusia-Ukraina, China (Taiwan/regulasi/ekonomi), Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
 
 ## 📊 SENTIMENT METER MINGGUAN
 - **IHSG:** [angka]/100 — [label — berdasarkan level real-time]
@@ -5825,7 +5855,7 @@ Event penting (FOMC, data AS, dll) + stance + 2-3 sektor rotasi + risiko utama. 
 ## 🎯 WATCHLIST SEKTORAL (5 sektor)
 (✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham — Alasan geopolitik/makro
 
-Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
+Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Semua waktu dalam WIB."""
 
                 # ── Eksekusi: Coba Anthropic API dulu (dengan web search), fallback ke Groq ──
                 mb_res = None
@@ -6051,9 +6081,9 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         
         # ─────────────────────────────────────────────────────────
-        # ECONOMIC CALENDAR — ID · US · CN · JP
+        # ECONOMIC CALENDAR — ID · US
         # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US · CN · JP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         cal_bg      = met_bg
         cal_border  = met_border
@@ -6062,36 +6092,25 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
 
         calendar_data = {
             "🇮🇩 INDONESIA": [
-                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia. Penting bagi sektor perbankan & properti."},
-                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
-                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
-                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
-                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
-                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
+                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia (14:00 WIB). Penting bagi sektor perbankan & properti."},
+                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan — BPS rilis ~09:00 WIB. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
+                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI — BI rilis ~10:00 WIB. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
+                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "PMI Manufaktur S&P Global Indonesia — rilis ~09:00 WIB. Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
+                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1 — BPS rilis ~11:00 WIB. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
+                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "BPS neraca dagang — rilis ~11:00 WIB. Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
+                {"tanggal": "19 Jun 2026", "event": "BI Rate Decision",            "forecast": "5.50%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Rapat Dewan Gubernur BI Juni — pengumuman ~14:00 WIB. Potensi pemangkasan pertama jika inflasi terkendali."},
+                {"tanggal": "01 Jul 2026", "event": "Inflasi CPI YoY (Jun)",       "forecast": "2.7%",    "prev": "2.9%",    "dampak": "HIGH",   "keterangan": "BPS rilis CPI Juni — ~09:00 WIB. Tren penurunan inflasi membuka ruang pemangkasan BI Rate lebih lanjut."},
             ],
             "🇺🇸 UNITED STATES": [
-                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
-                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
-                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "4.25%",   "prev": "4.50%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Fed. Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
-                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
-                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
-                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
-            ],
-            "🇨🇳 CHINA": [
-                {"tanggal": "11 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "0.3%",    "prev": "0.1%",    "dampak": "HIGH",   "keterangan": "Deflasi China mengkhawatirkan pasar. Pemulihan CPI = sinyal demand domestik membaik."},
-                {"tanggal": "16 Apr 2026", "event": "GDP Q1 2026",                 "forecast": "5.0%",    "prev": "5.0%",    "dampak": "HIGH",   "keterangan": "Target pemerintah 5%. Miss di bawah target = sentiment negatif ke komoditas & saham RI."},
-                {"tanggal": "16 Apr 2026", "event": "Industrial Output YoY",       "forecast": "5.6%",    "prev": "5.9%",    "dampak": "MEDIUM", "keterangan": "Output industri China berpengaruh langsung ke harga komoditas: nikel, batu bara, CPO."},
-                {"tanggal": "20 Apr 2026", "event": "PBoC Loan Prime Rate (LPR)",  "forecast": "3.10%",   "prev": "3.10%",   "dampak": "MEDIUM", "keterangan": "Suku bunga pinjaman China. Pemotongan LPR = stimulus ekonomi = demand komoditas naik."},
-                {"tanggal": "01 Mei 2026", "event": "PMI Manufaktur Caixin",       "forecast": "51.0",    "prev": "50.8",    "dampak": "MEDIUM", "keterangan": "PMI sektor swasta China. Lebih sensitif ke ekspor. Pengaruh besar ke saham komoditas RI."},
-                {"tanggal": "20 Mei 2026", "event": "Foreign Direct Investment",   "forecast": "-8.5%",   "prev": "-10.8%",  "dampak": "LOW",    "keterangan": "Investasi asing langsung ke China. Tren perbaikan = confidence investor global ke Asia EM."},
-            ],
-            "🇯🇵 JAPAN": [
-                {"tanggal": "09 Apr 2026", "event": "BoJ Rate Decision",           "forecast": "0.50%",   "prev": "0.50%",   "dampak": "HIGH",   "keterangan": "Bank of Japan. Kenaikan rate = Yen menguat = unwinding carry trade = tekanan ke aset EM."},
-                {"tanggal": "11 Apr 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "3.5%",    "prev": "4.0%",    "dampak": "MEDIUM", "keterangan": "Leading indicator inflasi Jepang. Berpengaruh ke ekspektasi BoJ hike selanjutnya."},
-                {"tanggal": "18 Apr 2026", "event": "CPI Core Inflasi YoY",        "forecast": "3.0%",    "prev": "3.0%",    "dampak": "HIGH",   "keterangan": "Inflasi inti Jepang. Terus tinggi = BoJ makin hawkish = Yen carry trade terancam."},
-                {"tanggal": "30 Apr 2026", "event": "Industrial Production MoM",   "forecast": "+0.3%",   "prev": "-1.1%",   "dampak": "MEDIUM", "keterangan": "Output industri Jepang. Pemulihan = demand bahan baku Asia meningkat."},
-                {"tanggal": "16 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "+0.3%",   "prev": "-0.1%",   "dampak": "HIGH",   "keterangan": "GDP Jepang. Resesi teknis (2 kuartal negatif) = BoJ lebih hati-hati naikkan bunga."},
-                {"tanggal": "23 Mei 2026", "event": "PMI Manufaktur Flash",        "forecast": "49.5",    "prev": "48.7",    "dampak": "MEDIUM", "keterangan": "PMI flash Jepang. Masih di bawah 50 = kontraksi industri. Berpengaruh ke Nikkei & Yen."},
+                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "BLS rilis 20:30 WIB. Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
+                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Census Bureau rilis 19:30 WIB. Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
+                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "3.50%",   "prev": "3.75%",   "dampak": "HIGH",   "keterangan": "Pengumuman suku bunga Fed — 01:00 WIB (dini hari 1 Mei). Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
+                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "BLS rilis 19:30 WIB. Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
+                {"tanggal": "13 Mei 2026", "event": "CPI Inflasi YoY (Apr)",       "forecast": "2.6%",    "prev": "2.8%",    "dampak": "HIGH",   "keterangan": "BLS rilis 19:30 WIB. Data inflasi April. Penurunan konsisten = Fed makin dovish = positif untuk aset EM."},
+                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "BLS rilis 19:30 WIB. Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
+                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "BEA rilis 19:30 WIB. Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
+                {"tanggal": "05 Jun 2026", "event": "Non-Farm Payrolls Mei",       "forecast": "180K",    "prev": "195K",    "dampak": "HIGH",   "keterangan": "BLS rilis 19:30 WIB. Data tenaga kerja Mei. Melemah = Fed makin agresif potong rate = bullish aset global."},
+                {"tanggal": "18 Jun 2026", "event": "FOMC Rate Decision",          "forecast": "3.25%",   "prev": "3.50%",   "dampak": "HIGH",   "keterangan": "Pengumuman suku bunga Fed — 01:00 WIB (dini hari 19 Jun). Pemangkasan ke-2 berturut-turut = risk-on signal kuat."},
             ],
         }
 
@@ -6165,7 +6184,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable."""
                     )
                 st.markdown(
                     f"<div class='cal-wrap'>"
-                    f"<div class='cal-hdr'>{country} — Apr–Mei 2026</div>"
+                    f"<div class='cal-hdr'>{country} — Apr–Jun 2026 · Waktu WIB</div>"
                     f"{rows_html}"
                     f"</div>",
                     unsafe_allow_html=True
