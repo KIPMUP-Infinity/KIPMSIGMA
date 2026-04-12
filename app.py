@@ -5552,12 +5552,13 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    tab_macro, tab_rotation, tab_shareholder, tab_ai, tab_reco = st.tabs([
+    tab_macro, tab_rotation, tab_shareholder, tab_ai, tab_reco, tab_kalkulator = st.tabs([
         "  GLOBAL MACRO & NEWS  ",
         "  INDEX & SECTOR ROTATION  ",
         "  SHAREHOLDER  ",
         "  AI STOCK INSIGHT  ",
         "  AI REKOMENDASI  ",
+        "  🧮 KALKULATOR  ",
     ])
 
     with tab_macro:
@@ -11677,6 +11678,581 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                 </div>""", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
+
+# ─────────────────────────────────────────────
+# PART 12: KALKULATOR SAHAM
+# ─────────────────────────────────────────────
+    with tab_kalkulator:
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🧮 KALKULATOR SAHAM</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        _kc_bg      = met_bg
+        _kc_border  = met_border
+        _kc_gold    = "#F5C242"
+        _kc_purple  = "#a78bfa"
+        _kc_blue    = "#60a5fa"
+        _kc_green   = "#26a69a"
+        _kc_red     = "#f23645"
+        _kc_text    = text_main
+        _kc_sub     = text_sub
+
+        # ── Sub-tabs
+        ktab_ara, ktab_avg = st.tabs([
+            "  📈 Kalkulator ARA / ARB  ",
+            "  📉 Kalkulator Average Down  ",
+        ])
+
+        # ══════════════════════════════════════════════
+        # SUB-TAB 1 — KALKULATOR ARA / ARB
+        # ══════════════════════════════════════════════
+        with ktab_ara:
+            st.markdown(f"""
+            <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};
+            border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
+            font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_gold};font-weight:700;letter-spacing:0.1em;font-size:0.82rem;'>ℹ️ TENTANG ARA / ARB</span><br>
+            <b style='color:{_kc_green};'>ARA (Auto Rejection Atas)</b> — batas maksimum kenaikan harga saham dalam 1 hari.<br>
+            <b style='color:{_kc_red};'>ARB (Auto Rejection Bawah)</b> — batas maksimum penurunan harga saham dalam 1 hari.<br><br>
+            <b>Reguler:</b> Harga &lt; Rp 200 = ±35% · Harga Rp 200–Rp 5.000 = ±25% · Harga &gt; Rp 5.000 = ±20%<br>
+            <b>Akselerasi &amp; FCA:</b> Sesi 1 = ±10% · Sesi 2 = ±10% (compounding per sesi)
+            </div>
+            """, unsafe_allow_html=True)
+
+            _ara_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
+
+/* ── Form ── */
+.form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
+.form-title{{font-size:1.25rem;font-weight:700;color:{_kc_gold};letter-spacing:0.06em;margin-bottom:18px;text-align:center;}}
+.form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.08em;margin-top:-14px;margin-bottom:18px;}}
+.toggle-row{{display:flex;gap:0;margin-bottom:18px;border:1px solid {_kc_border};border-radius:8px;overflow:hidden;}}
+.toggle-btn{{flex:1;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:0.85rem;font-weight:600;
+  letter-spacing:0.06em;border:none;cursor:pointer;transition:all 0.18s;}}
+.toggle-btn.active{{background:linear-gradient(135deg,rgba(245,194,66,0.18),rgba(124,58,237,0.15));color:{_kc_gold};border-bottom:2px solid {_kc_gold};}}
+.toggle-btn.inactive{{background:transparent;color:{_kc_sub};border-bottom:2px solid transparent;}}
+.field-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;}}
+.inp{{width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
+  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:1.05rem;font-weight:600;
+  color:{_kc_text};outline:none;transition:border-color 0.18s;}}
+.inp:focus{{border-color:{_kc_gold};box-shadow:0 0 0 2px rgba(245,194,66,0.08);}}
+.row2{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}}
+.slider-row{{margin-bottom:18px;}}
+.slider-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};
+  margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}}
+.slider-val{{font-size:1.0rem;font-weight:700;color:{_kc_gold};}}
+input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;}}
+.calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(245,194,66,0.22),rgba(124,58,237,0.18));
+  border:1px solid rgba(245,194,66,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
+  font-size:0.9rem;font-weight:700;letter-spacing:0.1em;color:{_kc_gold};cursor:pointer;
+  transition:all 0.18s;text-transform:uppercase;}}
+.calc-btn:hover{{background:linear-gradient(135deg,rgba(245,194,66,0.32),rgba(124,58,237,0.25));
+  box-shadow:0 0 18px rgba(245,194,66,0.18);}}
+
+/* ── Results ── */
+.result-wrap{{display:none;}}
+.result-wrap.show{{display:block;}}
+.result-header{{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:{_kc_sub};margin:20px 0 12px;display:flex;align-items:center;gap:8px;}}
+.result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
+.cards-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;}}
+.step-card{{border:1px solid {_kc_border};border-radius:10px;padding:14px 16px;
+  background:rgba(8,12,22,0.8);transition:border-color 0.15s;}}
+.step-card.ara{{border-left:4px solid {_kc_green};}}
+.step-card.arb{{border-left:4px solid {_kc_red};}}
+.step-card:hover{{border-color:rgba(245,194,66,0.3);}}
+.step-tag{{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;
+  font-weight:700;margin-bottom:6px;}}
+.step-tag.ara{{color:{_kc_green};}}
+.step-tag.arb{{color:{_kc_red};}}
+.step-price{{font-size:1.55rem;font-weight:700;line-height:1.1;margin-bottom:3px;}}
+.step-rp{{font-size:0.78rem;font-weight:400;margin-bottom:4px;color:{_kc_sub};}}
+.step-delta{{font-size:0.78rem;font-weight:600;}}
+.step-delta.up{{color:{_kc_green};}}
+.step-delta.dn{{color:{_kc_red};}}
+.step-total{{font-size:0.72rem;color:{_kc_sub};margin-top:4px;}}
+.step-total b{{color:{_kc_text};font-size:0.82rem;}}
+
+/* Visualisasi bar */
+.viz-wrap{{margin-top:20px;background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:18px 20px;}}
+.viz-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:14px;text-align:center;}}
+.viz-bar-row{{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:0.75rem;}}
+.viz-lbl{{width:60px;text-align:right;color:{_kc_sub};flex-shrink:0;}}
+.viz-bar-bg{{flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:20px;overflow:hidden;position:relative;}}
+.viz-bar-fill{{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;
+  font-size:0.68rem;font-weight:700;transition:width 0.5s ease;white-space:nowrap;}}
+.viz-end{{width:80px;text-align:left;flex-shrink:0;}}
+
+@media(max-width:640px){{
+  .cards-grid{{grid-template-columns:1fr;}}
+  .step-price{{font-size:1.3rem;}}
+  .row2{{grid-template-columns:1fr;}}
+  .form-wrap{{padding:16px 14px;}}
+}}
+</style></head><body>
+
+<div class="form-wrap">
+  <div class="form-title">Auto Rejection</div>
+  <div class="form-sub">Kalkulator ARA ARB</div>
+
+  <label class="field-lbl">Jenis Saham</label>
+  <div class="toggle-row" style="margin-bottom:18px;">
+    <button class="toggle-btn active" id="btn-reg" onclick="setType('reguler')">Reguler</button>
+    <button class="toggle-btn inactive" id="btn-fca" onclick="setType('fca')">Akselerasi &amp; FCA</button>
+  </div>
+
+  <label class="field-lbl">Harga Saham (Rp)</label>
+  <input class="inp" id="inp-harga" type="number" placeholder="Masukkan harga saham" min="1" style="margin-bottom:14px;" oninput="onHargaChange()">
+
+  <div class="row2">
+    <div>
+      <label class="field-lbl">Lot</label>
+      <input class="inp" id="inp-lot" type="number" placeholder="1" min="1" value="1">
+    </div>
+    <div>
+      <label class="field-lbl">Modal (Rp) <span style="color:{_kc_sub};font-size:0.62rem;">— opsional</span></label>
+      <input class="inp" id="inp-modal" type="number" placeholder="Otomatis" min="0">
+    </div>
+  </div>
+
+  <div class="slider-row" style="margin-top:14px;">
+    <div class="slider-lbl">
+      <span>Jumlah Skenario (ARA/ARB)</span>
+      <span class="slider-val" id="slider-val">5</span>
+    </div>
+    <input type="range" id="inp-steps" min="1" max="50" value="5" oninput="document.getElementById('slider-val').textContent=this.value">
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">▶ Hitung ARA &amp; ARB</button>
+</div>
+
+<div class="result-wrap" id="result-wrap">
+  <div class="result-header">Hasil Simulasi</div>
+  <div class="cards-grid" id="cards-container"></div>
+  <div class="viz-wrap" id="viz-wrap">
+    <div class="viz-title">Visualisasi Pergerakan Harga</div>
+    <div class="viz-sub" style="font-size:0.65rem;color:{_kc_sub};text-align:center;margin-top:-10px;margin-bottom:14px;">
+      Visualisasi pergerakan harga untuk setiap ARA dan ARB di setiap langkah
+    </div>
+    <div id="viz-container"></div>
+  </div>
+</div>
+
+<script>
+var sahamType = 'reguler';
+
+function setType(t) {{
+  sahamType = t;
+  document.getElementById('btn-reg').className = 'toggle-btn ' + (t==='reguler'?'active':'inactive');
+  document.getElementById('btn-fca').className = 'toggle-btn ' + (t==='fca'?'active':'inactive');
+}}
+
+function onHargaChange() {{
+  var h = parseFloat(document.getElementById('inp-harga').value)||0;
+  var lot = parseInt(document.getElementById('inp-lot').value)||1;
+  document.getElementById('inp-modal').placeholder = h>0 ? 'Rp '+fmt(h*lot*100) : 'Otomatis';
+}}
+
+function getARARate(price, type) {{
+  if (type === 'fca') return 0.10; // Sesi 1 & 2 masing-masing 10%
+  if (price < 200)   return 0.35;
+  if (price <= 5000) return 0.25;
+  return 0.20;
+}}
+
+function getARBRate(price, type) {{
+  if (type === 'fca') return 0.10;
+  if (price < 200)   return 0.35;
+  if (price <= 5000) return 0.25;
+  return 0.20;
+}}
+
+function roundTick(p) {{
+  if (p < 200)   return Math.round(p);
+  if (p < 500)   return Math.round(p/2)*2;
+  if (p < 2000)  return Math.round(p/5)*5;
+  if (p < 5000)  return Math.round(p/10)*10;
+  return Math.round(p/25)*25;
+}}
+
+function fmt(n) {{
+  if (!n && n!==0) return '—';
+  return new Intl.NumberFormat('id-ID').format(Math.round(n));
+}}
+
+function fmtPct(p) {{
+  return (p>=0?'↑':' ') + p.toFixed(2) + '%';
+}}
+
+function calculate() {{
+  var harga  = parseFloat(document.getElementById('inp-harga').value);
+  var lot    = parseInt(document.getElementById('inp-lot').value)||1;
+  var steps  = parseInt(document.getElementById('inp-steps').value)||5;
+  var modal  = parseFloat(document.getElementById('inp-modal').value)||0;
+  if (!harga || harga <= 0) {{ alert('Masukkan harga saham terlebih dahulu.'); return; }}
+
+  var modalEff = modal > 0 ? modal : harga * lot * 100;
+
+  var araSteps = [], arbSteps = [];
+  var curARA = harga, curARB = harga;
+
+  for (var i=1; i<=steps; i++) {{
+    var araRate = getARARate(curARA, sahamType);
+    curARA = roundTick(curARA * (1 + araRate));
+    var naik = ((curARA - harga) / harga * 100);
+    araSteps.push({{ step:i, price:curARA, naik:araRate*100, total:naik }});
+
+    var arbRate = getARBRate(curARB, sahamType);
+    var nextARB = roundTick(curARB * (1 - arbRate));
+    var turun = ((nextARB - harga) / harga * 100);
+    // Hard floor: harga minimum IDX = Rp 50
+    if (nextARB < 50) nextARB = 50;
+    curARB = nextARB;
+    arbSteps.push({{ step:i, price:curARB, turun:arbRate*100, total:turun }});
+  }}
+
+  // Build cards
+  var html = '';
+  for (var i=0; i<araSteps.length; i++) {{
+    var a = araSteps[i], b = arbSteps[i];
+    html += '<div class="step-card ara">' +
+      '<div class="step-tag ara">ARA #'+a.step+'</div>' +
+      '<div class="step-delta up">↑ '+a.naik.toFixed(2)+'%</div>' +
+      '<div class="step-price">'+fmt(a.price)+'</div>' +
+      '<div class="step-rp">Rp '+fmt(a.price)+'</div>' +
+      '<div class="step-total">Total Naik: <b style="color:#26a69a;">↑ '+a.total.toFixed(2)+'%</b></div>' +
+      '</div>' +
+      '<div class="step-card arb">' +
+      '<div class="step-tag arb">ARB #'+b.step+'</div>' +
+      '<div class="step-delta dn">↓ -'+b.turun.toFixed(2)+'%</div>' +
+      '<div class="step-price">'+fmt(b.price)+'</div>' +
+      '<div class="step-rp">Rp '+fmt(b.price)+'</div>' +
+      '<div class="step-total">Total Turun: <b style="color:#f23645;">↓ '+b.total.toFixed(2)+'%</b></div>' +
+      '</div>';
+  }}
+  document.getElementById('cards-container').innerHTML = html;
+
+  // Visualisasi
+  var maxPrice = araSteps[araSteps.length-1].price;
+  var vizHtml = '';
+  // ARA bars
+  for (var i=0; i<araSteps.length; i++) {{
+    var a = araSteps[i];
+    var pct = Math.max(2, (a.price / maxPrice * 75));
+    vizHtml += '<div class="viz-bar-row">' +
+      '<div class="viz-lbl" style="color:#26a69a;">ARA #'+a.step+'</div>' +
+      '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,rgba(38,166,154,0.7),rgba(38,166,154,0.4));color:#fff;">' +
+      'Rp '+fmt(a.price)+'</div></div>' +
+      '<div class="viz-end" style="color:#26a69a;font-size:0.7rem;">+'+a.total.toFixed(1)+'%</div></div>';
+  }}
+  // Separator
+  vizHtml += '<div style="border-top:1px dashed rgba(245,194,66,0.15);margin:10px 0 10px;"></div>';
+  // ARB bars
+  var minPrice = arbSteps[arbSteps.length-1].price;
+  for (var i=0; i<arbSteps.length; i++) {{
+    var b = arbSteps[i];
+    var pct2 = Math.max(2, (b.price / harga * 75));
+    vizHtml += '<div class="viz-bar-row">' +
+      '<div class="viz-lbl" style="color:#f23645;">ARB #'+b.step+'</div>' +
+      '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct2+'%;background:linear-gradient(90deg,rgba(242,54,69,0.7),rgba(242,54,69,0.35));color:#fff;">' +
+      'Rp '+fmt(b.price)+'</div></div>' +
+      '<div class="viz-end" style="color:#f23645;font-size:0.7rem;">'+b.total.toFixed(1)+'%</div></div>';
+  }}
+  document.getElementById('viz-container').innerHTML = vizHtml;
+  document.getElementById('result-wrap').className = 'result-wrap show';
+}}
+</script>
+</body></html>"""
+
+            components.html(_ara_html, height=1600, scrolling=True)
+
+        # ══════════════════════════════════════════════
+        # SUB-TAB 2 — KALKULATOR AVERAGE DOWN
+        # ══════════════════════════════════════════════
+        with ktab_avg:
+            st.markdown(f"""
+            <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_purple};
+            border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
+            font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_purple};font-weight:700;letter-spacing:0.1em;font-size:0.82rem;'>ℹ️ TENTANG AVERAGE DOWN</span><br>
+            <b>Average Down</b> adalah strategi membeli lebih banyak saham saat harga turun untuk menurunkan harga rata-rata kepemilikan.<br>
+            Kalkulator ini mendukung <b>hingga 5 transaksi pembelian</b> sekaligus untuk menghitung harga rata-rata, total lot, dan total modal yang dibutuhkan.
+            </div>
+            """, unsafe_allow_html=True)
+
+            _avg_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
+.form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
+.form-title{{font-size:1.25rem;font-weight:700;color:{_kc_purple};letter-spacing:0.06em;margin-bottom:4px;text-align:center;}}
+.form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.06em;margin-bottom:20px;}}
+.field-lbl{{font-size:0.70rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;font-weight:600;}}
+.inp{{width:100%;padding:10px 13px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
+  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.95rem;font-weight:600;
+  color:{_kc_text};outline:none;transition:border-color 0.18s;}}
+.inp:focus{{border-color:{_kc_purple};box-shadow:0 0 0 2px rgba(167,139,250,0.08);}}
+.trx-block{{background:rgba(124,58,237,0.05);border:1px solid rgba(124,58,237,0.18);
+  border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+.trx-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_purple};
+  font-weight:700;margin-bottom:12px;}}
+.row3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}}
+.row2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;}}
+.add-btn{{width:100%;padding:10px;background:rgba(124,58,237,0.1);border:1px dashed rgba(124,58,237,0.35);
+  border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:600;
+  letter-spacing:0.08em;color:{_kc_purple};cursor:pointer;margin-bottom:14px;transition:all 0.18s;}}
+.add-btn:hover{{background:rgba(124,58,237,0.18);border-color:rgba(124,58,237,0.6);}}
+.del-btn{{float:right;padding:2px 8px;background:rgba(242,54,69,0.1);border:1px solid rgba(242,54,69,0.3);
+  border-radius:4px;font-size:0.68rem;color:{_kc_red};cursor:pointer;font-family:'IBM Plex Mono',monospace;margin-top:-2px;}}
+.del-btn:hover{{background:rgba(242,54,69,0.22);}}
+.harga-inp{{margin-bottom:18px;}}
+
+/* Current Price section */
+.cur-price-row{{display:flex;gap:12px;align-items:flex-end;margin-bottom:18px;}}
+.cur-price-row > div:first-child{{flex:1;}}
+
+.calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(167,139,250,0.22),rgba(96,165,250,0.18));
+  border:1px solid rgba(167,139,250,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
+  font-size:0.9rem;font-weight:700;letter-spacing:0.1em;color:{_kc_purple};cursor:pointer;
+  transition:all 0.18s;text-transform:uppercase;margin-top:6px;}}
+.calc-btn:hover{{background:linear-gradient(135deg,rgba(167,139,250,0.32),rgba(96,165,250,0.25));
+  box-shadow:0 0 18px rgba(167,139,250,0.18);}}
+
+/* Results */
+.result-wrap{{display:none;}}
+.result-wrap.show{{display:block;}}
+.result-header{{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:{_kc_sub};margin:20px 0 14px;display:flex;align-items:center;gap:8px;}}
+.result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
+
+.summary-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}}
+.sum-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:14px 16px;text-align:center;}}
+.sum-lbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:6px;}}
+.sum-val{{font-size:1.3rem;font-weight:700;}}
+.sum-val.purple{{color:{_kc_purple};}}
+.sum-val.blue{{color:{_kc_blue};}}
+.sum-val.gold{{color:{_kc_gold};}}
+.sum-val.green{{color:{_kc_green};}}
+.sum-val.red{{color:{_kc_red};}}
+
+/* Breakdown table */
+.bk-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
+.bk-tbl{{width:100%;border-collapse:collapse;}}
+.bk-tbl thead th{{background:rgba(124,58,237,0.08);color:{_kc_purple};padding:9px 12px;
+  font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;text-align:left;border-bottom:1px solid {_kc_border};}}
+.bk-tbl tbody td{{padding:9px 12px;font-size:0.88rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}}
+.bk-tbl tbody tr:last-child td{{border-bottom:none;font-weight:700;color:{_kc_purple};background:rgba(124,58,237,0.05);}}
+.bk-tbl tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.03);}}
+.bk-tbl tbody tr:nth-child(even) td{{background:rgba(96,165,250,0.03);}}
+
+/* PnL insight */
+.pnl-box{{border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:0.88rem;line-height:1.75;}}
+.pnl-box.profit{{background:rgba(38,166,154,0.08);border:1px solid rgba(38,166,154,0.25);border-left:3px solid {_kc_green};}}
+.pnl-box.loss{{background:rgba(242,54,69,0.07);border:1px solid rgba(242,54,69,0.22);border-left:3px solid {_kc_red};}}
+.pnl-box.neutral{{background:rgba(245,194,66,0.06);border:1px solid rgba(245,194,66,0.2);border-left:3px solid {_kc_gold};}}
+
+@media(max-width:640px){{
+  .row3{{grid-template-columns:1fr;}}
+  .summary-grid{{grid-template-columns:1fr 1fr;}}
+  .form-wrap{{padding:16px 14px;}}
+}}
+</style></head><body>
+
+<div class="form-wrap">
+  <div class="form-title">📉 Average Down</div>
+  <div class="form-sub">Kalkulator Harga Rata-Rata Saham</div>
+
+  <div id="trx-container">
+    <!-- Pembelian Awal -->
+    <div class="trx-block" id="trx-0">
+      <div class="trx-title">🛒 PEMBELIAN AWAL</div>
+      <div class="row3">
+        <div>
+          <label class="field-lbl">Kode Saham <span style="color:{_kc_sub};font-weight:400;">(opsional)</span></label>
+          <input class="inp" id="kode-0" type="text" placeholder="cth: BBCA" maxlength="6" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div>
+          <label class="field-lbl">Harga Beli (Rp) <span style="color:{_kc_red};">*</span></label>
+          <input class="inp" id="harga-0" type="number" placeholder="Contoh: 16800" min="1" oninput="livePreview()">
+        </div>
+        <div>
+          <label class="field-lbl">Lot <span style="color:{_kc_red};">*</span></label>
+          <input class="inp" id="lot-0" type="number" placeholder="Contoh: 10" min="1" oninput="livePreview()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="add-btn" onclick="addTrx()" id="add-btn">+ Tambah Pembelian Berikutnya</button>
+
+  <div>
+    <label class="field-lbl">Harga Pasar Saat Ini (Rp) <span style="color:{_kc_sub};font-weight:400;">— untuk hitung PnL</span></label>
+    <input class="inp harga-inp" id="cur-price" type="number" placeholder="Opsional — isi untuk lihat profit/loss saat ini" min="1" oninput="livePreview()">
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">🧮 Hitung Average</button>
+</div>
+
+<div class="result-wrap" id="result-wrap">
+  <div class="result-header">Hasil Perhitungan</div>
+  <div class="summary-grid" id="summary-grid"></div>
+  <div class="bk-wrap"><table class="bk-tbl">
+    <thead><tr>
+      <th>#</th><th>Harga Beli</th><th>Lot</th><th>Lembar</th>
+      <th>Total Modal</th><th>Bobot</th>
+    </tr></thead>
+    <tbody id="bk-tbody"></tbody>
+  </table></div>
+  <div id="pnl-box"></div>
+  <div id="live-avg" style="display:none;margin-top:-10px;margin-bottom:14px;font-size:0.8rem;color:{_kc_sub};
+    font-family:'IBM Plex Mono',monospace;text-align:center;letter-spacing:0.06em;"></div>
+</div>
+
+<script>
+var trxCount = 1;
+
+function fmt(n) {{
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return new Intl.NumberFormat('id-ID').format(Math.round(n));
+}}
+
+function fmtK(n) {{
+  if (!n) return '—';
+  if (n >= 1e12) return (n/1e12).toFixed(2) + ' T';
+  if (n >= 1e9)  return (n/1e9).toFixed(1) + ' M';
+  if (n >= 1e6)  return (n/1e6).toFixed(1) + ' Jt';
+  return fmt(n);
+}}
+
+function addTrx() {{
+  if (trxCount >= 5) {{ document.getElementById('add-btn').style.display='none'; return; }}
+  var idx = trxCount;
+  var label = idx===0 ? 'PEMBELIAN AWAL' : 'PEMBELIAN #'+(idx+1);
+  var div = document.createElement('div');
+  div.className = 'trx-block'; div.id = 'trx-'+idx;
+  div.innerHTML = '<div class="trx-title">🛒 ' + label +
+    (idx>0?'<button class="del-btn" onclick="delTrx('+idx+')">✕ Hapus</button>':'') + '</div>' +
+    '<div class="row3">' +
+    '<div><label class="field-lbl">Harga Beli (Rp) <span style="color:{_kc_red};">*</span></label>' +
+    '<input class="inp" id="harga-'+idx+'" type="number" placeholder="Harga beli" min="1" oninput="livePreview()"></div>' +
+    '<div><label class="field-lbl">Lot <span style="color:{_kc_red};">*</span></label>' +
+    '<input class="inp" id="lot-'+idx+'" type="number" placeholder="Jumlah lot" min="1" oninput="livePreview()"></div>' +
+    '<div><label class="field-lbl">Biaya (Rp) <span style="color:{_kc_sub};font-weight:400;">opsional</span></label>' +
+    '<input class="inp" id="fee-'+idx+'" type="number" placeholder="Biaya broker" min="0" oninput="livePreview()"></div>' +
+    '</div>';
+  document.getElementById('trx-container').appendChild(div);
+  trxCount++;
+  if (trxCount >= 5) document.getElementById('add-btn').style.display='none';
+}}
+
+function delTrx(idx) {{
+  var el = document.getElementById('trx-'+idx);
+  if (el) el.remove();
+  if (trxCount >= 5) {{ trxCount--; document.getElementById('add-btn').style.display='block'; }}
+  livePreview();
+}}
+
+function collectData() {{
+  var rows = [];
+  for (var i=0; i<5; i++) {{
+    var hEl = document.getElementById('harga-'+i);
+    var lEl = document.getElementById('lot-'+i);
+    if (!hEl || !lEl) continue;
+    var h = parseFloat(hEl.value)||0;
+    var l = parseInt(lEl.value)||0;
+    var fee = parseFloat((document.getElementById('fee-'+i)||{{}}).value)||0;
+    if (h>0 && l>0) rows.push({{h:h, l:l, fee:fee}});
+  }}
+  return rows;
+}}
+
+function livePreview() {{
+  var rows = collectData();
+  if (rows.length < 1) return;
+  var totalModal=0, totalLembar=0;
+  rows.forEach(function(r){{totalModal+=r.h*r.l*100+r.fee; totalLembar+=r.l*100;}});
+  var avg = totalModal/totalLembar;
+  var liveEl = document.getElementById('live-avg');
+  if (liveEl) {{
+    liveEl.style.display='block';
+    liveEl.textContent = '🔄 Preview: Avg Rp '+fmt(avg)+' · '+rows.reduce(function(s,r){{return s+r.l;}},0)+' Lot · Modal Rp '+fmtK(totalModal);
+  }}
+}}
+
+function calculate() {{
+  var rows = collectData();
+  if (rows.length < 1) {{ alert('Masukkan minimal 1 data pembelian.'); return; }}
+
+  var totalModal=0, totalLembar=0;
+  rows.forEach(function(r){{totalModal+=r.h*r.l*100+r.fee; totalLembar+=r.l*100;}});
+  var avgHarga = totalModal / totalLembar;
+  var totalLot = totalLembar / 100;
+  var curPrice = parseFloat(document.getElementById('cur-price').value)||0;
+
+  // Summary cards
+  var pnlHtml='', pnlClass='neutral';
+  var sumExtra = '';
+  if (curPrice > 0) {{
+    var pnl = (curPrice - avgHarga) * totalLembar;
+    var pnlPct = (curPrice - avgHarga) / avgHarga * 100;
+    var isPro = pnl >= 0;
+    pnlClass = isPro?'profit':'loss';
+    var pnlIcon = isPro?'📈':'📉';
+    pnlHtml = '<div class="pnl-box '+pnlClass+'">' +
+      pnlIcon + ' <b>PnL Saat Ini:</b> ' +
+      '<span style="color:'+(isPro?'#26a69a':'#f23645')+';font-weight:700;font-size:1.05rem;">' +
+      (isPro?'+':'-')+'Rp '+fmt(Math.abs(pnl)) + '</span>' +
+      ' &nbsp;|&nbsp; <b>'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</b>' +
+      '<br><span style="font-size:0.78rem;color:{_kc_sub};">Harga pasar: <b>Rp '+fmt(curPrice)+'</b> vs Average: <b>Rp '+fmt(avgHarga)+'</b>' +
+      ' — Perlu kenaikan <b>' + (avgHarga>curPrice?((avgHarga-curPrice)/curPrice*100).toFixed(2)+'%':'—') + '</b> untuk BEP</span>' +
+      '</div>';
+    sumExtra = '<div class="sum-card"><div class="sum-lbl">PnL Saat Ini</div><div class="sum-val '+(isPro?'green':'red')+'">'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</div></div>';
+  }}
+
+  var sumHtml =
+    '<div class="sum-card"><div class="sum-lbl">Average Harga</div><div class="sum-val purple">Rp '+fmt(avgHarga)+'</div></div>'+
+    '<div class="sum-card"><div class="sum-lbl">Total Lot</div><div class="sum-val blue">'+totalLot+' Lot</div></div>'+
+    '<div class="sum-card"><div class="sum-lbl">Total Modal</div><div class="sum-val gold">Rp '+fmtK(totalModal)+'</div></div>'+
+    sumExtra;
+  document.getElementById('summary-grid').innerHTML = sumHtml;
+
+  // Breakdown table
+  var tbody = '';
+  var cumModal=0, cumLembar=0;
+  rows.forEach(function(r,i){{
+    var rowModal = r.h*r.l*100+r.fee;
+    cumModal+=rowModal; cumLembar+=r.l*100;
+    var bobot = (rowModal/totalModal*100).toFixed(1);
+    var label = i===0?'Pembelian Awal':'Pembelian #'+(i+1);
+    tbody+='<tr>'+
+      '<td style="color:{_kc_sub};">'+label+'</td>'+
+      '<td style="color:{_kc_purple};font-weight:600;">Rp '+fmt(r.h)+'</td>'+
+      '<td>'+r.l+' lot</td>'+
+      '<td style="color:{_kc_sub};">'+fmt(r.l*100)+' lbr</td>'+
+      '<td>Rp '+fmtK(rowModal)+'</td>'+
+      '<td style="color:{_kc_gold};">'+bobot+'%</td>'+
+      '</tr>';
+  }});
+  tbody+='<tr>'+
+    '<td>✅ Total / Average</td>'+
+    '<td>Rp '+fmt(avgHarga)+'</td>'+
+    '<td>'+totalLot+' lot</td>'+
+    '<td>'+fmt(totalLembar)+' lbr</td>'+
+    '<td>Rp '+fmtK(totalModal)+'</td>'+
+    '<td>100%</td>'+
+    '</tr>';
+  document.getElementById('bk-tbody').innerHTML = tbody;
+  document.getElementById('pnl-box').innerHTML = pnlHtml;
+  document.getElementById('result-wrap').className = 'result-wrap show';
+  document.getElementById('live-avg').style.display='none';
+}}
+</script>
+</body></html>"""
+
+            components.html(_avg_html, height=1400, scrolling=True)
+
 # ─────────────────────────────────────────────
 else:
     if not active["messages"][1:]:
