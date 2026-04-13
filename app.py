@@ -1126,18 +1126,18 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#0a1628" if dark else "#f0f0f0",       # Navy lebih terang — lebih nyaman di mata
-        "sidebar_bg":   "#07101e" if dark else "#e3e3e3",       # Sedikit lebih terang dari sebelumnya
-        "text":         "#e8eef6" if dark else "#0d0d0d",       # Putih kebiruan hangat, lebih mudah dibaca
-        "text_muted":   "#7a90b0" if dark else "#6e6e80",       # Muted lebih terang untuk kontras lebih baik
-        "border":       "#1e3a5f" if dark else "#8a8aaa",       # Border lebih terlihat — biru navy medium
-        "hover":        "#152d52" if dark else "#c4c4d8",       # Hover sedikit lebih terang
-        "input_bg":     "#0d1e36" if dark else "#ffffff",       # Input biru gelap tapi lebih terang
-        "bubble":       "#1e3558",
+        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap original
+        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk sidebar
+        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan
+        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
+        "border":       "#1a2f50" if dark else "#8a8aaa",       # Border lebih visible (sedikit lebih terang dari #132545)
+        "hover":        "#0d1c36" if dark else "#c4c4d8",       # Efek hover kebiruan
+        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat deep blue
+        "bubble":       "#1B2A4A",
         "bubble_text":  "#ffffff",
-        "divider":      "#1e3a5f" if dark else "#8a8aaa",       # Divider lebih terlihat
-        "gold":         "#a78bfa",
-        "active_bg":    "#152d52" if dark else "#c8c8c8",
+        "divider":      "#1a2f50" if dark else "#8a8aaa",       # Garis pemisah sedikit lebih terang
+        "gold":         "#b89fff",                               # Ungu/violet lebih terang dari #a78bfa
+        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
     }
 
 # =========================================================
@@ -3031,10 +3031,10 @@ body {{ background: #080c14; }}
 .sys-divider {{ width:60px; height:2px; background:linear-gradient(90deg,transparent,#009dff,transparent); margin:14px auto 0; animation:shimmer 2.5s ease-in-out infinite; }}
 @keyframes shimmer {{ 0%,100% {{ opacity:0.4; width:40px; }} 50% {{ opacity:1; width:80px; }} }}
 
-.sys-cards {{ display:flex; gap:28px; flex-wrap:wrap; justify-content:center; position:relative; z-index:2; max-width:860px; width:100%; }}
+.sys-cards {{ display:flex; gap:20px; flex-wrap:wrap; justify-content:center; position:relative; z-index:2; max-width:1280px; width:100%; }}
 
 .sys-card {{
-    flex:1; min-width:300px; max-width:400px;
+    flex:1; min-width:280px; max-width:380px;
     background:rgba(10,14,26,0.9); border:1px solid rgba(255,255,255,0.08);
     border-radius:20px; padding:28px 26px 26px;
     position:relative; overflow:hidden; cursor:pointer;
@@ -5153,6 +5153,13 @@ if current_view == "dashboard":
     <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
+    /* ── Accent color upgrade — ungu lebih terang & vivid ── */
+    :root {{
+        --sigma-accent: #b89fff;
+        --sigma-accent-dim: rgba(184,159,255,0.18);
+        --sigma-accent-border: rgba(184,159,255,0.32);
+    }}
+
     .stApp, .stApp * {{ font-family: 'IBM Plex Sans', sans-serif !important; }}
 
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"],
@@ -5200,7 +5207,7 @@ if current_view == "dashboard":
 
     [data-testid="stTabs"] [role="tablist"] {{
         background: {"rgba(6,9,18,0.95)" if is_dark else "#f1f5f9"} !important;
-        border: 1px solid {"rgba(124,58,237,0.18)" if is_dark else "#ede9fe"} !important;
+        border: 1px solid {"rgba(184,159,255,0.2)" if is_dark else "#ede9fe"} !important;
         border-radius: 8px !important;
         padding: 5px !important;
         gap: 2px !important;
@@ -5220,14 +5227,14 @@ if current_view == "dashboard":
         transition: all 0.2s !important;
     }}
     [data-testid="stTabs"] button[role="tab"]:hover {{
-        color: {"#a78bfa" if is_dark else "#7c3aed"} !important;
-        background: {"rgba(124,58,237,0.10)" if is_dark else "rgba(124,58,237,0.06)"} !important;
+        color: {"#b89fff" if is_dark else "#7c3aed"} !important;
+        background: {"rgba(184,159,255,0.10)" if is_dark else "rgba(124,58,237,0.06)"} !important;
     }}
     [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
-        background: {"rgba(124,58,237,0.12)" if is_dark else "#ffffff"} !important;
-        color: {"#a78bfa" if is_dark else "#0d1117"} !important;
+        background: {"rgba(184,159,255,0.12)" if is_dark else "#ffffff"} !important;
+        color: {"#b89fff" if is_dark else "#0d1117"} !important;
         font-weight: 600 !important;
-        box-shadow: {"0 1px 8px rgba(124,58,237,0.15), inset 0 0 0 1px rgba(124,58,237,0.2)" if is_dark else "0 1px 4px rgba(0,0,0,0.1)"} !important;
+        box-shadow: {"0 1px 8px rgba(184,159,255,0.18), inset 0 0 0 1px rgba(184,159,255,0.22)" if is_dark else "0 1px 4px rgba(0,0,0,0.1)"} !important;
     }}
     [data-testid="stTabs"] [role="tabpanel"] {{
         background: transparent !important;
@@ -5237,19 +5244,19 @@ if current_view == "dashboard":
     }}
 
     .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; }}
-    .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(124,58,237,0.2)" if is_dark else "#ede9fe"}; }}
+    .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(184,159,255,0.22)" if is_dark else "#ede9fe"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
         font-size: 1.18rem;
         font-weight: 600;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: {"#a78bfa" if is_dark else "#7c3aed"};
+        color: {"#b89fff" if is_dark else "#7c3aed"};
         white-space: nowrap;
         padding: 3px 10px;
-        border: 1px solid {"rgba(124,58,237,0.3)" if is_dark else "rgba(124,58,237,0.2)"};
+        border: 1px solid {"rgba(184,159,255,0.35)" if is_dark else "rgba(124,58,237,0.2)"};
         border-radius: 3px;
-        background: {"rgba(124,58,237,0.05)" if is_dark else "#f8fafc"};
+        background: {"rgba(184,159,255,0.06)" if is_dark else "#f8fafc"};
     }}
 
     .trm-card {{
@@ -5261,20 +5268,20 @@ if current_view == "dashboard":
         transition: border-color 0.2s;
         margin-bottom: 12px;
     }}
-    .trm-card:hover {{ border-color: rgba(124,58,237,0.45); box-shadow: 0 0 16px rgba(124,58,237,0.1); }}
+    .trm-card:hover {{ border-color: rgba(184,159,255,0.5); box-shadow: 0 0 16px rgba(184,159,255,0.12); }}
     .trm-card-title {{
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.9rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #a78bfa;
+        color: #b89fff;
         margin-bottom: 10px;
         font-weight: 600;
     }}
 
     .trm-insight {{
-        background: {"rgba(124,58,237,0.05)" if is_dark else "#fffbeb"};
-        border-left: 3px solid #a78bfa;
+        background: {"rgba(184,159,255,0.06)" if is_dark else "#fffbeb"};
+        border-left: 3px solid #b89fff;
         border-radius: 0 6px 6px 0;
         padding: 14px 18px;
         margin: 12px 0;
@@ -5286,7 +5293,7 @@ if current_view == "dashboard":
     .fancy-divider {{
         border: 0;
         height: 1px;
-        background: {"rgba(124,58,237,0.18)" if is_dark else "#ede9fe"};
+        background: {"rgba(184,159,255,0.2)" if is_dark else "#ede9fe"};
         margin: 20px 0;
     }}
 
@@ -5302,9 +5309,9 @@ if current_view == "dashboard":
 
     [data-testid="stTabs"] ~ div .stButton > button,
     [data-testid="stVerticalBlock"] .stButton > button {{
-        background: {"rgba(124,58,237,0.1)" if is_dark else "rgba(124,58,237,0.08)"} !important;
-        color: {"#a78bfa" if is_dark else "#7c3aed"} !important;
-        border: 1px solid {"rgba(124,58,237,0.3)" if is_dark else "rgba(124,58,237,0.35)"} !important;
+        background: {"rgba(184,159,255,0.1)" if is_dark else "rgba(124,58,237,0.08)"} !important;
+        color: {"#b89fff" if is_dark else "#7c3aed"} !important;
+        border: 1px solid {"rgba(184,159,255,0.32)" if is_dark else "rgba(124,58,237,0.35)"} !important;
         font-family: 'IBM Plex Mono', monospace !important;
         font-size: 1.08rem !important;
         font-weight: 600 !important;
@@ -5844,9 +5851,10 @@ if current_view == "dashboard":
         # ── Render both tables via components.html ─────────────────────────
         _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
         _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        # On mobile they stack, so total height = sum; on desktop = max. 
-        # Use sum + padding to be safe — scrolling=False so height must fit both on mobile
-        _tbl_h = _idx_total_h + _com_total_h + 80  # stack height for mobile safety
+        # Desktop: side-by-side → max(). Mobile: stacked → sum().
+        # Set height conservatively to sum so mobile shows both tables.
+        # JS inside will auto-shrink whitespace on desktop via postMessage resize.
+        _tbl_h = _idx_total_h + _com_total_h + 60
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -5856,16 +5864,16 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;}}
 .col{{flex:1;min-width:0;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;height:100%;}}
-.mkt-hdr{{padding:10px 16px;background:rgba(124,58,237,0.09);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#a78bfa;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.mkt-hdr{{padding:10px 16px;background:rgba(184,159,255,0.07);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#b89fff;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
 .mkt-badge{{font-size:0.93rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.13rem;min-width:320px;}}
-thead th{{position:static;background:rgba(124,58,237,0.10);color:#a78bfa;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
+thead th{{position:static;background:rgba(184,159,255,0.08);color:#b89fff;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
 tbody td{{padding:8px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
+tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
 .nm{{font-weight:600;font-size:1.11rem;color:{text_main};}}
 .flag{{margin-right:5px;font-size:1.15rem;}}
 .price{{font-size:1.15rem;font-weight:700;}}
@@ -5978,6 +5986,18 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
     var e2=document.getElementById('com-ts'); if(e2) e2.textContent=str;
   }}
   setInterval(updateTs, 60000);
+
+  // ── Auto-resize iframe height to actual content (eliminates desktop gap) ──
+  function autoResize() {{
+    var body = document.body;
+    var h = body.scrollHeight;
+    // Only shrink, never expand beyond initial Streamlit height
+    try {{
+      window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
+    }} catch(e) {{}}
+  }}
+  setTimeout(autoResize, 120);
+  setTimeout(autoResize, 400);
 }})();
 </script></body></html>""", height=_tbl_h, scrolling=False)
 
