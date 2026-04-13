@@ -1126,18 +1126,18 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap (mirip background menu)
-        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk membedakan sidebar
-        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan (cool white) agar lebih tajam
-        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
-        "border":       "#132545" if dark else "#8a8aaa",       # Border dengan highlight biru navy (light: lebih gelap agar jelas)
-        "hover":        "#0d1c36" if dark else "#c4c4d8",       # Efek hover kebiruan
-        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat warna deep blue
-        "bubble":       "#1B2A4A",
+        "bg":           "#0a1628" if dark else "#f0f0f0",       # Navy lebih terang — lebih nyaman di mata
+        "sidebar_bg":   "#07101e" if dark else "#e3e3e3",       # Sedikit lebih terang dari sebelumnya
+        "text":         "#e8eef6" if dark else "#0d0d0d",       # Putih kebiruan hangat, lebih mudah dibaca
+        "text_muted":   "#7a90b0" if dark else "#6e6e80",       # Muted lebih terang untuk kontras lebih baik
+        "border":       "#1e3a5f" if dark else "#8a8aaa",       # Border lebih terlihat — biru navy medium
+        "hover":        "#152d52" if dark else "#c4c4d8",       # Hover sedikit lebih terang
+        "input_bg":     "#0d1e36" if dark else "#ffffff",       # Input biru gelap tapi lebih terang
+        "bubble":       "#1e3558",
         "bubble_text":  "#ffffff",
-        "divider":      "#132545" if dark else "#8a8aaa",       # Garis pemisah (light: gelap agar terbaca)
+        "divider":      "#1e3a5f" if dark else "#8a8aaa",       # Divider lebih terlihat
         "gold":         "#a78bfa",
-        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
+        "active_bg":    "#152d52" if dark else "#c8c8c8",
     }
 
 # =========================================================
@@ -3045,6 +3045,7 @@ body {{ background: #080c14; }}
 }}
 .sigma-chat::before {{ background:linear-gradient(90deg,transparent,#009dff,#0048ff,transparent); }}
 .sigma-terminal::before {{ background:linear-gradient(90deg,transparent,#a78bfa,#7c3aed,transparent); }}
+.kipm-academy::before {{ background:linear-gradient(90deg,transparent,#f59e0b,#d97706,transparent); }}
 
 /* corner brackets */
 .sys-card::after {{
@@ -3054,6 +3055,7 @@ body {{ background: #080c14; }}
 }}
 .sigma-chat::after {{ border-color:#009dff; }}
 .sigma-terminal::after {{ border-color:#a78bfa; }}
+.kipm-academy::after {{ border-color:#f59e0b; }}
 .corner-tl {{
     position:absolute; top:12px; left:12px;
     width:14px; height:14px; border-top:1px solid; border-left:1px solid; border-radius:3px 0 0 0;
@@ -3061,6 +3063,7 @@ body {{ background: #080c14; }}
 }}
 .sigma-chat .corner-tl {{ border-color:#009dff; }}
 .sigma-terminal .corner-tl {{ border-color:#a78bfa; }}
+.kipm-academy .corner-tl {{ border-color:#f59e0b; }}
 
 .card-glow {{
     position:absolute; width:220px; height:220px; border-radius:50%;
@@ -3069,24 +3072,86 @@ body {{ background: #080c14; }}
 }}
 .sigma-chat .card-glow {{ background:rgba(0,157,255,0.3); }}
 .sigma-terminal .card-glow {{ background:rgba(124,58,237,0.22); }}
+.kipm-academy .card-glow {{ background:rgba(245,158,11,0.25); }}
 .sys-card:hover .card-glow {{ opacity:1; }}
 .sys-card:hover {{ transform:translateY(-6px); }}
 .sigma-chat:hover {{ border-color:rgba(0,157,255,0.45); box-shadow:0 20px 60px rgba(0,100,255,0.18),0 0 0 1px rgba(0,157,255,0.28); }}
 .sigma-terminal:hover {{ border-color:rgba(124,58,237,0.45); box-shadow:0 20px 60px rgba(124,58,237,0.12),0 0 0 1px rgba(124,58,237,0.28); }}
+.kipm-academy:hover {{ border-color:rgba(245,158,11,0.5); box-shadow:0 20px 60px rgba(245,158,11,0.15),0 0 0 1px rgba(245,158,11,0.32); }}
 
 .card-badge {{ position:absolute; top:18px; right:20px; font-size:0.6rem; letter-spacing:2.5px; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:600; }}
 .sigma-chat .card-badge {{ background:rgba(0,157,255,0.12); color:#009dff; border:1px solid rgba(0,157,255,0.22); }}
 .sigma-terminal .card-badge {{ background:rgba(124,58,237,0.1); color:#a78bfa; border:1px solid rgba(124,58,237,0.18); }}
+.kipm-academy .card-badge {{ background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.28); animation:goldPulse 2.5s ease-in-out infinite; }}
+@keyframes goldPulse {{ 0%,100% {{ opacity:0.8; }} 50% {{ opacity:1; box-shadow:0 0 8px rgba(245,158,11,0.4); }} }}
 
 .card-icon {{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; margin-bottom:18px; }}
 .sigma-chat .card-icon {{ background:rgba(0,157,255,0.1); border:1px solid rgba(0,157,255,0.22); }}
 .sigma-terminal .card-icon {{ background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.18); }}
+.kipm-academy .card-icon {{ background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.22); }}
 
 .card-name {{ font-size:1.35rem; font-weight:700; color:#fff; margin-bottom:5px; letter-spacing:-0.2px; }}
 .card-tagline {{ font-size:0.65rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; font-weight:400; }}
 .sigma-chat .card-tagline {{ color:rgba(0,157,255,0.65); }}
 .sigma-terminal .card-tagline {{ color:rgba(124,58,237,0.65); }}
+.kipm-academy .card-tagline {{ color:rgba(245,158,11,0.75); }}
 .card-desc {{ font-size:0.83rem; color:rgba(255,255,255,0.45); line-height:1.75; margin-bottom:20px; }}
+
+/* ── COMING SOON banner ── */
+.coming-soon-banner {{
+    background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(217,119,6,0.05));
+    border:1px solid rgba(245,158,11,0.2);
+    border-radius:12px;
+    padding:22px 18px;
+    margin-bottom:16px;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+}}
+.coming-soon-banner::before {{
+    content:'';
+    position:absolute;
+    top:-30px; left:-30px; right:-30px; bottom:-30px;
+    background:radial-gradient(ellipse at center, rgba(245,158,11,0.06) 0%, transparent 70%);
+    pointer-events:none;
+}}
+.cs-icon {{ font-size:2rem; margin-bottom:10px; display:block; }}
+.cs-title {{
+    font-size:1.0rem; font-weight:700; color:#f59e0b;
+    letter-spacing:3px; text-transform:uppercase;
+    margin-bottom:6px;
+    animation:goldShimmer 3s ease-in-out infinite;
+}}
+@keyframes goldShimmer {{
+    0%,100% {{ opacity:0.85; text-shadow:none; }}
+    50% {{ opacity:1; text-shadow:0 0 16px rgba(245,158,11,0.5); }}
+}}
+.cs-sub {{ font-size:0.72rem; color:rgba(245,158,11,0.55); letter-spacing:1.5px; margin-bottom:14px; }}
+.cs-dots {{ display:flex; justify-content:center; gap:12px; margin-top:10px; }}
+.cs-dot-item {{ display:flex; flex-direction:column; align-items:center; gap:4px; }}
+.cs-dot-icon {{ font-size:1.1rem; }}
+.cs-dot-lbl {{ font-size:0.58rem; color:rgba(245,158,11,0.5); letter-spacing:1px; text-transform:uppercase; }}
+.cs-progress {{
+    display:flex; align-items:center; gap:8px; margin-top:14px;
+    background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.12);
+    border-radius:8px; padding:6px 12px;
+}}
+.cs-progress-bar {{
+    flex:1; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden;
+}}
+.cs-progress-fill {{
+    height:100%; width:35%; background:linear-gradient(90deg,#f59e0b,#d97706);
+    border-radius:2px; animation:progressPulse 2s ease-in-out infinite;
+}}
+@keyframes progressPulse {{
+    0%,100% {{ width:30%; opacity:0.8; }}
+    50% {{ width:40%; opacity:1; }}
+}}
+.cs-progress-lbl {{ font-size:0.65rem; color:rgba(245,158,11,0.6); white-space:nowrap; letter-spacing:0.5px; }}
+
+.kipm-academy .card-features li {{ font-size:0.78rem; color:rgba(255,255,255,0.4); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; gap:8px; }}
+.kipm-academy .card-features li:last-child {{ border-bottom:none; }}
+.kipm-academy .feat-dot {{ background:#f59e0b; box-shadow:0 0 5px rgba(245,158,11,0.6); }}
 
 /* ── TERMINAL PREVIEW (hanya untuk card terminal) ── */
 .term-preview {{
@@ -3139,7 +3204,9 @@ body {{ background: #080c14; }}
 .card-cta {{ width:100%; padding:13px; border-radius:12px; border:none; font-size:0.85rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s, transform 0.15s; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; }}
 .sigma-chat .card-cta {{ background:linear-gradient(135deg,#009dff,#0048ff); color:#fff; box-shadow:0 6px 24px rgba(0,100,255,0.32); }}
 .sigma-terminal .card-cta {{ background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#07090f; box-shadow:0 6px 24px rgba(124,58,237,0.26); }}
+.kipm-academy .card-cta {{ background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.12)); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); cursor:not-allowed; opacity:0.7; }}
 .card-cta:hover {{ opacity:0.88; transform:translateY(-1px); }}
+.kipm-academy .card-cta:hover {{ opacity:0.7; transform:none; }}
 
 /* ── CHAT PREVIEW (AI Chat card) ── */
 .chat-preview {{
@@ -3200,6 +3267,9 @@ body {{ background: #080c14; }}
     .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
     .card-cta {{ padding: 12px; font-size: 0.85rem; }}
     .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
+    .coming-soon-banner {{ padding: 16px 14px; }}
+    .cs-title {{ font-size: 0.88rem; letter-spacing: 2px; }}
+    .cs-dots {{ gap: 8px; }}
 }}
 </style>
 </head>
@@ -3280,6 +3350,37 @@ body {{ background: #080c14; }}
             </ul>
             <button class="card-cta" onclick="event.stopPropagation(); selectTerminal()">Masuk ke Terminal &#8594;</button>
         </div>
+        <div class="sys-card kipm-academy" id="card-academy" onclick="selectAcademy()">
+            <div class="card-glow"></div>
+            <div class="corner-tl"></div>
+            <div class="card-badge">&#9733; Coming Soon</div>
+            <div class="card-icon">&#127891;</div>
+            <div class="card-name">KIPM Academy</div>
+            <div class="card-tagline">Pasar Modal Education</div>
+
+            <div class="coming-soon-banner">
+                <span class="cs-icon">&#127917;</span>
+                <div class="cs-title">Coming Soon</div>
+                <div class="cs-sub">Segera Hadir &mdash; Q3 2026</div>
+                <div class="cs-dots">
+                    <div class="cs-dot-item"><span class="cs-dot-icon">&#127916;</span><span class="cs-dot-lbl">Video</span></div>
+                    <div class="cs-dot-item"><span class="cs-dot-icon">&#128214;</span><span class="cs-dot-lbl">Materi</span></div>
+                    <div class="cs-dot-item"><span class="cs-dot-icon">&#127942;</span><span class="cs-dot-lbl">Sertifikat</span></div>
+                    <div class="cs-dot-item"><span class="cs-dot-icon">&#128200;</span><span class="cs-dot-lbl">Live Class</span></div>
+                </div>
+                <div class="cs-progress">
+                    <div class="cs-progress-bar"><div class="cs-progress-fill"></div></div>
+                    <span class="cs-progress-lbl">In Development &bull; 35%</span>
+                </div>
+            </div>
+
+            <ul class="card-features">
+                <li><span class="feat-dot"></span>Video pembelajaran pasar modal IDX</li>
+                <li><span class="feat-dot"></span>Kursus teknikal, fundamental &amp; bandarmologi</li>
+                <li><span class="feat-dot"></span>Sertifikasi by KIPM Universitas Pancasila</li>
+            </ul>
+            <button class="card-cta" onclick="event.stopPropagation();">&#128274; Segera Hadir &mdash; Daftarkan Dirimu</button>
+        </div>
     </div>
 
     <div class="sys-footer">SIGMA &middot; by MarketnMocha(MnM) &times; KIPM Universitas Pancasila</div>
@@ -3333,11 +3434,20 @@ function selectTerminal() {{
         }} catch(e) {{}}
     }}, 150);
 }}
+
+function selectAcademy() {{
+    // Coming soon — no action yet
+    var card = document.getElementById('card-academy');
+    if (card) {{
+        card.style.transform = 'scale(0.98)';
+        setTimeout(function() {{ card.style.transform = ''; }}, 200);
+    }}
+}}
 </script>
 
 </body>
 </html>
-    """, height=1350, scrolling=False)
+    """, height=1850, scrolling=False)
 
     # ── JALUR ANDROID / WINDOWS: Tombol Streamlit Tersembunyi ──
     col1, col2 = st.columns(2)
@@ -5734,7 +5844,9 @@ if current_view == "dashboard":
         # ── Render both tables via components.html ─────────────────────────
         _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
         _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        _tbl_h = max(_idx_total_h, _com_total_h) + 30
+        # On mobile they stack, so total height = sum; on desktop = max. 
+        # Use sum + padding to be safe — scrolling=False so height must fit both on mobile
+        _tbl_h = _idx_total_h + _com_total_h + 80  # stack height for mobile safety
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -5760,13 +5872,15 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
 .badge{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:1.02rem;font-weight:700;}}
 .ccy{{font-size:0.97rem;color:{text_sub};}}
 @media(max-width:600px){{
-  .row{{flex-direction:column;gap:10px;}}
-  .mkt-hdr{{font-size:0.9rem;padding:8px 10px;}}
-  thead th{{font-size:0.87rem;padding:7px 8px;}}
-  tbody td{{font-size:0.93rem;padding:7px 8px;}}
-  .badge{{font-size:0.87rem;padding:2px 5px;}}
-  .nm{{font-size:0.93rem;}}
-  .price{{font-size:0.95rem;}}
+  .row{{flex-direction:column;gap:14px;}}
+  .col{{width:100%;}}
+  .mkt-hdr{{font-size:0.88rem;padding:8px 10px;}}
+  thead th{{font-size:0.82rem;padding:7px 8px;}}
+  tbody td{{font-size:0.88rem;padding:7px 8px;}}
+  .badge{{font-size:0.83rem;padding:2px 5px;}}
+  .nm{{font-size:0.88rem;}}
+  .price{{font-size:0.92rem;}}
+  table{{min-width:280px;}}
 }}
 </style></head><body>
 <div class="row">
@@ -12013,23 +12127,34 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
 .result-header{{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
   color:{_kc_sub};margin:20px 0 12px;display:flex;align-items:center;gap:8px;}}
 .result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
-.cards-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px;}}
-.step-card{{border:1px solid {_kc_border};border-radius:10px;padding:14px 16px;
-  background:rgba(8,12,22,0.8);transition:border-color 0.15s;}}
+
+/* ── ARA/ARB section headers ── */
+.section-label{{font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:{_kc_sub};margin:16px 0 8px;padding-left:4px;}}
+
+/* ── Card list style (like image 2) ── */
+.cards-list{{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}}
+.step-card{{border:1px solid {_kc_border};border-radius:10px;padding:13px 16px;
+  background:rgba(14,22,40,0.9);display:flex;align-items:center;gap:12px;
+  transition:border-color 0.15s;}}
 .step-card.ara{{border-left:4px solid {_kc_green};}}
 .step-card.arb{{border-left:4px solid {_kc_red};}}
-.step-card:hover{{border-color:rgba(124,58,237,0.3);}}
-.step-tag{{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;
-  font-weight:700;margin-bottom:6px;}}
-.step-tag.ara{{color:{_kc_green};}}
-.step-tag.arb{{color:{_kc_red};}}
-.step-price{{font-size:1.55rem;font-weight:700;line-height:1.1;margin-bottom:3px;}}
-.step-rp{{font-size:0.78rem;font-weight:400;margin-bottom:4px;color:{_kc_sub};}}
-.step-delta{{font-size:0.78rem;font-weight:600;}}
+.step-card:hover{{border-color:rgba(124,58,237,0.35);}}
+.step-card-left{{flex:1;min-width:0;}}
+.step-price-row{{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;}}
+.step-price{{font-size:1.35rem;font-weight:700;line-height:1.1;}}
+.step-rp{{font-size:0.75rem;font-weight:400;color:{_kc_sub};}}
+.step-delta{{font-size:0.8rem;font-weight:600;}}
 .step-delta.up{{color:{_kc_green};}}
 .step-delta.dn{{color:{_kc_red};}}
-.step-total{{font-size:0.72rem;color:{_kc_sub};margin-top:4px;}}
-.step-total b{{color:{_kc_text};font-size:0.82rem;}}
+.step-card-right{{text-align:right;flex-shrink:0;}}
+.step-tag{{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;
+  font-weight:700;margin-bottom:4px;display:block;}}
+.step-tag.ara{{color:{_kc_green};}}
+.step-tag.arb{{color:{_kc_red};}}
+.step-total-pct{{font-size:1.1rem;font-weight:700;}}
+.step-total-pct.up{{color:{_kc_green};}}
+.step-total-pct.dn{{color:{_kc_red};}}
 
 /* Visualisasi bar */
 .viz-wrap{{margin-top:20px;background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:18px 20px;}}
@@ -12042,10 +12167,11 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
 .viz-end{{width:80px;text-align:left;flex-shrink:0;}}
 
 @media(max-width:640px){{
-  .cards-grid{{grid-template-columns:1fr;}}
-  .step-price{{font-size:1.3rem;}}
+  .step-price{{font-size:1.2rem;}}
+  .step-total-pct{{font-size:1.0rem;}}
   .row2{{grid-template-columns:1fr;}}
   .form-wrap{{padding:16px 14px;}}
+  .step-card{{padding:11px 13px;gap:10px;}}
 }}
 </style></head><body>
 
@@ -12086,7 +12212,11 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
 
 <div class="result-wrap" id="result-wrap">
   <div class="result-header">Hasil Simulasi</div>
-  <div class="cards-grid" id="cards-container"></div>
+  <div class="section-label" id="ara-label" style="display:none;">&#9650; ARA — Auto Rejection Atas</div>
+  <div class="cards-list" id="ara-container"></div>
+  <div style="border-top:1px dashed rgba(124,58,237,0.2);margin:4px 0 12px;"></div>
+  <div class="section-label" id="arb-label" style="display:none;">&#9660; ARB — Auto Rejection Bawah</div>
+  <div class="cards-list" id="arb-container"></div>
   <div class="viz-wrap" id="viz-wrap">
     <div class="viz-title">Visualisasi Pergerakan Harga</div>
     <div class="viz-sub" style="font-size:0.65rem;color:{_kc_sub};text-align:center;margin-top:-10px;margin-bottom:14px;">
@@ -12169,26 +12299,41 @@ function calculate() {{
     arbSteps.push({{ step:i, price:curARB, turun:arbRate*100, total:turun }});
   }}
 
-  // Build cards
-  var html = '';
+  var araHtml = '';
+  var arbHtml = '';
   for (var i=0; i<araSteps.length; i++) {{
     var a = araSteps[i], b = arbSteps[i];
-    html += '<div class="step-card ara">' +
-      '<div class="step-tag ara">ARA #'+a.step+'</div>' +
-      '<div class="step-delta up">↑ '+a.naik.toFixed(2)+'%</div>' +
-      '<div class="step-price">'+fmt(a.price)+'</div>' +
-      '<div class="step-rp">Rp '+fmt(a.price)+'</div>' +
-      '<div class="step-total">Total Naik: <b style="color:#26a69a;">↑ '+a.total.toFixed(2)+'%</b></div>' +
+    araHtml += '<div class="step-card ara">' +
+      '<div class="step-card-left">' +
+        '<div class="step-price-row">' +
+          '<span class="step-price" style="color:#26a69a;">Rp ' + fmt(a.price) + '</span>' +
+          '<span class="step-delta up">↑ +' + a.naik.toFixed(2) + '%</span>' +
+        '</div>' +
+        '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
       '</div>' +
-      '<div class="step-card arb">' +
-      '<div class="step-tag arb">ARB #'+b.step+'</div>' +
-      '<div class="step-delta dn">↓ -'+b.turun.toFixed(2)+'%</div>' +
-      '<div class="step-price">'+fmt(b.price)+'</div>' +
-      '<div class="step-rp">Rp '+fmt(b.price)+'</div>' +
-      '<div class="step-total">Total Turun: <b style="color:#f23645;">↓ '+b.total.toFixed(2)+'%</b></div>' +
-      '</div>';
+      '<div class="step-card-right">' +
+        '<span class="step-tag ara">ARA #' + a.step + '</span>' +
+        '<div class="step-total-pct up">↗ ' + a.total.toFixed(2) + '%</div>' +
+      '</div>' +
+    '</div>';
+    arbHtml += '<div class="step-card arb">' +
+      '<div class="step-card-left">' +
+        '<div class="step-price-row">' +
+          '<span class="step-price" style="color:#f23645;">Rp ' + fmt(b.price) + '</span>' +
+          '<span class="step-delta dn">↓ -' + b.turun.toFixed(2) + '%</span>' +
+        '</div>' +
+        '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
+      '</div>' +
+      '<div class="step-card-right">' +
+        '<span class="step-tag arb">ARB #' + b.step + '</span>' +
+        '<div class="step-total-pct dn">↘ ' + b.total.toFixed(2) + '%</div>' +
+      '</div>' +
+    '</div>';
   }}
-  document.getElementById('cards-container').innerHTML = html;
+  document.getElementById('ara-container').innerHTML = araHtml;
+  document.getElementById('arb-container').innerHTML = arbHtml;
+  document.getElementById('ara-label').style.display = 'block';
+  document.getElementById('arb-label').style.display = 'block';
 
   // Visualisasi
   var maxPrice = araSteps[araSteps.length-1].price;
