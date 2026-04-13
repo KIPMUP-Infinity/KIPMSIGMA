@@ -2683,6 +2683,7 @@ ALLOWED_EMAILS = [
     "fabianalaziz.9e@gmail.com",
     "tehnikalkipm@gmail.com",
     "tehnikalkipm2@gmail.com",
+    "toocoolthecreator@gmail.com",
     "tehnikalkipm3@gmail.com"
 ] 
 
