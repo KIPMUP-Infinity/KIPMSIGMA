@@ -2239,6 +2239,24 @@ Jika setelah analisa dampak user minta trade plan emiten tertentu
 GROQ_SYSTEM_PROMPT = """Kamu adalah SIGMA — asisten cerdas KIPM Universitas Pancasila, by MarketnMocha (MnM).
 Bahasa: Indonesia natural. Ramah saat ngobrol, profesional saat analisa. Selalu akhiri analisa dengan DYOR.
 
+=== MODE RESPONS — WAJIB DIBACA PERTAMA ===
+SIGMA beroperasi dalam 2 mode. Deteksi mode dari isi pertanyaan:
+
+MODE 1 — GENERAL / EDUKASI:
+Aktif jika: pertanyaan tentang teori ekonomi, definisi, konsep umum, cara kerja sesuatu, pertanyaan non-saham, atau obrolan biasa.
+→ Jawab LANGSUNG sesuai pertanyaan, seperti AI asisten cerdas pada umumnya.
+→ DILARANG menyisipkan analisa dampak global, market brief, atau konteks pasar yang tidak diminta.
+→ DILARANG menggunakan template analisa saham (trade plan, bandarmologi, dsb) untuk pertanyaan umum.
+→ Format: jawab lugas, padat, akurat. Boleh pakai poin/numbering jika membantu kejelasan.
+→ Tidak perlu DYOR untuk pertanyaan edukasi murni.
+
+MODE 2 — ANALISA PASAR / TRADING:
+Aktif jika: ada ticker saham 4 huruf kapital, kata kunci analisa/teknikal/fundamental/bandarmologi/ihsg/trading, atau trigger 7 Alpha.
+→ Ikuti SEMUA aturan, template, dan struktur di bawah ini secara disiplin.
+→ Wajib DYOR di akhir.
+
+ATURAN TRANSISI: Jika user bertanya hal umum DI TENGAH sesi trading → tetap jawab umum dulu (Mode 1), baru kembali ke konteks trading di pesan berikutnya jika diminta.
+
 === PRINSIP UTAMA SIGMA — BACA SEBELUM APAPUN ===
 SIGMA adalah asisten yang JUJUR, TEGAS, dan DISIPLIN. Analisa ini menyangkut uang nyata milik pengguna dan kepercayaan yang sangat berharga.
 
@@ -14248,6 +14266,40 @@ else:
         
         emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
 
+        # ── INTENT DETECTION — pisahkan general question vs analisa pasar ──
+        _TRADING_KEYWORDS = [
+            "analisa", "saham", "ihsg", "harga", "ticker", "emiten", "idx", "beli", "jual",
+            "teknikal", "fundamental", "bandarmologi", "bursa", "investasi", "trading",
+            "dampak", "makro", "market", "rupiah", "berita pasar", "laporan", "bantu aku analisa",
+            "7 alpha", "alpha", "ipo", "broker", "bandar", "akumulasi", "distribusi",
+            "support", "resistance", "breakout", "candle", "volume", "entry", "sl", "tp",
+            "trade plan", "setup", "portofolio", "dividen", "right issue", "buyback",
+            "confluence", "fvg", "order block", "supply", "demand", "ema",
+        ]
+        _GENERAL_KEYWORDS = [
+            "hukum", "pengertian", "definisi", "jelaskan", "apa itu", "apa yang dimaksud",
+            "sejarah", "teori", "konsep", "bagaimana cara", "mengapa", "kenapa", "bedakan",
+            "perbedaan", "persamaan", "contoh", "faktor", "pengaruh", "dampak terhadap",
+            "ekonomi makro", "mikroekonomi", "makroekonomi", "permintaan", "penawaran",
+            "inflasi umum", "deflasi", "suku bunga umum", "kebijakan fiskal", "kebijakan moneter",
+            "pasar persaingan", "monopoli", "oligopoli", "elastisitas", "utilitas", "produksi",
+            "biaya produksi", "keseimbangan pasar", "kurva", "fungsi permintaan", "fungsi penawaran",
+            "rekomendasi", "saran", "tips", "cara", "langkah", "strategi umum",
+        ]
+        _is_trading_request = (
+            any(kw in prompt_lower for kw in _TRADING_KEYWORDS) or
+            bool(emiten_match) or
+            any(prompt_lower.startswith(p) for p in ["1.", "2.", "3.", "4.", "5.", "6.", "7."])
+        )
+        _is_general_question = (
+            not _is_trading_request and
+            any(kw in prompt_lower for kw in _GENERAL_KEYWORDS)
+        )
+        # Pertanyaan pendek tanpa keyword spesifik = general juga
+        _is_general_question = _is_general_question or (
+            not _is_trading_request and len(prompt.split()) <= 30
+        )
+
         is_dampak_makro  = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower or ("kesimpulan dampak" in prompt_lower and not emiten_match)
         is_dampak_emiten = prompt_lower.startswith("2.") or ("kesimpulan dampak" in prompt_lower and bool(emiten_match))
         is_bandarmologi  = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or ("broker summary" in prompt_lower)
@@ -14377,15 +14429,12 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
         elif img_data: full_prompt = f"[Gambar: {img_data[2]}]\n\nPertanyaan: {prompt}"
         else:
             full_prompt = prompt
-            # Hanya inject market context jika user memang request analisa/data pasar
-            # Bukan untuk chat biasa / obrolan umum
-            _analisa_keywords = [
-                "analisa", "saham", "ihsg", "harga", "ticker", "emiten", "idx", "beli", "jual",
-                "teknikal", "fundamental", "bandarmologi", "bursa", "investasi", "trading",
-                "dampak", "makro", "market", "rupiah", "berita pasar", "laporan", "bantu aku analisa"
-            ]
-            _is_analisa_request = any(kw in prompt_lower for kw in _analisa_keywords) or bool(emiten_match)
-            if _is_analisa_request:
+            if _is_general_question:
+                # Pertanyaan umum/edukasi → jawab apa adanya, TANPA inject market context
+                # Tetap pakai GROQ_SYSTEM_PROMPT tapi full_prompt = prompt bersih
+                pass
+            elif _is_trading_request:
+                # Pertanyaan terkait pasar/trading → inject market context
                 try:
                     ctx = build_combined_context(prompt)
                     if ctx: full_prompt = f"{ctx}\n\n{prompt}"
