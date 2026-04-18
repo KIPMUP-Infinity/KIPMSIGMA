@@ -14264,7 +14264,36 @@ else:
 
         prompt_lower = prompt.lower()
         
-        emiten_match = re.search(r'\b[A-Z]{4}\b', prompt.upper())
+        # ── EMITEN DETECTION — filter kata umum Bahasa Indonesia ──
+        # Kata 4 huruf kapital yang BUKAN ticker saham IDX
+        # ── EMITEN DETECTION — hanya valid jika diikuti konteks trading ──
+        # Strategi: cari 4-huruf kapital, tapi validasi dengan context clues
+        _BUKAN_TICKER = {
+            "YANG","DARI","PADA","OLEH","ATAU","JIKA","AKAN","JUGA","BAGI","AGAR",
+            "SAAT","BISA","BUAT","SAJA","PARA","KITA","ANDA","SAMA","LAIN","BARU",
+            "CARA","TAPI","MAKA","KAMI","DATA","SINI","SITU","LAGI","MANA","PULA",
+            "SATU","DEMI","DULU","TADI","KALI","LALU","PAGI","SORE","HARI","KAMU",
+            "SAYA","ATAS","LUAR","RATA","LABA","RUGI","ASET","RISK","FUND","LOAN",
+            "COST","FLOW","RATE","BOND","CASH","TERM","PLAN","GOAL","IDEA","TYPE",
+            "MODE","MAJU","KUAT","BEDA","REAL","TIME","LINE","AREA","ZONA","OPEN",
+            "HIGH","STOP","EXIT","BULL","BEAR","SIDE","BIAS","NEWS","BANK","CALL",
+            "BASE","CORE","FORM","HALO","BAIK","OKAY","NEXT","LAST","FULL","FAST",
+            "SLOW","WIDE","MINI","MAXI","FREE","GOOD","BEST","ONLY","MOST","LESS",
+            "MORE","YEAR","WEEK","DAYS","LONG","SORT","BOTH","EACH","VERY","MUCH",
+            "SUCH","ALSO","THEN","WHEN","WITH","FROM","INTO","THAT","THIS","HAVE",
+            "BEEN","WERE","WHAT","JUST","NEED","WANT","MAKE","TAKE","GIVE","BACK",
+            "OVER","DOWN","UPON","COME","DOES","DONE","MANA","JADI","DIRI","SEMU",
+            "TIAP","BAGI","NAIK","TURUN","TREN","JUAL","BELI","MEGA","MEDI","MULA",
+            "SERA","EMUA","ONAL","ERAL","URAL","ICAL","ITAL","IVAL","ETAL","OGAN",
+            "HUKM","FAKT","DEMA","SUPL","THEO","ECON","CONS","PROD","MARK","PRIC",
+            "HUKU","PENA","WARA","MINN","APAK","SEBU","KOND","SEBA","KARE","SUPA",
+            "UNTU","DENG","OLHE","BERD","PERB","PERB","PENG","PEND","PEMB","PEMA",
+            "HARG","JASA","KONS","PROD","DITA","DIMI","DIDA","DIBE","DIBU","DICA",
+        }
+        # Cari semua kandidat ticker (4 huruf kapital)
+        _ticker_candidates = re.findall(r'\b[A-Z]{4}\b', prompt.upper())
+        _valid_tickers = [t for t in _ticker_candidates if t not in _BUKAN_TICKER]
+        emiten_match = re.search(r'\b(' + '|'.join(_valid_tickers) + r')\b', prompt.upper()) if _valid_tickers else None
 
         # ── INTENT DETECTION — pisahkan general question vs analisa pasar ──
         _TRADING_KEYWORDS = [
@@ -14286,31 +14315,55 @@ else:
             "biaya produksi", "keseimbangan pasar", "kurva", "fungsi permintaan", "fungsi penawaran",
             "rekomendasi", "saran", "tips", "cara", "langkah", "strategi umum",
         ]
-        _is_trading_request = (
-            any(kw in prompt_lower for kw in _TRADING_KEYWORDS) or
-            bool(emiten_match) or
-            any(prompt_lower.startswith(p) for p in ["1.", "2.", "3.", "4.", "5.", "6.", "7."])
-        )
-        _is_general_question = (
-            not _is_trading_request and
-            any(kw in prompt_lower for kw in _GENERAL_KEYWORDS)
-        )
-        # Pertanyaan pendek tanpa keyword spesifik = general juga
-        _is_general_question = _is_general_question or (
-            not _is_trading_request and len(prompt.split()) <= 30
-        )
+        # Keyword general yang SANGAT KUAT — override trading keywords jika ada
+        _STRONG_GENERAL = [
+            "jelaskan", "apa itu", "pengertian", "definisi", "perbedaan antara",
+            "bedakan", "sejarah", "teori ekonomi", "hukum permintaan", "hukum penawaran",
+            "bagaimana cara kerja", "mengapa", "kenapa", "apa yang dimaksud",
+            "faktor-faktor yang mempengaruhi", "kurva permintaan", "kurva penawaran",
+            "elastisitas", "utilitas", "biaya produksi", "keseimbangan pasar",
+        ]
+        _has_strong_general = any(kw in prompt_lower for kw in _STRONG_GENERAL)
+        _has_general = any(kw in prompt_lower for kw in _GENERAL_KEYWORDS)
+        _has_emiten = bool(emiten_match)
+        _has_trading_kw = any(kw in prompt_lower for kw in _TRADING_KEYWORDS)
+        _has_trigger_prefix = any(prompt_lower.startswith(p) for p in ["1.", "2.", "3.", "4.", "5.", "6.", "7."])
 
-        is_dampak_makro  = prompt_lower.startswith("1.") or "dampak makro" in prompt_lower or ("kesimpulan dampak" in prompt_lower and not emiten_match)
-        is_dampak_emiten = prompt_lower.startswith("2.") or ("kesimpulan dampak" in prompt_lower and bool(emiten_match))
-        is_bandarmologi  = prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or ("broker summary" in prompt_lower)
-        is_fundamental   = prompt_lower.startswith("4.") or "fundamental" in prompt_lower
-        is_fundamental_multidisiplin = (
+        # Logika final:
+        # 1. Strong general keyword → selalu general (override apapun kecuali ada emiten ticker valid)
+        # 2. Ada emiten ticker valid → trading
+        # 3. Ada trading keyword tanpa general → trading
+        # 4. Sisanya → general
+        if _has_strong_general and not _has_emiten and not _has_trigger_prefix:
+            _is_general_question = True
+            _is_trading_request = False
+        elif _has_emiten or _has_trigger_prefix:
+            _is_trading_request = True
+            _is_general_question = False
+        elif _has_trading_kw and not _has_general:
+            _is_trading_request = True
+            _is_general_question = False
+        elif _has_general:
+            _is_general_question = True
+            _is_trading_request = False
+        else:
+            # Default: pertanyaan pendek = general, panjang tanpa konteks = trading
+            _is_general_question = len(prompt.split()) <= 25
+            _is_trading_request = not _is_general_question
+
+        # Semua flag analisa hanya aktif jika BUKAN pertanyaan general
+        _block = _is_general_question  # shorthand: kalau general → blokir semua template analisa
+        is_dampak_makro  = not _block and (prompt_lower.startswith("1.") or "dampak makro" in prompt_lower or ("kesimpulan dampak" in prompt_lower and not emiten_match))
+        is_dampak_emiten = not _block and (prompt_lower.startswith("2.") or ("kesimpulan dampak" in prompt_lower and bool(emiten_match)))
+        is_bandarmologi  = not _block and (prompt_lower.startswith("3.") or "bandarmologi" in prompt_lower or ("broker summary" in prompt_lower))
+        is_fundamental   = not _block and (prompt_lower.startswith("4.") or ("fundamental" in prompt_lower and bool(emiten_match)))
+        is_fundamental_multidisiplin = not _block and (
             any(k in prompt_lower for k in ["damodaran","dcf","reverse dcf","margin of safety","lynch","schilit","shenanigan","multi disiplin","multidisiplin","value investing","intrinsik","nilai intrinsik","growth rate","wacc"]) and
             (bool(emiten_match) or "analisa" in prompt_lower)
         )
-        is_teknikal      = prompt_lower.startswith("5.") or "teknikal" in prompt_lower
-        is_lengkap       = prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2)
-        is_ipo           = prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower
+        is_teknikal      = not _block and (prompt_lower.startswith("5.") or ("teknikal" in prompt_lower and bool(emiten_match)))
+        is_lengkap       = not _block and (prompt_lower.startswith("6.") or "analisa lengkap" in prompt_lower or (prompt_lower.startswith("7 alpha ") and len(prompt_lower.split()) > 2))
+        is_ipo           = not _block and (prompt_lower.startswith("7.") or "analisa ipo" in prompt_lower)
         
         if is_dampak_makro:
             with st.spinner("Menganalisa sentimen makro global/domestik..."):
