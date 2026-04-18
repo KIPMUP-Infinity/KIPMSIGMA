@@ -12972,12 +12972,13 @@ function calculate() {{
 </style>""", unsafe_allow_html=True)
 
         # ── Sub-tabs Panduan ─────────────────────────────────────────────
-        pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7 = st.tabs([
+        pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8 = st.tabs([
             "  🌍 Global Macro & News  ",
             "  🔄 Index & Sector Rotation  ",
             "  👥 Shareholder  ",
             "  ⚡ Alpha Screener  ",
             "  🧮 Kalkulator  ",
+            "  📊 Broker Summary  ",
             "  ℹ️ Lainnya  ",
             "  🔬 Cara Kerja Screener  ",
         ])
@@ -14098,9 +14099,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
             components.html(_guide_html_4, height=4200, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 5 — AI REKOMENDASI
+        # PANDUAN 5 — KALKULATOR (content moved from pg_tab6)
         # ══════════════════════════════════════════════════════════════
-        with pg_tab5:
+        # (Kalkulator content is injected below at PANDUAN 6 block, swapped)
+
+        # PANDUAN 5b — AI REKOMENDASI (now under pg_tab7 Lainnya)
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab7:
             _guide_html_5 = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
@@ -14226,9 +14231,9 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
             components.html(_guide_html_5, height=2000, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 6 — KALKULATOR
+        # PANDUAN 6 — KALKULATOR (now correctly under pg_tab5)
         # ══════════════════════════════════════════════════════════════
-        with pg_tab6:
+        with pg_tab5:
             _guide_html_6 = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
@@ -14363,9 +14368,160 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
             components.html(_guide_html_6, height=2200, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 7 — CARA KERJA SCREENER (HOW IT WORKS)
         # ══════════════════════════════════════════════════════════════
-        with pg_tab7:
+        # PANDUAN — BROKER SUMMARY (pg_tab6)
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab6:
+            _guide_html_brosum = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
+.feat-title{{font-size:1.05rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.tag{{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;margin:2px;}}
+.tag.buy{{background:rgba(38,166,154,0.18);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
+.tag.sell{{background:rgba(242,54,69,0.15);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
+.tag.foreign{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.35);}}
+.tag.local{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.3);}}
+.table-wrap{{overflow-x:auto;margin:12px 0;}}
+table{{width:100%;border-collapse:collapse;font-size:0.85rem;}}
+th{{background:rgba(124,58,237,0.2);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
+td{{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:{_TXT};}}
+tr:hover td{{background:rgba(124,58,237,0.07);}}
+.alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_Y};}}
+.info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_B};}}
+.broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
+.broker-card{{background:rgba(8,12,22,0.9);border:1px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.broker-code{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.08em;}}
+.broker-name{{font-size:0.78rem;color:{_SUB};margin-top:2px;}}
+.broker-type{{font-size:0.75rem;margin-top:6px;}}
+@media(max-width:600px){{
+  .broker-grid{{grid-template-columns:1fr 1fr;}}
+  .sec-title{{font-size:1rem;}}
+  .feat{{padding:13px 14px;}}
+}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head">
+  <div class="sec-icon">📊</div>
+  <div>
+    <div class="sec-title">BROKER SUMMARY — Panduan Lengkap</div>
+    <div class="sec-desc">Membaca jejak transaksi broker untuk analisa bandarmologi & akumulasi/distribusi</div>
+  </div>
+</div>
+
+<div class="feat">
+<div class="feat-title">📌 Apa itu Broker Summary (Brosum)?</div>
+<div class="stext">Broker Summary adalah ringkasan aktivitas transaksi <b>per kode broker</b> dalam satu saham pada periode tertentu (harian/mingguan/bulanan). Data ini menampilkan total <span class="hi">volume beli</span>, <span class="dn">volume jual</span>, dan <b>net buy/sell</b> setiap broker — sehingga kamu bisa melihat siapa yang sedang akumulasi dan siapa yang distribusi.</div>
+<div class="steps" style="margin-top:12px;">
+  <div class="step"><div class="snum">1</div><div class="stext">Broker Summary tersedia di platform seperti <b>RTI Business</b>, <b>ChartNexus</b>, <b>Stockbit</b>, <b>IPOT</b>, dan aplikasi broker masing-masing.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext">Data umumnya menampilkan: <span class="hi">Kode Broker</span> | <span class="ok">Buy Volume (lot/nilai)</span> | <span class="dn">Sell Volume (lot/nilai)</span> | <b>Net Buy/Sell</b>.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Untuk analisa bandarmologi di SIGMA, screenshot Broker Summary lalu lampirkan bersama perintah <span class="hi">"3. Bandarmologi [kode saham]"</span>.</div></div>
+</div>
+</div>
+
+<div class="feat blue">
+<div class="feat-title">📋 Kolom-Kolom Penting dalam Broker Summary</div>
+<div class="table-wrap">
+<table>
+  <tr><th>Kolom</th><th>Keterangan</th></tr>
+  <tr><td><b>Kode Broker</b></td><td>Kode 2 huruf broker (mis: YP, AK, RX, ZP, BQ)</td></tr>
+  <tr><td><b>Buy Vol / Lot</b></td><td>Total volume beli dalam lot (1 lot = 100 lembar)</td></tr>
+  <tr><td><b>Sell Vol / Lot</b></td><td>Total volume jual dalam lot</td></tr>
+  <tr><td><b>Net Buy</b></td><td>Buy Vol − Sell Vol. Positif = akumulasi, Negatif = distribusi</td></tr>
+  <tr><td><b>Buy Value</b></td><td>Total nilai transaksi beli (Rp)</td></tr>
+  <tr><td><b>Sell Value</b></td><td>Total nilai transaksi jual (Rp)</td></tr>
+  <tr><td><b>Avg Buy Price</b></td><td>Rata-rata harga beli broker tersebut</td></tr>
+  <tr><td><b>Avg Sell Price</b></td><td>Rata-rata harga jual broker tersebut</td></tr>
+  <tr><td><b>Frekuensi</b></td><td>Jumlah order/transaksi — frekuensi tinggi = aktivitas intens</td></tr>
+</table>
+</div>
+</div>
+
+<div class="feat green">
+<div class="feat-title">🔍 Cara Membaca Sinyal Akumulasi & Distribusi</div>
+<div class="steps">
+  <div class="step"><div class="snum">↑</div><div class="stext"><span class="ok">Akumulasi (Bullish Signal):</span> Broker tertentu konsisten <b>Net Buy besar</b> selama beberapa hari berturut-turut, terutama jika harga belum bergerak jauh. Ini tanda "bandar" sedang kumpulkan saham.</div></div>
+  <div class="step"><div class="snum">↓</div><div class="stext"><span class="dn">Distribusi (Bearish Signal):</span> Broker yang sebelumnya Net Buy kini berbalik jadi <b>Net Sell dominan</b>. Terutama berbahaya jika harga masih tinggi — ini tanda mulai lepas saham ke publik.</div></div>
+  <div class="step"><div class="snum">→</div><div class="stext"><span class="yl">Crossing:</span> Broker A beli banyak DARI broker B yang jual banyak, pada <b>harga yang sama/mirip</b>. Ini pola crossing klasik — perpindahan kepemilikan dari satu pihak ke pihak lain secara terkoordinasi.</div></div>
+  <div class="step"><div class="snum">→</div><div class="stext"><span class="hi">Foreign Flow:</span> Perhatikan broker asing (ZP, DB, CS, ML, MS). Net buy asing = sentimen positif global. Net sell asing = tekanan jual dari institusi internasional.</div></div>
+</div>
+</div>
+
+<div class="feat yellow">
+<div class="feat-title">🏦 Kode Broker Penting di IDX</div>
+<div class="broker-grid">
+  <div class="broker-card"><div class="broker-code">YP</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — Retail</span></div></div>
+  <div class="broker-card"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">ZP</div><div class="broker-name">Kim Eng Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">BQ</div><div class="broker-name">Mirae Asset</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">DB</div><div class="broker-name">Deutsche Securities</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">CS</div><div class="broker-name">Credit Suisse</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">ML</div><div class="broker-name">Merrill Lynch</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">MS</div><div class="broker-name">Morgan Stanley</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">RX</div><div class="broker-name">Macquarie Capital</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card"><div class="broker-code">OD</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
+  <div class="broker-card"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas 2</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
+  <div class="broker-card"><div class="broker-code">DH</div><div class="broker-name">Sinarmas Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card"><div class="broker-code">PD</div><div class="broker-name">BNI Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
+  <div class="broker-card"><div class="broker-code">GR</div><div class="broker-name">Panin Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card"><div class="broker-code">FZ</div><div class="broker-name">Waterfront Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card"><div class="broker-code">LG</div><div class="broker-name">Trimegah Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+</div>
+</div>
+
+<div class="feat">
+<div class="feat-title">📸 Cara Menggunakan Broker Summary di SIGMA</div>
+<div class="steps">
+  <div class="step"><div class="snum">1</div><div class="stext">Buka platform data saham (RTI, Stockbit, IPOT, dll.) → cari saham yang ingin dianalisa → buka menu <b>Broker Summary</b>.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext">Pilih periode: <span class="yl">Harian</span> untuk sinyal jangka pendek, <span class="ok">Mingguan/Bulanan</span> untuk melihat tren akumulasi besar.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Screenshot tampilan Broker Summary — pastikan terlihat jelas kolom Net Buy/Sell dan kode broker teratas.</div></div>
+  <div class="step"><div class="snum">4</div><div class="stext">Di SIGMA, ketik: <span class="hi">"3. Bandarmologi BBRI"</span> (ganti dengan kode saham) sambil <b>lampirkan screenshot Brosum, Price Table, dan Volume</b>.</div></div>
+  <div class="step"><div class="snum">5</div><div class="stext">SIGMA AI akan membedah pola akumulasi/distribusi, crossing antar broker, dan memberikan interpretasi terhadap momentum harga.</div></div>
+</div>
+<div class="info-box">💡 <b>Pro Tip:</b> Untuk analisa Quad Confluence (perintah 6), lampirkan sekaligus: SS Chart Teknikal + SS Broker Summary. SIGMA akan menggabungkan sinyal teknikal, bandarmologi, fundamental, dan makro dalam satu analisa terpadu.</div>
+</div>
+
+<div class="feat red">
+<div class="feat-title">⚠️ Hal-Hal yang Perlu Diperhatikan</div>
+<div class="steps">
+  <div class="step"><div class="snum">!</div><div class="stext"><span class="dn">Jangan terpaku hanya pada 1 hari data</span> — pola akumulasi bandar biasanya terlihat setelah 3–10 hari observasi berturut-turut.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext">Broker besar tidak selalu = bandar. <span class="yl">Konfirmasi dengan price action</span>: jika akumulasi tapi harga sideways/turun, waspadai distribusi terselubung.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext">Data Broker Summary adalah <b>lagging indicator</b> — ia menunjukkan apa yang SUDAH terjadi, bukan apa yang AKAN terjadi. Gunakan bersama analisa teknikal.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext">Semua analisa bandarmologi adalah <b>referensi riset</b>, bukan sinyal trading resmi. Selalu DYOR dan kelola risiko dengan disiplin.</div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_brosum, height=2400, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 7 — CARA KERJA SCREENER (HOW IT WORKS) → now pg_tab8
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab8:
             _P7 = "#a78bfa"
             _B7 = "#60a5fa"
             _G7 = "#26a69a"
