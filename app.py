@@ -3618,8 +3618,7 @@ body {{ background: #080c14; }}
                 <li><span class="feat-dot"></span>Global Macro &amp; News &#8212; Live Market Pulse</li>
                 <li><span class="feat-dot"></span>Index &amp; Sector Rotation &#8212; IDX Heatmap</li>
                 <li><span class="feat-dot"></span>Shareholder &#8212; Foreign Flow &amp; Ownership</li>
-                <li><span class="feat-dot"></span>AI Stock Insight &#8212; Screener &amp; Analisa</li>
-                <li><span class="feat-dot"></span>AI Rekomendasi &#8212; Watchlist &amp; Alert</li>
+                <li><span class="feat-dot"></span>⚡ Alpha Screener &#8212; AI Stock Insight, Daily, Weekly, BSJP &amp; Fundamental Screener</li>
             </ul>
             <button class="card-cta" onclick="event.stopPropagation(); selectTerminal()">Masuk ke Terminal &#8594;</button>
         </div>
@@ -5913,12 +5912,11 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    tab_macro, tab_rotation, tab_shareholder, tab_ai, tab_reco, tab_kalkulator, tab_panduan = st.tabs([
+    tab_macro, tab_rotation, tab_shareholder, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  GLOBAL MACRO & NEWS  ",
         "  INDEX & SECTOR ROTATION  ",
         "  SHAREHOLDER  ",
-        "  AI STOCK INSIGHT  ",
-        "  AI REKOMENDASI  ",
+        "  ⚡ ALPHA SCREENER  ",
         "  🧮 CALCULATOR  ",
         "  📖 PANDUAN  ",
     ])
@@ -10339,8 +10337,20 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
 
-    with tab_ai:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+    with tab_alpha_screener:
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER — AI STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
+
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental = st.tabs([
+            "  🔍 AI STOCK INSIGHT  ",
+            "  📅 DAILY  ",
+            "  📆 WEEKLY  ",
+            "  🌙 BELI SORE JUAL PAGI  ",
+            "  📊 FUNDAMENTAL SCREENER  ",
+        ])
+
+        with alpha_tab_insight:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
         col_input, col_btn = st.columns([3, 1])
@@ -11041,10 +11051,11 @@ Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume
                 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# PART 11: AI REKOMENDASI (Daily / Weekly / BSJP)
+# PART 11: ALPHA SCREENER — DAILY / WEEKLY / BSJP / FUNDAMENTAL (merged from tab_reco)
 # ─────────────────────────────────────────────
-    with tab_reco:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>AI REKOMENDASI SIGMA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        # Daily / Weekly / BSJP content — now inside alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp
+        # Fundamental Screener — inside alpha_tab_fundamental
+        # Shared resources (watchlist, price fetcher, AI caller, renderers) defined once below
 
         # ── DAFTAR SAHAM IDX — TOP 500 MARKET CAP, AKTIF DIPERDAGANGKAN ──
         # Sudah dikurasi: hapus saham suspend >1 bln & micro-speculative tidak relevan
@@ -11283,13 +11294,12 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
             except:
                 return "Data shareholder tidak tersedia"
 
-        # ── Definisikan tabs SEBELUM kontennya ──────────────────────────────
-        reco_tab_daily, reco_tab_weekly, reco_tab_bsjp, reco_tab_fundamental = st.tabs([
-            "  📅 DAILY  ",
-            "  📆 WEEKLY  ",
-            "  🌙 BELI SORE JUAL PAGI  ",
-            "  📊 FUNDAMENTAL SCREENER  ",
-        ])
+        # ── Sub-tabs sudah didefinisikan di atas (alpha_tab_daily/weekly/bsjp/fundamental) ──
+        # reco_tab_* aliases untuk backward compat internal
+        reco_tab_daily       = alpha_tab_daily
+        reco_tab_weekly      = alpha_tab_weekly
+        reco_tab_bsjp        = alpha_tab_bsjp
+        reco_tab_fundamental = alpha_tab_fundamental
 
         # ─── SHARED TABLE RENDERER ─────────────────────────────────────────
         def _render_table_reco(session_key_result, session_key_ts, accent_color,
@@ -12971,9 +12981,9 @@ function calculate() {{
             "  🌍 Global Macro & News  ",
             "  🔄 Index & Sector Rotation  ",
             "  👥 Shareholder  ",
-            "  🤖 AI Stock Insight  ",
-            "  🎯 AI Rekomendasi  ",
+            "  ⚡ Alpha Screener  ",
             "  🧮 Kalkulator  ",
+            "  ℹ️ Lainnya  ",
         ])
 
         # ══════════════════════════════════════════════════════════════
@@ -13549,7 +13559,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
       <b>Validasi dengan Macro:</b> Kembali ke tab Global Macro — apakah kondisi risk-on mendukung sektor tersebut? Misalnya: sektor Energi + Komoditas naik = konfluensi kuat.
     </div></div>
     <div class="step"><div class="snum">5</div><div class="stext">
-      <b>Analisa emiten spesifik:</b> Setelah sektor dan saham terpilih, gunakan <b>AI Stock Insight</b> atau ketik di <b>SIGMA AI Chat</b> untuk analisa fundamental dan teknikal mendalam.
+      <b>Analisa emiten spesifik:</b> Setelah sektor dan saham terpilih, gunakan <b>⚡ Alpha Screener → AI Stock Insight</b> atau ketik di <b>SIGMA AI Chat</b> untuk analisa fundamental dan teknikal mendalam.
     </div></div>
   </div>
 </div>
@@ -13675,7 +13685,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="steps">
 <div class="step"><div class="snum">1</div><div class="stext"><b>Screening awal:</b> Filter saham dengan float publik rendah (&lt;30%) dan kepemilikan asing tinggi (&gt;30%) — ini kandidat saham yang rawan digerakkan.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext"><b>Tracker confirmation:</b> Setelah dapat kandidat, masukkan ke Tracker untuk lihat tren jumlah holder 3-6 bulan terakhir.</div></div>
-<div class="step"><div class="snum">3</div><div class="stext"><b>Korelasi teknikal:</b> Crossing holder turun + harga di support kuat = area entry potensial. Kirim ke <b>AI Stock Insight</b> untuk konfirmasi teknikal lengkap.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext"><b>Korelasi teknikal:</b> Crossing holder turun + harga di support kuat = area entry potensial. Kirim ke <b>⚡ Alpha Screener → AI Stock Insight</b> untuk konfirmasi teknikal lengkap.</div></div>
 </div>
 </div>
 
@@ -13766,7 +13776,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- APA ITU -->
 <div class="feat">
-<div class="feat-title">📌 Apa itu AI Stock Insight?</div>
+<div class="feat-title">📌 ⚡ Alpha Screener — AI Stock Insight</div>
 <div class="stext">Engine analisa terpadu SIGMA Terminal. Masukkan kode saham → sistem otomatis tarik data harga, volume, fundamental, dan makro → AI generate analisa lengkap dengan <span class="hi">chart 5-panel interaktif</span>, <span class="ok">trade plan tervisualisasi</span>, <span class="yl">risk level otomatis</span>, dan Volume Intelligence Engine.</div>
 </div>
 
@@ -14069,7 +14079,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="feat yellow">
 <div class="feat-title">📋 Fundamental Screener (Buffett Criteria)</div>
 <div class="steps">
-<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab AI Stock Insight.</div></div>
+<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab ⚡ Alpha Screener → sub-tab AI Stock Insight.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext">Pilih <b>filter sektor</b> (All / Banking / Property / Energy / Consumer) untuk mempersempit pencarian.</div></div>
 <div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> — sistem evaluasi ratusan saham IDX berdasarkan: <span class="hi">ROE ≥15%</span>, <span class="ok">DER ≤1.5×</span>, <span class="yl">Net Margin ≥10%</span>, Current Ratio ≥1.5, <span class="hi">PBV ≤3×</span>, EPS positif.</div></div>
 <div class="step"><div class="snum">4</div><div class="stext">Urutkan hasil dengan <b>"Sort By"</b>: ROE Tertinggi / DER Terendah / Net Margin / PBV.</div></div>
@@ -14146,8 +14156,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div></div>
 
 <div class="feat">
-<div class="feat-title">📌 Apa itu AI Rekomendasi?</div>
-<div class="stext">Tab AI Rekomendasi adalah fitur kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam tiga mode: <span class="hi">Harian</span>, <span class="yl">Mingguan</span>, dan <span class="ok">Buy-Sell-JP (BSJP)</span>.</div>
+<div class="feat-title">📌 ⚡ Alpha Screener — Daily / Weekly / BSJP</div>
+<div class="stext">Tab ⚡ Alpha Screener adalah pusat analisa dan kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam tiga mode: <span class="hi">Harian</span>, <span class="yl">Mingguan</span>, dan <span class="ok">Buy-Sell-JP (BSJP)</span>.</div>
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📅</div>
@@ -14158,7 +14168,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="feat blue">
 <div class="feat-title">🌅 Cara Menggunakan Rekomendasi Harian</div>
 <div class="steps">
-<div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>AI Rekomendasi</b> dari navigasi atas SIGMA Terminal.</div></div>
+<div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>⚡ Alpha Screener</b> dari navigasi atas SIGMA Terminal.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext">Klik tombol <b>"🌅 Generate Rekomendasi Harian"</b> — AI akan memproses kondisi makro hari ini + sinyal teknikal intraday.</div></div>
 <div class="step"><div class="snum">3</div><div class="stext">Output berisi: <span class="ok">daftar saham</span> + <span class="hi">alasan singkat</span> + <span class="yl">level entry estimasi</span> + <span class="dn">catatan risiko</span>.</div></div>
 <div class="step"><div class="snum">4</div><div class="stext">Hasil disimpan otomatis di <b>session state</b> — tidak hilang saat kamu pindah tab lalu kembali.</div></div>
@@ -14174,7 +14184,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="feat green">
 <div class="feat-title">📈 Cara Menggunakan Rekomendasi Mingguan</div>
 <div class="steps">
-<div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"📆 Generate Rekomendasi Mingguan"</b> di tab AI Rekomendasi.</div></div>
+<div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"📆 Generate Rekomendasi Mingguan"</b> di tab ⚡ Alpha Screener.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext">AI mempertimbangkan: rotasi sektor dari RRG, sentimen makro minggu ini, jadwal corporate action, dan momentum fundamental.</div></div>
 <div class="step"><div class="snum">3</div><div class="stext">Output lebih detail dari harian: menyertakan <b>target price</b>, <b>stop loss</b>, <b>time horizon</b>, dan konteks sektoral.</div></div>
 <div class="step"><div class="snum">4</div><div class="stext">Cocok untuk <b>swing trader</b> MnM Strategy+ yang ingin entry di awal minggu dan holding beberapa hari.</div></div>
@@ -14212,7 +14222,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <div class="feat red">
 <div class="feat-title">⚠️ Disclaimer Penting — Wajib Dibaca</div>
-<div class="stext">Semua output AI Rekomendasi adalah <b>bahan riset dan referensi analisa</b>, BUKAN sinyal trading resmi atau financial advice. SIGMA tidak menjamin akurasi prediksi. Keputusan trading sepenuhnya tanggung jawab trader masing-masing. <span class="dn">Selalu DYOR (Do Your Own Research)</span> dan konfirmasi dengan analisa mandiri sebelum eksekusi.</div>
+<div class="stext">Semua output Alpha Screener adalah <b>bahan riset dan referensi analisa</b>, BUKAN sinyal trading resmi atau financial advice. SIGMA tidak menjamin akurasi prediksi. Keputusan trading sepenuhnya tanggung jawab trader masing-masing. <span class="dn">Selalu DYOR (Do Your Own Research)</span> dan konfirmasi dengan analisa mandiri sebelum eksekusi.</div>
 <div class="alert">🚨 IDX = <b>Long Only Market</b>. Profit hanya dari kenaikan harga. Tidak ada short selling konvensional untuk retail. Pastikan entry hanya saat tren mendukung — jangan fight the trend.</div>
 </div>
 
@@ -15057,3 +15067,4 @@ js_code = """
 </script>
 """
 components.html(js_code, height=0)
+                        
