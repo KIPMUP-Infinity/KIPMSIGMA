@@ -19,6 +19,20 @@ import hashlib
 import bcrypt
 import re
 
+# ── SIGMA SCORE ENGINE ──
+try:
+    from sigma_score import (
+        sigma_score as _sigma_score_calc,
+        batch_sigma_score,
+        PriceData, FundamentalData,
+        render_sigma_score_badge,
+        price_data_from_yf,
+        fundamental_data_from_dict,
+    )
+    _SIGMA_SCORE_AVAILABLE = True
+except ImportError:
+    _SIGMA_SCORE_AVAILABLE = False
+
 # ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
 def _fetch_all_data(tickers):
     import threading
@@ -9079,6 +9093,11 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
 
     # ── TAB: SHAREHOLDER ──────────────────────────────────────────────
+    with tab_shareholder:
+
+        import datetime as _dt
+        import pandas as pd
+
     # ── TAB: SHAREHOLDER ──────────────────────────────────────────────
     with tab_shareholder:
 
@@ -10336,716 +10355,732 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER — AI STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental = st.tabs([
             "  🔍 AI STOCK INSIGHT  ",
             "  📅 DAILY  ",
             "  📆 WEEKLY  ",
             "  🌙 BELI SORE JUAL PAGI  ",
             "  📊 FUNDAMENTAL SCREENER  ",
-            "  🏦 BROKER SUMMARY  ",
-            "  🏆 TRACK RECORD  ",
         ])
 
         with alpha_tab_insight:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
-            col_input, col_btn = st.columns([3, 1])
-            with col_input:
-                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA").upper()
-            with col_btn:
-                st.markdown("<br>", unsafe_allow_html=True)
-                run_analysis = st.button("▶ ANALYZE", use_container_width=True)
+        col_input, col_btn = st.columns([3, 1])
+        with col_input:
+            ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA").upper()
+        with col_btn:
+            st.markdown("<br>", unsafe_allow_html=True)
+            run_analysis = st.button("▶ ANALYZE", use_container_width=True)
         
-            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-            if ticker_input:
-                df_chart = pd.DataFrame()
-                ai_data = None
-                ai_text_verdict = ""
+        if ticker_input:
+            df_chart = pd.DataFrame()
+            ai_data = None
+            ai_text_verdict = ""
             
-                try:
-                    t = yf.Ticker(f"{ticker_input}.JK")
-                    df_chart = t.history(period="6mo")
-                except Exception as e:
-                    pass
+            try:
+                t = yf.Ticker(f"{ticker_input}.JK")
+                df_chart = t.history(period="6mo")
+            except Exception as e:
+                pass
 
-                if run_analysis:
-                    with st.spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
-                        try:
-                            fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
-                        
-                            live_price_str = "N/A"
-                            if not df_chart.empty:
-                                try: 
-                                    live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
-                                except Exception as e: 
-                                    pass
-
-                            vol_context = ""
-                            if not df_chart.empty and 'Volume' in df_chart.columns:
-                                try:
-                                    avg_vol_20 = df_chart['Volume'].rolling(20).mean().iloc[-1]
-                                    avg_vol_5  = df_chart['Volume'].rolling(5).mean().iloc[-1]
-                                    last_vol   = df_chart['Volume'].iloc[-1]
-                                    last_close = df_chart['Close'].iloc[-1]
-                                    last_value = last_vol * last_close  
-
-                                    spike_ratio = last_vol / avg_vol_20 if avg_vol_20 > 0 else 1
-
-                                    price_chg_5d = (df_chart['Close'].iloc[-1] - df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
-                                    vol_chg_5d   = (avg_vol_5 - df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
-
-                                    dryup = avg_vol_5 < (avg_vol_20 * 0.5)
-
-                                    if spike_ratio >= 10:    vol_signal = "🔴 VOLUME EKSTREM"
-                                    elif spike_ratio >= 5:   vol_signal = "🟠 VOLUME SANGAT TINGGI"
-                                    elif spike_ratio >= 2:   vol_signal = "🟡 VOLUME SPIKE"
-                                    elif dryup:              vol_signal = "🔵 VOLUME DRY-UP"
-                                    else:                    vol_signal = "⚪ Volume normal"
-
-                                    if price_chg_5d > 2 and vol_chg_5d < -20:
-                                        pvd_signal = "&#9888; DIVERGENSI: Harga naik tapi volume turun"
-                                    elif price_chg_5d < -2 and vol_chg_5d < -20:
-                                        pvd_signal = "🔵 Volume turun saat harga turun"
-                                    elif price_chg_5d > 2 and vol_chg_5d > 20:
-                                        pvd_signal = "✅ Harga naik + volume naik"
-                                    elif price_chg_5d < -2 and vol_chg_5d > 20:
-                                        pvd_signal = "&#9888; Volume spike saat turun"
-                                    else:
-                                        pvd_signal = "Volume dan harga konsisten"
-
-                                    vol_context = f"Volume Terakhir: {int(last_vol):,} | Spike Ratio: {spike_ratio:.1f}x | Sinyal: {vol_signal} | Divergensi: {pvd_signal}"
-                                except Exception as e:
-                                    vol_context = ""
-
-                            # ── Shareholder context untuk ticker ini ────────────
-                            _sh_ctx = ""
-                            try:
-                                # Gunakan global helper — tersedia lintas tab
-                                _sh_db_tp = _get_sh_db_global()
-                                _sh_recs = _sh_db_tp.get(ticker_input, [])
-                                if len(_sh_recs) >= 2:
-                                    import pandas as _pd_sh
-                                    _sh_df2 = _pd_sh.DataFrame(_sh_recs).sort_values("date").reset_index(drop=True)
-                                    _sh_last2  = int(_sh_df2["shareholders"].iloc[-1])
-                                    _sh_prev1  = int(_sh_df2["shareholders"].iloc[-2])
-                                    _sh_delta1 = _sh_last2 - _sh_prev1
-                                    _sh_pct1   = round(_sh_delta1 / _sh_prev1 * 100, 2) if _sh_prev1 else 0
-                                    _lbl_now   = _sh_df2["date"].iloc[-1].strftime("%b %Y")
-                                    _lbl_1m    = _sh_df2["date"].iloc[-2].strftime("%b %Y")
-
-                                    _sh_delta3 = None
-                                    _sh_pct3   = None
-                                    _lbl_3m    = None
-                                    if len(_sh_df2) >= 4:
-                                        _sh_prev3  = int(_sh_df2["shareholders"].iloc[-4])
-                                        _sh_delta3 = _sh_last2 - _sh_prev3
-                                        _sh_pct3   = round(_sh_delta3 / _sh_prev3 * 100, 2) if _sh_prev3 else 0
-                                        _lbl_3m    = _sh_df2["date"].iloc[-4].strftime("%b %Y")
-
-                                    _sh_tren3 = ""
-                                    if len(_sh_df2) >= 4:
-                                        _v3b = _sh_df2["shareholders"].iloc[-4]
-                                        _v2b = _sh_df2["shareholders"].iloc[-3]
-                                        _v1b = _sh_df2["shareholders"].iloc[-2]
-                                        _v0b = _sh_df2["shareholders"].iloc[-1]
-                                        if _v0b > _v1b > _v2b > _v3b:
-                                            _sh_tren3 = "NAIK KONSISTEN 3 BULAN → sinyal akumulasi retail kuat"
-                                        elif _v0b < _v1b < _v2b < _v3b:
-                                            _sh_tren3 = "TURUN KONSISTEN 3 BULAN → sinyal distribusi retail kuat"
-                                        elif _v0b > _v1b:
-                                            _sh_tren3 = "Naik 1 bulan terakhir setelah sempat turun → pemulihan awal"
-                                        else:
-                                            _sh_tren3 = "Turun 1 bulan terakhir → tekanan distribusi berlanjut"
-
-                                    _sh_ctx_lines = [
-                                        f"Total pemegang saham {ticker_input} per {_lbl_now}: {_sh_last2:,} pemegang",
-                                        f"  Perubahan 1 bulan ({_lbl_1m}\u2192{_lbl_now}): {_sh_delta1:+,} pemegang ({_sh_pct1:+.2f}%)",
-                                    ]
-                                    if _sh_delta3 is not None:
-                                        _sh_ctx_lines.append(
-                                            f"  Perubahan 3 bulan ({_lbl_3m}\u2192{_lbl_now}): {_sh_delta3:+,} pemegang ({_sh_pct3:+.2f}%)"
-                                        )
-                                    if _sh_tren3:
-                                        _sh_ctx_lines.append(f"  Tren: {_sh_tren3}")
-                                    _sh_ctx = "\n".join(_sh_ctx_lines)
-                                else:
-                                    _sh_ctx = f"Data historis pemegang saham {ticker_input} belum tersedia dalam database SIGMA (database mencakup 25 emiten utama)."
-                            except Exception as _e_sh:
-                                _sh_ctx = f"Data pemegang saham tidak dapat diambil saat ini."
-
-                            dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
-    Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA.
-
-    === DATA HARGA & TEKNIKAL ===
-    Harga Terakhir: {live_price_str}
-    {vol_context}
-
-    === DATA FUNDAMENTAL ===
-    {fund_context}
-
-    === DATA PEMEGANG SAHAM ===
-    {_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
-
-    ────────────────────────────────────────────────
-    ATURAN UTAMA — WAJIB DIPATUHI:
-    ────────────────────────────────────────────────
-
-    ⚠️ PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
-    Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
-    - LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
-    - WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
-    - HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
-
-    ⛔ ATURAN TRADE PLAN & RISK LEVEL:
-    - Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
-    - Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
-    - Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
-
-    🎯 SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
-    - HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
-    - MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
-    - LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
-    - IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
-
-    ────────────────────────────────────────────────
-    STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
-    ────────────────────────────────────────────────
-
-    1. 📊 NARASI TEKNIKAL
-       - Posisi harga saat ini vs struktur support/resistance utama
-       - Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
-       - Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
-       - Volume: konfirmasi atau divergensi dari price action?
-       - EMA: posisi harga vs EMA 13/21/100/200 → arah trend
-       - JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
-
-    2. 🏢 NARASI FUNDAMENTAL
-       - Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) — jujur jika overvalued
-       - Kinerja keuangan (EPS, margin, pertumbuhan revenue) — sebutkan jika memburuk
-       - Katalis positif/negatif ke depan — jangan sembunyikan risiko
-       - Posisi vs kompetitor sektor
-
-    3. 👥 SINYAL PEMEGANG SAHAM
-       - Tren jumlah pemegang saham: akumulasi atau distribusi?
-       - Implikasi terhadap supply/demand
-
-    4. 📰 OUTLOOK SEKTOR & MAKRO
-       - Kondisi sektor saat ini
-       - Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
-       - Risiko utama — JANGAN diremehkan
-
-    5. ⚡ KESIMPULAN & VERDICT (JUJUR & TEGAS)
-       - Bias tunggal: BULLISH / BEARISH / SIDEWAYS — satu pilihan, jelaskan alasan utama
-       - Rating: BELI / WASPADA / HINDARI
-       - Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini — sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
-       - Level kunci yang wajib diperhatikan
-
-    6. 🎯 TRADE PLAN
-       ⚠️ HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
-       ⛔ JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
-          "⛔ TRADE PLAN TIDAK TERSEDIA — [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
-   
-       Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
-       - 🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
-       - 🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
-       - 🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
-
-       Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] — [alasan singkat 1 kalimat]
-
-       Lanjutkan:
-       - Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
-       - Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
-       - TP1: Rp[A] → resistance minor / FVG terdekat
-       - TP2: Rp[B] → resistance mayor jika ada struktur
-       - Timeframe: perkiraan berapa hari/minggu
-       - Trigger masuk: kondisi spesifik sebelum entry
-
-    Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
-
-    Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
-    ```json
-    {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null, "risk_level": "HIGH"}}
-    ```
-    PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) — JANGAN gambar trade plan di chart.
-    Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str}).
-    Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental oke. Jika tidak ada trade plan, isi "NONE"."""
-
-                            try:
-                                ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                            except Exception as e_groq:
-                                try:
-                                    ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
-                                except Exception as e_gem:
-                                    ai_raw_result = f"Gagal memanggil AI: {e_gem}"
-
-                            try:
-                                # Coba berbagai format: ```json block, { plain }, atau inline
-                                json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
-                                if not json_match:
-                                    # Coba cari JSON object langsung (tanpa backtick)
-                                    json_match_plain = re.search(r'\{[^{}]*"entry_low"[^{}]*\}', ai_raw_result, re.DOTALL)
-                                    if json_match_plain:
-                                        raw_json = json.loads(json_match_plain.group(0))
-                                    else:
-                                        # Coba cari JSON object apapun di akhir teks
-                                        json_match_any = re.search(r'\{[\s\S]*\}', ai_raw_result)
-                                        raw_json = json.loads(json_match_any.group(0)) if json_match_any else {}
-                                else:
-                                    raw_json = json.loads(json_match.group(1))
-
-                                def _safe_float(v):
-                                    try: return float(v) if v is not None else None
-                                    except: return None
-
-                                ai_data = {
-                                    "entry_low":  _safe_float(raw_json.get("entry_low")),
-                                    "entry_high": _safe_float(raw_json.get("entry_high")),
-                                    "stop_loss":  _safe_float(raw_json.get("stop_loss")),
-                                    "tp1": _safe_float(raw_json.get("tp1") or raw_json.get("target")),
-                                    "tp2": _safe_float(raw_json.get("tp2")),
-                                    "tp3": _safe_float(raw_json.get("tp3")),
-                                    "risk_level": str(raw_json.get("risk_level", "HIGH")).upper(),
-                                }
-                                # Validasi: semua harga harus > 0 dan masuk akal
-                                last_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0
-                                if last_price > 0:
-                                    def _plausible(v, ref, pct=0.6):
-                                        return v and v > 0 and abs(v - ref) / ref < pct
-                                    # Entry zone: plausible ±60% dari last price
-                                    if not _plausible(ai_data['entry_low'], last_price, 0.60): ai_data['entry_low'] = None
-                                    if not _plausible(ai_data['entry_high'], last_price, 0.60): ai_data['entry_high'] = None
-                                    if not _plausible(ai_data['stop_loss'], last_price, 0.60): ai_data['stop_loss'] = None
-                                    # TP: lebih longgar ±80% karena bisa jauh dari harga saat ini
-                                    if not _plausible(ai_data['tp1'], last_price, 0.80): ai_data['tp1'] = None
-                                    if not _plausible(ai_data['tp2'], last_price, 0.80): ai_data['tp2'] = None
-                                    if not _plausible(ai_data['tp3'], last_price, 0.80): ai_data['tp3'] = None
-
-                                    # ── Fallback buy zone: jika AI tidak return entry_low/entry_high ──
-                                    # Gunakan last_price ±0.5% sebagai zona default yang terlihat di chart
-                                    if not ai_data['entry_low'] and not ai_data['entry_high']:
-                                        if ai_data.get('stop_loss') and ai_data.get('tp1'):
-                                            # Estimasi entry dari midpoint stop_loss → tp1
-                                            _sl = ai_data['stop_loss']
-                                            _tp = ai_data['tp1']
-                                            # Buy zone = 30-50% dari range SL-TP1 di atas SL
-                                            _range = _tp - _sl
-                                            ai_data['entry_low']  = round(_sl + _range * 0.10, 0)
-                                            ai_data['entry_high'] = round(_sl + _range * 0.25, 0)
-                                        else:
-                                            # Fallback absolut: ±0.8% dari last price
-                                            ai_data['entry_low']  = round(last_price * 0.992, 0)
-                                            ai_data['entry_high'] = round(last_price * 1.000, 0)
-
-                                    # ── Pastikan entry_low < entry_high ──
-                                    if ai_data['entry_low'] and ai_data['entry_high']:
-                                        if ai_data['entry_low'] >= ai_data['entry_high']:
-                                            ai_data['entry_low'], ai_data['entry_high'] = (
-                                                min(ai_data['entry_low'], ai_data['entry_high']),
-                                                max(ai_data['entry_low'], ai_data['entry_high'])
-                                            )
-                                            # Pastikan ada gap minimal 0.5%
-                                            if ai_data['entry_high'] - ai_data['entry_low'] < last_price * 0.005:
-                                                ai_data['entry_high'] = round(ai_data['entry_low'] * 1.008, 0)
-
-                                    # ── Validasi logika: SL < entry_low, entry_high < TP1 ──
-                                    if ai_data['stop_loss'] and ai_data['entry_low']:
-                                        if ai_data['stop_loss'] >= ai_data['entry_low']:
-                                            # SL tidak boleh di atas atau sama dengan entry bawah
-                                            ai_data['stop_loss'] = round(ai_data['entry_low'] * 0.975, 0)
-                                    if ai_data['tp1'] and ai_data['entry_high']:
-                                        if ai_data['tp1'] <= ai_data['entry_high']:
-                                            ai_data['tp1'] = round(ai_data['entry_high'] * 1.03, 0)
-
-                                # Hanya simpan ai_data jika minimal entry zone atau stop_loss valid
-                                if not (ai_data.get('entry_low') or ai_data.get('stop_loss') or ai_data.get('tp1')):
-                                    ai_data = None
-
-                                # Bersihkan teks dari JSON block
-                                ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
-                                ai_text_verdict = re.sub(r'\{[\s\S]*"entry_low"[\s\S]*\}', '', ai_text_verdict).strip()
-                                # Hapus kalimat pengantar JSON yang tertinggal di akhir
-                                ai_text_verdict = re.sub(r'\n*[^\n]*[Bb]erikut[^\n]*(JSON|json|blok|block)[^\n]*:?\s*$', '', ai_text_verdict).strip()
-                                ai_text_verdict = re.sub(r'\n*[^\n]*(following|berikut)[^\n]*(JSON|blok|strategi)[^\n]*:?\s*$', '', ai_text_verdict, flags=re.IGNORECASE).strip()
-                            except Exception as e:
-                                ai_data = None
-                                ai_text_verdict = ai_raw_result
-
-                        except Exception as e:
-                            st.error(f"Gagal memproses analisa AI: {e}")
-
-                st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART &mdash; {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-                if not df_chart.empty:
+            if run_analysis:
+                with st.spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
                     try:
-                        from plotly.subplots import make_subplots
+                        fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
+                        
+                        live_price_str = "N/A"
+                        if not df_chart.empty:
+                            try: 
+                                live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
+                            except Exception as e: 
+                                pass
 
-                        inc_color     = '#089981'
-                        dec_color     = '#f23645'
-                        tv_bg_color   = "#131722" if is_dark else "#ffffff"
-                        tv_text_color = "#b2b5be" if is_dark else "#1f2937"
-                        tv_border     = "#2a2e39" if is_dark else "#e0e3eb"
-
-                        # ── Bersihkan df: hanya trading days (buang weekend) ──
-                        df_chart = df_chart.copy()
-                        df_chart.index = pd.to_datetime(df_chart.index)
-                        df_chart = df_chart[df_chart.index.dayofweek < 5].dropna(subset=['Open','High','Low','Close'])
-
-                        # ── EMAs ──────────────────────────────────────────────
-                        df_chart['EMA13']  = df_chart['Close'].ewm(span=13,  adjust=False).mean()
-                        df_chart['EMA21']  = df_chart['Close'].ewm(span=21,  adjust=False).mean()
-                        df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
-                        df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
-
-                        # ── RSI ───────────────────────────────────────────────
-                        delta = df_chart['Close'].diff()
-                        gain  = delta.clip(lower=0)
-                        loss  = -delta.clip(upper=0)
-                        avg_g = gain.ewm(com=13, adjust=False).mean()
-                        avg_l = loss.ewm(com=13, adjust=False).mean()
-                        rs    = avg_g / avg_l.replace(0, 1e-9)
-                        df_chart['RSI'] = (100 - (100 / (1 + rs))).fillna(50)
-
-                        # ── MACD ──────────────────────────────────────────────
-                        ema12 = df_chart['Close'].ewm(span=12, adjust=False).mean()
-                        ema26 = df_chart['Close'].ewm(span=26, adjust=False).mean()
-                        df_chart['MACD']        = ema12 - ema26
-                        df_chart['MACD_signal'] = df_chart['MACD'].ewm(span=9, adjust=False).mean()
-                        df_chart['MACD_hist']   = df_chart['MACD'] - df_chart['MACD_signal']
-
-                        # ── x-axis: string kategori (anti-gap weekend) ────────
-                        x_str  = df_chart.index.strftime('%d %b %y').tolist()
-                        n_bars = len(x_str)
-
-                        # Padding kanan ~30 bar agar candle tidak mepet & ada ruang label
-                        n_pad   = 30
-                        pad_str = [f"_p{i}" for i in range(n_pad)]
-                        x_all   = x_str + pad_str
-                        n_total = len(x_all)
-
-                        # ── Figure 5 rows: Price / Vol Normal / Vol Delta / RSI / MACD ────────
-                        fig = make_subplots(
-                            rows=5, cols=1,
-                            shared_xaxes=True,
-                            row_heights=[0.46, 0.12, 0.14, 0.14, 0.14],
-                            vertical_spacing=0.010,
-                        )
-
-                        # ── Candlestick ───────────────────────────────────────
-                        fig.add_trace(go.Candlestick(
-                            x=x_str,
-                            open=df_chart['Open'],  high=df_chart['High'],
-                            low=df_chart['Low'],    close=df_chart['Close'],
-                            increasing_line_color=inc_color,
-                            decreasing_line_color=dec_color,
-                            name="Price", showlegend=False,
-                        ), row=1, col=1)
-
-                        # ── EMAs ──────────────────────────────────────────────
-                        for col_n, clr, w in [
-                            ('EMA13','#009dff',1.2), ('EMA21','#ff0000',1.2),
-                            ('EMA100','#cc00ff',1.2), ('EMA200','#a78bfa',1.5),
-                        ]:
-                            fig.add_trace(go.Scatter(
-                                x=x_str, y=df_chart[col_n],
-                                mode='lines', line=dict(color=clr, width=w),
-                                showlegend=False,
-                            ), row=1, col=1)
-
-                        # ── Trade plan lines + labels style TradingView ────────
-                        if ai_data:
+                        # ── SIGMA SCORE CALCULATION ──
+                        _sigma_result = None
+                        if _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
                             try:
-                                el  = ai_data.get('entry_low')
-                                eh  = ai_data.get('entry_high')
-                                sl  = ai_data.get('stop_loss')
-                                tp1 = ai_data.get('tp1')
-                                tp2 = ai_data.get('tp2')
-                                tp3 = ai_data.get('tp3')
+                                import yfinance as _yf_ihsg
+                                _ihsg_hist = _yf_ihsg.Ticker("^JKSE").history(period="3mo")
+                                _pd_obj = price_data_from_yf(df_chart, _ihsg_hist if not _ihsg_hist.empty else None)
+                                # Ambil fundamental dari cache
+                                _fd_raw = fetch_fundamental_with_cache(ticker_input)
+                                _fd_obj = fundamental_data_from_dict(_fd_raw) if _fd_raw else None
+                                _sigma_result = _sigma_score_calc(ticker_input, _pd_obj, _fd_obj)
+                            except Exception as _se:
+                                _sigma_result = None
 
-                                # Fungsi Final: Garis Full Layar & Label Rata Kanan Dalam (Untuk SL dan TP)
-                                def _draw_tv_level(y_val, label_text, line_color, bg_color, text_color, dash_style='dash'):
-                                    if not y_val: return
-                                    y_val = float(y_val)
+                        vol_context = ""
+                        if not df_chart.empty and 'Volume' in df_chart.columns:
+                            try:
+                                avg_vol_20 = df_chart['Volume'].rolling(20).mean().iloc[-1]
+                                avg_vol_5  = df_chart['Volume'].rolling(5).mean().iloc[-1]
+                                last_vol   = df_chart['Volume'].iloc[-1]
+                                last_close = df_chart['Close'].iloc[-1]
+                                last_value = last_vol * last_close  
 
-                                    # 1. Garis absolut dari kiri (0) ke kanan (1) layar penuh
-                                    fig.add_shape(
-                                        type="line", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=y_val, y1=y_val,
-                                        line=dict(color=line_color, width=1.5, dash=dash_style),
-                                        layer="below"
-                                    )
+                                spike_ratio = last_vol / avg_vol_20 if avg_vol_20 > 0 else 1
 
-                                    # 2. Label dikunci di x=1.0 (batas tembok kanan)
-                                    fig.add_annotation(
-                                        xref='paper', yref='y',
-                                        x=1.0, y=y_val,
-                                        text=f"<b>{label_text} {y_val:,.0f}</b>",
-                                        showarrow=False,
-                                        xanchor='right', yanchor='middle',
-                                        font=dict(color=text_color, size=10, family='IBM Plex Mono, monospace'),
-                                        bgcolor=bg_color,
-                                        bordercolor=line_color,
-                                        borderwidth=1,
-                                        borderpad=4
-                                    )
+                                price_chg_5d = (df_chart['Close'].iloc[-1] - df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
+                                vol_chg_5d   = (avg_vol_5 - df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
 
-                                # Area BUY — kotak hijau dengan border atas/bawah yang jelas
-                                if el and eh:
-                                    el_val = float(el)
-                                    eh_val = float(eh)
-                                    # Pastikan el_val < eh_val
-                                    if el_val > eh_val:
-                                        el_val, eh_val = eh_val, el_val
-                                    mid_y = (el_val + eh_val) / 2
+                                dryup = avg_vol_5 < (avg_vol_20 * 0.5)
 
-                                    # Background hijau — opacity lebih kuat agar konsisten terlihat
-                                    fig.add_shape(
-                                        type="rect", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=el_val, y1=eh_val,
-                                        fillcolor="rgba(8,153,129,0.22)",
-                                        line=dict(width=0),
-                                        layer="below"
-                                    )
-                                    # Garis batas bawah buy zone (solid tipis hijau)
-                                    fig.add_shape(
-                                        type="line", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=el_val, y1=el_val,
-                                        line=dict(color="#089981", width=1.2, dash="solid"),
-                                        layer="above"
-                                    )
-                                    # Garis batas atas buy zone (dashed hijau)
-                                    fig.add_shape(
-                                        type="line", xref="paper", yref="y",
-                                        x0=0, x1=1, y0=eh_val, y1=eh_val,
-                                        line=dict(color="#089981", width=1.0, dash="dash"),
-                                        layer="above"
-                                    )
-                                    # Label BUY di kanan
-                                    fig.add_annotation(
-                                        xref='paper', yref='y',
-                                        x=1.0, y=mid_y,
-                                        text=f"<b>BUY {min(el_val, eh_val):,.0f} - {max(el_val, eh_val):,.0f}</b>",
-                                        showarrow=False,
-                                        xanchor='right', yanchor='middle',
-                                        font=dict(color='#089981', size=10, family='IBM Plex Mono, monospace'),
-                                        bgcolor=tv_bg_color,
-                                        bordercolor='#089981',
-                                        borderwidth=1,
-                                        borderpad=4
-                                    )
+                                if spike_ratio >= 10:    vol_signal = "🔴 VOLUME EKSTREM"
+                                elif spike_ratio >= 5:   vol_signal = "🟠 VOLUME SANGAT TINGGI"
+                                elif spike_ratio >= 2:   vol_signal = "🟡 VOLUME SPIKE"
+                                elif dryup:              vol_signal = "🔵 VOLUME DRY-UP"
+                                else:                    vol_signal = "⚪ Volume normal"
 
-                                # SL (Merah Solid)
-                                if sl:
-                                    _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
+                                if price_chg_5d > 2 and vol_chg_5d < -20:
+                                    pvd_signal = "&#9888; DIVERGENSI: Harga naik tapi volume turun"
+                                elif price_chg_5d < -2 and vol_chg_5d < -20:
+                                    pvd_signal = "🔵 Volume turun saat harga turun"
+                                elif price_chg_5d > 2 and vol_chg_5d > 20:
+                                    pvd_signal = "✅ Harga naik + volume naik"
+                                elif price_chg_5d < -2 and vol_chg_5d > 20:
+                                    pvd_signal = "&#9888; Volume spike saat turun"
+                                else:
+                                    pvd_signal = "Volume dan harga konsisten"
 
-                                # TP (Kuning Solid)
-                                if tp1: _draw_tv_level(tp1, "TP1", '#a78bfa', '#a78bfa', '#000000', 'dot')
-                                if tp2: _draw_tv_level(tp2, "TP2", '#a78bfa', '#a78bfa', '#000000', 'dot')
-                                if tp3: _draw_tv_level(tp3, "TP3", '#a78bfa', '#a78bfa', '#000000', 'dot')
-
+                                vol_context = f"Volume Terakhir: {int(last_vol):,} | Spike Ratio: {spike_ratio:.1f}x | Sinyal: {vol_signal} | Divergensi: {pvd_signal}"
                             except Exception as e:
-                                st.warning(f"AI gagal menggambar Trade Plan: {e}")
+                                vol_context = ""
 
-                        # ── Volume Normal (hijau/merah ikut candle) ───────────
-                        vol_clr_normal = [
-                            inc_color if c >= o else dec_color
-                            for c, o in zip(df_chart['Close'], df_chart['Open'])
-                        ]
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=df_chart['Volume'],
-                            marker_color=[c.replace(')', ',0.65)').replace('rgb(','rgba(').replace('#089981','rgba(8,153,129,0.65)').replace('#f23645','rgba(242,54,69,0.65)') for c in vol_clr_normal],
-                            showlegend=False, name='Volume',
-                        ), row=2, col=1)
-                        # Garis rata-rata volume 20-bar
-                        vol_ma20 = df_chart['Volume'].rolling(20).mean()
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=vol_ma20,
-                            mode='lines', line=dict(color='#f5a623', width=1.2, dash='dot'),
-                            showlegend=False, name='Vol MA20',
-                        ), row=2, col=1)
+                        # ── Shareholder context untuk ticker ini ────────────
+                        _sh_ctx = ""
+                        try:
+                            # Gunakan global helper — tersedia lintas tab
+                            _sh_db_tp = _get_sh_db_global()
+                            _sh_recs = _sh_db_tp.get(ticker_input, [])
+                            if len(_sh_recs) >= 2:
+                                import pandas as _pd_sh
+                                _sh_df2 = _pd_sh.DataFrame(_sh_recs).sort_values("date").reset_index(drop=True)
+                                _sh_last2  = int(_sh_df2["shareholders"].iloc[-1])
+                                _sh_prev1  = int(_sh_df2["shareholders"].iloc[-2])
+                                _sh_delta1 = _sh_last2 - _sh_prev1
+                                _sh_pct1   = round(_sh_delta1 / _sh_prev1 * 100, 2) if _sh_prev1 else 0
+                                _lbl_now   = _sh_df2["date"].iloc[-1].strftime("%b %Y")
+                                _lbl_1m    = _sh_df2["date"].iloc[-2].strftime("%b %Y")
 
-                        # ── Volume Delta (split buy/sell power) ───────────────
-                        hl_range = (df_chart['High'] - df_chart['Low']).replace(0, 1)
-                        buy_vol  = (df_chart['Volume'] * (df_chart['Close'] - df_chart['Low'])  / hl_range).clip(lower=0)
-                        sell_vol = (df_chart['Volume'] * (df_chart['High']  - df_chart['Close']) / hl_range).clip(lower=0)
-                        # Bar bawah: sell (merah), bar atas: buy (hijau) — stacked
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=sell_vol,
-                            marker_color='rgba(242,54,69,0.75)',
-                            name='Sell Power', showlegend=False,
-                        ), row=3, col=1)
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=buy_vol,
-                            marker_color='rgba(8,153,129,0.85)',
-                            name='Buy Power', showlegend=False,
-                        ), row=3, col=1)
+                                _sh_delta3 = None
+                                _sh_pct3   = None
+                                _lbl_3m    = None
+                                if len(_sh_df2) >= 4:
+                                    _sh_prev3  = int(_sh_df2["shareholders"].iloc[-4])
+                                    _sh_delta3 = _sh_last2 - _sh_prev3
+                                    _sh_pct3   = round(_sh_delta3 / _sh_prev3 * 100, 2) if _sh_prev3 else 0
+                                    _lbl_3m    = _sh_df2["date"].iloc[-4].strftime("%b %Y")
 
-                        # ── RSI (level 70/30) ──────────────────────────────────
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=df_chart['RSI'],
-                            mode='lines', line=dict(color='#a78bfa', width=1.2),
-                            showlegend=False,
-                        ), row=4, col=1)
-                        for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
-                            fig.add_trace(go.Scatter(
-                                x=[x_str[0], x_str[-1]], y=[lvl, lvl],
-                                mode='lines', line=dict(color=clr, width=1, dash='dot'),
-                                showlegend=False,
-                            ), row=4, col=1)
+                                _sh_tren3 = ""
+                                if len(_sh_df2) >= 4:
+                                    _v3b = _sh_df2["shareholders"].iloc[-4]
+                                    _v2b = _sh_df2["shareholders"].iloc[-3]
+                                    _v1b = _sh_df2["shareholders"].iloc[-2]
+                                    _v0b = _sh_df2["shareholders"].iloc[-1]
+                                    if _v0b > _v1b > _v2b > _v3b:
+                                        _sh_tren3 = "NAIK KONSISTEN 3 BULAN → sinyal akumulasi retail kuat"
+                                    elif _v0b < _v1b < _v2b < _v3b:
+                                        _sh_tren3 = "TURUN KONSISTEN 3 BULAN → sinyal distribusi retail kuat"
+                                    elif _v0b > _v1b:
+                                        _sh_tren3 = "Naik 1 bulan terakhir setelah sempat turun → pemulihan awal"
+                                    else:
+                                        _sh_tren3 = "Turun 1 bulan terakhir → tekanan distribusi berlanjut"
 
-                        # ── MACD ──────────────────────────────────────────────
-                        macd_hist_clr = [inc_color if v >= 0 else dec_color
-                                         for v in df_chart['MACD_hist']]
-                        fig.add_trace(go.Bar(
-                            x=x_str, y=df_chart['MACD_hist'],
-                            marker_color=macd_hist_clr, showlegend=False,
-                        ), row=5, col=1)
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=df_chart['MACD'],
-                            mode='lines', line=dict(color='#2196f3', width=1.2),
-                            showlegend=False,
-                        ), row=5, col=1)
-                        fig.add_trace(go.Scatter(
-                            x=x_str, y=df_chart['MACD_signal'],
-                            mode='lines', line=dict(color='#ff5252', width=1.2),
-                            showlegend=False,
-                        ), row=5, col=1)
-                        fig.add_trace(go.Scatter(
-                            x=[x_str[0], x_str[-1]], y=[0, 0],
-                            mode='lines', line=dict(color=tv_border, width=1),
-                            showlegend=False,
-                        ), row=5, col=1)
+                                _sh_ctx_lines = [
+                                    f"Total pemegang saham {ticker_input} per {_lbl_now}: {_sh_last2:,} pemegang",
+                                    f"  Perubahan 1 bulan ({_lbl_1m}\u2192{_lbl_now}): {_sh_delta1:+,} pemegang ({_sh_pct1:+.2f}%)",
+                                ]
+                                if _sh_delta3 is not None:
+                                    _sh_ctx_lines.append(
+                                        f"  Perubahan 3 bulan ({_lbl_3m}\u2192{_lbl_now}): {_sh_delta3:+,} pemegang ({_sh_pct3:+.2f}%)"
+                                    )
+                                if _sh_tren3:
+                                    _sh_ctx_lines.append(f"  Tren: {_sh_tren3}")
+                                _sh_ctx = "\n".join(_sh_ctx_lines)
+                            else:
+                                _sh_ctx = f"Data historis pemegang saham {ticker_input} belum tersedia dalam database SIGMA (database mencakup 25 emiten utama)."
+                        except Exception as _e_sh:
+                            _sh_ctx = f"Data pemegang saham tidak dapat diambil saat ini."
 
-                        # ── Tick labels: ambil ~8 titik merata ───────────────
-                        step     = max(1, n_bars // 8)
-                        tickvals = x_str[::step]
+                        dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
+Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA.
 
-                        # ── Layout ────────────────────────────────────────────
-                        ax_x = dict(
-                            type='category',
-                            showgrid=False,
-                            showline=True, linecolor=tv_border, linewidth=1,
-                            zeroline=False,
-                            tickangle=-30,
-                            tickfont=dict(size=10),
-                            automargin=False,
-                        )
-                        ax_y_plain = dict(
-                            showgrid=False,
-                            showline=True, linecolor=tv_border, linewidth=1,
-                            zeroline=False,
-                            tickfont=dict(size=10),
-                            type='linear',
-                            side='right',
-                            automargin=False,
-                        )
-                        ax_y_grid = dict(
-                            showgrid=True, gridcolor=tv_border,
-                            showline=True, linecolor=tv_border, linewidth=1,
-                            zeroline=False,
-                            tickfont=dict(size=10),
-                            type='linear',
-                            side='right',
-                            automargin=False,
-                        )
-                        fig.update_layout(
-                            template='plotly_dark' if is_dark else 'plotly_white',
-                            plot_bgcolor=tv_bg_color,
-                            paper_bgcolor=tv_bg_color,
-                            font=dict(color=tv_text_color, size=11),
-                            height=1080,
-                            showlegend=False,
-                            barmode="stack",
-                            margin=dict(l=0, r=120, t=10, b=40),
-                            xaxis =dict(**ax_x, rangeslider=dict(visible=False),
-                                        range=[-0.5, n_total-0.5], tickvals=tickvals),
-                            xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                            xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                            xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
-                            xaxis5=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
-                            yaxis =dict(**ax_y_plain, title=''),
-                            yaxis2=dict(**ax_y_grid,  title='VOL'),
-                            yaxis3=dict(**ax_y_grid,  title='DELTA'),
-                            yaxis4=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
-                            yaxis5=dict(**ax_y_grid,  title='MACD'),
-                        )
+=== DATA HARGA & TEKNIKAL ===
+Harga Terakhir: {live_price_str}
+{vol_context}
 
-                        st.plotly_chart(fig, use_container_width=True)
+=== DATA FUNDAMENTAL ===
+{fund_context}
 
-                        # ── EMA Legend ────────────────────────────────────────
-                        ema_items = [
-                            ('#009dff','EMA 13 — Fast (Momentum)'),
-                            ('#ff0000','EMA 21 — Signal'),
-                            ('#cc00ff','EMA 100 — Mid Trend'),
-                            ('#a78bfa','EMA 200 — Major Trend'),
-                            ('#f5a623','Vol MA20 — Avg Volume'),
-                        ]
-                        leg = "<div style='display:flex;flex-wrap:wrap;gap:18px;padding:6px 4px;margin-top:-6px;'>"
-                        for clr, lbl in ema_items:
-                            leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
-                                    f"<span style='display:inline-block;width:28px;height:3px;"
-                                    f"background:{clr};border-radius:2px;'></span>"
-                                    f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                                    f"color:{tv_text_color};'>{lbl}</span></span>")
-                        # Volume Delta legend
-                        leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
-                                f"<span style='display:inline-block;width:14px;height:10px;"
-                                f"background:rgba(8,153,129,0.85);border-radius:2px;'></span>"
-                                f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                                f"color:{tv_text_color};'>Buy Power (Delta)</span></span>")
-                        leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
-                                f"<span style='display:inline-block;width:14px;height:10px;"
-                                f"background:rgba(242,54,69,0.75);border-radius:2px;'></span>"
-                                f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
-                                f"color:{tv_text_color};'>Sell Power (Delta)</span></span>")
-                        leg += "</div>"
-                        st.markdown(leg, unsafe_allow_html=True)
+=== DATA PEMEGANG SAHAM ===
+{_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
+
+────────────────────────────────────────────────
+ATURAN UTAMA — WAJIB DIPATUHI:
+────────────────────────────────────────────────
+
+⚠️ PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
+Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
+- LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
+- WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
+- HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
+
+⛔ ATURAN TRADE PLAN & RISK LEVEL:
+- Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
+- Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
+- Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
+
+🎯 SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
+- HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
+- MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
+- LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
+- IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
+
+────────────────────────────────────────────────
+STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
+────────────────────────────────────────────────
+
+1. 📊 NARASI TEKNIKAL
+   - Posisi harga saat ini vs struktur support/resistance utama
+   - Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
+   - Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
+   - Volume: konfirmasi atau divergensi dari price action?
+   - EMA: posisi harga vs EMA 13/21/100/200 → arah trend
+   - JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
+
+2. 🏢 NARASI FUNDAMENTAL
+   - Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) — jujur jika overvalued
+   - Kinerja keuangan (EPS, margin, pertumbuhan revenue) — sebutkan jika memburuk
+   - Katalis positif/negatif ke depan — jangan sembunyikan risiko
+   - Posisi vs kompetitor sektor
+
+3. 👥 SINYAL PEMEGANG SAHAM
+   - Tren jumlah pemegang saham: akumulasi atau distribusi?
+   - Implikasi terhadap supply/demand
+
+4. 📰 OUTLOOK SEKTOR & MAKRO
+   - Kondisi sektor saat ini
+   - Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
+   - Risiko utama — JANGAN diremehkan
+
+5. ⚡ KESIMPULAN & VERDICT (JUJUR & TEGAS)
+   - Bias tunggal: BULLISH / BEARISH / SIDEWAYS — satu pilihan, jelaskan alasan utama
+   - Rating: BELI / WASPADA / HINDARI
+   - Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini — sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
+   - Level kunci yang wajib diperhatikan
+
+6. 🎯 TRADE PLAN
+   ⚠️ HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
+   ⛔ JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
+      "⛔ TRADE PLAN TIDAK TERSEDIA — [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
+   
+   Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
+   - 🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
+   - 🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
+   - 🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
+
+   Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] — [alasan singkat 1 kalimat]
+
+   Lanjutkan:
+   - Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
+   - Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
+   - TP1: Rp[A] → resistance minor / FVG terdekat
+   - TP2: Rp[B] → resistance mayor jika ada struktur
+   - Timeframe: perkiraan berapa hari/minggu
+   - Trigger masuk: kondisi spesifik sebelum entry
+
+Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
+
+Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
+```json
+{{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null, "risk_level": "HIGH"}}
+```
+PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) — JANGAN gambar trade plan di chart.
+Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str}).
+Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental oke. Jika tidak ada trade plan, isi "NONE"."""
+
+                        try:
+                            ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
+                        except Exception as e_groq:
+                            try:
+                                ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+                            except Exception as e_gem:
+                                ai_raw_result = f"Gagal memanggil AI: {e_gem}"
+
+                        try:
+                            # Coba berbagai format: ```json block, { plain }, atau inline
+                            json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
+                            if not json_match:
+                                # Coba cari JSON object langsung (tanpa backtick)
+                                json_match_plain = re.search(r'\{[^{}]*"entry_low"[^{}]*\}', ai_raw_result, re.DOTALL)
+                                if json_match_plain:
+                                    raw_json = json.loads(json_match_plain.group(0))
+                                else:
+                                    # Coba cari JSON object apapun di akhir teks
+                                    json_match_any = re.search(r'\{[\s\S]*\}', ai_raw_result)
+                                    raw_json = json.loads(json_match_any.group(0)) if json_match_any else {}
+                            else:
+                                raw_json = json.loads(json_match.group(1))
+
+                            def _safe_float(v):
+                                try: return float(v) if v is not None else None
+                                except: return None
+
+                            ai_data = {
+                                "entry_low":  _safe_float(raw_json.get("entry_low")),
+                                "entry_high": _safe_float(raw_json.get("entry_high")),
+                                "stop_loss":  _safe_float(raw_json.get("stop_loss")),
+                                "tp1": _safe_float(raw_json.get("tp1") or raw_json.get("target")),
+                                "tp2": _safe_float(raw_json.get("tp2")),
+                                "tp3": _safe_float(raw_json.get("tp3")),
+                                "risk_level": str(raw_json.get("risk_level", "HIGH")).upper(),
+                            }
+                            # Validasi: semua harga harus > 0 dan masuk akal
+                            last_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0
+                            if last_price > 0:
+                                def _plausible(v, ref, pct=0.6):
+                                    return v and v > 0 and abs(v - ref) / ref < pct
+                                # Entry zone: plausible ±60% dari last price
+                                if not _plausible(ai_data['entry_low'], last_price, 0.60): ai_data['entry_low'] = None
+                                if not _plausible(ai_data['entry_high'], last_price, 0.60): ai_data['entry_high'] = None
+                                if not _plausible(ai_data['stop_loss'], last_price, 0.60): ai_data['stop_loss'] = None
+                                # TP: lebih longgar ±80% karena bisa jauh dari harga saat ini
+                                if not _plausible(ai_data['tp1'], last_price, 0.80): ai_data['tp1'] = None
+                                if not _plausible(ai_data['tp2'], last_price, 0.80): ai_data['tp2'] = None
+                                if not _plausible(ai_data['tp3'], last_price, 0.80): ai_data['tp3'] = None
+
+                                # ── Fallback buy zone: jika AI tidak return entry_low/entry_high ──
+                                # Gunakan last_price ±0.5% sebagai zona default yang terlihat di chart
+                                if not ai_data['entry_low'] and not ai_data['entry_high']:
+                                    if ai_data.get('stop_loss') and ai_data.get('tp1'):
+                                        # Estimasi entry dari midpoint stop_loss → tp1
+                                        _sl = ai_data['stop_loss']
+                                        _tp = ai_data['tp1']
+                                        # Buy zone = 30-50% dari range SL-TP1 di atas SL
+                                        _range = _tp - _sl
+                                        ai_data['entry_low']  = round(_sl + _range * 0.10, 0)
+                                        ai_data['entry_high'] = round(_sl + _range * 0.25, 0)
+                                    else:
+                                        # Fallback absolut: ±0.8% dari last price
+                                        ai_data['entry_low']  = round(last_price * 0.992, 0)
+                                        ai_data['entry_high'] = round(last_price * 1.000, 0)
+
+                                # ── Pastikan entry_low < entry_high ──
+                                if ai_data['entry_low'] and ai_data['entry_high']:
+                                    if ai_data['entry_low'] >= ai_data['entry_high']:
+                                        ai_data['entry_low'], ai_data['entry_high'] = (
+                                            min(ai_data['entry_low'], ai_data['entry_high']),
+                                            max(ai_data['entry_low'], ai_data['entry_high'])
+                                        )
+                                        # Pastikan ada gap minimal 0.5%
+                                        if ai_data['entry_high'] - ai_data['entry_low'] < last_price * 0.005:
+                                            ai_data['entry_high'] = round(ai_data['entry_low'] * 1.008, 0)
+
+                                # ── Validasi logika: SL < entry_low, entry_high < TP1 ──
+                                if ai_data['stop_loss'] and ai_data['entry_low']:
+                                    if ai_data['stop_loss'] >= ai_data['entry_low']:
+                                        # SL tidak boleh di atas atau sama dengan entry bawah
+                                        ai_data['stop_loss'] = round(ai_data['entry_low'] * 0.975, 0)
+                                if ai_data['tp1'] and ai_data['entry_high']:
+                                    if ai_data['tp1'] <= ai_data['entry_high']:
+                                        ai_data['tp1'] = round(ai_data['entry_high'] * 1.03, 0)
+
+                            # Hanya simpan ai_data jika minimal entry zone atau stop_loss valid
+                            if not (ai_data.get('entry_low') or ai_data.get('stop_loss') or ai_data.get('tp1')):
+                                ai_data = None
+
+                            # Bersihkan teks dari JSON block
+                            ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
+                            ai_text_verdict = re.sub(r'\{[\s\S]*"entry_low"[\s\S]*\}', '', ai_text_verdict).strip()
+                            # Hapus kalimat pengantar JSON yang tertinggal di akhir
+                            ai_text_verdict = re.sub(r'\n*[^\n]*[Bb]erikut[^\n]*(JSON|json|blok|block)[^\n]*:?\s*$', '', ai_text_verdict).strip()
+                            ai_text_verdict = re.sub(r'\n*[^\n]*(following|berikut)[^\n]*(JSON|blok|strategi)[^\n]*:?\s*$', '', ai_text_verdict, flags=re.IGNORECASE).strip()
+                        except Exception as e:
+                            ai_data = None
+                            ai_text_verdict = ai_raw_result
 
                     except Exception as e:
-                        st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
+                        st.error(f"Gagal memproses analisa AI: {e}")
+
+            st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART &mdash; {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+            if not df_chart.empty:
+                try:
+                    from plotly.subplots import make_subplots
+
+                    inc_color     = '#089981'
+                    dec_color     = '#f23645'
+                    tv_bg_color   = "#131722" if is_dark else "#ffffff"
+                    tv_text_color = "#b2b5be" if is_dark else "#1f2937"
+                    tv_border     = "#2a2e39" if is_dark else "#e0e3eb"
+
+                    # ── Bersihkan df: hanya trading days (buang weekend) ──
+                    df_chart = df_chart.copy()
+                    df_chart.index = pd.to_datetime(df_chart.index)
+                    df_chart = df_chart[df_chart.index.dayofweek < 5].dropna(subset=['Open','High','Low','Close'])
+
+                    # ── EMAs ──────────────────────────────────────────────
+                    df_chart['EMA13']  = df_chart['Close'].ewm(span=13,  adjust=False).mean()
+                    df_chart['EMA21']  = df_chart['Close'].ewm(span=21,  adjust=False).mean()
+                    df_chart['EMA100'] = df_chart['Close'].ewm(span=100, adjust=False).mean()
+                    df_chart['EMA200'] = df_chart['Close'].ewm(span=200, adjust=False).mean()
+
+                    # ── RSI ───────────────────────────────────────────────
+                    delta = df_chart['Close'].diff()
+                    gain  = delta.clip(lower=0)
+                    loss  = -delta.clip(upper=0)
+                    avg_g = gain.ewm(com=13, adjust=False).mean()
+                    avg_l = loss.ewm(com=13, adjust=False).mean()
+                    rs    = avg_g / avg_l.replace(0, 1e-9)
+                    df_chart['RSI'] = (100 - (100 / (1 + rs))).fillna(50)
+
+                    # ── MACD ──────────────────────────────────────────────
+                    ema12 = df_chart['Close'].ewm(span=12, adjust=False).mean()
+                    ema26 = df_chart['Close'].ewm(span=26, adjust=False).mean()
+                    df_chart['MACD']        = ema12 - ema26
+                    df_chart['MACD_signal'] = df_chart['MACD'].ewm(span=9, adjust=False).mean()
+                    df_chart['MACD_hist']   = df_chart['MACD'] - df_chart['MACD_signal']
+
+                    # ── x-axis: string kategori (anti-gap weekend) ────────
+                    x_str  = df_chart.index.strftime('%d %b %y').tolist()
+                    n_bars = len(x_str)
+
+                    # Padding kanan ~30 bar agar candle tidak mepet & ada ruang label
+                    n_pad   = 30
+                    pad_str = [f"_p{i}" for i in range(n_pad)]
+                    x_all   = x_str + pad_str
+                    n_total = len(x_all)
+
+                    # ── Figure 5 rows: Price / Vol Normal / Vol Delta / RSI / MACD ────────
+                    fig = make_subplots(
+                        rows=5, cols=1,
+                        shared_xaxes=True,
+                        row_heights=[0.46, 0.12, 0.14, 0.14, 0.14],
+                        vertical_spacing=0.010,
+                    )
+
+                    # ── Candlestick ───────────────────────────────────────
+                    fig.add_trace(go.Candlestick(
+                        x=x_str,
+                        open=df_chart['Open'],  high=df_chart['High'],
+                        low=df_chart['Low'],    close=df_chart['Close'],
+                        increasing_line_color=inc_color,
+                        decreasing_line_color=dec_color,
+                        name="Price", showlegend=False,
+                    ), row=1, col=1)
+
+                    # ── EMAs ──────────────────────────────────────────────
+                    for col_n, clr, w in [
+                        ('EMA13','#009dff',1.2), ('EMA21','#ff0000',1.2),
+                        ('EMA100','#cc00ff',1.2), ('EMA200','#a78bfa',1.5),
+                    ]:
+                        fig.add_trace(go.Scatter(
+                            x=x_str, y=df_chart[col_n],
+                            mode='lines', line=dict(color=clr, width=w),
+                            showlegend=False,
+                        ), row=1, col=1)
+
+                    # ── Trade plan lines + labels style TradingView ────────
+                    if ai_data:
+                        try:
+                            el  = ai_data.get('entry_low')
+                            eh  = ai_data.get('entry_high')
+                            sl  = ai_data.get('stop_loss')
+                            tp1 = ai_data.get('tp1')
+                            tp2 = ai_data.get('tp2')
+                            tp3 = ai_data.get('tp3')
+
+                            # Fungsi Final: Garis Full Layar & Label Rata Kanan Dalam (Untuk SL dan TP)
+                            def _draw_tv_level(y_val, label_text, line_color, bg_color, text_color, dash_style='dash'):
+                                if not y_val: return
+                                y_val = float(y_val)
+
+                                # 1. Garis absolut dari kiri (0) ke kanan (1) layar penuh
+                                fig.add_shape(
+                                    type="line", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=y_val, y1=y_val,
+                                    line=dict(color=line_color, width=1.5, dash=dash_style),
+                                    layer="below"
+                                )
+
+                                # 2. Label dikunci di x=1.0 (batas tembok kanan)
+                                fig.add_annotation(
+                                    xref='paper', yref='y',
+                                    x=1.0, y=y_val,
+                                    text=f"<b>{label_text} {y_val:,.0f}</b>",
+                                    showarrow=False,
+                                    xanchor='right', yanchor='middle',
+                                    font=dict(color=text_color, size=10, family='IBM Plex Mono, monospace'),
+                                    bgcolor=bg_color,
+                                    bordercolor=line_color,
+                                    borderwidth=1,
+                                    borderpad=4
+                                )
+
+                            # Area BUY — kotak hijau dengan border atas/bawah yang jelas
+                            if el and eh:
+                                el_val = float(el)
+                                eh_val = float(eh)
+                                # Pastikan el_val < eh_val
+                                if el_val > eh_val:
+                                    el_val, eh_val = eh_val, el_val
+                                mid_y = (el_val + eh_val) / 2
+
+                                # Background hijau — opacity lebih kuat agar konsisten terlihat
+                                fig.add_shape(
+                                    type="rect", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=el_val, y1=eh_val,
+                                    fillcolor="rgba(8,153,129,0.22)",
+                                    line=dict(width=0),
+                                    layer="below"
+                                )
+                                # Garis batas bawah buy zone (solid tipis hijau)
+                                fig.add_shape(
+                                    type="line", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=el_val, y1=el_val,
+                                    line=dict(color="#089981", width=1.2, dash="solid"),
+                                    layer="above"
+                                )
+                                # Garis batas atas buy zone (dashed hijau)
+                                fig.add_shape(
+                                    type="line", xref="paper", yref="y",
+                                    x0=0, x1=1, y0=eh_val, y1=eh_val,
+                                    line=dict(color="#089981", width=1.0, dash="dash"),
+                                    layer="above"
+                                )
+                                # Label BUY di kanan
+                                fig.add_annotation(
+                                    xref='paper', yref='y',
+                                    x=1.0, y=mid_y,
+                                    text=f"<b>BUY {min(el_val, eh_val):,.0f} - {max(el_val, eh_val):,.0f}</b>",
+                                    showarrow=False,
+                                    xanchor='right', yanchor='middle',
+                                    font=dict(color='#089981', size=10, family='IBM Plex Mono, monospace'),
+                                    bgcolor=tv_bg_color,
+                                    bordercolor='#089981',
+                                    borderwidth=1,
+                                    borderpad=4
+                                )
+
+                            # SL (Merah Solid)
+                            if sl:
+                                _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
+
+                            # TP (Kuning Solid)
+                            if tp1: _draw_tv_level(tp1, "TP1", '#a78bfa', '#a78bfa', '#000000', 'dot')
+                            if tp2: _draw_tv_level(tp2, "TP2", '#a78bfa', '#a78bfa', '#000000', 'dot')
+                            if tp3: _draw_tv_level(tp3, "TP3", '#a78bfa', '#a78bfa', '#000000', 'dot')
+
+                        except Exception as e:
+                            st.warning(f"AI gagal menggambar Trade Plan: {e}")
+
+                    # ── Volume Normal (hijau/merah ikut candle) ───────────
+                    vol_clr_normal = [
+                        inc_color if c >= o else dec_color
+                        for c, o in zip(df_chart['Close'], df_chart['Open'])
+                    ]
+                    fig.add_trace(go.Bar(
+                        x=x_str, y=df_chart['Volume'],
+                        marker_color=[c.replace(')', ',0.65)').replace('rgb(','rgba(').replace('#089981','rgba(8,153,129,0.65)').replace('#f23645','rgba(242,54,69,0.65)') for c in vol_clr_normal],
+                        showlegend=False, name='Volume',
+                    ), row=2, col=1)
+                    # Garis rata-rata volume 20-bar
+                    vol_ma20 = df_chart['Volume'].rolling(20).mean()
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=vol_ma20,
+                        mode='lines', line=dict(color='#f5a623', width=1.2, dash='dot'),
+                        showlegend=False, name='Vol MA20',
+                    ), row=2, col=1)
+
+                    # ── Volume Delta (split buy/sell power) ───────────────
+                    hl_range = (df_chart['High'] - df_chart['Low']).replace(0, 1)
+                    buy_vol  = (df_chart['Volume'] * (df_chart['Close'] - df_chart['Low'])  / hl_range).clip(lower=0)
+                    sell_vol = (df_chart['Volume'] * (df_chart['High']  - df_chart['Close']) / hl_range).clip(lower=0)
+                    # Bar bawah: sell (merah), bar atas: buy (hijau) — stacked
+                    fig.add_trace(go.Bar(
+                        x=x_str, y=sell_vol,
+                        marker_color='rgba(242,54,69,0.75)',
+                        name='Sell Power', showlegend=False,
+                    ), row=3, col=1)
+                    fig.add_trace(go.Bar(
+                        x=x_str, y=buy_vol,
+                        marker_color='rgba(8,153,129,0.85)',
+                        name='Buy Power', showlegend=False,
+                    ), row=3, col=1)
+
+                    # ── RSI (level 70/30) ──────────────────────────────────
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=df_chart['RSI'],
+                        mode='lines', line=dict(color='#a78bfa', width=1.2),
+                        showlegend=False,
+                    ), row=4, col=1)
+                    for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
+                        fig.add_trace(go.Scatter(
+                            x=[x_str[0], x_str[-1]], y=[lvl, lvl],
+                            mode='lines', line=dict(color=clr, width=1, dash='dot'),
+                            showlegend=False,
+                        ), row=4, col=1)
+
+                    # ── MACD ──────────────────────────────────────────────
+                    macd_hist_clr = [inc_color if v >= 0 else dec_color
+                                     for v in df_chart['MACD_hist']]
+                    fig.add_trace(go.Bar(
+                        x=x_str, y=df_chart['MACD_hist'],
+                        marker_color=macd_hist_clr, showlegend=False,
+                    ), row=5, col=1)
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=df_chart['MACD'],
+                        mode='lines', line=dict(color='#2196f3', width=1.2),
+                        showlegend=False,
+                    ), row=5, col=1)
+                    fig.add_trace(go.Scatter(
+                        x=x_str, y=df_chart['MACD_signal'],
+                        mode='lines', line=dict(color='#ff5252', width=1.2),
+                        showlegend=False,
+                    ), row=5, col=1)
+                    fig.add_trace(go.Scatter(
+                        x=[x_str[0], x_str[-1]], y=[0, 0],
+                        mode='lines', line=dict(color=tv_border, width=1),
+                        showlegend=False,
+                    ), row=5, col=1)
+
+                    # ── Tick labels: ambil ~8 titik merata ───────────────
+                    step     = max(1, n_bars // 8)
+                    tickvals = x_str[::step]
+
+                    # ── Layout ────────────────────────────────────────────
+                    ax_x = dict(
+                        type='category',
+                        showgrid=False,
+                        showline=True, linecolor=tv_border, linewidth=1,
+                        zeroline=False,
+                        tickangle=-30,
+                        tickfont=dict(size=10),
+                        automargin=False,
+                    )
+                    ax_y_plain = dict(
+                        showgrid=False,
+                        showline=True, linecolor=tv_border, linewidth=1,
+                        zeroline=False,
+                        tickfont=dict(size=10),
+                        type='linear',
+                        side='right',
+                        automargin=False,
+                    )
+                    ax_y_grid = dict(
+                        showgrid=True, gridcolor=tv_border,
+                        showline=True, linecolor=tv_border, linewidth=1,
+                        zeroline=False,
+                        tickfont=dict(size=10),
+                        type='linear',
+                        side='right',
+                        automargin=False,
+                    )
+                    fig.update_layout(
+                        template='plotly_dark' if is_dark else 'plotly_white',
+                        plot_bgcolor=tv_bg_color,
+                        paper_bgcolor=tv_bg_color,
+                        font=dict(color=tv_text_color, size=11),
+                        height=1080,
+                        showlegend=False,
+                        barmode="stack",
+                        margin=dict(l=0, r=120, t=10, b=40),
+                        xaxis =dict(**ax_x, rangeslider=dict(visible=False),
+                                    range=[-0.5, n_total-0.5], tickvals=tickvals),
+                        xaxis2=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis3=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis4=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals, showticklabels=False),
+                        xaxis5=dict(**ax_x, range=[-0.5, n_total-0.5], tickvals=tickvals),
+                        yaxis =dict(**ax_y_plain, title=''),
+                        yaxis2=dict(**ax_y_grid,  title='VOL'),
+                        yaxis3=dict(**ax_y_grid,  title='DELTA'),
+                        yaxis4=dict(**ax_y_grid,  title='RSI', range=[0, 100]),
+                        yaxis5=dict(**ax_y_grid,  title='MACD'),
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # ── EMA Legend ────────────────────────────────────────
+                    ema_items = [
+                        ('#009dff','EMA 13 — Fast (Momentum)'),
+                        ('#ff0000','EMA 21 — Signal'),
+                        ('#cc00ff','EMA 100 — Mid Trend'),
+                        ('#a78bfa','EMA 200 — Major Trend'),
+                        ('#f5a623','Vol MA20 — Avg Volume'),
+                    ]
+                    leg = "<div style='display:flex;flex-wrap:wrap;gap:18px;padding:6px 4px;margin-top:-6px;'>"
+                    for clr, lbl in ema_items:
+                        leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
+                                f"<span style='display:inline-block;width:28px;height:3px;"
+                                f"background:{clr};border-radius:2px;'></span>"
+                                f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                                f"color:{tv_text_color};'>{lbl}</span></span>")
+                    # Volume Delta legend
+                    leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
+                            f"<span style='display:inline-block;width:14px;height:10px;"
+                            f"background:rgba(8,153,129,0.85);border-radius:2px;'></span>"
+                            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                            f"color:{tv_text_color};'>Buy Power (Delta)</span></span>")
+                    leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
+                            f"<span style='display:inline-block;width:14px;height:10px;"
+                            f"background:rgba(242,54,69,0.75);border-radius:2px;'></span>"
+                            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                            f"color:{tv_text_color};'>Sell Power (Delta)</span></span>")
+                    leg += "</div>"
+                    st.markdown(leg, unsafe_allow_html=True)
+
+                except Exception as e:
+                    st.error(f"Terjadi kesalahan saat menggambar chart: {e}")
+            else:
+                st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
+
+# ── Executive Summary — di bawah chart, full width ───────────
+            if run_analysis and ai_text_verdict:
+                bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f8fafc'
+                bd_color = tv_border if not df_chart.empty else 'transparent'
+
+                # ── SIGMA SCORE BADGE ──
+                if _sigma_result is not None:
+                    st.markdown(render_sigma_score_badge(_sigma_result, ticker_input, compact=False), unsafe_allow_html=True)
+                
+                # Risk level badge
+                _rl = (ai_data or {}).get("risk_level", "NONE")
+                if _rl == "LOW":
+                    _rl_badge = "<span style='background:#089981;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟢 LOW RISK</span>"
+                elif _rl == "MID":
+                    _rl_badge = "<span style='background:#f5a623;color:#000;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟡 MID RISK</span>"
+                elif _rl == "HIGH":
+                    _rl_badge = "<span style='background:#f23645;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🔴 HIGH RISK</span>"
                 else:
-                    st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
+                    _rl_badge = ""
 
-    # ── Executive Summary — di bawah chart, full width ───────────
-                if run_analysis and ai_text_verdict:
-                    bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f8fafc'
-                    bd_color = tv_border if not df_chart.empty else 'transparent'
+                # Memastikan enter dari AI tidak terlalu lebar (maksimal 2 enter)
+                verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
-                    # Risk level badge
-                    _rl = (ai_data or {}).get("risk_level", "NONE")
-                    if _rl == "LOW":
-                        _rl_badge = "<span style='background:#089981;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟢 LOW RISK</span>"
-                    elif _rl == "MID":
-                        _rl_badge = "<span style='background:#f5a623;color:#000;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟡 MID RISK</span>"
-                    elif _rl == "HIGH":
-                        _rl_badge = "<span style='background:#f23645;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🔴 HIGH RISK</span>"
-                    else:
-                        _rl_badge = ""
+                # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
+                html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #a78bfa; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
+<div style="font-size:0.65rem;letter-spacing:0.14em;color:#a78bfa; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
+📋 TRADE PLAN SIGMA {_rl_badge}
+</div>
+<div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
+{verdict_clean}
+</div>
+</div>"""
 
-                    # Memastikan enter dari AI tidak terlalu lebar (maksimal 2 enter)
-                    verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
-                
-                    # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                    html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #a78bfa; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-    <div style="font-size:0.65rem;letter-spacing:0.14em;color:#a78bfa; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
-    📋 TRADE PLAN SIGMA {_rl_badge}
-    </div>
-    <div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
-    {verdict_clean}
-    </div>
-    </div>"""
-
-                    st.markdown(html_str, unsafe_allow_html=True)
-                elif not run_analysis:
-                    st.markdown(f"""
-                    <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
-                        <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
-                        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                            Masukkan kode saham dan klik <span style='color:#a78bfa;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(html_str, unsafe_allow_html=True)
+            elif not run_analysis:
+                st.markdown(f"""
+                <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Masukkan kode saham dan klik <span style='color:#a78bfa;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # PART 11: ALPHA SCREENER — DAILY / WEEKLY / BSJP / FUNDAMENTAL (merged from tab_reco)
@@ -11536,6 +11571,15 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI HARIAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick trading hari ini — berbasis volume intelligence, frekuensi transaksi, block trade detection, dan sinyal shareholder.</p>", unsafe_allow_html=True)
 
+            # ── Broker Summary Input (opsional — meningkatkan akurasi bandar score) ──
+            with st.expander("📋 Paste Broker Summary (opsional — meningkatkan akurasi SIGMA Score)", expanded=False):
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_sub};'>Copy-paste broker summary dari RTI / Stockbit / IPOT. SIGMA akan parse net foreign, top broker, dan sinyal akumulasi/distribusi secara otomatis.</p>", unsafe_allow_html=True)
+                _broker_summary_daily = st.text_area(
+                    "Broker Summary:", height=100, key="broker_summary_daily",
+                    placeholder="Contoh: Net Foreign: +Rp 45M | Top Buy: UBS, CLSA | Top Sell: MNC, BNI | Akumulasi terdeteksi..."
+                )
+            _broker_input_daily = st.session_state.get("broker_summary_daily", "")
+
             col_d1, col_d2 = st.columns([3, 1])
             with col_d2:
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -11555,8 +11599,28 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                             key=lambda x: (x[1]["bearish_score"], x[1]["spike"]), reverse=True
                         )[:10]
 
-                        bull_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|Chg5D={d['chg5d']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|AvgVol5={d['vol5']:,}|EMA5={d['ema5']:,.0f}|BullScore={d['bullish_score']}/4"
-                                      for tk, d in bullish_candidates]
+                        # ── SIGMA SCORE untuk top bullish candidates ──
+                        _sigma_scores_daily = {}
+                        if _SIGMA_SCORE_AVAILABLE:
+                            try:
+                                import yfinance as _yf2
+                                _ihsg2 = _yf2.Ticker("^JKSE").history(period="3mo")
+                                _ihsg_c = _ihsg2["Close"].tolist() if not _ihsg2.empty else []
+                                for _tk, _d in bullish_candidates[:10]:
+                                    try:
+                                        _h = _yf2.Ticker(f"{_tk}.JK").history(period="3mo")
+                                        if not _h.empty:
+                                            _pd2 = price_data_from_yf(_h, _ihsg2 if not _ihsg2.empty else None)
+                                            _sr = _sigma_score_calc(_tk, _pd2, None, _broker_input_daily or None)
+                                            _sigma_scores_daily[_tk] = _sr
+                                    except: pass
+                            except: pass
+
+                        bull_lines = [
+                            f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|Chg5D={d['chg5d']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|AvgVol5={d['vol5']:,}|EMA5={d['ema5']:,.0f}|BullScore={d['bullish_score']}/4"
+                            + (f"|SIGMAScore={_sigma_scores_daily[tk].score}[{_sigma_scores_daily[tk].grade}]" if tk in _sigma_scores_daily else "")
+                            for tk, d in bullish_candidates
+                        ]
                         bear_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|Chg5D={d['chg5d']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|BearScore={d['bearish_score']}/4"
                                       for tk, d in bearish_candidates]
 
@@ -11629,6 +11693,13 @@ Format JSON WAJIB:
                     "SUMMARY — DAILY PICK", "DETAIL TRADE PLAN HARIAN", "HINDARI HARI INI",
                     "Bias Pasar Hari Ini", "HORIZON"
                 )
+                # ── SIGMA Score badges untuk top candidates ──
+                if _SIGMA_SCORE_AVAILABLE and _sigma_scores_daily:
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.62rem;color:{text_sub};letter-spacing:0.1em;text-transform:uppercase;margin:14px 0 8px;'>⚡ SIGMA SCORE — MULTI-FACTOR RANKING</p>", unsafe_allow_html=True)
+                    _score_cols = st.columns(min(len(_sigma_scores_daily), 4))
+                    for _i, (_stk, _sr) in enumerate(sorted(_sigma_scores_daily.items(), key=lambda x: x[1].score, reverse=True)[:4]):
+                        with _score_cols[_i % 4]:
+                            st.markdown(render_sigma_score_badge(_sr, _stk, compact=True), unsafe_allow_html=True)
             elif not run_daily:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
@@ -12124,6 +12195,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
   <th title="Market Cap">MKT CAP</th>
   <th title="Posisi 52W">52W POS</th>
   <th title="Skor Buffett">SKOR</th>
+  <th title="SIGMA Multi-Factor Score 0-100">⚡ SIGMA</th>
 </tr></thead>
 <tbody id="pass-tb"></tbody>
 </table></div></div>
@@ -12135,6 +12207,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
   <th>ROE</th><th>DER</th><th>NET MARGIN</th>
   <th>CURR RATIO</th><th>PBV</th><th>PER</th><th>PEG</th>
   <th>DIV</th><th>MKT CAP</th><th>52W POS</th><th>SKOR</th>
+  <th title="SIGMA Multi-Factor Score 0-100">⚡ SIGMA</th>
 </tr></thead>
 <tbody id="watch-tb"></tbody>
 </table></div></div>
@@ -12145,6 +12218,13 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
   var PASS=ALL.filter(function(r){{return r.tier==='PASS';}});
   var WATCH=ALL.filter(function(r){{return r.tier==='WATCH';}});
 
+  function sigmaBadge(s){{
+    if(!s&&s!==0)return '<span style="color:#555;font-size:0.65rem;">—</span>';
+    var c=s>=82?'#00c853':s>=65?'#69f0ae':s>=48?'#ffd740':s>=30?'#ff6d00':'#ff1744';
+    var g=s>=82?'S.BUY':s>=65?'BUY':s>=48?'WATCH':s>=30?'AVOID':'DANGER';
+    return '<span style="font-family:IBM Plex Mono,monospace;font-weight:700;color:'+c+';font-size:0.85rem;">'+s+'</span>'+
+           '<span style="font-size:0.58rem;color:'+c+';margin-left:4px;opacity:0.85;">'+g+'</span>';
+  }}
   function c(v,ok){{return '<span class="'+(ok?'ok':'ng')+'">'+v+'</span>';}}
   function dots(s){{
     var h='';
@@ -12170,6 +12250,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         '<td class="neu">'+r.cap+'</td>'+
         '<td class="neu">'+r.rpos+'</td>'+
         '<td>'+dots(r.score)+'</td>'+
+        '<td>'+sigmaBadge(r.sigma_score||null)+'</td>'+
         '</tr>';
     }});
     var el=document.getElementById(tbId);
@@ -12287,698 +12368,6 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                 </div>""", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
-
-# ─────────────────────────────────────────────
-# PART 12B: BROKER SUMMARY — NET BUY/SELL + FOREIGN FLOW
-# ─────────────────────────────────────────────
-    with alpha_tab_brosum:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 BROKER SUMMARY — NET BUY/SELL &amp; FOREIGN FLOW</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
-
-        bs_tab_screening, bs_tab_foreign, bs_tab_upload = st.tabs([
-            "  🔍 BROKER SCREENING  ",
-            "  🌐 NET BUY FOREIGN  ",
-            "  📸 ANALISA BROSUM (AI)  ",
-        ])
-
-        # ── FOREIGN BROKER CODES ──
-        _FOREIGN_BROKERS = {
-            "AK": "UBS Securities", "BK": "J.P. Morgan", "BQ": "Mirae Asset",
-            "CS": "Credit Suisse", "DB": "Deutsche Securities", "DX": "Danareksa (Asing)",
-            "IJ": "CIMB Securities", "KI": "CGS-CIMB", "KZ": "CLSA Securities",
-            "MD": "Mandiri Ekuitas (Asing)", "ML": "Merrill Lynch", "MS": "Morgan Stanley",
-            "MU": "Manulife", "OD": "Mandiri Sekuritas", "RX": "Macquarie Capital",
-            "YU": "OCBC Sekuritas", "ZP": "Kim Eng (Maybank)", "GW": "Goldman Sachs",
-            "DP": "DBS Vickers", "HG": "HSBC Securities", "SQ": "Société Générale",
-            "BC": "Standard Chartered", "EB": "Credit Agricole",
-        }
-
-        @st.cache_data(ttl=600, show_spinner=False)
-        def _fetch_idx_broker_summary(ticker, period="daily"):
-            """Fetch broker summary dari IDX dan sumber alternatif."""
-            import urllib.request, json as _j
-            try:
-                # IDX API broker summary
-                url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetBrokerSummary?code={ticker}&type={period}"
-                req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"})
-                with urllib.request.urlopen(req, timeout=8) as r:
-                    data = _j.loads(r.read())
-                if data and isinstance(data, list) and len(data) > 0:
-                    return data
-            except: pass
-            return []
-
-        @st.cache_data(ttl=600, show_spinner=False)
-        def _fetch_foreign_flow_market():
-            """Fetch net foreign buy/sell market-wide dari IDX."""
-            import urllib.request, json as _j
-            result = {}
-            try:
-                url = "https://www.idx.co.id/umbraco/Surface/Helper/GetForeignFlow"
-                req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"})
-                with urllib.request.urlopen(req, timeout=8) as r:
-                    data = _j.loads(r.read())
-                if data:
-                    result["raw"] = data
-            except: pass
-            return result
-
-        with bs_tab_screening:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Masukkan kode saham untuk melihat aktivitas broker — siapa yang akumulasi, siapa yang distribusi.</p>", unsafe_allow_html=True)
-
-            col_bs1, col_bs2, col_bs3 = st.columns([2, 1, 1])
-            with col_bs1:
-                bs_ticker = st.text_input("KODE SAHAM:", "BBCA", key="bs_ticker_input").upper().strip()
-            with col_bs2:
-                bs_period = st.selectbox("PERIODE:", ["Harian", "Mingguan", "Bulanan"], key="bs_period_sel")
-            with col_bs3:
-                st.markdown("<br>", unsafe_allow_html=True)
-                bs_run = st.button("🔍 LOAD BROSUM", use_container_width=True, key="bs_run_btn")
-
-            _period_map = {"Harian": "daily", "Mingguan": "weekly", "Bulanan": "monthly"}
-
-            if bs_run or st.session_state.get("bs_last_ticker") == bs_ticker:
-                st.session_state["bs_last_ticker"] = bs_ticker
-                with st.spinner(f"Mengambil data broker untuk {bs_ticker}..."):
-                    bs_data = _fetch_idx_broker_summary(bs_ticker, _period_map.get(bs_period, "daily"))
-
-                if bs_data:
-                    # Parse data
-                    import json as _bsj
-                    _rows_buy, _rows_sell = [], []
-                    _net_map = {}
-                    for row in bs_data:
-                        broker = str(row.get("BrokerID", row.get("broker", row.get("Code", "?"))))
-                        buy_lot = float(row.get("BuyVolume", row.get("buy_lot", row.get("BuyLot", 0))) or 0)
-                        sell_lot = float(row.get("SellVolume", row.get("sell_lot", row.get("SellLot", 0))) or 0)
-                        buy_val = float(row.get("BuyValue", row.get("buy_val", 0)) or 0)
-                        sell_val = float(row.get("SellValue", row.get("sell_val", 0)) or 0)
-                        net = buy_lot - sell_lot
-                        net_val = buy_val - sell_val
-                        is_foreign = broker in _FOREIGN_BROKERS
-                        broker_name = _FOREIGN_BROKERS.get(broker, row.get("BrokerName", row.get("name", "")))
-                        _net_map[broker] = {
-                            "broker": broker, "name": broker_name,
-                            "buy_lot": buy_lot, "sell_lot": sell_lot, "net": net,
-                            "buy_val": buy_val, "sell_val": sell_val, "net_val": net_val,
-                            "is_foreign": is_foreign
-                        }
-
-                    _sorted_net = sorted(_net_map.values(), key=lambda x: x["net"], reverse=True)
-                    _top_buy = [r for r in _sorted_net if r["net"] > 0][:15]
-                    _top_sell = [r for r in _sorted_net if r["net"] < 0][-15:][::-1]
-                    _foreign_rows = [r for r in _sorted_net if r["is_foreign"]]
-
-                    # Total foreign net
-                    _total_foreign_net = sum(r["net"] for r in _foreign_rows)
-                    _total_local_net = sum(r["net"] for r in _sorted_net if not r["is_foreign"])
-
-                    _bs_rows_json = _bsj.dumps(_top_buy + _top_sell, ensure_ascii=False)
-                    _bs_foreign_json = _bsj.dumps(_foreign_rows, ensure_ascii=False)
-                    _tf_net = _total_foreign_net
-                    _tl_net = _total_local_net
-                    _P_c = "#a78bfa"; _G_c = "#26a69a"; _R_c = "#f23645"; _B_c = "#60a5fa"; _Y_c = "#fbbf24"
-                    _TXT_c = text_main; _SUB_c = text_sub
-                    _table_bg = "rgba(8,12,22,0.95)" if is_dark else "#fff"
-                    _border_c = "rgba(124,58,237,0.15)" if is_dark else "#e2e8f0"
-                    _hdr_bg = "rgba(124,58,237,0.08)" if is_dark else "#f8fafc"
-
-                    _bs_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;color:{_TXT_c};}}
-.sec-lbl{{font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:{_P_c};font-weight:700;margin:0 0 7px;display:block;}}
-.card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:18px;}}
-.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
-table{{width:100%;border-collapse:collapse;min-width:640px;}}
-thead th{{background:{_hdr_bg};color:{_P_c};padding:9px 12px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:{_TXT_c};font-size:0.88rem;white-space:nowrap;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
-.bk{{font-weight:700;color:{_P_c};font-size:0.95rem;}}
-.bk.foreign{{color:{_B_c};}}
-.pos{{color:{_G_c};font-weight:700;}}
-.neg{{color:{_R_c};font-weight:700;}}
-.bar-wrap{{width:100px;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;display:inline-block;vertical-align:middle;}}
-.bar-fill{{height:100%;border-radius:4px;}}
-.tag-foreign{{display:inline-block;padding:1px 6px;border-radius:10px;font-size:0.65rem;background:rgba(96,165,250,0.14);color:{_B_c};border:1px solid rgba(96,165,250,0.3);margin-left:4px;}}
-.summary-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}}
-.sum-card{{background:{_table_bg};border:1px solid {_border_c};border-radius:8px;padding:14px 16px;}}
-.sum-label{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB_c};}}
-.sum-val{{font-size:1.4rem;font-weight:700;margin-top:4px;}}
-</style></head><body>
-
-<div class="summary-grid">
-  <div class="sum-card">
-    <div class="sum-label">🌐 Net Foreign (Lot)</div>
-    <div class="sum-val" style="color:{(_G_c if _tf_net>=0 else _R_c)}">{"+" if _tf_net>=0 else ""}{int(_tf_net):,}</div>
-  </div>
-  <div class="sum-card">
-    <div class="sum-label">🏠 Net Lokal (Lot)</div>
-    <div class="sum-val" style="color:{(_G_c if _tl_net>=0 else _R_c)}">{"+" if _tl_net>=0 else ""}{int(_tl_net):,}</div>
-  </div>
-</div>
-
-<span class="sec-lbl">📈 Top Akumulasi (Net Buy Terbesar)</span>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>BROKER</th><th>NAMA</th><th>TYPE</th>
-  <th>BUY (LOT)</th><th>SELL (LOT)</th><th>NET (LOT)</th>
-  <th>NET VALUE (Rp)</th><th>BAR</th>
-</tr></thead>
-<tbody id="buy-tb"></tbody>
-</table></div></div>
-
-<span class="sec-lbl">📉 Top Distribusi (Net Sell Terbesar)</span>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>BROKER</th><th>NAMA</th><th>TYPE</th>
-  <th>BUY (LOT)</th><th>SELL (LOT)</th><th>NET (LOT)</th>
-  <th>NET VALUE (Rp)</th><th>BAR</th>
-</tr></thead>
-<tbody id="sell-tb"></tbody>
-</table></div></div>
-
-<span class="sec-lbl">🌐 Aktivitas Broker Asing</span>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>BROKER</th><th>NAMA ASING</th>
-  <th>BUY (LOT)</th><th>SELL (LOT)</th><th>NET (LOT)</th><th>SINYAL</th>
-</tr></thead>
-<tbody id="foreign-tb"></tbody>
-</table></div></div>
-
-<script>
-(function(){{
-  var ROWS={_bs_rows_json};
-  var FOREIGN={_bs_foreign_json};
-
-  function fmt(n){{ return parseInt(n||0).toLocaleString('id-ID'); }}
-  function fmtv(n){{ 
-    var v=Math.abs(n||0);
-    if(v>=1e9) return (n<0?'-':'')+(v/1e9).toFixed(1)+'B';
-    if(v>=1e6) return (n<0?'-':'')+(v/1e6).toFixed(1)+'M';
-    return fmt(n);
-  }}
-
-  var maxNet=0;
-  ROWS.forEach(function(r){{ if(Math.abs(r.net)>maxNet) maxNet=Math.abs(r.net); }});
-
-  var buyTb=document.getElementById('buy-tb');
-  var sellTb=document.getElementById('sell-tb');
-  var topBuy=ROWS.filter(function(r){{return r.net>0;}});
-  var topSell=ROWS.filter(function(r){{return r.net<0;}});
-
-  function rowHtml(r){{
-    var pct=maxNet>0?Math.abs(r.net)/maxNet*100:0;
-    var col=r.net>=0?'{_G_c}':'{_R_c}';
-    var fTag=r.is_foreign?'<span class="tag-foreign">ASING</span>':'';
-    var bkCls='bk'+(r.is_foreign?' foreign':'');
-    return '<tr>'+
-      '<td><span class="'+bkCls+'">'+r.broker+'</span></td>'+
-      '<td style="font-size:0.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;">'+
-        (r.name||'—')+fTag+'</td>'+
-      '<td>'+(r.is_foreign?'🌐 Asing':'🏠 Lokal')+'</td>'+
-      '<td>'+fmt(r.buy_lot)+'</td>'+
-      '<td>'+fmt(r.sell_lot)+'</td>'+
-      '<td class="'+(r.net>=0?'pos':'neg')+'">'+(r.net>=0?'+':'')+fmt(r.net)+'</td>'+
-      '<td class="'+(r.net_val>=0?'pos':'neg')+'">'+(r.net_val>=0?'+':'')+fmtv(r.net_val)+'</td>'+
-      '<td><div class="bar-wrap"><div class="bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+col+';"></div></div></td>'+
-    '</tr>';
-  }}
-  topBuy.forEach(function(r){{ buyTb.innerHTML+=rowHtml(r); }});
-  topSell.forEach(function(r){{ sellTb.innerHTML+=rowHtml(r); }});
-
-  var fTb=document.getElementById('foreign-tb');
-  var sortedF=FOREIGN.slice().sort(function(a,b){{return b.net-a.net;}});
-  sortedF.forEach(function(r){{
-    var sig=r.net>0?'<span style="color:{_G_c};font-weight:700;">✅ AKUMULASI</span>':
-            r.net<0?'<span style="color:{_R_c};font-weight:700;">⚠️ DISTRIBUSI</span>':
-            '<span style="color:{_Y_c};">— NETRAL</span>';
-    fTb.innerHTML+='<tr>'+
-      '<td><span class="bk foreign">'+r.broker+'</span></td>'+
-      '<td style="font-size:0.8rem;">'+(r.name||'—')+'</td>'+
-      '<td>'+fmt(r.buy_lot)+'</td>'+
-      '<td>'+fmt(r.sell_lot)+'</td>'+
-      '<td class="'+(r.net>=0?'pos':'neg')+'">'+(r.net>=0?'+':'')+fmt(r.net)+'</td>'+
-      '<td>'+sig+'</td>'+
-    '</tr>';
-  }});
-}})();
-</script>
-</body></html>"""
-                    components.html(_bs_html, height=1600, scrolling=True)
-
-                else:
-                    st.warning(f"⚠️ Data broker summary untuk **{bs_ticker}** tidak tersedia dari IDX API saat ini. Coba ticker lain atau upload screenshot manual di tab 📸 Analisa Brosum (AI).")
-                    st.info("💡 **Tips:** Broker Summary tersedia untuk saham-saham liquid di IDX. Untuk saham mid/small cap, data mungkin terbatas. Gunakan tab AI untuk analisa dari screenshot RTI/Stockbit.")
-
-        with bs_tab_foreign:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Monitoring aliran dana asing secara keseluruhan di pasar IDX — Net Foreign Buy/Sell multi-saham.</p>", unsafe_allow_html=True)
-
-            col_f1, col_f2 = st.columns([3, 1])
-            with col_f1:
-                bs_foreign_tickers_raw = st.text_input("KODE SAHAM (pisah koma, maks 10):", "BBCA,BBRI,TLKM,BMRI,ASII", key="bs_foreign_tickers")
-            with col_f2:
-                st.markdown("<br>", unsafe_allow_html=True)
-                bs_foreign_run = st.button("🌐 LOAD FOREIGN FLOW", use_container_width=True, key="bs_foreign_run")
-
-            if bs_foreign_run:
-                _ftickers = [t.strip().upper() for t in bs_foreign_tickers_raw.split(",") if t.strip()][:10]
-                with st.spinner("Mengambil foreign flow per saham..."):
-                    _fresults = []
-                    for _ftk in _ftickers:
-                        _fdata = _fetch_idx_broker_summary(_ftk, "daily")
-                        _f_net = 0; _l_net = 0; _f_buy = 0; _f_sell = 0
-                        for row in _fdata:
-                            broker = str(row.get("BrokerID", row.get("Code", "?")))
-                            buy_lot = float(row.get("BuyVolume", 0) or 0)
-                            sell_lot = float(row.get("SellVolume", 0) or 0)
-                            net = buy_lot - sell_lot
-                            if broker in _FOREIGN_BROKERS:
-                                _f_net += net; _f_buy += buy_lot; _f_sell += sell_lot
-                            else:
-                                _l_net += net
-                        _fresults.append({"ticker": _ftk, "f_net": _f_net, "l_net": _l_net,
-                                          "f_buy": _f_buy, "f_sell": _f_sell})
-
-                import json as _ffj
-                _fr_json = _ffj.dumps(_fresults, ensure_ascii=False)
-                _P_c2 = "#a78bfa"; _G_c2 = "#26a69a"; _R_c2 = "#f23645"; _B_c2 = "#60a5fa"
-                _TXT_c2 = text_main; _table_bg2 = "rgba(8,12,22,0.95)" if is_dark else "#fff"
-                _border_c2 = "rgba(124,58,237,0.15)" if is_dark else "#e2e8f0"
-                _hdr_bg2 = "rgba(124,58,237,0.08)" if is_dark else "#f8fafc"
-
-                _fflow_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_c2};font-size:0.93rem;}}
-.card{{background:{_table_bg2};border:1px solid {_border_c2};border-radius:10px;overflow:hidden;margin-bottom:18px;}}
-.scroll{{width:100%;overflow-x:auto;}}
-table{{width:100%;border-collapse:collapse;min-width:540px;}}
-thead th{{background:{_hdr_bg2};color:{_P_c2};padding:9px 12px;text-align:left;border-bottom:1px solid {_border_c2};font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.88rem;white-space:nowrap;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
-.tk{{font-weight:700;color:{_P_c2};}}
-.pos{{color:{_G_c2};font-weight:700;}}
-.neg{{color:{_R_c2};font-weight:700;}}
-.bar-wrap{{width:80px;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;display:inline-block;vertical-align:middle;margin-left:6px;}}
-.bar-fill{{height:100%;border-radius:4px;}}
-</style></head><body>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>TICKER</th>
-  <th>🌐 FOREIGN NET (LOT)</th><th>FOREIGN BUY</th><th>FOREIGN SELL</th>
-  <th>🏠 LOKAL NET (LOT)</th><th>SINYAL ASING</th>
-</tr></thead>
-<tbody id="ff-tb"></tbody>
-</table></div></div>
-<script>
-(function(){{
-  var DATA={_fr_json};
-  var maxF=0;
-  DATA.forEach(function(r){{if(Math.abs(r.f_net)>maxF) maxF=Math.abs(r.f_net);}});
-  var tb=document.getElementById('ff-tb');
-  DATA.forEach(function(r){{
-    var pct=maxF>0?Math.abs(r.f_net)/maxF*100:0;
-    var col=r.f_net>=0?'{_G_c2}':'{_R_c2}';
-    var sig=r.f_net>500?'✅ AKUMULASI':r.f_net<-500?'⚠️ DISTRIBUSI':'— NETRAL';
-    var sigCol=r.f_net>500?'{_G_c2}':r.f_net<-500?'{_R_c2}':'{_TXT_c2}';
-    tb.innerHTML+='<tr>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td class="'+(r.f_net>=0?'pos':'neg')+'">'+(r.f_net>=0?'+':'')+parseInt(r.f_net).toLocaleString('id-ID')+
-        '<div class="bar-wrap"><div class="bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+col+';"></div></div></td>'+
-      '<td>'+parseInt(r.f_buy).toLocaleString('id-ID')+'</td>'+
-      '<td>'+parseInt(r.f_sell).toLocaleString('id-ID')+'</td>'+
-      '<td class="'+(r.l_net>=0?'pos':'neg')+'">'+(r.l_net>=0?'+':'')+parseInt(r.l_net).toLocaleString('id-ID')+'</td>'+
-      '<td style="color:'+sigCol+';font-weight:700;">'+sig+'</td>'+
-    '</tr>';
-  }});
-}})();
-</script>
-</body></html>"""
-                components.html(_fflow_html, height=600, scrolling=True)
-
-        with bs_tab_upload:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Upload screenshot Broker Summary dari RTI, Stockbit, atau IPOT — AI akan membedah pola akumulasi, distribusi, crossing, dan sinyal foreign.</p>", unsafe_allow_html=True)
-            st.info("💡 Upload screenshot Broker Summary di bawah lalu klik **Analisa**. Pastikan kolom Net Buy/Sell dan kode broker terlihat jelas.")
-            
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;letter-spacing:0.08em;color:{text_sub};text-transform:uppercase;margin-bottom:4px;'>Screenshot Broker Summary (PNG / JPG / WEBP)</p>", unsafe_allow_html=True)
-            bs_img_upload = st.file_uploader("", type=["png", "jpg", "jpeg", "webp"], key="bs_img_uploader", label_visibility="collapsed")
-            bs_ticker_hint = st.text_input("Kode Saham (opsional, untuk konteks):", key="bs_ticker_hint_input").upper().strip()
-            bs_analyze_btn = st.button("🤖 ANALISA DENGAN AI", use_container_width=True, key="bs_analyze_ai_btn")
-
-            if bs_analyze_btn and bs_img_upload:
-                import base64
-                _bs_img_bytes = bs_img_upload.read()
-                _bs_img_b64 = base64.b64encode(_bs_img_bytes).decode()
-                _bs_mime = "image/png" if bs_img_upload.name.endswith(".png") else "image/jpeg"
-                _bs_context = f" untuk saham {bs_ticker_hint}" if bs_ticker_hint else ""
-                with st.spinner("AI sedang menganalisa Broker Summary..."):
-                    try:
-                        _model_ai = st.secrets.get("GROQ_MODEL", "llama-3.3-70b-versatile")
-                        _bs_ai_key = None
-                        for _k in _get_all_groq_keys():
-                            if _k and len(_k) > 10: _bs_ai_key = _k; break
-                        if not _bs_ai_key: _bs_ai_key = st.secrets.get("GROQ_KEY", "")
-
-                        import google.generativeai as genai2
-                        _gai_key = None
-                        for _k in _get_all_gemini_keys():
-                            if _k and len(_k) > 10: _gai_key = _k; break
-                        if not _gai_key: _gai_key = st.secrets.get("GEMINI_KEY", "")
-
-                        _bs_prompt = f"""Kamu adalah SIGMA AI, analis bandarmologi expert IDX Indonesia.
-Analisa screenshot Broker Summary{_bs_context} ini secara mendalam:
-
-1. **Identifikasi Top 5 Net Buy terbesar** — kode broker, apakah asing atau lokal, dan estimasi posisi
-2. **Identifikasi Top 5 Net Sell terbesar** — kode broker dan interpretasi apakah distribusi atau rebalancing
-3. **Deteksi Crossing** — apakah ada pola broker A beli dari broker B pada rentang harga yang sama?
-4. **Analisa Foreign Flow** — total net asing, apakah akumulasi atau distribusi, dan dampaknya ke sentiment
-5. **Sinyal Bandarmologi** — akumulasi, distribusi, atau sideways? Berikan confidence level (rendah/sedang/tinggi)
-6. **Kesimpulan & Rekomendasi** — berdasarkan data brosum ini, apakah saham ini layak diperhatikan untuk trading?
-
-Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan."""
-
-                        genai2.configure(api_key=_gai_key)
-                        _gmodel = genai2.GenerativeModel("gemini-2.0-flash")
-                        import PIL.Image, io as _bio
-                        _pil_img = PIL.Image.open(_bio.BytesIO(_bs_img_bytes))
-                        _gai_resp = _gmodel.generate_content([_bs_prompt, _pil_img])
-                        _bs_ai_result = _gai_resp.text if _gai_resp else "Analisa gagal."
-                        st.markdown("---")
-                        st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.93rem;line-height:1.8;color:{text_main};'>{_bs_ai_result.replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
-                    except Exception as _bse:
-                        st.error(f"Analisa AI gagal: {str(_bse)[:200]}. Pastikan API key Gemini tersedia.")
-            elif bs_analyze_btn and not bs_img_upload:
-                st.warning("⚠️ Upload screenshot Broker Summary terlebih dahulu.")
-
-
-# ─────────────────────────────────────────────
-# PART 12C: TRACK RECORD / BACKTEST REKOMENDASI
-# ─────────────────────────────────────────────
-    with alpha_tab_trackrecord:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏆 TRACK RECORD &amp; BACKTEST REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Riwayat rekomendasi AI &middot; Actual vs Target &middot; Win Rate &middot; P&amp;L Simulator</p>", unsafe_allow_html=True)
-
-        tr_tab_live, tr_tab_history, tr_tab_stats = st.tabs([
-            "  📋 CATAT REKOMENDASI  ",
-            "  📜 RIWAYAT & HASIL  ",
-            "  📈 STATISTIK WIN RATE  ",
-        ])
-
-        # ── SESSION STATE INIT ──
-        if "tr_records" not in st.session_state:
-            st.session_state["tr_records"] = []  # list of dicts
-
-        with tr_tab_live:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Catat setiap rekomendasi yang dihasilkan AI (dari tab Daily/Weekly/BSJP) ke dalam track record. Setelah target/SL tersentuh, update hasilnya.</p>", unsafe_allow_html=True)
-
-            with st.expander("TAMBAH REKOMENDASI BARU", expanded=True):
-                col_tr1, col_tr2, col_tr3 = st.columns(3)
-                with col_tr1:
-                    tr_ticker = st.text_input("KODE SAHAM:", key="tr_ticker_new").upper().strip()
-                    tr_type = st.selectbox("TIPE REKO:", ["Daily", "Weekly", "BSJP"], key="tr_type_new")
-                    tr_entry = st.number_input("HARGA ENTRY (Rp):", min_value=0, value=0, key="tr_entry_new")
-                with col_tr2:
-                    tr_tp1 = st.number_input("TARGET 1 / TP1 (Rp):", min_value=0, value=0, key="tr_tp1_new")
-                    tr_tp2 = st.number_input("TARGET 2 / TP2 (Rp):", min_value=0, value=0, key="tr_tp2_new")
-                    tr_sl = st.number_input("STOP LOSS / SL (Rp):", min_value=0, value=0, key="tr_sl_new")
-                with col_tr3:
-                    tr_date = st.date_input("TANGGAL REKO:", key="tr_date_new")
-                    tr_rating = st.selectbox("RATING AI:", ["BUY", "STRONG BUY", "SPECULATIVE BUY"], key="tr_rating_new")
-                    tr_reason = st.text_area("ALASAN SINGKAT:", height=80, key="tr_reason_new")
-
-                if st.button("💾 SIMPAN REKOMENDASI", use_container_width=True, key="tr_save_btn"):
-                    if tr_ticker and tr_entry > 0:
-                        _new_rec = {
-                            "id": len(st.session_state["tr_records"]) + 1,
-                            "ticker": tr_ticker,
-                            "type": tr_type,
-                            "entry": tr_entry,
-                            "tp1": tr_tp1,
-                            "tp2": tr_tp2,
-                            "sl": tr_sl,
-                            "date": str(tr_date),
-                            "rating": tr_rating,
-                            "reason": tr_reason,
-                            "status": "OPEN",
-                            "exit_price": 0,
-                            "pnl_pct": 0,
-                            "result": "—",
-                            "exit_date": "",
-                        }
-                        st.session_state["tr_records"].append(_new_rec)
-                        st.success(f"✅ Rekomendasi {tr_ticker} berhasil disimpan ke Track Record!")
-                    else:
-                        st.warning("⚠️ Isi kode saham dan harga entry.")
-
-        with tr_tab_history:
-            _records = st.session_state.get("tr_records", [])
-            if not _records:
-                st.info("📋 Belum ada rekomendasi yang dicatat. Gunakan tab **📋 Catat Rekomendasi** untuk mulai tracking.")
-            else:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};margin-bottom:12px;'>Total {len(_records)} rekomendasi tercatat. Update hasil di bawah setelah TP/SL tersentuh.</p>", unsafe_allow_html=True)
-
-                # Update form
-                with st.expander("UPDATE HASIL REKOMENDASI"):
-                    _open_recs = [r for r in _records if r["status"] == "OPEN"]
-                    if _open_recs:
-                        _up_options = {f"#{r['id']} {r['ticker']} ({r['type']}) - Entry: {r['entry']:,}": i
-                                      for i, r in enumerate(_records) if r["status"] == "OPEN"}
-                        _up_sel = st.selectbox("Pilih Rekomendasi:", list(_up_options.keys()), key="tr_update_sel")
-                        _up_idx = _up_options[_up_sel]
-                        col_up1, col_up2, col_up3 = st.columns(3)
-                        with col_up1:
-                            _up_status = st.selectbox("HASIL:", ["OPEN", "TP1 HIT", "TP2 HIT", "SL HIT", "MANUAL EXIT"], key="tr_up_status")
-                            _up_exit_price = st.number_input("HARGA EXIT (Rp):", min_value=0, value=0, key="tr_up_exit")
-                        with col_up2:
-                            _up_exit_date = st.date_input("TANGGAL EXIT:", key="tr_up_exit_date")
-                            _up_notes = st.text_input("CATATAN:", key="tr_up_notes")
-                        with col_up3:
-                            _entry_p = _records[_up_idx]["entry"]
-                            if _up_exit_price > 0 and _entry_p > 0:
-                                _pnl_pct = (_up_exit_price - _entry_p) / _entry_p * 100
-                                _pnl_color = "#26a69a" if _pnl_pct >= 0 else "#f23645"
-                                st.markdown(f"<br><div style='font-family:IBM Plex Mono,monospace;font-size:1.2rem;font-weight:700;color:{_pnl_color};'>P&L: {_pnl_pct:+.2f}%</div>", unsafe_allow_html=True)
-
-                        if st.button("💾 UPDATE HASIL", use_container_width=True, key="tr_update_btn"):
-                            _pnl = ((_up_exit_price - _entry_p) / _entry_p * 100) if (_up_exit_price > 0 and _entry_p > 0) else 0
-                            _result_label = "WIN" if _pnl > 0 else ("LOSS" if _pnl < 0 else "BE")
-                            st.session_state["tr_records"][_up_idx].update({
-                                "status": _up_status,
-                                "exit_price": _up_exit_price,
-                                "pnl_pct": round(_pnl, 2),
-                                "result": _result_label,
-                                "exit_date": str(_up_exit_date),
-                                "notes": _up_notes,
-                            })
-                            st.success("✅ Track record diupdate!")
-                    else:
-                        st.info("Semua rekomendasi sudah diupdate hasilnya.")
-
-                # Render table
-                import json as _trj
-                _rec_json = _trj.dumps(_records, ensure_ascii=False)
-                _P_tr = "#a78bfa"; _G_tr = "#26a69a"; _R_tr = "#f23645"; _B_tr = "#60a5fa"; _Y_tr = "#fbbf24"
-                _TXT_tr = text_main; _SUB_tr = text_sub
-                _table_bg_tr = "rgba(8,12,22,0.95)" if is_dark else "#fff"
-                _border_tr = "rgba(124,58,237,0.15)" if is_dark else "#e2e8f0"
-                _hdr_bg_tr = "rgba(124,58,237,0.08)" if is_dark else "#f8fafc"
-
-                _tr_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_tr};font-size:0.93rem;}}
-.card{{background:{_table_bg_tr};border:1px solid {_border_tr};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
-.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
-table{{width:100%;border-collapse:collapse;min-width:900px;}}
-thead th{{background:{_hdr_bg_tr};color:{_P_tr};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_tr};font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem;white-space:nowrap;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
-.tk{{font-weight:700;color:{_P_tr};font-size:0.93rem;}}
-.win{{color:{_G_tr};font-weight:700;}}
-.loss{{color:{_R_tr};font-weight:700;}}
-.open{{color:{_Y_tr};font-weight:700;}}
-.be{{color:{_B_tr};font-weight:700;}}
-.bdg{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.72rem;font-weight:700;}}
-.bdg-daily{{background:rgba(124,58,237,0.18);color:{_P_tr};border:1px solid rgba(124,58,237,0.4);}}
-.bdg-weekly{{background:rgba(96,165,250,0.15);color:{_B_tr};border:1px solid rgba(96,165,250,0.4);}}
-.bdg-bsjp{{background:rgba(38,166,154,0.15);color:{_G_tr};border:1px solid rgba(38,166,154,0.4);}}
-.bdg-open{{background:rgba(251,191,36,0.12);color:{_Y_tr};border:1px solid rgba(251,191,36,0.35);}}
-.bdg-win{{background:rgba(38,166,154,0.15);color:{_G_tr};border:1px solid rgba(38,166,154,0.4);}}
-.bdg-loss{{background:rgba(242,54,69,0.12);color:{_R_tr};border:1px solid rgba(242,54,69,0.35);}}
-.bar-pnl{{display:inline-block;height:6px;border-radius:3px;vertical-align:middle;margin-left:4px;}}
-</style></head><body>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>#</th><th>TANGGAL</th><th>TICKER</th><th>TIPE</th><th>RATING</th>
-  <th>ENTRY</th><th>TP1</th><th>TP2</th><th>SL</th>
-  <th>EXIT</th><th>TGL EXIT</th><th>P&L %</th><th>HASIL</th><th>STATUS</th>
-</tr></thead>
-<tbody id="tr-tb"></tbody>
-</table></div></div>
-<script>
-(function(){{
-  var RECS={_rec_json};
-  var tb=document.getElementById('tr-tb');
-  function fmt(n){{ return n&&n>0?'Rp '+parseInt(n).toLocaleString('id-ID'):'—'; }}
-  function typeBdg(t){{
-    var c=t==='Daily'?'daily':t==='Weekly'?'weekly':'bsjp';
-    return '<span class="bdg bdg-'+c+'">'+t+'</span>';
-  }}
-  function resBdg(r,s){{
-    if(s==='OPEN') return '<span class="bdg bdg-open">OPEN</span>';
-    var c=r==='WIN'?'win':r==='LOSS'?'loss':'win';
-    return '<span class="bdg bdg-'+c+'">'+r+'</span>';
-  }}
-  RECS.slice().reverse().forEach(function(r){{
-    var pnlCol=r.pnl_pct>0?'{_G_tr}':r.pnl_pct<0?'{_R_tr}':'{_B_tr}';
-    var pnlStr=r.status==='OPEN'?'<span class="open">—</span>':
-      '<span style="color:'+pnlCol+';font-weight:700;">'+(r.pnl_pct>=0?'+':'')+r.pnl_pct.toFixed(2)+'%</span>';
-    var pnlBar=r.status!=='OPEN'&&r.pnl_pct?
-      '<div class="bar-pnl" style="width:'+Math.min(Math.abs(r.pnl_pct)*3,80)+'px;background:'+pnlCol+';"></div>':'';
-    tb.innerHTML+='<tr>'+
-      '<td style="color:{_SUB_tr};font-size:0.75rem;">'+r.id+'</td>'+
-      '<td style="color:{_SUB_tr};font-size:0.78rem;">'+r.date+'</td>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td>'+typeBdg(r.type)+'</td>'+
-      '<td style="font-size:0.78rem;color:{_P_tr};">'+r.rating+'</td>'+
-      '<td>'+fmt(r.entry)+'</td>'+
-      '<td style="color:{_G_tr};">'+fmt(r.tp1)+'</td>'+
-      '<td style="color:{_G_tr};">'+fmt(r.tp2)+'</td>'+
-      '<td style="color:{_R_tr};">'+fmt(r.sl)+'</td>'+
-      '<td>'+fmt(r.exit_price)+'</td>'+
-      '<td style="color:{_SUB_tr};font-size:0.78rem;">'+(r.exit_date||'—')+'</td>'+
-      '<td>'+pnlStr+pnlBar+'</td>'+
-      '<td>'+resBdg(r.result, r.status)+'</td>'+
-      '<td style="font-size:0.78rem;color:{_Y_tr};">'+r.status+'</td>'+
-    '</tr>';
-  }});
-}})();
-</script>
-</body></html>"""
-                components.html(_tr_html, height=max(400, len(_records) * 45 + 100), scrolling=True)
-
-        with tr_tab_stats:
-            _records_s = st.session_state.get("tr_records", [])
-            _closed = [r for r in _records_s if r["status"] != "OPEN"]
-            _wins = [r for r in _closed if r["result"] == "WIN"]
-            _losses = [r for r in _closed if r["result"] == "LOSS"]
-            _total_closed = len(_closed)
-            _win_rate = (len(_wins) / _total_closed * 100) if _total_closed > 0 else 0
-            _avg_win = (sum(r["pnl_pct"] for r in _wins) / len(_wins)) if _wins else 0
-            _avg_loss = (sum(r["pnl_pct"] for r in _losses) / len(_losses)) if _losses else 0
-            _total_pnl = sum(r["pnl_pct"] for r in _closed)
-            _expectancy = (_win_rate/100 * _avg_win) + ((1-_win_rate/100) * _avg_loss) if _total_closed > 0 else 0
-
-            _by_type = {}
-            for r in _closed:
-                t = r.get("type", "Daily")
-                if t not in _by_type: _by_type[t] = {"wins":0,"losses":0,"pnl":0}
-                if r["result"] == "WIN": _by_type[t]["wins"] += 1
-                else: _by_type[t]["losses"] += 1
-                _by_type[t]["pnl"] += r["pnl_pct"]
-
-            import json as _stj
-            _by_type_json = _stj.dumps(_by_type, ensure_ascii=False)
-            _wrate_json = _stj.dumps({
-                "total": _total_closed, "wins": len(_wins), "losses": len(_losses),
-                "open": len(_records_s) - _total_closed,
-                "win_rate": round(_win_rate, 1),
-                "avg_win": round(_avg_win, 2), "avg_loss": round(_avg_loss, 2),
-                "total_pnl": round(_total_pnl, 2),
-                "expectancy": round(_expectancy, 2),
-            }, ensure_ascii=False)
-
-            _P_s="#a78bfa";_G_s="#26a69a";_R_s="#f23645";_B_s="#60a5fa";_Y_s="#fbbf24"
-            _TXT_s=text_main;_SUB_s=text_sub
-            _table_bg_s="rgba(8,12,22,0.95)" if is_dark else "#fff"
-            _border_s="rgba(124,58,237,0.15)" if is_dark else "#e2e8f0"
-
-            _stats_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s};}}
-.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}}
-.stat-card{{background:{_table_bg_s};border:1px solid {_border_s};border-radius:10px;padding:14px 16px;}}
-.stat-label{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB_s};margin-bottom:4px;}}
-.stat-val{{font-size:1.6rem;font-weight:700;}}
-.stat-sub{{font-size:0.75rem;color:{_SUB_s};margin-top:3px;}}
-.sec-lbl{{font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:{_P_s};font-weight:700;margin:16px 0 10px;display:block;}}
-.type-card{{background:{_table_bg_s};border:1px solid {_border_s};border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}}
-.type-name{{font-size:0.85rem;font-weight:700;color:{_P_s};}}
-.bar-bg{{background:rgba(255,255,255,0.07);border-radius:4px;height:10px;margin-top:8px;overflow:hidden;}}
-.bar-win{{height:100%;border-radius:4px;background:{_G_s};}}
-.verdict{{background:{_table_bg_s};border:1px solid {_border_s};border-radius:10px;padding:16px;margin-top:16px;}}
-.verdict-title{{font-size:0.85rem;font-weight:700;color:{_P_s};margin-bottom:8px;}}
-.verdict-text{{font-size:0.88rem;color:{_TXT_s};line-height:1.7;}}
-@media(max-width:480px){{.grid{{grid-template-columns:1fr 1fr;}}}}
-</style></head><body>
-<div id="stats-root"></div>
-<script>
-(function(){{
-  var S=JSON.parse('{_wrate_json.replace("'","\\'")}');
-  var BT=JSON.parse('{_by_type_json.replace("'","\\'")}');
-  var root=document.getElementById('stats-root');
-
-  if(S.total===0){{
-    root.innerHTML='<div style="text-align:center;padding:40px;color:{_SUB_s};font-size:0.9rem;">Belum ada rekomendasi yang selesai (closed).<br>Update hasil di tab Riwayat setelah TP/SL tersentuh.</div>';
-    return;
-  }}
-
-  var wrColor=S.win_rate>=60?'{_G_s}':S.win_rate>=45?'{_Y_s}':'{_R_s}';
-  var exColor=S.expectancy>=0?'{_G_s}':'{_R_s}';
-
-  root.innerHTML=
-    '<div class="grid">'+
-      '<div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-val" style="color:'+wrColor+';">'+S.win_rate+'%</div><div class="stat-sub">'+S.wins+' WIN / '+S.losses+' LOSS</div></div>'+
-      '<div class="stat-card"><div class="stat-label">Total Reko</div><div class="stat-val" style="color:{_P_s};">'+S.total+'</div><div class="stat-sub">+'+S.open+' masih OPEN</div></div>'+
-      '<div class="stat-card"><div class="stat-label">Avg WIN</div><div class="stat-val" style="color:{_G_s};">+'+S.avg_win+'%</div><div class="stat-sub">per trade menang</div></div>'+
-      '<div class="stat-card"><div class="stat-label">Avg LOSS</div><div class="stat-val" style="color:{_R_s};">'+S.avg_loss+'%</div><div class="stat-sub">per trade kalah</div></div>'+
-      '<div class="stat-card"><div class="stat-label">Total P&L</div><div class="stat-val" style="color:'+(S.total_pnl>=0?'{_G_s}':'{_R_s}')+';">'+(S.total_pnl>=0?'+':'')+S.total_pnl+'%</div><div class="stat-sub">akumulasi semua trade</div></div>'+
-      '<div class="stat-card"><div class="stat-label">Expectancy</div><div class="stat-val" style="color:'+exColor+';">'+(S.expectancy>=0?'+':'')+S.expectancy+'%</div><div class="stat-sub">ekspektasi per trade</div></div>'+
-    '</div>'+
-    
-    '<span class="sec-lbl">📊 Performa per Tipe Rekomendasi</span>';
-
-  Object.keys(BT).forEach(function(t){{
-    var d=BT[t];
-    var tot=d.wins+d.losses;
-    var wr=tot>0?(d.wins/tot*100).toFixed(0):0;
-    var wrColor2=wr>=60?'{_G_s}':wr>=45?'{_Y_s}':'{_R_s}';
-    root.innerHTML+=
-      '<div class="type-card">'+
-        '<div>'+
-          '<div class="type-name">'+t+'</div>'+
-          '<div style="font-size:0.78rem;color:{_SUB_s};">'+d.wins+' WIN · '+d.losses+' LOSS · Total P&L: '+(d.pnl>=0?'+':'')+d.pnl.toFixed(2)+'%</div>'+
-          '<div class="bar-bg"><div class="bar-win" style="width:'+wr+'%;"></div></div>'+
-        '</div>'+
-        '<div style="font-size:1.4rem;font-weight:700;color:'+wrColor2+';">'+wr+'%</div>'+
-      '</div>';
-  }});
-
-  // Verdict
-  var verdict='';
-  if(S.total<5) verdict='📊 <b>Data terlalu sedikit</b> untuk kesimpulan valid. Butuh minimal 20 trade untuk statistik bermakna.';
-  else if(S.win_rate>=60&&S.expectancy>0) verdict='✅ <b>Strategi SIGMA menunjukkan EDGE positif.</b> Win rate '+S.win_rate+'% dan expectancy '+S.expectancy+'% per trade. Strategi ini menguntungkan jika dieksekusi konsisten.';
-  else if(S.win_rate>=50&&S.expectancy>0) verdict='🟡 <b>Strategi di atas rata-rata.</b> Win rate '+S.win_rate+'% cukup baik. Fokus pada disiplin SL dan position sizing untuk meningkatkan expectancy.';
-  else if(S.expectancy<0) verdict='🔴 <b>Expectancy negatif ('+S.expectancy+'%).</b> Strategi perlu evaluasi. Kemungkinan: SL terlalu ketat, TP terlalu jauh, atau entry timing perlu diperbaiki.';
-  else verdict='⚠️ <b>Perlu lebih banyak data.</b> Terus catat trade dan evaluasi setelah 20+ rekomendasi.';
-
-  root.innerHTML+='<div class="verdict"><div class="verdict-title">🤖 Verdict SIGMA</div><div class="verdict-text">'+verdict+'</div></div>';
-}})();
-</script>
-</body></html>"""
-            components.html(_stats_html, height=700, scrolling=True)
-
-
 
 # ─────────────────────────────────────────────
 # PART 12: CALCULATOR
@@ -13585,7 +12974,9 @@ function calculate() {{
 
             components.html(_avg_html, height=1400, scrolling=True)
 
-
+# ─────────────────────────────────────────────
+# PART 13: PANDUAN / USER GUIDE
+# ─────────────────────────────────────────────
     with tab_panduan:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.93rem;color:{text_sub};margin-bottom:20px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
@@ -13664,15 +13055,13 @@ function calculate() {{
 </style>""", unsafe_allow_html=True)
 
         # ── Sub-tabs Panduan ─────────────────────────────────────────────
-        pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8 = st.tabs([
+        pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6 = st.tabs([
             "  🌍 Global Macro & News  ",
             "  🔄 Index & Sector Rotation  ",
             "  👥 Shareholder  ",
             "  ⚡ Alpha Screener  ",
             "  🧮 Kalkulator  ",
-            "  📊 Broker Summary  ",
             "  ℹ️ Lainnya  ",
-            "  🔬 Cara Kerja Screener  ",
         ])
 
         # ══════════════════════════════════════════════════════════════
@@ -14791,13 +14180,9 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
             components.html(_guide_html_4, height=4200, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 5 — KALKULATOR (content moved from pg_tab6)
+        # PANDUAN 5 — AI REKOMENDASI
         # ══════════════════════════════════════════════════════════════
-        # (Kalkulator content is injected below at PANDUAN 6 block, swapped)
-
-        # PANDUAN 5b — AI REKOMENDASI (now under pg_tab7 Lainnya)
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab7:
+        with pg_tab5:
             _guide_html_5 = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
@@ -14923,9 +14308,9 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
             components.html(_guide_html_5, height=2000, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 6 — KALKULATOR (now correctly under pg_tab5)
+        # PANDUAN 6 — KALKULATOR
         # ══════════════════════════════════════════════════════════════
-        with pg_tab5:
+        with pg_tab6:
             _guide_html_6 = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
@@ -15058,639 +14443,6 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 </div></body></html>"""
             components.html(_guide_html_6, height=2200, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN — BROKER SUMMARY (pg_tab6)
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab6:
-            _guide_html_brosum = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
-.wrap{{max-width:100%;padding:4px 0;}}
-.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
-.sec-icon{{font-size:1.6rem;}}
-.sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
-.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
-.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
-.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
-.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
-.feat-title{{font-size:1.05rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
-.feat.blue .feat-title{{color:{_B};}}
-.feat.green .feat-title{{color:{_G};}}
-.feat.yellow .feat-title{{color:{_Y};}}
-.feat.red .feat-title{{color:{_R};}}
-.steps{{margin:10px 0 6px;}}
-.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
-.stext b{{color:{_B};}}
-.stext .hi{{color:{_P};font-weight:700;}}
-.stext .ok{{color:{_G};font-weight:700;}}
-.stext .yl{{color:{_Y};font-weight:700;}}
-.stext .dn{{color:{_R};font-weight:700;}}
-.tag{{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;margin:2px;}}
-.tag.buy{{background:rgba(38,166,154,0.18);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
-.tag.sell{{background:rgba(242,54,69,0.15);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
-.tag.foreign{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.35);}}
-.tag.local{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.3);}}
-.table-wrap{{overflow-x:auto;margin:12px 0;}}
-table{{width:100%;border-collapse:collapse;font-size:0.85rem;}}
-th{{background:rgba(124,58,237,0.2);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
-td{{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:{_TXT};}}
-tr:hover td{{background:rgba(124,58,237,0.07);}}
-.alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_Y};}}
-.info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_B};}}
-.broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
-.broker-card{{background:rgba(8,12,22,0.9);border:1px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
-.broker-code{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.08em;}}
-.broker-name{{font-size:0.78rem;color:{_SUB};margin-top:2px;}}
-.broker-type{{font-size:0.75rem;margin-top:6px;}}
-@media(max-width:600px){{
-  .broker-grid{{grid-template-columns:1fr 1fr;}}
-  .sec-title{{font-size:1rem;}}
-  .feat{{padding:13px 14px;}}
-}}
-</style></head><body><div class="wrap">
-
-<div class="sec-head">
-  <div class="sec-icon">📊</div>
-  <div>
-    <div class="sec-title">BROKER SUMMARY — Panduan Lengkap</div>
-    <div class="sec-desc">Membaca jejak transaksi broker untuk analisa bandarmologi & akumulasi/distribusi</div>
-  </div>
-</div>
-
-<div class="feat">
-<div class="feat-title">📌 Apa itu Broker Summary (Brosum)?</div>
-<div class="stext">Broker Summary adalah ringkasan aktivitas transaksi <b>per kode broker</b> dalam satu saham pada periode tertentu (harian/mingguan/bulanan). Data ini menampilkan total <span class="hi">volume beli</span>, <span class="dn">volume jual</span>, dan <b>net buy/sell</b> setiap broker — sehingga kamu bisa melihat siapa yang sedang akumulasi dan siapa yang distribusi.</div>
-<div class="steps" style="margin-top:12px;">
-  <div class="step"><div class="snum">1</div><div class="stext">Broker Summary tersedia di platform seperti <b>RTI Business</b>, <b>ChartNexus</b>, <b>Stockbit</b>, <b>IPOT</b>, dan aplikasi broker masing-masing.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Data umumnya menampilkan: <span class="hi">Kode Broker</span> | <span class="ok">Buy Volume (lot/nilai)</span> | <span class="dn">Sell Volume (lot/nilai)</span> | <b>Net Buy/Sell</b>.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Untuk analisa bandarmologi di SIGMA, screenshot Broker Summary lalu lampirkan bersama perintah <span class="hi">"3. Bandarmologi [kode saham]"</span>.</div></div>
-</div>
-</div>
-
-<div class="feat blue">
-<div class="feat-title">📋 Kolom-Kolom Penting dalam Broker Summary</div>
-<div class="table-wrap">
-<table>
-  <tr><th>Kolom</th><th>Keterangan</th></tr>
-  <tr><td><b>Kode Broker</b></td><td>Kode 2 huruf broker (mis: YP, AK, RX, ZP, BQ)</td></tr>
-  <tr><td><b>Buy Vol / Lot</b></td><td>Total volume beli dalam lot (1 lot = 100 lembar)</td></tr>
-  <tr><td><b>Sell Vol / Lot</b></td><td>Total volume jual dalam lot</td></tr>
-  <tr><td><b>Net Buy</b></td><td>Buy Vol − Sell Vol. Positif = akumulasi, Negatif = distribusi</td></tr>
-  <tr><td><b>Buy Value</b></td><td>Total nilai transaksi beli (Rp)</td></tr>
-  <tr><td><b>Sell Value</b></td><td>Total nilai transaksi jual (Rp)</td></tr>
-  <tr><td><b>Avg Buy Price</b></td><td>Rata-rata harga beli broker tersebut</td></tr>
-  <tr><td><b>Avg Sell Price</b></td><td>Rata-rata harga jual broker tersebut</td></tr>
-  <tr><td><b>Frekuensi</b></td><td>Jumlah order/transaksi — frekuensi tinggi = aktivitas intens</td></tr>
-</table>
-</div>
-</div>
-
-<div class="feat green">
-<div class="feat-title">🔍 Cara Membaca Sinyal Akumulasi & Distribusi</div>
-<div class="steps">
-  <div class="step"><div class="snum">↑</div><div class="stext"><span class="ok">Akumulasi (Bullish Signal):</span> Broker tertentu konsisten <b>Net Buy besar</b> selama beberapa hari berturut-turut, terutama jika harga belum bergerak jauh. Ini tanda "bandar" sedang kumpulkan saham.</div></div>
-  <div class="step"><div class="snum">↓</div><div class="stext"><span class="dn">Distribusi (Bearish Signal):</span> Broker yang sebelumnya Net Buy kini berbalik jadi <b>Net Sell dominan</b>. Terutama berbahaya jika harga masih tinggi — ini tanda mulai lepas saham ke publik.</div></div>
-  <div class="step"><div class="snum">→</div><div class="stext"><span class="yl">Crossing:</span> Broker A beli banyak DARI broker B yang jual banyak, pada <b>harga yang sama/mirip</b>. Ini pola crossing klasik — perpindahan kepemilikan dari satu pihak ke pihak lain secara terkoordinasi.</div></div>
-  <div class="step"><div class="snum">→</div><div class="stext"><span class="hi">Foreign Flow:</span> Perhatikan broker asing (ZP, DB, CS, ML, MS). Net buy asing = sentimen positif global. Net sell asing = tekanan jual dari institusi internasional.</div></div>
-</div>
-</div>
-
-<div class="feat yellow">
-<div class="feat-title">🏦 Kode Broker Penting di IDX</div>
-<div class="broker-grid">
-  <div class="broker-card"><div class="broker-code">YP</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — Retail</span></div></div>
-  <div class="broker-card"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">ZP</div><div class="broker-name">Kim Eng Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">BQ</div><div class="broker-name">Mirae Asset</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">DB</div><div class="broker-name">Deutsche Securities</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">CS</div><div class="broker-name">Credit Suisse</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">ML</div><div class="broker-name">Merrill Lynch</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">MS</div><div class="broker-name">Morgan Stanley</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">RX</div><div class="broker-name">Macquarie Capital</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">OD</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
-  <div class="broker-card"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas 2</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
-  <div class="broker-card"><div class="broker-code">DH</div><div class="broker-name">Sinarmas Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-  <div class="broker-card"><div class="broker-code">PD</div><div class="broker-name">BNI Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
-  <div class="broker-card"><div class="broker-code">GR</div><div class="broker-name">Panin Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-  <div class="broker-card"><div class="broker-code">FZ</div><div class="broker-name">Waterfront Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-  <div class="broker-card"><div class="broker-code">LG</div><div class="broker-name">Trimegah Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-</div>
-</div>
-
-<div class="feat">
-<div class="feat-title">📸 Cara Menggunakan Broker Summary di SIGMA</div>
-<div class="steps">
-  <div class="step"><div class="snum">1</div><div class="stext">Buka platform data saham (RTI, Stockbit, IPOT, dll.) → cari saham yang ingin dianalisa → buka menu <b>Broker Summary</b>.</div></div>
-  <div class="step"><div class="snum">2</div><div class="stext">Pilih periode: <span class="yl">Harian</span> untuk sinyal jangka pendek, <span class="ok">Mingguan/Bulanan</span> untuk melihat tren akumulasi besar.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Screenshot tampilan Broker Summary — pastikan terlihat jelas kolom Net Buy/Sell dan kode broker teratas.</div></div>
-  <div class="step"><div class="snum">4</div><div class="stext">Di SIGMA, ketik: <span class="hi">"3. Bandarmologi BBRI"</span> (ganti dengan kode saham) sambil <b>lampirkan screenshot Brosum, Price Table, dan Volume</b>.</div></div>
-  <div class="step"><div class="snum">5</div><div class="stext">SIGMA AI akan membedah pola akumulasi/distribusi, crossing antar broker, dan memberikan interpretasi terhadap momentum harga.</div></div>
-</div>
-<div class="info-box">💡 <b>Pro Tip:</b> Untuk analisa Quad Confluence (perintah 6), lampirkan sekaligus: SS Chart Teknikal + SS Broker Summary. SIGMA akan menggabungkan sinyal teknikal, bandarmologi, fundamental, dan makro dalam satu analisa terpadu.</div>
-</div>
-
-<div class="feat red">
-<div class="feat-title">⚠️ Hal-Hal yang Perlu Diperhatikan</div>
-<div class="steps">
-  <div class="step"><div class="snum">!</div><div class="stext"><span class="dn">Jangan terpaku hanya pada 1 hari data</span> — pola akumulasi bandar biasanya terlihat setelah 3–10 hari observasi berturut-turut.</div></div>
-  <div class="step"><div class="snum">!</div><div class="stext">Broker besar tidak selalu = bandar. <span class="yl">Konfirmasi dengan price action</span>: jika akumulasi tapi harga sideways/turun, waspadai distribusi terselubung.</div></div>
-  <div class="step"><div class="snum">!</div><div class="stext">Data Broker Summary adalah <b>lagging indicator</b> — ia menunjukkan apa yang SUDAH terjadi, bukan apa yang AKAN terjadi. Gunakan bersama analisa teknikal.</div></div>
-  <div class="step"><div class="snum">!</div><div class="stext">Semua analisa bandarmologi adalah <b>referensi riset</b>, bukan sinyal trading resmi. Selalu DYOR dan kelola risiko dengan disiplin.</div></div>
-</div>
-</div>
-
-</div></body></html>"""
-            components.html(_guide_html_brosum, height=2400, scrolling=True)
-
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 7 — CARA KERJA SCREENER (HOW IT WORKS) → now pg_tab8
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab8:
-            _P7 = "#a78bfa"
-            _B7 = "#60a5fa"
-            _G7 = "#26a69a"
-            _R7 = "#f23645"
-            _Y7 = "#fbbf24"
-            _TXT7 = text_main
-            _SUB7 = text_sub
-            _BG7  = met_bg
-            _BD7  = met_border
-
-            _guide_html_7 = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7};font-size:0.93rem;line-height:1.8;}}
-.wrap{{max-width:100%;padding:4px 0 32px;}}
-
-/* ── Hero ── */
-.hero{{
-  background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(96,165,250,0.08));
-  border:1px solid rgba(124,58,237,0.25);border-radius:12px;
-  padding:22px 24px;margin-bottom:22px;
-}}
-.hero-title{{font-size:1.3rem;font-weight:700;color:{_P7};letter-spacing:0.06em;margin-bottom:6px;}}
-.hero-sub{{font-size:0.88rem;color:{_SUB7};line-height:1.7;}}
-
-/* ── Nav tabs ── */
-.nav{{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}}
-.nav-btn{{
-  font-family:'IBM Plex Mono',monospace;
-  font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-  border:1px solid rgba(124,58,237,0.3);background:rgba(124,58,237,0.07);
-  color:{_P7};border-radius:6px;padding:6px 13px;cursor:pointer;
-  transition:all 0.15s;
-}}
-.nav-btn:hover,.nav-btn.active{{background:rgba(124,58,237,0.18);border-color:{_P7};}}
-
-/* ── Panels ── */
-.panel{{display:none;}}
-.panel.active{{display:block;}}
-
-/* ── Section header ── */
-.sec-head{{
-  display:flex;align-items:center;gap:12px;
-  margin:0 0 16px;padding-bottom:10px;
-  border-bottom:1px solid rgba(124,58,237,0.2);
-}}
-.sec-icon{{font-size:1.5rem;}}
-.sec-title{{font-size:1.1rem;font-weight:700;color:{_P7};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.82rem;color:{_SUB7};margin-top:2px;}}
-
-/* ── Cards ── */
-.card{{
-  background:{_BG7};border:1px solid {_BD7};
-  border-radius:10px;padding:16px 18px;margin-bottom:12px;
-}}
-.card.accent-p{{border-left:3px solid {_P7};}}
-.card.accent-b{{border-left:3px solid {_B7};}}
-.card.accent-g{{border-left:3px solid {_G7};}}
-.card.accent-y{{border-left:3px solid {_Y7};}}
-.card.accent-r{{border-left:3px solid {_R7};}}
-.card-title{{font-size:0.95rem;font-weight:700;color:{_B7};margin-bottom:8px;}}
-.card-body{{font-size:0.88rem;color:{_TXT7};line-height:1.8;}}
-.card-body b{{color:{_P7};}}
-
-/* ── Flow pipeline ── */
-.pipeline{{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 0;}}
-.pipe-step{{
-  font-size:0.68rem;font-weight:700;letter-spacing:0.07em;padding:5px 11px;
-  border-radius:6px;white-space:nowrap;
-}}
-.pipe-arrow{{font-size:0.9rem;color:{_SUB7};}}
-
-/* ── Steps numbered ── */
-.steps{{margin:6px 0;}}
-.step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
-.snum{{
-  min-width:22px;height:22px;border-radius:50%;
-  background:linear-gradient(135deg,{_P7},{_B7});
-  color:#fff;font-size:0.68rem;font-weight:700;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
-}}
-.stext{{font-size:0.88rem;color:{_TXT7};line-height:1.75;}}
-.stext b{{color:{_B7};}}
-.hi{{color:{_P7};font-weight:700;}}
-.ok{{color:{_G7};font-weight:700;}}
-.dn{{color:{_R7};font-weight:700;}}
-.yl{{color:{_Y7};font-weight:700;}}
-
-/* ── Metric grid ── */
-.mgrid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}}
-.mcard{{
-  background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);
-  border-radius:8px;padding:11px 13px;
-}}
-.mlbl{{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB7};margin-bottom:4px;}}
-.mval{{font-size:1.0rem;font-weight:700;color:{_P7};}}
-.msub{{font-size:0.75rem;color:{_SUB7};margin-top:3px;line-height:1.5;}}
-
-/* ── Badges ── */
-.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;margin:0 3px;vertical-align:middle;}}
-.bp{{background:rgba(167,139,250,0.15);color:{_P7};border:1px solid rgba(167,139,250,0.35);}}
-.bb{{background:rgba(96,165,250,0.14);color:{_B7};border:1px solid rgba(96,165,250,0.35);}}
-.bg{{background:rgba(38,166,154,0.14);color:{_G7};border:1px solid rgba(38,166,154,0.35);}}
-.br{{background:rgba(242,54,69,0.12);color:{_R7};border:1px solid rgba(242,54,69,0.35);}}
-.by{{background:rgba(251,191,36,0.12);color:{_Y7};border:1px solid rgba(251,191,36,0.35);}}
-
-/* ── Info / Warn boxes ── */
-.tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
-.honesty{{background:rgba(38,166,154,0.07);border-left:3px solid {_G7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
-.danger{{background:rgba(242,54,69,0.07);border-left:3px solid {_R7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
-
-/* ── Source chips ── */
-.chip{{display:inline-block;font-size:0.65rem;padding:1px 7px;border-radius:4px;margin:0 2px;background:rgba(167,139,250,0.1);color:{_P7};border:1px solid rgba(167,139,250,0.2);}}
-
-/* ── Divider ── */
-.div{{height:1px;background:rgba(124,58,237,0.15);margin:18px 0;}}
-
-@media(max-width:600px){{
-  .mgrid{{grid-template-columns:1fr;}}
-  .pipeline{{gap:4px;}}
-  .pipe-step{{font-size:0.6rem;padding:4px 8px;}}
-  .card{{padding:12px 13px;}}
-}}
-</style></head><body><div class="wrap">
-
-<!-- HERO -->
-<div class="hero">
-  <div class="hero-title">🔬 BAGAIMANA SIGMA MEMILIH SAHAM?</div>
-  <div class="hero-sub">
-    Penjelasan lengkap arsitektur, logika, dan mekanisme di balik setiap modul screening SIGMA — 
-    dari sumber data, filter bertingkat, sampai cara AI menghasilkan trade plan.<br><br>
-    Pilih modul di bawah untuk membaca detail cara kerjanya.
-  </div>
-</div>
-
-<!-- NAV -->
-<div class="nav" id="guide-nav">
-  <button class="nav-btn active" onclick="showGuide('overview',this)">Arsitektur Sistem</button>
-  <button class="nav-btn" onclick="showGuide('insight',this)">AI Stock Insight</button>
-  <button class="nav-btn" onclick="showGuide('daily',this)">Daily Screener</button>
-  <button class="nav-btn" onclick="showGuide('weekly',this)">Weekly Screener</button>
-  <button class="nav-btn" onclick="showGuide('bsjp',this)">BSJP</button>
-  <button class="nav-btn" onclick="showGuide('fundamental',this)">Fundamental</button>
-  <button class="nav-btn" onclick="showGuide('accuracy',this)">Akurasi &amp; Batas</button>
-</div>
-
-<!-- ════════════ PANEL: OVERVIEW ════════════ -->
-<div class="panel active" id="g-overview">
-  <div class="sec-head">
-    <span class="sec-icon">🏗️</span>
-    <div>
-      <div class="sec-title">ARSITEKTUR MULTI-LAYER SIGMA</div>
-      <div class="sec-desc">Setiap rekomendasi melewati minimal 3 lapisan validasi sebelum ditampilkan</div>
-    </div>
-  </div>
-
-  <div class="pipeline">
-    <div class="pipe-step" style="background:rgba(96,165,250,0.12);color:{_B7};border:1px solid rgba(96,165,250,0.3);">📡 Data Live IDX</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step" style="background:rgba(167,139,250,0.12);color:{_P7};border:1px solid rgba(167,139,250,0.3);">📐 Filter Teknikal</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step" style="background:rgba(38,166,154,0.12);color:{_G7};border:1px solid rgba(38,166,154,0.3);">📊 Analisa Volume</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step" style="background:rgba(251,191,36,0.12);color:{_Y7};border:1px solid rgba(251,191,36,0.3);">🤖 AI Analisa</div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step" style="background:rgba(242,54,69,0.12);color:{_R7};border:1px solid rgba(242,54,69,0.3);">🎯 Trade Plan</div>
-  </div>
-
-  <div class="div"></div>
-
-  <div class="card accent-b">
-    <div class="card-title">5 Sumber Data Real-Time (Multi-Source Fallback)</div>
-    <div class="card-body">
-      <b>Harga & Volume:</b><br>
-      <span class="chip">IDX API</span><span class="chip">Yahoo Finance</span><span class="chip">Finnhub</span><span class="chip">FMP</span><span class="chip">stooq</span><br>
-      Diambil secara paralel. <b>Prioritas: IDX API</b> (sumber resmi bursa). Jika gagal, otomatis fallback ke layer berikutnya.<br><br>
-      <b>Fundamental:</b><br>
-      <span class="chip">Finnhub</span><span class="chip">Alpha Vantage</span><span class="chip">FMP</span><span class="chip">yfinance</span><br>
-      Setiap API punya key cadangan (KEY1–KEY6). Jika rate limit, sistem auto-rotate ke key berikutnya tanpa gangguan.<br><br>
-      <b>Berita:</b><br>
-      <span class="chip">Google News RSS</span><span class="chip">CNBC Indonesia</span><span class="chip">Kontan</span><span class="chip">Bisnis.com</span><br>
-      Difilter berdasarkan keyword relevan (nama emiten, IHSG, makro, komoditas).
-    </div>
-  </div>
-
-  <div class="card accent-p">
-    <div class="card-title">Validasi Corporate Action — Otomatis</div>
-    <div class="card-body">
-      SIGMA menyimpan database internal riwayat <b>stock split & reverse split</b> dari semua emiten besar IDX (BBCA, BBRI, BMRI, TLKM, GOTO, dll).<br><br>
-      Sebelum data harga dikirim ke AI untuk dianalisa, sistem otomatis memvalidasi:<br>
-      <span class="ok">✅ Harga masuk rentang post-split</span> → aman digunakan<br>
-      <span class="dn">⚠️ Harga terdeteksi pre-split</span> → AI diperingatkan, wajib memberitahu user<br>
-      <span class="dn">⛔ Saham berstatus SUSPEND</span> → analisa dihentikan, dilarang buat trade plan
-    </div>
-  </div>
-
-  <div class="card accent-g">
-    <div class="card-title">Database Pemegang Saham IDX</div>
-    <div class="card-body">
-      SIGMA menyimpan data bulanan jumlah pemegang saham dari <b>200+ emiten BEI</b> (Apr 2025 – Mar 2026).<br><br>
-      <span class="ok">Pemegang naik konsisten 3 bulan</span> → sinyal akumulasi retail kuat — institusi sudah masuk lebih dulu<br>
-      <span class="dn">Pemegang turun konsisten 3 bulan</span> → sinyal distribusi — pemegang lama mulai keluar<br><br>
-      Data ini dikombinasikan dengan analisa volume dan teknikal untuk memperkuat atau menyanggah sinyal.
-    </div>
-  </div>
-</div>
-
-<!-- ════════════ PANEL: AI STOCK INSIGHT ════════════ -->
-<div class="panel" id="g-insight">
-  <div class="sec-head">
-    <span class="sec-icon">🔍</span>
-    <div>
-      <div class="sec-title">AI STOCK INSIGHT</div>
-      <div class="sec-desc">Analisa mendalam per ticker — teknikal + fundamental + pemegang saham dalam 1 klik</div>
-    </div>
-  </div>
-
-  <div class="card accent-p">
-    <div class="card-title">Apa yang terjadi saat kamu ketik ticker & klik Analyze?</div>
-    <div class="card-body">
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext"><b>Ambil chart 6 bulan</b> — OHLCV dari yfinance. Weekend & data kosong otomatis dibersihkan agar chart rapi.</div></div>
-        <div class="step"><div class="snum">2</div><div class="stext"><b>Hitung indikator teknikal</b> — EMA 13/21/100/200, RSI, MACD, Bollinger Bands, ATR, Pivot Points, support/resistance otomatis dari price action.</div></div>
-        <div class="step"><div class="snum">3</div><div class="stext"><b>Analisa volume</b> — spike ratio (volume hari ini vs MA-20), deteksi divergensi harga-volume, dry-up signal.</div></div>
-        <div class="step"><div class="snum">4</div><div class="stext"><b>Fetch fundamental multi-source</b> — ROE, ROA, PER, PBV, EPS, DER, Dividend Yield, NIM, NPL (khusus bank). Validasi corporate action dilakukan di sini.</div></div>
-        <div class="step"><div class="snum">5</div><div class="stext"><b>Cek tren pemegang saham</b> — database SIGMA 12 bulan terakhir. Naik atau turun? Berapa persen perubahannya?</div></div>
-        <div class="step"><div class="snum">6</div><div class="stext"><b>AI generate analisa</b> — semua data dikirim ke model AI. AI <span class="hi">wajib menilai</span> kondisi saham (LAYAK / WASPADA / HINDARI) sebelum menulis analisa. Trade plan hanya muncul jika kondisi layak.</div></div>
-        <div class="step"><div class="snum">7</div><div class="stext"><b>Gambar chart + trade plan</b> — Entry zone, TP1, TP2, SL di-overlay di atas candlestick chart. Koordinat divalidasi agar masuk akal vs harga live.</div></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="mgrid">
-    <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_R7};">HIGH</div><div class="msub">Hanya teknikal oke, volume & fundamental belum konfirmasi</div></div>
-    <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_Y7};">MID</div><div class="msub">Teknikal + volume sama-sama mendukung. Buy power dominan.</div></div>
-    <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_G7};">LOW</div><div class="msub">Trio lengkap: teknikal + volume + fundamental semua oke</div></div>
-    <div class="mcard"><div class="mlbl">Jika Bearish</div><div class="mval" style="color:{_SUB7};">NO PLAN</div><div class="msub">Trade plan tidak ditampilkan. AI wajib jelaskan kenapa dengan tegas.</div></div>
-  </div>
-
-  <div class="honesty">
-    ✅ <b>Prinsip Kejujuran:</b> AI di-brief bahwa kejujuran adalah prioritas utama. Saham yang sedang downtrend, distribusi aktif, atau fundamental buruk akan dinilai HINDARI — bukan dibuat trade plan asal-asalan untuk menyenangkan trader.
-  </div>
-</div>
-
-<!-- ════════════ PANEL: DAILY ════════════ -->
-<div class="panel" id="g-daily">
-  <div class="sec-head">
-    <span class="sec-icon">📅</span>
-    <div>
-      <div class="sec-title">DAILY SCREENER</div>
-      <div class="sec-desc">Scan 500+ saham IDX setiap hari — top pick berbasis volume intelligence & block trade detection</div>
-    </div>
-  </div>
-
-  <div class="card accent-b">
-    <div class="card-title">Universe & Pre-filter</div>
-    <div class="card-body">
-      Universe: <b>500+ saham IDX aktif</b> (sudah dikurasi — hapus saham suspend, micro-cap speculative). Data OHLCV 10 hari terakhir diambil secara paralel untuk semua ticker.<br><br>
-      Hanya saham dengan <b>Bullish Score ≥ 3 dari 4</b> yang masuk ke tahap AI:
-      <br><br>
-      <span class="bg">+1</span> Harga naik hari ini (chg &gt; 0%)<br>
-      <span class="bg">+1</span> Harga naik 5 hari terakhir (chg5d &gt; 0%)<br>
-      <span class="bg">+1</span> Volume hari ini &gt; rata-rata volume 5 hari<br>
-      <span class="bg">+1</span> Harga di atas EMA 5
-    </div>
-  </div>
-
-  <div class="card accent-p">
-    <div class="card-title">Volume Intelligence — Inti Perbedaannya</div>
-    <div class="card-body">
-      AI Daily di-brief khusus untuk membedakan tipe volume:<br><br>
-      <span class="bp">Block Trade</span> Nilai besar + Lot besar + Frekuensi <b>KECIL</b> → institusi masuk diam-diam → <span class="ok">SINYAL KUAT</span><br><br>
-      <span class="br">Noise</span> Nilai kecil + Lot kecil + Frekuensi <b>BESAR</b> → ritel biasa → <span class="dn">Diabaikan</span><br><br>
-      <span class="by">Bias/HFT</span> Nilai besar + Frekuensi <b>BESAR</b> → Algo/HFT → <span class="yl">Perlu konfirmasi hari berikutnya</span><br><br>
-      AI diminta <b>memprioritaskan</b> saham dengan volume spike tinggi TAPI frekuensi rendah (block trade) di atas saham yang hanya ramai ritel.
-    </div>
-  </div>
-
-  <div class="card accent-g">
-    <div class="card-title">Output Tabel Daily</div>
-    <div class="card-body">
-      <b>4–6 saham BUY</b> + <b>3 saham HINDARI</b>, masing-masing dengan:<br><br>
-      TA Score (0–100) · FA Score (0–100) · Vol Spike ratio · Vol Type (Block/Ritel/Mixed) · RSI · MACD · Wyckoff Phase · Entry Zone · TP1 · TP2 · SL · Horizon (Intraday/1–3 hari/3–5 hari) · Alasan singkat kenapa layak
-    </div>
-  </div>
-
-  <div class="tip">💡 <b>Horizon Daily:</b> Intraday = beli pagi jual sore hari yang sama. 1–3 hari = swing pendek. 3–5 hari = swing mingguan ringan. Pilih sesuai gaya trading kamu.</div>
-</div>
-
-<!-- ════════════ PANEL: WEEKLY ════════════ -->
-<div class="panel" id="g-weekly">
-  <div class="sec-head">
-    <span class="sec-icon">📆</span>
-    <div>
-      <div class="sec-title">WEEKLY SCREENER</div>
-      <div class="sec-desc">Swing trade 1–2 minggu — kombinasi tren mingguan, katalis fundamental, dan tren pemegang saham</div>
-    </div>
-  </div>
-
-  <div class="card accent-b">
-    <div class="card-title">Perbedaan Utama dari Daily</div>
-    <div class="card-body">
-      <b>Timeframe lebih panjang:</b> Data 20 hari digunakan (bukan 10 hari). EMA yang diperhatikan adalah EMA 21 dan EMA 50 — bukan EMA 5.<br><br>
-      <b>Fundamental lebih dominan:</b> Di Daily, FA Score hanya 40% bobot. Di Weekly, fundamental mendapat perhatian lebih karena horizon 1–2 minggu memberikan waktu bagi katalis fundamental bekerja.<br><br>
-      <b>Horizon:</b> 1–2 minggu. Bukan untuk daytrader — untuk swing trader yang bisa menahan posisi.
-    </div>
-  </div>
-
-  <div class="card accent-p">
-    <div class="card-title">Faktor Tambahan di Weekly</div>
-    <div class="card-body">
-      <span class="bp">Tren Pemegang Saham</span> Data IDX bulanan — apakah jumlah pemegang naik (akumulasi) atau turun (distribusi)? Naik 3 bulan berturut = sinyal kuat.<br><br>
-      <span class="bb">Katalis Fundamental</span> AI diminta menimbang katalis ke depan: jadwal dividen, rilis laporan keuangan, kebijakan makro yang relevan untuk sektor saham tersebut.<br><br>
-      <span class="bg">Sector Outlook</span> Kondisi sektor dan makro dipertimbangkan — suku bunga BI, kurs IDR, harga komoditas terkait, dan rotasi sektor dari data Sector Rotation.
-    </div>
-  </div>
-
-  <div class="card accent-g">
-    <div class="card-title">Output Tabel Weekly</div>
-    <div class="card-body">
-      <b>3–5 saham BUY mingguan</b> dengan detail: TA Score · FA Score · Vol Spike · Vol Type · Entry Zone · TP1 · TP2 · SL · Kolom "Why Buy" (1 kalimat alasan, fokus katalis + volume)
-    </div>
-  </div>
-
-  <div class="warn">⚠️ Weekly bukan untuk intraday. Jika kamu tidak bisa menahan posisi selama 5–10 hari, gunakan Daily Screener sebagai gantinya.</div>
-</div>
-
-<!-- ════════════ PANEL: BSJP ════════════ -->
-<div class="panel" id="g-bsjp">
-  <div class="sec-head">
-    <span class="sec-icon">🌙</span>
-    <div>
-      <div class="sec-title">BELI SORE JUAL PAGI (BSJP)</div>
-      <div class="sec-desc">Strategi overnight — beli 15:00–15:50 WIB, jual pre-opening atau sesi 1 keesokan hari</div>
-    </div>
-  </div>
-
-  <div class="card accent-p">
-    <div class="card-title">Logika Strategi</div>
-    <div class="card-body">
-      BSJP memanfaatkan dua fenomena pasar IDX:<br><br>
-      <b>1. Gap-up pembukaan:</b> Saham yang diakumulasi institusi menjelang closing sering gap-up keesokan pagi karena order pembelian berlanjut di pre-opening dan sesi 1.<br><br>
-      <b>2. Momentum pembukaan:</b> Retail yang melihat saham naik kemarin cenderung ikut beli di pagi hari, mendorong harga lebih tinggi sebelum SIGMA bisa jual.
-    </div>
-  </div>
-
-  <div class="card accent-b">
-    <div class="card-title">Sinyal yang Dicari BSJP</div>
-    <div class="card-body">
-      <span class="bp">Volume Spike Closing</span> Volume melonjak signifikan di 30–60 menit terakhir sebelum penutupan. Pertanda ada yang mengakumulasi saat retail sudah mau pulang.<br><br>
-      <span class="bb">Frekuensi Rendah</span> Volume spike dari <b>block trade</b> (institusi), bukan dari ritel kecil-kecil. Ini yang membedakan BSJP sinyal valid vs noise.<br><br>
-      <span class="bg">Harga Stabil atau Naik Pelan</span> Tidak ada distribusi massal sebelum closing — artinya yang beli lebih kuat dari yang jual.<br><br>
-      <span class="br">HINDARI</span> Saham dengan berita negatif besar semalam (risiko gap-down pagi). Cek news feed sebelum tidur.
-    </div>
-  </div>
-
-  <div class="card accent-y">
-    <div class="card-title">Risk Management BSJP</div>
-    <div class="card-body">
-      <b>Sizing maksimal: 5–10% portofolio per posisi</b><br><br>
-      Risiko utama: berita negatif overnight atau sentimen global buruk → gap-down pagi hari. Ini tidak bisa dikontrol.<br><br>
-      Strategi ini <b>hanya cocok</b> jika tidak ada event risiko besar di malam hari: FOMC meeting, rilis data CPI AS, eskalasi geopolitik, atau berita emiten negatif yang sudah beredar.
-    </div>
-  </div>
-
-  <div class="danger">⛔ <b>Penting:</b> BSJP adalah strategi berisiko tinggi. Selalu pasang mental stop-loss sebelum tidur: jika keesokan pagi harga gap-down &gt; [SL kamu], langsung eksekusi jual di opening tanpa tunggu recovery.</div>
-</div>
-
-<!-- ════════════ PANEL: FUNDAMENTAL ════════════ -->
-<div class="panel" id="g-fundamental">
-  <div class="sec-head">
-    <span class="sec-icon">📊</span>
-    <div>
-      <div class="sec-title">FUNDAMENTAL SCREENER</div>
-      <div class="sec-desc">Screening berbasis kesehatan bisnis — untuk investor, bukan trader harian</div>
-    </div>
-  </div>
-
-  <div class="card accent-b">
-    <div class="card-title">Metrik yang Diukur</div>
-    <div class="card-body">
-      <b>Valuasi:</b> PER (Price-to-Earnings) dan PBV (Price-to-Book Value). AI menilai murah/wajar/mahal berdasarkan perbandingan vs peers sektor — bukan angka absolut.<br><br>
-      <b>Profitabilitas:</b> ROE (Return on Equity), ROA (Return on Assets), Net Profit Margin. Mengukur kemampuan manajemen menghasilkan laba dari modal yang ada.<br><br>
-      <b>Kualitas Earnings:</b> EPS (Earnings Per Share) dan tren pertumbuhannya YoY/CAGR. EPS yang tumbuh konsisten = kualitas bisnis yang sehat.<br><br>
-      <b>Kesehatan Neraca:</b> DER (Debt-to-Equity Ratio) dan Current Ratio. Mengukur beban utang vs kemampuan membayar kewajiban jangka pendek.
-    </div>
-  </div>
-
-  <div class="card accent-p">
-    <div class="card-title">Mode Khusus Perbankan</div>
-    <div class="card-body">
-      Sistem otomatis mendeteksi apakah ticker adalah emiten perbankan. Jika ya, metrik berubah ke <b>rasio spesifik perbankan</b>:<br><br>
-      <span class="bp">NIM</span> Net Interest Margin — spread bunga bank. Makin tinggi makin baik.<br>
-      <span class="bp">NPL Gross & Net</span> Non-Performing Loan — kredit macet. &lt; 5% = sehat.<br>
-      <span class="bp">LDR</span> Loan-to-Deposit Ratio — agresivitas penyaluran kredit. 78–92% = ideal.<br>
-      <span class="bp">CAR</span> Capital Adequacy Ratio — ketebalan modal. &gt; 14% = sangat aman.<br>
-      <span class="bp">BOPO</span> Rasio efisiensi operasional. &lt; 80% = efisien.<br><br>
-      DER dan Current Ratio <b>tidak relevan untuk bank</b> — sistem tidak menggunakannya jika emiten terdeteksi sebagai bank.
-    </div>
-  </div>
-
-  <div class="card accent-g">
-    <div class="card-title">Prioritas Data — TTM 2026</div>
-    <div class="card-body">
-      Sistem selalu mengambil data <b>TTM (Trailing Twelve Months)</b> terbaru sebagai data utama. Data 2024–2025 digunakan hanya sebagai pembanding tren (YoY / CAGR), bukan sebagai angka primer.<br><br>
-      Jika AI menampilkan EPS atau ROE, angka tersebut adalah TTM terbaru yang tersedia dari multi-source API — bukan angka tahun lalu.
-    </div>
-  </div>
-
-  <div class="tip">💡 Fundamental Screener bukan untuk timing entry harian. Gunakan bersama Daily atau AI Stock Insight: Fundamental Screener sebagai filter kualitas bisnis, Daily/Insight sebagai timing entry teknikal.</div>
-</div>
-
-<!-- ════════════ PANEL: ACCURACY ════════════ -->
-<div class="panel" id="g-accuracy">
-  <div class="sec-head">
-    <span class="sec-icon">⚖️</span>
-    <div>
-      <div class="sec-title">AKURASI & BATAS SISTEM</div>
-      <div class="sec-desc">Transparansi penuh — apa yang SIGMA kerjakan dengan baik, dan di mana batasannya</div>
-    </div>
-  </div>
-
-  <div class="card accent-g">
-    <div class="card-title">Yang Dikerjakan Sistem dengan Baik</div>
-    <div class="card-body">
-      <span class="bg">✅ Kuat</span> Deteksi volume anomali — spike ratio dan tipe (block vs ritel) berbasis data harga nyata dari bursa.<br><br>
-      <span class="bg">✅ Kuat</span> Pengecekan corporate action — sistem tidak akan salah analisa karena harga pre-split.<br><br>
-      <span class="bg">✅ Kuat</span> Multi-source fallback — jika 1 sumber data mati, sistem tetap jalan dengan sumber lain tanpa gangguan.<br><br>
-      <span class="bg">✅ Kuat</span> Transparansi risk level — AI diwajibkan menyebut HIGH/MID/LOW risk dengan alasan konkret, bukan label kosong.<br><br>
-      <span class="bg">✅ Kuat</span> Deteksi sektor perbankan — metrik otomatis berganti ke NIM/NPL/CAR/BOPO untuk emiten bank.
-    </div>
-  </div>
-
-  <div class="card accent-y">
-    <div class="card-title">Batasan yang Harus Dipahami</div>
-    <div class="card-body">
-      <span class="by">⚠️ Fundamental delay:</span> Data dari API eksternal kadang terlambat 1–3 bulan dari laporan keuangan terbaru. Untuk laporan quarterly terbaru, selalu cek langsung di IDX.co.id.<br><br>
-      <span class="by">⚠️ Tidak ada data bandarmologi:</span> SIGMA tidak punya akses ke data broker (siapa yang beli/jual). Yang tersedia hanya volume aggregate dari bursa.<br><br>
-      <span class="by">⚠️ Black swan:</span> Saat crash global, FOMC hawkish ekstrem, atau geopolitik memburuk tiba-tiba, semua sinyal teknikal bisa gagal sekaligus. Tidak ada sistem yang imun.<br><br>
-      <span class="by">⚠️ AI bukan oracle:</span> AI menganalisa berdasarkan data yang tersedia saat itu. Berita material yang belum masuk ke harga (insider information) tidak bisa dideteksi sistem mana pun.
-    </div>
-  </div>
-
-  <div class="honesty">
-    ✅ <b>Komitmen Kejujuran SIGMA:</b> AI di-brief bahwa jika kondisi saham bearish kuat, trade plan tidak ditampilkan dan AI wajib menjelaskan kenapa dengan tegas — bukan memberikan false hope. SIGMA bukan robot yang selalu bilang "beli". Kadang jawaban yang paling berharga adalah "jangan beli sekarang".
-  </div>
-
-  <div class="div"></div>
-
-  <div class="card accent-r">
-    <div class="card-title">⚠️ DYOR — Do Your Own Research</div>
-    <div class="card-body">
-      SIGMA adalah <b>alat bantu analisa</b>, bukan robot trading otomatis dan bukan rekomendasi investasi.<br><br>
-      Output SIGMA sebaiknya dikombinasikan dengan:<br>
-      · Berita fundamental terkini (laporan keuangan, aksi korporasi, kebijakan sektoral)<br>
-      · Kondisi makro global hari itu (sentimen AS, DXY, VIX)<br>
-      · Manajemen risiko dan position sizing yang disiplin<br>
-      · Stop-loss yang selalu dieksekusi tanpa pengecualian<br><br>
-      <b>Tidak ada sistem yang 100% akurat di pasar modal.</b> Keputusan akhir selalu ada di tanganmu.
-    </div>
-  </div>
-</div>
-
-<script>
-function showGuide(id, btn) {{
-  document.querySelectorAll('.panel').forEach(function(p){{ p.classList.remove('active'); }});
-  document.querySelectorAll('.nav-btn').forEach(function(b){{ b.classList.remove('active'); }});
-  var el = document.getElementById('g-' + id);
-  if(el) el.classList.add('active');
-  if(btn) btn.classList.add('active');
-}}
-</script>
-
-</div></body></html>"""
-            components.html(_guide_html_7, height=1800, scrolling=True)
 
 # ─────────────────────────────────────────────
 else:
