@@ -9079,11 +9079,6 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
 
     # ── TAB: SHAREHOLDER ──────────────────────────────────────────────
-    with tab_shareholder:
-
-        import datetime as _dt
-        import pandas as pd
-
     # ── TAB: SHAREHOLDER ──────────────────────────────────────────────
     with tab_shareholder:
 
