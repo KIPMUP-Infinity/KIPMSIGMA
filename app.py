@@ -753,6 +753,126 @@ def build_combined_context(prompt):
     if global_ctx[0]: parts.append("[DATA GLOBAL]\n" + global_ctx[0] + "\n[/DATA GLOBAL]")
     return "\n\n".join(parts)
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CORPORATE ACTION DATABASE — IDX (update 2024–2026)
+# Digunakan untuk validasi harga sebelum analisa dikirim ke AI
+# ─────────────────────────────────────────────────────────────────────────────
+IDX_CORPORATE_ACTIONS = {
+    # STOCK SPLIT: ratio = 1/N (harga dibagi N)
+    # Format: ticker → {"type", "ratio_divisor", "date", "pre_range", "post_range", "note"}
+    "BBCA": {"type": "split", "ratio": "1:5",  "ratio_divisor": 5,  "date": "28 Mar 2024",
+             "pre_range": (8000, 12000), "post_range": (1500, 3000),
+             "note": "Split 1:5. Harga pre-split ~Rp9.000–10.000 → post-split valid ~Rp1.800–2.200. Harga live sekarang (Apr 2026) sekitar Rp8.500–10.000 (adjusted)."},
+    "BBRI": {"type": "split", "ratio": "1:5",  "ratio_divisor": 5,  "date": "Feb 2022",
+             "pre_range": (3000, 5000), "post_range": (400, 800),
+             "note": "Split 1:5. Harga valid post-split ~Rp 450–700. Jika data menunjukkan >Rp3.000 → data pre-split, JANGAN gunakan."},
+    "BMRI": {"type": "split", "ratio": "1:2",  "ratio_divisor": 2,  "date": "Jun 2023",
+             "pre_range": (9000, 13000), "post_range": (4000, 8000),
+             "note": "Split 1:2 Jun 2023. Harga valid post-split Rp5.000–7.000an."},
+    "TLKM": {"type": "split", "ratio": "1:5",  "ratio_divisor": 5,  "date": "Jun 2023",
+             "pre_range": (12000, 20000), "post_range": (2000, 5000),
+             "note": "Split 1:5 Jun 2023. Harga valid post-split ~Rp2.500–4.000."},
+    "EXCL":  {"type": "split", "ratio": "1:5",  "ratio_divisor": 5,  "date": "2024",
+              "pre_range": (2000, 4000), "post_range": (400, 1200),
+              "note": "Split 1:5 2024."},
+    "MYOR":  {"type": "split", "ratio": "1:5",  "ratio_divisor": 5,  "date": "2021",
+              "pre_range": (10000, 30000), "post_range": (1500, 4000),
+              "note": "Split 1:5 2021."},
+    "ICBP":  {"type": "split", "ratio": "1:2",  "ratio_divisor": 2,  "date": "2021",
+              "pre_range": (8000, 14000), "post_range": (4000, 8000),
+              "note": "Split 1:2 2021."},
+    "INDF":  {"type": "split", "ratio": "1:2",  "ratio_divisor": 2,  "date": "2021",
+              "pre_range": (6000, 10000), "post_range": (5000, 8000),
+              "note": "Split 1:2 2021."},
+    "HMSP":  {"type": "split", "ratio": "1:25", "ratio_divisor": 25, "date": "2017",
+              "pre_range": (60000, 100000), "post_range": (600, 2000),
+              "note": "Split 1:25 2017 (historis)."},
+    # REVERSE SPLIT
+    "GOTO":  {"type": "reverse", "ratio": "20:1", "ratio_divisor": 0.05, "date": "2024",
+              "pre_range": (40, 80), "post_range": (500, 1200),
+              "note": "Reverse split 20:1 2024. Harga pre-reverse ~Rp50 → post ~Rp600–900. Konfirmasi live."},
+    "BUMI":  {"type": "reverse", "ratio": "10:1", "ratio_divisor": 0.10, "date": "2023",
+              "pre_range": (50, 200), "post_range": (400, 1500),
+              "note": "Reverse split 10:1 2023."},
+}
+
+IDX_SUSPENDED_TICKERS_GLOBAL = {
+    "WIKA": "SUSPEND — Wijaya Karya, PKPU sejak 2024",
+    "WSKT": "SUSPEND — Waskita Karya, restrukturisasi hutang",
+    "PPRO": "SUSPEND — PP Properti",
+    "ACST": "SUSPEND — Acset Indonusa",
+    "IATA": "SUSPEND — My Indo Airlines",
+    "SRIL": "SUSPEND — Sri Rejeki Isman, PKPU",
+    "BLTA": "SUSPEND — Berlian Laju Tanker",
+    "TAXI": "SUSPEND — Express Transindo",
+    "MIRA": "SUSPEND — Mira International",
+    "SAFE": "SUSPEND — Steady Safe",
+    "KARW": "SUSPEND — Karya Bersama Anugerah",
+    "SUGI": "SUSPEND — Sugih Energy",
+    "SULI": "SUSPEND — Sumalindo Lestari",
+    "CNKO": "SUSPEND — Exploitasi Energi",
+    "PKPK": "SUSPEND — Perdana Karya",
+    "POLY": "SUSPEND — Asia Pacific Fibers",
+    "RAAM": "SUSPEND — Rama Agung",
+    "BCIP": "SUSPEND — Bumi Citra",
+    "BPII": "SUSPEND — Batavia Prosperindo",
+    "LAPD": "SUSPEND — Leyand International",
+    "DERA": "SUSPEND — Derajat Prima",
+    "BSML": "SUSPEND — Bintang Sarana",
+    "APOL": "SUSPEND — Arpeni Pratama",
+}
+
+def _validate_price_corporate_action(ticker, price):
+    """
+    Validasi harga terhadap database corporate action.
+    Return: (is_valid, warning_message)
+    - is_valid=False → harga terindikasi pre-split/pre-reverse, jangan gunakan
+    - warning_message → string peringatan untuk disertakan di prompt AI
+    """
+    if not price or price <= 0:
+        return True, ""
+
+    ticker = ticker.upper()
+
+    # Cek suspend
+    if ticker in IDX_SUSPENDED_TICKERS_GLOBAL:
+        return False, (
+            f"⛔ PERHATIAN KRITIS: {ticker} berstatus {IDX_SUSPENDED_TICKERS_GLOBAL[ticker]}. "
+            f"Saham ini TIDAK DAPAT diperdagangkan. DILARANG membuat trade plan atau rekomendasi beli."
+        )
+
+    # Cek corporate action
+    ca = IDX_CORPORATE_ACTIONS.get(ticker)
+    if not ca:
+        return True, ""
+
+    pre_lo, pre_hi = ca["pre_range"]
+    post_lo, post_hi = ca["post_range"]
+
+    if ca["type"] == "split":
+        # Harga terlalu tinggi → kemungkinan data pre-split
+        if price >= pre_lo * 0.7:
+            return False, (
+                f"⚠️ PERINGATAN CORPORATE ACTION [{ticker}]: "
+                f"Harga Rp{price:,.0f} terindikasi DATA PRE-SPLIT. "
+                f"{ticker} melakukan stock split {ca['ratio']} pada {ca['date']}. "
+                f"{ca['note']} "
+                f"GUNAKAN harga post-split dari sumber live (IDX/yfinance adjusted). "
+                f"JANGAN gunakan harga Rp{price:,.0f} ini untuk analisa."
+            )
+    elif ca["type"] == "reverse":
+        # Harga terlalu rendah → kemungkinan data pre-reverse
+        if price <= pre_hi * 1.3:
+            return False, (
+                f"⚠️ PERINGATAN CORPORATE ACTION [{ticker}]: "
+                f"Harga Rp{price:,.0f} terindikasi DATA PRE-REVERSE SPLIT. "
+                f"{ticker} melakukan reverse split {ca['ratio']} pada {ca['date']}. "
+                f"{ca['note']} "
+                f"GUNAKAN harga post-reverse dari sumber live."
+            )
+
+    return True, ""
+
 def build_fundamental_from_text(prompt):
     ticker = detect_ticker_from_prompt(prompt)
     if not ticker: return ""
@@ -765,8 +885,12 @@ def build_fundamental_from_text(prompt):
             current_year = 2026 # Force context ke 2026
 
             price_live = multi.get("price")
-            # Logika deteksi harga tetap dipertahankan seperti sebelumnya...
-            
+
+            # ── VALIDASI CORPORATE ACTION ──
+            _ca_valid, _ca_warning = _validate_price_corporate_action(ticker, price_live)
+            _ca_info = IDX_CORPORATE_ACTIONS.get(ticker.upper(), {})
+            _suspend_warning = IDX_SUSPENDED_TICKERS_GLOBAL.get(ticker.upper(), "")
+
             is_bank = is_bank_sector(ticker)
             sektor = "Perbankan" if is_bank else "Non-Perbankan"
 
@@ -778,7 +902,23 @@ def build_fundamental_from_text(prompt):
                 f"=== DATA FUNDAMENTAL {ticker} ({sektor}) ==="
             ]
 
-            if price_live:
+            # Inject suspend warning jika ada
+            if _suspend_warning:
+                lines.append(f"\n⛔ STATUS SUSPEND: {_suspend_warning}")
+                lines.append(f"⛔ SIGMA WAJIB mencantumkan status SUSPEND ini di bagian paling atas output analisa.\n")
+
+            # Inject corporate action info jika ada
+            if _ca_info:
+                lines.append(f"\n📋 CORPORATE ACTION {ticker}:")
+                lines.append(f"   Jenis   : {_ca_info.get('type','').upper()} {_ca_info.get('ratio','')}")
+                lines.append(f"   Tanggal : {_ca_info.get('date','')}")
+                lines.append(f"   Catatan : {_ca_info.get('note','')}")
+
+            # Inject price warning jika tidak valid
+            if not _ca_valid and _ca_warning:
+                lines.append(f"\n{_ca_warning}")
+                lines.append(f"⚠️ SIGMA WAJIB: Notifikasi user tentang corporate action ini di output analisa.\n")
+            elif price_live:
                 lines.append(f"💹 Harga Saham Saat Ini : Rp{price_live:,.0f}")
             
             # Menampilkan Data 2026 dan Pembanding
@@ -2174,6 +2314,90 @@ CARA SIGMA HANDLE CORPORATE ACTION:
 - Jika user sebut harga yang berbeda dari data SIGMA -> PERCAYAI user, tanyakan apakah ada corporate action
 - Semua rasio per saham (EPS/DPS/BV) HARUS adjusted ke jumlah saham terkini
 - SEBUTKAN corporate action yang relevan di bagian VERDICT analisa fundamental
+
+=== DATABASE CORPORATE ACTION IDX — WAJIB DIINGAT (UPDATE 2024–2026) ===
+
+ATURAN KRITIS NOMOR 1 — HARGA:
+Sebelum menyebut HARGA APAPUN dalam analisa, SIGMA WAJIB cek tabel ini.
+Jika ticker ada di tabel → GUNAKAN harga post-adjustment. DILARANG menyebut harga pre-split.
+
+STOCK SPLIT (harga turun, saham bertambah):
+┌─────────┬──────────────────────────────────┬──────────┬─────────────────────────────────────────┐
+│ Ticker  │ Nama                             │ Rasio    │ Keterangan                              │
+├─────────┼──────────────────────────────────┼──────────┼─────────────────────────────────────────┤
+│ BBCA    │ Bank Central Asia                │ 1:5      │ Split 28 Mar 2024. Pre: ~Rp9.000–10.000 │
+│         │                                  │          │ Post: ~Rp1.800–2.200. Harga valid skrg  │
+│         │                                  │          │ kisaran Rp 8.000–10.000 (post-adjusted) │
+│ BBRI    │ Bank Rakyat Indonesia            │ 1:5      │ Split Feb 2022. Pre: ~Rp4.000           │
+│         │                                  │          │ Post: ~Rp 500–700an. Harga valid skrg   │
+│         │                                  │          │ kisaran Rp 3.800–5.000 (post-adjusted)  │
+│ BMRI    │ Bank Mandiri                     │ 1:2      │ Split Jun 2023. Pre: ~Rp10.000          │
+│         │                                  │          │ Post: ~Rp5.000–6.000an                  │
+│ TLKM    │ Telkom Indonesia                 │ 1:5      │ Split Jun 2023. Pre: ~Rp15.000–16.000  │
+│         │                                  │          │ Post: ~Rp3.000–4.000an                  │
+│ ASII    │ Astra International              │ 1:10     │ Split 2012 (historis, sudah lama)        │
+│ UNVR    │ Unilever Indonesia               │ 1:5      │ Split 2003 (historis)                   │
+│ GOTO    │ GoTo Gojek Tokopedia             │ 1:10     │ Reverse split rencana 2024–2025,        │
+│         │                                  │          │ verifikasi harga terkini                │
+│ EXCL    │ XL Axiata                        │ 1:5      │ Split 2024                              │
+│ MYOR    │ Mayora Indah                     │ 1:5      │ Split 2021                              │
+│ HMSP    │ HM Sampoerna                     │ 1:25     │ Split 2017 (historis)                   │
+│ ICBP    │ Indofood CBP                     │ 1:2      │ Split 2021                              │
+│ KLBF    │ Kalbe Farma                      │ 1:5      │ Split 2012 (historis)                   │
+│ INDF    │ Indofood                         │ 1:2      │ Split 2021                              │
+└─────────┴──────────────────────────────────┴──────────┴─────────────────────────────────────────┘
+
+REVERSE STOCK (harga naik, saham berkurang):
+┌─────────┬──────────────────────────────────┬──────────┬─────────────────────────────────────────┐
+│ Ticker  │ Nama                             │ Rasio    │ Keterangan                              │
+├─────────┼──────────────────────────────────┼──────────┼─────────────────────────────────────────┤
+│ GOTO    │ GoTo Gojek Tokopedia             │ 20:1     │ Reverse split 2024, harga dari Rp50an   │
+│         │                                  │          │ naik ke Rp 600–900an. Konfirmasi live.  │
+│ BUMI    │ Bumi Resources                   │ 10:1     │ Reverse 2023                            │
+│ DEWA    │ Darma Henwa                      │ 5:1      │ Reverse 2022                            │
+└─────────┴──────────────────────────────────┴──────────┴─────────────────────────────────────────┘
+
+RIGHT ISSUE (harga koreksi teoritis = TERP, saham bertambah):
+┌─────────┬───────────────────────────┬──────────────────────────────────────────────────────────┐
+│ Ticker  │ Nama                      │ Keterangan                                               │
+├─────────┼───────────────────────────┼──────────────────────────────────────────────────────────┤
+│ BBNI    │ Bank Negara Indonesia     │ Rights issue 2021, 1:2 @ Rp6.000                         │
+│ BSDE    │ BSD City                  │ Rights issue 2023                                        │
+│ SMGR    │ Semen Indonesia           │ Rights issue 2022                                        │
+│ MAPA    │ Map Aktif Adiperkasa      │ Rights issue 2023                                        │
+│ PNLF    │ Panin Financial           │ Cum Rights Issue Jun 2026 (upcoming)                     │
+└─────────┴───────────────────────────┴──────────────────────────────────────────────────────────┘
+
+SAHAM SUSPEND IDX (tidak boleh direkomendasikan untuk beli/trading):
+┌─────────┬──────────────────────────────────┬──────────────────────────────────────────────────┐
+│ Ticker  │ Nama                             │ Status                                           │
+├─────────┼──────────────────────────────────┼──────────────────────────────────────────────────┤
+│ WIKA    │ Wijaya Karya                     │ SUSPEND — PKPU sejak 2024                        │
+│ WSKT    │ Waskita Karya                    │ SUSPEND — restrukturisasi hutang                 │
+│ PPRO    │ PP Properti                      │ SUSPEND                                          │
+│ ACST    │ Acset Indonusa                   │ SUSPEND                                          │
+│ IATA    │ My Indo Airlines                 │ SUSPEND                                          │
+│ SRIL    │ Sri Rejeki Isman                 │ SUSPEND — PKPU                                   │
+│ BLTA    │ Berlian Laju Tanker              │ SUSPEND                                          │
+│ TAXI    │ Express Transindo               │ SUSPEND                                           │
+│ MIRA    │ Mira International               │ SUSPEND                                          │
+│ SAFE    │ Steady Safe                      │ SUSPEND / tidak aktif                            │
+│ BUMI    │ Bumi Resources                   │ PERHATIAN — riwayat suspend, likuiditas rendah   │
+│ ENRG    │ Energi Mega Persada              │ PERHATIAN — riwayat suspend                      │
+└─────────┴──────────────────────────────────┴──────────────────────────────────────────────────┘
+
+ATURAN WAJIB SIGMA UNTUK SAHAM SUSPEND:
+⛔ DILARANG merekomendasikan BUY/ENTRY untuk saham suspend
+⛔ DILARANG membuat trade plan untuk saham suspend
+✅ Jika user tanya saham suspend → WAJIB beri warning status suspend terlebih dahulu
+✅ Boleh analisa fundamental historis tapi dengan disclaimer jelas
+
+PROTOKOL VALIDASI HARGA (WAJIB setiap analisa teknikal/fundamental):
+1. Ambil harga dari sumber live (IDX API / yfinance adjusted)
+2. Bandingkan dengan range wajar post-adjustment di tabel atas
+3. Jika harga tampak 3x–10x lebih tinggi dari range → KEMUNGKINAN data pre-split, JANGAN gunakan
+4. Jika harga dari yfinance tanpa auto_adjust=True → bisa menggunakan harga lama, ABAIKAN
+5. SELALU sebut corporate action yang relevan di bagian output analisa
 
 FORMAT ANALISA DAMPAK GLOBAL:
 Trigger: kata kunci "kesimpulan dampak", "dampak [topik] ke indonesia",
@@ -9138,39 +9362,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         _sh_all_db = get_manual_sh_db_full()
 
         # ════════════════════════════════════════════════════════════════
-        # DAFTAR SAHAM SUSPEND IDX (tidak diperdagangkan > 1 bulan)
-        # Update manual jika BEI mencabut/menambah suspend
-        # ════════════════════════════════════════════════════════════════
-        IDX_SUSPENDED_TICKERS = {
-            # KONSTRUKSI BUMN — restrukturisasi hutang / PKPU
-            "WIKA",  # Wijaya Karya — suspend sejak 2024, PKPU
-            "WSKT",  # Waskita Karya — suspend panjang, restrukturisasi
-            "PPRO",  # PP Properti — suspend
-            "ACST",  # Acset Indonusa — suspend
-            # PENERBANGAN
-            "IATA",  # My Indo Airlines — suspend
-            # PELAYARAN / SHIPPING
-            "BLTA",  # Berlian Laju Tanker — suspend lama
-            "MIRA",  # Mira International — suspend
-            "SAFE",  # Steady Safe — tidak aktif/suspend
-            "KARW",  # Karya Bersama Anugerah — suspend
-            # TEKSTIL & GARMEN
-            "SRIL",  # Sri Rejeki Isman — suspend PKPU
-            "SUGI",  # Sugih Energy — suspend
-            "SULI",  # Sumalindo Lestari — suspend
-            # LAINNYA
-            "TAXI",  # Express Transindo — suspend
-            "CNKO",  # Exploitasi Energi — suspend
-            "PKPK",  # Perdana Karya — suspend
-            "POLY",  # Asia Pacific Fibers — suspend lama
-            "RAAM",  # Rama Agung — suspend
-            "BCIP",  # Bumi Citra — suspend
-            "BPII",  # Batavia Prosperindo — suspend
-            "LAPD",  # Leyand International — suspend
-            "DERA",  # Derajat Prima — suspend
-            "BSML",  # Bintang Sarana — suspend
-            "APOL",  # Arpeni Pratama — suspend lama
-        }
+        # DAFTAR SAHAM SUSPEND IDX — sync dengan IDX_SUSPENDED_TICKERS_GLOBAL
+        IDX_SUSPENDED_TICKERS = set(IDX_SUSPENDED_TICKERS_GLOBAL.keys())
 
         # ════════════════════════════════════════════════════════════════
         # LIVE FETCH PEMEGANG SAHAM — MULTI-SOURCE UNTUK SEMUA SAHAM BEI
@@ -14451,15 +14644,21 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
 
         elif is_teknikal:
             emiten_target = emiten_match.group(0).upper() if emiten_match else "SAHAM INI"
+            # ── Corporate Action Check ──
+            _ca_v, _ca_w = _validate_price_corporate_action(emiten_target, None)
+            _ca_prefix = f"\n\n[CORPORATE ACTION ALERT]:\n{_ca_w}\n" if _ca_w else ""
             if img_data or multi_images:
                 with st.spinner(f"Membaca Chart & Merancang 3 Skenario Trade Plan..."):
-                    full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
+                    full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target) + _ca_prefix
             else:
-                full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target)
+                full_prompt = TEMPLATE_TEKNIKAL.format(emiten=emiten_target) + _ca_prefix
                 full_prompt += f"\n\n[PENTING: User TIDAK mengirimkan gambar chart. Lakukan estimasi level support/resistance dan plan trading menggunakan data harga yang kamu punya.]"
 
         elif is_lengkap and emiten_match:
             emiten_target = emiten_match.group(0).upper()
+            # ── Corporate Action Check ──
+            _ca_v, _ca_w = _validate_price_corporate_action(emiten_target, None)
+            _ca_prefix = f"\n\n[CORPORATE ACTION ALERT]:\n{_ca_w}\n" if _ca_w else ""
             with st.spinner(f"Memproses Quad Confluence (Bandar + Teknikal + Funda + Makro) untuk {emiten_target}..."):
                 try:
                     fund_text = build_fundamental_from_text(f"fundamental {emiten_target}")
@@ -14467,6 +14666,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
                     fund_text = "Data fundamental gagal ditarik secara live, gunakan estimasi dari knowledge base."
                 
                 full_prompt = TEMPLATE_LENGKAP.format(emiten=emiten_target, data_raw=fund_text)
+                full_prompt += _ca_prefix
                 full_prompt += f"\n\n[PENTING: Gunakan gambar chart & data Broker Summary yang dilampirkan user! Cari Divergence!]\nPertanyaan Asli User: {prompt}"
 
         elif is_ipo:
