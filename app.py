@@ -2466,27 +2466,58 @@ def _get_groq_client_and_key():
     return client, key_name
 
 
+def _estimate_tokens(text):
+    """Estimasi token count — 1 token ≈ 4 karakter (konservatif untuk Bahasa Indonesia)."""
+    return max(1, len(text) // 4)
+
+def _smart_truncate_prompt(text, max_tokens=22000):
+    """
+    Smart truncation: potong prompt agar tidak melebihi max_tokens.
+    Prioritas: pertahankan awal (konteks/pertanyaan) & akhir (data terbaru).
+    max_tokens default 22000 → sisakan ~8000 untuk system prompt + history + output.
+    """
+    max_chars = max_tokens * 4
+    if len(text) <= max_chars:
+        return text
+    # Ambil 70% dari depan + 30% dari belakang — pertahankan konteks & data terbaru
+    head = int(max_chars * 0.70)
+    tail = max_chars - head
+    # Potong di batas kalimat/newline yang bersih
+    head_cut = text[:head].rfind('\n')
+    if head_cut < int(head * 0.85): head_cut = text[:head].rfind('. ')
+    if head_cut < 1: head_cut = head
+    tail_start = len(text) - tail
+    tail_cut = text.find('\n', tail_start)
+    if tail_cut < 0 or tail_cut > tail_start + 200: tail_cut = tail_start
+    return text[:head_cut] + "\n\n[... sebagian data tengah dipotong otomatis untuk efisiensi token ...]\n\n" + text[tail_cut:]
+
 def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
     """
     Groq PRIMARY — LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
     Key rotation otomatis saat 429 rate limit — coba semua key sebelum menyerah.
+    Smart truncation: total konteks dijaga ≤ 30.000 token.
     """
     from groq import Groq
 
-    MAX_PROMPT_CHARS = 20000
-    if len(full_prompt) > MAX_PROMPT_CHARS:
-        cutoff = full_prompt[:MAX_PROMPT_CHARS].rfind('\n')
-        if cutoff < int(MAX_PROMPT_CHARS * 0.8):
-            cutoff = full_prompt[:MAX_PROMPT_CHARS].rfind('. ')
-        if cutoff < 1:
-            cutoff = MAX_PROMPT_CHARS
-        full_prompt = full_prompt[:cutoff] + "\n\n[... data dipotong karena terlalu panjang]"
+    # ── Budget token: 30.000 total context window ──
+    # System prompt ~2000 token, history ~3000 token, output max_tokens → sisakan 22000 untuk prompt user
+    SYSTEM_TOKEN_EST = _estimate_tokens(GROQ_SYSTEM_PROMPT)
+    HISTORY_TOKEN_BUDGET = 3000   # max token untuk history
+    OUTPUT_BUDGET = min(max_tokens, 16000)
+    TOTAL_BUDGET = 30000
+    PROMPT_BUDGET = TOTAL_BUDGET - SYSTEM_TOKEN_EST - HISTORY_TOKEN_BUDGET - OUTPUT_BUDGET
+    PROMPT_BUDGET = max(PROMPT_BUDGET, 8000)  # minimal 8000 token untuk prompt
+
+    # Truncate prompt jika melebihi budget
+    full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=PROMPT_BUDGET)
 
     messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
 
     if history_msgs:
+        # Truncate setiap pesan history agar tidak membengkak
+        hist_char_limit = HISTORY_TOKEN_BUDGET * 4 // 6  # bagi rata 6 pesan
         hist_clean = [
-            {"role": m["role"], "content": (m.get("content") or "")[:2000]}
+            {"role": m["role"], "content": (m.get("content") or "")[:hist_char_limit]}
             for m in history_msgs
             if m.get("role") in ("user", "assistant")
         ][-6:]
@@ -2508,13 +2539,13 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
                 model="llama-3.3-70b-versatile",
                 messages=messages,
                 temperature=0.7,
-                max_tokens=max_tokens
+                max_tokens=OUTPUT_BUDGET
             )
             return response.choices[0].message.content, f"Groq/Llama70B({key_name})"
         except Exception as e:
             err_str = str(e).lower()
-            # 429 rate limit → coba key berikutnya
-            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str:
+            # 429 rate limit atau token terlalu besar → coba key berikutnya
+            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "too large" in err_str or "token" in err_str:
                 last_err = e
                 continue
             # Error lain (bukan limit) → langsung raise
@@ -2526,14 +2557,12 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
 def _call_groq_fallback(full_prompt):
     """
     Groq LAST RESORT — LLaMA 3.1 8B Instant.
-    Juga rotate semua key saat 429.
+    Juga rotate semua key saat 429. Smart truncation ≤ 10.000 token.
     """
     from groq import Groq
 
-    MAX_CHARS = 8000
-    if len(full_prompt) > MAX_CHARS:
-        cutoff = full_prompt[:MAX_CHARS].rfind('\n')
-        full_prompt = full_prompt[:cutoff] if cutoff > 0 else full_prompt[:MAX_CHARS]
+    # 8B model: context window lebih kecil → budget 10.000 token
+    full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=9000)
 
     valid_keys = _get_all_groq_keys()
     if not valid_keys:
@@ -2550,12 +2579,12 @@ def _call_groq_fallback(full_prompt):
                     {"role": "user", "content": full_prompt}
                 ],
                 temperature=0.7,
-                max_tokens=8000
+                max_tokens=6000
             )
             return response.choices[0].message.content, f"Groq/Llama8B({key_name})"
         except Exception as e:
             err_str = str(e).lower()
-            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str:
+            if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "too large" in err_str or "token" in err_str:
                 last_err = e
                 continue
             raise e
@@ -3501,56 +3530,8 @@ init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
 
-def _call_cerebras(full_prompt, history_msgs=None, max_tokens=8000):
-    """
-    Cerebras — FALLBACK KE-2 setelah Groq 70B gagal semua key.
-    Model: llama-3.3-70b (throughput sangat tinggi, cocok saat Groq overload).
-    """
-    import urllib.request, json as _j
+# _call_cerebras sudah didefinisikan di atas (PART 6) dengan smart truncation — tidak perlu duplikat.
 
-    MAX_CHARS = 20000
-    if len(full_prompt) > MAX_CHARS:
-        cutoff = full_prompt[:MAX_CHARS].rfind('\n')
-        if cutoff < int(MAX_CHARS * 0.8):
-            cutoff = full_prompt[:MAX_CHARS].rfind('. ')
-        full_prompt = full_prompt[:cutoff if cutoff > 0 else MAX_CHARS] + "\n\n[... data dipotong]"
-
-    cerebras_key = st.secrets.get("CEREBRAS_API_KEY", "")
-    if not cerebras_key or len(cerebras_key) < 10:
-        raise Exception("CEREBRAS_API_KEY tidak ditemukan di Secrets")
-
-    messages = [{"role": "system", "content": GROQ_SYSTEM_PROMPT}]
-    if history_msgs:
-        hist_clean = [
-            {"role": m["role"], "content": (m.get("content") or "")[:2000]}
-            for m in history_msgs
-            if m.get("role") in ("user", "assistant")
-        ][-6:]
-        if hist_clean and hist_clean[-1]["role"] == "user":
-            hist_clean = hist_clean[:-1]
-        messages.extend(hist_clean)
-    messages.append({"role": "user", "content": full_prompt})
-
-    payload = {
-        "model": "llama-3.3-70b",
-        "messages": messages,
-        "temperature": 0.7,
-        "max_tokens": max_tokens
-    }
-    req = urllib.request.Request(
-        "https://api.cerebras.ai/v1/chat/completions",
-        data=_j.dumps(payload).encode(),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {cerebras_key}"
-        }
-    )
-    with urllib.request.urlopen(req, timeout=45) as r:
-        data = _j.loads(r.read())
-    content_text = data["choices"][0]["message"]["content"]
-    if not content_text:
-        raise Exception("Cerebras mengembalikan respons kosong")
-    return content_text, "Cerebras/Llama70B"
 
 
 # ─────────────────────────────────────────────
@@ -4829,11 +4810,18 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
     raise Exception(f"Gemini Vision gagal semua model/key: {last_err}")
 
 def _call_gemini_text(messages):
-    """Gemini Text — FALLBACK untuk text jika semua Groq 70B rate limit. Pakai full SYSTEM_PROMPT."""
+    """
+    Gemini Text — FALLBACK untuk text jika semua Groq 70B rate limit.
+    Auto-rotate 6 key + 2 model. Smart truncation ≤ 30.000 token.
+    """
     import urllib.request, json as _j
+
+    # Budget Gemini: context window besar (1M token), tapi kita batasi 30k agar respons cepat
+    GEMINI_PROMPT_MAX_TOKENS = 24000  # sisakan ruang untuk system prompt + output
+
     keys = _get_gemini_keys()
     if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
-    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
     last_err = ""
     for api_key in keys:
         for model_name in models:
@@ -4842,19 +4830,31 @@ def _call_gemini_text(messages):
                 for m in messages:
                     r = m.get("role", "")
                     t = m.get("content", "") or ""
-                    # Bersihkan simbol AI dari history agar tidak double
+                    # Bersihkan simbol AI dari history
                     t = re.sub(r'\n\n\*?\([✨⚡🤖].*?\)\*?', '', t)
+                    # Truncate setiap pesan agar tidak membengkak
+                    t = _smart_truncate_prompt(t, max_tokens=GEMINI_PROMPT_MAX_TOKENS // max(len(messages), 1))
                     if r == "user": gemini_contents.append({"role": "user", "parts": [{"text": t}]})
                     elif r == "assistant": gemini_contents.append({"role": "model", "parts": [{"text": t}]})
                 if not gemini_contents: gemini_contents = [{"role": "user", "parts": [{"text": "Halo"}]}]
-                gemini_contents[0]["parts"][0]["text"] = f"{SYSTEM_PROMPT['content']}\n\n{gemini_contents[0]['parts'][0]['text']}"
-                payload = {"contents": gemini_contents, "generationConfig": {"temperature": 0.7, "maxOutputTokens": 16384}}
+                # Inject system prompt ke pesan pertama
+                sys_text = SYSTEM_PROMPT['content'] if isinstance(SYSTEM_PROMPT, dict) else str(SYSTEM_PROMPT)
+                gemini_contents[0]["parts"][0]["text"] = f"{sys_text}\n\n{gemini_contents[0]['parts'][0]['text']}"
+                payload = {
+                    "contents": gemini_contents,
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 16384}
+                }
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
                 req = urllib.request.Request(url, data=_j.dumps(payload).encode(), headers={"Content-Type": "application/json"})
                 with urllib.request.urlopen(req, timeout=35) as r: data = _j.loads(r.read())
                 return data["candidates"][0]["content"]["parts"][0]["text"], model_name
             except Exception as e:
-                last_err = str(e); continue
+                err_str = str(e)
+                last_err = err_str
+                # 429 quota habis → skip ke key berikutnya
+                if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower() or "exhausted" in err_str.lower():
+                    break  # coba key berikutnya
+                continue   # error lain → coba model berikutnya
     raise Exception(f"Gemini Text gagal semua model/key: {last_err}")
 
 # ─── PENGATURAN UI CSS KHUSUS ───
@@ -10966,11 +10966,9 @@ Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume
             for t in threads: t.join(timeout=15)
             return result
 
-        def _call_ai_reco(prompt_text, max_tok=4000):
-            # Potong prompt jika terlalu panjang — cegah 429 token limit
-            MAX_PROMPT = 12000
-            if len(prompt_text) > MAX_PROMPT:
-                prompt_text = prompt_text[:MAX_PROMPT] + "\n\n[... data dipotong. Lanjutkan analisa dengan data di atas.]"
+        def _call_ai_reco(prompt_text, max_tok=8000):
+            # Smart truncation — budget 30k total, ~20k untuk prompt Terminal
+            prompt_text = _smart_truncate_prompt(prompt_text, max_tokens=20000)
             # Layer 1: Groq (primary — cepat, rotate semua key otomatis)
             try:
                 result, _ = _call_groq_primary(prompt_text, max_tokens=max_tok)
@@ -10983,14 +10981,14 @@ Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume
                 return result
             except:
                 pass
-            # Layer 3: Gemini (last resort)
+            # Layer 3: Gemini (rotate 6 key otomatis)
             try:
                 result, _ = _call_gemini_text([{"role":"user","content":prompt_text}])
                 return result
             except Exception as e:
                 err = str(e)
                 if "429" in err or "quota" in err.lower() or "rate" in err.lower():
-                    return "⚠️ Semua AI engine sedang overload (rate limit 429). Tunggu 1-2 menit lalu coba lagi. Jika masih gagal, coba di jam yang berbeda."
+                    return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
                 return f"Gagal memanggil AI: {e}"
 
         def _render_reco_cards(reco_text, accent="#a78bfa"):
@@ -14467,7 +14465,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
                                     debug_info.append(f"Groq PDF fallback: {str(e_groq_pdf)}")
 
                     else:
-                        # Layer 1: Groq 70B (rotate 13 key)
+                        # Layer 1: Groq 70B (rotate 13 key) — smart truncation sudah ada di dalam _call_groq_primary
                         try:
                             ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs, max_tokens=16000)
                             simbol_ai = "\n\n*(&#9889; Groq/Llama)*"
