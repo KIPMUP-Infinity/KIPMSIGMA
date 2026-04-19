@@ -7833,10 +7833,10 @@ if current_view == "dashboard":
         # ── Render both tables via components.html ─────────────────────────
         _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
         _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        # Desktop: side-by-side → max(). Mobile: stacked → sum().
-        # Set height conservatively to sum so mobile shows both tables.
-        # JS inside will auto-shrink whitespace on desktop via postMessage resize.
-        _tbl_h = _idx_total_h + _com_total_h + 60
+        # Desktop: side-by-side → ambil yang TERBESAR + buffer kecil.
+        # Mobile (≤600px): CSS flex-direction:column → JS resize handle via postMessage.
+        # Jangan sum() keduanya — iframe jadi 2× terlalu tinggi di desktop.
+        _tbl_h = max(_idx_total_h, _com_total_h) + 24
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -7969,17 +7969,27 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
   }}
   setInterval(updateTs, 60000);
 
-  // ── Auto-resize iframe height to actual content (eliminates desktop gap) ──
+  // ── Auto-resize iframe ke tinggi konten aktual ──
   function autoResize() {{
-    var body = document.body;
-    var h = body.scrollHeight;
-    // Only shrink, never expand beyond initial Streamlit height
+    var isMobile = window.innerWidth <= 600;
+    var h;
+    if (isMobile) {{
+      // Mobile: stacked → total scroll height kedua div
+      var idxW = document.getElementById('idx-scroll');
+      var comW = document.getElementById('com-scroll');
+      h = (idxW ? idxW.scrollHeight : 0) + (comW ? comW.scrollHeight : 0) + 120;
+    }} else {{
+      // Desktop: side-by-side → ambil yang paling tinggi + header + sedikit buffer
+      h = document.body.scrollHeight + 4;
+    }}
     try {{
       window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
     }} catch(e) {{}}
   }}
-  setTimeout(autoResize, 120);
-  setTimeout(autoResize, 400);
+  setTimeout(autoResize, 80);
+  setTimeout(autoResize, 300);
+  setTimeout(autoResize, 800);
+  window.addEventListener('resize', autoResize);
 }})();
 </script></body></html>""", height=_tbl_h, scrolling=False)
 
@@ -8736,12 +8746,26 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
             if len(all_items) < 5:
                 all_items = _static
             
-            # Sort by date
+            # Sort by date — support nama bulan Bahasa Indonesia & English
             def _parse_dt(s):
-                for fmt in ("%d %b %Y", "%d %B %Y", "%Y-%m-%d"):
-                    try: return datetime.strptime(s[:11].strip(), fmt)
-                    except: pass
-                return datetime(2099,1,1)
+                # Mapping bulan ID + EN → angka (semua lowercase 3 char)
+                _id_months = {
+                    "jan": "01", "feb": "02", "mar": "03", "apr": "04",
+                    "mei": "05", "may": "05", "jun": "06", "jul": "07",
+                    "agu": "08", "aug": "08", "sep": "09", "okt": "10",
+                    "oct": "10", "nov": "11", "des": "12", "dec": "12",
+                }
+                try:
+                    parts = s.strip().split()
+                    if len(parts) == 3:
+                        d, m, y = parts
+                        m_num = _id_months.get(m[:3].lower(), "01")
+                        return datetime.strptime(f"{d.zfill(2)}/{m_num}/{y}", "%d/%m/%Y")
+                except: pass
+                # Fallback: coba format ISO
+                try: return datetime.strptime(s[:10], "%Y-%m-%d")
+                except: pass
+                return datetime(2099, 1, 1)
             all_items.sort(key=lambda x: _parse_dt(x["Tanggal"]))
             return all_items
 
@@ -8979,7 +9003,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 }})();
 </script></body></html>"""
 
-        components.html(ca_html_widget, height=_ca_total_h + 60, scrolling=False)
+        components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -12436,6 +12460,38 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     # Hanya simpan ai_data jika minimal entry zone atau stop_loss valid
                                     if not (ai_data.get('entry_low') or ai_data.get('stop_loss') or ai_data.get('tp1')):
                                         ai_data = None
+
+                                    # ── SINKRONISASI KRITIS: Override _sigma_result dengan level dari AI ──
+                                    # Chart menggambar ai_data, badge menampilkan _sigma_result.
+                                    # Tanpa sync ini, dua angka berbeda akan muncul untuk user yang sama.
+                                    # AI memiliki konteks lebih lengkap (chart visual + zona + macro),
+                                    # sehingga ai_data dijadikan sumber kebenaran tunggal (single source of truth).
+                                    if ai_data and _sigma_result is not None:
+                                        try:
+                                            _el = ai_data.get('entry_low')
+                                            _eh = ai_data.get('entry_high')
+                                            _sl = ai_data.get('stop_loss')
+                                            _t1 = ai_data.get('tp1')
+                                            _t2 = ai_data.get('tp2')
+                                            _t3 = ai_data.get('tp3')
+                                            if _el and _eh:
+                                                _sigma_result.entry_zone = (_el, _eh)
+                                            if _sl:
+                                                _sigma_result.sl_zone = _sl
+                                            if _t1:
+                                                _sigma_result.tp1 = _t1
+                                            if _t2:
+                                                _sigma_result.tp2 = _t2
+                                            if _t3:
+                                                _sigma_result.tp3 = _t3
+                                            # Hitung ulang R/R dari nilai AI agar konsisten
+                                            if _el and _eh and _sl and _t1:
+                                                _mid = (_el + _eh) / 2
+                                                _risk = max(_mid - _sl, 1)
+                                                _rwd  = _t1 - _mid
+                                                _sigma_result.rr_ratio = round(_rwd / _risk, 1) if _risk > 0 else 0
+                                        except Exception:
+                                            pass
     
                                     # Bersihkan teks dari JSON block
                                     ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
