@@ -3077,6 +3077,13 @@ def init_session():
         "fs_sort_key": "ROE (Tertinggi)",
         "fs_ai_result": "",
         "fs_chat_ans": "",
+        # ── AI Stock Insight - persist across refresh/nav ──
+        "last_analyzed_ticker": "",
+        "last_ai_data": None,          # ai_data dict (entry/sl/tp levels)
+        "last_ai_text_verdict": "",    # trade plan text
+        "last_ai_sigma_result": None,  # sigma score badge
+        "last_ai_vol_context": "",
+        "last_ai_timestamp": "",
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -4773,7 +4780,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
-            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records"]:
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records","last_analyzed_ticker","last_ai_data","last_ai_text_verdict","last_ai_sigma_result","last_ai_vol_context","last_ai_timestamp"]:
                 if saved.get(_tab_key) is not None:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
@@ -4794,7 +4801,7 @@ if st.session_state.user and not st.session_state.data_loaded:
                 else: _s["messages"][0] = SYSTEM_PROMPT
             st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
     if saved:
-        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records"]:
+        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records","last_analyzed_ticker","last_ai_data","last_ai_text_verdict","last_ai_sigma_result","last_ai_vol_context","last_ai_timestamp"]:
             if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
                 st.session_state[_tab_key] = saved[_tab_key]
     st.session_state.data_loaded = True
@@ -5905,6 +5912,12 @@ if "del" in st.query_params:
             "alpha_insight_last_data": st.session_state.get("alpha_insight_last_data"),
             "alpha_insight_last_ticker": st.session_state.get("alpha_insight_last_ticker"),
             "tr_records": st.session_state.get("tr_records", []),
+            "last_analyzed_ticker": st.session_state.get("last_analyzed_ticker", ""),
+            "last_ai_data": st.session_state.get("last_ai_data"),
+            "last_ai_text_verdict": st.session_state.get("last_ai_text_verdict", ""),
+            "last_ai_sigma_result": st.session_state.get("last_ai_sigma_result"),
+            "last_ai_vol_context": st.session_state.get("last_ai_vol_context", ""),
+            "last_ai_timestamp": st.session_state.get("last_ai_timestamp", ""),
         })
         
     try: del st.query_params["del"]
@@ -12535,7 +12548,8 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
             col_input, col_btn = st.columns([3, 1])
             with col_input:
-                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA").upper()
+                _default_ticker = st.session_state.get("last_analyzed_ticker", "") or "BBCA"
+                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", _default_ticker).upper()
             with col_btn:
                 st.markdown("<br>", unsafe_allow_html=True)
                 run_analysis = st.button("▶ ANALYZE", use_container_width=True)
@@ -12546,6 +12560,12 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                 df_chart = pd.DataFrame()
                 ai_data = None
                 ai_text_verdict = ""
+
+                # ── Restore last analysis if same ticker (survives refresh/nav/theme change) ──
+                _last_ticker = st.session_state.get("last_analyzed_ticker", "")
+                if _last_ticker and _last_ticker == ticker_input and not run_analysis:
+                    ai_data          = st.session_state.get("last_ai_data")
+                    ai_text_verdict  = st.session_state.get("last_ai_text_verdict", "")
             
                 try:
                     t = yf.Ticker(f"{ticker_input}.JK")
@@ -13006,11 +13026,24 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                             st.session_state["alpha_insight_last_key"]    = _insight_cache_key
                                             st.session_state["alpha_insight_last_data"]   = _cache_payload
                                             st.session_state["alpha_insight_last_ticker"] = ticker_input
+                                            # ── Persist data analisa terbaru (untuk restore chart plan) ──
+                                            st.session_state["last_analyzed_ticker"]  = ticker_input
+                                            st.session_state["last_ai_data"]          = ai_data
+                                            st.session_state["last_ai_text_verdict"]  = ai_text_verdict
+                                            st.session_state["last_ai_sigma_result"]  = _sigma_result if '_sigma_result' in dir() else None
+                                            st.session_state["last_ai_vol_context"]   = vol_context if 'vol_context' in dir() else ''
+                                            st.session_state["last_ai_timestamp"]     = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                                             if st.session_state.get("user"):
                                                 _sv = load_user(st.session_state.user["email"]) or {}
                                                 _sv["alpha_insight_last_key"]    = _insight_cache_key
                                                 _sv["alpha_insight_last_data"]   = _cache_payload
                                                 _sv["alpha_insight_last_ticker"] = ticker_input
+                                                _sv["last_analyzed_ticker"]  = ticker_input
+                                                _sv["last_ai_data"]          = ai_data
+                                                _sv["last_ai_text_verdict"]  = ai_text_verdict
+                                                _sv["last_ai_sigma_result"]  = None  # SigmaScoreResult not JSON-serializable; skip
+                                                _sv["last_ai_vol_context"]   = vol_context if 'vol_context' in dir() else ''
+                                                _sv["last_ai_timestamp"]     = _sv.get("last_ai_timestamp", datetime.now().strftime("%d %b %Y, %H:%M WIB"))
                                                 save_user(st.session_state.user["email"], _sv)
                                         except Exception:
                                             pass
