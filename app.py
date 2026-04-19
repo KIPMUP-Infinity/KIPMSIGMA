@@ -962,8 +962,8 @@ def render_sigma_score_badge(result: SigmaScoreResult, ticker: str = "", compact
 border:1px solid {c}44;border-radius:8px;padding:6px 12px;">
   <span style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:{c};">{score}</span>
   <div>
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:{c};font-weight:600;letter-spacing:0.1em;">{grade}</div>
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:#888;letter-spacing:0.05em;">SIGMA SCORE</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:1.8rem;color:{c};font-weight:600;letter-spacing:0.1em;">{grade}</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:1.65rem;color:#888;letter-spacing:0.05em;">SIGMA SCORE</div>
   </div>
 </div>"""
 
@@ -978,7 +978,7 @@ border:1px solid {c}44;border-radius:8px;padding:6px 12px;">
         wt  = int(WEIGHTS.get(key, 0.2) * 100)
         bars += f"""
 <div style="margin-bottom:6px;">
-  <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#aaa;margin-bottom:2px;">
+  <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:1.8rem;color:#aaa;margin-bottom:2px;">
     <span>{label} <span style="color:#666;">({wt}%)</span></span>
     <span style="color:{bc};font-weight:600;">{val}</span>
   </div>
@@ -987,7 +987,7 @@ border:1px solid {c}44;border-radius:8px;padding:6px 12px;">
   </div>
 </div>"""
 
-    signals_html = "".join(f"<div style='font-size:0.72rem;color:#ccc;margin-bottom:3px;'>{s}</div>" for s in result.signals[:5])
+    signals_html = "".join(f"<div style='font-size:2.16rem;color:#ccc;margin-bottom:3px;'>{s}</div>" for s in result.signals[:5])
 
     conf_color = {"HIGH":"#69f0ae","MEDIUM":"#ffd740","LOW":"#ff6d00"}.get(result.confidence, "#888")
     ticker_display = f" - {ticker}" if ticker else ""
@@ -996,7 +996,7 @@ border:1px solid {c}44;border-radius:8px;padding:6px 12px;">
     levels_html = ""
     if result.entry_zone:
         lo, hi = result.entry_zone
-        levels_html += f"<div style='font-size:0.7rem;margin-top:8px;border-top:1px solid rgba(255,255,255,0.07);padding-top:8px;'>"
+        levels_html += f"<div style='font-size:2.1rem;margin-top:8px;border-top:1px solid rgba(255,255,255,0.07);padding-top:8px;'>"
         levels_html += f"<span style='color:#ffd740;font-family:IBM Plex Mono,monospace;'>🎯 Entry</span> <span style='color:#eee;'>Rp{lo:,.0f} – Rp{hi:,.0f}</span> &nbsp;"
         if result.sl_zone:
             levels_html += f"<span style='color:#ff5555;font-family:IBM Plex Mono,monospace;'>🛑 SL</span> <span style='color:#eee;'>Rp{result.sl_zone:,.0f}</span> &nbsp;"
@@ -1013,12 +1013,12 @@ border-radius:0 10px 10px 0;padding:16px 18px;margin:8px 0;box-sizing:border-box
     <div style="display:flex;align-items:center;gap:12px;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:2.2rem;font-weight:700;color:{c};line-height:1;">{score}</div>
       <div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:{c};font-weight:700;letter-spacing:0.12em;">{grade}</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:#666;letter-spacing:0.08em;">SIGMA SCORE{ticker_display}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:2.25rem;color:{c};font-weight:700;letter-spacing:0.12em;">{grade}</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:1.8rem;color:#666;letter-spacing:0.08em;">SIGMA SCORE{ticker_display}</div>
       </div>
     </div>
     <div style="text-align:right;">
-      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.55rem;color:{conf_color};letter-spacing:0.1em;">CONFIDENCE: {result.confidence}</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:1.65rem;color:{conf_color};letter-spacing:0.1em;">CONFIDENCE: {result.confidence}</div>
     </div>
   </div>
   {bars}
@@ -1591,19 +1591,19 @@ def zone_badge_html(result: ZoneResult, price: float = 0, C: dict = None) -> str
     if C is None: C = {}
     parts = []
 
-    if result.ifvg_bull: parts.append('<span title="IFVG Bull" style="color:#4285F4;font-weight:700;font-size:10px;">IFVG</span>')
-    if result.ifvg_bear: parts.append('<span title="IFVG Bear" style="color:#aaa;font-weight:700;font-size:10px;">IFVG▼</span>')
-    if result.fvg_bull:  parts.append('<span title="FVG Bull" style="color:#0ea5e9;font-size:10px;">FVG</span>')
-    if result.ob_bull:   parts.append('<span title="OB Bull" style="color:#22c55e;font-size:10px;">OB</span>')
-    if result.demand:    parts.append('<span title="Demand Zone" style="color:#009fd4;font-size:10px;">DMD</span>')
-    if result.supply:    parts.append('<span title="Supply Zone" style="color:#888;font-size:10px;">SPY</span>')
+    if result.ifvg_bull: parts.append('<span title="IFVG Bull" style="color:#4285F4;font-weight:700;font-size:30px;">IFVG</span>')
+    if result.ifvg_bear: parts.append('<span title="IFVG Bear" style="color:#aaa;font-weight:700;font-size:30px;">IFVG▼</span>')
+    if result.fvg_bull:  parts.append('<span title="FVG Bull" style="color:#0ea5e9;font-size:30px;">FVG</span>')
+    if result.ob_bull:   parts.append('<span title="OB Bull" style="color:#22c55e;font-size:30px;">OB</span>')
+    if result.demand:    parts.append('<span title="Demand Zone" style="color:#009fd4;font-size:30px;">DMD</span>')
+    if result.supply:    parts.append('<span title="Supply Zone" style="color:#888;font-size:30px;">SPY</span>')
 
     cs = result.confluence_score
     cc = "#00c853" if cs >= 5 else ("#ffd740" if cs >= 3 else "#888")
     if cs > 0:
         parts.append(
             f'<span style="background:{cc}22;color:{cc};border:1px solid {cc}55;'
-            f'border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700;font-family:\'IBM Plex Mono\',monospace;">'
+            f'border-radius:3px;padding:1px 4px;font-size:27px;font-weight:700;font-family:\'IBM Plex Mono\',monospace;">'
             f'C:{cs}</span>'
         )
 
@@ -1620,16 +1620,16 @@ def zone_badge_html(result: ZoneResult, price: float = 0, C: dict = None) -> str
     vol_short = vt.split(" ")[0][:8]
     parts.append(
         f'<span style="background:{vbg};color:{vc};border:1px solid {vc}33;'
-        f'border-radius:3px;padding:1px 4px;font-size:9px;font-family:\'IBM Plex Mono\',monospace;">'
+        f'border-radius:3px;padding:1px 4px;font-size:27px;font-family:\'IBM Plex Mono\',monospace;">'
         f'{vol_short}</span>'
     )
 
     if result.nearest_zone != "-":
         nz = result.nearest_zone
         nc = "#009fd4" if ("Bull" in nz or "Demand" in nz) else "#f23645"
-        parts.append(f'<span style="color:{nc};font-size:9px;">→{nz[:8]}</span>')
+        parts.append(f'<span style="color:{nc};font-size:27px;">→{nz[:8]}</span>')
 
-    return " ".join(parts) if parts else '<span style="color:#555;font-size:9px;">-</span>'
+    return " ".join(parts) if parts else '<span style="color:#555;font-size:27px;">-</span>'
 
 
 # ─────────────────────────────────────────────
@@ -1657,19 +1657,19 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     html = f"""
 <div style="background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:14px;margin:8px 0;font-family:'DM Sans',sans-serif;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:#8b5cf6;font-weight:700;letter-spacing:0.1em;">▸ VOLUME INTELLIGENCE · MnM</span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">ZONE CONF {cs}/10</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:2.04rem;color:#8b5cf6;font-weight:700;letter-spacing:0.1em;">▸ VOLUME INTELLIGENCE · MnM</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:1.86rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">ZONE CONF {cs}/10</span>
   </div>
   <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
-    <div style="font-size:0.78rem;color:{vc};font-weight:600;margin-bottom:4px;">{result.vol_type}</div>
-    <div style="font-size:0.68rem;color:{text_sub};">
+    <div style="font-size:2.34rem;color:{vc};font-weight:600;margin-bottom:4px;">{result.vol_type}</div>
+    <div style="font-size:2.04rem;color:{text_sub};">
       Frekuensi: <span style="color:{text_main};">{result.vol_freq_signal}</span>
-      {'&nbsp;·&nbsp;<span style="color:#00e5a0;font-weight:600;">✅ True Breakout Terkonfirmasi</span>' if result.breakout_valid else ''}
-      {'&nbsp;·&nbsp;<span style="color:#f23645;font-weight:600;">⛔ False Breakout Terdeteksi</span>' if result.false_breakout else ''}
+      {("&nbsp;&middot;&nbsp;<span style='color:#00e5a0;font-weight:600;'>✅ True Breakout Terkonfirmasi</span>") if result.breakout_valid else ""}
+      {("&nbsp;&middot;&nbsp;<span style='color:#f23645;font-weight:600;'>⛔ False Breakout Terdeteksi</span>") if result.false_breakout else ""}
     </div>
   </div>
   <div style="margin-bottom:8px;">
-    <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
+    <div style="display:flex;justify-content:space-between;font-size:27px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
       <span>Vol Intelligence Score</span><span style="color:{vc};font-weight:600;">{vs}/100</span>
     </div>
     <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:5px;">
@@ -1677,14 +1677,14 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     </div>
   </div>
   <div>
-    <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
+    <div style="display:flex;justify-content:space-between;font-size:27px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
       <span>Akumulasi Score</span><span style="color:#00e5a0;font-weight:600;">{result.accum_score}/100</span>
     </div>
     <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:5px;">
       <div style="width:{result.accum_score}%;height:100%;background:#00e5a0;border-radius:3px;"></div>
     </div>
   </div>
-  {'<div style="border-top:1px solid ' + met_border + ';padding-top:8px;margin-top:10px;">' + "".join(f'<div style="font-size:0.65rem;color:{text_sub};margin-bottom:3px;">{s}</div>' for s in result.zone_signals[:4]) + '</div>' if result.zone_signals else ''}
+  {'<div style="border-top:1px solid ' + met_border + ';padding-top:8px;margin-top:10px;">' + "".join(f'<div style="font-size:1.95rem;color:{text_sub};margin-bottom:3px;">{s}</div>' for s in result.zone_signals[:4]) + '</div>' if result.zone_signals else ''}
 </div>"""
     return html
 
@@ -4766,6 +4766,10 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
+            # Restore generated tab content
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+                if saved.get(_tab_key) is not None:
+                    st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
             restore_images_from_messages()
             st.rerun()
@@ -4783,6 +4787,11 @@ if st.session_state.user and not st.session_state.data_loaded:
                 elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                 else: _s["messages"][0] = SYSTEM_PROMPT
             st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
+    # Restore generated tab content
+    if saved:
+        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+            if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
+                st.session_state[_tab_key] = saved[_tab_key]
     st.session_state.data_loaded = True
     restore_images_from_messages()
 
@@ -4930,7 +4939,7 @@ def show_login():
     st.markdown('''
         <div style="text-align:center;margin:0 0 10px;">
             <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#a78bfa;">Σ</span></div>
-            <div class="sigma-tagline" style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
+            <div class="sigma-tagline" style="font-size:1.95rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
         </div>
         <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
     ''', unsafe_allow_html=True)
@@ -4973,7 +4982,7 @@ def show_login():
             auth_url = google_auth_url()
             st.markdown(f"""
             <div style="margin-top:8px;">
-                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;text-decoration:none;font-size:0.9rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;text-decoration:none;font-size:2.7rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
                     <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     Lanjutkan dengan Google
                 </a>
@@ -4981,7 +4990,7 @@ def show_login():
             """, unsafe_allow_html=True)
         except: st.info("Google login belum dikonfigurasi di Secrets")
 
-    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
+    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:2.16rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
     st.stop()
 
 if st.session_state.user is None: show_login()
@@ -5062,10 +5071,10 @@ body {{ background: #080c14; }}
 @keyframes orbFloat {{ 0%,100% {{ transform:translate(0,0); }} 50% {{ transform:translate(60px,40px); }} }}
 
 .sys-header {{ text-align:center; margin-bottom:48px; position:relative; z-index:2; }}
-.sys-welcome {{ font-size:0.8rem; letter-spacing:4px; color:rgba(0,157,255,0.7); text-transform:uppercase; margin-bottom:10px; }}
+.sys-welcome {{ font-size:2.4rem; letter-spacing:4px; color:rgba(0,157,255,0.7); text-transform:uppercase; margin-bottom:10px; }}
 .sys-title {{ font-size:2.8rem; font-weight:700; color:#fff; letter-spacing:2px; line-height:1.1; margin-bottom:6px; }}
 .sys-title span {{ color:#a78bfa; }}
-.sys-subtitle {{ font-size:0.85rem; color:rgba(255,255,255,0.35); letter-spacing:1px; }}
+.sys-subtitle {{ font-size:2.55rem; color:rgba(255,255,255,0.35); letter-spacing:1px; }}
 .sys-divider {{ width:60px; height:2px; background:linear-gradient(90deg,transparent,#009dff,transparent); margin:14px auto 0; animation:shimmer 2.5s ease-in-out infinite; }}
 @keyframes shimmer {{ 0%,100% {{ opacity:0.4; width:40px; }} 50% {{ opacity:1; width:80px; }} }}
 
@@ -5117,7 +5126,7 @@ body {{ background: #080c14; }}
 .sigma-terminal:hover {{ border-color:rgba(124,58,237,0.45); box-shadow:0 20px 60px rgba(124,58,237,0.12),0 0 0 1px rgba(124,58,237,0.28); }}
 .kipm-academy:hover {{ border-color:rgba(245,158,11,0.5); box-shadow:0 20px 60px rgba(245,158,11,0.15),0 0 0 1px rgba(245,158,11,0.32); }}
 
-.card-badge {{ position:absolute; top:18px; right:20px; font-size:0.6rem; letter-spacing:2.5px; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:600; }}
+.card-badge {{ position:absolute; top:18px; right:20px; font-size:1.8rem; letter-spacing:2.5px; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:600; }}
 .sigma-chat .card-badge {{ background:rgba(0,157,255,0.12); color:#009dff; border:1px solid rgba(0,157,255,0.22); }}
 .sigma-terminal .card-badge {{ background:rgba(124,58,237,0.1); color:#a78bfa; border:1px solid rgba(124,58,237,0.18); }}
 .kipm-academy .card-badge {{ background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.28); animation:goldPulse 2.5s ease-in-out infinite; }}
@@ -5129,11 +5138,11 @@ body {{ background: #080c14; }}
 .kipm-academy .card-icon {{ background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.22); }}
 
 .card-name {{ font-size:1.35rem; font-weight:700; color:#fff; margin-bottom:5px; letter-spacing:-0.2px; }}
-.card-tagline {{ font-size:0.65rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; font-weight:400; }}
+.card-tagline {{ font-size:1.95rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; font-weight:400; }}
 .sigma-chat .card-tagline {{ color:rgba(0,157,255,0.65); }}
 .sigma-terminal .card-tagline {{ color:rgba(124,58,237,0.65); }}
 .kipm-academy .card-tagline {{ color:rgba(245,158,11,0.75); }}
-.card-desc {{ font-size:0.83rem; color:rgba(255,255,255,0.45); line-height:1.75; margin-bottom:20px; }}
+.card-desc {{ font-size:2.49rem; color:rgba(255,255,255,0.45); line-height:1.75; margin-bottom:20px; }}
 
 /* ── COMING SOON banner ── */
 .coming-soon-banner {{
@@ -5164,11 +5173,11 @@ body {{ background: #080c14; }}
     0%,100% {{ opacity:0.85; text-shadow:none; }}
     50% {{ opacity:1; text-shadow:0 0 16px rgba(245,158,11,0.5); }}
 }}
-.cs-sub {{ font-size:0.72rem; color:rgba(245,158,11,0.55); letter-spacing:1.5px; margin-bottom:14px; }}
+.cs-sub {{ font-size:2.16rem; color:rgba(245,158,11,0.55); letter-spacing:1.5px; margin-bottom:14px; }}
 .cs-dots {{ display:flex; justify-content:center; gap:12px; margin-top:10px; }}
 .cs-dot-item {{ display:flex; flex-direction:column; align-items:center; gap:4px; }}
 .cs-dot-icon {{ font-size:1.1rem; }}
-.cs-dot-lbl {{ font-size:0.58rem; color:rgba(245,158,11,0.5); letter-spacing:1px; text-transform:uppercase; }}
+.cs-dot-lbl {{ font-size:1.74rem; color:rgba(245,158,11,0.5); letter-spacing:1px; text-transform:uppercase; }}
 .cs-progress {{
     display:flex; align-items:center; gap:8px; margin-top:14px;
     background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.12);
@@ -5185,9 +5194,9 @@ body {{ background: #080c14; }}
     0%,100% {{ width:30%; opacity:0.8; }}
     50% {{ width:40%; opacity:1; }}
 }}
-.cs-progress-lbl {{ font-size:0.65rem; color:rgba(245,158,11,0.6); white-space:nowrap; letter-spacing:0.5px; }}
+.cs-progress-lbl {{ font-size:1.95rem; color:rgba(245,158,11,0.6); white-space:nowrap; letter-spacing:0.5px; }}
 
-.kipm-academy .card-features li {{ font-size:0.78rem; color:rgba(255,255,255,0.4); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; gap:8px; }}
+.kipm-academy .card-features li {{ font-size:2.34rem; color:rgba(255,255,255,0.4); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; gap:8px; }}
 .kipm-academy .card-features li:last-child {{ border-bottom:none; }}
 .kipm-academy .feat-dot {{ background:#f59e0b; box-shadow:0 0 5px rgba(245,158,11,0.6); }}
 
@@ -5199,7 +5208,7 @@ body {{ background: #080c14; }}
     padding:10px 12px;
     margin-bottom:14px;
     font-family: 'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.62rem;
+    font-size:1.86rem;
     line-height:1.85;
     position:relative;
     overflow:hidden;
@@ -5226,20 +5235,20 @@ body {{ background: #080c14; }}
 .data-pills {{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:16px; }}
 .pill {{
     font-family: 'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.57rem; padding:3px 8px; border-radius:5px; border:1px solid; letter-spacing:0.3px;
+    font-size:1.71rem; padding:3px 8px; border-radius:5px; border:1px solid; letter-spacing:0.3px;
 }}
 .pill-up {{ color:#4ade80; border-color:rgba(74,222,128,0.2); background:rgba(74,222,128,0.06); }}
 .pill-dn {{ color:#f87171; border-color:rgba(248,113,113,0.2); background:rgba(248,113,113,0.06); }}
 .pill-neu {{ color:rgba(124,58,237,0.8); border-color:rgba(124,58,237,0.15); background:rgba(124,58,237,0.04); }}
 
 .card-features {{ list-style:none; padding:0; margin:0 0 24px 0; }}
-.card-features li {{ font-size:0.78rem; color:rgba(255,255,255,0.5); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:8px; }}
+.card-features li {{ font-size:2.34rem; color:rgba(255,255,255,0.5); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:8px; }}
 .card-features li:last-child {{ border-bottom:none; }}
 .feat-dot {{ width:5px; height:5px; border-radius:50%; flex-shrink:0; }}
 .sigma-chat .feat-dot {{ background:#009dff; box-shadow:0 0 5px rgba(0,157,255,0.7); }}
 .sigma-terminal .feat-dot {{ background:#a78bfa; box-shadow:0 0 5px rgba(124,58,237,0.6); }}
 
-.card-cta {{ width:100%; padding:13px; border-radius:12px; border:none; font-size:0.85rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s, transform 0.15s; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; }}
+.card-cta {{ width:100%; padding:13px; border-radius:12px; border:none; font-size:2.55rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s, transform 0.15s; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; }}
 .sigma-chat .card-cta {{ background:linear-gradient(135deg,#009dff,#0048ff); color:#fff; box-shadow:0 6px 24px rgba(0,100,255,0.32); }}
 .sigma-terminal .card-cta {{ background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#07090f; box-shadow:0 6px 24px rgba(124,58,237,0.26); }}
 .kipm-academy .card-cta {{ background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.12)); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); cursor:not-allowed; opacity:0.7; }}
@@ -5269,13 +5278,13 @@ body {{ background: #080c14; }}
 .cp-dot-3 {{ background:#4ade80; }}
 .cp-title {{
     font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.52rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
+    font-size:1.56rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
     text-transform:uppercase; margin-left:2px;
 }}
 .cp-body {{ padding:8px 10px; display:flex; flex-direction:column; gap:4px; }}
 .cp-cmd {{
     font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.60rem; color:rgba(255,255,255,0.45);
+    font-size:1.8rem; color:rgba(255,255,255,0.45);
     display:flex; align-items:center; gap:8px; padding:3px 0;
     border-bottom:1px solid rgba(255,255,255,0.04);
     line-height:1.4;
@@ -5285,7 +5294,7 @@ body {{ background: #080c14; }}
     color:#009dff; min-width:14px; font-weight:700; opacity:0.8;
 }}
 
-.sys-footer {{ margin-top:48px; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
+.sys-footer {{ margin-top:48px; text-align:center; font-size:2.16rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
 
 @media (max-width:768px) {{
     .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
@@ -5620,6 +5629,10 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
+            # Restore generated tab content
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+                if saved.get(_tab_key) is not None:
+                    st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
             restore_images_from_messages()
             st.rerun()
@@ -5637,6 +5650,11 @@ if st.session_state.user and not st.session_state.data_loaded:
                 elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                 else: _s["messages"][0] = SYSTEM_PROMPT
             st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
+    # Restore generated tab content
+    if saved:
+        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+            if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
+                st.session_state[_tab_key] = saved[_tab_key]
     st.session_state.data_loaded = True
     restore_images_from_messages()
 
@@ -5698,9 +5716,9 @@ hr {{ border-color: {C['border']} !important; }}
 [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
 [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
 @media (max-width: 768px) {{
-    html, body {{ overflow-x: hidden !important; max-width: 100vw !important; }}
-    .stApp {{ overflow-x: hidden !important; }}
-    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 12px 120px !important; overflow-x: hidden !important; }}
+    html, body {{ max-width: 100vw !important; }}
+    .stApp {{ overflow-x: auto !important; }}
+    [data-testid="stMainBlockContainer"] {{ max-width: 100% !important; padding: 12px 12px 120px !important; overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }}
     [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] strong, [data-testid="stMarkdownContainer"] b, [data-testid="stMarkdownContainer"] em {{ font-size: 1rem !important; line-height: 1.85 !important; }}
     [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.25rem !important; }}
     [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.1rem !important; }}
@@ -5709,7 +5727,9 @@ hr {{ border-color: {C['border']} !important; }}
     [data-testid="stMarkdownContainer"] li {{ margin-bottom: 4px !important; }}
     [data-testid="stMarkdownContainer"] code {{ font-size: 0.85rem !important; padding: 2px 6px !important; border-radius: 4px !important; background: rgba(255,255,255,0.08) !important; }}
     [data-testid="stMarkdownContainer"] pre {{ font-size: 0.82rem !important; overflow-x: auto !important; padding: 12px !important; border-radius: 8px !important; }}
-    [data-testid="stMarkdownContainer"] div {{ max-width: 100% !important; overflow-x: hidden !important; box-sizing: border-box !important; }}
+    [data-testid="stMarkdownContainer"] div {{ max-width: 100% !important; overflow-x: auto !important; box-sizing: border-box !important; }}
+    [data-testid="stMarkdownContainer"] table {{ display: block !important; overflow-x: auto !important; white-space: nowrap !important; -webkit-overflow-scrolling: touch !important; }}
+    .element-container {{ overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }}
     div[data-testid="stChatInputContainer"] {{ border-radius: 26px !important; margin: 0 6px 8px !important; }}
     [data-testid="stChatInput"] textarea {{ font-size: 16px !important; line-height: 1.5 !important; }}
     [data-testid="stChatMessage"] {{ padding: 10px 0 !important; }}
@@ -5786,7 +5806,7 @@ def show_login():
     st.markdown('''
         <div style="text-align:center;margin:0 0 10px;">
             <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#a78bfa;">Σ</span></div>
-            <div class="sigma-tagline" style="font-size:0.65rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
+            <div class="sigma-tagline" style="font-size:1.95rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
         </div>
         <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
     ''', unsafe_allow_html=True)
@@ -5826,7 +5846,7 @@ def show_login():
             auth_url = google_auth_url()
             st.markdown(f"""
             <div style="margin-top:8px;">
-                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;text-decoration:none;font-size:0.9rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;text-decoration:none;font-size:2.7rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
                     <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     Lanjutkan dengan Google
                 </a>
@@ -5834,7 +5854,7 @@ def show_login():
             """, unsafe_allow_html=True)
         except: st.info("Google login belum dikonfigurasi di Secrets")
 
-    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
+    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:2.16rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
     st.stop()
 
 if st.session_state.user is None: show_login()
@@ -5860,7 +5880,18 @@ if "del" in st.query_params:
             "theme": st.session_state.get("theme", "dark"), 
             "sessions": _to_save, 
             "active_id": st.session_state.active_id,
-            "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat"), "selected_system": st.session_state.get("selected_system", "chat")
+            "current_view": st.session_state.get("current_view", "chat"), 
+            "selected_system": st.session_state.get("selected_system", "chat"),
+            "reco_daily_result": st.session_state.get("reco_daily_result"),
+            "reco_daily_ts": st.session_state.get("reco_daily_ts"),
+            "reco_weekly_result": st.session_state.get("reco_weekly_result"),
+            "reco_weekly_ts": st.session_state.get("reco_weekly_ts"),
+            "reco_bsjp_result": st.session_state.get("reco_bsjp_result"),
+            "reco_bsjp_ts": st.session_state.get("reco_bsjp_ts"),
+            "mb_daily_content": st.session_state.get("mb_daily_content"),
+            "mb_daily_timestamp": st.session_state.get("mb_daily_timestamp"),
+            "mb_weekly_content": st.session_state.get("mb_weekly_content"),
+            "mb_weekly_timestamp": st.session_state.get("mb_weekly_timestamp"),
         })
         
     try: del st.query_params["del"]
@@ -5973,8 +6004,8 @@ s.textContent=`
 #spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
 .smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:48px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:2.04rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
@@ -6951,7 +6982,7 @@ for _sesi in st.session_state.sessions:
 (function(){{
     var row=pd.createElement('div'); row.style.cssText='display:flex;align-items:center;width:100%;';
     var a=pd.createElement('a'); a.textContent='{_td}'; var u=new URL(window.parent.location.href); u.searchParams.set('do','sel_{_sid}'); a.href=u.toString(); a.style.cssText='flex:1;display:block;padding:12px 8px 12px 18px;font-size:1rem;color:{C["text"]};background:{_bg};font-weight:{_fw};border:none;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;min-width:0;'; a.onmouseenter=function(){{this.style.background='linear-gradient(135deg,rgba(124,58,237,0.18),rgba(59,130,246,0.16))';this.style.borderLeft='2px solid rgba(124,58,237,0.55)';this.style.color='#a78bfa';}}; a.onmouseleave=function(){{this.style.background='{_bg}';this.style.borderLeft='2px solid transparent';this.style.color='{C["text"]}';}};
-    var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:0.85rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; del.onclick=function(e){{ e.preventDefault();e.stopPropagation(); if(confirm('Hapus obrolan ini?')){{ var u2=new URL(window.parent.location.href); u2.searchParams.set('del','{_sid}'); u2.searchParams.delete('do'); window.parent.location.href=u2.toString(); }} }};
+    var del=pd.createElement('button'); del.innerHTML='🗑'; del.title='Hapus'; del.style.cssText='padding:8px 12px;background:transparent;border:none;cursor:pointer;font-size:2.55rem;opacity:0.35;flex-shrink:0;color:{C["text"]};'; del.onmouseenter=function(){{this.style.opacity='1';this.style.color='#ff5555';}}; del.onmouseleave=function(){{this.style.opacity='0.35';this.style.color='{C["text"]}';}}; del.onclick=function(e){{ e.preventDefault();e.stopPropagation(); if(confirm('Hapus obrolan ini?')){{ var u2=new URL(window.parent.location.href); u2.searchParams.set('del','{_sid}'); u2.searchParams.delete('do'); window.parent.location.href=u2.toString(); }} }};
     row.appendChild(a); row.appendChild(del); h.appendChild(row);
 }})();
 """
@@ -6970,8 +7001,8 @@ s.textContent=`
 #spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
 .smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:48px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:2.04rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
@@ -7048,8 +7079,18 @@ if user:
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat"), "selected_system": st.session_state.get("selected_system", "chat"),
-        "selected_system": st.session_state.get("selected_system", "chat")
+        "current_view": st.session_state.get("current_view", "chat"), 
+        "selected_system": st.session_state.get("selected_system", "chat"),
+        "reco_daily_result": st.session_state.get("reco_daily_result"),
+        "reco_daily_ts": st.session_state.get("reco_daily_ts"),
+        "reco_weekly_result": st.session_state.get("reco_weekly_result"),
+        "reco_weekly_ts": st.session_state.get("reco_weekly_ts"),
+        "reco_bsjp_result": st.session_state.get("reco_bsjp_result"),
+        "reco_bsjp_ts": st.session_state.get("reco_bsjp_ts"),
+        "mb_daily_content": st.session_state.get("mb_daily_content"),
+        "mb_daily_timestamp": st.session_state.get("mb_daily_timestamp"),
+        "mb_weekly_content": st.session_state.get("mb_weekly_content"),
+        "mb_weekly_timestamp": st.session_state.get("mb_weekly_timestamp"),
     })
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
@@ -7718,25 +7759,25 @@ if current_view == "dashboard":
         # ── Shared table CSS (same style as Corporate Action) ───────────────
         st.markdown(f"""<style>
         .mkt-wrap {{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;}}
-        .mkt-hdr {{padding:10px 16px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.92rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
-        .mkt-hdr-badge {{font-size:0.75rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
+        .mkt-hdr {{padding:10px 16px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:2.76rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
+        .mkt-hdr-badge {{font-size:2.25rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
         .mkt-scroll {{width:100%;overflow-x:auto;overflow-y:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
         .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
         .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-        table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
-        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.84rem;white-space:nowrap;}}
+        table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:2.82rem;}}
+        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:2.52rem;white-space:nowrap;}}
         table.mkt-tbl tbody td {{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
         table.mkt-tbl tbody tr:last-child td {{border-bottom:none;}}
         table.mkt-tbl tbody tr:hover td {{background:rgba(139,92,246,0.06);}}
-        .mkt-name {{font-weight:600;font-size:0.93rem;}}
-        .mkt-price {{font-size:0.98rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+        .mkt-name {{font-weight:600;font-size:2.79rem;}}
+        .mkt-price {{font-size:2.94rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
         .mkt-up {{color:#089981;}}
         .mkt-dn {{color:#f23645;}}
         .mkt-na {{color:{text_sub};}}
-        .mkt-chg-badge {{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.84rem;font-weight:700;}}
+        .mkt-chg-badge {{display:inline-block;padding:2px 8px;border-radius:4px;font-size:2.52rem;font-weight:700;}}
         @media(max-width:600px){{
-            table.mkt-tbl thead th {{font-size:0.78rem;padding:7px 8px;}}
-            table.mkt-tbl tbody td {{font-size:0.85rem;padding:7px 8px;}}
+            table.mkt-tbl thead th {{font-size:2.34rem;padding:7px 8px;}}
+            table.mkt-tbl tbody td {{font-size:2.55rem;padding:7px 8px;}}
         }}
         </style>""", unsafe_allow_html=True)
 
@@ -7846,30 +7887,30 @@ body{{background:transparent;font-family:'DM Sans',sans-serif;}}
 .row{{display:flex;gap:12px;width:100%;}}
 .col{{flex:1;min-width:0;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:18px;overflow:hidden;height:100%;}}
-.mkt-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:0.7rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
-.mkt-badge{{font-size:0.93rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
+.mkt-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:2.1rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
+.mkt-badge{{font-size:2.79rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.13rem;min-width:320px;}}
-thead th{{position:static;background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
-tbody td{{padding:8px 12px;border-bottom:1px solid rgba(3,40,238,0.10);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.88rem;}}
+thead th{{position:static;background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:2.16rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
+tbody td{{padding:8px 12px;border-bottom:1px solid rgba(3,40,238,0.10);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:2.64rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
-.nm{{font-weight:600;font-size:0.88rem;color:{text_main};font-family:'DM Sans',sans-serif;}}
+.nm{{font-weight:600;font-size:2.64rem;color:{text_main};font-family:'DM Sans',sans-serif;}}
 .flag{{margin-right:5px;font-size:1.15rem;}}
-.price{{font-size:0.9rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
-.badge{{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.78rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
-.ccy{{font-size:0.78rem;color:{text_sub};}}
+.price{{font-size:2.7rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+.badge{{display:inline-block;padding:2px 8px;border-radius:6px;font-size:2.34rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+.ccy{{font-size:2.34rem;color:{text_sub};}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:14px;}}
   .col{{width:100%;}}
-  .mkt-hdr{{font-size:0.88rem;padding:8px 10px;}}
-  thead th{{font-size:0.82rem;padding:7px 8px;}}
-  tbody td{{font-size:0.88rem;padding:7px 8px;}}
-  .badge{{font-size:0.83rem;padding:2px 5px;}}
-  .nm{{font-size:0.88rem;}}
-  .price{{font-size:0.92rem;}}
+  .mkt-hdr{{font-size:2.64rem;padding:8px 10px;}}
+  thead th{{font-size:2.46rem;padding:7px 8px;}}
+  tbody td{{font-size:2.64rem;padding:7px 8px;}}
+  .badge{{font-size:2.49rem;padding:2px 5px;}}
+  .nm{{font-size:2.64rem;}}
+  .price{{font-size:2.76rem;}}
   table{{min-width:280px;}}
 }}
 </style></head><body>
@@ -7913,7 +7954,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     var h='';
     data.forEach(function(r){{
       if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.92rem;color:rgba(3,40,238,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.15);background:rgba(3,40,238,0.03);">'+r.label+'</td></tr>';
+        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:2.76rem;color:rgba(3,40,238,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.15);background:rgba(3,40,238,0.03);">'+r.label+'</td></tr>';
         return;
       }}
       var up = r.cls==='mkt-up';
@@ -8000,15 +8041,15 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MARKET BRIEF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""
         <style>
-        .mb-desc {{ font-family:'DM Sans',sans-serif; font-size:0.88rem; color:{text_sub}; margin-bottom:12px; line-height:1.6; }}
+        .mb-desc {{ font-family:'DM Sans',sans-serif; font-size:2.64rem; color:{text_sub}; margin-bottom:12px; line-height:1.6; }}
         .mb-tags {{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }}
-        .mb-tag  {{ font-family:'DM Sans',sans-serif; font-size:0.78rem; color:{text_sub};
+        .mb-tag  {{ font-family:'DM Sans',sans-serif; font-size:2.34rem; color:{text_sub};
             background:rgba(255,255,255,0.05); border:1px solid {met_border};
             border-radius:20px; padding:3px 10px; white-space:nowrap; }}
         @media (max-width:768px) {{
-            .mb-desc {{ font-size:0.83rem; }}
+            .mb-desc {{ font-size:2.49rem; }}
             .mb-tags {{ gap:6px; }}
-            .mb-tag  {{ font-size:0.76rem; padding:2px 8px; }}
+            .mb-tag  {{ font-size:2.28rem; padding:2px 8px; }}
         }}
         </style>
         <p class='mb-desc'>Analisis pasar berbasis AI - IHSG, Global Markets, Forex, Komoditas, Sentimen &amp; Tactical View. Sumber: CNBC Indonesia, CNBC Global, Bloomberg &amp; MarketWatch.</p>
@@ -8301,9 +8342,17 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                 if mode_key == "daily":
                     st.session_state["mb_daily_content"]   = mb_res
                     st.session_state["mb_daily_timestamp"] = _today
+                    if st.session_state.user:
+                        _sv = load_user(st.session_state.user["email"]) or {}
+                        _sv["mb_daily_content"] = mb_res; _sv["mb_daily_timestamp"] = _today
+                        save_user(st.session_state.user["email"], _sv)
                 else:
                     st.session_state["mb_weekly_content"]   = mb_res
                     st.session_state["mb_weekly_timestamp"] = _today
+                    if st.session_state.user:
+                        _sv = load_user(st.session_state.user["email"]) or {}
+                        _sv["mb_weekly_content"] = mb_res; _sv["mb_weekly_timestamp"] = _today
+                        save_user(st.session_state.user["email"], _sv)
                 # backward compat
                 st.session_state["mb_content"]    = mb_res
                 st.session_state["mb_mode"]       = mode_str
@@ -8322,14 +8371,14 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             .mb-header {{ background:rgba(3,40,238,0.08); padding:14px 18px; border-radius:16px 16px 0 0;
                 border-bottom:1px solid {met_border}; display:flex; align-items:center;
                 justify-content:space-between; flex-wrap:wrap; gap:8px; }}
-            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.98rem; color:{_mb_color};
+            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:2.94rem; color:{_mb_color};
                 font-weight:700; letter-spacing:1.2px; }}
-            .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:{text_sub};
+            .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:2.46rem; color:{text_sub};
                 background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px;
                 border:1px solid {met_border}; white-space:nowrap; }}
             @media (max-width: 768px) {{
                 .mb-header {{ padding:10px 14px; }}
-                .mb-title {{ font-size:0.9rem; }}
+                .mb-title {{ font-size:2.7rem; }}
             }}
             </style>
             <div class='mb-container'>
@@ -8406,8 +8455,8 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     html_str += f"""
                     <a href='{entry.link}' target='_blank' style='text-decoration:none;'>
                         <div style='padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);'>
-                            <div style='color:{text_main}; font-size:15px; line-height:1.4;'>{entry.title}</div>
-                            <div style='color:{text_sub}; font-size:12px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
+                            <div style='color:{text_main}; font-size:45px; line-height:1.4;'>{entry.title}</div>
+                            <div style='color:{text_sub}; font-size:36px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
                         </div>
                     </a>"""
                 return html_str if html_str else "No news found."
@@ -8419,7 +8468,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:39px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -8427,7 +8476,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
+                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:39px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -8672,26 +8721,26 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         .ca-stat {{ background:{met_bg}; border:1px solid {met_border}; border-radius:8px;
             padding:10px 16px; font-family:'IBM Plex Mono',monospace; flex:1; min-width:100px; }}
         .ca-stat-val {{ font-size:1.5rem; font-weight:700; color:#8b5cf6; }}
-        .ca-stat-lbl {{ font-size:0.82rem; color:{text_sub}; letter-spacing:0.08em; margin-top:2px; }}
-        .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.94rem; }}
-        .ca-tbl th {{ background:rgba(139,92,246,0.08); color:#8b5cf6; padding:9px 12px; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em;
-            text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.06em; font-weight:700; font-size:0.85rem; }}
+        .ca-stat-lbl {{ font-size:2.46rem; color:{text_sub}; letter-spacing:0.08em; margin-top:2px; }}
+        .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:2.82rem; }}
+        .ca-tbl th {{ background:rgba(139,92,246,0.08); color:#8b5cf6; padding:9px 12px; font-size:2.1rem; text-transform:uppercase; letter-spacing:0.08em;
+            text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.06em; font-weight:700; font-size:2.55rem; }}
         .ca-tbl td {{ padding:10px 12px; border-bottom:1px solid {met_border}; color:{text_main}; vertical-align:middle; }}
         .ca-tbl tr:last-child td {{ border-bottom:none; }}
         .ca-tbl tr:hover td {{ background:rgba(3,40,238,0.04); }}
-        .ca-badge {{ padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.85rem; letter-spacing:0.04em; }}
-        .ca-ev-badge {{ padding:3px 8px; border-radius:4px; font-size:0.85rem; font-weight:600; white-space:nowrap; }}
-        .ca-info {{ color:{text_sub}; font-size:0.9rem; }}
+        .ca-badge {{ padding:3px 8px; border-radius:4px; font-weight:700; font-size:2.55rem; letter-spacing:0.04em; }}
+        .ca-ev-badge {{ padding:3px 8px; border-radius:4px; font-size:2.55rem; font-weight:600; white-space:nowrap; }}
+        .ca-info {{ color:{text_sub}; font-size:2.7rem; }}
         @media (max-width:768px) {{
             .ca-stats {{ gap:8px; }}
             .ca-stat {{ padding:8px 12px; min-width:80px; }}
             .ca-stat-val {{ font-size:1.3rem; }}
-            .ca-stat-lbl {{ font-size:0.78rem; }}
-            .ca-tbl th {{ padding:8px 8px; font-size:0.8rem; }}
-            .ca-tbl td {{ padding:8px 8px; font-size:0.88rem; }}
-            .ca-badge {{ font-size:0.8rem; padding:2px 6px; }}
-            .ca-ev-badge {{ font-size:0.8rem; padding:2px 6px; }}
-            .ca-info {{ font-size:0.84rem; }}
+            .ca-stat-lbl {{ font-size:2.34rem; }}
+            .ca-tbl th {{ padding:8px 8px; font-size:2.4rem; }}
+            .ca-tbl td {{ padding:8px 8px; font-size:2.64rem; }}
+            .ca-badge {{ font-size:2.4rem; padding:2px 6px; }}
+            .ca-ev-badge {{ font-size:2.4rem; padding:2px 6px; }}
+            .ca-info {{ font-size:2.52rem; }}
         }}
         </style>
         <div class='ca-stats'>
@@ -8700,7 +8749,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             <div class='ca-stat'><div class='ca-stat-val' style='color:#8b5cf6;'>{_rups_ct}</div><div class='ca-stat-lbl'>RUPS</div></div>
             <div class='ca-stat'><div class='ca-stat-val' style='color:#4285F4;'>{_ri_ct}</div><div class='ca-stat-lbl'>RIGHTS ISSUE</div></div>
         </div>
-        <p style='font-family:'DM Sans',sans-serif;font-size:0.83rem;color:{text_sub};margin-bottom:12px;'>
+        <p style='font-family:'DM Sans',sans-serif;font-size:2.49rem;color:{text_sub};margin-bottom:12px;'>
             📅 Menampilkan {len(ca_data_filtered)} dari {_total} events · 3 bulan ke depan · Sumber: IDX &amp; Data Bursa
         </p>
         """, unsafe_allow_html=True)
@@ -8744,7 +8793,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'DM Sans',sans-serif;}}
 .ca-wrap{{background:{met_bg};border-radius:10px;border:1px solid {met_border};overflow:hidden;}}
-.hint{{display:none;text-align:center;font-size:0.75rem;color:{text_sub};
+.hint{{display:none;text-align:center;font-size:2.25rem;color:{text_sub};
        padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {met_border};}}
 .scroll-box{{
   width:100%;
@@ -8758,41 +8807,41 @@ body{{background:transparent;font-family:'DM Sans',sans-serif;}}
 .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:max-content;min-width:100%;border-collapse:collapse;
-       font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
+       font-family:'IBM Plex Mono',monospace;font-size:2.82rem;}}
 thead th{{
   position:sticky;top:0;z-index:2;
   background:rgba(139,92,246,0.08);color:#8b5cf6;
   padding:10px 12px;text-align:left;
   border-bottom:1px solid {met_border};
-  letter-spacing:0.06em;font-weight:700;font-size:0.85rem;
+  letter-spacing:0.06em;font-weight:700;font-size:2.55rem;
   white-space:nowrap;
 }}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
           color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
-.ca-badge{{padding:3px 8px;border-radius:4px;font-weight:700;font-size:0.85rem;letter-spacing:0.04em;}}
-.ca-ev-badge{{padding:3px 8px;border-radius:4px;font-size:0.85rem;font-weight:600;white-space:nowrap;}}
-.ca-info{{color:{text_sub};font-size:0.9rem;white-space:normal;max-width:280px;}}
+.ca-badge{{padding:3px 8px;border-radius:4px;font-weight:700;font-size:2.55rem;letter-spacing:0.04em;}}
+.ca-ev-badge{{padding:3px 8px;border-radius:4px;font-size:2.55rem;font-weight:600;white-space:nowrap;}}
+.ca-info{{color:{text_sub};font-size:2.7rem;white-space:normal;max-width:280px;}}
 .pg-bar{{display:flex;align-items:center;justify-content:space-between;
          padding:6px 12px;border-top:1px solid {met_border};
          background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:4px;}}
-.pg-info{{font-size:0.78rem;color:{text_sub};}}
+.pg-info{{font-size:2.34rem;color:{text_sub};}}
 .pg-btns{{display:flex;gap:5px;}}
 .pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
          border:1px solid {met_border};border-radius:4px;
          padding:4px 11px;font-family:'IBM Plex Mono',monospace;
-         font-size:0.78rem;cursor:pointer;transition:background 0.15s;}}
+         font-size:2.34rem;cursor:pointer;transition:background 0.15s;}}
 .pg-btn:hover{{background:rgba(255,255,255,0.12);}}
 .pg-btn:disabled{{opacity:0.3;cursor:default;}}
 @media(max-width:600px){{
   .hint{{display:block;}}
-  table{{font-size:0.85rem;}}
-  thead th{{font-size:0.8rem;padding:8px 8px;}}
-  tbody td{{padding:7px 8px;font-size:0.85rem;}}
-  .ca-badge{{font-size:0.78rem;padding:2px 5px;}}
-  .ca-ev-badge{{font-size:0.78rem;padding:2px 5px;}}
-  .ca-info{{font-size:0.82rem;max-width:180px;}}
+  table{{font-size:2.55rem;}}
+  thead th{{font-size:2.4rem;padding:8px 8px;}}
+  tbody td{{padding:7px 8px;font-size:2.55rem;}}
+  .ca-badge{{font-size:2.34rem;padding:2px 5px;}}
+  .ca-ev-badge{{font-size:2.34rem;padding:2px 5px;}}
+  .ca-info{{font-size:2.46rem;max-width:180px;}}
 }}
 </style></head><body>
 <div class="ca-wrap">
@@ -8851,7 +8900,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FED RATE MONITOR TOOL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""
-        <p style='font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
+        <p style='font-family:'DM Sans',sans-serif;font-size:2.64rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
         Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
         Rate saat ini: <b style='color:#8b5cf6;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
         </p>
@@ -9460,15 +9509,15 @@ body{{background:transparent;font-family:'DM Sans',sans-serif;}}
   padding:11px 16px;
   background:rgba(139,92,246,0.08);
   border-bottom:1px solid {met_border};
-  font-size:0.75rem;font-weight:700;letter-spacing:0.12em;
+  font-size:2.25rem;font-weight:700;letter-spacing:0.12em;
   color:#8b5cf6;text-transform:uppercase;
   display:flex;align-items:center;justify-content:space-between;
   flex-wrap:wrap;gap:6px;font-family:'DM Sans',sans-serif;
 }}
 .hdr-right{{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}}
-.ec-badge{{font-size:0.76rem;color:{text_sub};background:rgba(255,255,255,0.05);
+.ec-badge{{font-size:2.28rem;color:{text_sub};background:rgba(255,255,255,0.05);
   border:1px solid {met_border};border-radius:8px;padding:2px 9px;white-space:nowrap;}}
-.f-btn{{font-size:0.72rem;font-family:'IBM Plex Mono',monospace;font-weight:700;
+.f-btn{{font-size:2.16rem;font-family:'IBM Plex Mono',monospace;font-weight:700;
   border:1px solid {met_border};border-radius:4px;padding:3px 10px;cursor:pointer;
   background:rgba(255,255,255,0.05);color:{text_sub};transition:all 0.15s;white-space:nowrap;}}
 .f-btn.on{{background:rgba(139,92,246,0.18);color:#8b5cf6;border-color:#8b5cf6;}}
@@ -9483,33 +9532,33 @@ thead th{{
   background:rgba(139,92,246,0.08);color:#8b5cf6;
   padding:9px 12px;text-align:left;
   border-bottom:1px solid {met_border};
-  letter-spacing:0.07em;font-weight:700;font-size:0.78rem;
+  letter-spacing:0.07em;font-weight:700;font-size:2.34rem;
   white-space:nowrap;text-transform:uppercase;
   font-family:'DM Sans',sans-serif;
 }}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
-  color:{text_main};vertical-align:middle;font-size:0.94rem;}}
+  color:{text_main};vertical-align:middle;font-size:2.82rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
 .flag-cell{{display:flex;align-items:center;gap:5px;white-space:nowrap;}}
 .fl{{font-size:1.15rem;}}
-.neg{{font-size:0.72rem;font-weight:700;letter-spacing:0.05em;color:{text_sub};font-family:'DM Sans',sans-serif;}}
-.dt-d{{font-weight:600;color:{text_main};font-size:0.92rem;white-space:nowrap;}}
-.dt-j{{font-size:0.8rem;color:{text_sub};white-space:nowrap;}}
-.ev-name{{font-size:0.94rem;font-weight:500;color:{text_main};white-space:normal;line-height:1.35;max-width:200px;}}
-.fc-v{{font-size:0.93rem;color:#089981;font-weight:700;}}
-.pv-v{{font-size:0.82rem;color:{text_sub};}}
+.neg{{font-size:2.16rem;font-weight:700;letter-spacing:0.05em;color:{text_sub};font-family:'DM Sans',sans-serif;}}
+.dt-d{{font-weight:600;color:{text_main};font-size:2.76rem;white-space:nowrap;}}
+.dt-j{{font-size:2.4rem;color:{text_sub};white-space:nowrap;}}
+.ev-name{{font-size:2.82rem;font-weight:500;color:{text_main};white-space:normal;line-height:1.35;max-width:200px;}}
+.fc-v{{font-size:2.79rem;color:#089981;font-weight:700;}}
+.pv-v{{font-size:2.46rem;color:{text_sub};}}
 /* ACTUAL column - highlight jika ada data */
-.act-val{{font-size:0.95rem;font-weight:700;}}
+.act-val{{font-size:2.85rem;font-weight:700;}}
 .act-beat{{color:#089981;}}  /* actual > forecast = beat */
 .act-miss{{color:#f23645;}}  /* actual < forecast = miss */
 .act-meet{{color:#f59e0b;}}  /* actual = forecast */
-.act-none{{color:{text_sub};font-style:italic;font-size:0.82rem;}}
+.act-none{{color:{text_sub};font-style:italic;font-size:2.46rem;}}
 .bdg{{display:inline-block;padding:3px 8px;border-radius:4px;
-  font-size:0.78rem;font-weight:700;letter-spacing:0.05em;
+  font-size:2.34rem;font-weight:700;letter-spacing:0.05em;
   font-family:'IBM Plex Mono',monospace;white-space:nowrap;}}
 /* Date separator */
-.sep-row td{{padding:3px 12px;font-size:0.74rem;letter-spacing:0.1em;
+.sep-row td{{padding:3px 12px;font-size:2.22rem;letter-spacing:0.1em;
   color:rgba(139,92,246,0.55);background:rgba(139,92,246,0.04);
   border-bottom:1px solid rgba(139,92,246,0.12);
   font-family:'DM Sans',sans-serif;font-weight:700;}}
@@ -9520,15 +9569,15 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
   background:{'#131825' if is_dark else '#ffffff'};
   border:1px solid {met_border};border-left:3px solid #8b5cf6;
   border-radius:0 6px 6px 6px;padding:9px 13px;
-  font-size:0.84rem;color:{text_main};line-height:1.6;
+  font-size:2.52rem;color:{text_main};line-height:1.6;
   pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.45);
   white-space:normal;min-width:240px;max-width:380px;
   font-family:'DM Sans',sans-serif;}}
 @media(max-width:600px){{
   table{{min-width:480px;}}
   .ev-name{{max-width:130px;}}
-  tbody td{{font-size:0.86rem;padding:7px 8px;}}
-  thead th{{font-size:0.72rem;padding:7px 8px;}}
+  tbody td{{font-size:2.58rem;padding:7px 8px;}}
+  thead th{{font-size:2.16rem;padding:7px 8px;}}
 }}
 </style></head><body>
 <div class="cal-wrap">
@@ -9551,7 +9600,7 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
         <th>JAM (WIB)</th>
         <th>EVENT</th>
         <th>FORECAST</th>
-        <th>ACTUAL <span style="font-size:0.65rem;color:#089981;">● RT</span></th>
+        <th>ACTUAL <span style="font-size:1.95rem;color:#089981;">● RT</span></th>
         <th>PREV</th>
         <th>IMPACT</th>
       </tr></thead>
@@ -9645,7 +9694,7 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
         # ─────────────────────────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ EC AI ANALYST — DAMPAK DATA EKONOMI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""
-        <p style='font-family:"DM Sans",sans-serif;font-size:0.9rem;color:{text_sub};margin-bottom:14px;line-height:1.65;'>
+        <p style='font-family:"DM Sans",sans-serif;font-size:2.7rem;color:{text_sub};margin-bottom:14px;line-height:1.65;'>
         Pilih event ekonomi → AI analisa dampak Actual vs Forecast ke <b style='color:#FFD700;'>XAU/USD</b>, <b style='color:#4285F4;'>USD/IDR</b>,
         <b style='color:#089981;'>DXY</b>, dan <b style='color:#8b5cf6;'>IHSG/IDX</b>.
         Skenario jika beat forecast maupun miss forecast keduanya disimulasikan.
@@ -9668,14 +9717,14 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
         if _sel_row:
             _ec_cols = st.columns([1,1,1,1])
             with _ec_cols[0]:
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};'>NEGARA</div><div style='font-size:1.1rem;'>{_sel_row['flag']} {_sel_row['neg']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:2.34rem;color:{text_sub};'>NEGARA</div><div style='font-size:1.1rem;'>{_sel_row['flag']} {_sel_row['neg']}</div>", unsafe_allow_html=True)
             with _ec_cols[1]:
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};'>FORECAST</div><div style='font-size:1rem;font-weight:700;color:#089981;'>{_sel_row['fc']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:2.34rem;color:{text_sub};'>FORECAST</div><div style='font-size:1rem;font-weight:700;color:#089981;'>{_sel_row['fc']}</div>", unsafe_allow_html=True)
             with _ec_cols[2]:
                 _act_color = "#089981" if _sel_row['actual'] not in ("—","") else text_sub
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};'>ACTUAL (RT)</div><div style='font-size:1rem;font-weight:700;color:{_act_color};'>{_sel_row['actual']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:2.34rem;color:{text_sub};'>ACTUAL (RT)</div><div style='font-size:1rem;font-weight:700;color:{_act_color};'>{_sel_row['actual']}</div>", unsafe_allow_html=True)
             with _ec_cols[3]:
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};'>PREVIOUS</div><div style='font-size:1rem;color:{text_sub};'>{_sel_row['prev']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:2.34rem;color:{text_sub};'>PREVIOUS</div><div style='font-size:1rem;color:{text_sub};'>{_sel_row['prev']}</div>", unsafe_allow_html=True)
 
         st.markdown("<div style='margin-top:12px;'></div>", unsafe_allow_html=True)
 
@@ -9758,15 +9807,15 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid #8b5cf6;
                 border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;'>
               <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
-                <span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;
+                <span style='font-family:IBM Plex Mono,monospace;font-size:2.16rem;font-weight:700;
                   letter-spacing:0.12em;color:#8b5cf6;'>⚡ SIGMA EC ANALYSIS</span>
-                <span style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;
+                <span style='font-family:IBM Plex Mono,monospace;font-size:2.34rem;
                   color:{text_sub};background:rgba(255,255,255,0.05);
                   border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>
                   {_sel_row['event']} · Actual: <b style='color:#089981;'>{_act_display}</b>
                   &nbsp;{_beat_miss}
                 </span>
-                <span style='font-size:0.7rem;color:{text_sub};margin-left:auto;'>model: {_ec_ai_model}</span>
+                <span style='font-size:2.1rem;color:{text_sub};margin-left:auto;'>model: {_ec_ai_model}</span>
               </div>
             </div>
             """, unsafe_allow_html=True)
@@ -9789,7 +9838,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             return df_style.applymap(func, subset=subset)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.64rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
         # ── AUTO-UPDATE: slot update 13:00 & 21:00 WIB ─────────────────
         # Cache key berubah tiap slot → data otomatis refresh 2x sehari
@@ -10026,7 +10075,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         # Tampilkan badge update time
         _badge_color = "#089981"
         st.markdown(f"""<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
-            <span style='font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};'>
+            <span style='font-family:'DM Sans',sans-serif;font-size:2.64rem;color:{text_sub};'>
             🕐 RRG update: <b style="color:#8b5cf6">13:00</b> & <b style="color:#8b5cf6">21:00</b> WIB
             &nbsp;·&nbsp; Slot: <b style="color:{_badge_color}">{_update_slot}</b>
             &nbsp;·&nbsp; Next: <b style="color:#8b5cf6">{_next_update} WIB</b>
@@ -10487,7 +10536,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     st.session_state["rrg_selected"] = clicked_sector
 
         # ── TOMBOL SEKTOR (fallback klik) ──────────────────────────────
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.4rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
         btn_cols = st.columns(len(sector_names))
         for i, sname in enumerate(sector_names):
             sdata = rrg_sectors[sname]
@@ -10520,7 +10569,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     <div>
                         <div style='font-family:'DM Sans',sans-serif;font-size:1.2rem;font-weight:700;
                             color:{text_main};letter-spacing:0.05em;'>{sel} Sector</div>
-                        <div style='font-size:0.92rem;color:{text_sub};margin-top:2px;'>
+                        <div style='font-size:2.76rem;color:{text_sub};margin-top:2px;'>
                             RS: <b style="color:{fc}">{sd["rs"]}</b> &nbsp;|&nbsp;
                             Momentum: <b style="color:{fc}">{sd["mom"]}</b> &nbsp;|&nbsp;
                             Fase: <b style="color:{fc}">{sd["fase"].upper()}</b>
@@ -10528,7 +10577,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     </div>
                     <div style='margin-left:auto;background:{fc}22;border:1px solid {fc}44;
                         border-radius:8px;padding:8px 16px;text-align:center;'>
-                        <div style='font-size:0.8rem;color:{text_sub};letter-spacing:0.1em;'>AKSI</div>
+                        <div style='font-size:2.4rem;color:{text_sub};letter-spacing:0.1em;'>AKSI</div>
                         <div style='font-size:1.05rem;font-weight:700;color:{fc};'>{sd["aksi"]}</div>
                     </div>
                 </div>
@@ -10550,9 +10599,9 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 with col:
                     st.markdown(f"""<div style='background:{c}11;border:1px solid {c}33;
                         border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;'>
-                        <div style='font-size:0.75rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
+                        <div style='font-size:2.25rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
                         <div style='font-size:1.6rem;font-weight:700;color:{text_main};'>{val}</div>
-                        <div style='font-size:0.8rem;color:{text_sub};'>saham</div>
+                        <div style='font-size:2.4rem;color:{text_sub};'>saham</div>
                     </div>""", unsafe_allow_html=True)
 
             # Mini RRG untuk sektor ini (plotly kecil, tampilkan saham-saham di dalamnya)
@@ -10628,14 +10677,14 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 font=dict(family="IBM Plex Mono", color=text_main),
             )
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#8b5cf6;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.46rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#8b5cf6;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
             st.plotly_chart(fig_mini, use_container_width=True,
                 config={"displayModeBar": True, "modeBarButtonsToAdd": ["toggleFullscreen"],
                         "modeBarButtonsToRemove": ["lasso2d","select2d"],
                         "displaylogo": False, "scrollZoom": True},
                 key=f"mini_rrg_{sel}")
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#8b5cf6\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.46rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#8b5cf6\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
             # Build HTML table - max 30 rows
             tbl_rows = ""
             _saham_display = sorted(sd["saham"], key=lambda x: x["rs"], reverse=True)[:30]
@@ -10644,30 +10693,30 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 rs_pct = max(0, min(100, (stk["rs"]-85) / 30 * 100))
                 _mc_disp = stk.get("mktcap","-")
                 tbl_rows += f"""<tr>
-                    <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;'>{stk["ticker"]}</td>
-                    <td style='font-size:13px;color:{text_sub};'>{stk["nama"]}</td>
+                    <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:42px;'>{stk["ticker"]}</td>
+                    <td style='font-size:39px;color:{text_sub};'>{stk["nama"]}</td>
                     <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
-                        font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
+                        font-size:33px;font-weight:700;padding:2px 6px;border-radius:8px;
                         font-family:'DM Sans',sans-serif;'>{stk.get("fase","")}</span></td>
-                    <td style='font-size:12px;color:#8b5cf6;font-weight:600;'>{_mc_disp}</td>
-                    <td style='font-size:13px;'>
+                    <td style='font-size:36px;color:#8b5cf6;font-weight:600;'>{_mc_disp}</td>
+                    <td style='font-size:39px;'>
                         <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
                         <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
                             <div style='height:100%;width:{rs_pct:.0f}%;background:{fc2};border-radius:2px;'></div>
                         </div>
                     </td>
-                    <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
+                    <td style='font-size:39px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
                 </tr>"""
 
             st.markdown(f"""<div style='overflow-y:auto;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
             <table style='width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;'>
             <thead><tr style='background:{met_bg};position:sticky;top:0;'>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};'>MKT CAP</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>RS</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>MOM</th>
+                <th style='padding:6px 10px;font-size:33px;letter-spacing:0.1em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
+                <th style='padding:6px 10px;font-size:33px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
+                <th style='padding:6px 10px;font-size:33px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
+                <th style='padding:6px 10px;font-size:33px;letter-spacing:0.1em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};'>MKT CAP</th>
+                <th style='padding:6px 10px;font-size:33px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>RS</th>
+                <th style='padding:6px 10px;font-size:33px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>MOM</th>
             </tr></thead>
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
@@ -10682,7 +10731,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:2.7rem;color:{text_sub};
             background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -10717,19 +10766,19 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         }
         df_msci = pd.DataFrame(msci_data)
         
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:2.7rem;color:{text_sub};
             background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -10761,16 +10810,16 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         }
         df_ftse = pd.DataFrame(ftse_data)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:2.7rem;color:{text_sub};
             background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -10814,16 +10863,16 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         # ─── IDX30 INDEX ─────────────────────────────────────────────────
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
+        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:2.7rem;color:{text_sub};
             background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
@@ -10862,13 +10911,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             ],
         }
         df_idx30 = pd.DataFrame(idx30_data)
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:2.76rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
         
         conglo_data = [
             {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
@@ -11622,7 +11671,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         # SECTION 1: SHAREHOLDER TRACKER  (di atas screening)
         # ════════════════════════════════════════════════════════════════
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren pemegang saham vs pergerakan harga 1 tahun &middot; Deteksi akumulasi &amp; distribusi smart money &middot; Data IDX resmi &middot; Seluruh saham BEI</p>", unsafe_allow_html=True)
 
         # ── Banner update bulanan tgl 7-10 ──
         import datetime as _dt_sh
@@ -11632,7 +11681,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             <div style='background:rgba(8,153,129,0.1);border:1px solid #089981;border-radius:10px;
                 padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;'>
                 <span style='font-size:1.2rem;'>🔄</span>
-                <span style='font-family:'DM Sans',sans-serif;font-size:0.85rem;color:#089981;'>
+                <span style='font-family:'DM Sans',sans-serif;font-size:2.55rem;color:#089981;'>
                     <b>WINDOW UPDATE BULANAN AKTIF</b> - IDX/KSEI biasanya merilis data pemegang saham terbaru
                     pada tanggal 7–10. Data live diambil fresh, cache diperbarui otomatis.
                 </span>
@@ -11657,7 +11706,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         letter-spacing:0.1em;color:#f23645;text-transform:uppercase;margin-bottom:8px;'>
                         ⛔ SAHAM SUSPEND - TIDAK DIPERDAGANGKAN
                     </div>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:0.92rem;color:{text_sub};line-height:1.8;'>
+                    <div style='font-family:'DM Sans',sans-serif;font-size:2.76rem;color:{text_sub};line-height:1.8;'>
                         <b style='color:{text_main};'>{sh_ticker}</b> saat ini dalam status <b style='color:#f23645;'>SUSPEND</b> 
                         di Bursa Efek Indonesia (tidak diperdagangkan lebih dari 1 bulan).<br>
                         Data pemegang saham untuk saham suspend tidak relevan karena tidak ada price discovery aktif.<br>
@@ -11698,13 +11747,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         Data historis pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> belum tersedia.<br>
                         Kemungkinan sebab: saham baru IPO, emiten delisting, atau IDX belum merilis data bulan ini.
                     </div>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:0.92rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
+                    <div style='font-family:'DM Sans',sans-serif;font-size:2.76rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
                         💡 <b style="color:#8b5cf6;">Cara alternatif verifikasi data pemegang saham:</b><br>
                         1. Buka <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}" target="_blank" style="color:#4285F4;">{sh_ticker} di idx.co.id</a><br>
                         2. Cek tab "Profil Pemegang Saham" di Stockbit atau RTI Business<br>
                         3. Data KSEI diperbarui setiap awal bulan dari hasil kliring bursa
                     </div>
-                    <div style='margin-top:20px;font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};'>
+                    <div style='margin-top:20px;font-family:'DM Sans',sans-serif;font-size:2.64rem;color:{text_sub};'>
                         ● Ticker dengan data terverifikasi: {", ".join(sorted(_sh_all_db.keys()))}
                     </div>
                 </div>""", unsafe_allow_html=True)
@@ -11715,7 +11764,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                 # Badge sumber data
                 src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#8b5cf6" if "SIGMA" in data_source else "#9b59b6"))
-                st.markdown(f"""<div style='display:inline-block;font-family:'DM Sans',sans-serif;font-size:0.82rem;
+                st.markdown(f"""<div style='display:inline-block;font-family:'DM Sans',sans-serif;font-size:2.46rem;
                     letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
                     background:{src_color}11;padding:3px 10px;border-radius:4px;margin-bottom:8px;'>
                     ● SUMBER: {data_source}</div>""", unsafe_allow_html=True)
@@ -11724,7 +11773,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 if is_estimated:
                     st.markdown(f"""<div style='background:rgba(155,89,182,0.08);border:1px solid rgba(155,89,182,0.3);
                         border-left:3px solid #9b59b6;border-radius:0 6px 6px 0;
-                        padding:10px 16px;margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:0.92rem;color:{text_sub};'>
+                        padding:10px 16px;margin-bottom:12px;font-family:'DM Sans',sans-serif;font-size:2.76rem;color:{text_sub};'>
                         ⚠️ <b style='color:#9b59b6;'>DATA ESTIMASI</b> - {sh_ticker} tidak tersedia di database IDX resmi.
                         Chart di bawah adalah estimasi berbasis data publik yfinance + pola industri.
                         Untuk data akurat, cek langsung di
@@ -11797,9 +11846,9 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     with col:
                         st.markdown(f"""
                         <div style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;'>
-                            <div style='font-size:0.8rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
+                            <div style='font-size:2.4rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
                             <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
-                            <div style='font-size:0.85rem;color:{sub_c};margin-top:3px;'>{sub}</div>
+                            <div style='font-size:2.55rem;color:{sub_c};margin-top:3px;'>{sub}</div>
                         </div>""", unsafe_allow_html=True)
 
                 st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
@@ -11917,7 +11966,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 )
 
                 st.markdown(f"""
-                <div style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
+                <div style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:2.64rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
                     <span style='color:{price_color};font-weight:600;'>━━ Harga {sh_ticker} (Rp) - Skala Kanan</span>
                     <span style='color:#4285F4;font-weight:600;'>━━ Total Pemegang - Skala Kiri</span>
                     <span style='color:{sh_up_color};'>█ Δ Naik</span>
@@ -11940,7 +11989,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 </div>""", unsafe_allow_html=True)
 
                 # ── Tabel data per bulan ──
-                st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.9rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin-bottom:8px;'>DATA HISTORIS BULANAN</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.7rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin-bottom:8px;'>DATA HISTORIS BULANAN</p>", unsafe_allow_html=True)
                 df_disp = df_sh[["date", "shareholders", "delta", "pct_change"]].copy()
 
                 # Merge harga bulanan ke tabel
@@ -12089,7 +12138,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         # ── Hapus saham suspend dari screening database ──
         _full_screen_db = {tk: v for tk, v in _full_screen_db.items() if tk not in IDX_SUSPENDED_TICKERS}
 
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.88rem;letter-spacing:0.06em;color:{text_sub};margin-bottom:14px;text-transform:uppercase;'>Deteksi akumulasi &amp; distribusi retail &middot; Naik/Turun 1 bulan &amp; 3 bulan berturut-turut &middot; Data IDX &middot; {len(_full_screen_db)} emiten terpantau</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.64rem;letter-spacing:0.06em;color:{text_sub};margin-bottom:14px;text-transform:uppercase;'>Deteksi akumulasi &amp; distribusi retail &middot; Naik/Turun 1 bulan &amp; 3 bulan berturut-turut &middot; Data IDX &middot; {len(_full_screen_db)} emiten terpantau</p>", unsafe_allow_html=True)
 
         # ── Build screening rows dari database gabungan ──
         _naik_rows = []
@@ -12183,8 +12232,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
     letter-spacing: 0.08em;
   }}
 }}
-.sh2-tbl {{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.96rem;}}
-.sh2-tbl th {{font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid;text-align:left;white-space:nowrap;}}
+.sh2-tbl {{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:2.88rem;}}
+.sh2-tbl th {{font-size:2.34rem;letter-spacing:0.1em;text-transform:uppercase;padding:8px 10px;border-bottom:2px solid;text-align:left;white-space:nowrap;}}
 .sh2-tbl td {{padding:7px 10px;border-bottom:1px solid {_tbl_border};vertical-align:middle;white-space:nowrap;}}
 .sh2-tbl tr:last-child td {{border-bottom:none;}}
 .sh2-tbl tr:hover td {{background:rgba(255,255,255,0.03);}}
@@ -12195,14 +12244,14 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 .sh2-head-dn {{background:{_tbl_head_dn};color:{_acc_dn};border-color:{_acc_dn}33;}}
 .sh2-badge-up {{color:{_acc_up};}}
 .sh2-badge-dn {{color:{_acc_dn};}}
-.sh2-hist {{color:{_acc_hist};font-size:0.88rem;}}
-.sh2-hist-lbl {{font-size:0.75rem;opacity:0.7;display:block;margin-bottom:1px;}}
+.sh2-hist {{color:{_acc_hist};font-size:2.64rem;}}
+.sh2-hist-lbl {{font-size:2.25rem;opacity:0.7;display:block;margin-bottom:1px;}}
 @media(max-width:768px){{
-  .sh2-tbl{{font-size:0.85rem;}}
-  .sh2-tbl th{{font-size:0.72rem;padding:5px 8px;}}
+  .sh2-tbl{{font-size:2.55rem;}}
+  .sh2-tbl th{{font-size:2.16rem;padding:5px 8px;}}
   .sh2-tbl td{{padding:5px 8px;}}
-  .sh2-badge{{font-size:0.9rem;}}
-  .sh2-hist{{font-size:0.82rem;}}
+  .sh2-badge{{font-size:2.7rem;}}
+  .sh2-hist{{font-size:2.46rem;}}
 }}
 </style>""", unsafe_allow_html=True)
 
@@ -12251,7 +12300,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
-.lbl{{font-size:0.85rem;letter-spacing:0.12em;text-transform:uppercase;
+.lbl{{font-size:2.55rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
 .wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
 /* === SCROLL CONTAINER: vertikal + horizontal === */
@@ -12269,11 +12318,11 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
 .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{_tbl_border};border-radius:10px;}}
 table{{width:max-content;min-width:100%;border-collapse:collapse;
-       font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
+       font-family:'IBM Plex Mono',monospace;font-size:2.82rem;}}
 /* Sticky header saat scroll vertikal */
 thead th{{
   position:sticky;top:0;z-index:2;
-  font-size:0.77rem;letter-spacing:0.1em;text-transform:uppercase;
+  font-size:2.31rem;letter-spacing:0.1em;text-transform:uppercase;
   padding:8px 10px;border-bottom:2px solid {_head_bdr};
   text-align:left;white-space:nowrap;
   background:{_head_bg};color:{_head_clr};
@@ -12284,34 +12333,34 @@ tbody td{{
 }}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
-.tk{{font-weight:700;font-size:0.98rem;color:{acc};}}
+.tk{{font-weight:700;font-size:2.94rem;color:{acc};}}
 .up{{color:{_acc_up};font-weight:600;}}
 .dn{{color:{_acc_dn};font-weight:600;}}
-.hist{{color:{_acc_hist};font-size:0.88rem;}}
+.hist{{color:{_acc_hist};font-size:2.64rem;}}
 /* Footer: info baris + navigasi halaman */
 .pg-bar{{display:flex;align-items:center;justify-content:space-between;
          padding:7px 12px;border-top:1px solid {_tbl_border};
          background:rgba(255,255,255,0.02);flex-wrap:wrap;gap:5px;}}
-.pg-info{{font-size:0.78rem;color:{_acc_hist};}}
+.pg-info{{font-size:2.34rem;color:{_acc_hist};}}
 .pg-btns{{display:flex;gap:5px;}}
 .pg-btn{{background:rgba(255,255,255,0.06);color:{text_main};
          border:1px solid {_tbl_border};border-radius:4px;
          padding:4px 11px;font-family:'IBM Plex Mono',monospace;
-         font-size:0.78rem;cursor:pointer;transition:background 0.15s;}}
+         font-size:2.34rem;cursor:pointer;transition:background 0.15s;}}
 .pg-btn:hover{{background:rgba(255,255,255,0.12);}}
 .pg-btn:disabled{{opacity:0.3;cursor:default;}}
 /* Scroll hint mobile */
-.hint{{display:none;text-align:center;font-size:0.75rem;color:{_acc_hist};
+.hint{{display:none;text-align:center;font-size:2.25rem;color:{_acc_hist};
        padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {_tbl_border};}}
 @media(max-width:600px){{
   .hint{{display:block;}}
-  table{{font-size:0.85rem;}}
-  thead th{{font-size:0.72rem;padding:6px 8px;}}
-  tbody td{{padding:5px 8px;font-size:0.85rem;}}
-  .tk{{font-size:0.9rem;}}
-  .hist{{font-size:0.8rem;}}
-  .pg-info{{font-size:0.74rem;}}
-  .pg-btn{{padding:3px 9px;font-size:0.74rem;}}
+  table{{font-size:2.55rem;}}
+  thead th{{font-size:2.16rem;padding:6px 8px;}}
+  tbody td{{padding:5px 8px;font-size:2.55rem;}}
+  .tk{{font-size:2.7rem;}}
+  .hist{{font-size:2.4rem;}}
+  .pg-info{{font-size:2.22rem;}}
+  .pg-btn{{padding:3px 9px;font-size:2.22rem;}}
 }}
 </style></head><body>
 <span class="lbl">{icon} {label} - {count} EMITEN</span>
@@ -12389,7 +12438,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
             _h = max(_h, 200)
             components.html(_html, height=_h, scrolling=False)
 
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.64rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
         st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;'></div>", unsafe_allow_html=True)
@@ -12400,7 +12449,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
     with tab_alpha_screener:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - AI STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.1rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
         alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
             "  🔍 AI STOCK INSIGHT  ",
@@ -12414,7 +12463,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
         with alpha_tab_insight:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:2.1rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
             col_input, col_btn = st.columns([3, 1])
             with col_input:
@@ -13204,18 +13253,18 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
                                     f"<span style='display:inline-block;width:28px;height:3px;"
                                     f"background:{clr};border-radius:2px;'></span>"
-                                    f"<span style='font-family:'DM Sans',sans-serif;font-size:0.72rem;"
+                                    f"<span style='font-family:'DM Sans',sans-serif;font-size:2.16rem;"
                                     f"color:{tv_text_color};'>{lbl}</span></span>")
                         # Volume Delta legend
                         leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
                                 f"<span style='display:inline-block;width:14px;height:10px;"
                                 f"background:rgba(8,153,129,0.85);border-radius:2px;'></span>"
-                                f"<span style='font-family:'DM Sans',sans-serif;font-size:0.72rem;"
+                                f"<span style='font-family:'DM Sans',sans-serif;font-size:2.16rem;"
                                 f"color:{tv_text_color};'>Buy Power (Delta)</span></span>")
                         leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
                                 f"<span style='display:inline-block;width:14px;height:10px;"
                                 f"background:rgba(242,54,69,0.75);border-radius:2px;'></span>"
-                                f"<span style='font-family:'DM Sans',sans-serif;font-size:0.72rem;"
+                                f"<span style='font-family:'DM Sans',sans-serif;font-size:2.16rem;"
                                 f"color:{tv_text_color};'>Sell Power (Delta)</span></span>")
                         leg += "</div>"
                         st.markdown(leg, unsafe_allow_html=True)
@@ -13246,11 +13295,11 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     # Risk level badge
                     _rl = (ai_data or {}).get("risk_level", "NONE")
                     if _rl == "LOW":
-                        _rl_badge = "<span style='background:#089981;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟢 LOW RISK</span>"
+                        _rl_badge = "<span style='background:#089981;color:#fff;font-size:2.04rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟢 LOW RISK</span>"
                     elif _rl == "MID":
-                        _rl_badge = "<span style='background:#f5a623;color:#000;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟡 MID RISK</span>"
+                        _rl_badge = "<span style='background:#f5a623;color:#000;font-size:2.04rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟡 MID RISK</span>"
                     elif _rl == "HIGH":
-                        _rl_badge = "<span style='background:#f23645;color:#fff;font-size:0.68rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🔴 HIGH RISK</span>"
+                        _rl_badge = "<span style='background:#f23645;color:#fff;font-size:2.04rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🔴 HIGH RISK</span>"
                     else:
                         _rl_badge = ""
 
@@ -13259,10 +13308,10 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                 
                     # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
                     html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-    <div style="font-size:0.65rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
+    <div style="font-size:1.95rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
     📋 TRADE PLAN SIGMA {_rl_badge}
     </div>
-    <div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
+    <div style="font-size:2.46rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
     {verdict_clean}
     </div>
     </div>"""
@@ -13272,7 +13321,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     st.markdown(f"""
                     <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
                         <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
-                        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        <p style="font-family:'IBM Plex Mono',monospace;font-size:2.16rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
                             Masukkan kode saham dan klik <span style='color:#8b5cf6;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
                         </p>
                     </div>
@@ -13368,7 +13417,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         except NameError:
             pass  # IDX_SUSPENDED_TICKERS belum tersedia di context ini (aman)
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.1rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
@@ -13464,7 +13513,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
             # Jika tidak bisa split (format berbeda), render as-is
             if not stock_parts:
                 st.markdown(f"""<div style="background:{bg_wrap};border:1px solid {border_c};border-left:3px solid {accent};
-border-radius:0 8px 8px 0;padding:20px 20px;margin-top:12px;font-size:0.88rem;color:{text_main};
+border-radius:0 8px 8px 0;padding:20px 20px;margin-top:12px;font-size:2.64rem;color:{text_main};
 white-space:pre-wrap;word-break:break-word;line-height:1.78;box-sizing:border-box;width:100%;overflow:visible;">
 {reco_text}
 </div>""", unsafe_allow_html=True)
@@ -13479,7 +13528,7 @@ white-space:pre-wrap;word-break:break-word;line-height:1.78;box-sizing:border-bo
   border-radius:0 10px 10px 0;
   padding:16px 18px;
   margin-bottom:14px;
-  font-size:0.88rem;
+  font-size:2.64rem;
   color:{text_main};
   white-space:pre-wrap;
   word-break:break-word;
@@ -13488,7 +13537,7 @@ white-space:pre-wrap;word-break:break-word;line-height:1.78;box-sizing:border-bo
   width:100%;
 }}
 @media(max-width:768px){{
-  .reco-stock-card{{padding:12px 13px;font-size:0.82rem;line-height:1.75;}}
+  .reco-stock-card{{padding:12px 13px;font-size:2.46rem;line-height:1.75;}}
 }}
 </style>""", unsafe_allow_html=True)
 
@@ -13499,7 +13548,7 @@ white-space:pre-wrap;word-break:break-word;line-height:1.78;box-sizing:border-bo
             if tail_parts:
                 tail_text = "\n\n".join(tail_parts)
                 st.markdown(f"""<div style="background:rgba(124,58,237,0.05);border:1px solid {border_c};
-border-radius:8px;padding:14px 16px;margin-top:4px;font-size:0.85rem;color:{text_sub};
+border-radius:8px;padding:14px 16px;margin-top:4px;font-size:2.55rem;color:{text_sub};
 white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-box;width:100%;">
 {tail_text}
 </div>""", unsafe_allow_html=True)
@@ -13540,7 +13589,7 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
             if not _raw_t:
                 return
             if _ts_t:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts_t}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:1.8rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_ts_t}</p>", unsafe_allow_html=True)
 
             _tdata = None
             try:
@@ -13589,41 +13638,41 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;}}
-.sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{_acc};font-weight:700;margin:0 0 7px;display:block;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:2.79rem;}}
+.sec-lbl{{font-size:2.16rem;letter-spacing:0.14em;text-transform:uppercase;color:{_acc};font-weight:700;margin:0 0 7px;display:block;}}
 .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
 .scroll::-webkit-scrollbar{{height:4px;}}
 .scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;min-width:820px;}}
-thead th{{background:{_hdr_bg};color:{_acc};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{_txt};font-size:0.93rem;}}
+thead th{{background:{_hdr_bg};color:{_acc};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{_txt};font-size:2.79rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
 tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
 tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
-.tk{{font-weight:700;font-size:0.93rem;color:{_acc};}}
-.nm{{font-size:0.80rem;color:{_sub_c};max-width:130px;overflow:hidden;text-overflow:ellipsis;}}
+.tk{{font-weight:700;font-size:2.79rem;color:{_acc};}}
+.nm{{font-size:2.4rem;color:{_sub_c};max-width:130px;overflow:hidden;text-overflow:ellipsis;}}
 .pr{{font-weight:600;}}
 .sg{{color:#089981;font-weight:700;}}
 .sy{{color:#a78bfa;font-weight:700;}}
 .sr{{color:#f23645;font-weight:700;}}
-.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.78rem;font-weight:700;letter-spacing:0.05em;}}
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:2.34rem;font-weight:700;letter-spacing:0.05em;}}
 .bdg-buy{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
 .bdg-hold{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
 .bdg-avoid{{background:rgba(242,54,69,0.12);color:#f23645;border:1px solid rgba(242,54,69,0.5);}}
 .vol-hi{{color:#a78bfa;font-weight:700;}}
 .vol-lo{{color:#f23645;font-weight:600;}}
 .vol-ok{{color:{_sub_c};}}
-.freq-smart{{color:#60a5fa;font-size:0.80rem;}}
-.freq-noise{{color:{_sub_c};font-size:0.80rem;}}
-.reason-cell{{max-width:200px;white-space:normal;line-height:1.4;font-size:0.80rem;color:#f23645;}}
-.buy-txt{{font-size:0.80rem;color:{_txt};max-width:180px;white-space:normal;line-height:1.35;}}
-.outlook-box{{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.20);border-left:3px solid {_acc};border-radius:0 8px 8px 0;padding:11px 15px;font-size:0.93rem;color:{_txt};line-height:1.65;margin-bottom:10px;}}
+.freq-smart{{color:#60a5fa;font-size:2.4rem;}}
+.freq-noise{{color:{_sub_c};font-size:2.4rem;}}
+.reason-cell{{max-width:200px;white-space:normal;line-height:1.4;font-size:2.4rem;color:#f23645;}}
+.buy-txt{{font-size:2.4rem;color:{_txt};max-width:180px;white-space:normal;line-height:1.35;}}
+.outlook-box{{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.20);border-left:3px solid {_acc};border-radius:0 8px 8px 0;padding:11px 15px;font-size:2.79rem;color:{_txt};line-height:1.65;margin-bottom:10px;}}
 @media(max-width:640px){{
-  thead th{{font-size:0.55rem;padding:6px 7px;}}
-  tbody td{{font-size:0.82rem;padding:6px 7px;}}
-  .tk{{font-size:0.86rem;}}
+  thead th{{font-size:1.65rem;padding:6px 7px;}}
+  tbody td{{font-size:2.46rem;padding:6px 7px;}}
+  .tk{{font-size:2.58rem;}}
   .nm{{max-width:80px;}}
 }}
 </style></head><body>
@@ -13712,8 +13761,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
       '<td><span class="'+volClass(r.vol_spike)+'">'+( r.vol_spike||'-')+'</span></td>'+
       '<td>'+freqLabel(r.vol_type)+'</td>'+
       '<td class="vol-ok">'+(r.rsi?parseFloat(r.rsi).toFixed(1):'-')+'</td>'+
-      '<td style="font-size:0.65rem;max-width:130px;white-space:normal;">'+(r.macd||'-')+'</td>'+
-      '<td style="font-size:0.65rem;max-width:120px;white-space:normal;">'+wy+'</td>'+
+      '<td style="font-size:1.95rem;max-width:130px;white-space:normal;">'+(r.macd||'-')+'</td>'+
+      '<td style="font-size:1.95rem;max-width:120px;white-space:normal;">'+wy+'</td>'+
       '<td>'+bdg(r.rating)+'</td>'+
       '</tr>';
   }});
@@ -13749,7 +13798,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
       '<td><span class="sr">'+(r.ta_score||'-')+'</span></td>'+
       '<td><span class="sr">'+(r.fa_score||'-')+'</span></td>'+
       '<td><span class="sr">'+(sc?sc.toFixed(1):'-')+'</span></td>'+
-      '<td style="font-size:0.65rem;color:#f23645;">'+(r.vol_signal||'Distribusi')+'</td>'+
+      '<td style="font-size:1.95rem;color:#f23645;">'+(r.vol_signal||'Distribusi')+'</td>'+
       '<td>'+bdg('AVOID')+'</td>'+
       '<td class="reason-cell">'+(r.reason||r.alasan||'-')+'</td>'+
       '</tr>';
@@ -13765,7 +13814,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI HARIAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Top pick trading hari ini - berbasis volume intelligence, frekuensi transaksi, block trade detection, dan sinyal shareholder.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.04rem;color:{text_sub};margin-bottom:16px;'>Top pick trading hari ini - berbasis volume intelligence, frekuensi transaksi, block trade detection, dan sinyal shareholder.</p>", unsafe_allow_html=True)
 
             col_d1, col_d2 = st.columns([3, 1])
             with col_d2:
@@ -13893,6 +13942,12 @@ Format JSON WAJIB:
                         _daily_raw = _call_ai_reco(prompt)
                         st.session_state["reco_daily_result"] = _daily_raw
                         st.session_state["reco_daily_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        # Persist immediately so refresh doesn't lose this
+                        if st.session_state.user:
+                            _sv = load_user(st.session_state.user["email"]) or {}
+                            _sv["reco_daily_result"] = _daily_raw
+                            _sv["reco_daily_ts"] = st.session_state["reco_daily_ts"]
+                            save_user(st.session_state.user["email"], _sv)
                         if _SIGMA_SCORE_AVAILABLE and _sigma_scores_daily:
                             st.session_state["_sigma_scores_daily_cache"] = _sigma_scores_daily
                     else:
@@ -13907,7 +13962,7 @@ Format JSON WAJIB:
                 # ── SIGMA Score compact badges - top 4 candidates ──
                 if _SIGMA_SCORE_AVAILABLE and st.session_state.get("_sigma_scores_daily_cache"):
                     _ssd = st.session_state["_sigma_scores_daily_cache"]
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};letter-spacing:0.1em;text-transform:uppercase;margin:12px 0 6px;'>⚡ SIGMA SCORE - MULTI-FACTOR RANKING</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:1.8rem;color:{text_sub};letter-spacing:0.1em;text-transform:uppercase;margin:12px 0 6px;'>⚡ SIGMA SCORE - MULTI-FACTOR RANKING</p>", unsafe_allow_html=True)
                     _sc = st.columns(min(len(_ssd), 4))
                     for _i, (_stk, _sr) in enumerate(sorted(_ssd.items(), key=lambda x: x[1].score, reverse=True)[:4]):
                         with _sc[_i % 4]:
@@ -13915,15 +13970,15 @@ Format JSON WAJIB:
             elif not run_daily:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📅</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
                         Klik <span style='color:#a78bfa;'>Generate Daily</span> untuk top pick saham hari ini<br>
-                        <span style="opacity:0.5;font-size:0.62rem;">Format tabel: TA Score · FA Score · Vol Spike · Vol Type (Block/Ritel) · Trade Plan</span></p>
+                        <span style="opacity:0.5;font-size:1.86rem;">Format tabel: TA Score · FA Score · Vol Spike · Vol Type (Block/Ritel) · Trade Plan</span></p>
                 </div>""", unsafe_allow_html=True)
 
         # ─── TAB WEEKLY ───────────────────────────────────────────────────
         with reco_tab_weekly:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>REKOMENDASI MINGGUAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Swing trade 1-2 minggu - tren, katalis fundamental, dan tren pemegang saham. Format tabel detail langsung.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.04rem;color:{text_sub};margin-bottom:16px;'>Swing trade 1-2 minggu - tren, katalis fundamental, dan tren pemegang saham. Format tabel detail langsung.</p>", unsafe_allow_html=True)
 
             col_w1, col_w2 = st.columns([3, 1])
             with col_w2:
@@ -14023,6 +14078,11 @@ Format JSON WAJIB:
                         _weekly_raw = _call_ai_reco(prompt, max_tok=3500)
                         st.session_state["reco_weekly_result"] = _weekly_raw
                         st.session_state["reco_weekly_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        if st.session_state.user:
+                            _sv = load_user(st.session_state.user["email"]) or {}
+                            _sv["reco_weekly_result"] = _weekly_raw
+                            _sv["reco_weekly_ts"] = st.session_state["reco_weekly_ts"]
+                            save_user(st.session_state.user["email"], _sv)
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
 
@@ -14035,15 +14095,15 @@ Format JSON WAJIB:
             elif not run_weekly:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📆</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
                         Klik <span style='color:#26a69a;'>Generate Weekly</span> untuk top pick swing trade minggu ini<br>
-                        <span style="opacity:0.5;font-size:0.62rem;">Format tabel detail: TA Score · FA Score · Combined · Wyckoff · MACD · Trade Plan</span></p>
+                        <span style="opacity:0.5;font-size:1.86rem;">Format tabel detail: TA Score · FA Score · Combined · Wyckoff · MACD · Trade Plan</span></p>
                 </div>""", unsafe_allow_html=True)
 
         # ─── TAB BSJP ─────────────────────────────────────────────────────
         with reco_tab_bsjp:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>BELI SORE JUAL PAGI (BSJP)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:8px;'>Strategi overnight - beli menjelang penutupan BEI (15:00–15:50 WIB), jual di pre-opening atau sesi 1 besok pagi.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.04rem;color:{text_sub};margin-bottom:8px;'>Strategi overnight - beli menjelang penutupan BEI (15:00–15:50 WIB), jual di pre-opening atau sesi 1 besok pagi.</p>", unsafe_allow_html=True)
             st.markdown(f"""<div class="trm-insight" style="margin-bottom:16px;">
 ⚠️ <b>Disclaimer BSJP:</b> Strategi overnight memanfaatkan gap-up dan momentum pembukaan.
 Kunci: cari saham dengan <b>volume spike menjelang closing + frekuensi transaksi RENDAH</b> (block trade institusi).
@@ -14157,6 +14217,11 @@ Format JSON WAJIB:
                         _bsjp_raw = _call_ai_reco(prompt)
                         st.session_state["reco_bsjp_result"] = _bsjp_raw
                         st.session_state["reco_bsjp_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        if st.session_state.user:
+                            _sv = load_user(st.session_state.user["email"]) or {}
+                            _sv["reco_bsjp_result"] = _bsjp_raw
+                            _sv["reco_bsjp_ts"] = st.session_state["reco_bsjp_ts"]
+                            save_user(st.session_state.user["email"], _sv)
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
 
@@ -14169,20 +14234,20 @@ Format JSON WAJIB:
             elif not run_bsjp:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
                         Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini<br>
-                        <span style="opacity:0.5;font-size:0.62rem;">Format tabel: Vol Spike · Block Trade / Ritel · Entry Zone · Target Pagi · SL</span></p>
+                        <span style="opacity:0.5;font-size:1.86rem;">Format tabel: Vol Spike · Block Trade / Ritel · Entry Zone · Target Pagi · SL</span></p>
                 </div>""", unsafe_allow_html=True)
 
         # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
         with reco_tab_fundamental:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.04rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
 
             _fs_accent = "#26a69a"
 
             st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};line-height:1.9;'>
+            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:2.01rem;color:{text_sub};line-height:1.9;'>
             <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING (BASIS SCREENING)</span><br>
             ✅ <b>ROE ≥ 15%</b> - Return on Equity kuat (Buffett: konsisten ≥15% = moat sesungguhnya) &nbsp;|&nbsp;
             ✅ <b>DER ≤ 1.0x</b> - Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
@@ -14344,13 +14409,13 @@ Format JSON WAJIB:
                     # Summary metric cards
                     _sm1, _sm2, _sm3, _sm4 = st.columns(4)
                     _avg_roe = sum(d.get("roe",0) for _,d in _fs_data.items()) / max(len(_fs_data),1)
-                    with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
-                    with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:#a78bfa;'>{len(_fs_watch)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
-                    with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
-                    with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:0.6rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
+                    with _sm1: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{_fs_accent};'>{len(_fs_pass)}</div><div style='font-size:1.8rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>LOLOS BUFFETT ≥4/6</div></div>", unsafe_allow_html=True)
+                    with _sm2: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:#a78bfa;'>{len(_fs_watch)}</div><div style='font-size:1.8rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>WATCHLIST 2–3/6</div></div>", unsafe_allow_html=True)
+                    with _sm3: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{_avg_roe:.1f}%</div><div style='font-size:1.8rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>AVG ROE UNIVERSE</div></div>", unsafe_allow_html=True)
+                    with _sm4: st.markdown(f"<div style='background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:10px 14px;font-family:IBM Plex Mono,monospace;'><div style='font-size:1.4rem;font-weight:700;color:{text_main};'>{len(_fs_data)}</div><div style='font-size:1.8rem;color:{text_sub};letter-spacing:0.08em;margin-top:2px;'>TOTAL DISCREEN</div></div>", unsafe_allow_html=True)
 
                     if _fs_ts:
-                        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.6rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:1.8rem;color:{text_sub};margin:10px 0 4px;'>🕐 {_fs_ts} · Sumber: yfinance · Cache 1 jam</p>", unsafe_allow_html=True)
 
                     def _render_fs_table_bsjp(pass_rows, watch_rows, accent):
                         """Render Fundamental Screener dalam format tabel BSJP - dua section + avoid."""
@@ -14405,29 +14470,29 @@ Format JSON WAJIB:
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;}}
-.sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:2.79rem;}}
+.sec-lbl{{font-size:2.16rem;letter-spacing:0.14em;text-transform:uppercase;color:{accent};font-weight:700;margin:0 0 7px;display:block;}}
 .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
 .scroll::-webkit-scrollbar{{height:4px;}}
 .scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;min-width:900px;}}
-thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.93rem;}}
+thead th{{background:{_hdr_bg};color:{accent};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:2.79rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.04);}}
 tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.04);}}
 tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
-.tk{{font-weight:700;font-size:0.93rem;color:{accent};}}
-.nm{{font-size:0.80rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
+.tk{{font-weight:700;font-size:2.79rem;color:{accent};}}
+.nm{{font-size:2.4rem;color:{text_sub};max-width:120px;overflow:hidden;text-overflow:ellipsis;}}
 .ok{{color:#a78bfa;font-weight:600;}}
 .ng{{color:#f23645;}}
 .neu{{color:{text_sub};}}
-.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;}}
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:2.16rem;font-weight:700;letter-spacing:0.05em;}}
 .bdg-pass{{background:rgba(124,58,237,0.18);color:#a78bfa;border:1px solid rgba(124,58,237,0.5);}}
 .bdg-watch{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
-.dots span{{font-size:0.80rem;}}
-@media(max-width:640px){{thead th{{font-size:0.55rem;padding:6px 7px;}}tbody td{{font-size:0.82rem;padding:6px 7px;}}}}
+.dots span{{font-size:2.4rem;}}
+@media(max-width:640px){{thead th{{font-size:1.65rem;padding:6px 7px;}}tbody td{{font-size:2.46rem;padding:6px 7px;}}}}
 </style></head><body>
 
 <span class="sec-lbl">✅ LOLOS BUFFETT - {_n_pass} SAHAM (SKOR ≥4/6)</span>
@@ -14470,7 +14535,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
   function dots(s){{
     var h='';
     for(var i=0;i<6;i++)h+='<span style="color:'+(i<s?'{accent}':'rgba(200,200,200,0.18)')+'">&#9679;</span>';
-    return h+'<span style="font-size:0.58rem;color:{text_sub};margin-left:3px;">'+s+'/6</span>';
+    return h+'<span style="font-size:1.74rem;color:{text_sub};margin-left:3px;">'+s+'/6</span>';
   }}
   function buildRows(arr,tbId){{
     var h='';
@@ -14506,7 +14571,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     if _fs_pass or _fs_watch:
                         _render_fs_table_bsjp(_fs_pass, _fs_watch, _fs_accent)
                     if not _fs_pass and not _fs_watch:
-                        st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='trm-card' style='text-align:center;padding:24px;'><p style='font-family:IBM Plex Mono,monospace;font-size:2.16rem;color:{text_sub};'>Tidak ada saham yang lolos filter di sektor ini.</p></div>", unsafe_allow_html=True)
 
                     # AI Insight
                     if _fs_pass:
@@ -14552,11 +14617,11 @@ Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang 
                                 st.session_state["fs_ai_result"] = _fs_ai
 
                     if st.session_state.get("fs_ai_result"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:0.93rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:16px 18px;margin-top:12px;font-size:2.79rem;color:{text_main};line-height:1.8;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_ai_result']}</div>""", unsafe_allow_html=True)
 
                     # ── Chat tanya fundamental ─────────────────────────────────
                     st.markdown(f"<hr style='border-color:rgba(255,255,255,0.06);margin:18px 0 14px;'>", unsafe_allow_html=True)
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;color:{text_sub};margin-bottom:8px;letter-spacing:0.05em;'>💬 TANYA FUNDAMENTAL - Analisa mendalam saham apapun dari hasil screener</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.04rem;color:{text_sub};margin-bottom:8px;letter-spacing:0.05em;'>💬 TANYA FUNDAMENTAL - Analisa mendalam saham apapun dari hasil screener</p>", unsafe_allow_html=True)
                     _fs_chat_q = st.text_input(
                         "",
                         placeholder="Contoh: analisa fundamental BBCA | bandingkan TLKM vs BBRI | bagaimana valuasi ASII? | apakah BMRI layak akumulasi?",
@@ -14594,7 +14659,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                             st.session_state["fs_chat_ans"] = _fs_chat_ans
 
                     if st.session_state.get("fs_chat_ans"):
-                        st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:0.93rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
+                        st.markdown(f"""<div style="background:{met_bg};border:1px solid rgba(38,166,154,0.2);border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:14px 18px;margin-top:8px;font-size:2.79rem;color:{text_main};line-height:1.82;white-space:pre-wrap;word-break:break-word;">{st.session_state['fs_chat_ans']}</div>""", unsafe_allow_html=True)
                         if st.button("🗑 Hapus Jawaban", key="btn_fs_chat_clear"):
                             st.session_state["fs_chat_ans"] = ""
                             st.rerun()
@@ -14602,9 +14667,9 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
             else:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:40px 20px;">
                     <div style="font-size:2.5rem;opacity:0.3;margin-bottom:14px;">📊</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
                         Pilih sektor &amp; urutan, lalu klik <span style='color:{_fs_accent};'>SCREEN</span><br>
-                        <span style="opacity:0.5;font-size:0.65rem;">Screening {len(_fs_universe)} saham IDX · 6 Kriteria Warren Buffett · Data Live</span></p>
+                        <span style="opacity:0.5;font-size:1.95rem;">Screening {len(_fs_universe)} saham IDX · 6 Kriteria Warren Buffett · Data Live</span></p>
                 </div>""", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True) 
@@ -14614,7 +14679,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 # ─────────────────────────────────────────────
     with alpha_tab_brosum:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 BROKER SUMMARY - NET BUY/SELL &amp; FOREIGN FLOW</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.1rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
 
         bs_tab_screening, bs_tab_foreign, bs_tab_upload = st.tabs([
             "  🔍 BROKER SCREENING  ",
@@ -14768,7 +14833,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
             return result
 
         with bs_tab_screening:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Masukkan kode saham untuk melihat aktivitas broker - siapa yang akumulasi, siapa yang distribusi.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.64rem;color:{text_sub};margin-bottom:16px;'>Masukkan kode saham untuk melihat aktivitas broker - siapa yang akumulasi, siapa yang distribusi.</p>", unsafe_allow_html=True)
 
             col_bs1, col_bs2, col_bs3 = st.columns([2, 1, 1])
             with col_bs1:
@@ -14836,29 +14901,29 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.93rem;color:{_TXT_c};}}
-.sec-lbl{{font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:{_P_c};font-weight:700;margin:0 0 7px;display:block;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:2.79rem;color:{_TXT_c};}}
+.sec-lbl{{font-size:2.1rem;letter-spacing:0.14em;text-transform:uppercase;color:{_P_c};font-weight:700;margin:0 0 7px;display:block;}}
 .card{{background:{_table_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:18px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
 table{{width:100%;border-collapse:collapse;min-width:640px;}}
-thead th{{background:{_hdr_bg};color:{_P_c};padding:9px 12px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:{_TXT_c};font-size:0.88rem;white-space:nowrap;}}
+thead th{{background:{_hdr_bg};color:{_P_c};padding:9px 12px;text-align:left;border-bottom:1px solid {_border_c};font-size:2.1rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
+tbody td{{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:{_TXT_c};font-size:2.64rem;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
-.bk{{font-weight:700;color:{_P_c};font-size:0.95rem;}}
+.bk{{font-weight:700;color:{_P_c};font-size:2.85rem;}}
 .bk.foreign{{color:{_R_c};}}
 .bk.bumn{{color:{_G_c};}}
 .pos{{color:{_G_c};font-weight:700;}}
 .neg{{color:{_R_c};font-weight:700;}}
 .bar-wrap{{width:100px;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;display:inline-block;vertical-align:middle;}}
 .bar-fill{{height:100%;border-radius:4px;}}
-.tag-type{{display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.65rem;font-weight:700;margin-left:4px;}}
+.tag-type{{display:inline-block;padding:1px 7px;border-radius:10px;font-size:1.95rem;font-weight:700;margin-left:4px;}}
 .tag-foreign{{background:rgba(242,54,69,0.14);color:{_R_c};border:1px solid rgba(242,54,69,0.3);}}
 .tag-bumn{{background:rgba(38,166,154,0.14);color:{_G_c};border:1px solid rgba(38,166,154,0.35);}}
 .tag-lokal{{background:rgba(124,58,237,0.12);color:{_P_c};border:1px solid rgba(124,58,237,0.25);}}
 .summary-grid{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}}
 .sum-card{{background:{_table_bg};border:1px solid {_border_c};border-radius:8px;padding:14px 16px;}}
-.sum-label{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB_c};}}
+.sum-label{{font-size:1.95rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB_c};}}
 .sum-val{{font-size:1.35rem;font-weight:700;margin-top:4px;}}
 </style></head><body>
 
@@ -14934,7 +14999,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
     var bkCls='bk'+(r.type==='FOREIGN'?' foreign':r.type==='BUMN'?' bumn':'');
     return '<tr>'+
       '<td><span class="'+bkCls+'">'+r.broker+'</span></td>'+
-      '<td style="font-size:0.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;">'+
+      '<td style="font-size:2.4rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;">'+
         (r.name||'-')+fTag+'</td>'+
       '<td>'+(r.type==='FOREIGN'?'<span class="tag-type tag-foreign">🌐 ASING</span>':r.type==='BUMN'?'<span class="tag-type tag-bumn">🏛️ BUMN</span>':'<span class="tag-type tag-lokal">🏠 LOKAL</span>')+'</td>'+
       '<td>'+fmt(r.buy_lot)+'</td>'+
@@ -14955,7 +15020,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
             '<span style="color:{_Y_c};">- NETRAL</span>';
     fTb.innerHTML+='<tr>'+
       '<td><span class="bk foreign">'+r.broker+'</span></td>'+
-      '<td style="font-size:0.8rem;">'+(r.name||'-')+'</td>'+
+      '<td style="font-size:2.4rem;">'+(r.name||'-')+'</td>'+
       '<td>'+fmt(r.buy_lot)+'</td>'+
       '<td>'+fmt(r.sell_lot)+'</td>'+
       '<td class="'+(r.net>=0?'pos':'neg')+'">'+(r.net>=0?'+':'')+fmt(r.net)+'</td>'+
@@ -14972,7 +15037,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
                     st.info("💡 **Tips:** Broker Summary tersedia untuk saham-saham liquid di IDX. Untuk saham mid/small cap, data mungkin terbatas. Gunakan tab AI untuk analisa dari screenshot RTI/Stockbit.")
 
         with bs_tab_foreign:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Monitoring aliran dana asing secara keseluruhan di pasar IDX - Net Foreign Buy/Sell multi-saham.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.64rem;color:{text_sub};margin-bottom:16px;'>Monitoring aliran dana asing secara keseluruhan di pasar IDX - Net Foreign Buy/Sell multi-saham.</p>", unsafe_allow_html=True)
 
             col_f1, col_f2 = st.columns([3, 1])
             with col_f1:
@@ -15012,12 +15077,12 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_c2};font-size:0.93rem;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_c2};font-size:2.79rem;}}
 .card{{background:{_table_bg2};border:1px solid {_border_c2};border-radius:10px;overflow:hidden;margin-bottom:18px;}}
 .scroll{{width:100%;overflow-x:auto;}}
 table{{width:100%;border-collapse:collapse;min-width:540px;}}
-thead th{{background:{_hdr_bg2};color:{_P_c2};padding:9px 12px;text-align:left;border-bottom:1px solid {_border_c2};font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.88rem;white-space:nowrap;}}
+thead th{{background:{_hdr_bg2};color:{_P_c2};padding:9px 12px;text-align:left;border-bottom:1px solid {_border_c2};font-size:2.1rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
+tbody td{{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:2.64rem;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 .tk{{font-weight:700;color:{_P_c2};}}
@@ -15069,9 +15134,9 @@ div[data-testid="stFileUploader"]:has(input[data-testid="bs_img_uploader"]) sect
 div[data-testid="stFileUploader"]:has(input[data-testid="bs_img_uploader"]) label { display: none !important; }
 div[data-testid="stFileUploader"]:has(input[data-testid="bs_img_uploader"]) section > button span:first-child { display: none !important; }
 </style>""", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Upload screenshot Broker Summary dari RTI, Stockbit, atau IPOT - AI akan membedah pola akumulasi, distribusi, crossing, dan sinyal foreign.</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.64rem;color:{text_sub};margin-bottom:16px;'>Upload screenshot Broker Summary dari RTI, Stockbit, atau IPOT - AI akan membedah pola akumulasi, distribusi, crossing, dan sinyal foreign.</p>", unsafe_allow_html=True)
             st.info("💡 Pastikan kolom Net Buy/Sell dan kode broker terlihat jelas dalam screenshot.")
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;letter-spacing:0.08em;color:{text_sub};text-transform:uppercase;margin-bottom:4px;'>Screenshot Broker Summary (PNG / JPG / WEBP)</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.25rem;letter-spacing:0.08em;color:{text_sub};text-transform:uppercase;margin-bottom:4px;'>Screenshot Broker Summary (PNG / JPG / WEBP)</p>", unsafe_allow_html=True)
             bs_img_upload = st.file_uploader(
                 "ss_brosum",
                 type=["png", "jpg", "jpeg", "webp"],
@@ -15120,7 +15185,7 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
                         _gai_resp = _gmodel.generate_content([_bs_prompt, _pil_img])
                         _bs_ai_result = _gai_resp.text if _gai_resp else "Analisa gagal."
                         st.markdown("---")
-                        st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.93rem;line-height:1.8;color:{text_main};'>{_bs_ai_result.replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:2.79rem;line-height:1.8;color:{text_main};'>{_bs_ai_result.replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
                     except Exception as _bse:
                         st.error(f"Analisa AI gagal: {str(_bse)[:200]}. Pastikan API key Gemini tersedia.")
             elif bs_analyze_btn and not bs_img_upload:
@@ -15132,7 +15197,7 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
 # ─────────────────────────────────────────────
     with alpha_tab_trackrecord:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏆 TRACK RECORD &amp; BACKTEST REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Riwayat rekomendasi AI &middot; Actual vs Target &middot; Win Rate &middot; P&amp;L Simulator</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.1rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Riwayat rekomendasi AI &middot; Actual vs Target &middot; Win Rate &middot; P&amp;L Simulator</p>", unsafe_allow_html=True)
 
         tr_tab_live, tr_tab_history, tr_tab_stats = st.tabs([
             "  📋 CATAT REKOMENDASI  ",
@@ -15145,8 +15210,8 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
             st.session_state["tr_records"] = []  # list of dicts
 
         with tr_tab_live:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:16px;'>Catat setiap rekomendasi yang dihasilkan AI (dari tab Daily/Weekly/BSJP) ke dalam track record. Setelah target/SL tersentuh, update hasilnya.</p>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(124,58,237,0.25);'>+ TAMBAH REKOMENDASI BARU</div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.64rem;color:{text_sub};margin-bottom:16px;'>Catat setiap rekomendasi yang dihasilkan AI (dari tab Daily/Weekly/BSJP) ke dalam track record. Setelah target/SL tersentuh, update hasilnya.</p>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:2.1rem;letter-spacing:0.12em;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(124,58,237,0.25);'>+ TAMBAH REKOMENDASI BARU</div>", unsafe_allow_html=True)
             if True:
                 col_tr1, col_tr2, col_tr3 = st.columns(3)
                 with col_tr1:
@@ -15191,10 +15256,10 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
             if not _records:
                 st.info("📋 Belum ada rekomendasi yang dicatat. Gunakan tab **📋 Catat Rekomendasi** untuk mulai tracking.")
             else:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};margin-bottom:12px;'>Total {len(_records)} rekomendasi tercatat. Update hasil di bawah setelah TP/SL tersentuh.</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.4rem;color:{text_sub};margin-bottom:12px;'>Total {len(_records)} rekomendasi tercatat. Update hasil di bawah setelah TP/SL tersentuh.</p>", unsafe_allow_html=True)
 
                 # Update form
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.7rem;letter-spacing:0.12em;font-weight:700;color:#60a5fa;text-transform:uppercase;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(96,165,250,0.2);'>EDIT HASIL REKOMENDASI</div>", unsafe_allow_html=True)
+                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:2.1rem;letter-spacing:0.12em;font-weight:700;color:#60a5fa;text-transform:uppercase;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(96,165,250,0.2);'>EDIT HASIL REKOMENDASI</div>", unsafe_allow_html=True)
                 if True:
                     _open_recs = [r for r in _records if r["status"] == "OPEN"]
                     if _open_recs:
@@ -15244,20 +15309,20 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_tr};font-size:0.93rem;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_tr};font-size:2.79rem;}}
 .card{{background:{_table_bg_tr};border:1px solid {_border_tr};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
 table{{width:100%;border-collapse:collapse;min-width:900px;}}
-thead th{{background:{_hdr_bg_tr};color:{_P_tr};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_tr};font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.82rem;white-space:nowrap;}}
+thead th{{background:{_hdr_bg_tr};color:{_P_tr};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_tr};font-size:2.04rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
+tbody td{{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:2.46rem;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
-.tk{{font-weight:700;color:{_P_tr};font-size:0.93rem;}}
+.tk{{font-weight:700;color:{_P_tr};font-size:2.79rem;}}
 .win{{color:{_G_tr};font-weight:700;}}
 .loss{{color:{_R_tr};font-weight:700;}}
 .open{{color:{_Y_tr};font-weight:700;}}
 .be{{color:{_B_tr};font-weight:700;}}
-.bdg{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.72rem;font-weight:700;}}
+.bdg{{display:inline-block;padding:2px 8px;border-radius:4px;font-size:2.16rem;font-weight:700;}}
 .bdg-daily{{background:rgba(124,58,237,0.18);color:{_P_tr};border:1px solid rgba(124,58,237,0.4);}}
 .bdg-weekly{{background:rgba(96,165,250,0.15);color:{_B_tr};border:1px solid rgba(96,165,250,0.4);}}
 .bdg-bsjp{{background:rgba(38,166,154,0.15);color:{_G_tr};border:1px solid rgba(38,166,154,0.4);}}
@@ -15295,20 +15360,20 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
     var pnlBar=r.status!=='OPEN'&&r.pnl_pct?
       '<div class="bar-pnl" style="width:'+Math.min(Math.abs(r.pnl_pct)*3,80)+'px;background:'+pnlCol+';"></div>':'';
     tb.innerHTML+='<tr>'+
-      '<td style="color:{_SUB_tr};font-size:0.75rem;">'+r.id+'</td>'+
-      '<td style="color:{_SUB_tr};font-size:0.78rem;">'+r.date+'</td>'+
+      '<td style="color:{_SUB_tr};font-size:2.25rem;">'+r.id+'</td>'+
+      '<td style="color:{_SUB_tr};font-size:2.34rem;">'+r.date+'</td>'+
       '<td><span class="tk">'+r.ticker+'</span></td>'+
       '<td>'+typeBdg(r.type)+'</td>'+
-      '<td style="font-size:0.78rem;color:{_P_tr};">'+r.rating+'</td>'+
+      '<td style="font-size:2.34rem;color:{_P_tr};">'+r.rating+'</td>'+
       '<td>'+fmt(r.entry)+'</td>'+
       '<td style="color:{_G_tr};">'+fmt(r.tp1)+'</td>'+
       '<td style="color:{_G_tr};">'+fmt(r.tp2)+'</td>'+
       '<td style="color:{_R_tr};">'+fmt(r.sl)+'</td>'+
       '<td>'+fmt(r.exit_price)+'</td>'+
-      '<td style="color:{_SUB_tr};font-size:0.78rem;">'+(r.exit_date||'-')+'</td>'+
+      '<td style="color:{_SUB_tr};font-size:2.34rem;">'+(r.exit_date||'-')+'</td>'+
       '<td>'+pnlStr+pnlBar+'</td>'+
       '<td>'+resBdg(r.result, r.status)+'</td>'+
-      '<td style="font-size:0.78rem;color:{_Y_tr};">'+r.status+'</td>'+
+      '<td style="font-size:2.34rem;color:{_Y_tr};">'+r.status+'</td>'+
     '</tr>';
   }});
 }})();
@@ -15359,17 +15424,17 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s};}}
 .grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}}
 .stat-card{{background:{_table_bg_s};border:1px solid {_border_s};border-radius:10px;padding:14px 16px;}}
-.stat-label{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB_s};margin-bottom:4px;}}
+.stat-label{{font-size:1.95rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB_s};margin-bottom:4px;}}
 .stat-val{{font-size:1.6rem;font-weight:700;}}
-.stat-sub{{font-size:0.75rem;color:{_SUB_s};margin-top:3px;}}
-.sec-lbl{{font-size:0.7rem;letter-spacing:0.14em;text-transform:uppercase;color:{_P_s};font-weight:700;margin:16px 0 10px;display:block;}}
+.stat-sub{{font-size:2.25rem;color:{_SUB_s};margin-top:3px;}}
+.sec-lbl{{font-size:2.1rem;letter-spacing:0.14em;text-transform:uppercase;color:{_P_s};font-weight:700;margin:16px 0 10px;display:block;}}
 .type-card{{background:{_table_bg_s};border:1px solid {_border_s};border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}}
-.type-name{{font-size:0.85rem;font-weight:700;color:{_P_s};}}
+.type-name{{font-size:2.55rem;font-weight:700;color:{_P_s};}}
 .bar-bg{{background:rgba(255,255,255,0.07);border-radius:4px;height:10px;margin-top:8px;overflow:hidden;}}
 .bar-win{{height:100%;border-radius:4px;background:{_G_s};}}
 .verdict{{background:{_table_bg_s};border:1px solid {_border_s};border-radius:10px;padding:16px;margin-top:16px;}}
-.verdict-title{{font-size:0.85rem;font-weight:700;color:{_P_s};margin-bottom:8px;}}
-.verdict-text{{font-size:0.88rem;color:{_TXT_s};line-height:1.7;}}
+.verdict-title{{font-size:2.55rem;font-weight:700;color:{_P_s};margin-bottom:8px;}}
+.verdict-text{{font-size:2.64rem;color:{_TXT_s};line-height:1.7;}}
 @media(max-width:480px){{.grid{{grid-template-columns:1fr 1fr;}}}}
 </style></head><body>
 <div id="stats-root"></div>
@@ -15380,7 +15445,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s
   var root=document.getElementById('stats-root');
 
   if(S.total===0){{
-    root.innerHTML='<div style="text-align:center;padding:40px;color:{_SUB_s};font-size:0.9rem;">Belum ada rekomendasi yang selesai (closed).<br>Update hasil di tab Riwayat setelah TP/SL tersentuh.</div>';
+    root.innerHTML='<div style="text-align:center;padding:40px;color:{_SUB_s};font-size:2.7rem;">Belum ada rekomendasi yang selesai (closed).<br>Update hasil di tab Riwayat setelah TP/SL tersentuh.</div>';
     return;
   }}
 
@@ -15408,7 +15473,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s
       '<div class="type-card">'+
         '<div>'+
           '<div class="type-name">'+t+'</div>'+
-          '<div style="font-size:0.78rem;color:{_SUB_s};">'+d.wins+' WIN · '+d.losses+' LOSS · Total P&L: '+(d.pnl>=0?'+':'')+d.pnl.toFixed(2)+'%</div>'+
+          '<div style="font-size:2.34rem;color:{_SUB_s};">'+d.wins+' WIN · '+d.losses+' LOSS · Total P&L: '+(d.pnl>=0?'+':'')+d.pnl.toFixed(2)+'%</div>'+
           '<div class="bar-bg"><div class="bar-win" style="width:'+wr+'%;"></div></div>'+
         '</div>'+
         '<div style="font-size:1.4rem;font-weight:700;color:'+wrColor2+';">'+wr+'%</div>'+
@@ -15460,8 +15525,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s
             st.markdown(f"""
             <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};
             border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
-            font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{_kc_sub};line-height:1.85;'>
-            <span style='color:{_kc_gold};font-weight:700;letter-spacing:0.1em;font-size:0.82rem;'>ℹ️ TENTANG ARA / ARB</span><br>
+            font-family:IBM Plex Mono,monospace;font-size:2.34rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_gold};font-weight:700;letter-spacing:0.1em;font-size:2.46rem;'>ℹ️ TENTANG ARA / ARB</span><br>
             <b style='color:{_kc_green};'>ARA (Auto Rejection Atas)</b> - batas maksimum kenaikan harga saham dalam 1 hari.<br>
             <b style='color:{_kc_red};'>ARB (Auto Rejection Bawah)</b> - batas maksimum penurunan harga saham dalam 1 hari.<br><br>
             <b>Reguler:</b> Harga &lt; Rp 200 = ±35% · Harga Rp 200–Rp 5.000 = ±25% · Harga &gt; Rp 5.000 = ±20%<br>
@@ -15478,26 +15543,26 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 /* ── Form ── */
 .form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
 .form-title{{font-size:1.25rem;font-weight:700;color:{_kc_gold};letter-spacing:0.06em;margin-bottom:18px;text-align:center;}}
-.form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.08em;margin-top:-14px;margin-bottom:18px;}}
+.form-sub{{font-size:2.16rem;color:{_kc_sub};text-align:center;letter-spacing:0.08em;margin-top:-14px;margin-bottom:18px;}}
 .toggle-row{{display:flex;gap:0;margin-bottom:18px;border:1px solid {_kc_border};border-radius:8px;overflow:hidden;}}
-.toggle-btn{{flex:1;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:0.85rem;font-weight:600;
+.toggle-btn{{flex:1;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:2.55rem;font-weight:600;
   letter-spacing:0.06em;border:none;cursor:pointer;transition:all 0.18s;}}
 .toggle-btn.active{{background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(124,58,237,0.15));color:{_kc_gold};border-bottom:2px solid {_kc_gold};}}
 .toggle-btn.inactive{{background:transparent;color:{_kc_sub};border-bottom:2px solid transparent;}}
-.field-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;}}
+.field-lbl{{font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;}}
 .inp{{width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
   border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:1.05rem;font-weight:600;
   color:{_kc_text};outline:none;transition:border-color 0.18s;}}
 .inp:focus{{border-color:{_kc_gold};box-shadow:0 0 0 2px rgba(124,58,237,0.08);}}
 .row2{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}}
 .slider-row{{margin-bottom:18px;}}
-.slider-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};
+.slider-lbl{{font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};
   margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}}
 .slider-val{{font-size:1.0rem;font-weight:700;color:{_kc_gold};}}
 input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;}}
 .calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(124,58,237,0.22),rgba(124,58,237,0.18));
   border:1px solid rgba(124,58,237,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
-  font-size:0.9rem;font-weight:700;letter-spacing:0.1em;color:{_kc_gold};cursor:pointer;
+  font-size:2.7rem;font-weight:700;letter-spacing:0.1em;color:{_kc_gold};cursor:pointer;
   transition:all 0.18s;text-transform:uppercase;}}
 .calc-btn:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.32),rgba(124,58,237,0.25));
   box-shadow:0 0 18px rgba(124,58,237,0.18);}}
@@ -15505,12 +15570,12 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
 /* ── Results ── */
 .result-wrap{{display:none;}}
 .result-wrap.show{{display:block;}}
-.result-header{{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+.result-header{{font-size:2.1rem;letter-spacing:0.12em;text-transform:uppercase;
   color:{_kc_sub};margin:20px 0 12px;display:flex;align-items:center;gap:8px;}}
 .result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
 
 /* ── ARA/ARB section headers ── */
-.section-label{{font-size:0.68rem;letter-spacing:0.14em;text-transform:uppercase;
+.section-label{{font-size:2.04rem;letter-spacing:0.14em;text-transform:uppercase;
   color:{_kc_sub};margin:16px 0 8px;padding-left:4px;}}
 
 /* ── Card list style (like image 2) ── */
@@ -15524,12 +15589,12 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
 .step-card-left{{flex:1;min-width:0;}}
 .step-price-row{{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;}}
 .step-price{{font-size:1.35rem;font-weight:700;line-height:1.1;}}
-.step-rp{{font-size:0.75rem;font-weight:400;color:{_kc_sub};}}
-.step-delta{{font-size:0.8rem;font-weight:600;}}
+.step-rp{{font-size:2.25rem;font-weight:400;color:{_kc_sub};}}
+.step-delta{{font-size:2.4rem;font-weight:600;}}
 .step-delta.up{{color:{_kc_green};}}
 .step-delta.dn{{color:{_kc_red};}}
 .step-card-right{{text-align:right;flex-shrink:0;}}
-.step-tag{{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;
+.step-tag{{font-size:1.8rem;letter-spacing:0.12em;text-transform:uppercase;
   font-weight:700;margin-bottom:4px;display:block;}}
 .step-tag.ara{{color:{_kc_green};}}
 .step-tag.arb{{color:{_kc_red};}}
@@ -15539,12 +15604,12 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
 
 /* Visualisasi bar */
 .viz-wrap{{margin-top:20px;background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:18px 20px;}}
-.viz-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:14px;text-align:center;}}
-.viz-bar-row{{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:0.75rem;}}
+.viz-title{{font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:14px;text-align:center;}}
+.viz-bar-row{{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:2.25rem;}}
 .viz-lbl{{width:60px;text-align:right;color:{_kc_sub};flex-shrink:0;}}
 .viz-bar-bg{{flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:20px;overflow:hidden;position:relative;}}
 .viz-bar-fill{{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;
-  font-size:0.68rem;font-weight:700;transition:width 0.5s ease;white-space:nowrap;}}
+  font-size:2.04rem;font-weight:700;transition:width 0.5s ease;white-space:nowrap;}}
 .viz-end{{width:80px;text-align:left;flex-shrink:0;}}
 
 @media(max-width:640px){{
@@ -15575,7 +15640,7 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
       <input class="inp" id="inp-lot" type="number" placeholder="1" min="1" value="1">
     </div>
     <div>
-      <label class="field-lbl">Modal (Rp) <span style="color:{_kc_sub};font-size:0.62rem;">- opsional</span></label>
+      <label class="field-lbl">Modal (Rp) <span style="color:{_kc_sub};font-size:1.86rem;">- opsional</span></label>
       <input class="inp" id="inp-modal" type="number" placeholder="Otomatis" min="0">
     </div>
   </div>
@@ -15600,7 +15665,7 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
   <div class="cards-list" id="arb-container"></div>
   <div class="viz-wrap" id="viz-wrap">
     <div class="viz-title">Visualisasi Pergerakan Harga</div>
-    <div class="viz-sub" style="font-size:0.65rem;color:{_kc_sub};text-align:center;margin-top:-10px;margin-bottom:14px;">
+    <div class="viz-sub" style="font-size:1.95rem;color:{_kc_sub};text-align:center;margin-top:-10px;margin-bottom:14px;">
       Visualisasi pergerakan harga untuk setiap ARA dan ARB di setiap langkah
     </div>
     <div id="viz-container"></div>
@@ -15690,7 +15755,7 @@ function calculate() {{
           '<span class="step-price" style="color:#26a69a;">Rp ' + fmt(a.price) + '</span>' +
           '<span class="step-delta up">↑ +' + a.naik.toFixed(2) + '%</span>' +
         '</div>' +
-        '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
+        '<div style="font-size:2.16rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
       '</div>' +
       '<div class="step-card-right">' +
         '<span class="step-tag ara">ARA #' + a.step + '</span>' +
@@ -15703,7 +15768,7 @@ function calculate() {{
           '<span class="step-price" style="color:#f23645;">Rp ' + fmt(b.price) + '</span>' +
           '<span class="step-delta dn">↓ -' + b.turun.toFixed(2) + '%</span>' +
         '</div>' +
-        '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
+        '<div style="font-size:2.16rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
       '</div>' +
       '<div class="step-card-right">' +
         '<span class="step-tag arb">ARB #' + b.step + '</span>' +
@@ -15727,7 +15792,7 @@ function calculate() {{
       '<div class="viz-lbl" style="color:#26a69a;">ARA #'+a.step+'</div>' +
       '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,rgba(38,166,154,0.7),rgba(38,166,154,0.4));color:#fff;">' +
       'Rp '+fmt(a.price)+'</div></div>' +
-      '<div class="viz-end" style="color:#26a69a;font-size:0.7rem;">+'+a.total.toFixed(1)+'%</div></div>';
+      '<div class="viz-end" style="color:#26a69a;font-size:2.1rem;">+'+a.total.toFixed(1)+'%</div></div>';
   }}
   // Separator
   vizHtml += '<div style="border-top:1px dashed rgba(124,58,237,0.15);margin:10px 0 10px;"></div>';
@@ -15740,7 +15805,7 @@ function calculate() {{
       '<div class="viz-lbl" style="color:#f23645;">ARB #'+b.step+'</div>' +
       '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct2+'%;background:linear-gradient(90deg,rgba(242,54,69,0.7),rgba(242,54,69,0.35));color:#fff;">' +
       'Rp '+fmt(b.price)+'</div></div>' +
-      '<div class="viz-end" style="color:#f23645;font-size:0.7rem;">'+b.total.toFixed(1)+'%</div></div>';
+      '<div class="viz-end" style="color:#f23645;font-size:2.1rem;">'+b.total.toFixed(1)+'%</div></div>';
   }}
   document.getElementById('viz-container').innerHTML = vizHtml;
   document.getElementById('result-wrap').className = 'result-wrap show';
@@ -15757,8 +15822,8 @@ function calculate() {{
             st.markdown(f"""
             <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_purple};
             border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
-            font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{_kc_sub};line-height:1.85;'>
-            <span style='color:{_kc_purple};font-weight:700;letter-spacing:0.1em;font-size:0.82rem;'>ℹ️ TENTANG AVERAGE DOWN</span><br>
+            font-family:IBM Plex Mono,monospace;font-size:2.34rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_purple};font-weight:700;letter-spacing:0.1em;font-size:2.46rem;'>ℹ️ TENTANG AVERAGE DOWN</span><br>
             <b>Average Down</b> adalah strategi membeli lebih banyak saham saat harga turun untuk menurunkan harga rata-rata kepemilikan.<br>
             Kalkulator ini mendukung <b>hingga 5 transaksi pembelian</b> sekaligus untuk menghitung harga rata-rata, total lot, dan total modal yang dibutuhkan.
             </div>
@@ -15771,24 +15836,24 @@ function calculate() {{
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
 .form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
 .form-title{{font-size:1.25rem;font-weight:700;color:{_kc_purple};letter-spacing:0.06em;margin-bottom:4px;text-align:center;}}
-.form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.06em;margin-bottom:20px;}}
-.field-lbl{{font-size:0.70rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;font-weight:600;}}
+.form-sub{{font-size:2.16rem;color:{_kc_sub};text-align:center;letter-spacing:0.06em;margin-bottom:20px;}}
+.field-lbl{{font-size:2.1rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;font-weight:600;}}
 .inp{{width:100%;padding:10px 13px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
-  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.95rem;font-weight:600;
+  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:2.85rem;font-weight:600;
   color:{_kc_text};outline:none;transition:border-color 0.18s;}}
 .inp:focus{{border-color:{_kc_purple};box-shadow:0 0 0 2px rgba(167,139,250,0.08);}}
 .trx-block{{background:rgba(124,58,237,0.05);border:1px solid rgba(124,58,237,0.18);
   border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
-.trx-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_purple};
+.trx-title{{font-size:2.16rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_purple};
   font-weight:700;margin-bottom:12px;}}
 .row3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}}
 .row2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;}}
 .add-btn{{width:100%;padding:10px;background:rgba(124,58,237,0.1);border:1px dashed rgba(124,58,237,0.35);
-  border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:600;
+  border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:2.4rem;font-weight:600;
   letter-spacing:0.08em;color:{_kc_purple};cursor:pointer;margin-bottom:14px;transition:all 0.18s;}}
 .add-btn:hover{{background:rgba(124,58,237,0.18);border-color:rgba(124,58,237,0.6);}}
 .del-btn{{float:right;padding:2px 8px;background:rgba(242,54,69,0.1);border:1px solid rgba(242,54,69,0.3);
-  border-radius:4px;font-size:0.68rem;color:{_kc_red};cursor:pointer;font-family:'IBM Plex Mono',monospace;margin-top:-2px;}}
+  border-radius:4px;font-size:2.04rem;color:{_kc_red};cursor:pointer;font-family:'IBM Plex Mono',monospace;margin-top:-2px;}}
 .del-btn:hover{{background:rgba(242,54,69,0.22);}}
 .harga-inp{{margin-bottom:18px;}}
 
@@ -15798,7 +15863,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 
 .calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(167,139,250,0.22),rgba(96,165,250,0.18));
   border:1px solid rgba(167,139,250,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
-  font-size:0.9rem;font-weight:700;letter-spacing:0.1em;color:{_kc_purple};cursor:pointer;
+  font-size:2.7rem;font-weight:700;letter-spacing:0.1em;color:{_kc_purple};cursor:pointer;
   transition:all 0.18s;text-transform:uppercase;margin-top:6px;}}
 .calc-btn:hover{{background:linear-gradient(135deg,rgba(167,139,250,0.32),rgba(96,165,250,0.25));
   box-shadow:0 0 18px rgba(167,139,250,0.18);}}
@@ -15806,13 +15871,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 /* Results */
 .result-wrap{{display:none;}}
 .result-wrap.show{{display:block;}}
-.result-header{{font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+.result-header{{font-size:2.1rem;letter-spacing:0.12em;text-transform:uppercase;
   color:{_kc_sub};margin:20px 0 14px;display:flex;align-items:center;gap:8px;}}
 .result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
 
 .summary-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}}
 .sum-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:14px 16px;text-align:center;}}
-.sum-lbl{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:6px;}}
+.sum-lbl{{font-size:1.95rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:6px;}}
 .sum-val{{font-size:1.3rem;font-weight:700;}}
 .sum-val.purple{{color:{_kc_purple};}}
 .sum-val.blue{{color:{_kc_blue};}}
@@ -15824,14 +15889,14 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 .bk-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
 .bk-tbl{{width:100%;border-collapse:collapse;}}
 .bk-tbl thead th{{background:rgba(124,58,237,0.08);color:{_kc_purple};padding:9px 12px;
-  font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;text-align:left;border-bottom:1px solid {_kc_border};}}
-.bk-tbl tbody td{{padding:9px 12px;font-size:0.88rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}}
+  font-size:1.95rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;text-align:left;border-bottom:1px solid {_kc_border};}}
+.bk-tbl tbody td{{padding:9px 12px;font-size:2.64rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}}
 .bk-tbl tbody tr:last-child td{{border-bottom:none;font-weight:700;color:{_kc_purple};background:rgba(124,58,237,0.05);}}
 .bk-tbl tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.03);}}
 .bk-tbl tbody tr:nth-child(even) td{{background:rgba(96,165,250,0.03);}}
 
 /* PnL insight */
-.pnl-box{{border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:0.88rem;line-height:1.75;}}
+.pnl-box{{border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:2.64rem;line-height:1.75;}}
 .pnl-box.profit{{background:rgba(38,166,154,0.08);border:1px solid rgba(38,166,154,0.25);border-left:3px solid {_kc_green};}}
 .pnl-box.loss{{background:rgba(242,54,69,0.07);border:1px solid rgba(242,54,69,0.22);border-left:3px solid {_kc_red};}}
 .pnl-box.neutral{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-left:3px solid {_kc_gold};}}
@@ -15889,7 +15954,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
     <tbody id="bk-tbody"></tbody>
   </table></div>
   <div id="pnl-box"></div>
-  <div id="live-avg" style="display:none;margin-top:-10px;margin-bottom:14px;font-size:0.8rem;color:{_kc_sub};
+  <div id="live-avg" style="display:none;margin-top:-10px;margin-bottom:14px;font-size:2.4rem;color:{_kc_sub};
     font-family:'IBM Plex Mono',monospace;text-align:center;letter-spacing:0.06em;"></div>
 </div>
 
@@ -15988,7 +16053,7 @@ function calculate() {{
       '<span style="color:'+(isPro?'#26a69a':'#f23645')+';font-weight:700;font-size:1.05rem;">' +
       (isPro?'+':'-')+'Rp '+fmt(Math.abs(pnl)) + '</span>' +
       ' &nbsp;|&nbsp; <b>'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</b>' +
-      '<br><span style="font-size:0.78rem;color:{_kc_sub};">Harga pasar: <b>Rp '+fmt(curPrice)+'</b> vs Average: <b>Rp '+fmt(avgHarga)+'</b>' +
+      '<br><span style="font-size:2.34rem;color:{_kc_sub};">Harga pasar: <b>Rp '+fmt(curPrice)+'</b> vs Average: <b>Rp '+fmt(avgHarga)+'</b>' +
       ' - Perlu kenaikan <b>' + (avgHarga>curPrice?((avgHarga-curPrice)/curPrice*100).toFixed(2)+'%':'-') + '</b> untuk BEP</span>' +
       '</div>';
     sumExtra = '<div class="sum-card"><div class="sum-lbl">PnL Saat Ini</div><div class="sum-val '+(isPro?'green':'red')+'">'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</div></div>';
@@ -16039,7 +16104,7 @@ function calculate() {{
 
     with tab_panduan:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.93rem;color:{text_sub};margin-bottom:20px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:2.79rem;color:{text_sub};margin-bottom:20px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
 
         _P   = "#a78bfa"   # purple accent
         _B   = "#60a5fa"   # blue accent
@@ -16065,7 +16130,7 @@ function calculate() {{
   margin-bottom:6px;display:flex;align-items:center;gap:10px;
 }}
 .pgd-section-sub {{
-  font-size:0.88rem;color:{_SUB};margin-bottom:16px;line-height:1.7;
+  font-size:2.64rem;color:{_SUB};margin-bottom:16px;line-height:1.7;
 }}
 .pgd-feature {{
   background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);
@@ -16076,7 +16141,7 @@ function calculate() {{
   display:flex;align-items:center;gap:8px;
 }}
 .pgd-feature-body {{
-  font-size:0.93rem;color:{_TXT};line-height:1.85;
+  font-size:2.79rem;color:{_TXT};line-height:1.85;
 }}
 .pgd-step {{
   display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;
@@ -16084,24 +16149,24 @@ function calculate() {{
 .pgd-step-num {{
   min-width:26px;height:26px;border-radius:50%;
   background:linear-gradient(135deg,{_P},{_B});
-  color:#fff;font-size:0.78rem;font-weight:700;
+  color:#fff;font-size:2.34rem;font-weight:700;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }}
-.pgd-step-text {{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.pgd-step-text {{font-size:2.79rem;color:{_TXT};line-height:1.75;}}
 .pgd-tip {{
   background:rgba(96,165,250,0.08);border-left:3px solid {_B};
   border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;
-  font-size:0.88rem;color:{_TXT};line-height:1.7;
+  font-size:2.64rem;color:{_TXT};line-height:1.7;
 }}
 .pgd-warn {{
   background:rgba(251,191,36,0.08);border-left:3px solid {_Y};
   border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;
-  font-size:0.88rem;color:{_TXT};line-height:1.7;
+  font-size:2.64rem;color:{_TXT};line-height:1.7;
 }}
 .pgd-grid {{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}}
 .pgd-badge {{
   display:inline-block;padding:2px 9px;border-radius:12px;
-  font-size:0.75rem;font-weight:700;letter-spacing:0.06em;margin-right:6px;
+  font-size:2.25rem;font-weight:700;letter-spacing:0.06em;margin-right:6px;
   vertical-align:middle;
 }}
 .pgd-badge-p {{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
@@ -16135,7 +16200,7 @@ function calculate() {{
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:2.85rem;line-height:1.8;}}
 
 /* Layout */
 .wrap{{max-width:100%;padding:4px 0;}}
@@ -16149,7 +16214,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 }}
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.sec-desc{{font-size:2.64rem;color:{_SUB};margin-top:3px;}}
 
 /* Feature cards */
 .feat{{
@@ -16178,10 +16243,10 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .snum{{
   min-width:24px;height:24px;border-radius:50%;
   background:linear-gradient(135deg,{_P},{_B});
-  color:#fff;font-size:0.72rem;font-weight:700;
+  color:#fff;font-size:2.16rem;font-weight:700;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
 }}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.stext{{font-size:2.79rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
@@ -16192,12 +16257,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .tip{{
   background:rgba(96,165,250,0.07);border-left:3px solid {_B};
   border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
-  font-size:0.88rem;color:{_TXT};line-height:1.72;
+  font-size:2.64rem;color:{_TXT};line-height:1.72;
 }}
 .warn{{
   background:rgba(251,191,36,0.07);border-left:3px solid {_Y};
   border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
-  font-size:0.88rem;color:{_TXT};line-height:1.72;
+  font-size:2.64rem;color:{_TXT};line-height:1.72;
 }}
 
 /* Grid */
@@ -16208,12 +16273,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
   border:1px solid rgba(124,58,237,0.2);
   border-radius:8px;padding:12px 14px;
 }}
-.gcard-lbl{{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
-.gcard-val{{font-size:0.93rem;font-weight:700;color:{_P};}}
-.gcard-sub{{font-size:0.78rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
+.gcard-lbl{{font-size:2.1rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
+.gcard-val{{font-size:2.79rem;font-weight:700;color:{_P};}}
+.gcard-sub{{font-size:2.34rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
 
 /* Badge */
-.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;}}
+.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:2.16rem;font-weight:700;margin:0 3px;}}
 .bdg-p{{background:rgba(124,58,237,0.18);color:{_P};}}
 .bdg-b{{background:rgba(96,165,250,0.15);color:{_B};}}
 .bdg-g{{background:rgba(38,166,154,0.15);color:{_G};}}
@@ -16387,8 +16452,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
   <div style="font-size:1.02rem;font-weight:700;color:{_P};margin-bottom:12px;">⚡ QUICK REFERENCE - Dampak Makro ke IDX</div>
   <div class="grid2">
     <div>
-      <div style="font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-ON ✅ (IHSG Cenderung Naik)</div>
-      <div style="font-size:0.88rem;color:{_TXT};line-height:1.85;">
+      <div style="font-size:2.34rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-ON ✅ (IHSG Cenderung Naik)</div>
+      <div style="font-size:2.64rem;color:{_TXT};line-height:1.85;">
         • DXY melemah &amp; Rupiah menguat<br>
         • VIX &lt; 20 (pasar tenang)<br>
         • Fed dovish / probabilitas CUT naik<br>
@@ -16398,8 +16463,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
       </div>
     </div>
     <div>
-      <div style="font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-OFF ⚠️ (IHSG Cenderung Turun)</div>
-      <div style="font-size:0.88rem;color:{_TXT};line-height:1.85;">
+      <div style="font-size:2.34rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-OFF ⚠️ (IHSG Cenderung Turun)</div>
+      <div style="font-size:2.64rem;color:{_TXT};line-height:1.85;">
         • DXY menguat &amp; Rupiah melemah<br>
         • VIX &gt; 25 (pasar cemas)<br>
         • Fed hawkish / probabilitas HIKE naik<br>
@@ -16423,12 +16488,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:2.85rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0;}}
 .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(124,58,237,0.25);}}
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.sec-desc{{font-size:2.64rem;color:{_SUB};margin-top:3px;}}
 .feat{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};}}
 .feat.green{{border-left-color:{_G};}}
@@ -16441,15 +16506,15 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .feat.red .feat-title{{color:{_R};}}
 .steps{{margin:10px 0 6px;}}
 .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:2.16rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:2.79rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
 .stext .dn{{color:{_R};font-weight:700;}}
 .stext .yl{{color:{_Y};font-weight:700;}}
-.tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
 .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
 .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
 .grid4{{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin:10px 0;}}
@@ -16458,10 +16523,10 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .gcard.blue{{border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.06);}}
 .gcard.red{{border-color:rgba(242,54,69,0.25);background:rgba(242,54,69,0.06);}}
 .gcard.yellow{{border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.06);}}
-.gcard-lbl{{font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
-.gcard-val{{font-size:0.93rem;font-weight:700;}}
-.gcard-sub{{font-size:0.78rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
-.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;}}
+.gcard-lbl{{font-size:2.1rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
+.gcard-val{{font-size:2.79rem;font-weight:700;}}
+.gcard-sub{{font-size:2.34rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
+.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:2.16rem;font-weight:700;margin:0 3px;}}
 .bdg-p{{background:rgba(124,58,237,0.18);color:{_P};}}
 .bdg-b{{background:rgba(96,165,250,0.15);color:{_B};}}
 .bdg-g{{background:rgba(38,166,154,0.15);color:{_G};}}
@@ -16469,20 +16534,20 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .bdg-y{{background:rgba(251,191,36,0.12);color:{_Y};}}
 .div{{height:1px;background:rgba(124,58,237,0.15);margin:24px 0;}}
 .rrg-diagram{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:12px;padding:20px;margin:14px 0;position:relative;}}
-.rrg-title{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB};text-align:center;margin-bottom:14px;}}
+.rrg-title{{font-size:2.16rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB};text-align:center;margin-bottom:14px;}}
 .rrg-grid{{display:grid;grid-template-columns:1fr 1fr;gap:3px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;}}
 .rrg-q{{padding:14px 12px;text-align:center;}}
 .rrg-q-leading{{background:rgba(38,166,154,0.12);}}
 .rrg-q-improving{{background:rgba(124,58,237,0.1);}}
 .rrg-q-weakening{{background:rgba(242,54,69,0.1);}}
 .rrg-q-lagging{{background:rgba(66,133,244,0.1);}}
-.rrg-q-name{{font-size:0.88rem;font-weight:700;margin-bottom:4px;}}
-.rrg-q-axis{{font-size:0.7rem;color:{_SUB};margin-bottom:4px;}}
-.rrg-q-action{{font-size:0.8rem;}}
-.rrg-q-desc{{font-size:0.75rem;color:{_SUB};margin-top:4px;line-height:1.5;}}
-.rrg-arrow{{font-size:0.72rem;text-align:center;color:{_SUB};margin:8px 0;}}
+.rrg-q-name{{font-size:2.64rem;font-weight:700;margin-bottom:4px;}}
+.rrg-q-axis{{font-size:2.1rem;color:{_SUB};margin-bottom:4px;}}
+.rrg-q-action{{font-size:2.4rem;}}
+.rrg-q-desc{{font-size:2.25rem;color:{_SUB};margin-top:4px;line-height:1.5;}}
+.rrg-arrow{{font-size:2.16rem;text-align:center;color:{_SUB};margin:8px 0;}}
 .cycle-flow{{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;justify-content:center;}}
-.cycle-item{{padding:8px 14px;border-radius:8px;font-size:0.82rem;font-weight:700;text-align:center;}}
+.cycle-item{{padding:8px 14px;border-radius:8px;font-size:2.46rem;font-weight:700;text-align:center;}}
 .cycle-arrow{{font-size:1.1rem;color:{_SUB};}}
 @media(max-width:600px){{
   .grid2,.grid3,.grid4{{grid-template-columns:1fr;}}
@@ -16511,7 +16576,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="div"></div>
 <div class="feat">
   <div class="feat-title">🔄 1 · RRG CHART - Relative Rotation Graph</div>
-  <p style="font-size:0.93rem;color:{_TXT};margin-bottom:14px;line-height:1.8;">
+  <p style="font-size:2.79rem;color:{_TXT};margin-bottom:14px;line-height:1.8;">
     RRG (Relative Rotation Graph) adalah tools analisa yang menggambarkan <b>kekuatan relatif</b> dan <b>momentum</b> setiap sektor dibandingkan benchmark IHSG. 
     Setiap bubble mewakili satu sektor dan bergerak searah jarum jam di sepanjang siklus rotasi.
   </p>
@@ -16599,21 +16664,21 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <!-- ══ 3. SIKLUS ROTASI ══ -->
 <div class="feat green">
   <div class="feat-title">🔃 3 · MEMAHAMI SIKLUS ROTASI SEKTOR</div>
-  <p style="font-size:0.93rem;color:{_TXT};margin-bottom:12px;line-height:1.8;">
+  <p style="font-size:2.79rem;color:{_TXT};margin-bottom:12px;line-height:1.8;">
     Setiap sektor bergerak dalam siklus yang dapat diprediksi berdasarkan kondisi makro. Memahami siklus ini membantu menentukan <b>kapan masuk dan keluar</b> dari setiap sektor.
   </p>
 
   <!-- Cycle flow visual -->
   <div class="cycle-flow">
-    <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};">📈 IMPROVING<br><span style="font-size:0.7rem;font-weight:400;">Mulai entry</span></div>
+    <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};">📈 IMPROVING<br><span style="font-size:2.1rem;font-weight:400;">Mulai entry</span></div>
     <div class="cycle-arrow">→</div>
-    <div class="cycle-item" style="background:rgba(38,166,154,0.15);color:{_G};">🚀 LEADING<br><span style="font-size:0.7rem;font-weight:400;">Hold &amp; profit run</span></div>
+    <div class="cycle-item" style="background:rgba(38,166,154,0.15);color:{_G};">🚀 LEADING<br><span style="font-size:2.1rem;font-weight:400;">Hold &amp; profit run</span></div>
     <div class="cycle-arrow">→</div>
-    <div class="cycle-item" style="background:rgba(242,54,69,0.15);color:{_R};">⚠️ WEAKENING<br><span style="font-size:0.7rem;font-weight:400;">Mulai kurangi</span></div>
+    <div class="cycle-item" style="background:rgba(242,54,69,0.15);color:{_R};">⚠️ WEAKENING<br><span style="font-size:2.1rem;font-weight:400;">Mulai kurangi</span></div>
     <div class="cycle-arrow">→</div>
-    <div class="cycle-item" style="background:rgba(66,133,244,0.15);color:#4285F4;">⛔ LAGGING<br><span style="font-size:0.7rem;font-weight:400;">Hindari / monitor</span></div>
+    <div class="cycle-item" style="background:rgba(66,133,244,0.15);color:#4285F4;">⛔ LAGGING<br><span style="font-size:2.1rem;font-weight:400;">Hindari / monitor</span></div>
     <div class="cycle-arrow">→</div>
-    <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};">📈 IMPROVING<br><span style="font-size:0.7rem;font-weight:400;">Siklus baru</span></div>
+    <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};">📈 IMPROVING<br><span style="font-size:2.1rem;font-weight:400;">Siklus baru</span></div>
   </div>
 
   <div class="steps">
@@ -16717,12 +16782,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:2.85rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0;}}
 .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.sec-desc{{font-size:2.64rem;color:{_SUB};margin-top:3px;}}
 .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
@@ -16735,26 +16800,26 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .feat.red .feat-title{{color:{_R};}}
 .steps{{margin:10px 0 6px;}}
 .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:2.16rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:2.79rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
 .stext .dn{{color:{_R};font-weight:700;}}
 .stext .yl{{color:{_Y};font-weight:700;}}
-.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
 .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
 .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
 .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
 .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
 .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard-title{{font-size:2.34rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
 .gcard.green .gcard-title{{color:{_G};}}
 .gcard.blue .gcard-title{{color:{_B};}}
 .gcard.yellow .gcard-title{{color:{_Y};}}
-.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
-.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
+.gcard-val{{font-size:2.64rem;color:{_TXT};line-height:1.6;}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:2.16rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
 .badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
 .badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
 .badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
@@ -16841,12 +16906,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.93rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:2.79rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0;}}
 .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.15rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.85rem;color:{_SUB};margin-top:3px;}}
+.sec-desc{{font-size:2.55rem;color:{_SUB};margin-top:3px;}}
 .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
@@ -16859,15 +16924,15 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .feat.red .feat-title{{color:{_R};}}
 .steps{{margin:10px 0 6px;}}
 .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.91rem;color:{_TXT};line-height:1.75;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:2.16rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:2.73rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
 .stext .dn{{color:{_R};font-weight:700;}}
 .stext .yl{{color:{_Y};font-weight:700;}}
-.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.86rem;color:{_TXT};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.86rem;color:{_TXT};line-height:1.72;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.58rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.58rem;color:{_TXT};line-height:1.72;}}
 .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
 .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
 .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
@@ -16875,13 +16940,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
 .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
 .gcard.red{{border-color:rgba(242,54,69,0.35);background:rgba(242,54,69,0.06);}}
-.gcard-title{{font-size:0.76rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard-title{{font-size:2.28rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
 .gcard.green .gcard-title{{color:{_G};}}
 .gcard.blue .gcard-title{{color:{_B};}}
 .gcard.yellow .gcard-title{{color:{_Y};}}
 .gcard.red .gcard-title{{color:{_R};}}
-.gcard-val{{font-size:0.86rem;color:{_TXT};line-height:1.6;}}
-.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.70rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
+.gcard-val{{font-size:2.58rem;color:{_TXT};line-height:1.6;}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:2.1rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
 .badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
 .badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
 .badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
@@ -16896,15 +16961,15 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .rl-badge.low{{background:rgba(8,153,129,0.14);border:2px solid rgba(8,153,129,0.45);}}
 .rl-badge.mid{{background:rgba(245,166,35,0.12);border:2px solid rgba(245,166,35,0.45);}}
 .rl-badge.high{{background:rgba(242,54,69,0.11);border:2px solid rgba(242,54,69,0.4);}}
-.rl-badge .rl-label{{font-size:0.80rem;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;}}
+.rl-badge .rl-label{{font-size:2.4rem;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;}}
 .rl-badge.low .rl-label{{color:#089981;}}
 .rl-badge.mid .rl-label{{color:#f5a623;}}
 .rl-badge.high .rl-label{{color:#f23645;}}
-.rl-badge .rl-cond{{font-size:0.76rem;color:{_SUB};line-height:1.5;margin-top:4px;}}
+.rl-badge .rl-cond{{font-size:2.28rem;color:{_SUB};line-height:1.5;margin-top:4px;}}
 .ind-row{{display:flex;align-items:center;gap:10px;margin:7px 0;}}
 .ind-line{{width:32px;height:4px;border-radius:2px;flex-shrink:0;}}
 .ind-dot{{width:14px;height:14px;border-radius:3px;flex-shrink:0;}}
-.ind-desc{{font-size:0.85rem;color:{_TXT};line-height:1.55;}}
+.ind-desc{{font-size:2.55rem;color:{_TXT};line-height:1.55;}}
 .ind-desc b{{font-weight:700;}}
 @media(max-width:640px){{.grid2,.grid3{{grid-template-columns:1fr;}}.rl-row{{flex-direction:column;}}}}
 </style></head><body><div class="wrap">
@@ -17195,17 +17260,17 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="rl-row">
 <div class="rl-badge high">
 <div class="rl-label">🔴 HIGH RISK</div>
-<div style="font-size:0.9rem;font-weight:700;color:#f23645;margin:4px 0;">Teknikal ✅</div>
+<div style="font-size:2.7rem;font-weight:700;color:#f23645;margin:4px 0;">Teknikal ✅</div>
 <div class="rl-cond">Setup teknikal ada (EMA, support, pattern) tapi volume belum konfirmasi atau fundamental lemah/tidak tersedia. Risiko tertinggi - position sizing kecil, wajib ketat di SL.</div>
 </div>
 <div class="rl-badge mid">
 <div class="rl-label">🟡 MID RISK</div>
-<div style="font-size:0.9rem;font-weight:700;color:#f5a623;margin:4px 0;">Teknikal ✅ + Volume ✅</div>
+<div style="font-size:2.7rem;font-weight:700;color:#f5a623;margin:4px 0;">Teknikal ✅ + Volume ✅</div>
 <div class="rl-cond">Teknikal bullish PLUS volume konfirmasi: volume di atas MA20, buy power dominan, tidak ada distribusi besar. Fundamental netral atau kurang data.</div>
 </div>
 <div class="rl-badge low">
 <div class="rl-label">🟢 LOW RISK</div>
-<div style="font-size:0.9rem;font-weight:700;color:#089981;margin:4px 0;">Teknikal ✅ + Volume ✅ + Fundamental ✅</div>
+<div style="font-size:2.7rem;font-weight:700;color:#089981;margin:4px 0;">Teknikal ✅ + Volume ✅ + Fundamental ✅</div>
 <div class="rl-cond">Triple konfirmasi lengkap: teknikal bullish + volume mendukung + fundamental sehat (ROE positif, PBV wajar, EPS tumbuh). Setup paling aman untuk full position.</div>
 </div>
 </div>
@@ -17247,12 +17312,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:2.85rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0;}}
 .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.sec-desc{{font-size:2.64rem;color:{_SUB};margin-top:3px;}}
 .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
@@ -17265,26 +17330,26 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .feat.red .feat-title{{color:{_R};}}
 .steps{{margin:10px 0 6px;}}
 .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:2.16rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:2.79rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
 .stext .dn{{color:{_R};font-weight:700;}}
 .stext .yl{{color:{_Y};font-weight:700;}}
-.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
-.alert{{background:rgba(242,54,69,0.09);border:1px solid rgba(242,54,69,0.25);border-left:3px solid {_R};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
+.alert{{background:rgba(242,54,69,0.09);border:1px solid rgba(242,54,69,0.25);border-left:3px solid {_R};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
 .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0;}}
 .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
 .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
 .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
 .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard-title{{font-size:2.34rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
 .gcard.green .gcard-title{{color:{_G};}}
 .gcard.blue .gcard-title{{color:{_B};}}
 .gcard.yellow .gcard-title{{color:{_Y};}}
-.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
+.gcard-val{{font-size:2.64rem;color:{_TXT};line-height:1.6;}}
 @media(max-width:640px){{.grid3{{grid-template-columns:1fr;}}}}
 </style></head><body><div class="wrap">
 
@@ -17372,12 +17437,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:2.85rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0;}}
 .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.sec-desc{{font-size:2.64rem;color:{_SUB};margin-top:3px;}}
 .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
@@ -17388,26 +17453,26 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .feat.yellow .feat-title{{color:{_Y};}}
 .steps{{margin:10px 0 6px;}}
 .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:2.16rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:2.79rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
 .stext .dn{{color:{_R};font-weight:700;}}
 .stext .yl{{color:{_Y};font-weight:700;}}
-.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.88rem;color:{_TXT};line-height:1.72;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.64rem;color:{_TXT};line-height:1.72;}}
 .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
 .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
 .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
 .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
 .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-.gcard-title{{font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard-title{{font-size:2.34rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
 .gcard.green .gcard-title{{color:{_G};}}
 .gcard.blue .gcard-title{{color:{_B};}}
 .gcard.yellow .gcard-title{{color:{_Y};}}
-.gcard-val{{font-size:0.88rem;color:{_TXT};line-height:1.6;}}
-.formula{{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:10px 16px;margin:8px 0;font-size:0.9rem;color:{_P};font-weight:700;letter-spacing:0.03em;}}
+.gcard-val{{font-size:2.64rem;color:{_TXT};line-height:1.6;}}
+.formula{{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:10px 16px;margin:8px 0;font-size:2.7rem;color:{_P};font-weight:700;letter-spacing:0.03em;}}
 @media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
 </style></head><body><div class="wrap">
 
@@ -17510,12 +17575,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.95rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:2.85rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0;}}
 .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
+.sec-desc{{font-size:2.64rem;color:{_SUB};margin-top:3px;}}
 .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
@@ -17528,14 +17593,14 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .feat.red .feat-title{{color:{_R};}}
 .steps{{margin:10px 0 6px;}}
 .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-.stext{{font-size:0.93rem;color:{_TXT};line-height:1.75;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:2.16rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:2.79rem;color:{_TXT};line-height:1.75;}}
 .stext b{{color:{_B};}}
 .stext .hi{{color:{_P};font-weight:700;}}
 .stext .ok{{color:{_G};font-weight:700;}}
 .stext .yl{{color:{_Y};font-weight:700;}}
 .stext .dn{{color:{_R};font-weight:700;}}
-.tag{{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;margin:2px;}}
+.tag{{display:inline-block;padding:2px 9px;border-radius:20px;font-size:2.25rem;font-weight:700;margin:2px;}}
 .tag.buy{{background:rgba(38,166,154,0.18);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
 .tag.sell{{background:rgba(242,54,69,0.15);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
 .tag.foreign{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
@@ -17543,22 +17608,22 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .tag.local{{background:rgba(139,92,246,0.15);color:{_P};border:1px solid rgba(139,92,246,0.4);}}
 
 .table-wrap{{overflow-x:auto;margin:12px 0;}}
-table{{width:100%;border-collapse:collapse;font-size:0.85rem;}}
+table{{width:100%;border-collapse:collapse;font-size:2.55rem;}}
 th{{background:rgba(124,58,237,0.15);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
 td{{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:{_TXT};}}
 tr:hover td{{background:rgba(124,58,237,0.07);}}
-.alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_Y};}}
-.info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_B};}}
+.alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:2.64rem;color:{_Y};}}
+.info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:2.64rem;color:{_B};}}
 .broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
 .broker-card{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:8px;padding:12px 14px;}}
 .broker-card.foreign{{border-left:3px solid rgba(242,54,69,0.6);}}
 .broker-card.bumn{{border-left:3px solid rgba(38,166,154,0.7);}}
 .broker-card.local{{border-left:3px solid rgba(139,92,246,0.6);}}
 .broker-code{{font-size:1.05rem;font-weight:700;color:{_P};letter-spacing:0.08em;}}
-.broker-name{{font-size:0.76rem;color:{_SUB};margin-top:2px;line-height:1.3;}}
-.broker-vol{{font-size:0.68rem;color:{_SUB};opacity:0.55;margin-top:1px;}}
-.broker-note{{font-size:0.68rem;color:{_Y};margin-top:3px;font-style:italic;}}
-.broker-type{{font-size:0.73rem;margin-top:5px;}}
+.broker-name{{font-size:2.28rem;color:{_SUB};margin-top:2px;line-height:1.3;}}
+.broker-vol{{font-size:2.04rem;color:{_SUB};opacity:0.55;margin-top:1px;}}
+.broker-note{{font-size:2.04rem;color:{_Y};margin-top:3px;font-style:italic;}}
+.broker-type{{font-size:2.19rem;margin-top:5px;}}
 @media(max-width:600px){{
   .broker-grid{{grid-template-columns:1fr 1fr;}}
   .sec-title{{font-size:1rem;}}
@@ -17615,11 +17680,11 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 <div class="feat yellow">
 <div class="feat-title">🏦 Kode Broker Penting di IDX</div>
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 14px;align-items:center;">
-  <span style="font-size:0.72rem;color:{_SUB};letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">LEGENDA:</span>
-  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></span><span style="color:{_P};">Lokal</span></span>
-  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;"><span style="width:10px;height:10px;border-radius:50%;background:#26a69a;display:inline-block;"></span><span style="color:{_G};">BUMN</span></span>
-  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;"><span style="width:10px;height:10px;border-radius:50%;background:#f23645;display:inline-block;"></span><span style="color:{_R};">Asing / Foreign</span></span>
-  <span style="font-size:0.72rem;color:{_Y};font-style:italic;">⚠️ YP & CP = entitas asing, tapi nasabah mayoritas lokal</span>
+  <span style="font-size:2.16rem;color:{_SUB};letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">LEGENDA:</span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:2.34rem;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></span><span style="color:{_P};">Lokal</span></span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:2.34rem;"><span style="width:10px;height:10px;border-radius:50%;background:#26a69a;display:inline-block;"></span><span style="color:{_G};">BUMN</span></span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:2.34rem;"><span style="width:10px;height:10px;border-radius:50%;background:#f23645;display:inline-block;"></span><span style="color:{_R};">Asing / Foreign</span></span>
+  <span style="font-size:2.16rem;color:{_Y};font-style:italic;">⚠️ YP & CP = entitas asing, tapi nasabah mayoritas lokal</span>
 </div>
 <div class="broker-grid">
   <div class="broker-card foreign"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas Indonesia</div><div class="broker-vol">3.4T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
@@ -17771,7 +17836,7 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7};font-size:0.93rem;line-height:1.8;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7};font-size:2.79rem;line-height:1.8;}}
 .wrap{{max-width:100%;padding:4px 0 32px;}}
 
 /* ── Hero ── */
@@ -17781,13 +17846,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
   padding:22px 24px;margin-bottom:22px;
 }}
 .hero-title{{font-size:1.3rem;font-weight:700;color:{_P7};letter-spacing:0.06em;margin-bottom:6px;}}
-.hero-sub{{font-size:0.88rem;color:{_SUB7};line-height:1.7;}}
+.hero-sub{{font-size:2.64rem;color:{_SUB7};line-height:1.7;}}
 
 /* ── Nav tabs ── */
 .nav{{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}}
 .nav-btn{{
   font-family:'IBM Plex Mono',monospace;
-  font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  font-size:2.1rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
   border:1px solid rgba(124,58,237,0.3);background:rgba(124,58,237,0.07);
   color:{_P7};border-radius:6px;padding:6px 13px;cursor:pointer;
   transition:all 0.15s;
@@ -17806,7 +17871,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
 }}
 .sec-icon{{font-size:1.5rem;}}
 .sec-title{{font-size:1.1rem;font-weight:700;color:{_P7};letter-spacing:0.06em;}}
-.sec-desc{{font-size:0.82rem;color:{_SUB7};margin-top:2px;}}
+.sec-desc{{font-size:2.46rem;color:{_SUB7};margin-top:2px;}}
 
 /* ── Cards ── */
 .card{{
@@ -17818,17 +17883,17 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
 .card.accent-g{{border-left:3px solid {_G7};}}
 .card.accent-y{{border-left:3px solid {_Y7};}}
 .card.accent-r{{border-left:3px solid {_R7};}}
-.card-title{{font-size:0.95rem;font-weight:700;color:{_B7};margin-bottom:8px;}}
-.card-body{{font-size:0.88rem;color:{_TXT7};line-height:1.8;}}
+.card-title{{font-size:2.85rem;font-weight:700;color:{_B7};margin-bottom:8px;}}
+.card-body{{font-size:2.64rem;color:{_TXT7};line-height:1.8;}}
 .card-body b{{color:{_P7};}}
 
 /* ── Flow pipeline ── */
 .pipeline{{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 0;}}
 .pipe-step{{
-  font-size:0.68rem;font-weight:700;letter-spacing:0.07em;padding:5px 11px;
+  font-size:2.04rem;font-weight:700;letter-spacing:0.07em;padding:5px 11px;
   border-radius:6px;white-space:nowrap;
 }}
-.pipe-arrow{{font-size:0.9rem;color:{_SUB7};}}
+.pipe-arrow{{font-size:2.7rem;color:{_SUB7};}}
 
 /* ── Steps numbered ── */
 .steps{{margin:6px 0;}}
@@ -17836,10 +17901,10 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
 .snum{{
   min-width:22px;height:22px;border-radius:50%;
   background:linear-gradient(135deg,{_P7},{_B7});
-  color:#fff;font-size:0.68rem;font-weight:700;
+  color:#fff;font-size:2.04rem;font-weight:700;
   display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
 }}
-.stext{{font-size:0.88rem;color:{_TXT7};line-height:1.75;}}
+.stext{{font-size:2.64rem;color:{_TXT7};line-height:1.75;}}
 .stext b{{color:{_B7};}}
 .hi{{color:{_P7};font-weight:700;}}
 .ok{{color:{_G7};font-weight:700;}}
@@ -17852,12 +17917,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
   background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);
   border-radius:8px;padding:11px 13px;
 }}
-.mlbl{{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB7};margin-bottom:4px;}}
+.mlbl{{font-size:1.86rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB7};margin-bottom:4px;}}
 .mval{{font-size:1.0rem;font-weight:700;color:{_P7};}}
-.msub{{font-size:0.75rem;color:{_SUB7};margin-top:3px;line-height:1.5;}}
+.msub{{font-size:2.25rem;color:{_SUB7};margin-top:3px;line-height:1.5;}}
 
 /* ── Badges ── */
-.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:700;margin:0 3px;vertical-align:middle;}}
+.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:2.1rem;font-weight:700;margin:0 3px;vertical-align:middle;}}
 .bp{{background:rgba(167,139,250,0.15);color:{_P7};border:1px solid rgba(167,139,250,0.35);}}
 .bb{{background:rgba(96,165,250,0.14);color:{_B7};border:1px solid rgba(96,165,250,0.35);}}
 .bg{{background:rgba(38,166,154,0.14);color:{_G7};border:1px solid rgba(38,166,154,0.35);}}
@@ -17865,13 +17930,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
 .by{{background:rgba(251,191,36,0.12);color:{_Y7};border:1px solid rgba(251,191,36,0.35);}}
 
 /* ── Info / Warn boxes ── */
-.tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
-.honesty{{background:rgba(38,166,154,0.07);border-left:3px solid {_G7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
-.warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
-.danger{{background:rgba(242,54,69,0.07);border-left:3px solid {_R7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.85rem;color:{_TXT7};line-height:1.72;}}
+.tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.55rem;color:{_TXT7};line-height:1.72;}}
+.honesty{{background:rgba(38,166,154,0.07);border-left:3px solid {_G7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.55rem;color:{_TXT7};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.55rem;color:{_TXT7};line-height:1.72;}}
+.danger{{background:rgba(242,54,69,0.07);border-left:3px solid {_R7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:2.55rem;color:{_TXT7};line-height:1.72;}}
 
 /* ── Source chips ── */
-.chip{{display:inline-block;font-size:0.65rem;padding:1px 7px;border-radius:4px;margin:0 2px;background:rgba(167,139,250,0.1);color:{_P7};border:1px solid rgba(167,139,250,0.2);}}
+.chip{{display:inline-block;font-size:1.95rem;padding:1px 7px;border-radius:4px;margin:0 2px;background:rgba(167,139,250,0.1);color:{_P7};border:1px solid rgba(167,139,250,0.2);}}
 
 /* ── Divider ── */
 .div{{height:1px;background:rgba(124,58,237,0.15);margin:18px 0;}}
@@ -17879,7 +17944,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
 @media(max-width:600px){{
   .mgrid{{grid-template-columns:1fr;}}
   .pipeline{{gap:4px;}}
-  .pipe-step{{font-size:0.6rem;padding:4px 8px;}}
+  .pipe-step{{font-size:1.8rem;padding:4px 8px;}}
   .card{{padding:12px 13px;}}
 }}
 </style></head><body><div class="wrap">
@@ -18242,7 +18307,7 @@ else:
         st.markdown(f"""
         <div style="text-align:center;padding:10vh 0 2rem;">
             <h1 style="margin:0;font-size:1.8rem;font-weight:700;color:{C['text']};">Halo, {uname} &#128075;</h1>
-            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:0.9rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila. Ada yang bisa saya bantu hari ini?
+            <p style="margin:8px 0 0;color:{C['text_muted']};font-size:2.7rem;">Halo! Saya SIGMA, asisten cerdas KIPM Universitas Pancasila. Ada yang bisa saya bantu hari ini?
             Jika Anda ingin menganalisa saham atau topik tertentu, Anda bisa ketik "7 Alpha" untuk melihat menu panduan saya.&#128522;</p>
         </div>
         """, unsafe_allow_html=True)
@@ -18719,8 +18784,8 @@ s.textContent=`
 #spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
 .smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:48px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:2.04rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
