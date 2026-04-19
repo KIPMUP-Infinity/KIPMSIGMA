@@ -34,12 +34,12 @@ _SIGMA_SCORE_AVAILABLE = True
 #
 # Output:
 #   sigma_score(ticker, price_data, fundamental_data) → SigmaScoreResult
-#   - score: int 0–100
-#   - grade: "STRONG BUY" / "BUY" / "WATCH" / "AVOID" / "DANGER"
-#   - badge_color: hex color
-#   - breakdown: dict per komponen
-#   - signals: list sinyal penting yang ditemukan
-#   - entry_zone, sl_zone, tp1, tp2, tp3: level harga
+#  —score: int 0–100
+#  —grade: "STRONG BUY" / "BUY" / "WATCH" / "AVOID" / "DANGER"
+#  —badge_color: hex color
+#  —breakdown: dict per komponen
+#  —signals: list sinyal penting yang ditemukan
+#  —entry_zone, sl_zone, tp1, tp2, tp3: level harga
 # ═══════════════════════════════════════════════════════════════════════════════
 
 from dataclasses import dataclass, field
@@ -132,19 +132,19 @@ def _ema(values: list, period: int) -> float:
     k = 2 / (period + 1)
     ema = sum(values[:period]) / period
     for v in values[period:]:
-        ema = v * k + ema * (1 - k)
+        ema = v * k + ema * (1—k)
     return ema
 
 def _atr(highs: list, lows: list, closes: list, period: int = 14) -> float:
     """Average True Range — ukuran volatilitas."""
     if len(closes) < period + 1:
-        return (max(highs[-5:]) - min(lows[-5:])) / 2 if highs else 0
+        return (max(highs[-5:])—min(lows[-5:])) / 2 if highs else 0
     trs = []
     for i in range(1, min(period + 1, len(closes))):
         tr = max(
-            highs[-i] - lows[-i],
-            abs(highs[-i] - closes[-i - 1]),
-            abs(lows[-i]  - closes[-i - 1]),
+            highs[-i]—lows[-i],
+            abs(highs[-i]—closes[-i—1]),
+            abs(lows[-i] —closes[-i—1]),
         )
         trs.append(tr)
     return sum(trs) / len(trs) if trs else 0
@@ -152,16 +152,16 @@ def _atr(highs: list, lows: list, closes: list, period: int = 14) -> float:
 def _swing_lows(lows: list, window: int = 3) -> list:
     """Cari swing low dari data harga."""
     result = []
-    for i in range(window, len(lows) - window):
-        if lows[i] == min(lows[i - window: i + window + 1]):
+    for i in range(window, len(lows)—window):
+        if lows[i] == min(lows[i—window: i + window + 1]):
             result.append((i, lows[i]))
     return result
 
 def _swing_highs(highs: list, window: int = 3) -> list:
     """Cari swing high dari data harga."""
     result = []
-    for i in range(window, len(highs) - window):
-        if highs[i] == max(highs[i - window: i + window + 1]):
+    for i in range(window, len(highs)—window):
+        if highs[i] == max(highs[i—window: i + window + 1]):
             result.append((i, highs[i]))
     return result
 
@@ -175,10 +175,10 @@ def _clamp(val, lo=0, hi=100) -> int:
 def _score_teknikal(pd: PriceData) -> tuple:
     """
     Scoring berbasis MnM Strategy+:
-    - EMA alignment (13/21/50/200)
-    - Price vs EMA positions
-    - Struktur HH/HL atau LL/LH
-    - Candle momentum
+   —EMA alignment (13/21/50/200)
+   —Price vs EMA positions
+   —Struktur HH/HL atau LL/LH
+   —Candle momentum
     Returns (score 0–100, signals list)
     """
     c = pd.closes
@@ -208,7 +208,7 @@ def _score_teknikal(pd: PriceData) -> tuple:
     if ema21 > ema50:  bullish_ema += 1
 
     # EMA alignment: 0–6 → mapped ke -20 to +30
-    ema_contribution = (bullish_ema / 6) * 50 - 15
+    ema_contribution = (bullish_ema / 6) * 50—15
     score += ema_contribution
 
     if bullish_ema >= 5:
@@ -243,9 +243,9 @@ def _score_teknikal(pd: PriceData) -> tuple:
 
     # ── Candle Momentum (3 hari terakhir) ──
     if len(c) >= 4:
-        bodies = [abs(c[-i] - c[-i-1]) for i in range(1, 4)]
+        bodies = [abs(c[-i]—c[-i-1]) for i in range(1, 4)]
         avg_body = sum(bodies) / 3
-        last_body = abs(c[-1] - c[-2])
+        last_body = abs(c[-1]—c[-2])
         # Candle besar = momentum kuat
         if last_body > avg_body * 1.5 and c[-1] > c[-2]:
             score += 8
@@ -255,7 +255,7 @@ def _score_teknikal(pd: PriceData) -> tuple:
             signals.append("⚡ Candle momentum bearish kuat")
 
     # ── Proximity ke EMA21 (area entry ideal MnM) ──
-    dist_ema21 = abs(price - ema21) / ema21 * 100
+    dist_ema21 = abs(price—ema21) / ema21 * 100
     if dist_ema21 <= 1.5 and price >= ema21:
         score += 7
         signals.append("🎯 Harga di atas EMA21 (zona entry MnM)")
@@ -272,10 +272,10 @@ def _score_teknikal(pd: PriceData) -> tuple:
 def _score_volume(pd: PriceData) -> tuple:
     """
     Volume Intelligence (sesuai GROQ_SYSTEM_PROMPT SIGMA):
-    - Spike detection vs avg 20 hari
-    - Price-Volume Divergence
-    - Dry-up detection (akumulasi stealth)
-    - Absorpsi di zona supply/demand
+   —Spike detection vs avg 20 hari
+   —Price-Volume Divergence
+   —Dry-up detection (akumulasi stealth)
+   —Absorpsi di zona supply/demand
     """
     c = pd.closes
     v = pd.volumes
@@ -309,10 +309,10 @@ def _score_volume(pd: PriceData) -> tuple:
 
     # ── Price-Volume Divergence (5 hari) ──
     if len(c) >= 6 and len(v) >= 6:
-        price_chg_5d = (c[-1] - c[-6]) / c[-6] * 100 if c[-6] > 0 else 0
+        price_chg_5d = (c[-1]—c[-6]) / c[-6] * 100 if c[-6] > 0 else 0
         vol_avg_5d_old = sum(v[-11:-6]) / 5 if len(v) >= 11 else avg20
         vol_avg_5d_new = sum(v[-5:])    / 5
-        vol_chg_pct = (vol_avg_5d_new - vol_avg_5d_old) / vol_avg_5d_old * 100 if vol_avg_5d_old > 0 else 0
+        vol_chg_pct = (vol_avg_5d_new—vol_avg_5d_old) / vol_avg_5d_old * 100 if vol_avg_5d_old > 0 else 0
 
         if price_chg_5d > 2 and vol_chg_pct < -20:
             score -= 15
@@ -335,8 +335,8 @@ def _score_volume(pd: PriceData) -> tuple:
 
     # ── Candle-Body vs Volume Konviksi ──
     if len(c) >= 3 and len(h) >= 3 and len(l) >= 3:
-        candle_body = abs(c[-1] - c[-2])
-        candle_range = h[-1] - l[-1]
+        candle_body = abs(c[-1]—c[-2])
+        candle_range = h[-1]—l[-1]
         body_ratio = candle_body / candle_range if candle_range > 0 else 0.5
 
         if body_ratio > 0.7 and spike_ratio >= 1.5 and last_price > prev_price:
@@ -362,8 +362,8 @@ def _score_bandar(pd: PriceData) -> tuple:
     quiet accumulation pattern, dan distribusi di resistance.
 
     IDX Rule (counter-intuitive):
-    - Volume spike kecil tapi sustained di low = AKUMULASI
-    - Volume spike besar di high = DISTRIBUSI
+   —Volume spike kecil tapi sustained di low = AKUMULASI
+   —Volume spike besar di high = DISTRIBUSI
     """
     c = pd.closes
     v = pd.volumes
@@ -379,7 +379,7 @@ def _score_bandar(pd: PriceData) -> tuple:
 
     # ── Pattern 1: Stealth Accumulation (quiet buying at lows) ──
     # Ciri: harga sideways/turun perlahan + volume di bawah rata-rata tapi konsisten
-    price_range_10d = (max(c[-10:]) - min(c[-10:])) / c[-10] * 100 if c[-10] > 0 else 0
+    price_range_10d = (max(c[-10:])—min(c[-10:])) / c[-10] * 100 if c[-10] > 0 else 0
     vol_consistency = min(v[-10:]) / avg_vol_20 if avg_vol_20 > 0 else 0
 
     if price_range_10d < 5 and vol_consistency > 0.3:  # sideways + volume konsisten
@@ -404,7 +404,7 @@ def _score_bandar(pd: PriceData) -> tuple:
     if len(c) >= 15:
         vol_trend_early = sum(v[-15:-10]) / 5
         vol_trend_late  = sum(v[-5:]) / 5
-        price_trend     = (c[-1] - c[-15]) / c[-15] * 100 if c[-15] > 0 else 0
+        price_trend     = (c[-1]—c[-15]) / c[-15] * 100 if c[-15] > 0 else 0
 
         if price_trend > 5 and vol_trend_late > vol_trend_early * 1.3:
             score += 18
@@ -416,8 +416,8 @@ def _score_bandar(pd: PriceData) -> tuple:
     # ── Pattern 5: Shakeout Detection ──
     # Penurunan tajam 1 hari dengan volume tinggi tapi close kembali ke atas
     if len(c) >= 3 and len(h) >= 3 and len(l) >= 3:
-        intraday_drop = (l[-2] - c[-3]) / c[-3] * 100 if c[-3] > 0 else 0  # low kemarin vs close 2 hari lalu
-        recovery      = (c[-1] - l[-2]) / l[-2] * 100 if l[-2] > 0 else 0    # recovery hari ini dari low kemarin
+        intraday_drop = (l[-2]—c[-3]) / c[-3] * 100 if c[-3] > 0 else 0  # low kemarin vs close 2 hari lalu
+        recovery      = (c[-1]—l[-2]) / l[-2] * 100 if l[-2] > 0 else 0    # recovery hari ini dari low kemarin
         if intraday_drop < -3 and recovery > 2 and v[-2] > avg_vol_20 * 1.5:
             score += 14
             signals.append("🟡 SHAKEOUT PATTERN: penurunan tajam diikuti recovery — bandar kumpulin di panic sell")
@@ -425,8 +425,8 @@ def _score_bandar(pd: PriceData) -> tuple:
     # ── Pattern 6: Stop Hunt ──
     # Wick panjang ke bawah dengan body kecil = test stop loss lalu reversal
     if len(l) >= 2 and len(c) >= 2:
-        wick_down = c[-2] - l[-2]  # lower wick
-        body      = abs(c[-2] - c[-3]) if len(c) >= 3 else 1
+        wick_down = c[-2]—l[-2]  # lower wick
+        body      = abs(c[-2]—c[-3]) if len(c) >= 3 else 1
         if body > 0 and wick_down > body * 2 and c[-1] > c[-2]:
             score += 10
             signals.append("🟡 STOP HUNT: wick panjang ke bawah + recovery — bandar test supply")
@@ -538,8 +538,8 @@ def _score_momentum_rs(pd: PriceData) -> tuple:
         return 50, ["Data tidak cukup untuk RS"]
 
     # Internal momentum (tanpa IHSG)
-    ret_5d  = (c[-1] - c[-6])  / c[-6]  * 100 if len(c) >= 6  and c[-6]  > 0 else 0
-    ret_20d = (c[-1] - c[-21]) / c[-21] * 100 if len(c) >= 21 and c[-21] > 0 else 0
+    ret_5d  = (c[-1]—c[-6])  / c[-6]  * 100 if len(c) >= 6  and c[-6]  > 0 else 0
+    ret_20d = (c[-1]—c[-21]) / c[-21] * 100 if len(c) >= 21 and c[-21] > 0 else 0
 
     score = 50
     score += ret_5d * 1.5    # 1% naik 5 hari = +1.5 poin
@@ -552,7 +552,7 @@ def _score_momentum_rs(pd: PriceData) -> tuple:
 
     # RS vs IHSG jika data tersedia
     if len(ihsg) >= 10:
-        ihsg_ret_20d = (ihsg[-1] - ihsg[-21]) / ihsg[-21] * 100 if len(ihsg) >= 21 and ihsg[-21] > 0 else 0
+        ihsg_ret_20d = (ihsg[-1]—ihsg[-21]) / ihsg[-21] * 100 if len(ihsg) >= 21 and ihsg[-21] > 0 else 0
         rs = ret_20d / ihsg_ret_20d if ihsg_ret_20d != 0 else 1.0
 
         if rs > 1.5:
@@ -597,14 +597,14 @@ def _calc_trade_levels(pd: PriceData) -> dict:
     resistances = sorted([x[1] for x in s_highs if x[1] > price])
 
     # ── Entry Zone ──
-    nearest_support = supports[0] if supports else price - atr * 1.5
-    entry_lo = _round_tick(max(nearest_support, price - atr * 0.8))
+    nearest_support = supports[0] if supports else price—atr * 1.5
+    entry_lo = _round_tick(max(nearest_support, price—atr * 0.8))
     entry_hi = _round_tick(price)
 
     # ── Stop Loss ──
-    second_support = supports[1] if len(supports) > 1 else nearest_support - atr
-    sl = _round_tick(second_support - atr * 0.5)
-    sl = min(sl, entry_lo - atr)  # SL minimal 1 ATR di bawah entry
+    second_support = supports[1] if len(supports) > 1 else nearest_support—atr
+    sl = _round_tick(second_support—atr * 0.5)
+    sl = min(sl, entry_lo—atr)  # SL minimal 1 ATR di bawah entry
 
     # ── Take Profits dari resistance structure ──
     tp1 = _round_tick(resistances[0]) if resistances else _round_tick(price + atr * 2)
@@ -613,8 +613,8 @@ def _calc_trade_levels(pd: PriceData) -> dict:
 
     # ── R/R Ratio ──
     mid_entry = (entry_lo + entry_hi) / 2
-    risk      = max(mid_entry - sl, atr * 0.5)
-    reward    = tp1 - mid_entry
+    risk      = max(mid_entry—sl, atr * 0.5)
+    reward    = tp1—mid_entry
     rr        = round(reward / risk, 2) if risk > 0 else 0
 
     return {
@@ -634,8 +634,8 @@ def score_bandar_from_broker_summary(broker_text: str) -> tuple:
     """
     Parse broker summary yang diinput user (copy-paste dari RTI/Stockbit/IPOT).
     Menerapkan logika IDX yang counter-intuitive:
-      - Banyak buyer broker + sedikit seller broker = DISTRIBUSI
-      - Sedikit buyer broker + banyak seller broker = AKUMULASI
+     —Banyak buyer broker + sedikit seller broker = DISTRIBUSI
+     —Sedikit buyer broker + banyak seller broker = AKUMULASI
 
     Format yang didukung:
       "Net Foreign: +Rp 50M | Top Buy: BNI, MNC | Top Sell: UBS, CGS"
@@ -1016,7 +1016,7 @@ def fundamental_data_from_dict(d: dict) -> FundamentalData:
     eps_prev = d.get("eps_last_year")
     eps_growth = None
     if eps_now and eps_prev and eps_prev != 0:
-        eps_growth = (eps_now - eps_prev) / abs(eps_prev) * 100
+        eps_growth = (eps_now—eps_prev) / abs(eps_prev) * 100
 
     return FundamentalData(
         roe           = roe_pct,
@@ -1074,7 +1074,7 @@ def _fetch_all_data(tickers):
                             _fh_price = _fh_d.get("c", 0)  # current price
                             _fh_prev  = _fh_d.get("pc", 0) # previous close
                             if _fh_price and _fh_price > 0:
-                                _fh_chg = ((_fh_price - _fh_prev) / _fh_prev * 100) if _fh_prev else 0
+                                _fh_chg = ((_fh_price—_fh_prev) / _fh_prev * 100) if _fh_prev else 0
                                 result["prices"][tk] = {
                                     "price": round(_fh_price, 0),
                                     "chg": round(_fh_chg, 2),
@@ -1124,7 +1124,7 @@ def _fetch_all_data(tickers):
                     _price = _meta.get("regularMarketPrice") or _meta.get("previousClose")
                     _prev  = _meta.get("previousClose", _price)
                     if _price and _price > 0:
-                        _chg = ((_price - _prev) / _prev * 100) if _prev else 0
+                        _chg = ((_price—_prev) / _prev * 100) if _prev else 0
                         result["prices"][tk] = {
                             "price": round(_price, 0),
                             "chg": round(_chg, 2),
@@ -1746,8 +1746,8 @@ def build_context(prompt):
 def _calc_cagr(values_sorted_new_to_old):
     vals = [v for v in values_sorted_new_to_old if v and v > 0]
     if len(vals) < 2: return None
-    n = len(vals) - 1
-    try: return (vals[0] / vals[-1]) ** (1/n) - 1
+    n = len(vals)—1
+    try: return (vals[0] / vals[-1]) ** (1/n)—1
     except: return None
 
 def build_combined_context(prompt):
@@ -1837,8 +1837,8 @@ def _validate_price_corporate_action(ticker, price):
     """
     Validasi harga terhadap database corporate action.
     Return: (is_valid, warning_message)
-    - is_valid=False → harga terindikasi pre-split/pre-reverse, jangan gunakan
-    - warning_message → string peringatan untuk disertakan di prompt AI
+   —is_valid=False → harga terindikasi pre-split/pre-reverse, jangan gunakan
+   —warning_message → string peringatan untuk disertakan di prompt AI
     """
     if not price or price <= 0:
         return True, ""
@@ -1939,7 +1939,7 @@ def build_fundamental_from_text(prompt):
             if eps_2026:
                 lines.append(f"EPS TTM (2026) : Rp{eps_2026:,.0f}")
                 if eps_2025:
-                    growth = ((eps_2026 - eps_2025) / eps_2025) * 100
+                    growth = ((eps_2026—eps_2025) / eps_2025) * 100
                     lines.append(f"Growth EPS vs 2025 : {growth:+.2f}%")
             
             # Valuasi Tetap Wajib Ada
@@ -2394,7 +2394,7 @@ SIGMA memahami dan dapat menerapkan kerangka analisa dari para master investasi 
 
 📘 GRAHAM (Margin of Safety & Neraca Kuat):
 - Nilai intrinsik = Earnings Power Value (laba stabil × multiplier konservatif)
-- Margin of Safety = (Nilai Intrinsik - Harga Pasar) / Nilai Intrinsik × 100%
+- Margin of Safety = (Nilai Intrinsik—Harga Pasar) / Nilai Intrinsik × 100%
 - Neraca kuat: DER rendah, Current Ratio ≥ 1.5x, tidak over-leverage
 - Filosofi: beli bisnis bagus di harga MURAH, bukan harga murah tanpa bisnis bagus
 
@@ -2553,7 +2553,7 @@ SCORING:
 ✅ WAJIB hubungkan bandarmologi+teknikal+fundamental dalam kesimpulan akhir
 
 ====================================
-LOGIKA ANALISA IPO (MENU 7) - WAJIB PATUHI
+LOGIKA ANALISA IPO (MENU 7)—WAJIB PATUHI
 ====================================
 Jika menganalisa dokumen IPO (Menu 7), SIGMA WAJIB menghitung dan menyimpulkan hal berikut:
 
@@ -2903,8 +2903,8 @@ THRESHOLD ANOMALI VOLUME:
 50-100x normal = SANGAT EKSTREM -> bandar masuk besar, potensi besar
 
 CARA HITUNG ESTIMASI POSISI BANDAR:
-Volume anomali total - Volume normal = Estimasi lot yang dikumpulkan bandar
-Contoh TOWR: 297,185 - 3,000 = ~294,185 lot posisi bandar
+Volume anomali total—Volume normal = Estimasi lot yang dikumpulkan bandar
+Contoh TOWR: 297,185—3,000 = ~294,185 lot posisi bandar
 Dengan B.Lot 142,435 yang teridentifikasi di price table
 -> Bandar butuh waktu signifikan untuk exit semua posisi ini
 
@@ -3270,8 +3270,8 @@ DISIPLIN DATA: PRIORITAS 2026 & KOMPARASI HISTORIS
 
 Kamu bekerja dengan hirarki data sebagai berikut:
 1. PRIORITAS (LEVEL 1): Data Terbaru 2026 atau TTM (Trailing Twelve Months). Semua kesimpulan "Murah/Mahal" atau "Buy/Sell" wajib didasarkan pada angka 2026 ini.
-2. KOMPARASI (LEVEL 2): Data 2021 - 2022 - 2023 - 2024 - 2025 wajib digunakan sebagai PEMBANDING. 
-   - Contoh: "Meskipun EPS 2026 sebesar Rp500 terlihat bagus, angka ini sebenarnya turun 10% dibanding EPS 2025."
+2. KOMPARASI (LEVEL 2): Data 2021—2022—2023—2024—2025 wajib digunakan sebagai PEMBANDING. 
+  —Contoh: "Meskipun EPS 2026 sebesar Rp500 terlihat bagus, angka ini sebenarnya turun 10% dibanding EPS 2025."
 3. GAP-FILLING (LEVEL 3): Jika data 2026 belum tersedia (misal laporan keuangan belum rilis), gunakan data 2025 sebagai basis estimasi untuk memproyeksikan angka 2026 yang logis.
 
 ATURAN WAJIB:
@@ -3734,12 +3734,12 @@ def _smart_truncate_prompt(text, max_tokens=22000):
         return text
     # Ambil 70% dari depan + 30% dari belakang — pertahankan konteks & data terbaru
     head = int(max_chars * 0.70)
-    tail = max_chars - head
+    tail = max_chars—head
     # Potong di batas kalimat/newline yang bersih
     head_cut = text[:head].rfind('\n')
     if head_cut < int(head * 0.85): head_cut = text[:head].rfind('. ')
     if head_cut < 1: head_cut = head
-    tail_start = len(text) - tail
+    tail_start = len(text)—tail
     tail_cut = text.find('\n', tail_start)
     if tail_cut < 0 or tail_cut > tail_start + 200: tail_cut = tail_start
     return text[:head_cut] + "\n\n[... sebagian data tengah dipotong otomatis untuk efisiensi token ...]\n\n" + text[tail_cut:]
@@ -3758,7 +3758,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
     HISTORY_TOKEN_BUDGET = 3000   # max token untuk history
     OUTPUT_BUDGET = min(max_tokens, 16000)
     TOTAL_BUDGET = 30000
-    PROMPT_BUDGET = TOTAL_BUDGET - SYSTEM_TOKEN_EST - HISTORY_TOKEN_BUDGET - OUTPUT_BUDGET
+    PROMPT_BUDGET = TOTAL_BUDGET—SYSTEM_TOKEN_EST—HISTORY_TOKEN_BUDGET—OUTPUT_BUDGET
     PROMPT_BUDGET = max(PROMPT_BUDGET, 8000)  # minimal 8000 token untuk prompt
 
     # Truncate prompt jika melebihi budget
@@ -4238,9 +4238,9 @@ if st.session_state.user is None: show_login()
 # ─────────────────────────────────────────────
 # REPLACE FUNGSI show_system_selector() di app.py
 # Ini adalah versi upgrade dengan perubahan MINIMAL dari original:
-# - CSS diperbarui (font tetap system font, warna lebih tajam, corner brackets)
-# - Card terminal mendapat: mini terminal preview + data pills
-# - Struktur HTML/JS identik dengan aslinya (tidak ada perubahan arsitektur)
+#—CSS diperbarui (font tetap system font, warna lebih tajam, corner brackets)
+#—Card terminal mendapat: mini terminal preview + data pills
+#—Struktur HTML/JS identik dengan aslinya (tidak ada perubahan arsitektur)
 # ─────────────────────────────────────────────
 
 def show_system_selector():
@@ -5628,8 +5628,8 @@ Berikut adalah bedah Prospektus IPO untuk **{emiten}**:
 - **Harga Nominal:** Rp[X] per saham
 - **Rentang Harga Penawaran:** Rp[Y] hingga Rp[Z] per saham
 - **Rasio Harga Penawaran / Harga Nominal:**
-  - Pada harga Rp[Y]: [A]x → Kategori: [SANGAT MENARIK / MENARIK / WASPADA / HATI-HATI TINGGI]
-  - Pada harga Rp[Z]: [B]x → Kategori: [SANGAT MENARIK / MENARIK / WASPADA / HATI-HATI TINGGI]
+ —Pada harga Rp[Y]: [A]x → Kategori: [SANGAT MENARIK / MENARIK / WASPADA / HATI-HATI TINGGI]
+ —Pada harga Rp[Z]: [B]x → Kategori: [SANGAT MENARIK / MENARIK / WASPADA / HATI-HATI TINGGI]
 - **Skala Acuan:** ≤2x = Sangat Menarik | 2–4x = Menarik/Wajar | >4–7x = Waspada/Mahal | >7x = Hati-Hati Tinggi
 - **Kesimpulan:** [Jelaskan implikasi rasio ini — seberapa jauh harga penawaran dari nilai nominal, dan apa artinya bagi investor ritel. Sebutkan di harga mana yang lebih aman untuk masuk.]
 
@@ -5748,11 +5748,11 @@ Berikut analisa teknikal (MnM Strategy+) untuk **{emiten}**:
 - **Volume yang Dibutuhkan:** [Dry-up saat turun + spike saat bounce / Spike konfirmasi arah]
 - **Entry:** Rp[X] – Rp[Y]
 - **Stop Loss:** Rp[Z]
-  - *(Invalidasi: [sebutkan candle/zona yang jika ditembus setup ini batal])*
+ —*(Invalidasi: [sebutkan candle/zona yang jika ditembus setup ini batal])*
 - **Target:**
-  - TP1: Rp[A] — *[resistance/zona teknikal apa]*
-  - TP2: Rp[B] — *[zona berikutnya]* *(hapus jika tidak ada struktur jelas)*
-  - TP3: Rp[C] — *[zona mayor]* *(hapus jika tidak ada)*
+ —TP1: Rp[A] — *[resistance/zona teknikal apa]*
+ —TP2: Rp[B] — *[zona berikutnya]* *(hapus jika tidak ada struktur jelas)*
+ —TP3: Rp[C] — *[zona mayor]* *(hapus jika tidak ada)*
 - **R:R:** 1 : [X] | **Sizing:** [Normal / Kecil 30-50% / Hindari]
 
 🔵 **MODEL 2 — CONFIRMATION / BREAKOUT**
@@ -5760,10 +5760,10 @@ Berikut analisa teknikal (MnM Strategy+) untuk **{emiten}**:
 
 - **Pemicu Entry:** Close di atas Rp[X] dengan volume minimal [Y]x rata-rata
 - **Stop Loss:** Rp[Z]
-  - *(Invalidasi: [kondisi yang membatalkan])*
+ —*(Invalidasi: [kondisi yang membatalkan])*
 - **Target:**
-  - TP1: Rp[A] — *[alasan teknikal]*
-  - TP2: Rp[B] — *[alasan teknikal]* *(hapus jika tidak ada)*
+ —TP1: Rp[A] — *[alasan teknikal]*
+ —TP2: Rp[B] — *[alasan teknikal]* *(hapus jika tidak ada)*
 - **R:R:** 1 : [X]
 
 🟣 **MODEL 3 — DEEP ACCUMULATION (Spekulatif)**
@@ -5772,8 +5772,8 @@ Berikut analisa teknikal (MnM Strategy+) untuk **{emiten}**:
 - **Area Spekulatif:** Rp[X] – Rp[Y] *(zona demand lebih dalam / likuiditas terbawah)*
 - **Stop Loss:** Rp[Z] *(batas invalidasi tren mayor)*
 - **Target:**
-  - TP1: Rp[A] — *[alasan teknikal]*
-  - TP2: Rp[B] — *[alasan teknikal]* *(hapus jika tidak ada)*
+ —TP1: Rp[A] — *[alasan teknikal]*
+ —TP2: Rp[B] — *[alasan teknikal]* *(hapus jika tidak ada)*
 - **Sizing Wajib:** Maksimal 30-50% alokasi normal karena entry sebelum konfirmasi penuh.
 
 ---
@@ -5797,6 +5797,23 @@ Kamu adalah SIGMA, tracker aliran dana yang JUJUR dan TEGAS. Ingat: analisa ini 
 - WAJIB jujur: jika ada tanda distribusi, katakan distribusi. Jangan beri harapan palsu.
 - Jika data yang dikirim user tidak cukup → KATAKAN dengan jelas data apa yang kurang.
 
+[REFERENSI KODE BROKER IDX — WAJIB PAKAI UNTUK KLASIFIKASI]:
+FOREIGN (Asing): AK=UBS, YU=CGS International, YP=Mirae Asset, ZP=Maybank, CP=KB Valbury,
+  BK=JPMorgan, KZ=CLSA, RX=Macquarie, KK=Phillip, AI=Kay Hian, AG=Kiwoom, DR=RHB,
+  BQ=Korea Investment, XA=NH Korindo, TP=OCBC, HD=KGI, RB=Ina Sekuritas, DP=DBS Vickers,
+  LS=Reliance, FS=Yuanta, DU=KAF, GI=Webull, AH=Shinhan, CS=Credit Suisse, CG=Citigroup,
+  GW=HSBC, LH=Royal Investium, MS=Morgan Stanley
+BUMN: CC=Mandiri Sekuritas, NI=BNI Sekuritas, OD=BRI Danareksa, DX=Bahana Sekuritas
+LOKAL (Retail/Institusi Lokal): XL=Stockbit, MG=Semesta Indovest, PD=Indo Premier, XC=Ajaib,
+  DH=Sinarmas, AZ=Sucor, SQ=BCA Sekuritas, LG=Trimegah, IC=Integrity Capital, IF=Samuel,
+  GR=Panin, KI=Ciptadana, BB=Verdhana, YB=Yakin Bertumbuh, EP=MNC Sekuritas, SS=Supra,
+  AO=Erdhika, YJ=Lotus Andalan, BR=Trust Sekuritas, HP=Henan Putihrai, SF=Surya Fajar,
+  AT=Phintraco, IN=Investindo Nusantara, RF=Buana Capital, FZ=Waterfront, SH=Artha,
+  PC=FAC Sekuritas, SA=Elit Sukses, PO=Pilarmas, TS=Dwidana Sakti, dan lainnya.
+
+CATATAN PENTING: YP=Mirae Asset adalah broker ASING (Korea), BUKAN lokal.
+CP=KB Valbury adalah broker ASING (Korea), BUKAN lokal. Gunakan referensi di atas secara konsisten.
+
 URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
 1. PEMBACAAN MONEY FLOW (narasi siapa yang mengendalikan)
 2. PETA POSISI BANDAR (harga modal vs harga market)
@@ -5817,7 +5834,7 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 - Durasi Estimasi: [Sudah berlangsung berapa hari/minggu berdasarkan data yang terlihat]
 
 **Aktor yang Bermain:**
-- Top Buyer: [Sebutkan kode broker dan klasifikasinya: Asing/BUMN/Lokal]
+- Top Buyer: [Sebutkan kode broker dan klasifikasinya: Asing/BUMN/Lokal — gunakan referensi kode broker di atas]
 - Top Seller: [Sebutkan kode broker dan klasifikasinya: Asing/BUMN/Lokal]
 - Asing (Foreign Flow): [Net Buy Rp[X]B / Net Sell Rp[X]B / Neutral — implikasinya ke saham ini]
 - BUMN: [Net Buy / Net Sell / Tidak hadir — interpretasi]
@@ -5831,7 +5848,7 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 💰 **2. PETA POSISI & MODAL BANDAR**
 
 - **Average Top Buyer:** Rp[X]
-  - *(Interpretasi: Ini adalah estimasi harga modal bandar masuk)*
+ —*(Interpretasi: Ini adalah estimasi harga modal bandar masuk)*
 - **Harga Market Saat Ini:** Rp[Y]
 - **Selisih:** [+Rp[Z] floating profit / -Rp[Z] floating loss / Break Even]
 - **Status Bandar:** [Floating Profit ✅ = bandar nyaman | Break Even ⚠️ = kritis | Floating Loss ❌ = waspada distribusi paksa]
@@ -5870,14 +5887,108 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 - **Strategi:** [Cicil beli mendekati average bandar / Wait konfirmasi / Exit bertahap / Jangan masuk]
 
 - **Entry Area:** Rp[X] – Rp[Y]
-  - *(Mendekati atau setara average bandar — bukan jauh di atas modalnya)*
+ —*(Mendekati atau setara average bandar — bukan jauh di atas modalnya)*
 
 - **Stop Loss:** Di bawah Rp[Z]
-  - *(Invalidasi: Jika bandar beralih ke distribusi masif atau Top Buyer berganti menjadi Top Seller)*
+ —*(Invalidasi: Jika bandar beralih ke distribusi masif atau Top Buyer berganti menjadi Top Seller)*
 
 - **Target:**
-  - TP1: Rp[A] — *[logika: level psikologis / pola distribusi bandar / resistance terdekat]*
-  - TP2: Rp[B] — *[jika ada skenario mark-up berlanjut]* *(hapus jika tidak ada)*
+ —TP1: Rp[A] — *[logika: level psikologis / pola distribusi bandar / resistance terdekat]*
+ —TP2: Rp[B] — *[jika ada skenario mark-up berlanjut]* *(hapus jika tidak ada)*
+
+- **Instruksi Tegas:** [1 kalimat instruksi konkret. Contoh: "Cicil beli di Rp[X]-[Y], SL ketat di Rp[Z], exit jika Top Buyer berubah menjadi seller dalam 2 hari ke depan."]
+
+---
+
+💡 **6. INSIGHT & PERINGATAN**
+
+- [Sebutkan sinyal tersembunyi yang tidak terbaca langsung dari data, misalnya: pola washing, estimasi waktu distribusi, potensi mark-up, atau hal yang perlu dimonitor]
+- [Jika ada peringatan khusus — TULIS DENGAN JELAS, jangan disamarkan]
+
+---
+
+⚠️ *Analisa ini melacak aliran dana Smart Money. SIGMA tidak menjanjikan profit — disiplin SL wajib dijalankan.*
+"""
+1. PEMBACAAN MONEY FLOW (narasi siapa yang mengendalikan)
+2. PETA POSISI BANDAR (harga modal vs harga market)
+3. ANALISA VOLUME & FREKUENSI
+4. KESIMPULAN (tegas: ikut / wait / keluar)
+5. TRADE PLAN berdasarkan money flow
+6. INSIGHT (jika ada sinyal tersembunyi atau peringatan tambahan)
+
+[TEMPLATE WAJIB — IKUTI PERSIS]:
+Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
+
+---
+
+🕵️ **1. PEMBACAAN MONEY FLOW — SIAPA YANG MENGENDALIKAN?**
+
+**Fase Dominan Saat Ini:**
+- Fase Bandar: [Akumulasi / Distribusi / Mark-Up / Mark-Down / Shakeout / Mixed — pilih satu, jelaskan tandanya]
+- Durasi Estimasi: [Sudah berlangsung berapa hari/minggu berdasarkan data yang terlihat]
+
+**Aktor yang Bermain:**
+- Top Buyer: [Sebutkan kode broker dan klasifikasinya: Asing/BUMN/Lokal]
+- Top Seller: [Sebutkan kode broker dan klasifikasinya: Asing/BUMN/Lokal]
+- Asing (Foreign Flow): [Net Buy Rp[X]B / Net Sell Rp[X]B / Neutral — implikasinya ke saham ini]
+- BUMN: [Net Buy / Net Sell / Tidak hadir — interpretasi]
+- Lokal: [Net Buy / Net Sell — apakah ritel panik atau institusi lokal mengikuti?]
+
+**Taktik yang Terdeteksi:**
+- [Jelaskan jika ada: Washing/cuci barang / Bandar Nyamar broker ritel / Fake Bid-Offer / Shakeout ritel / Tidak terdeteksi]
+
+---
+
+💰 **2. PETA POSISI & MODAL BANDAR**
+
+- **Average Top Buyer:** Rp[X]
+ —*(Interpretasi: Ini adalah estimasi harga modal bandar masuk)*
+- **Harga Market Saat Ini:** Rp[Y]
+- **Selisih:** [+Rp[Z] floating profit / -Rp[Z] floating loss / Break Even]
+- **Status Bandar:** [Floating Profit ✅ = bandar nyaman | Break Even ⚠️ = kritis | Floating Loss ❌ = waspada distribusi paksa]
+
+---
+
+📊 **3. ANALISA VOLUME & FREKUENSI**
+
+**Karakter Transaksi:**
+- Tipe: [Block Trade — lot besar, frekuensi kecil = Smart Money | Eceran — lot kecil, frekuensi besar = Ritel]
+- Lot per Transaksi: [X lot/transaksi — [interpretasi: kecil/sedang/besar]]
+
+**Kondisi Volume:**
+- Status: [Anomali [Xx rata-rata] / Normal / Sepi — dry-up]
+- Arah: [Volume naik saat harga naik = konfirmasi | Volume naik saat harga turun = distribusi/kapitulasi]
+
+**Price Table (jika data tersedia):**
+- [Analisa perbandingan B.Lot vs S.Lot, B.Freq vs S.Freq di level harga kunci]
+- [Identifikasi: block trade beli di support = akumulasi kuat / block trade jual di resistance = distribusi kuat]
+
+---
+
+⚖️ **4. KESIMPULAN — JUJUR & TEGAS**
+
+> *(SIGMA tidak akan merekomendasikan ikut jika tanda-tanda distribusi lebih dominan.)*
+
+- **Sinyal Utama:** [S1 Akumulasi Dini / S2 Hindari Distribusi / S3 Ikuti Asing / S4 Konfluensi 3 Layer / S5 Exit / S6-S9 sesuai kondisi]
+- **Keputusan:** [✅ IKUT AKUMULASI / ⚠️ WAIT — belum jelas / ❌ KELUAR / ❌ JANGAN MASUK]
+- **Alasan:** [2-3 kalimat jujur menjelaskan mengapa keputusan ini — sebutkan fakta konkret dari data]
+- **Risiko Utama:** [Apa yang bisa membuat analisa ini salah? Sebutkan kondisi spesifik]
+
+---
+
+🎯 **5. TRADE PLAN (Berbasis Money Flow)**
+
+- **Strategi:** [Cicil beli mendekati average bandar / Wait konfirmasi / Exit bertahap / Jangan masuk]
+
+- **Entry Area:** Rp[X] – Rp[Y]
+ —*(Mendekati atau setara average bandar — bukan jauh di atas modalnya)*
+
+- **Stop Loss:** Di bawah Rp[Z]
+ —*(Invalidasi: Jika bandar beralih ke distribusi masif atau Top Buyer berganti menjadi Top Seller)*
+
+- **Target:**
+ —TP1: Rp[A] — *[logika: level psikologis / pola distribusi bandar / resistance terdekat]*
+ —TP2: Rp[B] — *[jika ada skenario mark-up berlanjut]* *(hapus jika tidak ada)*
 
 - **Instruksi Tegas:** [1 kalimat instruksi konkret. Contoh: "Cicil beli di Rp[X]-[Y], SL ketat di Rp[Z], exit jika Top Buyer berubah menjadi seller dalam 2 hari ke depan."]
 
@@ -5900,6 +6011,16 @@ Kamu adalah SIGMA, analis QUAD CONFLUENCE yang JUJUR, TEGAS, dan DISIPLIN. Ingat
 - Jika 3 dari 4 layer bearish — KATAKAN BEARISH. Jangan cari-cari alasan untuk bullish.
 - Cerita/narasi harus menjelaskan MENGAPA kondisi ini terjadi secara logis, bukan sekadar daftar data.
 - DILARANG skip atau mengosongkan bagian manapun. Jika data tidak ada → tulis "(est.)" + estimasi.
+
+[REFERENSI KODE BROKER IDX — WAJIB PAKAI]:
+FOREIGN: AK=UBS, YU=CGS International, YP=Mirae Asset (ASING-Korea), ZP=Maybank, CP=KB Valbury (ASING-Korea),
+  BK=JPMorgan, KZ=CLSA, RX=Macquarie, KK=Phillip, AI=Kay Hian, AG=Kiwoom, DR=RHB,
+  BQ=Korea Investment, XA=NH Korindo, TP=OCBC, HD=KGI, DP=DBS Vickers, MS=Morgan Stanley,
+  CS=Credit Suisse, CG=Citigroup, GW=HSBC, GI=Webull, FS=Yuanta, AH=Shinhan
+BUMN: CC=Mandiri Sekuritas, NI=BNI Sekuritas, OD=BRI Danareksa, DX=Bahana Sekuritas
+LOKAL: XL=Stockbit, MG=Semesta Indovest, PD=Indo Premier, XC=Ajaib, DH=Sinarmas, AZ=Sucor,
+  SQ=BCA Sekuritas, LG=Trimegah, IC=Integrity Capital, IF=Samuel, GR=Panin, KI=Ciptadana,
+  BB=Verdhana, YB=Yakin Bertumbuh, EP=MNC, SS=Supra, AO=Erdhika, HP=Henan Putihrai, dan lainnya.
 
 [DATA LIVE FUNDAMENTAL]:
 {data_raw}
@@ -5988,15 +6109,15 @@ URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
 - **Strategi:** [Buy on Weakness / Wait for Breakout / Avoid / Exit Bertahap]
 
 - **Entry Area:** Rp[X] – Rp[Y]
-  - *(Logika: konfluensi Average Bandar + Support Teknikal + Zona Demand)*
+ —*(Logika: konfluensi Average Bandar + Support Teknikal + Zona Demand)*
 
 - **Stop Loss:** Di bawah Rp[Z]
-  - *(Invalidasi: [kondisi teknikal + bandar yang jika terjadi, setup ini batal])*
+ —*(Invalidasi: [kondisi teknikal + bandar yang jika terjadi, setup ini batal])*
 
 - **Target:**
-  - TP1: Rp[A] — *[resistance teknikal minor / zona distribusi bandar]*
-  - TP2: Rp[B] — *[resistance mayor / target valuasi]* *(hapus jika tidak ada)*
-  - TP3: Rp[C] — *[zona ekstrem / ATH area]* *(hapus jika tidak ada)*
+ —TP1: Rp[A] — *[resistance teknikal minor / zona distribusi bandar]*
+ —TP2: Rp[B] — *[resistance mayor / target valuasi]* *(hapus jika tidak ada)*
+ —TP3: Rp[C] — *[zona ekstrem / ATH area]* *(hapus jika tidak ada)*
 
 - **R:R:** 1 : [X]
 - **Sizing:** [Penuh / 50-70% / 30-50% / Hindari] — [alasan sizing]
@@ -6910,7 +7031,7 @@ if current_view == "dashboard":
             if len(_h) >= 2:
                 _p  = _h['Close'].iloc[-1]
                 _pc = _h['Close'].iloc[-2]
-                _chg = (_p - _pc) / _pc * 100
+                _chg = (_p—_pc) / _pc * 100
                 _cls = "up" if _chg >= 0 else "dn"
                 _arr = "&#9650;" if _chg >= 0 else "&#9660;"
                 _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
@@ -6945,7 +7066,7 @@ if current_view == "dashboard":
                     if len(hist) >= 2:
                         last = float(hist['Close'].iloc[-1])
                         prev = float(hist['Close'].iloc[-2])
-                        pct = ((last - prev) / prev) * 100
+                        pct = ((last—prev) / prev) * 100
                         data[name] = {"price": last, "pct": pct}
                     elif len(hist) == 1:
                         last = float(hist['Close'].iloc[-1])
@@ -7227,7 +7348,7 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
   function updateTs(){{
     var now = new Date();
     // WIB = UTC+7
-    var wibMs = now.getTime() + (7*60*60*1000) - now.getTimezoneOffset()*60000;
+    var wibMs = now.getTime() + (7*60*60*1000)—now.getTimezoneOffset()*60000;
     // just use UTC offset trick
     var wib = new Date(now.getTime());
     var ofs = now.getTimezoneOffset(); // local offset in mins
@@ -7296,8 +7417,8 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
                 from datetime import timezone, timedelta as _td
                 _wib = timezone(_td(hours=7))
                 _now_wib = datetime.now(_wib)
-                _cutoff_daily  = _now_wib - _td(hours=24)
-                _cutoff_weekly = _now_wib - _td(days=7)
+                _cutoff_daily  = _now_wib—_td(hours=24)
+                _cutoff_weekly = _now_wib—_td(days=7)
                 _cutoff = _cutoff_daily if req_daily else _cutoff_weekly
 
                 # ── Fetch multi-source headline (RSS backup) ──────────────────────
@@ -8626,7 +8747,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
   var TARGET_UTC_MS = Date.UTC(2026, 3, 29, 18, 0, 0);
 
   function tick() {{
-    var diff = TARGET_UTC_MS - Date.now();
+    var diff = TARGET_UTC_MS—Date.now();
     var cd = document.getElementById('frm-cd');
     if (!cd) return;
     if (diff <= 0) {{
@@ -8959,8 +9080,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             import hashlib as _hsh
             _h = int(_hsh.md5(ticker.encode()).hexdigest()[:8], 16)
             # Spread ±8 points di sekitar centroid sektor
-            _rs_spread  = ((_h % 160) - 80) / 10.0   # -8 to +8
-            _mom_spread = (((_h >> 8) % 140) - 70) / 10.0
+            _rs_spread  = ((_h % 160)—80) / 10.0   # -8 to +8
+            _mom_spread = (((_h >> 8) % 140)—70) / 10.0
             _rs  = round(min(115, max(85, sector_rs  + _rs_spread)),  1)
             _mom = round(min(115, max(85, sector_mom + _mom_spread)), 1)
             _fase = ("Leading"   if _rs>=100 and _mom>=100 else
@@ -9586,7 +9707,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             _saham_display = sorted(sd["saham"], key=lambda x: x["rs"], reverse=True)[:30]
             for stk in _saham_display:
                 fc2 = fase_colors.get(stk.get("fase",""), "#888")
-                rs_pct = max(0, min(100, (stk["rs"] - 85) / 30 * 100))
+                rs_pct = max(0, min(100, (stk["rs"]—85) / 30 * 100))
                 _mc_disp = stk.get("mktcap","—")
                 tbl_rows += f"""<tr>
                     <td style='font-weight:700;color:{fc2};font-family:IBM Plex Mono,monospace;font-size:14px;'>{stk["ticker"]}</td>
@@ -10387,9 +10508,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             now = _dtx.datetime.now()
             # Buat tanggal akhir bulan terakhir
             if now.day > 5:
-                last_month_end = now.replace(day=1) - _dtx.timedelta(days=1)
+                last_month_end = now.replace(day=1)—_dtx.timedelta(days=1)
             else:
-                last_month_end = (now.replace(day=1) - _dtx.timedelta(days=1)).replace(day=1) - _dtx.timedelta(days=1)
+                last_month_end = (now.replace(day=1)—_dtx.timedelta(days=1)).replace(day=1)—_dtx.timedelta(days=1)
 
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -10548,7 +10669,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     # Buat 12 bulan historis dengan variasi realistis
                     now = _dtx.datetime.now()
                     for i in range(11, -1, -1):
-                        month = now.month - i
+                        month = now.month—i
                         year  = now.year
                         while month <= 0:
                             month += 12
@@ -10557,7 +10678,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                         last_day = calendar.monthrange(year, month)[1]
                         dt = _dtx.datetime(year, month, last_day)
                         # Variasi ±5% secara gradual
-                        factor = 1.0 + (i - 6) * _rnd.uniform(-0.008, 0.012)
+                        factor = 1.0 + (i—6) * _rnd.uniform(-0.008, 0.012)
                         sh_val = max(100, int(est_holders * factor))
                         results.append({"date": dt, "shareholders": sh_val})
             except: pass
@@ -10701,9 +10822,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 df_sh["pct_change"] = df_sh["shareholders"].pct_change() * 100
 
                 # Sinyal 6-bulan
-                n_periods = min(6, len(df_sh) - 1)
-                trend_6m = df_sh["shareholders"].iloc[-1] - df_sh["shareholders"].iloc[-1 - n_periods]
-                pct_6m = (trend_6m / df_sh["shareholders"].iloc[-1 - n_periods]) * 100 if n_periods > 0 else 0
+                n_periods = min(6, len(df_sh)—1)
+                trend_6m = df_sh["shareholders"].iloc[-1]—df_sh["shareholders"].iloc[-1—n_periods]
+                pct_6m = (trend_6m / df_sh["shareholders"].iloc[-1—n_periods]) * 100 if n_periods > 0 else 0
                 if pct_6m < -15:
                     sinyal, sinyal_color = "DISTRIBUSI KUAT", "#f23645"
                     sinyal_desc = "Jumlah pemegang saham turun >15% dalam 6 bulan. Smart money kemungkinan besar sedang distribusi — menjual saham ke retail yang makin sedikit. Waspadai tekanan jual lanjutan."
@@ -11053,7 +11174,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             _m2    = int(_df_sc["shareholders"].iloc[-3]) if len(_df_sc) >= 3 else None
             _m3    = int(_df_sc["shareholders"].iloc[-4]) if len(_df_sc) >= 4 else None
 
-            _delta1 = _last - _prev1
+            _delta1 = _last—_prev1
             _pct1   = round(_delta1 / _prev1 * 100, 2) if _prev1 else 0
 
             _trend3 = "—"
@@ -11417,8 +11538,8 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
                                     spike_ratio = last_vol / avg_vol_20 if avg_vol_20 > 0 else 1
 
-                                    price_chg_5d = (df_chart['Close'].iloc[-1] - df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
-                                    vol_chg_5d   = (avg_vol_5 - df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
+                                    price_chg_5d = (df_chart['Close'].iloc[-1]—df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
+                                    vol_chg_5d   = (avg_vol_5—df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
 
                                     dryup = avg_vol_5 < (avg_vol_20 * 0.5)
 
@@ -11454,7 +11575,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     _sh_df2 = _pd_sh.DataFrame(_sh_recs).sort_values("date").reset_index(drop=True)
                                     _sh_last2  = int(_sh_df2["shareholders"].iloc[-1])
                                     _sh_prev1  = int(_sh_df2["shareholders"].iloc[-2])
-                                    _sh_delta1 = _sh_last2 - _sh_prev1
+                                    _sh_delta1 = _sh_last2—_sh_prev1
                                     _sh_pct1   = round(_sh_delta1 / _sh_prev1 * 100, 2) if _sh_prev1 else 0
                                     _lbl_now   = _sh_df2["date"].iloc[-1].strftime("%b %Y")
                                     _lbl_1m    = _sh_df2["date"].iloc[-2].strftime("%b %Y")
@@ -11464,7 +11585,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     _lbl_3m    = None
                                     if len(_sh_df2) >= 4:
                                         _sh_prev3  = int(_sh_df2["shareholders"].iloc[-4])
-                                        _sh_delta3 = _sh_last2 - _sh_prev3
+                                        _sh_delta3 = _sh_last2—_sh_prev3
                                         _sh_pct3   = round(_sh_delta3 / _sh_prev3 * 100, 2) if _sh_prev3 else 0
                                         _lbl_3m    = _sh_df2["date"].iloc[-4].strftime("%b %Y")
 
@@ -11518,53 +11639,53 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
     ⚠️ PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
     Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
-    - LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
-    - WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
-    - HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
+   —LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
+   —WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
+   —HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
 
     ⛔ ATURAN TRADE PLAN & RISK LEVEL:
-    - Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
-    - Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
-    - Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
+   —Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
+   —Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
+   —Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
 
     🎯 SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
-    - HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
-    - MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
-    - LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
-    - IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
+   —HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
+   —MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
+   —LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
+   —IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
 
     ────────────────────────────────────────────────
     STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
     ────────────────────────────────────────────────
 
     1. 📊 NARASI TEKNIKAL
-       - Posisi harga saat ini vs struktur support/resistance utama
-       - Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
-       - Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
-       - Volume: konfirmasi atau divergensi dari price action?
-       - EMA: posisi harga vs EMA 13/21/100/200 → arah trend
-       - JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
+      —Posisi harga saat ini vs struktur support/resistance utama
+      —Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
+      —Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
+      —Volume: konfirmasi atau divergensi dari price action?
+      —EMA: posisi harga vs EMA 13/21/100/200 → arah trend
+      —JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
 
     2. 🏢 NARASI FUNDAMENTAL
-       - Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) — jujur jika overvalued
-       - Kinerja keuangan (EPS, margin, pertumbuhan revenue) — sebutkan jika memburuk
-       - Katalis positif/negatif ke depan — jangan sembunyikan risiko
-       - Posisi vs kompetitor sektor
+      —Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) — jujur jika overvalued
+      —Kinerja keuangan (EPS, margin, pertumbuhan revenue) — sebutkan jika memburuk
+      —Katalis positif/negatif ke depan — jangan sembunyikan risiko
+      —Posisi vs kompetitor sektor
 
     3. 👥 SINYAL PEMEGANG SAHAM
-       - Tren jumlah pemegang saham: akumulasi atau distribusi?
-       - Implikasi terhadap supply/demand
+      —Tren jumlah pemegang saham: akumulasi atau distribusi?
+      —Implikasi terhadap supply/demand
 
     4. 📰 OUTLOOK SEKTOR & MAKRO
-       - Kondisi sektor saat ini
-       - Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
-       - Risiko utama — JANGAN diremehkan
+      —Kondisi sektor saat ini
+      —Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
+      —Risiko utama — JANGAN diremehkan
 
     5. ⚡ KESIMPULAN & VERDICT (JUJUR & TEGAS)
-       - Bias tunggal: BULLISH / BEARISH / SIDEWAYS — satu pilihan, jelaskan alasan utama
-       - Rating: BELI / WASPADA / HINDARI
-       - Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini — sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
-       - Level kunci yang wajib diperhatikan
+      —Bias tunggal: BULLISH / BEARISH / SIDEWAYS — satu pilihan, jelaskan alasan utama
+      —Rating: BELI / WASPADA / HINDARI
+      —Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini — sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
+      —Level kunci yang wajib diperhatikan
 
     6. 🎯 TRADE PLAN
        ⚠️ HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
@@ -11572,19 +11693,19 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
           "⛔ TRADE PLAN TIDAK TERSEDIA — [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
    
        Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
-       - 🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
-       - 🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
-       - 🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
+      —🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
+      —🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
+      —🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
 
        Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] — [alasan singkat 1 kalimat]
 
        Lanjutkan:
-       - Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
-       - Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
-       - TP1: Rp[A] → resistance minor / FVG terdekat
-       - TP2: Rp[B] → resistance mayor jika ada struktur
-       - Timeframe: perkiraan berapa hari/minggu
-       - Trigger masuk: kondisi spesifik sebelum entry
+      —Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
+      —Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
+      —TP1: Rp[A] → resistance minor / FVG terdekat
+      —TP2: Rp[B] → resistance mayor jika ada struktur
+      —Timeframe: perkiraan berapa hari/minggu
+      —Trigger masuk: kondisi spesifik sebelum entry
 
     Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
 
@@ -11636,7 +11757,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                 last_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0
                                 if last_price > 0:
                                     def _plausible(v, ref, pct=0.6):
-                                        return v and v > 0 and abs(v - ref) / ref < pct
+                                        return v and v > 0 and abs(v—ref) / ref < pct
                                     # Entry zone: plausible ±60% dari last price
                                     if not _plausible(ai_data['entry_low'], last_price, 0.60): ai_data['entry_low'] = None
                                     if not _plausible(ai_data['entry_high'], last_price, 0.60): ai_data['entry_high'] = None
@@ -11654,7 +11775,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                             _sl = ai_data['stop_loss']
                                             _tp = ai_data['tp1']
                                             # Buy zone = 30-50% dari range SL-TP1 di atas SL
-                                            _range = _tp - _sl
+                                            _range = _tp—_sl
                                             ai_data['entry_low']  = round(_sl + _range * 0.10, 0)
                                             ai_data['entry_high'] = round(_sl + _range * 0.25, 0)
                                         else:
@@ -11670,7 +11791,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                                 max(ai_data['entry_low'], ai_data['entry_high'])
                                             )
                                             # Pastikan ada gap minimal 0.5%
-                                            if ai_data['entry_high'] - ai_data['entry_low'] < last_price * 0.005:
+                                            if ai_data['entry_high']—ai_data['entry_low'] < last_price * 0.005:
                                                 ai_data['entry_high'] = round(ai_data['entry_low'] * 1.008, 0)
 
                                     # ── Validasi logika: SL < entry_low, entry_high < TP1 ──
@@ -11729,14 +11850,14 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         avg_g = gain.ewm(com=13, adjust=False).mean()
                         avg_l = loss.ewm(com=13, adjust=False).mean()
                         rs    = avg_g / avg_l.replace(0, 1e-9)
-                        df_chart['RSI'] = (100 - (100 / (1 + rs))).fillna(50)
+                        df_chart['RSI'] = (100—(100 / (1 + rs))).fillna(50)
 
                         # ── MACD ──────────────────────────────────────────────
                         ema12 = df_chart['Close'].ewm(span=12, adjust=False).mean()
                         ema26 = df_chart['Close'].ewm(span=26, adjust=False).mean()
-                        df_chart['MACD']        = ema12 - ema26
+                        df_chart['MACD']        = ema12—ema26
                         df_chart['MACD_signal'] = df_chart['MACD'].ewm(span=9, adjust=False).mean()
-                        df_chart['MACD_hist']   = df_chart['MACD'] - df_chart['MACD_signal']
+                        df_chart['MACD_hist']   = df_chart['MACD']—df_chart['MACD_signal']
 
                         # ── x-axis: string kategori (anti-gap weekend) ────────
                         x_str  = df_chart.index.strftime('%d %b %y').tolist()
@@ -11849,7 +11970,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     fig.add_annotation(
                                         xref='paper', yref='y',
                                         x=1.0, y=mid_y,
-                                        text=f"<b>BUY {min(el_val, eh_val):,.0f} - {max(el_val, eh_val):,.0f}</b>",
+                                        text=f"<b>BUY {min(el_val, eh_val):,.0f}—{max(el_val, eh_val):,.0f}</b>",
                                         showarrow=False,
                                         xanchor='right', yanchor='middle',
                                         font=dict(color='#089981', size=10, family='IBM Plex Mono, monospace'),
@@ -11890,9 +12011,9 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         ), row=2, col=1)
 
                         # ── Volume Delta (split buy/sell power) ───────────────
-                        hl_range = (df_chart['High'] - df_chart['Low']).replace(0, 1)
-                        buy_vol  = (df_chart['Volume'] * (df_chart['Close'] - df_chart['Low'])  / hl_range).clip(lower=0)
-                        sell_vol = (df_chart['Volume'] * (df_chart['High']  - df_chart['Close']) / hl_range).clip(lower=0)
+                        hl_range = (df_chart['High']—df_chart['Low']).replace(0, 1)
+                        buy_vol  = (df_chart['Volume'] * (df_chart['Close']—df_chart['Low'])  / hl_range).clip(lower=0)
+                        sell_vol = (df_chart['Volume'] * (df_chart['High'] —df_chart['Close']) / hl_range).clip(lower=0)
                         # Bar bawah: sell (merah), bar atas: buy (hijau) — stacked
                         fig.add_trace(go.Bar(
                             x=x_str, y=sell_vol,
@@ -12185,7 +12306,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         ema5  = sum(closes[-5:]) / 5
                         ema10 = sum(closes[-10:]) / 10 if len(closes) >= 10 else ema5
                         spike  = vols[-1] / (sum(vols[-5:]) / 5) if sum(vols[-5:]) > 0 else 1
-                        chg5d  = round((closes[-1] - closes[-6]) / closes[-6] * 100, 2) if len(closes) >= 6 else 0
+                        chg5d  = round((closes[-1]—closes[-6]) / closes[-6] * 100, 2) if len(closes) >= 6 else 0
                         with lock:
                             result[tk] = {
                                 "price":  round(closes[-1], 0),
@@ -12194,8 +12315,8 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                 "low":    round(lows[-1], 0),
                                 "vol":    int(vols[-1]),
                                 "vol5":   int(sum(vols[-5:]) / 5),
-                                "chg":    round((closes[-1] - closes[-2]) / closes[-2] * 100, 2),
-                                "chg2d":  round((closes[-1] - closes[-3]) / closes[-3] * 100, 2) if len(closes) >= 3 else 0,
+                                "chg":    round((closes[-1]—closes[-2]) / closes[-2] * 100, 2),
+                                "chg2d":  round((closes[-1]—closes[-3]) / closes[-3] * 100, 2) if len(closes) >= 3 else 0,
                                 "chg5d":  chg5d,
                                 "ema5":   round(ema5, 0),
                                 "ema10":  round(ema10, 0),
@@ -12311,7 +12432,7 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                     if len(_df) >= 2:
                         last = int(_df["shareholders"].iloc[-1])
                         prev = int(_df["shareholders"].iloc[-2])
-                        delta = last - prev
+                        delta = last—prev
                         pct   = round(delta / prev * 100, 2)
                         trend = "naik" if delta > 0 else "turun"
                         lines.append(f"{tk}: {last:,} pemegang (Δ {delta:+,} = {pct:+.2f}% MoM — {trend})")
@@ -12999,7 +13120,7 @@ Format JSON WAJIB:
                                     mkcap     = inf.get("marketCap") or 0
                                     w52h      = inf.get("fiftyTwoWeekHigh") or 0
                                     w52l      = inf.get("fiftyTwoWeekLow") or 0
-                                    rpos      = ((price - w52l)/(w52h - w52l)*100) if w52h > w52l else 0
+                                    rpos      = ((price—w52l)/(w52h—w52l)*100) if w52h > w52l else 0
                                     eps_fwd   = inf.get("forwardEps") or 0
                                     eps_g     = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
                                     score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
@@ -13260,28 +13381,28 @@ Kriteria screening: ROE≥15% | DER≤1.0x | NetMargin≥10% | CurrentRatio≥1.
 Lakukan analisa MULTI-DISIPLIN berikut:
 
 1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-   - Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
-   - Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
-   - Saham mana yang paling menarik secara Risk/Reward?
+  —Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
+  —Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
+  —Saham mana yang paling menarik secara Risk/Reward?
 
 2. KUALITAS LABA & UJI FORENSIK (Schilit):
-   - Bandingkan tren laba bersih vs estimasi arus kas operasi
-   - Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
-   - Red flag atau green flag yang perlu diperhatikan?
+  —Bandingkan tren laba bersih vs estimasi arus kas operasi
+  —Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
+  —Red flag atau green flag yang perlu diperhatikan?
 
 3. KATEGORISASI PROFIL (Lynch):
-   - Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-   - Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
+  —Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+  —Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
 
 4. MARGIN OF SAFETY (Graham):
-   - Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
-   - Berapa % Margin of Safety yang tersedia saat ini?
-   - Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
+  —Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
+  —Berapa % Margin of Safety yang tersedia saat ini?
+  —Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
 
 5. SINTESIS & SIGMA VIEW:
-   - Beri skor Risk/Reward untuk masing-masing saham
-   - Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
-   - Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
+  —Beri skor Risk/Reward untuk masing-masing saham
+  —Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
+  —Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
 
 Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang data mentah."""
                                 _fs_ai = _call_ai_reco(_fp)
@@ -13358,17 +13479,120 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
             "  📸 ANALISA BROSUM (AI)  ",
         ])
 
-        # ── FOREIGN BROKER CODES ──
-        _FOREIGN_BROKERS = {
-            "AK": "UBS Securities", "BK": "J.P. Morgan", "BQ": "Mirae Asset",
-            "CS": "Credit Suisse", "DB": "Deutsche Securities", "DX": "Danareksa (Asing)",
-            "IJ": "CIMB Securities", "KI": "CGS-CIMB", "KZ": "CLSA Securities",
-            "MD": "Mandiri Ekuitas (Asing)", "ML": "Merrill Lynch", "MS": "Morgan Stanley",
-            "MU": "Manulife", "OD": "Mandiri Sekuritas", "RX": "Macquarie Capital",
-            "YU": "OCBC Sekuritas", "ZP": "Kim Eng (Maybank)", "GW": "Goldman Sachs",
-            "DP": "DBS Vickers", "HG": "HSBC Securities", "SQ": "Société Générale",
-            "BC": "Standard Chartered", "EB": "Credit Agricole",
+        # ── BROKER CODES — LENGKAP (sumber: Daftar Kode Broker IDX) ──
+        # Dipakai untuk: klasifikasi Asing/BUMN/Lokal, AI prompt context, brosum screening
+        _ALL_BROKERS = {
+            # FOREIGN
+            "AK": ("UBS Sekuritas Indonesia",          "FOREIGN", "3.4T"),
+            "YU": ("CGS International Sekuritas",      "FOREIGN", "1.8T"),
+            "YP": ("Mirae Asset Sekuritas Indonesia",  "FOREIGN", "1.8T"),
+            "ZP": ("Maybank Sekuritas Indonesia",      "FOREIGN", "1.7T"),
+            "CP": ("KB Valbury Sekuritas",             "FOREIGN", "1.0T"),
+            "BK": ("J.P. Morgan Sekuritas Indonesia",  "FOREIGN", "734.7B"),
+            "KZ": ("CLSA Sekuritas Indonesia",         "FOREIGN", "643.8B"),
+            "RX": ("Macquarie Sekuritas Indonesia",    "FOREIGN", "623.4B"),
+            "KK": ("Phillip Sekuritas Indonesia",      "FOREIGN", "412.8B"),
+            "AI": ("Kay Hian Sekuritas",               "FOREIGN", "335.5B"),
+            "AG": ("Kiwoom Sekuritas Indonesia",       "FOREIGN", "288.3B"),
+            "DR": ("RHB Sekuritas Indonesia",          "FOREIGN", "278.8B"),
+            "BQ": ("Korea Investment Sekuritas",       "FOREIGN", "270.1B"),
+            "XA": ("NH Korindo Sekuritas Indonesia",   "FOREIGN", "237.7B"),
+            "TP": ("OCBC Sekuritas Indonesia",         "FOREIGN", "208.5B"),
+            "HD": ("KGI Sekuritas Indonesia",          "FOREIGN", "174.3B"),
+            "RB": ("Ina Sekuritas Indonesia",          "FOREIGN", "66.2B"),
+            "DP": ("DBS Vickers Sekuritas Indonesia",  "FOREIGN", "61.4B"),
+            "LS": ("Reliance Sekuritas Indonesia",     "FOREIGN", "38.2B"),
+            "FS": ("Yuanta Sekuritas Indonesia",       "FOREIGN", "23.1B"),
+            "DU": ("KAF Sekuritas Indonesia",          "FOREIGN", "9.6B"),
+            "GI": ("Webull Sekuritas Indonesia",       "FOREIGN", "9.0B"),
+            "AH": ("Shinhan Sekuritas Indonesia",      "FOREIGN", "266.1M"),
+            "CS": ("Credit Suisse Sekuritas",          "FOREIGN", "0"),
+            "CG": ("Citigroup Sekuritas Indonesia",    "FOREIGN", "0"),
+            "GW": ("HSBC Sekuritas Indonesia",         "FOREIGN", "0"),
+            "LH": ("Royal Investium Sekuritas",        "FOREIGN", "0"),
+            "MS": ("Morgan Stanley Sekuritas",         "FOREIGN", "0"),
+            # BUMN
+            "CC": ("Mandiri Sekuritas",                "BUMN",    "2.8T"),
+            "NI": ("BNI Sekuritas",                    "BUMN",    "590.8B"),
+            "OD": ("BRI Danareksa Sekuritas",          "BUMN",    "403.3B"),
+            "DX": ("Bahana Sekuritas",                 "BUMN",    "69.4B"),
+            # LOKAL
+            "XL": ("Stockbit Sekuritas Digital",       "LOKAL",   "4.4T"),
+            "MG": ("Semesta Indovest Sekuritas",       "LOKAL",   "1.3T"),
+            "PD": ("Indo Premier Sekuritas",           "LOKAL",   "1.0T"),
+            "XC": ("Ajaib Sekuritas Asia",             "LOKAL",   "978.5B"),
+            "DH": ("Sinarmas Sekuritas",               "LOKAL",   "796.7B"),
+            "AZ": ("Sucor Sekuritas",                  "LOKAL",   "715.8B"),
+            "SQ": ("BCA Sekuritas",                    "LOKAL",   "705.5B"),
+            "LG": ("Trimegah Sekuritas Indonesia",     "LOKAL",   "384.6B"),
+            "IC": ("Integrity Capital Sekuritas",      "LOKAL",   "366.2B"),
+            "IF": ("Samuel Sekuritas Indonesia",       "LOKAL",   "354.5B"),
+            "GR": ("Panin Sekuritas Tbk.",             "LOKAL",   "310.1B"),
+            "KI": ("Ciptadana Sekuritas Asia",         "LOKAL",   "278.7B"),
+            "BB": ("Verdhana Sekuritas Indonesia",     "LOKAL",   "255.4B"),
+            "YB": ("Yakin Bertumbuh Sekuritas",        "LOKAL",   "246.8B"),
+            "EP": ("MNC Sekuritas",                    "LOKAL",   "203.8B"),
+            "SS": ("Supra Sekuritas Indonesia",        "LOKAL",   "181.8B"),
+            "AO": ("Erdhika Elit Sekuritas",           "LOKAL",   "123.3B"),
+            "YJ": ("Lotus Andalan Sekuritas",          "LOKAL",   "115.7B"),
+            "BR": ("Trust Sekuritas",                  "LOKAL",   "97.3B"),
+            "HP": ("Henan Putihrai Sekuritas",         "LOKAL",   "82.8B"),
+            "SF": ("Surya Fajar Sekuritas",            "LOKAL",   "76.2B"),
+            "AT": ("Phintraco Sekuritas",              "LOKAL",   "73.3B"),
+            "IN": ("Investindo Nusantara Sekuritas",   "LOKAL",   "63.1B"),
+            "RF": ("Buana Capital Sekuritas",          "LOKAL",   "60.7B"),
+            "FZ": ("Waterfront Sekuritas Indonesia",   "LOKAL",   "43.5B"),
+            "SH": ("Artha Sekuritas Indonesia",        "LOKAL",   "41.5B"),
+            "PC": ("FAC Sekuritas Indonesia",          "LOKAL",   "39.7B"),
+            "SA": ("Elit Sukses Sekuritas",            "LOKAL",   "38.3B"),
+            "PO": ("Pilarmas Investindo Sekuritas",    "LOKAL",   "38.0B"),
+            "TS": ("Dwidana Sakti Sekuritas",          "LOKAL",   "37.1B"),
+            "II": ("Danatama Makmur Sekuritas",        "LOKAL",   "36.3B"),
+            "MU": ("Minna Padi Investama Sekuritas",   "LOKAL",   "35.2B"),
+            "IH": ("Indo Harvest Sekuritas",           "LOKAL",   "32.3B"),
+            "IU": ("Indo Capital Sekuritas",           "LOKAL",   "29.7B"),
+            "CD": ("Mega Capital Sekuritas",           "LOKAL",   "29.1B"),
+            "EL": ("Evergreen Sekuritas Indonesia",    "LOKAL",   "23.6B"),
+            "MI": ("Victoria Sekuritas Indonesia",     "LOKAL",   "23.5B"),
+            "AP": ("Pacific Sekuritas Indonesia",      "LOKAL",   "20.1B"),
+            "PG": ("Panca Global Sekuritas",           "LOKAL",   "16.2B"),
+            "RO": ("Pluang Maju Sekuritas",            "LOKAL",   "15.7B"),
+            "AR": ("Binaartha Sekuritas",              "LOKAL",   "14.9B"),
+            "PF": ("Danasakti Sekuritas Indonesia",    "LOKAL",   "13.5B"),
+            "ID": ("Anugerah Sekuritas Indonesia",     "LOKAL",   "13.3B"),
+            "ES": ("Ekokapital Sekuritas",             "LOKAL",   "12.5B"),
+            "ZR": ("Bumiputera Sekuritas",             "LOKAL",   "11.3B"),
+            "QA": ("Tuntun Sekuritas Indonesia",       "LOKAL",   "10.9B"),
+            "RG": ("Profindo Sekuritas Indonesia",     "LOKAL",   "9.4B"),
+            "GA": ("BNC Sekuritas Indonesia",          "LOKAL",   "9.2B"),
+            "PI": ("Magenta Kapital Sekuritas",        "LOKAL",   "9.1B"),
+            "OK": ("Net Sekuritas",                    "LOKAL",   "6.5B"),
+            "AF": ("Harita Kencana Sekuritas",         "LOKAL",   "6.2B"),
+            "BS": ("Equity Sekuritas Indonesia",       "LOKAL",   "5.7B"),
+            "TF": ("Universal Broker Indonesia",       "LOKAL",   "5.6B"),
+            "RS": ("Yulie Sekuritas Indonesia",        "LOKAL",   "5.4B"),
+            "AD": ("OSO Sekuritas Indonesia",          "LOKAL",   "4.4B"),
+            "JB": ("BJB Sekuritas",                    "LOKAL",   "2.1B"),
+            "BF": ("Inti Fikasa Sekuritas",            "LOKAL",   "2.0B"),
+            "YO": ("Amantara Sekuritas Indonesia",     "LOKAL",   "1.5B"),
+            "IT": ("Inti Teladan Sekuritas",           "LOKAL",   "803.6M"),
+            "PP": ("Aldiracita Sekuritas Indonesia",   "LOKAL",   "543.0M"),
+            "DD": ("Makindo Sekuritas",                "LOKAL",   "125.3M"),
+            "FO": ("Forte Global Sekuritas",           "LOKAL",   "3.8M"),
+            "KS": ("Kresna Sekuritas",                 "LOKAL",   "0"),
+            "AN": ("Wanteg Sekuritas",                 "LOKAL",   "0"),
+            "DM": ("Masindo Artha Sekuritas",          "LOKAL",   "0"),
+            "IP": ("Yugen Bertumbuh Sekuritas",        "LOKAL",   "0"),
+            "BZ": ("Batavia Prosperindo Sekuritas",    "LOKAL",   "0"),
+            "MK": ("Ekuator Swarna Sekuritas",         "LOKAL",   "0"),
+            "PS": ("Paramitra Alfa Sekuritas",         "LOKAL",   "0"),
+            "SC": ("IMG Sekuritas",                    "LOKAL",   "0"),
+            "TX": ("Dhanawibawa Sekuritas Indonesia",  "LOKAL",   "0"),
         }
+        # Helper sets for quick lookup
+        _FOREIGN_BROKERS = {k: v[0] for k, v in _ALL_BROKERS.items() if v[1] == "FOREIGN"}
+        _BUMN_BROKERS    = {k: v[0] for k, v in _ALL_BROKERS.items() if v[1] == "BUMN"}
+        _LOKAL_BROKERS   = {k: v[0] for k, v in _ALL_BROKERS.items() if v[1] == "LOKAL"}
 
         @st.cache_data(ttl=600, show_spinner=False)
         def _fetch_idx_broker_summary(ticker, period="daily"):
@@ -13430,25 +13654,30 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                         sell_lot = float(row.get("SellVolume", row.get("sell_lot", row.get("SellLot", 0))) or 0)
                         buy_val = float(row.get("BuyValue", row.get("buy_val", 0)) or 0)
                         sell_val = float(row.get("SellValue", row.get("sell_val", 0)) or 0)
-                        net = buy_lot - sell_lot
-                        net_val = buy_val - sell_val
-                        is_foreign = broker in _FOREIGN_BROKERS
-                        broker_name = _FOREIGN_BROKERS.get(broker, row.get("BrokerName", row.get("name", "")))
+                        net = buy_lot—sell_lot
+                        net_val = buy_val—sell_val
+                        _binfo = _ALL_BROKERS.get(broker)
+                        is_foreign = _binfo[1] == "FOREIGN" if _binfo else False
+                        is_bumn   = _binfo[1] == "BUMN"    if _binfo else False
+                        broker_name = _binfo[0] if _binfo else row.get("BrokerName", row.get("name", ""))
                         _net_map[broker] = {
                             "broker": broker, "name": broker_name,
                             "buy_lot": buy_lot, "sell_lot": sell_lot, "net": net,
                             "buy_val": buy_val, "sell_val": sell_val, "net_val": net_val,
-                            "is_foreign": is_foreign
+                            "is_foreign": is_foreign, "is_bumn": is_bumn,
+                            "type": ("FOREIGN" if is_foreign else "BUMN" if is_bumn else "LOKAL")
                         }
 
                     _sorted_net = sorted(_net_map.values(), key=lambda x: x["net"], reverse=True)
                     _top_buy = [r for r in _sorted_net if r["net"] > 0][:15]
                     _top_sell = [r for r in _sorted_net if r["net"] < 0][-15:][::-1]
                     _foreign_rows = [r for r in _sorted_net if r["is_foreign"]]
+                    _bumn_rows    = [r for r in _sorted_net if r.get("is_bumn")]
 
-                    # Total foreign net
+                    # Total foreign net + BUMN net
                     _total_foreign_net = sum(r["net"] for r in _foreign_rows)
-                    _total_local_net = sum(r["net"] for r in _sorted_net if not r["is_foreign"])
+                    _total_bumn_net    = sum(r["net"] for r in _bumn_rows)
+                    _total_local_net   = sum(r["net"] for r in _sorted_net if not r["is_foreign"] and not r.get("is_bumn"))
 
                     _bs_rows_json = _bsj.dumps(_top_buy + _top_sell, ensure_ascii=False)
                     _bs_foreign_json = _bsj.dumps(_foreign_rows, ensure_ascii=False)
@@ -13475,21 +13704,29 @@ tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 .bk{{font-weight:700;color:{_P_c};font-size:0.95rem;}}
 .bk.foreign{{color:{_B_c};}}
+.bk.bumn{{color:{_Y_c};}}
 .pos{{color:{_G_c};font-weight:700;}}
 .neg{{color:{_R_c};font-weight:700;}}
 .bar-wrap{{width:100px;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;display:inline-block;vertical-align:middle;}}
 .bar-fill{{height:100%;border-radius:4px;}}
-.tag-foreign{{display:inline-block;padding:1px 6px;border-radius:10px;font-size:0.65rem;background:rgba(96,165,250,0.14);color:{_B_c};border:1px solid rgba(96,165,250,0.3);margin-left:4px;}}
-.summary-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}}
+.tag-type{{display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.65rem;font-weight:700;margin-left:4px;}}
+.tag-foreign{{background:rgba(96,165,250,0.14);color:{_B_c};border:1px solid rgba(96,165,250,0.3);}}
+.tag-bumn{{background:rgba(251,191,36,0.13);color:{_Y_c};border:1px solid rgba(251,191,36,0.3);}}
+.tag-lokal{{background:rgba(124,58,237,0.12);color:{_P_c};border:1px solid rgba(124,58,237,0.25);}}
+.summary-grid{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}}
 .sum-card{{background:{_table_bg};border:1px solid {_border_c};border-radius:8px;padding:14px 16px;}}
 .sum-label{{font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB_c};}}
-.sum-val{{font-size:1.4rem;font-weight:700;margin-top:4px;}}
+.sum-val{{font-size:1.35rem;font-weight:700;margin-top:4px;}}
 </style></head><body>
 
 <div class="summary-grid">
   <div class="sum-card">
     <div class="sum-label">🌐 Net Foreign (Lot)</div>
     <div class="sum-val" style="color:{(_G_c if _tf_net>=0 else _R_c)}">{"+" if _tf_net>=0 else ""}{int(_tf_net):,}</div>
+  </div>
+  <div class="sum-card">
+    <div class="sum-label">🏛️ Net BUMN (Lot)</div>
+    <div class="sum-val" style="color:{(_G_c if _total_bumn_net>=0 else _R_c)}">{"+" if _total_bumn_net>=0 else ""}{int(_total_bumn_net):,}</div>
   </div>
   <div class="sum-card">
     <div class="sum-label">🏠 Net Lokal (Lot)</div>
@@ -13551,12 +13788,12 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
     var pct=maxNet>0?Math.abs(r.net)/maxNet*100:0;
     var col=r.net>=0?'{_G_c}':'{_R_c}';
     var fTag=r.is_foreign?'<span class="tag-foreign">ASING</span>':'';
-    var bkCls='bk'+(r.is_foreign?' foreign':'');
+    var bkCls='bk'+(r.type==='FOREIGN'?' foreign':r.type==='BUMN'?' bumn':'');
     return '<tr>'+
       '<td><span class="'+bkCls+'">'+r.broker+'</span></td>'+
       '<td style="font-size:0.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;">'+
         (r.name||'—')+fTag+'</td>'+
-      '<td>'+(r.is_foreign?'🌐 Asing':'🏠 Lokal')+'</td>'+
+      '<td>'+(r.type==='FOREIGN'?'<span class="tag-type tag-foreign">🌐 ASING</span>':r.type==='BUMN'?'<span class="tag-type tag-bumn">🏛️ BUMN</span>':'<span class="tag-type tag-lokal">🏠 LOKAL</span>')+'</td>'+
       '<td>'+fmt(r.buy_lot)+'</td>'+
       '<td>'+fmt(r.sell_lot)+'</td>'+
       '<td class="'+(r.net>=0?'pos':'neg')+'">'+(r.net>=0?'+':'')+fmt(r.net)+'</td>'+
@@ -13612,8 +13849,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
                             broker = str(row.get("BrokerID", row.get("Code", "?")))
                             buy_lot = float(row.get("BuyVolume", 0) or 0)
                             sell_lot = float(row.get("SellVolume", 0) or 0)
-                            net = buy_lot - sell_lot
-                            if broker in _FOREIGN_BROKERS:
+                            net = buy_lot—sell_lot
+                            binfo = _ALL_BROKERS.get(broker); is_f = binfo[1] == 'FOREIGN' if binfo else False
+                            if is_f:
                                 _f_net += net; _f_buy += buy_lot; _f_sell += sell_lot
                             else:
                                 _l_net += net
@@ -13817,7 +14055,7 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
                 if True:
                     _open_recs = [r for r in _records if r["status"] == "OPEN"]
                     if _open_recs:
-                        _up_options = {f"#{r['id']} {r['ticker']} ({r['type']}) - Entry: {r['entry']:,}": i
+                        _up_options = {f"#{r['id']} {r['ticker']} ({r['type']})—Entry: {r['entry']:,}": i
                                       for i, r in enumerate(_records) if r["status"] == "OPEN"}
                         _up_sel = st.selectbox("Pilih Rekomendasi:", list(_up_options.keys()), key="tr_update_sel")
                         _up_idx = _up_options[_up_sel]
@@ -13831,12 +14069,12 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
                         with col_up3:
                             _entry_p = _records[_up_idx]["entry"]
                             if _up_exit_price > 0 and _entry_p > 0:
-                                _pnl_pct = (_up_exit_price - _entry_p) / _entry_p * 100
+                                _pnl_pct = (_up_exit_price—_entry_p) / _entry_p * 100
                                 _pnl_color = "#26a69a" if _pnl_pct >= 0 else "#f23645"
                                 st.markdown(f"<br><div style='font-family:IBM Plex Mono,monospace;font-size:1.2rem;font-weight:700;color:{_pnl_color};'>P&L: {_pnl_pct:+.2f}%</div>", unsafe_allow_html=True)
 
                         if st.button("💾 UPDATE HASIL", use_container_width=True, key="tr_update_btn"):
-                            _pnl = ((_up_exit_price - _entry_p) / _entry_p * 100) if (_up_exit_price > 0 and _entry_p > 0) else 0
+                            _pnl = ((_up_exit_price—_entry_p) / _entry_p * 100) if (_up_exit_price > 0 and _entry_p > 0) else 0
                             _result_label = "WIN" if _pnl > 0 else ("LOSS" if _pnl < 0 else "BE")
                             st.session_state["tr_records"][_up_idx].update({
                                 "status": _up_status,
@@ -13959,7 +14197,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
             _by_type_json = _stj.dumps(_by_type, ensure_ascii=False)
             _wrate_json = _stj.dumps({
                 "total": _total_closed, "wins": len(_wins), "losses": len(_losses),
-                "open": len(_records_s) - _total_closed,
+                "open": len(_records_s)—_total_closed,
                 "win_rate": round(_win_rate, 1),
                 "avg_win": round(_avg_win, 2), "avg_loss": round(_avg_loss, 2),
                 "total_pnl": round(_total_pnl, 2),
@@ -14287,12 +14525,12 @@ function calculate() {{
   for (var i=1; i<=steps; i++) {{
     var araRate = getARARate(curARA, sahamType);
     curARA = roundTick(curARA * (1 + araRate));
-    var naik = ((curARA - harga) / harga * 100);
+    var naik = ((curARA—harga) / harga * 100);
     araSteps.push({{ step:i, price:curARA, naik:araRate*100, total:naik }});
 
     var arbRate = getARBRate(curARB, sahamType);
-    var nextARB = roundTick(curARB * (1 - arbRate));
-    var turun = ((nextARB - harga) / harga * 100);
+    var nextARB = roundTick(curARB * (1—arbRate));
+    var turun = ((nextARB—harga) / harga * 100);
     // Hard floor: harga minimum IDX = Rp 50
     if (nextARB < 50) nextARB = 50;
     curARB = nextARB;
@@ -14597,8 +14835,8 @@ function calculate() {{
   var pnlHtml='', pnlClass='neutral';
   var sumExtra = '';
   if (curPrice > 0) {{
-    var pnl = (curPrice - avgHarga) * totalLembar;
-    var pnlPct = (curPrice - avgHarga) / avgHarga * 100;
+    var pnl = (curPrice—avgHarga) * totalLembar;
+    var pnlPct = (curPrice—avgHarga) / avgHarga * 100;
     var isPro = pnl >= 0;
     pnlClass = isPro?'profit':'loss';
     var pnlIcon = isPro?'📈':'📉';
@@ -14734,14 +14972,13 @@ function calculate() {{
 </style>""", unsafe_allow_html=True)
 
         # ── Sub-tabs Panduan ─────────────────────────────────────────────
-        pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8 = st.tabs([
+        pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7 = st.tabs([
             "  🌍 Global Macro & News  ",
             "  🔄 Index & Sector Rotation  ",
             "  👥 Shareholder  ",
             "  ⚡ Alpha Screener  ",
             "  🧮 Kalkulator  ",
             "  📊 Broker Summary  ",
-            "  ℹ️ Lainnya  ",
             "  🔬 Cara Kerja Screener  ",
         ])
 
@@ -15860,15 +16097,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div></body></html>"""
             components.html(_guide_html_4, height=4200, scrolling=True)
 
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 5 — KALKULATOR (content moved from pg_tab6)
-        # ══════════════════════════════════════════════════════════════
-        # (Kalkulator content is injected below at PANDUAN 6 block, swapped)
-
-        # PANDUAN 5b — AI REKOMENDASI (now under pg_tab7 Lainnya)
-        # ══════════════════════════════════════════════════════════════
-        with pg_tab7:
-            _guide_html_5 = f"""<!DOCTYPE html><html><head>
+            # ── AI REKOMENDASI panduan (merged from Lainnya) ──
+            _guide_html_4b = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
@@ -15990,11 +16220,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 </div></body></html>"""
-            components.html(_guide_html_5, height=2000, scrolling=True)
+            components.html(_guide_html_4b, height=2000, scrolling=True)
 
-        # ══════════════════════════════════════════════════════════════
-        # PANDUAN 6 — KALKULATOR (now correctly under pg_tab5)
-        # ══════════════════════════════════════════════════════════════
         with pg_tab5:
             _guide_html_6 = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -16100,7 +16327,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="grid2">
 <div class="gcard blue">
 <div class="gcard-title">📥 Biaya Beli</div>
-<div class="gcard-val">Umumnya 0.15% - 0.19% dari nilai transaksi (tergantung broker). Beberapa broker offer 0% fee beli untuk saham tertentu.</div>
+<div class="gcard-val">Umumnya 0.15%—0.19% dari nilai transaksi (tergantung broker). Beberapa broker offer 0% fee beli untuk saham tertentu.</div>
 </div>
 <div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
 <div class="gcard-title" style="color:{_R};">📤 Biaya Jual</div>
@@ -16281,9 +16508,9 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
             components.html(_guide_html_brosum, height=2400, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 7 — CARA KERJA SCREENER (HOW IT WORKS) → now pg_tab8
+        # PANDUAN 7 — CARA KERJA SCREENER (HOW IT WORKS)
         # ══════════════════════════════════════════════════════════════
-        with pg_tab8:
+        with pg_tab7:
             _P7 = "#a78bfa"
             _B7 = "#60a5fa"
             _G7 = "#26a69a"
@@ -16798,7 +17025,7 @@ else:
                 elif msg.get("img_b64"): st.markdown(f'<img src="data:{msg.get("img_mime","image/jpeg")};base64,{msg["img_b64"]}" style="max-width:100%;max-height:240px;border-radius:10px;margin-bottom:6px;display:block;">', unsafe_allow_html=True)
             st.markdown(display_clean)
 
-    try: result = st.chat_input("Tanya SIGMA... DYOR - bukan financial advice.", accept_file="multiple")
+    try: result = st.chat_input("Tanya SIGMA... DYOR—bukan financial advice.", accept_file="multiple")
     except TypeError: result = st.chat_input("Tanya SIGMA...")
 
     prompt = None; file_obj = None; multi_images = []
@@ -17007,27 +17234,27 @@ else:
 Instruksi Eksekusi (WAJIB diikuti semua poin):
 
 1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-   - Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
-   - Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
-   - Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
+  —Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
+  —Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
+  —Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
 
 2. KUALITAS LABA & UJI FORENSIK (Schilit):
-   - Bandingkan tren laba bersih vs arus kas operasi — apakah laba diback up cash?
-   - Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
-   - Red flag atau tanda manipulasi akuntansi?
+  —Bandingkan tren laba bersih vs arus kas operasi — apakah laba diback up cash?
+  —Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
+  —Red flag atau tanda manipulasi akuntansi?
 
 3. KATEGORISASI PROFIL & KATALIS (Lynch):
-   - Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-   - Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
+  —Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+  —Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
 
 4. MARGIN OF SAFETY (Graham):
-   - Bandingkan harga saat ini dengan estimasi nilai intrinsik — berapa % Margin of Safety tersedia?
-   - Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
+  —Bandingkan harga saat ini dengan estimasi nilai intrinsik — berapa % Margin of Safety tersedia?
+  —Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
 
 5. SINTESIS — RISK/REWARD:
-   - Beri kesimpulan akhir berupa rasio Risk/Reward
-   - Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
-   - Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
+  —Beri kesimpulan akhir berupa rasio Risk/Reward
+  —Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
+  —Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
 
 Pertanyaan user: {prompt}
 
@@ -17158,17 +17385,17 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
                             ans_bersih, _ = _call_gemini_text(
                                 _history_msgs[-6:] + [{"role": "user", "content": full_prompt}]
                             )
-                            simbol_ai = "\n\n*(&#10024; Gemini - PDF Mode)*"
+                            simbol_ai = "\n\n*(&#10024; Gemini—PDF Mode)*"
                         except Exception as e_pdf:
                             debug_info.append(f"Gemini PDF: {str(e_pdf)}")
                             try:
                                 ans_bersih, _ = _call_cerebras(full_prompt, _history_msgs)
-                                simbol_ai = "\n\n*(&#9889; Cerebras - PDF Fallback)*"
+                                simbol_ai = "\n\n*(&#9889; Cerebras—PDF Fallback)*"
                             except Exception as e_cbr_pdf:
                                 debug_info.append(f"Cerebras PDF: {str(e_cbr_pdf)}")
                                 try:
                                     ans_bersih, _ = _call_groq_primary(full_prompt, _history_msgs)
-                                    simbol_ai = "\n\n*(&#9889; Groq - PDF Fallback)*"
+                                    simbol_ai = "\n\n*(&#9889; Groq—PDF Fallback)*"
                                 except Exception as e_groq_pdf:
                                     debug_info.append(f"Groq PDF fallback: {str(e_groq_pdf)}")
 
@@ -17420,11 +17647,11 @@ components.html(f"""
                     }}
                 }}
             }}
-            // Method 4: innerHTML string check - stChatMessageAvatarUser in DOM
+            // Method 4: innerHTML string check—stChatMessageAvatarUser in DOM
             if (!isUser) {{
                 var html = el.innerHTML || '';
                 if (html.indexOf('AvatarUser') >= 0) isUser = true;
-                // If neither avatar found yet, can't determine - retry later
+                // If neither avatar found yet, can't determine—retry later
                 else if (html.indexOf('AvatarAssistant') < 0 && html.indexOf('AvatarUser') < 0) {{
                     return; // retry on next interval
                 }}
