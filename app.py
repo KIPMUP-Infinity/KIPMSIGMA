@@ -1654,6 +1654,13 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     elif vs >= 45: vc, vbg = "#ffd740", "rgba(255,215,64,0.07)"
     else:          vc, vbg = "#f23645", "rgba(242,54,69,0.08)"
 
+    # ── Pre-build zone signals HTML (avoid nested f-string leak) ──
+    _zone_sigs_html = (
+        f'<div style="border-top:1px solid {met_border};padding-top:8px;margin-top:10px;">'
+        + "".join(f'<div style="font-size:0.72rem;color:{text_sub};margin-bottom:3px;">{s}</div>' for s in result.zone_signals[:4])
+        + '</div>'
+    ) if result.zone_signals else ''
+
     html = f"""
 <div style="background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:14px;margin:8px 0;font-family:'DM Sans',sans-serif;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -1684,7 +1691,7 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
       <div style="width:{result.accum_score}%;height:100%;background:#00e5a0;border-radius:3px;"></div>
     </div>
   </div>
-  {'<div style="border-top:1px solid ' + met_border + ';padding-top:8px;margin-top:10px;">' + "".join(f'<div style="font-size:0.72rem;color:{text_sub};margin-bottom:3px;">{s}</div>' for s in result.zone_signals[:4]) + '</div>' if result.zone_signals else ''}
+  {_zone_sigs_html}
 </div>"""
     return html
 
@@ -4766,7 +4773,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
-            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
                 if saved.get(_tab_key) is not None:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
@@ -4787,7 +4794,7 @@ if st.session_state.user and not st.session_state.data_loaded:
                 else: _s["messages"][0] = SYSTEM_PROMPT
             st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
     if saved:
-        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
             if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
                 st.session_state[_tab_key] = saved[_tab_key]
     st.session_state.data_loaded = True
@@ -5627,7 +5634,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
-            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
                 if saved.get(_tab_key) is not None:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
@@ -5648,7 +5655,7 @@ if st.session_state.user and not st.session_state.data_loaded:
                 else: _s["messages"][0] = SYSTEM_PROMPT
             st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
     if saved:
-        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp"]:
+        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
             if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
                 st.session_state[_tab_key] = saved[_tab_key]
     st.session_state.data_loaded = True
@@ -5888,6 +5895,14 @@ if "del" in st.query_params:
             "mb_daily_timestamp": st.session_state.get("mb_daily_timestamp"),
             "mb_weekly_content": st.session_state.get("mb_weekly_content"),
             "mb_weekly_timestamp": st.session_state.get("mb_weekly_timestamp"),
+            "ec_ai_result": st.session_state.get("ec_ai_result"),
+            "ec_ai_event": st.session_state.get("ec_ai_event"),
+            "ec_ai_actual": st.session_state.get("ec_ai_actual"),
+            "ec_ai_beat_miss": st.session_state.get("ec_ai_beat_miss"),
+            "ec_ai_model": st.session_state.get("ec_ai_model"),
+            "ec_ai_timestamp": st.session_state.get("ec_ai_timestamp"),
+            "alpha_insight_last_key": st.session_state.get("alpha_insight_last_key"),
+            "alpha_insight_last_data": st.session_state.get("alpha_insight_last_data"),
         })
         
     try: del st.query_params["del"]
@@ -7087,6 +7102,14 @@ if user:
         "mb_daily_timestamp": st.session_state.get("mb_daily_timestamp"),
         "mb_weekly_content": st.session_state.get("mb_weekly_content"),
         "mb_weekly_timestamp": st.session_state.get("mb_weekly_timestamp"),
+        "ec_ai_result": st.session_state.get("ec_ai_result"),
+        "ec_ai_event": st.session_state.get("ec_ai_event"),
+        "ec_ai_actual": st.session_state.get("ec_ai_actual"),
+        "ec_ai_beat_miss": st.session_state.get("ec_ai_beat_miss"),
+        "ec_ai_model": st.session_state.get("ec_ai_model"),
+        "ec_ai_timestamp": st.session_state.get("ec_ai_timestamp"),
+        "alpha_insight_last_key": st.session_state.get("alpha_insight_last_key"),
+        "alpha_insight_last_data": st.session_state.get("alpha_insight_last_data"),
     })
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
@@ -9802,16 +9825,33 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     else: _beat_miss = f"<span style='color:#f59e0b;font-weight:700;'>→ IN-LINE</span>"
             except: pass
 
+            # ── Simpan ke session_state & database agar tidak hilang saat rerun ──
+            st.session_state["ec_ai_result"]    = _ec_ai_resp
+            st.session_state["ec_ai_event"]     = _sel_row.get("event", "")
+            st.session_state["ec_ai_actual"]    = _act_display
+            st.session_state["ec_ai_beat_miss"] = _beat_miss
+            st.session_state["ec_ai_model"]     = _ec_ai_model
+            st.session_state["ec_ai_timestamp"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+            if st.session_state.get("user"):
+                _sv = load_user(st.session_state.user["email"]) or {}
+                _sv["ec_ai_result"]    = _ec_ai_resp
+                _sv["ec_ai_event"]     = _sel_row.get("event", "")
+                _sv["ec_ai_actual"]    = _act_display
+                _sv["ec_ai_beat_miss"] = _beat_miss
+                _sv["ec_ai_model"]     = _ec_ai_model
+                _sv["ec_ai_timestamp"] = st.session_state["ec_ai_timestamp"]
+                save_user(st.session_state.user["email"], _sv)
+
             st.markdown(f"""
             <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid #8b5cf6;
                 border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;'>
               <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
                 <span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;
-                  letter-spacing:0.12em;color:#8b5cf6;'>⚡ SIGMA EC ANALYSIS</span>
+                  letter-spacing:0.12em;color:#8b5cf6;'>&#9889; SIGMA EC ANALYSIS</span>
                 <span style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;
                   color:{text_sub};background:rgba(255,255,255,0.05);
                   border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>
-                  {_sel_row['event']} · Actual: <b style='color:#089981;'>{_act_display}</b>
+                  {_sel_row['event']} &middot; Actual: <b style='color:#089981;'>{_act_display}</b>
                   &nbsp;{_beat_miss}
                 </span>
                 <span style='font-size:0.72rem;color:{text_sub};margin-left:auto;'>model: {_ec_ai_model}</span>
@@ -9819,6 +9859,31 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             </div>
             """, unsafe_allow_html=True)
             st.markdown(_ec_ai_resp)
+
+        # ── Re-render hasil EC AI dari session_state jika sudah pernah digenerate ──
+        if not _ec_ai_btn and st.session_state.get("ec_ai_result"):
+            _ec_cached_event  = st.session_state.get("ec_ai_event", "")
+            _ec_cached_actual = st.session_state.get("ec_ai_actual", "&#8212;")
+            _ec_cached_bm     = st.session_state.get("ec_ai_beat_miss", "")
+            _ec_cached_model  = st.session_state.get("ec_ai_model", "")
+            _ec_cached_ts     = st.session_state.get("ec_ai_timestamp", "")
+            st.markdown(f"""
+            <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid #8b5cf6;
+                border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;'>
+              <div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
+                <span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;font-weight:700;
+                  letter-spacing:0.12em;color:#8b5cf6;'>&#9889; SIGMA EC ANALYSIS</span>
+                <span style='font-family:IBM Plex Mono,monospace;font-size:0.8rem;
+                  color:{text_sub};background:rgba(255,255,255,0.05);
+                  border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>
+                  {_ec_cached_event} &middot; Actual: <b style='color:#089981;'>{_ec_cached_actual}</b>
+                  &nbsp;{_ec_cached_bm}
+                </span>
+                <span style='font-size:0.72rem;color:{text_sub};margin-left:auto;'>model: {_ec_cached_model} &nbsp;&middot;&nbsp; {_ec_cached_ts}</span>
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown(st.session_state["ec_ai_result"])
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -12488,6 +12553,13 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                 # ── PRICE-BASED CACHE — konsistensi analisa ─────────────────
                 # Selama harga tidak berubah >0.5% dalam hari yang sama,
                 # gunakan hasil analisa dari session_state (tidak re-call AI)
+
+                # ── Restore cache dari database jika session_state kosong ──
+                _restored_key  = st.session_state.get("alpha_insight_last_key")
+                _restored_data = st.session_state.get("alpha_insight_last_data")
+                if _restored_key and _restored_data and not st.session_state.get(_restored_key):
+                    st.session_state[_restored_key] = _restored_data
+
                 _insight_cache_key  = None
                 _use_cached_insight = False
                 _ai_cache_hit       = False
@@ -12915,14 +12987,25 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     # ── SIMPAN KE CACHE ─────────────────────────
                                     if _insight_cache_key and ai_text_verdict:
                                         try:
-                                            st.session_state[_insight_cache_key] = {
+                                            _cache_payload = {
                                                 'price':           float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0,
                                                 'ai_raw_result':   ai_raw_result,
                                                 'ai_data':         ai_data,
                                                 'ai_text_verdict': ai_text_verdict,
                                                 'vol_context':     vol_context if 'vol_context' in dir() else '',
                                                 'sigma_result':    _sigma_result if '_sigma_result' in dir() else None,
+                                                'ticker':          ticker_input,
+                                                'timestamp':       datetime.now().strftime("%d %b %Y, %H:%M WIB"),
                                             }
+                                            st.session_state[_insight_cache_key] = _cache_payload
+                                            # ── Persist ke database agar tidak hilang saat rerun ──
+                                            st.session_state["alpha_insight_last_key"]  = _insight_cache_key
+                                            st.session_state["alpha_insight_last_data"] = _cache_payload
+                                            if st.session_state.get("user"):
+                                                _sv = load_user(st.session_state.user["email"]) or {}
+                                                _sv["alpha_insight_last_key"]  = _insight_cache_key
+                                                _sv["alpha_insight_last_data"] = _cache_payload
+                                                save_user(st.session_state.user["email"], _sv)
                                         except Exception:
                                             pass
 
@@ -13317,14 +13400,33 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
                     st.markdown(html_str, unsafe_allow_html=True)
                 elif not run_analysis:
-                    st.markdown(f"""
-                    <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
-                        <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
-                        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                            Masukkan kode saham dan klik <span style='color:#8b5cf6;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # ── Cek apakah ada hasil analisa tersimpan dari sesi sebelumnya ──
+                    _persisted_data = st.session_state.get("alpha_insight_last_data")
+                    _persisted_ticker = (_persisted_data or {}).get("ticker", "")
+                    if _persisted_data and _persisted_ticker and _persisted_ticker == ticker_input:
+                        _pv = _persisted_data.get("ai_text_verdict", "")
+                        _pt = _persisted_data.get("timestamp", "")
+                        if _pv:
+                            bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f0f4ff'
+                            bd_color = "rgba(139,92,246,0.18)"
+                            _pv_clean = _pv.replace('\n\n\n', '\n\n')
+                            st.markdown(f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
+    <div style="font-size:0.72rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px;">
+    &#128203; TRADE PLAN SIGMA &mdash; {_persisted_ticker} &nbsp;<span style="font-weight:400;color:#666;">{_pt}</span>
+    </div>
+    <div style="font-size:0.8rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
+    {_pv_clean}
+    </div>
+    </div>""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
+                            <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
+                            <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
+                                Masukkan kode saham dan klik <span style='color:#8b5cf6;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
 # PART 11: ALPHA SCREENER - DAILY / WEEKLY / BSJP / FUNDAMENTAL (merged from tab_reco)
