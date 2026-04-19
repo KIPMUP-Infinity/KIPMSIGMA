@@ -6405,19 +6405,18 @@ if current_view == "dashboard":
 
     is_dark = st.session_state.get("theme", "dark") == "dark"
 
-    # ── SIGMA TERMINAL COLOR SYSTEM ──
-    # Accent: #0328EE (blue), BG: #010725, Card: #010D50
-    text_main  = "#FFFFFF" if is_dark else "#0d1117"
-    text_sub   = "#8899bb" if is_dark else "#64748b"
-    card_bg    = "rgba(1,13,80,0.92)" if is_dark else "#ffffff"
-    card_border= "rgba(3,40,238,0.25)" if is_dark else "#e2e8f0"
-    card_shadow= "0 4px 24px rgba(0,0,0,0.6)" if is_dark else "0 4px 16px rgba(0,0,0,0.06)"
-    met_bg     = "rgba(1,13,80,0.85)" if is_dark else "#f0f4ff"
-    met_border = "rgba(3,40,238,0.28)" if is_dark else "#e2e8f0"
-    met_shadow = "0 2px 12px rgba(0,0,0,0.5)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
-    met_hover  = "rgba(3,40,238,0.7)"
+    # ── SIGMA TERMINAL COLOR SYSTEM — AURORA DARK ──
+    # Aurora palette: deep black canvas + violet/cyan/emerald blob gradients
+    text_main  = "#E2E8F0" if is_dark else "#0d1117"
+    text_sub   = "#64748b" if is_dark else "#64748b"
+    card_bg    = "rgba(15,18,30,0.85)" if is_dark else "#ffffff"
+    card_border= "rgba(139,92,246,0.18)" if is_dark else "#e2e8f0"
+    card_shadow= "0 4px 32px rgba(0,0,0,0.7)" if is_dark else "0 4px 16px rgba(0,0,0,0.06)"
+    met_bg     = "rgba(15,18,30,0.9)" if is_dark else "#f0f4ff"
+    met_border = "rgba(139,92,246,0.22)" if is_dark else "#e2e8f0"
+    met_shadow = "0 2px 16px rgba(0,0,0,0.6)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
+    met_hover  = "rgba(139,92,246,0.55)"
     tv_theme   = "dark" if is_dark else "light"
-    # Tambahkan baris ini di bagian inisialisasi variabel dashboard Anda
     news_theme = "dark" if is_dark else "light"
     
     # Sekarang variabel ini aman digunakan di bawah:
@@ -6441,44 +6440,100 @@ if current_view == "dashboard":
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
+    /* ══════════════════════════════════════════
+       SIGMA TERMINAL — AURORA DARK THEME
+       Palette: deep void canvas + aurora blobs
+       Accent: violet #8b5cf6 · cyan #0ea5e9 · emerald #10b981
+       ══════════════════════════════════════════ */
     :root {{
-        --acc:   #0328EE;
-        --acc2:  #0218a8;
-        --bg:    #010725;
-        --card:  #010D50;
-        --card2: rgba(1,13,80,0.7);
-        --border:rgba(3,40,238,0.22);
-        --up:    #089981;
-        --dn:    #f23645;
-        --txt:   #FFFFFF;
-        --sub:   #8899bb;
-        --mono:  'IBM Plex Mono', monospace;
-        --sans:  'DM Sans', sans-serif;
+        --acc:      #8b5cf6;
+        --acc2:     #6d28d9;
+        --acc-cyan: #0ea5e9;
+        --acc-em:   #10b981;
+        --bg:       #080b14;
+        --card:     rgba(14,17,28,0.92);
+        --card2:    rgba(14,17,28,0.65);
+        --border:   rgba(139,92,246,0.16);
+        --border2:  rgba(14,165,233,0.14);
+        --up:       #10b981;
+        --dn:       #f87171;
+        --txt:      #e2e8f0;
+        --sub:      #64748b;
+        --mono:     'IBM Plex Mono', monospace;
+        --sans:     'DM Sans', sans-serif;
     }}
 
+    /* ── Ambient aurora blobs — injected on app bg ── */
+    .stApp {{
+        background: var(--bg) !important;
+        position: relative !important;
+    }}
+    .stApp::before {{
+        content: '';
+        position: fixed;
+        width: 520px; height: 520px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(109,40,217,0.18) 0%, transparent 68%);
+        top: -120px; left: -100px;
+        pointer-events: none;
+        z-index: 0;
+        animation: auroraFloat1 14s ease-in-out infinite;
+    }}
+    .stApp::after {{
+        content: '';
+        position: fixed;
+        width: 400px; height: 400px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(14,165,233,0.13) 0%, transparent 68%);
+        top: 80px; right: -60px;
+        pointer-events: none;
+        z-index: 0;
+        animation: auroraFloat2 18s ease-in-out infinite;
+    }}
+    @keyframes auroraFloat1 {{ 0%,100%{{transform:translate(0,0)}} 50%{{transform:translate(30px,20px)}} }}
+    @keyframes auroraFloat2 {{ 0%,100%{{transform:translate(0,0)}} 50%{{transform:translate(-20px,30px)}} }}
+
     /* ── Base ── */
-    .stApp, .stApp * {{ font-family: var(--sans) !important; }}
+    .stApp * {{ font-family: var(--sans) !important; }}
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"],
     [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display:none !important; }}
 
-    /* ── Metrics ── */
+    /* global bg override */
+    [data-testid="stAppViewContainer"],
+    section[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stBottom"] {{ background: var(--bg) !important; }}
+
+    /* ── Metrics — aurora glass cards ── */
     [data-testid="stMetric"] {{
         background: var(--card) !important;
-        border: 1px solid var(--border) !important;
+        border: 0.5px solid var(--border) !important;
         border-radius: 16px !important;
         padding: 16px 18px 14px !important;
-        transition: border-color 0.2s, box-shadow 0.2s !important;
+        transition: border-color 0.25s, box-shadow 0.25s !important;
         position: relative !important;
         overflow: hidden !important;
+        backdrop-filter: blur(12px) !important;
+    }}
+    [data-testid="stMetric"]::before {{
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.6), rgba(14,165,233,0.4), transparent);
     }}
     [data-testid="stMetric"]::after {{
         content: '';
         position: absolute;
-        top: 0; left: 0; right: 0; height: 2px;
-        background: var(--acc);
-        opacity: 0.5;
+        top: -40px; right: -30px;
+        width: 100px; height: 100px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%);
+        pointer-events: none;
     }}
-    [data-testid="stMetric"]:hover {{ border-color: var(--acc) !important; box-shadow: 0 0 24px rgba(3,40,238,0.18) !important; }}
+    [data-testid="stMetric"]:hover {{
+        border-color: rgba(139,92,246,0.45) !important;
+        box-shadow: 0 0 28px rgba(139,92,246,0.12), 0 8px 32px rgba(0,0,0,0.5) !important;
+    }}
     [data-testid="stMetricValue"] {{
         font-family: var(--mono) !important;
         font-size: 1.5rem !important;
@@ -6488,18 +6543,18 @@ if current_view == "dashboard":
     }}
     [data-testid="stMetricLabel"] {{
         font-family: var(--sans) !important;
-        font-size: 0.7rem !important;
+        font-size: 0.68rem !important;
         font-weight: 600 !important;
-        letter-spacing: 0.12em !important;
+        letter-spacing: 0.14em !important;
         text-transform: uppercase !important;
-        color: {text_sub} !important;
+        color: var(--sub) !important;
     }}
-    [data-testid="stMetricDelta"] {{ font-family: var(--mono) !important; font-size: 0.9rem !important; }}
+    [data-testid="stMetricDelta"] {{ font-family: var(--mono) !important; font-size: 0.88rem !important; }}
 
-    /* ── Tabs ── */
+    /* ── Tabs — pill style with aurora active ── */
     [data-testid="stTabs"] [role="tablist"] {{
-        background: var(--card) !important;
-        border: 1px solid var(--border) !important;
+        background: rgba(14,17,28,0.8) !important;
+        border: 0.5px solid var(--border) !important;
         border-radius: 50px !important;
         padding: 4px 6px !important;
         gap: 2px !important;
@@ -6507,16 +6562,17 @@ if current_view == "dashboard":
         flex-wrap: nowrap !important;
         -webkit-overflow-scrolling: touch !important;
         scrollbar-width: none !important;
+        backdrop-filter: blur(10px) !important;
     }}
     [data-testid="stTabs"] [role="tablist"]::-webkit-scrollbar {{ display: none !important; }}
     [data-testid="stTabs"] button[role="tab"] {{
         font-family: var(--sans) !important;
-        font-size: 0.75rem !important;
+        font-size: 0.73rem !important;
         font-weight: 600 !important;
-        letter-spacing: 0.07em !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase !important;
         border-radius: 50px !important;
-        color: {text_sub} !important;
+        color: var(--sub) !important;
         padding: 7px 16px !important;
         border: none !important;
         background: transparent !important;
@@ -6526,13 +6582,14 @@ if current_view == "dashboard":
     }}
     [data-testid="stTabs"] button[role="tab"]:hover {{
         color: {text_main} !important;
-        background: rgba(3,40,238,0.15) !important;
+        background: rgba(139,92,246,0.12) !important;
     }}
     [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
-        background: var(--acc) !important;
+        background: linear-gradient(135deg, rgba(109,40,217,0.75), rgba(14,165,233,0.55)) !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        box-shadow: 0 4px 14px rgba(3,40,238,0.4) !important;
+        box-shadow: 0 0 16px rgba(139,92,246,0.35), 0 4px 12px rgba(0,0,0,0.4) !important;
+        border: 0.5px solid rgba(139,92,246,0.4) !important;
     }}
     [data-testid="stTabs"] [role="tabpanel"] {{
         background: transparent !important;
@@ -6541,69 +6598,81 @@ if current_view == "dashboard":
         margin-top: 18px !important;
     }}
 
-    /* ── Section divider ── */
+    /* ── Section divider — aurora style ── */
     .trm-section {{ display:flex; align-items:center; gap:10px; margin:20px 0 14px; }}
-    .trm-section-line {{ flex:1; height:1px; background:var(--border); }}
+    .trm-section-line {{ flex:1; height:1px; background: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent); }}
     .trm-section-label {{
         font-family: var(--sans);
-        font-size: 0.68rem;
+        font-size: 0.65rem;
         font-weight: 700;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: var(--acc);
+        color: #a78bfa;
         white-space: nowrap;
         padding: 4px 12px;
-        border: 1px solid rgba(3,40,238,0.35);
+        border: 0.5px solid rgba(139,92,246,0.3);
         border-radius: 50px;
-        background: rgba(3,40,238,0.10);
+        background: rgba(139,92,246,0.08);
     }}
 
-    /* ── Cards ── */
+    /* ── Cards — aurora glass ── */
     .trm-card {{
         background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 20px;
+        border: 0.5px solid var(--border);
+        border-radius: 18px;
         padding: 20px 22px;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        transition: border-color 0.25s, box-shadow 0.25s;
         margin-bottom: 14px;
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
     }}
-    .trm-card:hover {{ border-color: var(--acc); box-shadow: 0 4px 24px rgba(3,40,238,0.18); }}
+    .trm-card::before {{
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.4), transparent);
+    }}
+    .trm-card:hover {{
+        border-color: rgba(139,92,246,0.38);
+        box-shadow: 0 8px 32px rgba(109,40,217,0.12), 0 0 0 0.5px rgba(139,92,246,0.2);
+    }}
     .trm-card-title {{
         font-family: var(--sans);
-        font-size: 0.72rem;
-        letter-spacing: 0.14em;
+        font-size: 0.68rem;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
-        color: var(--sub);
+        color: #a78bfa;
         margin-bottom: 10px;
         font-weight: 700;
     }}
 
-    /* ── Insight block ── */
+    /* ── Insight block — aurora accent ── */
     .trm-insight {{
-        background: rgba(3,40,238,0.08);
-        border-left: 3px solid var(--acc);
+        background: rgba(109,40,217,0.07);
+        border-left: 2px solid rgba(139,92,246,0.55);
         border-radius: 0 12px 12px 0;
         padding: 14px 18px;
         margin: 12px 0;
         font-size: 0.95rem;
         color: {text_main};
-        line-height: 1.7;
+        line-height: 1.75;
     }}
 
     /* ── Divider ── */
     .fancy-divider {{
         border: 0; height: 1px;
-        background: var(--border);
+        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.2), rgba(14,165,233,0.15), transparent);
         margin: 20px 0;
     }}
 
-    /* ── Ticker tape ── */
+    /* ── Ticker tape — aurora glow ── */
     .trm-ticker-wrap {{
         overflow: hidden; max-width: 100%;
         white-space: nowrap;
-        border-top: 1px solid var(--border);
-        border-bottom: 1px solid var(--border);
-        background: rgba(3,40,238,0.04);
+        border-top: 0.5px solid rgba(139,92,246,0.18);
+        border-bottom: 0.5px solid rgba(139,92,246,0.18);
+        background: rgba(139,92,246,0.04);
         padding: 7px 0;
         margin: 0 0 10px;
         border-radius: 0;
@@ -6615,71 +6684,71 @@ if current_view == "dashboard":
         font-family: var(--mono);
         font-size: 0.82rem;
         letter-spacing: 0.06em;
-        color: rgba(255,255,255,0.55);
+        color: rgba(226,232,240,0.5);
     }}
     .trm-ticker-tape .up {{ color: var(--up); }}
     .trm-ticker-tape .dn {{ color: var(--dn); }}
-    .trm-ticker-tape .sep {{ color: rgba(3,40,238,0.4); margin: 0 18px; }}
+    .trm-ticker-tape .sep {{ color: rgba(139,92,246,0.35); margin: 0 18px; }}
     @keyframes ticker-scroll {{
         0%   {{ transform: translateX(0); }}
         100% {{ transform: translateX(-50%); }}
     }}
 
-    /* ── Inputs ── */
+    /* ── Inputs — aurora glass ── */
     [data-testid="stTextInput"] input {{
         font-family: var(--mono) !important;
         font-size: 0.95rem !important;
         font-weight: 500 !important;
-        background: var(--card) !important;
-        border: 1px solid var(--border) !important;
+        background: rgba(14,17,28,0.9) !important;
+        border: 0.5px solid rgba(139,92,246,0.22) !important;
         border-radius: 12px !important;
         color: {text_main} !important;
         padding: 10px 14px !important;
     }}
     [data-testid="stTextInput"] input:focus {{
-        border-color: var(--acc) !important;
-        box-shadow: 0 0 0 3px rgba(3,40,238,0.12) !important;
+        border-color: rgba(139,92,246,0.6) !important;
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.1), 0 0 16px rgba(139,92,246,0.08) !important;
     }}
     [data-testid="stTextInput"] label,
     [data-testid="stSelectbox"] label {{
         font-family: var(--sans) !important;
-        font-size: 0.7rem !important;
-        letter-spacing: 0.1em !important;
+        font-size: 0.68rem !important;
+        letter-spacing: 0.12em !important;
         text-transform: uppercase !important;
-        color: {text_sub} !important;
+        color: #a78bfa !important;
         font-weight: 600 !important;
     }}
     [data-testid="stSelectbox"] > div > div {{
-        background: var(--card) !important;
-        border: 1px solid var(--border) !important;
+        background: rgba(14,17,28,0.9) !important;
+        border: 0.5px solid rgba(139,92,246,0.22) !important;
         border-radius: 12px !important;
         color: {text_main} !important;
     }}
     [data-testid="stSelectbox"] > div > div:focus-within {{
-        border-color: var(--acc) !important;
-        box-shadow: 0 0 0 3px rgba(3,40,238,0.12) !important;
+        border-color: rgba(139,92,246,0.55) !important;
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.1) !important;
     }}
 
-    /* ── Buttons ── */
+    /* ── Buttons — aurora gradient ── */
     [data-testid="stTabs"] ~ div .stButton > button,
     [data-testid="stVerticalBlock"] .stButton > button {{
-        background: var(--acc) !important;
+        background: linear-gradient(135deg, rgba(109,40,217,0.85), rgba(14,165,233,0.7)) !important;
         color: #FFFFFF !important;
-        border: none !important;
+        border: 0.5px solid rgba(139,92,246,0.4) !important;
         font-family: var(--sans) !important;
-        font-size: 0.8rem !important;
+        font-size: 0.78rem !important;
         font-weight: 700 !important;
-        letter-spacing: 0.06em !important;
+        letter-spacing: 0.08em !important;
         text-transform: uppercase !important;
         border-radius: 50px !important;
         padding: 10px 24px !important;
-        transition: all 0.2s !important;
-        box-shadow: 0 4px 16px rgba(3,40,238,0.35) !important;
+        transition: all 0.22s !important;
+        box-shadow: 0 4px 16px rgba(109,40,217,0.25) !important;
     }}
     [data-testid="stTabs"] ~ div .stButton > button:hover,
     [data-testid="stVerticalBlock"] .stButton > button:hover {{
-        background: var(--acc2) !important;
-        box-shadow: 0 6px 24px rgba(3,40,238,0.5) !important;
+        background: linear-gradient(135deg, rgba(109,40,217,0.95), rgba(14,165,233,0.85)) !important;
+        box-shadow: 0 6px 28px rgba(109,40,217,0.4), 0 0 0 1px rgba(139,92,246,0.35) !important;
         transform: translateY(-1px) !important;
     }}
 
@@ -6689,8 +6758,8 @@ if current_view == "dashboard":
     [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {{ gap: 0.4rem !important; }}
     .element-container {{ margin-bottom: 0 !important; }}
 
-    /* ── Screening/data tables ── */
-    .sh-screen-table th {{ background: rgba(3,40,238,0.10); color: var(--acc); }}
+    /* ── Screening/data tables — aurora ── */
+    .sh-screen-table th {{ background: rgba(109,40,217,0.10); color: #a78bfa; border-bottom: 0.5px solid rgba(139,92,246,0.2); }}
 
     /* ── Mobile ── */
     @media (max-width: 768px) {{
@@ -6762,18 +6831,21 @@ if current_view == "dashboard":
         flex-wrap: wrap;
         gap: 8px;
         padding: 16px 0 14px;
-        border-bottom: 1px solid rgba(3,40,238,0.20);
+        border-bottom: 0.5px solid rgba(139,92,246,0.18);
         margin-bottom: 16px;
+        position: relative;
     ">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <div style="
                 width: 36px; height: 36px;
-                background: #0328EE;
+                background: linear-gradient(135deg, rgba(109,40,217,0.9), rgba(14,165,233,0.7));
                 border-radius: 10px;
+                border: 0.5px solid rgba(139,92,246,0.45);
                 display: flex; align-items: center; justify-content: center;
                 font-size: 1.1rem; font-weight: 900; color: #fff;
                 font-family: 'DM Sans', sans-serif;
                 flex-shrink: 0;
+                box-shadow: 0 0 16px rgba(109,40,217,0.3);
             ">Σ</div>
             <div>
                 <div style="
@@ -6781,13 +6853,13 @@ if current_view == "dashboard":
                     font-size: clamp(1.0rem, 4vw, 1.25rem);
                     font-weight: 700;
                     letter-spacing: 0.04em;
-                    color: #FFFFFF;
+                    color: #E2E8F0;
                     line-height: 1.1;
                 ">SIGMA TERMINAL</div>
                 <div style="
                     font-family: 'IBM Plex Mono', monospace;
                     font-size: 0.6rem;
-                    color: {'rgba(136,153,187,0.8)' if is_dark else '#94a3b8'};
+                    color: #64748b;
                     letter-spacing: 0.12em;
                     text-transform: uppercase;
                     margin-top: 2px;
@@ -6797,22 +6869,23 @@ if current_view == "dashboard":
         <div style="display:flex; align-items:center; gap:10px;">
             <div style="
                 display: flex; align-items: center; gap: 6px;
-                background: rgba(3,40,238,0.12);
-                border: 1px solid rgba(3,40,238,0.25);
+                background: rgba(139,92,246,0.08);
+                border: 0.5px solid rgba(139,92,246,0.22);
                 border-radius: 50px;
                 padding: 5px 12px;
             ">
                 <span style="
                     width: 7px; height: 7px;
-                    background: #089981;
+                    background: #10b981;
                     border-radius: 50%;
                     display: inline-block;
+                    box-shadow: 0 0 8px rgba(16,185,129,0.6);
                     animation: pulse-dot 2s infinite;
                 "></span>
                 <span id="sigma-wib-clock" style="
                     font-family: 'IBM Plex Mono', monospace;
                     font-size: 0.68rem;
-                    color: {'rgba(136,153,187,0.9)' if is_dark else '#64748b'};
+                    color: #94a3b8;
                     letter-spacing: 0.06em;
                 ">--:--:-- WIB</span>
             </div>
@@ -6820,8 +6893,8 @@ if current_view == "dashboard":
     </div>
     <style>
     @keyframes pulse-dot {{
-        0%, 100% {{ opacity: 1; transform: scale(1); }}
-        50%       {{ opacity: 0.5; transform: scale(0.8); }}
+        0%, 100% {{ opacity: 1; box-shadow: 0 0 8px rgba(16,185,129,0.6); }}
+        50%       {{ opacity: 0.6; box-shadow: 0 0 4px rgba(16,185,129,0.3); }}
     }}
     </style>
     """, unsafe_allow_html=True)
