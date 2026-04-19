@@ -2653,7 +2653,7 @@ TRIGGER - langsung analisa jika: ada kode 2 huruf+nilai transaksi, kata bandarmo
 WAJIB: identifikasi broker -> kategorikan -> analisa pola -> output format -> JANGAN tanya balik.
 DILARANG: salah kategorikan broker, bilang tidak tahu warna, minta user jelaskan kategori.
 
-WARNA STOCKBIT: 🔴MERAH=Asing | 🟢HIJAU=BUMN | 🟣UNGU=Lokal
+WARNA SIGMA/STOCKBIT: 🟣UNGU=Lokal | 🟢HIJAU=BUMN | 🔴MERAH=Asing
 
 DB ASING(🔴,29): YU=CGS|AK=UBS|BK=JPMorgan|ZP=Maybank|BQ=KoreaInv|YP=Mirae|RX=Macquarie|CP=KBValbury|KZ=CLSA|KK=Phillip|TP=OCBC|HD=KGI|DR=RHB|XA=NHKorindo|DP=DBSVickers|AI=KayHian|AG=Kiwoom|LS=Reliance|RB=Ina|FS=Yuanta|DU=KAF|GI=Webull|AH=Shinhan|CG=Citi|CS=CreditSuisse|GW=HSBC|LH=Royal|MS=MorganStanley
 DB BUMN(🟢,4): CC=Mandiri|NI=BNI|OD=BRIDanareksa|DX=Bahana
@@ -5811,8 +5811,13 @@ LOKAL (Retail/Institusi Lokal): XL=Stockbit, MG=Semesta Indovest, PD=Indo Premie
   AT=Phintraco, IN=Investindo Nusantara, RF=Buana Capital, FZ=Waterfront, SH=Artha,
   PC=FAC Sekuritas, SA=Elit Sukses, PO=Pilarmas, TS=Dwidana Sakti, dan lainnya.
 
-CATATAN PENTING: YP=Mirae Asset adalah broker ASING (Korea), BUKAN lokal.
-CP=KB Valbury adalah broker ASING (Korea), BUKAN lokal. Gunakan referensi di atas secara konsisten.
+CATATAN PENTING KLASIFIKASI BROKER:
+- YP=Mirae Asset: Secara entitas ASING (Korea), namun MAYORITAS NASABAHNYA ADALAH LOKAL/RITEL Indonesia.
+  Interpretasi: YP net buy besar tidak selalu = asing masuk. Bisa = ritel lokal lewat Mirae. Bedakan dengan broker asing murni seperti AK, KZ, BK.
+- CP=KB Valbury: Sama seperti YP - entitas ASING (Korea) tapi basis nasabah didominasi lokal Indonesia.
+  Interpretasi: CP net buy bukan murni sinyal asing. Perlakukan campuran lokal-asing.
+- Broker asing MURNI (sinyal institusi global valid): AK=UBS, YU=CGS, ZP=Maybank, BK=JPMorgan, KZ=CLSA, RX=Macquarie, AI=KayHian, BQ=KoreaInv, XA=NHKorindo, TP=OCBC, KK=Phillip, HD=KGI
+- Dalam output: tetap label YP dan CP sebagai FOREIGN, tapi tambahkan catatan bahwa mayoritas nasabahnya lokal.
 
 URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
 1. PEMBACAAN MONEY FLOW (narasi siapa yang mengendalikan)
@@ -13609,15 +13614,15 @@ tbody td{{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.04);color:
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 .bk{{font-weight:700;color:{_P_c};font-size:0.95rem;}}
-.bk.foreign{{color:{_B_c};}}
-.bk.bumn{{color:{_Y_c};}}
+.bk.foreign{{color:{_R_c};}}
+.bk.bumn{{color:{_G_c};}}
 .pos{{color:{_G_c};font-weight:700;}}
 .neg{{color:{_R_c};font-weight:700;}}
 .bar-wrap{{width:100px;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;display:inline-block;vertical-align:middle;}}
 .bar-fill{{height:100%;border-radius:4px;}}
 .tag-type{{display:inline-block;padding:1px 7px;border-radius:10px;font-size:0.65rem;font-weight:700;margin-left:4px;}}
-.tag-foreign{{background:rgba(96,165,250,0.14);color:{_B_c};border:1px solid rgba(96,165,250,0.3);}}
-.tag-bumn{{background:rgba(251,191,36,0.13);color:{_Y_c};border:1px solid rgba(251,191,36,0.3);}}
+.tag-foreign{{background:rgba(242,54,69,0.14);color:{_R_c};border:1px solid rgba(242,54,69,0.3);}}
+.tag-bumn{{background:rgba(38,166,154,0.14);color:{_G_c};border:1px solid rgba(38,166,154,0.35);}}
 .tag-lokal{{background:rgba(124,58,237,0.12);color:{_P_c};border:1px solid rgba(124,58,237,0.25);}}
 .summary-grid{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}}
 .sum-card{{background:{_table_bg};border:1px solid {_border_c};border-radius:8px;padding:14px 16px;}}
@@ -16299,8 +16304,10 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .tag{{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;margin:2px;}}
 .tag.buy{{background:rgba(38,166,154,0.18);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
 .tag.sell{{background:rgba(242,54,69,0.15);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
-.tag.foreign{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.35);}}
-.tag.local{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.3);}}
+.tag.foreign{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
+.tag.bumn{{background:rgba(38,166,154,0.14);color:{_G};border:1px solid rgba(38,166,154,0.35);}}
+.tag.local{{background:rgba(139,92,246,0.15);color:{_P};border:1px solid rgba(139,92,246,0.4);}}
+
 .table-wrap{{overflow-x:auto;margin:12px 0;}}
 table{{width:100%;border-collapse:collapse;font-size:0.85rem;}}
 th{{background:rgba(124,58,237,0.2);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
@@ -16309,10 +16316,15 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 .alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_Y};}}
 .info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_B};}}
 .broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
-.broker-card{{background:rgba(8,12,22,0.9);border:1px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
-.broker-code{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.08em;}}
-.broker-name{{font-size:0.78rem;color:{_SUB};margin-top:2px;}}
-.broker-type{{font-size:0.75rem;margin-top:6px;}}
+.broker-card{{background:rgba(8,12,22,0.9);border:1px solid rgba(124,58,237,0.18);border-radius:8px;padding:12px 14px;}}
+.broker-card.foreign{{border-left:3px solid rgba(242,54,69,0.6);}}
+.broker-card.bumn{{border-left:3px solid rgba(38,166,154,0.7);}}
+.broker-card.local{{border-left:3px solid rgba(139,92,246,0.6);}}
+.broker-code{{font-size:1.05rem;font-weight:700;color:{_P};letter-spacing:0.08em;}}
+.broker-name{{font-size:0.76rem;color:{_SUB};margin-top:2px;line-height:1.3;}}
+.broker-vol{{font-size:0.68rem;color:{_SUB};opacity:0.55;margin-top:1px;}}
+.broker-note{{font-size:0.68rem;color:{_Y};margin-top:3px;font-style:italic;}}
+.broker-type{{font-size:0.73rem;margin-top:5px;}}
 @media(max-width:600px){{
   .broker-grid{{grid-template-columns:1fr 1fr;}}
   .sec-title{{font-size:1rem;}}
@@ -16362,29 +16374,123 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
   <div class="step"><div class="snum">↑</div><div class="stext"><span class="ok">Akumulasi (Bullish Signal):</span> Broker tertentu konsisten <b>Net Buy besar</b> selama beberapa hari berturut-turut, terutama jika harga belum bergerak jauh. Ini tanda "bandar" sedang kumpulkan saham.</div></div>
   <div class="step"><div class="snum">↓</div><div class="stext"><span class="dn">Distribusi (Bearish Signal):</span> Broker yang sebelumnya Net Buy kini berbalik jadi <b>Net Sell dominan</b>. Terutama berbahaya jika harga masih tinggi - ini tanda mulai lepas saham ke publik.</div></div>
   <div class="step"><div class="snum">→</div><div class="stext"><span class="yl">Crossing:</span> Broker A beli banyak DARI broker B yang jual banyak, pada <b>harga yang sama/mirip</b>. Ini pola crossing klasik - perpindahan kepemilikan dari satu pihak ke pihak lain secara terkoordinasi.</div></div>
-  <div class="step"><div class="snum">→</div><div class="stext"><span class="hi">Foreign Flow:</span> Perhatikan broker asing (ZP, DB, CS, ML, MS). Net buy asing = sentimen positif global. Net sell asing = tekanan jual dari institusi internasional.</div></div>
+  <div class="step"><div class="snum">→</div><div class="stext"><span class="hi">Foreign Flow:</span> Perhatikan broker asing: <b>AK,YU,ZP,BK,KZ,RX,KK</b> = sinyal institusi global murni. <b>YP (Mirae) & CP (KB Valbury)</b> = resmi asing tapi nasabahnya mayoritas lokal, jadi pergerakannya campuran - jangan langsung dikategorikan sebagai "sinyal asing". Net buy asing murni (AK,KZ,BK dll) = konfirmasi kuat.</div></div>
 </div>
 </div>
 
 <div class="feat yellow">
 <div class="feat-title">🏦 Kode Broker Penting di IDX</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 14px;align-items:center;">
+  <span style="font-size:0.72rem;color:{_SUB};letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">LEGENDA:</span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></span><span style="color:{_P};">Lokal</span></span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;"><span style="width:10px;height:10px;border-radius:50%;background:#26a69a;display:inline-block;"></span><span style="color:{_G};">BUMN</span></span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;"><span style="width:10px;height:10px;border-radius:50%;background:#f23645;display:inline-block;"></span><span style="color:{_R};">Asing / Foreign</span></span>
+  <span style="font-size:0.72rem;color:{_Y};font-style:italic;">⚠️ YP & CP = entitas asing, tapi nasabah mayoritas lokal</span>
+</div>
 <div class="broker-grid">
-  <div class="broker-card"><div class="broker-code">YP</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-type"><span class="tag local">Lokal - Retail</span></div></div>
-  <div class="broker-card"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">ZP</div><div class="broker-name">Kim Eng Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">BQ</div><div class="broker-name">Mirae Asset</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">DB</div><div class="broker-name">Deutsche Securities</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">CS</div><div class="broker-name">Credit Suisse</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">ML</div><div class="broker-name">Merrill Lynch</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">MS</div><div class="broker-name">Morgan Stanley</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">RX</div><div class="broker-name">Macquarie Capital</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">OD</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-type"><span class="tag local">Lokal - BUMN</span></div></div>
-  <div class="broker-card"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas 2</div><div class="broker-type"><span class="tag local">Lokal - BUMN</span></div></div>
-  <div class="broker-card"><div class="broker-code">DH</div><div class="broker-name">Sinarmas Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-  <div class="broker-card"><div class="broker-code">PD</div><div class="broker-name">BNI Sekuritas</div><div class="broker-type"><span class="tag local">Lokal - BUMN</span></div></div>
-  <div class="broker-card"><div class="broker-code">GR</div><div class="broker-name">Panin Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-  <div class="broker-card"><div class="broker-code">FZ</div><div class="broker-name">Waterfront Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-  <div class="broker-card"><div class="broker-code">LG</div><div class="broker-name">Trimegah Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas Indonesia</div><div class="broker-vol">3.4T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">YU</div><div class="broker-name">CGS International Sekuritas</div><div class="broker-vol">1.8T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">YP</div><div class="broker-name">Mirae Asset Sekuritas</div><div class="broker-vol">1.8T</div><div class="broker-type"><span class="tag foreign">Asing*</span></div><div class="broker-note">⚠️ Mayoritas nasabah lokal</div></div>
+  <div class="broker-card foreign"><div class="broker-code">ZP</div><div class="broker-name">Maybank Sekuritas Indonesia</div><div class="broker-vol">1.7T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">CP</div><div class="broker-name">KB Valbury Sekuritas</div><div class="broker-vol">1.0T</div><div class="broker-type"><span class="tag foreign">Asing*</span></div><div class="broker-note">⚠️ Mayoritas nasabah lokal</div></div>
+  <div class="broker-card foreign"><div class="broker-code">BK</div><div class="broker-name">J.P. Morgan Sekuritas</div><div class="broker-vol">734.7B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">KZ</div><div class="broker-name">CLSA Sekuritas Indonesia</div><div class="broker-vol">643.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">RX</div><div class="broker-name">Macquarie Sekuritas Indonesia</div><div class="broker-vol">623.4B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">KK</div><div class="broker-name">Phillip Sekuritas Indonesia</div><div class="broker-vol">412.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">AI</div><div class="broker-name">Kay Hian Sekuritas</div><div class="broker-vol">335.5B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">AG</div><div class="broker-name">Kiwoom Sekuritas Indonesia</div><div class="broker-vol">288.3B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">DR</div><div class="broker-name">RHB Sekuritas Indonesia</div><div class="broker-vol">278.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">BQ</div><div class="broker-name">Korea Investment Sekuritas</div><div class="broker-vol">270.1B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">XA</div><div class="broker-name">NH Korindo Sekuritas Indonesia</div><div class="broker-vol">237.7B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">TP</div><div class="broker-name">OCBC Sekuritas Indonesia</div><div class="broker-vol">208.5B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">HD</div><div class="broker-name">KGI Sekuritas Indonesia</div><div class="broker-vol">174.3B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">RB</div><div class="broker-name">Ina Sekuritas Indonesia</div><div class="broker-vol">66.2B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">DP</div><div class="broker-name">DBS Vickers Sekuritas</div><div class="broker-vol">61.4B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">LS</div><div class="broker-name">Reliance Sekuritas Indonesia</div><div class="broker-vol">38.2B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">FS</div><div class="broker-name">Yuanta Sekuritas Indonesia</div><div class="broker-vol">23.1B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">DU</div><div class="broker-name">KAF Sekuritas Indonesia</div><div class="broker-vol">9.6B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">GI</div><div class="broker-name">Webull Sekuritas Indonesia</div><div class="broker-vol">9.0B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">AH</div><div class="broker-name">Shinhan Sekuritas Indonesia</div><div class="broker-vol">266.1M</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">CS</div><div class="broker-name">Credit Suisse Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">CG</div><div class="broker-name">Citigroup Sekuritas Indonesia</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">GW</div><div class="broker-name">HSBC Sekuritas Indonesia</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">LH</div><div class="broker-name">Royal Investium Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">MS</div><div class="broker-name">Morgan Stanley Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card bumn"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-vol">2.8T</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card bumn"><div class="broker-code">NI</div><div class="broker-name">BNI Sekuritas</div><div class="broker-vol">590.8B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card bumn"><div class="broker-code">OD</div><div class="broker-name">BRI Danareksa Sekuritas</div><div class="broker-vol">403.3B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card bumn"><div class="broker-code">DX</div><div class="broker-name">Bahana Sekuritas</div><div class="broker-vol">69.4B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card local"><div class="broker-code">XL</div><div class="broker-name">Stockbit Sekuritas Digital</div><div class="broker-vol">4.4T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">MG</div><div class="broker-name">Semesta Indovest Sekuritas</div><div class="broker-vol">1.3T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PD</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-vol">1.0T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">XC</div><div class="broker-name">Ajaib Sekuritas Asia</div><div class="broker-vol">978.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">DH</div><div class="broker-name">Sinarmas Sekuritas</div><div class="broker-vol">796.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AZ</div><div class="broker-name">Sucor Sekuritas</div><div class="broker-vol">715.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SQ</div><div class="broker-name">BCA Sekuritas</div><div class="broker-vol">705.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">LG</div><div class="broker-name">Trimegah Sekuritas Indonesia</div><div class="broker-vol">384.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IC</div><div class="broker-name">Integrity Capital Sekuritas</div><div class="broker-vol">366.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IF</div><div class="broker-name">Samuel Sekuritas Indonesia</div><div class="broker-vol">354.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">GR</div><div class="broker-name">Panin Sekuritas Tbk.</div><div class="broker-vol">310.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">KI</div><div class="broker-name">Ciptadana Sekuritas Asia</div><div class="broker-vol">278.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BB</div><div class="broker-name">Verdhana Sekuritas Indonesia</div><div class="broker-vol">255.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">YB</div><div class="broker-name">Yakin Bertumbuh Sekuritas</div><div class="broker-vol">246.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">EP</div><div class="broker-name">MNC Sekuritas</div><div class="broker-vol">203.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SS</div><div class="broker-name">Supra Sekuritas Indonesia</div><div class="broker-vol">181.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AO</div><div class="broker-name">Erdhika Elit Sekuritas</div><div class="broker-vol">123.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">YJ</div><div class="broker-name">Lotus Andalan Sekuritas</div><div class="broker-vol">115.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BR</div><div class="broker-name">Trust Sekuritas</div><div class="broker-vol">97.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">HP</div><div class="broker-name">Henan Putihrai Sekuritas</div><div class="broker-vol">82.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SF</div><div class="broker-name">Surya Fajar Sekuritas</div><div class="broker-vol">76.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AT</div><div class="broker-name">Phintraco Sekuritas</div><div class="broker-vol">73.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IN</div><div class="broker-name">Investindo Nusantara Sekuritas</div><div class="broker-vol">63.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RF</div><div class="broker-name">Buana Capital Sekuritas</div><div class="broker-vol">60.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">FZ</div><div class="broker-name">Waterfront Sekuritas Indonesia</div><div class="broker-vol">43.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SH</div><div class="broker-name">Artha Sekuritas Indonesia</div><div class="broker-vol">41.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PC</div><div class="broker-name">FAC Sekuritas Indonesia</div><div class="broker-vol">39.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SA</div><div class="broker-name">Elit Sukses Sekuritas</div><div class="broker-vol">38.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PO</div><div class="broker-name">Pilarmas Investindo Sekuritas</div><div class="broker-vol">38.0B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">TS</div><div class="broker-name">Dwidana Sakti Sekuritas</div><div class="broker-vol">37.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">II</div><div class="broker-name">Danatama Makmur Sekuritas</div><div class="broker-vol">36.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">MU</div><div class="broker-name">Minna Padi Investama Sekuritas</div><div class="broker-vol">35.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IH</div><div class="broker-name">Indo Harvest Sekuritas</div><div class="broker-vol">32.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IU</div><div class="broker-name">Indo Capital Sekuritas</div><div class="broker-vol">29.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">CD</div><div class="broker-name">Mega Capital Sekuritas</div><div class="broker-vol">29.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">EL</div><div class="broker-name">Evergreen Sekuritas Indonesia</div><div class="broker-vol">23.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">MI</div><div class="broker-name">Victoria Sekuritas Indonesia</div><div class="broker-vol">23.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AP</div><div class="broker-name">Pacific Sekuritas Indonesia</div><div class="broker-vol">20.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PG</div><div class="broker-name">Panca Global Sekuritas</div><div class="broker-vol">16.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RO</div><div class="broker-name">Pluang Maju Sekuritas</div><div class="broker-vol">15.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AR</div><div class="broker-name">Binaartha Sekuritas</div><div class="broker-vol">14.9B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PF</div><div class="broker-name">Danasakti Sekuritas Indonesia</div><div class="broker-vol">13.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">ID</div><div class="broker-name">Anugerah Sekuritas Indonesia</div><div class="broker-vol">13.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">ES</div><div class="broker-name">Ekokapital Sekuritas</div><div class="broker-vol">12.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">ZR</div><div class="broker-name">Bumiputera Sekuritas</div><div class="broker-vol">11.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">QA</div><div class="broker-name">Tuntun Sekuritas Indonesia</div><div class="broker-vol">10.9B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RG</div><div class="broker-name">Profindo Sekuritas Indonesia</div><div class="broker-vol">9.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">GA</div><div class="broker-name">BNC Sekuritas Indonesia</div><div class="broker-vol">9.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PI</div><div class="broker-name">Magenta Kapital Sekuritas</div><div class="broker-vol">9.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">OK</div><div class="broker-name">Net Sekuritas</div><div class="broker-vol">6.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AF</div><div class="broker-name">Harita Kencana Sekuritas</div><div class="broker-vol">6.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BS</div><div class="broker-name">Equity Sekuritas Indonesia</div><div class="broker-vol">5.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">TF</div><div class="broker-name">Universal Broker Indonesia</div><div class="broker-vol">5.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RS</div><div class="broker-name">Yulie Sekuritas Indonesia</div><div class="broker-vol">5.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AD</div><div class="broker-name">OSO Sekuritas Indonesia</div><div class="broker-vol">4.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">JB</div><div class="broker-name">BJB Sekuritas</div><div class="broker-vol">2.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BF</div><div class="broker-name">Inti Fikasa Sekuritas</div><div class="broker-vol">2.0B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">YO</div><div class="broker-name">Amantara Sekuritas Indonesia</div><div class="broker-vol">1.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IT</div><div class="broker-name">Inti Teladan Sekuritas</div><div class="broker-vol">803.6M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PP</div><div class="broker-name">Aldiracita Sekuritas Indonesia</div><div class="broker-vol">543.0M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">DD</div><div class="broker-name">Makindo Sekuritas</div><div class="broker-vol">125.3M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">FO</div><div class="broker-name">Forte Global Sekuritas</div><div class="broker-vol">3.8M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">KS</div><div class="broker-name">Kresna Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">AN</div><div class="broker-name">Wanteg Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">DM</div><div class="broker-name">Masindo Artha Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">IP</div><div class="broker-name">Yugen Bertumbuh Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">BZ</div><div class="broker-name">Batavia Prosperindo Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">MK</div><div class="broker-name">Ekuator Swarna Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">PS</div><div class="broker-name">Paramitra Alfa Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">SC</div><div class="broker-name">IMG Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">TX</div><div class="broker-name">Dhanawibawa Sekuritas Indonesia</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
 </div>
 </div>
 
