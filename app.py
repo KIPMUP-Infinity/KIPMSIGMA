@@ -13672,8 +13672,43 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         # Fundamental Screener - inside alpha_tab_fundamental
         # Shared resources (watchlist, price fetcher, AI caller, renderers) defined once below
 
-        # ── DAFTAR SAHAM IDX - TOP 500 MARKET CAP, AKTIF DIPERDAGANGKAN ──
-        # Sudah dikurasi: hapus saham suspend >1 bln & micro-speculative tidak relevan
+        # ── DAFTAR SAHAM IDX - TOP 250 MARKET CAP (untuk GoAPI Bandarmologi Engine) ──
+        # Dikurasi berdasarkan market cap terbesar IDX, aktif diperdagangkan, tidak suspend
+        _IDX_TOP250 = [
+            # MEGA CAP (BBCA, BBRI, BMRI, TLKM, ASII, GOTO dst — liquid sangat tinggi)
+            "BBCA","BBRI","BMRI","TLKM","ASII","BBNI","UNVR","BREN","AMMN","ADRO",
+            "BYAN","TPIA","ICBP","INDF","KLBF","HMSP","GGRM","MDKA","CUAN","ANTM",
+            "BRPT","INKP","MAPI","BSDE","CTRA","EXCL","ISAT","PGAS","PTBA","MEDC",
+            # LARGE CAP
+            "SMGR","INCO","AALI","TOWR","TBIG","MTEL","ARTO","BRIS","GOTO","EMTK",
+            "BUKA","FILM","MNCN","SCMA","HEAL","MIKA","SILO","KAEF","AMRT","MIDI",
+            "ACES","RALS","LPPF","INTP","SMRA","LPKR","PWON","ASRI","BFIN","ADMF",
+            "MFIN","UNTR","HRUM","ITMG","GEMS","BSSR","TOBA","ESSA","ELSA","RAJA",
+            "NCKL","MBMA","BRMS","PSAB","LSIP","SIMP","TBLA","SGRO","SSMS","BWPT",
+            "JPFA","CPIN","MYOR","SIDO","BBTN","BDMN","PNBN","NISP","MEGA","BJBR",
+            # MID CAP — LIQUID & RELEVAN UNTUK BANDARMOLOGI
+            "BJTM","ARNA","TOTO","MARK","INAI","KRAS","AGII","TKIM","TBMS","NIKL",
+            "BIRD","GIAA","SMDR","TMAS","NELY","BULL","SUPR","SHIP","SOCI","LEAD",
+            "HITS","DEAL","CMPP","WEHA","BPTR","BBRM","NRCA","PTPP","ADHI","WSBP",
+            "DMAS","EMDE","GPRA","BKSL","COWL","MKPI","MTLA","RDTX","ROCK","RODA",
+            "SMDM","JRPT","APLN","DILD","MDLN","LPCK","BEST","SSIA","KIJA","PGEO",
+            "BREN","PTRO","VKTR","CDIA","AUTO","IMAS","SMSM","GJTL","BOLT","DRMA",
+            "LPIN","INDS","HEXA","MASA","NIPS","PRAS","GDYR","MTDL","DMMX","EDGE",
+            "ASSA","CASH","MCAS","TELE","WIFI","WINS","KIOS","MSKY","NETV","JELO",
+            "TSPC","DVLA","INAF","PEHA","MERK","PYFA","SOHO","SCPI","IRRA","PRIM",
+            "BMTR","MAMI","ERAA","CSAP","MAPA","MPPA","DAYA","GLOB","KOIN","TRIO",
+            "FAST","KINO","HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI",
+            "CLEO","DLTA","KEJU","ADES","CEKA","ICBP","AISA","IIKP","MAGP","CPRO",
+            "PALM","TAPG","ANJT","DSFI","BISI","TINS","ZINC","DKFT","MITI","SMNP",
+            "DSSA","MBAP","INDY","MYOH","SMMT","BUMI","MCOL","DEWA","GTBO","KKGI",
+            "FIRE","ARCI","SMRU","TPMA","MBSS","RIGS","PTIS","SQMI","CANI","SMMU",
+            # BANKING MID-SMALL LIQUID
+            "BBYB","BANK","AGRO","MEGA","BNGA","BTPN","NISP","BJBR","BJTM","BFIN",
+            "MCOR","SDRA","MAYA","NOBU","BBSI","PNLF","WOMF","VRNA","CFIN","MFIN",
+        ]
+        _IDX_TOP250 = list(dict.fromkeys(_IDX_TOP250))[:250]  # deduplicate & cap 250
+
+        # ── WATCHLIST RECO (tetap full untuk tab AI Stock Insight & BSJP) ──
         _WATCHLIST_RECO = [
             # PERBANKAN BESAR & MENENGAH
             "BBCA","BBRI","BMRI","BBNI","BBTN","BRIS","BNGA","BTPN","BDMN","PNBN",
@@ -13754,6 +13789,585 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
             _WATCHLIST_RECO = [tk for tk in _WATCHLIST_RECO if tk not in IDX_SUSPENDED_TICKERS]
         except NameError:
             pass  # IDX_SUSPENDED_TICKERS belum tersedia di context ini (aman)
+
+        # ════════════════════════════════════════════════════════════════
+        # GOAPI BANDARMOLOGI ENGINE — Logika MnM Strategy+ by Alfan KIPM
+        # ════════════════════════════════════════════════════════════════
+        def _tick_size(price: float) -> float:
+            """IDX fraksi harga BEI."""
+            if price < 200:   return 1
+            if price < 500:   return 2
+            if price < 2000:  return 5
+            if price < 5000:  return 10
+            return 25
+
+        def _bandar_distribution_target(avg_buy: float, bandar_lot: float, daily_avg_lot: float, price: float) -> dict:
+            """
+            Kalkulasi target distribusi bandar.
+
+            Logika MnM:
+            - Bandar akumulasi 100K lot, avg daily market 10K lot
+            - Supply di tiap tick diatas bandar = avg daily lot
+            - Agar distribusi selesai tanpa rugi: perlu minimal N tick di atas avg_buy
+              dimana N = ceil(bandar_lot / daily_avg_lot)
+            - Konservatif: minimal 5 tick di atas avg_buy
+            - Agresif: N tick di atas avg_buy (sesuai supply ratio)
+
+            Return: dict {tp_conservative, tp_aggressive, supply_ratio, analysis}
+            """
+            tick = _tick_size(price)
+            if daily_avg_lot <= 0:
+                daily_avg_lot = max(bandar_lot * 0.1, 1000)
+
+            supply_ratio = bandar_lot / daily_avg_lot  # berapa kali lipat avg daily
+
+            # Konservatif: 5 tick minimum
+            tp_conservative = avg_buy + (5 * tick)
+
+            # Agresif: N tick berdasarkan supply ratio, max 20 tick
+            n_tick_needed = min(int(supply_ratio), 20)
+            n_tick_needed = max(n_tick_needed, 5)
+            tp_aggressive = avg_buy + (n_tick_needed * tick)
+
+            # Analisa teks
+            if supply_ratio >= 10:
+                analysis = f"Bandar masuk {supply_ratio:.0f}x dari avg harian — butuh minimal {n_tick_needed} tick kenaikan untuk distribusi selesai"
+            elif supply_ratio >= 5:
+                analysis = f"Akumulasi signifikan {supply_ratio:.1f}x avg — target distribusi {n_tick_needed} tick di atas avg buy"
+            else:
+                analysis = f"Akumulasi moderat {supply_ratio:.1f}x — minimal 5 tick kenaikan untuk profitabel"
+
+            return {
+                "tp_conservative": _round_tick(tp_conservative, tick),
+                "tp_aggressive":   _round_tick(tp_aggressive, tick),
+                "supply_ratio":    round(supply_ratio, 2),
+                "n_tick_needed":   n_tick_needed,
+                "tick_size":       tick,
+                "analysis":        analysis,
+            }
+
+        def _round_tick(price: float, tick: float) -> float:
+            return round(price / tick) * tick
+
+        def _bandar_score_from_brosum(rows: list, ticker_daily_avg_lot: float = 0) -> dict:
+            """
+            Scoring akumulasi/distribusi dari data broker summary GoAPI.
+
+            Logika MnM IDX (counter-intuitive):
+            - Banyak broker BELI + sedikit broker JUAL = DISTRIBUSI (bandar jual ke ritel)
+            - Sedikit broker BELI + banyak broker JUAL = AKUMULASI (bandar beli diam-diam)
+            - Volume BESAR + frekuensi broker KECIL = TRUE AKUMULASI (block trade)
+            - Volume BESAR + frekuensi broker BESAR = Ritel/noise atau distribusi
+            - Volume BESAR + breakout struktural + break EMA = TRUE BREAKOUT
+
+            Return: dict dengan skor, sinyal, dan data distribusi target
+            """
+            if not rows:
+                return {"score": 0, "signals": [], "verdict": "NO_DATA", "dist_target": None}
+
+            total_buy_lot  = sum(r.get("BuyVolume", 0) for r in rows)
+            total_sell_lot = sum(r.get("SellVolume", 0) for r in rows)
+            total_net_lot  = total_buy_lot - total_sell_lot
+
+            # Pisahkan broker asing vs lokal
+            foreign_rows = [r for r in rows if r.get("_source") == "GoAPI" and
+                            _ALL_BROKERS.get(str(r.get("BrokerID", "")), ("", ""))[1] == "FOREIGN"
+                            or _ALL_BROKERS.get(str(r.get("BrokerID", "")), ("", ""))[1] == "FOREIGN"]
+            buy_brokers  = [r for r in rows if float(r.get("BuyVolume", 0) or 0) > 0]
+            sell_brokers = [r for r in rows if float(r.get("SellVolume", 0) or 0) > 0]
+
+            n_buy_brokers  = len(buy_brokers)
+            n_sell_brokers = len(sell_brokers)
+            n_foreign_buy  = sum(1 for r in foreign_rows if float(r.get("BuyVolume", 0) or 0) > 0)
+            n_foreign_sell = sum(1 for r in foreign_rows if float(r.get("SellVolume", 0) or 0) > 0)
+
+            # Avg buy price dari GoAPI (AvgBuy field)
+            avg_buy_prices  = [float(r.get("AvgBuy", 0) or 0) for r in rows if float(r.get("AvgBuy", 0) or 0) > 0]
+            avg_sell_prices = [float(r.get("AvgSell", 0) or 0) for r in rows if float(r.get("AvgSell", 0) or 0) > 0]
+            weighted_avg_buy  = sum(avg_buy_prices)  / len(avg_buy_prices)  if avg_buy_prices  else 0
+            weighted_avg_sell = sum(avg_sell_prices) / len(avg_sell_prices) if avg_sell_prices else 0
+
+            score = 50  # baseline netral
+            signals = []
+
+            # ── LOGIKA COUNTER-INTUITIVE IDX ──
+
+            # 1. True Akumulasi: volume besar + sedikit broker beli (block trade)
+            if total_buy_lot > 0 and n_buy_brokers <= 3 and total_buy_lot > (ticker_daily_avg_lot * 2):
+                score += 25
+                signals.append(f"🟢 TRUE AKUMULASI: {n_buy_brokers} broker kumpul {total_buy_lot:,.0f} lot ({total_buy_lot/max(ticker_daily_avg_lot,1):.1f}x avg harian)")
+
+            # 2. Distribusi tersembunyi: banyak broker beli tapi itu sebenarnya bandar jual
+            elif n_buy_brokers >= 8 and n_sell_brokers <= 3 and total_sell_lot < total_buy_lot * 0.4:
+                score -= 20
+                signals.append(f"🔴 POLA DISTRIBUSI: {n_buy_brokers} broker beli (ritel FOMO) tapi hanya {n_sell_brokers} broker jual (bandar pelan distribusi)")
+
+            # 3. True Breakout: volume besar + banyak broker beli + net positif
+            if n_buy_brokers >= 5 and total_net_lot > (ticker_daily_avg_lot * 3) and total_buy_lot > total_sell_lot * 2:
+                score += 20
+                signals.append(f"⚡ TRUE BREAKOUT SIGNAL: volume {total_buy_lot/max(ticker_daily_avg_lot,1):.1f}x avg dengan {n_buy_brokers} broker aktif beli")
+
+            # 4. Asing masuk = strong confirmation
+            if n_foreign_buy > 0 and n_foreign_buy >= n_foreign_sell:
+                foreign_net = sum(float(r.get("BuyVolume",0) or 0) - float(r.get("SellVolume",0) or 0)
+                                  for r in foreign_rows)
+                if foreign_net > 0:
+                    score += 15
+                    signals.append(f"✅ ASING AKUMULASI: {n_foreign_buy} broker asing net beli {foreign_net:,.0f} lot")
+                else:
+                    score -= 10
+                    signals.append(f"⚠️ ASING DISTRIBUSI: net asing {foreign_net:,.0f} lot")
+
+            # 5. Net lot keseluruhan
+            net_ratio = total_net_lot / max(ticker_daily_avg_lot, 1)
+            if net_ratio >= 5:
+                score += 10
+                signals.append(f"✅ Net akumulasi {net_ratio:.1f}x avg harian — sangat kuat")
+            elif net_ratio <= -5:
+                score -= 10
+                signals.append(f"🔴 Net distribusi {abs(net_ratio):.1f}x avg harian — tekanan jual besar")
+
+            # Clamp score
+            score = max(0, min(100, score))
+
+            # Verdict
+            if score >= 75:   verdict = "STRONG_ACCUM"
+            elif score >= 60: verdict = "ACCUM"
+            elif score >= 45: verdict = "NEUTRAL"
+            elif score >= 30: verdict = "DIST"
+            else:             verdict = "STRONG_DIST"
+
+            # Distribusi target kalkulasi
+            dist_target = None
+            if weighted_avg_buy > 0 and total_buy_lot > 0:
+                dist_target = _bandar_distribution_target(
+                    avg_buy=weighted_avg_buy,
+                    bandar_lot=total_buy_lot,
+                    daily_avg_lot=max(ticker_daily_avg_lot, total_buy_lot * 0.1),
+                    price=weighted_avg_buy,
+                )
+
+            return {
+                "score":           score,
+                "signals":         signals,
+                "verdict":         verdict,
+                "total_buy_lot":   total_buy_lot,
+                "total_sell_lot":  total_sell_lot,
+                "net_lot":         total_net_lot,
+                "n_buy_brokers":   n_buy_brokers,
+                "n_sell_brokers":  n_sell_brokers,
+                "n_foreign_buy":   n_foreign_buy,
+                "n_foreign_sell":  n_foreign_sell,
+                "avg_buy":         weighted_avg_buy,
+                "avg_sell":        weighted_avg_sell,
+                "dist_target":     dist_target,
+            }
+
+        def _goapi_screen_daily_picks(universe: list, max_picks: int = 5) -> dict:
+            """
+            Screening 250 saham top mktcap dengan GoAPI Broker Summary.
+            Hemat limit: 1 call per saham, batas 5 rekom final.
+            Hanya jalan setelah jam 20:00 WIB.
+
+            Return: {"picks": [...5 saham...], "avoid": [...], "generated_at": str, "calls_used": int}
+            """
+            import threading
+            from datetime import date as _d, timedelta
+
+            # Cari T-1 bursa (skip weekend)
+            today = _d.today()
+            # Cari hari terakhir bursa (skip Sabtu=5, Minggu=6)
+            delta = 1
+            while True:
+                candidate = today - timedelta(days=delta)
+                if candidate.weekday() < 5:  # Senin-Jumat
+                    break
+                delta += 1
+            date_str = str(candidate)
+
+            scored = []
+            calls_used = [0]
+            lock = threading.Lock()
+
+            # Fetch price data dulu (yfinance, batch) untuk daily avg lot
+            price_map = {}
+            try:
+                import yfinance as _yf_g
+                _batch = [f"{tk}.JK" for tk in universe[:250]]
+                # Batch download lebih efisien
+                _hist_batch = _yf_g.download(_batch, period="10d", auto_adjust=True, progress=False, threads=True)
+                if not _hist_batch.empty:
+                    for tk in universe:
+                        try:
+                            _cl = _hist_batch["Close"][f"{tk}.JK"].dropna()
+                            _vl = _hist_batch["Volume"][f"{tk}.JK"].dropna()
+                            if len(_cl) >= 3 and len(_vl) >= 3:
+                                price_map[tk] = {
+                                    "price":      float(_cl.iloc[-1]),
+                                    "avg_vol_5d": float(_vl.iloc[-5:].mean()) if len(_vl) >= 5 else float(_vl.mean()),
+                                    "chg1d":      float((_cl.iloc[-1] - _cl.iloc[-2]) / _cl.iloc[-2] * 100),
+                                    "chg5d":      float((_cl.iloc[-1] - _cl.iloc[-6]) / _cl.iloc[-6] * 100) if len(_cl) >= 6 else 0,
+                                    "ema13":      float(_cl.ewm(span=13).mean().iloc[-1]),
+                                    "ema21":      float(_cl.ewm(span=21).mean().iloc[-1]),
+                                    "ema50":      float(_cl.ewm(span=50).mean().iloc[-1]) if len(_cl) >= 30 else float(_cl.mean()),
+                                }
+                        except: pass
+            except: pass
+
+            def _fetch_score(tk):
+                if not _goapi_available():
+                    return
+                try:
+                    rows = goapi_get_broker_summary(tk, date_str)
+                    with lock:
+                        calls_used[0] += 1
+                    if not rows:
+                        return
+
+                    pdata = price_map.get(tk, {})
+                    avg_daily = pdata.get("avg_vol_5d", 10000) / 100  # convert share to lot (1 lot = 100 shares)
+
+                    bs_result = _bandar_score_from_brosum(rows, ticker_daily_avg_lot=avg_daily)
+
+                    # Skip jika tidak ada sinyal kuat
+                    if bs_result["score"] < 55 and bs_result["score"] > 45:
+                        return
+
+                    # EMA breakout bonus
+                    price   = pdata.get("price", 0)
+                    ema13   = pdata.get("ema13", price)
+                    ema21   = pdata.get("ema21", price)
+                    ema50   = pdata.get("ema50", price)
+                    ema_break = price > ema13 and price > ema21 and price > ema50
+                    struct_break = pdata.get("chg1d", 0) > 1.0  # breakout >1% hari ini
+
+                    if ema_break and struct_break and bs_result["verdict"] in ("STRONG_ACCUM", "ACCUM"):
+                        bs_result["score"] += 10
+                        bs_result["signals"].append("⚡ TRUE BREAKOUT: breakout struktural + break EMA + akumulasi bandar")
+                        bs_result["verdict"] = "BREAKOUT"
+
+                    with lock:
+                        scored.append({
+                            "ticker":     tk,
+                            "price":      price,
+                            "chg1d":      pdata.get("chg1d", 0),
+                            "chg5d":      pdata.get("chg5d", 0),
+                            "ema_break":  ema_break,
+                            "struct_break": struct_break,
+                            "bs":         bs_result,
+                        })
+                except: pass
+
+            # Parallel fetch — tapi batasi concurrency agar GoAPI tidak rate limit
+            for i in range(0, len(universe), 10):
+                batch = universe[i:i+10]
+                threads = [threading.Thread(target=_fetch_score, args=(tk,), daemon=True) for tk in batch]
+                for t in threads: t.start()
+                for t in threads: t.join(timeout=20)
+
+            # Sort: STRONG_ACCUM/BREAKOUT dulu, lalu by score
+            verdict_order = {"BREAKOUT": 0, "STRONG_ACCUM": 1, "ACCUM": 2, "NEUTRAL": 5, "DIST": 7, "STRONG_DIST": 8}
+            bullish = [s for s in scored if s["bs"]["verdict"] in ("BREAKOUT", "STRONG_ACCUM", "ACCUM")]
+            bearish = [s for s in scored if s["bs"]["verdict"] in ("STRONG_DIST", "DIST")]
+
+            bullish.sort(key=lambda x: (verdict_order.get(x["bs"]["verdict"], 9), -x["bs"]["score"]))
+            bearish.sort(key=lambda x: x["bs"]["score"])
+
+            picks = bullish[:max_picks]
+            avoid = bearish[:3]
+
+            return {
+                "picks":        picks,
+                "avoid":        avoid,
+                "generated_at": _wib_now().strftime("%d %b %Y %H:%M WIB"),
+                "date_brosum":  date_str,
+                "calls_used":   calls_used[0],
+                "total_scored": len(scored),
+            }
+
+        def _goapi_screen_weekly_picks(universe: list, max_picks: int = 5) -> dict:
+            """
+            Screening WEEKLY: akumulasi 5 hari terakhir (T-1 s/d T-5 hari bursa).
+            Hemat limit: fetch per hari per saham, aggregate.
+            Hanya jalan hari Sabtu setelah jam 12:00 WIB.
+            """
+            import threading
+            from datetime import date as _d, timedelta
+
+            # Cari 5 hari bursa terakhir
+            bursa_days = []
+            check = _d.today()
+            while len(bursa_days) < 5:
+                check -= timedelta(days=1)
+                if check.weekday() < 5:
+                    bursa_days.append(str(check))
+
+            # Price data
+            price_map = {}
+            try:
+                import yfinance as _yf_w
+                _batch_w = [f"{tk}.JK" for tk in universe[:250]]
+                _hist_w  = _yf_w.download(_batch_w, period="20d", auto_adjust=True, progress=False, threads=True)
+                if not _hist_w.empty:
+                    for tk in universe:
+                        try:
+                            _cl = _hist_w["Close"][f"{tk}.JK"].dropna()
+                            _vl = _hist_w["Volume"][f"{tk}.JK"].dropna()
+                            if len(_cl) >= 5:
+                                price_map[tk] = {
+                                    "price":      float(_cl.iloc[-1]),
+                                    "avg_vol_5d": float(_vl.iloc[-5:].mean()) if len(_vl) >= 5 else float(_vl.mean()),
+                                    "chg5d":      float((_cl.iloc[-1] - _cl.iloc[-6]) / _cl.iloc[-6] * 100) if len(_cl) >= 6 else 0,
+                                    "ema13":      float(_cl.ewm(span=13).mean().iloc[-1]),
+                                    "ema21":      float(_cl.ewm(span=21).mean().iloc[-1]),
+                                    "ema50":      float(_cl.ewm(span=50).mean().iloc[-1]) if len(_cl) >= 30 else float(_cl.mean()),
+                                }
+                        except: pass
+            except: pass
+
+            calls_used = [0]
+            lock = threading.Lock()
+            weekly_scores = {}  # tk → {aggregated brosum data}
+
+            def _fetch_week_score(tk):
+                if not _goapi_available(): return
+                agg = {
+                    "total_buy": 0, "total_sell": 0, "total_net": 0,
+                    "days_accum": 0, "days_dist": 0, "days_data": 0,
+                    "avg_buy_list": [], "all_signals": [],
+                    "n_buy_broker_avg": [], "n_sell_broker_avg": [],
+                }
+                for day_str in bursa_days:
+                    try:
+                        rows = goapi_get_broker_summary(tk, day_str)
+                        with lock: calls_used[0] += 1
+                        if not rows: continue
+                        pdata   = price_map.get(tk, {})
+                        avg_day = pdata.get("avg_vol_5d", 10000) / 100
+                        day_res = _bandar_score_from_brosum(rows, ticker_daily_avg_lot=avg_day)
+                        agg["days_data"] += 1
+                        agg["total_buy"]  += day_res["total_buy_lot"]
+                        agg["total_sell"] += day_res["total_sell_lot"]
+                        agg["total_net"]  += day_res["net_lot"]
+                        agg["n_buy_broker_avg"].append(day_res["n_buy_brokers"])
+                        agg["n_sell_broker_avg"].append(day_res["n_sell_brokers"])
+                        if day_res["avg_buy"] > 0: agg["avg_buy_list"].append(day_res["avg_buy"])
+                        if day_res["verdict"] in ("STRONG_ACCUM", "ACCUM", "BREAKOUT"):
+                            agg["days_accum"] += 1
+                        elif day_res["verdict"] in ("STRONG_DIST", "DIST"):
+                            agg["days_dist"] += 1
+                    except: pass
+
+                if agg["days_data"] < 2: return  # kurang dari 2 hari data — skip
+
+                pdata    = price_map.get(tk, {})
+                avg_day  = pdata.get("avg_vol_5d", 10000) / 100
+                avg_buy  = sum(agg["avg_buy_list"]) / len(agg["avg_buy_list"]) if agg["avg_buy_list"] else 0
+                price    = pdata.get("price", 0)
+
+                # Weekly verdict
+                accum_ratio = agg["days_accum"] / agg["days_data"]
+                dist_ratio  = agg["days_dist"]  / agg["days_data"]
+                total_net_ratio = agg["total_net"] / max(avg_day * 5, 1)
+
+                weekly_verdict = "NEUTRAL"
+                w_score = 50
+                w_signals = []
+
+                if accum_ratio >= 0.6 and total_net_ratio >= 3:
+                    weekly_verdict = "STRONG_ACCUM_WEEKLY"
+                    w_score = 80 + min(15, accum_ratio * 10)
+                    w_signals.append(f"🟢 AKUMULASI KONSISTEN {agg['days_accum']}/{agg['days_data']} hari — net {agg['total_net']:,.0f} lot ({total_net_ratio:.1f}x avg 5H)")
+                elif accum_ratio >= 0.4 and total_net_ratio >= 1:
+                    weekly_verdict = "ACCUM_WEEKLY"
+                    w_score = 65
+                    w_signals.append(f"✅ Akumulasi {agg['days_accum']}/{agg['days_data']} hari — net positif {agg['total_net']:,.0f} lot")
+                elif dist_ratio >= 0.6 and total_net_ratio <= -3:
+                    weekly_verdict = "DIST_WEEKLY"
+                    w_score = 20
+                    w_signals.append(f"🔴 DISTRIBUSI {agg['days_dist']}/{agg['days_data']} hari — net {agg['total_net']:,.0f} lot (jauhi)")
+
+                # EMA break weekly
+                ema13 = pdata.get("ema13", price)
+                ema21 = pdata.get("ema21", price)
+                if price > ema13 and price > ema21 and weekly_verdict in ("STRONG_ACCUM_WEEKLY", "ACCUM_WEEKLY"):
+                    w_score = min(100, w_score + 8)
+                    w_signals.append("⚡ Break EMA13/21 — konfirmasi breakout struktural mingguan")
+
+                # Kalkulasi distribusi target untuk weekly
+                dist_target = None
+                if avg_buy > 0 and agg["total_buy"] > 0:
+                    dist_target = _bandar_distribution_target(
+                        avg_buy=avg_buy,
+                        bandar_lot=agg["total_buy"],
+                        daily_avg_lot=max(avg_day, agg["total_buy"] * 0.1),
+                        price=price,
+                    )
+
+                with lock:
+                    weekly_scores[tk] = {
+                        "ticker":         tk,
+                        "price":          price,
+                        "chg5d":          pdata.get("chg5d", 0),
+                        "days_accum":     agg["days_accum"],
+                        "days_dist":      agg["days_dist"],
+                        "days_data":      agg["days_data"],
+                        "total_buy":      agg["total_buy"],
+                        "total_sell":     agg["total_sell"],
+                        "total_net":      agg["total_net"],
+                        "avg_buy":        avg_buy,
+                        "verdict":        weekly_verdict,
+                        "score":          min(100, w_score),
+                        "signals":        w_signals,
+                        "dist_target":    dist_target,
+                    }
+
+            # Parallel fetch
+            for i in range(0, len(universe), 8):
+                batch = universe[i:i+8]
+                threads = [threading.Thread(target=_fetch_week_score, args=(tk,), daemon=True) for tk in batch]
+                for t in threads: t.start()
+                for t in threads: t.join(timeout=30)
+
+            all_scores = list(weekly_scores.values())
+            bullish_w = [s for s in all_scores if s["verdict"] in ("STRONG_ACCUM_WEEKLY", "ACCUM_WEEKLY")]
+            bearish_w = [s for s in all_scores if s["verdict"] == "DIST_WEEKLY"]
+            bullish_w.sort(key=lambda x: -x["score"])
+            bearish_w.sort(key=lambda x: x["score"])
+
+            return {
+                "picks":        bullish_w[:max_picks],
+                "avoid":        bearish_w[:3],
+                "generated_at": _wib_now().strftime("%d %b %Y %H:%M WIB"),
+                "bursa_days":   bursa_days,
+                "calls_used":   calls_used[0],
+                "total_scored": len(all_scores),
+            }
+
+        def _render_goapi_reko_card(item: dict, mode: str = "daily"):
+            """Render kartu rekomendasi GoAPI Bandarmologi untuk 1 saham."""
+            bs      = item.get("bs", item)  # daily pakai item.bs, weekly langsung item
+            ticker  = item.get("ticker", "")
+            price   = item.get("price", 0)
+            chg1d   = item.get("chg1d", 0)
+            chg5d   = item.get("chg5d", 0)
+            verdict = bs.get("verdict", item.get("verdict", "NEUTRAL")) if mode == "daily" else item.get("verdict", "NEUTRAL")
+            signals = bs.get("signals", item.get("signals", [])) if mode == "daily" else item.get("signals", [])
+            dist    = bs.get("dist_target", item.get("dist_target")) if mode == "daily" else item.get("dist_target")
+            score   = bs.get("score", item.get("score", 50)) if mode == "daily" else item.get("score", 50)
+
+            verdict_color = {
+                "BREAKOUT":            "#a78bfa",
+                "STRONG_ACCUM":        "#26a69a",
+                "ACCUM":               "#69f0ae",
+                "STRONG_ACCUM_WEEKLY": "#26a69a",
+                "ACCUM_WEEKLY":        "#69f0ae",
+                "NEUTRAL":             "#fbbf24",
+                "DIST":                "#f23645",
+                "STRONG_DIST":         "#b91c1c",
+                "DIST_WEEKLY":         "#f23645",
+            }.get(verdict, "#fbbf24")
+
+            verdict_label = {
+                "BREAKOUT":            "🚀 TRUE BREAKOUT",
+                "STRONG_ACCUM":        "🟢 STRONG AKUMULASI",
+                "ACCUM":               "✅ AKUMULASI",
+                "STRONG_ACCUM_WEEKLY": "🟢 AKUMULASI KONSISTEN",
+                "ACCUM_WEEKLY":        "✅ AKUMULASI MINGGUAN",
+                "NEUTRAL":             "⚪ NETRAL",
+                "DIST":                "🔴 DISTRIBUSI",
+                "STRONG_DIST":         "🔴 STRONG DISTRIBUSI",
+                "DIST_WEEKLY":         "🔴 DISTRIBUSI MINGGUAN",
+            }.get(verdict, verdict)
+
+            chg_color = "#26a69a" if chg1d >= 0 else "#f23645"
+            chg5_color = "#26a69a" if chg5d >= 0 else "#f23645"
+
+            # Build dist target section
+            dist_html = ""
+            if dist:
+                dist_html = f"""
+                <div style='margin-top:10px;padding:10px 12px;background:rgba(167,139,250,0.07);
+                border:1px solid rgba(167,139,250,0.2);border-radius:6px;font-size:0.78rem;'>
+                    <div style='color:#a78bfa;font-weight:700;margin-bottom:6px;font-size:0.72rem;letter-spacing:0.1em;'>
+                        📊 KALKULASI DISTRIBUSI BANDAR
+                    </div>
+                    <div style='color:{text_sub};margin-bottom:3px;'>
+                        Supply Ratio: <span style='color:{text_main};font-weight:700;'>{dist['supply_ratio']:.1f}x</span>
+                        avg harian · Tick size: Rp{int(dist['tick_size']):,}
+                    </div>
+                    <div style='color:{text_sub};margin-bottom:3px;'>
+                        Butuh kenaikan: <span style='color:#fbbf24;font-weight:700;'>{dist['n_tick_needed']} tick</span>
+                        agar distribusi selesai tanpa rugi
+                    </div>
+                    <div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;'>
+                        <div style='background:rgba(38,166,154,0.1);border:1px solid rgba(38,166,154,0.3);
+                        border-radius:5px;padding:8px;text-align:center;'>
+                            <div style='color:{text_sub};font-size:0.68rem;'>TP KONSERVATIF (+5 tick)</div>
+                            <div style='color:#26a69a;font-weight:700;font-size:1rem;'>Rp{int(dist['tp_conservative']):,}</div>
+                        </div>
+                        <div style='background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);
+                        border-radius:5px;padding:8px;text-align:center;'>
+                            <div style='color:{text_sub};font-size:0.68rem;'>TP AGRESIF ({dist['n_tick_needed']} tick)</div>
+                            <div style='color:#a78bfa;font-weight:700;font-size:1rem;'>Rp{int(dist['tp_aggressive']):,}</div>
+                        </div>
+                    </div>
+                    <div style='color:{text_sub};font-size:0.72rem;margin-top:6px;font-style:italic;'>
+                        {dist['analysis']}
+                    </div>
+                </div>"""
+
+            signals_html = "".join([f"<div style='padding:3px 0;color:{text_sub};font-size:0.8rem;border-bottom:1px solid rgba(255,255,255,0.04);'>{s}</div>" for s in signals]) if signals else ""
+
+            # Weekly extra info
+            weekly_extra = ""
+            if mode == "weekly":
+                days_accum = item.get("days_accum", 0)
+                days_data  = item.get("days_data", 1)
+                total_net  = item.get("total_net", 0)
+                avg_buy    = item.get("avg_buy", 0)
+                weekly_extra = f"""
+                <div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:8px 0;'>
+                    <div style='background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
+                        <div style='color:{text_sub};font-size:0.65rem;'>HARI AKUM</div>
+                        <div style='color:#26a69a;font-weight:700;'>{days_accum}/{days_data}</div>
+                    </div>
+                    <div style='background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
+                        <div style='color:{text_sub};font-size:0.65rem;'>NET 5H (LOT)</div>
+                        <div style='color:{"#26a69a" if total_net >= 0 else "#f23645"};font-weight:700;'>
+                            {"+" if total_net >= 0 else ""}{int(total_net):,}
+                        </div>
+                    </div>
+                    <div style='background:rgba(255,255,255,0.04);border-radius:5px;padding:6px;text-align:center;'>
+                        <div style='color:{text_sub};font-size:0.65rem;'>AVG BUY</div>
+                        <div style='color:#fbbf24;font-weight:700;'>{"Rp"+str(int(avg_buy)) if avg_buy > 0 else "-"}</div>
+                    </div>
+                </div>"""
+
+            st.markdown(f"""<div style='background:{"rgba(8,12,22,0.95)" if is_dark else "#fff"};
+            border:1px solid rgba(167,139,250,0.15);border-left:3px solid {verdict_color};
+            border-radius:10px;padding:14px 16px;margin-bottom:12px;'>
+                <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;'>
+                    <div>
+                        <span style='font-family:IBM Plex Mono,monospace;font-size:1.1rem;font-weight:700;color:{text_main};'>{ticker}</span>
+                        <span style='font-size:0.78rem;color:{text_sub};margin-left:8px;font-family:IBM Plex Mono,monospace;'>Rp{int(price):,}</span>
+                        <span style='color:{chg_color};font-size:0.8rem;margin-left:8px;font-weight:700;'>{chg1d:+.2f}%</span>
+                        <span style='color:{chg5_color};font-size:0.75rem;margin-left:6px;'>5H:{chg5d:+.2f}%</span>
+                    </div>
+                    <div style='display:flex;align-items:center;gap:8px;'>
+                        <span style='background:rgba({{"26,166,154" if "ACCUM" in verdict or "BREAK" in verdict else "242,54,69"}},0.15);
+                        color:{verdict_color};border:1px solid {verdict_color}30;border-radius:20px;
+                        padding:3px 10px;font-size:0.72rem;font-weight:700;font-family:IBM Plex Mono,monospace;'>
+                            {verdict_label}
+                        </span>
+                        <span style='background:rgba(167,139,250,0.1);color:#a78bfa;border-radius:15px;
+                        padding:2px 8px;font-size:0.72rem;font-weight:700;'>SCORE {score}</span>
+                    </div>
+                </div>
+                {weekly_extra}
+                {signals_html}
+                {dist_html}
+            </div>""", unsafe_allow_html=True)
 
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
@@ -14865,24 +15479,91 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 REKOMENDASI HARIAN — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 REKOMENDASI HARIAN — GOAPI BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_d = _wib_now()
-            _slot_d = _auto_plan_slot(_now_d)
-            _next_slot_d = "21:00 WIB" if _slot_d == "morning" else "13:00 WIB besok"
-            st.markdown(f"""<div style='background:{"rgba(167,139,250,0.07)" if is_dark else "#f5f3ff"};border:1px solid rgba(167,139,250,0.2);border-left:3px solid #a78bfa;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
-⚡ <b style='color:#a78bfa;'>AUTO-SCHEDULE AKTIF</b> &nbsp;·&nbsp; Update otomatis <b>13:00 WIB</b> (siang) &amp; <b>21:00 WIB</b> (malam) setiap hari &nbsp;·&nbsp; History 30 hari tersimpan<br>
-🕐 Update berikutnya: <b style='color:{text_main};'>{_next_slot_d}</b>
+            _hour_d = _now_d.hour
+
+            # ── Time gate: tersedia mulai jam 20:00 WIB ──
+            _daily_ready = _hour_d >= 20
+            _daily_cache_key = f"goapi_daily_{_now_d.strftime('%Y%m%d')}"
+
+            st.markdown(f"""<div style='background:{"rgba(167,139,250,0.07)" if is_dark else "#f5f3ff"};border:1px solid rgba(167,139,250,0.2);
+            border-left:3px solid #a78bfa;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
+            font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
+⚡ <b style='color:#a78bfa;'>GOAPI BANDARMOLOGI ENGINE</b> &nbsp;·&nbsp;
+Screening <b style='color:{text_main};'>250 saham top mktcap IDX</b> &nbsp;·&nbsp;
+Limit GoAPI: maks <b>5 rekomendasi</b> per run &nbsp;·&nbsp;
+Data broker summary real-time<br>
+🕐 Tersedia mulai: <b style='color:{"#26a69a" if _daily_ready else "#f23645"};'>20:00 WIB setiap hari</b>
+{"&nbsp;·&nbsp; <b style='color:#26a69a;'>✅ Siap dijalankan</b>" if _daily_ready else f"&nbsp;·&nbsp; <b style='color:#f23645;'>⏳ Belum tersedia — tunggu pukul 20:00 WIB (sekarang {_hour_d:02d}:{_now_d.minute:02d} WIB)</b>"}
 </div>""", unsafe_allow_html=True)
 
-            # Tabs: History (default) | Generate Manual
-            _d_tab_hist, _d_tab_manual = st.tabs(["  📜 HISTORY PLAN (Auto)  ", "  ▶ GENERATE MANUAL  "])
+            _d_tab_hist, _d_tab_goapi, _d_tab_manual = st.tabs([
+                "  📜 HISTORY (Auto)  ",
+                "  🔴 GOAPI BROSUM DAILY  ",
+                "  ▶ GENERATE MANUAL (AI)  "
+            ])
 
             with _d_tab_hist:
                 _render_auto_history("daily")
 
+            with _d_tab_goapi:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};margin-bottom:12px;'>Engine scans {len(_IDX_TOP250)} saham top mktcap IDX · Broker summary dari GoAPI · Logika: True Akumulasi, True Breakout, Kalkulasi Distribusi Bandar.</p>", unsafe_allow_html=True)
+
+                col_dg1, col_dg2 = st.columns([3, 1])
+                with col_dg2:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    _btn_daily_goapi = st.button(
+                        "🔍 SCAN BROSUM DAILY",
+                        use_container_width=True,
+                        key="btn_goapi_daily",
+                        disabled=not (_daily_ready or bool(st.session_state.get(_daily_cache_key))),
+                        help="Tersedia mulai pukul 20:00 WIB" if not _daily_ready else "Klik untuk scan broker summary 250 saham top mktcap"
+                    )
+
+                if not _daily_ready and not st.session_state.get(_daily_cache_key):
+                    _jam_left = 20 - _hour_d
+                    st.info(f"⏰ **Rekomendasi Daily GoAPI tersedia mulai pukul 20:00 WIB** — {_jam_left} jam lagi. Gunakan tab 📜 History atau ▶ Generate Manual (AI) untuk sementara.")
+                else:
+                    if _btn_daily_goapi:
+                        with st.spinner(f"🔍 GoAPI Bandarmologi Engine — scanning {len(_IDX_TOP250)} saham top mktcap IDX..."):
+                            _goapi_daily_result = _goapi_screen_daily_picks(_IDX_TOP250, max_picks=5)
+                            st.session_state[_daily_cache_key] = _goapi_daily_result
+
+                    _cached_daily = st.session_state.get(_daily_cache_key)
+                    if _cached_daily:
+                        _meta = _cached_daily
+                        st.markdown(f"""<div style='display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>
+                        <span>🕐 Generated: <b style='color:{text_main};'>{_meta.get('generated_at','')}</b></span>
+                        <span>📊 Brosum date: <b style='color:{text_main};'>{_meta.get('date_brosum','')}</b></span>
+                        <span>📡 GoAPI calls: <b style='color:#a78bfa;'>{_meta.get('calls_used',0)}</b></span>
+                        <span>🔎 Scored: <b style='color:{text_main};'>{_meta.get('total_scored',0)} saham</b></span>
+                        </div>""", unsafe_allow_html=True)
+
+                        picks = _meta.get("picks", [])
+                        avoid = _meta.get("avoid", [])
+
+                        if picks:
+                            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#26a69a;font-weight:700;margin-bottom:10px;'>📈 TOP {len(picks)} REKOMENDASI BELI — GOAPI BANDARMOLOGI</div>", unsafe_allow_html=True)
+                            for item in picks:
+                                _render_goapi_reko_card(item, mode="daily")
+                        else:
+                            st.warning("⚠️ Tidak ada sinyal akumulasi kuat hari ini dari 250 saham top mktcap. Coba lagi besok atau gunakan Generate Manual.")
+
+                        if avoid:
+                            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#f23645;font-weight:700;margin:16px 0 10px;'>📉 HINDARI HARI INI — SINYAL DISTRIBUSI</div>", unsafe_allow_html=True)
+                            for item in avoid:
+                                _render_goapi_reko_card(item, mode="daily")
+                    else:
+                        st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
+                            <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🔍</div>
+                            <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                                Klik <span style='color:#a78bfa;'>Scan BroSum Daily</span> untuk mulai scanning GoAPI</p>
+                        </div>""", unsafe_allow_html=True)
+
             with _d_tab_manual:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:12px;'>Generate manual menggunakan AI (Groq/Cerebras). Gunakan jika auto-plan belum update atau ingin refresh data.</p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:12px;'>Generate manual menggunakan AI (Groq/Gemini). Tidak memerlukan GoAPI — bisa kapan saja.</p>", unsafe_allow_html=True)
                 col_d1, col_d2 = st.columns([3, 1])
                 with col_d2:
                     st.markdown("<br>", unsafe_allow_html=True)
@@ -15043,17 +15724,81 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
         # ─── TAB WEEKLY ───────────────────────────────────────────────────
         with reco_tab_weekly:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📆 REKOMENDASI MINGGUAN — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📆 REKOMENDASI MINGGUAN — GOAPI BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
             _now_w = _wib_now()
-            _next_w = "21:00 WIB" if _auto_plan_slot(_now_w) == "morning" else "13:00 WIB besok"
-            st.markdown(f"""<div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};border:1px solid rgba(38,166,154,0.2);border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
-⚡ <b style='color:#26a69a;'>AUTO-SCHEDULE AKTIF</b> &nbsp;·&nbsp; Update otomatis <b>13:00 WIB</b> &amp; <b>21:00 WIB</b> &nbsp;·&nbsp; History 30 hari &nbsp;·&nbsp; Update berikutnya: <b style='color:{text_main};'>{_next_w}</b>
+            _is_saturday = _now_w.weekday() == 5
+            _hour_w      = _now_w.hour
+            _weekly_ready = _is_saturday and _hour_w >= 12
+            _weekly_cache_key = f"goapi_weekly_{_now_w.strftime('%Y_W%W')}"
+
+            st.markdown(f"""<div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};border:1px solid rgba(38,166,154,0.2);
+            border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
+            font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
+📆 <b style='color:#26a69a;'>GOAPI BANDARMOLOGI WEEKLY</b> &nbsp;·&nbsp;
+Akumulasi <b>5 hari bursa terakhir</b> &nbsp;·&nbsp; Screening <b>250 saham top mktcap IDX</b> &nbsp;·&nbsp; Maks <b>5 rekom swing</b><br>
+🕐 Tersedia: <b style='color:{"#26a69a" if _weekly_ready else "#f23645"};'>Setiap Sabtu mulai 12:00 WIB</b>
+{"&nbsp;·&nbsp; <b style='color:#26a69a;'>✅ Siap dijalankan</b>" if _weekly_ready else f"&nbsp;·&nbsp; <b style='color:#f23645;'>⏳ {'Tunggu pukul 12:00 WIB' if _is_saturday else 'Tersedia Sabtu jam 12:00 WIB'}</b>"}
 </div>""", unsafe_allow_html=True)
 
-            _w_tab_hist, _w_tab_manual = st.tabs(["  📜 HISTORY PLAN (Auto)  ", "  ▶ GENERATE MANUAL  "])
+            _w_tab_hist, _w_tab_goapi, _w_tab_manual = st.tabs([
+                "  📜 HISTORY (Auto)  ",
+                "  📡 GOAPI BROSUM WEEKLY  ",
+                "  ▶ GENERATE MANUAL (AI)  "
+            ])
 
             with _w_tab_hist:
                 _render_auto_history("weekly")
+
+            with _w_tab_goapi:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};margin-bottom:12px;'>Engine mengaggregate broker summary 5 hari bursa terakhir per saham · Deteksi akumulasi konsisten vs distribusi · Kalkulasi target distribusi bandar.</p>", unsafe_allow_html=True)
+                col_wg1, col_wg2 = st.columns([3, 1])
+                with col_wg2:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    _btn_weekly_goapi = st.button(
+                        "📡 SCAN BROSUM WEEKLY",
+                        use_container_width=True,
+                        key="btn_goapi_weekly",
+                        disabled=not (_weekly_ready or bool(st.session_state.get(_weekly_cache_key))),
+                        help="Tersedia setiap Sabtu mulai 12:00 WIB"
+                    )
+
+                if not _weekly_ready and not st.session_state.get(_weekly_cache_key):
+                    st.info(f"⏰ **Rekomendasi Weekly GoAPI tersedia setiap Sabtu pukul 12:00 WIB** — {'tunggu jam 12:00 WIB' if _is_saturday else 'cek lagi hari Sabtu'}. Gunakan ▶ Generate Manual (AI) untuk sementara.")
+                else:
+                    if _btn_weekly_goapi:
+                        with st.spinner(f"📡 GoAPI Weekly Engine — scanning {len(_IDX_TOP250)} saham × 5 hari bursa... (estimasi 2-4 menit)"):
+                            _goapi_weekly_result = _goapi_screen_weekly_picks(_IDX_TOP250, max_picks=5)
+                            st.session_state[_weekly_cache_key] = _goapi_weekly_result
+                    _cached_weekly = st.session_state.get(_weekly_cache_key)
+                    if _cached_weekly:
+                        _meta_w = _cached_weekly
+                        bursa_days_str = " | ".join(_meta_w.get("bursa_days", []))
+                        st.markdown(f"""<div style='display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;
+                        font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};'>
+                        <span>🕐 Generated: <b style='color:{text_main};'>{_meta_w.get('generated_at','')}</b></span>
+                        <span>📅 Periode: <b style='color:{text_main};'>{bursa_days_str}</b></span>
+                        <span>📡 GoAPI calls: <b style='color:#a78bfa;'>{_meta_w.get('calls_used',0)}</b></span>
+                        <span>🔎 Scored: <b style='color:{text_main};'>{_meta_w.get('total_scored',0)} saham</b></span>
+                        </div>""", unsafe_allow_html=True)
+                        picks_w = _meta_w.get("picks", [])
+                        avoid_w = _meta_w.get("avoid", [])
+                        if picks_w:
+                            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#26a69a;font-weight:700;margin-bottom:10px;'>📈 TOP {len(picks_w)} SWING TRADE WEEKLY — GOAPI BANDARMOLOGI</div>", unsafe_allow_html=True)
+                            for item_w in picks_w:
+                                _render_goapi_reko_card(item_w, mode="weekly")
+                        else:
+                            st.warning("⚠️ Tidak ada sinyal akumulasi konsisten minggu ini. Coba Generate Manual.")
+                        if avoid_w:
+                            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:#f23645;font-weight:700;margin:16px 0 10px;'>📉 HINDARI MINGGU INI — DISTRIBUSI KONSISTEN</div>", unsafe_allow_html=True)
+                            for item_w in avoid_w:
+                                _render_goapi_reko_card(item_w, mode="weekly")
+                    else:
+                        st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
+                            <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">📡</div>
+                            <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                                Klik <span style='color:#26a69a;'>Scan BroSum Weekly</span> untuk mulai scanning 5 hari</p>
+                        </div>""", unsafe_allow_html=True)
 
             with _w_tab_manual:
                 st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:12px;'>Swing trade 1-2 minggu. Generate manual jika butuh refresh data dengan AI.</p>", unsafe_allow_html=True)
