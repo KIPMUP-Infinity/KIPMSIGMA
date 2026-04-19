@@ -2277,18 +2277,18 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#080b14" if dark else "#f0f0f0",       # Aurora void black
-        "sidebar_bg":   "#050810" if dark else "#e3e3e3",       # Deeper void for sidebar
-        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Slate white
-        "text_muted":   "#475569" if dark else "#6e6e80",       # Dark slate muted
-        "border":       "rgba(139,92,246,0.18)" if dark else "#8a8aaa",  # Violet border
-        "hover":        "rgba(109,40,217,0.12)" if dark else "#c4c4d8",  # Aurora hover
-        "input_bg":     "rgba(14,17,28,0.92)" if dark else "#ffffff",    # Glass input
-        "bubble":       "linear-gradient(135deg, rgba(109,40,217,0.6), rgba(14,165,233,0.4))",
+        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap original
+        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk sidebar
+        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan
+        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
+        "border":       "#1a2f50" if dark else "#8a8aaa",       # Border lebih visible (sedikit lebih terang dari #132545)
+        "hover":        "#0d1c36" if dark else "#c4c4d8",       # Efek hover kebiruan
+        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat deep blue
+        "bubble":       "#1B2A4A",
         "bubble_text":  "#ffffff",
-        "divider":      "rgba(139,92,246,0.15)" if dark else "#8a8aaa",
-        "gold":         "#a78bfa",                               # Aurora violet (was purple accent)
-        "active_bg":    "rgba(109,40,217,0.14)" if dark else "#c8c8c8",
+        "divider":      "#1a2f50" if dark else "#8a8aaa",       # Garis pemisah sedikit lebih terang
+        "gold":         "#b89fff",                               # Ungu/violet lebih terang dari #a78bfa
+        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
     }
 
 # =========================================================
@@ -4036,90 +4036,20 @@ C = get_colors(st.session_state.theme)
 
 st.markdown(f"""
 <style>
-/* ══════════════════════════════════════════
-   SIGMA AI — AURORA DARK GLOBAL THEME
-   ══════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
-
 * {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
-
-/* ── App background — void black with subtle aurora ── */
-.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section,
-section[data-testid="stMain"], [data-testid="stMainBlockContainer"],
-[data-testid="stBottom"], [data-testid="stBottom"] > div {{
-    background: #080b14 !important;
-}}
-
-/* ── Sidebar — slightly lighter void ── */
-section[data-testid="stSidebar"],
-section[data-testid="stSidebar"] > div,
-section[data-testid="stSidebar"] > div > div,
-section[data-testid="stSidebar"] > div > div > div,
-[data-testid="stSidebarContent"],
-[data-testid="stSidebarUserContent"],
-[data-testid="stSidebarUserContent"] > div,
-[data-testid="stSidebarUserContent"] > div > div {{
-    background: #050810 !important;
-    box-shadow: none !important;
-}}
-section[data-testid="stSidebar"] {{
-    border-right: 0.5px solid rgba(139,92,246,0.14) !important;
-}}
-section[data-testid="stSidebar"] > div,
-section[data-testid="stSidebar"] > div > div,
-[data-testid="stSidebarContent"],
-[data-testid="stSidebarUserContent"],
-[data-testid="stSidebarUserContent"] > div {{
-    padding-top: 0 !important; margin-top: 0 !important;
-}}
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
+section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
+section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
+section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
 [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-
-/* ── Sidebar buttons — aurora hover ── */
-section[data-testid="stSidebar"] .stButton > button {{
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #94a3b8 !important;
-    font-size: 0.875rem !important;
-    padding: 7px 12px !important;
-    border-radius: 8px !important;
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    text-align: left !important;
-    min-height: 36px !important;
-    transition: all 0.18s ease !important;
-    border-left: 2px solid transparent !important;
-}}
-section[data-testid="stSidebar"] .stButton > button:hover {{
-    background: linear-gradient(135deg, rgba(109,40,217,0.14) 0%, rgba(14,165,233,0.1) 100%) !important;
-    border-left: 2px solid rgba(139,92,246,0.6) !important;
-    color: #a78bfa !important;
-}}
-section[data-testid="stSidebar"] .stButton > button p,
-section[data-testid="stSidebar"] .stButton > button span {{
-    margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important;
-}}
-
-/* ── Chat messages ── */
+section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
+section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
+section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
-[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{
-    font-size: 1.0rem !important;
-    line-height: 1.75 !important;
-    color: #e2e8f0 !important;
-    background: transparent !important;
-}}
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 1.0rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
 
-/* ── AI assistant response — subtle aurora left border ── */
-[data-testid="stChatMessage"]:not(.sigma-user-msg) [data-testid="stMarkdownContainer"] {{
-    border-left: 1.5px solid rgba(139,92,246,0.2) !important;
-    padding-left: 14px !important;
-    margin-left: 2px !important;
-}}
-
-/* ── USER BUBBLE — Aurora glass style ── */
+/* ── USER BUBBLE - Gemini style (applied via JS class injection) ── */
 .sigma-user-msg {{
     display: flex !important;
     justify-content: flex-end !important;
@@ -4131,101 +4061,35 @@ section[data-testid="stSidebar"] .stButton > button span {{
     width: 100% !important;
 }}
 .sigma-user-msg [data-testid="stMarkdownContainer"] {{
-    background: linear-gradient(135deg, rgba(109,40,217,0.55), rgba(14,165,233,0.35)) !important;
-    border: 0.5px solid rgba(139,92,246,0.4) !important;
-    color: #ffffff !important;
+    background: {C['bubble']} !important;
+    color: {C['bubble_text']} !important;
     border-radius: 20px 20px 4px 20px !important;
     padding: 10px 16px !important;
     max-width: 75% !important;
     margin-left: auto !important;
-    box-shadow: 0 4px 16px rgba(109,40,217,0.2), 0 2px 8px rgba(0,0,0,0.4) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
     font-size: 0.9rem !important;
-    backdrop-filter: blur(8px) !important;
 }}
 .sigma-user-msg [data-testid="stMarkdownContainer"] p,
 .sigma-user-msg [data-testid="stMarkdownContainer"] span,
 .sigma-user-msg [data-testid="stMarkdownContainer"] li,
 .sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
-    color: #ffffff !important;
+    color: {C['bubble_text']} !important;
     font-size: 0.9rem !important;
 }}
-
-/* ── Main content area ── */
-[data-testid="stMainBlockContainer"] {{
-    max-width: 760px !important;
-    margin: 0 auto !important;
-    padding: 0 24px 120px !important;
-    overflow-y: visible !important;
-}}
-[data-testid="stMainBlockContainer"] p,
-[data-testid="stMainBlockContainer"] li,
-[data-testid="stMainBlockContainer"] h1,
-[data-testid="stMainBlockContainer"] h2,
-[data-testid="stMainBlockContainer"] h3 {{
-    color: #e2e8f0 !important;
-}}
-
-/* ── Chat input — aurora glass ── */
-div[data-testid="stChatInputContainer"] {{
-    border: 0.5px solid rgba(139,92,246,0.25) !important;
-    background: rgba(14,17,28,0.92) !important;
-    border-radius: 16px !important;
-    backdrop-filter: blur(12px) !important;
-    box-shadow: 0 0 24px rgba(109,40,217,0.06) !important;
-    transition: border-color 0.2s, box-shadow 0.2s !important;
-}}
-div[data-testid="stChatInputContainer"]:focus-within {{
-    border-color: rgba(139,92,246,0.55) !important;
-    box-shadow: 0 0 28px rgba(109,40,217,0.12), 0 0 0 1px rgba(139,92,246,0.15) !important;
-}}
-[data-testid="stChatInput"] textarea {{
-    background: rgba(14,17,28,0.92) !important;
-    color: #e2e8f0 !important;
-    font-size: 0.9rem !important;
-}}
-[data-testid="stChatInput"] textarea::placeholder {{
-    color: #475569 !important;
-}}
-[data-testid="stChatInputContainer"] textarea:focus {{
-    box-shadow: none !important;
-    outline: none !important;
-}}
-
+[data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
+[data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
+div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
+[data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.9rem !important; }}
+[data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
+[data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
 footer, #MainMenu {{ visibility: hidden !important; }}
+hr {{ border-color: {C['border']} !important; }}
+[data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.95rem !important; line-height: 1.8 !important; }}
+[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }}
+[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
+[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
 
-/* ── Dividers ── */
-hr {{
-    border: none !important;
-    border-top: 0.5px solid rgba(139,92,246,0.16) !important;
-}}
-
-/* ── Markdown typography ── */
-[data-testid="stMarkdownContainer"] *,
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] li,
-[data-testid="stMarkdownContainer"] span,
-[data-testid="stMarkdownContainer"] div {{ font-size: 0.95rem !important; line-height: 1.8 !important; }}
-[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; color: #e2e8f0 !important; }}
-[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; color: #e2e8f0 !important; }}
-[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; color: #e2e8f0 !important; }}
-
-/* ── Code blocks — terminal mono ── */
-[data-testid="stMarkdownContainer"] code {{
-    background: rgba(139,92,246,0.1) !important;
-    border: 0.5px solid rgba(139,92,246,0.2) !important;
-    border-radius: 4px !important;
-    color: #a78bfa !important;
-    padding: 1px 5px !important;
-    font-family: 'IBM Plex Mono', monospace !important;
-}}
-[data-testid="stMarkdownContainer"] pre {{
-    background: rgba(14,17,28,0.9) !important;
-    border: 0.5px solid rgba(139,92,246,0.2) !important;
-    border-radius: 10px !important;
-    border-left: 2px solid rgba(139,92,246,0.5) !important;
-}}
-
-/* ── System selector cards responsive ── */
 @media (max-width:768px) {{
     .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
     .sys-header {{ margin-bottom: 24px; }}
@@ -4233,13 +4097,16 @@ hr {{
     .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
     .sys-subtitle {{ font-size: 0.75rem; }}
     .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
+    
     .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
     .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
+    
     .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
     .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
     .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
     .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
     .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
+    
     .card-features {{ margin-bottom: 20px; }}
     .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
     .card-cta {{ padding: 12px; font-size: 0.85rem; }}
@@ -6538,18 +6405,19 @@ if current_view == "dashboard":
 
     is_dark = st.session_state.get("theme", "dark") == "dark"
 
-    # ── SIGMA TERMINAL COLOR SYSTEM — AURORA DARK ──
-    # Aurora palette: deep black canvas + violet/cyan/emerald blob gradients
-    text_main  = "#E2E8F0" if is_dark else "#0d1117"
-    text_sub   = "#64748b" if is_dark else "#64748b"
-    card_bg    = "rgba(15,18,30,0.85)" if is_dark else "#ffffff"
-    card_border= "rgba(139,92,246,0.18)" if is_dark else "#e2e8f0"
-    card_shadow= "0 4px 32px rgba(0,0,0,0.7)" if is_dark else "0 4px 16px rgba(0,0,0,0.06)"
-    met_bg     = "rgba(15,18,30,0.9)" if is_dark else "#f0f4ff"
-    met_border = "rgba(139,92,246,0.22)" if is_dark else "#e2e8f0"
-    met_shadow = "0 2px 16px rgba(0,0,0,0.6)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
-    met_hover  = "rgba(139,92,246,0.55)"
+    # ── SIGMA TERMINAL COLOR SYSTEM ──
+    # Accent: #0328EE (blue), BG: #010725, Card: #010D50
+    text_main  = "#e2e8f0" if is_dark else "#0d1117"
+    text_sub   = "#7c86a2" if is_dark else "#64748b"
+    card_bg    = "rgba(15,18,32,0.92)" if is_dark else "#ffffff"
+    card_border= "rgba(139,92,246,0.25)" if is_dark else "#e2e8f0"
+    card_shadow= "0 4px 24px rgba(0,0,0,0.6)" if is_dark else "0 4px 16px rgba(0,0,0,0.06)"
+    met_bg     = "rgba(15,18,32,0.88)" if is_dark else "#f5f3ff"
+    met_border = "rgba(139,92,246,0.28)" if is_dark else "#e2e8f0"
+    met_shadow = "0 2px 12px rgba(0,0,0,0.5)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
+    met_hover  = "rgba(139,92,246,0.7)"
     tv_theme   = "dark" if is_dark else "light"
+    # Tambahkan baris ini di bagian inisialisasi variabel dashboard Anda
     news_theme = "dark" if is_dark else "light"
     
     # Sekarang variabel ini aman digunakan di bawah:
@@ -6573,100 +6441,47 @@ if current_view == "dashboard":
     <style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-    /* ══════════════════════════════════════════
-       SIGMA TERMINAL — AURORA DARK THEME
-       Palette: deep void canvas + aurora blobs
-       Accent: violet #8b5cf6 · cyan #0ea5e9 · emerald #10b981
-       ══════════════════════════════════════════ */
     :root {{
         --acc:      #8b5cf6;
         --acc2:     #6d28d9;
         --acc-cyan: #0ea5e9;
         --acc-em:   #10b981;
         --bg:       #080b14;
-        --card:     rgba(14,17,28,0.92);
-        --card2:    rgba(14,17,28,0.65);
-        --border:   rgba(139,92,246,0.16);
-        --border2:  rgba(14,165,233,0.14);
+        --card:     rgba(15,18,32,0.92);
+        --card2:    rgba(15,18,32,0.70);
+        --border:   rgba(139,92,246,0.22);
         --up:       #10b981;
-        --dn:       #f87171;
+        --dn:       #f23645;
         --txt:      #e2e8f0;
-        --sub:      #64748b;
+        --sub:      #7c86a2;
         --mono:     'IBM Plex Mono', monospace;
         --sans:     'DM Sans', sans-serif;
     }}
 
-    /* ── Ambient aurora blobs — injected on app bg ── */
-    .stApp {{
-        background: var(--bg) !important;
-        position: relative !important;
-    }}
-    .stApp::before {{
-        content: '';
-        position: fixed;
-        width: 520px; height: 520px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(109,40,217,0.18) 0%, transparent 68%);
-        top: -120px; left: -100px;
-        pointer-events: none;
-        z-index: 0;
-        animation: auroraFloat1 14s ease-in-out infinite;
-    }}
-    .stApp::after {{
-        content: '';
-        position: fixed;
-        width: 400px; height: 400px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(14,165,233,0.13) 0%, transparent 68%);
-        top: 80px; right: -60px;
-        pointer-events: none;
-        z-index: 0;
-        animation: auroraFloat2 18s ease-in-out infinite;
-    }}
-    @keyframes auroraFloat1 {{ 0%,100%{{transform:translate(0,0)}} 50%{{transform:translate(30px,20px)}} }}
-    @keyframes auroraFloat2 {{ 0%,100%{{transform:translate(0,0)}} 50%{{transform:translate(-20px,30px)}} }}
-
     /* ── Base ── */
-    .stApp * {{ font-family: var(--sans) !important; }}
+    .stApp, .stApp * {{ font-family: var(--sans) !important; }}
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"],
     [data-testid="stDataFrame"] [aria-haspopup="menu"] {{ display:none !important; }}
 
-    /* global bg override */
-    [data-testid="stAppViewContainer"],
-    section[data-testid="stMain"],
-    [data-testid="stMainBlockContainer"],
-    [data-testid="stBottom"] {{ background: var(--bg) !important; }}
-
-    /* ── Metrics — aurora glass cards ── */
+    /* ── Metrics ── */
     [data-testid="stMetric"] {{
-        background: var(--card) !important;
-        border: 0.5px solid var(--border) !important;
+        background: rgba(15,18,32,0.85) !important;
+        border: 1px solid rgba(139,92,246,0.25) !important;
         border-radius: 16px !important;
         padding: 16px 18px 14px !important;
-        transition: border-color 0.25s, box-shadow 0.25s !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
         position: relative !important;
         overflow: hidden !important;
         backdrop-filter: blur(12px) !important;
     }}
-    [data-testid="stMetric"]::before {{
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.6), rgba(14,165,233,0.4), transparent);
-    }}
     [data-testid="stMetric"]::after {{
         content: '';
         position: absolute;
-        top: -40px; right: -30px;
-        width: 100px; height: 100px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%);
-        pointer-events: none;
+        top: 0; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg,#8b5cf6,#0ea5e9);
+        opacity: 0.8;
     }}
-    [data-testid="stMetric"]:hover {{
-        border-color: rgba(139,92,246,0.45) !important;
-        box-shadow: 0 0 28px rgba(139,92,246,0.12), 0 8px 32px rgba(0,0,0,0.5) !important;
-    }}
+    [data-testid="stMetric"]:hover {{ border-color: #8b5cf6 !important; box-shadow: 0 0 28px rgba(139,92,246,0.22) !important; }}
     [data-testid="stMetricValue"] {{
         font-family: var(--mono) !important;
         font-size: 1.5rem !important;
@@ -6676,18 +6491,18 @@ if current_view == "dashboard":
     }}
     [data-testid="stMetricLabel"] {{
         font-family: var(--sans) !important;
-        font-size: 0.68rem !important;
+        font-size: 0.7rem !important;
         font-weight: 600 !important;
-        letter-spacing: 0.14em !important;
+        letter-spacing: 0.12em !important;
         text-transform: uppercase !important;
-        color: var(--sub) !important;
+        color: {text_sub} !important;
     }}
-    [data-testid="stMetricDelta"] {{ font-family: var(--mono) !important; font-size: 0.88rem !important; }}
+    [data-testid="stMetricDelta"] {{ font-family: var(--mono) !important; font-size: 0.9rem !important; }}
 
-    /* ── Tabs — pill style with aurora active ── */
+    /* ── Tabs ── */
     [data-testid="stTabs"] [role="tablist"] {{
-        background: rgba(14,17,28,0.8) !important;
-        border: 0.5px solid var(--border) !important;
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
         border-radius: 50px !important;
         padding: 4px 6px !important;
         gap: 2px !important;
@@ -6695,17 +6510,16 @@ if current_view == "dashboard":
         flex-wrap: nowrap !important;
         -webkit-overflow-scrolling: touch !important;
         scrollbar-width: none !important;
-        backdrop-filter: blur(10px) !important;
     }}
     [data-testid="stTabs"] [role="tablist"]::-webkit-scrollbar {{ display: none !important; }}
     [data-testid="stTabs"] button[role="tab"] {{
         font-family: var(--sans) !important;
-        font-size: 0.73rem !important;
+        font-size: 0.75rem !important;
         font-weight: 600 !important;
-        letter-spacing: 0.08em !important;
+        letter-spacing: 0.07em !important;
         text-transform: uppercase !important;
         border-radius: 50px !important;
-        color: var(--sub) !important;
+        color: {text_sub} !important;
         padding: 7px 16px !important;
         border: none !important;
         background: transparent !important;
@@ -6714,15 +6528,14 @@ if current_view == "dashboard":
         flex-shrink: 0 !important;
     }}
     [data-testid="stTabs"] button[role="tab"]:hover {{
-        color: {text_main} !important;
-        background: rgba(139,92,246,0.12) !important;
+        color: #e2e8f0 !important;
+        background: rgba(139,92,246,0.15) !important;
     }}
     [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
-        background: linear-gradient(135deg, rgba(109,40,217,0.75), rgba(14,165,233,0.55)) !important;
+        background: linear-gradient(135deg,#8b5cf6,#0ea5e9) !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        box-shadow: 0 0 16px rgba(139,92,246,0.35), 0 4px 12px rgba(0,0,0,0.4) !important;
-        border: 0.5px solid rgba(139,92,246,0.4) !important;
+        box-shadow: 0 4px 18px rgba(139,92,246,0.40) !important;
     }}
     [data-testid="stTabs"] [role="tabpanel"] {{
         background: transparent !important;
@@ -6731,81 +6544,70 @@ if current_view == "dashboard":
         margin-top: 18px !important;
     }}
 
-    /* ── Section divider — aurora style ── */
+    /* ── Section divider ── */
     .trm-section {{ display:flex; align-items:center; gap:10px; margin:20px 0 14px; }}
-    .trm-section-line {{ flex:1; height:1px; background: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent); }}
+    .trm-section-line {{ flex:1; height:1px; background:var(--border); }}
     .trm-section-label {{
         font-family: var(--sans);
-        font-size: 0.65rem;
+        font-size: 0.68rem;
         font-weight: 700;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: #a78bfa;
+        color: #8b5cf6;
         white-space: nowrap;
         padding: 4px 12px;
-        border: 0.5px solid rgba(139,92,246,0.3);
+        border: 1px solid rgba(139,92,246,0.35);
         border-radius: 50px;
-        background: rgba(139,92,246,0.08);
+        background: rgba(139,92,246,0.10);
     }}
 
-    /* ── Cards — aurora glass ── */
+    /* ── Cards ── */
     .trm-card {{
-        background: var(--card);
-        border: 0.5px solid var(--border);
-        border-radius: 18px;
+        background: rgba(15,18,32,0.85);
+        border: 1px solid rgba(139,92,246,0.20);
+        border-radius: 20px;
         padding: 20px 22px;
-        transition: border-color 0.25s, box-shadow 0.25s;
+        transition: border-color 0.2s, box-shadow 0.2s;
         margin-bottom: 14px;
         backdrop-filter: blur(10px);
-        position: relative;
-        overflow: hidden;
     }}
-    .trm-card::before {{
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.4), transparent);
-    }}
-    .trm-card:hover {{
-        border-color: rgba(139,92,246,0.38);
-        box-shadow: 0 8px 32px rgba(109,40,217,0.12), 0 0 0 0.5px rgba(139,92,246,0.2);
-    }}
+    .trm-card:hover {{ border-color: #8b5cf6; box-shadow: 0 4px 28px rgba(139,92,246,0.18); }}
     .trm-card-title {{
         font-family: var(--sans);
-        font-size: 0.68rem;
-        letter-spacing: 0.16em;
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #a78bfa;
+        color: var(--sub);
         margin-bottom: 10px;
         font-weight: 700;
     }}
 
-    /* ── Insight block — aurora accent ── */
+    /* ── Insight block ── */
     .trm-insight {{
-        background: rgba(109,40,217,0.07);
-        border-left: 2px solid rgba(139,92,246,0.55);
+        background: rgba(139,92,246,0.08);
+        border-left: 3px solid #8b5cf6;
         border-radius: 0 12px 12px 0;
         padding: 14px 18px;
         margin: 12px 0;
         font-size: 0.95rem;
         color: {text_main};
-        line-height: 1.75;
+        line-height: 1.7;
     }}
 
     /* ── Divider ── */
     .fancy-divider {{
         border: 0; height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.2), rgba(14,165,233,0.15), transparent);
+        background: var(--border);
         margin: 20px 0;
     }}
 
-    /* ── Ticker tape — aurora glow ── */
+    /* ── Ticker tape ── */
     .trm-ticker-wrap {{
         overflow: hidden; max-width: 100%;
         white-space: nowrap;
-        border-top: 0.5px solid rgba(139,92,246,0.18);
-        border-bottom: 0.5px solid rgba(139,92,246,0.18);
-        background: rgba(139,92,246,0.04);
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+        background: rgba(3,40,238,0.04);
         padding: 7px 0;
         margin: 0 0 10px;
         border-radius: 0;
@@ -6817,72 +6619,72 @@ if current_view == "dashboard":
         font-family: var(--mono);
         font-size: 0.82rem;
         letter-spacing: 0.06em;
-        color: rgba(226,232,240,0.5);
+        color: rgba(255,255,255,0.55);
     }}
     .trm-ticker-tape .up {{ color: var(--up); }}
     .trm-ticker-tape .dn {{ color: var(--dn); }}
-    .trm-ticker-tape .sep {{ color: rgba(139,92,246,0.35); margin: 0 18px; }}
+    .trm-ticker-tape .sep {{ color: rgba(139,92,246,0.5); margin: 0 18px; }}
     @keyframes ticker-scroll {{
         0%   {{ transform: translateX(0); }}
         100% {{ transform: translateX(-50%); }}
     }}
 
-    /* ── Inputs — aurora glass ── */
+    /* ── Inputs ── */
     [data-testid="stTextInput"] input {{
         font-family: var(--mono) !important;
         font-size: 0.95rem !important;
         font-weight: 500 !important;
-        background: rgba(14,17,28,0.9) !important;
-        border: 0.5px solid rgba(139,92,246,0.22) !important;
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         color: {text_main} !important;
         padding: 10px 14px !important;
     }}
     [data-testid="stTextInput"] input:focus {{
-        border-color: rgba(139,92,246,0.6) !important;
-        box-shadow: 0 0 0 3px rgba(139,92,246,0.1), 0 0 16px rgba(139,92,246,0.08) !important;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important;
     }}
     [data-testid="stTextInput"] label,
     [data-testid="stSelectbox"] label {{
         font-family: var(--sans) !important;
-        font-size: 0.68rem !important;
-        letter-spacing: 0.12em !important;
+        font-size: 0.7rem !important;
+        letter-spacing: 0.1em !important;
         text-transform: uppercase !important;
-        color: #a78bfa !important;
+        color: {text_sub} !important;
         font-weight: 600 !important;
     }}
     [data-testid="stSelectbox"] > div > div {{
-        background: rgba(14,17,28,0.9) !important;
-        border: 0.5px solid rgba(139,92,246,0.22) !important;
+        background: var(--card) !important;
+        border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         color: {text_main} !important;
     }}
     [data-testid="stSelectbox"] > div > div:focus-within {{
-        border-color: rgba(139,92,246,0.55) !important;
-        box-shadow: 0 0 0 3px rgba(139,92,246,0.1) !important;
+        border-color: #8b5cf6 !important;
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important;
     }}
 
-    /* ── Buttons — aurora gradient ── */
+    /* ── Buttons ── */
     [data-testid="stTabs"] ~ div .stButton > button,
     [data-testid="stVerticalBlock"] .stButton > button {{
-        background: linear-gradient(135deg, rgba(109,40,217,0.85), rgba(14,165,233,0.7)) !important;
+        background: linear-gradient(135deg,#8b5cf6,#0ea5e9) !important;
         color: #FFFFFF !important;
-        border: 0.5px solid rgba(139,92,246,0.4) !important;
+        border: none !important;
         font-family: var(--sans) !important;
-        font-size: 0.78rem !important;
+        font-size: 0.8rem !important;
         font-weight: 700 !important;
-        letter-spacing: 0.08em !important;
+        letter-spacing: 0.06em !important;
         text-transform: uppercase !important;
         border-radius: 50px !important;
         padding: 10px 24px !important;
-        transition: all 0.22s !important;
-        box-shadow: 0 4px 16px rgba(109,40,217,0.25) !important;
+        transition: all 0.2s !important;
+        box-shadow: 0 4px 18px rgba(139,92,246,0.35) !important;
     }}
     [data-testid="stTabs"] ~ div .stButton > button:hover,
     [data-testid="stVerticalBlock"] .stButton > button:hover {{
-        background: linear-gradient(135deg, rgba(109,40,217,0.95), rgba(14,165,233,0.85)) !important;
-        box-shadow: 0 6px 28px rgba(109,40,217,0.4), 0 0 0 1px rgba(139,92,246,0.35) !important;
+        box-shadow: 0 6px 28px rgba(139,92,246,0.55) !important;
         transform: translateY(-1px) !important;
+        filter: brightness(1.1) !important;
     }}
 
     /* ── Gap control ── */
@@ -6891,8 +6693,8 @@ if current_view == "dashboard":
     [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {{ gap: 0.4rem !important; }}
     .element-container {{ margin-bottom: 0 !important; }}
 
-    /* ── Screening/data tables — aurora ── */
-    .sh-screen-table th {{ background: rgba(109,40,217,0.10); color: #a78bfa; border-bottom: 0.5px solid rgba(139,92,246,0.2); }}
+    /* ── Screening/data tables ── */
+    .sh-screen-table th {{ background: rgba(139,92,246,0.12); color: #8b5cf6; }}
 
     /* ── Mobile ── */
     @media (max-width: 768px) {{
@@ -6953,32 +6755,24 @@ if current_view == "dashboard":
     st.markdown(f"""
     <div style="
         display: flex;
-        align-items: center;    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown(f"""
-    <div style="
-        display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 8px;
         padding: 16px 0 14px;
-        border-bottom: 0.5px solid rgba(139,92,246,0.18);
+        border-bottom: 1px solid rgba(3,40,238,0.20);
         margin-bottom: 16px;
-        position: relative;
     ">
         <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
             <div style="
                 width: 36px; height: 36px;
-                background: linear-gradient(135deg, rgba(109,40,217,0.9), rgba(14,165,233,0.7));
+                background: linear-gradient(135deg,#8b5cf6,#0ea5e9);
                 border-radius: 10px;
-                border: 0.5px solid rgba(139,92,246,0.45);
                 display: flex; align-items: center; justify-content: center;
                 font-size: 1.1rem; font-weight: 900; color: #fff;
                 font-family: 'DM Sans', sans-serif;
                 flex-shrink: 0;
-                box-shadow: 0 0 16px rgba(109,40,217,0.3);
+                box-shadow: 0 0 18px rgba(139,92,246,0.45);
             ">Σ</div>
             <div>
                 <div style="
@@ -6986,13 +6780,16 @@ if current_view == "dashboard":
                     font-size: clamp(1.0rem, 4vw, 1.25rem);
                     font-weight: 700;
                     letter-spacing: 0.04em;
-                    color: #E2E8F0;
+                    background: linear-gradient(135deg,#8b5cf6,#0ea5e9);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
                     line-height: 1.1;
                 ">SIGMA TERMINAL</div>
                 <div style="
                     font-family: 'IBM Plex Mono', monospace;
                     font-size: 0.6rem;
-                    color: #64748b;
+                    color: {'rgba(136,153,187,0.8)' if is_dark else '#94a3b8'};
                     letter-spacing: 0.12em;
                     text-transform: uppercase;
                     margin-top: 2px;
@@ -7002,8 +6799,8 @@ if current_view == "dashboard":
         <div style="display:flex; align-items:center; gap:10px;">
             <div style="
                 display: flex; align-items: center; gap: 6px;
-                background: rgba(139,92,246,0.08);
-                border: 0.5px solid rgba(139,92,246,0.22);
+                background: rgba(139,92,246,0.10);
+                border: 1px solid rgba(139,92,246,0.30);
                 border-radius: 50px;
                 padding: 5px 12px;
             ">
@@ -7012,13 +6809,13 @@ if current_view == "dashboard":
                     background: #10b981;
                     border-radius: 50%;
                     display: inline-block;
-                    box-shadow: 0 0 8px rgba(16,185,129,0.6);
                     animation: pulse-dot 2s infinite;
+                    box-shadow: 0 0 8px rgba(16,185,129,0.6);
                 "></span>
                 <span id="sigma-wib-clock" style="
                     font-family: 'IBM Plex Mono', monospace;
                     font-size: 0.68rem;
-                    color: #94a3b8;
+                    color: {'rgba(136,153,187,0.9)' if is_dark else '#64748b'};
                     letter-spacing: 0.06em;
                 ">--:--:-- WIB</span>
             </div>
@@ -7026,8 +6823,8 @@ if current_view == "dashboard":
     </div>
     <style>
     @keyframes pulse-dot {{
-        0%, 100% {{ opacity: 1; box-shadow: 0 0 8px rgba(16,185,129,0.6); }}
-        50%       {{ opacity: 0.6; box-shadow: 0 0 4px rgba(16,185,129,0.3); }}
+        0%, 100% {{ opacity: 1; transform: scale(1); }}
+        50%       {{ opacity: 0.5; transform: scale(0.8); }}
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -7167,13 +6964,13 @@ if current_view == "dashboard":
         # ── Shared table CSS (same style as Corporate Action) ───────────────
         st.markdown(f"""<style>
         .mkt-wrap {{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;}}
-        .mkt-hdr {{padding:10px 16px;background:rgba(3,40,238,0.09);border-bottom:1px solid {met_border};font-size:0.92rem;font-weight:700;letter-spacing:0.12em;color:#0328EE;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
+        .mkt-hdr {{padding:10px 16px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.92rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
         .mkt-hdr-badge {{font-size:0.75rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
         .mkt-scroll {{width:100%;overflow-x:auto;overflow-y:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
         .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
         .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
         table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
-        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(3,40,238,0.08);color:#0328EE;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.84rem;white-space:nowrap;}}
+        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.84rem;white-space:nowrap;}}
         table.mkt-tbl tbody td {{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
         table.mkt-tbl tbody tr:last-child td {{border-bottom:none;}}
         table.mkt-tbl tbody tr:hover td {{background:rgba(3,40,238,0.04);}}
@@ -7295,13 +7092,13 @@ body{{background:transparent;font-family:'DM Sans',sans-serif;}}
 .row{{display:flex;gap:12px;width:100%;}}
 .col{{flex:1;min-width:0;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:18px;overflow:hidden;height:100%;}}
-.mkt-hdr{{padding:12px 16px;background:rgba(3,40,238,0.08);border-bottom:1px solid {met_border};font-size:0.7rem;font-weight:700;letter-spacing:0.14em;color:#0328EE;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
+.mkt-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:0.7rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
 .mkt-badge{{font-size:0.93rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.13rem;min-width:320px;}}
-thead th{{position:static;background:rgba(3,40,238,0.06);color:#0328EE;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
+thead th{{position:static;background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
 tbody td{{padding:8px 12px;border-bottom:1px solid rgba(3,40,238,0.10);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.88rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
@@ -7752,7 +7549,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         # ── Render Daily Brief (jika ada) ──────────────────────────────────
         def _render_mb_block(content, ts, mode_key):
             _mb_icon  = "🔄" if mode_key == "daily" else "🗓️"
-            _mb_color = "#4285F4" if mode_key == "daily" else "#0328EE"
+            _mb_color = "#4285F4" if mode_key == "daily" else "#8b5cf6"
             _mb_title = "DAILY MARKET BRIEF - 24 JAM TERAKHIR" if mode_key == "daily" else "WEEKLY MARKET BRIEF - REKAP 7 HARI"
             st.markdown(f"""
             <style>
@@ -7858,7 +7655,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#0328EE; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -7866,7 +7663,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#0328EE; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
+                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -7882,22 +7679,22 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;color:#0328EE;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;color:#8b5cf6;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
                 "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
                 "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
             }, index=dates)
-            st.line_chart(macro_id, color=["#0328EE", "#4285F4", "#ff5555"], height=320)
+            st.line_chart(macro_id, color=["#8b5cf6", "#0ea5e9", "#f23645"], height=320)
 
         with macro_col2:
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;color:#0328EE;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;color:#8b5cf6;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
                 "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
                 "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
             }, index=dates)
-            st.line_chart(macro_us, color=["#0328EE", "#4285F4", "#ff5555"], height=320)
+            st.line_chart(macro_us, color=["#8b5cf6", "#0ea5e9", "#f23645"], height=320)
 
         st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
 
@@ -7907,11 +7704,11 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             <div class="trm-card">
                 <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
                 <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
-                <span style='color:#0328EE;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
+                <span style='color:#8b5cf6;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
                 Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
                 </p>
                 <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#0328EE;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
+                <span style='color:#8b5cf6;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
                 Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
                 </p>
             </div>
@@ -7968,7 +7765,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             ],
         }
 
-        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#0328EE", "LOW": "#4285F4"}
+        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#0ea5e9", "LOW": "#4285F4"}
         dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(3,40,238,0.10)", "LOW": "rgba(66,133,244,0.10)"}
 
         # ── Build JSON for each country ──────────────────────────────────
@@ -8005,13 +7802,13 @@ body{{background:transparent;font-family:'DM Sans',sans-serif;}}
 .row{{display:flex;gap:14px;width:100%;align-items:flex-start;}}
 .col{{flex:1;min-width:0;}}
 .cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.cal-hdr{{padding:12px 16px;background:rgba(3,40,238,0.08);border-bottom:1px solid {met_border};font-size:0.7rem;font-weight:700;letter-spacing:0.14em;color:#0328EE;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
+.cal-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:0.7rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
 .cal-sub{{font-size:0.92rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .scroll-box{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.12rem;min-width:340px;}}
-thead th{{position:static;background:rgba(3,40,238,0.06);color:#0328EE;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.7rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
+thead th{{position:static;background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.7rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
@@ -8025,7 +7822,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
 .tip-wrap:hover .tip{{display:block;}}
 .tip{{display:none;position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:9999;
   background:{'#1a2035' if is_dark else '#ffffff'};
-  border:1px solid {met_border};border-left:3px solid #0328EE;
+  border:1px solid {met_border};border-left:3px solid #8b5cf6;
   border-radius:0 6px 6px 0;padding:8px 12px;
   font-size:0.87rem;color:{text_main};line-height:1.5;
   pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,0.4);
@@ -8261,7 +8058,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
             "dividen": ("#089981", "rgba(8,153,129,0.15)"),
             "dividend": ("#089981", "rgba(8,153,129,0.15)"),
             "payment": ("#089981", "rgba(8,153,129,0.15)"),
-            "rups": ("#0328EE", "rgba(3,40,238,0.12)"),
+            "rups": ("#8b5cf6", "rgba(139,92,246,0.12)"),
             "right": ("#4285F4", "rgba(66,133,244,0.14)"),
             "rights": ("#4285F4", "rgba(66,133,244,0.14)"),
             "split": ("#b07cf8", "rgba(176,124,248,0.14)"),
@@ -8319,10 +8116,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
         .ca-stats {{ display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }}
         .ca-stat {{ background:{met_bg}; border:1px solid {met_border}; border-radius:8px;
             padding:10px 16px; font-family:'IBM Plex Mono',monospace; flex:1; min-width:100px; }}
-        .ca-stat-val {{ font-size:1.5rem; font-weight:700; color:#0328EE; }}
+        .ca-stat-val {{ font-size:1.5rem; font-weight:700; color:#8b5cf6; }}
         .ca-stat-lbl {{ font-size:0.82rem; color:{text_sub}; letter-spacing:0.08em; margin-top:2px; }}
         .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.94rem; }}
-        .ca-tbl th {{ background:rgba(3,40,238,0.08); color:#0328EE; padding:9px 12px; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em;
+        .ca-tbl th {{ background:rgba(139,92,246,0.08); color:#8b5cf6; padding:9px 12px; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em;
             text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.06em; font-weight:700; font-size:0.85rem; }}
         .ca-tbl td {{ padding:10px 12px; border-bottom:1px solid {met_border}; color:{text_main}; vertical-align:middle; }}
         .ca-tbl tr:last-child td {{ border-bottom:none; }}
@@ -8345,7 +8142,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
         <div class='ca-stats'>
             <div class='ca-stat'><div class='ca-stat-val'>{_total}</div><div class='ca-stat-lbl'>TOTAL EVENTS</div></div>
             <div class='ca-stat'><div class='ca-stat-val' style='color:#089981;'>{_div_ct}</div><div class='ca-stat-lbl'>DIVIDEN</div></div>
-            <div class='ca-stat'><div class='ca-stat-val' style='color:#0328EE;'>{_rups_ct}</div><div class='ca-stat-lbl'>RUPS</div></div>
+            <div class='ca-stat'><div class='ca-stat-val' style='color:#8b5cf6;'>{_rups_ct}</div><div class='ca-stat-lbl'>RUPS</div></div>
             <div class='ca-stat'><div class='ca-stat-val' style='color:#4285F4;'>{_ri_ct}</div><div class='ca-stat-lbl'>RIGHTS ISSUE</div></div>
         </div>
         <p style='font-family:'DM Sans',sans-serif;font-size:0.83rem;color:{text_sub};margin-bottom:12px;'>
@@ -8409,7 +8206,7 @@ table{{width:max-content;min-width:100%;border-collapse:collapse;
        font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
 thead th{{
   position:sticky;top:0;z-index:2;
-  background:rgba(3,40,238,0.08);color:#0328EE;
+  background:rgba(139,92,246,0.08);color:#8b5cf6;
   padding:10px 12px;text-align:left;
   border-bottom:1px solid {met_border};
   letter-spacing:0.06em;font-weight:700;font-size:0.85rem;
@@ -8501,7 +8298,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
         st.markdown(f"""
         <p style='font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
         Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
-        Rate saat ini: <b style='color:#0328EE;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
+        Rate saat ini: <b style='color:#8b5cf6;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
         </p>
         """, unsafe_allow_html=True)
 
@@ -9150,9 +8947,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         _badge_color = "#089981"
         st.markdown(f"""<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
             <span style='font-family:'DM Sans',sans-serif;font-size:0.88rem;color:{text_sub};'>
-            🕐 RRG update: <b style="color:#0328EE">13:00</b> & <b style="color:#0328EE">21:00</b> WIB
+            🕐 RRG update: <b style="color:#8b5cf6">13:00</b> & <b style="color:#8b5cf6">21:00</b> WIB
             &nbsp;·&nbsp; Slot: <b style="color:{_badge_color}">{_update_slot}</b>
-            &nbsp;·&nbsp; Next: <b style="color:#0328EE">{_next_update} WIB</b>
+            &nbsp;·&nbsp; Next: <b style="color:#8b5cf6">{_next_update} WIB</b>
             &nbsp;·&nbsp; <span style='color:#60a5fa;font-weight:600;'>📊 {_screen_total} saham terscreening · top 30/sektor by market cap</span>
             </span></div>""", unsafe_allow_html=True)
 
@@ -9197,7 +8994,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 ]
             },
             "Basic Materials": {
-                "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#0328EE",
+                "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#8b5cf6",
                 "aksi": "Accumulation", "icon": "🏗️",
                 "trail": [(99.0,99.0),(100.5,100.1),(101.8,101.0),(103.5,101.8)],
                 "saham": [
@@ -9419,7 +9216,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         fase_colors = {
             "Leading":   "#089981",
-            "Improving": "#0328EE",
+            "Improving": "#8b5cf6",
             "Weakening": "#f23645",
             "Lagging":   "#4285F4",
         }
@@ -9475,7 +9272,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         # Leading=hijau, Improving=kuning, Weakening=merah, Lagging=biru
         def _rrg_bubble_color(rs, mom):
             if   rs >= 100 and mom >= 100: return "#089981"  # Leading   - hijau (kanan-atas)
-            elif rs <  100 and mom >= 100: return "#0328EE"  # Improving - kuning (kiri-atas)
+            elif rs <  100 and mom >= 100: return "#8b5cf6"  # Improving - kuning (kiri-atas)
             elif rs >= 100 and mom <  100: return "#f23645"  # Weakening - merah (kanan-bawah)
             else:                          return "#4285F4"  # Lagging   - biru  (kiri-bawah)
 
@@ -9501,7 +9298,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         # Quadrant labels
         for lbl, x, y, c in [
             ("LEADING",   113, 114, "#089981"),
-            ("IMPROVING", 87,  114, "#0328EE"),
+            ("IMPROVING", 87,  114, "#8b5cf6"),
             ("WEAKENING", 113, 86,  "#f23645"),
             ("LAGGING",   87,  86,  "#4285F4"),
         ]:
@@ -9632,7 +9429,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         sel = st.session_state.get("rrg_selected")
         if sel and sel in rrg_sectors:
             sd = rrg_sectors[sel]
-            fc = fase_colors.get(sd["fase"], "#0328EE")
+            fc = fase_colors.get(sd["fase"], "#8b5cf6")
 
             # Header card
             st.markdown(f"""
@@ -9666,7 +9463,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             mc1, mc2, mc3, mc4 = st.columns(4)
             for col, lbl, val, c in [
                 (mc1, "LEADING",   leading_n,   "#089981"),
-                (mc2, "IMPROVING", improving_n, "#0328EE"),
+                (mc2, "IMPROVING", improving_n, "#8b5cf6"),
                 (mc3, "WEAKENING", weakening_n, "#f23645"),
                 (mc4, "LAGGING",   lagging_n,   "#4285F4"),
             ]:
@@ -9694,7 +9491,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
             fig_mini.add_shape(type="line",x0=85,x1=115,y0=100,y1=100,
                 line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
-            for lbl,x,y,c in [("LEADING",112,113,"#089981"),("IMPROVING",88,113,"#0328EE"),
+            for lbl,x,y,c in [("LEADING",112,113,"#089981"),("IMPROVING",88,113,"#8b5cf6"),
                                ("WEAKENING",112,87,"#f23645"),("LAGGING",88,87,"#4285F4")]:
                 fig_mini.add_annotation(x=x,y=y,text=f"<b>{lbl}</b>",showarrow=False,
                     font=dict(size=8,color=c,family="IBM Plex Mono"),opacity=0.8)
@@ -9751,14 +9548,14 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 font=dict(family="IBM Plex Mono", color=text_main),
             )
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#0328EE;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#8b5cf6;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
             st.plotly_chart(fig_mini, use_container_width=True,
                 config={"displayModeBar": True, "modeBarButtonsToAdd": ["toggleFullscreen"],
                         "modeBarButtonsToRemove": ["lasso2d","select2d"],
                         "displaylogo": False, "scrollZoom": True},
                 key=f"mini_rrg_{sel}")
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#0328EE\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#8b5cf6\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
             # Build HTML table - max 30 rows
             tbl_rows = ""
             _saham_display = sorted(sd["saham"], key=lambda x: x["rs"], reverse=True)[:30]
@@ -9772,7 +9569,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
                         font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
                         font-family:'DM Sans',sans-serif;'>{stk.get("fase","")}</span></td>
-                    <td style='font-size:12px;color:#0328EE;font-weight:600;'>{_mc_disp}</td>
+                    <td style='font-size:12px;color:#8b5cf6;font-weight:600;'>{_mc_disp}</td>
                     <td style='font-size:13px;'>
                         <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
                         <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
@@ -9785,7 +9582,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             st.markdown(f"""<div style='overflow-y:auto;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
             <table style='width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;'>
             <thead><tr style='background:{met_bg};position:sticky;top:0;'>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#0328EE;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};'>MKT CAP</th>
@@ -9795,7 +9592,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
 
-            st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#0328EE;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#8b5cf6;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -9806,10 +9603,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
-            background:rgba(3,40,238,0.07);border-left:3px solid #0328EE;
+            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#0328EE;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 2× setahun - Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
         </div>""", unsafe_allow_html=True)
         msci_data = {
@@ -9840,10 +9637,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_msci = pd.DataFrame(msci_data)
         
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
@@ -9853,10 +9650,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
-            background:rgba(3,40,238,0.07);border-left:3px solid #0328EE;
+            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#0328EE;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#8b5cf6;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 4× setahun - Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
         </div>""", unsafe_allow_html=True)
         
@@ -9884,20 +9681,20 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_ftse = pd.DataFrame(ftse_data)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
-            background:rgba(3,40,238,0.07);border-left:3px solid #0328EE;
+            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#0328EE;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 2× setahun - Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
         </div>""", unsafe_allow_html=True)
         
@@ -9937,7 +9734,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
@@ -9947,10 +9744,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.9rem;color:{text_sub};
-            background:rgba(3,40,238,0.07);border-left:3px solid #0328EE;
+            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#0328EE;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Subset 30 saham paling likuid dari LQ45. Sumber: <b>idx.co.id</b></span>
         </div>""", unsafe_allow_html=True)
 
@@ -9985,7 +9782,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             ],
         }
         df_idx30 = pd.DataFrame(idx30_data)
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
         st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
@@ -10064,7 +9861,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
             </p>
             <p style='color:{text_sub}; font-size: 1.05rem; line-height: 1.7; margin:10px 0 0;'>
-            <span style='color:#0328EE;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
+            <span style='color:#8b5cf6;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -10784,7 +10581,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                         <b style='color:{text_main};'>{sh_ticker}</b> saat ini dalam status <b style='color:#f23645;'>SUSPEND</b> 
                         di Bursa Efek Indonesia (tidak diperdagangkan lebih dari 1 bulan).<br>
                         Data pemegang saham untuk saham suspend tidak relevan karena tidak ada price discovery aktif.<br>
-                        <span style='color:#0328EE;'>Pilih emiten lain yang aktif diperdagangkan.</span>
+                        <span style='color:#8b5cf6;'>Pilih emiten lain yang aktif diperdagangkan.</span>
                     </div>
                 </div>""", unsafe_allow_html=True)
                 st.stop()
@@ -10814,15 +10611,15 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             if not has_live_data:
                 # Tidak ada data sama sekali - tampilkan info yang BERGUNA bukan "pipeline"
                 st.markdown(f"""
-                <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #0328EE;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
+                <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #8b5cf6;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
                     <div style='font-size:2rem;margin-bottom:12px;'>📡</div>
-                    <div style='font-family:'DM Sans',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:0.12em;color:#0328EE;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
+                    <div style='font-family:'DM Sans',sans-serif;font-size:1.2rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
                     <div style='font-family:'DM Sans',sans-serif;font-size:1.0rem;color:{text_sub};max-width:560px;margin:0 auto 20px;line-height:1.8;'>
                         Data historis pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> belum tersedia.<br>
                         Kemungkinan sebab: saham baru IPO, emiten delisting, atau IDX belum merilis data bulan ini.
                     </div>
                     <div style='font-family:'DM Sans',sans-serif;font-size:0.92rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
-                        💡 <b style="color:#0328EE;">Cara alternatif verifikasi data pemegang saham:</b><br>
+                        💡 <b style="color:#8b5cf6;">Cara alternatif verifikasi data pemegang saham:</b><br>
                         1. Buka <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}" target="_blank" style="color:#4285F4;">{sh_ticker} di idx.co.id</a><br>
                         2. Cek tab "Profil Pemegang Saham" di Stockbit atau RTI Business<br>
                         3. Data KSEI diperbarui setiap awal bulan dari hasil kliring bursa
@@ -10837,7 +10634,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 import numpy as np
 
                 # Badge sumber data
-                src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#0328EE" if "SIGMA" in data_source else "#9b59b6"))
+                src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#8b5cf6" if "SIGMA" in data_source else "#9b59b6"))
                 st.markdown(f"""<div style='display:inline-block;font-family:'DM Sans',sans-serif;font-size:0.82rem;
                     letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
                     background:{src_color}11;padding:3px 10px;border-radius:4px;margin-bottom:8px;'>
@@ -10886,10 +10683,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     sinyal, sinyal_color = "DISTRIBUSI KUAT", "#f23645"
                     sinyal_desc = "Jumlah pemegang saham turun >15% dalam 6 bulan. Smart money kemungkinan besar sedang distribusi - menjual saham ke retail yang makin sedikit. Waspadai tekanan jual lanjutan."
                 elif pct_6m < -5:
-                    sinyal, sinyal_color = "DISTRIBUSI MODERAT", "#0328EE"
+                    sinyal, sinyal_color = "DISTRIBUSI MODERAT", "#8b5cf6"
                     sinyal_desc = "Pemegang saham turun 5–15%. Perlu konfirmasi dari bandarmologi dan volume. Bisa konsolidasi atau awal distribusi."
                 elif pct_6m > 15:
-                    sinyal, sinyal_color = "RETAIL MASUK MASIF", "#0328EE"
+                    sinyal, sinyal_color = "RETAIL MASUK MASIF", "#8b5cf6"
                     sinyal_desc = "Pemegang saham naik >15% - retail masuk besar-besaran. Hati-hati: bisa berarti euphoria puncak. Konfirmasi dengan net broker apakah smart money sedang exit."
                 elif pct_6m > 5:
                     sinyal, sinyal_color = "AKUMULASI BERTAHAP", "#089981"
@@ -10933,7 +10730,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 bg_chart    = "rgba(0,0,0,0)" if is_dark else "rgba(255,255,255,0)"
                 grid_color  = "rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)"
                 axis_color  = text_sub
-                price_color = "#0328EE"
+                price_color = "#8b5cf6"
                 sh_up_color = "#26a69a"
                 sh_dn_color = "#f23645"
 
@@ -11055,7 +10852,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     <div class="trm-card-title" style="color:{sinyal_color};">🔍 INTERPRETASI: {sinyal}</div>
                     <p style='color:{text_main};font-size:1.08rem;line-height:1.7;margin:0;'>{sinyal_desc}</p>
                     <p style='color:{text_sub};font-size:1.02rem;line-height:1.7;margin:10px 0 0;'>
-                    <span style='color:#0328EE;font-weight:600;'>⚠️ Logika Bandarmologi IDX:</span>
+                    <span style='color:#8b5cf6;font-weight:600;'>⚠️ Logika Bandarmologi IDX:</span>
                     Pemegang <b style='color:#f23645;'>turun</b> = distribusi (smart money jual).
                     Pemegang <b style='color:#089981;'>naik bertahap</b> = akumulasi awal.
                     Cross-check dengan net broker dan price action.
@@ -11947,7 +11744,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         # ── EMAs ──────────────────────────────────────────────
                         for col_n, clr, w in [
                             ('EMA13','#009dff',1.2), ('EMA21','#ff0000',1.2),
-                            ('EMA100','#cc00ff',1.2), ('EMA200','#0328EE',1.5),
+                            ('EMA100','#cc00ff',1.2), ('EMA200','#8b5cf6',1.5),
                         ]:
                             fig.add_trace(go.Scatter(
                                 x=x_str, y=df_chart[col_n],
@@ -12042,9 +11839,9 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
 
                                 # TP (Kuning Solid)
-                                if tp1: _draw_tv_level(tp1, "TP1", '#0328EE', '#0328EE', '#000000', 'dot')
-                                if tp2: _draw_tv_level(tp2, "TP2", '#0328EE', '#0328EE', '#000000', 'dot')
-                                if tp3: _draw_tv_level(tp3, "TP3", '#0328EE', '#0328EE', '#000000', 'dot')
+                                if tp1: _draw_tv_level(tp1, "TP1", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
+                                if tp2: _draw_tv_level(tp2, "TP2", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
+                                if tp3: _draw_tv_level(tp3, "TP3", '#8b5cf6', '#8b5cf6', '#000000', 'dot')
 
                             except Exception as e:
                                 st.warning(f"AI gagal menggambar Trade Plan: {e}")
@@ -12086,7 +11883,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         # ── RSI (level 70/30) ──────────────────────────────────
                         fig.add_trace(go.Scatter(
                             x=x_str, y=df_chart['RSI'],
-                            mode='lines', line=dict(color='#0328EE', width=1.2),
+                            mode='lines', line=dict(color='#8b5cf6', width=1.2),
                             showlegend=False,
                         ), row=4, col=1)
                         for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
@@ -12180,7 +11977,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             ('#009dff','EMA 13 - Fast (Momentum)'),
                             ('#ff0000','EMA 21 - Signal'),
                             ('#cc00ff','EMA 100 - Mid Trend'),
-                            ('#0328EE','EMA 200 - Major Trend'),
+                            ('#8b5cf6','EMA 200 - Major Trend'),
                             ('#f5a623','Vol MA20 - Avg Volume'),
                         ]
                         leg = "<div style='display:flex;flex-wrap:wrap;gap:18px;padding:6px 4px;margin-top:-6px;'>"
@@ -12233,8 +12030,8 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
                     # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                    html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #0328EE; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-    <div style="font-size:0.65rem;letter-spacing:0.14em;color:#0328EE; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
+                    html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
+    <div style="font-size:0.65rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
     📋 TRADE PLAN SIGMA {_rl_badge}
     </div>
     <div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
@@ -12248,7 +12045,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
                         <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
                         <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                            Masukkan kode saham dan klik <span style='color:#0328EE;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
+                            Masukkan kode saham dan klik <span style='color:#8b5cf6;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -17626,13 +17423,13 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:#050810;color:#e2e8f0;border:0.5px solid rgba(139,92,246,0.25); cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 24px rgba(0,0,0,0.7),0 0 16px rgba(139,92,246,0.08);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:linear-gradient(135deg,rgba(109,40,217,0.2),rgba(14,165,233,0.15));box-shadow:0 6px 24px rgba(109,40,217,0.2);}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:#050810;border:0.5px solid rgba(139,92,246,0.2); border-radius:16px;box-shadow:0 -4px 32px rgba(0,0,0,0.7),0 0 0 0.5px rgba(139,92,246,0.1); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
+#spbtn:hover{{transform:scale(1.08); background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(59,130,246,0.18));}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:#94a3b8;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(109,40,217,0.14),rgba(14,165,233,0.1));border-left:2px solid rgba(139,92,246,0.55);color:#a78bfa;}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:rgba(139,92,246,0.08);flex-shrink:0;}}
-.smsp{{border:none;border-top:0.5px solid rgba(139,92,246,0.14);margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:#475569; font-weight:600;letter-spacing:1px;}} .smred{{color:#f87171!important}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
+.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
@@ -17740,9 +17537,8 @@ _bubble_css = """
     width: 100% !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] {
-    background: linear-gradient(135deg, rgba(109,40,217,0.58), rgba(14,165,233,0.38)) !important;
-    border: 0.5px solid rgba(139,92,246,0.4) !important;
-    color: #ffffff !important;
+    background: """ + C['bubble'] + """ !important;
+    color: """ + C['bubble_text'] + """ !important;
     border-radius: 20px 20px 4px 20px !important;
     padding: 10px 16px !important;
     max-width: 75% !important;
@@ -17750,17 +17546,16 @@ _bubble_css = """
     min-width: 0 !important;
     margin-left: auto !important;
     margin-right: 0 !important;
-    box-shadow: 0 4px 16px rgba(109,40,217,0.22), 0 2px 8px rgba(0,0,0,0.4) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
     font-size: 0.9rem !important;
     text-align: left !important;
     display: inline-block !important;
-    backdrop-filter: blur(8px) !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] p,
 .sigma-user-msg [data-testid="stMarkdownContainer"] span,
 .sigma-user-msg [data-testid="stMarkdownContainer"] li,
 .sigma-user-msg [data-testid="stMarkdownContainer"] strong {
-    color: #ffffff !important;
+    color: """ + C['bubble_text'] + """ !important;
     font-size: 0.9rem !important;
     text-align: left !important;
 }
@@ -17828,7 +17623,7 @@ components.html(f"""
 </script>
 """, height=0)
 
-sig_color = "#a78bfa"
+sig_color = C.get("text", "#ffffff")
 js_code = """
 <script>
 (function() {
@@ -17839,7 +17634,7 @@ js_code = """
     brand.id = 'sigma-desktop-brand';
     
     brand.innerHTML = 'SIGMA';
-    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 1.25rem; background: linear-gradient(135deg, #a78bfa, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.2px; user-select: none; cursor: default;';
+    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
