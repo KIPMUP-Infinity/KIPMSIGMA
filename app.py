@@ -1772,11 +1772,11 @@ IDX_CORPORATE_ACTIONS = {
     # STOCK SPLIT: ratio = 1/N (harga dibagi N)
     # Format: ticker → {"type", "ratio_divisor", "date", "pre_range", "post_range", "note"}
     "BBCA": {"type": "split", "ratio": "1:5",  "ratio_divisor": 5,  "date": "28 Mar 2024",
-             "pre_range": (8000, 12000), "post_range": (1500, 3000),
-             "note": "Split 1:5. Harga pre-split ~Rp9.000–10.000 → post-split valid ~Rp1.800–2.200. Harga live sekarang (Apr 2026) sekitar Rp8.500–10.000 (adjusted)."},
+             "pre_range": (50000, 99999), "post_range": (1500, 15000),
+             "note": "Split 1:5 pada 28 Mar 2024. Harga post-split awal ~Rp1.800-2.200. Harga saat ini (Apr 2026) sudah naik organik ke kisaran Rp8.500-10.000 (adjusted). Sumber data yfinance sudah auto-adjusted pasca-split."},
     "BBRI": {"type": "split", "ratio": "1:5",  "ratio_divisor": 5,  "date": "Feb 2022",
-             "pre_range": (3000, 5000), "post_range": (400, 800),
-             "note": "Split 1:5. Harga valid post-split ~Rp 450–700. Jika data menunjukkan >Rp3.000 → data pre-split, JANGAN gunakan."},
+             "pre_range": (15000, 99999), "post_range": (400, 8000),
+             "note": "Split 1:5 Feb 2022. Harga post-split awal ~Rp450-700. Harga saat ini mengikuti pergerakan organik. yfinance sudah adjusted otomatis."},
     "BMRI": {"type": "split", "ratio": "1:2",  "ratio_divisor": 2,  "date": "Jun 2023",
              "pre_range": (9000, 13000), "post_range": (4000, 8000),
              "note": "Split 1:2 Jun 2023. Harga valid post-split Rp5.000–7.000an."},
@@ -1861,8 +1861,12 @@ def _validate_price_corporate_action(ticker, price):
     post_lo, post_hi = ca["post_range"]
 
     if ca["type"] == "split":
-        # Harga terlalu tinggi → kemungkinan data pre-split
-        if price >= pre_lo * 0.7:
+        post_lo, post_hi = ca["post_range"]
+        # Harga terindikasi pre-split HANYA jika jelas masuk range pre-split
+        # DAN jauh melampaui organic ceiling post-split (kenaikan alami jangka panjang)
+        # Toleransi 10x post_hi untuk mengakomodasi kenaikan organik multi-tahun
+        organic_ceiling = post_hi * 10
+        if price >= pre_lo * 0.85 and price > organic_ceiling:
             return False, (
                 f"⚠️ PERINGATAN CORPORATE ACTION [{ticker}]: "
                 f"Harga Rp{price:,.0f} terindikasi DATA PRE-SPLIT. "
@@ -3744,7 +3748,7 @@ def _smart_truncate_prompt(text, max_tokens=22000):
     if tail_cut < 0 or tail_cut > tail_start + 200: tail_cut = tail_start
     return text[:head_cut] + "\n\n[... sebagian data tengah dipotong otomatis untuk efisiensi token ...]\n\n" + text[tail_cut:]
 
-def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
+def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, temperature=0.7):
     """
     Groq PRIMARY - LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
     Key rotation otomatis saat 429 rate limit - coba semua key sebelum menyerah.
@@ -3791,7 +3795,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=messages,
-                temperature=0.7,
+                temperature=temperature,
                 max_tokens=OUTPUT_BUDGET
             )
             return response.choices[0].message.content, f"Groq/Llama70B({key_name})"
@@ -11356,323 +11360,387 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                 except Exception as e:
                     pass
 
+
+                # ── PRICE-BASED CACHE — konsistensi analisa ─────────────────
+                # Selama harga tidak berubah >0.5% dalam hari yang sama,
+                # gunakan hasil analisa dari session_state (tidak re-call AI)
+                _insight_cache_key  = None
+                _use_cached_insight = False
+                _ai_cache_hit       = False
+                if not df_chart.empty:
+                    try:
+                        _last_close = float(df_chart['Close'].iloc[-1])
+                        _last_date  = df_chart.index[-1].strftime('%Y%m%d')
+                        _insight_cache_key = f"sigma_insight_{ticker_input}_{_last_date}_{int(_last_close)}"
+                        _cached = st.session_state.get(_insight_cache_key)
+                        if _cached and run_analysis:
+                            _cached_price   = _cached.get('price', 0)
+                            _price_diff_pct = abs(_last_close - _cached_price) / _cached_price if _cached_price > 0 else 1
+                            if _price_diff_pct < 0.005:   # <0.5% → pakai cache
+                                _use_cached_insight = True
+                                _ai_cache_hit       = True
+                                ai_raw_result       = _cached['ai_raw_result']
+                                ai_data             = _cached['ai_data']
+                                ai_text_verdict     = _cached['ai_text_verdict']
+                                vol_context         = _cached.get('vol_context', '')
+                                _sigma_result       = _cached.get('sigma_result', None)
+                    except Exception:
+                        _insight_cache_key = None
+
                 if run_analysis:
                     with st.spinner("SIGMA sedang mengumpulkan data, menganalisis, dan menggambar chart..."):
-                        try:
-                            fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
-                        
-                            live_price_str = "N/A"
-                            if not df_chart.empty:
-                                try: 
-                                    live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
-                                except Exception as e: 
-                                    pass
-
-                            # ── SIGMA SCORE CALCULATION ──
-                            _sigma_result = None
-                            if _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
-                                try:
-                                    import yfinance as _yf_ihsg
-                                    _ihsg_hist = _yf_ihsg.Ticker("^JKSE").history(period="3mo")
-                                    _pd_obj = price_data_from_yf(df_chart, _ihsg_hist if not _ihsg_hist.empty else None)
-                                    _fd_raw = fetch_fundamental_with_cache(ticker_input)
-                                    _fd_obj = fundamental_data_from_dict(_fd_raw) if _fd_raw else None
-                                    _sigma_result = _sigma_score_calc(ticker_input, _pd_obj, _fd_obj)
-                                except Exception as _se:
-                                    _sigma_result = None
-
-                            vol_context = ""
-                            if not df_chart.empty and 'Volume' in df_chart.columns:
-                                try:
-                                    avg_vol_20 = df_chart['Volume'].rolling(20).mean().iloc[-1]
-                                    avg_vol_5  = df_chart['Volume'].rolling(5).mean().iloc[-1]
-                                    last_vol   = df_chart['Volume'].iloc[-1]
-                                    last_close = df_chart['Close'].iloc[-1]
-                                    last_value = last_vol * last_close  
-
-                                    spike_ratio = last_vol / avg_vol_20 if avg_vol_20 > 0 else 1
-
-                                    price_chg_5d = (df_chart['Close'].iloc[-1]-df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
-                                    vol_chg_5d   = (avg_vol_5-df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
-
-                                    dryup = avg_vol_5 < (avg_vol_20 * 0.5)
-
-                                    if spike_ratio >= 10:    vol_signal = "🔴 VOLUME EKSTREM"
-                                    elif spike_ratio >= 5:   vol_signal = "🟠 VOLUME SANGAT TINGGI"
-                                    elif spike_ratio >= 2:   vol_signal = "🟡 VOLUME SPIKE"
-                                    elif dryup:              vol_signal = "🔵 VOLUME DRY-UP"
-                                    else:                    vol_signal = "⚪ Volume normal"
-
-                                    if price_chg_5d > 2 and vol_chg_5d < -20:
-                                        pvd_signal = "&#9888; DIVERGENSI: Harga naik tapi volume turun"
-                                    elif price_chg_5d < -2 and vol_chg_5d < -20:
-                                        pvd_signal = "🔵 Volume turun saat harga turun"
-                                    elif price_chg_5d > 2 and vol_chg_5d > 20:
-                                        pvd_signal = "✅ Harga naik + volume naik"
-                                    elif price_chg_5d < -2 and vol_chg_5d > 20:
-                                        pvd_signal = "&#9888; Volume spike saat turun"
-                                    else:
-                                        pvd_signal = "Volume dan harga konsisten"
-
-                                    vol_context = f"Volume Terakhir: {int(last_vol):,} | Spike Ratio: {spike_ratio:.1f}x | Sinyal: {vol_signal} | Divergensi: {pvd_signal}"
-                                except Exception as e:
-                                    vol_context = ""
-
-                            # ── Shareholder context untuk ticker ini ────────────
-                            _sh_ctx = ""
+                        if _use_cached_insight:
+                            st.info(
+                                "⚡ **Analisa dikembalikan dari cache** — harga tidak berubah signifikan dari analisa sebelumnya. "
+                                "Untuk paksa refresh analisa baru, tunggu perubahan harga >0.5% atau reload halaman.",
+                                icon="ℹ️"
+                            )
+                        else:
                             try:
-                                # Gunakan global helper - tersedia lintas tab
-                                _sh_db_tp = _get_sh_db_global()
-                                _sh_recs = _sh_db_tp.get(ticker_input, [])
-                                if len(_sh_recs) >= 2:
-                                    import pandas as _pd_sh
-                                    _sh_df2 = _pd_sh.DataFrame(_sh_recs).sort_values("date").reset_index(drop=True)
-                                    _sh_last2  = int(_sh_df2["shareholders"].iloc[-1])
-                                    _sh_prev1  = int(_sh_df2["shareholders"].iloc[-2])
-                                    _sh_delta1 = _sh_last2-_sh_prev1
-                                    _sh_pct1   = round(_sh_delta1 / _sh_prev1 * 100, 2) if _sh_prev1 else 0
-                                    _lbl_now   = _sh_df2["date"].iloc[-1].strftime("%b %Y")
-                                    _lbl_1m    = _sh_df2["date"].iloc[-2].strftime("%b %Y")
-
-                                    _sh_delta3 = None
-                                    _sh_pct3   = None
-                                    _lbl_3m    = None
-                                    if len(_sh_df2) >= 4:
-                                        _sh_prev3  = int(_sh_df2["shareholders"].iloc[-4])
-                                        _sh_delta3 = _sh_last2-_sh_prev3
-                                        _sh_pct3   = round(_sh_delta3 / _sh_prev3 * 100, 2) if _sh_prev3 else 0
-                                        _lbl_3m    = _sh_df2["date"].iloc[-4].strftime("%b %Y")
-
-                                    _sh_tren3 = ""
-                                    if len(_sh_df2) >= 4:
-                                        _v3b = _sh_df2["shareholders"].iloc[-4]
-                                        _v2b = _sh_df2["shareholders"].iloc[-3]
-                                        _v1b = _sh_df2["shareholders"].iloc[-2]
-                                        _v0b = _sh_df2["shareholders"].iloc[-1]
-                                        if _v0b > _v1b > _v2b > _v3b:
-                                            _sh_tren3 = "NAIK KONSISTEN 3 BULAN → sinyal akumulasi retail kuat"
-                                        elif _v0b < _v1b < _v2b < _v3b:
-                                            _sh_tren3 = "TURUN KONSISTEN 3 BULAN → sinyal distribusi retail kuat"
-                                        elif _v0b > _v1b:
-                                            _sh_tren3 = "Naik 1 bulan terakhir setelah sempat turun → pemulihan awal"
+                                fund_context = build_fundamental_from_text(f"fundamental {ticker_input}")
+                            
+                                live_price_str = "N/A"
+                                if not df_chart.empty:
+                                    try: 
+                                        live_price_str = f"Rp {float(df_chart['Close'].iloc[-1]):,.0f}"
+                                    except Exception as e: 
+                                        pass
+    
+                                # ── SIGMA SCORE CALCULATION ──
+                                _sigma_result = None
+                                if _SIGMA_SCORE_AVAILABLE and not df_chart.empty:
+                                    try:
+                                        import yfinance as _yf_ihsg
+                                        _ihsg_hist = _yf_ihsg.Ticker("^JKSE").history(period="3mo")
+                                        _pd_obj = price_data_from_yf(df_chart, _ihsg_hist if not _ihsg_hist.empty else None)
+                                        _fd_raw = fetch_fundamental_with_cache(ticker_input)
+                                        _fd_obj = fundamental_data_from_dict(_fd_raw) if _fd_raw else None
+                                        _sigma_result = _sigma_score_calc(ticker_input, _pd_obj, _fd_obj)
+                                    except Exception as _se:
+                                        _sigma_result = None
+    
+                                vol_context = ""
+                                if not df_chart.empty and 'Volume' in df_chart.columns:
+                                    try:
+                                        avg_vol_20 = df_chart['Volume'].rolling(20).mean().iloc[-1]
+                                        avg_vol_5  = df_chart['Volume'].rolling(5).mean().iloc[-1]
+                                        last_vol   = df_chart['Volume'].iloc[-1]
+                                        last_close = df_chart['Close'].iloc[-1]
+                                        last_value = last_vol * last_close  
+    
+                                        spike_ratio = last_vol / avg_vol_20 if avg_vol_20 > 0 else 1
+    
+                                        price_chg_5d = (df_chart['Close'].iloc[-1]-df_chart['Close'].iloc[-6]) / df_chart['Close'].iloc[-6] * 100 if len(df_chart) >= 6 else 0
+                                        vol_chg_5d   = (avg_vol_5-df_chart['Volume'].rolling(20).mean().iloc[-6]) / df_chart['Volume'].rolling(20).mean().iloc[-6] * 100 if len(df_chart) >= 6 else 0
+    
+                                        dryup = avg_vol_5 < (avg_vol_20 * 0.5)
+    
+                                        if spike_ratio >= 10:    vol_signal = "🔴 VOLUME EKSTREM"
+                                        elif spike_ratio >= 5:   vol_signal = "🟠 VOLUME SANGAT TINGGI"
+                                        elif spike_ratio >= 2:   vol_signal = "🟡 VOLUME SPIKE"
+                                        elif dryup:              vol_signal = "🔵 VOLUME DRY-UP"
+                                        else:                    vol_signal = "⚪ Volume normal"
+    
+                                        if price_chg_5d > 2 and vol_chg_5d < -20:
+                                            pvd_signal = "&#9888; DIVERGENSI: Harga naik tapi volume turun"
+                                        elif price_chg_5d < -2 and vol_chg_5d < -20:
+                                            pvd_signal = "🔵 Volume turun saat harga turun"
+                                        elif price_chg_5d > 2 and vol_chg_5d > 20:
+                                            pvd_signal = "✅ Harga naik + volume naik"
+                                        elif price_chg_5d < -2 and vol_chg_5d > 20:
+                                            pvd_signal = "&#9888; Volume spike saat turun"
                                         else:
-                                            _sh_tren3 = "Turun 1 bulan terakhir → tekanan distribusi berlanjut"
-
-                                    _sh_ctx_lines = [
-                                        f"Total pemegang saham {ticker_input} per {_lbl_now}: {_sh_last2:,} pemegang",
-                                        f"  Perubahan 1 bulan ({_lbl_1m}\u2192{_lbl_now}): {_sh_delta1:+,} pemegang ({_sh_pct1:+.2f}%)",
-                                    ]
-                                    if _sh_delta3 is not None:
-                                        _sh_ctx_lines.append(
-                                            f"  Perubahan 3 bulan ({_lbl_3m}\u2192{_lbl_now}): {_sh_delta3:+,} pemegang ({_sh_pct3:+.2f}%)"
-                                        )
-                                    if _sh_tren3:
-                                        _sh_ctx_lines.append(f"  Tren: {_sh_tren3}")
-                                    _sh_ctx = "\n".join(_sh_ctx_lines)
-                                else:
-                                    _sh_ctx = f"Data historis pemegang saham {ticker_input} belum tersedia dalam database SIGMA (database mencakup 25 emiten utama)."
-                            except Exception as _e_sh:
-                                _sh_ctx = f"Data pemegang saham tidak dapat diambil saat ini."
-
-                            dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
-    Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA.
-
-    === DATA HARGA & TEKNIKAL ===
-    Harga Terakhir: {live_price_str}
-    {vol_context}
-
-    === DATA FUNDAMENTAL ===
-    {fund_context}
-
-    === DATA PEMEGANG SAHAM ===
-    {_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
-
-    ────────────────────────────────────────────────
-    ATURAN UTAMA - WAJIB DIPATUHI:
-    ────────────────────────────────────────────────
-
-    ⚠️ PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
-    Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
-   -LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
-   -WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
-   -HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
-
-    ⛔ ATURAN TRADE PLAN & RISK LEVEL:
-   -Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
-   -Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
-   -Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
-
-    🎯 SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
-   -HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
-   -MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
-   -LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
-   -IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
-
-    ────────────────────────────────────────────────
-    STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
-    ────────────────────────────────────────────────
-
-    1. 📊 NARASI TEKNIKAL
-      -Posisi harga saat ini vs struktur support/resistance utama
-      -Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
-      -Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
-      -Volume: konfirmasi atau divergensi dari price action?
-      -EMA: posisi harga vs EMA 13/21/100/200 → arah trend
-      -JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
-
-    2. 🏢 NARASI FUNDAMENTAL
-      -Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) - jujur jika overvalued
-      -Kinerja keuangan (EPS, margin, pertumbuhan revenue) - sebutkan jika memburuk
-      -Katalis positif/negatif ke depan - jangan sembunyikan risiko
-      -Posisi vs kompetitor sektor
-
-    3. 👥 SINYAL PEMEGANG SAHAM
-      -Tren jumlah pemegang saham: akumulasi atau distribusi?
-      -Implikasi terhadap supply/demand
-
-    4. 📰 OUTLOOK SEKTOR & MAKRO
-      -Kondisi sektor saat ini
-      -Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
-      -Risiko utama - JANGAN diremehkan
-
-    5. ⚡ KESIMPULAN & VERDICT (JUJUR & TEGAS)
-      -Bias tunggal: BULLISH / BEARISH / SIDEWAYS - satu pilihan, jelaskan alasan utama
-      -Rating: BELI / WASPADA / HINDARI
-      -Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini - sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
-      -Level kunci yang wajib diperhatikan
-
-    6. 🎯 TRADE PLAN
-       ⚠️ HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
-       ⛔ JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
-          "⛔ TRADE PLAN TIDAK TERSEDIA - [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
-   
-       Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
-      -🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
-      -🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
-      -🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
-
-       Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] - [alasan singkat 1 kalimat]
-
-       Lanjutkan:
-      -Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
-      -Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
-      -TP1: Rp[A] → resistance minor / FVG terdekat
-      -TP2: Rp[B] → resistance mayor jika ada struktur
-      -Timeframe: perkiraan berapa hari/minggu
-      -Trigger masuk: kondisi spesifik sebelum entry
-
-    Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
-
-    Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
-    ```json
-    {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null, "risk_level": "HIGH"}}
-    ```
-    PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) - JANGAN gambar trade plan di chart.
-    Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str}).
-    Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental oke. Jika tidak ada trade plan, isi "NONE"."""
-
-                            try:
-                                ai_raw_result, _ = _call_groq_primary(dashboard_prompt)
-                            except Exception as e_groq:
+                                            pvd_signal = "Volume dan harga konsisten"
+    
+                                        vol_context = f"Volume Terakhir: {int(last_vol):,} | Spike Ratio: {spike_ratio:.1f}x | Sinyal: {vol_signal} | Divergensi: {pvd_signal}"
+                                    except Exception as e:
+                                        vol_context = ""
+    
+                                # ── Shareholder context untuk ticker ini ────────────
+                                _sh_ctx = ""
                                 try:
-                                    ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
-                                except Exception as e_gem:
-                                    ai_raw_result = f"Gagal memanggil AI: {e_gem}"
-
-                            try:
-                                # Coba berbagai format: ```json block, { plain }, atau inline
-                                json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
-                                if not json_match:
-                                    # Coba cari JSON object langsung (tanpa backtick)
-                                    json_match_plain = re.search(r'\{[^{}]*"entry_low"[^{}]*\}', ai_raw_result, re.DOTALL)
-                                    if json_match_plain:
-                                        raw_json = json.loads(json_match_plain.group(0))
-                                    else:
-                                        # Coba cari JSON object apapun di akhir teks
-                                        json_match_any = re.search(r'\{[\s\S]*\}', ai_raw_result)
-                                        raw_json = json.loads(json_match_any.group(0)) if json_match_any else {}
-                                else:
-                                    raw_json = json.loads(json_match.group(1))
-
-                                def _safe_float(v):
-                                    try: return float(v) if v is not None else None
-                                    except: return None
-
-                                ai_data = {
-                                    "entry_low":  _safe_float(raw_json.get("entry_low")),
-                                    "entry_high": _safe_float(raw_json.get("entry_high")),
-                                    "stop_loss":  _safe_float(raw_json.get("stop_loss")),
-                                    "tp1": _safe_float(raw_json.get("tp1") or raw_json.get("target")),
-                                    "tp2": _safe_float(raw_json.get("tp2")),
-                                    "tp3": _safe_float(raw_json.get("tp3")),
-                                    "risk_level": str(raw_json.get("risk_level", "HIGH")).upper(),
-                                }
-                                # Validasi: semua harga harus > 0 dan masuk akal
-                                last_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0
-                                if last_price > 0:
-                                    def _plausible(v, ref, pct=0.6):
-                                        return v and v > 0 and abs(v-ref) / ref < pct
-                                    # Entry zone: plausible ±60% dari last price
-                                    if not _plausible(ai_data['entry_low'], last_price, 0.60): ai_data['entry_low'] = None
-                                    if not _plausible(ai_data['entry_high'], last_price, 0.60): ai_data['entry_high'] = None
-                                    if not _plausible(ai_data['stop_loss'], last_price, 0.60): ai_data['stop_loss'] = None
-                                    # TP: lebih longgar ±80% karena bisa jauh dari harga saat ini
-                                    if not _plausible(ai_data['tp1'], last_price, 0.80): ai_data['tp1'] = None
-                                    if not _plausible(ai_data['tp2'], last_price, 0.80): ai_data['tp2'] = None
-                                    if not _plausible(ai_data['tp3'], last_price, 0.80): ai_data['tp3'] = None
-
-                                    # ── Fallback buy zone: jika AI tidak return entry_low/entry_high ──
-                                    # Gunakan last_price ±0.5% sebagai zona default yang terlihat di chart
-                                    if not ai_data['entry_low'] and not ai_data['entry_high']:
-                                        if ai_data.get('stop_loss') and ai_data.get('tp1'):
-                                            # Estimasi entry dari midpoint stop_loss → tp1
-                                            _sl = ai_data['stop_loss']
-                                            _tp = ai_data['tp1']
-                                            # Buy zone = 30-50% dari range SL-TP1 di atas SL
-                                            _range = _tp-_sl
-                                            ai_data['entry_low']  = round(_sl + _range * 0.10, 0)
-                                            ai_data['entry_high'] = round(_sl + _range * 0.25, 0)
-                                        else:
-                                            # Fallback absolut: ±0.8% dari last price
-                                            ai_data['entry_low']  = round(last_price * 0.992, 0)
-                                            ai_data['entry_high'] = round(last_price * 1.000, 0)
-
-                                    # ── Pastikan entry_low < entry_high ──
-                                    if ai_data['entry_low'] and ai_data['entry_high']:
-                                        if ai_data['entry_low'] >= ai_data['entry_high']:
-                                            ai_data['entry_low'], ai_data['entry_high'] = (
-                                                min(ai_data['entry_low'], ai_data['entry_high']),
-                                                max(ai_data['entry_low'], ai_data['entry_high'])
+                                    # Gunakan global helper - tersedia lintas tab
+                                    _sh_db_tp = _get_sh_db_global()
+                                    _sh_recs = _sh_db_tp.get(ticker_input, [])
+                                    if len(_sh_recs) >= 2:
+                                        import pandas as _pd_sh
+                                        _sh_df2 = _pd_sh.DataFrame(_sh_recs).sort_values("date").reset_index(drop=True)
+                                        _sh_last2  = int(_sh_df2["shareholders"].iloc[-1])
+                                        _sh_prev1  = int(_sh_df2["shareholders"].iloc[-2])
+                                        _sh_delta1 = _sh_last2-_sh_prev1
+                                        _sh_pct1   = round(_sh_delta1 / _sh_prev1 * 100, 2) if _sh_prev1 else 0
+                                        _lbl_now   = _sh_df2["date"].iloc[-1].strftime("%b %Y")
+                                        _lbl_1m    = _sh_df2["date"].iloc[-2].strftime("%b %Y")
+    
+                                        _sh_delta3 = None
+                                        _sh_pct3   = None
+                                        _lbl_3m    = None
+                                        if len(_sh_df2) >= 4:
+                                            _sh_prev3  = int(_sh_df2["shareholders"].iloc[-4])
+                                            _sh_delta3 = _sh_last2-_sh_prev3
+                                            _sh_pct3   = round(_sh_delta3 / _sh_prev3 * 100, 2) if _sh_prev3 else 0
+                                            _lbl_3m    = _sh_df2["date"].iloc[-4].strftime("%b %Y")
+    
+                                        _sh_tren3 = ""
+                                        if len(_sh_df2) >= 4:
+                                            _v3b = _sh_df2["shareholders"].iloc[-4]
+                                            _v2b = _sh_df2["shareholders"].iloc[-3]
+                                            _v1b = _sh_df2["shareholders"].iloc[-2]
+                                            _v0b = _sh_df2["shareholders"].iloc[-1]
+                                            if _v0b > _v1b > _v2b > _v3b:
+                                                _sh_tren3 = "NAIK KONSISTEN 3 BULAN → sinyal akumulasi retail kuat"
+                                            elif _v0b < _v1b < _v2b < _v3b:
+                                                _sh_tren3 = "TURUN KONSISTEN 3 BULAN → sinyal distribusi retail kuat"
+                                            elif _v0b > _v1b:
+                                                _sh_tren3 = "Naik 1 bulan terakhir setelah sempat turun → pemulihan awal"
+                                            else:
+                                                _sh_tren3 = "Turun 1 bulan terakhir → tekanan distribusi berlanjut"
+    
+                                        _sh_ctx_lines = [
+                                            f"Total pemegang saham {ticker_input} per {_lbl_now}: {_sh_last2:,} pemegang",
+                                            f"  Perubahan 1 bulan ({_lbl_1m}\u2192{_lbl_now}): {_sh_delta1:+,} pemegang ({_sh_pct1:+.2f}%)",
+                                        ]
+                                        if _sh_delta3 is not None:
+                                            _sh_ctx_lines.append(
+                                                f"  Perubahan 3 bulan ({_lbl_3m}\u2192{_lbl_now}): {_sh_delta3:+,} pemegang ({_sh_pct3:+.2f}%)"
                                             )
-                                            # Pastikan ada gap minimal 0.5%
-                                            if ai_data['entry_high']-ai_data['entry_low'] < last_price * 0.005:
-                                                ai_data['entry_high'] = round(ai_data['entry_low'] * 1.008, 0)
+                                        if _sh_tren3:
+                                            _sh_ctx_lines.append(f"  Tren: {_sh_tren3}")
+                                        _sh_ctx = "\n".join(_sh_ctx_lines)
+                                    else:
+                                        _sh_ctx = f"Data historis pemegang saham {ticker_input} belum tersedia dalam database SIGMA (database mencakup 25 emiten utama)."
+                                except Exception as _e_sh:
+                                    _sh_ctx = f"Data pemegang saham tidak dapat diambil saat ini."
+    
+                                dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
+        Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA.
+    
+        === DATA HARGA & TEKNIKAL ===
+        Harga Terakhir: {live_price_str}
+        {vol_context}
+    
+        === DATA FUNDAMENTAL ===
+        {fund_context}
+    
+        === DATA PEMEGANG SAHAM ===
+        {_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
+    
+        ────────────────────────────────────────────────
+        ATURAN UTAMA - WAJIB DIPATUHI:
+        ────────────────────────────────────────────────
+    
+        ⚠️ PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
+        Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
+       -LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
+       -WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
+       -HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
+    
+        ⛔ ATURAN TRADE PLAN & RISK LEVEL:
+       -Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
+       -Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
+       -Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
+    
+        🎯 SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
+       -HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
+       -MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
+       -LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
+       -IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
+    
+        ────────────────────────────────────────────────
+        STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
+        ────────────────────────────────────────────────
+    
+        1. 📊 NARASI TEKNIKAL
+          -Posisi harga saat ini vs struktur support/resistance utama
+          -Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
+          -Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
+          -Volume: konfirmasi atau divergensi dari price action?
+          -EMA: posisi harga vs EMA 13/21/100/200 → arah trend
+          -JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
+    
+        2. 🏢 NARASI FUNDAMENTAL
+          -Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) - jujur jika overvalued
+          -Kinerja keuangan (EPS, margin, pertumbuhan revenue) - sebutkan jika memburuk
+          -Katalis positif/negatif ke depan - jangan sembunyikan risiko
+          -Posisi vs kompetitor sektor
+    
+        3. 👥 SINYAL PEMEGANG SAHAM
+          -Tren jumlah pemegang saham: akumulasi atau distribusi?
+          -Implikasi terhadap supply/demand
+    
+        4. 📰 OUTLOOK SEKTOR & MAKRO
+          -Kondisi sektor saat ini
+          -Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
+          -Risiko utama - JANGAN diremehkan
+    
+        5. ⚡ KESIMPULAN & VERDICT (JUJUR & TEGAS)
+          -Bias tunggal: BULLISH / BEARISH / SIDEWAYS - satu pilihan, jelaskan alasan utama
+          -Rating: BELI / WASPADA / HINDARI
+          -Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini - sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
+          -Level kunci yang wajib diperhatikan
+    
+        6. 🎯 TRADE PLAN
+           ⚠️ HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
+           ⛔ JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
+              "⛔ TRADE PLAN TIDAK TERSEDIA - [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
+       
+           Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
+          -🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
+          -🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
+          -🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
+    
+           Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] - [alasan singkat 1 kalimat]
+    
+           Lanjutkan:
+          -Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
+          -Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
+          -TP1: Rp[A] → resistance minor / FVG terdekat (WAJIB diisi)
+          -TP2: Rp[B] → resistance mayor berikutnya (WAJIB diisi — gunakan swing high berikutnya atau fibonacci extension 1.272/1.618 dari setup)
+          -Timeframe: perkiraan berapa hari/minggu
+          -Trigger masuk: kondisi spesifik sebelum entry
+    
+        CATATAN CHART: Semua level (BUY ZONE, SL, TP1, TP2) AKAN digambar otomatis di chart. Pastikan angka konsisten: SL < entry_low < entry_high < TP1 < TP2.
+    
+        Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
+    
+        Di AKHIR JAWABAN (setelah semua analisa), tambahkan JSON koordinat chart:
+        ```json
+        {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null, "risk_level": "HIGH"}}
+        ```
+        PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) - JANGAN gambar trade plan di chart.
+        Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str}).
+        Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental oke. Jika tidak ada trade plan, isi "NONE"."""
+    
+                                try:
+                                    # temperature=0 → hasil deterministik untuk konsistensi analisa
+                                    ai_raw_result, _ = _call_groq_primary(dashboard_prompt, temperature=0)
+                                except Exception as e_groq:
+                                    try:
+                                        ai_raw_result, _ = _call_gemini_text([{"role": "user", "content": dashboard_prompt}])
+                                    except Exception as e_gem:
+                                        ai_raw_result = f"Gagal memanggil AI: {e_gem}"
+    
+                                try:
+                                    # Coba berbagai format: ```json block, { plain }, atau inline
+                                    json_match = re.search(r'```json\s*(.*?)\s*```', ai_raw_result, re.DOTALL)
+                                    if not json_match:
+                                        # Coba cari JSON object langsung (tanpa backtick)
+                                        json_match_plain = re.search(r'\{[^{}]*"entry_low"[^{}]*\}', ai_raw_result, re.DOTALL)
+                                        if json_match_plain:
+                                            raw_json = json.loads(json_match_plain.group(0))
+                                        else:
+                                            # Coba cari JSON object apapun di akhir teks
+                                            json_match_any = re.search(r'\{[\s\S]*\}', ai_raw_result)
+                                            raw_json = json.loads(json_match_any.group(0)) if json_match_any else {}
+                                    else:
+                                        raw_json = json.loads(json_match.group(1))
+    
+                                    def _safe_float(v):
+                                        try: return float(v) if v is not None else None
+                                        except: return None
+    
+                                    ai_data = {
+                                        "entry_low":  _safe_float(raw_json.get("entry_low")),
+                                        "entry_high": _safe_float(raw_json.get("entry_high")),
+                                        "stop_loss":  _safe_float(raw_json.get("stop_loss")),
+                                        "tp1": _safe_float(raw_json.get("tp1") or raw_json.get("target")),
+                                        "tp2": _safe_float(raw_json.get("tp2")),
+                                        "tp3": _safe_float(raw_json.get("tp3")),
+                                        "risk_level": str(raw_json.get("risk_level", "HIGH")).upper(),
+                                    }
+                                    # Validasi: semua harga harus > 0 dan masuk akal
+                                    last_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0
+                                    if last_price > 0:
+                                        def _plausible(v, ref, pct=0.6):
+                                            return v and v > 0 and abs(v-ref) / ref < pct
+                                        # Entry zone: plausible ±60% dari last price
+                                        if not _plausible(ai_data['entry_low'], last_price, 0.60): ai_data['entry_low'] = None
+                                        if not _plausible(ai_data['entry_high'], last_price, 0.60): ai_data['entry_high'] = None
+                                        if not _plausible(ai_data['stop_loss'], last_price, 0.60): ai_data['stop_loss'] = None
+                                        # TP1: ±80% dari last price
+                                        if not _plausible(ai_data['tp1'], last_price, 0.80): ai_data['tp1'] = None
+                                        # TP2/TP3: lebih longgar ±150% karena target lanjutan bisa lebih jauh
+                                        if not _plausible(ai_data['tp2'], last_price, 1.50): ai_data['tp2'] = None
+                                        if not _plausible(ai_data['tp3'], last_price, 1.50): ai_data['tp3'] = None
+    
+                                        # ── Fallback TP2 via Fibonacci extension ──
+                                        # Jika AI tidak return TP2 tapi TP1 ada, estimasi dari extension 1.618
+                                        if not ai_data['tp2'] and ai_data.get('tp1') and ai_data.get('entry_high'):
+                                            _tp1_v = ai_data['tp1']
+                                            _eh_v  = ai_data['entry_high']
+                                            if _tp1_v > _eh_v:
+                                                _ext_v    = (_tp1_v - _eh_v) * 1.618
+                                                _tp2_calc = round(_tp1_v + _ext_v, 0)
+                                                if _plausible(_tp2_calc, last_price, 1.50):
+                                                    ai_data['tp2'] = _tp2_calc
+    
+                                        # ── Fallback buy zone: jika AI tidak return entry_low/entry_high ──
+                                        # Gunakan last_price ±0.5% sebagai zona default yang terlihat di chart
+                                        if not ai_data['entry_low'] and not ai_data['entry_high']:
+                                            if ai_data.get('stop_loss') and ai_data.get('tp1'):
+                                                # Estimasi entry dari midpoint stop_loss → tp1
+                                                _sl = ai_data['stop_loss']
+                                                _tp = ai_data['tp1']
+                                                # Buy zone = 30-50% dari range SL-TP1 di atas SL
+                                                _range = _tp-_sl
+                                                ai_data['entry_low']  = round(_sl + _range * 0.10, 0)
+                                                ai_data['entry_high'] = round(_sl + _range * 0.25, 0)
+                                            else:
+                                                # Fallback absolut: ±0.8% dari last price
+                                                ai_data['entry_low']  = round(last_price * 0.992, 0)
+                                                ai_data['entry_high'] = round(last_price * 1.000, 0)
+    
+                                        # ── Pastikan entry_low < entry_high ──
+                                        if ai_data['entry_low'] and ai_data['entry_high']:
+                                            if ai_data['entry_low'] >= ai_data['entry_high']:
+                                                ai_data['entry_low'], ai_data['entry_high'] = (
+                                                    min(ai_data['entry_low'], ai_data['entry_high']),
+                                                    max(ai_data['entry_low'], ai_data['entry_high'])
+                                                )
+                                                # Pastikan ada gap minimal 0.5%
+                                                if ai_data['entry_high']-ai_data['entry_low'] < last_price * 0.005:
+                                                    ai_data['entry_high'] = round(ai_data['entry_low'] * 1.008, 0)
+    
+                                        # ── Validasi logika: SL < entry_low, entry_high < TP1 ──
+                                        if ai_data['stop_loss'] and ai_data['entry_low']:
+                                            if ai_data['stop_loss'] >= ai_data['entry_low']:
+                                                # SL tidak boleh di atas atau sama dengan entry bawah
+                                                ai_data['stop_loss'] = round(ai_data['entry_low'] * 0.975, 0)
+                                        if ai_data['tp1'] and ai_data['entry_high']:
+                                            if ai_data['tp1'] <= ai_data['entry_high']:
+                                                ai_data['tp1'] = round(ai_data['entry_high'] * 1.03, 0)
+    
+                                    # Hanya simpan ai_data jika minimal entry zone atau stop_loss valid
+                                    if not (ai_data.get('entry_low') or ai_data.get('stop_loss') or ai_data.get('tp1')):
+                                        ai_data = None
+    
+                                    # Bersihkan teks dari JSON block
+                                    ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
+                                    ai_text_verdict = re.sub(r'\{[\s\S]*"entry_low"[\s\S]*\}', '', ai_text_verdict).strip()
+                                    # Hapus kalimat pengantar JSON yang tertinggal di akhir
+                                    ai_text_verdict = re.sub(r'\n*[^\n]*[Bb]erikut[^\n]*(JSON|json|blok|block)[^\n]*:?\s*$', '', ai_text_verdict).strip()
+                                    ai_text_verdict = re.sub(r'\n*[^\n]*(following|berikut)[^\n]*(JSON|blok|strategi)[^\n]*:?\s*$', '', ai_text_verdict, flags=re.IGNORECASE).strip()
+    
+                                    # ── SIMPAN KE CACHE ─────────────────────────
+                                    if _insight_cache_key and ai_text_verdict:
+                                        try:
+                                            st.session_state[_insight_cache_key] = {
+                                                'price':           float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0,
+                                                'ai_raw_result':   ai_raw_result,
+                                                'ai_data':         ai_data,
+                                                'ai_text_verdict': ai_text_verdict,
+                                                'vol_context':     vol_context if 'vol_context' in dir() else '',
+                                                'sigma_result':    _sigma_result if '_sigma_result' in dir() else None,
+                                            }
+                                        except Exception:
+                                            pass
 
-                                    # ── Validasi logika: SL < entry_low, entry_high < TP1 ──
-                                    if ai_data['stop_loss'] and ai_data['entry_low']:
-                                        if ai_data['stop_loss'] >= ai_data['entry_low']:
-                                            # SL tidak boleh di atas atau sama dengan entry bawah
-                                            ai_data['stop_loss'] = round(ai_data['entry_low'] * 0.975, 0)
-                                    if ai_data['tp1'] and ai_data['entry_high']:
-                                        if ai_data['tp1'] <= ai_data['entry_high']:
-                                            ai_data['tp1'] = round(ai_data['entry_high'] * 1.03, 0)
-
-                                # Hanya simpan ai_data jika minimal entry zone atau stop_loss valid
-                                if not (ai_data.get('entry_low') or ai_data.get('stop_loss') or ai_data.get('tp1')):
+                                except Exception as e:
                                     ai_data = None
+                                    ai_text_verdict = ai_raw_result
 
-                                # Bersihkan teks dari JSON block
-                                ai_text_verdict = re.sub(r'```json\s*.*?\s*```', '', ai_raw_result, flags=re.DOTALL).strip()
-                                ai_text_verdict = re.sub(r'\{[\s\S]*"entry_low"[\s\S]*\}', '', ai_text_verdict).strip()
-                                # Hapus kalimat pengantar JSON yang tertinggal di akhir
-                                ai_text_verdict = re.sub(r'\n*[^\n]*[Bb]erikut[^\n]*(JSON|json|blok|block)[^\n]*:?\s*$', '', ai_text_verdict).strip()
-                                ai_text_verdict = re.sub(r'\n*[^\n]*(following|berikut)[^\n]*(JSON|blok|strategi)[^\n]*:?\s*$', '', ai_text_verdict, flags=re.IGNORECASE).strip()
                             except Exception as e:
-                                ai_data = None
-                                ai_text_verdict = ai_raw_result
-
-                        except Exception as e:
-                            st.error(f"Gagal memproses analisa AI: {e}")
+                                st.error(f"Gagal memproses analisa AI: {e}")
 
                 st.markdown(f"<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>TECHNICAL PLAN CHART &mdash; {ticker_input}</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
