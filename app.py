@@ -574,10 +574,11 @@ def _score_momentum_rs(pd: PriceData) -> tuple:
 # ─────────────────────────────────────────────
 # TRADE LEVEL CALCULATOR
 # ─────────────────────────────────────────────
-def _calc_trade_levels(pd: PriceData) -> dict:
+def _calc_trade_levels(pd: PriceData, zone_result=None) -> dict:
     """
-    Auto-hitung entry zone, SL, TP1/2/3 dari struktur teknikal.
-    Mengikuti MnM Strategy+: TP dari resistance, bukan rasio matematika.
+    Auto-hitung entry zone, SL, TP1/2/3 dari struktur teknikal MnM.
+    Prioritas: IFVG/FVG/Demand/OB Bull → Entry, Supply/OB Bear → TP.
+    SL di bawah zona demand / swing low terkuat.
     """
     c = pd.closes
     h = pd.highs
@@ -590,31 +591,76 @@ def _calc_trade_levels(pd: PriceData) -> dict:
     atr = _atr(h, l, c, 14)
 
     # ── Support & Resistance dari Swing ──
-    s_lows  = _swing_lows(l[-30:],  window=3)
-    s_highs = _swing_highs(h[-30:], window=3)
+    s_lows  = _swing_lows(l[-50:],  window=3)
+    s_highs = _swing_highs(h[-50:], window=3)
 
     supports    = sorted([x[1] for x in s_lows  if x[1] < price], reverse=True)
     resistances = sorted([x[1] for x in s_highs if x[1] > price])
 
-    # ── Entry Zone ──
-    nearest_support = supports[0] if supports else price-atr * 1.5
-    entry_lo = _round_tick(max(nearest_support, price-atr * 0.8))
-    entry_hi = _round_tick(price)
+    # ── Zone-aware Entry: prioritaskan Demand / IFVG Bull / FVG Bull / OB Bull ──
+    entry_lo = None
+    entry_hi = None
+    sl       = None
 
-    # ── Stop Loss ──
-    second_support = supports[1] if len(supports) > 1 else nearest_support-atr
-    sl = _round_tick(second_support-atr * 0.5)
-    sl = min(sl, entry_lo-atr)  # SL minimal 1 ATR di bawah entry
+    if zone_result is not None:
+        # Kumpulkan semua zona support (demand side) di bawah atau dekat harga
+        support_zones = []
+        for z in (zone_result.demand + zone_result.ifvg_bull + zone_result.fvg_bull + zone_result.ob_bull):
+            top = z.get("top", 0)
+            bot = z.get("bot", 0)
+            if bot > 0 and top > 0 and bot <= price * 1.02:  # zona di bawah atau sangat dekat harga
+                support_zones.append((bot, top))
+
+        if support_zones:
+            # Ambil zona terdekat ke harga
+            support_zones.sort(key=lambda x: abs(price - x[1]), reverse=False)
+            best_bot, best_top = support_zones[0]
+            entry_lo = _round_tick(best_bot)
+            entry_hi = _round_tick(min(best_top, price))
+            # SL di bawah zona support terkuat (ATR buffer)
+            sl = _round_tick(best_bot - atr * 1.2)
+
+        # TP dari Supply / OB Bear / IFVG Bear / FVG Bear di atas harga
+        resistance_zones = []
+        for z in (zone_result.supply + zone_result.ob_bear + zone_result.ifvg_bear + zone_result.fvg_bear):
+            bot = z.get("bot", 0)
+            top = z.get("top", 0)
+            if bot > price:
+                resistance_zones.append(bot)
+        resistance_zones = sorted(resistance_zones)
+
+        # Gabungkan dengan swing resistances
+        resistances = sorted(set(resistances + resistance_zones))
+
+    # Fallback ke swing jika zona tidak ada
+    if entry_lo is None:
+        nearest_support = supports[0] if supports else price - atr * 1.5
+        entry_lo = _round_tick(max(nearest_support, price - atr * 0.8))
+        entry_hi = _round_tick(price)
+
+    if sl is None:
+        second_support = supports[1] if len(supports) > 1 else (supports[0] - atr if supports else price - atr * 2)
+        sl = _round_tick(second_support - atr * 0.5)
+        sl = min(sl, entry_lo - atr)
+
+    # Pastikan entry_lo < entry_hi dan SL < entry_lo
+    if entry_hi is None or entry_hi <= entry_lo:
+        entry_hi = _round_tick(entry_lo + atr * 0.5)
+    sl = min(sl, entry_lo - _round_tick(atr * 0.5))
 
     # ── Take Profits dari resistance structure ──
     tp1 = _round_tick(resistances[0]) if resistances else _round_tick(price + atr * 2)
     tp2 = _round_tick(resistances[1]) if len(resistances) > 1 else _round_tick(tp1 + atr * 1.5)
     tp3 = _round_tick(resistances[2]) if len(resistances) > 2 else None
 
+    # Pastikan TP > entry_hi
+    tp1 = max(tp1, _round_tick(entry_hi + atr))
+    tp2 = max(tp2, _round_tick(tp1 + atr))
+
     # ── R/R Ratio ──
     mid_entry = (entry_lo + entry_hi) / 2
-    risk      = max(mid_entry-sl, atr * 0.5)
-    reward    = tp1-mid_entry
+    risk      = max(mid_entry - sl, atr * 0.5)
+    reward    = tp1 - mid_entry
     rr        = round(reward / risk, 2) if risk > 0 else 0
 
     return {
@@ -1590,45 +1636,18 @@ def zone_badge_html(result: ZoneResult, price: float = 0, C: dict = None) -> str
 # ZONE DETAIL CARD HTML (untuk section detail)
 # ─────────────────────────────────────────────
 def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> str:
+    """
+    Hanya render Volume Intelligence + Akumulasi Score.
+    Tabel zona (IFVG/FVG/OB/S&D) TIDAK ditampilkan ke user — hanya digunakan sistem untuk AI context.
+    """
     if C is None: C = {}
     met_bg     = C.get("bg", "#050a15")
     met_border = C.get("border", "#1a2f50")
     text_main  = C.get("text", "#e2e8f0")
     text_sub   = C.get("text_muted", "#64748b")
 
-    def pct_str(mid, p):
-        if p <= 0: return ""
-        v = (mid - p) / p * 100
-        c = "#00e5a0" if v >= 0 else "#f23645"
-        return f'<span style="color:{c};font-size:9px;">({v:+.1f}%)</span>'
-
-    def row(name, z, color, p):
-        return (
-            f"<tr>"
-            f"<td style='color:{color};font-weight:700;font-size:10px;padding:4px 8px;white-space:nowrap;'>{name}</td>"
-            f"<td style='font-size:10px;color:{text_main};font-family:\"IBM Plex Mono\",monospace;'>"
-            f"Rp{z['top']:,.0f}–{z['bot']:,.0f}</td>"
-            f"<td style='font-size:10px;color:{text_sub};'>TF:{z.get('tf','D')}</td>"
-            f"<td>{pct_str(z['mid'], p)}</td>"
-            f"</tr>"
-        )
-
-    rows = ""
-    for z in result.ifvg_bull: rows += row("IFVG Bull", z, "#4285F4", price)
-    for z in result.ifvg_bear: rows += row("IFVG Bear", z, "#727272", price)
-    for z in result.fvg_bull:  rows += row("FVG Bull",  z, "#0ea5e9", price)
-    for z in result.fvg_bear:  rows += row("FVG Bear",  z, "#575757", price)
-    for z in result.ob_bull:   rows += row("OB Bull",   z, "#22c55e", price)
-    for z in result.ob_bear:   rows += row("OB Bear",   z, "#ea00ff", price)
-    for z in result.demand:    rows += row("Demand",    z, "#009fd4", price)
-    for z in result.supply:    rows += row("Supply",    z, "#888",    price)
-
-    if not rows:
-        rows = f"<tr><td colspan='4' style='color:{text_sub};font-size:10px;padding:8px;text-align:center;'>Tidak ada zona aktif di range harga saat ini.</td></tr>"
-
     cs = result.confluence_score
     cc = "#00c853" if cs >= 5 else ("#ffd740" if cs >= 3 else "#888")
-    cz_str = ", ".join(result.confluence_zones[:4]) if result.confluence_zones else "-"
 
     vs = result.vol_score
     if vs >= 60:   vc, vbg = "#00e5a0", "rgba(0,229,160,0.08)"
@@ -1638,49 +1657,34 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     html = f"""
 <div style="background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:14px;margin:8px 0;font-family:'DM Sans',sans-serif;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:#8b5cf6;font-weight:700;letter-spacing:0.1em;">▸ MnM ZONE DETECTION · MULTI-TF</span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">CONFLUENCE {cs}/10</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:#8b5cf6;font-weight:700;letter-spacing:0.1em;">▸ VOLUME INTELLIGENCE · MnM</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">ZONE CONF {cs}/10</span>
   </div>
-  {'<div style="font-size:0.65rem;color:' + cc + ';margin-bottom:8px;font-family:IBM Plex Mono,monospace;">⚡ Zona bertumpuk: ' + cz_str + '</div>' if result.confluence_zones else ''}
-  <div style="overflow-x:auto;">
-  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
-    <thead><tr style="background:rgba(139,92,246,0.08);">
-      <th style="text-align:left;padding:4px 8px;font-size:9px;color:#8b5cf6;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;">TIPE</th>
-      <th style="text-align:left;padding:4px 8px;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;">RANGE HARGA</th>
-      <th style="text-align:left;padding:4px 8px;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;">TF</th>
-      <th style="text-align:left;padding:4px 8px;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;">JARAK</th>
-    </tr></thead>
-    <tbody>{rows}</tbody>
-  </table>
-  </div>
-  <div style="border-top:1px solid {met_border};padding-top:10px;margin-top:2px;">
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:#a78bfa;font-weight:700;letter-spacing:0.08em;margin-bottom:6px;">▸ VOLUME INTELLIGENCE</div>
-    <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:8px 10px;margin-bottom:8px;">
-      <div style="font-size:0.72rem;color:{vc};font-weight:600;margin-bottom:4px;">{result.vol_type}</div>
-      <div style="font-size:0.65rem;color:{text_sub};">
-        Frekuensi: <span style="color:{text_main};">{result.vol_freq_signal}</span>
-        {'&nbsp;·&nbsp;<span style="color:#00e5a0;">✅ True Breakout</span>' if result.breakout_valid else ''}
-        {'&nbsp;·&nbsp;<span style="color:#f23645;">⛔ False Breakout</span>' if result.false_breakout else ''}
-      </div>
-    </div>
-    <div style="margin-bottom:5px;">
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:2px;">
-        <span>Vol Intelligence</span><span style="color:{vc};font-weight:600;">{vs}</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:4px;">
-        <div style="width:{vs}%;height:100%;background:{vc};border-radius:3px;"></div>
-      </div>
-    </div>
-    <div>
-      <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:2px;">
-        <span>Akumulasi Score</span><span style="color:#00e5a0;font-weight:600;">{result.accum_score}</span>
-      </div>
-      <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:4px;">
-        <div style="width:{result.accum_score}%;height:100%;background:#00e5a0;border-radius:3px;"></div>
-      </div>
+  <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
+    <div style="font-size:0.78rem;color:{vc};font-weight:600;margin-bottom:4px;">{result.vol_type}</div>
+    <div style="font-size:0.68rem;color:{text_sub};">
+      Frekuensi: <span style="color:{text_main};">{result.vol_freq_signal}</span>
+      {'&nbsp;·&nbsp;<span style="color:#00e5a0;font-weight:600;">✅ True Breakout Terkonfirmasi</span>' if result.breakout_valid else ''}
+      {'&nbsp;·&nbsp;<span style="color:#f23645;font-weight:600;">⛔ False Breakout Terdeteksi</span>' if result.false_breakout else ''}
     </div>
   </div>
-  {'<div style="border-top:1px solid ' + met_border + ';padding-top:8px;margin-top:8px;">' + "".join(f'<div style="font-size:0.65rem;color:{text_sub};margin-bottom:2px;">{s}</div>' for s in result.zone_signals[:5]) + '</div>' if result.zone_signals else ''}
+  <div style="margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
+      <span>Vol Intelligence Score</span><span style="color:{vc};font-weight:600;">{vs}/100</span>
+    </div>
+    <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:5px;">
+      <div style="width:{vs}%;height:100%;background:{vc};border-radius:3px;transition:width 0.3s;"></div>
+    </div>
+  </div>
+  <div>
+    <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
+      <span>Akumulasi Score</span><span style="color:#00e5a0;font-weight:600;">{result.accum_score}/100</span>
+    </div>
+    <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:5px;">
+      <div style="width:{result.accum_score}%;height:100%;background:#00e5a0;border-radius:3px;"></div>
+    </div>
+  </div>
+  {'<div style="border-top:1px solid ' + met_border + ';padding-top:8px;margin-top:10px;">' + "".join(f'<div style="font-size:0.65rem;color:{text_sub};margin-bottom:3px;">{s}</div>' for s in result.zone_signals[:4]) + '</div>' if result.zone_signals else ''}
 </div>"""
     return html
 
@@ -8419,68 +8423,6 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # ---------------------------------------------------------
-        # MAKRO INDONESIA vs US  (moved down - after news)
-        # ---------------------------------------------------------
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'> MAKRO INDONESIA vs US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.9rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Tren 12 Bulan Terakhir</p>", unsafe_allow_html=True)
-
-        macro_col1, macro_col2 = st.columns(2)
-        dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
-
-        with macro_col1:
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;color:#8b5cf6;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
-            macro_id = pd.DataFrame({
-                "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
-                "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
-                "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
-            }, index=dates)
-            st.line_chart(macro_id, color=["#8b5cf6", "#0ea5e9", "#f23645"], height=320)
-
-        with macro_col2:
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.92rem;letter-spacing:0.1em;color:#8b5cf6;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
-            macro_us = pd.DataFrame({
-                "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
-                "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
-                "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
-            }, index=dates)
-            st.line_chart(macro_us, color=["#8b5cf6", "#0ea5e9", "#f23645"], height=320)
-
-        st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div class="trm-card">
-                <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
-                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
-                <span style='color:#8b5cf6;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
-                Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
-                </p>
-                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#8b5cf6;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
-                Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col2:
-            st.markdown(f"""
-            <div class="trm-card">
-                <div class="trm-card-title" style="color:#f23645;">Rotasi &amp; Kurva Imbal Hasil</div>
-                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#f23645;font-weight:600;'>Yield Curve Obligasi RI</span><br>
-                Pemantauan inversi kurva sebagai indikator awal pelambatan ekonomi atau resesi.
-                </p>
-                <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#f23645;font-weight:600;'>Sektor Fokus</span><br>
-                Komoditas memanas &rarr; Coal &amp; Gold. Suku bunga turun &rarr; Big Banks &amp; Properti.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR - ID · US
         # ─────────────────────────────────────────────────────────
@@ -12173,6 +12115,20 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     except Exception:
                                         _zone_res_ai = None
 
+                                # ── Override trade levels dengan zone-aware calculation ──
+                                if _sigma_result is not None and _zone_res_ai is not None and _pd_obj is not None:
+                                    try:
+                                        _zone_levels = _calc_trade_levels(_pd_obj, _zone_res_ai)
+                                        if _zone_levels:
+                                            _sigma_result.entry_zone = _zone_levels.get("entry_zone", _sigma_result.entry_zone)
+                                            _sigma_result.sl_zone    = _zone_levels.get("sl",         _sigma_result.sl_zone)
+                                            _sigma_result.tp1        = _zone_levels.get("tp1",        _sigma_result.tp1)
+                                            _sigma_result.tp2        = _zone_levels.get("tp2",        _sigma_result.tp2)
+                                            _sigma_result.tp3        = _zone_levels.get("tp3",        _sigma_result.tp3)
+                                            _sigma_result.rr_ratio   = _zone_levels.get("rr_ratio",   _sigma_result.rr_ratio)
+                                    except Exception:
+                                        pass
+
                                 vol_context = ""
                                 if not df_chart.empty and 'Volume' in df_chart.columns:
                                     try:
@@ -12359,14 +12315,14 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
            Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] - [alasan singkat 1 kalimat]
     
            Lanjutkan:
-          -Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
-          -Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
-          -TP1: Rp[A] → resistance minor / FVG terdekat (WAJIB diisi)
-          -TP2: Rp[B] → resistance mayor berikutnya (WAJIB diisi — gunakan swing high berikutnya atau fibonacci extension 1.272/1.618 dari setup)
+          -Area Beli (BUY ZONE): Rp[X] – Rp[Y] → WAJIB berdasarkan zona teknikal: Demand Zone / IFVG Bull / FVG Bull / OB Bull yang terdeteksi. Sebutkan zona mana yang digunakan.
+          -Stop Loss: Rp[Z] → di bawah zona demand/support struktural. Minimal 1.5× ATR dari entry bawah. WAJIB di bawah BUY ZONE.
+          -TP1: Rp[A] → zona Supply / OB Bear / IFVG Bear terdekat di atas harga, atau resistance swing high (WAJIB diisi)
+          -TP2: Rp[B] → zona Supply / resistance mayor berikutnya (WAJIB diisi)
           -Timeframe: perkiraan berapa hari/minggu
           -Trigger masuk: kondisi spesifik sebelum entry
     
-        CATATAN CHART: Semua level (BUY ZONE, SL, TP1, TP2) AKAN digambar otomatis di chart. Pastikan angka konsisten: SL < entry_low < entry_high < TP1 < TP2.
+        CATATAN CHART: Semua level (BUY ZONE, SL, TP1, TP2) AKAN digambar otomatis di chart. WAJIB konsisten: SL < entry_low < entry_high < TP1 < TP2. Level JSON di bawah HARUS SAMA PERSIS dengan angka yang kamu tulis di Trade Plan di atas.
     
         Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
     
