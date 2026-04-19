@@ -6446,14 +6446,14 @@ if current_view == "dashboard":
         --acc2:     #6d28d9;
         --acc-cyan: #0ea5e9;
         --acc-em:   #10b981;
-        --bg:       #080b14;
-        --card:     rgba(15,18,32,0.92);
-        --card2:    rgba(15,18,32,0.70);
-        --border:   rgba(139,92,246,0.22);
+        --bg:       {'#080b14' if is_dark else '#f5f3ff'};
+        --card:     {'rgba(15,18,32,0.92)' if is_dark else 'rgba(248,246,255,0.95)'};
+        --card2:    {'rgba(15,18,32,0.70)' if is_dark else 'rgba(240,237,255,0.80)'};
+        --border:   {'rgba(139,92,246,0.22)' if is_dark else 'rgba(139,92,246,0.28)'};
         --up:       #10b981;
         --dn:       #f23645;
-        --txt:      #e2e8f0;
-        --sub:      #7c86a2;
+        --txt:      {'#e2e8f0' if is_dark else '#0d1117'};
+        --sub:      {'#7c86a2' if is_dark else '#64748b'};
         --mono:     'IBM Plex Mono', monospace;
         --sans:     'DM Sans', sans-serif;
     }}
@@ -6465,7 +6465,7 @@ if current_view == "dashboard":
 
     /* ── Metrics ── */
     [data-testid="stMetric"] {{
-        background: rgba(15,18,32,0.85) !important;
+        background: {'rgba(15,18,32,0.85)' if is_dark else 'rgba(248,246,255,0.95)'} !important;
         border: 1px solid rgba(139,92,246,0.25) !important;
         border-radius: 16px !important;
         padding: 16px 18px 14px !important;
@@ -6501,7 +6501,7 @@ if current_view == "dashboard":
 
     /* ── Tabs ── */
     [data-testid="stTabs"] [role="tablist"] {{
-        background: var(--card) !important;
+        background: {'rgba(15,18,32,0.92)' if is_dark else 'rgba(240,237,255,0.95)'} !important;
         border: 1px solid var(--border) !important;
         border-radius: 50px !important;
         padding: 4px 6px !important;
@@ -6528,7 +6528,7 @@ if current_view == "dashboard":
         flex-shrink: 0 !important;
     }}
     [data-testid="stTabs"] button[role="tab"]:hover {{
-        color: #e2e8f0 !important;
+        color: {text_main} !important;
         background: rgba(139,92,246,0.15) !important;
     }}
     [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
@@ -6563,7 +6563,7 @@ if current_view == "dashboard":
 
     /* ── Cards ── */
     .trm-card {{
-        background: rgba(15,18,32,0.85);
+        background: {'rgba(15,18,32,0.85)' if is_dark else 'rgba(248,246,255,0.95)'};
         border: 1px solid rgba(139,92,246,0.20);
         border-radius: 20px;
         padding: 20px 22px;
@@ -6634,7 +6634,7 @@ if current_view == "dashboard":
         font-family: var(--mono) !important;
         font-size: 0.95rem !important;
         font-weight: 500 !important;
-        background: var(--card) !important;
+        background: {'rgba(15,18,32,0.92)' if is_dark else '#ffffff'} !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         color: {text_main} !important;
@@ -6654,7 +6654,7 @@ if current_view == "dashboard":
         font-weight: 600 !important;
     }}
     [data-testid="stSelectbox"] > div > div {{
-        background: var(--card) !important;
+        background: {'rgba(15,18,32,0.92)' if is_dark else '#ffffff'} !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         color: {text_main} !important;
@@ -6973,7 +6973,7 @@ if current_view == "dashboard":
         table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.84rem;white-space:nowrap;}}
         table.mkt-tbl tbody td {{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
         table.mkt-tbl tbody tr:last-child td {{border-bottom:none;}}
-        table.mkt-tbl tbody tr:hover td {{background:rgba(3,40,238,0.04);}}
+        table.mkt-tbl tbody tr:hover td {{background:rgba(139,92,246,0.06);}}
         .mkt-name {{font-weight:600;font-size:0.93rem;}}
         .mkt-price {{font-size:0.98rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
         .mkt-up {{color:#089981;}}
@@ -11680,11 +11680,14 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     try:
                         from plotly.subplots import make_subplots
 
-                        inc_color     = '#089981'
-                        dec_color     = '#f23645'
-                        tv_bg_color   = "#131722" if is_dark else "#ffffff"
-                        tv_text_color = "#b2b5be" if is_dark else "#1f2937"
-                        tv_border     = "#2a2e39" if is_dark else "#e0e3eb"
+                        inc_color     = '#00e5a0'   # Aurora bullish — bright emerald-teal
+                        dec_color     = '#ff3d5a'   # Aurora bearish — vivid crimson-pink
+                        inc_fill      = 'rgba(0,229,160,0.18)'
+                        dec_fill      = 'rgba(255,61,90,0.18)'
+                        tv_bg_color   = "#080b14" if is_dark else "#f8fafc"
+                        tv_grid_color = "rgba(139,92,246,0.10)" if is_dark else "rgba(100,120,180,0.12)"
+                        tv_text_color = "#7c86a2" if is_dark else "#374151"
+                        tv_border     = "rgba(139,92,246,0.18)" if is_dark else "rgba(100,120,180,0.20)"
 
                         # ── Bersihkan df: hanya trading days (buang weekend) ──
                         df_chart = df_chart.copy()
@@ -11737,14 +11740,16 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             open=df_chart['Open'],  high=df_chart['High'],
                             low=df_chart['Low'],    close=df_chart['Close'],
                             increasing_line_color=inc_color,
+                            increasing_fillcolor=inc_fill,
                             decreasing_line_color=dec_color,
+                            decreasing_fillcolor=dec_fill,
                             name="Price", showlegend=False,
                         ), row=1, col=1)
 
                         # ── EMAs ──────────────────────────────────────────────
                         for col_n, clr, w in [
-                            ('EMA13','#009dff',1.2), ('EMA21','#ff0000',1.2),
-                            ('EMA100','#cc00ff',1.2), ('EMA200','#8b5cf6',1.5),
+                            ('EMA13','#0ea5e9',1.4), ('EMA21','#f472b6',1.4),
+                            ('EMA100','#a78bfa',1.3), ('EMA200','#8b5cf6',1.8),
                         ]:
                             fig.add_trace(go.Scatter(
                                 x=x_str, y=df_chart[col_n],
@@ -11851,16 +11856,20 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             inc_color if c >= o else dec_color
                             for c, o in zip(df_chart['Close'], df_chart['Open'])
                         ]
+                        vol_clr_mapped = [
+                            'rgba(0,229,160,0.55)' if c >= o else 'rgba(255,61,90,0.55)'
+                            for c, o in zip(df_chart['Close'], df_chart['Open'])
+                        ]
                         fig.add_trace(go.Bar(
                             x=x_str, y=df_chart['Volume'],
-                            marker_color=[c.replace(')', ',0.65)').replace('rgb(','rgba(').replace('#089981','rgba(8,153,129,0.65)').replace('#f23645','rgba(242,54,69,0.65)') for c in vol_clr_normal],
+                            marker_color=vol_clr_mapped,
                             showlegend=False, name='Volume',
                         ), row=2, col=1)
                         # Garis rata-rata volume 20-bar
                         vol_ma20 = df_chart['Volume'].rolling(20).mean()
                         fig.add_trace(go.Scatter(
                             x=x_str, y=vol_ma20,
-                            mode='lines', line=dict(color='#f5a623', width=1.2, dash='dot'),
+                            mode='lines', line=dict(color='#fbbf24', width=1.5, dash='dot'),
                             showlegend=False, name='Vol MA20',
                         ), row=2, col=1)
 
@@ -11868,25 +11877,24 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         hl_range = (df_chart['High']-df_chart['Low']).replace(0, 1)
                         buy_vol  = (df_chart['Volume'] * (df_chart['Close']-df_chart['Low'])  / hl_range).clip(lower=0)
                         sell_vol = (df_chart['Volume'] * (df_chart['High'] -df_chart['Close']) / hl_range).clip(lower=0)
-                        # Bar bawah: sell (merah), bar atas: buy (hijau) - stacked
                         fig.add_trace(go.Bar(
                             x=x_str, y=sell_vol,
-                            marker_color='rgba(242,54,69,0.75)',
+                            marker_color='rgba(255,61,90,0.70)',
                             name='Sell Power', showlegend=False,
                         ), row=3, col=1)
                         fig.add_trace(go.Bar(
                             x=x_str, y=buy_vol,
-                            marker_color='rgba(8,153,129,0.85)',
+                            marker_color='rgba(0,229,160,0.80)',
                             name='Buy Power', showlegend=False,
                         ), row=3, col=1)
 
                         # ── RSI (level 70/30) ──────────────────────────────────
                         fig.add_trace(go.Scatter(
                             x=x_str, y=df_chart['RSI'],
-                            mode='lines', line=dict(color='#8b5cf6', width=1.2),
+                            mode='lines', line=dict(color='#0ea5e9', width=1.4),
                             showlegend=False,
                         ), row=4, col=1)
-                        for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
+                        for lvl, clr in [(70,'rgba(255,61,90,0.5)'),(30,'rgba(0,229,160,0.5)')]:
                             fig.add_trace(go.Scatter(
                                 x=[x_str[0], x_str[-1]], y=[lvl, lvl],
                                 mode='lines', line=dict(color=clr, width=1, dash='dot'),
@@ -11894,7 +11902,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             ), row=4, col=1)
 
                         # ── MACD ──────────────────────────────────────────────
-                        macd_hist_clr = [inc_color if v >= 0 else dec_color
+                        macd_hist_clr = ['rgba(0,229,160,0.75)' if v >= 0 else 'rgba(255,61,90,0.75)'
                                          for v in df_chart['MACD_hist']]
                         fig.add_trace(go.Bar(
                             x=x_str, y=df_chart['MACD_hist'],
@@ -11902,12 +11910,12 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         ), row=5, col=1)
                         fig.add_trace(go.Scatter(
                             x=x_str, y=df_chart['MACD'],
-                            mode='lines', line=dict(color='#2196f3', width=1.2),
+                            mode='lines', line=dict(color='#0ea5e9', width=1.4),
                             showlegend=False,
                         ), row=5, col=1)
                         fig.add_trace(go.Scatter(
                             x=x_str, y=df_chart['MACD_signal'],
-                            mode='lines', line=dict(color='#ff5252', width=1.2),
+                            mode='lines', line=dict(color='#f472b6', width=1.4),
                             showlegend=False,
                         ), row=5, col=1)
                         fig.add_trace(go.Scatter(
@@ -11923,27 +11931,27 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         # ── Layout ────────────────────────────────────────────
                         ax_x = dict(
                             type='category',
-                            showgrid=False,
+                            showgrid=True, gridcolor=tv_grid_color,
                             showline=True, linecolor=tv_border, linewidth=1,
                             zeroline=False,
                             tickangle=-30,
-                            tickfont=dict(size=10),
+                            tickfont=dict(size=10, color=tv_text_color),
                             automargin=False,
                         )
                         ax_y_plain = dict(
-                            showgrid=False,
+                            showgrid=True, gridcolor=tv_grid_color,
                             showline=True, linecolor=tv_border, linewidth=1,
                             zeroline=False,
-                            tickfont=dict(size=10),
+                            tickfont=dict(size=10, color=tv_text_color),
                             type='linear',
                             side='right',
                             automargin=False,
                         )
                         ax_y_grid = dict(
-                            showgrid=True, gridcolor=tv_border,
+                            showgrid=True, gridcolor=tv_grid_color,
                             showline=True, linecolor=tv_border, linewidth=1,
                             zeroline=False,
-                            tickfont=dict(size=10),
+                            tickfont=dict(size=10, color=tv_text_color),
                             type='linear',
                             side='right',
                             automargin=False,
@@ -11974,9 +11982,9 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
                         # ── EMA Legend ────────────────────────────────────────
                         ema_items = [
-                            ('#009dff','EMA 13 - Fast (Momentum)'),
-                            ('#ff0000','EMA 21 - Signal'),
-                            ('#cc00ff','EMA 100 - Mid Trend'),
+                            ('#0ea5e9','EMA 13 - Fast (Momentum)'),
+                            ('#f472b6','EMA 21 - Signal'),
+                            ('#a78bfa','EMA 100 - Mid Trend'),
                             ('#8b5cf6','EMA 200 - Major Trend'),
                             ('#f5a623','Vol MA20 - Avg Volume'),
                         ]
@@ -14757,6 +14765,8 @@ function calculate() {{
         _G   = "#26a69a"   # green
         _R   = "#f23645"   # red
         _Y   = "#fbbf24"   # yellow warning
+        _FEAT_BG = "rgba(8,12,22,0.85)" if is_dark else "rgba(248,246,255,0.95)"
+        _FEAT_BD = "rgba(124,58,237,0.2)" if is_dark else "rgba(124,58,237,0.18)"
         _TXT = text_main
         _SUB = text_sub
         _BG  = met_bg
@@ -14862,8 +14872,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 /* Feature cards */
 .feat{{
-  background:rgba(8,12,22,0.85);
-  border:1px solid rgba(124,58,237,0.2);
+  background:{_FEAT_BG};
+  border:1px solid {_FEAT_BD};
   border-left:4px solid {_P};
   border-radius:0 10px 10px 0;
   padding:18px 20px;
@@ -15138,7 +15148,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
 .sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:1px solid rgba(124,58,237,0.2);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};}}
 .feat.green{{border-left-color:{_G};}}
 .feat.yellow{{border-left-color:{_Y};}}
@@ -15177,7 +15187,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .bdg-r{{background:rgba(242,54,69,0.12);color:{_R};}}
 .bdg-y{{background:rgba(251,191,36,0.12);color:{_Y};}}
 .div{{height:1px;background:rgba(124,58,237,0.15);margin:24px 0;}}
-.rrg-diagram{{background:rgba(8,12,22,0.9);border:1px solid rgba(124,58,237,0.25);border-radius:12px;padding:20px;margin:14px 0;position:relative;}}
+.rrg-diagram{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:12px;padding:20px;margin:14px 0;position:relative;}}
 .rrg-title{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB};text-align:center;margin-bottom:14px;}}
 .rrg-grid{{display:grid;grid-template-columns:1fr 1fr;gap:3px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;}}
 .rrg-q{{padding:14px 12px;text-align:center;}}
@@ -15432,7 +15442,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
 .sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
 .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
@@ -15556,7 +15566,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.15rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
 .sec-desc{{font-size:0.85rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:14px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
 .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
@@ -15597,7 +15607,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
 .badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
 /* Chart Illustration SVG wrapper */
-.chart-illus{{width:100%;background:#0d1117;border:1.5px solid rgba(124,58,237,0.3);border-radius:10px;padding:10px 6px 6px;margin:14px 0;overflow:hidden;}}
+.chart-illus{{width:100%;background:{_FEAT_BG};border:1.5px solid {_FEAT_BD};border-radius:10px;padding:10px 6px 6px;margin:14px 0;overflow:hidden;}}
 .chart-illus svg{{width:100%;display:block;}}
 /* Risk level badges */
 .rl-row{{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;}}
@@ -15962,7 +15972,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
 .sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
 .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
@@ -16087,7 +16097,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
 .sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
 .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
@@ -16225,7 +16235,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 .sec-icon{{font-size:1.6rem;}}
 .sec-title{{font-size:1.18rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
 .sec-desc{{font-size:0.88rem;color:{_SUB};margin-top:3px;}}
-.feat{{background:rgba(8,12,22,0.85);border:2px solid rgba(124,58,237,0.28);border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
 .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
 .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
 .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
@@ -16253,13 +16263,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 .table-wrap{{overflow-x:auto;margin:12px 0;}}
 table{{width:100%;border-collapse:collapse;font-size:0.85rem;}}
-th{{background:rgba(124,58,237,0.2);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
+th{{background:rgba(124,58,237,0.15);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
 td{{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:{_TXT};}}
 tr:hover td{{background:rgba(124,58,237,0.07);}}
 .alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_Y};}}
 .info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.88rem;color:{_B};}}
 .broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
-.broker-card{{background:rgba(8,12,22,0.9);border:1px solid rgba(124,58,237,0.18);border-radius:8px;padding:12px 14px;}}
+.broker-card{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:8px;padding:12px 14px;}}
 .broker-card.foreign{{border-left:3px solid rgba(242,54,69,0.6);}}
 .broker-card.bumn{{border-left:3px solid rgba(38,166,154,0.7);}}
 .broker-card.local{{border-left:3px solid rgba(139,92,246,0.6);}}
