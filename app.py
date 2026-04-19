@@ -6405,15 +6405,17 @@ if current_view == "dashboard":
 
     is_dark = st.session_state.get("theme", "dark") == "dark"
 
-    text_main  = "#e8eaf0" if is_dark else "#0d1117"
-    text_sub   = "#6b7a99" if is_dark else "#64748b"
-    card_bg    = "rgba(10,14,26,0.85)" if is_dark else "#ffffff"
-    card_border= "rgba(124,58,237,0.15)" if is_dark else "#e2e8f0"
+    # ── SIGMA TERMINAL COLOR SYSTEM ──
+    # Accent: #0328EE (blue), BG: #010725, Card: #010D50
+    text_main  = "#FFFFFF" if is_dark else "#0d1117"
+    text_sub   = "#8899bb" if is_dark else "#64748b"
+    card_bg    = "rgba(1,13,80,0.92)" if is_dark else "#ffffff"
+    card_border= "rgba(3,40,238,0.25)" if is_dark else "#e2e8f0"
     card_shadow= "0 4px 24px rgba(0,0,0,0.6)" if is_dark else "0 4px 16px rgba(0,0,0,0.06)"
-    met_bg     = "rgba(8,12,22,0.9)" if is_dark else "#f8fafc"
-    met_border = "rgba(124,58,237,0.22)" if is_dark else "#e2e8f0"
+    met_bg     = "rgba(1,13,80,0.85)" if is_dark else "#f0f4ff"
+    met_border = "rgba(3,40,238,0.28)" if is_dark else "#e2e8f0"
     met_shadow = "0 2px 12px rgba(0,0,0,0.5)" if is_dark else "0 2px 8px rgba(0,0,0,0.04)"
-    met_hover  = "rgba(124,58,237,0.7)"
+    met_hover  = "rgba(3,40,238,0.7)"
     tv_theme   = "dark" if is_dark else "light"
     # Tambahkan baris ini di bagian inisialisasi variabel dashboard Anda
     news_theme = "dark" if is_dark else "light"
@@ -6437,16 +6439,19 @@ if current_view == "dashboard":
     """
     st.markdown(f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-    /* ── Accent color upgrade - ungu lebih terang & vivid ── */
+    /* ── SIGMA Terminal Color System ── */
     :root {{
-        --sigma-accent: #b89fff;
-        --sigma-accent-dim: rgba(184,159,255,0.18);
-        --sigma-accent-border: rgba(184,159,255,0.32);
+        --sigma-accent: #0328EE;
+        --sigma-accent-dim: rgba(3,40,238,0.15);
+        --sigma-accent-border: rgba(3,40,238,0.30);
+        --sigma-bg: #010725;
+        --sigma-card: #010D50;
+        --sigma-text: #FFFFFF;
     }}
 
-    .stApp, .stApp * {{ font-family: 'IBM Plex Sans', sans-serif !important; }}
+    .stApp, .stApp * {{ font-family: 'DM Sans', sans-serif !important; }}
 
     [data-testid="stDataFrame"] [data-testid="stElementToolbar"],
     [data-testid="stDataFrame"] [aria-haspopup="menu"],
@@ -6469,11 +6474,11 @@ if current_view == "dashboard":
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #a78bfa, transparent);
+        background: linear-gradient(90deg, transparent, #0328EE, transparent);
         opacity: 0;
         transition: opacity 0.2s;
     }}
-    [data-testid="stMetric"]:hover {{ border-color: rgba(124,58,237,0.5) !important; box-shadow: 0 0 20px rgba(124,58,237,0.12) !important; }}
+    [data-testid="stMetric"]:hover {{ border-color: rgba(3,40,238,0.5) !important; box-shadow: 0 0 20px rgba(3,40,238,0.12) !important; }}
     [data-testid="stMetric"]:hover::before {{ opacity: 1; }}
     [data-testid="stMetricValue"] {{
         font-family: 'IBM Plex Mono', monospace !important;
@@ -6483,9 +6488,10 @@ if current_view == "dashboard":
         letter-spacing: -0.5px !important;
     }}
     [data-testid="stMetricLabel"] {{
-        font-size: 1.02rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.08em !important;
+        font-family: 'DM Sans', sans-serif !important;
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.10em !important;
         text-transform: uppercase !important;
         color: {text_sub} !important;
     }}
@@ -6493,14 +6499,14 @@ if current_view == "dashboard":
 
     [data-testid="stTabs"] [role="tablist"] {{
         background: {"rgba(6,9,18,0.95)" if is_dark else "#f1f5f9"} !important;
-        border: 1px solid {"rgba(184,159,255,0.2)" if is_dark else "#ede9fe"} !important;
+        border: 1px solid {"rgba(3,40,238,0.2)" if is_dark else "#e8f0ff"} !important;
         border-radius: 8px !important;
         padding: 5px !important;
         gap: 2px !important;
         backdrop-filter: blur(10px) !important;
     }}
     [data-testid="stTabs"] button[role="tab"] {{
-        font-family: 'IBM Plex Sans', sans-serif !important;
+        font-family: 'DM Sans', sans-serif !important;
         font-size: 1.08rem !important;
         font-weight: 500 !important;
         letter-spacing: 0.05em !important;
@@ -6513,14 +6519,14 @@ if current_view == "dashboard":
         transition: all 0.2s !important;
     }}
     [data-testid="stTabs"] button[role="tab"]:hover {{
-        color: {"#b89fff" if is_dark else "#7c3aed"} !important;
-        background: {"rgba(184,159,255,0.10)" if is_dark else "rgba(124,58,237,0.06)"} !important;
+        color: {"#0328EE" if is_dark else "#0328EE"} !important;
+        background: {"rgba(3,40,238,0.12)" if is_dark else "rgba(3,40,238,0.06)"} !important;
     }}
     [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
-        background: {"rgba(184,159,255,0.12)" if is_dark else "#ffffff"} !important;
-        color: {"#b89fff" if is_dark else "#0d1117"} !important;
+        background: {"rgba(3,40,238,0.12)" if is_dark else "#ffffff"} !important;
+        color: {"#0328EE" if is_dark else "#0d1117"} !important;
         font-weight: 600 !important;
-        box-shadow: {"0 1px 8px rgba(184,159,255,0.18), inset 0 0 0 1px rgba(184,159,255,0.22)" if is_dark else "0 1px 4px rgba(0,0,0,0.1)"} !important;
+        box-shadow: {"0 1px 8px rgba(3,40,238,0.18), inset 0 0 0 1px rgba(3,40,238,0.22)" if is_dark else "0 1px 4px rgba(0,0,0,0.1)"} !important;
     }}
     [data-testid="stTabs"] [role="tabpanel"] {{
         background: transparent !important;
@@ -6530,19 +6536,19 @@ if current_view == "dashboard":
     }}
 
     .trm-section {{ display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; }}
-    .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(184,159,255,0.22)" if is_dark else "#ede9fe"}; }}
+    .trm-section-line {{ flex: 1; height: 1px; background: {"rgba(3,40,238,0.22)" if is_dark else "#e8f0ff"}; }}
     .trm-section-label {{
         font-family: 'IBM Plex Mono', monospace;
         font-size: 1.18rem;
         font-weight: 600;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: {"#b89fff" if is_dark else "#7c3aed"};
+        color: {"#0328EE" if is_dark else "#0328EE"};
         white-space: nowrap;
         padding: 3px 10px;
-        border: 1px solid {"rgba(184,159,255,0.35)" if is_dark else "rgba(124,58,237,0.2)"};
+        border: 1px solid {"rgba(3,40,238,0.35)" if is_dark else "rgba(3,40,238,0.2)"};
         border-radius: 3px;
-        background: {"rgba(184,159,255,0.06)" if is_dark else "#f8fafc"};
+        background: {"rgba(3,40,238,0.06)" if is_dark else "#f0f4ff"};
     }}
 
     .trm-card {{
@@ -6554,20 +6560,20 @@ if current_view == "dashboard":
         transition: border-color 0.2s;
         margin-bottom: 12px;
     }}
-    .trm-card:hover {{ border-color: rgba(184,159,255,0.5); box-shadow: 0 0 16px rgba(184,159,255,0.12); }}
+    .trm-card:hover {{ border-color: rgba(184,159,255,0.5); box-shadow: 0 0 16px rgba(3,40,238,0.12); }}
     .trm-card-title {{
         font-family: 'IBM Plex Mono', monospace;
         font-size: 0.9rem;
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        color: #b89fff;
+        color: #0328EE;
         margin-bottom: 10px;
         font-weight: 600;
     }}
 
     .trm-insight {{
-        background: {"rgba(184,159,255,0.06)" if is_dark else "#fffbeb"};
-        border-left: 3px solid #b89fff;
+        background: {"rgba(3,40,238,0.08)" if is_dark else "#eef2ff"};
+        border-left: 3px solid #0328EE;
         border-radius: 0 6px 6px 0;
         padding: 14px 18px;
         margin: 12px 0;
@@ -6579,50 +6585,55 @@ if current_view == "dashboard":
     .fancy-divider {{
         border: 0;
         height: 1px;
-        background: {"rgba(184,159,255,0.2)" if is_dark else "#ede9fe"};
+        background: {"rgba(3,40,238,0.2)" if is_dark else "#e8f0ff"};
         margin: 20px 0;
     }}
 
-    /* ── Kurangi gap berlebih dari components.html (iframe) ── */
+    /* ── Gap control: Live Market <-> Market Brief ── */
     [data-testid="stCustomComponentV1"] {{
-        margin-bottom: -10px !important;
+        margin-bottom: -8px !important;
         display: block !important;
     }}
-    /* Kurangi gap berlebih dari st.line_chart */
     [data-testid="stArrowVegaLiteChart"] {{
-        margin-bottom: -10px !important;
+        margin-bottom: -8px !important;
+    }}
+    /* Reduce default Streamlit vertical block spacing in Terminal */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {{
+        gap: 0.5rem !important;
+    }}
+    .element-container {{
+        margin-bottom: 0 !important;
     }}
 
     [data-testid="stTabs"] ~ div .stButton > button,
     [data-testid="stVerticalBlock"] .stButton > button {{
-        background: {"rgba(184,159,255,0.1)" if is_dark else "rgba(124,58,237,0.08)"} !important;
-        color: {"#b89fff" if is_dark else "#7c3aed"} !important;
-        border: 1px solid {"rgba(184,159,255,0.32)" if is_dark else "rgba(124,58,237,0.35)"} !important;
-        font-family: 'IBM Plex Mono', monospace !important;
-        font-size: 1.08rem !important;
-        font-weight: 600 !important;
+        background: #0328EE !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        font-family: 'DM Sans', sans-serif !important;
+        font-size: 0.82rem !important;
+        font-weight: 700 !important;
         letter-spacing: 0.06em !important;
         text-transform: uppercase !important;
-        border-radius: 5px !important;
-        padding: 10px 18px !important;
+        border-radius: 50px !important;
+        padding: 10px 22px !important;
         transition: all 0.2s !important;
-        box-shadow: none !important;
+        box-shadow: 0 4px 16px rgba(3,40,238,0.35) !important;
     }}
     [data-testid="stTabs"] ~ div .stButton > button:hover,
     [data-testid="stVerticalBlock"] .stButton > button:hover {{
-        background: {"linear-gradient(135deg,rgba(124,58,237,0.22),rgba(59,130,246,0.20))" if is_dark else "linear-gradient(135deg,rgba(124,58,237,0.14),rgba(59,130,246,0.12))"} !important;
-        border-color: {"rgba(124,58,237,0.65)" if is_dark else "rgba(124,58,237,0.5)"} !important;
-        color: {"#a78bfa" if is_dark else "#7c3aed"} !important;
-        box-shadow: 0 0 14px rgba(124,58,237,0.18) !important;
+        background: #0218a8 !important;
+        box-shadow: 0 6px 20px rgba(3,40,238,0.5) !important;
+        transform: translateY(-1px) !important;
     }}
 
    .trm-ticker-wrap {{ overflow: hidden; max-width: 100%;
         white-space: nowrap;
-        border-top: 1px solid {"rgba(124,58,237,0.15)" if is_dark else "#ede9fe"};
-        border-bottom: 1px solid {"rgba(124,58,237,0.15)" if is_dark else "#ede9fe"};
-        background: {"rgba(124,58,237,0.04)" if is_dark else "#f5f3ff"};
+        border-top: 1px solid {"rgba(3,40,238,0.15)" if is_dark else "#e8f0ff"};
+        border-bottom: 1px solid {"rgba(3,40,238,0.15)" if is_dark else "#e8f0ff"};
+        background: {"rgba(3,40,238,0.04)" if is_dark else "#f5f3ff"};
         padding: 7px 0;
-        margin: 0 0 20px;
+        margin: 0 0 10px;
         position: relative;
     }}
     .trm-ticker-tape {{
@@ -6635,7 +6646,7 @@ if current_view == "dashboard":
     }}
     .trm-ticker-tape .up {{ color: #26a69a; }}
     .trm-ticker-tape .dn {{ color: #f23645; }}
-    .trm-ticker-tape .sep {{ color: {"rgba(124,58,237,0.3)" if is_dark else "#6d28d9"}; margin: 0 18px; }}
+    .trm-ticker-tape .sep {{ color: rgba(3,40,238,0.4); margin: 0 18px; }}
     @keyframes ticker-scroll {{
         0%   {{ transform: translateX(0); }}
         100% {{ transform: translateX(-50%); }}
@@ -6653,8 +6664,8 @@ if current_view == "dashboard":
         padding: 10px 14px !important;
     }}
     [data-testid="stTextInput"] input:focus {{
-        border-color: rgba(124,58,237,0.5) !important;
-        box-shadow: 0 0 0 2px rgba(124,58,237,0.08) !important;
+        border-color: rgba(3,40,238,0.5) !important;
+        box-shadow: 0 0 0 2px rgba(3,40,238,0.08) !important;
     }}
     [data-testid="stTextInput"] label, [data-testid="stSelectbox"] label {{
         font-family: 'IBM Plex Mono', monospace !important;
@@ -6690,11 +6701,21 @@ if current_view == "dashboard":
             max-width: 100vw !important;
         }}
 
-        /* Tabs: ukuran label lebih kecil */
+        /* Tabs: scrollable + compact on mobile */
+        [data-testid="stTabs"] [role="tablist"] {{
+            overflow-x: auto !important;
+            flex-wrap: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+            padding: 4px !important;
+        }}
+        [data-testid="stTabs"] [role="tablist"]::-webkit-scrollbar {{ display: none !important; }}
         [data-testid="stTabs"] button[role="tab"] {{
-            font-size: 0.85rem !important;
-            padding: 6px 8px !important;
-            letter-spacing: 0.02em !important;
+            font-size: 0.8rem !important;
+            padding: 6px 10px !important;
+            letter-spacing: 0.01em !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
         }}
 
         /* Metric cards: anti overflow */
@@ -6838,7 +6859,56 @@ if current_view == "dashboard":
         /* Filter inputs: full width on mobile */
         [data-testid="stTextInput"] input,
         [data-testid="stSelectbox"] select {{
-            font-size: 1.02rem !important;
+            font-size: 1rem !important;
+        }}
+
+        /* Metric value mobile size */
+        [data-testid="stMetricValue"] {{
+            font-size: 1.15rem !important;
+        }}
+        [data-testid="stMetricLabel"] {{
+            font-size: 0.65rem !important;
+        }}
+
+        /* Terminal header SIGMA TERMINAL title */
+        .trm-title {{
+            font-size: clamp(0.9rem, 4vw, 1.2rem) !important;
+            letter-spacing: 0.06em !important;
+        }}
+
+        /* Buttons full width on mobile */
+        [data-testid="stVerticalBlock"] .stButton > button {{
+            width: 100% !important;
+            padding: 12px 16px !important;
+            font-size: 0.8rem !important;
+        }}
+
+        /* Reduce section label on mobile */
+        .trm-section-label {{
+            font-size: 0.65rem !important;
+            letter-spacing: 0.10em !important;
+        }}
+
+        /* trm-card-title mobile */
+        .trm-card-title {{
+            font-size: 0.75rem !important;
+            letter-spacing: 0.10em !important;
+        }}
+
+        /* Bottom padding for mobile browser chrome */
+        [data-testid="stMainBlockContainer"] {{
+            padding-bottom: 80px !important;
+        }}
+
+        /* Broker summary table compact */
+        .sum-card {{
+            padding: 10px 10px !important;
+        }}
+        .sum-val {{
+            font-size: 1.1rem !important;
+        }}
+        .sum-label {{
+            font-size: 0.6rem !important;
         }}
     }}
     </style>
@@ -6852,16 +6922,16 @@ if current_view == "dashboard":
         flex-wrap: wrap;
         gap: 6px;
         padding: 18px 4px 6px;
-        border-bottom: 1px solid {'rgba(124,58,237,0.12)' if is_dark else '#e2e8f0'};
+        border-bottom: 1px solid {'rgba(3,40,238,0.12)' if is_dark else '#e2e8f0'};
         margin-bottom: 18px;
     ">
         <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
-            <span style="
-                font-family:'IBM Plex Mono',monospace;
-                font-size:clamp(1.0rem, 4vw, 1.45rem);
+            <span class="trm-title" style="
+                font-family:'DM Sans',sans-serif;
+                font-size:clamp(1.0rem, 4vw, 1.35rem);
                 font-weight:700;
-                letter-spacing:0.10em;
-                color:#a78bfa;
+                letter-spacing:0.06em;
+                color:#0328EE;
                 text-transform:uppercase;
             ">SIGMA TERMINAL</span>
             <span style="
@@ -7021,16 +7091,16 @@ if current_view == "dashboard":
         # ── Shared table CSS (same style as Corporate Action) ───────────────
         st.markdown(f"""<style>
         .mkt-wrap {{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;}}
-        .mkt-hdr {{padding:10px 16px;background:rgba(124,58,237,0.09);border-bottom:1px solid {met_border};font-size:0.92rem;font-weight:700;letter-spacing:0.12em;color:#a78bfa;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
+        .mkt-hdr {{padding:10px 16px;background:rgba(124,58,237,0.09);border-bottom:1px solid {met_border};font-size:0.92rem;font-weight:700;letter-spacing:0.12em;color:#0328EE;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
         .mkt-hdr-badge {{font-size:0.75rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
         .mkt-scroll {{width:100%;overflow-x:auto;overflow-y:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
         .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
         .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
         table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
-        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(124,58,237,0.10);color:#a78bfa;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.84rem;white-space:nowrap;}}
+        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(124,58,237,0.10);color:#0328EE;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.84rem;white-space:nowrap;}}
         table.mkt-tbl tbody td {{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
         table.mkt-tbl tbody tr:last-child td {{border-bottom:none;}}
-        table.mkt-tbl tbody tr:hover td {{background:rgba(124,58,237,0.04);}}
+        table.mkt-tbl tbody tr:hover td {{background:rgba(3,40,238,0.04);}}
         .mkt-name {{font-weight:600;font-size:0.93rem;}}
         .mkt-price {{font-size:0.98rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
         .mkt-up {{color:#089981;}}
@@ -7149,13 +7219,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;}}
 .col{{flex:1;min-width:0;}}
 .mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;height:100%;}}
-.mkt-hdr{{padding:10px 16px;background:rgba(184,159,255,0.07);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#b89fff;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.mkt-hdr{{padding:10px 16px;background:rgba(184,159,255,0.07);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#0328EE;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
 .mkt-badge{{font-size:0.93rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.13rem;min-width:320px;}}
-thead th{{position:static;background:rgba(184,159,255,0.08);color:#b89fff;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
+thead th{{position:static;background:rgba(184,159,255,0.08);color:#0328EE;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
 tbody td{{padding:8px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
@@ -7216,7 +7286,7 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
     var h='';
     data.forEach(function(r){{
       if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.92rem;color:rgba(124,58,237,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(124,58,237,0.15);background:rgba(124,58,237,0.03);">'+r.label+'</td></tr>';
+        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.92rem;color:rgba(124,58,237,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.15);background:rgba(124,58,237,0.03);">'+r.label+'</td></tr>';
         return;
       }}
       var up = r.cls==='mkt-up';
@@ -7606,7 +7676,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         # ── Render Daily Brief (jika ada) ──────────────────────────────────
         def _render_mb_block(content, ts, mode_key):
             _mb_icon  = "🔄" if mode_key == "daily" else "🗓️"
-            _mb_color = "#4285F4" if mode_key == "daily" else "#a78bfa"
+            _mb_color = "#4285F4" if mode_key == "daily" else "#4d7dff"
             _mb_title = "DAILY MARKET BRIEF - 24 JAM TERAKHIR" if mode_key == "daily" else "WEEKLY MARKET BRIEF - REKAP 7 HARI"
             st.markdown(f"""
             <style>
@@ -7672,7 +7742,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             padding: 12px 15px;
             background: rgba(124,58,237,0.1);
             border-bottom: 1px solid {met_border};
-            color: #a78bfa;
+            color: #6e9bff;
             font-family: 'IBM Plex Mono', monospace;
             font-weight: 700;
             font-size: 13px;
@@ -7712,7 +7782,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#a78bfa; font-weight:bold; font-size:13px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
+                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#0328EE; font-weight:bold; font-size:13px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -7720,7 +7790,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
             st.markdown(f"""
             <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#a78bfa; font-weight:bold; font-size:13px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
+                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#0328EE; font-weight:bold; font-size:13px; font-family:IBM Plex Mono,monospace; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
 
@@ -7736,22 +7806,22 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         dates = pd.date_range(start="2025-04-01", end="2026-03-01", freq="MS")
 
         with macro_col1:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;color:#a78bfa;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;color:#0328EE;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127470;&#127465; Makro Indonesia</p>", unsafe_allow_html=True)
             macro_id = pd.DataFrame({
                 "BI Rate (%)": [6.00, 6.00, 6.00, 5.75, 5.75, 5.50, 5.25, 5.00, 4.75, 4.75, 4.75, 4.75],
                 "Inflasi RI (%)": [2.50, 2.60, 2.70, 2.50, 2.40, 2.30, 2.56, 2.86, 2.61, 3.55, 4.76, 4.76],
                 "Yield 10Y RI (%)": [6.90, 7.00, 7.10, 6.90, 6.80, 6.70, 6.60, 6.75, 6.80, 6.70, 6.60, 6.50]
             }, index=dates)
-            st.line_chart(macro_id, color=["#a78bfa", "#4285F4", "#ff5555"], height=320)
+            st.line_chart(macro_id, color=["#4d7dff", "#4285F4", "#ff5555"], height=320)
 
         with macro_col2:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;color:#a78bfa;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;color:#0328EE;font-weight:600;text-transform:uppercase;margin-bottom:8px;'>&#127482;&#127480; Makro United States</p>", unsafe_allow_html=True)
             macro_us = pd.DataFrame({
                 "Fed Rate (%)": [5.00, 5.00, 5.00, 5.00, 4.75, 4.50, 4.25, 4.00, 3.75, 3.75, 3.75, 3.75],
                 "Inflasi US (%)": [3.40, 3.30, 3.00, 2.90, 2.50, 2.40, 2.60, 3.10, 2.90, 2.60, 2.40, 2.40],
                 "Yield 10Y US (%)": [4.50, 4.40, 4.30, 4.10, 3.90, 3.80, 4.10, 4.30, 4.20, 4.10, 4.15, 4.20]
             }, index=dates)
-            st.line_chart(macro_us, color=["#a78bfa", "#4285F4", "#ff5555"], height=320)
+            st.line_chart(macro_us, color=["#4d7dff", "#4285F4", "#ff5555"], height=320)
 
         st.markdown(f"<div class='trm-insight'>&#128161; <b>SIGMA VIEW &mdash;</b> Suku bunga global sudah berada di tren pemangkasan. Namun, perhatikan lonjakan <b>Inflasi RI</b> belakangan ini yang membuat BI menunda pemangkasan lanjutan agar nilai tukar Rupiah tetap stabil.</div>", unsafe_allow_html=True)
 
@@ -7761,11 +7831,11 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             <div class="trm-card">
                 <div class="trm-card-title">Fundamental &amp; The Real Macro</div>
                 <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
-                <span style='color:#a78bfa;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
+                <span style='color:#0328EE;font-weight:600;'>GDP &amp; PMI Manufaktur</span><br>
                 Perekonomian ditopang konsumsi rumah tangga. PMI di atas 50 menandakan ekspansi pabrik.
                 </p>
                 <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:10px 0 0;'>
-                <span style='color:#a78bfa;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
+                <span style='color:#0328EE;font-weight:600;'>Cadangan Devisa &amp; Neraca Perdagangan</span><br>
                 Bantalan krusial untuk intervensi Bank Indonesia dalam menahan gejolak Rupiah.
                 </p>
             </div>
@@ -7822,7 +7892,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             ],
         }
 
-        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#a78bfa", "LOW": "#4285F4"}
+        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#4d7dff", "LOW": "#4285F4"}
         dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(124,58,237,0.10)", "LOW": "rgba(66,133,244,0.10)"}
 
         # ── Build JSON for each country ──────────────────────────────────
@@ -7859,16 +7929,16 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;}}
 .row{{display:flex;gap:14px;width:100%;align-items:flex-start;}}
 .col{{flex:1;min-width:0;}}
 .cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.cal-hdr{{padding:10px 16px;background:rgba(124,58,237,0.09);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#a78bfa;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
+.cal-hdr{{padding:10px 16px;background:rgba(124,58,237,0.09);border-bottom:1px solid {met_border};font-size:1.1rem;font-weight:700;letter-spacing:0.12em;color:#0328EE;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;}}
 .cal-sub{{font-size:0.92rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
 .scroll-box{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
 .scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
 table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.12rem;min-width:340px;}}
-thead th{{position:static;background:rgba(124,58,237,0.10);color:#a78bfa;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
+thead th{{position:static;background:rgba(124,58,237,0.10);color:#0328EE;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:1.02rem;white-space:nowrap;}}
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.04);cursor:default;}}
+tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
 .dt{{font-size:1.03rem;color:{text_sub};}}
 .ev{{font-size:1.11rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
 .fc{{font-size:1.09rem;color:#089981;font-weight:600;display:block;}}
@@ -7879,7 +7949,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);cursor:default;}}
 .tip-wrap:hover .tip{{display:block;}}
 .tip{{display:none;position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:9999;
   background:{'#1a2035' if is_dark else '#ffffff'};
-  border:1px solid {met_border};border-left:3px solid #a78bfa;
+  border:1px solid {met_border};border-left:3px solid #4d7dff;
   border-radius:0 6px 6px 0;padding:8px 12px;
   font-size:0.87rem;color:{text_main};line-height:1.5;
   pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,0.4);
@@ -8115,7 +8185,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);cursor:default;}}
             "dividen": ("#089981", "rgba(8,153,129,0.15)"),
             "dividend": ("#089981", "rgba(8,153,129,0.15)"),
             "payment": ("#089981", "rgba(8,153,129,0.15)"),
-            "rups": ("#a78bfa", "rgba(124,58,237,0.12)"),
+            "rups": ("#4d7dff", "rgba(3,40,238,0.12)"),
             "right": ("#4285F4", "rgba(66,133,244,0.14)"),
             "rights": ("#4285F4", "rgba(66,133,244,0.14)"),
             "split": ("#b07cf8", "rgba(176,124,248,0.14)"),
@@ -8173,14 +8243,14 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);cursor:default;}}
         .ca-stats {{ display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; }}
         .ca-stat {{ background:{met_bg}; border:1px solid {met_border}; border-radius:8px;
             padding:10px 16px; font-family:'IBM Plex Mono',monospace; flex:1; min-width:100px; }}
-        .ca-stat-val {{ font-size:1.5rem; font-weight:700; color:#a78bfa; }}
+        .ca-stat-val {{ font-size:1.5rem; font-weight:700; color:#0328EE; }}
         .ca-stat-lbl {{ font-size:0.82rem; color:{text_sub}; letter-spacing:0.08em; margin-top:2px; }}
         .ca-tbl {{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono',monospace; font-size:0.94rem; }}
-        .ca-tbl th {{ background:rgba(124,58,237,0.10); color:#a78bfa; padding:10px 12px;
+        .ca-tbl th {{ background:rgba(124,58,237,0.10); color:#0328EE; padding:10px 12px;
             text-align:left; border-bottom:1px solid {met_border}; letter-spacing:0.06em; font-weight:700; font-size:0.85rem; }}
         .ca-tbl td {{ padding:10px 12px; border-bottom:1px solid {met_border}; color:{text_main}; vertical-align:middle; }}
         .ca-tbl tr:last-child td {{ border-bottom:none; }}
-        .ca-tbl tr:hover td {{ background:rgba(124,58,237,0.04); }}
+        .ca-tbl tr:hover td {{ background:rgba(3,40,238,0.04); }}
         .ca-badge {{ padding:3px 8px; border-radius:4px; font-weight:700; font-size:0.85rem; letter-spacing:0.04em; }}
         .ca-ev-badge {{ padding:3px 8px; border-radius:4px; font-size:0.85rem; font-weight:600; white-space:nowrap; }}
         .ca-info {{ color:{text_sub}; font-size:0.9rem; }}
@@ -8199,7 +8269,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);cursor:default;}}
         <div class='ca-stats'>
             <div class='ca-stat'><div class='ca-stat-val'>{_total}</div><div class='ca-stat-lbl'>TOTAL EVENTS</div></div>
             <div class='ca-stat'><div class='ca-stat-val' style='color:#089981;'>{_div_ct}</div><div class='ca-stat-lbl'>DIVIDEN</div></div>
-            <div class='ca-stat'><div class='ca-stat-val' style='color:#a78bfa;'>{_rups_ct}</div><div class='ca-stat-lbl'>RUPS</div></div>
+            <div class='ca-stat'><div class='ca-stat-val' style='color:#0328EE;'>{_rups_ct}</div><div class='ca-stat-lbl'>RUPS</div></div>
             <div class='ca-stat'><div class='ca-stat-val' style='color:#4285F4;'>{_ri_ct}</div><div class='ca-stat-lbl'>RIGHTS ISSUE</div></div>
         </div>
         <p style='font-family:IBM Plex Mono,monospace;font-size:0.83rem;color:{text_sub};margin-bottom:12px;'>
@@ -8263,7 +8333,7 @@ table{{width:max-content;min-width:100%;border-collapse:collapse;
        font-family:'IBM Plex Mono',monospace;font-size:0.94rem;}}
 thead th{{
   position:sticky;top:0;z-index:2;
-  background:rgba(124,58,237,0.10);color:#a78bfa;
+  background:rgba(124,58,237,0.10);color:#0328EE;
   padding:10px 12px;text-align:left;
   border-bottom:1px solid {met_border};
   letter-spacing:0.06em;font-weight:700;font-size:0.85rem;
@@ -8272,7 +8342,7 @@ thead th{{
 tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};
           color:{text_main};vertical-align:middle;white-space:nowrap;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
+tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 .ca-badge{{padding:3px 8px;border-radius:4px;font-weight:700;font-size:0.85rem;letter-spacing:0.04em;}}
 .ca-ev-badge{{padding:3px 8px;border-radius:4px;font-size:0.85rem;font-weight:600;white-space:nowrap;}}
 .ca-info{{color:{text_sub};font-size:0.9rem;white-space:normal;max-width:280px;}}
@@ -8355,7 +8425,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
         st.markdown(f"""
         <p style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:14px;line-height:1.6;'>
         Probabilitas perubahan suku bunga Fed berdasarkan CME 30-Day Fed Fund Futures. 
-        Rate saat ini: <b style='color:#a78bfa;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
+        Rate saat ini: <b style='color:#0328EE;'>3.50–3.75%</b> &middot; FOMC berikutnya: <b style='color:#f23645;'>30 Apr 2026 · 01:00 WIB</b>
         </p>
         """, unsafe_allow_html=True)
 
@@ -8482,20 +8552,20 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
 
   /* Card */
   .frm-card {{
-    background: {'rgba(8,12,22,0.9)' if is_dark else '#f8fafc'};
-    border: 1px solid {'rgba(124,58,237,0.18)' if is_dark else '#e2e8f0'};
+    background: {'rgba(8,12,22,0.9)' if is_dark else '#f0f4ff'};
+    border: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
     border-radius: 12px;
     overflow: hidden;
   }}
   .frm-card-header {{
     background: rgba(124,58,237,0.07);
-    border-bottom: 1px solid {'rgba(124,58,237,0.18)' if is_dark else '#e2e8f0'};
+    border-bottom: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
     padding: 12px 16px;
   }}
   .frm-card-date {{
     font-size: 1.02rem;
     font-weight: 700;
-    color: #a78bfa;
+    color: #6e9bff;
     letter-spacing: 0.06em;
     margin-bottom: 4px;
   }}
@@ -8538,7 +8608,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
 
   /* Table section */
   .frm-tbl-wrap {{
-    border-top: 1px solid {'rgba(124,58,237,0.18)' if is_dark else '#e2e8f0'};
+    border-top: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
     overflow-x: auto;
   }}
   .frm-tbl {{
@@ -9004,9 +9074,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         _badge_color = "#089981"
         st.markdown(f"""<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
             <span style='font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};'>
-            🕐 RRG update: <b style="color:#a78bfa">13:00</b> & <b style="color:#a78bfa">21:00</b> WIB
+            🕐 RRG update: <b style="color:#4d7dff">13:00</b> & <b style="color:#4d7dff">21:00</b> WIB
             &nbsp;·&nbsp; Slot: <b style="color:{_badge_color}">{_update_slot}</b>
-            &nbsp;·&nbsp; Next: <b style="color:#a78bfa">{_next_update} WIB</b>
+            &nbsp;·&nbsp; Next: <b style="color:#4d7dff">{_next_update} WIB</b>
             &nbsp;·&nbsp; <span style='color:#60a5fa;font-weight:600;'>📊 {_screen_total} saham terscreening · top 30/sektor by market cap</span>
             </span></div>""", unsafe_allow_html=True)
 
@@ -9051,7 +9121,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 ]
             },
             "Basic Materials": {
-                "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#a78bfa",
+                "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#4d7dff",
                 "aksi": "Accumulation", "icon": "🏗️",
                 "trail": [(99.0,99.0),(100.5,100.1),(101.8,101.0),(103.5,101.8)],
                 "saham": [
@@ -9273,7 +9343,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         fase_colors = {
             "Leading":   "#089981",
-            "Improving": "#a78bfa",
+            "Improving": "#4d7dff",
             "Weakening": "#f23645",
             "Lagging":   "#4285F4",
         }
@@ -9329,7 +9399,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         # Leading=hijau, Improving=kuning, Weakening=merah, Lagging=biru
         def _rrg_bubble_color(rs, mom):
             if   rs >= 100 and mom >= 100: return "#089981"  # Leading   - hijau (kanan-atas)
-            elif rs <  100 and mom >= 100: return "#a78bfa"  # Improving - kuning (kiri-atas)
+            elif rs <  100 and mom >= 100: return "#4d7dff"  # Improving - kuning (kiri-atas)
             elif rs >= 100 and mom <  100: return "#f23645"  # Weakening - merah (kanan-bawah)
             else:                          return "#4285F4"  # Lagging   - biru  (kiri-bawah)
 
@@ -9340,7 +9410,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=100, y1=116,
             fillcolor="rgba(8,153,129,0.10)", line_width=0, layer="below")
         fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=100, y1=116,
-            fillcolor="rgba(124,58,237,0.08)", line_width=0, layer="below")
+            fillcolor="rgba(3,40,238,0.08)", line_width=0, layer="below")
         fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=84, y1=100,
             fillcolor="rgba(242,54,69,0.08)", line_width=0, layer="below")
         fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=84, y1=100,
@@ -9355,7 +9425,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         # Quadrant labels
         for lbl, x, y, c in [
             ("LEADING",   113, 114, "#089981"),
-            ("IMPROVING", 87,  114, "#a78bfa"),
+            ("IMPROVING", 87,  114, "#4d7dff"),
             ("WEAKENING", 113, 86,  "#f23645"),
             ("LAGGING",   87,  86,  "#4285F4"),
         ]:
@@ -9486,7 +9556,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         sel = st.session_state.get("rrg_selected")
         if sel and sel in rrg_sectors:
             sd = rrg_sectors[sel]
-            fc = fase_colors.get(sd["fase"], "#a78bfa")
+            fc = fase_colors.get(sd["fase"], "#4d7dff")
 
             # Header card
             st.markdown(f"""
@@ -9520,7 +9590,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             mc1, mc2, mc3, mc4 = st.columns(4)
             for col, lbl, val, c in [
                 (mc1, "LEADING",   leading_n,   "#089981"),
-                (mc2, "IMPROVING", improving_n, "#a78bfa"),
+                (mc2, "IMPROVING", improving_n, "#4d7dff"),
                 (mc3, "WEAKENING", weakening_n, "#f23645"),
                 (mc4, "LAGGING",   lagging_n,   "#4285F4"),
             ]:
@@ -9548,7 +9618,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
             fig_mini.add_shape(type="line",x0=85,x1=115,y0=100,y1=100,
                 line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
-            for lbl,x,y,c in [("LEADING",112,113,"#089981"),("IMPROVING",88,113,"#a78bfa"),
+            for lbl,x,y,c in [("LEADING",112,113,"#089981"),("IMPROVING",88,113,"#4d7dff"),
                                ("WEAKENING",112,87,"#f23645"),("LAGGING",88,87,"#4285F4")]:
                 fig_mini.add_annotation(x=x,y=y,text=f"<b>{lbl}</b>",showarrow=False,
                     font=dict(size=8,color=c,family="IBM Plex Mono"),opacity=0.8)
@@ -9605,14 +9675,14 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 font=dict(family="IBM Plex Mono", color=text_main),
             )
 
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#a78bfa;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#0328EE;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
             st.plotly_chart(fig_mini, use_container_width=True,
                 config={"displayModeBar": True, "modeBarButtonsToAdd": ["toggleFullscreen"],
                         "modeBarButtonsToRemove": ["lasso2d","select2d"],
                         "displaylogo": False, "scrollZoom": True},
                 key=f"mini_rrg_{sel}")
 
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#a78bfa\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.82rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#4d7dff\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
             # Build HTML table - max 30 rows
             tbl_rows = ""
             _saham_display = sorted(sd["saham"], key=lambda x: x["rs"], reverse=True)[:30]
@@ -9626,7 +9696,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
                         font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
                         font-family:IBM Plex Mono,monospace;'>{stk.get("fase","")}</span></td>
-                    <td style='font-size:12px;color:#a78bfa;font-weight:600;'>{_mc_disp}</td>
+                    <td style='font-size:12px;color:#0328EE;font-weight:600;'>{_mc_disp}</td>
                     <td style='font-size:13px;'>
                         <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
                         <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
@@ -9639,7 +9709,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             st.markdown(f"""<div style='overflow-y:auto;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
             <table style='width:100%;border-collapse:collapse;font-family:IBM Plex Mono,monospace;'>
             <thead><tr style='background:{met_bg};position:sticky;top:0;'>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#a78bfa;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#0328EE;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};'>MKT CAP</th>
@@ -9649,7 +9719,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
 
-            st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#a78bfa;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#0328EE;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -9660,10 +9730,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
-            background:rgba(124,58,237,0.07);border-left:3px solid #a78bfa;
+            background:rgba(124,58,237,0.07);border-left:3px solid #4d7dff;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#a78bfa;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#a78bfa;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#0328EE;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 2× setahun - Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
         </div>""", unsafe_allow_html=True)
         msci_data = {
@@ -9694,10 +9764,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_msci = pd.DataFrame(msci_data)
         
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
@@ -9707,10 +9777,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
-            background:rgba(124,58,237,0.07);border-left:3px solid #a78bfa;
+            background:rgba(124,58,237,0.07);border-left:3px solid #4d7dff;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#a78bfa;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#a78bfa;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#0328EE;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 4× setahun - Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
         </div>""", unsafe_allow_html=True)
         
@@ -9738,20 +9808,20 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_ftse = pd.DataFrame(ftse_data)
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
-            background:rgba(124,58,237,0.07);border-left:3px solid #a78bfa;
+            background:rgba(124,58,237,0.07);border-left:3px solid #4d7dff;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#a78bfa;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#a78bfa;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#0328EE;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Jadwal: 2× setahun - Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
         </div>""", unsafe_allow_html=True)
         
@@ -9791,7 +9861,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         }
         df_lq45 = pd.DataFrame(lq45_data)
 
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
         st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
@@ -9801,10 +9871,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.9rem;color:{text_sub};
-            background:rgba(124,58,237,0.07);border-left:3px solid #a78bfa;
+            background:rgba(124,58,237,0.07);border-left:3px solid #4d7dff;
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-        🗓️ <b style='color:#a78bfa;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#a78bfa;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+        🗓️ <b style='color:#0328EE;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+        <b style='color:#0328EE;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
         <span style='color:{text_sub};'>Subset 30 saham paling likuid dari LQ45. Sumber: <b>idx.co.id</b></span>
         </div>""", unsafe_allow_html=True)
 
@@ -9839,7 +9909,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             ],
         }
         df_idx30 = pd.DataFrame(idx30_data)
-        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#0328EE;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
         st.markdown("<p style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
         st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
@@ -9918,7 +9988,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
             </p>
             <p style='color:{text_sub}; font-size: 1.05rem; line-height: 1.7; margin:10px 0 0;'>
-            <span style='color:#a78bfa;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
+            <span style='color:#0328EE;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -10638,7 +10708,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                         <b style='color:{text_main};'>{sh_ticker}</b> saat ini dalam status <b style='color:#f23645;'>SUSPEND</b> 
                         di Bursa Efek Indonesia (tidak diperdagangkan lebih dari 1 bulan).<br>
                         Data pemegang saham untuk saham suspend tidak relevan karena tidak ada price discovery aktif.<br>
-                        <span style='color:#a78bfa;'>Pilih emiten lain yang aktif diperdagangkan.</span>
+                        <span style='color:#0328EE;'>Pilih emiten lain yang aktif diperdagangkan.</span>
                     </div>
                 </div>""", unsafe_allow_html=True)
                 st.stop()
@@ -10668,15 +10738,15 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             if not has_live_data:
                 # Tidak ada data sama sekali - tampilkan info yang BERGUNA bukan "pipeline"
                 st.markdown(f"""
-                <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #a78bfa;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
+                <div style='background:{met_bg};border:1px solid {met_border};border-left:4px solid #4d7dff;border-radius:14px;padding:40px 32px;text-align:center;margin:24px 0;'>
                     <div style='font-size:2rem;margin-bottom:12px;'>📡</div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:1.2rem;font-weight:700;letter-spacing:0.12em;color:#a78bfa;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:1.2rem;font-weight:700;letter-spacing:0.12em;color:#0328EE;text-transform:uppercase;margin-bottom:10px;'>DATA PEMEGANG SAHAM TIDAK TERSEDIA</div>
                     <div style='font-family:IBM Plex Mono,monospace;font-size:1.0rem;color:{text_sub};max-width:560px;margin:0 auto 20px;line-height:1.8;'>
                         Data historis pemegang saham untuk <b style="color:{text_main};">{sh_ticker}</b> belum tersedia.<br>
                         Kemungkinan sebab: saham baru IPO, emiten delisting, atau IDX belum merilis data bulan ini.
                     </div>
                     <div style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;color:{text_sub};line-height:1.9;text-align:left;display:inline-block;'>
-                        💡 <b style="color:#a78bfa;">Cara alternatif verifikasi data pemegang saham:</b><br>
+                        💡 <b style="color:#0328EE;">Cara alternatif verifikasi data pemegang saham:</b><br>
                         1. Buka <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}" target="_blank" style="color:#4285F4;">{sh_ticker} di idx.co.id</a><br>
                         2. Cek tab "Profil Pemegang Saham" di Stockbit atau RTI Business<br>
                         3. Data KSEI diperbarui setiap awal bulan dari hasil kliring bursa
@@ -10691,7 +10761,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 import numpy as np
 
                 # Badge sumber data
-                src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#a78bfa" if "SIGMA" in data_source else "#9b59b6"))
+                src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#4d7dff" if "SIGMA" in data_source else "#9b59b6"))
                 st.markdown(f"""<div style='display:inline-block;font-family:IBM Plex Mono,monospace;font-size:0.82rem;
                     letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
                     background:{src_color}11;padding:3px 10px;border-radius:4px;margin-bottom:8px;'>
@@ -10740,10 +10810,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     sinyal, sinyal_color = "DISTRIBUSI KUAT", "#f23645"
                     sinyal_desc = "Jumlah pemegang saham turun >15% dalam 6 bulan. Smart money kemungkinan besar sedang distribusi - menjual saham ke retail yang makin sedikit. Waspadai tekanan jual lanjutan."
                 elif pct_6m < -5:
-                    sinyal, sinyal_color = "DISTRIBUSI MODERAT", "#a78bfa"
+                    sinyal, sinyal_color = "DISTRIBUSI MODERAT", "#4d7dff"
                     sinyal_desc = "Pemegang saham turun 5–15%. Perlu konfirmasi dari bandarmologi dan volume. Bisa konsolidasi atau awal distribusi."
                 elif pct_6m > 15:
-                    sinyal, sinyal_color = "RETAIL MASUK MASIF", "#a78bfa"
+                    sinyal, sinyal_color = "RETAIL MASUK MASIF", "#4d7dff"
                     sinyal_desc = "Pemegang saham naik >15% - retail masuk besar-besaran. Hati-hati: bisa berarti euphoria puncak. Konfirmasi dengan net broker apakah smart money sedang exit."
                 elif pct_6m > 5:
                     sinyal, sinyal_color = "AKUMULASI BERTAHAP", "#089981"
@@ -10787,7 +10857,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 bg_chart    = "rgba(0,0,0,0)" if is_dark else "rgba(255,255,255,0)"
                 grid_color  = "rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)"
                 axis_color  = text_sub
-                price_color = "#a78bfa"
+                price_color = "#4d7dff"
                 sh_up_color = "#26a69a"
                 sh_dn_color = "#f23645"
 
@@ -10909,7 +10979,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     <div class="trm-card-title" style="color:{sinyal_color};">🔍 INTERPRETASI: {sinyal}</div>
                     <p style='color:{text_main};font-size:1.08rem;line-height:1.7;margin:0;'>{sinyal_desc}</p>
                     <p style='color:{text_sub};font-size:1.02rem;line-height:1.7;margin:10px 0 0;'>
-                    <span style='color:#a78bfa;font-weight:600;'>⚠️ Logika Bandarmologi IDX:</span>
+                    <span style='color:#0328EE;font-weight:600;'>⚠️ Logika Bandarmologi IDX:</span>
                     Pemegang <b style='color:#f23645;'>turun</b> = distribusi (smart money jual).
                     Pemegang <b style='color:#089981;'>naik bertahap</b> = akumulasi awal.
                     Cross-check dengan net broker dan price action.
@@ -11131,7 +11201,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 _turun_rows.append(_row)
 
         # ── CSS tabel ──
-        _tbl_border  = "rgba(124,58,237,0.12)" if is_dark else "#ddd0a0"
+        _tbl_border  = "rgba(3,40,238,0.12)" if is_dark else "#ddd0a0"
         _tbl_head_up = "rgba(38,166,154,0.12)" if is_dark else "#e8faf8"
         _tbl_head_dn = "rgba(242,54,69,0.10)"  if is_dark else "#fde8ea"
         _acc_up      = "#26a69a"
@@ -11801,7 +11871,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         # ── EMAs ──────────────────────────────────────────────
                         for col_n, clr, w in [
                             ('EMA13','#009dff',1.2), ('EMA21','#ff0000',1.2),
-                            ('EMA100','#cc00ff',1.2), ('EMA200','#a78bfa',1.5),
+                            ('EMA100','#cc00ff',1.2), ('EMA200','#4d7dff',1.5),
                         ]:
                             fig.add_trace(go.Scatter(
                                 x=x_str, y=df_chart[col_n],
@@ -11896,9 +11966,9 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                     _draw_tv_level(sl, "SL", '#f23645', '#f23645', '#ffffff', 'solid')
 
                                 # TP (Kuning Solid)
-                                if tp1: _draw_tv_level(tp1, "TP1", '#a78bfa', '#a78bfa', '#000000', 'dot')
-                                if tp2: _draw_tv_level(tp2, "TP2", '#a78bfa', '#a78bfa', '#000000', 'dot')
-                                if tp3: _draw_tv_level(tp3, "TP3", '#a78bfa', '#a78bfa', '#000000', 'dot')
+                                if tp1: _draw_tv_level(tp1, "TP1", '#4d7dff', '#4d7dff', '#000000', 'dot')
+                                if tp2: _draw_tv_level(tp2, "TP2", '#4d7dff', '#4d7dff', '#000000', 'dot')
+                                if tp3: _draw_tv_level(tp3, "TP3", '#4d7dff', '#4d7dff', '#000000', 'dot')
 
                             except Exception as e:
                                 st.warning(f"AI gagal menggambar Trade Plan: {e}")
@@ -11940,7 +12010,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         # ── RSI (level 70/30) ──────────────────────────────────
                         fig.add_trace(go.Scatter(
                             x=x_str, y=df_chart['RSI'],
-                            mode='lines', line=dict(color='#a78bfa', width=1.2),
+                            mode='lines', line=dict(color='#4d7dff', width=1.2),
                             showlegend=False,
                         ), row=4, col=1)
                         for lvl, clr in [(70,'rgba(242,54,69,0.55)'),(30,'rgba(8,153,129,0.55)')]:
@@ -12034,7 +12104,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             ('#009dff','EMA 13 - Fast (Momentum)'),
                             ('#ff0000','EMA 21 - Signal'),
                             ('#cc00ff','EMA 100 - Mid Trend'),
-                            ('#a78bfa','EMA 200 - Major Trend'),
+                            ('#4d7dff','EMA 200 - Major Trend'),
                             ('#f5a623','Vol MA20 - Avg Volume'),
                         ]
                         leg = "<div style='display:flex;flex-wrap:wrap;gap:18px;padding:6px 4px;margin-top:-6px;'>"
@@ -12065,7 +12135,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
     # ── Executive Summary - di bawah chart, full width ───────────
                 if run_analysis and ai_text_verdict:
-                    bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f8fafc'
+                    bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f0f4ff'
                     bd_color = tv_border if not df_chart.empty else 'transparent'
 
                     # ── SIGMA SCORE BADGE ──
@@ -12087,8 +12157,8 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
                 
                     # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                    html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #a78bfa; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-    <div style="font-size:0.65rem;letter-spacing:0.14em;color:#a78bfa; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
+                    html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #4d7dff; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
+    <div style="font-size:0.65rem;letter-spacing:0.14em;color:#0328EE; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
     📋 TRADE PLAN SIGMA {_rl_badge}
     </div>
     <div style="font-size:0.82rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
@@ -12102,7 +12172,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
                         <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
                         <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                            Masukkan kode saham dan klik <span style='color:#a78bfa;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
+                            Masukkan kode saham dan klik <span style='color:#0328EE;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
