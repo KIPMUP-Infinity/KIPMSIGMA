@@ -1988,6 +1988,210 @@ def _fetch_all_data(tickers):
 
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# GOAPI.IO — Stock Market IDX Helper
+# Base URL: https://app.goapi.io/api/v1/idx
+# Auth header: X-Api-Key
+# Secret key: GoAPI_KEY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+GOAPI_BASE = "https://app.goapi.io/api/v1/idx"
+
+def _goapi_headers():
+    key = st.secrets.get("GoAPI_KEY", "")
+    return {"X-Api-Key": key, "Accept": "application/json"}
+
+def _goapi_available():
+    return bool(st.secrets.get("GoAPI_KEY", ""))
+
+def goapi_get_price(ticker: str) -> dict:
+    """Harga real-time satu saham dari GoAPI."""
+    try:
+        r = requests.get(f"{GOAPI_BASE}/stock/{ticker}", headers=_goapi_headers(), timeout=10)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return {}
+
+def goapi_get_prices(tickers: list) -> dict:
+    """Harga real-time multiple ticker sekaligus."""
+    try:
+        symbols = ",".join(tickers)
+        r = requests.get(f"{GOAPI_BASE}/stock", params={"symbols": symbols},
+                         headers=_goapi_headers(), timeout=12)
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        return {}
+
+def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
+    """
+    Broker summary per saham dari GoAPI.
+    Return: list of broker rows (format siap pakai di SIGMA brosum parser).
+    date_str: 'YYYY-MM-DD', default = hari ini
+    """
+    try:
+        from datetime import date as _d
+        if date_str is None:
+            date_str = str(_d.today())
+        r = requests.get(f"{GOAPI_BASE}/broker-summary",
+                         params={"symbol": ticker, "date": date_str},
+                         headers=_goapi_headers(), timeout=20)
+        r.raise_for_status()
+        data = r.json()
+        # GoAPI returns {"data": [...]} or list directly
+        if isinstance(data, dict):
+            rows = data.get("data", data.get("brokerSummary", []))
+        elif isinstance(data, list):
+            rows = data
+        else:
+            rows = []
+        # Normalize keys agar kompatibel dengan parser SIGMA (BrokerID, BuyVolume, SellVolume, BuyValue, SellValue)
+        normalized = []
+        for row in rows:
+            normalized.append({
+                "BrokerID":   str(row.get("broker_code", row.get("brokerCode", row.get("BrokerID", row.get("broker", "?"))))),
+                "BrokerName": row.get("broker_name", row.get("brokerName", row.get("BrokerName", ""))),
+                "BuyVolume":  float(row.get("buy_lot", row.get("buyLot", row.get("BuyVolume", 0))) or 0),
+                "SellVolume": float(row.get("sell_lot", row.get("sellLot", row.get("SellVolume", 0))) or 0),
+                "BuyValue":   float(row.get("buy_value", row.get("buyValue", row.get("BuyValue", 0))) or 0),
+                "SellValue":  float(row.get("sell_value", row.get("sellValue", row.get("SellValue", 0))) or 0),
+                "AvgBuy":     float(row.get("avg_buy", row.get("avgBuy", 0)) or 0),
+                "AvgSell":    float(row.get("avg_sell", row.get("avgSell", 0)) or 0),
+                "InvestorBuy":  row.get("investor_buy", row.get("investorBuy", None)),
+                "InvestorSell": row.get("investor_sell", row.get("investorSell", None)),
+                "_source": "GoAPI",
+            })
+        return normalized
+    except Exception:
+        return []
+
+def goapi_get_historical(ticker: str, date_from: str, date_to: str) -> list:
+    """OHLCV historis dari GoAPI — max range 1 tahun."""
+    try:
+        r = requests.get(f"{GOAPI_BASE}/historical",
+                         params={"symbol": ticker, "from": date_from, "to": date_to},
+                         headers=_goapi_headers(), timeout=20)
+        r.raise_for_status()
+        data = r.json()
+        if isinstance(data, dict):
+            return data.get("data", data.get("historical", []))
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+def goapi_get_top_gainer() -> list:
+    try:
+        r = requests.get(f"{GOAPI_BASE}/top-gainer", headers=_goapi_headers(), timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("data", data) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+def goapi_get_top_loser() -> list:
+    try:
+        r = requests.get(f"{GOAPI_BASE}/top-loser", headers=_goapi_headers(), timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("data", data) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+def goapi_get_trending() -> list:
+    try:
+        r = requests.get(f"{GOAPI_BASE}/trending", headers=_goapi_headers(), timeout=10)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("data", data) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+def goapi_get_profile(ticker: str) -> dict:
+    """Company profile + fundamental dari GoAPI."""
+    try:
+        r = requests.get(f"{GOAPI_BASE}/profile/{ticker}", headers=_goapi_headers(), timeout=12)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("data", data) if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def goapi_get_indicators(page: int = 1, date_str: str = None) -> list:
+    """Indikator teknikal (MA, Bollinger, Stochastic) semua emiten — paginated."""
+    try:
+        from datetime import date as _d
+        if date_str is None:
+            date_str = str(_d.today())
+        r = requests.get(f"{GOAPI_BASE}/indicators",
+                         params={"page": page, "date": date_str},
+                         headers=_goapi_headers(), timeout=20)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("data", data) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+    except Exception:
+        return []
+
+def goapi_fetch_fundamental(ticker: str) -> dict:
+    """
+    Gabungkan goapi_get_price + goapi_get_profile → dict kompatibel _fetch_multi_fundamental.
+    Field yang di-return: price, pe, pbv, roe, eps, bv, mktcap, w52h, w52l, sector, name, source_fundamental
+    """
+    combined = {}
+    try:
+        profile = goapi_get_profile(ticker)
+        if profile:
+            # Mapping dari field GoAPI profile → field SIGMA fundamental
+            field_map = {
+                "pe": ["pe", "priceEarning", "price_earning", "PER"],
+                "pbv": ["pbv", "priceBook", "price_book", "PBV"],
+                "roe": ["roe", "returnOnEquity", "return_on_equity", "ROE"],
+                "roa": ["roa", "returnOnAssets", "return_on_assets", "ROA"],
+                "eps": ["eps", "earningPerShare", "earning_per_share", "EPS"],
+                "bv": ["bookValue", "book_value", "bv", "BV"],
+                "net_margin": ["netProfitMargin", "net_profit_margin", "netMargin", "net_margin"],
+                "der": ["debtEquity", "debt_equity", "DER", "der"],
+                "current_ratio": ["currentRatio", "current_ratio"],
+                "mktcap": ["marketCap", "market_cap", "mktcap"],
+                "w52h": ["52WeekHigh", "week52High", "high52", "w52h"],
+                "w52l": ["52WeekLow",  "week52Low",  "low52",  "w52l"],
+                "sector": ["sector", "sectorName", "sector_name"],
+                "name": ["companyName", "company_name", "name", "longName"],
+                "shares": ["shares", "sharesOutstanding", "shares_outstanding"],
+            }
+            for sigma_key, goapi_keys in field_map.items():
+                for gk in goapi_keys:
+                    val = profile.get(gk)
+                    if val is not None:
+                        combined[sigma_key] = val
+                        break
+            if profile:
+                combined["source_fundamental"] = "GoAPI"
+    except Exception:
+        pass
+
+    try:
+        price_data = goapi_get_price(ticker)
+        if price_data:
+            price_field = price_data.get("lastPrice", price_data.get("close",
+                          price_data.get("price", price_data.get("Last", None))))
+            if price_field and not combined.get("price"):
+                combined["price"] = float(price_field)
+                combined["source_price"] = "GoAPI (real-time)"
+            # Ambil juga 52wk H/L jika tersedia di price endpoint
+            for k, alt in [("w52h", ["52WeekHigh","week52High"]), ("w52l", ["52WeekLow","week52Low"])]:
+                if not combined.get(k):
+                    for a in alt:
+                        v = price_data.get(a)
+                        if v:
+                            combined[k] = float(v)
+                            break
+    except Exception:
+        pass
+
+    return combined
+
+
 # ─────────────────────────────────────────────
 # PART 2: FUNDAMENTAL APIs
 # ─────────────────────────────────────────────
@@ -2133,11 +2337,21 @@ def _fetch_fmp(ticker, api_key=None):
 # PENGAMAN LIMIT API: Menyimpan memori selama 1 jam (3600 detik)
 @st.cache_data(ttl=3600)
 def _fetch_multi_fundamental(ticker):
-    """Fetch fundamental berlapis - saling melengkapi."""
+    """Fetch fundamental berlapis - saling melengkapi. GoAPI = layer utama."""
     import threading
     result = [{}]
     def fetch():
         combined = {}
+
+        # ── LAYER 0: GoAPI (primary - data IDX lokal terlengkap) ──
+        try:
+            if _goapi_available():
+                goapi_data = goapi_fetch_fundamental(ticker)
+                for k, v in goapi_data.items():
+                    if v is not None:
+                        combined[k] = v
+        except: pass
+
         try:
             import urllib.request, json as _j
             req = urllib.request.Request(
@@ -2147,15 +2361,16 @@ def _fetch_multi_fundamental(ticker):
             with urllib.request.urlopen(req, timeout=5) as r:
                 d = _j.loads(r.read())
             if d and d.get("LastPrice") and d["LastPrice"] > 0:
-                combined["price"] = d["LastPrice"]
-                combined["source_price"] = "IDX (real-time)"
+                if not combined.get("price"):
+                    combined["price"] = d["LastPrice"]
+                    combined["source_price"] = "IDX (real-time)"
         except: pass
 
         try:
             fmp = _fetch_fmp(ticker)
             for k, v in fmp.items():
-                if v is not None: combined[k] = v
-            if fmp: combined["source_fundamental"] = "FMP"
+                if v is not None and k not in combined: combined[k] = v
+            if fmp and "source_fundamental" not in combined: combined["source_fundamental"] = "FMP"
         except: pass
 
         try:
@@ -15671,10 +15886,25 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 
         @st.cache_data(ttl=600, show_spinner=False)
         def _fetch_idx_broker_summary(ticker, period="daily"):
-            """Fetch broker summary dari IDX dan sumber alternatif."""
+            """
+            Fetch broker summary — GoAPI sebagai PRIMARY, IDX API sebagai FALLBACK.
+            GoAPI: data lebih lengkap (avg price, value, investor count).
+            """
             import urllib.request, json as _j
+            from datetime import date as _td, timedelta
+
+            # ── PRIMARY: GoAPI ──
+            if _goapi_available():
+                # Coba hari ini, jika kosong coba T-1 (hari bursa)
+                for delta in [0, 1, 2, 3]:
+                    _date_str = str(_td.today() - timedelta(days=delta))
+                    rows = goapi_get_broker_summary(ticker, _date_str)
+                    if rows:
+                        return rows
+                # Jika period bukan daily, GoAPI mungkin tidak support — lanjut ke fallback
+
+            # ── FALLBACK: IDX API ──
             try:
-                # IDX API broker summary
                 url = f"https://www.idx.co.id/umbraco/Surface/StockData/GetBrokerSummary?code={ticker}&type={period}"
                 req = urllib.request.Request(url, headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/"})
                 with urllib.request.urlopen(req, timeout=8) as r:
@@ -15702,6 +15932,36 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
         with bs_tab_screening:
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Masukkan kode saham untuk melihat aktivitas broker - siapa yang akumulasi, siapa yang distribusi.</p>", unsafe_allow_html=True)
 
+            # ── GoAPI Status Badge ──
+            if _goapi_available():
+                st.markdown(f"""<div style='display:inline-flex;align-items:center;gap:8px;background:rgba(38,166,154,0.1);
+                border:1px solid rgba(38,166,154,0.35);border-radius:8px;padding:6px 14px;margin-bottom:14px;
+                font-family:IBM Plex Mono,monospace;font-size:0.78rem;'>
+                <span style='color:#26a69a;font-weight:700;'>● GoAPI IDX</span>
+                <span style='color:{text_sub};'>Data broker real-time aktif — sumber primer</span>
+                </div>""", unsafe_allow_html=True)
+
+            # ── GoAPI Top Movers (lazy load sekali per session) ──
+            if _goapi_available() and not st.session_state.get("_goapi_movers_loaded"):
+                with st.expander("📊 TOP MOVERS IDX HARI INI (GoAPI)", expanded=False):
+                    with st.spinner("Mengambil top movers..."):
+                        _gainer = goapi_get_top_gainer()
+                        _loser  = goapi_get_top_loser()
+                        _trend  = goapi_get_trending()
+                    col_gm1, col_gm2, col_gm3 = st.columns(3)
+                    def _render_movers(label, items, color, col):
+                        with col:
+                            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;color:{color};font-weight:700;margin-bottom:6px;'>{label}</div>", unsafe_allow_html=True)
+                            for item in (items or [])[:8]:
+                                tk  = item.get("symbol", item.get("ticker", item.get("stock_code", "?")))
+                                chg = item.get("change_percent", item.get("changePercent", item.get("pct_change", 0))) or 0
+                                prc = item.get("close", item.get("last_price", item.get("price", 0))) or 0
+                                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.82rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;'><span style='color:{text_main};font-weight:700;'>{tk}</span><span style='color:{color};'>{chg:+.2f}%</span><span style='color:{text_sub};'>Rp{int(prc):,}</span></div>", unsafe_allow_html=True)
+                    _render_movers("🚀 TOP GAINER", _gainer, "#26a69a", col_gm1)
+                    _render_movers("📉 TOP LOSER",  _loser,  "#f23645", col_gm2)
+                    _render_movers("🔥 TRENDING",   _trend,  "#fbbf24", col_gm3)
+                    st.session_state["_goapi_movers_loaded"] = True
+
             col_bs1, col_bs2, col_bs3 = st.columns([2, 1, 1])
             with col_bs1:
                 bs_ticker = st.text_input("KODE SAHAM:", "BBCA", key="bs_ticker_input").upper().strip()
@@ -15723,12 +15983,19 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                     import json as _bsj
                     _rows_buy, _rows_sell = [], []
                     _net_map = {}
+                    _has_goapi_data = any(r.get("_source") == "GoAPI" for r in bs_data)
+                    if _has_goapi_data:
+                        st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:#26a69a;margin-bottom:8px;'>✅ Data dari GoAPI IDX — termasuk avg price & investor count</div>", unsafe_allow_html=True)
                     for row in bs_data:
                         broker = str(row.get("BrokerID", row.get("broker", row.get("Code", "?"))))
                         buy_lot = float(row.get("BuyVolume", row.get("buy_lot", row.get("BuyLot", 0))) or 0)
                         sell_lot = float(row.get("SellVolume", row.get("sell_lot", row.get("SellLot", 0))) or 0)
                         buy_val = float(row.get("BuyValue", row.get("buy_val", 0)) or 0)
                         sell_val = float(row.get("SellValue", row.get("sell_val", 0)) or 0)
+                        avg_buy  = float(row.get("AvgBuy", 0) or 0)
+                        avg_sell = float(row.get("AvgSell", 0) or 0)
+                        inv_buy  = row.get("InvestorBuy")
+                        inv_sell = row.get("InvestorSell")
                         net = buy_lot-sell_lot
                         net_val = buy_val-sell_val
                         _binfo = _ALL_BROKERS.get(broker)
@@ -15739,6 +16006,8 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                             "broker": broker, "name": broker_name,
                             "buy_lot": buy_lot, "sell_lot": sell_lot, "net": net,
                             "buy_val": buy_val, "sell_val": sell_val, "net_val": net_val,
+                            "avg_buy": avg_buy, "avg_sell": avg_sell,
+                            "inv_buy": inv_buy, "inv_sell": inv_sell,
                             "is_foreign": is_foreign, "is_bumn": is_bumn,
                             "type": ("FOREIGN" if is_foreign else "BUMN" if is_bumn else "LOKAL")
                         }
@@ -15814,7 +16083,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 <thead><tr>
   <th>BROKER</th><th>NAMA</th><th>TYPE</th>
   <th>BUY (LOT)</th><th>SELL (LOT)</th><th>NET (LOT)</th>
-  <th>NET VALUE (Rp)</th><th>BAR</th>
+  <th>NET VALUE (Rp)</th><th>AVG BUY</th><th>AVG SELL</th><th>BAR</th>
 </tr></thead>
 <tbody id="buy-tb"></tbody>
 </table></div></div>
@@ -15824,7 +16093,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 <thead><tr>
   <th>BROKER</th><th>NAMA</th><th>TYPE</th>
   <th>BUY (LOT)</th><th>SELL (LOT)</th><th>NET (LOT)</th>
-  <th>NET VALUE (Rp)</th><th>BAR</th>
+  <th>NET VALUE (Rp)</th><th>AVG BUY</th><th>AVG SELL</th><th>BAR</th>
 </tr></thead>
 <tbody id="sell-tb"></tbody>
 </table></div></div>
@@ -15864,6 +16133,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
     var col=r.net>=0?'{_G_c}':'{_R_c}';
     var fTag=r.is_foreign?'<span class="tag-foreign">ASING</span>':'';
     var bkCls='bk'+(r.type==='FOREIGN'?' foreign':r.type==='BUMN'?' bumn':'');
+    var avgBuyStr=r.avg_buy&&r.avg_buy>0?'Rp'+parseInt(r.avg_buy).toLocaleString('id-ID'):'-';
+    var avgSellStr=r.avg_sell&&r.avg_sell>0?'Rp'+parseInt(r.avg_sell).toLocaleString('id-ID'):'-';
     return '<tr>'+
       '<td><span class="'+bkCls+'">'+r.broker+'</span></td>'+
       '<td style="font-size:0.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;">'+
@@ -15873,6 +16144,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
       '<td>'+fmt(r.sell_lot)+'</td>'+
       '<td class="'+(r.net>=0?'pos':'neg')+'">'+(r.net>=0?'+':'')+fmt(r.net)+'</td>'+
       '<td class="'+(r.net_val>=0?'pos':'neg')+'">'+(r.net_val>=0?'+':'')+fmtv(r.net_val)+'</td>'+
+      '<td style="color:{_Y_c};font-size:0.8rem;">'+avgBuyStr+'</td>'+
+      '<td style="color:{_Y_c};font-size:0.8rem;">'+avgSellStr+'</td>'+
       '<td><div class="bar-wrap"><div class="bar-fill" style="width:'+pct.toFixed(1)+'%;background:'+col+';"></div></div></td>'+
     '</tr>';
   }}
