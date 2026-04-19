@@ -4442,7 +4442,7 @@ Format TRADE PLAN wajib seperti ini (setiap poin di baris baru):
 # ─────────────────────────────────────────────
 def _get_all_groq_keys():
     """Kumpulkan semua Groq API key yang tersedia (GROQ_API_KEY s/d GROQ_API_KEY13)."""
-    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(2, 14)]
+    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(2, 21)]
     valid = []
     for key_name in key_names:
         key = st.secrets.get(key_name, "")
@@ -4773,7 +4773,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
-            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records"]:
                 if saved.get(_tab_key) is not None:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
@@ -4794,7 +4794,7 @@ if st.session_state.user and not st.session_state.data_loaded:
                 else: _s["messages"][0] = SYSTEM_PROMPT
             st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
     if saved:
-        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
+        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records"]:
             if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
                 st.session_state[_tab_key] = saved[_tab_key]
     st.session_state.data_loaded = True
@@ -5634,7 +5634,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
-            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records"]:
                 if saved.get(_tab_key) is not None:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
@@ -5655,7 +5655,7 @@ if st.session_state.user and not st.session_state.data_loaded:
                 else: _s["messages"][0] = SYSTEM_PROMPT
             st.session_state.sessions = _loaded2; st.session_state.active_id = saved.get("active_id")
     if saved:
-        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data"]:
+        for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records"]:
             if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
                 st.session_state[_tab_key] = saved[_tab_key]
     st.session_state.data_loaded = True
@@ -5903,6 +5903,8 @@ if "del" in st.query_params:
             "ec_ai_timestamp": st.session_state.get("ec_ai_timestamp"),
             "alpha_insight_last_key": st.session_state.get("alpha_insight_last_key"),
             "alpha_insight_last_data": st.session_state.get("alpha_insight_last_data"),
+            "alpha_insight_last_ticker": st.session_state.get("alpha_insight_last_ticker"),
+            "tr_records": st.session_state.get("tr_records", []),
         })
         
     try: del st.query_params["del"]
@@ -7110,6 +7112,8 @@ if user:
         "ec_ai_timestamp": st.session_state.get("ec_ai_timestamp"),
         "alpha_insight_last_key": st.session_state.get("alpha_insight_last_key"),
         "alpha_insight_last_data": st.session_state.get("alpha_insight_last_data"),
+        "alpha_insight_last_ticker": st.session_state.get("alpha_insight_last_ticker"),
+        "tr_records": st.session_state.get("tr_records", []),
     })
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
@@ -12999,12 +13003,14 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                             }
                                             st.session_state[_insight_cache_key] = _cache_payload
                                             # ── Persist ke database agar tidak hilang saat rerun ──
-                                            st.session_state["alpha_insight_last_key"]  = _insight_cache_key
-                                            st.session_state["alpha_insight_last_data"] = _cache_payload
+                                            st.session_state["alpha_insight_last_key"]    = _insight_cache_key
+                                            st.session_state["alpha_insight_last_data"]   = _cache_payload
+                                            st.session_state["alpha_insight_last_ticker"] = ticker_input
                                             if st.session_state.get("user"):
                                                 _sv = load_user(st.session_state.user["email"]) or {}
-                                                _sv["alpha_insight_last_key"]  = _insight_cache_key
-                                                _sv["alpha_insight_last_data"] = _cache_payload
+                                                _sv["alpha_insight_last_key"]    = _insight_cache_key
+                                                _sv["alpha_insight_last_data"]   = _cache_payload
+                                                _sv["alpha_insight_last_ticker"] = ticker_input
                                                 save_user(st.session_state.user["email"], _sv)
                                         except Exception:
                                             pass
@@ -13401,14 +13407,27 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     st.markdown(html_str, unsafe_allow_html=True)
                 elif not run_analysis:
                     # ── Cek apakah ada hasil analisa tersimpan dari sesi sebelumnya ──
-                    _persisted_data = st.session_state.get("alpha_insight_last_data")
+                    _persisted_data   = st.session_state.get("alpha_insight_last_data")
                     _persisted_ticker = (_persisted_data or {}).get("ticker", "")
                     if _persisted_data and _persisted_ticker and _persisted_ticker == ticker_input:
-                        _pv = _persisted_data.get("ai_text_verdict", "")
-                        _pt = _persisted_data.get("timestamp", "")
+                        _pv  = _persisted_data.get("ai_text_verdict", "")
+                        _pt  = _persisted_data.get("timestamp", "")
+                        _psr = _persisted_data.get("sigma_result", None)
                         if _pv:
                             bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f0f4ff'
                             bd_color = "rgba(139,92,246,0.18)"
+                            # ── Re-render Sigma Score badge ──
+                            if _psr is not None and _SIGMA_SCORE_AVAILABLE:
+                                try:
+                                    st.markdown(render_sigma_score_badge(_psr, _persisted_ticker, compact=False), unsafe_allow_html=True)
+                                except: pass
+                            # ── Re-render Zone card ──
+                            if _ZONE_ENGINE_AVAILABLE:
+                                try:
+                                    _pzone = _cached_detect_zones_multi_tf(_persisted_ticker)
+                                    _pzone_price = float(df_chart["Close"].iloc[-1]) if not df_chart.empty else 0.0
+                                    st.markdown(zone_detail_html(_pzone, _pzone_price, C), unsafe_allow_html=True)
+                                except: pass
                             _pv_clean = _pv.replace('\n\n\n', '\n\n')
                             st.markdown(f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
     <div style="font-size:0.72rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px;">
@@ -13567,6 +13586,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
             return result
 
         def _call_ai_reco(prompt_text, max_tok=8000):
+            import time as _time_reco
             # Smart truncation - budget 30k total, ~20k untuk prompt Terminal
             prompt_text = _smart_truncate_prompt(prompt_text, max_tokens=20000)
             # Layer 1: Groq (primary - cepat, rotate semua key otomatis)
@@ -13574,22 +13594,42 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                 result, _ = _call_groq_primary(prompt_text, max_tokens=max_tok)
                 return result
             except Exception as _e_groq:
-                pass
+                _time_reco.sleep(1)  # cooldown sebelum fallback
             # Layer 2: Cerebras (fallback - throughput tinggi saat Groq overload)
             try:
                 result, _ = _call_cerebras(prompt_text, max_tokens=max_tok)
                 return result
             except:
-                pass
+                _time_reco.sleep(1)
             # Layer 3: Gemini (rotate 6 key otomatis)
             try:
                 result, _ = _call_gemini_text([{"role":"user","content":prompt_text}])
                 return result
-            except Exception as e:
-                err = str(e)
-                if "429" in err or "quota" in err.lower() or "rate" in err.lower():
-                    return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
-                return f"Gagal memanggil AI: {e}"
+            except:
+                _time_reco.sleep(1)
+            # Layer 4: Anthropic Claude (last resort)
+            try:
+                _ant_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+                if _ant_key:
+                    import urllib.request as _ur, json as _uj
+                    _payload = {
+                        "model": "claude-haiku-4-5-20251001",
+                        "max_tokens": min(max_tok, 4000),
+                        "messages": [{"role": "user", "content": prompt_text}]
+                    }
+                    _req = _ur.Request(
+                        "https://api.anthropic.com/v1/messages",
+                        data=_uj.dumps(_payload).encode(),
+                        headers={"Content-Type":"application/json","x-api-key":_ant_key,"anthropic-version":"2023-06-01"},
+                        method="POST"
+                    )
+                    with _ur.urlopen(_req, timeout=60) as _r:
+                        _d = _uj.loads(_r.read())
+                    _txt = "".join(b.get("text","") for b in _d.get("content",[]) if b.get("type")=="text")
+                    if _txt: return _txt
+            except:
+                pass
+            return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
 
         def _render_reco_cards(reco_text, accent="#a78bfa"):
             bg_card  = "rgba(30,35,50,0.7)" if is_dark else "#ffffff"
@@ -15311,8 +15351,12 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
 
         with tr_tab_live:
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Catat setiap rekomendasi yang dihasilkan AI (dari tab Daily/Weekly/BSJP) ke dalam track record. Setelah target/SL tersentuh, update hasilnya.</p>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.12em;font-weight:700;color:#a78bfa;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(124,58,237,0.25);'>+ TAMBAH REKOMENDASI BARU</div>", unsafe_allow_html=True)
-            if True:
+            _show_form = st.button("+ TAMBAH REKOMENDASI BARU", use_container_width=False, key="tr_toggle_form")
+            if "tr_show_form" not in st.session_state:
+                st.session_state["tr_show_form"] = False
+            if _show_form:
+                st.session_state["tr_show_form"] = not st.session_state["tr_show_form"]
+            if st.session_state["tr_show_form"]:
                 col_tr1, col_tr2, col_tr3 = st.columns(3)
                 with col_tr1:
                     tr_ticker = st.text_input("KODE SAHAM:", key="tr_ticker_new").upper().strip()
@@ -15347,6 +15391,11 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
                             "exit_date": "",
                         }
                         st.session_state["tr_records"].append(_new_rec)
+                        # ── Persist ke database ──
+                        if st.session_state.get("user"):
+                            _sv = load_user(st.session_state.user["email"]) or {}
+                            _sv["tr_records"] = st.session_state["tr_records"]
+                            save_user(st.session_state.user["email"], _sv)
                         st.success(f"✅ Rekomendasi {tr_ticker} berhasil disimpan ke Track Record!")
                     else:
                         st.warning("⚠️ Isi kode saham dan harga entry.")
@@ -15392,6 +15441,11 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
                                 "exit_date": str(_up_exit_date),
                                 "notes": _up_notes,
                             })
+                            # ── Persist ke database ──
+                            if st.session_state.get("user"):
+                                _sv = load_user(st.session_state.user["email"]) or {}
+                                _sv["tr_records"] = st.session_state["tr_records"]
+                                save_user(st.session_state.user["email"], _sv)
                             st.success("✅ Track record diupdate!")
                     else:
                         st.info("Semua rekomendasi sudah diupdate hasilnya.")
