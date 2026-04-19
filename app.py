@@ -1030,6 +1030,752 @@ def fundamental_data_from_dict(d: dict) -> FundamentalData:
 # Alias agar pemanggilan di app tetap konsisten
 _sigma_score_calc = sigma_score
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# MnM ZONE DETECTION ENGINE v2.0 — Embedded dari zone_engine_core.py
+# IFVG / FVG / Order Block / Supply & Demand / Volume Intelligence
+# Multi-Timeframe: Daily | Weekly | 4H
+# ═══════════════════════════════════════════════════════════════════════════════
+from dataclasses import dataclass, field as dc_field
+from typing import List, Optional
+import math
+
+
+# ─────────────────────────────────────────────
+# DATACLASS
+# ─────────────────────────────────────────────
+@dataclass
+class ZoneResult:
+    ticker: str = ""
+    ifvg_bull: list = dc_field(default_factory=list)
+    ifvg_bear: list = dc_field(default_factory=list)
+    fvg_bull:  list = dc_field(default_factory=list)
+    fvg_bear:  list = dc_field(default_factory=list)
+    ob_bull:   list = dc_field(default_factory=list)
+    ob_bear:   list = dc_field(default_factory=list)
+    supply:    list = dc_field(default_factory=list)
+    demand:    list = dc_field(default_factory=list)
+    vol_score:       int  = 50
+    vol_type:        str  = "-"
+    vol_freq_signal: str  = "-"
+    accum_score:     int  = 50
+    breakout_valid:  bool = False
+    false_breakout:  bool = False
+    confluence_score: int = 0
+    confluence_zones: list = dc_field(default_factory=list)
+    nearest_zone:    str  = "-"
+    nearest_zone_type: str = "-"
+    tf_summary: dict = dc_field(default_factory=dict)
+    zone_signals: list = dc_field(default_factory=list)
+
+
+# ─────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────
+def _calc_atr_z(highs, lows, closes, period=14):
+    if len(closes) < period + 1:
+        return (max(highs[-5:]) - min(lows[-5:])) / 2 if highs else 1
+    trs = []
+    for i in range(1, min(period + 1, len(closes))):
+        tr = max(
+            highs[-i] - lows[-i],
+            abs(highs[-i] - closes[-i-1]),
+            abs(lows[-i] - closes[-i-1]),
+        )
+        trs.append(tr)
+    return sum(trs) / len(trs) if trs else 1
+
+
+# ─────────────────────────────────────────────
+# FVG + IFVG DETECTION
+# ─────────────────────────────────────────────
+def _detect_fvg(closes, highs, lows, atr_val):
+    """
+    Bull FVG  : low[i] > high[i-2]
+    Bear FVG  : high[i] < low[i-2]
+    Bull IFVG : low[i] > high[i-2] AND close[i-1] > high[i-2]
+    Bear IFVG : high[i] < low[i-2] AND close[i-1] < low[i-2]
+    Filter   : gap > 0.1 * ATR
+    """
+    n = len(closes)
+    if n < 3:
+        return [], [], [], []
+
+    fvg_bull, fvg_bear, ifvg_bull, ifvg_bear = [], [], [], []
+    current_price = closes[-1]
+    start_fvg  = max(2, n - 100)
+    start_ifvg = max(2, n - 50)
+
+    for i in range(start_fvg, n):
+        h2 = highs[i-2]; l2 = lows[i-2]
+        h1 = highs[i-1]; c1 = closes[i-1]
+        hi = highs[i];   li = lows[i]
+
+        gap_bull = li - h2  if li > h2 else 0
+        gap_bear = l2 - hi  if l2 > hi else 0
+        min_size = atr_val * 0.1
+
+        if gap_bull > min_size:
+            z = {"top": li, "bot": h2, "mid": (li+h2)/2, "idx": i, "size": gap_bull}
+            if current_price >= h2:           # tidak mitigasi
+                fvg_bull.append(z)
+            if i >= start_ifvg and c1 > h2:   # IFVG
+                z2 = dict(z); z2["inverted"] = False
+                if current_price >= h2:
+                    ifvg_bull.append(z2)
+
+        if gap_bear > min_size:
+            z = {"top": l2, "bot": hi, "mid": (l2+hi)/2, "idx": i, "size": gap_bear}
+            if current_price <= l2:
+                fvg_bear.append(z)
+            if i >= start_ifvg and c1 < l2:
+                z2 = dict(z); z2["inverted"] = False
+                if current_price <= l2:
+                    ifvg_bear.append(z2)
+
+    return fvg_bull[-3:], fvg_bear[-3:], ifvg_bull[-3:], ifvg_bear[-3:]
+
+
+# ─────────────────────────────────────────────
+# ORDER BLOCK DETECTION
+# ─────────────────────────────────────────────
+def _detect_order_blocks(closes, highs, lows, swing_len=10):
+    n = len(closes)
+    if n < swing_len * 2 + 2:
+        return [], []
+
+    current_price = closes[-1]
+    start = max(0, n - 200)
+    sc = closes[start:]; sh = highs[start:]; sl = lows[start:]
+    nn = len(sc)
+
+    def swing_highs(h, w):
+        return [(i, h[i]) for i in range(w, len(h)-w)
+                if h[i] == max(h[max(0,i-w):i+w+1])]
+
+    def swing_lows(l, w):
+        return [(i, l[i]) for i in range(w, len(l)-w)
+                if l[i] == min(l[max(0,i-w):i+w+1])]
+
+    bull_obs, bear_obs = [], []
+
+    for sh_idx, sh_val in swing_highs(sh, swing_len):
+        break_idx = next((j for j in range(sh_idx+1, nn) if sc[j] > sh_val), None)
+        if break_idx is None: continue
+        for k in range(sh_idx, max(0, sh_idx-swing_len), -1):
+            if k < 1: break
+            if sc[k] < sc[k-1]:   # candle merah (proxy)
+                ob_top = max(sc[k], sc[k-1])
+                ob_bot = sl[k]
+                breaker = current_price < ob_bot
+                bull_obs.append({"top": ob_top, "bot": ob_bot, "mid": (ob_top+ob_bot)/2,
+                                  "breaker": breaker})
+                break
+
+    for sl_idx, sl_val in swing_lows(sl, swing_len):
+        break_idx = next((j for j in range(sl_idx+1, nn) if sc[j] < sl_val), None)
+        if break_idx is None: continue
+        for k in range(sl_idx, max(0, sl_idx-swing_len), -1):
+            if k < 1: break
+            if sc[k] > sc[k-1]:   # candle hijau (proxy)
+                ob_top = sh[k]
+                ob_bot = min(sc[k], sc[k-1])
+                breaker = current_price > ob_top
+                bear_obs.append({"top": ob_top, "bot": ob_bot, "mid": (ob_top+ob_bot)/2,
+                                  "breaker": breaker})
+                break
+
+    tol = 0.15
+    def rel(z, p): return abs(p - z["mid"]) / (z["mid"]+1) < tol
+    bull_rel = sorted([z for z in bull_obs if rel(z, current_price) or current_price > z["bot"]],
+                      key=lambda z: abs(current_price - z["mid"]))
+    bear_rel = sorted([z for z in bear_obs if rel(z, current_price) or current_price < z["top"]],
+                      key=lambda z: abs(current_price - z["mid"]))
+    return bull_rel[:3], bear_rel[:3]
+
+
+# ─────────────────────────────────────────────
+# SUPPLY / DEMAND DETECTION
+# ─────────────────────────────────────────────
+def _detect_supply_demand(closes, highs, lows, volumes, atr_val):
+    n = len(closes)
+    if n < 10:
+        return [], []
+
+    current_price = closes[-1]
+    avg_vol = sum(volumes[-20:]) / min(20, len(volumes))
+    supply_zones, demand_zones = [], []
+    start = max(6, n - 100)
+
+    def is_bull(k): return closes[k] > closes[k-1] if k > 0 else False
+    def is_bear(k): return closes[k] < closes[k-1] if k > 0 else False
+
+    for i in range(start, n - 1):
+        vol_i = volumes[i] if i < len(volumes) else avg_vol
+
+        # Supply
+        if i >= 2 and is_bear(i) and is_bear(i-1) and is_bear(i-2) and vol_i > avg_vol:
+            for j in range(i-3, max(0, i-8), -1):
+                if is_bull(j):
+                    top = highs[j] + atr_val * 2
+                    bot = lows[j]
+                    if current_price < top:
+                        supply_zones.append({"top": top, "bot": bot, "mid": (top+bot)/2, "idx": j})
+                    break
+
+        # Demand
+        if i >= 2 and is_bull(i) and is_bull(i-1) and is_bull(i-2) and vol_i > avg_vol:
+            for j in range(i-3, max(0, i-8), -1):
+                if is_bear(j):
+                    top = highs[j]
+                    bot = lows[j] - atr_val * 2
+                    if current_price > bot:
+                        demand_zones.append({"top": top, "bot": bot, "mid": (top+bot)/2, "idx": j})
+                    break
+
+    def dedup(zones, pct=0.02):
+        res = []
+        for z in zones:
+            if not any(abs(z["mid"]-r["mid"]) / (r["mid"]+1) < pct for r in res):
+                res.append(z)
+        return res
+
+    supply_zones = dedup(supply_zones[-5:])
+    demand_zones = dedup(demand_zones[-5:])
+
+    sup_above = sorted([z for z in supply_zones if z["bot"] > current_price], key=lambda z: z["bot"])
+    dem_below = sorted([z for z in demand_zones if z["top"] < current_price], key=lambda z: -z["top"])
+    return sup_above[:3], dem_below[:3]
+
+
+# ─────────────────────────────────────────────
+# VOLUME INTELLIGENCE
+# ─────────────────────────────────────────────
+def _vol_intelligence(closes, highs, lows, volumes):
+    """
+    IDX-specific volume scoring:
+    - Volume besar + frekuensi kecil (proxy: candle body ratio) = Akumulasi
+    - Volume besar + frekuensi besar = Distribusi / Noise
+    - Breakout + block trade = True Breakout
+    - Breakout + retail = False Breakout
+    """
+    n = len(closes)
+    if n < 5:
+        return 50, "-", "-", 50, False, False
+
+    avg20 = sum(volumes[-20:]) / min(20, len(volumes))
+    avg5  = sum(volumes[-5:])  / min(5, len(volumes))
+    vol_now = volumes[-1]
+    spike_ratio = vol_now / (avg20 + 1)
+
+    # Proxy frekuensi dari candle anatomy
+    body_ratios = []
+    for i in range(1, min(6, n)):
+        rng  = highs[-i] - lows[-i]
+        body = abs(closes[-i] - closes[-i-1]) if i+1 < n else rng*0.5
+        body_ratios.append(body / (rng + 0.001))
+    avg_br = sum(body_ratios) / len(body_ratios) if body_ratios else 0.5
+
+    is_block  = avg_br > 0.60   # sedikit transaksi besar
+    is_retail = avg_br < 0.35   # banyak transaksi kecil
+
+    # Posisi harga dalam range 20 hari
+    h20 = max(highs[-20:]) if len(highs) >= 20 else highs[-1]
+    l20 = min(lows[-20:])  if len(lows)  >= 20 else lows[-1]
+    pct = (closes[-1] - l20) / (h20 - l20 + 0.001)
+    at_top = pct > 0.75
+    at_bot = pct < 0.25
+
+    # Breakout check
+    is_bo  = len(highs) >= 21 and closes[-1] > max(highs[-21:-1])
+    is_bdo = len(lows)  >= 21 and closes[-1] < min(lows[-21:-1])
+
+    vs, ac = 50, 50
+    vt = "Normal"
+    vf = "Mixed"
+    bv = False
+    fbv = False
+
+    if spike_ratio >= 1.5 and is_block and at_bot:
+        vs = min(90, 55 + spike_ratio * 8)
+        ac = min(92, 60 + spike_ratio * 7)
+        vt = "Block Trade Akumulasi ✅"
+        vf = "Smart Money"
+
+    elif avg5 < avg20 * 0.5 and at_bot:
+        vs = 72; ac = 75
+        vt = "Akumulasi Stealth 🔵"
+        vf = "Smart Money"
+
+    elif spike_ratio >= 2.0 and at_top:
+        vs = max(20, 55 - spike_ratio * 6)
+        ac = max(15, 50 - spike_ratio * 7)
+        vt = "Distribusi Block Trade 🔴" if is_block else "Distribusi Ritel FOMO 🔴"
+        vf = "Smart Money Jual" if is_block else "Ritel Noise"
+
+    elif is_bo and spike_ratio >= 2.0 and is_block:
+        vs = min(88, 65 + spike_ratio * 5)
+        ac = min(85, 60 + spike_ratio * 5)
+        vt = "True Breakout ⚡"
+        vf = "Smart Money"
+        bv = True
+
+    elif is_bo and spike_ratio >= 2.0 and is_retail:
+        vs = 35; ac = 30
+        vt = "False Breakout ⚠️"
+        vf = "Ritel Noise"
+        fbv = True
+
+    elif is_retail:
+        vs = 45; vt = "Volume Ritel (Noise)"; vf = "Ritel"
+
+    elif spike_ratio >= 3.0:
+        ret5 = (closes[-1]-closes[-6])/(closes[-6]+1)*100 if n>=6 else 0
+        vs = 60 if ret5 > 1 else 42
+        vt = f"Vol Spike {spike_ratio:.1f}x 🟡"
+        vf = "Block Trade" if is_block else "Mixed"
+
+    elif avg5 < avg20 * 0.4:
+        vs = 65; ac = 68
+        vt = "Dry-Up (Siaga Breakout) 🔵"
+        vf = "Neutral"
+
+    # Price-Vol divergence penalty
+    if n >= 6:
+        pchg = (closes[-1]-closes[-6])/(closes[-6]+1)*100
+        v5old = sum(volumes[-11:-6])/5 if len(volumes)>=11 else avg20
+        vchg  = (avg5-v5old)/(v5old+1)*100
+        if pchg > 2 and vchg < -20:
+            vs = max(25, vs - 15)
+            vt += " | Divergensi ⚠️"
+
+    return (min(100, max(0, int(vs))), vt, vf,
+            min(100, max(0, int(ac))), bv, fbv)
+
+
+# ─────────────────────────────────────────────
+# CONFLUENCE SCORING
+# ─────────────────────────────────────────────
+def _confluence_at_price(price, ifvg_bull, ifvg_bear, fvg_bull, fvg_bear,
+                          ob_bull, ob_bear, supply, demand, pct_tol=0.02):
+    w = {"IFVG": 3, "FVG": 2, "OB": 2, "S/D": 1}
+
+    def in_zone(z, p, tol):
+        return z["bot"]*(1-tol) <= p <= z["top"]*(1+tol)
+
+    conf_zones = []
+    for z in ifvg_bull:
+        if in_zone(z, price, pct_tol): conf_zones.append(("IFVG Bull", z["mid"]))
+    for z in ifvg_bear:
+        if in_zone(z, price, pct_tol): conf_zones.append(("IFVG Bear", z["mid"]))
+    for z in fvg_bull:
+        if in_zone(z, price, pct_tol): conf_zones.append(("FVG Bull", z["mid"]))
+    for z in fvg_bear:
+        if in_zone(z, price, pct_tol): conf_zones.append(("FVG Bear", z["mid"]))
+    for z in ob_bull:
+        if in_zone(z, price, pct_tol): conf_zones.append(("OB Bull", z["mid"]))
+    for z in ob_bear:
+        if in_zone(z, price, pct_tol): conf_zones.append(("OB Bear", z["mid"]))
+    for z in supply:
+        if in_zone(z, price, pct_tol): conf_zones.append(("Supply", z["mid"]))
+    for z in demand:
+        if in_zone(z, price, pct_tol): conf_zones.append(("Demand", z["mid"]))
+
+    raw = 0
+    for name, _ in conf_zones:
+        for k, wv in w.items():
+            if k in name: raw += wv; break
+        else: raw += 1
+
+    all_zones = (
+        [("IFVG Bull", z["mid"], "support")   for z in ifvg_bull] +
+        [("IFVG Bear", z["mid"], "resistance") for z in ifvg_bear] +
+        [("FVG Bull",  z["mid"], "support")   for z in fvg_bull]  +
+        [("FVG Bear",  z["mid"], "resistance") for z in fvg_bear]  +
+        [("OB Bull",   z["mid"], "support")   for z in ob_bull]   +
+        [("OB Bear",   z["mid"], "resistance") for z in ob_bear]   +
+        [("Demand",    z["mid"], "support")   for z in demand]    +
+        [("Supply",    z["mid"], "resistance") for z in supply]
+    )
+    nearest = min(all_zones, key=lambda x: abs(x[1]-price), default=None)
+    nname = nearest[0] if nearest else "-"
+    ntype = nearest[2] if nearest else "-"
+
+    return min(10, raw), [z[0] for z in conf_zones], nname, ntype
+
+
+# ─────────────────────────────────────────────
+# SINGLE TF DETECTION
+# ─────────────────────────────────────────────
+def detect_zones_single_tf(closes, highs, lows, volumes, tf_label="D", ticker="") -> ZoneResult:
+    result = ZoneResult(ticker=ticker)
+    n = len(closes)
+    if n < 10:
+        return result
+
+    price = closes[-1]
+    atr   = _calc_atr_z(highs, lows, closes, 14)
+
+    fb, fb2, ifb, ifb2 = _detect_fvg(closes, highs, lows, atr)
+    ob_b, ob_be = _detect_order_blocks(closes, highs, lows)
+    sup_z, dem_z = _detect_supply_demand(closes, highs, lows, volumes, atr)
+    vs, vt, vf, ac, bv, fbv = _vol_intelligence(closes, highs, lows, volumes)
+    cs, cz, nz, nzt = _confluence_at_price(price, ifb, ifb2, fb, fb2, ob_b, ob_be, sup_z, dem_z)
+
+    result.ifvg_bull        = [dict(z, tf=tf_label) for z in ifb]
+    result.ifvg_bear        = [dict(z, tf=tf_label) for z in ifb2]
+    result.fvg_bull         = [dict(z, tf=tf_label) for z in fb]
+    result.fvg_bear         = [dict(z, tf=tf_label) for z in fb2]
+    result.ob_bull          = [dict(z, tf=tf_label) for z in ob_b]
+    result.ob_bear          = [dict(z, tf=tf_label) for z in ob_be]
+    result.supply           = [dict(z, tf=tf_label) for z in sup_z]
+    result.demand           = [dict(z, tf=tf_label) for z in dem_z]
+    result.vol_score        = vs
+    result.vol_type         = vt
+    result.vol_freq_signal  = vf
+    result.accum_score      = ac
+    result.breakout_valid   = bv
+    result.false_breakout   = fbv
+    result.confluence_score = cs
+    result.confluence_zones = cz
+    result.nearest_zone     = nz
+    result.nearest_zone_type = nzt
+
+    sigs = []
+    if ifb:    sigs.append(f"✅ IFVG Bull {tf_label}: Rp{ifb[-1]['top']:,.0f}–{ifb[-1]['bot']:,.0f}")
+    if ifb2:   sigs.append(f"🔴 IFVG Bear {tf_label}: Rp{ifb2[-1]['top']:,.0f}–{ifb2[-1]['bot']:,.0f}")
+    if fb:     sigs.append(f"🔵 FVG Bull {tf_label}: Rp{fb[-1]['top']:,.0f}–{fb[-1]['bot']:,.0f}")
+    if dem_z:  sigs.append(f"🟢 Demand {tf_label}: Rp{dem_z[0]['top']:,.0f}–{dem_z[0]['bot']:,.0f}")
+    if sup_z:  sigs.append(f"⚠️ Supply {tf_label}: Rp{sup_z[0]['top']:,.0f}–{sup_z[0]['bot']:,.0f}")
+    if cs >= 3: sigs.append(f"⚡ CONFLUENCE {cs}/10 di {tf_label}: {', '.join(cz[:3])}")
+    if bv:     sigs.append(f"🚀 TRUE BREAKOUT {tf_label} terkonfirmasi")
+    if fbv:    sigs.append(f"⛔ FALSE BREAKOUT {tf_label} terdeteksi")
+    result.zone_signals = sigs
+
+    return result
+
+
+# ─────────────────────────────────────────────
+# MULTI-TF DETECTION (with yfinance)
+# ─────────────────────────────────────────────
+def detect_zones_multi_tf(ticker: str) -> ZoneResult:
+    """
+    Deteksi zona multi-timeframe.
+    TF: Daily (200c), Weekly (52c), 4H (120c)
+    """
+    try:
+        import yfinance as yf
+    except ImportError:
+        return ZoneResult(ticker=ticker)
+
+    master = ZoneResult(ticker=ticker)
+    tf_map = {
+        "D":  ("6mo",  "1d"),
+        "W":  ("2y",   "1wk"),
+        "4H": ("60d",  "4h"),
+    }
+
+    all_signals = []
+    combined_conf = 0
+
+    for tf_label, (period, interval) in tf_map.items():
+        try:
+            hist = yf.Ticker(f"{ticker}.JK").history(
+                period=period, interval=interval, auto_adjust=True
+            )
+            if hist.empty or len(hist) < 10:
+                continue
+
+            c = hist["Close"].tolist()
+            h = hist["High"].tolist()
+            l = hist["Low"].tolist()
+            v = hist["Volume"].tolist()
+
+            tf_res = detect_zones_single_tf(c, h, l, v, tf_label, ticker)
+
+            master.tf_summary[tf_label] = {
+                "ifvg_bull":  tf_res.ifvg_bull,
+                "ifvg_bear":  tf_res.ifvg_bear,
+                "fvg_bull":   tf_res.fvg_bull,
+                "fvg_bear":   tf_res.fvg_bear,
+                "ob_bull":    tf_res.ob_bull,
+                "ob_bear":    tf_res.ob_bear,
+                "supply":     tf_res.supply,
+                "demand":     tf_res.demand,
+                "vol_score":  tf_res.vol_score,
+                "vol_type":   tf_res.vol_type,
+                "conf_score": tf_res.confluence_score,
+                "conf_zones": tf_res.confluence_zones,
+                "nearest_zone": tf_res.nearest_zone,
+                "nearest_zone_type": tf_res.nearest_zone_type,
+            }
+
+            if tf_label == "D":
+                master.ifvg_bull        = tf_res.ifvg_bull
+                master.ifvg_bear        = tf_res.ifvg_bear
+                master.fvg_bull         = tf_res.fvg_bull
+                master.fvg_bear         = tf_res.fvg_bear
+                master.ob_bull          = tf_res.ob_bull
+                master.ob_bear          = tf_res.ob_bear
+                master.supply           = tf_res.supply
+                master.demand           = tf_res.demand
+                master.vol_score        = tf_res.vol_score
+                master.vol_type         = tf_res.vol_type
+                master.vol_freq_signal  = tf_res.vol_freq_signal
+                master.accum_score      = tf_res.accum_score
+                master.breakout_valid   = tf_res.breakout_valid
+                master.false_breakout   = tf_res.false_breakout
+                master.nearest_zone     = tf_res.nearest_zone
+                master.nearest_zone_type = tf_res.nearest_zone_type
+
+            all_signals.extend(tf_res.zone_signals)
+            combined_conf += tf_res.confluence_score
+
+        except Exception:
+            continue
+
+    master.confluence_score = min(10, combined_conf // max(1, len(tf_map)))
+    master.zone_signals     = all_signals[:8]
+    return master
+
+
+# ─────────────────────────────────────────────
+# ZONE BADGE HTML (untuk kolom tabel screener)
+# ─────────────────────────────────────────────
+def zone_badge_html(result: ZoneResult, price: float = 0, C: dict = None) -> str:
+    if C is None: C = {}
+    parts = []
+
+    if result.ifvg_bull: parts.append('<span title="IFVG Bull" style="color:#4285F4;font-weight:700;font-size:10px;">IFVG</span>')
+    if result.ifvg_bear: parts.append('<span title="IFVG Bear" style="color:#aaa;font-weight:700;font-size:10px;">IFVG▼</span>')
+    if result.fvg_bull:  parts.append('<span title="FVG Bull" style="color:#0ea5e9;font-size:10px;">FVG</span>')
+    if result.ob_bull:   parts.append('<span title="OB Bull" style="color:#22c55e;font-size:10px;">OB</span>')
+    if result.demand:    parts.append('<span title="Demand Zone" style="color:#009fd4;font-size:10px;">DMD</span>')
+    if result.supply:    parts.append('<span title="Supply Zone" style="color:#888;font-size:10px;">SPY</span>')
+
+    cs = result.confluence_score
+    cc = "#00c853" if cs >= 5 else ("#ffd740" if cs >= 3 else "#888")
+    if cs > 0:
+        parts.append(
+            f'<span style="background:{cc}22;color:{cc};border:1px solid {cc}55;'
+            f'border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700;font-family:\'IBM Plex Mono\',monospace;">'
+            f'C:{cs}</span>'
+        )
+
+    vt = result.vol_type or "-"
+    if "Akumulasi" in vt or "True Breakout" in vt:
+        vc, vbg = "#00e5a0", "rgba(0,229,160,0.1)"
+    elif "Distribusi" in vt or "False" in vt:
+        vc, vbg = "#f23645", "rgba(242,54,69,0.1)"
+    elif "Dry-Up" in vt:
+        vc, vbg = "#4285F4", "rgba(66,133,244,0.1)"
+    else:
+        vc, vbg = "#888", "transparent"
+
+    vol_short = vt.split(" ")[0][:8]
+    parts.append(
+        f'<span style="background:{vbg};color:{vc};border:1px solid {vc}33;'
+        f'border-radius:3px;padding:1px 4px;font-size:9px;font-family:\'IBM Plex Mono\',monospace;">'
+        f'{vol_short}</span>'
+    )
+
+    if result.nearest_zone != "-":
+        nz = result.nearest_zone
+        nc = "#009fd4" if ("Bull" in nz or "Demand" in nz) else "#f23645"
+        parts.append(f'<span style="color:{nc};font-size:9px;">→{nz[:8]}</span>')
+
+    return " ".join(parts) if parts else '<span style="color:#555;font-size:9px;">-</span>'
+
+
+# ─────────────────────────────────────────────
+# ZONE DETAIL CARD HTML (untuk section detail)
+# ─────────────────────────────────────────────
+def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> str:
+    if C is None: C = {}
+    met_bg     = C.get("bg", "#050a15")
+    met_border = C.get("border", "#1a2f50")
+    text_main  = C.get("text", "#e2e8f0")
+    text_sub   = C.get("text_muted", "#64748b")
+
+    def pct_str(mid, p):
+        if p <= 0: return ""
+        v = (mid - p) / p * 100
+        c = "#00e5a0" if v >= 0 else "#f23645"
+        return f'<span style="color:{c};font-size:9px;">({v:+.1f}%)</span>'
+
+    def row(name, z, color, p):
+        return (
+            f"<tr>"
+            f"<td style='color:{color};font-weight:700;font-size:10px;padding:4px 8px;white-space:nowrap;'>{name}</td>"
+            f"<td style='font-size:10px;color:{text_main};font-family:\"IBM Plex Mono\",monospace;'>"
+            f"Rp{z['top']:,.0f}–{z['bot']:,.0f}</td>"
+            f"<td style='font-size:10px;color:{text_sub};'>TF:{z.get('tf','D')}</td>"
+            f"<td>{pct_str(z['mid'], p)}</td>"
+            f"</tr>"
+        )
+
+    rows = ""
+    for z in result.ifvg_bull: rows += row("IFVG Bull", z, "#4285F4", price)
+    for z in result.ifvg_bear: rows += row("IFVG Bear", z, "#727272", price)
+    for z in result.fvg_bull:  rows += row("FVG Bull",  z, "#0ea5e9", price)
+    for z in result.fvg_bear:  rows += row("FVG Bear",  z, "#575757", price)
+    for z in result.ob_bull:   rows += row("OB Bull",   z, "#22c55e", price)
+    for z in result.ob_bear:   rows += row("OB Bear",   z, "#ea00ff", price)
+    for z in result.demand:    rows += row("Demand",    z, "#009fd4", price)
+    for z in result.supply:    rows += row("Supply",    z, "#888",    price)
+
+    if not rows:
+        rows = f"<tr><td colspan='4' style='color:{text_sub};font-size:10px;padding:8px;text-align:center;'>Tidak ada zona aktif di range harga saat ini.</td></tr>"
+
+    cs = result.confluence_score
+    cc = "#00c853" if cs >= 5 else ("#ffd740" if cs >= 3 else "#888")
+    cz_str = ", ".join(result.confluence_zones[:4]) if result.confluence_zones else "-"
+
+    vs = result.vol_score
+    if vs >= 60:   vc, vbg = "#00e5a0", "rgba(0,229,160,0.08)"
+    elif vs >= 45: vc, vbg = "#ffd740", "rgba(255,215,64,0.07)"
+    else:          vc, vbg = "#f23645", "rgba(242,54,69,0.08)"
+
+    html = f"""
+<div style="background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:14px;margin:8px 0;font-family:'DM Sans',sans-serif;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:#8b5cf6;font-weight:700;letter-spacing:0.1em;">▸ MnM ZONE DETECTION · MULTI-TF</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">CONFLUENCE {cs}/10</span>
+  </div>
+  {'<div style="font-size:0.65rem;color:' + cc + ';margin-bottom:8px;font-family:IBM Plex Mono,monospace;">⚡ Zona bertumpuk: ' + cz_str + '</div>' if result.confluence_zones else ''}
+  <div style="overflow-x:auto;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;">
+    <thead><tr style="background:rgba(139,92,246,0.08);">
+      <th style="text-align:left;padding:4px 8px;font-size:9px;color:#8b5cf6;font-family:'IBM Plex Mono',monospace;letter-spacing:0.08em;">TIPE</th>
+      <th style="text-align:left;padding:4px 8px;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;">RANGE HARGA</th>
+      <th style="text-align:left;padding:4px 8px;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;">TF</th>
+      <th style="text-align:left;padding:4px 8px;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;">JARAK</th>
+    </tr></thead>
+    <tbody>{rows}</tbody>
+  </table>
+  </div>
+  <div style="border-top:1px solid {met_border};padding-top:10px;margin-top:2px;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:#a78bfa;font-weight:700;letter-spacing:0.08em;margin-bottom:6px;">▸ VOLUME INTELLIGENCE</div>
+    <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:8px 10px;margin-bottom:8px;">
+      <div style="font-size:0.72rem;color:{vc};font-weight:600;margin-bottom:4px;">{result.vol_type}</div>
+      <div style="font-size:0.65rem;color:{text_sub};">
+        Frekuensi: <span style="color:{text_main};">{result.vol_freq_signal}</span>
+        {'&nbsp;·&nbsp;<span style="color:#00e5a0;">✅ True Breakout</span>' if result.breakout_valid else ''}
+        {'&nbsp;·&nbsp;<span style="color:#f23645;">⛔ False Breakout</span>' if result.false_breakout else ''}
+      </div>
+    </div>
+    <div style="margin-bottom:5px;">
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:2px;">
+        <span>Vol Intelligence</span><span style="color:{vc};font-weight:600;">{vs}</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:4px;">
+        <div style="width:{vs}%;height:100%;background:{vc};border-radius:3px;"></div>
+      </div>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:2px;">
+        <span>Akumulasi Score</span><span style="color:#00e5a0;font-weight:600;">{result.accum_score}</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:4px;">
+        <div style="width:{result.accum_score}%;height:100%;background:#00e5a0;border-radius:3px;"></div>
+      </div>
+    </div>
+  </div>
+  {'<div style="border-top:1px solid ' + met_border + ';padding-top:8px;margin-top:8px;">' + "".join(f'<div style="font-size:0.65rem;color:{text_sub};margin-bottom:2px;">{s}</div>' for s in result.zone_signals[:5]) + '</div>' if result.zone_signals else ''}
+</div>"""
+    return html
+
+
+# ─────────────────────────────────────────────
+# ENRICH ROW (untuk tabel screener)
+# ─────────────────────────────────────────────
+def enrich_reco_row_with_zones(row: dict, zone_result: ZoneResult, C: dict) -> dict:
+    """Tambah data zona ke dict baris tabel screener."""
+    price = float(row.get("price", 0) or 0)
+    row["zone_badge_html"] = zone_badge_html(zone_result, price, C)
+    row["zone_conf"]       = zone_result.confluence_score
+    row["zone_nearest"]    = zone_result.nearest_zone
+    row["zone_vol_type"]   = zone_result.vol_type
+    row["zone_accum"]      = zone_result.accum_score
+    row["zone_breakout"]   = zone_result.breakout_valid
+    row["zone_false_bo"]   = zone_result.false_breakout
+    row["zone_signals"]    = zone_result.zone_signals
+
+    # Adjust combined score
+    conf_bonus  = zone_result.confluence_score * 0.5
+    accum_bonus = max(0, (zone_result.accum_score - 50) * 0.1)
+    bo_bonus    = 5 if zone_result.breakout_valid else 0
+    bo_penalty  = -8 if zone_result.false_breakout else 0
+
+    orig = float(row.get("combined", 50) or 50)
+    row["combined"] = round(min(100, max(0, orig + conf_bonus + accum_bonus + bo_bonus + bo_penalty)), 1)
+    return row
+
+
+# ─────────────────────────────────────────────
+# BATCH DETECT (untuk screener multi-ticker)
+# ─────────────────────────────────────────────
+def batch_detect_zones(tickers, max_workers=5) -> dict:
+    """
+    Deteksi zona untuk banyak ticker sekaligus.
+    Gunakan st.cache_data(ttl=3600) saat dipanggil dari Streamlit.
+
+    Returns: {ticker: ZoneResult}
+    """
+    import threading
+    results = {}
+    lock = threading.Lock()
+
+    def fetch_one(tk):
+        try:
+            zr = detect_zones_multi_tf(tk)
+        except Exception:
+            zr = ZoneResult(ticker=tk)
+        with lock:
+            results[tk] = zr
+
+    threads = []
+    for tk in tickers:
+        active = [t for t in threads if t.is_alive()]
+        if len(active) >= max_workers:
+            active[0].join(timeout=10)
+        t = threading.Thread(target=fetch_one, args=(tk,), daemon=True)
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join(timeout=15)
+
+    return results
+
+
+def add_zone_columns_to_rows(rows: list, C: dict) -> list:
+    """
+    Fetch & enrich semua row dari screener dengan data zona.
+    Panggil sebelum generate HTML tabel.
+    """
+    if not rows: return rows
+    tickers = tuple(sorted(set(r["ticker"] for r in rows if r.get("ticker"))))
+    zone_map = batch_detect_zones(tickers)
+    return [enrich_reco_row_with_zones(row, zone_map.get(row.get("ticker",""), ZoneResult()), C)
+            for row in rows]
+
+
+# ─────────────────────────────────────────────
+# QUICK TEST (python zone_engine_core.py)
+# ─────────────────────────────────────────────
+
+# ── Zone Engine: Streamlit cache wrappers ──
+@st.cache_data(ttl=3600)
+def _cached_detect_zones_multi_tf(ticker: str) -> ZoneResult:
+    return detect_zones_multi_tf(ticker)
+
+@st.cache_data(ttl=3600)
+def _cached_batch_detect_zones(tickers: tuple) -> dict:
+    return batch_detect_zones(tickers)
+
+_ZONE_ENGINE_AVAILABLE = True
+
+
 # ─── MULTI-SOURCE DATA (yfinance → stooq → IDX API) ───
 def _fetch_all_data(tickers):
     import threading
@@ -11418,7 +12164,15 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                         _sigma_result = _sigma_score_calc(ticker_input, _pd_obj, _fd_obj)
                                     except Exception as _se:
                                         _sigma_result = None
-    
+
+                                # ── MnM ZONE DETECTION (untuk AI context) ──
+                                _zone_res_ai = None
+                                if _ZONE_ENGINE_AVAILABLE:
+                                    try:
+                                        _zone_res_ai = _cached_detect_zones_multi_tf(ticker_input)
+                                    except Exception:
+                                        _zone_res_ai = None
+
                                 vol_context = ""
                                 if not df_chart.empty and 'Volume' in df_chart.columns:
                                     try:
@@ -11512,13 +12266,26 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                 except Exception as _e_sh:
                                     _sh_ctx = f"Data pemegang saham tidak dapat diambil saat ini."
     
+                                # ── Zone context untuk AI prompt ──
+                                _zone_context_str = ""
+                                if _zone_res_ai and _zone_res_ai.zone_signals:
+                                    _zone_context_str = "\n".join([
+                                        "\n=== ZONA MnM STRATEGY+ (AUTO-DETECTED) ===",
+                                        f"Confluence Score: {_zone_res_ai.confluence_score}/10",
+                                        f"Zona terkumpul: {', '.join(_zone_res_ai.confluence_zones[:4]) if _zone_res_ai.confluence_zones else '-'}",
+                                        f"Zona terdekat: {_zone_res_ai.nearest_zone} ({_zone_res_ai.nearest_zone_type})",
+                                        f"Volume: {_zone_res_ai.vol_type} | Freq: {_zone_res_ai.vol_freq_signal}",
+                                        f"Akumulasi Score: {_zone_res_ai.accum_score}/100",
+                                        *[f"  {s}" for s in _zone_res_ai.zone_signals[:6]],
+                                    ])
+
                                 dashboard_prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis MnM Strategy+.
         Buat analisa komprehensif dan JUJUR untuk saham {ticker_input}. KEJUJURAN ADALAH PRIORITAS UTAMA.
     
         === DATA HARGA & TEKNIKAL ===
         Harga Terakhir: {live_price_str}
         {vol_context}
-    
+    {_zone_context_str}
         === DATA FUNDAMENTAL ===
         {fund_context}
     
@@ -12090,6 +12857,15 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     # ── SIGMA SCORE BADGE ──
                     if _sigma_result is not None:
                         st.markdown(render_sigma_score_badge(_sigma_result, ticker_input, compact=False), unsafe_allow_html=True)
+
+                    # ── MnM ZONE DETECTION CARD ──
+                    if _ZONE_ENGINE_AVAILABLE:
+                        try:
+                            _zone_res = _cached_detect_zones_multi_tf(ticker_input)
+                            _zone_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0.0
+                            st.markdown(zone_detail_html(_zone_res, _zone_price, C), unsafe_allow_html=True)
+                        except Exception as _ze:
+                            pass
                 
                     # Risk level badge
                     _rl = (ai_data or {}).get("risk_level", "NONE")
@@ -12634,6 +13410,28 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                             key=lambda x: (x[1]["bearish_score"], x[1]["spike"]), reverse=True
                         )[:10]
 
+                        # ── MnM Zone Bonus & False Breakout Filter ──
+                        if _ZONE_ENGINE_AVAILABLE and bullish_candidates:
+                            try:
+                                _cand_tickers = tuple([tk for tk, _ in bullish_candidates])
+                                _zone_map_daily = _cached_batch_detect_zones(_cand_tickers)
+                                for _tk, _d in bullish_candidates:
+                                    _zr = _zone_map_daily.get(_tk, ZoneResult(ticker=_tk))
+                                    _d["zone_bonus"]     = _zr.confluence_score * 0.5 + max(0, (_zr.accum_score - 50) * 0.1)
+                                    _d["zone_signals"]   = _zr.zone_signals[:3]
+                                    _d["vol_type"]       = _zr.vol_type
+                                    _d["false_breakout"] = _zr.false_breakout
+                                # Filter keluar False Breakout
+                                bullish_candidates = [(tk, d) for tk, d in bullish_candidates
+                                                      if not d.get("false_breakout", False)]
+                                # Re-sort dengan zone bonus
+                                bullish_candidates.sort(
+                                    key=lambda x: x[1].get("bullish_score", 0) + x[1].get("zone_bonus", 0),
+                                    reverse=True
+                                )
+                            except Exception:
+                                pass
+
                         # ── SIGMA Score untuk top bullish candidates ──
                         _sigma_scores_daily = {}
                         if _SIGMA_SCORE_AVAILABLE:
@@ -12653,6 +13451,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                         bull_lines = [
                             f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|Chg5D={d['chg5d']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|AvgVol5={d['vol5']:,}|EMA5={d['ema5']:,.0f}|BullScore={d['bullish_score']}/4"
                             + (f"|SIGMAScore={_sigma_scores_daily[tk].score}[{_sigma_scores_daily[tk].grade}]" if tk in _sigma_scores_daily else "")
+                            + (f"|ZoneBonus={d.get('zone_bonus',0):.1f}|VolType={str(d.get('vol_type','-'))[:20]}" if d.get("zone_bonus") else "")
                             for tk, d in bullish_candidates
                         ]
                         bear_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|Chg5D={d['chg5d']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|BearScore={d['bearish_score']}/4"
@@ -12770,7 +13569,26 @@ Format JSON WAJIB:
                             key=lambda x: x[1]["bearish_score"], reverse=True
                         )[:5]
 
+                        # ── MnM Zone Bonus & False Breakout Filter (Weekly) ──
+                        if _ZONE_ENGINE_AVAILABLE and swing_candidates:
+                            try:
+                                _sw_tickers = tuple([tk for tk, _ in swing_candidates])
+                                _zone_map_sw = _cached_batch_detect_zones(_sw_tickers)
+                                for _tk, _d in swing_candidates:
+                                    _zr = _zone_map_sw.get(_tk, ZoneResult(ticker=_tk))
+                                    _d["zone_bonus"]     = _zr.confluence_score * 0.5 + max(0, (_zr.accum_score - 50) * 0.1)
+                                    _d["false_breakout"] = _zr.false_breakout
+                                swing_candidates = [(tk, d) for tk, d in swing_candidates
+                                                    if not d.get("false_breakout", False)]
+                                swing_candidates.sort(
+                                    key=lambda x: x[1].get("bullish_score", 0) + x[1].get("zone_bonus", 0),
+                                    reverse=True
+                                )
+                            except Exception:
+                                pass
+
                         lines = [f"{tk}:P={d['price']:,.0f}|C5={d['chg5d']:+.2f}%|Spk={d['spike']:.1f}x|Bl={d['bullish_score']}/4"
+                                 + (f"|ZB={d.get('zone_bonus',0):.1f}" if d.get("zone_bonus") else "")
                                  for tk, d in swing_candidates]
                         bear_lines = [f"{tk}: Harga={d['price']:,.0f} | Chg5d={d['chg5d']:+.2f}% | BearScore={d['bearish_score']}/4"
                                       for tk, d in bear_swing]
@@ -12876,7 +13694,26 @@ Risiko: berita negatif semalam → gap-down. Sizing maks <b>5–10% portofolio</
                             key=lambda x: x[1]["bearish_score"], reverse=True
                         )[:5]
 
+                        # ── MnM Zone Bonus & False Breakout Filter (BSJP) ──
+                        if _ZONE_ENGINE_AVAILABLE and bsjp_candidates:
+                            try:
+                                _bsjp_tickers = tuple([tk for tk, _ in bsjp_candidates])
+                                _zone_map_bsjp = _cached_batch_detect_zones(_bsjp_tickers)
+                                for _tk, _d in bsjp_candidates:
+                                    _zr = _zone_map_bsjp.get(_tk, ZoneResult(ticker=_tk))
+                                    _d["zone_bonus"]     = _zr.confluence_score * 0.5 + max(0, (_zr.accum_score - 50) * 0.1)
+                                    _d["false_breakout"] = _zr.false_breakout
+                                bsjp_candidates = [(tk, d) for tk, d in bsjp_candidates
+                                                   if not d.get("false_breakout", False)]
+                                bsjp_candidates.sort(
+                                    key=lambda x: x[1].get("spike", 0) + x[1].get("zone_bonus", 0),
+                                    reverse=True
+                                )
+                            except Exception:
+                                pass
+
                         lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|AvgVol5={d['vol5']:,}|High={d['high']:,.0f}|Low={d['low']:,.0f}|BullScore={d['bullish_score']}/4"
+                                 + (f"|ZoneBonus={d.get('zone_bonus',0):.1f}" if d.get("zone_bonus") else "")
                                  for tk, d in bsjp_candidates]
                         avoid_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|BearScore={d['bearish_score']}/4"
                                        for tk, d in bsjp_avoid]
