@@ -53,7 +53,7 @@ import math
 WEIGHTS = {
     "teknikal":    0.22,   # MnM Strategy+ confluence
     "volume":      0.25,   # Volume anomali & divergence
-    "bandar":      0.35,   # DOMINAN — IDX is bandar-driven
+    "bandar":      0.35,   # DOMINAN - IDX is bandar-driven
     "fundamental": 0.10,   # Buffett criteria
     "momentum_rs": 0.08,   # Relative strength vs IHSG
 }
@@ -132,19 +132,19 @@ def _ema(values: list, period: int) -> float:
     k = 2 / (period + 1)
     ema = sum(values[:period]) / period
     for v in values[period:]:
-        ema = v * k + ema * (1—k)
+        ema = v * k + ema * (1-k)
     return ema
 
 def _atr(highs: list, lows: list, closes: list, period: int = 14) -> float:
-    """Average True Range — ukuran volatilitas."""
+    """Average True Range - ukuran volatilitas."""
     if len(closes) < period + 1:
-        return (max(highs[-5:])—min(lows[-5:])) / 2 if highs else 0
+        return (max(highs[-5:])-min(lows[-5:])) / 2 if highs else 0
     trs = []
     for i in range(1, min(period + 1, len(closes))):
         tr = max(
-            highs[-i]—lows[-i],
-            abs(highs[-i]—closes[-i—1]),
-            abs(lows[-i] —closes[-i—1]),
+            highs[-i]-lows[-i],
+            abs(highs[-i]-closes[-i-1]),
+            abs(lows[-i] -closes[-i-1]),
         )
         trs.append(tr)
     return sum(trs) / len(trs) if trs else 0
@@ -152,16 +152,16 @@ def _atr(highs: list, lows: list, closes: list, period: int = 14) -> float:
 def _swing_lows(lows: list, window: int = 3) -> list:
     """Cari swing low dari data harga."""
     result = []
-    for i in range(window, len(lows)—window):
-        if lows[i] == min(lows[i—window: i + window + 1]):
+    for i in range(window, len(lows)-window):
+        if lows[i] == min(lows[i-window: i + window + 1]):
             result.append((i, lows[i]))
     return result
 
 def _swing_highs(highs: list, window: int = 3) -> list:
     """Cari swing high dari data harga."""
     result = []
-    for i in range(window, len(highs)—window):
-        if highs[i] == max(highs[i—window: i + window + 1]):
+    for i in range(window, len(highs)-window):
+        if highs[i] == max(highs[i-window: i + window + 1]):
             result.append((i, highs[i]))
     return result
 
@@ -208,7 +208,7 @@ def _score_teknikal(pd: PriceData) -> tuple:
     if ema21 > ema50:  bullish_ema += 1
 
     # EMA alignment: 0–6 → mapped ke -20 to +30
-    ema_contribution = (bullish_ema / 6) * 50—15
+    ema_contribution = (bullish_ema / 6) * 50-15
     score += ema_contribution
 
     if bullish_ema >= 5:
@@ -216,7 +216,7 @@ def _score_teknikal(pd: PriceData) -> tuple:
     elif bullish_ema >= 3:
         signals.append("🟡 EMA alignment parsial")
     else:
-        signals.append("🔴 EMA bearish — harga di bawah EMA kunci")
+        signals.append("🔴 EMA bearish - harga di bawah EMA kunci")
 
     # ── Struktur HH/HL vs LL/LH ──
     if len(c) >= 10:
@@ -225,10 +225,10 @@ def _score_teknikal(pd: PriceData) -> tuple:
         # HH: high terbaru > high 5 hari lalu
         if recent_highs[-1] > recent_highs[-6] and recent_lows[-1] > recent_lows[-6]:
             score += 10
-            signals.append("✅ Struktur HH/HL — uptrend valid")
+            signals.append("✅ Struktur HH/HL - uptrend valid")
         elif recent_highs[-1] < recent_highs[-6] and recent_lows[-1] < recent_lows[-6]:
             score -= 10
-            signals.append("🔴 Struktur LL/LH — downtrend aktif")
+            signals.append("🔴 Struktur LL/LH - downtrend aktif")
 
     # ── Golden/Death Cross ──
     if len(c) >= 55:
@@ -236,16 +236,16 @@ def _score_teknikal(pd: PriceData) -> tuple:
         ema200_prev = _ema(c[:-5], 200) if len(c) >= 205 else ema200
         if ema50 > ema200 and ema50_prev <= ema200_prev:
             score += 15
-            signals.append("🌟 GOLDEN CROSS EMA50/200 — sinyal bullish mayor")
+            signals.append("🌟 GOLDEN CROSS EMA50/200 - sinyal bullish mayor")
         elif ema50 < ema200 and ema50_prev >= ema200_prev:
             score -= 15
-            signals.append("💀 DEATH CROSS EMA50/200 — sinyal bearish mayor")
+            signals.append("💀 DEATH CROSS EMA50/200 - sinyal bearish mayor")
 
     # ── Candle Momentum (3 hari terakhir) ──
     if len(c) >= 4:
-        bodies = [abs(c[-i]—c[-i-1]) for i in range(1, 4)]
+        bodies = [abs(c[-i]-c[-i-1]) for i in range(1, 4)]
         avg_body = sum(bodies) / 3
-        last_body = abs(c[-1]—c[-2])
+        last_body = abs(c[-1]-c[-2])
         # Candle besar = momentum kuat
         if last_body > avg_body * 1.5 and c[-1] > c[-2]:
             score += 8
@@ -255,7 +255,7 @@ def _score_teknikal(pd: PriceData) -> tuple:
             signals.append("⚡ Candle momentum bearish kuat")
 
     # ── Proximity ke EMA21 (area entry ideal MnM) ──
-    dist_ema21 = abs(price—ema21) / ema21 * 100
+    dist_ema21 = abs(price-ema21) / ema21 * 100
     if dist_ema21 <= 1.5 and price >= ema21:
         score += 7
         signals.append("🎯 Harga di atas EMA21 (zona entry MnM)")
@@ -297,11 +297,11 @@ def _score_volume(pd: PriceData) -> tuple:
 
     # ── Volume Spike Classification ──
     if spike_ratio >= 10:
-        signals.append(f"🔴 VOLUME EKSTREM {spike_ratio:.1f}x avg — event besar, cek berita!")
+        signals.append(f"🔴 VOLUME EKSTREM {spike_ratio:.1f}x avg - event besar, cek berita!")
         # Ekstrem: bisa reversal atau katalis besar — netral dulu, tunggu konfirmasi
         score += 0
     elif spike_ratio >= 5:
-        signals.append(f"🟠 Volume sangat tinggi {spike_ratio:.1f}x avg — institusi aktif")
+        signals.append(f"🟠 Volume sangat tinggi {spike_ratio:.1f}x avg - institusi aktif")
         score += 15 if last_price > prev_price else -5
     elif spike_ratio >= 2:
         signals.append(f"🟡 Volume spike {spike_ratio:.1f}x avg")
@@ -309,45 +309,45 @@ def _score_volume(pd: PriceData) -> tuple:
 
     # ── Price-Volume Divergence (5 hari) ──
     if len(c) >= 6 and len(v) >= 6:
-        price_chg_5d = (c[-1]—c[-6]) / c[-6] * 100 if c[-6] > 0 else 0
+        price_chg_5d = (c[-1]-c[-6]) / c[-6] * 100 if c[-6] > 0 else 0
         vol_avg_5d_old = sum(v[-11:-6]) / 5 if len(v) >= 11 else avg20
         vol_avg_5d_new = sum(v[-5:])    / 5
-        vol_chg_pct = (vol_avg_5d_new—vol_avg_5d_old) / vol_avg_5d_old * 100 if vol_avg_5d_old > 0 else 0
+        vol_chg_pct = (vol_avg_5d_new-vol_avg_5d_old) / vol_avg_5d_old * 100 if vol_avg_5d_old > 0 else 0
 
         if price_chg_5d > 2 and vol_chg_pct < -20:
             score -= 15
-            signals.append("⚠️ DIVERGENSI: Harga naik tapi volume TURUN — momentum lemah")
+            signals.append("⚠️ DIVERGENSI: Harga naik tapi volume TURUN - momentum lemah")
         elif price_chg_5d > 2 and vol_chg_pct > 20:
             score += 18
-            signals.append("✅ Harga naik + volume naik — momentum KUAT")
+            signals.append("✅ Harga naik + volume naik - momentum KUAT")
         elif price_chg_5d < -2 and vol_chg_pct < -20:
             score += 8
-            signals.append("🔵 Seller exhaustion — volume turun saat harga turun")
+            signals.append("🔵 Seller exhaustion - volume turun saat harga turun")
         elif price_chg_5d < -2 and vol_chg_pct > 20:
             score -= 12
-            signals.append("🔴 Distribusi massal — harga turun + volume spike")
+            signals.append("🔴 Distribusi massal - harga turun + volume spike")
 
     # ── Volume Dry-Up Detection (akumulasi stealth) ──
     dry_up = avg5 < (avg20 * 0.45)
     if dry_up:
         score += 12
-        signals.append("🔵 Volume DRY-UP — potensi akumulasi stealth sebelum breakout")
+        signals.append("🔵 Volume DRY-UP - potensi akumulasi stealth sebelum breakout")
 
     # ── Candle-Body vs Volume Konviksi ──
     if len(c) >= 3 and len(h) >= 3 and len(l) >= 3:
-        candle_body = abs(c[-1]—c[-2])
-        candle_range = h[-1]—l[-1]
+        candle_body = abs(c[-1]-c[-2])
+        candle_range = h[-1]-l[-1]
         body_ratio = candle_body / candle_range if candle_range > 0 else 0.5
 
         if body_ratio > 0.7 and spike_ratio >= 1.5 and last_price > prev_price:
             score += 12
-            signals.append("✅ Candle besar + volume tinggi — konviksi KUAT bullish")
+            signals.append("✅ Candle besar + volume tinggi - konviksi KUAT bullish")
         elif body_ratio < 0.3 and spike_ratio >= 2:
             score -= 5
-            signals.append("⚠️ Candle kecil + volume tinggi — pertempuran BUY/SELL, tunggu resolusi")
+            signals.append("⚠️ Candle kecil + volume tinggi - pertempuran BUY/SELL, tunggu resolusi")
         elif body_ratio > 0.7 and spike_ratio < 0.5:
             score -= 8
-            signals.append("⚠️ Candle besar tapi volume rendah — potensi TRAP/manipulasi")
+            signals.append("⚠️ Candle besar tapi volume rendah - potensi TRAP/manipulasi")
 
     return _clamp(score), signals
 
@@ -379,57 +379,57 @@ def _score_bandar(pd: PriceData) -> tuple:
 
     # ── Pattern 1: Stealth Accumulation (quiet buying at lows) ──
     # Ciri: harga sideways/turun perlahan + volume di bawah rata-rata tapi konsisten
-    price_range_10d = (max(c[-10:])—min(c[-10:])) / c[-10] * 100 if c[-10] > 0 else 0
+    price_range_10d = (max(c[-10:])-min(c[-10:])) / c[-10] * 100 if c[-10] > 0 else 0
     vol_consistency = min(v[-10:]) / avg_vol_20 if avg_vol_20 > 0 else 0
 
     if price_range_10d < 5 and vol_consistency > 0.3:  # sideways + volume konsisten
         score += 15
-        signals.append("🟢 Pola AKUMULASI STEALTH: sideways + volume konsisten — bandar mengumpulkan")
+        signals.append("🟢 Pola AKUMULASI STEALTH: sideways + volume konsisten - bandar mengumpulkan")
 
     # ── Pattern 2: High-Volume Reversal at Bottom ──
     # Volume spike besar di harga rendah = bandar absorb supply dari retail panik
     price_at_low = c[-1] <= min(c[-20:]) * 1.05  # dalam 5% dari low 20 hari
     if price_at_low and v[-1] > avg_vol_20 * 2:
         score += 20
-        signals.append("🟢 ABSORPSI di LOW: volume spike di zona bawah — potensial reversal bandar")
+        signals.append("🟢 ABSORPSI di LOW: volume spike di zona bawah - potensial reversal bandar")
 
     # ── Pattern 3: Distribution Pattern ──
     # Volume spike besar di high = bandar distribusi ke retail FOMO
     price_at_high = c[-1] >= max(c[-20:]) * 0.97  # dalam 3% dari high 20 hari
     if price_at_high and v[-1] > avg_vol_20 * 2.5:
         score -= 25
-        signals.append("🔴 DISTRIBUSI di HIGH: volume ekstrem di zona atas — potensi bandar jual ke retail")
+        signals.append("🔴 DISTRIBUSI di HIGH: volume ekstrem di zona atas - potensi bandar jual ke retail")
 
     # ── Pattern 4: Institutional Buildup (volume naik bertahap saat harga naik) ──
     if len(c) >= 15:
         vol_trend_early = sum(v[-15:-10]) / 5
         vol_trend_late  = sum(v[-5:]) / 5
-        price_trend     = (c[-1]—c[-15]) / c[-15] * 100 if c[-15] > 0 else 0
+        price_trend     = (c[-1]-c[-15]) / c[-15] * 100 if c[-15] > 0 else 0
 
         if price_trend > 5 and vol_trend_late > vol_trend_early * 1.3:
             score += 18
             signals.append("✅ INSTITUTIONAL BUILDUP: harga naik + volume bertahap meningkat")
         elif price_trend > 5 and vol_trend_late < vol_trend_early * 0.7:
             score -= 10
-            signals.append("⚠️ Harga naik tapi volume trend TURUN — distribusi mungkin dimulai")
+            signals.append("⚠️ Harga naik tapi volume trend TURUN - distribusi mungkin dimulai")
 
     # ── Pattern 5: Shakeout Detection ──
     # Penurunan tajam 1 hari dengan volume tinggi tapi close kembali ke atas
     if len(c) >= 3 and len(h) >= 3 and len(l) >= 3:
-        intraday_drop = (l[-2]—c[-3]) / c[-3] * 100 if c[-3] > 0 else 0  # low kemarin vs close 2 hari lalu
-        recovery      = (c[-1]—l[-2]) / l[-2] * 100 if l[-2] > 0 else 0    # recovery hari ini dari low kemarin
+        intraday_drop = (l[-2]-c[-3]) / c[-3] * 100 if c[-3] > 0 else 0  # low kemarin vs close 2 hari lalu
+        recovery      = (c[-1]-l[-2]) / l[-2] * 100 if l[-2] > 0 else 0    # recovery hari ini dari low kemarin
         if intraday_drop < -3 and recovery > 2 and v[-2] > avg_vol_20 * 1.5:
             score += 14
-            signals.append("🟡 SHAKEOUT PATTERN: penurunan tajam diikuti recovery — bandar kumpulin di panic sell")
+            signals.append("🟡 SHAKEOUT PATTERN: penurunan tajam diikuti recovery - bandar kumpulin di panic sell")
 
     # ── Pattern 6: Stop Hunt ──
     # Wick panjang ke bawah dengan body kecil = test stop loss lalu reversal
     if len(l) >= 2 and len(c) >= 2:
-        wick_down = c[-2]—l[-2]  # lower wick
-        body      = abs(c[-2]—c[-3]) if len(c) >= 3 else 1
+        wick_down = c[-2]-l[-2]  # lower wick
+        body      = abs(c[-2]-c[-3]) if len(c) >= 3 else 1
         if body > 0 and wick_down > body * 2 and c[-1] > c[-2]:
             score += 10
-            signals.append("🟡 STOP HUNT: wick panjang ke bawah + recovery — bandar test supply")
+            signals.append("🟡 STOP HUNT: wick panjang ke bawah + recovery - bandar test supply")
 
     return _clamp(score), signals
 
@@ -443,7 +443,7 @@ def _score_fundamental(fd: Optional[FundamentalData]) -> tuple:
     Score tinggi = fundamental kuat, undervalue, profitable.
     """
     if fd is None:
-        return 50, ["Data fundamental tidak tersedia — skor netral"]
+        return 50, ["Data fundamental tidak tersedia - skor netral"]
 
     signals = []
     score = 50
@@ -453,62 +453,62 @@ def _score_fundamental(fd: Optional[FundamentalData]) -> tuple:
         roe_pct = fd.roe * 100 if fd.roe < 5 else fd.roe  # handle persen vs desimal
         if roe_pct > 20:
             score += 15
-            signals.append(f"✅ ROE {roe_pct:.1f}% — sangat baik (>20%)")
+            signals.append(f"✅ ROE {roe_pct:.1f}% - sangat baik (>20%)")
         elif roe_pct > 15:
             score += 8
-            signals.append(f"✅ ROE {roe_pct:.1f}% — baik (>15%)")
+            signals.append(f"✅ ROE {roe_pct:.1f}% - baik (>15%)")
         elif roe_pct < 8:
             score -= 12
-            signals.append(f"🔴 ROE {roe_pct:.1f}% — lemah (<8%)")
+            signals.append(f"🔴 ROE {roe_pct:.1f}% - lemah (<8%)")
 
     # ── DER (target: <1x untuk non-bank) ──
     if fd.der is not None:
         if fd.der < 0.5:
             score += 10
-            signals.append(f"✅ DER {fd.der:.2f}x — konservatif (rendah utang)")
+            signals.append(f"✅ DER {fd.der:.2f}x - konservatif (rendah utang)")
         elif fd.der > 2.0:
             score -= 15
-            signals.append(f"🔴 DER {fd.der:.2f}x — utang tinggi, risiko keuangan")
+            signals.append(f"🔴 DER {fd.der:.2f}x - utang tinggi, risiko keuangan")
         elif fd.der > 1.5:
             score -= 7
-            signals.append(f"⚠️ DER {fd.der:.2f}x — utang perlu diperhatikan")
+            signals.append(f"⚠️ DER {fd.der:.2f}x - utang perlu diperhatikan")
 
     # ── PBV (target: 1x–3x ideal untuk IDX) ──
     if fd.pbv is not None:
         if 0.5 <= fd.pbv <= 2.0:
             score += 12
-            signals.append(f"✅ PBV {fd.pbv:.2f}x — valuasi menarik")
+            signals.append(f"✅ PBV {fd.pbv:.2f}x - valuasi menarik")
         elif fd.pbv < 0.5:
             score += 6
-            signals.append(f"🟡 PBV {fd.pbv:.2f}x — sangat murah (cek apakah ada masalah)")
+            signals.append(f"🟡 PBV {fd.pbv:.2f}x - sangat murah (cek apakah ada masalah)")
         elif fd.pbv > 5.0:
             score -= 12
-            signals.append(f"🔴 PBV {fd.pbv:.2f}x — sudah mahal")
+            signals.append(f"🔴 PBV {fd.pbv:.2f}x - sudah mahal")
         elif fd.pbv > 3.0:
             score -= 5
-            signals.append(f"⚠️ PBV {fd.pbv:.2f}x — premium, butuh katalis kuat")
+            signals.append(f"⚠️ PBV {fd.pbv:.2f}x - premium, butuh katalis kuat")
 
     # ── EPS Growth ──
     if fd.eps_growth is not None:
         eg_pct = fd.eps_growth * 100 if fd.eps_growth < 5 else fd.eps_growth
         if eg_pct > 20:
             score += 10
-            signals.append(f"✅ EPS growth {eg_pct:.1f}% YoY — pertumbuhan kuat")
+            signals.append(f"✅ EPS growth {eg_pct:.1f}% YoY - pertumbuhan kuat")
         elif eg_pct > 10:
             score += 5
         elif eg_pct < 0:
             score -= 12
-            signals.append(f"🔴 EPS turun {eg_pct:.1f}% YoY — laba menyusut")
+            signals.append(f"🔴 EPS turun {eg_pct:.1f}% YoY - laba menyusut")
 
     # ── Net Margin ──
     if fd.net_margin is not None:
         nm_pct = fd.net_margin * 100 if fd.net_margin < 5 else fd.net_margin
         if nm_pct > 15:
             score += 8
-            signals.append(f"✅ Net margin {nm_pct:.1f}% — profitabilitas solid")
+            signals.append(f"✅ Net margin {nm_pct:.1f}% - profitabilitas solid")
         elif nm_pct < 3:
             score -= 8
-            signals.append(f"⚠️ Net margin {nm_pct:.1f}% — sangat tipis")
+            signals.append(f"⚠️ Net margin {nm_pct:.1f}% - sangat tipis")
 
     # ── Current Ratio ──
     if fd.current_ratio is not None:
@@ -516,7 +516,7 @@ def _score_fundamental(fd: Optional[FundamentalData]) -> tuple:
             score += 5
         elif fd.current_ratio < 1.0:
             score -= 10
-            signals.append(f"🔴 Current ratio {fd.current_ratio:.2f}x — likuiditas ketat")
+            signals.append(f"🔴 Current ratio {fd.current_ratio:.2f}x - likuiditas ketat")
 
     return _clamp(score), signals
 
@@ -538,8 +538,8 @@ def _score_momentum_rs(pd: PriceData) -> tuple:
         return 50, ["Data tidak cukup untuk RS"]
 
     # Internal momentum (tanpa IHSG)
-    ret_5d  = (c[-1]—c[-6])  / c[-6]  * 100 if len(c) >= 6  and c[-6]  > 0 else 0
-    ret_20d = (c[-1]—c[-21]) / c[-21] * 100 if len(c) >= 21 and c[-21] > 0 else 0
+    ret_5d  = (c[-1]-c[-6])  / c[-6]  * 100 if len(c) >= 6  and c[-6]  > 0 else 0
+    ret_20d = (c[-1]-c[-21]) / c[-21] * 100 if len(c) >= 21 and c[-21] > 0 else 0
 
     score = 50
     score += ret_5d * 1.5    # 1% naik 5 hari = +1.5 poin
@@ -552,21 +552,21 @@ def _score_momentum_rs(pd: PriceData) -> tuple:
 
     # RS vs IHSG jika data tersedia
     if len(ihsg) >= 10:
-        ihsg_ret_20d = (ihsg[-1]—ihsg[-21]) / ihsg[-21] * 100 if len(ihsg) >= 21 and ihsg[-21] > 0 else 0
+        ihsg_ret_20d = (ihsg[-1]-ihsg[-21]) / ihsg[-21] * 100 if len(ihsg) >= 21 and ihsg[-21] > 0 else 0
         rs = ret_20d / ihsg_ret_20d if ihsg_ret_20d != 0 else 1.0
 
         if rs > 1.5:
             score += 15
-            signals.append(f"✅ RS {rs:.2f}x — OUTPERFORM IHSG signifikan")
+            signals.append(f"✅ RS {rs:.2f}x - OUTPERFORM IHSG signifikan")
         elif rs > 1.1:
             score += 8
-            signals.append(f"✅ RS {rs:.2f}x — outperform IHSG")
+            signals.append(f"✅ RS {rs:.2f}x - outperform IHSG")
         elif rs < 0.7:
             score -= 15
-            signals.append(f"🔴 RS {rs:.2f}x — underperform IHSG — hindari saat ini")
+            signals.append(f"🔴 RS {rs:.2f}x - underperform IHSG - hindari saat ini")
         elif rs < 0.9:
             score -= 7
-            signals.append(f"⚠️ RS {rs:.2f}x — lebih lemah dari IHSG")
+            signals.append(f"⚠️ RS {rs:.2f}x - lebih lemah dari IHSG")
 
     return _clamp(score), signals
 
@@ -597,14 +597,14 @@ def _calc_trade_levels(pd: PriceData) -> dict:
     resistances = sorted([x[1] for x in s_highs if x[1] > price])
 
     # ── Entry Zone ──
-    nearest_support = supports[0] if supports else price—atr * 1.5
-    entry_lo = _round_tick(max(nearest_support, price—atr * 0.8))
+    nearest_support = supports[0] if supports else price-atr * 1.5
+    entry_lo = _round_tick(max(nearest_support, price-atr * 0.8))
     entry_hi = _round_tick(price)
 
     # ── Stop Loss ──
-    second_support = supports[1] if len(supports) > 1 else nearest_support—atr
-    sl = _round_tick(second_support—atr * 0.5)
-    sl = min(sl, entry_lo—atr)  # SL minimal 1 ATR di bawah entry
+    second_support = supports[1] if len(supports) > 1 else nearest_support-atr
+    sl = _round_tick(second_support-atr * 0.5)
+    sl = min(sl, entry_lo-atr)  # SL minimal 1 ATR di bawah entry
 
     # ── Take Profits dari resistance structure ──
     tp1 = _round_tick(resistances[0]) if resistances else _round_tick(price + atr * 2)
@@ -613,8 +613,8 @@ def _calc_trade_levels(pd: PriceData) -> dict:
 
     # ── R/R Ratio ──
     mid_entry = (entry_lo + entry_hi) / 2
-    risk      = max(mid_entry—sl, atr * 0.5)
-    reward    = tp1—mid_entry
+    risk      = max(mid_entry-sl, atr * 0.5)
+    reward    = tp1-mid_entry
     rr        = round(reward / risk, 2) if risk > 0 else 0
 
     return {
@@ -667,10 +667,10 @@ def score_bandar_from_broker_summary(broker_text: str) -> tuple:
             elif unit in ('rb', 'ribu'): val /= 1_000_000
             if val > 0:
                 score += min(20, val * 0.5)
-                signals.append(f"✅ Net Foreign BUY Rp{val:.1f}M — asing akumulasi")
+                signals.append(f"✅ Net Foreign BUY Rp{val:.1f}M - asing akumulasi")
             elif val < 0:
                 score -= min(20, abs(val) * 0.5)
-                signals.append(f"🔴 Net Foreign SELL Rp{abs(val):.1f}M — asing distribusi")
+                signals.append(f"🔴 Net Foreign SELL Rp{abs(val):.1f}M - asing distribusi")
         except:
             pass
 
@@ -737,10 +737,10 @@ def score_bandar_from_broker_summary(broker_text: str) -> tuple:
 
     if foreign_buy >= 2:
         score += 15
-        signals.append(f"✅ {foreign_buy} broker asing premium di sisi BUY — institusi masuk")
+        signals.append(f"✅ {foreign_buy} broker asing premium di sisi BUY - institusi masuk")
     if foreign_sell >= 2:
         score -= 12
-        signals.append(f"🔴 {foreign_sell} broker asing premium di sisi SELL — smart money keluar")
+        signals.append(f"🔴 {foreign_sell} broker asing premium di sisi SELL - smart money keluar")
 
     return _clamp(score), signals
 
@@ -944,7 +944,7 @@ border:1px solid {c}44;border-radius:8px;padding:6px 12px;">
     signals_html = "".join(f"<div style='font-size:0.72rem;color:#ccc;margin-bottom:3px;'>{s}</div>" for s in result.signals[:5])
 
     conf_color = {"HIGH":"#69f0ae","MEDIUM":"#ffd740","LOW":"#ff6d00"}.get(result.confidence, "#888")
-    ticker_display = f" — {ticker}" if ticker else ""
+    ticker_display = f" - {ticker}" if ticker else ""
 
     # Entry/SL/TP summary
     levels_html = ""
@@ -1016,7 +1016,7 @@ def fundamental_data_from_dict(d: dict) -> FundamentalData:
     eps_prev = d.get("eps_last_year")
     eps_growth = None
     if eps_now and eps_prev and eps_prev != 0:
-        eps_growth = (eps_now—eps_prev) / abs(eps_prev) * 100
+        eps_growth = (eps_now-eps_prev) / abs(eps_prev) * 100
 
     return FundamentalData(
         roe           = roe_pct,
@@ -1074,7 +1074,7 @@ def _fetch_all_data(tickers):
                             _fh_price = _fh_d.get("c", 0)  # current price
                             _fh_prev  = _fh_d.get("pc", 0) # previous close
                             if _fh_price and _fh_price > 0:
-                                _fh_chg = ((_fh_price—_fh_prev) / _fh_prev * 100) if _fh_prev else 0
+                                _fh_chg = ((_fh_price-_fh_prev) / _fh_prev * 100) if _fh_prev else 0
                                 result["prices"][tk] = {
                                     "price": round(_fh_price, 0),
                                     "chg": round(_fh_chg, 2),
@@ -1124,7 +1124,7 @@ def _fetch_all_data(tickers):
                     _price = _meta.get("regularMarketPrice") or _meta.get("previousClose")
                     _prev  = _meta.get("previousClose", _price)
                     if _price and _price > 0:
-                        _chg = ((_price—_prev) / _prev * 100) if _prev else 0
+                        _chg = ((_price-_prev) / _prev * 100) if _prev else 0
                         result["prices"][tk] = {
                             "price": round(_price, 0),
                             "chg": round(_chg, 2),
@@ -1235,7 +1235,7 @@ def _fetch_all_data(tickers):
 # PART 2: FUNDAMENTAL APIs
 # ─────────────────────────────────────────────
 def _fetch_finnhub(ticker, api_key=None):
-    """Fetch fundamental data dari Finnhub — auto-rotate KEY s/d KEY6."""
+    """Fetch fundamental data dari Finnhub - auto-rotate KEY s/d KEY6."""
     import urllib.request, json as _j
     keys = [api_key] if api_key else _get_all_finnhub_keys()
     if not keys:
@@ -1271,7 +1271,7 @@ def _fetch_finnhub(ticker, api_key=None):
     return {}
 
 def _fetch_alphavantage(ticker, api_key=None):
-    """Fetch fundamental data dari Alpha Vantage — auto-rotate KEY s/d KEY6."""
+    """Fetch fundamental data dari Alpha Vantage - auto-rotate KEY s/d KEY6."""
     import urllib.request, json as _j
     keys = [api_key] if api_key else _get_all_av_keys()
     if not keys:
@@ -1302,7 +1302,7 @@ def _fetch_alphavantage(ticker, api_key=None):
     return {}
 
 def _fetch_fmp(ticker, api_key=None):
-    """Fetch fundamental dari Financial Modeling Prep — auto-rotate KEY s/d KEY6."""
+    """Fetch fundamental dari Financial Modeling Prep - auto-rotate KEY s/d KEY6."""
     import urllib.request, json as _j
     keys = [api_key] if api_key else _get_all_fmp_keys()
     if not keys:
@@ -1376,7 +1376,7 @@ def _fetch_fmp(ticker, api_key=None):
 # PENGAMAN LIMIT API: Menyimpan memori selama 1 jam (3600 detik)
 @st.cache_data(ttl=3600)
 def _fetch_multi_fundamental(ticker):
-    """Fetch fundamental berlapis — saling melengkapi."""
+    """Fetch fundamental berlapis - saling melengkapi."""
     import threading
     result = [{}]
     def fetch():
@@ -1651,13 +1651,13 @@ def build_global_context(prompt):
 # ─────────────────────────────────────────────
 
 def fetch_fundamental_with_cache(ticker):
-    """Fetch fundamental langsung — selalu fresh, tanpa cache."""
+    """Fetch fundamental langsung - selalu fresh, tanpa cache."""
     data = _fetch_multi_fundamental(ticker)
     data["_from_cache"] = False
     return data
 
 def build_context(prompt):
-    """Build market context — inject ke prompt jika relevan."""
+    """Build market context - inject ke prompt jika relevan."""
     tickers = [t for t in re.findall(r'\b([A-Z]{4})\b', prompt.upper())
                if t not in {"YANG","ATAU","DARI","PADA","UNTUK","SAYA","TOLONG",
                             "ANALISA","SAHAM","MOHON","BISA","FUNDAMENTAL","DENGAN",
@@ -1746,8 +1746,8 @@ def build_context(prompt):
 def _calc_cagr(values_sorted_new_to_old):
     vals = [v for v in values_sorted_new_to_old if v and v > 0]
     if len(vals) < 2: return None
-    n = len(vals)—1
-    try: return (vals[0] / vals[-1]) ** (1/n)—1
+    n = len(vals)-1
+    try: return (vals[0] / vals[-1]) ** (1/n)-1
     except: return None
 
 def build_combined_context(prompt):
@@ -1808,29 +1808,29 @@ IDX_CORPORATE_ACTIONS = {
 }
 
 IDX_SUSPENDED_TICKERS_GLOBAL = {
-    "WIKA": "SUSPEND — Wijaya Karya, PKPU sejak 2024",
-    "WSKT": "SUSPEND — Waskita Karya, restrukturisasi hutang",
-    "PPRO": "SUSPEND — PP Properti",
-    "ACST": "SUSPEND — Acset Indonusa",
-    "IATA": "SUSPEND — My Indo Airlines",
-    "SRIL": "SUSPEND — Sri Rejeki Isman, PKPU",
-    "BLTA": "SUSPEND — Berlian Laju Tanker",
-    "TAXI": "SUSPEND — Express Transindo",
-    "MIRA": "SUSPEND — Mira International",
-    "SAFE": "SUSPEND — Steady Safe",
-    "KARW": "SUSPEND — Karya Bersama Anugerah",
-    "SUGI": "SUSPEND — Sugih Energy",
-    "SULI": "SUSPEND — Sumalindo Lestari",
-    "CNKO": "SUSPEND — Exploitasi Energi",
-    "PKPK": "SUSPEND — Perdana Karya",
-    "POLY": "SUSPEND — Asia Pacific Fibers",
-    "RAAM": "SUSPEND — Rama Agung",
-    "BCIP": "SUSPEND — Bumi Citra",
-    "BPII": "SUSPEND — Batavia Prosperindo",
-    "LAPD": "SUSPEND — Leyand International",
-    "DERA": "SUSPEND — Derajat Prima",
-    "BSML": "SUSPEND — Bintang Sarana",
-    "APOL": "SUSPEND — Arpeni Pratama",
+    "WIKA": "SUSPEND - Wijaya Karya, PKPU sejak 2024",
+    "WSKT": "SUSPEND - Waskita Karya, restrukturisasi hutang",
+    "PPRO": "SUSPEND - PP Properti",
+    "ACST": "SUSPEND - Acset Indonusa",
+    "IATA": "SUSPEND - My Indo Airlines",
+    "SRIL": "SUSPEND - Sri Rejeki Isman, PKPU",
+    "BLTA": "SUSPEND - Berlian Laju Tanker",
+    "TAXI": "SUSPEND - Express Transindo",
+    "MIRA": "SUSPEND - Mira International",
+    "SAFE": "SUSPEND - Steady Safe",
+    "KARW": "SUSPEND - Karya Bersama Anugerah",
+    "SUGI": "SUSPEND - Sugih Energy",
+    "SULI": "SUSPEND - Sumalindo Lestari",
+    "CNKO": "SUSPEND - Exploitasi Energi",
+    "PKPK": "SUSPEND - Perdana Karya",
+    "POLY": "SUSPEND - Asia Pacific Fibers",
+    "RAAM": "SUSPEND - Rama Agung",
+    "BCIP": "SUSPEND - Bumi Citra",
+    "BPII": "SUSPEND - Batavia Prosperindo",
+    "LAPD": "SUSPEND - Leyand International",
+    "DERA": "SUSPEND - Derajat Prima",
+    "BSML": "SUSPEND - Bintang Sarana",
+    "APOL": "SUSPEND - Arpeni Pratama",
 }
 
 def _validate_price_corporate_action(ticker, price):
@@ -1939,7 +1939,7 @@ def build_fundamental_from_text(prompt):
             if eps_2026:
                 lines.append(f"EPS TTM (2026) : Rp{eps_2026:,.0f}")
                 if eps_2025:
-                    growth = ((eps_2026—eps_2025) / eps_2025) * 100
+                    growth = ((eps_2026-eps_2025) / eps_2025) * 100
                     lines.append(f"Growth EPS vs 2025 : {growth:+.2f}%")
             
             # Valuasi Tetap Wajib Ada
@@ -3720,7 +3720,7 @@ def _get_groq_client_and_key():
 
 
 def _estimate_tokens(text):
-    """Estimasi token count — 1 token ≈ 4 karakter (konservatif untuk Bahasa Indonesia)."""
+    """Estimasi token count - 1 token ≈ 4 karakter (konservatif untuk Bahasa Indonesia)."""
     return max(1, len(text) // 4)
 
 def _smart_truncate_prompt(text, max_tokens=22000):
@@ -3734,12 +3734,12 @@ def _smart_truncate_prompt(text, max_tokens=22000):
         return text
     # Ambil 70% dari depan + 30% dari belakang — pertahankan konteks & data terbaru
     head = int(max_chars * 0.70)
-    tail = max_chars—head
+    tail = max_chars-head
     # Potong di batas kalimat/newline yang bersih
     head_cut = text[:head].rfind('\n')
     if head_cut < int(head * 0.85): head_cut = text[:head].rfind('. ')
     if head_cut < 1: head_cut = head
-    tail_start = len(text)—tail
+    tail_start = len(text)-tail
     tail_cut = text.find('\n', tail_start)
     if tail_cut < 0 or tail_cut > tail_start + 200: tail_cut = tail_start
     return text[:head_cut] + "\n\n[... sebagian data tengah dipotong otomatis untuk efisiensi token ...]\n\n" + text[tail_cut:]
@@ -3758,7 +3758,7 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000):
     HISTORY_TOKEN_BUDGET = 3000   # max token untuk history
     OUTPUT_BUDGET = min(max_tokens, 16000)
     TOTAL_BUDGET = 30000
-    PROMPT_BUDGET = TOTAL_BUDGET—SYSTEM_TOKEN_EST—HISTORY_TOKEN_BUDGET—OUTPUT_BUDGET
+    PROMPT_BUDGET = TOTAL_BUDGET-SYSTEM_TOKEN_EST-HISTORY_TOKEN_BUDGET-OUTPUT_BUDGET
     PROMPT_BUDGET = max(PROMPT_BUDGET, 8000)  # minimal 8000 token untuk prompt
 
     # Truncate prompt jika melebihi budget
@@ -4211,7 +4211,7 @@ def show_login():
                 st.error("⛔ Akses Ditolak: Username/Email ini tidak diizinkan untuk mendaftar.")
             else:
                 ok, msg = register_user(runame.strip(), rpwd, rname.strip())
-                if ok: st.success(f"✅ {msg} — silakan masuk")
+                if ok: st.success(f"✅ {msg} - silakan masuk")
                 else: st.error(msg)
 
     with tab3:
@@ -4244,7 +4244,7 @@ if st.session_state.user is None: show_login()
 # ─────────────────────────────────────────────
 
 def show_system_selector():
-    """Halaman promosi pemilihan sistem — upgraded terminal card."""
+    """Halaman promosi pemilihan sistem - upgraded terminal card."""
     _user = st.session_state.user
     _name = (_user.get("name") or _user.get("email","")).split()[0] if _user else "Trader"
 
@@ -5064,7 +5064,7 @@ def show_login():
             elif len(rpwd) < 6: st.error("Password minimal 6 karakter")
             else:
                 ok, msg = register_user(runame.strip(), rpwd, rname.strip())
-                if ok: st.success(f"✅ {msg} — silakan masuk")
+                if ok: st.success(f"✅ {msg} - silakan masuk")
                 else: st.error(msg)
 
     with tab3:
@@ -5916,23 +5916,23 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 5. TRADE PLAN berdasarkan money flow
 6. INSIGHT (jika ada sinyal tersembunyi atau peringatan tambahan)
 
-[TEMPLATE WAJIB — IKUTI PERSIS]:
+[TEMPLATE WAJIB - IKUTI PERSIS]:
 Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 
 ---
 
-🕵️ **1. PEMBACAAN MONEY FLOW — SIAPA YANG MENGENDALIKAN?**
+🕵️ **1. PEMBACAAN MONEY FLOW - SIAPA YANG MENGENDALIKAN?**
 
 **Fase Dominan Saat Ini:**
-- Fase Bandar: [Akumulasi / Distribusi / Mark-Up / Mark-Down / Shakeout / Mixed — pilih satu, jelaskan tandanya]
+- Fase Bandar: [Akumulasi / Distribusi / Mark-Up / Mark-Down / Shakeout / Mixed - pilih satu, jelaskan tandanya]
 - Durasi Estimasi: [Sudah berlangsung berapa hari/minggu berdasarkan data yang terlihat]
 
 **Aktor yang Bermain:**
 - Top Buyer: [Sebutkan kode broker dan klasifikasinya: Asing/BUMN/Lokal]
 - Top Seller: [Sebutkan kode broker dan klasifikasinya: Asing/BUMN/Lokal]
-- Asing (Foreign Flow): [Net Buy Rp[X]B / Net Sell Rp[X]B / Neutral — implikasinya ke saham ini]
-- BUMN: [Net Buy / Net Sell / Tidak hadir — interpretasi]
-- Lokal: [Net Buy / Net Sell — apakah ritel panik atau institusi lokal mengikuti?]
+- Asing (Foreign Flow): [Net Buy Rp[X]B / Net Sell Rp[X]B / Neutral - implikasinya ke saham ini]
+- BUMN: [Net Buy / Net Sell / Tidak hadir - interpretasi]
+- Lokal: [Net Buy / Net Sell - apakah ritel panik atau institusi lokal mengikuti?]
 
 **Taktik yang Terdeteksi:**
 - [Jelaskan jika ada: Washing/cuci barang / Bandar Nyamar broker ritel / Fake Bid-Offer / Shakeout ritel / Tidak terdeteksi]
@@ -5942,7 +5942,7 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 💰 **2. PETA POSISI & MODAL BANDAR**
 
 - **Average Top Buyer:** Rp[X]
- —*(Interpretasi: Ini adalah estimasi harga modal bandar masuk)*
+ -*(Interpretasi: Ini adalah estimasi harga modal bandar masuk)*
 - **Harga Market Saat Ini:** Rp[Y]
 - **Selisih:** [+Rp[Z] floating profit / -Rp[Z] floating loss / Break Even]
 - **Status Bandar:** [Floating Profit ✅ = bandar nyaman | Break Even ⚠️ = kritis | Floating Loss ❌ = waspada distribusi paksa]
@@ -5952,11 +5952,11 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 📊 **3. ANALISA VOLUME & FREKUENSI**
 
 **Karakter Transaksi:**
-- Tipe: [Block Trade — lot besar, frekuensi kecil = Smart Money | Eceran — lot kecil, frekuensi besar = Ritel]
-- Lot per Transaksi: [X lot/transaksi — [interpretasi: kecil/sedang/besar]]
+- Tipe: [Block Trade - lot besar, frekuensi kecil = Smart Money | Eceran - lot kecil, frekuensi besar = Ritel]
+- Lot per Transaksi: [X lot/transaksi - [interpretasi: kecil/sedang/besar]]
 
 **Kondisi Volume:**
-- Status: [Anomali [Xx rata-rata] / Normal / Sepi — dry-up]
+- Status: [Anomali [Xx rata-rata] / Normal / Sepi - dry-up]
 - Arah: [Volume naik saat harga naik = konfirmasi | Volume naik saat harga turun = distribusi/kapitulasi]
 
 **Price Table (jika data tersedia):**
@@ -5965,13 +5965,13 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 
 ---
 
-⚖️ **4. KESIMPULAN — JUJUR & TEGAS**
+⚖️ **4. KESIMPULAN - JUJUR & TEGAS**
 
 > *(SIGMA tidak akan merekomendasikan ikut jika tanda-tanda distribusi lebih dominan.)*
 
 - **Sinyal Utama:** [S1 Akumulasi Dini / S2 Hindari Distribusi / S3 Ikuti Asing / S4 Konfluensi 3 Layer / S5 Exit / S6-S9 sesuai kondisi]
-- **Keputusan:** [✅ IKUT AKUMULASI / ⚠️ WAIT — belum jelas / ❌ KELUAR / ❌ JANGAN MASUK]
-- **Alasan:** [2-3 kalimat jujur menjelaskan mengapa keputusan ini — sebutkan fakta konkret dari data]
+- **Keputusan:** [✅ IKUT AKUMULASI / ⚠️ WAIT - belum jelas / ❌ KELUAR / ❌ JANGAN MASUK]
+- **Alasan:** [2-3 kalimat jujur menjelaskan mengapa keputusan ini - sebutkan fakta konkret dari data]
 - **Risiko Utama:** [Apa yang bisa membuat analisa ini salah? Sebutkan kondisi spesifik]
 
 ---
@@ -5981,14 +5981,14 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 - **Strategi:** [Cicil beli mendekati average bandar / Wait konfirmasi / Exit bertahap / Jangan masuk]
 
 - **Entry Area:** Rp[X] – Rp[Y]
- —*(Mendekati atau setara average bandar — bukan jauh di atas modalnya)*
+ -*(Mendekati atau setara average bandar - bukan jauh di atas modalnya)*
 
 - **Stop Loss:** Di bawah Rp[Z]
- —*(Invalidasi: Jika bandar beralih ke distribusi masif atau Top Buyer berganti menjadi Top Seller)*
+ -*(Invalidasi: Jika bandar beralih ke distribusi masif atau Top Buyer berganti menjadi Top Seller)*
 
 - **Target:**
- —TP1: Rp[A] — *[logika: level psikologis / pola distribusi bandar / resistance terdekat]*
- —TP2: Rp[B] — *[jika ada skenario mark-up berlanjut]* *(hapus jika tidak ada)*
+ -TP1: Rp[A] - *[logika: level psikologis / pola distribusi bandar / resistance terdekat]*
+ -TP2: Rp[B] - *[jika ada skenario mark-up berlanjut]* *(hapus jika tidak ada)*
 
 - **Instruksi Tegas:** [1 kalimat instruksi konkret. Contoh: "Cicil beli di Rp[X]-[Y], SL ketat di Rp[Z], exit jika Top Buyer berubah menjadi seller dalam 2 hari ke depan."]
 
@@ -5997,22 +5997,22 @@ Berikut **Peta Aliran Dana Smart Money (Bandarmologi)** untuk **{emiten}**:
 💡 **6. INSIGHT & PERINGATAN**
 
 - [Sebutkan sinyal tersembunyi yang tidak terbaca langsung dari data, misalnya: pola washing, estimasi waktu distribusi, potensi mark-up, atau hal yang perlu dimonitor]
-- [Jika ada peringatan khusus — TULIS DENGAN JELAS, jangan disamarkan]
+- [Jika ada peringatan khusus - TULIS DENGAN JELAS, jangan disamarkan]
 
 ---
 
-⚠️ *Analisa ini melacak aliran dana Smart Money. SIGMA tidak menjanjikan profit — disiplin SL wajib dijalankan.*
+⚠️ *Analisa ini melacak aliran dana Smart Money. SIGMA tidak menjanjikan profit - disiplin SL wajib dijalankan.*
 """
 
 TEMPLATE_LENGKAP = """
-[INSTRUKSI TEGAS — BACA SEBELUM MENULIS APAPUN]:
+[INSTRUKSI TEGAS - BACA SEBELUM MENULIS APAPUN]:
 Kamu adalah SIGMA, analis QUAD CONFLUENCE yang JUJUR, TEGAS, dan DISIPLIN. Ingat: analisa ini menyangkut uang nyata.
 - WAJIB jujur soal kondisi sesungguhnya, bahkan jika hasilnya tidak bullish.
-- Jika 3 dari 4 layer bearish — KATAKAN BEARISH. Jangan cari-cari alasan untuk bullish.
+- Jika 3 dari 4 layer bearish - KATAKAN BEARISH. Jangan cari-cari alasan untuk bullish.
 - Cerita/narasi harus menjelaskan MENGAPA kondisi ini terjadi secara logis, bukan sekadar daftar data.
 - DILARANG skip atau mengosongkan bagian manapun. Jika data tidak ada → tulis "(est.)" + estimasi.
 
-[REFERENSI KODE BROKER IDX — WAJIB PAKAI]:
+[REFERENSI KODE BROKER IDX - WAJIB PAKAI]:
 FOREIGN: AK=UBS, YU=CGS International, YP=Mirae Asset (ASING-Korea), ZP=Maybank, CP=KB Valbury (ASING-Korea),
   BK=JPMorgan, KZ=CLSA, RX=Macquarie, KK=Phillip, AI=Kay Hian, AG=Kiwoom, DR=RHB,
   BQ=Korea Investment, XA=NH Korindo, TP=OCBC, HD=KGI, DP=DBS Vickers, MS=Morgan Stanley,
@@ -6026,64 +6026,64 @@ LOKAL: XL=Stockbit, MG=Semesta Indovest, PD=Indo Premier, XC=Ajaib, DH=Sinarmas,
 {data_raw}
 
 URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
-1. NARASI "THE STORY" — cerita kondisi saham ini dari sudut pandang 4 layer
+1. NARASI "THE STORY" - cerita kondisi saham ini dari sudut pandang 4 layer
 2. EMPAT LAYER ANALISA (Bandar, Teknikal, Fundamental, Makro)
 3. KESIMPULAN MASTER (skor + verdict jujur)
 4. SUPER TRADE PLAN (entry, SL, TP dengan logika)
 5. INSIGHT & MONITORING
 
-[TEMPLATE WAJIB — IKUTI PERSIS]:
-**🌟 ANALISA LENGKAP — QUAD CONFLUENCE {emiten} 🌟**
+[TEMPLATE WAJIB - IKUTI PERSIS]:
+**🌟 ANALISA LENGKAP - QUAD CONFLUENCE {emiten} 🌟**
 
 ---
 
-📖 **THE STORY — APA YANG SEBENARNYA TERJADI?**
+📖 **THE STORY - APA YANG SEBENARNYA TERJADI?**
 
-[Tulis 4-5 kalimat narasi yang menceritakan kondisi {emiten} saat ini secara jujur dan logis. Hubungkan keempat layer: apa yang dilakukan bandar, apa yang terbaca di chart, bagaimana kondisi bisnis/valuasinya, dan faktor makro apa yang mendorongnya. Ini adalah cerita yang akan membantu user memahami MENGAPA dan BAGAIMANA situasinya — bukan sekadar daftar data. Jika kondisinya buruk atau tidak jelas, KATAKAN dengan tegas di sini.]
+[Tulis 4-5 kalimat narasi yang menceritakan kondisi {emiten} saat ini secara jujur dan logis. Hubungkan keempat layer: apa yang dilakukan bandar, apa yang terbaca di chart, bagaimana kondisi bisnis/valuasinya, dan faktor makro apa yang mendorongnya. Ini adalah cerita yang akan membantu user memahami MENGAPA dan BAGAIMANA situasinya - bukan sekadar daftar data. Jika kondisinya buruk atau tidak jelas, KATAKAN dengan tegas di sini.]
 
 ---
 
-🕵️ **1. BANDARMOLOGI — MONEY FLOW**
+🕵️ **1. BANDARMOLOGI - MONEY FLOW**
 
-- **Fase Bandar:** [Akumulasi / Distribusi / Mark-Up / Mark-Down / Shakeout — sebutkan durasinya jika bisa diestimasi]
-- **Aktor Dominan:** [Top Buyer dan Top Seller — kode broker + klasifikasi Asing/BUMN/Lokal]
+- **Fase Bandar:** [Akumulasi / Distribusi / Mark-Up / Mark-Down / Shakeout - sebutkan durasinya jika bisa diestimasi]
+- **Aktor Dominan:** [Top Buyer dan Top Seller - kode broker + klasifikasi Asing/BUMN/Lokal]
 - **Posisi Modal Bandar:** Average Rp[X] vs Harga Market Rp[Y] → [Floating Profit/Loss/Break Even]
-- **Foreign Flow:** [Net Buy Rp[X]B / Net Sell Rp[X]B — implikasinya]
+- **Foreign Flow:** [Net Buy Rp[X]B / Net Sell Rp[X]B - implikasinya]
 - **Taktik Terdeteksi:** [Washing / Bandar nyamar / Block trade / Shakeout / Tidak ada yang mencurigakan]
-- **Verdict Bandar:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] — [alasan 1 kalimat konkret]
+- **Verdict Bandar:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] - [alasan 1 kalimat konkret]
 
 ---
 
-📈 **2. TEKNIKAL — MnM STRATEGY+**
+📈 **2. TEKNIKAL - MnM STRATEGY+**
 
-- **Struktur Mayor:** [Bullish / Bearish / Sideways — posisi vs swing high/low terakhir]
-- **Struktur Minor:** [Bullish / Bearish / Sideways — kondisi harian]
+- **Struktur Mayor:** [Bullish / Bearish / Sideways - posisi vs swing high/low terakhir]
+- **Struktur Minor:** [Bullish / Bearish / Sideways - kondisi harian]
 - **Zona Kunci:** [Sebutkan IFVG/OB/Demand/Supply yang aktif dan relevan dengan level harganya]
-- **EMA Status:** EMA13/21: [di atas/bawah] | EMA100/200: [di atas/bawah — implikasi tren besar]
+- **EMA Status:** EMA13/21: [di atas/bawah] | EMA100/200: [di atas/bawah - implikasi tren besar]
 - **Volume Divergence:** [HH+Vol Turun = WEAKNESS ⚠️ / LL+Vol Turun = EXHAUSTION 🟢 / Selaras ✅]
 - **Divergence Indikator:** [Ada Bullish Divergence di [indikator] / Ada Bearish Divergence / Tidak ada divergence]
-- **Verdict Teknikal:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] — [alasan 1 kalimat konkret]
+- **Verdict Teknikal:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] - [alasan 1 kalimat konkret]
 
 ---
 
-💰 **3. FUNDAMENTAL — VALUASI & BISNIS**
+💰 **3. FUNDAMENTAL - VALUASI & BISNIS**
 
 - **Harga Saat Ini:** Rp[X]
-- **Kinerja Terakhir:** [Laba/Revenue tren naik/turun — sebutkan angkanya jika ada]
+- **Kinerja Terakhir:** [Laba/Revenue tren naik/turun - sebutkan angkanya jika ada]
 - **Valuasi:** PER [X]x | PBV [Y]x → [Undervalue / Fair Value / Overvalue vs historis/sektor]
 - **Kekuatan Bisnis:** [Sebutkan 1-2 keunggulan fundamental konkret]
 - **Risiko Fundamental:** [Sebutkan 1-2 risiko konkret yang bisa tekan harga]
-- **Verdict Fundamental:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] — [alasan 1 kalimat konkret]
+- **Verdict Fundamental:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] - [alasan 1 kalimat konkret]
 
 ---
 
-🌍 **4. MAKRO & SENTIMEN — KATALIS EKSTERNAL**
+🌍 **4. MAKRO & SENTIMEN - KATALIS EKSTERNAL**
 
-- **Kondisi Makro:** [DXY / BI Rate / Fed Rate — arahnya dan dampaknya ke saham ini]
+- **Kondisi Makro:** [DXY / BI Rate / Fed Rate - arahnya dan dampaknya ke saham ini]
 - **Komoditas Terkait:** [Harga komoditas relevan dan dampaknya ke emiten ini]
-- **Sentimen Sektor:** [Positif / Negatif / Netral — jelaskan kenapa]
-- **Katalis Mendatang:** [Event/data yang akan rilis dan bisa mengubah arah — sebutkan tanggalnya jika tahu]
-- **Verdict Makro:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] — [alasan 1 kalimat konkret]
+- **Sentimen Sektor:** [Positif / Negatif / Netral - jelaskan kenapa]
+- **Katalis Mendatang:** [Event/data yang akan rilis dan bisa mengubah arah - sebutkan tanggalnya jika tahu]
+- **Verdict Makro:** [✅ BULLISH / ⚠️ NEUTRAL / ❌ BEARISH] - [alasan 1 kalimat konkret]
 
 ---
 
@@ -6098,29 +6098,29 @@ URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
 | Makro | [✅/⚠️/❌] | [1 kalimat] |
 
 **Verdict Final:** **[STRONG BUY / BUY / WAIT / JUAL / HINDARI]**
-**Alasan:** [2-3 kalimat jujur yang merangkai mengapa verdict ini — jangan ragu menyebut risiko]
+**Alasan:** [2-3 kalimat jujur yang merangkai mengapa verdict ini - jangan ragu menyebut risiko]
 
 ---
 
 📋 **SUPER TRADE PLAN**
 
-*(Skenario: [S1/S2/S3/S4 — sebutkan nama skenarionya])*
+*(Skenario: [S1/S2/S3/S4 - sebutkan nama skenarionya])*
 
 - **Strategi:** [Buy on Weakness / Wait for Breakout / Avoid / Exit Bertahap]
 
 - **Entry Area:** Rp[X] – Rp[Y]
- —*(Logika: konfluensi Average Bandar + Support Teknikal + Zona Demand)*
+ -*(Logika: konfluensi Average Bandar + Support Teknikal + Zona Demand)*
 
 - **Stop Loss:** Di bawah Rp[Z]
- —*(Invalidasi: [kondisi teknikal + bandar yang jika terjadi, setup ini batal])*
+ -*(Invalidasi: [kondisi teknikal + bandar yang jika terjadi, setup ini batal])*
 
 - **Target:**
- —TP1: Rp[A] — *[resistance teknikal minor / zona distribusi bandar]*
- —TP2: Rp[B] — *[resistance mayor / target valuasi]* *(hapus jika tidak ada)*
- —TP3: Rp[C] — *[zona ekstrem / ATH area]* *(hapus jika tidak ada)*
+ -TP1: Rp[A] - *[resistance teknikal minor / zona distribusi bandar]*
+ -TP2: Rp[B] - *[resistance mayor / target valuasi]* *(hapus jika tidak ada)*
+ -TP3: Rp[C] - *[zona ekstrem / ATH area]* *(hapus jika tidak ada)*
 
 - **R:R:** 1 : [X]
-- **Sizing:** [Penuh / 50-70% / 30-50% / Hindari] — [alasan sizing]
+- **Sizing:** [Penuh / 50-70% / 30-50% / Hindari] - [alasan sizing]
 
 ---
 
@@ -6128,11 +6128,11 @@ URUTAN OUTPUT WAJIB (JANGAN UBAH URUTAN INI):
 
 - **Yang Perlu Dipantau:** [Kondisi spesifik yang perlu dimonitor dalam 1-2 minggu ke depan]
 - **Level Kritis:** [Level harga yang jika ditembus akan mengubah keseluruhan bias]
-- **Peringatan Khusus:** [Jika ada sinyal tersembunyi atau risiko yang perlu diperhatikan — TULIS TEGAS]
+- **Peringatan Khusus:** [Jika ada sinyal tersembunyi atau risiko yang perlu diperhatikan - TULIS TEGAS]
 
 ---
 
-⚠️ *#DYOR — SIGMA jujur berbasis data, bukan rekomendasi investasi. Disiplin SL wajib dijalankan.*
+⚠️ *#DYOR - SIGMA jujur berbasis data, bukan rekomendasi investasi. Disiplin SL wajib dijalankan.*
 """
 
 # ─── FUNGSI API GEMINI ───
@@ -6184,7 +6184,7 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
 
 def _call_gemini_text(messages):
     """
-    Gemini Text — FALLBACK untuk text jika semua Groq 70B rate limit.
+    Gemini Text - FALLBACK untuk text jika semua Groq 70B rate limit.
     Auto-rotate 6 key + 2 model. Smart truncation ≤ 30.000 token.
     """
     import urllib.request, json as _j
@@ -6528,7 +6528,7 @@ if current_view == "dashboard":
     <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
-    /* ── Accent color upgrade — ungu lebih terang & vivid ── */
+    /* ── Accent color upgrade - ungu lebih terang & vivid ── */
     :root {{
         --sigma-accent: #b89fff;
         --sigma-accent-dim: rgba(184,159,255,0.18);
@@ -7314,7 +7314,7 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
       var bg  = na ? 'rgba(178,181,190,0.06)' : (up ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.10)');
       var bdr = na ? '#b2b5be' : (up ? '#089981' : '#f23645');
       var arrow = na ? '' : (up ? '▲' : '▼');
-      var pct = na ? '—' : (arrow+' '+r.pct);
+      var pct = na ? '-' : (arrow+' '+r.pct);
       var fl = r[flagKey] || '';
       var rowBg = r.is_id ? 'rgba(124,58,237,0.025)' : '';
       h += '<tr style="background:'+rowBg+'">'+
@@ -7330,7 +7330,7 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
   buildRows(IDX, 'idx-tb', 'flag');
   buildRows(COM, 'com-tb', 'icon');
 
-  // Equalise scroll heights — cap at 520px to keep both cols same size
+  // Equalise scroll heights - cap at 520px to keep both cols same size
   function setHeights(){{
     var idxS = document.getElementById('idx-scroll');
     var comS = document.getElementById('com-scroll');
@@ -7348,7 +7348,7 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
   function updateTs(){{
     var now = new Date();
     // WIB = UTC+7
-    var wibMs = now.getTime() + (7*60*60*1000)—now.getTimezoneOffset()*60000;
+    var wibMs = now.getTime() + (7*60*60*1000)-now.getTimezoneOffset()*60000;
     // just use UTC offset trick
     var wib = new Date(now.getTime());
     var ofs = now.getTimezoneOffset(); // local offset in mins
@@ -7393,7 +7393,7 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
             .mb-tag  {{ font-size:0.76rem; padding:2px 8px; }}
         }}
         </style>
-        <p class='mb-desc'>Analisis pasar berbasis AI — IHSG, Global Markets, Forex, Komoditas, Sentimen &amp; Tactical View. Sumber: CNBC Indonesia, CNBC Global, Bloomberg &amp; MarketWatch.</p>
+        <p class='mb-desc'>Analisis pasar berbasis AI - IHSG, Global Markets, Forex, Komoditas, Sentimen &amp; Tactical View. Sumber: CNBC Indonesia, CNBC Global, Bloomberg &amp; MarketWatch.</p>
         <div class='mb-tags'>
             <span class='mb-tag'>&#128240; Multi-Source RSS</span>
             <span class='mb-tag'>&#129302; AI Powered (Groq)</span>
@@ -7570,11 +7570,11 @@ tbody tr:hover td{{background:rgba(184,159,255,0.04);}}
 
                 if req_daily:
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI profesional.
-Tanggal & waktu sekarang: **{_today}** | Mode: **DAILY REVIEW — 24 JAM TERAKHIR SAJA**
+Tanggal & waktu sekarang: **{_today}** | Mode: **DAILY REVIEW - 24 JAM TERAKHIR SAJA**
 
 ⚠️ PERINTAH WAKTU KERAS: Kamu HANYA boleh membahas berita, data, dan peristiwa yang terjadi dalam 24 JAM TERAKHIR (sejak {_today}). Gunakan web search untuk memverifikasi berita terkini hari ini. JANGAN bahas berita yang lebih dari 24 jam lalu.
 
-═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
+═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI - WAJIB GUNAKAN ANGKA INI) ═══
 {_rt_block}
 ⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
 Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
@@ -7584,7 +7584,7 @@ BERITA RSS 24 JAM TERAKHIR (gunakan sebagai konteks, cari yang paling baru):
 Domestik: {_rss_dom_str}
 Global: {_rss_glob_str}
 
-FORMAT OUTPUT — Bahasa Indonesia, maks 600 kata, Markdown:
+FORMAT OUTPUT - Bahasa Indonesia, maks 600 kata, Markdown:
 
 ## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
 Gunakan harga IHSG dan USD/IDR dari DATA REAL-TIME di atas. Tambahkan konteks: sentimen lokal, saham/sektor bergerak berdasarkan berita RSS hari ini. (2 paragraf)
@@ -7599,8 +7599,8 @@ Gunakan harga S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME di atas. Tambahkan 
 Gunakan USD/IDR, Gold, WTI, Brent dari DATA REAL-TIME di atas. Sektor IDX terdampak?
 
 ## 📊 SENTIMENT METER
-- IHSG: [skor]/100 — [label berdasarkan data real-time]
-- Global Risk: [skor]/100 — [Risk-On/Mixed/Risk-Off]
+- IHSG: [skor]/100 - [label berdasarkan data real-time]
+- Global Risk: [skor]/100 - [Risk-On/Mixed/Risk-Off]
 - Geopolitik Risk: [Tinggi/Sedang/Rendah]
 - IDR: [Rendah/Sedang/Tinggi tekanan]
 
@@ -7608,17 +7608,17 @@ Gunakan USD/IDR, Gold, WTI, Brent dari DATA REAL-TIME di atas. Sektor IDX terdam
 Stance + support/resistance IHSG (berdasarkan level real-time di atas) + 1-2 sektor pantau.
 
 ## 🎯 WATCHLIST SEKTORAL (3 sektor)
-(✅/⚠/❌) Sektor — status — 1 kalimat alasan.
+(✅/⚠/❌) Sektor - status - 1 kalimat alasan.
 
 Padat & actionable. Hindari basa-basi. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Semua waktu dalam WIB."""
 
                 else:  # weekly
                     mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal — platform riset saham IDX/BEI.
-Tanggal & waktu sekarang: **{_today}** | Mode: **WEEKLY REVIEW — 7 HARI TERAKHIR**
+Tanggal & waktu sekarang: **{_today}** | Mode: **WEEKLY REVIEW - 7 HARI TERAKHIR**
 
 ⚠️ PERINTAH WAKTU KERAS: Kamu HANYA boleh membahas berita, data, dan peristiwa yang terjadi dalam 7 HARI TERAKHIR (sejak 7 hari sebelum {_today}). Gunakan web search untuk mencari dan memverifikasi perkembangan penting minggu ini. JANGAN bahas berita yang lebih dari 7 hari lalu.
 
-═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI — WAJIB GUNAKAN ANGKA INI) ═══
+═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI - WAJIB GUNAKAN ANGKA INI) ═══
 {_rt_block}
 ⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
 Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
@@ -7628,7 +7628,7 @@ BERITA RSS 7 HARI TERAKHIR (konteks narasi & analisis minggu ini):
 Domestik: {_rss_dom_str}
 Global: {_rss_glob_str}
 
-FORMAT OUTPUT — Bahasa Indonesia, padat & strategis. Maks 800 kata total.
+FORMAT OUTPUT - Bahasa Indonesia, padat & strategis. Maks 800 kata total.
 
 ## 📅 REKAP IHSG MINGGU INI (7 Hari Terakhir)
 Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS minggu ini (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
@@ -7640,17 +7640,17 @@ Gunakan S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME. Tambahkan konteks: keput
 **WAJIB DETAIL dari berita RSS minggu ini**: Perkembangan tarif/perang dagang Trump, eskalasi Rusia-Ukraina, China (Taiwan/regulasi/ekonomi), Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
 
 ## 📊 SENTIMENT METER MINGGUAN
-- **IHSG:** [angka]/100 — [label — berdasarkan level real-time]
-- **Foreign Flow:** [Net Buy/Sell/Mixed] — estimasi arah
-- **Global Risk:** [angka]/100 — [label]
+- **IHSG:** [angka]/100 - [label - berdasarkan level real-time]
+- **Foreign Flow:** [Net Buy/Sell/Mixed] - estimasi arah
+- **Global Risk:** [angka]/100 - [label]
 - **Geopolitik Risk:** [Tinggi/Sedang/Rendah]
-- **IDR:** [Menguat/Melemah/Stabil — berdasarkan data real-time]
+- **IDR:** [Menguat/Melemah/Stabil - berdasarkan data real-time]
 
 ## 🔮 OUTLOOK & TACTICAL VIEW MINGGU DEPAN
 Event penting (FOMC, data AS, dll) + stance + 2-3 sektor rotasi + risiko utama. (2 paragraf)
 
 ## 🎯 WATCHLIST SEKTORAL (5 sektor)
-(✅/⚠/❌) **Sektor** — Status — Outlook — Contoh saham — Alasan geopolitik/makro
+(✅/⚠/❌) **Sektor** - Status - Outlook - Contoh saham - Alasan geopolitik/makro
 
 Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Semua waktu dalam WIB."""
 
@@ -8724,7 +8724,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.04);}}
 
   <!-- Insight -->
   <div class="frm-insight">
-    💡 <b style="color:#4285F4;">SIGMA INSIGHT —</b>
+    💡 <b style="color:#4285F4;">SIGMA INSIGHT -</b>
     Probabilitas 98.9% pasar memproyeksikan Fed <b>HOLD</b> di 3.50–3.75% pada FOMC April 2026.
     Ekspektasi cut mulai muncul di FOMC Juni (5.9% cut ke 3.25–3.50%).
     Implikasi IDX: <span style="color:#089981;font-weight:600;">Rupiah relatif stabil</span>,
@@ -8741,13 +8741,13 @@ var DIR_COLOR = {{ "cut":"#089981", "hold":"#4285F4", "hike":"#f23645" }};
 var DIR_LABEL = {{ "cut":"CUT", "hold":"HOLD", "hike":"HIKE" }};
 var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15)", "hike":"rgba(242,54,69,0.15)" }};
 
-// ── LIVE COUNTDOWN — target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC ──
+// ── LIVE COUNTDOWN - target: Apr 30 2026 01:00 WIB = Apr 29 2026 18:00 UTC ──
 (function() {{
   // Apr 29 2026 14:00 EDT (UTC-4) = Apr 29 2026 18:00 UTC = Apr 30 2026 01:00 WIB (UTC+7)
   var TARGET_UTC_MS = Date.UTC(2026, 3, 29, 18, 0, 0);
 
   function tick() {{
-    var diff = TARGET_UTC_MS—Date.now();
+    var diff = TARGET_UTC_MS-Date.now();
     var cd = document.getElementById('frm-cd');
     if (!cd) return;
     if (diff <= 0) {{
@@ -8796,8 +8796,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
     mtg.scenarios.forEach(function(sc) {{
       var c = DIR_COLOR[sc.dir] || '#b2b5be';
       var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
-      var pd = sc.prev_day !== null ? sc.prev_day.toFixed(1) + '%' : '—';
-      var pw = sc.prev_week !== null ? sc.prev_week.toFixed(1) + '%' : '—';
+      var pd = sc.prev_day !== null ? sc.prev_day.toFixed(1) + '%' : '-';
+      var pw = sc.prev_week !== null ? sc.prev_week.toFixed(1) + '%' : '-';
       var badge = '<span class="frm-dir-badge" style="color:' + c + ';background:' + bc + '">' + DIR_LABEL[sc.dir] + '</span>';
       rows += '<tr>';
       rows += '<td>' + sc.range + badge + '</td>';
@@ -9753,7 +9753,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#a78bfa;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
         <b style='color:#a78bfa;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
+        <span style='color:{text_sub};'>Jadwal: 2× setahun - Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
         </div>""", unsafe_allow_html=True)
         msci_data = {
             "Ticker": [
@@ -9800,7 +9800,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#a78bfa;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
         <b style='color:#a78bfa;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Jadwal: 4× setahun — Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
+        <span style='color:{text_sub};'>Jadwal: 4× setahun - Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
         </div>""", unsafe_allow_html=True)
         
         ftse_data = {
@@ -9841,7 +9841,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
             padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
         🗓️ <b style='color:#a78bfa;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
         <b style='color:#a78bfa;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Jadwal: 2× setahun — Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
+        <span style='color:{text_sub};'>Jadwal: 2× setahun - Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
         </div>""", unsafe_allow_html=True)
         
         lq45_data = {
@@ -10699,7 +10699,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;'>
                 <span style='font-size:1.2rem;'>🔄</span>
                 <span style='font-family:IBM Plex Mono,monospace;font-size:0.85rem;color:#089981;'>
-                    <b>WINDOW UPDATE BULANAN AKTIF</b> — IDX/KSEI biasanya merilis data pemegang saham terbaru
+                    <b>WINDOW UPDATE BULANAN AKTIF</b> - IDX/KSEI biasanya merilis data pemegang saham terbaru
                     pada tanggal 7–10. Data live diambil fresh, cache diperbarui otomatis.
                 </span>
             </div>""", unsafe_allow_html=True)
@@ -10721,7 +10721,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     border-radius:12px;padding:20px 24px;margin:12px 0 20px;'>
                     <div style='font-family:IBM Plex Mono,monospace;font-size:1.0rem;font-weight:700;
                         letter-spacing:0.1em;color:#f23645;text-transform:uppercase;margin-bottom:8px;'>
-                        ⛔ SAHAM SUSPEND — TIDAK DIPERDAGANGKAN
+                        ⛔ SAHAM SUSPEND - TIDAK DIPERDAGANGKAN
                     </div>
                     <div style='font-family:IBM Plex Mono,monospace;font-size:0.92rem;color:{text_sub};line-height:1.8;'>
                         <b style='color:{text_main};'>{sh_ticker}</b> saat ini dalam status <b style='color:#f23645;'>SUSPEND</b> 
@@ -10791,7 +10791,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     st.markdown(f"""<div style='background:rgba(155,89,182,0.08);border:1px solid rgba(155,89,182,0.3);
                         border-left:3px solid #9b59b6;border-radius:0 6px 6px 0;
                         padding:10px 16px;margin-bottom:12px;font-family:IBM Plex Mono,monospace;font-size:0.92rem;color:{text_sub};'>
-                        ⚠️ <b style='color:#9b59b6;'>DATA ESTIMASI</b> — {sh_ticker} tidak tersedia di database IDX resmi.
+                        ⚠️ <b style='color:#9b59b6;'>DATA ESTIMASI</b> - {sh_ticker} tidak tersedia di database IDX resmi.
                         Chart di bawah adalah estimasi berbasis data publik yfinance + pola industri.
                         Untuk data akurat, cek langsung di
                         <a href="https://www.idx.co.id/id/perusahaan-tercatat/profil-perusahaan-tercatat?kodeEmiten={sh_ticker}"
@@ -10984,8 +10984,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
                 st.markdown(f"""
                 <div style='display:flex;gap:20px;font-family:IBM Plex Mono,monospace;font-size:0.88rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
-                    <span style='color:{price_color};font-weight:600;'>━━ Harga {sh_ticker} (Rp) — Skala Kanan</span>
-                    <span style='color:#4285F4;font-weight:600;'>━━ Total Pemegang — Skala Kiri</span>
+                    <span style='color:{price_color};font-weight:600;'>━━ Harga {sh_ticker} (Rp) - Skala Kanan</span>
+                    <span style='color:#4285F4;font-weight:600;'>━━ Total Pemegang - Skala Kiri</span>
                     <span style='color:{sh_up_color};'>█ Δ Naik</span>
                     <span style='color:{sh_dn_color};'>█ Δ Turun</span>
                 </div>""", unsafe_allow_html=True)
@@ -11380,7 +11380,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
   .pg-btn{{padding:3px 9px;font-size:0.74rem;}}
 }}
 </style></head><body>
-<span class="lbl">{icon} {label} — {count} EMITEN</span>
+<span class="lbl">{icon} {label} - {count} EMITEN</span>
 <div class="wrap">
   <div class="hint">← geser kiri / kanan →</div>
   <div class="scroll-box" id="sb_{_uid}">
@@ -11634,78 +11634,78 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
     {_sh_ctx if _sh_ctx else "Data shareholder tidak tersedia untuk ticker ini."}
 
     ────────────────────────────────────────────────
-    ATURAN UTAMA — WAJIB DIPATUHI:
+    ATURAN UTAMA - WAJIB DIPATUHI:
     ────────────────────────────────────────────────
 
     ⚠️ PENILAIAN KONDISI SAHAM (WAJIB LAKUKAN PERTAMA KALI, SEBELUM MENULIS ANALISA):
     Nilai saham ini secara objektif berdasarkan semua data di atas. Tentukan kondisinya:
-   —LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
-   —WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
-   —HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
+   -LAYAK BELI: Teknikal bullish atau netral + fundamental sehat/wajar + tidak ada downtrend mayor
+   -WASPADA: Campuran sinyal, ada risiko nyata, perlu selektif
+   -HINDARI / BERBAHAYA: Downtrend kuat + distribusi + fundamental buruk + volume distribusi
 
     ⛔ ATURAN TRADE PLAN & RISK LEVEL:
-   —Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
-   —Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
-   —Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
+   -Jika kondisi saham HINDARI/BERBAHAYA atau BEARISH KUAT → JANGAN tampilkan trade plan sama sekali
+   -Jika kondisi WASPADA dengan risiko tinggi → Tampilkan trade plan dengan warning ketat
+   -Jika kondisi LAYAK BELI → Tampilkan trade plan lengkap
 
     🎯 SYARAT RISK LEVEL TRADE PLAN (WAJIB TENTUKAN):
-   —HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
-   —MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
-   —LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
-   —IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
+   -HIGH RISK   : Hanya teknikal yang memungkinkan (setup ada, tapi volume tidak konfirmasi atau fundamental lemah/tidak tersedia)
+   -MID RISK    : Teknikal bullish PLUS volume konfirmasi (volume di atas rata-rata, buy power > sell power, tidak ada distribusi)
+   -LOW RISK    : Teknikal bullish PLUS volume konfirmasi PLUS fundamental sehat (PBV wajar, ROE positif, EPS tumbuh, tidak ada red flag fundamental)
+   -IDX = LONG ONLY. Jangan paksakan trade jika kondisi buruk.
 
     ────────────────────────────────────────────────
     STRUKTUR OUTPUT WAJIB (ikuti persis urutan ini):
     ────────────────────────────────────────────────
 
     1. 📊 NARASI TEKNIKAL
-      —Posisi harga saat ini vs struktur support/resistance utama
-      —Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
-      —Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
-      —Volume: konfirmasi atau divergensi dari price action?
-      —EMA: posisi harga vs EMA 13/21/100/200 → arah trend
-      —JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
+      -Posisi harga saat ini vs struktur support/resistance utama
+      -Tren jangka pendek (1-2 minggu) dan menengah (1-3 bulan)
+      -Momentum: sinyal reversal atau continuation? Supply/Demand zone aktif?
+      -Volume: konfirmasi atau divergensi dari price action?
+      -EMA: posisi harga vs EMA 13/21/100/200 → arah trend
+      -JUJUR: jika tren jelas turun, katakan downtrend dengan tegas
 
     2. 🏢 NARASI FUNDAMENTAL
-      —Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) — jujur jika overvalued
-      —Kinerja keuangan (EPS, margin, pertumbuhan revenue) — sebutkan jika memburuk
-      —Katalis positif/negatif ke depan — jangan sembunyikan risiko
-      —Posisi vs kompetitor sektor
+      -Valuasi: murah / wajar / mahal (berdasarkan PBV, PER, ROE) - jujur jika overvalued
+      -Kinerja keuangan (EPS, margin, pertumbuhan revenue) - sebutkan jika memburuk
+      -Katalis positif/negatif ke depan - jangan sembunyikan risiko
+      -Posisi vs kompetitor sektor
 
     3. 👥 SINYAL PEMEGANG SAHAM
-      —Tren jumlah pemegang saham: akumulasi atau distribusi?
-      —Implikasi terhadap supply/demand
+      -Tren jumlah pemegang saham: akumulasi atau distribusi?
+      -Implikasi terhadap supply/demand
 
     4. 📰 OUTLOOK SEKTOR & MAKRO
-      —Kondisi sektor saat ini
-      —Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
-      —Risiko utama — JANGAN diremehkan
+      -Kondisi sektor saat ini
+      -Faktor makro relevan (suku bunga BI, kurs IDR, kebijakan pemerintah)
+      -Risiko utama - JANGAN diremehkan
 
     5. ⚡ KESIMPULAN & VERDICT (JUJUR & TEGAS)
-      —Bias tunggal: BULLISH / BEARISH / SIDEWAYS — satu pilihan, jelaskan alasan utama
-      —Rating: BELI / WASPADA / HINDARI
-      —Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini — sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
-      —Level kunci yang wajib diperhatikan
+      -Bias tunggal: BULLISH / BEARISH / SIDEWAYS - satu pilihan, jelaskan alasan utama
+      -Rating: BELI / WASPADA / HINDARI
+      -Jika BEARISH/HINDARI: jelaskan dengan narasi JELAS mengapa saham ini tidak layak dibeli saat ini - sebutkan risiko konkret, downtrend, distribusi, fundamental buruk, dll. Gunakan bahasa tegas dan lugas agar trader tidak salah mengambil keputusan.
+      -Level kunci yang wajib diperhatikan
 
     6. 🎯 TRADE PLAN
        ⚠️ HANYA TAMPILKAN BAGIAN INI JIKA KONDISI SAHAM = LAYAK BELI ATAU WASPADA (dengan warning)
        ⛔ JIKA KONDISI = HINDARI/BERBAHAYA/DOWNTREND KUAT: Ganti seluruh bagian ini dengan narasi jelas:
-          "⛔ TRADE PLAN TIDAK TERSEDIA — [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
+          "⛔ TRADE PLAN TIDAK TERSEDIA - [jelaskan alasan konkret mengapa tidak ada setup yang layak: downtrend belum selesai, distribusi aktif, fundamental memburuk, dll. Berikan kondisi/trigger apa yang harus terpenuhi dulu sebelum trader boleh mempertimbangkan posisi di saham ini]"
    
        Jika LAYAK, WAJIB cantumkan Risk Level di baris pertama Trade Plan:
-      —🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
-      —🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
-      —🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
+      -🔴 HIGH RISK  → jika hanya teknikal yang memungkinkan (volume belum konfirmasi / fundamental tidak mendukung)
+      -🟡 MID RISK   → jika teknikal + volume sama-sama mendukung (buy power dominan, vol di atas MA)
+      -🟢 LOW RISK   → jika teknikal + volume + fundamental semuanya oke (trio konfirmasi lengkap)
 
-       Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] — [alasan singkat 1 kalimat]
+       Format baris pertama trade plan: ⚡ Risk Level: [🔴 HIGH RISK / 🟡 MID RISK / 🟢 LOW RISK] - [alasan singkat 1 kalimat]
 
        Lanjutkan:
-      —Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
-      —Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
-      —TP1: Rp[A] → resistance minor / FVG terdekat
-      —TP2: Rp[B] → resistance mayor jika ada struktur
-      —Timeframe: perkiraan berapa hari/minggu
-      —Trigger masuk: kondisi spesifik sebelum entry
+      -Area Beli (BUY ZONE): Rp[X] – Rp[Y] → jelaskan zona teknikal apa (support/FVG/demand/OB/IFVG)
+      -Stop Loss: Rp[Z] → di bawah support struktural, bukan hanya beberapa tick. Minimal 1.5× ATR dari entry bawah.
+      -TP1: Rp[A] → resistance minor / FVG terdekat
+      -TP2: Rp[B] → resistance mayor jika ada struktur
+      -Timeframe: perkiraan berapa hari/minggu
+      -Trigger masuk: kondisi spesifik sebelum entry
 
     Semua harga dalam Rupiah. Jawab dalam Bahasa Indonesia. Padat tapi detail. JANGAN ada kalimat pengantar JSON.
 
@@ -11713,7 +11713,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
     ```json
     {{"entry_low": 0, "entry_high": 0, "stop_loss": 0, "tp1": 0, "tp2": 0, "tp3": null, "risk_level": "HIGH"}}
     ```
-    PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) — JANGAN gambar trade plan di chart.
+    PENTING: Jika kondisi saham HINDARI/BEARISH KUAT, isi semua nilai JSON dengan 0 (nol) - JANGAN gambar trade plan di chart.
     Jika kondisi LAYAK: entry_low dan entry_high = batas BUY ZONE. stop_loss di bawah entry_low. tp1 di atas entry_high. Semua angka mendekati harga saat ini ({live_price_str}).
     Untuk risk_level: isi "HIGH" jika hanya teknikal oke, "MID" jika teknikal+volume oke, "LOW" jika teknikal+volume+fundamental oke. Jika tidak ada trade plan, isi "NONE"."""
 
@@ -12551,7 +12551,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 <thead><tr>
   <th>TICKER</th><th>NAME</th><th>PRICE</th>
   <th>TA SCORE</th><th>FA SCORE</th><th>COMBINED</th>
-  <th title="Volume hari ini vs rata-rata 5 hari — makin tinggi makin signifikan">VOL SPIKE</th>
+  <th title="Volume hari ini vs rata-rata 5 hari - makin tinggi makin signifikan">VOL SPIKE</th>
   <th title="Freq rendah + Lot besar = Smart Money / Block Trade">VOL TYPE</th>
   <th>RSI</th><th>MACD</th><th>WYCKOFF</th><th>RATING</th>
 </tr></thead>
@@ -12593,9 +12593,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
     var c=r==='BUY'?'bdg-buy':r==='HOLD'?'bdg-hold':'bdg-avoid';
     return '<span class="bdg '+c+'">'+r+'</span>';
   }}
-  function fmt(n){{ return n?'Rp '+parseInt(n).toLocaleString('id-ID'):'—'; }}
+  function fmt(n){{ return n?'Rp '+parseInt(n).toLocaleString('id-ID'):'-'; }}
   function upside(p,t){{
-    if(!p||!t) return '—';
+    if(!p||!t) return '-';
     var pct=((t-p)/p*100).toFixed(1);
     return '<span style="color:'+(pct>=0?'#089981':'#f23645')+';font-weight:600;">+'+(pct)+'%</span>';
   }}
@@ -12607,7 +12607,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
     return 'vol-ok';
   }}
   function freqLabel(vtype){{
-    if(!vtype) return '—';
+    if(!vtype) return '-';
     var v=vtype.toLowerCase();
     if(v.indexOf('block')>=0||v.indexOf('smart')>=0||v.indexOf('institusi')>=0)
       return '<span class="freq-smart">🏦 '+vtype+'</span>';
@@ -12619,7 +12619,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
   var h='';
   ROWS.forEach(function(r){{
     var sc=parseFloat(r.combined)||0;
-    var wy=(r.wyckoff||'—')+(r.wyckoff_pct?' ('+r.wyckoff_pct+'%)':'');
+    var wy=(r.wyckoff||'-')+(r.wyckoff_pct?' ('+r.wyckoff_pct+'%)':'');
     h+='<tr>'+
       '<td><span class="tk">'+r.ticker+'</span></td>'+
       '<td><span class="nm">'+r.name+'</span></td>'+
@@ -12627,10 +12627,10 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
       '<td><span class="'+scCls(r.ta_score)+'">'+r.ta_score+'</span></td>'+
       '<td><span class="'+scCls(r.fa_score)+'">'+r.fa_score+'</span></td>'+
       '<td><span class="'+scCls(sc)+'">'+sc.toFixed(1)+'</span></td>'+
-      '<td><span class="'+volClass(r.vol_spike)+'">'+( r.vol_spike||'—')+'</span></td>'+
+      '<td><span class="'+volClass(r.vol_spike)+'">'+( r.vol_spike||'-')+'</span></td>'+
       '<td>'+freqLabel(r.vol_type)+'</td>'+
-      '<td class="vol-ok">'+(r.rsi?parseFloat(r.rsi).toFixed(1):'—')+'</td>'+
-      '<td style="font-size:0.65rem;max-width:130px;white-space:normal;">'+(r.macd||'—')+'</td>'+
+      '<td class="vol-ok">'+(r.rsi?parseFloat(r.rsi).toFixed(1):'-')+'</td>'+
+      '<td style="font-size:0.65rem;max-width:130px;white-space:normal;">'+(r.macd||'-')+'</td>'+
       '<td style="font-size:0.65rem;max-width:120px;white-space:normal;">'+wy+'</td>'+
       '<td>'+bdg(r.rating)+'</td>'+
       '</tr>';
@@ -12640,14 +12640,14 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
   var h2='';
   ROWS.forEach(function(r){{
     var ez=r.entry_low&&r.entry_high?fmt(r.entry_low)+' – '+fmt(r.entry_high):(r.entry_zone||fmt(r.price));
-    var why=r.why_buy||r.alasan_beli||'—';
-    var hor=r.horizon||r.waktu||'—';
+    var why=r.why_buy||r.alasan_beli||'-';
+    var hor=r.horizon||r.waktu||'-';
     h2+='<tr>'+
       '<td><span class="tk">'+r.ticker+'</span></td>'+
       '<td class="pr">'+fmt(r.price)+'</td>'+
       '<td style="color:#a78bfa;font-weight:600;">'+ez+'</td>'+
       '<td style="color:#089981;font-weight:600;">'+fmt(r.tp1)+'</td>'+
-      '<td class="vol-ok">'+(r.tp2?fmt(r.tp2):'—')+'</td>'+
+      '<td class="vol-ok">'+(r.tp2?fmt(r.tp2):'-')+'</td>'+
       '<td style="color:#f23645;font-weight:600;">'+fmt(r.sl)+'</td>'+
       '<td>'+upside(r.price,r.tp1)+'</td>'+
       '<td class="vol-ok">'+hor+'</td>'+
@@ -12664,12 +12664,12 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
       '<td><span class="tk" style="color:#f23645;">'+r.ticker+'</span></td>'+
       '<td><span class="nm">'+r.name+'</span></td>'+
       '<td class="pr">'+fmt(r.price)+'</td>'+
-      '<td><span class="sr">'+(r.ta_score||'—')+'</span></td>'+
-      '<td><span class="sr">'+(r.fa_score||'—')+'</span></td>'+
-      '<td><span class="sr">'+(sc?sc.toFixed(1):'—')+'</span></td>'+
+      '<td><span class="sr">'+(r.ta_score||'-')+'</span></td>'+
+      '<td><span class="sr">'+(r.fa_score||'-')+'</span></td>'+
+      '<td><span class="sr">'+(sc?sc.toFixed(1):'-')+'</span></td>'+
       '<td style="font-size:0.65rem;color:#f23645;">'+(r.vol_signal||'Distribusi')+'</td>'+
       '<td>'+bdg('AVOID')+'</td>'+
-      '<td class="reason-cell">'+(r.reason||r.alasan||'—')+'</td>'+
+      '<td class="reason-cell">'+(r.reason||r.alasan||'-')+'</td>'+
       '</tr>';
   }});
   document.getElementById('avoid-tb').innerHTML=h3;
@@ -12736,7 +12736,7 @@ Fokus utama: VOLUME INTELLIGENCE & FREKUENSI TRANSAKSI.
 BLOCK TRADE (Smart Money): Nilai BESAR + Lot BESAR + Frekuensi KECIL → institusi masuk diam-diam → SINYAL KUAT
 NOISE (Ritel): Nilai KECIL + Lot KECIL + Frekuensi BESAR → abaikan sebagai sinyal
 BIAS: Nilai BESAR + Lot BESAR + Frekuensi BESAR → Algo/HFT → perlu konfirmasi
-Volume Spike ≥ 5x normal = anomali kuat — wajib diperhatikan siapa yang dominan
+Volume Spike ≥ 5x normal = anomali kuat - wajib diperhatikan siapa yang dominan
 Harga naik + Volume turun = WEAKNESS / distribusi tersembunyi
 Harga turun + Volume turun drastis = SELLER EXHAUSTION → potensi bottom
 Harga naik + Volume naik = GENUINE BREAKOUT / akumulasi valid
@@ -12752,7 +12752,7 @@ Harga naik + Volume naik = GENUINE BREAKOUT / akumulasi valid
 
 === TUGAS ===
 Pilih TOP 4-6 saham BELI harian + TOP 3 HINDARI.
-Prioritaskan saham dengan volume spike tinggi TAPI frekuensi rendah (block trade — smart money).
+Prioritaskan saham dengan volume spike tinggi TAPI frekuensi rendah (block trade - smart money).
 Hindari saham dengan volume spike dari ritel kecil-kecil (noise).
 
 PENTING: Jawab HANYA dalam format JSON. Jangan ada teks di luar JSON.
@@ -12763,8 +12763,8 @@ Field untuk setiap saham BELI:
 - fa_score (0-100): estimasi kualitas fundamental
 - combined (float): weighted TA60%+FA40%
 - vol_spike: rasio volume hari ini vs avg5 (format "3.2x", "8.5x", dll)
-- vol_type: jenis volume — "Block Trade / Smart Money" | "Ritel (Noise)" | "Mixed / Bias" | "Algo/HFT"
-- vol_trend: tren volume + harga — "Harga naik + Vol naik ✅" | "Harga naik + Vol turun ⚠️" | "Vol spike + Harga diam" | "Seller exhaustion"
+- vol_type: jenis volume - "Block Trade / Smart Money" | "Ritel (Noise)" | "Mixed / Bias" | "Algo/HFT"
+- vol_trend: tren volume + harga - "Harga naik + Vol naik ✅" | "Harga naik + Vol turun ⚠️" | "Vol spike + Harga diam" | "Seller exhaustion"
 - rsi (float), macd (string singkat)
 - wyckoff (string), wyckoff_pct (int 10-90)
 - entry_low (integer), entry_high (integer): zona beli
@@ -12969,7 +12969,7 @@ SINYAL BAHAYA BSJP:
 - Frekuensi transaksi SANGAT TINGGI tapi lot kecil = ritel FOMO, bukan smart money → risiko gap down
 - BearScore tinggi = downtrend aktif → gap down risk
 
-=== KANDIDAT BSJP — Volume Spike Tertinggi ===
+=== KANDIDAT BSJP - Volume Spike Tertinggi ===
 {market_snap}
 
 === HINDARI MALAM INI (Sinyal Bearish Kuat) ===
@@ -12989,7 +12989,7 @@ Field saham BSJP (beli):
 - ta_score (0-100), fa_score (0-100), combined (float)
 - vol_spike: rasio volume (format "4.2x")
 - vol_type: "Block Trade / Smart Money" | "Ritel (Noise)" | "Mixed / Bias"
-- vol_trend: posisi close vs range hari ini — "Tutup dekat HIGH ✅" | "Tutup tengah range ⚠️" | "Tutup dekat LOW ❌"
+- vol_trend: posisi close vs range hari ini - "Tutup dekat HIGH ✅" | "Tutup tengah range ⚠️" | "Tutup dekat LOW ❌"
 - wyckoff, wyckoff_pct, rsi (float), macd (string singkat)
 - entry_low (integer), entry_high (integer): zona beli sore (15:30-15:50 WIB)
 - tp1 (integer): target jual pagi besok
@@ -13009,7 +13009,7 @@ Format JSON WAJIB:
 {{
   "bsjp": [ ...array saham beli... ],
   "avoid": [ ...array saham hindari... ],
-  "kondisi": "Kondisi BSJP malam ini: KONDUSIF / WAIT — alasan 1 kalimat."
+  "kondisi": "Kondisi BSJP malam ini: KONDUSIF / WAIT - alasan 1 kalimat."
 }}"""
                         _bsjp_raw = _call_ai_reco(prompt)
                         st.session_state["reco_bsjp_result"] = _bsjp_raw
@@ -13041,18 +13041,18 @@ Format JSON WAJIB:
             st.markdown(f"""
             <div style='background:{met_bg};border:1px solid {met_border};border-left:3px solid {_fs_accent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};line-height:1.9;'>
             <span style='color:{_fs_accent};font-weight:700;letter-spacing:0.1em;'>6 KRITERIA BUFFETT + VALUE INVESTING (BASIS SCREENING)</span><br>
-            ✅ <b>ROE ≥ 15%</b> — Return on Equity kuat (Buffett: konsisten ≥15% = moat sesungguhnya) &nbsp;|&nbsp;
-            ✅ <b>DER ≤ 1.0x</b> — Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
-            ✅ <b>Net Margin ≥ 10%</b> — Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
-            ✅ <b>Current Ratio ≥ 1.5x</b> — Likuiditas jangka pendek aman &nbsp;|&nbsp;
-            ✅ <b>PBV 0.5–3.0x</b> — Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
-            ✅ <b>EPS positif</b> — Perusahaan benar-benar profitable<br><br>
+            ✅ <b>ROE ≥ 15%</b> - Return on Equity kuat (Buffett: konsisten ≥15% = moat sesungguhnya) &nbsp;|&nbsp;
+            ✅ <b>DER ≤ 1.0x</b> - Utang terkendali, tidak over-leverage &nbsp;|&nbsp;
+            ✅ <b>Net Margin ≥ 10%</b> - Pricing power &amp; efisiensi operasional &nbsp;|&nbsp;
+            ✅ <b>Current Ratio ≥ 1.5x</b> - Likuiditas jangka pendek aman &nbsp;|&nbsp;
+            ✅ <b>PBV 0.5–3.0x</b> - Tidak terlalu mahal, tidak value trap &nbsp;|&nbsp;
+            ✅ <b>EPS positif</b> - Perusahaan benar-benar profitable<br><br>
             <span style='color:#a78bfa;font-weight:700;letter-spacing:0.08em;'>📐 OPSI URUTAN TAMBAHAN (GRAHAM · DAMODARAN · LYNCH)</span><br>
-            🔢 <b>Buffett Score</b> — Skor total 0–6 kriteria terpenuhi &nbsp;|&nbsp;
-            📐 <b>Graham Number MoS</b> — √(22.5 × EPS × Book Value) vs harga pasar: makin besar = makin undervalue &nbsp;|&nbsp;
-            📈 <b>EPS Growth</b> — Pertumbuhan laba per saham (Lynch: Fast Grower jika EPS growth &gt;20%) &nbsp;|&nbsp;
-            💰 <b>Dividend Yield</b> — Yield dividen tertinggi (Slow Grower / income stock) &nbsp;|&nbsp;
-            ⚖️ <b>PEG Ratio</b> — PER ÷ ROE: &lt;1.0 = undervalue relatif growth (Damodaran/Lynch rule of thumb)
+            🔢 <b>Buffett Score</b> - Skor total 0–6 kriteria terpenuhi &nbsp;|&nbsp;
+            📐 <b>Graham Number MoS</b> - √(22.5 × EPS × Book Value) vs harga pasar: makin besar = makin undervalue &nbsp;|&nbsp;
+            📈 <b>EPS Growth</b> - Pertumbuhan laba per saham (Lynch: Fast Grower jika EPS growth &gt;20%) &nbsp;|&nbsp;
+            💰 <b>Dividend Yield</b> - Yield dividen tertinggi (Slow Grower / income stock) &nbsp;|&nbsp;
+            ⚖️ <b>PEG Ratio</b> - PER ÷ ROE: &lt;1.0 = undervalue relatif growth (Damodaran/Lynch rule of thumb)
             </div>
             """, unsafe_allow_html=True)
 
@@ -13287,7 +13287,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 @media(max-width:640px){{thead th{{font-size:0.55rem;padding:6px 7px;}}tbody td{{font-size:0.82rem;padding:6px 7px;}}}}
 </style></head><body>
 
-<span class="sec-lbl">✅ LOLOS BUFFETT — {_n_pass} SAHAM (SKOR ≥4/6)</span>
+<span class="sec-lbl">✅ LOLOS BUFFETT - {_n_pass} SAHAM (SKOR ≥4/6)</span>
 <div class="card"><div class="scroll"><table>
 <thead><tr>
   <th>TICKER</th><th>NAMA</th><th>HARGA</th>
@@ -13297,7 +13297,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
   <th title="Current Ratio ≥1.5x">CURR RATIO</th>
   <th title="PBV 0.5-3x">PBV</th>
   <th title="PER">PER</th>
-  <th title="PEG = PER / ROE — wajar jika &lt;1">PEG</th>
+  <th title="PEG = PER / ROE - wajar jika &lt;1">PEG</th>
   <th title="Dividend Yield">DIV</th>
   <th title="Market Cap">MKT CAP</th>
   <th title="Posisi 52W">52W POS</th>
@@ -13306,7 +13306,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 <tbody id="pass-tb"></tbody>
 </table></div></div>
 
-<span class="sec-lbl">⚠️ WATCHLIST — {_n_watch} SAHAM (SKOR 2–3/6)</span>
+<span class="sec-lbl">⚠️ WATCHLIST - {_n_watch} SAHAM (SKOR 2–3/6)</span>
 <div class="card"><div class="scroll"><table>
 <thead><tr>
   <th>TICKER</th><th>NAMA</th><th>HARGA</th>
@@ -13343,7 +13343,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         '<td>'+c(r.cr,r.cr_ok)+'</td>'+
         '<td>'+c(r.pbv,r.pbv_ok)+'</td>'+
         '<td class="neu">'+r.pe+'</td>'+
-        '<td style="color:'+(r.peg!=='—'&&parseFloat(r.peg)<1?'#26a69a':'#a78bfa')+';">'+r.peg+'</td>'+
+        '<td style="color:'+(r.peg!=='-'&&parseFloat(r.peg)<1?'#26a69a':'#a78bfa')+';">'+r.peg+'</td>'+
         '<td style="color:#a78bfa;">'+r.div+'</td>'+
         '<td class="neu">'+r.cap+'</td>'+
         '<td class="neu">'+r.rpos+'</td>'+
@@ -13373,7 +13373,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                                 _fsl  = [f"{tk}: ROE={d['roe']:.1f}%|DER={d['der']:.2f}x|NetMargin={d['npm']:.1f}%|PBV={d['pbv']:.2f}x|PER={d['pe']:.1f}x|CurrentRatio={d['cr']:.2f}x|EPS={d['eps']:.0f}|Div={d['div']:.1f}%|Score={d['score']}/6" for tk,d in _top5]
                                 _fp   = f"""Kamu adalah SIGMA AI — analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit.
 
-5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria — IDX):
+5 saham teratas hasil Fundamental Screener SIGMA (Buffett criteria - IDX):
 {chr(10).join(_fsl)}
 
 Kriteria screening: ROE≥15% | DER≤1.0x | NetMargin≥10% | CurrentRatio≥1.5x | PBV 0.5–3x | EPS positif
@@ -13381,28 +13381,28 @@ Kriteria screening: ROE≥15% | DER≤1.0x | NetMargin≥10% | CurrentRatio≥1.
 Lakukan analisa MULTI-DISIPLIN berikut:
 
 1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-  —Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
-  —Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
-  —Saham mana yang paling menarik secara Risk/Reward?
+  -Tentukan apakah PER/PBV saat ini mencerminkan ekspektasi growth yang realistis
+  -Reverse DCF: pada harga pasar saat ini, berapa growth rate yang dipriced-in? Masuk akal?
+  -Saham mana yang paling menarik secara Risk/Reward?
 
 2. KUALITAS LABA & UJI FORENSIK (Schilit):
-  —Bandingkan tren laba bersih vs estimasi arus kas operasi
-  —Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
-  —Red flag atau green flag yang perlu diperhatikan?
+  -Bandingkan tren laba bersih vs estimasi arus kas operasi
+  -Ada tanda-tanda penumpukan piutang atau anomali akuntansi?
+  -Red flag atau green flag yang perlu diperhatikan?
 
 3. KATEGORISASI PROFIL (Lynch):
-  —Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-  —Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
+  -Klasifikasikan setiap saham: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+  -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau?
 
 4. MARGIN OF SAFETY (Graham):
-  —Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
-  —Berapa % Margin of Safety yang tersedia saat ini?
-  —Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
+  -Estimasi nilai intrinsik sederhana (berbasis EPS/PBV historis atau earnings power)
+  -Berapa % Margin of Safety yang tersedia saat ini?
+  -Apakah neraca cukup kuat (DER rendah, CR tinggi) untuk bertahan di tekanan makro?
 
 5. SINTESIS & SIGMA VIEW:
-  —Beri skor Risk/Reward untuk masing-masing saham
-  —Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
-  —Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
+  -Beri skor Risk/Reward untuk masing-masing saham
+  -Rekomendasi 1-2 saham TERBAIK untuk akumulasi 3-6 bulan ke depan
+  -Saham mana yang paling menawarkan asimetri menguntungkan bagi investor IDX?
 
 Format: Bahasa Indonesia. Markdown rapi. Padat, jujur, actionable. Jangan ulang data mentah."""
                                 _fs_ai = _call_ai_reco(_fp)
@@ -13443,7 +13443,7 @@ INSTRUKSI:
 - Jika user minta perbandingan → bandingkan head-to-head secara kuantitatif dan kualitatif  
 - Jika user tanya valuasi → lakukan Reverse DCF: growth rate apa yang saat ini dipriced-in oleh pasar?
 - Jika user tanya apakah layak beli → berikan Margin of Safety estimate + Risk/Reward ratio
-- Selalu jujur — jika ada risiko atau kondisi tidak menarik, katakan dengan tegas
+- Selalu jujur - jika ada risiko atau kondisi tidak menarik, katakan dengan tegas
 - Akhiri dengan rekomendasi konkret: Accumulate / Wait / Avoid + alasan spesifik
 
 Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir."""
@@ -13792,7 +13792,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
     return '<tr>'+
       '<td><span class="'+bkCls+'">'+r.broker+'</span></td>'+
       '<td style="font-size:0.8rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;">'+
-        (r.name||'—')+fTag+'</td>'+
+        (r.name||'-')+fTag+'</td>'+
       '<td>'+(r.type==='FOREIGN'?'<span class="tag-type tag-foreign">🌐 ASING</span>':r.type==='BUMN'?'<span class="tag-type tag-bumn">🏛️ BUMN</span>':'<span class="tag-type tag-lokal">🏠 LOKAL</span>')+'</td>'+
       '<td>'+fmt(r.buy_lot)+'</td>'+
       '<td>'+fmt(r.sell_lot)+'</td>'+
@@ -13809,10 +13809,10 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
   sortedF.forEach(function(r){{
     var sig=r.net>0?'<span style="color:{_G_c};font-weight:700;">✅ AKUMULASI</span>':
             r.net<0?'<span style="color:{_R_c};font-weight:700;">⚠️ DISTRIBUSI</span>':
-            '<span style="color:{_Y_c};">— NETRAL</span>';
+            '<span style="color:{_Y_c};">- NETRAL</span>';
     fTb.innerHTML+='<tr>'+
       '<td><span class="bk foreign">'+r.broker+'</span></td>'+
-      '<td style="font-size:0.8rem;">'+(r.name||'—')+'</td>'+
+      '<td style="font-size:0.8rem;">'+(r.name||'-')+'</td>'+
       '<td>'+fmt(r.buy_lot)+'</td>'+
       '<td>'+fmt(r.sell_lot)+'</td>'+
       '<td class="'+(r.net>=0?'pos':'neg')+'">'+(r.net>=0?'+':'')+fmt(r.net)+'</td>'+
@@ -13900,7 +13900,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
   DATA.forEach(function(r){{
     var pct=maxF>0?Math.abs(r.f_net)/maxF*100:0;
     var col=r.f_net>=0?'{_G_c2}':'{_R_c2}';
-    var sig=r.f_net>500?'✅ AKUMULASI':r.f_net<-500?'⚠️ DISTRIBUSI':'— NETRAL';
+    var sig=r.f_net>500?'✅ AKUMULASI':r.f_net<-500?'⚠️ DISTRIBUSI':'- NETRAL';
     var sigCol=r.f_net>500?'{_G_c2}':r.f_net<-500?'{_R_c2}':'{_TXT_c2}';
     tb.innerHTML+='<tr>'+
       '<td><span class="tk">'+r.ticker+'</span></td>'+
@@ -13961,12 +13961,12 @@ div[data-testid="stFileUploader"]:has(input[data-testid="bs_img_uploader"]) sect
                         _bs_prompt = f"""Kamu adalah SIGMA AI, analis bandarmologi expert IDX Indonesia.
 Analisa screenshot Broker Summary{_bs_context} ini secara mendalam:
 
-1. **Identifikasi Top 5 Net Buy terbesar** — kode broker, apakah asing atau lokal, dan estimasi posisi
-2. **Identifikasi Top 5 Net Sell terbesar** — kode broker dan interpretasi apakah distribusi atau rebalancing
-3. **Deteksi Crossing** — apakah ada pola broker A beli dari broker B pada rentang harga yang sama?
-4. **Analisa Foreign Flow** — total net asing, apakah akumulasi atau distribusi, dan dampaknya ke sentiment
-5. **Sinyal Bandarmologi** — akumulasi, distribusi, atau sideways? Berikan confidence level (rendah/sedang/tinggi)
-6. **Kesimpulan & Rekomendasi** — berdasarkan data brosum ini, apakah saham ini layak diperhatikan untuk trading?
+1. **Identifikasi Top 5 Net Buy terbesar** - kode broker, apakah asing atau lokal, dan estimasi posisi
+2. **Identifikasi Top 5 Net Sell terbesar** - kode broker dan interpretasi apakah distribusi atau rebalancing
+3. **Deteksi Crossing** - apakah ada pola broker A beli dari broker B pada rentang harga yang sama?
+4. **Analisa Foreign Flow** - total net asing, apakah akumulasi atau distribusi, dan dampaknya ke sentiment
+5. **Sinyal Bandarmologi** - akumulasi, distribusi, atau sideways? Berikan confidence level (rendah/sedang/tinggi)
+6. **Kesimpulan & Rekomendasi** - berdasarkan data brosum ini, apakah saham ini layak diperhatikan untuk trading?
 
 Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan."""
 
@@ -14135,7 +14135,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
 (function(){{
   var RECS={_rec_json};
   var tb=document.getElementById('tr-tb');
-  function fmt(n){{ return n&&n>0?'Rp '+parseInt(n).toLocaleString('id-ID'):'—'; }}
+  function fmt(n){{ return n&&n>0?'Rp '+parseInt(n).toLocaleString('id-ID'):'-'; }}
   function typeBdg(t){{
     var c=t==='Daily'?'daily':t==='Weekly'?'weekly':'bsjp';
     return '<span class="bdg bdg-'+c+'">'+t+'</span>';
@@ -14147,7 +14147,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
   }}
   RECS.slice().reverse().forEach(function(r){{
     var pnlCol=r.pnl_pct>0?'{_G_tr}':r.pnl_pct<0?'{_R_tr}':'{_B_tr}';
-    var pnlStr=r.status==='OPEN'?'<span class="open">—</span>':
+    var pnlStr=r.status==='OPEN'?'<span class="open">-</span>':
       '<span style="color:'+pnlCol+';font-weight:700;">'+(r.pnl_pct>=0?'+':'')+r.pnl_pct.toFixed(2)+'%</span>';
     var pnlBar=r.status!=='OPEN'&&r.pnl_pct?
       '<div class="bar-pnl" style="width:'+Math.min(Math.abs(r.pnl_pct)*3,80)+'px;background:'+pnlCol+';"></div>':'';
@@ -14162,7 +14162,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.08);}}
       '<td style="color:{_G_tr};">'+fmt(r.tp2)+'</td>'+
       '<td style="color:{_R_tr};">'+fmt(r.sl)+'</td>'+
       '<td>'+fmt(r.exit_price)+'</td>'+
-      '<td style="color:{_SUB_tr};font-size:0.78rem;">'+(r.exit_date||'—')+'</td>'+
+      '<td style="color:{_SUB_tr};font-size:0.78rem;">'+(r.exit_date||'-')+'</td>'+
       '<td>'+pnlStr+pnlBar+'</td>'+
       '<td>'+resBdg(r.result, r.status)+'</td>'+
       '<td style="font-size:0.78rem;color:{_Y_tr};">'+r.status+'</td>'+
@@ -14319,8 +14319,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s
             border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
             font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{_kc_sub};line-height:1.85;'>
             <span style='color:{_kc_gold};font-weight:700;letter-spacing:0.1em;font-size:0.82rem;'>ℹ️ TENTANG ARA / ARB</span><br>
-            <b style='color:{_kc_green};'>ARA (Auto Rejection Atas)</b> — batas maksimum kenaikan harga saham dalam 1 hari.<br>
-            <b style='color:{_kc_red};'>ARB (Auto Rejection Bawah)</b> — batas maksimum penurunan harga saham dalam 1 hari.<br><br>
+            <b style='color:{_kc_green};'>ARA (Auto Rejection Atas)</b> - batas maksimum kenaikan harga saham dalam 1 hari.<br>
+            <b style='color:{_kc_red};'>ARB (Auto Rejection Bawah)</b> - batas maksimum penurunan harga saham dalam 1 hari.<br><br>
             <b>Reguler:</b> Harga &lt; Rp 200 = ±35% · Harga Rp 200–Rp 5.000 = ±25% · Harga &gt; Rp 5.000 = ±20%<br>
             <b>Akselerasi &amp; FCA:</b> Sesi 1 = ±10% · Sesi 2 = ±10% (compounding per sesi)
             </div>
@@ -14432,7 +14432,7 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
       <input class="inp" id="inp-lot" type="number" placeholder="1" min="1" value="1">
     </div>
     <div>
-      <label class="field-lbl">Modal (Rp) <span style="color:{_kc_sub};font-size:0.62rem;">— opsional</span></label>
+      <label class="field-lbl">Modal (Rp) <span style="color:{_kc_sub};font-size:0.62rem;">- opsional</span></label>
       <input class="inp" id="inp-modal" type="number" placeholder="Otomatis" min="0">
     </div>
   </div>
@@ -14450,10 +14450,10 @@ input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;
 
 <div class="result-wrap" id="result-wrap">
   <div class="result-header">Hasil Simulasi</div>
-  <div class="section-label" id="ara-label" style="display:none;">&#9650; ARA — Auto Rejection Atas</div>
+  <div class="section-label" id="ara-label" style="display:none;">&#9650; ARA - Auto Rejection Atas</div>
   <div class="cards-list" id="ara-container"></div>
   <div style="border-top:1px dashed rgba(124,58,237,0.2);margin:4px 0 12px;"></div>
-  <div class="section-label" id="arb-label" style="display:none;">&#9660; ARB — Auto Rejection Bawah</div>
+  <div class="section-label" id="arb-label" style="display:none;">&#9660; ARB - Auto Rejection Bawah</div>
   <div class="cards-list" id="arb-container"></div>
   <div class="viz-wrap" id="viz-wrap">
     <div class="viz-title">Visualisasi Pergerakan Harga</div>
@@ -14502,7 +14502,7 @@ function roundTick(p) {{
 }}
 
 function fmt(n) {{
-  if (!n && n!==0) return '—';
+  if (!n && n!==0) return '-';
   return new Intl.NumberFormat('id-ID').format(Math.round(n));
 }}
 
@@ -14525,12 +14525,12 @@ function calculate() {{
   for (var i=1; i<=steps; i++) {{
     var araRate = getARARate(curARA, sahamType);
     curARA = roundTick(curARA * (1 + araRate));
-    var naik = ((curARA—harga) / harga * 100);
+    var naik = ((curARA-harga) / harga * 100);
     araSteps.push({{ step:i, price:curARA, naik:araRate*100, total:naik }});
 
     var arbRate = getARBRate(curARB, sahamType);
-    var nextARB = roundTick(curARB * (1—arbRate));
-    var turun = ((nextARB—harga) / harga * 100);
+    var nextARB = roundTick(curARB * (1-arbRate));
+    var turun = ((nextARB-harga) / harga * 100);
     // Hard floor: harga minimum IDX = Rp 50
     if (nextARB < 50) nextARB = 50;
     curARB = nextARB;
@@ -14728,8 +14728,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
   <button class="add-btn" onclick="addTrx()" id="add-btn">+ Tambah Pembelian Berikutnya</button>
 
   <div>
-    <label class="field-lbl">Harga Pasar Saat Ini (Rp) <span style="color:{_kc_sub};font-weight:400;">— untuk hitung PnL</span></label>
-    <input class="inp harga-inp" id="cur-price" type="number" placeholder="Opsional — isi untuk lihat profit/loss saat ini" min="1" oninput="livePreview()">
+    <label class="field-lbl">Harga Pasar Saat Ini (Rp) <span style="color:{_kc_sub};font-weight:400;">- untuk hitung PnL</span></label>
+    <input class="inp harga-inp" id="cur-price" type="number" placeholder="Opsional - isi untuk lihat profit/loss saat ini" min="1" oninput="livePreview()">
   </div>
 
   <button class="calc-btn" onclick="calculate()">🧮 Hitung Average</button>
@@ -14754,12 +14754,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_te
 var trxCount = 1;
 
 function fmt(n) {{
-  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (n === null || n === undefined || isNaN(n)) return '-';
   return new Intl.NumberFormat('id-ID').format(Math.round(n));
 }}
 
 function fmtK(n) {{
-  if (!n) return '—';
+  if (!n) return '-';
   if (n >= 1e12) return (n/1e12).toFixed(2) + ' T';
   if (n >= 1e9)  return (n/1e9).toFixed(1) + ' M';
   if (n >= 1e6)  return (n/1e6).toFixed(1) + ' Jt';
@@ -14835,8 +14835,8 @@ function calculate() {{
   var pnlHtml='', pnlClass='neutral';
   var sumExtra = '';
   if (curPrice > 0) {{
-    var pnl = (curPrice—avgHarga) * totalLembar;
-    var pnlPct = (curPrice—avgHarga) / avgHarga * 100;
+    var pnl = (curPrice-avgHarga) * totalLembar;
+    var pnlPct = (curPrice-avgHarga) / avgHarga * 100;
     var isPro = pnl >= 0;
     pnlClass = isPro?'profit':'loss';
     var pnlIcon = isPro?'📈':'📉';
@@ -14846,7 +14846,7 @@ function calculate() {{
       (isPro?'+':'-')+'Rp '+fmt(Math.abs(pnl)) + '</span>' +
       ' &nbsp;|&nbsp; <b>'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</b>' +
       '<br><span style="font-size:0.78rem;color:{_kc_sub};">Harga pasar: <b>Rp '+fmt(curPrice)+'</b> vs Average: <b>Rp '+fmt(avgHarga)+'</b>' +
-      ' — Perlu kenaikan <b>' + (avgHarga>curPrice?((avgHarga-curPrice)/curPrice*100).toFixed(2)+'%':'—') + '</b> untuk BEP</span>' +
+      ' - Perlu kenaikan <b>' + (avgHarga>curPrice?((avgHarga-curPrice)/curPrice*100).toFixed(2)+'%':'-') + '</b> untuk BEP</span>' +
       '</div>';
     sumExtra = '<div class="sum-card"><div class="sum-lbl">PnL Saat Ini</div><div class="sum-val '+(isPro?'green':'red')+'">'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</div></div>';
   }}
@@ -15102,14 +15102,14 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <!-- ══ 1. LIVE MARKET ══ -->
 <div class="div"></div>
 <div class="feat">
-  <div class="feat-title">📊 1 · LIVE MARKET — Harga Aset Real-Time</div>
+  <div class="feat-title">📊 1 · LIVE MARKET - Harga Aset Real-Time</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
-      <b>Lihat harga terkini</b> IHSG, S&amp;P500, Dow Jones, Nasdaq, Nikkei, Hang Seng, Shanghai — semua dalam satu layar.
+      <b>Lihat harga terkini</b> IHSG, S&amp;P500, Dow Jones, Nasdaq, Nikkei, Hang Seng, Shanghai - semua dalam satu layar.
       Angka hijau (<span class="ok">▲</span>) = naik dari penutupan sebelumnya, merah (<span class="dn">▼</span>) = turun.
     </div></div>
     <div class="step"><div class="snum">2</div><div class="stext">
-      <b>Cek DXY (Dollar Index)</b> dan <b>USD/IDR</b> — DXY naik berarti Rupiah cenderung melemah, capital outflow dari EM termasuk IDX.
+      <b>Cek DXY (Dollar Index)</b> dan <b>USD/IDR</b> - DXY naik berarti Rupiah cenderung melemah, capital outflow dari EM termasuk IDX.
       DXY turun = Rupiah menguat = positif untuk IHSG.
     </div></div>
     <div class="step"><div class="snum">3</div><div class="stext">
@@ -15126,7 +15126,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ══ 2. MACRO INDICATORS ══ -->
 <div class="feat blue">
-  <div class="feat-title">📈 2 · MACRO INDICATORS — Data Ekonomi Kunci</div>
+  <div class="feat-title">📈 2 · MACRO INDICATORS - Data Ekonomi Kunci</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
       <b>BI Rate (Bank Indonesia):</b> Suku bunga acuan Indonesia. BI Rate turun = positif untuk properti (BSDE, CTRA), perbankan (NIM melebar), dan obligasi. BI Rate naik = perbankan lebih selektif, properti tertekan.
@@ -15149,7 +15149,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ══ 3. MARKET BRIEF ══ -->
 <div class="feat green">
-  <div class="feat-title">📰 3 · MARKET BRIEF — Ringkasan Harian</div>
+  <div class="feat-title">📰 3 · MARKET BRIEF - Ringkasan Harian</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
       Market Brief hadir setiap pagi dengan ringkasan kondisi pasar: sentimen global, arah IHSG hari ini, sektor yang perlu diperhatikan, dan event ekonomi penting hari ini.
@@ -15166,13 +15166,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ══ 4. NEWS FEED ══ -->
 <div class="feat">
-  <div class="feat-title">📡 4 · NEWS FEED — Berita Pasar Terkini</div>
+  <div class="feat-title">📡 4 · NEWS FEED - Berita Pasar Terkini</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
-      <b>IDX News:</b> Berita langsung dari TradingView — meliputi aksi korporasi (dividen, rights issue, buyback), laporan keuangan, dan berita emiten BEI.
+      <b>IDX News:</b> Berita langsung dari TradingView - meliputi aksi korporasi (dividen, rights issue, buyback), laporan keuangan, dan berita emiten BEI.
     </div></div>
     <div class="step"><div class="snum">2</div><div class="stext">
-      <b>Global News:</b> Feed dari Reuters, Bloomberg, CNBC Global — berita tentang perang dagang, keputusan Fed, data ekonomi AS, dan sentimen global.
+      <b>Global News:</b> Feed dari Reuters, Bloomberg, CNBC Global - berita tentang perang dagang, keputusan Fed, data ekonomi AS, dan sentimen global.
     </div></div>
     <div class="step"><div class="snum">3</div><div class="stext">
       <b>Filter relevansi:</b> Fokus pada berita yang menyebut kata kunci komoditas (oil, coal, nickel, CPO), geopolitik (tarif, sanksi, perang), atau makro (Fed, inflation, GDP).
@@ -15186,7 +15186,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ══ 5. ECONOMIC CALENDAR ══ -->
 <div class="feat blue">
-  <div class="feat-title">📅 5 · ECONOMIC CALENDAR — Jadwal Rilis Data</div>
+  <div class="feat-title">📅 5 · ECONOMIC CALENDAR - Jadwal Rilis Data</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
       Kalender Ekonomi menampilkan jadwal rilis data penting: <b>NFP (Non-Farm Payroll), CPI AS, PDB Indonesia, FOMC Meeting, BI Rate Decision</b>, dan lainnya.
@@ -15212,10 +15212,10 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ══ 6. FOMC FEDWATCH ══ -->
 <div class="feat yellow">
-  <div class="feat-title">🏦 6 · FOMC FEDWATCH — Probabilitas Suku Bunga Fed</div>
+  <div class="feat-title">🏦 6 · FOMC FEDWATCH - Probabilitas Suku Bunga Fed</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
-      FedWatch menampilkan <b>probabilitas pasar</b> untuk keputusan Fed di setiap FOMC meeting berikutnya — data dari CME FedWatch Tool yang dipakai profesional Wall Street.
+      FedWatch menampilkan <b>probabilitas pasar</b> untuk keputusan Fed di setiap FOMC meeting berikutnya - data dari CME FedWatch Tool yang dipakai profesional Wall Street.
     </div></div>
     <div class="step"><div class="snum">2</div><div class="stext">
       <b>Cara baca:</b> Angka % di setiap skenario (HOLD/CUT/HIKE) = probabilitas pasar futures. Jika "HOLD 95%" artinya pasar hampir pasti Fed tidak akan mengubah suku bunga.
@@ -15226,20 +15226,20 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
       <span class="dn">Fed HIKE</span> = DXY naik → Rupiah melemah → capital outflow → IHSG tertekan.
     </div></div>
     <div class="step"><div class="snum">4</div><div class="stext">
-      <b>Countdown Timer</b> di FedWatch menunjukkan sisa waktu menuju keputusan FOMC berikutnya — sehingga kamu tahu kapan volatilitas besar berpotensi terjadi.
+      <b>Countdown Timer</b> di FedWatch menunjukkan sisa waktu menuju keputusan FOMC berikutnya - sehingga kamu tahu kapan volatilitas besar berpotensi terjadi.
     </div></div>
     <div class="step"><div class="snum">5</div><div class="stext">
       <b>Probability shift:</b> Jika probabilitas HOLD turun dari 80% menjadi 60% dalam sepekan = pasar mulai repricing → bisa sebabkan volatilitas pada DXY dan EM assets.
     </div></div>
   </div>
   <div class="tip">💡 <b>Cara Pakai Pro:</b> Cek FedWatch tiap Senin pagi. Jika probabilitas CUT di meeting berikutnya &gt; 60% → posisikan diri di sektor Rate-Sensitive: Properti (BSDE, CTRA), Perbankan (BBCA, BMRI), dan Obligasi.</div>
-  <div class="warn">⚠️ <b>Ingat:</b> Probabilitas FedWatch adalah ekspektasi pasar, BUKAN keputusan resmi Fed. Fed bisa mengejutkan pasar kapan saja — selalu gunakan stop loss.</div>
+  <div class="warn">⚠️ <b>Ingat:</b> Probabilitas FedWatch adalah ekspektasi pasar, BUKAN keputusan resmi Fed. Fed bisa mengejutkan pasar kapan saja - selalu gunakan stop loss.</div>
 </div>
 
 <!-- ══ QUICK REFERENCE ══ -->
 <div class="div"></div>
 <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
-  <div style="font-size:1.02rem;font-weight:700;color:{_P};margin-bottom:12px;">⚡ QUICK REFERENCE — Dampak Makro ke IDX</div>
+  <div style="font-size:1.02rem;font-weight:700;color:{_P};margin-bottom:12px;">⚡ QUICK REFERENCE - Dampak Makro ke IDX</div>
   <div class="grid2">
     <div>
       <div style="font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-ON ✅ (IHSG Cenderung Naik)</div>
@@ -15365,7 +15365,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <!-- ══ 1. RRG CHART ══ -->
 <div class="div"></div>
 <div class="feat">
-  <div class="feat-title">🔄 1 · RRG CHART — Relative Rotation Graph</div>
+  <div class="feat-title">🔄 1 · RRG CHART - Relative Rotation Graph</div>
   <p style="font-size:0.93rem;color:{_TXT};margin-bottom:14px;line-height:1.8;">
     RRG (Relative Rotation Graph) adalah tools analisa yang menggambarkan <b>kekuatan relatif</b> dan <b>momentum</b> setiap sektor dibandingkan benchmark IHSG. 
     Setiap bubble mewakili satu sektor dan bergerak searah jarum jam di sepanjang siklus rotasi.
@@ -15373,7 +15373,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
   <!-- Diagram RRG Visual -->
   <div class="rrg-diagram">
-    <div class="rrg-title">DIAGRAM KUADRAN RRG — CARA BACA POSISI SEKTOR</div>
+    <div class="rrg-title">DIAGRAM KUADRAN RRG - CARA BACA POSISI SEKTOR</div>
     <div class="rrg-grid">
       <div class="rrg-q rrg-q-improving">
         <div class="rrg-q-name" style="color:{_P};">↖ IMPROVING</div>
@@ -15385,7 +15385,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
         <div class="rrg-q-name" style="color:{_G};">↗ LEADING</div>
         <div class="rrg-q-axis">RS &gt; 100 · Mom &gt; 100</div>
         <div class="rrg-q-action" style="color:{_G};">🚀 Hold / Profit Run</div>
-        <div class="rrg-q-desc">Sektor outperform IHSG dan momentumnya masih naik. Posisi terkuat — hold posisi dan biarkan profit berjalan.</div>
+        <div class="rrg-q-desc">Sektor outperform IHSG dan momentumnya masih naik. Posisi terkuat - hold posisi dan biarkan profit berjalan.</div>
       </div>
       <div class="rrg-q rrg-q-lagging">
         <div class="rrg-q-name" style="color:#4285F4;">↙ LAGGING</div>
@@ -15415,7 +15415,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
     </div></div>
     <div class="step"><div class="snum">4</div><div class="stext">
       <b>RS Ratio</b> = kekuatan relatif sektor vs IHSG (100 = setara, &gt;100 = outperform).
-      <b>Momentum</b> = arah RS — apakah kekuatan relatif sedang meningkat atau menurun.
+      <b>Momentum</b> = arah RS - apakah kekuatan relatif sedang meningkat atau menurun.
     </div></div>
     <div class="step"><div class="snum">5</div><div class="stext">
       <b>Update otomatis</b> jam 13:00 dan 21:00 WIB menggunakan data live harga saham vs IHSG. Badge "Slot aktif" di atas chart menunjukkan data dari slot mana yang sedang aktif.
@@ -15426,13 +15426,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ══ 2. SCREENING SAHAM ══ -->
 <div class="feat blue">
-  <div class="feat-title">🔍 2 · SCREENING SAHAM — Top 30 per Sektor by Market Cap</div>
+  <div class="feat-title">🔍 2 · SCREENING SAHAM - Top 30 per Sektor by Market Cap</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
       <b>Sumber data:</b> SIGMA secara otomatis mengambil data dari <b>500 saham IDX aktif</b> yang memiliki market cap terbesar dan dapat ditransaksikan (ada harga + volume).
     </div></div>
     <div class="step"><div class="snum">2</div><div class="stext">
-      <b>Kriteria masuk:</b> (1) Market cap &gt; 0, (2) Ada harga pasar aktif, (3) Volume perdagangan tidak nol — artinya saham tidak sedang suspend atau tidak likuid.
+      <b>Kriteria masuk:</b> (1) Market cap &gt; 0, (2) Ada harga pasar aktif, (3) Volume perdagangan tidak nol - artinya saham tidak sedang suspend atau tidak likuid.
     </div></div>
     <div class="step"><div class="snum">3</div><div class="stext">
       <b>Top 30 per sektor:</b> Dari hasil screening, dipilih 30 saham dengan market cap terbesar di setiap sektor. Ini memastikan yang tampil di RRG adalah emiten-emiten yang benar-benar diperdagangkan oleh institusi besar.
@@ -15496,7 +15496,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
       <b>Apa itu MSCI?</b> MSCI (Morgan Stanley Capital International) adalah penyedia indeks global yang diikuti oleh ratusan fund manager dan ETF di seluruh dunia. Saham yang masuk MSCI akan mendapat aliran dana dari passive fund secara otomatis.
     </div></div>
     <div class="step"><div class="snum">2</div><div class="stext">
-      <b>Standard Index</b> = saham blue chip Indonesia yang masuk MSCI. Fund manager internasional <b>wajib</b> membeli saham ini saat entry dan menjualnya saat exit — ini yang menciptakan aliran dana besar.
+      <b>Standard Index</b> = saham blue chip Indonesia yang masuk MSCI. Fund manager internasional <b>wajib</b> membeli saham ini saat entry dan menjualnya saat exit - ini yang menciptakan aliran dana besar.
     </div></div>
     <div class="step"><div class="snum">3</div><div class="stext">
       <b>Cara baca STATUS:</b>
@@ -15505,7 +15505,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
       <span class="bdg bdg-r">OUT</span> = dikeluarkan → ekspektasi penjualan besar oleh passive fund.
     </div></div>
     <div class="step"><div class="snum">4</div><div class="stext">
-      <b>Jadwal Review MSCI:</b> 2× setahun (Februari &amp; Agustus pengumuman, efektif 2 minggu setelah pengumuman). Pantau tanggal pengumuman — biasanya terjadi pergerakan besar di saham yang masuk/keluar.
+      <b>Jadwal Review MSCI:</b> 2× setahun (Februari &amp; Agustus pengumuman, efektif 2 minggu setelah pengumuman). Pantau tanggal pengumuman - biasanya terjadi pergerakan besar di saham yang masuk/keluar.
     </div></div>
     <div class="step"><div class="snum">5</div><div class="stext">
       <b>Strategi MSCI Rebalancing:</b> Beli saham kandidat NEW ENTRY 1–2 minggu sebelum tanggal efektif. Jual pada/setelah tanggal efektif saat passive fund sudah selesai membeli (sell the news).
@@ -15519,28 +15519,28 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ══ 5. FTSE TRACKER ══ -->
 <div class="feat blue">
-  <div class="feat-title">📊 5 · FTSE GLOBAL EQUITY INDEX — INDONESIA</div>
+  <div class="feat-title">📊 5 · FTSE GLOBAL EQUITY INDEX - INDONESIA</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
       <b>Apa itu FTSE Russell?</b> FTSE Russell (Financial Times Stock Exchange) adalah penyedia indeks global kedua terbesar setelah MSCI. ETF dan fund yang tracking FTSE juga wajib rebalancing saat ada perubahan komposisi.
     </div></div>
     <div class="step"><div class="snum">2</div><div class="stext">
-      <b>Jadwal Review FTSE:</b> 4× setahun (Maret, Juni, September, Desember — lebih sering dari MSCI). Artinya peluang trading FTSE rebalancing muncul lebih sering.
+      <b>Jadwal Review FTSE:</b> 4× setahun (Maret, Juni, September, Desember - lebih sering dari MSCI). Artinya peluang trading FTSE rebalancing muncul lebih sering.
     </div></div>
     <div class="step"><div class="snum">3</div><div class="stext">
-      <b>Perbedaan MSCI vs FTSE:</b> MSCI lebih besar AUM-nya (aset yang dikelola), sehingga dampak rebalancing MSCI umumnya lebih besar. FTSE memiliki frekuensi review lebih tinggi — lebih sering ada saham masuk/keluar.
+      <b>Perbedaan MSCI vs FTSE:</b> MSCI lebih besar AUM-nya (aset yang dikelola), sehingga dampak rebalancing MSCI umumnya lebih besar. FTSE memiliki frekuensi review lebih tinggi - lebih sering ada saham masuk/keluar.
     </div></div>
     <div class="step"><div class="snum">4</div><div class="stext">
-      Perhatikan saham yang ada di <b>kedua indeks</b> (MSCI + FTSE) — saham ini mendapat double demand dari passive fund. Biasanya ini adalah blue chip terbesar seperti BBCA, BBRI, BMRI, TLKM.
+      Perhatikan saham yang ada di <b>kedua indeks</b> (MSCI + FTSE) - saham ini mendapat double demand dari passive fund. Biasanya ini adalah blue chip terbesar seperti BBCA, BBRI, BMRI, TLKM.
     </div></div>
   </div>
-  <div class="tip">💡 <b>Insight:</b> Saham yang masuk MSCI atau FTSE tidak langsung naik drastis — pasar biasanya sudah "pricing in" jauh sebelum tanggal efektif. Yang lebih penting adalah <b>perubahan bobot</b> (weight increase) yang memaksa passive fund menambah pembelian.</div>
+  <div class="tip">💡 <b>Insight:</b> Saham yang masuk MSCI atau FTSE tidak langsung naik drastis - pasar biasanya sudah "pricing in" jauh sebelum tanggal efektif. Yang lebih penting adalah <b>perubahan bobot</b> (weight increase) yang memaksa passive fund menambah pembelian.</div>
 </div>
 
 <!-- ══ KOMBINASI ANALISA ══ -->
 <div class="div"></div>
 <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
-  <div style="font-size:1.02rem;font-weight:700;color:{_P};margin-bottom:12px;">🎯 CARA PAKAI YANG OPTIMAL — Kombinasi Fitur</div>
+  <div style="font-size:1.02rem;font-weight:700;color:{_P};margin-bottom:12px;">🎯 CARA PAKAI YANG OPTIMAL - Kombinasi Fitur</div>
   <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">
       <b>Mulai dari RRG:</b> Identifikasi sektor di posisi IMPROVING atau LEADING. Ini adalah universum saham prioritasmu.
@@ -15552,7 +15552,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
       <b>Cek MSCI/FTSE:</b> Apakah saham yang kamu incar termasuk dalam MSCI Standard atau FTSE? Jika ya, ada lapisan demand tambahan dari passive fund.
     </div></div>
     <div class="step"><div class="snum">4</div><div class="stext">
-      <b>Validasi dengan Macro:</b> Kembali ke tab Global Macro — apakah kondisi risk-on mendukung sektor tersebut? Misalnya: sektor Energi + Komoditas naik = konfluensi kuat.
+      <b>Validasi dengan Macro:</b> Kembali ke tab Global Macro - apakah kondisi risk-on mendukung sektor tersebut? Misalnya: sektor Energi + Komoditas naik = konfluensi kuat.
     </div></div>
     <div class="step"><div class="snum">5</div><div class="stext">
       <b>Analisa emiten spesifik:</b> Setelah sektor dan saham terpilih, gunakan <b>⚡ Alpha Screener → AI Stock Insight</b> atau ketik di <b>SIGMA AI Chat</b> untuk analisa fundamental dan teknikal mendalam.
@@ -15619,7 +15619,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </style></head><body><div class="wrap">
 
 <div class="sec-head"><div class="sec-icon">👥</div>
-<div><div class="sec-title">SHAREHOLDER — Panduan Lengkap</div>
+<div><div class="sec-title">SHAREHOLDER - Panduan Lengkap</div>
 <div class="sec-desc">Lacak komposisi pemegang saham & deteksi perubahan kepemilikan institusional secara real-time.</div>
 </div></div>
 
@@ -15629,7 +15629,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📈</div>
-<div><div class="sec-title">SECTION 1 — Shareholder Tracker</div>
+<div><div class="sec-title">SECTION 1 - Shareholder Tracker</div>
 <div class="sec-desc">Grafik dual-axis: perubahan jumlah pemegang saham vs pergerakan harga saham.</div>
 </div></div>
 
@@ -15638,7 +15638,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="steps">
 <div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>SHAREHOLDER TRACKER</b> di dalam tab Shareholder.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>kode emiten IDX</b> (contoh: <span class="hi">BBCA</span>, <span class="hi">GOTO</span>, <span class="hi">BRMS</span>) di kolom input yang tersedia.</div></div>
-<div class="step"><div class="snum">3</div><div class="stext">Klik tombol <b>"Tampilkan Tracker"</b> — sistem akan mengambil data historis pemegang saham dan harga secara otomatis.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Klik tombol <b>"Tampilkan Tracker"</b> - sistem akan mengambil data historis pemegang saham dan harga secara otomatis.</div></div>
 <div class="step"><div class="snum">4</div><div class="stext">Baca grafik: <span class="hi">Sumbu kiri</span> = jumlah pemegang saham | <span class="ok">Sumbu kanan</span> = harga saham (Rp).</div></div>
 <div class="step"><div class="snum">5</div><div class="stext">Identifikasi pola: apakah jumlah holder naik saat harga turun? Ini sinyal <b class="ok">DISTRIBUSI ke retail</b>. Atau holder turun saat harga naik? Ini sinyal <b class="hi">AKUMULASI oleh institusi</b>.</div></div>
 </div>
@@ -15661,7 +15661,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🔎</div>
-<div><div class="sec-title">SECTION 2 — Shareholder Screening</div>
+<div><div class="sec-title">SECTION 2 - Shareholder Screening</div>
 <div class="sec-desc">Tabel komposisi kepemilikan 60+ emiten: Publik, Institusi Asing, dan Promotor/Pemerintah.</div>
 </div></div>
 
@@ -15669,7 +15669,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="feat-title">📊 Cara Membaca Tabel Screening</div>
 <div class="steps">
 <div class="step"><div class="snum">1</div><div class="stext">Tabel menampilkan kolom: <b>Emiten</b>, <b>% Publik</b>, <b>% Institusi Asing</b>, <b>% Promotor / Pemerintah</b>, dan informasi tambahan lainnya.</div></div>
-<div class="step"><div class="snum">2</div><div class="stext">Scroll horizontal di mobile untuk melihat semua kolom — tabel sudah mobile-responsive dengan sticky header.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Scroll horizontal di mobile untuk melihat semua kolom - tabel sudah mobile-responsive dengan sticky header.</div></div>
 <div class="step"><div class="snum">3</div><div class="stext">Perhatikan <b>% Institusi Asing</b>: saham dengan porsi asing tinggi lebih sensitif terhadap sentimen global dan pergerakan MSCI/FTSE rebalancing.</div></div>
 <div class="step"><div class="snum">4</div><div class="stext">Bandingkan <b>% Publik</b>: float rendah (publik kecil) = saham lebih mudah digerakkan oleh bandar dengan modal lebih kecil.</div></div>
 </div>
@@ -15679,7 +15679,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="feat yellow">
 <div class="feat-title">🎯 Strategi Penggunaan Optimal</div>
 <div class="steps">
-<div class="step"><div class="snum">1</div><div class="stext"><b>Screening awal:</b> Filter saham dengan float publik rendah (&lt;30%) dan kepemilikan asing tinggi (&gt;30%) — ini kandidat saham yang rawan digerakkan.</div></div>
+<div class="step"><div class="snum">1</div><div class="stext"><b>Screening awal:</b> Filter saham dengan float publik rendah (&lt;30%) dan kepemilikan asing tinggi (&gt;30%) - ini kandidat saham yang rawan digerakkan.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext"><b>Tracker confirmation:</b> Setelah dapat kandidat, masukkan ke Tracker untuk lihat tren jumlah holder 3-6 bulan terakhir.</div></div>
 <div class="step"><div class="snum">3</div><div class="stext"><b>Korelasi teknikal:</b> Crossing holder turun + harga di support kuat = area entry potensial. Kirim ke <b>⚡ Alpha Screener → AI Stock Insight</b> untuk konfirmasi teknikal lengkap.</div></div>
 </div>
@@ -15766,19 +15766,19 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- HEADER -->
 <div class="sec-head"><div class="sec-icon">🤖</div>
-<div><div class="sec-title">AI STOCK INSIGHT — Panduan Visual Lengkap</div>
+<div><div class="sec-title">AI STOCK INSIGHT - Panduan Visual Lengkap</div>
 <div class="sec-desc">Analisa saham IDX berbasis AI: Chart Interaktif, Volume Dual-Panel, Risk Level Trade Plan, dan Fundamental Screener.</div>
 </div></div>
 
 <!-- APA ITU -->
 <div class="feat">
-<div class="feat-title">📌 ⚡ Alpha Screener — AI Stock Insight</div>
+<div class="feat-title">📌 ⚡ Alpha Screener - AI Stock Insight</div>
 <div class="stext">Engine analisa terpadu SIGMA Terminal. Masukkan kode saham → sistem otomatis tarik data harga, volume, fundamental, dan makro → AI generate analisa lengkap dengan <span class="hi">chart 5-panel interaktif</span>, <span class="ok">trade plan tervisualisasi</span>, <span class="yl">risk level otomatis</span>, dan Volume Intelligence Engine.</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="sec-head" style="margin-top:22px;"><div class="sec-icon">📊</div>
-<div><div class="sec-title">STRUKTUR CHART — 5 Panel Interaktif</div>
+<div><div class="sec-title">STRUKTUR CHART - 5 Panel Interaktif</div>
 <div class="sec-desc">Setiap panel punya fungsi berbeda. Baca dari atas ke bawah untuk membaca sinyal secara sistematis.</div>
 </div></div>
 
@@ -15967,58 +15967,58 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📈</div>
-<div><div class="sec-title">INDIKATOR — Fungsi & Cara Baca</div>
+<div><div class="sec-title">INDIKATOR - Fungsi & Cara Baca</div>
 </div></div>
 
 <div class="feat blue">
-<div class="feat-title">🕯️ Panel ① — Candlestick + EMA (Harga & Tren)</div>
-<div class="ind-row"><div class="ind-line" style="background:#009dff;"></div><div class="ind-desc"><b style="color:#009dff">EMA 13</b> — Moving average cepat. Harga di atas = momentum naik jangka pendek.</div></div>
-<div class="ind-row"><div class="ind-line" style="background:#ff0000;"></div><div class="ind-desc"><b style="color:#ff0000">EMA 21</b> — Konfirmasi sinyal. Crossover EMA13/EMA21 = sinyal entry awal.</div></div>
-<div class="ind-row"><div class="ind-line" style="background:#cc00ff;"></div><div class="ind-desc"><b style="color:#cc00ff">EMA 100</b> — Tren menengah (1–3 bulan). Support dinamis penting.</div></div>
-<div class="ind-row"><div class="ind-line" style="background:#a78bfa;"></div><div class="ind-desc"><b style="color:#a78bfa">EMA 200</b> — Tren jangka panjang. Harga di atas EMA200 = Bull Market. Di bawah = Bear Market.</div></div>
+<div class="feat-title">🕯️ Panel ① - Candlestick + EMA (Harga & Tren)</div>
+<div class="ind-row"><div class="ind-line" style="background:#009dff;"></div><div class="ind-desc"><b style="color:#009dff">EMA 13</b> - Moving average cepat. Harga di atas = momentum naik jangka pendek.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#ff0000;"></div><div class="ind-desc"><b style="color:#ff0000">EMA 21</b> - Konfirmasi sinyal. Crossover EMA13/EMA21 = sinyal entry awal.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#cc00ff;"></div><div class="ind-desc"><b style="color:#cc00ff">EMA 100</b> - Tren menengah (1–3 bulan). Support dinamis penting.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#a78bfa;"></div><div class="ind-desc"><b style="color:#a78bfa">EMA 200</b> - Tren jangka panjang. Harga di atas EMA200 = Bull Market. Di bawah = Bear Market.</div></div>
 <div class="tip">💡 Setup terkuat: Harga di atas EMA200, EMA13 baru cross EMA21 ke atas, volume konfirmasi.</div>
 </div>
 
 <div class="feat green">
-<div class="feat-title">📊 Panel ② — Volume Normal (Total Transaksi per Hari)</div>
-<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.65);"></div><div class="ind-desc"><b style="color:#089981">Bar Hijau</b> — Candle tutup naik (Close > Open). Volume tinggi = banyak yang beli.</div></div>
-<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.65);"></div><div class="ind-desc"><b style="color:#f23645">Bar Merah</b> — Candle tutup turun (Close &lt; Open). Volume tinggi = banyak yang jual.</div></div>
-<div class="ind-row"><div class="ind-line" style="background:#f5a623;"></div><div class="ind-desc"><b style="color:#f5a623">Garis Oranye (Vol MA20)</b> — Rata-rata volume 20 hari. Bar di atas garis ini = volume lebih dari biasanya = aktivitas tinggi.</div></div>
+<div class="feat-title">📊 Panel ② - Volume Normal (Total Transaksi per Hari)</div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.65);"></div><div class="ind-desc"><b style="color:#089981">Bar Hijau</b> - Candle tutup naik (Close > Open). Volume tinggi = banyak yang beli.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.65);"></div><div class="ind-desc"><b style="color:#f23645">Bar Merah</b> - Candle tutup turun (Close &lt; Open). Volume tinggi = banyak yang jual.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#f5a623;"></div><div class="ind-desc"><b style="color:#f5a623">Garis Oranye (Vol MA20)</b> - Rata-rata volume 20 hari. Bar di atas garis ini = volume lebih dari biasanya = aktivitas tinggi.</div></div>
 <div class="tip">💡 Volume naik + harga naik = konfirmasi bullish kuat. Volume tinggi + harga turun = distribusi/jual besar.</div>
 </div>
 
 <div class="feat">
-<div class="feat-title">⚡ Panel ③ — Volume Delta (Buy vs Sell Power)</div>
+<div class="feat-title">⚡ Panel ③ - Volume Delta (Buy vs Sell Power)</div>
 <div class="stext" style="margin-bottom:10px;">Memisahkan volume menjadi dua komponen: tekanan beli dan tekanan jual dalam satu bar hari.</div>
-<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.85);"></div><div class="ind-desc"><b style="color:#089981">Buy Power (Hijau)</b> — Porsi volume yang terjadi di sisi beli: dihitung dari (Close−Low)/(High−Low) × Volume. Makin tinggi = makin banyak beli.</div></div>
-<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.75);"></div><div class="ind-desc"><b style="color:#f23645">Sell Power (Merah)</b> — Porsi volume di sisi jual: (High−Close)/(High−Low) × Volume. Makin tinggi = makin banyak jual.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.85);"></div><div class="ind-desc"><b style="color:#089981">Buy Power (Hijau)</b> - Porsi volume yang terjadi di sisi beli: dihitung dari (Close−Low)/(High−Low) × Volume. Makin tinggi = makin banyak beli.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.75);"></div><div class="ind-desc"><b style="color:#f23645">Sell Power (Merah)</b> - Porsi volume di sisi jual: (High−Close)/(High−Low) × Volume. Makin tinggi = makin banyak jual.</div></div>
 <div class="tip">💡 Buy Power >> Sell Power secara konsisten = akumulasi. Sell Power mendadak melonjak = distribusi atau panic sell.</div>
 </div>
 
 <div class="feat">
-<div class="feat-title" style="color:#a78bfa;">〰️ Panel ④ — RSI (Relative Strength Index)</div>
+<div class="feat-title" style="color:#a78bfa;">〰️ Panel ④ - RSI (Relative Strength Index)</div>
 <div class="stext" style="margin-bottom:10px;">Mengukur kekuatan/kelemahan relatif harga dalam rentang 0–100.</div>
 <div class="grid3">
-<div class="gcard red"><div class="gcard-title">RSI &gt; 70</div><div class="gcard-val">Overbought — harga sudah naik terlalu cepat. Potensi koreksi atau reversal.</div></div>
-<div class="gcard green"><div class="gcard-title">RSI &lt; 30</div><div class="gcard-val">Oversold — harga sudah turun terlalu dalam. Potensi pantulan atau reversal naik.</div></div>
+<div class="gcard red"><div class="gcard-title">RSI &gt; 70</div><div class="gcard-val">Overbought - harga sudah naik terlalu cepat. Potensi koreksi atau reversal.</div></div>
+<div class="gcard green"><div class="gcard-title">RSI &lt; 30</div><div class="gcard-val">Oversold - harga sudah turun terlalu dalam. Potensi pantulan atau reversal naik.</div></div>
 <div class="gcard blue"><div class="gcard-title">RSI 40–60</div><div class="gcard-val">Zona netral / sideways. Tunggu konfirmasi arah sebelum entry.</div></div>
 </div>
 <div class="tip">💡 Divergence RSI: harga buat higher high tapi RSI lower high = bearish divergence (sinyal lemah/reversal). Sebaliknya = bullish divergence.</div>
 </div>
 
 <div class="feat blue">
-<div class="feat-title">📉 Panel ⑤ — MACD (Moving Average Convergence Divergence)</div>
+<div class="feat-title">📉 Panel ⑤ - MACD (Moving Average Convergence Divergence)</div>
 <div class="stext" style="margin-bottom:10px;">Konfirmasi momentum tren dengan dua moving average dan histogram.</div>
-<div class="ind-row"><div class="ind-line" style="background:#2196f3;"></div><div class="ind-desc"><b style="color:#2196f3">MACD Line (Biru)</b> — EMA12 minus EMA26. Refleksi momentum jangka pendek vs menengah.</div></div>
-<div class="ind-row"><div class="ind-line" style="background:#ff5252;"></div><div class="ind-desc"><b style="color:#ff5252">Signal Line (Merah)</b> — EMA9 dari MACD Line. Crossover = sinyal beli/jual.</div></div>
-<div class="ind-row"><div class="ind-dot" style="background:#089981;"></div><div class="ind-desc"><b style="color:#089981">Histogram Hijau</b> — MACD > Signal. Momentum bullish. Makin tinggi = makin kuat.</div></div>
-<div class="ind-row"><div class="ind-dot" style="background:#f23645;"></div><div class="ind-desc"><b style="color:#f23645">Histogram Merah</b> — MACD < Signal. Momentum bearish atau melemah.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#2196f3;"></div><div class="ind-desc"><b style="color:#2196f3">MACD Line (Biru)</b> - EMA12 minus EMA26. Refleksi momentum jangka pendek vs menengah.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#ff5252;"></div><div class="ind-desc"><b style="color:#ff5252">Signal Line (Merah)</b> - EMA9 dari MACD Line. Crossover = sinyal beli/jual.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:#089981;"></div><div class="ind-desc"><b style="color:#089981">Histogram Hijau</b> - MACD > Signal. Momentum bullish. Makin tinggi = makin kuat.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:#f23645;"></div><div class="ind-desc"><b style="color:#f23645">Histogram Merah</b> - MACD < Signal. Momentum bearish atau melemah.</div></div>
 <div class="tip">💡 Sinyal terkuat: MACD cross Signal dari bawah + histogram baru jadi hijau + RSI di bawah 50 → awal rally baru.</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🎯</div>
-<div><div class="sec-title">TRADE PLAN — Visualisasi & Risk Level</div>
+<div><div class="sec-title">TRADE PLAN - Visualisasi & Risk Level</div>
 <div class="sec-desc">AI otomatis gambar trade plan di chart dan tentukan risk level berdasarkan kondisi pasar.</div>
 </div></div>
 
@@ -16031,7 +16031,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 <div class="gcard red">
 <div class="gcard-title">🛑 STOP LOSS (Garis Merah)</div>
-<div class="gcard-val">Batas kerugian maksimal — di bawah BUY ZONE. Minimal 1.5× ATR dari entry bawah. WAJIB dihormati.</div>
+<div class="gcard-val">Batas kerugian maksimal - di bawah BUY ZONE. Minimal 1.5× ATR dari entry bawah. WAJIB dihormati.</div>
 </div>
 <div class="gcard" style="border-color:rgba(167,139,250,0.35);background:rgba(167,139,250,0.07);">
 <div class="gcard-title" style="color:#a78bfa;">🎯 TP1 / TP2 / TP3 (Titik-Titik Ungu)</div>
@@ -16045,13 +16045,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 <div class="feat yellow">
-<div class="feat-title">⚡ Risk Level — Syarat & Arti</div>
+<div class="feat-title">⚡ Risk Level - Syarat & Arti</div>
 <div class="stext" style="margin-bottom:12px;">AI menentukan risk level otomatis berdasarkan berapa "pilar" yang konfirmasi setup. Semakin banyak pilar, semakin rendah risiko.</div>
 <div class="rl-row">
 <div class="rl-badge high">
 <div class="rl-label">🔴 HIGH RISK</div>
 <div style="font-size:0.9rem;font-weight:700;color:#f23645;margin:4px 0;">Teknikal ✅</div>
-<div class="rl-cond">Setup teknikal ada (EMA, support, pattern) tapi volume belum konfirmasi atau fundamental lemah/tidak tersedia. Risiko tertinggi — position sizing kecil, wajib ketat di SL.</div>
+<div class="rl-cond">Setup teknikal ada (EMA, support, pattern) tapi volume belum konfirmasi atau fundamental lemah/tidak tersedia. Risiko tertinggi - position sizing kecil, wajib ketat di SL.</div>
 </div>
 <div class="rl-badge mid">
 <div class="rl-label">🟡 MID RISK</div>
@@ -16064,12 +16064,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="rl-cond">Triple konfirmasi lengkap: teknikal bullish + volume mendukung + fundamental sehat (ROE positif, PBV wajar, EPS tumbuh). Setup paling aman untuk full position.</div>
 </div>
 </div>
-<div class="warn">⚠️ Jika kondisi saham BEARISH KUAT / HINDARI, Trade Plan TIDAK ditampilkan — AI akan menjelaskan alasan dan kondisi yang harus terpenuhi dulu sebelum bisa entry.</div>
+<div class="warn">⚠️ Jika kondisi saham BEARISH KUAT / HINDARI, Trade Plan TIDAK ditampilkan - AI akan menjelaskan alasan dan kondisi yang harus terpenuhi dulu sebelum bisa entry.</div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🧮</div>
-<div><div class="sec-title">FITUR LAIN — Fundamental Screener & Chat</div>
+<div><div class="sec-title">FITUR LAIN - Fundamental Screener & Chat</div>
 </div></div>
 
 <div class="feat yellow">
@@ -16077,7 +16077,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="steps">
 <div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab ⚡ Alpha Screener → sub-tab AI Stock Insight.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext">Pilih <b>filter sektor</b> (All / Banking / Property / Energy / Consumer) untuk mempersempit pencarian.</div></div>
-<div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> — sistem evaluasi ratusan saham IDX berdasarkan: <span class="hi">ROE ≥15%</span>, <span class="ok">DER ≤1.5×</span>, <span class="yl">Net Margin ≥10%</span>, Current Ratio ≥1.5, <span class="hi">PBV ≤3×</span>, EPS positif.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> - sistem evaluasi ratusan saham IDX berdasarkan: <span class="hi">ROE ≥15%</span>, <span class="ok">DER ≤1.5×</span>, <span class="yl">Net Margin ≥10%</span>, Current Ratio ≥1.5, <span class="hi">PBV ≤3×</span>, EPS positif.</div></div>
 <div class="step"><div class="snum">4</div><div class="stext">Urutkan hasil dengan <b>"Sort By"</b>: ROE Tertinggi / DER Terendah / Net Margin / PBV.</div></div>
 <div class="step"><div class="snum">5</div><div class="stext">Pilih saham → klik <b>"Analisa AI"</b> untuk ringkasan fundamental lengkap dari AI.</div></div>
 </div>
@@ -16144,17 +16144,17 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </style></head><body><div class="wrap">
 
 <div class="sec-head"><div class="sec-icon">🎯</div>
-<div><div class="sec-title">AI REKOMENDASI — Panduan Lengkap</div>
+<div><div class="sec-title">AI REKOMENDASI - Panduan Lengkap</div>
 <div class="sec-desc">Rekomendasi saham harian, mingguan, dan watchlist Buy-Sell-JP berbasis AI dengan konteks fundamental + teknikal + makro.</div>
 </div></div>
 
 <div class="feat">
-<div class="feat-title">📌 ⚡ Alpha Screener — Daily / Weekly / BSJP</div>
+<div class="feat-title">📌 ⚡ Alpha Screener - Daily / Weekly / BSJP</div>
 <div class="stext">Tab ⚡ Alpha Screener adalah pusat analisa dan kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam tiga mode: <span class="hi">Harian</span>, <span class="yl">Mingguan</span>, dan <span class="ok">Buy-Sell-JP (BSJP)</span>.</div>
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📅</div>
-<div><div class="sec-title">MODE 1 — Rekomendasi Harian</div>
+<div><div class="sec-title">MODE 1 - Rekomendasi Harian</div>
 <div class="sec-desc">Watchlist saham untuk trading dalam 1-3 hari ke depan berdasarkan sentimen pasar hari ini.</div>
 </div></div>
 
@@ -16162,15 +16162,15 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="feat-title">🌅 Cara Menggunakan Rekomendasi Harian</div>
 <div class="steps">
 <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>⚡ Alpha Screener</b> dari navigasi atas SIGMA Terminal.</div></div>
-<div class="step"><div class="snum">2</div><div class="stext">Klik tombol <b>"🌅 Generate Rekomendasi Harian"</b> — AI akan memproses kondisi makro hari ini + sinyal teknikal intraday.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Klik tombol <b>"🌅 Generate Rekomendasi Harian"</b> - AI akan memproses kondisi makro hari ini + sinyal teknikal intraday.</div></div>
 <div class="step"><div class="snum">3</div><div class="stext">Output berisi: <span class="ok">daftar saham</span> + <span class="hi">alasan singkat</span> + <span class="yl">level entry estimasi</span> + <span class="dn">catatan risiko</span>.</div></div>
-<div class="step"><div class="snum">4</div><div class="stext">Hasil disimpan otomatis di <b>session state</b> — tidak hilang saat kamu pindah tab lalu kembali.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Hasil disimpan otomatis di <b>session state</b> - tidak hilang saat kamu pindah tab lalu kembali.</div></div>
 </div>
 <div class="tip">💡 Best practice: Generate di pagi hari sebelum market buka (08.30–09.00 WIB) untuk mendapat konteks pre-market yang relevan.</div>
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📆</div>
-<div><div class="sec-title">MODE 2 — Rekomendasi Mingguan</div>
+<div><div class="sec-title">MODE 2 - Rekomendasi Mingguan</div>
 <div class="sec-desc">Swing trade watchlist untuk horizon 1-4 minggu berdasarkan rotasi sektor dan fundamental jangka menengah.</div>
 </div></div>
 
@@ -16186,16 +16186,16 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🔄</div>
-<div><div class="sec-title">MODE 3 — Buy / Sell / JP (BSJP)</div>
+<div><div class="sec-title">MODE 3 - Buy / Sell / JP (BSJP)</div>
 <div class="sec-desc">Klasifikasi posisi: saham mana yang layak dibeli, dijual, atau hold (Jaga Posisi) berdasarkan kondisi terkini.</div>
 </div></div>
 
 <div class="feat yellow">
 <div class="feat-title">🔁 Cara Menggunakan BSJP</div>
 <div class="steps">
-<div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"🔄 Generate Buy-Sell-JP"</b> — AI akan mengklasifikasi saham ke tiga kategori berdasarkan kondisi teknikal + makro terkini.</div></div>
+<div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"🔄 Generate Buy-Sell-JP"</b> - AI akan mengklasifikasi saham ke tiga kategori berdasarkan kondisi teknikal + makro terkini.</div></div>
 <div class="step"><div class="snum">2</div><div class="stext">Output tiga kolom: <span class="ok">BUY</span> (entry potensial), <span class="dn">SELL / REDUCE</span> (kurangi atau keluar), <span class="yl">JP / HOLD</span> (tahan posisi, jangan panik jual).</div></div>
-<div class="step"><div class="snum">3</div><div class="stext">Setiap saham disertai <b>reasoning singkat AI</b> — bukan hanya listing nama, tapi konteks kenapa masuk kategori tersebut.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Setiap saham disertai <b>reasoning singkat AI</b> - bukan hanya listing nama, tapi konteks kenapa masuk kategori tersebut.</div></div>
 </div>
 <div class="grid3">
 <div class="gcard green">
@@ -16204,7 +16204,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 <div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
 <div class="gcard-title" style="color:{_R};">⬇️ SELL/REDUCE</div>
-<div class="gcard-val">Saham di area resistance, volume distribusi, sentimen negatif, atau sudah mencapai TP — pertimbangkan profit taking.</div>
+<div class="gcard-val">Saham di area resistance, volume distribusi, sentimen negatif, atau sudah mencapai TP - pertimbangkan profit taking.</div>
 </div>
 <div class="gcard yellow">
 <div class="gcard-title">⏸️ JP / HOLD</div>
@@ -16214,9 +16214,9 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 <div class="feat red">
-<div class="feat-title">⚠️ Disclaimer Penting — Wajib Dibaca</div>
+<div class="feat-title">⚠️ Disclaimer Penting - Wajib Dibaca</div>
 <div class="stext">Semua output Alpha Screener adalah <b>bahan riset dan referensi analisa</b>, BUKAN sinyal trading resmi atau financial advice. SIGMA tidak menjamin akurasi prediksi. Keputusan trading sepenuhnya tanggung jawab trader masing-masing. <span class="dn">Selalu DYOR (Do Your Own Research)</span> dan konfirmasi dengan analisa mandiri sebelum eksekusi.</div>
-<div class="alert">🚨 IDX = <b>Long Only Market</b>. Profit hanya dari kenaikan harga. Tidak ada short selling konvensional untuk retail. Pastikan entry hanya saat tren mendukung — jangan fight the trend.</div>
+<div class="alert">🚨 IDX = <b>Long Only Market</b>. Profit hanya dari kenaikan harga. Tidak ada short selling konvensional untuk retail. Pastikan entry hanya saat tren mendukung - jangan fight the trend.</div>
 </div>
 
 </div></body></html>"""
@@ -16267,17 +16267,17 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </style></head><body><div class="wrap">
 
 <div class="sec-head"><div class="sec-icon">🧮</div>
-<div><div class="sec-title">KALKULATOR — Panduan Lengkap</div>
+<div><div class="sec-title">KALKULATOR - Panduan Lengkap</div>
 <div class="sec-desc">Alat kalkulasi trading IDX: Profit/Loss, Position Sizing, Modal Lot, Brokerage Fee, dan Break Even Point.</div>
 </div></div>
 
 <div class="feat">
 <div class="feat-title">📌 Apa itu Tab Kalkulator?</div>
-<div class="stext">Tab Kalkulator adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual — masukkan angka, hasilnya otomatis.</div>
+<div class="stext">Tab Kalkulator adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual - masukkan angka, hasilnya otomatis.</div>
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">💰</div>
-<div><div class="sec-title">KALKULATOR 1 — Profit / Loss (P&L)</div>
+<div><div class="sec-title">KALKULATOR 1 - Profit / Loss (P&L)</div>
 </div></div>
 
 <div class="feat blue">
@@ -16293,15 +16293,15 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📐</div>
-<div><div class="sec-title">KALKULATOR 2 — Position Sizing & Modal</div>
+<div><div class="sec-title">KALKULATOR 2 - Position Sizing & Modal</div>
 </div></div>
 
 <div class="feat green">
 <div class="feat-title">🎯 Cara Menghitung Position Size</div>
 <div class="steps">
 <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Total Modal</b> yang tersedia (contoh: Rp 10.000.000)</div></div>
-<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>% Risiko per Trade</b> — standar konservatif: 1-2% per posisi (contoh: 2% = Rp 200.000 maksimal rugi)</div></div>
-<div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Harga Entry</b> dan <b>Harga Stop Loss</b> — jarak inilah yang menentukan berapa lot yang aman dibeli.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>% Risiko per Trade</b> - standar konservatif: 1-2% per posisi (contoh: 2% = Rp 200.000 maksimal rugi)</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Harga Entry</b> dan <b>Harga Stop Loss</b> - jarak inilah yang menentukan berapa lot yang aman dibeli.</div></div>
 <div class="step"><div class="snum">4</div><div class="stext">Kalkulator menampilkan: <span class="ok">jumlah lot optimal</span>, <span class="hi">modal yang dipakai</span>, dan <span class="yl">% dari total portofolio</span>.</div></div>
 </div>
 <div class="formula">Jumlah Lot = (Modal × % Risiko) ÷ ((Entry − SL) × 100)</div>
@@ -16318,7 +16318,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">💳</div>
-<div><div class="sec-title">KALKULATOR 3 — Biaya Broker & Break Even</div>
+<div><div class="sec-title">KALKULATOR 3 - Biaya Broker & Break Even</div>
 </div></div>
 
 <div class="feat yellow">
@@ -16327,7 +16327,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="grid2">
 <div class="gcard blue">
 <div class="gcard-title">📥 Biaya Beli</div>
-<div class="gcard-val">Umumnya 0.15%—0.19% dari nilai transaksi (tergantung broker). Beberapa broker offer 0% fee beli untuk saham tertentu.</div>
+<div class="gcard-val">Umumnya 0.15%-0.19% dari nilai transaksi (tergantung broker). Beberapa broker offer 0% fee beli untuk saham tertentu.</div>
 </div>
 <div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
 <div class="gcard-title" style="color:{_R};">📤 Biaya Jual</div>
@@ -16337,8 +16337,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="formula">BEP = Harga Beli × (1 + Fee Beli) × (1 + Fee Jual + Pajak)</div>
 <div class="steps" style="margin-top:12px;">
 <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Harga Beli</b> dan <b>% Fee Broker</b> yang kamu gunakan.</div></div>
-<div class="step"><div class="snum">2</div><div class="stext">Kalkulator menampilkan <span class="hi">harga BEP</span> — harga minimum jual agar tidak rugi setelah dipotong semua biaya.</div></div>
-<div class="step"><div class="snum">3</div><div class="stext">Gunakan BEP sebagai patokan — jangan jual di bawah BEP kecuali memang sudah keputusan cut loss terencana.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Kalkulator menampilkan <span class="hi">harga BEP</span> - harga minimum jual agar tidak rugi setelah dipotong semua biaya.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Gunakan BEP sebagai patokan - jangan jual di bawah BEP kecuali memang sudah keputusan cut loss terencana.</div></div>
 </div>
 <div class="warn">⚠️ Fee broker berbeda-beda tiap platform. Pastikan kamu tahu fee broker yang kamu pakai dan masukkan angka yang akurat agar BEP terhitung tepat.</div>
 </div>
@@ -16346,10 +16346,10 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 <div class="feat">
 <div class="feat-title">💡 Tips Penggunaan Kalkulator Optimal</div>
 <div class="steps">
-<div class="step"><div class="snum">→</div><div class="stext">Selalu hitung <span class="hi">position size</span> <b>sebelum</b> entry — bukan setelah. Emosi saat market buka sering membuat trader over-leverage.</div></div>
+<div class="step"><div class="snum">→</div><div class="stext">Selalu hitung <span class="hi">position size</span> <b>sebelum</b> entry - bukan setelah. Emosi saat market buka sering membuat trader over-leverage.</div></div>
 <div class="step"><div class="snum">→</div><div class="stext">Gunakan <span class="ok">P&L Calculator</span> untuk simulasi skenario: "jika harga naik ke TP1, berapa yang aku dapat? Jika kena SL, berapa yang hilang?"</div></div>
-<div class="step"><div class="snum">→</div><div class="stext">Catat semua trade di <span class="yl">Trading Journal Google Sheets MnM</span> — kombinasikan dengan kalkulator untuk evaluasi performa bulanan.</div></div>
-<div class="step"><div class="snum">→</div><div class="stext">R:R (Risk-Reward) minimum yang disarankan MnM Strategy+ adalah <span class="hi">1:2</span> — artinya untuk setiap 1 risiko, target minimal 2 profit.</div></div>
+<div class="step"><div class="snum">→</div><div class="stext">Catat semua trade di <span class="yl">Trading Journal Google Sheets MnM</span> - kombinasikan dengan kalkulator untuk evaluasi performa bulanan.</div></div>
+<div class="step"><div class="snum">→</div><div class="stext">R:R (Risk-Reward) minimum yang disarankan MnM Strategy+ adalah <span class="hi">1:2</span> - artinya untuk setiap 1 risiko, target minimal 2 profit.</div></div>
 </div>
 </div>
 
@@ -16417,14 +16417,14 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 <div class="sec-head">
   <div class="sec-icon">📊</div>
   <div>
-    <div class="sec-title">BROKER SUMMARY — Panduan Lengkap</div>
+    <div class="sec-title">BROKER SUMMARY - Panduan Lengkap</div>
     <div class="sec-desc">Membaca jejak transaksi broker untuk analisa bandarmologi & akumulasi/distribusi</div>
   </div>
 </div>
 
 <div class="feat">
 <div class="feat-title">📌 Apa itu Broker Summary (Brosum)?</div>
-<div class="stext">Broker Summary adalah ringkasan aktivitas transaksi <b>per kode broker</b> dalam satu saham pada periode tertentu (harian/mingguan/bulanan). Data ini menampilkan total <span class="hi">volume beli</span>, <span class="dn">volume jual</span>, dan <b>net buy/sell</b> setiap broker — sehingga kamu bisa melihat siapa yang sedang akumulasi dan siapa yang distribusi.</div>
+<div class="stext">Broker Summary adalah ringkasan aktivitas transaksi <b>per kode broker</b> dalam satu saham pada periode tertentu (harian/mingguan/bulanan). Data ini menampilkan total <span class="hi">volume beli</span>, <span class="dn">volume jual</span>, dan <b>net buy/sell</b> setiap broker - sehingga kamu bisa melihat siapa yang sedang akumulasi dan siapa yang distribusi.</div>
 <div class="steps" style="margin-top:12px;">
   <div class="step"><div class="snum">1</div><div class="stext">Broker Summary tersedia di platform seperti <b>RTI Business</b>, <b>ChartNexus</b>, <b>Stockbit</b>, <b>IPOT</b>, dan aplikasi broker masing-masing.</div></div>
   <div class="step"><div class="snum">2</div><div class="stext">Data umumnya menampilkan: <span class="hi">Kode Broker</span> | <span class="ok">Buy Volume (lot/nilai)</span> | <span class="dn">Sell Volume (lot/nilai)</span> | <b>Net Buy/Sell</b>.</div></div>
@@ -16445,7 +16445,7 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
   <tr><td><b>Sell Value</b></td><td>Total nilai transaksi jual (Rp)</td></tr>
   <tr><td><b>Avg Buy Price</b></td><td>Rata-rata harga beli broker tersebut</td></tr>
   <tr><td><b>Avg Sell Price</b></td><td>Rata-rata harga jual broker tersebut</td></tr>
-  <tr><td><b>Frekuensi</b></td><td>Jumlah order/transaksi — frekuensi tinggi = aktivitas intens</td></tr>
+  <tr><td><b>Frekuensi</b></td><td>Jumlah order/transaksi - frekuensi tinggi = aktivitas intens</td></tr>
 </table>
 </div>
 </div>
@@ -16454,8 +16454,8 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 <div class="feat-title">🔍 Cara Membaca Sinyal Akumulasi & Distribusi</div>
 <div class="steps">
   <div class="step"><div class="snum">↑</div><div class="stext"><span class="ok">Akumulasi (Bullish Signal):</span> Broker tertentu konsisten <b>Net Buy besar</b> selama beberapa hari berturut-turut, terutama jika harga belum bergerak jauh. Ini tanda "bandar" sedang kumpulkan saham.</div></div>
-  <div class="step"><div class="snum">↓</div><div class="stext"><span class="dn">Distribusi (Bearish Signal):</span> Broker yang sebelumnya Net Buy kini berbalik jadi <b>Net Sell dominan</b>. Terutama berbahaya jika harga masih tinggi — ini tanda mulai lepas saham ke publik.</div></div>
-  <div class="step"><div class="snum">→</div><div class="stext"><span class="yl">Crossing:</span> Broker A beli banyak DARI broker B yang jual banyak, pada <b>harga yang sama/mirip</b>. Ini pola crossing klasik — perpindahan kepemilikan dari satu pihak ke pihak lain secara terkoordinasi.</div></div>
+  <div class="step"><div class="snum">↓</div><div class="stext"><span class="dn">Distribusi (Bearish Signal):</span> Broker yang sebelumnya Net Buy kini berbalik jadi <b>Net Sell dominan</b>. Terutama berbahaya jika harga masih tinggi - ini tanda mulai lepas saham ke publik.</div></div>
+  <div class="step"><div class="snum">→</div><div class="stext"><span class="yl">Crossing:</span> Broker A beli banyak DARI broker B yang jual banyak, pada <b>harga yang sama/mirip</b>. Ini pola crossing klasik - perpindahan kepemilikan dari satu pihak ke pihak lain secara terkoordinasi.</div></div>
   <div class="step"><div class="snum">→</div><div class="stext"><span class="hi">Foreign Flow:</span> Perhatikan broker asing (ZP, DB, CS, ML, MS). Net buy asing = sentimen positif global. Net sell asing = tekanan jual dari institusi internasional.</div></div>
 </div>
 </div>
@@ -16463,7 +16463,7 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 <div class="feat yellow">
 <div class="feat-title">🏦 Kode Broker Penting di IDX</div>
 <div class="broker-grid">
-  <div class="broker-card"><div class="broker-code">YP</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — Retail</span></div></div>
+  <div class="broker-card"><div class="broker-code">YP</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-type"><span class="tag local">Lokal - Retail</span></div></div>
   <div class="broker-card"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
   <div class="broker-card"><div class="broker-code">ZP</div><div class="broker-name">Kim Eng Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
   <div class="broker-card"><div class="broker-code">BQ</div><div class="broker-name">Mirae Asset</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
@@ -16472,10 +16472,10 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
   <div class="broker-card"><div class="broker-code">ML</div><div class="broker-name">Merrill Lynch</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
   <div class="broker-card"><div class="broker-code">MS</div><div class="broker-name">Morgan Stanley</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
   <div class="broker-card"><div class="broker-code">RX</div><div class="broker-name">Macquarie Capital</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-  <div class="broker-card"><div class="broker-code">OD</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
-  <div class="broker-card"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas 2</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
+  <div class="broker-card"><div class="broker-code">OD</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-type"><span class="tag local">Lokal - BUMN</span></div></div>
+  <div class="broker-card"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas 2</div><div class="broker-type"><span class="tag local">Lokal - BUMN</span></div></div>
   <div class="broker-card"><div class="broker-code">DH</div><div class="broker-name">Sinarmas Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-  <div class="broker-card"><div class="broker-code">PD</div><div class="broker-name">BNI Sekuritas</div><div class="broker-type"><span class="tag local">Lokal — BUMN</span></div></div>
+  <div class="broker-card"><div class="broker-code">PD</div><div class="broker-name">BNI Sekuritas</div><div class="broker-type"><span class="tag local">Lokal - BUMN</span></div></div>
   <div class="broker-card"><div class="broker-code">GR</div><div class="broker-name">Panin Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
   <div class="broker-card"><div class="broker-code">FZ</div><div class="broker-name">Waterfront Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
   <div class="broker-card"><div class="broker-code">LG</div><div class="broker-name">Trimegah Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
@@ -16487,7 +16487,7 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 <div class="steps">
   <div class="step"><div class="snum">1</div><div class="stext">Buka platform data saham (RTI, Stockbit, IPOT, dll.) → cari saham yang ingin dianalisa → buka menu <b>Broker Summary</b>.</div></div>
   <div class="step"><div class="snum">2</div><div class="stext">Pilih periode: <span class="yl">Harian</span> untuk sinyal jangka pendek, <span class="ok">Mingguan/Bulanan</span> untuk melihat tren akumulasi besar.</div></div>
-  <div class="step"><div class="snum">3</div><div class="stext">Screenshot tampilan Broker Summary — pastikan terlihat jelas kolom Net Buy/Sell dan kode broker teratas.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Screenshot tampilan Broker Summary - pastikan terlihat jelas kolom Net Buy/Sell dan kode broker teratas.</div></div>
   <div class="step"><div class="snum">4</div><div class="stext">Di SIGMA, ketik: <span class="hi">"3. Bandarmologi BBRI"</span> (ganti dengan kode saham) sambil <b>lampirkan screenshot Brosum, Price Table, dan Volume</b>.</div></div>
   <div class="step"><div class="snum">5</div><div class="stext">SIGMA AI akan membedah pola akumulasi/distribusi, crossing antar broker, dan memberikan interpretasi terhadap momentum harga.</div></div>
 </div>
@@ -16497,9 +16497,9 @@ tr:hover td{{background:rgba(124,58,237,0.07);}}
 <div class="feat red">
 <div class="feat-title">⚠️ Hal-Hal yang Perlu Diperhatikan</div>
 <div class="steps">
-  <div class="step"><div class="snum">!</div><div class="stext"><span class="dn">Jangan terpaku hanya pada 1 hari data</span> — pola akumulasi bandar biasanya terlihat setelah 3–10 hari observasi berturut-turut.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext"><span class="dn">Jangan terpaku hanya pada 1 hari data</span> - pola akumulasi bandar biasanya terlihat setelah 3–10 hari observasi berturut-turut.</div></div>
   <div class="step"><div class="snum">!</div><div class="stext">Broker besar tidak selalu = bandar. <span class="yl">Konfirmasi dengan price action</span>: jika akumulasi tapi harga sideways/turun, waspadai distribusi terselubung.</div></div>
-  <div class="step"><div class="snum">!</div><div class="stext">Data Broker Summary adalah <b>lagging indicator</b> — ia menunjukkan apa yang SUDAH terjadi, bukan apa yang AKAN terjadi. Gunakan bersama analisa teknikal.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext">Data Broker Summary adalah <b>lagging indicator</b> - ia menunjukkan apa yang SUDAH terjadi, bukan apa yang AKAN terjadi. Gunakan bersama analisa teknikal.</div></div>
   <div class="step"><div class="snum">!</div><div class="stext">Semua analisa bandarmologi adalah <b>referensi riset</b>, bukan sinyal trading resmi. Selalu DYOR dan kelola risiko dengan disiplin.</div></div>
 </div>
 </div>
@@ -16642,7 +16642,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
 <div class="hero">
   <div class="hero-title">🔬 BAGAIMANA SIGMA MEMILIH SAHAM?</div>
   <div class="hero-sub">
-    Penjelasan lengkap arsitektur, logika, dan mekanisme di balik setiap modul screening SIGMA — 
+    Penjelasan lengkap arsitektur, logika, dan mekanisme di balik setiap modul screening SIGMA - 
     dari sumber data, filter bertingkat, sampai cara AI menghasilkan trade plan.<br><br>
     Pilih modul di bawah untuk membaca detail cara kerjanya.
   </div>
@@ -16699,7 +16699,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
   </div>
 
   <div class="card accent-p">
-    <div class="card-title">Validasi Corporate Action — Otomatis</div>
+    <div class="card-title">Validasi Corporate Action - Otomatis</div>
     <div class="card-body">
       SIGMA menyimpan database internal riwayat <b>stock split & reverse split</b> dari semua emiten besar IDX (BBCA, BBRI, BMRI, TLKM, GOTO, dll).<br><br>
       Sebelum data harga dikirim ke AI untuk dianalisa, sistem otomatis memvalidasi:<br>
@@ -16713,8 +16713,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <div class="card-title">Database Pemegang Saham IDX</div>
     <div class="card-body">
       SIGMA menyimpan data bulanan jumlah pemegang saham dari <b>200+ emiten BEI</b> (Apr 2025 – Mar 2026).<br><br>
-      <span class="ok">Pemegang naik konsisten 3 bulan</span> → sinyal akumulasi retail kuat — institusi sudah masuk lebih dulu<br>
-      <span class="dn">Pemegang turun konsisten 3 bulan</span> → sinyal distribusi — pemegang lama mulai keluar<br><br>
+      <span class="ok">Pemegang naik konsisten 3 bulan</span> → sinyal akumulasi retail kuat - institusi sudah masuk lebih dulu<br>
+      <span class="dn">Pemegang turun konsisten 3 bulan</span> → sinyal distribusi - pemegang lama mulai keluar<br><br>
       Data ini dikombinasikan dengan analisa volume dan teknikal untuk memperkuat atau menyanggah sinyal.
     </div>
   </div>
@@ -16726,7 +16726,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <span class="sec-icon">🔍</span>
     <div>
       <div class="sec-title">AI STOCK INSIGHT</div>
-      <div class="sec-desc">Analisa mendalam per ticker — teknikal + fundamental + pemegang saham dalam 1 klik</div>
+      <div class="sec-desc">Analisa mendalam per ticker - teknikal + fundamental + pemegang saham dalam 1 klik</div>
     </div>
   </div>
 
@@ -16734,13 +16734,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <div class="card-title">Apa yang terjadi saat kamu ketik ticker & klik Analyze?</div>
     <div class="card-body">
       <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext"><b>Ambil chart 6 bulan</b> — OHLCV dari yfinance. Weekend & data kosong otomatis dibersihkan agar chart rapi.</div></div>
-        <div class="step"><div class="snum">2</div><div class="stext"><b>Hitung indikator teknikal</b> — EMA 13/21/100/200, RSI, MACD, Bollinger Bands, ATR, Pivot Points, support/resistance otomatis dari price action.</div></div>
-        <div class="step"><div class="snum">3</div><div class="stext"><b>Analisa volume</b> — spike ratio (volume hari ini vs MA-20), deteksi divergensi harga-volume, dry-up signal.</div></div>
-        <div class="step"><div class="snum">4</div><div class="stext"><b>Fetch fundamental multi-source</b> — ROE, ROA, PER, PBV, EPS, DER, Dividend Yield, NIM, NPL (khusus bank). Validasi corporate action dilakukan di sini.</div></div>
-        <div class="step"><div class="snum">5</div><div class="stext"><b>Cek tren pemegang saham</b> — database SIGMA 12 bulan terakhir. Naik atau turun? Berapa persen perubahannya?</div></div>
-        <div class="step"><div class="snum">6</div><div class="stext"><b>AI generate analisa</b> — semua data dikirim ke model AI. AI <span class="hi">wajib menilai</span> kondisi saham (LAYAK / WASPADA / HINDARI) sebelum menulis analisa. Trade plan hanya muncul jika kondisi layak.</div></div>
-        <div class="step"><div class="snum">7</div><div class="stext"><b>Gambar chart + trade plan</b> — Entry zone, TP1, TP2, SL di-overlay di atas candlestick chart. Koordinat divalidasi agar masuk akal vs harga live.</div></div>
+        <div class="step"><div class="snum">1</div><div class="stext"><b>Ambil chart 6 bulan</b> - OHLCV dari yfinance. Weekend & data kosong otomatis dibersihkan agar chart rapi.</div></div>
+        <div class="step"><div class="snum">2</div><div class="stext"><b>Hitung indikator teknikal</b> - EMA 13/21/100/200, RSI, MACD, Bollinger Bands, ATR, Pivot Points, support/resistance otomatis dari price action.</div></div>
+        <div class="step"><div class="snum">3</div><div class="stext"><b>Analisa volume</b> - spike ratio (volume hari ini vs MA-20), deteksi divergensi harga-volume, dry-up signal.</div></div>
+        <div class="step"><div class="snum">4</div><div class="stext"><b>Fetch fundamental multi-source</b> - ROE, ROA, PER, PBV, EPS, DER, Dividend Yield, NIM, NPL (khusus bank). Validasi corporate action dilakukan di sini.</div></div>
+        <div class="step"><div class="snum">5</div><div class="stext"><b>Cek tren pemegang saham</b> - database SIGMA 12 bulan terakhir. Naik atau turun? Berapa persen perubahannya?</div></div>
+        <div class="step"><div class="snum">6</div><div class="stext"><b>AI generate analisa</b> - semua data dikirim ke model AI. AI <span class="hi">wajib menilai</span> kondisi saham (LAYAK / WASPADA / HINDARI) sebelum menulis analisa. Trade plan hanya muncul jika kondisi layak.</div></div>
+        <div class="step"><div class="snum">7</div><div class="stext"><b>Gambar chart + trade plan</b> - Entry zone, TP1, TP2, SL di-overlay di atas candlestick chart. Koordinat divalidasi agar masuk akal vs harga live.</div></div>
       </div>
     </div>
   </div>
@@ -16753,7 +16753,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
   </div>
 
   <div class="honesty">
-    ✅ <b>Prinsip Kejujuran:</b> AI di-brief bahwa kejujuran adalah prioritas utama. Saham yang sedang downtrend, distribusi aktif, atau fundamental buruk akan dinilai HINDARI — bukan dibuat trade plan asal-asalan untuk menyenangkan trader.
+    ✅ <b>Prinsip Kejujuran:</b> AI di-brief bahwa kejujuran adalah prioritas utama. Saham yang sedang downtrend, distribusi aktif, atau fundamental buruk akan dinilai HINDARI - bukan dibuat trade plan asal-asalan untuk menyenangkan trader.
   </div>
 </div>
 
@@ -16763,14 +16763,14 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <span class="sec-icon">📅</span>
     <div>
       <div class="sec-title">DAILY SCREENER</div>
-      <div class="sec-desc">Scan 500+ saham IDX setiap hari — top pick berbasis volume intelligence & block trade detection</div>
+      <div class="sec-desc">Scan 500+ saham IDX setiap hari - top pick berbasis volume intelligence & block trade detection</div>
     </div>
   </div>
 
   <div class="card accent-b">
     <div class="card-title">Universe & Pre-filter</div>
     <div class="card-body">
-      Universe: <b>500+ saham IDX aktif</b> (sudah dikurasi — hapus saham suspend, micro-cap speculative). Data OHLCV 10 hari terakhir diambil secara paralel untuk semua ticker.<br><br>
+      Universe: <b>500+ saham IDX aktif</b> (sudah dikurasi - hapus saham suspend, micro-cap speculative). Data OHLCV 10 hari terakhir diambil secara paralel untuk semua ticker.<br><br>
       Hanya saham dengan <b>Bullish Score ≥ 3 dari 4</b> yang masuk ke tahap AI:
       <br><br>
       <span class="bg">+1</span> Harga naik hari ini (chg &gt; 0%)<br>
@@ -16781,7 +16781,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
   </div>
 
   <div class="card accent-p">
-    <div class="card-title">Volume Intelligence — Inti Perbedaannya</div>
+    <div class="card-title">Volume Intelligence - Inti Perbedaannya</div>
     <div class="card-body">
       AI Daily di-brief khusus untuk membedakan tipe volume:<br><br>
       <span class="bp">Block Trade</span> Nilai besar + Lot besar + Frekuensi <b>KECIL</b> → institusi masuk diam-diam → <span class="ok">SINYAL KUAT</span><br><br>
@@ -16808,25 +16808,25 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <span class="sec-icon">📆</span>
     <div>
       <div class="sec-title">WEEKLY SCREENER</div>
-      <div class="sec-desc">Swing trade 1–2 minggu — kombinasi tren mingguan, katalis fundamental, dan tren pemegang saham</div>
+      <div class="sec-desc">Swing trade 1–2 minggu - kombinasi tren mingguan, katalis fundamental, dan tren pemegang saham</div>
     </div>
   </div>
 
   <div class="card accent-b">
     <div class="card-title">Perbedaan Utama dari Daily</div>
     <div class="card-body">
-      <b>Timeframe lebih panjang:</b> Data 20 hari digunakan (bukan 10 hari). EMA yang diperhatikan adalah EMA 21 dan EMA 50 — bukan EMA 5.<br><br>
+      <b>Timeframe lebih panjang:</b> Data 20 hari digunakan (bukan 10 hari). EMA yang diperhatikan adalah EMA 21 dan EMA 50 - bukan EMA 5.<br><br>
       <b>Fundamental lebih dominan:</b> Di Daily, FA Score hanya 40% bobot. Di Weekly, fundamental mendapat perhatian lebih karena horizon 1–2 minggu memberikan waktu bagi katalis fundamental bekerja.<br><br>
-      <b>Horizon:</b> 1–2 minggu. Bukan untuk daytrader — untuk swing trader yang bisa menahan posisi.
+      <b>Horizon:</b> 1–2 minggu. Bukan untuk daytrader - untuk swing trader yang bisa menahan posisi.
     </div>
   </div>
 
   <div class="card accent-p">
     <div class="card-title">Faktor Tambahan di Weekly</div>
     <div class="card-body">
-      <span class="bp">Tren Pemegang Saham</span> Data IDX bulanan — apakah jumlah pemegang naik (akumulasi) atau turun (distribusi)? Naik 3 bulan berturut = sinyal kuat.<br><br>
+      <span class="bp">Tren Pemegang Saham</span> Data IDX bulanan - apakah jumlah pemegang naik (akumulasi) atau turun (distribusi)? Naik 3 bulan berturut = sinyal kuat.<br><br>
       <span class="bb">Katalis Fundamental</span> AI diminta menimbang katalis ke depan: jadwal dividen, rilis laporan keuangan, kebijakan makro yang relevan untuk sektor saham tersebut.<br><br>
-      <span class="bg">Sector Outlook</span> Kondisi sektor dan makro dipertimbangkan — suku bunga BI, kurs IDR, harga komoditas terkait, dan rotasi sektor dari data Sector Rotation.
+      <span class="bg">Sector Outlook</span> Kondisi sektor dan makro dipertimbangkan - suku bunga BI, kurs IDR, harga komoditas terkait, dan rotasi sektor dari data Sector Rotation.
     </div>
   </div>
 
@@ -16846,7 +16846,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <span class="sec-icon">🌙</span>
     <div>
       <div class="sec-title">BELI SORE JUAL PAGI (BSJP)</div>
-      <div class="sec-desc">Strategi overnight — beli 15:00–15:50 WIB, jual pre-opening atau sesi 1 keesokan hari</div>
+      <div class="sec-desc">Strategi overnight - beli 15:00–15:50 WIB, jual pre-opening atau sesi 1 keesokan hari</div>
     </div>
   </div>
 
@@ -16864,7 +16864,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <div class="card-body">
       <span class="bp">Volume Spike Closing</span> Volume melonjak signifikan di 30–60 menit terakhir sebelum penutupan. Pertanda ada yang mengakumulasi saat retail sudah mau pulang.<br><br>
       <span class="bb">Frekuensi Rendah</span> Volume spike dari <b>block trade</b> (institusi), bukan dari ritel kecil-kecil. Ini yang membedakan BSJP sinyal valid vs noise.<br><br>
-      <span class="bg">Harga Stabil atau Naik Pelan</span> Tidak ada distribusi massal sebelum closing — artinya yang beli lebih kuat dari yang jual.<br><br>
+      <span class="bg">Harga Stabil atau Naik Pelan</span> Tidak ada distribusi massal sebelum closing - artinya yang beli lebih kuat dari yang jual.<br><br>
       <span class="br">HINDARI</span> Saham dengan berita negatif besar semalam (risiko gap-down pagi). Cek news feed sebelum tidur.
     </div>
   </div>
@@ -16887,14 +16887,14 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <span class="sec-icon">📊</span>
     <div>
       <div class="sec-title">FUNDAMENTAL SCREENER</div>
-      <div class="sec-desc">Screening berbasis kesehatan bisnis — untuk investor, bukan trader harian</div>
+      <div class="sec-desc">Screening berbasis kesehatan bisnis - untuk investor, bukan trader harian</div>
     </div>
   </div>
 
   <div class="card accent-b">
     <div class="card-title">Metrik yang Diukur</div>
     <div class="card-body">
-      <b>Valuasi:</b> PER (Price-to-Earnings) dan PBV (Price-to-Book Value). AI menilai murah/wajar/mahal berdasarkan perbandingan vs peers sektor — bukan angka absolut.<br><br>
+      <b>Valuasi:</b> PER (Price-to-Earnings) dan PBV (Price-to-Book Value). AI menilai murah/wajar/mahal berdasarkan perbandingan vs peers sektor - bukan angka absolut.<br><br>
       <b>Profitabilitas:</b> ROE (Return on Equity), ROA (Return on Assets), Net Profit Margin. Mengukur kemampuan manajemen menghasilkan laba dari modal yang ada.<br><br>
       <b>Kualitas Earnings:</b> EPS (Earnings Per Share) dan tren pertumbuhannya YoY/CAGR. EPS yang tumbuh konsisten = kualitas bisnis yang sehat.<br><br>
       <b>Kesehatan Neraca:</b> DER (Debt-to-Equity Ratio) dan Current Ratio. Mengukur beban utang vs kemampuan membayar kewajiban jangka pendek.
@@ -16905,20 +16905,20 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <div class="card-title">Mode Khusus Perbankan</div>
     <div class="card-body">
       Sistem otomatis mendeteksi apakah ticker adalah emiten perbankan. Jika ya, metrik berubah ke <b>rasio spesifik perbankan</b>:<br><br>
-      <span class="bp">NIM</span> Net Interest Margin — spread bunga bank. Makin tinggi makin baik.<br>
-      <span class="bp">NPL Gross & Net</span> Non-Performing Loan — kredit macet. &lt; 5% = sehat.<br>
-      <span class="bp">LDR</span> Loan-to-Deposit Ratio — agresivitas penyaluran kredit. 78–92% = ideal.<br>
-      <span class="bp">CAR</span> Capital Adequacy Ratio — ketebalan modal. &gt; 14% = sangat aman.<br>
+      <span class="bp">NIM</span> Net Interest Margin - spread bunga bank. Makin tinggi makin baik.<br>
+      <span class="bp">NPL Gross & Net</span> Non-Performing Loan - kredit macet. &lt; 5% = sehat.<br>
+      <span class="bp">LDR</span> Loan-to-Deposit Ratio - agresivitas penyaluran kredit. 78–92% = ideal.<br>
+      <span class="bp">CAR</span> Capital Adequacy Ratio - ketebalan modal. &gt; 14% = sangat aman.<br>
       <span class="bp">BOPO</span> Rasio efisiensi operasional. &lt; 80% = efisien.<br><br>
-      DER dan Current Ratio <b>tidak relevan untuk bank</b> — sistem tidak menggunakannya jika emiten terdeteksi sebagai bank.
+      DER dan Current Ratio <b>tidak relevan untuk bank</b> - sistem tidak menggunakannya jika emiten terdeteksi sebagai bank.
     </div>
   </div>
 
   <div class="card accent-g">
-    <div class="card-title">Prioritas Data — TTM 2026</div>
+    <div class="card-title">Prioritas Data - TTM 2026</div>
     <div class="card-body">
       Sistem selalu mengambil data <b>TTM (Trailing Twelve Months)</b> terbaru sebagai data utama. Data 2024–2025 digunakan hanya sebagai pembanding tren (YoY / CAGR), bukan sebagai angka primer.<br><br>
-      Jika AI menampilkan EPS atau ROE, angka tersebut adalah TTM terbaru yang tersedia dari multi-source API — bukan angka tahun lalu.
+      Jika AI menampilkan EPS atau ROE, angka tersebut adalah TTM terbaru yang tersedia dari multi-source API - bukan angka tahun lalu.
     </div>
   </div>
 
@@ -16931,18 +16931,18 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
     <span class="sec-icon">⚖️</span>
     <div>
       <div class="sec-title">AKURASI & BATAS SISTEM</div>
-      <div class="sec-desc">Transparansi penuh — apa yang SIGMA kerjakan dengan baik, dan di mana batasannya</div>
+      <div class="sec-desc">Transparansi penuh - apa yang SIGMA kerjakan dengan baik, dan di mana batasannya</div>
     </div>
   </div>
 
   <div class="card accent-g">
     <div class="card-title">Yang Dikerjakan Sistem dengan Baik</div>
     <div class="card-body">
-      <span class="bg">✅ Kuat</span> Deteksi volume anomali — spike ratio dan tipe (block vs ritel) berbasis data harga nyata dari bursa.<br><br>
-      <span class="bg">✅ Kuat</span> Pengecekan corporate action — sistem tidak akan salah analisa karena harga pre-split.<br><br>
-      <span class="bg">✅ Kuat</span> Multi-source fallback — jika 1 sumber data mati, sistem tetap jalan dengan sumber lain tanpa gangguan.<br><br>
-      <span class="bg">✅ Kuat</span> Transparansi risk level — AI diwajibkan menyebut HIGH/MID/LOW risk dengan alasan konkret, bukan label kosong.<br><br>
-      <span class="bg">✅ Kuat</span> Deteksi sektor perbankan — metrik otomatis berganti ke NIM/NPL/CAR/BOPO untuk emiten bank.
+      <span class="bg">✅ Kuat</span> Deteksi volume anomali - spike ratio dan tipe (block vs ritel) berbasis data harga nyata dari bursa.<br><br>
+      <span class="bg">✅ Kuat</span> Pengecekan corporate action - sistem tidak akan salah analisa karena harga pre-split.<br><br>
+      <span class="bg">✅ Kuat</span> Multi-source fallback - jika 1 sumber data mati, sistem tetap jalan dengan sumber lain tanpa gangguan.<br><br>
+      <span class="bg">✅ Kuat</span> Transparansi risk level - AI diwajibkan menyebut HIGH/MID/LOW risk dengan alasan konkret, bukan label kosong.<br><br>
+      <span class="bg">✅ Kuat</span> Deteksi sektor perbankan - metrik otomatis berganti ke NIM/NPL/CAR/BOPO untuk emiten bank.
     </div>
   </div>
 
@@ -16957,13 +16957,13 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
   </div>
 
   <div class="honesty">
-    ✅ <b>Komitmen Kejujuran SIGMA:</b> AI di-brief bahwa jika kondisi saham bearish kuat, trade plan tidak ditampilkan dan AI wajib menjelaskan kenapa dengan tegas — bukan memberikan false hope. SIGMA bukan robot yang selalu bilang "beli". Kadang jawaban yang paling berharga adalah "jangan beli sekarang".
+    ✅ <b>Komitmen Kejujuran SIGMA:</b> AI di-brief bahwa jika kondisi saham bearish kuat, trade plan tidak ditampilkan dan AI wajib menjelaskan kenapa dengan tegas - bukan memberikan false hope. SIGMA bukan robot yang selalu bilang "beli". Kadang jawaban yang paling berharga adalah "jangan beli sekarang".
   </div>
 
   <div class="div"></div>
 
   <div class="card accent-r">
-    <div class="card-title">⚠️ DYOR — Do Your Own Research</div>
+    <div class="card-title">⚠️ DYOR - Do Your Own Research</div>
     <div class="card-body">
       SIGMA adalah <b>alat bantu analisa</b>, bukan robot trading otomatis dan bukan rekomendasi investasi.<br><br>
       Output SIGMA sebaiknya dikombinasikan dengan:<br>
@@ -17234,27 +17234,27 @@ else:
 Instruksi Eksekusi (WAJIB diikuti semua poin):
 
 1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-  —Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
-  —Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
-  —Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
+  -Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
+  -Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
+  -Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
 
 2. KUALITAS LABA & UJI FORENSIK (Schilit):
-  —Bandingkan tren laba bersih vs arus kas operasi — apakah laba diback up cash?
-  —Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
-  —Red flag atau tanda manipulasi akuntansi?
+  -Bandingkan tren laba bersih vs arus kas operasi - apakah laba diback up cash?
+  -Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
+  -Red flag atau tanda manipulasi akuntansi?
 
 3. KATEGORISASI PROFIL & KATALIS (Lynch):
-  —Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-  —Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
+  -Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+  -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
 
 4. MARGIN OF SAFETY (Graham):
-  —Bandingkan harga saat ini dengan estimasi nilai intrinsik — berapa % Margin of Safety tersedia?
-  —Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
+  -Bandingkan harga saat ini dengan estimasi nilai intrinsik - berapa % Margin of Safety tersedia?
+  -Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
 
-5. SINTESIS — RISK/REWARD:
-  —Beri kesimpulan akhir berupa rasio Risk/Reward
-  —Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
-  —Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
+5. SINTESIS - RISK/REWARD:
+  -Beri kesimpulan akhir berupa rasio Risk/Reward
+  -Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
+  -Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
 
 Pertanyaan user: {prompt}
 
@@ -17511,7 +17511,7 @@ components.html("""
 
     function pasteHandler(e) {
         var doc = window.parent.document;
-        // Re-fetch fileInput fresh on every paste — Streamlit replaces DOM nodes after rerun
+        // Re-fetch fileInput fresh on every paste - Streamlit replaces DOM nodes after rerun
         var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
         if (!fileInput) return;
 
@@ -17553,7 +17553,7 @@ components.html("""
         if (!textarea) return;
 
         // Streamlit replaces the textarea DOM node on every rerun.
-        // Detect node change and rebind — do NOT rely on dataset flag.
+        // Detect node change and rebind - do NOT rely on dataset flag.
         if (textarea !== _boundTextarea) {
             if (_boundTextarea) {
                 _boundTextarea.removeEventListener('paste', pasteHandler);
@@ -17647,11 +17647,11 @@ components.html(f"""
                     }}
                 }}
             }}
-            // Method 4: innerHTML string check—stChatMessageAvatarUser in DOM
+            // Method 4: innerHTML string check-stChatMessageAvatarUser in DOM
             if (!isUser) {{
                 var html = el.innerHTML || '';
                 if (html.indexOf('AvatarUser') >= 0) isUser = true;
-                // If neither avatar found yet, can't determine—retry later
+                // If neither avatar found yet, can't determine-retry later
                 else if (html.indexOf('AvatarAssistant') < 0 && html.indexOf('AvatarUser') < 0) {{
                     return; // retry on next interval
                 }}
