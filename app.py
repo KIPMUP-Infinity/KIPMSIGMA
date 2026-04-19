@@ -2277,18 +2277,18 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap original
-        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk sidebar
-        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan
-        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
-        "border":       "#1a2f50" if dark else "#8a8aaa",       # Border lebih visible (sedikit lebih terang dari #132545)
-        "hover":        "#0d1c36" if dark else "#c4c4d8",       # Efek hover kebiruan
-        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat deep blue
-        "bubble":       "#1B2A4A",
+        "bg":           "#080b14" if dark else "#f0f0f0",       # Aurora void black
+        "sidebar_bg":   "#050810" if dark else "#e3e3e3",       # Deeper void for sidebar
+        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Slate white
+        "text_muted":   "#475569" if dark else "#6e6e80",       # Dark slate muted
+        "border":       "rgba(139,92,246,0.18)" if dark else "#8a8aaa",  # Violet border
+        "hover":        "rgba(109,40,217,0.12)" if dark else "#c4c4d8",  # Aurora hover
+        "input_bg":     "rgba(14,17,28,0.92)" if dark else "#ffffff",    # Glass input
+        "bubble":       "linear-gradient(135deg, rgba(109,40,217,0.6), rgba(14,165,233,0.4))",
         "bubble_text":  "#ffffff",
-        "divider":      "#1a2f50" if dark else "#8a8aaa",       # Garis pemisah sedikit lebih terang
-        "gold":         "#b89fff",                               # Ungu/violet lebih terang dari #a78bfa
-        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
+        "divider":      "rgba(139,92,246,0.15)" if dark else "#8a8aaa",
+        "gold":         "#a78bfa",                               # Aurora violet (was purple accent)
+        "active_bg":    "rgba(109,40,217,0.14)" if dark else "#c8c8c8",
     }
 
 # =========================================================
@@ -4036,20 +4036,90 @@ C = get_colors(st.session_state.theme)
 
 st.markdown(f"""
 <style>
+/* ══════════════════════════════════════════
+   SIGMA AI — AURORA DARK GLOBAL THEME
+   ══════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
 * {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
-.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
-section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
-section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
-section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
+
+/* ── App background — void black with subtle aurora ── */
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section,
+section[data-testid="stMain"], [data-testid="stMainBlockContainer"],
+[data-testid="stBottom"], [data-testid="stBottom"] > div {{
+    background: #080b14 !important;
+}}
+
+/* ── Sidebar — slightly lighter void ── */
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] > div > div,
+section[data-testid="stSidebar"] > div > div > div,
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarUserContent"],
+[data-testid="stSidebarUserContent"] > div,
+[data-testid="stSidebarUserContent"] > div > div {{
+    background: #050810 !important;
+    box-shadow: none !important;
+}}
+section[data-testid="stSidebar"] {{
+    border-right: 0.5px solid rgba(139,92,246,0.14) !important;
+}}
+section[data-testid="stSidebar"] > div,
+section[data-testid="stSidebar"] > div > div,
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarUserContent"],
+[data-testid="stSidebarUserContent"] > div {{
+    padding-top: 0 !important; margin-top: 0 !important;
+}}
 [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
-section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
-section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
+
+/* ── Sidebar buttons — aurora hover ── */
+section[data-testid="stSidebar"] .stButton > button {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #94a3b8 !important;
+    font-size: 0.875rem !important;
+    padding: 7px 12px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    min-height: 36px !important;
+    transition: all 0.18s ease !important;
+    border-left: 2px solid transparent !important;
+}}
+section[data-testid="stSidebar"] .stButton > button:hover {{
+    background: linear-gradient(135deg, rgba(109,40,217,0.14) 0%, rgba(14,165,233,0.1) 100%) !important;
+    border-left: 2px solid rgba(139,92,246,0.6) !important;
+    color: #a78bfa !important;
+}}
+section[data-testid="stSidebar"] .stButton > button p,
+section[data-testid="stSidebar"] .stButton > button span {{
+    margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important;
+}}
+
+/* ── Chat messages ── */
 [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
 [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
-[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 1.0rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{
+    font-size: 1.0rem !important;
+    line-height: 1.75 !important;
+    color: #e2e8f0 !important;
+    background: transparent !important;
+}}
 
-/* ── USER BUBBLE - Gemini style (applied via JS class injection) ── */
+/* ── AI assistant response — subtle aurora left border ── */
+[data-testid="stChatMessage"]:not(.sigma-user-msg) [data-testid="stMarkdownContainer"] {{
+    border-left: 1.5px solid rgba(139,92,246,0.2) !important;
+    padding-left: 14px !important;
+    margin-left: 2px !important;
+}}
+
+/* ── USER BUBBLE — Aurora glass style ── */
 .sigma-user-msg {{
     display: flex !important;
     justify-content: flex-end !important;
@@ -4061,35 +4131,101 @@ section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSi
     width: 100% !important;
 }}
 .sigma-user-msg [data-testid="stMarkdownContainer"] {{
-    background: {C['bubble']} !important;
-    color: {C['bubble_text']} !important;
+    background: linear-gradient(135deg, rgba(109,40,217,0.55), rgba(14,165,233,0.35)) !important;
+    border: 0.5px solid rgba(139,92,246,0.4) !important;
+    color: #ffffff !important;
     border-radius: 20px 20px 4px 20px !important;
     padding: 10px 16px !important;
     max-width: 75% !important;
     margin-left: auto !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 4px 16px rgba(109,40,217,0.2), 0 2px 8px rgba(0,0,0,0.4) !important;
     font-size: 0.9rem !important;
+    backdrop-filter: blur(8px) !important;
 }}
 .sigma-user-msg [data-testid="stMarkdownContainer"] p,
 .sigma-user-msg [data-testid="stMarkdownContainer"] span,
 .sigma-user-msg [data-testid="stMarkdownContainer"] li,
 .sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
-    color: {C['bubble_text']} !important;
+    color: #ffffff !important;
     font-size: 0.9rem !important;
 }}
-[data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
-[data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
-div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
-[data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.9rem !important; }}
-[data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
-[data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
-footer, #MainMenu {{ visibility: hidden !important; }}
-hr {{ border-color: {C['border']} !important; }}
-[data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.95rem !important; line-height: 1.8 !important; }}
-[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; }}
-[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; }}
-[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; }}
 
+/* ── Main content area ── */
+[data-testid="stMainBlockContainer"] {{
+    max-width: 760px !important;
+    margin: 0 auto !important;
+    padding: 0 24px 120px !important;
+    overflow-y: visible !important;
+}}
+[data-testid="stMainBlockContainer"] p,
+[data-testid="stMainBlockContainer"] li,
+[data-testid="stMainBlockContainer"] h1,
+[data-testid="stMainBlockContainer"] h2,
+[data-testid="stMainBlockContainer"] h3 {{
+    color: #e2e8f0 !important;
+}}
+
+/* ── Chat input — aurora glass ── */
+div[data-testid="stChatInputContainer"] {{
+    border: 0.5px solid rgba(139,92,246,0.25) !important;
+    background: rgba(14,17,28,0.92) !important;
+    border-radius: 16px !important;
+    backdrop-filter: blur(12px) !important;
+    box-shadow: 0 0 24px rgba(109,40,217,0.06) !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}}
+div[data-testid="stChatInputContainer"]:focus-within {{
+    border-color: rgba(139,92,246,0.55) !important;
+    box-shadow: 0 0 28px rgba(109,40,217,0.12), 0 0 0 1px rgba(139,92,246,0.15) !important;
+}}
+[data-testid="stChatInput"] textarea {{
+    background: rgba(14,17,28,0.92) !important;
+    color: #e2e8f0 !important;
+    font-size: 0.9rem !important;
+}}
+[data-testid="stChatInput"] textarea::placeholder {{
+    color: #475569 !important;
+}}
+[data-testid="stChatInputContainer"] textarea:focus {{
+    box-shadow: none !important;
+    outline: none !important;
+}}
+
+footer, #MainMenu {{ visibility: hidden !important; }}
+
+/* ── Dividers ── */
+hr {{
+    border: none !important;
+    border-top: 0.5px solid rgba(139,92,246,0.16) !important;
+}}
+
+/* ── Markdown typography ── */
+[data-testid="stMarkdownContainer"] *,
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] span,
+[data-testid="stMarkdownContainer"] div {{ font-size: 0.95rem !important; line-height: 1.8 !important; }}
+[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.3rem !important; color: #e2e8f0 !important; }}
+[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.15rem !important; color: #e2e8f0 !important; }}
+[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.05rem !important; color: #e2e8f0 !important; }}
+
+/* ── Code blocks — terminal mono ── */
+[data-testid="stMarkdownContainer"] code {{
+    background: rgba(139,92,246,0.1) !important;
+    border: 0.5px solid rgba(139,92,246,0.2) !important;
+    border-radius: 4px !important;
+    color: #a78bfa !important;
+    padding: 1px 5px !important;
+    font-family: 'IBM Plex Mono', monospace !important;
+}}
+[data-testid="stMarkdownContainer"] pre {{
+    background: rgba(14,17,28,0.9) !important;
+    border: 0.5px solid rgba(139,92,246,0.2) !important;
+    border-radius: 10px !important;
+    border-left: 2px solid rgba(139,92,246,0.5) !important;
+}}
+
+/* ── System selector cards responsive ── */
 @media (max-width:768px) {{
     .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
     .sys-header {{ margin-bottom: 24px; }}
@@ -4097,16 +4233,13 @@ hr {{ border-color: {C['border']} !important; }}
     .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
     .sys-subtitle {{ font-size: 0.75rem; }}
     .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
-    
     .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
     .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
-    
     .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
     .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
     .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
     .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
     .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
-    
     .card-features {{ margin-bottom: 20px; }}
     .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
     .card-cta {{ padding: 12px; font-size: 0.85rem; }}
@@ -17493,13 +17626,13 @@ var kipmStyle = pd.getElementById('kipm-mobile-logo-style'); if (kipmStyle) kipm
 ['spbtn','spmenu','sphist','spui','sigma-mobile-css'].forEach(function(id){{ var el=pd.getElementById(id); if(el) el.remove(); }});
 var s=pd.createElement('style'); s.id='sigma-mobile-css';
 s.textContent=`
-#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:{C["sidebar_bg"]};color:{C["text"]};border:1px solid {C["border"]}; cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 20px rgba(0,0,0,0.5);padding:0;transition:transform 0.2s, background 0.2s;}} 
-#spbtn:hover{{transform:scale(1.08); background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(59,130,246,0.18));}}
-#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:{C["sidebar_bg"]};border:1px solid {C["border"]}; border-radius:16px;box-shadow:0 -4px 24px rgba(0,0,0,0.5); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
+#spbtn{{position:fixed;bottom:20px;left:20px;width:50px;height:50px;border-radius:50%; background:#050810;color:#e2e8f0;border:0.5px solid rgba(139,92,246,0.25); cursor:pointer;z-index:999999; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 24px rgba(0,0,0,0.7),0 0 16px rgba(139,92,246,0.08);padding:0;transition:transform 0.2s, background 0.2s;}} 
+#spbtn:hover{{transform:scale(1.08); background:linear-gradient(135deg,rgba(109,40,217,0.2),rgba(14,165,233,0.15));box-shadow:0 6px 24px rgba(109,40,217,0.2);}}
+#spmenu,#sphist{{position:fixed;left:20px;bottom:85px; background:#050810;border:0.5px solid rgba(139,92,246,0.2); border-radius:16px;box-shadow:0 -4px 32px rgba(0,0,0,0.7),0 0 0 0.5px rgba(139,92,246,0.1); z-index:999998;display:none;overflow:hidden;min-width:260px;}} 
 #sphist{{max-height:55vh;overflow-y:auto;}}
-.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:{C["text"]};cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.16),rgba(59,130,246,0.14));border-left:2px solid rgba(124,58,237,0.55);color:#a78bfa;}}
-.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:{C["hover"]};flex-shrink:0;}}
-.smsp{{border:none;border-top:1px solid {C["border"]};margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:{C["text_muted"]}; font-weight:600;letter-spacing:1px;}} .smred{{color:#f55!important}}
+.smi{{display:flex;align-items:center;gap:14px;padding:13px 18px;font-size:1rem;color:#94a3b8;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;text-decoration:none;transition:all 0.18s ease;border-left:2px solid transparent;}} .smi:hover{{background:linear-gradient(135deg,rgba(109,40,217,0.14),rgba(14,165,233,0.1));border-left:2px solid rgba(139,92,246,0.55);color:#a78bfa;}}
+.smico{{width:32px;height:32px;border-radius:8px;display:flex; align-items:center;justify-content:center;font-size:16px; background:rgba(139,92,246,0.08);flex-shrink:0;}}
+.smsp{{border:none;border-top:0.5px solid rgba(139,92,246,0.14);margin:4px 0;}} .smhd{{padding:8px 18px 4px;font-size:0.68rem;color:#475569; font-weight:600;letter-spacing:1px;}} .smred{{color:#f87171!important}}
 `; pd.head.appendChild(s);
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
@@ -17607,8 +17740,9 @@ _bubble_css = """
     width: 100% !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] {
-    background: """ + C['bubble'] + """ !important;
-    color: """ + C['bubble_text'] + """ !important;
+    background: linear-gradient(135deg, rgba(109,40,217,0.58), rgba(14,165,233,0.38)) !important;
+    border: 0.5px solid rgba(139,92,246,0.4) !important;
+    color: #ffffff !important;
     border-radius: 20px 20px 4px 20px !important;
     padding: 10px 16px !important;
     max-width: 75% !important;
@@ -17616,16 +17750,17 @@ _bubble_css = """
     min-width: 0 !important;
     margin-left: auto !important;
     margin-right: 0 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    box-shadow: 0 4px 16px rgba(109,40,217,0.22), 0 2px 8px rgba(0,0,0,0.4) !important;
     font-size: 0.9rem !important;
     text-align: left !important;
     display: inline-block !important;
+    backdrop-filter: blur(8px) !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] p,
 .sigma-user-msg [data-testid="stMarkdownContainer"] span,
 .sigma-user-msg [data-testid="stMarkdownContainer"] li,
 .sigma-user-msg [data-testid="stMarkdownContainer"] strong {
-    color: """ + C['bubble_text'] + """ !important;
+    color: #ffffff !important;
     font-size: 0.9rem !important;
     text-align: left !important;
 }
@@ -17693,7 +17828,7 @@ components.html(f"""
 </script>
 """, height=0)
 
-sig_color = C.get("text", "#ffffff")
+sig_color = "#a78bfa"
 js_code = """
 <script>
 (function() {
@@ -17704,7 +17839,7 @@ js_code = """
     brand.id = 'sigma-desktop-brand';
     
     brand.innerHTML = 'SIGMA';
-    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
+    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 1.25rem; background: linear-gradient(135deg, #a78bfa, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: 0.2px; user-select: none; cursor: default;';
     
     var style = pd.createElement('style');
     style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
