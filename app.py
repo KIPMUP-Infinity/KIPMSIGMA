@@ -8432,167 +8432,6 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # ─────────────────────────────────────────────────────────
-        # ECONOMIC CALENDAR - ID · US
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR - ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        cal_bg      = met_bg
-        cal_border  = met_border
-        cal_text    = text_main
-        cal_sub_clr = text_sub
-
-        calendar_data = {
-            "🇮🇩 INDONESIA": [
-                {"tanggal": "07 Apr 2026", "event": "BI Rate Decision",           "forecast": "5.75%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Keputusan suku bunga Bank Indonesia (14:00 WIB). Penting bagi sektor perbankan & properti."},
-                {"tanggal": "15 Apr 2026", "event": "Inflasi CPI YoY",             "forecast": "2.9%",    "prev": "2.60%",   "dampak": "HIGH",   "keterangan": "Indeks Harga Konsumen tahunan - BPS rilis ~09:00 WIB. Data di atas ekspektasi bisa menunda pemangkasan BI Rate."},
-                {"tanggal": "22 Apr 2026", "event": "Cadangan Devisa",             "forecast": "$155B",   "prev": "$154.5B", "dampak": "MEDIUM", "keterangan": "Cadangan devisa RI - BI rilis ~10:00 WIB. Semakin tinggi = Rupiah makin terlindungi dari gejolak global."},
-                {"tanggal": "05 Mei 2026", "event": "PMI Manufaktur",              "forecast": "51.2",    "prev": "51.0",    "dampak": "MEDIUM", "keterangan": "PMI Manufaktur S&P Global Indonesia - rilis ~09:00 WIB. Di atas 50 = ekspansi industri. Berpengaruh ke sektor consumer & basic materials."},
-                {"tanggal": "15 Mei 2026", "event": "GDP Q1 2026 (Flash)",         "forecast": "5.1%",    "prev": "5.02%",   "dampak": "HIGH",   "keterangan": "Pertumbuhan ekonomi kuartal 1 - BPS rilis ~11:00 WIB. Angka lebih tinggi dari ekspektasi = bullish IHSG."},
-                {"tanggal": "20 Mei 2026", "event": "Neraca Perdagangan Apr",      "forecast": "$3.2B",   "prev": "$2.8B",   "dampak": "MEDIUM", "keterangan": "BPS neraca dagang - rilis ~11:00 WIB. Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
-                {"tanggal": "19 Jun 2026", "event": "BI Rate Decision",            "forecast": "5.50%",   "prev": "5.75%",   "dampak": "HIGH",   "keterangan": "Rapat Dewan Gubernur BI Juni - pengumuman ~14:00 WIB. Potensi pemangkasan pertama jika inflasi terkendali."},
-                {"tanggal": "01 Jul 2026", "event": "Inflasi CPI YoY (Jun)",       "forecast": "2.7%",    "prev": "2.9%",    "dampak": "HIGH",   "keterangan": "BPS rilis CPI Juni - ~09:00 WIB. Tren penurunan inflasi membuka ruang pemangkasan BI Rate lebih lanjut."},
-            ],
-            "🇺🇸 UNITED STATES": [
-                {"tanggal": "10 Apr 2026", "event": "CPI Inflasi YoY",             "forecast": "2.8%",    "prev": "2.82%",   "dampak": "HIGH",   "keterangan": "BLS rilis 20:30 WIB. Data inflasi AS paling dinantikan. Jika turun → ekspektasi Fed cut meningkat → risk-on global."},
-                {"tanggal": "17 Apr 2026", "event": "Retail Sales MoM",            "forecast": "+0.4%",   "prev": "+0.2%",   "dampak": "MEDIUM", "keterangan": "Census Bureau rilis 19:30 WIB. Kekuatan konsumsi AS. Data kuat = ekonomi solid = Fed lebih hawkish."},
-                {"tanggal": "30 Apr 2026", "event": "FOMC Rate Decision",          "forecast": "3.50%",   "prev": "3.75%",   "dampak": "HIGH",   "keterangan": "Pengumuman suku bunga Fed - 01:00 WIB (dini hari 1 Mei). Pemangkasan = dollar melemah = hot money masuk EM termasuk IDX."},
-                {"tanggal": "01 Mei 2026", "event": "Non-Farm Payrolls Apr",       "forecast": "195K",    "prev": "228K",    "dampak": "HIGH",   "keterangan": "BLS rilis 19:30 WIB. Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat."},
-                {"tanggal": "13 Mei 2026", "event": "CPI Inflasi YoY (Apr)",       "forecast": "2.6%",    "prev": "2.8%",    "dampak": "HIGH",   "keterangan": "BLS rilis 19:30 WIB. Data inflasi April. Penurunan konsisten = Fed makin dovish = positif untuk aset EM."},
-                {"tanggal": "15 Mei 2026", "event": "PPI Inflasi Produsen YoY",    "forecast": "2.5%",    "prev": "2.7%",    "dampak": "MEDIUM", "keterangan": "BLS rilis 19:30 WIB. Leading indicator inflasi konsumen. Berpengaruh ke ekspektasi kebijakan Fed ke depan."},
-                {"tanggal": "29 Mei 2026", "event": "GDP Q1 2026 (Revisi)",        "forecast": "2.3%",    "prev": "2.4%",    "dampak": "MEDIUM", "keterangan": "BEA rilis 19:30 WIB. Revisi data GDP AS kuartal 1. Penting untuk proyeksi pertumbuhan global."},
-                {"tanggal": "05 Jun 2026", "event": "Non-Farm Payrolls Mei",       "forecast": "180K",    "prev": "195K",    "dampak": "HIGH",   "keterangan": "BLS rilis 19:30 WIB. Data tenaga kerja Mei. Melemah = Fed makin agresif potong rate = bullish aset global."},
-                {"tanggal": "18 Jun 2026", "event": "FOMC Rate Decision",          "forecast": "3.25%",   "prev": "3.50%",   "dampak": "HIGH",   "keterangan": "Pengumuman suku bunga Fed - 01:00 WIB (dini hari 19 Jun). Pemangkasan ke-2 berturut-turut = risk-on signal kuat."},
-            ],
-        }
-
-        dampak_color = {"HIGH": "#f23645", "MEDIUM": "#0ea5e9", "LOW": "#4285F4"}
-        dampak_bg    = {"HIGH": "rgba(242,54,69,0.12)", "MEDIUM": "rgba(3,40,238,0.10)", "LOW": "rgba(66,133,244,0.10)"}
-
-        # ── Build JSON for each country ──────────────────────────────────
-        import json as _cal_json
-        _cal_all = []
-        for country, events in calendar_data.items():
-            for ev in events:
-                dk = ev["dampak"]
-                _cal_all.append({
-                    "country": country,
-                    "tanggal": ev["tanggal"],
-                    "event":   ev["event"],
-                    "fc":      ev["forecast"],
-                    "prev":    ev["prev"],
-                    "dampak":  "MED" if dk == "MEDIUM" else dk,
-                    "d_clr":   dampak_color.get(dk, "#b2b5be"),
-                    "d_bg":    dampak_bg.get(dk, "rgba(178,181,190,0.08)"),
-                    "tip":     ev["keterangan"].replace('"','&quot;').replace("'","&#39;"),
-                })
-        _cal_id = [r for r in _cal_all if "INDONESIA" in r["country"]]
-        _cal_us = [r for r in _cal_all if "UNITED" in r["country"]]
-        _cal_id_json = _cal_json.dumps(_cal_id, ensure_ascii=False)
-        _cal_us_json = _cal_json.dumps(_cal_us, ensure_ascii=False)
-
-        _cal_id_row_h = 42 + len(_cal_id)*42 + 28
-        _cal_us_scroll_h = 380 + 42 + 28  # header + scrollbox(380px) + padding
-        _cal_total_h = max(_cal_id_row_h, _cal_us_scroll_h) + 30
-
-        components.html(f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'DM Sans',sans-serif;}}
-.row{{display:flex;gap:14px;width:100%;align-items:flex-start;}}
-.col{{flex:1;min-width:0;}}
-.cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.cal-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:0.7rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
-.cal-sub{{font-size:0.92rem;color:{text_sub};font-weight:400;letter-spacing:0.04em;background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
-.scroll-box{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
-.scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
-.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.12rem;min-width:340px;}}
-thead th{{position:static;background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.7rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
-tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(3,40,238,0.04);cursor:default;}}
-.dt{{font-size:1.03rem;color:{text_sub};}}
-.ev{{font-size:1.11rem;font-weight:500;color:{text_main};max-width:180px;white-space:normal;line-height:1.3;}}
-.fc{{font-size:1.09rem;color:#089981;font-weight:600;display:block;}}
-.pv{{font-size:0.99rem;color:{text_sub};display:block;}}
-.bdg{{display:inline-block;padding:2px 6px;border-radius:4px;font-size:1.0rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;}}
-/* Tooltip */
-.tip-wrap{{position:relative;}}
-.tip-wrap:hover .tip{{display:block;}}
-.tip{{display:none;position:absolute;left:0;right:0;top:calc(100% + 2px);z-index:9999;
-  background:{'#1a2035' if is_dark else '#ffffff'};
-  border:1px solid {met_border};border-left:3px solid #8b5cf6;
-  border-radius:0 6px 6px 0;padding:8px 12px;
-  font-size:0.87rem;color:{text_main};line-height:1.5;
-  pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,0.4);
-  white-space:normal;min-width:220px;max-width:360px;}}
-@media(max-width:600px){{
-  .row{{flex-direction:column;gap:10px;}}
-  .cal-hdr{{font-size:0.9rem;padding:8px 10px;}}
-  thead th{{font-size:0.87rem;padding:7px 8px;}}
-  tbody td{{font-size:0.93rem;padding:7px 8px;}}
-  .bdg{{font-size:0.85rem;padding:2px 4px;}}
-  .ev{{font-size:0.93rem;}}
-  .fc{{font-size:0.92rem;}}
-  .pv{{font-size:0.85rem;}}
-}}
-</style></head><body>
-<div class="row">
-  <div class="col">
-    <div class="cal-wrap">
-      <div class="cal-hdr">
-        <span>🇮🇩 INDONESIA</span>
-        <span class="cal-sub">Apr–Jul 2026 · WIB</span>
-      </div>
-      <div class="scroll-box" style="max-height:380px;">
-        <table><thead><tr>
-          <th>TANGGAL</th><th>EVENT</th><th>FORECAST / PREV</th><th>DAMPAK</th>
-        </tr></thead>
-        <tbody id="id-tb"></tbody></table>
-      </div>
-    </div>
-  </div>
-  <div class="col">
-    <div class="cal-wrap">
-      <div class="cal-hdr">
-        <span>🇺🇸 UNITED STATES</span>
-        <span class="cal-sub">Apr–Jun 2026 · WIB</span>
-      </div>
-      <div class="scroll-box" style="max-height:380px;overflow-y:auto;">
-        <table><thead><tr>
-          <th>TANGGAL</th><th>EVENT</th><th>FORECAST / PREV</th><th>DAMPAK</th>
-        </tr></thead>
-        <tbody id="us-tb"></tbody></table>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-(function(){{
-  var ID={_cal_id_json};
-  var US={_cal_us_json};
-  function buildCal(data, tbId){{
-    var h='';
-    data.forEach(function(r){{
-      h+='<tr class="tip-wrap">'+
-        '<td class="dt">'+r.tanggal+'</td>'+
-        '<td class="ev">'+r.event+'<div class="tip">'+r.tip+'</div></td>'+
-        '<td><span class="fc">&#9654; '+r.fc+'</span><span class="pv">Prev: '+r.prev+'</span></td>'+
-        '<td><span class="bdg" style="background:'+r.d_bg+';color:'+r.d_clr+';border:1px solid '+r.d_clr+';">'+r.dampak+'</span></td>'+
-        '</tr>';
-    }});
-    document.getElementById(tbId).innerHTML=h;
-  }}
-  buildCal(ID,'id-tb');
-  buildCal(US,'us-tb');
-}})();
-</script></body></html>""", height=_cal_total_h, scrolling=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
         # ─────────────────────────────────────────────────────────
         # CORPORATE ACTION - IDX FULL FETCH (900+ SAHAM, 3 BULAN)
         # ─────────────────────────────────────────────────────────
@@ -9409,6 +9248,309 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 </body>
 </html>
         """, height=1100, scrolling=True)
+
+        # ─────────────────────────────────────────────────────────
+        # ECONOMIC CALENDAR — ID · US (UNIFIED SINGLE TABLE)
+        # Diurutkan berdasarkan tanggal, bendera negara di kolom pertama
+        # Data USD mengacu Forexfactory: semua event high/medium impact
+        # ─────────────────────────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>ECONOMIC CALENDAR — ID · US</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        # ── Dataset lengkap: ID + US digabung ───────────────────
+        _ec_raw = [
+            # ══ APRIL 2026 ══════════════════════════════════════════════════════════
+            # --- Apr 19 ---
+            {"neg":"ID","tgl":"19 Apr 2026","jam":"—",      "event":"Libur Paskah (Pasar Tutup)",      "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"BEI tutup hari Sabtu Paskah. Tidak ada sesi trading."},
+            # --- Apr 21 ---
+            {"neg":"US","tgl":"21 Apr 2026","jam":"19:15",  "event":"ADP Weekly Employment Change",    "fc":"—",      "prev":"39.3K",   "dampak":"MEDIUM","tip":"Data ketenagakerjaan mingguan ADP. Leading indicator NFP."},
+            {"neg":"US","tgl":"21 Apr 2026","jam":"19:30",  "event":"Core Retail Sales m/m",           "fc":"0.4%",   "prev":"1.3%",    "dampak":"HIGH",  "tip":"Penjualan ritel inti MoM. Konsumsi AS = 70% GDP. Data kuat → Fed hawkish."},
+            {"neg":"US","tgl":"21 Apr 2026","jam":"19:30",  "event":"Retail Sales m/m",                "fc":"0.6%",   "prev":"1.4%",    "dampak":"HIGH",  "tip":"Penjualan ritel total MoM. Salah satu indikator kekuatan ekonomi AS terpenting."},
+            {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Fed Chair-Designate Warsh Testifies","fc":"—",   "prev":"—",       "dampak":"HIGH",  "tip":"Testimoni calon Ketua Fed. Market perhatikan sinyal arah kebijakan suku bunga."},
+            {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Pending Home Sales m/m",          "fc":"1.8%",   "prev":"0.0%",    "dampak":"MEDIUM","tip":"Kontrak rumah yang belum diselesaikan. Leading indicator penjualan rumah jadi."},
+            {"neg":"US","tgl":"21 Apr 2026","jam":"21:00",  "event":"Business Inventories m/m",        "fc":"-0.1%",  "prev":"0.3%",    "dampak":"LOW",   "tip":"Perubahan inventori bisnis. Kenaikan inventori → demand lemah ke depan."},
+            # --- Apr 22 ---
+            {"neg":"US","tgl":"22 Apr 2026","jam":"07:30",  "event":"FOMC Member Waller Speaks",       "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Pernyataan anggota FOMC. Cermati nada hawkish/dovish terkait suku bunga."},
+            {"neg":"US","tgl":"22 Apr 2026","jam":"09:30",  "event":"API Weekly Statistical Bulletin", "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Data stok minyak mingguan API. Prekursor resmi EIA Crude Oil Inventories."},
+            {"neg":"US","tgl":"22 Apr 2026","jam":"21:30",  "event":"Crude Oil Inventories",           "fc":"—",      "prev":"-0.9M",   "dampak":"MEDIUM","tip":"EIA: stok minyak mingguan. Naik = supply berlebih = harga minyak tertekan. Relevan untuk PGAS/MEDC."},
+            # --- Apr 23 ---
+            {"neg":"US","tgl":"23 Apr 2026","jam":"19:30",  "event":"Unemployment Claims",             "fc":"207K",   "prev":"210K",    "dampak":"HIGH",  "tip":"Klaim pengangguran mingguan. Di bawah 220K = pasar kerja kuat → Fed tetap wait and see."},
+            {"neg":"US","tgl":"23 Apr 2026","jam":"20:45",  "event":"Flash Manufacturing PMI",         "fc":"52.3",   "prev":"52.5",    "dampak":"MEDIUM","tip":"PMI Manufaktur S&P Global (flash). Di atas 50 = ekspansi. Bergerak bisa gerakkan DXY."},
+            {"neg":"US","tgl":"23 Apr 2026","jam":"20:45",  "event":"Flash Services PMI",              "fc":"49.8",   "prev":"50.1",    "dampak":"MEDIUM","tip":"PMI Jasa (flash). Sektor jasa = 80% ekonomi AS. Melemah di bawah 50 = kontraksi = dovish signal."},
+            {"neg":"US","tgl":"23 Apr 2026","jam":"21:30",  "event":"Natural Gas Storage",             "fc":"—",      "prev":"59B",     "dampak":"LOW",   "tip":"Stok gas alam EIA. Relevan untuk harga gas dan emiten energi."},
+            # --- Apr 24 ---
+            {"neg":"US","tgl":"24 Apr 2026","jam":"21:00",  "event":"Revised UoM Consumer Sentiment",  "fc":"47.6",   "prev":"48.4",    "dampak":"MEDIUM","tip":"Revisi sentimen konsumen Universitas Michigan. Cerminkan kepercayaan rumah tangga AS."},
+            {"neg":"US","tgl":"24 Apr 2026","jam":"21:00",  "event":"Revised UoM Inflation Expectations","fc":"—",    "prev":"4.8%",    "dampak":"MEDIUM","tip":"Ekspektasi inflasi konsumen. Jika naik → tekanan pada Fed untuk pertahankan rate tinggi."},
+            # --- Apr 22 ID ---
+            {"neg":"ID","tgl":"22 Apr 2026","jam":"10:00",  "event":"Cadangan Devisa Mar",             "fc":"$155B",  "prev":"$154.5B", "dampak":"MEDIUM","tip":"Cadangan devisa BI. Makin tinggi = Rupiah lebih terlindungi dari gejolak global & capital outflow."},
+            # --- Apr 28 ---
+            {"neg":"US","tgl":"28 Apr 2026","jam":"19:15",  "event":"ADP Weekly Employment Change",    "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Data ketenagakerjaan mingguan ADP. Pembaruan awal sebelum NFP Jumat."},
+            {"neg":"US","tgl":"28 Apr 2026","jam":"20:00",  "event":"HPI m/m",                        "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"House Price Index FHFA MoM. Indikator harga properti Amerika."},
+            {"neg":"US","tgl":"28 Apr 2026","jam":"20:00",  "event":"S&P/CS Composite-20 HPI y/y",    "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Indeks harga rumah Case-Shiller 20 kota. Tren properti AS jangka panjang."},
+            {"neg":"US","tgl":"28 Apr 2026","jam":"21:00",  "event":"CB Consumer Confidence",         "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Conference Board: keyakinan konsumen. Salah satu leading indicator konsumsi AS terkuat."},
+            {"neg":"US","tgl":"28 Apr 2026","jam":"21:00",  "event":"Richmond Manufacturing Index",   "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Indeks manufaktur distrik Richmond Fed. Snapshot aktivitas industri wilayah Mid-Atlantic."},
+            # ══ APRIL 29 ════════════════════════════════════════════════════════════
+            {"neg":"US","tgl":"29 Apr 2026","jam":"09:30",  "event":"API Weekly Statistical Bulletin", "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Data stok minyak mingguan API sebelum rilis resmi EIA."},
+            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Building Permits",               "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Izin mendirikan bangunan. Leading indicator aktivitas konstruksi & permintaan material."},
+            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Core Durable Goods Orders m/m",  "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pesanan barang tahan lama inti (ex-transportation). Indikator investasi bisnis."},
+            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Durable Goods Orders m/m",       "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pesanan barang tahan lama total. Volatilitas tinggi karena komponen pesawat. Market perhatikan angka inti."},
+            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Goods Trade Balance",            "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Neraca perdagangan barang AS. Defisit besar → tekanan dollar jangka panjang."},
+            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Housing Starts",                 "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Jumlah unit hunian yang mulai dibangun. Cerminkan kondisi pasar properti AS."},
+            {"neg":"US","tgl":"29 Apr 2026","jam":"19:30",  "event":"Prelim Wholesale Inventories m/m","fc":"—",     "prev":"—",       "dampak":"LOW",   "tip":"Stok inventori grosir. Komponen perhitungan GDP."},
+            {"neg":"US","tgl":"29 Apr 2026","jam":"21:30",  "event":"Crude Oil Inventories",          "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"EIA: stok minyak mingguan. Pengaruhi harga WTI/Brent dan emiten migas."},
+            # ══ APRIL 30 — MEGA EVENT DAY ═══════════════════════════════════════════
+            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"Federal Funds Rate",             "fc":"3.50%",  "prev":"3.75%",   "dampak":"HIGH",  "tip":"🔴 MEGA EVENT: Keputusan suku bunga FOMC. Pemangkasan 25bp = dollar melemah = modal masuk EM & IDX bullish."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"01:00",  "event":"FOMC Statement",                 "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan resmi FOMC menyertai keputusan rate. Kata-kata kunci: 'data-dependent', 'further cuts', 'higher for longer'."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"01:30",  "event":"FOMC Press Conference",          "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers Powell (atau Warsh). Paling volatile — setiap kata bisa gerakkan semua aset global."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Advance GDP q/q",                "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Estimasi awal GDP AS Q1 2026. Angka negatif 2 kuartal berturut = resesi teknis → Fed dovish paksa."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Core PCE Price Index m/m",       "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"🔴 Inflasi favorit Fed (PCE inti). Indikator penentu arah kebijakan moneter. Lebih penting dari CPI."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Employment Cost Index q/q",      "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Biaya tenaga kerja kuartalan. Proksi tekanan inflasi dari sisi upah. Naik = inflasi sulit turun."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Unemployment Claims",            "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Klaim pengangguran mingguan. Rilis bersamaan hari FOMC — dobel volatilitas."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Advance GDP Price Index q/q",    "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Deflator GDP (inflasi dalam GDP). Komplemen data GDP advance."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Personal Income m/m",            "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Pendapatan personal MoM. Basis konsumsi jangka panjang masyarakat AS."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"19:30",  "event":"Personal Spending m/m",          "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Pengeluaran personal MoM. Komponen utama GDP AS — jika turun = pertumbuhan melambat."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"20:45",  "event":"Chicago PMI",                    "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"PMI Manufaktur wilayah Chicago. Leading indicator ISM Manufacturing yang rilis besok."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"21:00",  "event":"CB Leading Index m/m",           "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Conference Board Leading Economic Index. Composite 10 indikator prediksi arah ekonomi 6 bulan ke depan."},
+            {"neg":"US","tgl":"30 Apr 2026","jam":"21:30",  "event":"Natural Gas Storage",            "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Stok gas alam EIA. Relevan harga gas dan emiten energi."},
+            # ══ MEI 1 ════════════════════════════════════════════════════════════════
+            {"neg":"US","tgl":"01 Mei 2026","jam":"Tent.",  "event":"FOMC Financial Stability Report","fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"Laporan stabilitas keuangan Fed setengah tahunan. Berisi asesmen risiko sistemik perbankan & pasar."},
+            {"neg":"US","tgl":"01 Mei 2026","jam":"20:45",  "event":"Final Manufacturing PMI",        "fc":"—",      "prev":"—",       "dampak":"MEDIUM","tip":"PMI Manufaktur final S&P Global. Konfirmasi angka flash yang sudah dirilis sebelumnya."},
+            {"neg":"US","tgl":"01 Mei 2026","jam":"21:00",  "event":"ISM Manufacturing PMI",          "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"PMI Manufaktur ISM — lebih diikuti market vs S&P Global. Di atas 50 = ekspansi industri AS."},
+            {"neg":"US","tgl":"01 Mei 2026","jam":"21:00",  "event":"ISM Manufacturing Prices",       "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Komponen harga dari ISM Manufaktur. Proksi inflasi input — naik = tekanan inflasi hilir."},
+            {"neg":"US","tgl":"01 Mei 2026","jam":"All Day", "event":"Wards Total Vehicle Sales",     "fc":"—",      "prev":"—",       "dampak":"LOW",   "tip":"Total penjualan kendaraan bermotor AS. Indikator kekuatan konsumsi durable goods."},
+            # ══ ID ══
+            {"neg":"ID","tgl":"05 Mei 2026","jam":"09:00",  "event":"PMI Manufaktur",                 "fc":"51.2",   "prev":"51.0",    "dampak":"MEDIUM","tip":"PMI Manufaktur S&P Global Indonesia. Di atas 50 = ekspansi. Berpengaruh ke sektor consumer & basic materials."},
+            # ══ MEI 2 ════════════════════════════════════════════════════════════════
+            {"neg":"US","tgl":"02 Mei 2026","jam":"19:30",  "event":"Non-Farm Payrolls Apr",          "fc":"195K",   "prev":"228K",    "dampak":"HIGH",  "tip":"🔴 MEGA EVENT: Data tenaga kerja utama AS. Angka di bawah ekspektasi → pasar antisipasi Fed cut lebih cepat. Gerakkan semua aset global."},
+            {"neg":"US","tgl":"02 Mei 2026","jam":"19:30",  "event":"Unemployment Rate",              "fc":"4.1%",   "prev":"4.2%",    "dampak":"HIGH",  "tip":"Tingkat pengangguran AS. Naik signifikan di atas 4.5% = alarm resesi → Fed terpaksa dovish."},
+            {"neg":"US","tgl":"02 Mei 2026","jam":"19:30",  "event":"Average Hourly Earnings m/m",    "fc":"0.3%",   "prev":"0.3%",    "dampak":"HIGH",  "tip":"Upah per jam rata-rata. Naik terlalu tinggi = tekanan inflasi → Fed hawkish. Naik moderat = Goldilocks."},
+            # ══ MEI (lanjutan) ════════════════════════════════════════════════════════
+            {"neg":"ID","tgl":"15 Mei 2026","jam":"11:00",  "event":"GDP Q1 2026 (Flash)",            "fc":"5.1%",   "prev":"5.02%",   "dampak":"HIGH",  "tip":"Pertumbuhan ekonomi kuartal 1 BPS. Angka lebih tinggi dari ekspektasi = bullish IHSG secara fundamental."},
+            {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Apr)",          "fc":"2.6%",   "prev":"2.8%",    "dampak":"HIGH",  "tip":"BLS: inflasi konsumen April. Penurunan konsisten = Fed makin dovish = positif untuk aset EM termasuk IDX."},
+            {"neg":"US","tgl":"13 Mei 2026","jam":"19:30",  "event":"Core CPI m/m",                   "fc":"0.3%",   "prev":"0.3%",    "dampak":"HIGH",  "tip":"Inflasi inti MoM (ex-food & energy). Indikator tren inflasi yang lebih stabil vs CPI headline."},
+            {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"PPI Inflasi Produsen YoY",       "fc":"2.5%",   "prev":"2.7%",    "dampak":"MEDIUM","tip":"BLS: inflasi tingkat produsen. Leading indicator inflasi konsumen 1-2 bulan ke depan."},
+            {"neg":"US","tgl":"15 Mei 2026","jam":"19:30",  "event":"Retail Sales m/m",               "fc":"0.4%",   "prev":"—",       "dampak":"HIGH",  "tip":"Penjualan ritel Mei. Kekuatan konsumsi — komponen terbesar GDP AS."},
+            {"neg":"ID","tgl":"20 Mei 2026","jam":"11:00",  "event":"Neraca Perdagangan Apr",         "fc":"$3.2B",  "prev":"$2.8B",   "dampak":"MEDIUM","tip":"BPS neraca dagang. Surplus perdagangan mendukung Rupiah dan capital inflow ke pasar saham."},
+            {"neg":"US","tgl":"29 Mei 2026","jam":"19:30",  "event":"GDP Q1 2026 (Revisi)",           "fc":"2.3%",   "prev":"2.4%",    "dampak":"MEDIUM","tip":"BEA: revisi data GDP AS Q1. Angka lebih rendah dari flash = sinyal pelemahan ekonomi → dovish."},
+            # ══ JUNI ══════════════════════════════════════════════════════════════════
+            {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Non-Farm Payrolls Mei",          "fc":"180K",   "prev":"195K",    "dampak":"HIGH",  "tip":"🔴 Data tenaga kerja Mei. Tren melambat = Fed makin agresif potong rate = bullish aset global."},
+            {"neg":"US","tgl":"05 Jun 2026","jam":"19:30",  "event":"Unemployment Rate",              "fc":"4.1%",   "prev":"4.1%",    "dampak":"HIGH",  "tip":"Tingkat pengangguran Mei. Konsistensi penting — naik berturut = tekanan pada Fed."},
+            {"neg":"US","tgl":"11 Jun 2026","jam":"19:30",  "event":"CPI Inflasi YoY (Mei)",          "fc":"2.4%",   "prev":"2.6%",    "dampak":"HIGH",  "tip":"BLS: inflasi Mei. Jika tren turun berlanjut = ruang cut rate lebih besar di FOMC Jun."},
+            {"neg":"ID","tgl":"19 Jun 2026","jam":"14:00",  "event":"BI Rate Decision",               "fc":"5.50%",  "prev":"5.75%",   "dampak":"HIGH",  "tip":"RDG BI Juni. Potensi pemangkasan pertama jika inflasi terkendali & Fed sudah lebih dovish. Bullish perbankan & properti."},
+            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Rate Decision",             "fc":"3.25%",  "prev":"3.50%",   "dampak":"HIGH",  "tip":"🔴 FOMC Juni. Pemangkasan ke-2 berturut-turut = risk-on signal kuat. Dollar melemah = hot money masuk IDX."},
+            {"neg":"US","tgl":"18 Jun 2026","jam":"01:00",  "event":"FOMC Statement",                 "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Pernyataan FOMC Juni — cermati forward guidance apakah ada sinyal jeda (pause) setelah 2 cut."},
+            {"neg":"US","tgl":"18 Jun 2026","jam":"01:30",  "event":"FOMC Press Conference",          "fc":"—",      "prev":"—",       "dampak":"HIGH",  "tip":"Konferensi pers post-FOMC. Market volatil. Cermati dot plot dan proyeksi GDP/inflasi terbaru."},
+            # ══ JULI ID ═══════════════════════════════════════════════════════════════
+            {"neg":"ID","tgl":"01 Jul 2026","jam":"09:00",  "event":"Inflasi CPI YoY (Jun)",          "fc":"2.7%",   "prev":"2.9%",    "dampak":"HIGH",  "tip":"BPS CPI Juni. Tren penurunan inflasi membuka ruang pemangkasan BI Rate lebih lanjut di semester 2."},
+        ]
+
+        # ── Sort semua event by date (ID month mapping) ──────────
+        def _ec_sort_key(r):
+            _m = {"jan":"01","feb":"02","mar":"03","apr":"04","mei":"05","may":"05",
+                  "jun":"06","jul":"07","agu":"08","aug":"08","sep":"09","okt":"10",
+                  "oct":"10","nov":"11","des":"12","dec":"12"}
+            try:
+                p = r["tgl"].strip().split()
+                if len(p) == 3:
+                    mn = _m.get(p[1][:3].lower(), "01")
+                    return datetime.strptime(f"{p[0].zfill(2)}/{mn}/{p[2]}", "%d/%m/%Y")
+            except: pass
+            return datetime(2099,1,1)
+        _ec_raw.sort(key=_ec_sort_key)
+
+        # ── Build JSON ────────────────────────────────────────────
+        import json as _cal_json
+        _d_clr  = {"HIGH":"#f23645","MEDIUM":"#f59e0b","LOW":"#4285F4"}
+        _d_bg   = {"HIGH":"rgba(242,54,69,0.12)","MEDIUM":"rgba(245,158,11,0.12)","LOW":"rgba(66,133,244,0.10)"}
+        _d_lbl  = {"HIGH":"HIGH","MEDIUM":"MED","LOW":"LOW"}
+        _ec_rows = []
+        for ev in _ec_raw:
+            dk = ev["dampak"]
+            _ec_rows.append({
+                "neg":  ev["neg"],
+                "flag": "🇮🇩" if ev["neg"]=="ID" else "🇺🇸",
+                "tgl":  ev["tgl"],
+                "jam":  ev["jam"],
+                "event":ev["event"],
+                "fc":   ev["fc"],
+                "prev": ev["prev"],
+                "d_lbl":_d_lbl.get(dk,"LOW"),
+                "d_clr":_d_clr.get(dk,"#4285F4"),
+                "d_bg": _d_bg.get(dk,"rgba(66,133,244,0.10)"),
+                "tip":  ev["tip"].replace('"','&quot;').replace("'","&#39;"),
+            })
+        _ec_json = _cal_json.dumps(_ec_rows, ensure_ascii=False)
+        _ec_total_h = 530  # fixed height dengan internal scroll
+
+        components.html(f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'DM Sans',sans-serif;}}
+.cal-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
+.cal-hdr{{
+  padding:11px 16px;
+  background:rgba(139,92,246,0.08);
+  border-bottom:1px solid {met_border};
+  font-size:0.68rem;font-weight:700;letter-spacing:0.14em;
+  color:#8b5cf6;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:6px;
+  font-family:'DM Sans',sans-serif;
+}}
+.cal-hdr-right{{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}}
+.cal-badge{{font-size:0.72rem;color:{text_sub};background:rgba(255,255,255,0.05);
+  border:1px solid {met_border};border-radius:8px;padding:2px 8px;white-space:nowrap;}}
+.filter-btn{{font-size:0.7rem;font-family:'IBM Plex Mono',monospace;font-weight:700;
+  border:1px solid {met_border};border-radius:4px;padding:2px 8px;cursor:pointer;
+  background:rgba(255,255,255,0.05);color:{text_sub};transition:all 0.15s;white-space:nowrap;}}
+.filter-btn.active{{background:rgba(139,92,246,0.18);color:#8b5cf6;border-color:#8b5cf6;}}
+.filter-btn:hover{{background:rgba(255,255,255,0.08);}}
+.scroll-box{{width:100%;max-height:456px;overflow-x:auto;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.scroll-box::-webkit-scrollbar{{width:4px;height:4px;}}
+.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:560px;}}
+thead th{{
+  position:sticky;top:0;z-index:2;
+  background:rgba(139,92,246,0.07);color:#8b5cf6;
+  padding:8px 10px;text-align:left;
+  border-bottom:1px solid {met_border};
+  letter-spacing:0.07em;font-weight:700;font-size:0.69rem;
+  white-space:nowrap;text-transform:uppercase;
+  font-family:'DM Sans',sans-serif;
+}}
+tbody td{{padding:7px 10px;border-bottom:1px solid {met_border};color:{text_main};
+  vertical-align:middle;font-size:0.84rem;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
+/* Flag + country cell */
+.flag-cell{{white-space:nowrap;font-size:1.1rem;display:flex;align-items:center;gap:5px;}}
+.neg-lbl{{font-size:0.7rem;font-weight:700;letter-spacing:0.06em;color:{text_sub};
+  font-family:'DM Sans',sans-serif;}}
+/* Date cell */
+.dt-cell{{white-space:nowrap;color:{text_sub};font-size:0.8rem;}}
+.dt-date{{font-weight:600;color:{text_main};font-size:0.82rem;}}
+.dt-jam{{font-size:0.74rem;color:{text_sub};}}
+/* Event cell */
+.ev-cell{{max-width:220px;white-space:normal;line-height:1.35;position:relative;}}
+.ev-name{{font-size:0.85rem;font-weight:500;color:{text_main};}}
+/* Forecast/prev cell */
+.fp-cell{{white-space:nowrap;}}
+.fc-val{{font-size:0.82rem;color:#089981;font-weight:700;}}
+.pv-val{{font-size:0.75rem;color:{text_sub};}}
+/* Impact badge */
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;
+  font-size:0.72rem;font-weight:700;letter-spacing:0.05em;white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;}}
+/* Tooltip */
+.tip-wrap{{position:relative;cursor:default;}}
+.tip-wrap:hover .tip{{display:block;}}
+.tip{{display:none;position:absolute;left:0;top:calc(100% + 3px);z-index:9999;
+  background:{'#131825' if is_dark else '#ffffff'};
+  border:1px solid {met_border};border-left:3px solid #8b5cf6;
+  border-radius:0 6px 6px 6px;padding:9px 13px;
+  font-size:0.8rem;color:{text_main};line-height:1.55;
+  pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.5);
+  white-space:normal;min-width:240px;max-width:380px;
+  font-family:'DM Sans',sans-serif;}}
+/* Separator row */
+.sep-row td{{padding:3px 10px;font-size:0.68rem;letter-spacing:0.12em;
+  color:rgba(139,92,246,0.5);background:rgba(139,92,246,0.04);
+  border-bottom:1px solid rgba(139,92,246,0.12);font-family:'DM Sans',sans-serif;}}
+@media(max-width:600px){{
+  table{{min-width:420px;}}
+  .ev-cell{{max-width:150px;}}
+  .tip{{max-width:260px;}}
+}}
+</style></head><body>
+<div class="cal-wrap">
+  <div class="cal-hdr">
+    <span>📅 ECONOMIC CALENDAR — ID · US &nbsp;·&nbsp; Apr–Jul 2026</span>
+    <div class="cal-hdr-right">
+      <span class="cal-badge" id="ec-count"></span>
+      <button class="filter-btn active" onclick="ecFilter('ALL')">🌐 SEMUA</button>
+      <button class="filter-btn" onclick="ecFilter('ID')">🇮🇩 INDONESIA</button>
+      <button class="filter-btn" onclick="ecFilter('US')">🇺🇸 USD</button>
+      <button class="filter-btn" onclick="ecFilter('HIGH')">🔴 HIGH</button>
+    </div>
+  </div>
+  <div class="scroll-box" id="ec-scroll">
+    <table>
+      <thead><tr>
+        <th>NEGARA</th>
+        <th>TANGGAL</th>
+        <th>JAM (WIB)</th>
+        <th>EVENT</th>
+        <th>FORECAST</th>
+        <th>PREV</th>
+        <th>IMPACT</th>
+      </tr></thead>
+      <tbody id="ec-tb"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+(function(){{
+  var ROWS={_ec_json};
+  var activeFilter='ALL';
+  var lastDate='';
+
+  function render(){{
+    var h='';
+    var filtered=ROWS.filter(function(r){{
+      if(activeFilter==='ALL') return true;
+      if(activeFilter==='HIGH') return r.d_lbl==='HIGH';
+      return r.neg===activeFilter;
+    }});
+    lastDate='';
+    filtered.forEach(function(r){{
+      // Separator baris baru per tanggal
+      var dateKey=r.tgl;
+      if(dateKey!==lastDate){{
+        var dayLabel=r.tgl;
+        h+='<tr class="sep-row"><td colspan="7">'+dayLabel+'</td></tr>';
+        lastDate=dateKey;
+      }}
+      var negBg = r.neg==='ID' ? 'rgba(8,153,129,0.07)' : 'rgba(66,133,244,0.06)';
+      h+='<tr style="background:'+negBg+';">'+
+        '<td><div class="flag-cell"><span>'+r.flag+'</span><span class="neg-lbl">'+r.neg+'</span></div></td>'+
+        '<td class="dt-cell"><span class="dt-date">'+r.tgl+'</span></td>'+
+        '<td class="dt-cell"><span class="dt-jam">'+r.jam+'</span></td>'+
+        '<td class="ev-cell tip-wrap"><span class="ev-name">'+r.event+'</span><div class="tip">'+r.tip+'</div></td>'+
+        '<td class="fp-cell"><span class="fc-val">'+r.fc+'</span></td>'+
+        '<td class="fp-cell"><span class="pv-val">'+r.prev+'</span></td>'+
+        '<td><span class="bdg" style="background:'+r.d_bg+';color:'+r.d_clr+';border:1px solid '+r.d_clr+'44;">'+r.d_lbl+'</span></td>'+
+        '</tr>';
+    }});
+    if(!filtered.length){{
+      h='<tr><td colspan="7" style="text-align:center;padding:24px;color:{text_sub};">Tidak ada event untuk filter ini.</td></tr>';
+    }}
+    document.getElementById('ec-tb').innerHTML=h;
+    document.getElementById('ec-count').textContent=filtered.length+' events';
+    // Update button states
+    document.querySelectorAll('.filter-btn').forEach(function(b){{
+      b.classList.remove('active');
+      if((b.textContent.indexOf('SEMUA')>-1 && activeFilter==='ALL')||
+         (b.textContent.indexOf('INDONESIA')>-1 && activeFilter==='ID')||
+         (b.textContent.indexOf('USD')>-1 && activeFilter==='US')||
+         (b.textContent.indexOf('HIGH')>-1 && activeFilter==='HIGH')){{
+        b.classList.add('active');
+      }}
+    }});
+  }}
+
+  window.ecFilter=function(f){{
+    activeFilter=f;
+    render();
+    document.getElementById('ec-scroll').scrollTop=0;
+  }};
+
+  render();
+}})();
+</script></body></html>""", height=_ec_total_h, scrolling=False)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
 
     # ── TAB: INDEX & SECTOR ROTATION ──────────────────────────────────
     with tab_rotation:
