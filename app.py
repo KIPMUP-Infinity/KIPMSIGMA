@@ -19,6 +19,23 @@ import hashlib
 import bcrypt
 import re
 
+# ── SIGMA MODULES: Storage permanen + render Daily/Weekly/BrokSum/Alpha/TrackRecord ──
+try:
+    from sigma_modules import (
+        load_all as _sm_load_all,
+        save_auto_plan as _sm_save_auto_plan,
+        append_daily_plan as _sm_append_daily_plan,
+        append_daily_summary as _sm_append_daily_summary,
+        append_weekly_plan as _sm_append_weekly_plan,
+        append_weekly_summary as _sm_append_weekly_summary,
+        save_broker_screening_result as _sm_save_broker_result,
+        render_daily_plan as _sm_render_daily_plan,
+        render_weekly_plan as _sm_render_weekly_plan,
+    )
+    _SIGMA_MODULES_AVAILABLE = True
+except ImportError:
+    _SIGMA_MODULES_AVAILABLE = False
+
 # ── SIGMA SCORE ENGINE (embedded) ──
 _SIGMA_SCORE_AVAILABLE = True
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -3298,6 +3315,10 @@ def init_session():
             st.session_state[k] = v
 
 init_session()
+
+# ── Load sigma_modules persistent storage ──
+if _SIGMA_MODULES_AVAILABLE:
+    _sm_load_all()
 
 C = get_colors(st.session_state.theme)
 
@@ -12501,15 +12522,15 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         # ── END PASSWORD GATE — only render content if unlocked ───────────────
         _alpha_unlocked = st.session_state.get("alpha_screener_unlocked", False)
         if _alpha_unlocked:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - AI STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - ALPHA STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
 
         if _alpha_unlocked:
             alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
-                "  🔍 AI STOCK INSIGHT  ",
-                "  📅 DAILY  ",
-                "  📆 WEEKLY  ",
+                "  ⚡ ALPHA STOCK INSIGHT  ",
+                "  📅 DAILY PLAN  ",
+                "  📆 WEEKLY PLAN  ",
                 "  🌙 BELI SORE JUAL PAGI  ",
                 "  📊 FUNDAMENTAL SCREENER  ",
                 "  🏦 BROKER SUMMARY  ",
@@ -14802,6 +14823,24 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     save_user(st.session_state.user["email"], _sv)
                 except: pass
 
+            # ── Mirror ke sigma_modules: storage permanen JSON lokal ──
+            if _SIGMA_MODULES_AVAILABLE:
+                try:
+                    _sm_save_auto_plan(plan_type, slot_key, history[slot_key])
+                    # Juga append ke daily/weekly list agar Signal Board terisi
+                    _rows = (plan_json.get(plan_type)
+                             or plan_json.get("daily")
+                             or plan_json.get("weekly")
+                             or [])
+                    _outlook = plan_json.get("outlook", "")
+                    if plan_type == "daily":
+                        _sm_append_daily_plan(_rows, _outlook)
+                        _sm_append_daily_summary(_rows, _outlook)
+                    elif plan_type == "weekly":
+                        _sm_append_weekly_plan(_rows, _outlook)
+                        _sm_append_weekly_summary(_rows, _outlook)
+                except Exception: pass
+
         def _auto_generate_if_needed(plan_type="daily"):
             """
             Core auto-generate logic.
@@ -15259,31 +15298,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 REKOMENDASI HARIAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_d = _wib_now()
-
-            # ── Info banner: engine berbasis 30 saham screened ──
             _bs30_cache = st.session_state.get("sigma_bs30_screened", [])
             _bs30_count = len(_bs30_cache)
 
-            st.markdown(f"""<div style='background:{"rgba(167,139,250,0.07)" if is_dark else "#f5f3ff"};border:1px solid rgba(167,139,250,0.2);
-            border-left:3px solid #a78bfa;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
-            font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
-⚡ <b style='color:#a78bfa;'>SIGMA BANDARMOLOGI ENGINE</b> &nbsp;·&nbsp;
-Analisa dari <b style='color:{text_main};'>{'<span style=\'color:#26a69a;\'>'+str(_bs30_count)+' saham</span> hasil Broker Summary Screening' if _bs30_count > 0 else '<span style=\'color:#f23645;\'>Belum ada data — jalankan Broker Summary Screening dulu</span>'}</b> &nbsp;·&nbsp;
-Output: <b>10 saham terbaik harian</b> &nbsp;·&nbsp; Hemat API · Zero GoAPI call di sini<br>
-📌 Cara kerja: Broker Summary tab → screening 30 saham teraktif → Daily tab ambil cache → AI analisa → Top 10
-</div>""", unsafe_allow_html=True)
-
-            # ── Jika belum ada cache dari Broker Summary ──
-            if _bs30_count == 0:
-                st.info("⚠️ **Data 30 saham screened belum tersedia.** Buka tab **🏦 Broker Summary** → klik **🔍 Jalankan Screening 30 Saham** terlebih dahulu. Setelah selesai, kembali ke tab ini untuk generate rekomendasi daily.")
-
             _d_tab_hist, _d_tab_ai = st.tabs([
-                "  📜 HISTORY (Auto)  ",
+                "  📋 TRADE PLAN  ",
                 "  ⚡ GENERATE DAILY (AI)  "
             ])
 
             with _d_tab_hist:
-                _render_auto_history("daily")
+                # ── Trade Plan: gunakan sigma_modules jika tersedia (storage permanen) ──
+                if _SIGMA_MODULES_AVAILABLE:
+                    _sm_render_daily_plan()
+                else:
+                    _render_auto_history("daily")
 
             with _d_tab_ai:
                 # ── Tampilkan list 30 saham yang jadi universe ──
@@ -15455,6 +15483,27 @@ Format JSON WAJIB:
                                 save_user(st.session_state.user["email"], _sv)
                             if _SIGMA_SCORE_AVAILABLE and _sigma_scores_daily:
                                 st.session_state["_sigma_scores_daily_cache"] = _sigma_scores_daily
+                            # ── Simpan ke sigma_modules storage permanen ──
+                            if _SIGMA_MODULES_AVAILABLE:
+                                try:
+                                    import json as _jdp
+                                    _dparsed = _jdp.loads(_daily_raw)
+                                    _dslot_key = _wib_now().strftime("%Y-%m-%d_%H%M")
+                                    _sm_save_auto_plan("daily", _dslot_key, {
+                                        "date": _wib_now().strftime("%d %b %Y"),
+                                        "slot": "Sesi Malam (21:00)",
+                                        "generated_at": _wib_now().strftime("%d %b %Y, %H:%M WIB"),
+                                        "plan": _dparsed,
+                                    })
+                                    _sm_append_daily_plan(
+                                        _dparsed.get("daily", []),
+                                        _dparsed.get("outlook", "")
+                                    )
+                                    _sm_append_daily_summary(
+                                        _dparsed.get("daily", []),
+                                        _dparsed.get("outlook", "")
+                                    )
+                                except Exception: pass
                         else:
                             st.warning("Gagal mengambil data pasar. Coba lagi.")
 
@@ -15501,13 +15550,17 @@ Akumulasi <b>5 hari bursa terakhir</b> &nbsp;·&nbsp; Screening <b>250 saham top
 </div>""", unsafe_allow_html=True)
 
             _w_tab_hist, _w_tab_goapi, _w_tab_manual = st.tabs([
-                "  📜 HISTORY (Auto)  ",
+                "  📋 TRADE PLAN  ",
                 "  📡 GOAPI BROSUM WEEKLY  ",
                 "  ▶ GENERATE MANUAL (AI)  "
             ])
 
             with _w_tab_hist:
-                _render_auto_history("weekly")
+                # ── Trade Plan Weekly: gunakan sigma_modules jika tersedia ──
+                if _SIGMA_MODULES_AVAILABLE:
+                    _sm_render_weekly_plan()
+                else:
+                    _render_auto_history("weekly")
 
             with _w_tab_goapi:
                 st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};margin-bottom:12px;'>Engine mengaggregate broker summary 5 hari bursa terakhir per saham · Deteksi akumulasi konsisten vs distribusi · Kalkulasi target distribusi bandar.</p>", unsafe_allow_html=True)
@@ -15664,6 +15717,27 @@ Format JSON WAJIB:
                             _sv["reco_weekly_result"] = _weekly_raw
                             _sv["reco_weekly_ts"] = st.session_state["reco_weekly_ts"]
                             save_user(st.session_state.user["email"], _sv)
+                        # ── Simpan ke sigma_modules storage permanen ──
+                        if _SIGMA_MODULES_AVAILABLE:
+                            try:
+                                import json as _jwp
+                                _wparsed = _jwp.loads(_weekly_raw)
+                                _wslot_key = _wib_now().strftime("%G-W%V_%H%M")
+                                _sm_save_auto_plan("weekly", _wslot_key, {
+                                    "date": _wib_now().strftime("%d %b %Y"),
+                                    "slot": "Sabtu 12:00",
+                                    "generated_at": _wib_now().strftime("%d %b %Y, %H:%M WIB"),
+                                    "plan": _wparsed,
+                                })
+                                _sm_append_weekly_plan(
+                                    _wparsed.get("weekly", _wparsed.get("daily", [])),
+                                    _wparsed.get("outlook", "")
+                                )
+                                _sm_append_weekly_summary(
+                                    _wparsed.get("weekly", _wparsed.get("daily", [])),
+                                    _wparsed.get("outlook", "")
+                                )
+                            except Exception: pass
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
 
@@ -15691,7 +15765,7 @@ Format JSON WAJIB:
 ⚠️ Strategi overnight: sizing maks <b>5–10%</b> portofolio per posisi. Risiko gap-down dari berita semalam.
 </div>""", unsafe_allow_html=True)
 
-            _b_tab_hist, _b_tab_manual = st.tabs(["  📜 HISTORY PLAN (Auto)  ", "  ▶ GENERATE MANUAL  "])
+            _b_tab_hist, _b_tab_manual = st.tabs(["  📋 HISTORY PLAN  ", "  ▶ GENERATE MANUAL  "])
 
             with _b_tab_hist:
                 _render_auto_history("bsjp")
@@ -16730,6 +16804,11 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 
                 st.session_state["sigma_bs30_screened"] = _top30
                 st.session_state["sigma_bs30_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                # ── Simpan ke sigma_modules storage permanen ──
+                if _SIGMA_MODULES_AVAILABLE:
+                    try:
+                        _sm_save_broker_result(_top30)
+                    except Exception: pass
                 st.rerun()
 
             # ── Tampilkan hasil screening jika sudah ada ──
@@ -18321,7 +18400,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
       Market Brief juga mencantumkan <b>jadwal rilis data ekonomi</b> (CPI, PDB, neraca dagang) yang berpotensi mempengaruhi volatilitas harian.
     </div></div>
   </div>
-  <div class="tip">💡 <b>Cara Pakai:</b> Baca Market Brief → cek Live Market → baru buka AI STOCK INSIGHT untuk analisa emiten spesifik. Urutan ini memastikan kamu paham konteks makro sebelum masuk ke level mikro saham.</div>
+  <div class="tip">💡 <b>Cara Pakai:</b> Baca Market Brief → cek Live Market → baru buka ALPHA STOCK INSIGHT untuk analisa emiten spesifik. Urutan ini memastikan kamu paham konteks makro sebelum masuk ke level mikro saham.</div>
 </div>
 
 <!-- ══ 4. NEWS FEED ══ -->
@@ -18849,7 +18928,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
             components.html(_guide_html_3, height=1800, scrolling=True)
 
         # ══════════════════════════════════════════════════════════════
-        # PANDUAN 4 - AI STOCK INSIGHT
+        # PANDUAN 4 - ALPHA STOCK INSIGHT
         # ══════════════════════════════════════════════════════════════
         with pg_tab4:
             _guide_html_4 = f"""<!DOCTYPE html><html><head>
@@ -18926,7 +19005,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <!-- HEADER -->
 <div class="sec-head"><div class="sec-icon">🤖</div>
-<div><div class="sec-title">AI STOCK INSIGHT - Panduan Visual Lengkap</div>
+<div><div class="sec-title">ALPHA STOCK INSIGHT - Panduan Visual Lengkap</div>
 <div class="sec-desc">Analisa saham IDX berbasis AI: Chart Interaktif, Volume Dual-Panel, Risk Level Trade Plan, dan Fundamental Screener.</div>
 </div></div>
 
@@ -19981,12 +20060,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7}
   </div>
 </div>
 
-<!-- ════════════ PANEL: AI STOCK INSIGHT ════════════ -->
+<!-- ════════════ PANEL: ALPHA STOCK INSIGHT ════════════ -->
 <div class="panel" id="g-insight">
   <div class="sec-head">
     <span class="sec-icon">🔍</span>
     <div>
-      <div class="sec-title">AI STOCK INSIGHT</div>
+      <div class="sec-title">ALPHA STOCK INSIGHT</div>
       <div class="sec-desc">Analisa mendalam per ticker - teknikal + fundamental + pemegang saham dalam 1 klik</div>
     </div>
   </div>
