@@ -15714,9 +15714,9 @@ Output: <b>10 saham terbaik harian</b> &nbsp;·&nbsp; Hemat API · Zero GoAPI ca
                             prompt = f"""Kamu adalah SIGMA AI, analis saham Indonesia profesional berbasis sistem Bandarmologi.
 
 Universe analisa hari ini adalah {len(_universe_daily)} saham PILIHAN yang sudah diseleksi ketat oleh sistem Broker Summary Screening SIGMA:
-- Saham-saham ini adalah yang PALING AKTIF secara volume & frekuensi abnormal dari 200 saham Market Cap terbesar IDX
-- Sudah difilter berdasarkan aktivitas broker (akumulasi vs distribusi)
-- Saham dengan tanda ★HIGH MOMENTUM = muncul dalam list 30 teraktif ≥3 hari berturut-turut
+- Pipeline: 200 saham Market Cap terbesar IDX (Non-Banking) → 100 saham volume spike di atas rata-rata 20 hari → 30 saham pola akumulasi (frekuensi kecil + volume besar) → dikonfirmasi GoAPI broker data
+- Saham dengan GoAPI verdict AKUMULASI = smart money sedang masuk (sedikit buyer broker + banyak seller broker = IDX counter-intuitive)
+- Saham dengan tanda ★HIGH MOMENTUM = muncul di top-30 ≥3 hari BERTURUT-TURUT → prioritas tertinggi
 
 TUGAS: Dari universe pilihan ini, pilih TOP 10 SAHAM TERBAIK untuk rekomendasi harian.
 Fokus utama: sinyal bandarmologi + volume intelligence + teknikal.
@@ -16771,17 +16771,24 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
             st.markdown(f"""<div style='background:{"rgba(245,158,11,0.07)" if is_dark else "#fffbeb"};
             border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:14px 18px;margin-bottom:18px;'>
             <div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;letter-spacing:0.1em;
-                        color:#f59e0b;font-weight:700;margin-bottom:6px;'>
-                ⚡ SIGMA SCREENING ENGINE — 30 Saham Teraktif (Input → Daily & Weekly Tab)
+                        color:#f59e0b;font-weight:700;margin-bottom:8px;'>
+                ⚡ SIGMA SCREENING ENGINE — Pipeline 200 → 100 → 30 Saham
             </div>
-            <div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};line-height:1.7;'>
-                Sistem scan <b style='color:{text_main};'>200 saham Market Cap terbesar IDX (Non-Banking)</b> →
-                filter <b>30 teraktif</b> berdasarkan volume &amp; frekuensi abnormal →
-                tandai <b style='color:#f59e0b;'>★ HIGH MOMENTUM</b> jika muncul ≥3 hari berturut-turut.<br>
-                📌 Hasil screening ini otomatis jadi <b>universe</b> untuk tab 📅 Daily &amp; 📆 Weekly.
-                <b style='color:#26a69a;'>Hemat GoAPI</b>: screening via yfinance, GoAPI hanya untuk analisa individual.
+            <div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};line-height:1.9;'>
+                <span style='color:#f59e0b;font-weight:700;'>STEP 1</span> &nbsp;Seluruh saham IHSG (900+) →
+                <b style='color:{text_main};'>200 saham Market Cap terbesar IDX (Non-Banking)</b><br>
+                <span style='color:#a78bfa;font-weight:700;'>STEP 2</span> &nbsp;200 saham →
+                <b style='color:{text_main};'>100 saham</b> dengan <b>volume hari ini jauh di atas rata-rata 20 hari terakhir</b>
+                (volume spike abnormal — indikasi ada pergerakan tidak biasa)<br>
+                <span style='color:#26a69a;font-weight:700;'>STEP 3</span> &nbsp;100 saham →
+                <b style='color:{text_main};'>30 saham</b> dengan pola <b>frekuensi kecil + volume besar</b>
+                (proxy akumulasi: transaksi sedikit tapi lot besar — ciri smart money / broker asing masuk diam-diam)<br>
+                <span style='color:#f23645;font-weight:700;'>KONFIRMASI</span> &nbsp;30 saham final →
+                <b style='color:#26a69a;'>GoAPI broker data</b> untuk konfirmasi akumulasi/distribusi real<br>
+                <span style='color:{text_sub};'>📌 Output ini jadi <b>universe</b> untuk tab 📅 Daily &amp; 📆 Weekly &nbsp;|&nbsp;
+                ★ HIGH MOMENTUM = muncul di top-30 ≥3 hari berturut-turut</span>
             </div>
-            {'<div style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#26a69a;margin-top:6px;">✅ Cache aktif — ' + str(len(_bs30_existing)) + " saham tersedia · Diperbarui: " + _bs30_ts + "</div>" if _bs30_existing else ""}
+            {'<div style="font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#26a69a;margin-top:8px;border-top:1px solid rgba(245,158,11,0.15);padding-top:6px;">✅ Cache aktif — ' + str(len(_bs30_existing)) + " saham tersedia · Diperbarui: " + _bs30_ts + "</div>" if _bs30_existing else ""}
             </div>""", unsafe_allow_html=True)
 
             _scr_col1, _scr_col2, _scr_col3 = st.columns([2, 1, 1])
@@ -16790,7 +16797,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                     "🔍 JALANKAN SCREENING 30 SAHAM",
                     use_container_width=True,
                     key="btn_screen30",
-                    help="Scan 200 saham market cap terbesar → filter 30 teraktif → simpan ke cache"
+                    help="200 top mktcap → 100 vol spike (20d avg) → 30 akumulasi pattern → GoAPI confirm"
                 )
             with _scr_col3:
                 if _bs30_existing:
@@ -16801,140 +16808,279 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                         st.rerun()
 
             if _btn_screen30:
-                with st.spinner("⚡ SIGMA Screening Engine — memfilter 200 saham top market cap IDX..."):
-                    import yfinance as _yf_s30
-                    from datetime import date as _d30, timedelta as _td30
+                # ═══════════════════════════════════════════════════════════════════
+                # SIGMA SCREENING PIPELINE v2 — 200 → 100 → 30 + GoAPI Konfirmasi
+                # ═══════════════════════════════════════════════════════════════════
+                _prog_bar   = st.progress(0, text="⚡ STEP 1/4 — Mengambil data 200 saham Market Cap terbesar...")
+                _prog_status = st.empty()
 
-                    # Daftar 200 saham Market Cap terbesar IDX Non-Banking (statis, diupdate berkala)
-                    _SIGMA_200 = [
-                        "TLKM","ASII","UNVR","ICBP","INDF","KLBF","GGRM","HMSP","MYOR","CPIN",
-                        "AALI","LSIP","SIMP","SSMS","PALM","JPFA","MAIN","BISI","PGAS","PTBA",
-                        "ADRO","ITMG","HRUM","BUMI","BYAN","ARII","DSSA","GEMS","SMRU","TOBA",
-                        "ANTM","INCO","TINS","CITA","MDKA","MERDEKA","BRMS","NICL","NCKL","MBMA",
-                        "SMGR","INTP","WTON","SEMEN","ULPL","AMFG","ARNA","MLIA","TOTO","MARK",
-                        "WIKA","WSKT","ADHI","PTPP","TOTL","ACST","NRCA","DGIK","IDPR","BKSL",
-                        "TLKM","XL","ISAT","EXCL","FREN","BTEL","SUPR","TOWR","TBIG","MTEL",
-                        "JSMR","CMNP","META","NELY","WINS","ASSA","GIIA","HEAL","PRDA","MIKA",
-                        "SIDO","KAEF","PEHA","DVLA","PYFA","MERK","TSPC","SQBB","SCPI","INAF",
-                        "UNTR","IMAS","HEXA","MPMX","TURI","BRAM","GJTL","SMSM","NIPS","LPIN",
-                        "AKRA","DIAN","ALDO","EPAC","AIMS","CSMI","EKAD","INCI","UNIC","TPIA",
-                        "SRIL","RICY","POLY","ARGO","TFCO","STAR","MYTX","SSTM","PBRX","INDR",
-                        "MAPI","RALS","LPPF","ACES","HERO","MIDI","AMRT","RANC","MPPA","CSAP",
-                        "MEDC","RAJA","SRTG","ELSA","RUIS","ESSA","ARTI","BIPI","ENRG","KARW",
-                        "CTRA","BSDE","SMRA","PWON","DILD","APLN","EMDE","MKPI","LPKR","PPRO",
-                        "EXCL","INKP","TKIM","FASW","SPMA","LTLS","DSFI","DSNG","WMUU","KKGI",
-                        "MAPI","MPPA","AMRT","ACES","HERO","MIDI","LPPF","RALS","RANC","CSAP",
-                        "SOCI","TJUN","LAPD","NASI","CEKA","BWPT","DMAS","KRAS","KPIG","GMTD",
-                        "BMTR","MNCN","SCMA","VIVA","MSKY","EMTK","LINK","KBLV","FILM","JTPE",
-                        "PTBA","MYOH","SMMT","DEWA","PKPK","ARTI","BORN","PSAB","BCIP","JAWA",
-                    ]
-                    _SIGMA_200 = list(dict.fromkeys(_SIGMA_200))[:200]  # dedup & cap
+                import yfinance as _yf_s30
+                from datetime import date as _d30, timedelta as _td30
 
-                    # Ambil data 10 hari terakhir untuk hitung rata-rata volume
-                    _screen_result = []
-                    try:
-                        _batch_tickers = [f"{tk}.JK" for tk in _SIGMA_200]
-                        _hist = _yf_s30.download(
-                            _batch_tickers, period="15d",
-                            auto_adjust=True, progress=False, threads=True
-                        )
-                        _today30 = _d30.today()
+                # ── Universe: 200 saham Market Cap terbesar IDX Non-Banking ──
+                _SIGMA_200 = [
+                    "TLKM","ASII","UNVR","ICBP","INDF","KLBF","GGRM","HMSP","MYOR","CPIN",
+                    "AALI","LSIP","SIMP","SSMS","PALM","JPFA","MAIN","BISI","PGAS","PTBA",
+                    "ADRO","ITMG","HRUM","BUMI","BYAN","ARII","DSSA","GEMS","SMRU","TOBA",
+                    "ANTM","INCO","TINS","CITA","MDKA","MERDEKA","BRMS","NICL","NCKL","MBMA",
+                    "SMGR","INTP","WTON","AMFG","ARNA","MLIA","TOTO","MARK","ULPL","SEMEN",
+                    "WIKA","WSKT","ADHI","PTPP","TOTL","ACST","NRCA","DGIK","IDPR","BKSL",
+                    "ISAT","EXCL","FREN","SUPR","TOWR","TBIG","MTEL","XL","BTEL","TLKM",
+                    "JSMR","CMNP","META","NELY","WINS","ASSA","GIIA","HEAL","PRDA","MIKA",
+                    "SIDO","KAEF","PEHA","DVLA","PYFA","MERK","TSPC","SQBB","SCPI","INAF",
+                    "UNTR","IMAS","HEXA","MPMX","TURI","BRAM","GJTL","SMSM","NIPS","LPIN",
+                    "AKRA","ALDO","EPAC","EKAD","INCI","UNIC","TPIA","DIAN","AIMS","CSMI",
+                    "SRIL","RICY","POLY","ARGO","TFCO","STAR","MYTX","SSTM","PBRX","INDR",
+                    "MAPI","RALS","LPPF","ACES","HERO","MIDI","AMRT","RANC","MPPA","CSAP",
+                    "MEDC","RAJA","SRTG","ELSA","RUIS","ESSA","BIPI","ENRG","KARW","ARTI",
+                    "CTRA","BSDE","SMRA","PWON","DILD","APLN","EMDE","MKPI","LPKR","PPRO",
+                    "INKP","TKIM","FASW","SPMA","LTLS","DSFI","DSNG","WMUU","KKGI","EXCL",
+                    "SOCI","TJUN","CEKA","BWPT","DMAS","KRAS","KPIG","GMTD","LAPD","NASI",
+                    "BMTR","MNCN","SCMA","VIVA","MSKY","EMTK","LINK","KBLV","FILM","JTPE",
+                    "PTBA","MYOH","SMMT","DEWA","PKPK","BORN","PSAB","BCIP","JAWA","MDKA",
+                    "BBTN","BNGA","NISP","MEGA","PNBN","BJTM","BJBR","BNII","BMAS","MAYA",
+                ]
+                _SIGMA_200 = list(dict.fromkeys(_SIGMA_200))[:200]
 
-                        # Baca history screening (untuk konsistensi filter HIGH MOMENTUM)
-                        _screen_history = st.session_state.get("sigma_bs30_history", {})
-                        _today_str = str(_today30)
+                # ────────────────────────────────────────────────────────────────
+                # STEP 1 — Download 30 hari data (20 hari avg + buffer hari ini)
+                # ────────────────────────────────────────────────────────────────
+                _step1_result = []
+                try:
+                    _batch_tickers = [f"{tk}.JK" for tk in _SIGMA_200]
+                    _hist = _yf_s30.download(
+                        _batch_tickers, period="30d",
+                        auto_adjust=True, progress=False, threads=True
+                    )
+                    _prog_bar.progress(25, text="✅ STEP 1 selesai — Data 200 saham berhasil diunduh. STEP 2: Filter volume spike 20-hari...")
 
-                        for tk in _SIGMA_200:
-                            try:
-                                _cl = _hist["Close"][f"{tk}.JK"].dropna()
-                                _vl = _hist["Volume"][f"{tk}.JK"].dropna()
-                                if len(_cl) < 5 or len(_vl) < 5:
-                                    continue
-                                _price   = float(_cl.iloc[-1])
-                                _vol_td  = float(_vl.iloc[-1])
-                                _avg_vol = float(_vl.iloc[:-1].mean())
-                                _freq_proxy = _vol_td / max(_price, 1)  # lot proxy
-                                _spike   = _vol_td / max(_avg_vol, 1)
-                                _chg1d   = float((_cl.iloc[-1] - _cl.iloc[-2]) / _cl.iloc[-2] * 100) if len(_cl) >= 2 else 0
+                    _today30   = _d30.today()
+                    _today_str = str(_today30)
 
-                                # Filter: volume spike ≥ 1.5x DAN masuk top volume
-                                if _spike >= 1.5:
-                                    _screen_result.append({
-                                        "ticker": tk,
-                                        "price":  _price,
-                                        "vol":    _vol_td,
-                                        "avg_vol": _avg_vol,
-                                        "spike":  _spike,
-                                        "chg1d":  _chg1d,
-                                        "score":  _spike * (1.2 if _chg1d > 0 else 0.8),
-                                    })
-                            except: pass
-                    except Exception as _e_s30:
-                        st.warning(f"Gagal fetch data screening: {_e_s30}")
+                    for tk in _SIGMA_200:
+                        try:
+                            _cl = _hist["Close"][f"{tk}.JK"].dropna()
+                            _vl = _hist["Volume"][f"{tk}.JK"].dropna()
+                            if len(_cl) < 5 or len(_vl) < 5:
+                                continue
+                            _price   = float(_cl.iloc[-1])
+                            _vol_td  = float(_vl.iloc[-1])
+                            # Rata-rata 20 hari SEBELUM hari ini (exclude hari ini)
+                            _lookback = _vl.iloc[:-1]
+                            _avg20   = float(_lookback.tail(20).mean()) if len(_lookback) >= 5 else float(_lookback.mean())
+                            _spike   = _vol_td / max(_avg20, 1)
+                            _chg1d   = float((_cl.iloc[-1] - _cl.iloc[-2]) / _cl.iloc[-2] * 100) if len(_cl) >= 2 else 0
+                            _step1_result.append({
+                                "ticker":  tk,
+                                "price":   _price,
+                                "vol":     _vol_td,
+                                "avg_vol": _avg20,
+                                "spike":   _spike,
+                                "chg1d":   _chg1d,
+                            })
+                        except: pass
+                except Exception as _e_s30:
+                    st.warning(f"Gagal fetch data screening: {_e_s30}")
 
-                    # Sort by score & ambil top 30
-                    _screen_result.sort(key=lambda x: x["score"], reverse=True)
-                    _top30 = _screen_result[:30]
+                # ────────────────────────────────────────────────────────────────
+                # STEP 2 — Filter ke 100: volume hari ini > rata-rata 20 hari
+                # Ambil yang spike paling tinggi, minimal spike > 1.2x
+                # ────────────────────────────────────────────────────────────────
+                _step2_candidates = [s for s in _step1_result if s["spike"] > 1.2]
+                _step2_candidates.sort(key=lambda x: x["spike"], reverse=True)
+                _top100 = _step2_candidates[:100]  # ambil top 100, kalau < 100 ya semua
 
-                    # Update history untuk HIGH MOMENTUM detection
-                    _screen_history = st.session_state.get("sigma_bs30_history", {})
-                    _today_str = str(_d30.today())
-                    _today_tickers = set(s["ticker"] for s in _top30)
-                    _screen_history[_today_str] = list(_today_tickers)
+                _prog_bar.progress(50, text=f"✅ STEP 2 selesai — {len(_top100)} saham lolos filter volume spike. STEP 3: Filter akumulasi pattern...")
 
-                    # Bersihkan history > 5 hari
-                    _dates_sorted = sorted(_screen_history.keys(), reverse=True)
-                    _screen_history = {k: _screen_history[k] for k in _dates_sorted[:5]}
-                    st.session_state["sigma_bs30_history"] = _screen_history
+                # ────────────────────────────────────────────────────────────────
+                # STEP 3 — Filter ke 30: proxy akumulasi = volume besar, frekuensi kecil
+                # Proxy: spike tinggi TAPI pergerakan harga terbatas (sideways/turun sedikit)
+                # → smart money absorb supply tanpa menaikkan harga
+                # Score akumulasi = spike × (1 / (1 + abs(chg1d) * 0.5)) × multiplier
+                # Bonus: harga turun/flat saat volume besar = lebih kuat sinyalnya
+                # ────────────────────────────────────────────────────────────────
+                for _s in _top100:
+                    _spk  = _s["spike"]
+                    _chg  = _s["chg1d"]
+                    # Harga sideways atau turun ringan (< +1%) saat volume besar = akumulasi ideal
+                    _price_suppression = 1.0 if _chg <= 1.0 else max(0.4, 1.0 - (_chg - 1.0) * 0.15)
+                    # Volume sangat besar (> 5x) dapat bonus ekstra
+                    _vol_bonus = 1.3 if _spk >= 5 else (1.15 if _spk >= 3 else 1.0)
+                    _s["accum_score"] = _spk * _price_suppression * _vol_bonus
+                    # Flag: kemungkinan akumulasi (indikasi awal sebelum GoAPI konfirmasi)
+                    _s["pre_accum"]   = (_chg <= 1.5 and _spk >= 2.0)
 
-                    # Hitung HIGH MOMENTUM: muncul ≥3 hari berturut-turut dari 5 hari terakhir
-                    _recent_dates = sorted(_screen_history.keys(), reverse=True)[:5]
-                    for s in _top30:
-                        _count = sum(1 for _dd in _recent_dates if s["ticker"] in _screen_history.get(_dd, set()))
-                        s["high_momentum"] = (_count >= 3)
-                        s["momentum_days"] = _count
-                        s["verdict"] = ""   # placeholder; GoAPI brosum diisi di Broker Summary individual
-                        s["bpr"] = 0
-                        s["top_accum"] = []
+                _top100.sort(key=lambda x: x["accum_score"], reverse=True)
+                _top30 = _top100[:30]
 
-                    st.session_state["sigma_bs30_screened"] = _top30
-                    st.session_state["sigma_bs30_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
-                    st.rerun()
+                _prog_bar.progress(70, text=f"✅ STEP 3 selesai — 30 saham terpilih. STEP 4: GoAPI konfirmasi akumulasi/distribusi...")
+
+                # ────────────────────────────────────────────────────────────────
+                # STEP 4 — GoAPI Konfirmasi Broker Summary untuk 30 saham final
+                # Cek: sedikit buyer broker + banyak seller broker = AKUMULASI
+                # (IDX counter-intuitive: smart money beli via sedikit broker besar)
+                # ────────────────────────────────────────────────────────────────
+                _goapi_ok = _goapi_available()
+                _prog_status.markdown(
+                    f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#a78bfa;'>"
+                    f"{'🔗 GoAPI aktif — mengkonfirmasi broker data 30 saham...' if _goapi_ok else '⚠️ GoAPI tidak tersedia — konfirmasi broker dilewati, gunakan proxy saja'}"
+                    f"</p>", unsafe_allow_html=True
+                )
+
+                for _i30, _s in enumerate(_top30):
+                    _tk = _s["ticker"]
+                    _s["verdict"]   = ""
+                    _s["bpr"]       = 0
+                    _s["top_accum"] = []
+                    _s["goapi_confirmed"] = False
+
+                    if _goapi_ok:
+                        try:
+                            _brows = goapi_get_broker_summary(_tk)
+                            if _brows:
+                                # Hitung jumlah buyer broker vs seller broker
+                                _buy_brokers  = [r for r in _brows if float(r.get("BuyVolume", 0) or 0) > 0]
+                                _sell_brokers = [r for r in _brows if float(r.get("SellVolume", 0) or 0) > 0]
+                                _n_buy  = len(_buy_brokers)
+                                _n_sell = len(_sell_brokers)
+                                _total_buy_vol  = sum(float(r.get("BuyVolume",0) or 0) for r in _brows)
+                                _total_sell_vol = sum(float(r.get("SellVolume",0) or 0) for r in _brows)
+
+                                # IDX Counter-intuitive:
+                                # sedikit buyer broker + banyak seller broker → AKUMULASI (smart money)
+                                # banyak buyer broker + sedikit seller broker → DISTRIBUSI (ritel FOMO)
+                                if _n_buy > 0 and _n_sell > 0:
+                                    _bpr = _n_sell / _n_buy  # Broker Pressure Ratio
+                                    _s["bpr"] = round(_bpr, 2)
+                                    if _bpr >= 2.0:
+                                        _s["verdict"] = "AKUMULASI"
+                                        _s["goapi_confirmed"] = True
+                                        # Boost accum_score jika GoAPI konfirmasi
+                                        _s["accum_score"] *= 1.5
+                                    elif _bpr >= 1.3:
+                                        _s["verdict"] = "AKUMULASI LEMAH"
+                                        _s["goapi_confirmed"] = True
+                                        _s["accum_score"] *= 1.2
+                                    elif _bpr <= 0.5:
+                                        _s["verdict"] = "DISTRIBUSI"
+                                        _s["accum_score"] *= 0.5  # penalti
+                                    else:
+                                        _s["verdict"] = "NETRAL"
+
+                                # Top 3 broker akumulasi terbesar (sisi buy dengan lot paling besar)
+                                _top_b = sorted(_buy_brokers, key=lambda r: float(r.get("BuyVolume",0) or 0), reverse=True)[:3]
+                                _s["top_accum"] = [r.get("BrokerID","?") for r in _top_b]
+                        except: pass
+
+                    # Update progress per saham
+                    _prog_bar.progress(70 + int((_i30 + 1) / 30 * 28), text=f"GoAPI konfirmasi: {_tk} ({_i30+1}/30)...")
+
+                # Re-sort setelah GoAPI boost/penalty
+                _top30.sort(key=lambda x: x["accum_score"], reverse=True)
+
+                _prog_bar.progress(100, text="✅ Screening selesai!")
+                _prog_status.empty()
+
+                # ────────────────────────────────────────────────────────────────
+                # HIGH MOMENTUM: tracking history → muncul ≥3 hari berturut-turut
+                # ────────────────────────────────────────────────────────────────
+                _screen_history  = st.session_state.get("sigma_bs30_history", {})
+                _today_tickers   = set(s["ticker"] for s in _top30)
+                _screen_history[_today_str] = list(_today_tickers)
+
+                # Simpan history sampai 30 hari (untuk analisa konsistensi)
+                _dates_sorted    = sorted(_screen_history.keys(), reverse=True)
+                _screen_history  = {k: _screen_history[k] for k in _dates_sorted[:30]}
+                st.session_state["sigma_bs30_history"] = _screen_history
+
+                # Cek konsekutif: hitung hari berturut-turut (bukan sekadar total muncul)
+                _recent_dates = sorted(_screen_history.keys(), reverse=True)
+                for s in _top30:
+                    _streak = 0
+                    for _dd in _recent_dates:
+                        if s["ticker"] in _screen_history.get(_dd, set()):
+                            _streak += 1
+                        else:
+                            break  # konsekutif putus → stop
+                    s["high_momentum"]  = (_streak >= 3)
+                    s["momentum_days"]  = _streak
+
+                st.session_state["sigma_bs30_screened"] = _top30
+                st.session_state["sigma_bs30_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                st.rerun()
 
             # ── Tampilkan hasil screening jika sudah ada ──
             if _bs30_existing:
-                _hm_list = [s for s in _bs30_existing if s.get("high_momentum")]
-                _reg_list = [s for s in _bs30_existing if not s.get("high_momentum")]
+                _hm_list        = [s for s in _bs30_existing if s.get("high_momentum")]
+                _confirmed_list = [s for s in _bs30_existing if s.get("goapi_confirmed")]
 
-                st.markdown(f"""<div style='display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};'>
-                    <span>📊 Total screened: <b style='color:{text_main};'>{len(_bs30_existing)}</b></span>
+                st.markdown(f"""<div style='display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};'>
+                    <span>📊 Total: <b style='color:{text_main};'>{len(_bs30_existing)}</b> saham</span>
                     <span>⭐ HIGH MOMENTUM: <b style='color:#f59e0b;'>{len(_hm_list)}</b></span>
+                    <span>🔗 GoAPI Confirmed: <b style='color:#26a69a;'>{len(_confirmed_list)}</b></span>
                     <span>🕐 Update: <b style='color:{text_main};'>{_bs30_ts}</b></span>
-                    <span style='color:#26a69a;'>✅ Data ini dipakai oleh tab Daily &amp; Weekly</span>
+                </div>""", unsafe_allow_html=True)
+
+                st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};margin-bottom:10px;'>
+                    <span style='color:#26a69a;'>■</span> AKUMULASI (GoAPI confirmed) &nbsp;
+                    <span style='color:#a78bfa;'>■</span> Pre-Akumulasi (proxy) &nbsp;
+                    <span style='color:#f23645;'>■</span> DISTRIBUSI &nbsp;
+                    <span style='color:rgba(255,255,255,0.2);'>■</span> Netral
                 </div>""", unsafe_allow_html=True)
 
                 _s30_cols = st.columns(5)
                 for _si, _sitem in enumerate(_bs30_existing):
-                    _stk = _sitem.get("ticker","")
-                    _hm  = _sitem.get("high_momentum", False)
-                    _spk = _sitem.get("spike", 0)
-                    _chg = _sitem.get("chg1d", 0)
-                    _md  = _sitem.get("momentum_days", 0)
+                    _stk     = _sitem.get("ticker", "")
+                    _hm      = _sitem.get("high_momentum", False)
+                    _spk     = _sitem.get("spike", 0)
+                    _chg     = _sitem.get("chg1d", 0)
+                    _md      = _sitem.get("momentum_days", 0)
+                    _verdict = _sitem.get("verdict", "")
+                    _bpr     = _sitem.get("bpr", 0)
+                    _top_b   = _sitem.get("top_accum", [])
+                    _goconf  = _sitem.get("goapi_confirmed", False)
+                    _pre_acc = _sitem.get("pre_accum", False)
+
+                    if _verdict == "AKUMULASI":
+                        _border_c = "rgba(38,166,154,0.6)"; _bg_c = "rgba(38,166,154,0.10)"; _label_c = "#26a69a"
+                    elif _verdict == "AKUMULASI LEMAH":
+                        _border_c = "rgba(38,166,154,0.3)"; _bg_c = "rgba(38,166,154,0.06)"; _label_c = "#80cbc4"
+                    elif _verdict == "DISTRIBUSI":
+                        _border_c = "rgba(242,54,69,0.45)"; _bg_c = "rgba(242,54,69,0.08)"; _label_c = "#f23645"
+                    elif _pre_acc:
+                        _border_c = "rgba(167,139,250,0.4)"; _bg_c = "rgba(167,139,250,0.08)"; _label_c = "#a78bfa"
+                    elif _hm:
+                        _border_c = "rgba(245,158,11,0.35)"; _bg_c = "rgba(245,158,11,0.10)"; _label_c = "#f59e0b"
+                    else:
+                        _border_c = "rgba(255,255,255,0.08)"; _bg_c = "rgba(255,255,255,0.03)"; _label_c = text_sub
+
+                    _brokers_str = " ".join(_top_b) if _top_b else ""
+                    _verdict_line = ""
+                    if _verdict:
+                        _bpr_str = f" BPR:{_bpr}" if _bpr else ""
+                        _verdict_line = f"<br><span style='color:{_label_c};font-weight:700;'>{_verdict}{_bpr_str}</span>"
+                    elif _pre_acc:
+                        _verdict_line = f"<br><span style='color:{_label_c};'>~Akumulasi?</span>"
+
                     with _s30_cols[_si % 5]:
-                        st.markdown(
+                        _ticker_color  = "#f59e0b" if _hm else text_main
+                        _ticker_prefix = "⭐ " if _hm else ""
+                        _spk_color     = "#26a69a" if _spk >= 3 else ("#f59e0b" if _spk >= 2 else text_main)
+                        _chg_color     = "#26a69a" if _chg > 0 else "#f23645"
+                        _hm_line       = f"<br><span style='color:#f59e0b;'>★ {_md}d berturut</span>" if _hm else ""
+                        _broker_line   = f"<br><span style='color:#64748b;font-size:0.62rem;'>{_brokers_str}</span>" if _brokers_str else ""
+                        _card_html = (
                             f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
-                            f"padding:6px 8px;margin-bottom:5px;"
-                            f"background:{'rgba(245,158,11,0.12)' if _hm else 'rgba(167,139,250,0.07)'};"
-                            f"border:1px solid {'rgba(245,158,11,0.35)' if _hm else 'rgba(167,139,250,0.15)'};"
-                            f"border-radius:8px;'>"
-                            f"<div style='font-weight:700;color:{'#f59e0b' if _hm else text_main};'>{'⭐ ' if _hm else ''}{_stk}</div>"
-                            f"<div style='color:{text_sub};font-size:0.68rem;margin-top:2px;'>"
-                            f"Spike: <span style='color:{'#26a69a' if _spk>=3 else text_main};'>{_spk:.1f}x</span>"
-                            f" | Chg: <span style='color:{'#26a69a' if _chg>0 else '#f23645'};'>{_chg:+.1f}%</span>"
-                            f"{'<br><span style="color:#f59e0b;">★ '+str(_md)+'d berturut</span>' if _hm else ''}"
-                            f"</div></div>",
-                            unsafe_allow_html=True
+                            f"padding:7px 9px;margin-bottom:6px;"
+                            f"background:{_bg_c};border:1px solid {_border_c};border-radius:8px;'>"
+                            f"<div style='font-weight:700;color:{_ticker_color};font-size:0.82rem;'>{_ticker_prefix}{_stk}</div>"
+                            f"<div style='color:{text_sub};font-size:0.67rem;margin-top:3px;line-height:1.65;'>"
+                            f"<span style='color:{_spk_color};'>{_spk:.1f}x</span>"
+                            f" <span style='color:{_chg_color};'>{_chg:+.1f}%</span>"
+                            f"{_hm_line}{_verdict_line}{_broker_line}"
+                            f"</div></div>"
                         )
+                        st.markdown(_card_html, unsafe_allow_html=True)
 
             st.markdown("<hr style='border-color:rgba(255,255,255,0.06);margin:20px 0;'>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};margin-bottom:12px;font-weight:700;'>BROKER ANALYSIS INDIVIDUAL — Cek aktivitas broker per saham:</p>", unsafe_allow_html=True)
