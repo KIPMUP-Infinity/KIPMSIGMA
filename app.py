@@ -14187,6 +14187,24 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                         ema10 = sum(closes[-10:]) / 10 if len(closes) >= 10 else ema5
                         spike  = vols[-1] / (sum(vols[-5:]) / 5) if sum(vols[-5:]) > 0 else 1
                         chg5d  = round((closes[-1]-closes[-6]) / closes[-6] * 100, 2) if len(closes) >= 6 else 0
+                        # ── Consecutive up days (BSJP power signal) ──
+                        consec_up = 0
+                        for _i in range(1, min(6, len(closes))):
+                            if closes[-_i] > closes[-_i-1]:
+                                consec_up += 1
+                            else:
+                                break
+                        # ── Close position in day range (kuat vs lemah) ──
+                        day_range = highs[-1] - lows[-1]
+                        close_pct_range = round((closes[-1] - lows[-1]) / day_range * 100, 1) if day_range > 0 else 50
+                        # ── Volume spike prev day (bsjp: 2 hari volume naik = lebih valid) ──
+                        spike_prev = vols[-2] / (sum(vols[-6:-1]) / 5) if len(vols) >= 6 and sum(vols[-6:-1]) > 0 else 1
+                        # ── 5 candle mini data untuk visual ──
+                        n5 = min(5, len(closes))
+                        closes5 = [round(closes[-n5+i], 0) for i in range(n5)]
+                        highs5  = [round(highs[-n5+i], 0) for i in range(n5)]
+                        lows5   = [round(lows[-n5+i], 0) for i in range(n5)]
+                        vols5   = [int(vols[-n5+i]) for i in range(n5)]
                         with lock:
                             result[tk] = {
                                 "price":  round(closes[-1], 0),
@@ -14201,10 +14219,18 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                                 "ema5":   round(ema5, 0),
                                 "ema10":  round(ema10, 0),
                                 "spike":  round(spike, 2),
+                                "spike_prev": round(spike_prev, 2),
+                                "consec_up": consec_up,
+                                "close_pct_range": close_pct_range,
                                 # bullish: harga > EMA5 > EMA10 dan spike > 1
                                 "bullish_score": (1 if closes[-1] > ema5 else 0) + (1 if ema5 > ema10 else 0) + (1 if spike >= 1.5 else 0) + (1 if chg5d > 0 else 0),
                                 # bearish: harga < EMA5 < EMA10
                                 "bearish_score": (1 if closes[-1] < ema5 else 0) + (1 if ema5 < ema10 else 0) + (1 if spike >= 1.5 and closes[-1] < closes[-2] else 0) + (1 if chg5d < 0 else 0),
+                                # 5-candle data untuk mini visual
+                                "closes5": closes5,
+                                "highs5":  highs5,
+                                "lows5":   lows5,
+                                "vols5":   vols5,
                             }
                 except: pass
 
@@ -14583,7 +14609,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
         # ══════════════════════════════════════════════════════════════════
         # AUTO-SCHEDULED TRADE PLAN SYSTEM
-        # Generate otomatis jam 13:00 & 21:00 WIB setiap hari
+        # Daily  : Senin-Jumat jam 21:00 WIB
+        # Weekly : Sabtu jam 12:00 WIB
+        # BSJP   : Senin-Jumat jam 15:30 WIB (closing BEI)
         # History 30 hari | Track Record auto-update jam 21:00
         # RULE-BASED (tidak butuh AI call → tidak kena rate limit)
         # ══════════════════════════════════════════════════════════════════
@@ -14603,16 +14631,38 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             return d.strftime("%Y%m%d")
 
         def _auto_plan_slot(dt=None):
-            """Slot: 'morning' (13:00) atau 'evening' (21:00) atau None"""
+            """
+            Slot untuk Daily & Weekly:
+            - Daily  : generate jam 21:00 WIB, Senin-Jumat (weekday 0-4)
+            - Weekly : generate Sabtu jam 12:00 WIB (weekday 5)
+            Returns: 'evening' | 'saturday_noon' | None (tidak ada jadwal)
+            """
             d = dt or _wib_now()
-            h = d.hour
-            # Pagi: 13:00-20:59 → slot morning
-            # Malam: 21:00-23:59 atau 00:00-12:59 hari berikutnya → slot evening
-            if 13 <= h < 21:
-                return "morning"
-            elif h >= 21 or h < 13:
-                return "evening"
-            return "morning"
+            h, wd = d.hour, d.weekday()  # 0=Senin, 5=Sabtu, 6=Minggu
+            if wd < 5:  # Senin–Jumat
+                if h >= 21:
+                    return "evening"
+                return "pre_evening"  # belum waktunya, tapi tetap return string agar _should_auto_generate berjalan
+            elif wd == 5:  # Sabtu
+                if h >= 12:
+                    return "saturday_noon"
+                return "pre_saturday"
+            return "weekend"  # Minggu - tidak ada generate
+
+        def _auto_plan_slot_bsjp(dt=None):
+            """
+            Slot BSJP: hanya Senin–Jumat, generate jam 15:30 WIB.
+            Returns: 'closing' | 'pre_closing' | 'weekend_skip'
+            """
+            d = dt or _wib_now()
+            h, m, wd = d.hour, d.minute, d.weekday()  # 0=Senin
+            if wd >= 5:  # Sabtu & Minggu — skip
+                return "weekend_skip"
+            # Jam 15:30–23:59 → slot closing (satu kali per hari)
+            if h > 15 or (h == 15 and m >= 30):
+                return "closing"
+            # Sebelum 15:30 → belum waktunya
+            return "pre_closing"
 
         def _should_auto_generate(plan_type="daily"):
             """
@@ -14630,8 +14680,12 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         def _rule_based_plan(price_data_map, plan_type="daily"):
             """
             Generate trade plan berbasis rule (tanpa AI call).
-            Lebih cepat, tidak kena rate limit, hasil konsisten.
-            Mengembalikan dict JSON-compatible.
+            BSJP mode:
+              - Filter harga > 8000 → skip
+              - Tampilkan SEMUA kandidat valid (tidak dibatasi jumlah)
+              - Scoring lebih powerful: consecutive up days + close pct range + vol spike 2 hari
+              - Include mini candle data (5 bar) untuk visual
+            Daily mode: top 5, Weekly mode: top 7.
             """
             import math
 
@@ -14646,62 +14700,127 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 t = _tick(p)
                 return int(round(p / t) * t)
 
-            # Filter dan sort kandidat
+            is_bsjp = (plan_type == "bsjp")
+
+            # ── Filter & score kandidat ──
             candidates = []
             for tk, d in price_data_map.items():
-                bs = d.get("bullish_score", 0)
+                bs    = d.get("bullish_score", 0)
                 spike = d.get("spike", 1)
                 price = d.get("price", 0)
-                chg = d.get("chg", 0)
-                if bs >= 2 and price > 50 and spike >= 1.2:
+                chg   = d.get("chg", 0)
+                chg2d = d.get("chg2d", 0)
+                chg5  = d.get("chg5d", 0)
+                consec_up       = d.get("consec_up", 0)
+                close_pct_range = d.get("close_pct_range", 50)
+                spike_prev      = d.get("spike_prev", 1)
+
+                if is_bsjp:
+                    # BSJP: filter harga, minimal sinyal bullish, tidak boleh terlalu turun
+                    if price <= 0 or price > 8000:
+                        continue
+                    if spike < 1.2 or d.get("chg", 0) < -5:
+                        continue
+                    # BSJP scoring formula (lebih powerful)
+                    # Komponen:
+                    #   vol_spike hari ini        → bobot tertinggi (sinyal utama BSJP)
+                    #   close dekat HIGH          → konfirmasi buying pressure closing
+                    #   consecutive up days       → momentum berlanjut
+                    #   vol spike kemarin juga    → 2 hari berturut volume naik = KUAT
+                    #   bullish EMA alignment     → struktur teknikal
+                    #   tidak terlalu overbought  → chg5d < 30% (masih ada ruang)
+                    score_composite = (
+                        min(spike * 10, 50)              # vol spike hari ini (max 50)
+                        + close_pct_range * 0.25         # close pct: 100% HIGH = +25
+                        + consec_up * 12                 # tiap hari naik berturut = +12
+                        + (min(spike_prev * 5, 20) if spike_prev >= 1.5 else 0)  # vol kemarin (max 20)
+                        + bs * 8                         # EMA/bullish alignment
+                        + (10 if chg2d > 0 and chg > 0 else 0)  # 2 hari naik berturut
+                        - (max(0, chg5 - 25) * 0.5)     # penalti overbought >25%
+                    )
+                else:
+                    if bs < 2 or price <= 50 or spike < 1.2:
+                        continue
                     score_composite = bs * 20 + min(spike * 5, 30) + (10 if chg > 0 else 0)
-                    candidates.append((tk, d, score_composite))
+
+                candidates.append((tk, d, score_composite))
 
             candidates.sort(key=lambda x: x[2], reverse=True)
 
             avoid_cands = []
             for tk, d in price_data_map.items():
-                bs = d.get("bearish_score", 0)
+                price = d.get("price", 0)
+                if is_bsjp and price > 8000:
+                    continue
+                brs   = d.get("bearish_score", 0)
                 spike = d.get("spike", 1)
-                if bs >= 3 and spike >= 1.5:
+                if brs >= 3 and spike >= 1.5:
                     avoid_cands.append((tk, d))
             avoid_cands.sort(key=lambda x: x[1].get("bearish_score", 0), reverse=True)
 
-            # Limit: daily 5, weekly 7, bsjp 5
-            top_n = 7 if plan_type == "weekly" else 5
-            top_candidates = candidates[:top_n]
-            top_avoid = avoid_cands[:3]
+            # ── Limit kandidat ──
+            if is_bsjp:
+                top_candidates = candidates         # BSJP: tampilkan SEMUA tanpa batas
+            else:
+                top_n = 7 if plan_type == "weekly" else 5
+                top_candidates = candidates[:top_n]
+            top_avoid = avoid_cands[:5] if is_bsjp else avoid_cands[:3]
 
             result_rows = []
             for tk, d, sc in top_candidates:
-                price = d.get("price", 100)
-                low   = d.get("low", price * 0.97)
-                high  = d.get("high", price * 1.03)
-                ema5  = d.get("ema5", price)
-                spike = d.get("spike", 1)
-                chg   = d.get("chg", 0)
-                chg5  = d.get("chg5d", 0)
-                bs    = d.get("bullish_score", 0)
+                price  = d.get("price", 100)
+                low    = d.get("low", price * 0.97)
+                high   = d.get("high", price * 1.03)
+                ema5   = d.get("ema5", price)
+                spike  = d.get("spike", 1)
+                chg    = d.get("chg", 0)
+                chg2d  = d.get("chg2d", 0)
+                chg5   = d.get("chg5d", 0)
+                bs     = d.get("bullish_score", 0)
+                consec_up       = d.get("consec_up", 0)
+                close_pct_range = d.get("close_pct_range", 50)
+                spike_prev      = d.get("spike_prev", 1)
+                closes5 = d.get("closes5", [])
+                highs5  = d.get("highs5", [])
+                lows5   = d.get("lows5", [])
+                vols5   = d.get("vols5", [])
 
-                # Entry zone: sekitar EMA5 atau low harian
-                entry_low  = _r(min(ema5, low) * 0.995)
-                entry_high = _r(max(ema5, price) * 1.002)
+                # Entry zone
+                if is_bsjp:
+                    # Entry BSJP: area sekitar harga sekarang (beli sore hari ini)
+                    atr_proxy = max((high - low), price * 0.02)
+                    entry_low  = _r(max(low, price - atr_proxy * 0.5))
+                    entry_high = _r(price)
+                else:
+                    entry_low  = _r(min(ema5, low) * 0.995)
+                    entry_high = _r(max(ema5, price) * 1.002)
 
-                # SL: 2-3% di bawah entry (ATR proxy)
-                atr_proxy = (high - low) * 1.2
-                sl = _r(entry_low - max(atr_proxy, price * 0.025))
+                # SL
+                atr_proxy = max((high - low) * 1.2, price * 0.025)
+                if is_bsjp:
+                    sl = _r(entry_low - atr_proxy * 0.8)   # tighter SL untuk overnight
+                else:
+                    sl = _r(entry_low - atr_proxy)
 
-                # TP1: resistance minor (~3-5% dari entry)
-                tp_mult = 1.04 if plan_type == "daily" else (1.06 if plan_type == "weekly" else 1.03)
-                tp1 = _r(entry_high * tp_mult)
-
-                # TP2: hanya jika bullish_score >= 3
-                tp2 = _r(entry_high * (tp_mult + 0.03)) if bs >= 3 else None
+                # TP — BSJP: target gap-up besok pagi
+                if is_bsjp:
+                    tp_mult = 1.03   # target +3% untuk overnight
+                    tp1 = _r(entry_high * tp_mult)
+                    # TP2 hanya jika momentum kuat (2+ hari naik berturut atau vol sangat besar)
+                    tp2 = _r(entry_high * 1.06) if (consec_up >= 2 or spike >= 4) else None
+                elif plan_type == "weekly":
+                    tp_mult = 1.06
+                    tp1 = _r(entry_high * tp_mult)
+                    tp2 = _r(entry_high * (tp_mult + 0.03)) if bs >= 3 else None
+                else:
+                    tp_mult = 1.04
+                    tp1 = _r(entry_high * tp_mult)
+                    tp2 = _r(entry_high * (tp_mult + 0.03)) if bs >= 3 else None
 
                 # RR
-                risk = entry_high - sl
+                risk   = max(entry_high - sl, 1)
                 reward = tp1 - entry_high
-                rr = round(reward / risk, 1) if risk > 0 else 0
+                rr     = round(reward / risk, 1) if risk > 0 else 0
 
                 # Volume type
                 if spike >= 5:
@@ -14711,34 +14830,42 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 else:
                     vol_type = "Normal"
 
-                # Wyckoff estimation
-                if chg5 > 5 and bs >= 3:
-                    wyckoff = "Markup"
-                    wyckoff_pct = 65
-                elif chg5 > 0 and spike >= 1.5:
-                    wyckoff = "Accumulation"
-                    wyckoff_pct = 55
-                elif chg5 < -5:
-                    wyckoff = "Markdown"
-                    wyckoff_pct = 30
+                # Vol trend (close position in range)
+                if close_pct_range >= 70:
+                    vol_trend = "Tutup dekat HIGH ✅"
+                elif close_pct_range >= 40:
+                    vol_trend = "Tutup tengah range ⚠️"
                 else:
-                    wyckoff = "Ranging"
-                    wyckoff_pct = 50
+                    vol_trend = "Tutup dekat LOW ❌"
 
-                # Why buy
+                # Wyckoff
+                if chg5 > 5 and bs >= 3:
+                    wyckoff, wyckoff_pct = "Markup", 65
+                elif chg5 > 0 and spike >= 1.5:
+                    wyckoff, wyckoff_pct = "Accumulation", 55
+                elif chg5 < -5:
+                    wyckoff, wyckoff_pct = "Markdown", 30
+                else:
+                    wyckoff, wyckoff_pct = "Ranging", 50
+
+                # Why buy — BSJP enriched
                 reasons = []
-                if spike >= 3: reasons.append(f"Vol spike {spike:.1f}x")
-                if bs >= 3: reasons.append("BullScore tinggi")
-                if chg > 1: reasons.append(f"+{chg:.1f}% hari ini")
+                if spike >= 3:     reasons.append(f"Vol spike {spike:.1f}x")
+                if consec_up >= 2: reasons.append(f"Naik {consec_up} hari berturut")
+                if close_pct_range >= 70: reasons.append("Tutup dekat HIGH")
+                if spike_prev >= 1.5 and spike >= 1.5: reasons.append("Vol naik 2 hari")
+                if bs >= 3:        reasons.append("BullScore tinggi")
+                if chg > 1 and not any("Naik" in r for r in reasons):
+                    reasons.append(f"+{chg:.1f}% hari ini")
                 why = " · ".join(reasons) if reasons else "Setup teknikal valid"
 
                 # Horizon
-                if plan_type == "daily":
-                    horizon = "Intraday" if spike >= 3 else "1-3 hari"
-                elif plan_type == "weekly":
-                    horizon = "1-2 minggu" if bs >= 3 else "2-4 minggu"
-                else:
+                if is_bsjp:
                     horizon = "Overnight / next open"
+                elif plan_type == "daily":
+                    horizon = "Intraday" if spike >= 3 else "1-3 hari"
+                else:
+                    horizon = "1-2 minggu" if bs >= 3 else "2-4 minggu"
 
                 row = {
                     "ticker": tk,
@@ -14746,10 +14873,10 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "price": int(price),
                     "ta_score": min(95, int(bs * 22 + spike * 4)),
                     "fa_score": 55,
-                    "combined": round(min(95, bs * 18 + spike * 3.5), 1),
+                    "combined": round(min(95, sc * 0.6 + bs * 8), 1) if is_bsjp else round(min(95, bs * 18 + spike * 3.5), 1),
                     "vol_spike": f"{spike:.1f}x",
                     "vol_type": vol_type,
-                    "vol_trend": "Harga naik + Vol naik ✅" if chg > 0 and spike > 1 else "Vol spike + Harga diam",
+                    "vol_trend": vol_trend,
                     "rsi": round(45 + chg5 * 1.5, 1),
                     "macd": "Bullish crossover" if chg5 > 2 else "Mendekati sinyal",
                     "wyckoff": wyckoff,
@@ -14761,8 +14888,16 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "sl": sl,
                     "horizon": horizon,
                     "why_buy": why[:80],
-                    "rating": "BUY" if bs >= 3 else "HOLD",
+                    "rating": "BUY" if (bs >= 3 or (is_bsjp and spike >= 2)) else "HOLD",
                     "rr": rr,
+                    "consec_up": consec_up,
+                    "close_pct_range": close_pct_range,
+                    "chg2d": round(chg2d, 2),
+                    # 5-candle mini data
+                    "closes5": closes5,
+                    "highs5":  highs5,
+                    "lows5":   lows5,
+                    "vols5":   vols5,
                 }
                 result_rows.append(row)
 
@@ -14783,7 +14918,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "rating": "AVOID",
                 })
 
-            # Outlook singkat
+            # Outlook
             avg_chg = sum(d.get("chg", 0) for _, d, _ in top_candidates[:3]) / max(len(top_candidates[:3]), 1)
             if avg_chg > 1:
                 outlook = f"Pasar {plan_type} cenderung bullish ({avg_chg:+.1f}% avg top picks). Fokus block trade konfirmasi."
@@ -14792,8 +14927,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             else:
                 outlook = f"Pasar {plan_type} sideways-ranging. Entry hanya di zona demand konfirmasi."
 
-            main_key = plan_type  # "daily", "weekly", "bsjp"
-            return {main_key: result_rows, "avoid": avoid_rows, "outlook": outlook}
+            return {plan_type: result_rows, "avoid": avoid_rows, "outlook": outlook}
 
         def _rule_based_plan_v2(price_data_map, bs30_cache, plan_type="daily"):
             """
@@ -15024,13 +15158,39 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
         def _auto_generate_if_needed(plan_type="daily"):
             """
-            Core auto-generate logic.
-            Dipanggil setiap kali tab dibuka.
-            Jika slot sekarang belum ada plannya → generate otomatis.
+            Core auto-generate logic. Dipanggil setiap kali tab dibuka.
+            Jadwal:
+              daily  → Senin-Jumat jam 21:00 WIB
+              weekly → Sabtu jam 12:00 WIB
+              bsjp   → Senin-Jumat jam 15:30 WIB (closing BEI)
             """
             now = _wib_now()
+            wd  = now.weekday()  # 0=Senin … 6=Minggu
+
+            # ── Guard: hari yang tidak boleh generate ──
+            if plan_type == "daily" and wd >= 5:   # Sabtu-Minggu skip
+                return False
+            if plan_type == "weekly" and wd != 5:  # Hanya Sabtu
+                return False
+            if plan_type == "bsjp"   and wd >= 5:  # Sabtu-Minggu skip
+                return False
+
             date_key = _auto_plan_date_key(now)
-            slot = _auto_plan_slot(now)
+
+            # ── Tentukan slot dan validasi jam ──
+            if plan_type == "bsjp":
+                slot = _auto_plan_slot_bsjp(now)
+                if slot in ("pre_closing", "weekend_skip"):
+                    return False   # belum 15:30 WIB atau weekend
+            elif plan_type == "weekly":
+                slot = _auto_plan_slot(now)
+                if slot not in ("saturday_noon",):
+                    return False   # belum Sabtu 12:00
+            else:  # daily
+                slot = _auto_plan_slot(now)
+                if slot not in ("evening",):
+                    return False   # belum 21:00
+
             slot_key = f"{date_key}_{slot}"
             history_key = f"auto_plan_history_{plan_type}"
 
@@ -15051,25 +15211,33 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             if slot_key in history:
                 return False  # sudah ada, tidak perlu generate
 
-            # Generate baru
+            # ── Generate baru ──
             try:
-                with st.spinner(f"⚡ SIGMA Auto-Generate {plan_type.upper()} Plan ({slot} slot)..."):
+                with st.spinner(f"⚡ SIGMA Auto-Generate {plan_type.upper()} Plan..."):
                     _price_map = _reco_fetch_prices(tuple(_WATCHLIST_RECO))
                     if not _price_map:
                         return False
                     plan_json = _rule_based_plan(_price_map, plan_type)
+
+                    # Label slot untuk history
+                    if plan_type == "bsjp":
+                        _slot_label = "Sesi Closing (15:30)"
+                    elif plan_type == "weekly":
+                        _slot_label = "Sabtu Siang (12:00)"
+                    else:
+                        _slot_label = "Sesi Malam (21:00)"
+
                     _save_auto_plan_to_history(
                         plan_type, plan_json, slot_key,
                         now.strftime("%d %b %Y"),
-                        "Sesi Siang (13:00)" if slot == "morning" else "Sesi Malam (21:00)"
+                        _slot_label
                     )
-                    # Juga simpan ke reco_*_result untuk kompatibilitas render lama
                     import json as _jap
                     _raw = _jap.dumps(plan_json, ensure_ascii=False)
                     st.session_state[f"reco_{plan_type}_result"] = _raw
                     st.session_state[f"reco_{plan_type}_ts"] = _wib_now().strftime("%d %b %Y, %H:%M WIB")
                 return True
-            except Exception as _ae:
+            except Exception:
                 return False
 
         def _auto_update_track_record():
@@ -15331,7 +15499,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
   }});
 
   if(DATA.length > 0) renderSlot(0);
-  else content.innerHTML = '<div style="text-align:center;padding:30px;color:{_sub_c};font-size:0.875rem;">Belum ada history plan. Plan otomatis akan muncul jam 13:00 & 21:00 WIB.</div>';
+  else content.innerHTML = '<div style="text-align:center;padding:30px;color:{_sub_c};font-size:0.875rem;">Belum ada history plan. BSJP auto-generate jam 15:30 WIB (Senin–Jumat). Daily jam 21:00 WIB. Weekly Sabtu jam 12:00 WIB.</div>';
 
   // Adaptive height
   setTimeout(function(){{
@@ -15945,9 +16113,17 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             if not _alpha_unlocked: st.stop()
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🌙 BELI SORE JUAL PAGI — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             _now_b = _wib_now()
-            _next_b = "21:00 WIB" if _auto_plan_slot(_now_b) == "morning" else "13:00 WIB besok"
+            _wd_b  = _now_b.weekday()
+            _h_b, _m_b = _now_b.hour, _now_b.minute
+            # Hitung jadwal generate berikutnya
+            if _wd_b >= 5:
+                _next_b = "Senin jam 15:30 WIB"
+            elif _h_b > 15 or (_h_b == 15 and _m_b >= 30):
+                _next_b = "Besok jam 15:30 WIB"
+            else:
+                _next_b = "Hari ini jam 15:30 WIB"
             st.markdown(f"""<div style='background:{"rgba(245,166,35,0.07)" if is_dark else "#fffbeb"};border:1px solid rgba(245,166,35,0.25);border-left:3px solid #f5a623;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
-⚡ <b style='color:#f5a623;'>AUTO-SCHEDULE AKTIF</b> &nbsp;·&nbsp; BSJP plan update <b>13:00 WIB</b> &amp; <b>21:00 WIB</b> &nbsp;·&nbsp; Update berikutnya: <b style='color:{text_main};'>{_next_b}</b><br>
+⚡ <b style='color:#f5a623;'>AUTO-SCHEDULE AKTIF</b> &nbsp;·&nbsp; BSJP plan auto-generate <b>15:30 WIB</b>, Senin–Jumat &nbsp;·&nbsp; Generate berikutnya: <b style='color:{text_main};'>{_next_b}</b><br>
 ⚠️ Strategi overnight: sizing maks <b>5–10%</b> portofolio per posisi. Risiko gap-down dari berita semalam.
 </div>""", unsafe_allow_html=True)
 
@@ -15964,127 +16140,241 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                     run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
 
             if run_bsjp:
-                with st.spinner("SIGMA AI sedang mencari kandidat BSJP dari seluruh IDX..."):
+                with st.spinner("⚡ SIGMA Engine mencari kandidat BSJP dari seluruh IDX (harga ≤ Rp8.000)..."):
                     price_data = _reco_fetch_prices(_WATCHLIST_RECO)
-                    sh_summary = _sh_summary_for_reco()
                     if price_data:
-                        bsjp_candidates = sorted(
-                            [(tk, d) for tk, d in price_data.items()
-                             if d.get("spike", 1) >= 1.5 and d.get("chg", 0) > -3 and d.get("vol5", 0) > 0],
-                            key=lambda x: x[1]["spike"], reverse=True
-                        )[:15]
-                        bsjp_avoid = sorted(
-                            [(tk, d) for tk, d in price_data.items() if d.get("bearish_score", 0) >= 3],
-                            key=lambda x: x[1]["bearish_score"], reverse=True
-                        )[:5]
+                        # ── Rule-based BSJP plan (no AI needed, unlimited candidates) ──
+                        import json as _bj
+                        _bsjp_plan = _rule_based_plan(price_data, "bsjp")
+                        _bsjp_rows  = _bsjp_plan.get("bsjp", [])
+                        _bsjp_avoid = _bsjp_plan.get("avoid", [])
+                        _bsjp_out   = _bsjp_plan.get("outlook", "")
 
-                        # ── MnM Zone Bonus & False Breakout Filter (BSJP) ──
-                        if _ZONE_ENGINE_AVAILABLE and bsjp_candidates:
-                            try:
-                                _bsjp_tickers = tuple([tk for tk, _ in bsjp_candidates])
-                                _zone_map_bsjp = _cached_batch_detect_zones(_bsjp_tickers)
-                                for _tk, _d in bsjp_candidates:
-                                    _zr = _zone_map_bsjp.get(_tk, ZoneResult(ticker=_tk))
-                                    _d["zone_bonus"]     = _zr.confluence_score * 0.5 + max(0, (_zr.accum_score - 50) * 0.1)
-                                    _d["false_breakout"] = _zr.false_breakout
-                                bsjp_candidates = [(tk, d) for tk, d in bsjp_candidates
-                                                   if not d.get("false_breakout", False)]
-                                bsjp_candidates.sort(
-                                    key=lambda x: x[1].get("spike", 0) + x[1].get("zone_bonus", 0),
-                                    reverse=True
-                                )
-                            except Exception:
-                                pass
-
-                        lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|VolSpike={d['spike']:.1f}x|Vol={d['vol']:,}|AvgVol5={d['vol5']:,}|High={d['high']:,.0f}|Low={d['low']:,.0f}|BullScore={d['bullish_score']}/4"
-                                 + (f"|ZoneBonus={d.get('zone_bonus',0):.1f}" if d.get("zone_bonus") else "")
-                                 for tk, d in bsjp_candidates]
-                        avoid_lines = [f"{tk}: Harga={d['price']:,.0f}|Chg={d['chg']:+.2f}%|BearScore={d['bearish_score']}/4"
-                                       for tk, d in bsjp_avoid]
-                        market_snap = "\n".join(lines)
-
-                        prompt = f"""Kamu adalah SIGMA AI, spesialis strategi overnight trading IDX (BSJP).
-Universe screening: {len(price_data)} saham IDX.
-FOKUS UTAMA: Volume spike menjelang closing + analisa frekuensi transaksi.
-
-=== TEORI VOLUME & FREKUENSI UNTUK BSJP ===
-SINYAL BSJP IDEAL:
-1. Volume spike sore ≥ 3x normal → institusi/bandar sedang kumpul menjelang closing
-2. Frekuensi transaksi RENDAH + Lot per transaksi BESAR = BLOCK TRADE = smart money masuk diam-diam ✅
-3. Frekuensi TINGGI + Lot kecil-kecil = ritel / noise = BUKAN sinyal BSJP
-4. Harga menutup KUAT di dekat HIGH hari ini = buying pressure kuat menjelang closing
-5. Pemegang saham naik MoM = konfirmasi positif tambahan
-
-SINYAL BAHAYA BSJP:
-- Volume spike besar TAPI harga tutup di bawah tengah range = distribusi menjelang closing → JANGAN BSJP
-- Frekuensi transaksi SANGAT TINGGI tapi lot kecil = ritel FOMO, bukan smart money → risiko gap down
-- BearScore tinggi = downtrend aktif → gap down risk
-
-=== KANDIDAT BSJP - Volume Spike Tertinggi ===
-{market_snap}
-
-=== HINDARI MALAM INI (Sinyal Bearish Kuat) ===
-{chr(10).join(avoid_lines) if avoid_lines else 'Tidak ada sinyal bearish ekstrem.'}
-
-=== DATA PEMEGANG SAHAM ===
-{sh_summary}
-
-=== TUGAS ===
-Pilih TOP 3-5 saham BSJP terbaik + TOP 2-3 JANGAN DIPEGANG malam ini.
-Prioritaskan yang volume spike sore + indikasi block trade (frekuensi rendah).
-
-PENTING: Jawab HANYA dalam format JSON. Jangan ada teks di luar JSON.
-
-Field saham BSJP (beli):
-- ticker, name (max 28 kar), price (integer)
-- ta_score (0-100), fa_score (0-100), combined (float)
-- vol_spike: rasio volume (format "4.2x")
-- vol_type: "Block Trade / Smart Money" | "Ritel (Noise)" | "Mixed / Bias"
-- vol_trend: posisi close vs range hari ini - "Tutup dekat HIGH ✅" | "Tutup tengah range ⚠️" | "Tutup dekat LOW ❌"
-- wyckoff, wyckoff_pct, rsi (float), macd (string singkat)
-- entry_low (integer), entry_high (integer): zona beli sore (15:30-15:50 WIB)
-- tp1 (integer): target jual pagi besok
-- tp2 (integer atau null): target lebih jauh jika gap-up kuat
-- sl (integer): SL jika buka di bawah level ini besok pagi
-- horizon: "Overnight" | "1-2 hari"
-- why_buy: alasan singkat kenapa layak BSJP (max 80 karakter)
-- rating: "BUY"
-
-Field saham HINDARI malam ini:
-- ticker, name, price, ta_score, fa_score, combined
-- vol_signal: sinyal bahaya volume (max 60 kar)
-- reason: alasan jangan dipegang (max 80 kar)
-- rating: "AVOID"
-
-Format JSON WAJIB:
-{{
-  "bsjp": [ ...array saham beli... ],
-  "avoid": [ ...array saham hindari... ],
-  "kondisi": "Kondisi BSJP malam ini: KONDUSIF / WAIT - alasan 1 kalimat."
-}}"""
-                        _bsjp_raw = _call_ai_reco(prompt)
+                        _bsjp_raw = _bj.dumps(_bsjp_plan, ensure_ascii=False)
                         st.session_state["reco_bsjp_result"] = _bsjp_raw
-                        st.session_state["reco_bsjp_ts"] = datetime.now().strftime("%d %b %Y, %H:%M WIB")
-                        if st.session_state.user:
-                            _sv = load_user(st.session_state.user["email"]) or {}
-                            _sv["reco_bsjp_result"] = _bsjp_raw
-                            _sv["reco_bsjp_ts"] = st.session_state["reco_bsjp_ts"]
-                            save_user(st.session_state.user["email"], _sv)
+                        st.session_state["reco_bsjp_ts"] = _wib_now().strftime("%d %b %Y, %H:%M WIB")
+                        if st.session_state.get("user"):
+                            try:
+                                _sv = load_user(st.session_state.user["email"]) or {}
+                                _sv["reco_bsjp_result"] = _bsjp_raw
+                                _sv["reco_bsjp_ts"] = st.session_state["reco_bsjp_ts"]
+                                save_user(st.session_state.user["email"], _sv)
+                            except: pass
                     else:
                         st.warning("Gagal mengambil data pasar. Coba lagi.")
 
-                if st.session_state.get("reco_bsjp_result"):
-                    _render_table_reco(
-                        "reco_bsjp_result", "reco_bsjp_ts", "#7c3aed",
-                        "SUMMARY - BELI SORE INI", "DETAIL EKSEKUSI BSJP", "JANGAN DIPEGANG MALAM INI",
-                        "Kondisi BSJP Malam Ini", "WAKTU JUAL"
-                    )
-                elif not run_bsjp:
-                    st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
-                        <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
-                        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                            Klik <span style='color:#7c3aed;'>Generate BSJP</span> untuk kandidat overnight trade malam ini</p>
-                    </div>""", unsafe_allow_html=True)
+            # ── Render BSJP hasil (rule-based, no summary table) ──
+            _bsjp_raw_ss = st.session_state.get("reco_bsjp_result", "")
+            _bsjp_ts_ss  = st.session_state.get("reco_bsjp_ts", "")
+            if _bsjp_raw_ss:
+                import json as _bjr, re as _bjre
+                _bjdata = None
+                try:
+                    _bjm = _bjre.search(r'\{[\s\S]*\}', _bsjp_raw_ss)
+                    if _bjm: _bjdata = _bjr.loads(_bjm.group(0))
+                except: pass
+
+                if _bjdata:
+                    _brows  = _bjdata.get("bsjp", [])
+                    _barows = _bjdata.get("avoid", [])
+                    _bout   = _bjdata.get("outlook", _bjdata.get("kondisi", ""))
+                else:
+                    _brows, _barows, _bout = [], [], ""
+
+                _tbl_bg   = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
+                _hdr_bg   = "rgba(245,166,35,0.08)" if is_dark else "#fffbf0"
+                _border_c = "rgba(245,166,35,0.18)" if is_dark else "#f5d67a"
+                _acc_b    = "#f5a623"
+
+                if _bsjp_ts_ss:
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_bsjp_ts_ss} &nbsp;·&nbsp; {len(_brows)} saham kandidat (harga ≤ Rp8.000)</p>", unsafe_allow_html=True)
+
+                if _bout:
+                    st.markdown(f"<div style='background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-left:3px solid {_acc_b};border-radius:0 8px 8px 0;padding:10px 15px;font-size:0.875rem;color:{text_main};margin-bottom:12px;line-height:1.65;'>💡 {_bout}</div>", unsafe_allow_html=True)
+
+                # ── Build BSJP table HTML with mini candle SVG ──
+                import json as _bjj
+                _brows_json  = _bjj.dumps(_brows,  ensure_ascii=False)
+                _barows_json = _bjj.dumps(_barows, ensure_ascii=False)
+                _n_b  = len(_brows)
+                _n_ba = len(_barows)
+                _bsjp_h = max(600, 90 + _n_b * 50 + 200 + _n_ba * 44 + 150)
+
+                _bsjp_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
+.sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{_acc_b};font-weight:700;margin:0 0 7px;display:block;}}
+.card{{background:{_tbl_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
+.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
+.scroll::-webkit-scrollbar{{height:4px;}}
+.scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
+table{{width:100%;border-collapse:collapse;min-width:900px;}}
+thead th{{background:{_hdr_bg};color:{_acc_b};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
+tbody td{{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.8rem;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:nth-child(odd) td{{background:rgba(245,166,35,0.03);}}
+tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.03);}}
+tbody tr:hover td{{background:rgba(245,166,35,0.09);}}
+.tk{{font-weight:700;font-size:0.875rem;color:{_acc_b};}}
+.pr{{font-weight:600;}}
+.sg{{color:#089981;font-weight:700;}}
+.sr{{color:#f23645;font-weight:700;}}
+.sy{{color:#a78bfa;font-weight:700;}}
+.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:700;}}
+.bdg-buy{{background:rgba(245,166,35,0.18);color:{_acc_b};border:1px solid rgba(245,166,35,0.5);}}
+.bdg-hold{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
+.bdg-avoid{{background:rgba(242,54,69,0.12);color:#f23645;border:1px solid rgba(242,54,69,0.5);}}
+.vol-hi{{color:#a78bfa;font-weight:700;}}
+.vol-ok{{color:{text_sub};}}
+.consec{{color:#f5a623;font-weight:700;font-size:0.8rem;}}
+.buy-txt{{font-size:0.72rem;color:{text_main};max-width:180px;white-space:normal;line-height:1.35;}}
+.avoid-rsn{{max-width:200px;white-space:normal;font-size:0.72rem;color:#f23645;}}
+@media(max-width:640px){{
+  thead th{{font-size:0.65rem;padding:5px 6px;}}
+  tbody td{{font-size:0.72rem;padding:5px 6px;}}
+}}
+</style></head><body>
+
+<span class="sec-lbl">📈 TRADE PLAN — BELI SORE JUAL PAGI ({_n_b} saham, urut terbaik)</span>
+<div class="card"><div class="scroll"><table>
+<thead><tr>
+  <th>TICKER</th>
+  <th title="5 candle terakhir — mini visual momentum">5 CANDLE</th>
+  <th>PRICE</th>
+  <th>ENTRY LOW</th><th>ENTRY HIGH</th>
+  <th>TP1</th><th>TP2</th><th>SL</th>
+  <th title="Reward/Risk ratio">RR</th>
+  <th>HORIZON</th>
+  <th title="Volume spike hari ini vs avg 5 hari">VOL</th>
+  <th title="Hari naik berturut-turut">STREAK</th>
+  <th title="Posisi close dalam range harian: 100% = tepat di HIGH">CLOSE%</th>
+  <th>RATING</th>
+  <th>ALASAN</th>
+</tr></thead>
+<tbody id="bsjp-tb"></tbody>
+</table></div></div>
+
+<span class="sec-lbl">⛔ HINDARI MALAM INI ({_n_ba} saham)</span>
+<div class="card"><div class="scroll"><table>
+<thead><tr>
+  <th>TICKER</th><th>PRICE</th><th>VOL SIGNAL</th><th>ALASAN</th><th>RATING</th>
+</tr></thead>
+<tbody id="avoid-tb"></tbody>
+</table></div></div>
+
+<script>
+(function(){{
+  var ROWS  = {_brows_json};
+  var AVOID = {_barows_json};
+
+  function fmt(n){{ return n?'Rp '+parseInt(n).toLocaleString('id-ID'):'-'; }}
+  function bdg(r){{
+    if(!r) return '';
+    var c = r==='BUY'?'bdg-buy':r==='HOLD'?'bdg-hold':'bdg-avoid';
+    return '<span class="bdg '+c+'">'+r+'</span>';
+  }}
+  function upside(p,t){{
+    if(!p||!t) return '-';
+    var pct=((t-p)/p*100).toFixed(1);
+    var c=pct>=0?'#089981':'#f23645';
+    return '<span style="color:'+c+';font-weight:600;">'+(pct>=0?'+':'')+pct+'%</span>';
+  }}
+  function closePctColor(v){{
+    if(v>=70) return '#089981';
+    if(v>=40) return '#f5a623';
+    return '#f23645';
+  }}
+  function streakBadge(n){{
+    if(!n||n===0) return '<span style="color:#666;">—</span>';
+    var col = n>=3?'#f5a623':n>=2?'#60a5fa':'#888';
+    var stars = n>=3?'🔥':n>=2?'✅':'·';
+    return '<span class="consec" style="color:'+col+';">'+stars+' '+n+'d</span>';
+  }}
+
+  // ── Mini Candle SVG renderer ──
+  function miniCandles(c5,h5,l5,v5){{
+    if(!c5||c5.length<2) return '<svg width="60" height="28"></svg>';
+    var W=60, H=28, pad=3;
+    var allH=h5, allL=l5;
+    var mn=Math.min.apply(null,allL), mx=Math.max.apply(null,allH);
+    var rng=mx-mn||1;
+    function py(p){{ return pad+(H-2*pad)*(1-(p-mn)/rng); }}
+    var barW=7, gap=3;
+    var svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+    for(var i=0;i<c5.length;i++){{
+      var x=pad+i*(barW+gap);
+      var open_p = i===0?c5[0]:c5[i-1];
+      var close_p=c5[i], hi_p=h5[i]||close_p, lo_p=l5[i]||close_p;
+      var isBull=close_p>=open_p;
+      var col=isBull?'#089981':'#f23645';
+      var yH=py(hi_p), yL=py(lo_p);
+      var yO=py(open_p), yC=py(close_p);
+      var bodyY=Math.min(yO,yC), bodyH=Math.max(Math.abs(yO-yC),1);
+      // wick
+      svg+='<line x1="'+(x+barW/2)+'" y1="'+yH+'" x2="'+(x+barW/2)+'" y2="'+yL+'" stroke="'+col+'" stroke-width="1" opacity="0.7"/>';
+      // body
+      svg+='<rect x="'+x+'" y="'+bodyY+'" width="'+barW+'" height="'+bodyH+'" fill="'+col+'" rx="1"/>';
+    }}
+    svg+='</svg>';
+    return svg;
+  }}
+
+  var h='';
+  ROWS.forEach(function(r){{
+    var cpr  = parseFloat(r.close_pct_range)||50;
+    var cv   = r.vol_spike||'-';
+    var vs   = parseFloat(cv)||1;
+    var vcls = vs>=5?'vol-hi':vs>=2?'vol-hi':'vol-ok';
+    h+='<tr>'+
+      '<td><span class="tk">'+r.ticker+'</span></td>'+
+      '<td>'+miniCandles(r.closes5,r.highs5,r.lows5,r.vols5)+'</td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td class="sg">'+fmt(r.entry_low)+'</td>'+
+      '<td class="sg">'+fmt(r.entry_high)+'</td>'+
+      '<td style="color:#089981;font-weight:600;">'+fmt(r.tp1)+'</td>'+
+      '<td class="vol-ok">'+(r.tp2?fmt(r.tp2):'-')+'</td>'+
+      '<td class="sr">'+fmt(r.sl)+'</td>'+
+      '<td>'+(r.rr?'<span class="sy">'+r.rr+'x</span>':'-')+'</td>'+
+      '<td style="color:#60a5fa;font-size:0.72rem;">'+(r.horizon||'-')+'</td>'+
+      '<td><span class="'+vcls+'">'+cv+'</span></td>'+
+      '<td>'+streakBadge(r.consec_up)+'</td>'+
+      '<td><span style="color:'+closePctColor(cpr)+';font-weight:600;">'+cpr.toFixed(0)+'%</span></td>'+
+      '<td>'+bdg(r.rating)+'</td>'+
+      '<td><span class="buy-txt">'+(r.why_buy||'-')+'</span></td>'+
+    '</tr>';
+  }});
+  document.getElementById('bsjp-tb').innerHTML = h || '<tr><td colspan="15" style="text-align:center;padding:20px;color:#666;">Tidak ada kandidat BSJP yang memenuhi kriteria saat ini.</td></tr>';
+
+  var h2='';
+  AVOID.forEach(function(r){{
+    h2+='<tr>'+
+      '<td><span class="tk" style="color:#f23645;">'+r.ticker+'</span></td>'+
+      '<td class="pr">'+fmt(r.price)+'</td>'+
+      '<td style="font-size:0.72rem;color:#f23645;">'+(r.vol_signal||'Distribusi')+'</td>'+
+      '<td class="avoid-rsn">'+(r.reason||'-')+'</td>'+
+      '<td>'+bdg('AVOID')+'</td>'+
+    '</tr>';
+  }});
+  document.getElementById('avoid-tb').innerHTML = h2 || '<tr><td colspan="5" style="text-align:center;padding:14px;color:#666;">Tidak ada sinyal bearish ekstrem.</td></tr>';
+
+  setTimeout(function(){{
+    var hh=document.body.scrollHeight;
+    window.parent.postMessage({{type:'streamlit:setFrameHeight',height:hh+20}},'*');
+  }},300);
+}})();
+</script>
+</body></html>"""
+                components.html(_bsjp_html, height=_bsjp_h, scrolling=True)
+
+            elif not run_bsjp:
+                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
+                    <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
+                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                        Klik <span style='color:#f5a623;'>Generate BSJP</span> untuk kandidat overnight trade hari ini<br>
+                        <span style='color:{text_sub};opacity:0.6;font-size:0.65rem;'>Auto-generate aktif jam 15:30 WIB · Senin–Jumat · Semua saham ≤ Rp8.000</span></p>
+                </div>""", unsafe_allow_html=True)
 
         # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
         with reco_tab_fundamental:
