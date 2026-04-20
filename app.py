@@ -5252,6 +5252,26 @@ def show_system_selector():
     </style>
     """, unsafe_allow_html=True)
 
+    # ── FIX SCROLL: Paksa scroll ke atas setiap kali halaman ini dirender ──
+    components.html("""
+<script>
+(function() {
+    // Scroll parent window to top immediately
+    try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {}
+    try { window.parent.document.documentElement.scrollTop = 0; } catch(e) {}
+    try { window.parent.document.body.scrollTop = 0; } catch(e) {}
+    // Also scroll after a tiny delay in case Streamlit re-renders
+    setTimeout(function() {
+        try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {}
+        try { window.parent.document.documentElement.scrollTop = 0; } catch(e) {}
+    }, 100);
+    setTimeout(function() {
+        try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {}
+    }, 400);
+})();
+</script>
+""", height=0)
+
     _terminal_url = st.secrets.get("SIGMA_TERMINAL_URL", "")
 
     components.html(f"""
@@ -12734,20 +12754,99 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
 
     with tab_alpha_screener:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - AI STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
+        # ── ALPHA SCREENER PASSWORD GATE ──────────────────────────────────────
+        _ALPHA_PASSWORD = st.secrets.get("ALPHA_SCREENER_PASSWORD", "SIGMA2025")
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
-            "  🔍 AI STOCK INSIGHT  ",
-            "  📅 DAILY  ",
-            "  📆 WEEKLY  ",
-            "  🌙 BELI SORE JUAL PAGI  ",
-            "  📊 FUNDAMENTAL SCREENER  ",
-            "  🏦 BROKER SUMMARY  ",
-            "  🏆 TRACK RECORD  ",
-        ])
+        if not st.session_state.get("alpha_screener_unlocked", False):
+            st.markdown(f"""
+            <style>
+            .alpha-gate-wrapper {{
+                display:flex; flex-direction:column; align-items:center; justify-content:center;
+                min-height:420px; padding:40px 20px;
+            }}
+            .alpha-gate-card {{
+                background:linear-gradient(135deg,rgba(10,15,30,0.98),rgba(15,20,40,0.98));
+                border:1px solid rgba(245,158,11,0.25); border-radius:20px;
+                padding:40px 36px; max-width:420px; width:100%; text-align:center;
+                box-shadow:0 0 60px rgba(245,158,11,0.08), 0 20px 40px rgba(0,0,0,0.5);
+                position:relative; overflow:hidden;
+            }}
+            .alpha-gate-card::before {{
+                content:''; position:absolute; inset:0;
+                background:radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.07) 0%, transparent 65%);
+                pointer-events:none;
+            }}
+            .alpha-gate-icon {{ font-size:2.6rem; margin-bottom:14px; display:block; }}
+            .alpha-gate-title {{
+                font-size:1.35rem; font-weight:700; color:#f59e0b; letter-spacing:2px;
+                text-transform:uppercase; margin-bottom:6px;
+            }}
+            .alpha-gate-sub {{
+                font-size:0.78rem; color:rgba(255,255,255,0.35); letter-spacing:1.5px;
+                text-transform:uppercase; margin-bottom:28px;
+            }}
+            .alpha-gate-badge {{
+                display:inline-flex; align-items:center; gap:6px;
+                background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2);
+                border-radius:20px; padding:4px 14px; font-size:0.7rem; color:#f59e0b;
+                letter-spacing:2px; text-transform:uppercase; margin-bottom:28px;
+            }}
+            </style>
+            <div class="alpha-gate-wrapper">
+                <div class="alpha-gate-card">
+                    <span class="alpha-gate-icon">⚡</span>
+                    <div class="alpha-gate-title">Alpha Screener</div>
+                    <div class="alpha-gate-sub">Area Terbatas · Akses Eksklusif</div>
+                    <div class="alpha-gate-badge">🔒 Password Required</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            _col_pw, _col_ok = st.columns([3, 1])
+            with _col_pw:
+                _pw_input = st.text_input(
+                    "Masukkan Password Alpha Screener:",
+                    type="password",
+                    placeholder="••••••••••",
+                    key="alpha_pw_input",
+                    label_visibility="collapsed"
+                )
+            with _col_ok:
+                _pw_btn = st.button("🔓 UNLOCK", use_container_width=True, key="alpha_pw_btn")
+
+            if _pw_btn:
+                if _pw_input == _ALPHA_PASSWORD:
+                    st.session_state["alpha_screener_unlocked"] = True
+                    st.rerun()
+                else:
+                    st.error("❌ Password salah. Hubungi admin untuk akses.")
+
+        # ── END PASSWORD GATE — only render content if unlocked ───────────────
+        _alpha_unlocked = st.session_state.get("alpha_screener_unlocked", False)
+        if _alpha_unlocked:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - AI STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
+
+
+        if _alpha_unlocked:
+            alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
+                "  🔍 AI STOCK INSIGHT  ",
+                "  📅 DAILY  ",
+                "  📆 WEEKLY  ",
+                "  🌙 BELI SORE JUAL PAGI  ",
+                "  📊 FUNDAMENTAL SCREENER  ",
+                "  🏦 BROKER SUMMARY  ",
+                "  🏆 TRACK RECORD  ",
+            ])
+        else:
+            # Dummy context managers so "with alpha_tab_X:" blocks don't NameError
+            import contextlib as _ctxlib
+            alpha_tab_insight = alpha_tab_daily = alpha_tab_weekly = alpha_tab_bsjp = _ctxlib.suppress()
+            alpha_tab_fundamental = alpha_tab_brosum = alpha_tab_trackrecord = _ctxlib.suppress()
+
 
         with alpha_tab_insight:
+            if not _alpha_unlocked: st.stop()
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
@@ -15479,6 +15578,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
+            if not _alpha_unlocked: st.stop()
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 REKOMENDASI HARIAN — GOAPI BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_d = _wib_now()
@@ -15724,6 +15824,7 @@ Data broker summary real-time<br>
 
         # ─── TAB WEEKLY ───────────────────────────────────────────────────
         with reco_tab_weekly:
+            if not _alpha_unlocked: st.stop()
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📆 REKOMENDASI MINGGUAN — GOAPI BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_w = _wib_now()
@@ -15923,6 +16024,7 @@ Format JSON WAJIB:
 
         # ─── TAB BSJP ─────────────────────────────────────────────────────
         with reco_tab_bsjp:
+            if not _alpha_unlocked: st.stop()
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🌙 BELI SORE JUAL PAGI — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             _now_b = _wib_now()
             _next_b = "21:00 WIB" if _auto_plan_slot(_now_b) == "morning" else "13:00 WIB besok"
@@ -16068,6 +16170,7 @@ Format JSON WAJIB:
 
         # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
         with reco_tab_fundamental:
+            if not _alpha_unlocked: st.stop()
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
 
@@ -16505,6 +16608,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 # PART 12B: BROKER SUMMARY - NET BUY/SELL + FOREIGN FLOW
 # ─────────────────────────────────────────────
     with alpha_tab_brosum:
+        if not _alpha_unlocked: st.stop()
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 BROKER SUMMARY - NET BUY/SELL &amp; FOREIGN FLOW</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
 
@@ -17081,6 +17185,7 @@ Format output: terstruktur dengan heading jelas, gunakan emoji untuk keterbacaan
 # PART 12C: TRACK RECORD / BACKTEST REKOMENDASI
 # ─────────────────────────────────────────────
     with alpha_tab_trackrecord:
+        if not _alpha_unlocked: st.stop()
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏆 TRACK RECORD — AUTO UPDATE JAM 21:00 WIB</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};border:1px solid rgba(38,166,154,0.2);border-left:3px solid #26a69a;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
 🔄 <b style='color:#26a69a;'>AUTO UPDATE AKTIF</b> &nbsp;·&nbsp; Setiap jam <b>21:00 WIB</b> sistem cek otomatis TP/SL tersentuh &nbsp;·&nbsp; P&amp;L unrealized update harian
