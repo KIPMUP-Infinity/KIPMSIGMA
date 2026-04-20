@@ -16778,11 +16778,12 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                 <span style='color:#f59e0b;font-weight:700;'>STEP 1</span> &nbsp;Seluruh saham IHSG (900+) →
                 <b style='color:{text_main};'>200 saham Market Cap terbesar IDX (Non-Banking)</b><br>
                 <span style='color:#a78bfa;font-weight:700;'>STEP 2</span> &nbsp;200 saham →
-                <b style='color:{text_main};'>100 saham</b> dengan <b>volume hari ini jauh di atas rata-rata 20 hari terakhir</b>
+                <b style='color:{text_main};'>100 saham</b> dengan <b>harga ≤ Rp8.000</b> + <b>volume hari ini jauh di atas rata-rata 20 hari terakhir</b>
                 (volume spike abnormal — indikasi ada pergerakan tidak biasa)<br>
                 <span style='color:#26a69a;font-weight:700;'>STEP 3</span> &nbsp;100 saham →
-                <b style='color:{text_main};'>30 saham</b> dengan pola <b>frekuensi kecil + volume besar</b>
-                (proxy akumulasi: transaksi sedikit tapi lot besar — ciri smart money / broker asing masuk diam-diam)<br>
+                <b style='color:{text_main};'>30 saham</b> dengan pola <b>akumulasi 3 hari terakhir</b>:
+                volume ≥1.5x avg20 TAPI harga tidak naik signifikan (≤+1.5%) — smart money absorb supply diam-diam.
+                Makin banyak hari berturut-turut = skor makin tinggi (1 hari=1.0x · 2 hari=1.4x · 3 hari=2.0x)<br>
                 <span style='color:#f23645;font-weight:700;'>KONFIRMASI</span> &nbsp;30 saham final →
                 <b style='color:#26a69a;'>GoAPI broker data</b> untuk konfirmasi akumulasi/distribusi real<br>
                 <span style='color:{text_sub};'>📌 Output ini jadi <b>universe</b> untuk tab 📅 Daily &amp; 📆 Weekly &nbsp;|&nbsp;
@@ -16863,20 +16864,41 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                             _vl = _hist["Volume"][f"{tk}.JK"].dropna()
                             if len(_cl) < 5 or len(_vl) < 5:
                                 continue
-                            _price   = float(_cl.iloc[-1])
-                            _vol_td  = float(_vl.iloc[-1])
-                            # Rata-rata 20 hari SEBELUM hari ini (exclude hari ini)
+                            _price = float(_cl.iloc[-1])
+
+                            # ── Filter harga: maks 8.000 (IDX long-only, harga > 8k likuiditas terbatas) ──
+                            if _price > 8000:
+                                continue
+
+                            # ── Rata-rata 20 hari SEBELUM hari ini ──
                             _lookback = _vl.iloc[:-1]
-                            _avg20   = float(_lookback.tail(20).mean()) if len(_lookback) >= 5 else float(_lookback.mean())
-                            _spike   = _vol_td / max(_avg20, 1)
-                            _chg1d   = float((_cl.iloc[-1] - _cl.iloc[-2]) / _cl.iloc[-2] * 100) if len(_cl) >= 2 else 0
+                            _avg20    = float(_lookback.tail(20).mean()) if len(_lookback) >= 5 else float(_lookback.mean())
+
+                            # ── Spike hari ini ──
+                            _vol_td = float(_vl.iloc[-1])
+                            _spike  = _vol_td / max(_avg20, 1)
+                            _chg1d  = float((_cl.iloc[-1] - _cl.iloc[-2]) / _cl.iloc[-2] * 100) if len(_cl) >= 2 else 0
+
+                            # ── Data 3 hari terakhir (D-1, D-2, D-3 dari hari ini) untuk multi-day accum ──
+                            # Gunakan maksimal 4 hari terakhir (termasuk hari ini)
+                            _days_data = []
+                            _n_avail   = min(4, len(_cl))
+                            for _di in range(1, _n_avail):  # _di=1 = hari ini, _di=2 = kemarin, dst
+                                _v_day  = float(_vl.iloc[-_di]) if len(_vl) >= _di else 0
+                                _sp_day = _v_day / max(_avg20, 1)
+                                _c_now  = float(_cl.iloc[-_di])
+                                _c_prv  = float(_cl.iloc[-_di-1]) if len(_cl) > _di else _c_now
+                                _chg_d  = (_c_now - _c_prv) / max(_c_prv, 1) * 100
+                                _days_data.append({"spike": _sp_day, "chg": _chg_d})
+
                             _step1_result.append({
-                                "ticker":  tk,
-                                "price":   _price,
-                                "vol":     _vol_td,
-                                "avg_vol": _avg20,
-                                "spike":   _spike,
-                                "chg1d":   _chg1d,
+                                "ticker":    tk,
+                                "price":     _price,
+                                "vol":       _vol_td,
+                                "avg_vol":   _avg20,
+                                "spike":     _spike,
+                                "chg1d":     _chg1d,
+                                "days_data": _days_data,  # list 3 hari ke belakang
                             })
                         except: pass
                 except Exception as _e_s30:
@@ -16884,36 +16906,60 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 
                 # ────────────────────────────────────────────────────────────────
                 # STEP 2 — Filter ke 100: volume hari ini > rata-rata 20 hari
-                # Ambil yang spike paling tinggi, minimal spike > 1.2x
+                # Harga sudah difilter ≤ 8.000 di atas
+                # Minimal spike > 1.2x, ambil top 100
                 # ────────────────────────────────────────────────────────────────
                 _step2_candidates = [s for s in _step1_result if s["spike"] > 1.2]
                 _step2_candidates.sort(key=lambda x: x["spike"], reverse=True)
-                _top100 = _step2_candidates[:100]  # ambil top 100, kalau < 100 ya semua
+                _top100 = _step2_candidates[:100]
 
-                _prog_bar.progress(50, text=f"✅ STEP 2 selesai — {len(_top100)} saham lolos filter volume spike. STEP 3: Filter akumulasi pattern...")
+                _prog_bar.progress(50, text=f"✅ STEP 2 selesai — {len(_top100)} saham lolos (harga ≤8.000 + vol spike). STEP 3: Deteksi akumulasi multi-hari...")
 
                 # ────────────────────────────────────────────────────────────────
-                # STEP 3 — Filter ke 30: proxy akumulasi = volume besar, frekuensi kecil
-                # Proxy: spike tinggi TAPI pergerakan harga terbatas (sideways/turun sedikit)
-                # → smart money absorb supply tanpa menaikkan harga
-                # Score akumulasi = spike × (1 / (1 + abs(chg1d) * 0.5)) × multiplier
-                # Bonus: harga turun/flat saat volume besar = lebih kuat sinyalnya
+                # STEP 3 — Scoring akumulasi MULTI-HARI (3 hari terakhir)
+                # Kriteria akumulasi per hari:
+                #   volume ≥ 1.5x avg20 TAPI harga bergerak ≤ +1.5% (harga di-"press")
+                #   → smart money absorb supply tanpa dorong harga
+                # Semakin banyak hari yang memenuhi = semakin kuat sinyal
+                # Bonus hari berturut-turut: 1 hari = 1.0x, 2 hari = 1.4x, 3 hari = 2.0x
                 # ────────────────────────────────────────────────────────────────
                 for _s in _top100:
-                    _spk  = _s["spike"]
-                    _chg  = _s["chg1d"]
-                    # Harga sideways atau turun ringan (< +1%) saat volume besar = akumulasi ideal
-                    _price_suppression = 1.0 if _chg <= 1.0 else max(0.4, 1.0 - (_chg - 1.0) * 0.15)
-                    # Volume sangat besar (> 5x) dapat bonus ekstra
+                    _days  = _s.get("days_data", [])
+                    _spk   = _s["spike"]
+                    _chg   = _s["chg1d"]
+
+                    # Hitung berapa hari memenuhi pola akumulasi
+                    _accum_days = 0
+                    _consecutive = 0
+                    _max_streak  = 0
+                    _streak_now  = 0
+                    for _dd in _days:
+                        _is_accum_day = (_dd["spike"] >= 1.5 and _dd["chg"] <= 1.5)
+                        if _is_accum_day:
+                            _accum_days += 1
+                            _streak_now += 1
+                            _max_streak = max(_max_streak, _streak_now)
+                        else:
+                            _streak_now = 0
+
+                    # Multiplier berdasarkan konsistensi: 1 hari=1.0, 2 hari=1.4, 3 hari=2.0
+                    _day_mult = {0: 0.6, 1: 1.0, 2: 1.4, 3: 2.0}.get(min(_max_streak, 3), 2.0)
+
+                    # Suppression hari ini (harga tidak naik saat volume besar)
+                    _press = 1.0 if _chg <= 1.0 else max(0.4, 1.0 - (_chg - 1.0) * 0.15)
+
+                    # Volume bonus
                     _vol_bonus = 1.3 if _spk >= 5 else (1.15 if _spk >= 3 else 1.0)
-                    _s["accum_score"] = _spk * _price_suppression * _vol_bonus
-                    # Flag: kemungkinan akumulasi (indikasi awal sebelum GoAPI konfirmasi)
-                    _s["pre_accum"]   = (_chg <= 1.5 and _spk >= 2.0)
+
+                    _s["accum_score"]  = _spk * _press * _vol_bonus * _day_mult
+                    _s["accum_days"]   = _accum_days   # berapa hari dari 3 yang memenuhi pola
+                    _s["accum_streak"] = _max_streak   # streak berturut-turut terpanjang
+                    _s["pre_accum"]    = (_accum_days >= 1 and _spk >= 2.0)
 
                 _top100.sort(key=lambda x: x["accum_score"], reverse=True)
                 _top30 = _top100[:30]
 
-                _prog_bar.progress(70, text=f"✅ STEP 3 selesai — 30 saham terpilih. STEP 4: GoAPI konfirmasi akumulasi/distribusi...")
+                _prog_bar.progress(70, text=f"✅ STEP 3 selesai — 30 saham terpilih (multi-day accum scored). STEP 4: GoAPI konfirmasi...")
 
                 # ────────────────────────────────────────────────────────────────
                 # STEP 4 — GoAPI Konfirmasi Broker Summary untuk 30 saham final
@@ -17040,6 +17086,8 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                     _top_b   = _sitem.get("top_accum", [])
                     _goconf  = _sitem.get("goapi_confirmed", False)
                     _pre_acc = _sitem.get("pre_accum", False)
+                    _astreak = _sitem.get("accum_streak", 0)   # berapa hari berturut akumulasi
+                    _adays   = _sitem.get("accum_days", 0)     # total hari dari 3 yang match
 
                     if _verdict == "AKUMULASI":
                         _border_c = "rgba(38,166,154,0.6)"; _bg_c = "rgba(38,166,154,0.10)"; _label_c = "#26a69a"
@@ -17055,29 +17103,40 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                         _border_c = "rgba(255,255,255,0.08)"; _bg_c = "rgba(255,255,255,0.03)"; _label_c = text_sub
 
                     _brokers_str = " ".join(_top_b) if _top_b else ""
+
+                    # Verdict line: GoAPI > pre-accum proxy
                     _verdict_line = ""
                     if _verdict:
-                        _bpr_str = f" BPR:{_bpr}" if _bpr else ""
+                        _bpr_str = f" {_bpr:.1f}" if _bpr else ""
                         _verdict_line = f"<br><span style='color:{_label_c};font-weight:700;'>{_verdict}{_bpr_str}</span>"
                     elif _pre_acc:
-                        _verdict_line = f"<br><span style='color:{_label_c};'>~Akumulasi?</span>"
+                        _ad_str = f" {_adays}/3d" if _adays else ""
+                        _verdict_line = f"<br><span style='color:{_label_c};'>~Accum{_ad_str}</span>"
+
+                    # Streak akumulasi multi-hari (dari yfinance proxy)
+                    _streak_line = ""
+                    if _astreak >= 2:
+                        _streak_color = "#26a69a" if _astreak >= 3 else "#80cbc4"
+                        _streak_line  = f"<br><span style='color:{_streak_color};font-size:0.62rem;'>▲ {_astreak}d vol+press</span>"
 
                     with _s30_cols[_si % 5]:
                         _ticker_color  = "#f59e0b" if _hm else text_main
                         _ticker_prefix = "⭐ " if _hm else ""
                         _spk_color     = "#26a69a" if _spk >= 3 else ("#f59e0b" if _spk >= 2 else text_main)
                         _chg_color     = "#26a69a" if _chg > 0 else "#f23645"
+                        _price_str     = f"{int(_sitem.get('price',0)):,}".replace(",",".")
                         _hm_line       = f"<br><span style='color:#f59e0b;'>★ {_md}d berturut</span>" if _hm else ""
-                        _broker_line   = f"<br><span style='color:#64748b;font-size:0.62rem;'>{_brokers_str}</span>" if _brokers_str else ""
+                        _broker_line   = f"<br><span style='color:#64748b;font-size:0.60rem;'>{_brokers_str}</span>" if _brokers_str else ""
                         _card_html = (
                             f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
                             f"padding:7px 9px;margin-bottom:6px;"
                             f"background:{_bg_c};border:1px solid {_border_c};border-radius:8px;'>"
                             f"<div style='font-weight:700;color:{_ticker_color};font-size:0.82rem;'>{_ticker_prefix}{_stk}</div>"
+                            f"<div style='color:{text_sub};font-size:0.62rem;margin-top:1px;'>Rp{_price_str}</div>"
                             f"<div style='color:{text_sub};font-size:0.67rem;margin-top:3px;line-height:1.65;'>"
                             f"<span style='color:{_spk_color};'>{_spk:.1f}x</span>"
                             f" <span style='color:{_chg_color};'>{_chg:+.1f}%</span>"
-                            f"{_hm_line}{_verdict_line}{_broker_line}"
+                            f"{_streak_line}{_hm_line}{_verdict_line}{_broker_line}"
                             f"</div></div>"
                         )
                         st.markdown(_card_html, unsafe_allow_html=True)
