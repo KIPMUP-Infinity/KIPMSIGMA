@@ -15560,7 +15560,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                             _res_opt = st.selectbox(
                                 "HASIL:",
                                 ["— Masih OPEN —", "✅ TP1 HIT", "🎯 TP2 HIT", "🛑 SL HIT", "📤 Manual Exit"],
-                                key=f"tr_res_{plan_type}_{_or.get('id','')}")
+                                key=f"tr_res_{plan_type}_{_oi}_{_or.get('id','')}")
                             if _res_opt != "— Masih OPEN —":
                                 _ex_price = st.number_input(
                                     "Harga Exit (Rp):",
@@ -15568,8 +15568,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                                     value=int(_or.get("tp1",0)) if "TP1" in _res_opt
                                           else int(_or.get("tp2",0)) if "TP2" in _res_opt
                                           else int(_or.get("sl",0)) if "SL" in _res_opt else 0,
-                                    key=f"tr_exp_{plan_type}_{_or.get('id','')}")
-                                if st.button("💾 SIMPAN", key=f"tr_upd_{plan_type}_{_or.get('id','')}",
+                                    key=f"tr_exp_{plan_type}_{_oi}_{_or.get('id','')}")
+                                if st.button("💾 SIMPAN", key=f"tr_upd_{plan_type}_{_oi}_{_or.get('id','')}",
                                              use_container_width=True):
                                     _entry_v = _or.get("entry", 0)
                                     _exit_v  = _ex_price if _ex_price > 0 else (
@@ -16430,7 +16430,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 st.caption(f"📌 {_br.get('why_buy','—')}")
 
                     if _brows_avoid:
-                        with st.expander(f"⛔ Hindari Malam Ini ({len(_brows_avoid)} saham)", expanded=False):
+                        with st.expander(f"⛔ Hindari Malam Ini ({len(_brows_avoid)} saham)", expanded=True):
                             import pandas as _pd_bav
                             _bav_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {int(a.get('price',0)):,}",
                                           "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _brows_avoid]
