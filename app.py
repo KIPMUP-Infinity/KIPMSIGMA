@@ -17947,11 +17947,15 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         _spk = 1.0
                         if _vol_df is not None and _ck in _vol_df.columns:
                             _vs = _vol_df[_ck].dropna()
-                            if len(_vs) >= 21:
-                                _avg20    = float(_vs.iloc[-21:-1].mean())
+                            if len(_vs) >= 10:
+                                # Gunakan 10-hari jika <21 hari data tersedia
+                                _lookback = min(len(_vs)-1, 20)
+                                _avg20    = float(_vs.iloc[-_lookback-1:-1].mean())
                                 _todayvol = float(_vs.iloc[-1])
                                 _spk = round(_todayvol / _avg20, 2) if _avg20 > 0 else 1.0
-                        if _spk < 1.5: continue
+                        # Turunkan threshold spike: 1.0× (ada volume) sudah cukup masuk step2
+                        # Saham dengan spike rendah tetap masuk, diranking di step3
+                        if _spk < 0.8: continue   # buang hanya yang volume sangat sepi
                         _chg = round((_cs.iloc[-1]-_cs.iloc[-2])/_cs.iloc[-2]*100, 2) if len(_cs)>=2 else 0
                         _step2.append({"ticker":_tk,"price":_pr,"spike":_spk,"chg1d":_chg,"closes":list(_cs.tail(10))})
                     _step2.sort(key=lambda x: x["spike"], reverse=True)
@@ -17962,25 +17966,46 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     for _si in _step2:
                         _stk = _si["ticker"]; _ck = f"{_stk}.JK"
                         _accum_days = 0; _accum_streak = 0; _last_accum = True
+                        _pre_accum_soft = False  # flag: lolos kriteria lebih longgar
                         if _vol_df is not None and _ck in _vol_df.columns and _high_df is not None and _ck in _high_df.columns:
                             _vs2  = _vol_df[_ck].dropna()
                             _hs   = _high_df[_ck].dropna()
                             _ls   = _low_df[_ck].dropna() if _low_df is not None and _ck in _low_df.columns else _hs
                             for _di in range(1, 4):
-                                if len(_vs2) < _di+20 or len(_close_df[_ck].dropna()) < _di+1: break
-                                _vi   = float(_vs2.iloc[-_di])
-                                _avg20i = float(_vs2.iloc[-_di-20:-_di].mean())
-                                _chgi  = abs(float(_close_df[_ck].dropna().iloc[-_di] - _close_df[_ck].dropna().iloc[-_di-1]) /
-                                            _close_df[_ck].dropna().iloc[-_di-1] * 100)
-                                if _vi >= _avg20i * 1.5 and _chgi <= 1.5:
+                                if len(_vs2) < _di+10 or len(_close_df[_ck].dropna()) < _di+1: break
+                                _vi      = float(_vs2.iloc[-_di])
+                                _lbk     = min(len(_vs2)-_di-1, 20)
+                                _avg20i  = float(_vs2.iloc[-_di-_lbk:-_di].mean()) if _lbk > 0 else _vi
+                                _chgi    = abs(float(_close_df[_ck].dropna().iloc[-_di] - _close_df[_ck].dropna().iloc[-_di-1]) /
+                                              _close_df[_ck].dropna().iloc[-_di-1] * 100) if len(_close_df[_ck].dropna()) > _di else 99
+                                # Kriteria KETAT: volume spike ≥1.3× + gerak harga ≤2%
+                                if _vi >= _avg20i * 1.3 and _chgi <= 2.0:
                                     _accum_days += 1
                                     if _last_accum: _accum_streak += 1
+                                # Kriteria LONGGAR: spike ≥1.0× + gerak ≤3% → tandai pre_accum_soft
+                                elif _vi >= _avg20i * 1.0 and _chgi <= 3.0:
+                                    _pre_accum_soft = True
+                                    if _last_accum: pass  # tidak menambah streak ketat
                                 else:
                                     _last_accum = False
-                        if _accum_days == 0: continue
-                        _score_mult = {1: 1.0, 2: 1.4, 3: 2.0}.get(_accum_days, 1.0)
+
+                        # Loloskan jika minimal ada 1 hari akumulasi ATAU pre_accum_soft
+                        # Ini mencegah hasil 0 di pasar sepi
+                        if _accum_days == 0 and not _pre_accum_soft:
+                            # Fallback terakhir: loloskan saham dengan spike tertinggi
+                            # agar top30 tidak kosong di kondisi pasar sangat sepi
+                            if _si["spike"] < 1.2:
+                                continue
+                            # spike ≥1.2 tapi tidak ada pola → tetap masuk sbg kandidat lemah
+                            _pre_accum_soft = True
+
+                        _score_mult = {0: 0.7, 1: 1.0, 2: 1.4, 3: 2.0}.get(_accum_days, 1.0)
+                        # Bonus kecil untuk pre_accum_soft
+                        if _accum_days == 0 and _pre_accum_soft:
+                            _score_mult = 0.7
                         _step3.append({**_si, "accum_days": _accum_days, "accum_streak": _accum_streak,
-                                       "pre_accum": True, "score_mult": _score_mult})
+                                       "pre_accum": (_accum_days > 0 or _pre_accum_soft),
+                                       "score_mult": _score_mult})
                     _step3.sort(key=lambda x: x["spike"]*x.get("score_mult",1), reverse=True)
                     _top30 = _step3[:30]
 
