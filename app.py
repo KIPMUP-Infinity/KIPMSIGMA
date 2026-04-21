@@ -15111,30 +15111,84 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
 
         def _save_auto_plan_to_history(plan_type, plan_json, slot_key, date_str, slot_str):
-            """Simpan plan ke history session_state + database."""
+            """Simpan plan ke history session_state + database.
+            OTOMATIS inject semua saham BUY ke tr_records sebagai OPEN."""
             history_key = f"auto_plan_history_{plan_type}"
             history = st.session_state.get(history_key, {})
 
             # Batasi 30 hari × 2 slot = 60 entri max
             if len(history) >= 62:
-                # Hapus 10 entri terlama
                 sorted_keys = sorted(history.keys())
                 for _k in sorted_keys[:10]:
                     del history[_k]
 
+            _gen_at = _wib_now().strftime("%d %b %Y, %H:%M WIB")
             history[slot_key] = {
                 "date": date_str,
                 "slot": slot_str,
                 "plan": plan_json,
-                "generated_at": _wib_now().strftime("%d %b %Y, %H:%M WIB"),
+                "generated_at": _gen_at,
             }
             st.session_state[history_key] = history
 
-            # Persist ke DB
+            # ══════════════════════════════════════════════════════
+            # AUTO-INJECT ke tr_records sebagai OPEN
+            # Setiap saham BUY di plan langsung masuk Track Record
+            # Skip duplikat: ticker + date + type sudah ada
+            # ══════════════════════════════════════════════════════
+            _type_label = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}.get(plan_type, plan_type)
+            _plan_rows  = (plan_json.get(plan_type)
+                           or plan_json.get("bsjp")
+                           or plan_json.get("daily")
+                           or plan_json.get("weekly")
+                           or [])
+            _tr_records = st.session_state.get("tr_records", [])
+
+            # Buat set existing keys agar tidak duplikat
+            _existing_keys = set(
+                f"{r.get('ticker','')}|{r.get('date','')}|{r.get('type','')}"
+                for r in _tr_records
+            )
+
+            _new_injected = []
+            for _pr in _plan_rows:
+                _ptk   = _pr.get("ticker", "")
+                _pdate = date_str
+                _pkey  = f"{_ptk}|{_pdate}|{_type_label}"
+                if not _ptk or _pkey in _existing_keys:
+                    continue  # skip duplikat
+                _existing_keys.add(_pkey)
+                _new_rec = {
+                    "id":         len(_tr_records) + len(_new_injected) + 1,
+                    "ticker":     _ptk,
+                    "type":       _type_label,
+                    "entry":      int(_pr.get("entry_low", _pr.get("price", 0))),
+                    "tp1":        int(_pr.get("tp1", 0)),
+                    "tp2":        int(_pr.get("tp2", 0)),
+                    "sl":         int(_pr.get("sl", 0)),
+                    "date":       _pdate,
+                    "slot":       slot_str,
+                    "rating":     _pr.get("rating", "BUY"),
+                    "reason":     _pr.get("why_buy", ""),
+                    "status":     "OPEN",
+                    "exit_price": 0,
+                    "pnl_pct":    0,
+                    "result":     "-",
+                    "exit_date":  "",
+                    "auto_note":  f"Auto-injected dari {_type_label} Plan {_gen_at}",
+                }
+                _new_injected.append(_new_rec)
+
+            if _new_injected:
+                _tr_records.extend(_new_injected)
+                st.session_state["tr_records"] = _tr_records
+
+            # Persist ke DB (history + tr_records)
             if st.session_state.get("user"):
                 try:
                     _sv = load_user(st.session_state.user["email"]) or {}
                     _sv[history_key] = history
+                    _sv["tr_records"] = _tr_records
                     save_user(st.session_state.user["email"], _sv)
                 except: pass
 
@@ -15142,11 +15196,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             if _SIGMA_MODULES_AVAILABLE:
                 try:
                     _sm_save_auto_plan(plan_type, slot_key, history[slot_key])
-                    # Juga append ke daily/weekly list agar Signal Board terisi
-                    _rows = (plan_json.get(plan_type)
-                             or plan_json.get("daily")
-                             or plan_json.get("weekly")
-                             or [])
+                    _rows = _plan_rows
                     _outlook = plan_json.get("outlook", "")
                     if plan_type == "daily":
                         _sm_append_daily_plan(_rows, _outlook)
@@ -15511,6 +15561,174 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 </body></html>"""
             components.html(_hist_html, height=_total_h, scrolling=True)
 
+        def _render_track_record_inline(plan_type="daily", accent="#a78bfa"):
+            """
+            Track Record yang 100% terhubung ke History Plan.
+            Setiap saham di History Plan otomatis masuk sebagai OPEN.
+            User hanya perlu update hasil: TP1/TP2/SL HIT.
+            """
+            _type_label = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}.get(plan_type, plan_type)
+            _all_records = st.session_state.get("tr_records", [])
+            _filtered    = [r for r in _all_records if r.get("type","").lower() == _type_label.lower()]
+
+            # ── Info Banner ──
+            _hist_key   = f"auto_plan_history_{plan_type}"
+            _hist_count = len(st.session_state.get(_hist_key, {}))
+            st.markdown(f"""
+            <div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};
+                border:1px solid rgba(38,166,154,0.2);border-left:3px solid {accent};
+                border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
+                font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};line-height:1.8;'>
+            🔗 <b style='color:{accent};'>AUTO-LINKED KE HISTORY PLAN</b> &nbsp;·&nbsp;
+            Setiap saham dari {_type_label} Plan otomatis masuk sebagai <b>OPEN</b> &nbsp;·&nbsp;
+            {_hist_count} history tersimpan &nbsp;·&nbsp; {len(_filtered)} trade tercatat<br>
+            ✏️ Tugas kamu: pilih posisi OPEN dan update apakah <b>TP HIT</b> atau <b>SL HIT</b>
+            </div>""", unsafe_allow_html=True)
+
+            # ══════════════════════════════════════════════════════
+            # SECTION A — UPDATE HASIL TRADE (OPEN → CLOSED)
+            # ══════════════════════════════════════════════════════
+            _open_list = [r for r in _filtered if r.get("status", "OPEN") == "OPEN"]
+
+            if _open_list:
+                st.markdown(
+                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
+                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
+                    f"✏️ UPDATE HASIL — {len(_open_list)} posisi OPEN</div>",
+                    unsafe_allow_html=True)
+
+                # Tampilkan kartu per posisi OPEN
+                for _oi, _or in enumerate(_open_list):
+                    _or_idx = next((i for i, r in enumerate(_all_records)
+                                    if r.get("id") == _or.get("id")), None)
+                    if _or_idx is None: continue
+
+                    with st.container(border=True):
+                        _oc1, _oc2, _oc3 = st.columns([2, 3, 2])
+                        with _oc1:
+                            st.markdown(
+                                f"**{_or.get('ticker','')}** &nbsp;"
+                                f"<span style='color:{accent};font-size:11px;'>{_or.get('date','')}</span><br>"
+                                f"<span style='font-size:11px;color:#888;'>{_or.get('slot', _or.get('type',''))}</span>",
+                                unsafe_allow_html=True)
+                            st.caption(f"Entry: Rp {int(_or.get('entry',0)):,}")
+                        with _oc2:
+                            _lv1, _lv2, _lv3 = st.columns(3)
+                            _lv1.metric("TP1", f"Rp {int(_or.get('tp1',0)):,}")
+                            _lv2.metric("TP2", f"Rp {int(_or.get('tp2',0)):,}" if _or.get('tp2') else "—")
+                            _lv3.metric("SL",  f"Rp {int(_or.get('sl',0)):,}")
+                        with _oc3:
+                            _res_opt = st.selectbox(
+                                "HASIL:",
+                                ["— Masih OPEN —", "✅ TP1 HIT", "🎯 TP2 HIT", "🛑 SL HIT", "📤 Manual Exit"],
+                                key=f"tr_res_{plan_type}_{_or.get('id','')}")
+                            if _res_opt != "— Masih OPEN —":
+                                _ex_price = st.number_input(
+                                    "Harga Exit (Rp):",
+                                    min_value=0,
+                                    value=int(_or.get("tp1",0)) if "TP1" in _res_opt
+                                          else int(_or.get("tp2",0)) if "TP2" in _res_opt
+                                          else int(_or.get("sl",0)) if "SL" in _res_opt else 0,
+                                    key=f"tr_exp_{plan_type}_{_or.get('id','')}")
+                                if st.button("💾 SIMPAN", key=f"tr_upd_{plan_type}_{_or.get('id','')}",
+                                             use_container_width=True):
+                                    _entry_v = _or.get("entry", 0)
+                                    _exit_v  = _ex_price if _ex_price > 0 else (
+                                        _or.get("tp1",0) if "TP1" in _res_opt else
+                                        _or.get("tp2",0) if "TP2" in _res_opt else
+                                        _or.get("sl",0))
+                                    _pnl_v   = round((_exit_v - _entry_v) / _entry_v * 100, 2) if _entry_v else 0
+                                    _res_v   = "WIN" if _pnl_v >= 0 else "LOSS"
+                                    _tag     = ("TP1 HIT" if "TP1" in _res_opt
+                                                else "TP2 HIT" if "TP2" in _res_opt
+                                                else "SL HIT" if "SL" in _res_opt
+                                                else "Manual Exit")
+                                    _all_records[_or_idx].update({
+                                        "status":     "CLOSED",
+                                        "exit_price": _exit_v,
+                                        "pnl_pct":    _pnl_v,
+                                        "result":     _res_v,
+                                        "exit_date":  _wib_now().strftime("%Y-%m-%d"),
+                                        "auto_note":  _tag,
+                                    })
+                                    st.session_state["tr_records"] = _all_records
+                                    if st.session_state.get("user"):
+                                        try:
+                                            _sv = load_user(st.session_state.user["email"]) or {}
+                                            _sv["tr_records"] = _all_records
+                                            save_user(st.session_state.user["email"], _sv)
+                                        except: pass
+                                    st.success(f"✅ {_or.get('ticker','')} → {_tag} | P&L: {'+'if _pnl_v>=0 else ''}{_pnl_v}%")
+                                    st.rerun()
+            else:
+                if _filtered:
+                    st.info("✅ Semua posisi sudah CLOSED. Tidak ada yang perlu diupdate.")
+                else:
+                    st.markdown(f"""<div style='text-align:center;padding:32px 20px;opacity:0.5;'>
+                        <div style='font-size:2rem;margin-bottom:10px;'>🏆</div>
+                        <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'>
+                        Belum ada trade tercatat.<br>
+                        Generate {_type_label} Plan → saham otomatis masuk ke sini sebagai OPEN.</div>
+                    </div>""", unsafe_allow_html=True)
+                    return
+
+            st.markdown("---")
+
+            # ══════════════════════════════════════════════════════
+            # SECTION B — STATISTIK WIN RATE
+            # ══════════════════════════════════════════════════════
+            if _filtered:
+                _closed_f = [r for r in _filtered if r.get("status") == "CLOSED"]
+                _open_f   = [r for r in _filtered if r.get("status") != "CLOSED"]
+                _wins_f   = [r for r in _closed_f if r.get("result") == "WIN"]
+                _loss_f   = [r for r in _closed_f if r.get("result") == "LOSS"]
+                _wr_f     = round(len(_wins_f)/len(_closed_f)*100,1) if _closed_f else 0
+                _avg_w_f  = round(sum(r.get("pnl_pct",0) for r in _wins_f)/len(_wins_f),2) if _wins_f else 0
+                _avg_l_f  = round(sum(r.get("pnl_pct",0) for r in _loss_f)/len(_loss_f),2) if _loss_f else 0
+                _tot_pnl_f= round(sum(r.get("pnl_pct",0) for r in _closed_f),2)
+
+                st.markdown(
+                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
+                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
+                    f"📊 STATISTIK {_type_label.upper()} TRACK RECORD</div>",
+                    unsafe_allow_html=True)
+
+                _mc1,_mc2,_mc3,_mc4 = st.columns(4)
+                _mc1.metric("Win Rate",
+                            f"{_wr_f}%",
+                            f"{len(_wins_f)} WIN · {len(_loss_f)} LOSS",
+                            delta_color="normal" if _wr_f >= 50 else "inverse")
+                _mc2.metric("Total Trade", len(_filtered), f"{len(_open_f)} masih OPEN")
+                _mc3.metric("Total P&L (Closed)",
+                            f"{'+'if _tot_pnl_f>=0 else ''}{_tot_pnl_f}%",
+                            delta_color="normal" if _tot_pnl_f >= 0 else "inverse")
+                _mc4.metric("Avg Win / Avg Loss", f"+{_avg_w_f}% / {_avg_l_f}%")
+
+                st.markdown("<br>", unsafe_allow_html=True)
+
+                # ── Tabel Lengkap ──
+                import pandas as _pd_tr
+                _tbl_rows = []
+                for _rf in sorted(_filtered, key=lambda x: x.get("date",""), reverse=True):
+                    _pnl_v = _rf.get("pnl_pct", 0)
+                    _stat  = _rf.get("result", "OPEN")
+                    _emoji = "✅" if _stat == "WIN" else ("🛑" if _stat == "LOSS" else "⏳")
+                    _tbl_rows.append({
+                        "#":        _rf.get("id",""),
+                        "TANGGAL":  _rf.get("date",""),
+                        "TICKER":   _rf.get("ticker",""),
+                        "SESI":     _rf.get("slot", _rf.get("type","")),
+                        "ENTRY":    f"Rp {int(_rf.get('entry',0)):,}",
+                        "TP1":      f"Rp {int(_rf.get('tp1',0)):,}",
+                        "TP2":      f"Rp {int(_rf.get('tp2',0)):,}" if _rf.get("tp2") else "—",
+                        "SL":       f"Rp {int(_rf.get('sl',0)):,}",
+                        "EXIT":     f"Rp {int(_rf.get('exit_price',0)):,}" if _rf.get("exit_price",0) > 0 else "—",
+                        "P&L":      f"{'+'if _pnl_v>=0 else ''}{_pnl_v}%" if _pnl_v else "—",
+                        "HASIL":    f"{_emoji} {_stat}",
+                        "KET":      (_rf.get("auto_note","") or _rf.get("reason",""))[:45],
+                    })
+                st.dataframe(_pd_tr.DataFrame(_tbl_rows), use_container_width=True, hide_index=True)
+
         def _render_auto_track_record():
             """Render track record yang ter-update otomatis."""
             records = st.session_state.get("tr_records", [])
@@ -15667,11 +15885,12 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         st.session_state[_daily_auto_key] = True
                 except Exception: pass
 
-            # ── 3 sub-tab ──
-            _d_tab_plan, _d_tab_hist_plan, _d_tab_hist_sum = st.tabs([
+            # ── 4 sub-tab ──
+            _d_tab_plan, _d_tab_hist_plan, _d_tab_hist_sum, _d_tab_trackrecord = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  📊 HISTORY SUMMARY  ",
+                "  🏆 TRACK RECORD  ",
             ])
 
             # ════════════════════════════════════════════
@@ -15881,6 +16100,12 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     _hc4.metric("Wyckoff", _hr.get("wyckoff","—"))
                                     st.caption(f"📌 {_hr.get('why_buy','—')}")
 
+            # ════════════════════════════════════════════
+            # TAB 4 — TRACK RECORD (Daily)
+            # ════════════════════════════════════════════
+            with _d_tab_trackrecord:
+                _render_track_record_inline("daily", "#a78bfa")
+
         # ─── TAB WEEKLY ───────────────────────────────────────────────────
         with reco_tab_weekly:
             if not _alpha_unlocked: st.stop()
@@ -15906,10 +16131,11 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         st.session_state[_weekly_auto_key] = True
                 except Exception: pass
 
-            _w_tab_plan, _w_tab_hist_plan, _w_tab_hist_sum = st.tabs([
+            _w_tab_plan, _w_tab_hist_plan, _w_tab_hist_sum, _w_tab_trackrecord = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  📊 HISTORY SUMMARY  ",
+                "  🏆 TRACK RECORD  ",
             ])
 
             # ============================================================
@@ -16108,6 +16334,12 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     _whc4.metric("Wyckoff", _whr.get("wyckoff","—"))
                                     st.caption(f"📌 {_whr.get('why_buy','—')}")
 
+            # ============================================================
+            # WEEKLY TAB 4 — TRACK RECORD
+            # ============================================================
+            with _w_tab_trackrecord:
+                _render_track_record_inline("weekly", "#26a69a")
+
         # ─── TAB BSJP ─────────────────────────────────────────────────────
         with reco_tab_bsjp:
             if not _alpha_unlocked: st.stop()
@@ -16127,254 +16359,210 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 ⚠️ Strategi overnight: sizing maks <b>5–10%</b> portofolio per posisi. Risiko gap-down dari berita semalam.
 </div>""", unsafe_allow_html=True)
 
-            _b_tab_hist, _b_tab_manual = st.tabs(["  📋 HISTORY PLAN  ", "  ▶ GENERATE MANUAL  "])
+            # ── 4 sub-tab BSJP ──
+            _b_tab_plan, _b_tab_hist, _b_tab_hist_sum, _b_tab_trackrecord = st.tabs([
+                "  🌙 TRADE PLAN & SUMMARY  ",
+                "  🗂️ HISTORY TRADE PLAN  ",
+                "  📊 HISTORY SUMMARY  ",
+                "  🏆 TRACK RECORD  ",
+            ])
 
+            # ════════════════════════════════════════════
+            # BSJP TAB 1 — TRADE PLAN & SUMMARY (hari ini)
+            # ════════════════════════════════════════════
+            with _b_tab_plan:
+                # Cari plan hari ini dari history
+                _bsjp_hist_all = st.session_state.get("auto_plan_history_bsjp", {})
+                _today_b_key   = _now_b.strftime("%Y-%m-%d")
+                _today_b_entry = None
+                for _bk, _bv in sorted(_bsjp_hist_all.items(), reverse=True):
+                    if _bk.startswith(_today_b_key):
+                        _today_b_entry = _bv
+                        break
+
+                # Tombol generate manual
+                _bcol1, _bcol2 = st.columns([4, 1])
+                with _bcol2:
+                    run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
+
+                if run_bsjp:
+                    with st.spinner("⚡ SIGMA Engine mencari kandidat BSJP..."):
+                        price_data = _reco_fetch_prices(_WATCHLIST_RECO)
+                        if price_data:
+                            import json as _bj
+                            _bsjp_plan = _rule_based_plan(price_data, "bsjp")
+                            _bsjp_raw = _bj.dumps(_bsjp_plan, ensure_ascii=False)
+                            st.session_state["reco_bsjp_result"] = _bsjp_raw
+                            st.session_state["reco_bsjp_ts"] = _wib_now().strftime("%d %b %Y, %H:%M WIB")
+                            # Simpan ke history
+                            _bslot = _now_b.strftime("%Y-%m-%d_1530")
+                            _save_auto_plan_to_history("bsjp", _bsjp_plan, _bslot,
+                                                       _now_b.strftime("%d %b %Y"), "Sore (15:30)")
+                            _today_b_entry = {"plan": _bsjp_plan,
+                                              "generated_at": st.session_state["reco_bsjp_ts"],
+                                              "date": _now_b.strftime("%d %b %Y")}
+                            if st.session_state.get("user"):
+                                try:
+                                    _sv = load_user(st.session_state.user["email"]) or {}
+                                    _sv["reco_bsjp_result"] = _bsjp_raw
+                                    _sv["reco_bsjp_ts"] = st.session_state["reco_bsjp_ts"]
+                                    save_user(st.session_state.user["email"], _sv)
+                                except: pass
+                        else:
+                            st.warning("Gagal mengambil data pasar. Coba lagi.")
+
+                if _today_b_entry:
+                    _bplan_data = _today_b_entry.get("plan", {})
+                    _brows_buy  = _bplan_data.get("bsjp", [])
+                    _brows_avoid= _bplan_data.get("avoid", [])
+                    _boutlook   = _bplan_data.get("outlook", _bplan_data.get("kondisi", ""))
+
+                    st.markdown(
+                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                        f"color:#888;margin-bottom:10px;'>🕐 {_today_b_entry.get('generated_at','—')}"
+                        f"&nbsp;·&nbsp;Beli menjelang closing BEI (15:00–15:50), jual pre-opening besok</div>",
+                        unsafe_allow_html=True)
+
+                    if _boutlook:
+                        st.markdown(
+                            f"<div style='padding:9px 14px;border-left:3px solid #f5a623;"
+                            f"background:rgba(245,166,35,0.06);border-radius:0 6px 6px 0;"
+                            f"font-size:0.8rem;margin-bottom:14px;line-height:1.6;'>"
+                            f"💡 {_boutlook}</div>", unsafe_allow_html=True)
+
+                    # ── Trade Plan Table ──
+                    if _brows_buy:
+                        st.markdown(
+                            f"<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
+                            f"text-transform:uppercase;color:#f5a623;margin:10px 0 6px;'>"
+                            f"📈 TRADE PLAN BSJP — {_today_b_entry.get('date','')}</div>",
+                            unsafe_allow_html=True)
+
+                        import pandas as _pd_bp
+                        _btp_rows = []
+                        for _br in _brows_buy:
+                            _btp_rows.append({
+                                "TICKER":       _br.get("ticker",""),
+                                "PRICE":        f"Rp {int(_br.get('price',0)):,}",
+                                "ENTRY LOW":    f"Rp {int(_br.get('entry_low',0)):,}",
+                                "ENTRY HIGH":   f"Rp {int(_br.get('entry_high',0)):,}",
+                                "TP1":          f"Rp {int(_br.get('tp1',0)):,}",
+                                "TP2":          f"Rp {int(_br.get('tp2',0)):,}" if _br.get("tp2") else "—",
+                                "SL":           f"Rp {int(_br.get('sl',0)):,}",
+                                "RR":           f"{_br.get('rr',0)}x",
+                                "VOL SPIKE":    _br.get("vol_spike","—"),
+                                "STREAK":       f"{_br.get('consec_up',0)}d" if _br.get('consec_up') else "—",
+                                "CLOSE%":       f"{float(_br.get('close_pct_range',50)):.0f}%",
+                                "RATING":       _br.get("rating","—"),
+                                "ALASAN":       _br.get("why_buy","—"),
+                            })
+                        st.dataframe(_pd_bp.DataFrame(_btp_rows), use_container_width=True, hide_index=True)
+
+                    # ── Summary Cards BSJP ──
+                    if _brows_buy:
+                        st.markdown(
+                            f"<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
+                            f"text-transform:uppercase;color:#f5a623;margin:16px 0 8px;'>"
+                            f"⚡ SUMMARY TOP PICKS BSJP</div>", unsafe_allow_html=True)
+                        for _bri, _br in enumerate(_brows_buy[:8], 1):
+                            _btk = _br.get("ticker","")
+                            with st.container(border=True):
+                                _bch, _bcs = st.columns([4,1])
+                                with _bch:
+                                    st.markdown(
+                                        f"**#{_bri} {_btk}**  "
+                                        f"<span style='font-size:12px'>Rp {int(_br.get('price',0)):,}</span>",
+                                        unsafe_allow_html=True)
+                                with _bcs:
+                                    _brating = _br.get("rating","BUY")
+                                    _brat_color = "#089981" if _brating == "BUY" else "#f5a623"
+                                    st.markdown(
+                                        f"<div style='text-align:right'>"
+                                        f"<span style='font-size:18px;font-weight:700;color:#f5a623'>{_br.get('combined',_br.get('vol_spike','—'))}</span>"
+                                        f"<br><span style='font-size:9px;color:#666'>VOL</span>"
+                                        f"<br><span style='color:{_brat_color};font-weight:700;font-size:11px'>► {_brating}</span>"
+                                        f"</div>", unsafe_allow_html=True)
+                                _bc1,_bc2,_bc3,_bc4,_bc5 = st.columns(5)
+                                _bc1.metric("Entry Low",  f"Rp {int(_br.get('entry_low',0)):,}")
+                                _bc2.metric("TP1",        f"Rp {int(_br.get('tp1',0)):,}")
+                                _bc3.metric("SL",         f"Rp {int(_br.get('sl',0)):,}")
+                                _bc4.metric("RR",         f"{_br.get('rr',0)}x")
+                                _bc5.metric("Streak",     f"{_br.get('consec_up',0)}d" if _br.get('consec_up') else "—")
+                                st.caption(f"📌 {_br.get('why_buy','—')}")
+
+                    if _brows_avoid:
+                        with st.expander(f"⛔ Hindari Malam Ini ({len(_brows_avoid)} saham)", expanded=False):
+                            import pandas as _pd_bav
+                            _bav_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {int(a.get('price',0)):,}",
+                                          "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _brows_avoid]
+                            st.dataframe(_pd_bav.DataFrame(_bav_rows), use_container_width=True, hide_index=True)
+                else:
+                    st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
+                        <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
+                        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
+                            Klik <span style='color:#f5a623;'>Generate BSJP</span> untuk kandidat overnight trade hari ini<br>
+                            <span style='color:{text_sub};opacity:0.6;font-size:0.65rem;'>Auto-generate aktif jam 15:30 WIB · Senin–Jumat · Semua saham ≤ Rp8.000</span></p>
+                    </div>""", unsafe_allow_html=True)
+
+            # ════════════════════════════════════════════
+            # BSJP TAB 2 — HISTORY TRADE PLAN
+            # ════════════════════════════════════════════
             with _b_tab_hist:
                 _render_auto_history("bsjp")
 
-            with _b_tab_manual:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:12px;'>Generate manual BSJP. Beli menjelang closing BEI (15:00–15:50), jual di pre-opening besok.</p>", unsafe_allow_html=True)
-                col_b1, col_b2 = st.columns([3, 1])
-                with col_b2:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    run_bsjp = st.button("▶ GENERATE BSJP", use_container_width=True, key="btn_bsjp")
-
-            if run_bsjp:
-                with st.spinner("⚡ SIGMA Engine mencari kandidat BSJP dari seluruh IDX (harga ≤ Rp8.000)..."):
-                    price_data = _reco_fetch_prices(_WATCHLIST_RECO)
-                    if price_data:
-                        # ── Rule-based BSJP plan (no AI needed, unlimited candidates) ──
-                        import json as _bj
-                        _bsjp_plan = _rule_based_plan(price_data, "bsjp")
-                        _bsjp_rows  = _bsjp_plan.get("bsjp", [])
-                        _bsjp_avoid = _bsjp_plan.get("avoid", [])
-                        _bsjp_out   = _bsjp_plan.get("outlook", "")
-
-                        _bsjp_raw = _bj.dumps(_bsjp_plan, ensure_ascii=False)
-                        st.session_state["reco_bsjp_result"] = _bsjp_raw
-                        st.session_state["reco_bsjp_ts"] = _wib_now().strftime("%d %b %Y, %H:%M WIB")
-                        if st.session_state.get("user"):
-                            try:
-                                _sv = load_user(st.session_state.user["email"]) or {}
-                                _sv["reco_bsjp_result"] = _bsjp_raw
-                                _sv["reco_bsjp_ts"] = st.session_state["reco_bsjp_ts"]
-                                save_user(st.session_state.user["email"], _sv)
-                            except: pass
-                    else:
-                        st.warning("Gagal mengambil data pasar. Coba lagi.")
-
-            # ── Render BSJP hasil (rule-based, no summary table) ──
-            _bsjp_raw_ss = st.session_state.get("reco_bsjp_result", "")
-            _bsjp_ts_ss  = st.session_state.get("reco_bsjp_ts", "")
-            if _bsjp_raw_ss:
-                import json as _bjr, re as _bjre
-                _bjdata = None
-                try:
-                    _bjm = _bjre.search(r'\{[\s\S]*\}', _bsjp_raw_ss)
-                    if _bjm: _bjdata = _bjr.loads(_bjm.group(0))
-                except: pass
-
-                if _bjdata:
-                    _brows  = _bjdata.get("bsjp", [])
-                    _barows = _bjdata.get("avoid", [])
-                    _bout   = _bjdata.get("outlook", _bjdata.get("kondisi", ""))
+            # ════════════════════════════════════════════
+            # BSJP TAB 3 — HISTORY SUMMARY
+            # ════════════════════════════════════════════
+            with _b_tab_hist_sum:
+                _bsjp_hist_ss = st.session_state.get("auto_plan_history_bsjp", {})
+                if not _bsjp_hist_ss:
+                    st.info("📭 Belum ada History Summary BSJP. Data akan muncul setelah plan pertama dibuat (auto jam 15:30 WIB).")
                 else:
-                    _brows, _barows, _bout = [], [], ""
+                    _today_b_iso = _now_b.strftime("%Y-%m-%d")
+                    for _bhk in sorted(_bsjp_hist_ss.keys(), reverse=True)[:30]:
+                        _bhe    = _bsjp_hist_ss[_bhk]
+                        _bhplan = _bhe.get("plan", {})
+                        _bhrows = _bhplan.get("bsjp", [])
+                        _bhdate = _bhe.get("date", _bhk[:10])
+                        _bhts   = _bhe.get("generated_at","—")
+                        _bhout  = _bhplan.get("outlook", _bhplan.get("kondisi",""))
+                        _is_today_b = _bhk.startswith(_today_b_iso)
+                        _bbadge = "  🟢 HARI INI" if _is_today_b else ""
+                        _blabel = f"🌙 {_bhdate} — {_bhe.get('slot','—')} · {len(_bhrows)} kandidat{_bbadge}"
+                        with st.expander(_blabel, expanded=_is_today_b):
+                            st.caption(f"Generated {_bhts}")
+                            if _bhout:
+                                st.markdown(
+                                    f"<div style='padding:8px 12px;border-left:3px solid #f5a623;"
+                                    f"background:rgba(245,166,35,0.06);border-radius:0 6px 6px 0;"
+                                    f"font-size:0.8rem;margin-bottom:12px;line-height:1.6;'>"
+                                    f"💡 {_bhout}</div>", unsafe_allow_html=True)
+                            for _bhi2, _bhr in enumerate(_bhrows[:8], 1):
+                                _bhtk = _bhr.get("ticker","")
+                                with st.container(border=True):
+                                    _bhhc, _bhsc = st.columns([4,1])
+                                    with _bhhc:
+                                        st.markdown(
+                                            f"**#{_bhi2} {_bhtk}** &nbsp;"
+                                            f"<span style='font-size:12px'>Rp {int(_bhr.get('price',0)):,}</span>",
+                                            unsafe_allow_html=True)
+                                    with _bhsc:
+                                        st.markdown(
+                                            f"<div style='text-align:right'>"
+                                            f"<span style='font-size:16px;font-weight:700;color:#f5a623'>{_bhr.get('rating','BUY')}</span>"
+                                            f"</div>", unsafe_allow_html=True)
+                                    _bhc1,_bhc2,_bhc3,_bhc4 = st.columns(4)
+                                    _bhc1.metric("TP1",    f"Rp {int(_bhr.get('tp1',0)):,}")
+                                    _bhc2.metric("SL",     f"Rp {int(_bhr.get('sl',0)):,}")
+                                    _bhc3.metric("RR",     f"{_bhr.get('rr',0)}x")
+                                    _bhc4.metric("VOL",    _bhr.get("vol_spike","—"))
+                                    st.caption(f"📌 {_bhr.get('why_buy','—')}")
 
-                _tbl_bg   = "rgba(8,12,22,0.95)" if is_dark else "#ffffff"
-                _hdr_bg   = "rgba(245,166,35,0.08)" if is_dark else "#fffbf0"
-                _border_c = "rgba(245,166,35,0.18)" if is_dark else "#f5d67a"
-                _acc_b    = "#f5a623"
-
-                if _bsjp_ts_ss:
-                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:8px;'>🕐 Generated: {_bsjp_ts_ss} &nbsp;·&nbsp; {len(_brows)} saham kandidat (harga ≤ Rp8.000)</p>", unsafe_allow_html=True)
-
-                if _bout:
-                    st.markdown(f"<div style='background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-left:3px solid {_acc_b};border-radius:0 8px 8px 0;padding:10px 15px;font-size:0.875rem;color:{text_main};margin-bottom:12px;line-height:1.65;'>💡 {_bout}</div>", unsafe_allow_html=True)
-
-                # ── Build BSJP table HTML with mini candle SVG ──
-                import json as _bjj
-                _brows_json  = _bjj.dumps(_brows,  ensure_ascii=False)
-                _barows_json = _bjj.dumps(_barows, ensure_ascii=False)
-                _n_b  = len(_brows)
-                _n_ba = len(_barows)
-                _bsjp_h = max(600, 90 + _n_b * 50 + 200 + _n_ba * 44 + 150)
-
-                _bsjp_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
-.sec-lbl{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:{_acc_b};font-weight:700;margin:0 0 7px;display:block;}}
-.card{{background:{_tbl_bg};border:1px solid {_border_c};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
-.scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{_border_c} transparent;}}
-.scroll::-webkit-scrollbar{{height:4px;}}
-.scroll::-webkit-scrollbar-thumb{{background:{_border_c};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;min-width:900px;}}
-thead th{{background:{_hdr_bg};color:{_acc_b};padding:9px 11px;text-align:left;border-bottom:1px solid {_border_c};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;font-weight:700;}}
-tbody td{{padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;white-space:nowrap;color:{text_main};font-size:0.8rem;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:nth-child(odd) td{{background:rgba(245,166,35,0.03);}}
-tbody tr:nth-child(even) td{{background:rgba(66,133,244,0.03);}}
-tbody tr:hover td{{background:rgba(245,166,35,0.09);}}
-.tk{{font-weight:700;font-size:0.875rem;color:{_acc_b};}}
-.pr{{font-weight:600;}}
-.sg{{color:#089981;font-weight:700;}}
-.sr{{color:#f23645;font-weight:700;}}
-.sy{{color:#a78bfa;font-weight:700;}}
-.bdg{{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:700;}}
-.bdg-buy{{background:rgba(245,166,35,0.18);color:{_acc_b};border:1px solid rgba(245,166,35,0.5);}}
-.bdg-hold{{background:rgba(66,133,244,0.14);color:#60a5fa;border:1px solid rgba(66,133,244,0.5);}}
-.bdg-avoid{{background:rgba(242,54,69,0.12);color:#f23645;border:1px solid rgba(242,54,69,0.5);}}
-.vol-hi{{color:#a78bfa;font-weight:700;}}
-.vol-ok{{color:{text_sub};}}
-.consec{{color:#f5a623;font-weight:700;font-size:0.8rem;}}
-.buy-txt{{font-size:0.72rem;color:{text_main};max-width:180px;white-space:normal;line-height:1.35;}}
-.avoid-rsn{{max-width:200px;white-space:normal;font-size:0.72rem;color:#f23645;}}
-@media(max-width:640px){{
-  thead th{{font-size:0.65rem;padding:5px 6px;}}
-  tbody td{{font-size:0.72rem;padding:5px 6px;}}
-}}
-</style></head><body>
-
-<span class="sec-lbl">📈 TRADE PLAN — BELI SORE JUAL PAGI ({_n_b} saham, urut terbaik)</span>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>TICKER</th>
-  <th title="5 candle terakhir — mini visual momentum">5 CANDLE</th>
-  <th>PRICE</th>
-  <th>ENTRY LOW</th><th>ENTRY HIGH</th>
-  <th>TP1</th><th>TP2</th><th>SL</th>
-  <th title="Reward/Risk ratio">RR</th>
-  <th>HORIZON</th>
-  <th title="Volume spike hari ini vs avg 5 hari">VOL</th>
-  <th title="Hari naik berturut-turut">STREAK</th>
-  <th title="Posisi close dalam range harian: 100% = tepat di HIGH">CLOSE%</th>
-  <th>RATING</th>
-  <th>ALASAN</th>
-</tr></thead>
-<tbody id="bsjp-tb"></tbody>
-</table></div></div>
-
-<span class="sec-lbl">⛔ HINDARI MALAM INI ({_n_ba} saham)</span>
-<div class="card"><div class="scroll"><table>
-<thead><tr>
-  <th>TICKER</th><th>PRICE</th><th>VOL SIGNAL</th><th>ALASAN</th><th>RATING</th>
-</tr></thead>
-<tbody id="avoid-tb"></tbody>
-</table></div></div>
-
-<script>
-(function(){{
-  var ROWS  = {_brows_json};
-  var AVOID = {_barows_json};
-
-  function fmt(n){{ return n?'Rp '+parseInt(n).toLocaleString('id-ID'):'-'; }}
-  function bdg(r){{
-    if(!r) return '';
-    var c = r==='BUY'?'bdg-buy':r==='HOLD'?'bdg-hold':'bdg-avoid';
-    return '<span class="bdg '+c+'">'+r+'</span>';
-  }}
-  function upside(p,t){{
-    if(!p||!t) return '-';
-    var pct=((t-p)/p*100).toFixed(1);
-    var c=pct>=0?'#089981':'#f23645';
-    return '<span style="color:'+c+';font-weight:600;">'+(pct>=0?'+':'')+pct+'%</span>';
-  }}
-  function closePctColor(v){{
-    if(v>=70) return '#089981';
-    if(v>=40) return '#f5a623';
-    return '#f23645';
-  }}
-  function streakBadge(n){{
-    if(!n||n===0) return '<span style="color:#666;">—</span>';
-    var col = n>=3?'#f5a623':n>=2?'#60a5fa':'#888';
-    var stars = n>=3?'🔥':n>=2?'✅':'·';
-    return '<span class="consec" style="color:'+col+';">'+stars+' '+n+'d</span>';
-  }}
-
-  // ── Mini Candle SVG renderer ──
-  function miniCandles(c5,h5,l5,v5){{
-    if(!c5||c5.length<2) return '<svg width="60" height="28"></svg>';
-    var W=60, H=28, pad=3;
-    var allH=h5, allL=l5;
-    var mn=Math.min.apply(null,allL), mx=Math.max.apply(null,allH);
-    var rng=mx-mn||1;
-    function py(p){{ return pad+(H-2*pad)*(1-(p-mn)/rng); }}
-    var barW=7, gap=3;
-    var svg='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
-    for(var i=0;i<c5.length;i++){{
-      var x=pad+i*(barW+gap);
-      var open_p = i===0?c5[0]:c5[i-1];
-      var close_p=c5[i], hi_p=h5[i]||close_p, lo_p=l5[i]||close_p;
-      var isBull=close_p>=open_p;
-      var col=isBull?'#089981':'#f23645';
-      var yH=py(hi_p), yL=py(lo_p);
-      var yO=py(open_p), yC=py(close_p);
-      var bodyY=Math.min(yO,yC), bodyH=Math.max(Math.abs(yO-yC),1);
-      // wick
-      svg+='<line x1="'+(x+barW/2)+'" y1="'+yH+'" x2="'+(x+barW/2)+'" y2="'+yL+'" stroke="'+col+'" stroke-width="1" opacity="0.7"/>';
-      // body
-      svg+='<rect x="'+x+'" y="'+bodyY+'" width="'+barW+'" height="'+bodyH+'" fill="'+col+'" rx="1"/>';
-    }}
-    svg+='</svg>';
-    return svg;
-  }}
-
-  var h='';
-  ROWS.forEach(function(r){{
-    var cpr  = parseFloat(r.close_pct_range)||50;
-    var cv   = r.vol_spike||'-';
-    var vs   = parseFloat(cv)||1;
-    var vcls = vs>=5?'vol-hi':vs>=2?'vol-hi':'vol-ok';
-    h+='<tr>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td>'+miniCandles(r.closes5,r.highs5,r.lows5,r.vols5)+'</td>'+
-      '<td class="pr">'+fmt(r.price)+'</td>'+
-      '<td class="sg">'+fmt(r.entry_low)+'</td>'+
-      '<td class="sg">'+fmt(r.entry_high)+'</td>'+
-      '<td style="color:#089981;font-weight:600;">'+fmt(r.tp1)+'</td>'+
-      '<td class="vol-ok">'+(r.tp2?fmt(r.tp2):'-')+'</td>'+
-      '<td class="sr">'+fmt(r.sl)+'</td>'+
-      '<td>'+(r.rr?'<span class="sy">'+r.rr+'x</span>':'-')+'</td>'+
-      '<td style="color:#60a5fa;font-size:0.72rem;">'+(r.horizon||'-')+'</td>'+
-      '<td><span class="'+vcls+'">'+cv+'</span></td>'+
-      '<td>'+streakBadge(r.consec_up)+'</td>'+
-      '<td><span style="color:'+closePctColor(cpr)+';font-weight:600;">'+cpr.toFixed(0)+'%</span></td>'+
-      '<td>'+bdg(r.rating)+'</td>'+
-      '<td><span class="buy-txt">'+(r.why_buy||'-')+'</span></td>'+
-    '</tr>';
-  }});
-  document.getElementById('bsjp-tb').innerHTML = h || '<tr><td colspan="15" style="text-align:center;padding:20px;color:#666;">Tidak ada kandidat BSJP yang memenuhi kriteria saat ini.</td></tr>';
-
-  var h2='';
-  AVOID.forEach(function(r){{
-    h2+='<tr>'+
-      '<td><span class="tk" style="color:#f23645;">'+r.ticker+'</span></td>'+
-      '<td class="pr">'+fmt(r.price)+'</td>'+
-      '<td style="font-size:0.72rem;color:#f23645;">'+(r.vol_signal||'Distribusi')+'</td>'+
-      '<td class="avoid-rsn">'+(r.reason||'-')+'</td>'+
-      '<td>'+bdg('AVOID')+'</td>'+
-    '</tr>';
-  }});
-  document.getElementById('avoid-tb').innerHTML = h2 || '<tr><td colspan="5" style="text-align:center;padding:14px;color:#666;">Tidak ada sinyal bearish ekstrem.</td></tr>';
-
-  setTimeout(function(){{
-    var hh=document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight',height:hh+20}},'*');
-  }},300);
-}})();
-</script>
-</body></html>"""
-                components.html(_bsjp_html, height=_bsjp_h, scrolling=True)
-
-            elif not run_bsjp:
-                st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
-                    <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
-                    <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
-                        Klik <span style='color:#f5a623;'>Generate BSJP</span> untuk kandidat overnight trade hari ini<br>
-                        <span style='color:{text_sub};opacity:0.6;font-size:0.65rem;'>Auto-generate aktif jam 15:30 WIB · Senin–Jumat · Semua saham ≤ Rp8.000</span></p>
-                </div>""", unsafe_allow_html=True)
+            # ════════════════════════════════════════════
+            # BSJP TAB 4 — TRACK RECORD
+            # ════════════════════════════════════════════
+            with _b_tab_trackrecord:
+                _render_track_record_inline("bsjp", "#f5a623")
 
         # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
         with reco_tab_fundamental:
