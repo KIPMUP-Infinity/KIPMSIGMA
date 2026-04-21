@@ -15111,10 +15111,42 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
         def _rule_based_plan_v2(price_data_map, bs30_cache, plan_type="daily"):
             """
-            Extended version of _rule_based_plan:
-            - Enriches each row with accum_days, accum_streak, top_accum/top_dist brokers
-            - Weekly mode: boosts score for multi-day accumulation + belum naik banyak
-            - Includes fundamental bonus from fa_score proxy
+            ═══════════════════════════════════════════════════════════════════
+            SIGMA MULTI-SCREENER ENGINE v3 — by MnM Strategy+ / KIPM-UP
+            ═══════════════════════════════════════════════════════════════════
+
+            Mengintegrasikan 4 SCREENER LOGIKA sekaligus dalam satu scoring:
+
+            [1] BIG ACCUMULATION
+                → Bandar Accum/Dist score > 20
+                → Value transaksi > 3 Miliar/hari (likuiditas cukup)
+                → Top 3 broker pembeli mendominasi > 20% total pembelian
+                Signal: block trade, smart money masuk diam-diam
+
+            [2] BANDAR ACCUMULATION UPTREND
+                → Bandar Value (net buy value broker) > rata-rata kemarin
+                → Value MA20 > 1 Miliar (saham likuid)
+                → Previous bandar value ≤ hari ini (tren akumulasi naik)
+                → Bandar value hari ini > kemarin (konfirmasi naik)
+                Signal: bandar sedang dalam proses akumulasi bertahap
+
+            [3] FOREIGN FLOW UPTREND
+                → Net Foreign Buy/Sell > 1 Miliar hari ini
+                → Net Foreign Buy MA20 > 1 Miliar (konsisten masuk)
+                → Net Foreign Buy Streak ≥ 2 hari berturut
+                → Foreign Flow hari ini > MA Foreign Flow (tren naik)
+                Signal: hot money asing masuk, biasanya pre-breakout besar
+
+            [4] 1 MONTH NET FOREIGN FLOW
+                → Kumulatif net foreign flow 1 bulan > 10 Miliar
+                → Value MA20 > 1 Miliar (saham likuid)
+                Signal: akumulasi sistematis jangka menengah oleh asing
+
+            SCORING:
+            - Setiap screener memberi poin tambahan (0–35 poin per screener)
+            - Skor total dipakai untuk ranking final top_n kandidat
+            - GoAPI (30 req/day) dipakai untuk konfirmasi broker di top 30
+            ═══════════════════════════════════════════════════════════════════
             """
             import math
 
@@ -15129,59 +15161,163 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 t = _tick(p)
                 return int(round(p / t) * t)
 
-            # Build bs30 lookup
+            # ── Build bs30 lookup (GoAPI broker data yang sudah terkonfirmasi) ──
             _bs_map = {s.get("ticker",""): s for s in (bs30_cache or [])}
 
             candidates = []
             for tk, d in price_data_map.items():
                 bs_data  = _bs_map.get(tk, {})
-                bsr_bs   = d.get("bullish_score", 0)
-                spike    = d.get("spike", 1)
                 price    = d.get("price", 0)
+                if price <= 50: continue  # buang saham penny/suspend
+
+                bsr_bs   = d.get("bullish_score", 0)
+                spike    = d.get("spike", 1.0)
+                spike_p  = d.get("spike_prev", 1.0)   # spike hari kemarin
                 chg      = d.get("chg", 0)
                 chg5     = d.get("chg5d", 0)
+                vol      = d.get("vol", 0)
+                vol5     = d.get("vol5", 1)
+                val_est  = price * vol                 # estimasi nilai transaksi (Rp)
+                val5_est = price * vol5                # estimasi nilai MA5
+
+                # Data GoAPI dari bs30_cache
                 accum_d  = bs_data.get("accum_days", 0)
                 accum_s  = bs_data.get("accum_streak", 0)
                 verdict  = bs_data.get("verdict", "")
                 goapi_ok = bs_data.get("goapi_confirmed", False)
+                top_accum= bs_data.get("top_accum", [])   # daftar broker akumulasi
+                top_dist = bs_data.get("top_dist", [])
+                bpr      = bs_data.get("bpr", 0)           # broker pressure ratio
 
-                if bsr_bs < 2 or price <= 50 or spike < 1.2:
-                    continue
+                # ── Filter minimum dasar ──
+                if bsr_bs < 1 and spike < 1.2:
+                    continue  # saham sama sekali tidak ada signal
 
-                # Base composite score
-                composite = bsr_bs * 20 + min(spike * 5, 30) + (10 if chg > 0 else 0)
+                # ══════════════════════════════════════════════════════════
+                # BASE SCORE dari teknikal dasar
+                # ══════════════════════════════════════════════════════════
+                composite = 0
+                composite += bsr_bs * 15          # max 60 (bullish score 0-4)
+                composite += min(spike * 4, 25)   # max 25 (volume spike bonus)
+                composite += 5 if chg > 0 else 0  # momentum positif hari ini
 
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 1 — BIG ACCUMULATION
+                # Bandar Accum score + nilai transaksi besar + broker dominasi
+                # ══════════════════════════════════════════════════════════
+                sc1_score = 0
+                if goapi_ok and "AKUMULASI" in verdict:
+                    sc1_score += 20   # GoAPI konfirmasi akumulasi
+                    if bpr > 20:
+                        sc1_score += 10  # Bandar Accum/Dist > 20 (dominasi broker beli)
+                    if len(top_accum) <= 3 and len(top_accum) > 0:
+                        sc1_score += 5   # ≤3 broker akumulasi = block trade / smart money
+                if val_est > 3_000_000_000:
+                    sc1_score += 8    # Value > 3 Miliar/hari
+                elif val_est > 1_000_000_000:
+                    sc1_score += 4    # Value > 1 Miliar/hari (partial)
+
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 2 — BANDAR ACCUMULATION UPTREND
+                # Volume/value bandar tren naik (spike hari ini > kemarin)
+                # + likuiditas cukup (Value MA20 > 1M)
+                # ══════════════════════════════════════════════════════════
+                sc2_score = 0
+                if val5_est > 1_000_000_000:       # Value MA5 proxy > 1 Miliar
+                    sc2_score += 8
+                if spike > spike_p and spike > 1.2:
+                    sc2_score += 12  # Volume spike hari ini > kemarin = tren akumulasi naik
+                if accum_s >= 2:
+                    sc2_score += 10  # Akumulasi ≥2 hari berturut = konsisten
+                elif accum_s >= 1:
+                    sc2_score += 5
+                if accum_d >= 2:
+                    sc2_score += 8   # Minimal 2 hari akumulasi dalam 3 hari terakhir
+
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 3 — FOREIGN FLOW UPTREND
+                # Net foreign buy > MA + streak ≥2 hari
+                # (diperkirakan dari arah broker asing di GoAPI)
+                # ══════════════════════════════════════════════════════════
+                sc3_score = 0
+                if goapi_ok:
+                    # Identifikasi broker asing dari top_accum
+                    _ALL_BROKER_CODES = _bs_map.get("__broker_codes__", {})
+                    foreign_accum = [b for b in top_accum if
+                                     _ALL_BROKERS.get(b, ("",""))[1] == "FOREIGN"]
+                    if len(foreign_accum) >= 2:
+                        sc3_score += 20  # ≥2 broker asing akumulasi = Foreign Flow Uptrend
+                    elif len(foreign_accum) == 1:
+                        sc3_score += 10  # 1 broker asing akumulasi
+                    # Streak sinyal: jika spike hari ini & kemarin keduanya tinggi
+                    # dan harga naik = surrogate untuk Foreign Buy Streak ≥2
+                    if spike > 1.5 and spike_p > 1.2 and chg > 0:
+                        sc3_score += 10  # proxy foreign buy streak ≥2
+                    if sc3_score > 0 and val5_est > 1_000_000_000:
+                        sc3_score += 5   # MA value cukup besar = konfirmasi
+
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 4 — 1 MONTH NET FOREIGN FLOW
+                # Akumulasi asing jangka menengah (chg5d proxy)
+                # Saham yang sudah diakumulasi asing 1 bulan = zona tunggu breakout
+                # ══════════════════════════════════════════════════════════
+                sc4_score = 0
+                # chg5d sebagai proxy tren 1 minggu (surrogate untuk 1-month net foreign)
+                # Kombinasi: harga masih sideways/belum breakout + volume konsisten
+                if chg5 > 0 and chg5 < 8 and spike >= 1.3:
+                    # Naik moderat (<8%) + volume masih aktif = masih dalam fase akumulasi
+                    sc4_score += 15
+                elif chg5 > 8:
+                    # Sudah breakout → mungkin sudah terlambat untuk foreign flow entry
+                    sc4_score -= 5
+                if val5_est > 1_000_000_000 and chg5 > 0:
+                    sc4_score += 8   # Value MA > 1M + tren positif 5 hari = konsisten
+
+                # ── Tandai screener mana yang dipenuhi ──
+                screeners_hit = []
+                if sc1_score >= 20:  screeners_hit.append("BigAccum")
+                if sc2_score >= 15:  screeners_hit.append("BandarUptrend")
+                if sc3_score >= 15:  screeners_hit.append("ForeignFlow")
+                if sc4_score >= 15:  screeners_hit.append("1M-Foreign")
+
+                # ── BONUS CONFLUENCE: semakin banyak screener = semakin kuat ──
+                n_screeners = len(screeners_hit)
+                if n_screeners >= 3:
+                    composite += 30  # Triple confluence = SANGAT KUAT
+                elif n_screeners == 2:
+                    composite += 18  # Double confluence = KUAT
+                elif n_screeners == 1:
+                    composite += 8   # Single screener = VALID
+
+                composite += sc1_score + sc2_score + sc3_score + sc4_score
+
+                # ── Plan type modifier ──
                 if plan_type == "weekly":
-                    # Weekly scoring: reward multi-day accum, penalize saham sudah naik banyak
                     composite += accum_d * 12 + accum_s * 8
-                    if "AKUMULASI" in verdict:
-                        composite += 25 if goapi_ok else 15
-                    # Bonus: belum naik banyak (masih di zona akumulasi)
                     if chg5 < 3:
                         composite += 15   # belum breakout = potensi masih besar
                     elif chg5 > 10:
                         composite -= 20   # sudah naik banyak = risiko distribusi
-                    # Fundamental proxy bonus
                     composite += min(bs_data.get("fa_score", 0) or 0, 10)
                 else:
-                    # Daily: reward momentum hari ini
-                    if chg > 2: composite += 15
-                    if "AKUMULASI" in verdict and goapi_ok: composite += 20
+                    if chg > 2: composite += 15  # momentum hari ini untuk daily
 
-                candidates.append((tk, d, bs_data, composite))
+                candidates.append((tk, d, bs_data, composite, screeners_hit, sc1_score, sc2_score, sc3_score, sc4_score))
 
             candidates.sort(key=lambda x: x[3], reverse=True)
             top_n = 7 if plan_type == "weekly" else 5
             top_candidates = candidates[:top_n]
 
+            # ── Avoid candidates ──
             avoid_cands = []
             for tk, d in price_data_map.items():
                 if d.get("bearish_score", 0) >= 3 and d.get("spike", 1) >= 1.5:
                     avoid_cands.append((tk, d))
             avoid_cands.sort(key=lambda x: x[1].get("bearish_score",0), reverse=True)
 
+            # ── Build result rows ──
             result_rows = []
-            for tk, d, bs_data, sc in top_candidates:
+            for tk, d, bs_data, sc, screeners_hit, sc1, sc2, sc3, sc4 in top_candidates:
                 price  = d.get("price", 100)
                 low    = d.get("low",   price * 0.97)
                 high   = d.get("high",  price * 1.03)
@@ -15192,6 +15328,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 bsr_bs = d.get("bullish_score", 0)
                 accum_d= bs_data.get("accum_days", 0)
                 accum_s= bs_data.get("accum_streak", 0)
+                verdict= bs_data.get("verdict", "")
+                bpr    = bs_data.get("bpr", 0)
 
                 entry_low  = _r(min(ema5, low) * 0.995)
                 entry_high = _r(max(ema5, price) * 1.002)
@@ -15199,17 +15337,17 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 sl         = _r(entry_low - max(atr_proxy, price * 0.025))
 
                 if plan_type == "weekly":
-                    tp_mult = 1.08 if bsr_bs >= 3 else 1.06
-                    horizon = "2-4 minggu" if accum_d >= 2 else "1-2 minggu"
+                    tp_mult = 1.10 if "BigAccum" in screeners_hit else (1.08 if bsr_bs >= 3 else 1.06)
+                    horizon = "3-5 minggu" if "ForeignFlow" in screeners_hit else ("2-4 minggu" if accum_d >= 2 else "1-2 minggu")
                 elif plan_type == "daily":
-                    tp_mult = 1.04
+                    tp_mult = 1.045 if sc1 >= 20 else 1.04
                     horizon = "Intraday" if spike >= 3 else "1-3 hari"
                 else:
                     tp_mult = 1.03
                     horizon = "Overnight / next open"
 
                 tp1 = _r(entry_high * tp_mult)
-                tp2 = _r(entry_high * (tp_mult + 0.03)) if bsr_bs >= 3 else None
+                tp2 = _r(entry_high * (tp_mult + 0.03)) if bsr_bs >= 3 or sc1 >= 20 else None
                 risk   = entry_high - sl
                 reward = tp1 - entry_high
                 rr     = round(reward / risk, 1) if risk > 0 else 0
@@ -15227,39 +15365,54 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 else:
                     wyckoff, wyckoff_pct = "Ranging", 50
 
+                # ── Reasons: gabungkan sinyal dari semua screener ──
                 reasons = []
-                if spike >= 3:    reasons.append(f"Vol spike {spike:.1f}x")
-                if bsr_bs >= 3:   reasons.append("BullScore tinggi")
-                if accum_d >= 2:  reasons.append(f"Akum {accum_d} hari")
-                if chg > 1:       reasons.append(f"+{chg:.1f}% hari ini")
-                verdict = bs_data.get("verdict","")
-                if "AKUMULASI" in verdict: reasons.append(verdict)
+                if spike >= 3:                   reasons.append(f"Vol spike {spike:.1f}x")
+                if bsr_bs >= 3:                  reasons.append("BullScore tinggi")
+                if accum_d >= 2:                 reasons.append(f"Akum {accum_d} hari berturut")
+                if chg > 1:                      reasons.append(f"+{chg:.1f}% hari ini")
+                if "AKUMULASI" in verdict:        reasons.append("GoAPI: Akumulasi ✅")
+                if "BigAccum" in screeners_hit:   reasons.append(f"BigAccum (BPR {bpr:.0f}%)")
+                if "BandarUptrend" in screeners_hit: reasons.append("Bandar Uptrend ↗")
+                if "ForeignFlow" in screeners_hit:  reasons.append("Foreign Flow ↑")
+                if "1M-Foreign" in screeners_hit:   reasons.append("1M Foreign Accum")
                 why = " · ".join(reasons) if reasons else "Setup teknikal valid"
 
+                # ── Screener label untuk tampilan ──
+                screener_label = " + ".join(screeners_hit) if screeners_hit else "Teknikal"
+
                 row = {
-                    "ticker":      tk,
-                    "name":        bs_data.get("name", tk),
-                    "price":       int(price),
-                    "ta_score":    min(95, int(bsr_bs * 22 + spike * 4)),
-                    "fa_score":    int(bs_data.get("fa_score", 55) or 55),
-                    "combined":    round(min(99, sc * 0.6), 1),
-                    "vol_spike":   f"{spike:.1f}x",
-                    "vol_type":    vol_type,
-                    "vol_trend":   "Harga naik + Vol naik \u2705" if chg > 0 and spike > 1 else "Vol spike + Harga diam",
-                    "rsi":         round(45 + chg5 * 1.5, 1),
-                    "macd":        "Bullish crossover" if chg5 > 2 else "Mendekati sinyal",
-                    "wyckoff":     wyckoff,
-                    "wyckoff_pct": wyckoff_pct,
-                    "entry_low":   entry_low,
-                    "entry_high":  entry_high,
-                    "tp1":         tp1,
-                    "tp2":         tp2,
-                    "sl":          sl,
-                    "horizon":     horizon,
-                    "acc_weeks":   f"{accum_s} hari" if accum_s else "\u2014",
-                    "why_buy":     why[:90],
-                    "rating":      "STRONG BUY" if sc > 80 else ("BUY" if bsr_bs >= 3 else "HOLD"),
-                    "rr":          rr,
+                    "ticker":         tk,
+                    "name":           bs_data.get("name", tk),
+                    "price":          int(price),
+                    "ta_score":       min(95, int(bsr_bs * 22 + spike * 4)),
+                    "fa_score":       int(bs_data.get("fa_score", 55) or 55),
+                    "combined":       round(min(99, sc * 0.45), 1),
+                    "vol_spike":      f"{spike:.1f}x",
+                    "vol_type":       vol_type,
+                    "vol_trend":      "Harga naik + Vol naik ✅" if chg > 0 and spike > 1 else "Vol spike + Harga diam",
+                    "rsi":            round(45 + chg5 * 1.5, 1),
+                    "macd":           "Bullish crossover" if chg5 > 2 else "Mendekati sinyal",
+                    "wyckoff":        wyckoff,
+                    "wyckoff_pct":    wyckoff_pct,
+                    "entry_low":      entry_low,
+                    "entry_high":     entry_high,
+                    "tp1":            tp1,
+                    "tp2":            tp2,
+                    "sl":             sl,
+                    "horizon":        horizon,
+                    "acc_weeks":      f"{accum_s} hari" if accum_s else "—",
+                    "why_buy":        why[:120],
+                    "screener_match": screener_label,
+                    "n_screeners":    len(screeners_hit),
+                    "sc_bigaccum":    sc1,
+                    "sc_bandar_up":   sc2,
+                    "sc_foreign":     sc3,
+                    "sc_1m_foreign":  sc4,
+                    "rating":         ("STRONG BUY" if len(screeners_hit) >= 3
+                                       else ("BUY" if len(screeners_hit) >= 1 or bsr_bs >= 3
+                                             else "HOLD")),
+                    "rr":             rr,
                     "bandar_verdict": verdict,
                 }
                 result_rows.append(row)
@@ -15275,17 +15428,20 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "fa_score": 45,
                     "combined": max(5, round(50 - brs * 12, 1)),
                     "vol_signal": f"Bearish spike {spike:.1f}x" if spike > 1.5 else "Tren turun",
-                    "reason": f"BearScore {brs}/4 \u00b7 hindari sementara",
+                    "reason": f"BearScore {brs}/4 · hindari sementara",
                     "rating": "AVOID",
                 })
 
-            avg_chg = sum(d.get("chg", 0) for _, d, _, _ in top_candidates[:3]) / max(len(top_candidates[:3]), 1)
-            if avg_chg > 1:
-                outlook = f"Pasar {plan_type} cenderung bullish ({avg_chg:+.1f}% avg top picks). Fokus block trade konfirmasi."
+            avg_chg = sum(d.get("chg", 0) for _, d, _, _, _, _, _, _, _ in top_candidates[:3]) / max(len(top_candidates[:3]), 1)
+            n_confluence = sum(1 for _, _, _, _, sh, _, _, _, _ in top_candidates if len(sh) >= 2)
+            if avg_chg > 1 and n_confluence >= 2:
+                outlook = f"🟢 Pasar {plan_type} BULLISH — {n_confluence} saham multi-screener confluence. Fokus BigAccum + ForeignFlow."
+            elif avg_chg > 0:
+                outlook = f"🟡 Pasar {plan_type} moderat positif ({avg_chg:+.1f}% avg). Selektif di screener terkonfirmasi GoAPI."
             elif avg_chg < -1:
-                outlook = f"Bias {plan_type} mixed-bearish. Selektif, tunggu konfirmasi volume."
+                outlook = f"🔴 Bias {plan_type} mixed-bearish. Tunggu konfirmasi volume + Foreign Flow sebelum entry."
             else:
-                outlook = f"Pasar {plan_type} sideways-ranging. Entry hanya di zona demand konfirmasi."
+                outlook = f"⚪ Pasar {plan_type} sideways. Entry hanya di zona demand + konfirmasi ≥2 screener."
 
             return {plan_type: result_rows, "avoid": avoid_rows, "outlook": outlook}
 
@@ -18014,7 +18170,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     for _si in _top30:
                         _stk = _si["ticker"]
                         if not _goapi_available():
-                            _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0})
+                            _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0,
+                                        "screeners_hit":[],"foreign_accum_count":0})
                             continue
                         try:
                             from datetime import date as _gd, timedelta as _gtd
@@ -18022,22 +18179,60 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             _grows = goapi_get_broker_summary(_stk, _gdate)
                             if not _grows:
                                 _grows = goapi_get_broker_summary(_stk, str(_gd.today()-_gtd(days=1)))
+
                             _net_b = 0; _top_acc = []; _top_dist_g = []
+                            _total_buy_val = 0; _total_vol = 0
+                            _foreign_accum = []; _foreign_dist = []
                             for _gr in (_grows or []):
-                                _gbr = str(_gr.get("BrokerID","?"))
-                                _gbl = float(_gr.get("BuyVolume",0) or 0)
-                                _gsl = float(_gr.get("SellVolume",0) or 0)
-                                _gn  = _gbl - _gsl
-                                _net_b += _gn
-                                if _gn > 0: _top_acc.append(_gbr)
-                                else: _top_dist_g.append(_gbr)
-                            _verdict  = "AKUMULASI" if _net_b > 0 else ("DISTRIBUSI" if _net_b < 0 else "")
-                            _bpr = round(abs(_net_b) / max(sum(float(r.get("BuyVolume",0) or 0) for r in _grows), 1) * 100, 1) if _grows else 0
-                            _si.update({"verdict": _verdict, "top_accum": _top_acc[:3],
-                                        "top_dist": _top_dist_g[:3], "goapi_confirmed": bool(_grows),
-                                        "bpr": _bpr})
+                                _gbr  = str(_gr.get("BrokerID","?"))
+                                _gbl  = float(_gr.get("BuyVolume",0) or 0)
+                                _gsl  = float(_gr.get("SellVolume",0) or 0)
+                                _gn   = _gbl - _gsl
+                                _gbv  = float(_gr.get("BuyValue",0) or 0)
+                                _net_b       += _gn
+                                _total_buy_val += _gbv
+                                _total_vol   += _gbl
+                                if _gn > 0:
+                                    _top_acc.append(_gbr)
+                                    if _ALL_BROKERS.get(_gbr, ("",""))[1] == "FOREIGN":
+                                        _foreign_accum.append(_gbr)
+                                else:
+                                    _top_dist_g.append(_gbr)
+                                    if _ALL_BROKERS.get(_gbr, ("",""))[1] == "FOREIGN":
+                                        _foreign_dist.append(_gbr)
+
+                            _verdict = "AKUMULASI" if _net_b > 0 else ("DISTRIBUSI" if _net_b < 0 else "")
+                            _bpr = round(abs(_net_b) / max(_total_vol, 1) * 100, 1) if _grows else 0
+
+                            # ── Evaluasi 4 screener untuk setiap saham di GoAPI ──
+                            _sc_hits = []
+                            # Screener 1: Big Accumulation
+                            if _bpr > 20 and len(_top_acc) <= 5 and _total_buy_val > 3_000_000_000:
+                                _sc_hits.append("BigAccum")
+                            # Screener 2: Bandar Accumulation Uptrend
+                            if _si.get("accum_streak",0) >= 2 or _si.get("accum_days",0) >= 2:
+                                _sc_hits.append("BandarUptrend")
+                            # Screener 3: Foreign Flow Uptrend
+                            if len(_foreign_accum) >= 2 and len(_foreign_accum) > len(_foreign_dist):
+                                _sc_hits.append("ForeignFlow")
+                            # Screener 4: 1 Month Net Foreign Flow (proxy dari multi-hari GoAPI + spike)
+                            if len(_foreign_accum) >= 1 and _si.get("spike",1) >= 1.3:
+                                _sc_hits.append("1M-Foreign")
+
+                            _si.update({
+                                "verdict":             _verdict,
+                                "top_accum":           _top_acc[:3],
+                                "top_dist":            _top_dist_g[:3],
+                                "goapi_confirmed":     bool(_grows),
+                                "bpr":                 _bpr,
+                                "screeners_hit":       _sc_hits,
+                                "foreign_accum_count": len(_foreign_accum),
+                                "n_screeners":         len(_sc_hits),
+                            })
                             if _grows: _confirmed_count += 1
-                        except: _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0})
+                        except:
+                            _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0,
+                                        "screeners_hit":[],"foreign_accum_count":0,"n_screeners":0})
 
                     # Consecutive momentum tracking
                     _screen_history = st.session_state.get("sigma_bs30_history", {})
