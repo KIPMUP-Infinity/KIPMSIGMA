@@ -7511,6 +7511,96 @@ if current_view == "dashboard":
         .sh-screen-table th {{ font-size: 0.7rem !important; padding: 5px 5px !important; }}
         .sh-screen-table td {{ padding: 5px 5px !important; }}
         [data-testid="stTextInput"] input {{ font-size: 0.95rem !important; }}
+
+        /* ── GLOBAL TABLE SCROLL FIX (mobile) ── */
+        [data-testid="stDataFrame"] {{
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        [data-testid="stDataFrame"] > div {{
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        /* Prevent double scroll on nested iframes (components.html) */
+        [data-testid="stCustomComponentV1"] iframe {{
+            border: none !important;
+            max-width: 100% !important;
+        }}
+        /* Fix horizontal overflow on columns */
+        [data-testid="column"] {{
+            min-width: 0 !important;
+            overflow: hidden !important;
+            word-break: break-word !important;
+        }}
+        /* Prevent text overflow in containers */
+        .stMarkdown, .stMarkdown p {{
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+        }}
+        /* Inline HTML tables (markdown) responsive — prevent double scrollbar */
+        [data-testid="stMarkdownContainer"] div[style*="overflow-x"] {{
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        /* stMarkdownContainer must NOT clip its scrollable table children */
+        [data-testid="stMarkdownContainer"] {{
+            overflow-x: visible !important;
+            max-width: 100% !important;
+        }}
+        /* Single-axis scroll: tables scroll only horizontally, no vertical container scroll */
+        [data-testid="stMarkdownContainer"] table {{
+            display: block !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            max-width: 100% !important;
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        /* But if already inside a scroll-wrapper div, use normal table display */
+        [data-testid="stMarkdownContainer"] div[style*="overflow-x"] table {{
+            display: table !important;
+            overflow-x: unset !important;
+        }}
+        /* Tab bar horizontal scroll on mobile */
+        [data-testid="stTabs"] [data-baseweb="tab-list"] {{
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            flex-wrap: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+            padding-bottom: 2px !important;
+        }}
+        [data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar {{
+            display: none !important;
+        }}
+        [data-testid="stTabs"] button[role="tab"] {{
+            flex-shrink: 0 !important;
+            font-size: 0.65rem !important;
+            padding: 5px 10px !important;
+            white-space: nowrap !important;
+        }}
+        /* Metrics stack properly on tiny screens */
+        @media (max-width: 420px) {{
+            [data-testid="stMetricValue"] {{ font-size: 1.05rem !important; }}
+            [data-testid="stMetricLabel"] {{ font-size: 0.58rem !important; }}
+            [data-testid="column"] {{ padding: 0 4px !important; }}
+        }}
+        /* Expander header */
+        [data-testid="stExpander"] summary {{
+            font-size: 0.82rem !important;
+            padding: 10px 12px !important;
+        }}
+        /* Number inputs and selectboxes on mobile */
+        [data-testid="stNumberInput"] input,
+        [data-testid="stSelectbox"] div {{
+            font-size: 0.9rem !important;
+        }}
+        /* Buttons full-width on mobile */
+        [data-testid="stVerticalBlock"] .stButton > button {{
+            width: 100% !important;
+            font-size: 0.76rem !important;
+            padding: 10px 14px !important;
+        }}
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -15915,8 +16005,40 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 "TOP ACCUM BROKER": _top_accum,
                                 "TOP DIST BROKER":  _top_dist,
                             })
-                        import pandas as _pd_tp
-                        st.dataframe(_pd_tp.DataFrame(_tp_rows), use_container_width=True, hide_index=True)
+                        # Build responsive HTML table - no double scroll
+                        _tp_hdr = ["TICKER","PRICE","ENTRY ZONE","TP1","TP2","SL","RR","HORIZON","VOL","RATING","ALASAN","TOP ACCUM","TOP DIST"]
+                        _tp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;border-bottom:1px solid rgba(167,139,250,0.25);text-align:left;'>{h}</th>" for h in _tp_hdr)
+                        _tp_trs = ""
+                        for _tri2, _r2 in enumerate(_tp_rows):
+                            _rat2  = _r2.get("RATING","—")
+                            _rc2   = "#089981" if _rat2=="BUY" else "#f5a623" if _rat2=="HOLD" else "#f23645"
+                            _bg2   = "rgba(167,139,250,0.04)" if _tri2%2==0 else "transparent"
+                            _tp_trs += (
+                                f"<tr style='background:{_bg2};'>"
+                                f"<td style='padding:7px 10px;font-weight:700;color:#a78bfa;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_r2.get('TICKER','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('PRICE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_r2.get('ENTRY ZONE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>{_r2.get('TP1','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{_r2.get('TP2','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>{_r2.get('SL','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('RR','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_r2.get('HORIZON','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('VOL','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rc2};font-weight:700;font-size:0.8rem;'>{_rat2}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.77rem;max-width:180px;'>{_r2.get('ALASAN','')}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_r2.get('TOP ACCUM BROKER','')}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_r2.get('TOP DIST BROKER','')}</td>"
+                                "</tr>"
+                            )
+                        st.markdown(
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
+                            "-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(167,139,250,0.2);margin-bottom:4px;'>"
+                            "<table style='border-collapse:collapse;min-width:960px;width:max-content;'>"
+                            f"<thead><tr style='background:rgba(167,139,250,0.08);'>{_tp_th}</tr></thead>"
+                            f"<tbody>{_tp_trs}</tbody>"
+                            "</table></div>",
+                            unsafe_allow_html=True)
 
                     # ── Summary Card Top Saham ──
                     if _rows_buy:
@@ -15975,13 +16097,35 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                             f"</div>", unsafe_allow_html=True)
                                 st.caption(f"📌 {_r.get('why_buy','—')}")
 
-                    # ── Saham Hindari ──
+                    # ── Saham Hindari (Daily) ──
                     if _rows_avoid:
-                        with st.expander(f"⛔ Hindari Hari Ini ({len(_rows_avoid)} saham)", expanded=False):
-                            import pandas as _pd_av
-                            _av_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {a.get('price',0):,}",
-                                         "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _rows_avoid]
-                            st.dataframe(_pd_av.DataFrame(_av_rows), use_container_width=True, hide_index=True)
+                        _av_html_rows = "".join(
+                            f"<tr style='background:rgba(242,54,69,0.10);'>"
+                            f"<td style='padding:8px 12px;font-weight:700;color:#ff4d4d;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;letter-spacing:0.05em;'>{a.get('ticker','')}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;color:#ff6b6b;font-size:0.8rem;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
+                            f"<td style='padding:8px 12px;color:#ffb3b3;font-size:0.78rem;'>{a.get('reason','—')}</td>"
+                            f"<td style='padding:8px 12px;color:#ff4d4d;font-weight:700;white-space:nowrap;font-size:0.78rem;'>{a.get('vol_signal','—')}</td>"
+                            "</tr>"
+                            for a in _rows_avoid
+                        )
+                        st.markdown(
+                            "<div style='margin-top:16px;'>"
+                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
+                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI HARI INI</span>"
+                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_rows_avoid)}</span>"
+                            "</div>"
+                            "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
+                            "<table style='width:100%;border-collapse:collapse;min-width:300px;'>"
+                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>TICKER</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>PRICE</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>ALASAN</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>VOL</th>"
+                            "</tr></thead>"
+                            f"<tbody>{_av_html_rows}</tbody>"
+                            "</table></div></div>",
+                            unsafe_allow_html=True)
 
             # ════════════════════════════════════════════
             # TAB 2 — HISTORY TRADE PLAN
@@ -16152,7 +16296,41 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 "TOP ACCUM":     ", ".join(_wta) if _wta else "—",
                                 "TOP DIST":      ", ".join(_wtd) if _wtd else "—",
                             })
-                        st.dataframe(_pd_wp.DataFrame(_wtp_rows), use_container_width=True, hide_index=True)
+                        # Responsive HTML table — no double scroll on mobile
+                        _wtp_hdr = ["TICKER","PRICE","ENTRY ZONE","TP1","TP2","SL","RR","HORIZON","ACC DAYS","SCORE","RATING","ALASAN","TOP ACCUM","TOP DIST"]
+                        _wtp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:#26a69a;border-bottom:1px solid rgba(38,166,154,0.25);text-align:left;'>{h}</th>" for h in _wtp_hdr)
+                        _wtp_trs = ""
+                        for _wri3, _wr3 in enumerate(_wtp_rows):
+                            _rat3 = _wr3.get("RATING","—")
+                            _rc3  = "#089981" if _rat3=="BUY" else "#f5a623" if _rat3=="HOLD" else "#f23645"
+                            _bg3  = "rgba(38,166,154,0.05)" if _wri3%2==0 else "transparent"
+                            _wtp_trs += (
+                                f"<tr style='background:{_bg3};'>"
+                                f"<td style='padding:7px 10px;font-weight:700;color:#26a69a;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_wr3.get('TICKER','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('PRICE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_wr3.get('ENTRY ZONE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>{_wr3.get('TP1','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{_wr3.get('TP2','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>{_wr3.get('SL','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('RR','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_wr3.get('HORIZON','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('ACC DAYS','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('SCORE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rc3};font-weight:700;font-size:0.8rem;'>{_rat3}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.77rem;max-width:180px;'>{_wr3.get('ALASAN','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.75rem;'>{_wr3.get('TOP ACCUM','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.75rem;'>{_wr3.get('TOP DIST','')}</td>"
+                                "</tr>"
+                            )
+                        st.markdown(
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
+                            "-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(38,166,154,0.2);margin-bottom:4px;'>"
+                            "<table style='border-collapse:collapse;min-width:1000px;width:max-content;'>"
+                            f"<thead><tr style='background:rgba(38,166,154,0.08);'>{_wtp_th}</tr></thead>"
+                            f"<tbody>{_wtp_trs}</tbody>"
+                            "</table></div>",
+                            unsafe_allow_html=True)
 
                     # ── Summary Cards Weekly ──
                     if _wrows:
@@ -16209,11 +16387,33 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 st.caption(f"📌 {_wr.get('why_buy','—')}")
 
                     if _wavoid:
-                        with st.expander(f"⛔ Hindari Minggu Ini ({len(_wavoid)} saham)", expanded=False):
-                            import pandas as _pd_wav
-                            _wav_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {a.get('price',0):,}",
-                                          "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _wavoid]
-                            st.dataframe(_pd_wav.DataFrame(_wav_rows), use_container_width=True, hide_index=True)
+                        _wav_html = "".join(
+                            f"<tr style='background:rgba(242,54,69,0.10);'>"
+                            f"<td style='padding:8px 12px;font-weight:700;color:#ff4d4d;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;letter-spacing:0.05em;'>{a.get('ticker','')}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;color:#ff6b6b;font-size:0.8rem;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
+                            f"<td style='padding:8px 12px;color:#ffb3b3;font-size:0.78rem;'>{a.get('reason','—')}</td>"
+                            f"<td style='padding:8px 12px;color:#ff4d4d;font-weight:700;white-space:nowrap;font-size:0.78rem;'>{a.get('vol_signal','—')}</td>"
+                            "</tr>"
+                            for a in _wavoid
+                        )
+                        st.markdown(
+                            "<div style='margin-top:16px;'>"
+                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
+                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI MINGGU INI</span>"
+                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_wavoid)}</span>"
+                            "</div>"
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
+                            "<table style='border-collapse:collapse;min-width:300px;width:max-content;'>"
+                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>TICKER</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>PRICE</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>ALASAN</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>VOL</th>"
+                            "</tr></thead>"
+                            f"<tbody>{_wav_html}</tbody>"
+                            "</table></div></div>",
+                            unsafe_allow_html=True)
 
             # ============================================================
             # WEEKLY TAB 2 — HISTORY TRADE PLAN
@@ -16373,25 +16573,40 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             f"📈 TRADE PLAN BSJP — {_today_b_entry.get('date','')}</div>",
                             unsafe_allow_html=True)
 
-                        import pandas as _pd_bp
-                        _btp_rows = []
-                        for _br in _brows_buy:
-                            _btp_rows.append({
-                                "TICKER":       _br.get("ticker",""),
-                                "PRICE":        f"Rp {int(_br.get('price',0)):,}",
-                                "ENTRY LOW":    f"Rp {int(_br.get('entry_low',0)):,}",
-                                "ENTRY HIGH":   f"Rp {int(_br.get('entry_high',0)):,}",
-                                "TP1":          f"Rp {int(_br.get('tp1',0)):,}",
-                                "TP2":          f"Rp {int(_br.get('tp2',0)):,}" if _br.get("tp2") else "—",
-                                "SL":           f"Rp {int(_br.get('sl',0)):,}",
-                                "RR":           f"{_br.get('rr',0)}x",
-                                "VOL SPIKE":    _br.get("vol_spike","—"),
-                                "STREAK":       f"{_br.get('consec_up',0)}d" if _br.get('consec_up') else "—",
-                                "CLOSE%":       f"{float(_br.get('close_pct_range',50)):.0f}%",
-                                "RATING":       _br.get("rating","—"),
-                                "ALASAN":       _br.get("why_buy","—"),
-                            })
-                        st.dataframe(_pd_bp.DataFrame(_btp_rows), use_container_width=True, hide_index=True)
+                        # Build mobile-friendly HTML table (no double scroll)
+                        _btp_hdr = ["TICKER","PRICE","ENTRY LOW","ENTRY HIGH","TP1","TP2","SL","RR","VOL","STREAK","CLOSE%","RATING","ALASAN"]
+                        _btp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;border-bottom:1px solid rgba(245,166,35,0.25);text-align:left;'>{h}</th>" for h in _btp_hdr)
+                        _btp_trs = ""
+                        for _bri2, _br in enumerate(_brows_buy):
+                            _rat = _br.get("rating","—")
+                            _rat_c = "#089981" if _rat=="BUY" else "#f5a623" if _rat=="HOLD" else "#f23645"
+                            _btp_trs += (
+                                f"<tr style='background:{'rgba(245,166,35,0.04)' if _bri2%2==0 else 'transparent'};'>"
+                                f"<td style='padding:7px 10px;font-weight:700;color:#f5a623;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_br.get('ticker','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('price',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('entry_low',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('entry_high',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>Rp {int(_br.get('tp1',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{f'Rp {int(_br.get('tp2',0)):,}' if _br.get('tp2') else '—'}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>Rp {int(_br.get('sl',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_br.get('rr',0)}x</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_br.get('vol_spike','—')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{f'{_br.get('consec_up',0)}d' if _br.get('consec_up') else '—'}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{float(_br.get('close_pct_range',50)):.0f}%</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rat_c};font-weight:700;font-size:0.8rem;'>{_rat}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.78rem;max-width:200px;'>{_br.get('why_buy','—')}</td>"
+                                f"</tr>"
+                            )
+                        _btp_html = (
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
+                            "-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(245,166,35,0.2);margin-bottom:4px;'>"
+                            "<table style='border-collapse:collapse;min-width:900px;width:max-content;'>"
+                            f"<thead><tr style='background:rgba(245,166,35,0.08);'>{_btp_th}</tr></thead>"
+                            f"<tbody>{_btp_trs}</tbody>"
+                            "</table></div>"
+                        )
+                        st.markdown(_btp_html, unsafe_allow_html=True)
 
                     # ── Summary Cards BSJP ──
                     if _brows_buy:
@@ -16426,11 +16641,34 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 st.caption(f"📌 {_br.get('why_buy','—')}")
 
                     if _brows_avoid:
-                        with st.expander(f"⛔ Hindari Malam Ini ({len(_brows_avoid)} saham)", expanded=True):
-                            import pandas as _pd_bav
-                            _bav_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {int(a.get('price',0)):,}",
-                                          "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _brows_avoid]
-                            st.dataframe(_pd_bav.DataFrame(_bav_rows), use_container_width=True, hide_index=True)
+                        _bav_rows_html = "".join([
+                            f"<tr style='background:rgba(242,54,69,0.10);'>"
+                            f"<td style='color:#ff4d4d;font-weight:700;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-family:IBM Plex Mono,monospace;font-size:0.82rem;letter-spacing:0.05em;white-space:nowrap;'>{a.get('ticker','')}</td>"
+                            f"<td style='color:#ff6b6b;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.82rem;white-space:nowrap;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
+                            f"<td style='color:#ffb3b3;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.8rem;'>{a.get('reason','—')}</td>"
+                            f"<td style='color:#ff4d4d;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.8rem;font-weight:700;white-space:nowrap;'>{a.get('vol_signal','—')}</td>"
+                            f"</tr>"
+                            for a in _brows_avoid
+                        ])
+                        _bav_html = (
+                            "<div style='margin-top:16px;'>"
+                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
+                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI MALAM INI</span>"
+                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_brows_avoid)}</span>"
+                            "</div>"
+                            "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
+                            "<table style='width:100%;border-collapse:collapse;min-width:320px;'>"
+                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>TICKER</th>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>PRICE</th>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>ALASAN</th>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>VOL</th>"
+                            "</tr></thead>"
+                            f"<tbody>{_bav_rows_html}</tbody>"
+                            "</table></div></div>"
+                        )
+                        st.markdown(_bav_html, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                         <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
@@ -17818,70 +18056,83 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         st.dataframe(_pd_bh.DataFrame(_bh_rows), use_container_width=True, hide_index=True)
 
         # ══════════════════════════════════════════════════════════
-        # TAB 3 — NET BUY FOREIGN
+        # TAB 3 — NET BUY FOREIGN (AUTO dari BS30)
         # ══════════════════════════════════════════════════════════
         with bs_tab_foreign:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Monitoring aliran dana asing secara keseluruhan di pasar IDX.</p>", unsafe_allow_html=True)
-            col_f1, col_f2 = st.columns([3,1])
-            with col_f1:
-                bs_foreign_tickers_raw = st.text_input("KODE SAHAM (pisah koma, maks 10):", "BBCA,BBRI,TLKM,BMRI,ASII", key="bs_foreign_tickers")
-            with col_f2:
-                st.markdown("<br>", unsafe_allow_html=True)
-                bs_foreign_run = st.button("🌐 LOAD FOREIGN FLOW", use_container_width=True, key="bs_foreign_run")
-            if bs_foreign_run:
-                _ftickers = [t.strip().upper() for t in bs_foreign_tickers_raw.split(",") if t.strip()][:10]
-                with st.spinner("Mengambil foreign flow per saham..."):
+            st.markdown(
+                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};margin-bottom:12px;'>"
+                "🌐 <b>AUTO NET FOREIGN FLOW</b> · Data dari 30 saham hasil Broker Screening · "
+                "Diperbarui otomatis saat Broker Screening dijalankan</p>",
+                unsafe_allow_html=True)
+
+            _fbs30      = st.session_state.get("sigma_bs30_screened", [])
+            _fbs30_ts   = st.session_state.get("sigma_bs30_ts", "")
+
+            if not _fbs30:
+                st.info("📭 Belum ada data. Jalankan Broker Screening terlebih dahulu untuk mengisi data 30 saham.")
+            else:
+                st.caption(f"📅 Data dari screening: {_fbs30_ts}  ·  {len(_fbs30)} saham")
+                _ftickers_auto = [s.get("ticker","") for s in _fbs30 if s.get("ticker")][:30]
+
+                with st.spinner(f"Mengambil foreign flow {len(_ftickers_auto)} saham dari BS30..."):
                     _fresults = []
-                    for _ftk in _ftickers:
-                        _fdata = _fetch_idx_broker_summary(_ftk, "daily")
-                        _f_net=0; _l_net=0; _f_buy=0; _f_sell=0
-                        for row in _fdata:
-                            broker = str(row.get("BrokerID", row.get("Code","?")))
-                            buy_lot = float(row.get("BuyVolume",0) or 0)
-                            sell_lot= float(row.get("SellVolume",0) or 0)
-                            net = buy_lot-sell_lot
-                            binfo = _ALL_BROKERS.get(broker); is_f = binfo[1]=="FOREIGN" if binfo else False
-                            if is_f: _f_net+=net; _f_buy+=buy_lot; _f_sell+=sell_lot
-                            else: _l_net+=net
-                        _fresults.append({"ticker":_ftk,"f_net":_f_net,"l_net":_l_net,"f_buy":_f_buy,"f_sell":_f_sell})
-                import json as _ffj
-                _fr_json = _ffj.dumps(_fresults, ensure_ascii=False)
-                _G2="#26a69a"; _R2="#f23645"; _P2="#a78bfa"
-                _TXT2=text_main; _tbl2="rgba(8,12,22,0.95)" if is_dark else "#fff"
-                _brd2="rgba(124,58,237,0.15)" if is_dark else "#e2e8f0"
-                _hdr2="rgba(124,58,237,0.08)" if is_dark else "#f8fafc"
-                _fflow_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT2};font-size:0.875rem;}}
-.card{{background:{_tbl2};border:1px solid {_brd2};border-radius:10px;overflow:hidden;}}
-.scroll{{width:100%;overflow-x:auto;}}
-table{{width:100%;border-collapse:collapse;min-width:540px;}}
-thead th{{background:{_hdr2};color:{_P2};padding:9px 12px;text-align:left;border-bottom:1px solid {_brd2};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.875rem;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.06);}}
-.tk{{font-weight:700;color:{_P2};}}
-.pos{{color:{_G2};font-weight:700;}}.neg{{color:{_R2};font-weight:700;}}
-</style></head><body>
-<div class="card"><div class="scroll"><table>
-<thead><tr><th>TICKER</th><th>🌐 FOREIGN NET (LOT)</th><th>F.BUY</th><th>F.SELL</th><th>🏠 LOKAL NET</th><th>SINYAL</th></tr></thead>
-<tbody id="ff-tb"></tbody></table></div></div>
-<script>(function(){{
-  var D={_fr_json};
-  D.forEach(function(r){{
-    var sig=r.f_net>500?'✅ AKUMULASI':r.f_net<-500?'⚠️ DISTRIBUSI':'- NETRAL';
-    var sc=r.f_net>500?'{_G2}':r.f_net<-500?'{_R2}':'{_TXT2}';
-    document.getElementById('ff-tb').innerHTML+='<tr>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td class="'+(r.f_net>=0?'pos':'neg')+'">'+(r.f_net>=0?'+':'')+parseInt(r.f_net).toLocaleString('id-ID')+'</td>'+
-      '<td>'+parseInt(r.f_buy).toLocaleString('id-ID')+'</td>'+
-      '<td>'+parseInt(r.f_sell).toLocaleString('id-ID')+'</td>'+
-      '<td class="'+(r.l_net>=0?'pos':'neg')+'">'+(r.l_net>=0?'+':'')+parseInt(r.l_net).toLocaleString('id-ID')+'</td>'+
-      '<td style="color:'+sc+';font-weight:700;">'+sig+'</td>'+
-    '</tr>';
-  }});
-}})();</script></body></html>"""
-                components.html(_fflow_html, height=500, scrolling=True)
+                    for _ftk in _ftickers_auto:
+                        try:
+                            _fdata = _fetch_idx_broker_summary(_ftk, "daily")
+                            _f_net=0; _l_net=0; _f_buy=0; _f_sell=0
+                            for row in _fdata:
+                                broker   = str(row.get("BrokerID", row.get("Code","?")))
+                                buy_lot  = float(row.get("BuyVolume",0) or 0)
+                                sell_lot = float(row.get("SellVolume",0) or 0)
+                                net      = buy_lot - sell_lot
+                                binfo    = _ALL_BROKERS.get(broker)
+                                is_f     = binfo[1]=="FOREIGN" if binfo else False
+                                if is_f: _f_net+=net; _f_buy+=buy_lot; _f_sell+=sell_lot
+                                else:    _l_net+=net
+                            _fresults.append({"ticker":_ftk,"f_net":_f_net,"l_net":_l_net,"f_buy":_f_buy,"f_sell":_f_sell})
+                        except: pass
+                    _fresults.sort(key=lambda x: x["f_net"], reverse=True)
+
+                if _fresults:
+                    _G2="#26a69a"; _R2="#f23645"; _P2="#a78bfa"
+                    _rows_ff = ""
+                    for _i_ff, _r_ff in enumerate(_fresults):
+                        _sig = "✅ AKUMULASI" if _r_ff["f_net"]>500 else "⚠️ DISTRIBUSI" if _r_ff["f_net"]<-500 else "— NETRAL"
+                        _sc  = _G2 if _r_ff["f_net"]>500 else _R2 if _r_ff["f_net"]<-500 else text_sub
+                        _fn_disp = ("+" if _r_ff["f_net"]>=0 else "") + f"{int(_r_ff['f_net']):,}"
+                        _ln_disp = ("+" if _r_ff["l_net"]>=0 else "") + f"{int(_r_ff['l_net']):,}"
+                        _bg_row  = ("rgba(38,166,154,0.06)" if _r_ff["f_net"]>500
+                                    else "rgba(242,54,69,0.05)" if _r_ff["f_net"]<-500
+                                    else ("rgba(255,255,255,0.02)" if _i_ff%2==0 else "transparent"))
+                        _rows_ff += (
+                            f"<tr style='background:{_bg_row};'>"
+                            f"<td style='padding:8px 12px;font-weight:700;color:{_P2};font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_r_ff['ticker']}</td>"
+                            f"<td style='padding:8px 12px;color:{'#26a69a' if _r_ff['f_net']>=0 else '#f23645'};font-weight:700;white-space:nowrap;font-size:0.82rem;'>{_fn_disp}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;font-size:0.8rem;'>{int(_r_ff['f_buy']):,}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;font-size:0.8rem;'>{int(_r_ff['f_sell']):,}</td>"
+                            f"<td style='padding:8px 12px;color:{'#26a69a' if _r_ff['l_net']>=0 else '#f23645'};white-space:nowrap;font-size:0.82rem;'>{_ln_disp}</td>"
+                            f"<td style='padding:8px 12px;color:{_sc};font-weight:700;white-space:nowrap;font-size:0.8rem;'>{_sig}</td>"
+                            f"</tr>"
+                        )
+                    _ff_html = (
+                        "<div style='width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;"
+                        "border-radius:10px;border:1px solid rgba(124,58,237,0.2);'>"
+                        "<table style='border-collapse:collapse;min-width:560px;width:max-content;'>"
+                        "<thead><tr style='background:rgba(124,58,237,0.1);'>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TICKER</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>🌐 FOREIGN NET (LOT)</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>F.BUY</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>F.SELL</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>🏠 LOKAL NET</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>SINYAL</th>"
+                        "</tr></thead>"
+                        f"<tbody>{_rows_ff}</tbody>"
+                        "</table></div>"
+                    )
+                    st.markdown(_ff_html, unsafe_allow_html=True)
+                else:
+                    st.warning("Tidak ada data foreign flow yang berhasil diambil.")
+
 
 
 # ─────────────────────────────────────────────
