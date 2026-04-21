@@ -7962,7 +7962,9 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 .ccy{{font-size:0.8rem;color:{text_sub};}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:14px;}}
-  .col{{width:100%;}}
+  .col{{width:100%;min-width:0;}}
+  .mkt-wrap{{overflow-x:auto;-webkit-overflow-scrolling:touch;}}
+  .mkt-scroll{{overflow-x:auto;-webkit-overflow-scrolling:touch;}}
   .mkt-hdr{{font-size:0.875rem;padding:8px 10px;}}
   thead th{{font-size:0.8rem;padding:7px 8px;}}
   tbody td{{font-size:0.875rem;padding:7px 8px;}}
@@ -8497,7 +8499,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         .news-entry-sigma:hover {{ background: rgba(3,40,238,0.05); }}
         .news-title-sigma {{ color: {text_main}; font-size: 15px; line-height: 1.5; margin-bottom: 5px; }}
         .news-meta-sigma {{ color: {text_sub}; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }}
-        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; }} .news-title-sigma {{ font-size: 14px !important; }} }}
+        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; margin-bottom: 16px !important; }} .news-title-sigma {{ font-size: 14px !important; }} .news-box {{ margin-bottom: 16px !important; }} }}
         .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
         .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
@@ -8525,7 +8527,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         with col_n1:
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column; margin-bottom:16px;'>
                 <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>""", unsafe_allow_html=True)
@@ -9084,6 +9086,12 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
     margin-bottom: 16px;
+    min-width: 600px;
+  }}
+  .frm-grid-wrap {{
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 16px;
   }}
 
   /* Card */
@@ -9239,7 +9247,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
   </div>
 
   <!-- Cards Grid -->
-  <div class="frm-grid" id="frm-grid"></div>
+  <div class="frm-grid-wrap"><div class="frm-grid" id="frm-grid"></div></div>
 
   <!-- Insight -->
   <div class="frm-insight">
@@ -9841,6 +9849,8 @@ TUGASMU — Analisa dampak event ini secara menyeluruh:
 
 Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gunakan Bahasa Indonesia. Tetap faktual, presisi, dan actionable — bukan generik."""
 
+            _ec_ai_resp = None
+            _ec_ai_model = "error"
             with st.spinner("⚡ SIGMA AI menganalisa dampak data ekonomi ke XAU, IDR, DXY, IHSG..."):
                 try:
                     _ec_ai_resp, _ec_ai_model = _call_groq_text([{"role":"user","content":_ec_prompt}])
@@ -9848,8 +9858,12 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     try:
                         _ec_ai_resp, _ec_ai_model = _call_gemini_text([{"role":"user","content":_ec_prompt}])
                     except Exception as _ec_e2:
-                        _ec_ai_resp = f"Gagal memanggil AI: {_ec_e2}"
+                        _ec_ai_resp = None
                         _ec_ai_model = "error"
+
+            if not _ec_ai_resp or _ec_ai_model == "error":
+                st.error("⚠️ Terjadi kesalahan: API Limit tercapai atau timeout. Silakan coba beberapa saat lagi.", icon="🚫")
+                st.stop()
 
             # ── Render hasil AI dalam card ──────────────────────
             _act_display = _use_actual if _use_actual not in ("—","") else "Belum rilis"
@@ -10796,13 +10810,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 rs_pct = max(0, min(100, (stk["rs"]-85) / 30 * 100))
                 _mc_disp = stk.get("mktcap","-")
                 tbl_rows += f"""<tr>
-                    <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;'>{stk["ticker"]}</td>
+                    <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;white-space:nowrap;'>{stk["ticker"]}</td>
                     <td style='font-size:13px;color:{text_sub};'>{stk["nama"]}</td>
                     <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
                         font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
-                        font-family:'DM Sans',sans-serif;'>{stk.get("fase","")}</span></td>
+                        font-family:'DM Sans',sans-serif;white-space:nowrap;display:inline-block;'>{stk.get("fase","")}</span></td>
                     <td style='font-size:13px;color:#8b5cf6;font-weight:600;'>{_mc_disp}</td>
-                    <td style='font-size:13px;'>
+                    <td style='font-size:13px;min-width:64px;'>
                         <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
                         <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
                             <div style='height:100%;width:{rs_pct:.0f}%;background:{fc2};border-radius:2px;'></div>
@@ -10811,15 +10825,15 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
                 </tr>"""
 
-            st.markdown(f"""<div style='overflow-y:auto;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
-            <table style='width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;'>
+            st.markdown(f"""<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
+            <table style='width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;min-width:480px;'>
             <thead><tr style='background:{met_bg};position:sticky;top:0;'>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FASE</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};'>MKT CAP</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>RS</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>MOM</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};min-width:64px;'>RS</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};min-width:60px;'>MOM</th>
             </tr></thead>
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
@@ -12070,10 +12084,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                 st.markdown(f"""
                 <div style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
-                    <span style='color:{price_color};font-weight:600;'>━━ Harga {sh_ticker} (Rp) - Skala Kanan</span>
-                    <span style='color:#4285F4;font-weight:600;'>━━ Total Pemegang - Skala Kiri</span>
-                    <span style='color:{sh_up_color};'>█ Δ Naik</span>
-                    <span style='color:{sh_dn_color};'>█ Δ Turun</span>
+                    <span style='color:{price_color};font-weight:600;white-space:nowrap;'>━━ Harga {sh_ticker} (Rp) - Skala Kanan</span>
+                    <span style='color:#4285F4;font-weight:600;white-space:nowrap;'>━━ Total Pemegang - Skala Kiri</span>
+                    <span style='color:{sh_up_color};white-space:nowrap;'>█ Δ Naik</span>
+                    <span style='color:{sh_dn_color};white-space:nowrap;'>█ Δ Turun</span>
                 </div>""", unsafe_allow_html=True)
 
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
@@ -13369,6 +13383,63 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
                         st.plotly_chart(fig, use_container_width=True)
 
+                        # ── Trade Plan Info Box (Buy Area / Target / TP / SL) ─
+                        if ai_data:
+                            _ib_el  = ai_data.get('entry_low')
+                            _ib_eh  = ai_data.get('entry_high')
+                            _ib_sl  = ai_data.get('stop_loss')
+                            _ib_tp1 = ai_data.get('tp1')
+                            _ib_tp2 = ai_data.get('tp2')
+                            _ib_tp3 = ai_data.get('tp3')
+                            _plan_boxes = ""
+                            if _ib_el and _ib_eh:
+                                try:
+                                    _plan_boxes += (
+                                        f"<div style='background:rgba(8,153,129,0.13);border:1px solid #089981;"
+                                        f"border-radius:8px;padding:10px 14px;min-width:160px;'>"
+                                        f"<div style='font-size:0.72rem;color:#089981;letter-spacing:0.1em;"
+                                        f"font-weight:700;margin-bottom:4px;'>🟩 BUY AREA</div>"
+                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
+                                        f"color:#e8eaf0;'>Rp{float(_ib_el):,.0f} &ndash; Rp{float(_ib_eh):,.0f}</div>"
+                                        f"</div>"
+                                    )
+                                except: pass
+                            if _ib_tp1:
+                                try:
+                                    _tp_str = f"TP1: Rp{float(_ib_tp1):,.0f}"
+                                    if _ib_tp2:
+                                        _tp_str += f"&nbsp;&nbsp;|&nbsp;&nbsp;TP2: Rp{float(_ib_tp2):,.0f}"
+                                    if _ib_tp3:
+                                        _tp_str += f"&nbsp;&nbsp;|&nbsp;&nbsp;TP3: Rp{float(_ib_tp3):,.0f}"
+                                    _plan_boxes += (
+                                        f"<div style='background:rgba(139,92,246,0.13);border:1px solid #8b5cf6;"
+                                        f"border-radius:8px;padding:10px 14px;min-width:160px;'>"
+                                        f"<div style='font-size:0.72rem;color:#8b5cf6;letter-spacing:0.1em;"
+                                        f"font-weight:700;margin-bottom:4px;'>🎯 TARGET &amp; TAKE PROFIT</div>"
+                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
+                                        f"color:#e8eaf0;'>{_tp_str}</div>"
+                                        f"</div>"
+                                    )
+                                except: pass
+                            if _ib_sl:
+                                try:
+                                    _plan_boxes += (
+                                        f"<div style='background:rgba(242,54,69,0.10);border:1px solid #f23645;"
+                                        f"border-radius:8px;padding:10px 14px;min-width:120px;'>"
+                                        f"<div style='font-size:0.72rem;color:#f23645;letter-spacing:0.1em;"
+                                        f"font-weight:700;margin-bottom:4px;'>🛑 STOP LOSS</div>"
+                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
+                                        f"color:#e8eaf0;'>Rp{float(_ib_sl):,.0f}</div>"
+                                        f"</div>"
+                                    )
+                                except: pass
+                            if _plan_boxes:
+                                st.markdown(
+                                    f"<div style='display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;"
+                                    f"margin-bottom:6px;'>{_plan_boxes}</div>",
+                                    unsafe_allow_html=True
+                                )
+
                         # ── EMA Legend ────────────────────────────────────────
                         ema_items = [
                             ('#0ea5e9','EMA 13 - Fast (Momentum)'),
@@ -13377,7 +13448,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             ('#8b5cf6','EMA 200 - Major Trend'),
                             ('#f5a623','Vol MA20 - Avg Volume'),
                         ]
-                        leg = "<div style='display:flex;flex-wrap:wrap;gap:18px;padding:6px 4px;margin-top:-6px;'>"
+                        leg = "<div style='display:flex;flex-direction:column;gap:8px;padding:6px 4px;margin-top:-6px;'>"
                         for clr, lbl in ema_items:
                             leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
                                     f"<span style='display:inline-block;width:28px;height:3px;"
