@@ -12461,99 +12461,26 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
 
     with tab_alpha_screener:
-        # ── ALPHA SCREENER PASSWORD GATE ──────────────────────────────────────
-        _ALPHA_PASSWORD = st.secrets.get("ALPHA_SCREENER_PASSWORD", "SIGMA2025")
+        # ── ALPHA SCREENER — NO LOCK (akses langsung) ─────────────────────────
+        _alpha_unlocked = True
+        st.session_state["alpha_screener_unlocked"] = True
 
-        if not st.session_state.get("alpha_screener_unlocked", False):
-            st.markdown(f"""
-            <style>
-            .alpha-gate-wrapper {{
-                display:flex; flex-direction:column; align-items:center; justify-content:center;
-                min-height:420px; padding:40px 20px;
-            }}
-            .alpha-gate-card {{
-                background:linear-gradient(135deg,rgba(10,15,30,0.98),rgba(15,20,40,0.98));
-                border:1px solid rgba(245,158,11,0.25); border-radius:20px;
-                padding:40px 36px; max-width:420px; width:100%; text-align:center;
-                box-shadow:0 0 60px rgba(245,158,11,0.08), 0 20px 40px rgba(0,0,0,0.5);
-                position:relative; overflow:hidden;
-            }}
-            .alpha-gate-card::before {{
-                content:''; position:absolute; inset:0;
-                background:radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.07) 0%, transparent 65%);
-                pointer-events:none;
-            }}
-            .alpha-gate-icon {{ font-size:2.6rem; margin-bottom:14px; display:block; }}
-            .alpha-gate-title {{
-                font-size:1.35rem; font-weight:700; color:#f59e0b; letter-spacing:2px;
-                text-transform:uppercase; margin-bottom:6px;
-            }}
-            .alpha-gate-sub {{
-                font-size:0.78rem; color:rgba(255,255,255,0.35); letter-spacing:1.5px;
-                text-transform:uppercase; margin-bottom:28px;
-            }}
-            .alpha-gate-badge {{
-                display:inline-flex; align-items:center; gap:6px;
-                background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2);
-                border-radius:20px; padding:4px 14px; font-size:0.7rem; color:#f59e0b;
-                letter-spacing:2px; text-transform:uppercase; margin-bottom:28px;
-            }}
-            </style>
-            <div class="alpha-gate-wrapper">
-                <div class="alpha-gate-card">
-                    <span class="alpha-gate-icon">⚡</span>
-                    <div class="alpha-gate-title">Alpha Screener</div>
-                    <div class="alpha-gate-sub">Area Terbatas · Akses Eksklusif</div>
-                    <div class="alpha-gate-badge">🔒 Password Required</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - ALPHA STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-            _col_pw, _col_ok = st.columns([3, 1])
-            with _col_pw:
-                _pw_input = st.text_input(
-                    "Masukkan Password Alpha Screener:",
-                    type="password",
-                    placeholder="••••••••••",
-                    key="alpha_pw_input",
-                    label_visibility="collapsed"
-                )
-            with _col_ok:
-                _pw_btn = st.button("🔓 UNLOCK", use_container_width=True, key="alpha_pw_btn")
-
-            if _pw_btn:
-                if _pw_input == _ALPHA_PASSWORD:
-                    st.session_state["alpha_screener_unlocked"] = True
-                    st.rerun()
-                else:
-                    st.error("❌ Password salah. Hubungi admin untuk akses.")
-
-        # ── END PASSWORD GATE — only render content if unlocked ───────────────
-        _alpha_unlocked = st.session_state.get("alpha_screener_unlocked", False)
-        if _alpha_unlocked:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - ALPHA STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
-
-
-        if _alpha_unlocked:
-            alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
-                "  ⚡ ALPHA STOCK INSIGHT  ",
-                "  📅 DAILY PLAN  ",
-                "  📆 WEEKLY PLAN  ",
-                "  🌙 BELI SORE JUAL PAGI  ",
-                "  📊 FUNDAMENTAL SCREENER  ",
-                "  🏦 BROKER SUMMARY  ",
-                "  🏆 TRACK RECORD  ",
-            ])
-        else:
-            # Dummy context managers so "with alpha_tab_X:" blocks don't NameError
-            import contextlib as _ctxlib
-            alpha_tab_insight = alpha_tab_daily = alpha_tab_weekly = alpha_tab_bsjp = _ctxlib.suppress()
-            alpha_tab_fundamental = alpha_tab_brosum = alpha_tab_trackrecord = _ctxlib.suppress()
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
+            "  ⚡ ALPHA STOCK INSIGHT  ",
+            "  📅 DAILY PLAN  ",
+            "  📆 WEEKLY PLAN  ",
+            "  🌙 BELI SORE JUAL PAGI  ",
+            "  📊 FUNDAMENTAL SCREENER  ",
+            "  🏦 BROKER SUMMARY  ",
+            "  🏆 TRACK RECORD  ",
+        ])
 
 
         with alpha_tab_insight:
-            if not _alpha_unlocked: st.stop()
+
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
@@ -15167,14 +15094,17 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 if not _ptk or _pkey in _existing_keys:
                     continue  # skip duplikat
                 _existing_keys.add(_pkey)
+                def _safe_int(v, default=0):
+                    try: return int(v or default)
+                    except: return default
                 _new_rec = {
                     "id":         len(_tr_records) + len(_new_injected) + 1,
                     "ticker":     _ptk,
                     "type":       _type_label,
-                    "entry":      int(_pr.get("entry_low", _pr.get("price", 0))),
-                    "tp1":        int(_pr.get("tp1", 0)),
-                    "tp2":        int(_pr.get("tp2", 0)),
-                    "sl":         int(_pr.get("sl", 0)),
+                    "entry":      _safe_int(_pr.get("entry_low", _pr.get("price", 0))),
+                    "tp1":        _safe_int(_pr.get("tp1")),
+                    "tp2":        _safe_int(_pr.get("tp2")),
+                    "sl":         _safe_int(_pr.get("sl")),
                     "date":       _pdate,
                     "slot":       slot_str,
                     "rating":     _pr.get("rating", "BUY"),
@@ -15870,7 +15800,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
-            if not _alpha_unlocked: st.stop()
+
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 DAILY PLAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_d        = _wib_now()
@@ -16117,7 +16047,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
         # ─── TAB WEEKLY ───────────────────────────────────────────────────
         with reco_tab_weekly:
-            if not _alpha_unlocked: st.stop()
+
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📆 WEEKLY PLAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_w        = _wib_now()
@@ -16351,7 +16281,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
         # ─── TAB BSJP ─────────────────────────────────────────────────────
         with reco_tab_bsjp:
-            if not _alpha_unlocked: st.stop()
+
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🌙 BELI SORE JUAL PAGI — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             _now_b = _wib_now()
             _wd_b  = _now_b.weekday()
@@ -16575,7 +16505,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
         # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
         with reco_tab_fundamental:
-            if not _alpha_unlocked: st.stop()
+
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:16px;'>Screening saham IDX berbasis kualitas fundamental - ROE, DER, Net Margin, Current Ratio, PBV, EPS. Urutkan berdasarkan framework: Buffett Score, Graham MoS, PEG Ratio, EPS Growth, Dividend Yield. Data live via yfinance multi-layer.</p>", unsafe_allow_html=True)
 
@@ -17013,7 +16943,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 # PART 12B: BROKER SUMMARY - NET BUY/SELL + FOREIGN FLOW
 # ─────────────────────────────────────────────
     with alpha_tab_brosum:
-        if not _alpha_unlocked: st.stop()
+
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 BROKER SUMMARY - NET BUY/SELL &amp; FOREIGN FLOW</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
 
@@ -17523,9 +17453,27 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             </div></div>""", unsafe_allow_html=True)
 
             _sc1, _sc2, _sc3 = st.columns([3, 1, 1])
+            with _sc1:
+                # Password gate untuk Generate Manual (kode: 929292)
+                if not st.session_state.get("brosum_manual_unlocked"):
+                    _bm_pw_col, _bm_btn_col = st.columns([2, 1])
+                    with _bm_pw_col:
+                        _bm_pw = st.text_input("Kode akses Generate Manual:",
+                                               type="password", placeholder="••••••",
+                                               key="brosum_pw_input", label_visibility="collapsed")
+                    with _bm_btn_col:
+                        if st.button("🔓 UNLOCK", use_container_width=True, key="brosum_pw_btn"):
+                            if _bm_pw == "929292":
+                                st.session_state["brosum_manual_unlocked"] = True
+                                st.rerun()
+                            else:
+                                st.error("❌ Kode salah.")
+                else:
+                    st.markdown(f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#26a69a;'>🔓 Generate Manual Unlocked</span>", unsafe_allow_html=True)
             with _sc2:
                 _btn_screen30 = st.button("🔍 GENERATE MANUAL", use_container_width=True, key="btn_screen30",
-                                          help="Jalankan screening sekarang tanpa menunggu jadwal 20:30")
+                                          help="Jalankan screening sekarang tanpa menunggu jadwal 20:30",
+                                          disabled=not st.session_state.get("brosum_manual_unlocked", False))
             with _sc3:
                 if _bs30_existing:
                     if st.button("🗑 Reset", use_container_width=True, key="btn_screen30_reset"):
@@ -17946,7 +17894,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.06);}}
 # PART 12C: TRACK RECORD / BACKTEST REKOMENDASI
 # ─────────────────────────────────────────────
     with alpha_tab_trackrecord:
-        if not _alpha_unlocked: st.stop()
+
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏆 TRACK RECORD — SEMUA PLAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"""<div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};
             border:1px solid rgba(38,166,154,0.2);border-left:3px solid #26a69a;
