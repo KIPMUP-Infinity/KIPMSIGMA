@@ -10987,7 +10987,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         df_conglo = pd.DataFrame(conglo_data)
         
         grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
-        selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list)
+        selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list, key="conglo_grup_sel")
         
         if selected_grup != "Semua Grup":
             df_display = df_conglo[df_conglo["Grup"] == selected_grup]
@@ -12486,10 +12486,10 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
             col_input, col_btn = st.columns([3, 1])
             with col_input:
-                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA").upper()
+                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA", key="alpha_ticker_input").upper()
             with col_btn:
                 st.markdown("<br>", unsafe_allow_html=True)
-                run_analysis = st.button("▶ ANALYZE", use_container_width=True)
+                run_analysis = st.button("▶ ANALYZE", use_container_width=True, key="alpha_run_btn")
         
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -15500,7 +15500,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 </body></html>"""
             components.html(_hist_html, height=_total_h, scrolling=True)
 
-        def _render_track_record_inline(plan_type="daily", accent="#a78bfa"):
+        def _render_track_record_inline(plan_type="daily", accent="#a78bfa", ctx="main"):
             """
             Track Record yang 100% terhubung ke History Plan.
             Setiap saham di History Plan otomatis masuk sebagai OPEN.
@@ -15560,7 +15560,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                             _res_opt = st.selectbox(
                                 "HASIL:",
                                 ["— Masih OPEN —", "✅ TP1 HIT", "🎯 TP2 HIT", "🛑 SL HIT", "📤 Manual Exit"],
-                                key=f"tr_res_{plan_type}_{_oi}_{_or.get('id','')}")
+                                key=f"tr_res_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
                             if _res_opt != "— Masih OPEN —":
                                 _ex_price = st.number_input(
                                     "Harga Exit (Rp):",
@@ -15568,8 +15568,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                                     value=int(_or.get("tp1",0)) if "TP1" in _res_opt
                                           else int(_or.get("tp2",0)) if "TP2" in _res_opt
                                           else int(_or.get("sl",0)) if "SL" in _res_opt else 0,
-                                    key=f"tr_exp_{plan_type}_{_oi}_{_or.get('id','')}")
-                                if st.button("💾 SIMPAN", key=f"tr_upd_{plan_type}_{_oi}_{_or.get('id','')}",
+                                    key=f"tr_exp_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
+                                if st.button("💾 SIMPAN", key=f"tr_upd_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}",
                                              use_container_width=True):
                                     _entry_v = _or.get("entry", 0)
                                     _exit_v  = _ex_price if _ex_price > 0 else (
@@ -16043,9 +16043,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # TAB 4 — TRACK RECORD (Daily)
             # ════════════════════════════════════════════
             with _d_tab_trackrecord:
-                _render_track_record_inline("daily", "#a78bfa")
-
-        # ─── TAB WEEKLY ───────────────────────────────────────────────────
+                _render_track_record_inline("daily", "#a78bfa", ctx="plan_daily")
         with reco_tab_weekly:
 
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📆 WEEKLY PLAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -16277,9 +16275,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # WEEKLY TAB 4 — TRACK RECORD
             # ============================================================
             with _w_tab_trackrecord:
-                _render_track_record_inline("weekly", "#26a69a")
-
-        # ─── TAB BSJP ─────────────────────────────────────────────────────
+                _render_track_record_inline("weekly", "#26a69a", ctx="plan_weekly")
         with reco_tab_bsjp:
 
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🌙 BELI SORE JUAL PAGI — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -16501,9 +16497,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # BSJP TAB 4 — TRACK RECORD
             # ════════════════════════════════════════════
             with _b_tab_trackrecord:
-                _render_track_record_inline("bsjp", "#f5a623")
-
-        # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
+                _render_track_record_inline("bsjp", "#f5a623", ctx="plan_bsjp")
         with reco_tab_fundamental:
 
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -17963,15 +17957,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.06);}}
                 st.dataframe(_pd_gtr.DataFrame(_gtr_rows), use_container_width=True, hide_index=True)
 
         with _gtr_tab_daily:
-            _render_track_record_inline("daily", "#a78bfa")
-
-        with _gtr_tab_weekly:
-            _render_track_record_inline("weekly", "#26a69a")
-
-        with _gtr_tab_bsjp:
-            _render_track_record_inline("bsjp", "#f5a623")
-
-        with _gtr_tab_stats:
+            _render_track_record_inline("daily", "#a78bfa", ctx="gtr_daily")
+            _render_track_record_inline("weekly", "#26a69a", ctx="gtr_weekly")
+            _render_track_record_inline("bsjp", "#f5a623", ctx="gtr_bsjp")
             # Statistik per tipe + overall
             _records_s = st.session_state.get("tr_records", [])
             _closed_s  = [r for r in _records_s if r.get("status") == "CLOSED"]
