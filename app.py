@@ -18,6 +18,47 @@ import os
 import hashlib
 import bcrypt
 import re
+import time
+import random
+
+# ── SIGMA HTML SANITIZER ──
+def _sanitize_html_text(raw) -> str:
+    """Hapus tag HTML yang bocor dari string teks sebelum dirender sebagai plain text."""
+    if not isinstance(raw, str):
+        return str(raw) if raw is not None else ""
+    # Hapus semua tag HTML/XML (termasuk </div>, <span>, dll)
+    cleaned = re.sub(r'</?[a-zA-Z][^>]*>', '', raw)
+    return cleaned.strip()
+
+# ── SIGMA GEMINI RATE LIMIT MANAGER ──
+# Menyimpan waktu cooldown per key-hash (dalam memory session)
+_gemini_cooldown: dict = {}
+_BACKOFF_BASE_SEC = 25      # detik cooldown awal setelah 429
+_BACKOFF_MAX_SEC  = 180     # batas atas cooldown eksponensial
+
+def _mark_gemini_key_ratelimited(key: str) -> None:
+    """Tandai key sebagai rate-limited dengan exponential backoff + random jitter."""
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    now = time.time()
+    prev_until = _gemini_cooldown.get(h, 0)
+    if prev_until > now:
+        # Masih dalam cooldown sebelumnya → double + jitter (eksponensial)
+        remaining = prev_until - now
+        wait = min(remaining * 2 + random.uniform(2, 8), _BACKOFF_MAX_SEC)
+    else:
+        # Pertama kali 429 → base + jitter
+        wait = _BACKOFF_BASE_SEC + random.uniform(1, 10)
+    _gemini_cooldown[h] = now + wait
+
+def _gemini_key_available(key: str) -> bool:
+    """Return True jika key tidak sedang dalam cooldown period."""
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    return time.time() >= _gemini_cooldown.get(h, 0)
+
+def _get_available_gemini_keys(all_keys: list) -> list:
+    """Return key yang tidak sedang cooldown. Fallback ke semua key jika semua cooldown."""
+    available = [k for k in all_keys if _gemini_key_available(k)]
+    return available if available else all_keys
 
 # ── SIGMA MODULES: Storage permanen + render Daily/Weekly/BrokSum/Alpha/TrackRecord ──
 try:
@@ -1685,9 +1726,9 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">ZONE CONF {cs}/10</span>
   </div>
   <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
-    <div style="font-size:0.8rem;color:{vc};font-weight:600;margin-bottom:4px;">{result.vol_type}</div>
+    <div style="font-size:0.8rem;color:{vc};font-weight:600;margin-bottom:4px;">{_sanitize_html_text(result.vol_type)}</div>
     <div style="font-size:0.72rem;color:{text_sub};">
-      Frekuensi: <span style="color:{text_main};">{result.vol_freq_signal}</span>
+      Frekuensi: <span style="color:{text_main};">{_sanitize_html_text(result.vol_freq_signal)}</span>
       {("&nbsp;&middot;&nbsp;<span style='color:#00e5a0;font-weight:600;'>✅ True Breakout Terkonfirmasi</span>") if result.breakout_valid else ""}
       {("&nbsp;&middot;&nbsp;<span style='color:#f23645;font-weight:600;'>⛔ False Breakout Terdeteksi</span>") if result.false_breakout else ""}
     </div>
@@ -6811,14 +6852,16 @@ def _get_gemini_keys():
     return keys
 
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
-    """Gemini Vision - PRIMARY untuk semua request gambar. Auto-rotate key & model."""
+    """Gemini Vision - PRIMARY untuk semua request gambar. Auto-rotate key & model + backoff 429."""
     import urllib.request, json as _j
-    keys = _get_gemini_keys()
-    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
-    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    all_keys = _get_gemini_keys()
+    if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    keys = _get_available_gemini_keys(all_keys)
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
     for api_key in keys:
+        if not _gemini_key_available(api_key):
+            continue
         for model_name in models:
             try:
                 _parts = []
@@ -6833,24 +6876,35 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 with urllib.request.urlopen(req, timeout=45) as r: data = _j.loads(r.read())
                 return data["candidates"][0]["content"]["parts"][0]["text"], model_name
             except Exception as e:
-                last_err = str(e); continue
+                err_str = str(e)
+                last_err = err_str
+                if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower() or "exhausted" in err_str.lower():
+                    _mark_gemini_key_ratelimited(api_key)
+                    break  # skip ke key berikutnya
+                continue
     raise Exception(f"Gemini Vision gagal semua model/key: {last_err}")
 
 def _call_gemini_text(messages):
     """
     Gemini Text - FALLBACK untuk text jika semua Groq 70B rate limit.
     Auto-rotate 6 key + 2 model. Smart truncation ≤ 30.000 token.
+    Exponential backoff per key saat 429.
     """
     import urllib.request, json as _j
 
     # Budget Gemini: context window besar (1M token), tapi kita batasi 30k agar respons cepat
     GEMINI_PROMPT_MAX_TOKENS = 24000  # sisakan ruang untuk system prompt + output
 
-    keys = _get_gemini_keys()
-    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    all_keys = _get_gemini_keys()
+    if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    # Prioritaskan key yang tidak sedang cooldown
+    keys = _get_available_gemini_keys(all_keys)
     models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
     last_err = ""
     for api_key in keys:
+        # Skip key yang sedang cooldown (double-check)
+        if not _gemini_key_available(api_key):
+            continue
         for model_name in models:
             try:
                 gemini_contents = []
@@ -6878,8 +6932,9 @@ def _call_gemini_text(messages):
             except Exception as e:
                 err_str = str(e)
                 last_err = err_str
-                # 429 quota habis → skip ke key berikutnya
+                # 429 quota habis → tandai cooldown eksponensial + skip ke key berikutnya
                 if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower() or "exhausted" in err_str.lower():
+                    _mark_gemini_key_ratelimited(api_key)
                     break  # coba key berikutnya
                 continue   # error lain → coba model berikutnya
     raise Exception(f"Gemini Text gagal semua model/key: {last_err}")
@@ -7932,10 +7987,12 @@ if current_view == "dashboard":
         # ── Render both tables via components.html ─────────────────────────
         _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
         _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        # Desktop: side-by-side → ambil yang TERBESAR + buffer kecil.
-        # Mobile (≤600px): CSS flex-direction:column → JS resize handle via postMessage.
-        # Jangan sum() keduanya — iframe jadi 2× terlalu tinggi di desktop.
-        _tbl_h = max(_idx_total_h, _com_total_h) + 24
+        # Mobile: dua kolom ditumpuk vertikal → harus dijumlah + gap + header
+        # Desktop: side-by-side → ambil yang TERBESAR + buffer
+        # Gunakan nilai mobile (lebih besar) sebagai default iframe height;
+        # JS autoResize akan koreksi ke nilai desktop saat di desktop.
+        _tbl_h_mobile  = _idx_total_h + _com_total_h + 140
+        _tbl_h = _tbl_h_mobile
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -7963,15 +8020,16 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 @media(max-width:600px){{
   .row{{flex-direction:column;gap:14px;}}
   .col{{width:100%;min-width:0;}}
-  .mkt-wrap{{overflow-x:auto;-webkit-overflow-scrolling:touch;}}
-  .mkt-scroll{{overflow-x:auto;-webkit-overflow-scrolling:touch;}}
-  .mkt-hdr{{font-size:0.875rem;padding:8px 10px;}}
-  thead th{{font-size:0.8rem;padding:7px 8px;}}
-  tbody td{{font-size:0.875rem;padding:7px 8px;}}
+  /* PENTING: overflow visible agar kolom ke-2 tidak terpotong saat stacked */
+  .mkt-wrap{{overflow:visible;-webkit-overflow-scrolling:touch;}}
+  .mkt-scroll{{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:none!important;}}
+  .mkt-hdr{{font-size:0.875rem;padding:8px 10px;flex-wrap:wrap;gap:4px;}}
+  thead th{{font-size:0.8rem;padding:7px 8px;white-space:nowrap;}}
+  tbody td{{font-size:0.875rem;padding:7px 8px;white-space:nowrap;}}
   .badge{{font-size:0.8rem;padding:2px 5px;}}
   .nm{{font-size:0.875rem;}}
   .price{{font-size:0.875rem;}}
-  table{{min-width:280px;}}
+  table{{min-width:260px;}}
 }}
 </style></head><body>
 <div class="row">
@@ -8075,22 +8133,27 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     var isMobile = window.innerWidth <= 600;
     var h;
     if (isMobile) {{
-      // Mobile: stacked → total scroll height kedua div
-      var idxW = document.getElementById('idx-scroll');
-      var comW = document.getElementById('com-scroll');
-      h = (idxW ? idxW.scrollHeight : 0) + (comW ? comW.scrollHeight : 0) + 120;
+      // Mobile: stacked — ukur bounding rect tiap kolom secara terpisah
+      var cols = document.querySelectorAll('.col');
+      var total = 0;
+      cols.forEach(function(col) {{
+        total += col.getBoundingClientRect().height;
+      }});
+      h = total + 60; // 60 = gap antar kolom + body padding
     }} else {{
-      // Desktop: side-by-side → ambil yang paling tinggi + header + sedikit buffer
-      h = document.body.scrollHeight + 4;
+      // Desktop: side-by-side — body.scrollHeight sudah cukup
+      h = document.body.scrollHeight + 8;
     }}
+    h = Math.max(h, 280);
     try {{
       window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
     }} catch(e) {{}}
   }}
-  setTimeout(autoResize, 80);
-  setTimeout(autoResize, 300);
-  setTimeout(autoResize, 800);
-  window.addEventListener('resize', autoResize);
+  setTimeout(autoResize, 100);
+  setTimeout(autoResize, 400);
+  setTimeout(autoResize, 900);
+  setTimeout(autoResize, 1800);
+  window.addEventListener('resize', function() {{ setTimeout(autoResize, 120); }});
 }})();
 </script></body></html>""", height=_tbl_h, scrolling=False)
 
@@ -8118,7 +8181,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             <span class='mb-tag'>&#129302; AI Powered (Groq)</span>
             <span class='mb-tag'>&#127470;&#127465; IDX Focused</span>
             <span class='mb-tag'>&#128202; Sentiment Meter</span>
-            <span class='mb-tag'>&#127919; Sektoral Watchlist</span>
+
         </div>
         """, unsafe_allow_html=True)
 
@@ -9365,7 +9428,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 </script>
 </body>
 </html>
-        """, height=660, scrolling=False)
+        """, height=1280, scrolling=True)
 
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
@@ -10826,14 +10889,14 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 </tr>"""
 
             st.markdown(f"""<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
-            <table style='width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;min-width:480px;'>
-            <thead><tr style='background:{met_bg};position:sticky;top:0;'>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FASE</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};'>MKT CAP</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};min-width:64px;'>RS</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};min-width:60px;'>MOM</th>
+            <table style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
+            <thead><tr style='background:{met_bg};position:sticky;top:0;z-index:2;'>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:80px;'>NAMA</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FASE</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>MKT CAP</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:64px;'>RS</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:60px;'>MOM</th>
             </tr></thead>
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
@@ -11881,10 +11944,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                 # Badge sumber data
                 src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#8b5cf6" if "SIGMA" in data_source else "#9b59b6"))
-                st.markdown(f"""<div style='display:inline-block;font-family:'DM Sans',sans-serif;font-size:0.8rem;
+                st.markdown(f"""<div style='display:block;font-family:DM Sans,sans-serif;font-size:0.8rem;
                     letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
-                    background:{src_color}11;padding:3px 10px;border-radius:4px;margin-bottom:8px;'>
-                    ● SUMBER: {data_source}</div>""", unsafe_allow_html=True)
+                    background:{src_color}11;padding:5px 12px;border-radius:4px;
+                    margin-top:10px;margin-bottom:16px;clear:both;line-height:1.6;'>
+                    &#9679; SUMBER: {data_source}</div>""", unsafe_allow_html=True)
 
                 # Warning jika data adalah estimasi
                 if is_estimated:
@@ -11968,7 +12032,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                             <div style='font-size:0.875rem;color:{sub_c};margin-top:3px;'>{sub}</div>
                         </div>""", unsafe_allow_html=True)
 
-                st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
                 # ════════════════════════════════════════════════════════
                 # DUAL-AXIS CHART: Harga 1 Tahun (line daily) + Shareholders (bar monthly)
@@ -12622,6 +12686,25 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                 _insight_cache_key  = None
                 _use_cached_insight = False
                 _ai_cache_hit       = False
+
+                # ── PERBAIKAN: Restore ai_data dari cache TANPA harus klik Analyze ──
+                # Ini memastikan TP/SL box di bawah chart tetap tampil setelah analisa sebelumnya
+                if not df_chart.empty:
+                    try:
+                        _last_close = float(df_chart['Close'].iloc[-1])
+                        _last_date  = df_chart.index[-1].strftime('%Y%m%d')
+                        _insight_cache_key = f"sigma_insight_{ticker_input}_{_last_date}_{int(_last_close)}"
+                        _cached_prev = st.session_state.get(_insight_cache_key)
+                        if _cached_prev and not run_analysis:
+                            # Tanpa klik Analyze → restore ai_data dari cache agar TP/SL tetap tampil
+                            _prev_price    = _cached_prev.get('price', 0)
+                            _prev_diff_pct = abs(_last_close - _prev_price) / _prev_price if _prev_price > 0 else 1
+                            if _prev_diff_pct < 0.02:   # dalam 2% → masih relevan
+                                ai_data         = _cached_prev.get('ai_data')
+                                ai_text_verdict = _cached_prev.get('ai_text_verdict', '')
+                    except Exception:
+                        pass
+
                 if not df_chart.empty:
                     try:
                         _last_close = float(df_chart['Close'].iloc[-1])
@@ -17774,9 +17857,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                 else:
                     st.markdown(f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#26a69a;'>🔓 Generate Manual Unlocked</span>", unsafe_allow_html=True)
             with _sc2:
-                _btn_screen30 = st.button("🔍 GENERATE MANUAL", use_container_width=True, key="btn_screen30",
-                                          help="Jalankan screening sekarang tanpa menunggu jadwal 20:30",
-                                          disabled=not st.session_state.get("brosum_manual_unlocked", False))
+                # Gunakan on_click callback agar button state tidak hilang setelah rerun unlock
+                def _do_unlock_and_generate():
+                    st.session_state["brosum_gen_triggered"] = True
+
+                _btn_screen30 = st.button(
+                    "🔍 GENERATE MANUAL",
+                    use_container_width=True,
+                    key="btn_screen30",
+                    help="Jalankan screening sekarang tanpa menunggu jadwal 20:30",
+                    disabled=not st.session_state.get("brosum_manual_unlocked", False)
+                )
+                # Sinkronkan: jika tombol diklik, set flag
+                if _btn_screen30:
+                    st.session_state["brosum_gen_triggered"] = True
             with _sc3:
                 if _bs30_existing:
                     if st.button("🗑 Reset", use_container_width=True, key="btn_screen30_reset"):
@@ -17784,7 +17878,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         st.session_state["sigma_bs30_ts"] = ""
                         st.rerun()
 
-            if _btn_screen30:
+            # Baca dan clear flag sebelum pipeline — mencegah double-trigger
+            _do_screen30 = st.session_state.pop("brosum_gen_triggered", False)
+
+            if _do_screen30:
                 # ═══════════════════════════════════════════════════════════
                 # SIGMA SCREENING PIPELINE v2 — 200 → 100 → 30 + GoAPI
                 # ═══════════════════════════════════════════════════════════
@@ -17966,12 +18063,12 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                 _hm_list        = [s for s in _bs30_existing if s.get("high_momentum")]
                 _confirmed_list = [s for s in _bs30_existing if s.get("goapi_confirmed")]
 
-                st.markdown(f"""<div style='display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;
+                st.markdown(f"""<div style='display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;
                     font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};'>
-                    <span>📊 Total: <b style='color:{text_main};'>{len(_bs30_existing)}</b> saham</span>
-                    <span>⭐ HIGH MOMENTUM: <b style='color:#f59e0b;'>{len(_hm_list)}</b></span>
-                    <span>🔗 GoAPI Confirmed: <b style='color:#26a69a;'>{len(_confirmed_list)}</b></span>
-                    <span>🕐 Update: <b style='color:{text_main};'>{_bs30_ts}</b></span>
+                    <span style='white-space:nowrap;'>📊 Total: <b style='color:{text_main};'>{len(_bs30_existing)}</b> saham</span>
+                    <span style='white-space:nowrap;'>⭐ HIGH MOMENTUM: <b style='color:#f59e0b;'>{len(_hm_list)}</b></span>
+                    <span style='white-space:nowrap;'>🔗 GoAPI Confirmed: <b style='color:#26a69a;'>{len(_confirmed_list)}</b></span>
+                    <span style='white-space:nowrap;background:{"rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.04)"};border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>🕐 <b style='color:{text_main};'>{_bs30_ts}</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};margin-bottom:10px;'>
