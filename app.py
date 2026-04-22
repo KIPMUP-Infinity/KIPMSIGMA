@@ -2047,22 +2047,90 @@ def _fetch_all_data(tickers):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# GOAPI.IO — Stock Market IDX Helper
-# Base URL resmi: https://api.goapi.io/api/v1/idx  (BUKAN app.goapi.io)
-# Auth header: X-Api-Key
-# Secret key: GoAPI_KEY
+# GOAPI.IO — Stock Market IDX
+# Semua kemungkinan base URL dicoba secara berurutan (self-discovery)
+# Hits=0 di dashboard berarti URL masih salah — kode ini probe otomatis
 # ═══════════════════════════════════════════════════════════════════════════════
 
-GOAPI_BASE = "https://api.goapi.io/api/v1/idx"
+# Kandidat base URL — dicoba berurutan sampai ada yang respond bukan 404
+_GOAPI_BASE_CANDIDATES = [
+    "https://app.goapi.io/api/v1/idx",       # original (app.goapi.io)
+    "https://api.goapi.io/api/v1/idx",       # api subdomain
+    "https://app.goapi.io/api/v1/stock/idx", # alternative path
+    "https://app.goapi.io/api/v2/idx",       # v2
+    "https://app.goapi.io/api/idx",          # tanpa v1
+    "https://app.goapi.io/idx",              # minimal path
+    "https://api.goapi.io/v1/idx",           # api.goapi.io tanpa /api
+    "https://api.goapi.io/idx",              # api.goapi.io minimal
+]
+
+# Runtime-resolved base URL (diisi saat pertama kali sukses, atau oleh Test GoAPI)
+GOAPI_BASE = "https://app.goapi.io/api/v1/idx"  # default, akan di-override jika ditemukan yang benar
+
 
 def _goapi_headers():
     key = st.secrets.get("GoAPI_KEY", "")
     return {"X-Api-Key": key, "Accept": "application/json"}
 
+
 def _goapi_available():
     """Cek apakah GoAPI key tersedia dan valid."""
     key = st.secrets.get("GoAPI_KEY", "")
     return bool(key and key.strip() and len(key.strip()) > 5)
+
+
+def _goapi_resolve_base(force: bool = False) -> str:
+    """
+    Probe semua kandidat base URL dan return yang pertama kali berhasil
+    (bukan 404 untuk endpoint /broker-summary).
+    Hasil di-cache di session_state["_goapi_base_resolved"].
+    """
+    global GOAPI_BASE
+    # Gunakan cache dulu
+    if not force:
+        cached = None
+        try:
+            cached = st.session_state.get("_goapi_base_resolved")
+        except Exception:
+            pass
+        if cached:
+            GOAPI_BASE = cached
+            return cached
+
+    from datetime import date as _d, timedelta as _td
+    # Pakai tanggal yang paling mungkin ada datanya
+    today = _d.today()
+    test_date = None
+    for delta in range(1, 8):
+        cand = today - _td(days=delta)
+        if cand.weekday() < 5:
+            test_date = str(cand)
+            break
+    if not test_date:
+        test_date = str(today - _td(days=1))
+
+    key = st.secrets.get("GoAPI_KEY", "")
+    headers = {"X-Api-Key": key, "Accept": "application/json"}
+
+    for base in _GOAPI_BASE_CANDIDATES:
+        try:
+            r = requests.get(
+                f"{base}/broker-summary",
+                params={"symbol": "TLKM", "date": test_date},
+                headers=headers, timeout=8)
+            # 200 atau 401/403/429 = URL-nya ditemukan (auth issue, bukan path issue)
+            if r.status_code in (200, 401, 403, 429):
+                GOAPI_BASE = base
+                try:
+                    st.session_state["_goapi_base_resolved"] = base
+                except Exception:
+                    pass
+                return base
+            # 404 = path tidak ada → coba berikutnya
+        except Exception:
+            continue
+    # Tidak ada yang cocok — kembalikan default
+    return GOAPI_BASE
 
 def goapi_get_price(ticker: str) -> dict:
     """Harga real-time satu saham dari GoAPI."""
@@ -2135,6 +2203,8 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     T-2, T-3, ... hingga 5 hari bursa. Menangani: libur nasional, data
     belum publish, weekend panjang.
     """
+    # Auto-resolve base URL jika belum pernah berhasil (Hits=0 di dashboard)
+    _goapi_resolve_base()
     candidates = _trading_date_candidates(date_str, max_lookback=5)
     last_err = f"Semua tanggal dicoba kosong: {candidates}"
     for _try_date in candidates:
@@ -18183,64 +18253,97 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     if not _goapi_key_ok:
                         st.error("❌ GoAPI_KEY tidak ditemukan di Streamlit secrets.")
                     else:
-                        with st.spinner("Testing GoAPI — mencoba beberapa tanggal..."):
+                        with st.spinner("Testing GoAPI — probe URL + tanggal..."):
                             try:
-                                # Auto-retry mundur hingga 5 hari bursa
-                                _test_candidates = _trading_date_candidates(max_lookback=5)
-                                _test_found = False
-                                _test_tried = []
-                                for _test_date in _test_candidates:
-                                    _test_tried.append(_test_date)
-                                    _test_r = requests.get(
-                                        f"{GOAPI_BASE}/broker-summary",
-                                        params={"symbol": "TLKM", "date": _test_date},
-                                        headers=_goapi_headers(), timeout=15)
-                                    _test_code = _test_r.status_code
-                                    if _test_code == 401:
-                                        st.error("❌ HTTP 401 Unauthorized — GoAPI_KEY salah atau expired.")
-                                        _test_found = True
-                                        break
-                                    if _test_code == 403:
-                                        st.error("❌ HTTP 403 Forbidden — Key tidak punya akses endpoint ini.")
-                                        _test_found = True
-                                        break
-                                    if _test_code == 429:
-                                        st.error("❌ HTTP 429 Rate Limit — Kuota GoAPI habis (30 req/hari plan free).")
-                                        _test_found = True
-                                        break
-                                    if _test_code == 404:
-                                        continue  # coba tanggal sebelumnya
-                                    if _test_code == 200:
+                                global GOAPI_BASE
+                                _test_dates = _trading_date_candidates(max_lookback=5)
+                                _found_url   = None
+                                _found_date  = None
+                                _found_rows  = 0
+                                _url_results = []  # [(url, date, code, note)]
+
+                                # Probe semua kandidat base URL x tanggal terbaru
+                                for _base_url in _GOAPI_BASE_CANDIDATES:
+                                    for _td_try in _test_dates[:2]:  # coba 2 tanggal per URL hemat
                                         try:
-                                            _test_json = _test_r.json()
-                                        except Exception:
-                                            _test_json = {}
-                                        _d2 = (_test_json.get("data") or
-                                               _test_json.get("brokerSummary") or
-                                               _test_json.get("broker_summary") or
-                                               (_test_json if isinstance(_test_json, list) else []))
-                                        _rows_count = len(_d2) if isinstance(_d2, list) else 0
-                                        if _rows_count > 0:
-                                            _extra = (f"  (skip {len(_test_tried)-1} tanggal kosong sebelumnya)"
-                                                      if len(_test_tried) > 1 else "")
-                                            st.success(
-                                                f"✅ GoAPI OK — {_rows_count} broker rows untuk TLKM\n"
-                                                f"📅 Data tanggal: **{_test_date}**{_extra}")
-                                            _test_found = True
-                                            st.session_state.pop("_goapi_last_error", None)
+                                            _tr = requests.get(
+                                                f"{_base_url}/broker-summary",
+                                                params={"symbol": "TLKM", "date": _td_try},
+                                                headers=_goapi_headers(), timeout=8)
+                                            _tc = _tr.status_code
+                                            if _tc == 404:
+                                                _url_results.append((_base_url, _td_try, _tc, "path tidak ditemukan"))
+                                                break  # URL ini salah — skip ke URL berikutnya
+                                            if _tc == 401:
+                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi key salah/expired"))
+                                                _found_url = _base_url
+                                                break
+                                            if _tc == 403:
+                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi key tidak punya akses"))
+                                                _found_url = _base_url
+                                                break
+                                            if _tc == 429:
+                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi rate limit"))
+                                                _found_url = _base_url
+                                                break
+                                            if _tc == 200:
+                                                try:
+                                                    _tj = _tr.json()
+                                                except Exception:
+                                                    _tj = {}
+                                                _d2 = (_tj.get("data") or _tj.get("brokerSummary") or
+                                                       _tj.get("broker_summary") or
+                                                       (_tj if isinstance(_tj, list) else []))
+                                                _rc = len(_d2) if isinstance(_d2, list) else 0
+                                                if _rc > 0:
+                                                    _found_url  = _base_url
+                                                    _found_date = _td_try
+                                                    _found_rows = _rc
+                                                    _url_results.append((_base_url, _td_try, _tc, f"✅ {_rc} rows"))
+                                                    break
+                                                else:
+                                                    _url_results.append((_base_url, _td_try, _tc, "200 tapi data kosong"))
+                                                    continue  # coba tanggal berikutnya
+                                            else:
+                                                _url_results.append((_base_url, _td_try, _tc, _tr.text[:60]))
+                                                break
+                                        except Exception as _ue:
+                                            _url_results.append((_base_url, _td_try, 0, str(_ue)[:60]))
                                             break
-                                        else:
-                                            continue  # 200 tapi kosong, coba hari sebelumnya
-                                    # Error lain — stop dan laporkan
-                                    st.error(f"❌ HTTP {_test_code} (tanggal: {_test_date}) — {_test_r.text[:150]}")
-                                    _test_found = True
-                                    break
-                                if not _test_found:
-                                    _tried_str = ", ".join(_test_tried)
+                                    if _found_url and _found_rows > 0:
+                                        break  # URL dengan data ketemu
+
+                                # Tampilkan hasil
+                                if _found_url and _found_rows > 0:
+                                    GOAPI_BASE = _found_url
+                                    st.session_state["_goapi_base_resolved"] = _found_url
+                                    st.session_state.pop("_goapi_last_error", None)
+                                    st.success(
+                                        f"✅ GoAPI OK!\n\n"
+                                        f"**URL yang benar:** `{_found_url}`\n"
+                                        f"**Data tanggal:** {_found_date}\n"
+                                        f"**Broker rows:** {_found_rows} untuk TLKM\n\n"
+                                        f"⚠️ Jika URL ini berbeda dari `GOAPI_BASE` di kode, update konstanta tersebut.")
+                                elif _found_url:
+                                    GOAPI_BASE = _found_url
+                                    st.session_state["_goapi_base_resolved"] = _found_url
+                                    _url_note = next((n for u, d, c, n in _url_results if u == _found_url), "")
+                                    st.warning(
+                                        f"⚠️ URL ditemukan tapi ada masalah auth/data:\n\n"
+                                        f"**URL:** `{_found_url}`\n"
+                                        f"**Status:** {_url_note}\n\n"
+                                        f"Cek GoAPI_KEY di Streamlit secrets.")
+                                else:
+                                    # Tampilkan semua hasil probe untuk diagnosis
+                                    _summary_lines = "\n".join(
+                                        f"- `{u.replace('https://','')}/broker-summary` → **{c}** ({n})"
+                                        for u, d, c, n in _url_results[:12]
+                                    )
                                     st.error(
-                                        f"❌ Tidak ada data untuk 5 hari bursa terakhir.\n\n"
-                                        f"**Tanggal dicoba:** {_tried_str}\n\n"
-                                        f"Kemungkinan: libur nasional panjang, GoAPI maintenance, atau rate limit habis.")
+                                        f"❌ Tidak ada URL yang berhasil dari {len(_GOAPI_BASE_CANDIDATES)} kandidat.\n\n"
+                                        f"**Hasil probe:**\n{_summary_lines}\n\n"
+                                        f"**Tindakan:** Buka `app.goapi.io` → klik **Dokumentasi** → "
+                                        f"cari endpoint broker-summary → copy URL lengkapnya ke sini.")
                             except Exception as _te:
                                 st.error(f"❌ Connection error: {type(_te).__name__}: {_te}")
             with _gapi_col3:
