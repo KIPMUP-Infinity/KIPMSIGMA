@@ -2086,8 +2086,7 @@ def goapi_get_prices(tickers: list) -> dict:
 
 def _last_trading_date(max_lookback: int = 7) -> str:
     """
-    Cari hari bursa terakhir (T-1 atau lebih) untuk GoAPI broker-summary.
-    GoAPI hanya publish data setelah bursa tutup — jangan pakai today().
+    Cari hari bursa terakhir (T-1 atau lebih).
     Skip Sabtu (5) dan Minggu (6). Fallback sampai max_lookback hari.
     """
     from datetime import date as _d, timedelta as _td
@@ -2099,91 +2098,129 @@ def _last_trading_date(max_lookback: int = 7) -> str:
     return str(today - _td(days=1))
 
 
+def _trading_date_candidates(date_str: str = None, max_lookback: int = 5) -> list:
+    """
+    Buat list kandidat tanggal hari bursa untuk dicoba secara berurutan (dari terbaru ke terlama).
+    Jika date_str diberikan, mulai dari situ lalu mundur.
+    Jika tidak, mulai dari T-1 lalu mundur sampai max_lookback hari bursa.
+    Digunakan untuk auto-retry GoAPI broker-summary.
+    """
+    from datetime import date as _d, timedelta as _td, datetime as _dtt
+    if date_str:
+        try:
+            start = _dtt.strptime(date_str, "%Y-%m-%d").date()
+        except Exception:
+            start = _d.today() - _td(days=1)
+    else:
+        start = _d.today() - _td(days=1)
+    candidates = []
+    delta = 0
+    while len(candidates) < max_lookback:
+        cand = start - _td(days=delta)
+        if cand.weekday() < 5:
+            candidates.append(str(cand))
+        delta += 1
+        if delta > 30:
+            break
+    return candidates
+
+
 def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     """
     Broker summary per saham dari GoAPI.
     Return: list of broker rows (format siap pakai di SIGMA brosum parser).
-    date_str: 'YYYY-MM-DD', default = T-1 hari bursa (bukan today — data belum tersedia).
+    date_str: 'YYYY-MM-DD', default = T-1 hari bursa.
+
+    Auto-retry: jika tanggal diminta return 404/kosong, otomatis mundur ke
+    T-2, T-3, ... hingga 5 hari bursa. Menangani: libur nasional, data
+    belum publish, weekend panjang.
     """
-    try:
-        if date_str is None:
-            date_str = _last_trading_date()
-        r = requests.get(f"{GOAPI_BASE}/broker-summary",
-                         params={"symbol": ticker, "date": date_str},
-                         headers=_goapi_headers(), timeout=20)
-        # Log HTTP error ke session state agar bisa ditampilkan di UI
-        if r.status_code != 200:
-            _goapi_err = f"HTTP {r.status_code} untuk {ticker} ({date_str})"
-            try:
-                _err_body = r.json()
-                _goapi_err += f" — {_err_body.get('message', _err_body.get('error', str(_err_body)[:80]))}"
-            except Exception:
-                _goapi_err += f" — {r.text[:80]}"
-            import streamlit as _st_g
-            _st_g.session_state["_goapi_last_error"] = _goapi_err
-            return []
-        data = r.json()
-        # GoAPI bisa return {"status":"error"} dengan HTTP 200 — cek explicit
-        if isinstance(data, dict):
-            _status = data.get("status", "ok")
-            if str(_status).lower() in ("error", "fail", "failed", "0", "false"):
-                _msg = data.get("message", data.get("error", str(data)[:120]))
-                import streamlit as _st_g
-                _st_g.session_state["_goapi_last_error"] = f"{ticker}: {_msg}"
-                return []
-            rows = data.get("data", data.get("brokerSummary",
-                   data.get("broker_summary", data.get("result", []))))
-            # Jika rows masih dict (bukan list), coba values
-            if isinstance(rows, dict):
-                rows = list(rows.values())
-        elif isinstance(data, list):
-            rows = data
-        else:
-            rows = []
-        if not rows:
-            import streamlit as _st_g
-            _st_g.session_state["_goapi_last_error"] = (
-                f"{ticker} ({date_str}): API OK tapi data kosong — "
-                f"kemungkinan hari libur/non-trading atau symbol tidak valid. "
-                f"Raw keys: {list(data.keys()) if isinstance(data, dict) else type(data).__name__}"
-            )
-        # Normalize keys agar kompatibel dengan parser SIGMA
-        normalized = []
-        for row in (rows or []):
-            if not isinstance(row, dict):
-                continue
-            normalized.append({
-                "BrokerID":   str(row.get("broker_code", row.get("brokerCode",
-                              row.get("BrokerID", row.get("broker",
-                              row.get("code", "?")))))),
-                "BrokerName": row.get("broker_name", row.get("brokerName",
-                              row.get("BrokerName", row.get("name", "")))),
-                "BuyVolume":  float(row.get("buy_lot",   row.get("buyLot",
-                              row.get("BuyVolume",  row.get("buy_volume", 0)))) or 0),
-                "SellVolume": float(row.get("sell_lot",  row.get("sellLot",
-                              row.get("SellVolume", row.get("sell_volume", 0)))) or 0),
-                "BuyValue":   float(row.get("buy_value", row.get("buyValue",
-                              row.get("BuyValue",   row.get("buy_val", 0)))) or 0),
-                "SellValue":  float(row.get("sell_value", row.get("sellValue",
-                              row.get("SellValue",  row.get("sell_val", 0)))) or 0),
-                "AvgBuy":     float(row.get("avg_buy",  row.get("avgBuy",
-                              row.get("average_buy", 0))) or 0),
-                "AvgSell":    float(row.get("avg_sell", row.get("avgSell",
-                              row.get("average_sell", 0))) or 0),
-                "InvestorBuy":  row.get("investor_buy",  row.get("investorBuy",  None)),
-                "InvestorSell": row.get("investor_sell", row.get("investorSell", None)),
-                "_source": "GoAPI",
-            })
-        return normalized
-    except Exception as _ge:
+    candidates = _trading_date_candidates(date_str, max_lookback=5)
+    last_err = f"Semua tanggal dicoba kosong: {candidates}"
+    for _try_date in candidates:
         try:
-            import streamlit as _st_g
-            _st_g.session_state["_goapi_last_error"] = (
-                f"Exception {ticker}: {type(_ge).__name__}: {str(_ge)[:120]}"
-            )
-        except Exception:
-            pass
-        return []
+            r = requests.get(f"{GOAPI_BASE}/broker-summary",
+                             params={"symbol": ticker, "date": _try_date},
+                             headers=_goapi_headers(), timeout=20)
+            # 429 = rate limit: berhenti, jangan buang kuota
+            if r.status_code == 429:
+                last_err = f"HTTP 429 Rate Limit untuk {ticker} ({_try_date})"
+                try:
+                    import streamlit as _st_g
+                    _st_g.session_state["_goapi_last_error"] = last_err
+                except Exception:
+                    pass
+                return []
+            # 404 = data hari ini belum ada → coba hari sebelumnya
+            if r.status_code == 404:
+                last_err = f"HTTP 404 untuk {ticker} ({_try_date})"
+                continue
+            # Error lain (401, 403, 5xx) → log dan coba hari sebelumnya
+            if r.status_code != 200:
+                last_err = f"HTTP {r.status_code} untuk {ticker} ({_try_date})"
+                try:
+                    _eb = r.json()
+                    last_err += f" — {_eb.get('message', _eb.get('error', r.text[:80]))}"
+                except Exception:
+                    last_err += f" — {r.text[:80]}"
+                continue
+            # HTTP 200 — parse data
+            data = r.json()
+            if isinstance(data, dict):
+                _status = data.get("status", "ok")
+                if str(_status).lower() in ("error", "fail", "failed", "0", "false"):
+                    last_err = f"{ticker} ({_try_date}): {data.get('message', data.get('error', str(data)[:80]))}"
+                    continue  # coba hari sebelumnya
+                rows = data.get("data", data.get("brokerSummary",
+                       data.get("broker_summary", data.get("result", []))))
+                if isinstance(rows, dict):
+                    rows = list(rows.values())
+            elif isinstance(data, list):
+                rows = data
+            else:
+                rows = []
+            if not rows:
+                last_err = f"{ticker} ({_try_date}): HTTP 200 tapi data kosong"
+                continue  # coba hari sebelumnya
+            # Ada data — normalize dan return
+            normalized = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                normalized.append({
+                    "BrokerID":    str(row.get("broker_code", row.get("brokerCode",
+                                   row.get("BrokerID", row.get("broker",
+                                   row.get("code", "?")))))),
+                    "BrokerName":  row.get("broker_name", row.get("brokerName",
+                                   row.get("BrokerName", row.get("name", "")))),
+                    "BuyVolume":   float(row.get("buy_lot",   row.get("buyLot",
+                                   row.get("BuyVolume",  row.get("buy_volume", 0)))) or 0),
+                    "SellVolume":  float(row.get("sell_lot",  row.get("sellLot",
+                                   row.get("SellVolume", row.get("sell_volume", 0)))) or 0),
+                    "BuyValue":    float(row.get("buy_value", row.get("buyValue",
+                                   row.get("BuyValue",   row.get("buy_val", 0)))) or 0),
+                    "SellValue":   float(row.get("sell_value", row.get("sellValue",
+                                   row.get("SellValue",  row.get("sell_val", 0)))) or 0),
+                    "AvgBuy":      float(row.get("avg_buy",   row.get("avgBuy",
+                                   row.get("average_buy", 0))) or 0),
+                    "AvgSell":     float(row.get("avg_sell",  row.get("avgSell",
+                                   row.get("average_sell", 0))) or 0),
+                    "InvestorBuy":  row.get("investor_buy",  row.get("investorBuy",  None)),
+                    "InvestorSell": row.get("investor_sell", row.get("investorSell", None)),
+                    "_source":     "GoAPI",
+                    "_date":       _try_date,  # tanggal data yang berhasil
+                })
+            return normalized
+        except Exception as _ge:
+            last_err = f"Exception {ticker} ({_try_date}): {type(_ge).__name__}: {str(_ge)[:80]}"
+            continue
+    # Semua kandidat gagal
+    try:
+        import streamlit as _st_g
+        _st_g.session_state["_goapi_last_error"] = last_err
+    except Exception:
+        pass
+    return []
 
 def goapi_get_historical(ticker: str, date_from: str, date_to: str) -> list:
     """OHLCV historis dari GoAPI — max range 1 tahun."""
@@ -18146,54 +18183,64 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     if not _goapi_key_ok:
                         st.error("❌ GoAPI_KEY tidak ditemukan di Streamlit secrets.")
                     else:
-                        with st.spinner("Testing GoAPI..."):
+                        with st.spinner("Testing GoAPI — mencoba beberapa tanggal..."):
                             try:
-                                _test_date = _last_trading_date()
-                                _test_r = requests.get(
-                                    f"{GOAPI_BASE}/broker-summary",
-                                    params={"symbol": "TLKM",
-                                            "date": _test_date},
-                                    headers=_goapi_headers(), timeout=15)
-                                _test_code = _test_r.status_code
-                                try:
-                                    _test_json = _test_r.json()
-                                except Exception:
-                                    _test_json = {"raw": _test_r.text[:200]}
-                                if _test_code == 200:
-                                    _rows_count = 0
-                                    if isinstance(_test_json, dict):
+                                # Auto-retry mundur hingga 5 hari bursa
+                                _test_candidates = _trading_date_candidates(max_lookback=5)
+                                _test_found = False
+                                _test_tried = []
+                                for _test_date in _test_candidates:
+                                    _test_tried.append(_test_date)
+                                    _test_r = requests.get(
+                                        f"{GOAPI_BASE}/broker-summary",
+                                        params={"symbol": "TLKM", "date": _test_date},
+                                        headers=_goapi_headers(), timeout=15)
+                                    _test_code = _test_r.status_code
+                                    if _test_code == 401:
+                                        st.error("❌ HTTP 401 Unauthorized — GoAPI_KEY salah atau expired.")
+                                        _test_found = True
+                                        break
+                                    if _test_code == 403:
+                                        st.error("❌ HTTP 403 Forbidden — Key tidak punya akses endpoint ini.")
+                                        _test_found = True
+                                        break
+                                    if _test_code == 429:
+                                        st.error("❌ HTTP 429 Rate Limit — Kuota GoAPI habis (30 req/hari plan free).")
+                                        _test_found = True
+                                        break
+                                    if _test_code == 404:
+                                        continue  # coba tanggal sebelumnya
+                                    if _test_code == 200:
+                                        try:
+                                            _test_json = _test_r.json()
+                                        except Exception:
+                                            _test_json = {}
                                         _d2 = (_test_json.get("data") or
                                                _test_json.get("brokerSummary") or
-                                               _test_json.get("broker_summary") or [])
+                                               _test_json.get("broker_summary") or
+                                               (_test_json if isinstance(_test_json, list) else []))
                                         _rows_count = len(_d2) if isinstance(_d2, list) else 0
-                                        if _rows_count == 0:
-                                            st.warning(
-                                                f"⚠️ HTTP 200 tapi data kosong untuk tanggal **{_test_date}**.\n\n"
-                                                f"**Keys diterima:** `{list(_test_json.keys())}`\n\n"
-                                                f"**Raw response (100 char):** `{str(_test_json)[:100]}`\n\n"
-                                                f"Kemungkinan: hari libur/non-trading atau field name berbeda.")
+                                        if _rows_count > 0:
+                                            _extra = (f"  (skip {len(_test_tried)-1} tanggal kosong sebelumnya)"
+                                                      if len(_test_tried) > 1 else "")
+                                            st.success(
+                                                f"✅ GoAPI OK — {_rows_count} broker rows untuk TLKM\n"
+                                                f"📅 Data tanggal: **{_test_date}**{_extra}")
+                                            _test_found = True
+                                            st.session_state.pop("_goapi_last_error", None)
+                                            break
                                         else:
-                                            st.success(f"✅ GoAPI OK — {_rows_count} broker rows untuk TLKM ({_test_date})!")
-                                    elif isinstance(_test_json, list):
-                                        st.success(f"✅ GoAPI OK — {len(_test_json)} broker rows untuk TLKM ({_test_date}, list format)")
-                                    else:
-                                        st.warning(f"⚠️ Format response tidak dikenal: {type(_test_json).__name__}")
-                                elif _test_code == 404:
+                                            continue  # 200 tapi kosong, coba hari sebelumnya
+                                    # Error lain — stop dan laporkan
+                                    st.error(f"❌ HTTP {_test_code} (tanggal: {_test_date}) — {_test_r.text[:150]}")
+                                    _test_found = True
+                                    break
+                                if not _test_found:
+                                    _tried_str = ", ".join(_test_tried)
                                     st.error(
-                                        f"❌ HTTP 404 untuk tanggal {_test_date} — data belum tersedia di GoAPI.\n\n"
-                                        f"Kemungkinan penyebab:\n"
-                                        f"- Data hari tersebut belum di-publish (biasanya tersedia setelah 20:00 WIB)\n"
-                                        f"- Tanggal adalah hari libur nasional (bukan weekend)\n"
-                                        f"- Endpoint `/broker-summary` sedang maintenance\n\n"
-                                        f"Coba lagi nanti malam atau besok.")
-                                elif _test_code == 401:
-                                    st.error("❌ HTTP 401 Unauthorized — GoAPI_KEY salah atau expired.")
-                                elif _test_code == 403:
-                                    st.error("❌ HTTP 403 Forbidden — Key tidak punya akses endpoint ini.")
-                                elif _test_code == 429:
-                                    st.error("❌ HTTP 429 Rate Limit — Kuota GoAPI habis hari ini (30 req/hari plan free).")
-                                else:
-                                    st.error(f"❌ HTTP {_test_code} (tanggal: {_test_date}) — {str(_test_json)[:150]}")
+                                        f"❌ Tidak ada data untuk 5 hari bursa terakhir.\n\n"
+                                        f"**Tanggal dicoba:** {_tried_str}\n\n"
+                                        f"Kemungkinan: libur nasional panjang, GoAPI maintenance, atau rate limit habis.")
                             except Exception as _te:
                                 st.error(f"❌ Connection error: {type(_te).__name__}: {_te}")
             with _gapi_col3:
