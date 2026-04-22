@@ -2048,12 +2048,12 @@ def _fetch_all_data(tickers):
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # GOAPI.IO — Stock Market IDX Helper
-# Base URL: https://app.goapi.io/api/v1/idx
+# Base URL resmi: https://api.goapi.io/api/v1/idx  (BUKAN app.goapi.io)
 # Auth header: X-Api-Key
 # Secret key: GoAPI_KEY
 # ═══════════════════════════════════════════════════════════════════════════════
 
-GOAPI_BASE = "https://app.goapi.io/api/v1/idx"
+GOAPI_BASE = "https://api.goapi.io/api/v1/idx"
 
 def _goapi_headers():
     key = st.secrets.get("GoAPI_KEY", "")
@@ -2084,16 +2084,30 @@ def goapi_get_prices(tickers: list) -> dict:
     except Exception:
         return {}
 
+def _last_trading_date(max_lookback: int = 7) -> str:
+    """
+    Cari hari bursa terakhir (T-1 atau lebih) untuk GoAPI broker-summary.
+    GoAPI hanya publish data setelah bursa tutup — jangan pakai today().
+    Skip Sabtu (5) dan Minggu (6). Fallback sampai max_lookback hari.
+    """
+    from datetime import date as _d, timedelta as _td
+    today = _d.today()
+    for delta in range(1, max_lookback + 1):
+        candidate = today - _td(days=delta)
+        if candidate.weekday() < 5:
+            return str(candidate)
+    return str(today - _td(days=1))
+
+
 def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     """
     Broker summary per saham dari GoAPI.
     Return: list of broker rows (format siap pakai di SIGMA brosum parser).
-    date_str: 'YYYY-MM-DD', default = hari ini
+    date_str: 'YYYY-MM-DD', default = T-1 hari bursa (bukan today — data belum tersedia).
     """
     try:
-        from datetime import date as _d
         if date_str is None:
-            date_str = str(_d.today())
+            date_str = _last_trading_date()
         r = requests.get(f"{GOAPI_BASE}/broker-summary",
                          params={"symbol": ticker, "date": date_str},
                          headers=_goapi_headers(), timeout=20)
@@ -13998,16 +14012,22 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
             import threading
             from datetime import date as _d, timedelta
 
-            # Cari T-1 bursa (skip weekend)
-            today = _d.today()
-            # Cari hari terakhir bursa (skip Sabtu=5, Minggu=6)
-            delta = 1
-            while True:
-                candidate = today - timedelta(days=delta)
-                if candidate.weekday() < 5:  # Senin-Jumat
-                    break
-                delta += 1
-            date_str = str(candidate)
+            # Cari T-1 bursa menggunakan helper yang sudah benar
+            # (tidak pakai today() — GoAPI belum publish data hari ini)
+            date_str = _last_trading_date()
+
+            # Siapkan juga T-2 sebagai fallback jika T-1 semua kosong
+            _t2 = None
+            try:
+                from datetime import date as _dd2, timedelta as _td2
+                _t1_obj = _dd2.fromisoformat(date_str)
+                for _fb_delta in range(1, 6):
+                    _fb_cand = _t1_obj - _td2(days=_fb_delta)
+                    if _fb_cand.weekday() < 5:
+                        _t2 = str(_fb_cand)
+                        break
+            except Exception:
+                pass
 
             scored = []
             calls_used = [0]
@@ -14045,6 +14065,11 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     rows = goapi_get_broker_summary(tk, date_str)
                     with lock:
                         calls_used[0] += 1
+                    # Fallback ke T-2 jika T-1 kosong (data belum publish)
+                    if not rows and _t2:
+                        rows = goapi_get_broker_summary(tk, _t2)
+                        with lock:
+                            calls_used[0] += 1
                     if not rows:
                         return
 
@@ -18123,10 +18148,11 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     else:
                         with st.spinner("Testing GoAPI..."):
                             try:
+                                _test_date = _last_trading_date()
                                 _test_r = requests.get(
                                     f"{GOAPI_BASE}/broker-summary",
                                     params={"symbol": "TLKM",
-                                            "date": str(__import__("datetime").date.today())},
+                                            "date": _test_date},
                                     headers=_goapi_headers(), timeout=15)
                                 _test_code = _test_r.status_code
                                 try:
@@ -18142,16 +18168,24 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                         _rows_count = len(_d2) if isinstance(_d2, list) else 0
                                         if _rows_count == 0:
                                             st.warning(
-                                                f"⚠️ HTTP 200 tapi data kosong.\n\n"
+                                                f"⚠️ HTTP 200 tapi data kosong untuk tanggal **{_test_date}**.\n\n"
                                                 f"**Keys diterima:** `{list(_test_json.keys())}`\n\n"
                                                 f"**Raw response (100 char):** `{str(_test_json)[:100]}`\n\n"
-                                                f"Kemungkinan: TLKM tidak ada data hari ini, atau field name berbeda.")
+                                                f"Kemungkinan: hari libur/non-trading atau field name berbeda.")
                                         else:
-                                            st.success(f"✅ GoAPI OK — {_rows_count} broker rows diterima untuk TLKM!")
+                                            st.success(f"✅ GoAPI OK — {_rows_count} broker rows untuk TLKM ({_test_date})!")
                                     elif isinstance(_test_json, list):
-                                        st.success(f"✅ GoAPI OK — {len(_test_json)} broker rows (list format)")
+                                        st.success(f"✅ GoAPI OK — {len(_test_json)} broker rows untuk TLKM ({_test_date}, list format)")
                                     else:
                                         st.warning(f"⚠️ Format response tidak dikenal: {type(_test_json).__name__}")
+                                elif _test_code == 404:
+                                    st.error(
+                                        f"❌ HTTP 404 untuk tanggal {_test_date} — data belum tersedia di GoAPI.\n\n"
+                                        f"Kemungkinan penyebab:\n"
+                                        f"- Data hari tersebut belum di-publish (biasanya tersedia setelah 20:00 WIB)\n"
+                                        f"- Tanggal adalah hari libur nasional (bukan weekend)\n"
+                                        f"- Endpoint `/broker-summary` sedang maintenance\n\n"
+                                        f"Coba lagi nanti malam atau besok.")
                                 elif _test_code == 401:
                                     st.error("❌ HTTP 401 Unauthorized — GoAPI_KEY salah atau expired.")
                                 elif _test_code == 403:
@@ -18159,7 +18193,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 elif _test_code == 429:
                                     st.error("❌ HTTP 429 Rate Limit — Kuota GoAPI habis hari ini (30 req/hari plan free).")
                                 else:
-                                    st.error(f"❌ HTTP {_test_code} — {str(_test_json)[:150]}")
+                                    st.error(f"❌ HTTP {_test_code} (tanggal: {_test_date}) — {str(_test_json)[:150]}")
                             except Exception as _te:
                                 st.error(f"❌ Connection error: {type(_te).__name__}: {_te}")
             with _gapi_col3:
@@ -18720,16 +18754,34 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     _last_goapi_err = st.session_state.pop("_goapi_last_error", "")
                     if _confirmed_count == 0 and _goapi_available():
                         if _last_goapi_err:
-                            st.warning(
-                                f"⚠️ **GoAPI Error** — API key terdeteksi tapi semua request gagal.\n\n"
-                                f"**Detail error terakhir:** `{_last_goapi_err}`\n\n"
-                                f"**Kemungkinan penyebab:**\n"
-                                f"- Data broker BEI belum tersedia hari ini (trading baru selesai / weekend)\n"
-                                f"- Rate limit GoAPI tercapai (plan free: 30 req/hari)\n"
-                                f"- Key GoAPI sudah expired atau tidak aktif\n"
-                                f"- Endpoint `/broker-summary` perlu format tanggal berbeda\n\n"
-                                f"Sistem tetap menampilkan 30 saham dari scoring teknikal + volume (tanpa GoAPI)."
-                            )
+                            _is_404 = "404" in _last_goapi_err
+                            _is_429 = "429" in _last_goapi_err
+                            if _is_404:
+                                st.warning(
+                                    f"⚠️ **GoAPI Error 404** — Data broker BEI belum tersedia untuk tanggal yang diminta.\n\n"
+                                    f"**Detail:** `{_last_goapi_err}`\n\n"
+                                    f"**Kemungkinan penyebab:**\n"
+                                    f"- GoAPI biasanya baru publish data setelah **20:00 WIB** — coba generate lagi malam ini\n"
+                                    f"- Tanggal adalah hari libur nasional (GoAPI tidak punya data)\n"
+                                    f"- GoAPI sedang maintenance endpoint `/broker-summary`\n\n"
+                                    f"Sistem tetap menampilkan 30 saham dari scoring teknikal + volume (tanpa GoAPI)."
+                                )
+                            elif _is_429:
+                                st.warning(
+                                    f"⚠️ **GoAPI Rate Limit (429)** — Kuota harian habis.\n\n"
+                                    f"Plan Free: 30 request/hari · Monthly: 500 request. Coba lagi besok atau upgrade plan.\n\n"
+                                    f"Sistem tetap menampilkan 30 saham dari scoring teknikal + volume (tanpa GoAPI)."
+                                )
+                            else:
+                                st.warning(
+                                    f"⚠️ **GoAPI Error** — API key terdeteksi tapi semua request gagal.\n\n"
+                                    f"**Detail error terakhir:** `{_last_goapi_err}`\n\n"
+                                    f"**Kemungkinan penyebab:**\n"
+                                    f"- Data broker BEI belum tersedia (trading baru selesai / weekend)\n"
+                                    f"- Rate limit GoAPI tercapai (plan free: 30 req/hari)\n"
+                                    f"- Key GoAPI sudah expired atau tidak aktif\n\n"
+                                    f"Sistem tetap menampilkan 30 saham dari scoring teknikal + volume (tanpa GoAPI)."
+                                )
                         else:
                             st.info(
                                 "ℹ️ **GoAPI Confirmed: 0** — Data broker tidak tersedia saat ini.\n\n"
