@@ -18255,7 +18255,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     else:
                         with st.spinner("Testing GoAPI — probe URL + tanggal..."):
                             try:
-                                global GOAPI_BASE
                                 _test_dates = _trading_date_candidates(max_lookback=5)
                                 _found_url   = None
                                 _found_date  = None
@@ -18315,7 +18314,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
                                 # Tampilkan hasil
                                 if _found_url and _found_rows > 0:
-                                    GOAPI_BASE = _found_url
                                     st.session_state["_goapi_base_resolved"] = _found_url
                                     st.session_state.pop("_goapi_last_error", None)
                                     st.success(
@@ -18323,9 +18321,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                         f"**URL yang benar:** `{_found_url}`\n"
                                         f"**Data tanggal:** {_found_date}\n"
                                         f"**Broker rows:** {_found_rows} untuk TLKM\n\n"
-                                        f"⚠️ Jika URL ini berbeda dari `GOAPI_BASE` di kode, update konstanta tersebut.")
+                                        f"⚠️ Copy URL di atas, lalu update `GOAPI_BASE` di baris ~2056 kode.")
                                 elif _found_url:
-                                    GOAPI_BASE = _found_url
                                     st.session_state["_goapi_base_resolved"] = _found_url
                                     _url_note = next((n for u, d, c, n in _url_results if u == _found_url), "")
                                     st.warning(
