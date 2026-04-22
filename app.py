@@ -2216,8 +2216,9 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     Auto-retry: jika 404/kosong, mundur ke T-2, T-3 dst (maks 5 hari bursa).
     """
     _goapi_resolve_base()
-    candidates = _trading_date_candidates(date_str, max_lookback=5)
+    candidates = _trading_date_candidates(date_str, max_lookback=10)  # extended: GoAPI kadang delay >5 hari
     last_err = f"Semua tanggal dicoba kosong: {candidates}"
+    _debug_log = []  # collect per-date results for better error reporting
     for _try_date in candidates:
         try:
             # URL baru: /{symbol}/broker_summary  (bukan /broker-summary?symbol=)
@@ -2252,15 +2253,21 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
                 if _status in ("error", "fail", "failed", "0", "false"):
                     last_err = f"{ticker} ({_try_date}): {data.get('message', str(data)[:80])}"
                     continue
-                # Coba semua kemungkinan key untuk rows
-                rows = (data.get("data", {}).get("results") or
-                        data.get("data") if not isinstance(data.get("data"), dict) else None or
-                        data.get("results") or
-                        data.get("brokerSummary") or
-                        data.get("broker_summary") or [])
-                # Fallback: jika data["data"] adalah list langsung
-                if not rows and isinstance(data.get("data"), list):
-                    rows = data["data"]
+                # Coba semua kemungkinan key untuk rows (fixed operator precedence)
+                _inner = data.get("data", {})
+                if isinstance(_inner, dict):
+                    rows = (_inner.get("results") or
+                            _inner.get("broker_summary") or
+                            _inner.get("brokerSummary") or
+                            data.get("results") or
+                            data.get("brokerSummary") or
+                            data.get("broker_summary") or [])
+                elif isinstance(_inner, list):
+                    rows = _inner
+                else:
+                    rows = (data.get("results") or
+                            data.get("brokerSummary") or
+                            data.get("broker_summary") or [])
                 if isinstance(rows, dict):
                     rows = list(rows.values())
             elif isinstance(data, list):
@@ -2270,6 +2277,7 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
 
             if not rows:
                 last_err = f"{ticker} ({_try_date}): HTTP 200 tapi data kosong"
+                _debug_log.append(f"{_try_date}:EMPTY")
                 continue
 
             # Normalize — response GoAPI baru punya field berbeda dari versi lama
@@ -2350,6 +2358,7 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
             continue
 
     # Semua kandidat gagal
+    last_err = f"{last_err} | debug: {'; '.join(_debug_log) if _debug_log else 'no attempts logged'}"
     try:
         import streamlit as _st_g
         _st_g.session_state["_goapi_last_error"] = last_err
