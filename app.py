@@ -18343,7 +18343,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     else:
                         with st.spinner("Testing GoAPI — probe URL + tanggal..."):
                             try:
-                                _test_dates = _trading_date_candidates(max_lookback=5)
+                                _test_dates = _trading_date_candidates(max_lookback=10)
                                 _found_url   = None
                                 _found_date  = None
                                 _found_rows  = 0
@@ -18351,7 +18351,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
                                 # Probe semua kandidat base URL x tanggal terbaru
                                 for _base_url in _GOAPI_BASE_CANDIDATES:
-                                    for _td_try in _test_dates[:2]:  # coba 2 tanggal per URL hemat
+                                    for _td_try in _test_dates[:5]:  # coba 5 tanggal per URL
                                         try:
                                             _tr = requests.get(
                                                 f"{_base_url}/TLKM/broker_summary",
@@ -18377,9 +18377,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                                     _tj = _tr.json()
                                                 except Exception:
                                                     _tj = {}
-                                                _d2 = (_tj.get("data") or _tj.get("brokerSummary") or
-                                                       _tj.get("broker_summary") or
-                                                       (_tj if isinstance(_tj, list) else []))
+                                                # Ekstrak rows dengan benar: response = {"data":{"results":[...]}}
+                                                _inner2 = _tj.get("data", {})
+                                                if isinstance(_inner2, dict):
+                                                    _d2 = (_inner2.get("results") or
+                                                           _inner2.get("broker_summary") or
+                                                           _inner2.get("brokerSummary") or
+                                                           _tj.get("results") or [])
+                                                elif isinstance(_inner2, list):
+                                                    _d2 = _inner2
+                                                else:
+                                                    _d2 = (_tj.get("results") or
+                                                           _tj.get("brokerSummary") or
+                                                           _tj.get("broker_summary") or
+                                                           (_tj if isinstance(_tj, list) else []))
                                                 _rc = len(_d2) if isinstance(_d2, list) else 0
                                                 if _rc > 0:
                                                     _found_url  = _base_url
@@ -18420,14 +18431,29 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 else:
                                     # Tampilkan semua hasil probe untuk diagnosis
                                     _summary_lines = "\n".join(
-                                        f"- `{u.replace('https://','')}/TLKM/broker_summary` → **{c}** ({n})"
+                                        f"* `{u.replace('https://','')}/TLKM/broker_summary` → **{c}** ({n})"
                                         for u, d, c, n in _url_results[:12]
                                     )
+                                    _dates_tried = ", ".join(d for _, d, _, _ in _url_results[:12])
+                                    # Ambil raw response preview untuk debug
+                                    _raw_preview = ""
+                                    try:
+                                        _last_r = requests.get(
+                                            f"{_GOAPI_BASE_CANDIDATES[0]}/TLKM/broker_summary",
+                                            params={"date": _test_dates[0], "investor": "ALL"},
+                                            headers=_goapi_headers(), timeout=8)
+                                        _raw_preview = _last_r.text[:400]
+                                    except Exception as _rpe:
+                                        _raw_preview = f"(gagal fetch: {_rpe})"
                                     st.error(
                                         f"❌ Tidak ada URL yang berhasil dari {len(_GOAPI_BASE_CANDIDATES)} kandidat.\n\n"
+                                        f"**Tanggal dicoba:** {_dates_tried}\n\n"
                                         f"**Hasil probe:**\n{_summary_lines}\n\n"
-                                        f"**Tindakan:** Buka `app.goapi.io` → klik **Dokumentasi** → "
-                                        f"cari endpoint `broker_summary` → pastikan base URL = `https://api.goapi.io/stock/idx`")
+                                        f"**Raw response GoAPI (tanggal terbaru):**\n```\n{_raw_preview}\n```\n\n"
+                                        f"**Kemungkinan penyebab:**\n"
+                                        f"- GoAPI tidak punya data broker_summary untuk periode ini\n"
+                                        f"- Endpoint broker_summary tidak termasuk di plan GoAPI kamu\n"
+                                        f"- Cek dashboard GoAPI → Usage → apakah broker_summary ada di plan")
                             except Exception as _te:
                                 st.error(f"❌ Connection error: {type(_te).__name__}: {_te}")
             with _gapi_col3:
