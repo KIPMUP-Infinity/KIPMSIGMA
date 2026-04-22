@@ -2054,23 +2054,16 @@ def _fetch_all_data(tickers):
 
 # Kandidat base URL — dicoba berurutan sampai ada yang respond bukan 404
 _GOAPI_BASE_CANDIDATES = [
-    "https://app.goapi.io/api/v1/idx",       # original (app.goapi.io)
-    "https://api.goapi.io/api/v1/idx",       # api subdomain
-    "https://app.goapi.io/api/v1/stock/idx", # alternative path
-    "https://app.goapi.io/api/v2/idx",       # v2
-    "https://app.goapi.io/api/idx",          # tanpa v1
-    "https://app.goapi.io/idx",              # minimal path
-    "https://api.goapi.io/v1/idx",           # api.goapi.io tanpa /api
-    "https://api.goapi.io/idx",              # api.goapi.io minimal
+    "https://api.goapi.io/stock/idx",   # ← BENAR (dari dokumentasi resmi)
 ]
 
 # Runtime-resolved base URL (diisi saat pertama kali sukses, atau oleh Test GoAPI)
-GOAPI_BASE = "https://app.goapi.io/api/v1/idx"  # default, akan di-override jika ditemukan yang benar
+GOAPI_BASE = "https://api.goapi.io/stock/idx"  # default, akan di-override jika ditemukan yang benar
 
 
 def _goapi_headers():
     key = st.secrets.get("GoAPI_KEY", "")
-    return {"X-Api-Key": key, "Accept": "application/json"}
+    return {"X-API-KEY": key, "Accept": "application/json"}
 
 
 def _goapi_available():
@@ -2082,7 +2075,7 @@ def _goapi_available():
 def _goapi_resolve_base(force: bool = False) -> str:
     """
     Probe semua kandidat base URL dan return yang pertama kali berhasil
-    (bukan 404 untuk endpoint /broker-summary).
+    (bukan 404 untuk endpoint /{symbol}/broker_summary).
     Hasil di-cache di session_state["_goapi_base_resolved"].
     """
     global GOAPI_BASE
@@ -2110,13 +2103,13 @@ def _goapi_resolve_base(force: bool = False) -> str:
         test_date = str(today - _td(days=1))
 
     key = st.secrets.get("GoAPI_KEY", "")
-    headers = {"X-Api-Key": key, "Accept": "application/json"}
+    headers = {"X-API-KEY": key, "Accept": "application/json"}
 
     for base in _GOAPI_BASE_CANDIDATES:
         try:
             r = requests.get(
-                f"{base}/broker-summary",
-                params={"symbol": "TLKM", "date": test_date},
+                f"{base}/TLKM/broker_summary",
+                params={"date": test_date, "investor": "ALL"},
                 headers=headers, timeout=8)
             # 200 atau 401/403/429 = URL-nya ditemukan (auth issue, bukan path issue)
             if r.status_code in (200, 401, 403, 429):
@@ -2133,22 +2126,42 @@ def _goapi_resolve_base(force: bool = False) -> str:
     return GOAPI_BASE
 
 def goapi_get_price(ticker: str) -> dict:
-    """Harga real-time satu saham dari GoAPI."""
+    """Harga real-time satu saham dari GoAPI. Endpoint: /stock/idx/{symbol}"""
     try:
-        r = requests.get(f"{GOAPI_BASE}/stock/{ticker}", headers=_goapi_headers(), timeout=10)
-        r.raise_for_status()
-        return r.json()
+        r = requests.get(f"{GOAPI_BASE}/{ticker}", headers=_goapi_headers(), timeout=10)
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+        # Response: {"status":"success","data":{"results":[{...}]}} atau {"data":{...}}
+        if isinstance(data, dict):
+            inner = data.get("data", data)
+            if isinstance(inner, dict):
+                results = inner.get("results", [])
+                if results and isinstance(results, list):
+                    return results[0]
+                return inner
+            elif isinstance(inner, list) and inner:
+                return inner[0]
+        return data
     except Exception:
         return {}
 
 def goapi_get_prices(tickers: list) -> dict:
-    """Harga real-time multiple ticker sekaligus."""
+    """Harga real-time multiple ticker. Endpoint: /stock/idx/prices?symbols=A,B,C"""
     try:
         symbols = ",".join(tickers)
-        r = requests.get(f"{GOAPI_BASE}/stock", params={"symbols": symbols},
+        r = requests.get(f"{GOAPI_BASE}/prices", params={"symbols": symbols},
                          headers=_goapi_headers(), timeout=12)
-        r.raise_for_status()
-        return r.json()
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+        # Response: {"status":"success","data":{"results":[{symbol,close,...}]}}
+        # Return dict keyed by symbol for easy lookup
+        if isinstance(data, dict):
+            inner = data.get("data", {})
+            results = inner.get("results", []) if isinstance(inner, dict) else []
+            return {row["symbol"]: row for row in results if isinstance(row, dict) and "symbol" in row}
+        return {}
     except Exception:
         return {}
 
@@ -2196,23 +2209,22 @@ def _trading_date_candidates(date_str: str = None, max_lookback: int = 5) -> lis
 def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     """
     Broker summary per saham dari GoAPI.
-    Return: list of broker rows (format siap pakai di SIGMA brosum parser).
-    date_str: 'YYYY-MM-DD', default = T-1 hari bursa.
+    Endpoint resmi: GET https://api.goapi.io/stock/idx/{symbol}/broker_summary
+    Params: date (YYYY-MM-DD), investor (LOCAL|FOREIGN|ALL)
+    Return: list of broker rows normalized untuk SIGMA parser.
 
-    Auto-retry: jika tanggal diminta return 404/kosong, otomatis mundur ke
-    T-2, T-3, ... hingga 5 hari bursa. Menangani: libur nasional, data
-    belum publish, weekend panjang.
+    Auto-retry: jika 404/kosong, mundur ke T-2, T-3 dst (maks 5 hari bursa).
     """
-    # Auto-resolve base URL jika belum pernah berhasil (Hits=0 di dashboard)
     _goapi_resolve_base()
     candidates = _trading_date_candidates(date_str, max_lookback=5)
     last_err = f"Semua tanggal dicoba kosong: {candidates}"
     for _try_date in candidates:
         try:
-            r = requests.get(f"{GOAPI_BASE}/broker-summary",
-                             params={"symbol": ticker, "date": _try_date},
-                             headers=_goapi_headers(), timeout=20)
-            # 429 = rate limit: berhenti, jangan buang kuota
+            # URL baru: /{symbol}/broker_summary  (bukan /broker-summary?symbol=)
+            r = requests.get(
+                f"{GOAPI_BASE}/{ticker}/broker_summary",
+                params={"date": _try_date, "investor": "ALL"},
+                headers=_goapi_headers(), timeout=20)
             if r.status_code == 429:
                 last_err = f"HTTP 429 Rate Limit untuk {ticker} ({_try_date})"
                 try:
@@ -2221,11 +2233,9 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
                 except Exception:
                     pass
                 return []
-            # 404 = data hari ini belum ada → coba hari sebelumnya
             if r.status_code == 404:
                 last_err = f"HTTP 404 untuk {ticker} ({_try_date})"
                 continue
-            # Error lain (401, 403, 5xx) → log dan coba hari sebelumnya
             if r.status_code != 200:
                 last_err = f"HTTP {r.status_code} untuk {ticker} ({_try_date})"
                 try:
@@ -2234,56 +2244,111 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
                 except Exception:
                     last_err += f" — {r.text[:80]}"
                 continue
-            # HTTP 200 — parse data
+            # HTTP 200
             data = r.json()
+            # Response format: {"status":"success","data":{"results":[...]}}
             if isinstance(data, dict):
-                _status = data.get("status", "ok")
-                if str(_status).lower() in ("error", "fail", "failed", "0", "false"):
-                    last_err = f"{ticker} ({_try_date}): {data.get('message', data.get('error', str(data)[:80]))}"
-                    continue  # coba hari sebelumnya
-                rows = data.get("data", data.get("brokerSummary",
-                       data.get("broker_summary", data.get("result", []))))
+                _status = str(data.get("status", "success")).lower()
+                if _status in ("error", "fail", "failed", "0", "false"):
+                    last_err = f"{ticker} ({_try_date}): {data.get('message', str(data)[:80])}"
+                    continue
+                # Coba semua kemungkinan key untuk rows
+                rows = (data.get("data", {}).get("results") or
+                        data.get("data") if not isinstance(data.get("data"), dict) else None or
+                        data.get("results") or
+                        data.get("brokerSummary") or
+                        data.get("broker_summary") or [])
+                # Fallback: jika data["data"] adalah list langsung
+                if not rows and isinstance(data.get("data"), list):
+                    rows = data["data"]
                 if isinstance(rows, dict):
                     rows = list(rows.values())
             elif isinstance(data, list):
                 rows = data
             else:
                 rows = []
+
             if not rows:
                 last_err = f"{ticker} ({_try_date}): HTTP 200 tapi data kosong"
-                continue  # coba hari sebelumnya
-            # Ada data — normalize dan return
+                continue
+
+            # Normalize — response GoAPI baru punya field berbeda dari versi lama
             normalized = []
             for row in rows:
                 if not isinstance(row, dict):
                     continue
-                normalized.append({
-                    "BrokerID":    str(row.get("broker_code", row.get("brokerCode",
-                                   row.get("BrokerID", row.get("broker",
-                                   row.get("code", "?")))))),
-                    "BrokerName":  row.get("broker_name", row.get("brokerName",
-                                   row.get("BrokerName", row.get("name", "")))),
-                    "BuyVolume":   float(row.get("buy_lot",   row.get("buyLot",
-                                   row.get("BuyVolume",  row.get("buy_volume", 0)))) or 0),
-                    "SellVolume":  float(row.get("sell_lot",  row.get("sellLot",
-                                   row.get("SellVolume", row.get("sell_volume", 0)))) or 0),
-                    "BuyValue":    float(row.get("buy_value", row.get("buyValue",
-                                   row.get("BuyValue",   row.get("buy_val", 0)))) or 0),
-                    "SellValue":   float(row.get("sell_value", row.get("sellValue",
-                                   row.get("SellValue",  row.get("sell_val", 0)))) or 0),
-                    "AvgBuy":      float(row.get("avg_buy",   row.get("avgBuy",
-                                   row.get("average_buy", 0))) or 0),
-                    "AvgSell":     float(row.get("avg_sell",  row.get("avgSell",
-                                   row.get("average_sell", 0))) or 0),
-                    "InvestorBuy":  row.get("investor_buy",  row.get("investorBuy",  None)),
-                    "InvestorSell": row.get("investor_sell", row.get("investorSell", None)),
-                    "_source":     "GoAPI",
-                    "_date":       _try_date,  # tanggal data yang berhasil
-                })
+                # Format baru: {"broker":{"code":"XL","name":"..."},"side":"BUY","lot":87051,...}
+                broker_obj = row.get("broker", {})
+                broker_code = str(row.get("code", broker_obj.get("code",
+                              row.get("broker_code", row.get("brokerCode",
+                              row.get("BrokerID", "?"))))))
+                broker_name = row.get("name", broker_obj.get("name",
+                              row.get("broker_name", row.get("BrokerName", ""))))
+
+                side     = str(row.get("side", "")).upper()  # "BUY" atau "SELL"
+                lot      = float(row.get("lot", row.get("buy_lot", row.get("sell_lot", 0))) or 0)
+                value    = float(row.get("value", row.get("buy_value", row.get("sell_value", 0))) or 0)
+                avg      = float(row.get("avg", row.get("avg_buy", row.get("avg_sell", 0))) or 0)
+                investor = row.get("investor", "LOCAL")
+
+                # Konversi format baru (per-side per-row) ke format lama (buy+sell per broker)
+                # Format lama yang dipakai SIGMA: BuyVolume, SellVolume, BuyValue, SellValue, AvgBuy, AvgSell
+                if side == "BUY":
+                    normalized.append({
+                        "BrokerID":    broker_code,
+                        "BrokerName":  broker_name,
+                        "BuyVolume":   lot,
+                        "SellVolume":  0.0,
+                        "BuyValue":    value,
+                        "SellValue":   0.0,
+                        "AvgBuy":      avg,
+                        "AvgSell":     0.0,
+                        "InvestorBuy": investor,
+                        "InvestorSell": None,
+                        "_source":     "GoAPI",
+                        "_date":       _try_date,
+                    })
+                elif side == "SELL":
+                    normalized.append({
+                        "BrokerID":    broker_code,
+                        "BrokerName":  broker_name,
+                        "BuyVolume":   0.0,
+                        "SellVolume":  lot,
+                        "BuyValue":    0.0,
+                        "SellValue":   value,
+                        "AvgBuy":      0.0,
+                        "AvgSell":     avg,
+                        "InvestorBuy": None,
+                        "InvestorSell": investor,
+                        "_source":     "GoAPI",
+                        "_date":       _try_date,
+                    })
+                else:
+                    # Format lama (fallback): row sudah punya BuyVolume/SellVolume
+                    buy_lot  = float(row.get("buy_lot",   row.get("buyLot",   row.get("BuyVolume",  0))) or 0)
+                    sell_lot = float(row.get("sell_lot",  row.get("sellLot",  row.get("SellVolume", 0))) or 0)
+                    normalized.append({
+                        "BrokerID":    broker_code,
+                        "BrokerName":  broker_name,
+                        "BuyVolume":   buy_lot,
+                        "SellVolume":  sell_lot,
+                        "BuyValue":    float(row.get("buy_value",  row.get("BuyValue",  0)) or 0),
+                        "SellValue":   float(row.get("sell_value", row.get("SellValue", 0)) or 0),
+                        "AvgBuy":      float(row.get("avg_buy",    row.get("AvgBuy",    0)) or 0),
+                        "AvgSell":     float(row.get("avg_sell",   row.get("AvgSell",   0)) or 0),
+                        "InvestorBuy":  row.get("investor_buy",  row.get("InvestorBuy",  investor)),
+                        "InvestorSell": row.get("investor_sell", row.get("InvestorSell", None)),
+                        "_source":     "GoAPI",
+                        "_date":       _try_date,
+                    })
+            if not normalized:
+                last_err = f"{ticker} ({_try_date}): rows ada tapi semua tidak valid"
+                continue
             return normalized
         except Exception as _ge:
             last_err = f"Exception {ticker} ({_try_date}): {type(_ge).__name__}: {str(_ge)[:80]}"
             continue
+
     # Semua kandidat gagal
     try:
         import streamlit as _st_g
@@ -2293,13 +2358,22 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     return []
 
 def goapi_get_historical(ticker: str, date_from: str, date_to: str) -> list:
-    """OHLCV historis dari GoAPI — max range 1 tahun."""
+    """OHLCV historis dari GoAPI — max range 1 tahun. Endpoint: /{symbol}/historical"""
     try:
-        r = requests.get(f"{GOAPI_BASE}/historical",
-                         params={"symbol": ticker, "from": date_from, "to": date_to},
+        r = requests.get(f"{GOAPI_BASE}/{ticker}/historical",
+                         params={"from": date_from, "to": date_to},
                          headers=_goapi_headers(), timeout=20)
-        r.raise_for_status()
+        if r.status_code != 200:
+            return []
         data = r.json()
+        # Response: {"data":{"results":[{...}]}}
+        if isinstance(data, dict):
+            inner = data.get("data", data)
+            if isinstance(inner, dict):
+                results = inner.get("results", inner.get("data", []))
+                return results if isinstance(results, list) else []
+            elif isinstance(inner, list):
+                return inner
         if isinstance(data, dict):
             return data.get("data", data.get("historical", []))
         return data if isinstance(data, list) else []
@@ -2308,7 +2382,7 @@ def goapi_get_historical(ticker: str, date_from: str, date_to: str) -> list:
 
 def goapi_get_top_gainer() -> list:
     try:
-        r = requests.get(f"{GOAPI_BASE}/top-gainer", headers=_goapi_headers(), timeout=10)
+        r = requests.get(f"{GOAPI_BASE}/top_gainer", headers=_goapi_headers(), timeout=10)
         r.raise_for_status()
         data = r.json()
         return data.get("data", data) if isinstance(data, dict) else data
@@ -2317,7 +2391,7 @@ def goapi_get_top_gainer() -> list:
 
 def goapi_get_top_loser() -> list:
     try:
-        r = requests.get(f"{GOAPI_BASE}/top-loser", headers=_goapi_headers(), timeout=10)
+        r = requests.get(f"{GOAPI_BASE}/top_loser", headers=_goapi_headers(), timeout=10)
         r.raise_for_status()
         data = r.json()
         return data.get("data", data) if isinstance(data, dict) else data
@@ -2334,12 +2408,17 @@ def goapi_get_trending() -> list:
         return []
 
 def goapi_get_profile(ticker: str) -> dict:
-    """Company profile + fundamental dari GoAPI."""
+    """Company profile + fundamental. Endpoint: /stock/idx/{symbol}/profile"""
     try:
-        r = requests.get(f"{GOAPI_BASE}/profile/{ticker}", headers=_goapi_headers(), timeout=12)
-        r.raise_for_status()
+        r = requests.get(f"{GOAPI_BASE}/{ticker}/profile", headers=_goapi_headers(), timeout=12)
+        if r.status_code != 200:
+            return {}
         data = r.json()
-        return data.get("data", data) if isinstance(data, dict) else {}
+        # Response: {"status":"success","data":{profile fields...}}
+        if isinstance(data, dict):
+            inner = data.get("data", data)
+            return inner if isinstance(inner, dict) else data
+        return {}
     except Exception:
         return {}
 
@@ -18266,13 +18345,12 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                     for _td_try in _test_dates[:2]:  # coba 2 tanggal per URL hemat
                                         try:
                                             _tr = requests.get(
-                                                f"{_base_url}/broker-summary",
-                                                params={"symbol": "TLKM", "date": _td_try},
+                                                f"{_base_url}/TLKM/broker_summary",
+                                                params={"date": _td_try, "investor": "ALL"},
                                                 headers=_goapi_headers(), timeout=8)
                                             _tc = _tr.status_code
                                             if _tc == 404:
                                                 _url_results.append((_base_url, _td_try, _tc, "path tidak ditemukan"))
-                                                break  # URL ini salah — skip ke URL berikutnya
                                             if _tc == 401:
                                                 _url_results.append((_base_url, _td_try, _tc, "URL OK tapi key salah/expired"))
                                                 _found_url = _base_url
@@ -18333,14 +18411,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 else:
                                     # Tampilkan semua hasil probe untuk diagnosis
                                     _summary_lines = "\n".join(
-                                        f"- `{u.replace('https://','')}/broker-summary` → **{c}** ({n})"
+                                        f"- `{u.replace('https://','')}/TLKM/broker_summary` → **{c}** ({n})"
                                         for u, d, c, n in _url_results[:12]
                                     )
                                     st.error(
                                         f"❌ Tidak ada URL yang berhasil dari {len(_GOAPI_BASE_CANDIDATES)} kandidat.\n\n"
                                         f"**Hasil probe:**\n{_summary_lines}\n\n"
                                         f"**Tindakan:** Buka `app.goapi.io` → klik **Dokumentasi** → "
-                                        f"cari endpoint broker-summary → copy URL lengkapnya ke sini.")
+                                        f"cari endpoint `broker_summary` → pastikan base URL = `https://api.goapi.io/stock/idx`")
                             except Exception as _te:
                                 st.error(f"❌ Connection error: {type(_te).__name__}: {_te}")
             with _gapi_col3:
