@@ -9405,11 +9405,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
     margin-bottom: 16px;
-    min-width: 600px;
   }}
   .frm-grid-wrap {{
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     margin-bottom: 16px;
   }}
 
@@ -9535,7 +9532,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
   /* Mobile */
   @media (max-width: 860px) {{
-    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; min-width: unset; }}
+    .frm-grid-wrap {{ overflow-x: unset; }}
     .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
     .frm-cd-num {{ font-size: 1.25rem; }}
     .frm-cd-box {{ min-width: 38px; }}
@@ -9546,10 +9544,38 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     .frm-bars {{ padding: 12px 14px 6px; }}
     .frm-bar-label {{ font-size: 0.875rem; }}
     .frm-bar-pct {{ font-size: 0.875rem; }}
-    .frm-tbl th {{ padding: 6px 8px; font-size: 0.72rem; }}
-    .frm-tbl td {{ padding: 6px 8px; font-size: 0.875rem; }}
     .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
-    .frm-tbl-wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
+
+    /* ── MOBILE TABLE FIX: no horizontal scroll ── */
+    .frm-tbl-wrap {{ overflow-x: unset; -webkit-overflow-scrolling: unset; }}
+    .frm-tbl {{ table-layout: fixed; width: 100%; }}
+    .frm-tbl th {{
+      padding: 5px 3px;
+      font-size: 0.65rem;
+      letter-spacing: 0;
+      white-space: normal;
+      word-break: break-word;
+    }}
+    .frm-tbl td {{
+      padding: 5px 3px;
+      font-size: 0.72rem;
+      white-space: normal;
+      word-break: break-word;
+    }}
+    /* Lebar kolom tetap proporsional di mobile */
+    .frm-tbl th:nth-child(1), .frm-tbl td:nth-child(1) {{ width: 40%; }}
+    .frm-tbl th:nth-child(2), .frm-tbl td:nth-child(2) {{ width: 20%; }}
+    .frm-tbl th:nth-child(3), .frm-tbl td:nth-child(3) {{ width: 20%; }}
+    .frm-tbl th:nth-child(4), .frm-tbl td:nth-child(4) {{ width: 20%; }}
+    /* Badge lebih kecil di mobile */
+    .frm-dir-badge {{
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      margin-left: 2px;
+      display: block;
+      width: fit-content;
+      margin-top: 2px;
+    }}
   }}
 </style>
 </head>
