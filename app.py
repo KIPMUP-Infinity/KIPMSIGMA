@@ -8171,7 +8171,7 @@ if current_view == "dashboard":
             is_id = name in _idx_indonesia_names
             # Add separator row before first global index
             if not is_id and not _global_divider_added:
-                _idx_rows.append({"_divider": True, "label": "───────────── GLOBAL ─────────────"})
+                _idx_rows.append({"_divider": True, "label": "──────────── GLOBAL ────────────"})
                 _global_divider_added = True
             if px == 0:
                 px_str = "N/A"
