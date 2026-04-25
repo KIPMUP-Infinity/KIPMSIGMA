@@ -9182,28 +9182,7 @@ window.addEventListener('resize',()=>{
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
-        @st.cache_data(ttl=300)
-        def get_market_data(ticker_dict):
-            import yfinance as yf
-            data = {}
-            for name, tk in ticker_dict.items():
-                try:
-                    ticker = yf.Ticker(tk)
-                    hist = ticker.history(period="5d")
-                    if len(hist) >= 2:
-                        last = float(hist['Close'].iloc[-1])
-                        prev = float(hist['Close'].iloc[-2])
-                        pct  = ((last - prev) / prev) * 100
-                        data[name] = {"price": last, "pct": pct}
-                    elif len(hist) == 1:
-                        last = float(hist['Close'].iloc[-1])
-                        data[name] = {"price": last, "pct": 0.0}
-                    else:
-                        data[name] = {"price": 0, "pct": 0}
-                except Exception:
-                    data[name] = {"price": 0, "pct": 0}
-            return data
-
+        # ── Ticker maps — verified valid yfinance symbols ──────────────────────
         indices_tickers = {
             "IHSG":      "^JKSE",
             "LQ45":      "^JKLQ45",
@@ -9228,16 +9207,105 @@ window.addEventListener('resize',()=>{
             "WTI Crude":      "CL=F",
             "Brent Crude":    "BZ=F",
             "Natural Gas":    "NG=F",
-            "Newcastle Coal": "NCF=F",
-            "Palm Oil":       "MYP=F",
-            "Nickel":         "NI=F",
-            "Aluminum":       "ALI=F",
+            "Coal (Futures)": "MTF=F",   # ICE Rotterdam coal (valid)
+            "Palm Oil":       "FCPO.KL", # Bursa Malaysia CPO futures
+            "Nickel":         "ND=F",    # LME nickel via CME (valid)
+            "Aluminum":       "ALS=F",   # Aluminum futures (valid)
             "Soybeans":       "ZS=F",
         }
 
+        @st.cache_data(ttl=300)
+        def get_market_data_batch(names_tuple, tickers_tuple):
+            """
+            Fetch semua ticker sekaligus dengan yf.download() (1 HTTP call),
+            lalu fallback per-ticker via .fast_info jika data kosong.
+            Menggunakan ThreadPoolExecutor untuk fallback paralel.
+            """
+            import yfinance as yf
+            import pandas as pd
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            name_list   = list(names_tuple)
+            ticker_list = list(tickers_tuple)
+            tk_to_name  = dict(zip(ticker_list, name_list))
+
+            result = {n: {"price": 0, "pct": 0.0} for n in name_list}
+
+            # ── 1. Batch download (1 call, jauh lebih cepat) ──────────────────
+            try:
+                raw = yf.download(
+                    ticker_list,
+                    period="5d",
+                    interval="1d",
+                    group_by="ticker",
+                    auto_adjust=True,
+                    progress=False,
+                    threads=True,
+                    timeout=20,
+                )
+                failed_tickers = []
+                for tk in ticker_list:
+                    name = tk_to_name[tk]
+                    try:
+                        if len(ticker_list) == 1:
+                            closes = raw["Close"].dropna()
+                        else:
+                            closes = raw[tk]["Close"].dropna() if tk in raw.columns.get_level_values(1) else pd.Series(dtype=float)
+                        if len(closes) >= 2:
+                            last = float(closes.iloc[-1])
+                            prev = float(closes.iloc[-2])
+                            pct  = ((last - prev) / prev) * 100
+                            result[name] = {"price": last, "pct": round(pct, 2)}
+                        elif len(closes) == 1:
+                            result[name] = {"price": float(closes.iloc[-1]), "pct": 0.0}
+                        else:
+                            failed_tickers.append(tk)
+                    except Exception:
+                        failed_tickers.append(tk)
+            except Exception:
+                failed_tickers = ticker_list[:]
+
+            # ── 2. Fallback paralel untuk ticker yang gagal di batch ──────────
+            def _fetch_single(tk):
+                try:
+                    t = yf.Ticker(tk)
+                    # Coba fast_info dulu (paling cepat, 1 request)
+                    fi = t.fast_info
+                    last = getattr(fi, "last_price", None) or getattr(fi, "regularMarketPrice", None)
+                    prev = getattr(fi, "previous_close", None) or getattr(fi, "regularMarketPreviousClose", None)
+                    if last and last > 0:
+                        pct = ((last - prev) / prev * 100) if (prev and prev > 0) else 0.0
+                        return tk, {"price": float(last), "pct": round(pct, 2)}
+                    # Fallback ke history jika fast_info kosong
+                    h = t.history(period="5d", timeout=10)
+                    if len(h) >= 2:
+                        last = float(h["Close"].iloc[-1])
+                        prev = float(h["Close"].iloc[-2])
+                        return tk, {"price": last, "pct": round(((last-prev)/prev)*100, 2)}
+                    elif len(h) == 1:
+                        return tk, {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
+                except Exception:
+                    pass
+                return tk, {"price": 0, "pct": 0.0}
+
+            if failed_tickers:
+                with ThreadPoolExecutor(max_workers=min(len(failed_tickers), 8)) as ex:
+                    futs = {ex.submit(_fetch_single, tk): tk for tk in failed_tickers}
+                    for fut in as_completed(futs):
+                        tk, val = fut.result()
+                        result[tk_to_name[tk]] = val
+
+            return result
+
         with st.spinner("Mendeteksi denyut pasar global..."):
-            idx_data = get_market_data(indices_tickers)
-            com_data = get_market_data(commodities_tickers)
+            idx_data = get_market_data_batch(
+                tuple(indices_tickers.keys()),
+                tuple(indices_tickers.values()),
+            )
+            com_data = get_market_data_batch(
+                tuple(commodities_tickers.keys()),
+                tuple(commodities_tickers.values()),
+            )
 
         import json as _mkt_json
 
