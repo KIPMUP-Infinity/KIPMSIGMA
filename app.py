@@ -8327,6 +8327,27 @@ canvas#globe { width:100%; height:100%; display:block; }
   letter-spacing:0.5px; transition:opacity 0.2s;
 }
 .si-btn:hover { opacity:0.85; }
+
+/* ── MOBILE RESPONSIVE ─────────────────────────────── */
+@media (max-width: 640px) {
+  #header { padding:6px 10px 4px; }
+  #header-left h1 { font-size:14px; letter-spacing:0.5px; }
+  #header-left p { display:none; }
+  .hbtn { padding:4px 8px; font-size:9px; min-width:38px; }
+  .hbtn svg { width:12px; height:12px; }
+  /* Sembunyikan panel kiri & kanan, globe full-width */
+  #left { display:none; }
+  #right { display:none; }
+  #center { width:100%; }
+  /* Bottom bar lebih kompak */
+  #bottom-bar { padding:3px 0 4px; }
+  #scale-box { padding:4px 10px; }
+  .scale-title { font-size:8px; }
+  #scale-dots { gap:10px; }
+  .slabel { font-size:8px; }
+  #instr { font-size:9px; padding:3px 6px 4px; }
+  #instr .instr-item:nth-child(2) { display:none; }
+}
 </style>
 </head>
 <body>
@@ -9247,7 +9268,7 @@ window.addEventListener('resize',()=>{
 </body>
 </html>
 """
-        components.html(_idx_globe_html, height=780, scrolling=False)
+        components.html(_idx_globe_html, height=680, scrolling=False)
 
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -9398,32 +9419,32 @@ window.addEventListener('resize',()=>{
         _com_json = _mkt_json.dumps(_com_rows, ensure_ascii=True)
 
         _now_wib  = datetime.now().strftime("%d %b %Y \u00b7 %H:%M WIB")
-        _idx_h    = max(50 + len(_idx_rows) * 41 + 20, 280)
-        _com_h    = max(50 + len(_com_rows) * 41 + 20, 200)
-        _total_h  = _idx_h + _com_h + 28   # 28px gap antar tabel
+        _idx_h    = max(38 + len(_idx_rows) * 30 + 10, 200)
+        _com_h    = max(38 + len(_com_rows) * 30 + 10, 160)
+        _total_h  = _idx_h + _com_h + 8    # 8px gap antar tabel
 
         # ── Shared CSS template ───────────────────────────────────────────────
         _tbl_css = f"""
 *{{box-sizing:border-box;margin:0;padding:0;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;width:100%;overflow:hidden;}}
-.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:16px;overflow:hidden;width:100%;margin-bottom:16px;}}
-.mkt-hdr{{padding:11px 16px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.13em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
-.mkt-badge{{font-size:0.78rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;white-space:nowrap;}}
+.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;width:100%;margin-bottom:4px;}}
+.mkt-hdr{{padding:6px 12px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.68rem;font-weight:700;letter-spacing:0.13em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
+.mkt-badge{{font-size:0.70rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:8px;padding:1px 6px;white-space:nowrap;}}
 table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:260px;}}
-thead th{{background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.70rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
-tbody td{{padding:8px 14px;border-bottom:1px solid rgba(139,92,246,0.07);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.875rem;}}
+thead th{{background:rgba(139,92,246,0.06);color:#8b5cf6;padding:4px 10px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.70rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
+tbody td{{padding:3px 10px;border-bottom:1px solid rgba(139,92,246,0.07);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.80rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(139,92,246,0.05);transition:background 0.15s;}}
-.nm{{font-weight:600;font-size:0.875rem;color:{text_main};font-family:'DM Sans',sans-serif;}}
+.nm{{font-weight:600;font-size:0.80rem;color:{text_main};font-family:'DM Sans',sans-serif;}}
 .flag{{margin-right:6px;font-size:1rem;}}
-.price{{font-size:0.875rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
-.badge{{display:inline-block;padding:2px 9px;border-radius:6px;font-size:0.80rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
-.ccy{{font-size:0.78rem;color:{text_sub};}}
+.price{{font-size:0.80rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+.badge{{display:inline-block;padding:1px 6px;border-radius:5px;font-size:0.74rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+.ccy{{font-size:0.72rem;color:{text_sub};}}
 @media(max-width:600px){{
-  .mkt-wrap{{border-radius:10px;margin-bottom:12px;}}
-  .mkt-hdr{{font-size:0.68rem;padding:8px 10px;}}
-  thead th{{font-size:0.68rem;padding:6px 8px;}}
-  tbody td{{font-size:0.80rem;padding:6px 8px;}}
+  .mkt-wrap{{border-radius:8px;margin-bottom:3px;}}
+  .mkt-hdr{{font-size:0.63rem;padding:4px 8px;}}
+  thead th{{font-size:0.62rem;padding:3px 6px;}}
+  tbody td{{font-size:0.72rem;padding:2px 6px;}}
   .badge{{font-size:0.75rem;padding:2px 5px;}}
   .nm,.price{{font-size:0.80rem;}}
 }}"""
