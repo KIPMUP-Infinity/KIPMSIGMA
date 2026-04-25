@@ -9590,47 +9590,61 @@ function setGroup(m){ groupMode=m; document.querySelectorAll('.tb-btn').forEach(
 function resort(){ sortMode=document.getElementById('sortby').value; draw(); }
 
 // Squarify treemap algorithm
-function squarify(items, rect) {
-  // items: [{weight, ...data}], rect: {x,y,w,h}
-  const total = items.reduce((s,i)=>s+i.weight, 0);
-  const cells = [];
-  function layout(items, rect) {
-    if(!items.length) return;
-    if(items.length===1){
-      cells.push({...items[0], x:rect.x, y:rect.y, w:rect.w, h:rect.h}); return;
-    }
-    // split by longest side
-    const horiz = rect.w >= rect.h;
-    const side  = horiz ? rect.h : rect.w;
-    let best=Infinity, row=[], rowSum=0;
-    for(let i=0;i<items.length;i++){
-      row.push(items[i]); rowSum+=items[i].weight;
-      const ratio = rowSum/total*(horiz?rect.w:rect.h);
-      const maxR  = Math.max(...row.map(it=>(it.weight/rowSum*side)**2/(ratio)**2), (ratio)**2/Math.min(...row.map(it=>(it.weight/rowSum*side)**2)));
-      if(maxR<best){ best=maxR; } else { row.pop(); rowSum-=items[i].weight; break; }
-    }
-    const rowFrac = rowSum/total;
-    const rw = horiz ? rect.w*rowFrac : rect.w;
-    const rh = horiz ? rect.h         : rect.h*rowFrac;
-    let off = 0;
-    row.forEach(it=>{
-      const frac = it.weight/rowSum;
-      if(horiz){ cells.push({...it,x:rect.x+off,y:rect.y,w:rw,h:rh*frac}); off+=rh*frac; }
-      else      { cells.push({...it,x:rect.x,y:rect.y+off,w:rw*frac,h:rh}); off+=rw*frac; }
-    });
-    const remItems = items.slice(row.length);
-    if(horiz) layout(remItems, {x:rect.x+rw, y:rect.y, w:rect.w-rw, h:rect.h});
-    else      layout(remItems, {x:rect.x, y:rect.y+rh, w:rect.w, h:rect.h-rh});
+// ── CORRECT SQUARIFY TREEMAP ─────────────────────────────────
+function squarify(items, x, y, w, h) {
+  // items must already have .nw (normalized weight = fraction of total area)
+  const out = [];
+  function worst(row, side) {
+    const s = row.reduce((a, i) => a + i.nw, 0);
+    const maxNw = Math.max(...row.map(i => i.nw));
+    const minNw = Math.min(...row.map(i => i.nw));
+    return Math.max((side * side * maxNw) / (s * s), (s * s) / (side * side * minNw));
   }
-  // scale weights to rect area
-  const area = rect.w*rect.h;
-  const scale = area/total;
-  items = items.map(i=>({...i, weight:i.weight*scale}));
-  // redo total after scale
-  const t2 = items.reduce((s,i)=>s+i.weight,0);
-  items = items.map(i=>({...i, weight:i.weight}));
-  layout(items, rect);
-  return cells;
+  function layoutRow(row, x, y, w, h) {
+    const rowSum = row.reduce((a, i) => a + i.nw, 0);
+    const horiz  = w >= h;
+    const strip  = horiz ? rowSum / h : rowSum / w;
+    let offset = 0;
+    row.forEach(item => {
+      const frac = item.nw / rowSum;
+      if (horiz) {
+        out.push({ ...item, x: x, y: y + offset, w: strip, h: frac * h });
+        offset += frac * h;
+      } else {
+        out.push({ ...item, x: x + offset, y: y, w: frac * w, h: strip });
+        offset += frac * w;
+      }
+    });
+    if (horiz) return { x: x + strip, y, w: w - strip, h };
+    else       return { x, y: y + strip, w, h: h - strip };
+  }
+  function tile(items, x, y, w, h) {
+    if (!items.length) return;
+    if (items.length === 1) {
+      out.push({ ...items[0], x, y, w, h });
+      return;
+    }
+    const side = Math.min(w, h);
+    let row = [], remaining = [...items];
+    while (remaining.length) {
+      const item = remaining[0];
+      if (!row.length || worst([...row, item], side) <= worst(row, side)) {
+        row.push(item);
+        remaining.shift();
+      } else {
+        const rect = layoutRow(row, x, y, w, h);
+        x = rect.x; y = rect.y; w = rect.w; h = rect.h;
+        row = [];
+      }
+    }
+    if (row.length) layoutRow(row, x, y, w, h);
+  }
+  // normalize weights to area
+  const totalW = items.reduce((a, i) => a + i.nw, 0);
+  const area   = w * h;
+  items = items.map(i => ({ ...i, nw: i.nw / totalW * area }));
+  tile(items, x, y, w, h);
+  return out;
 }
 
 let cells = [];
@@ -9657,8 +9671,9 @@ function draw(){
 
   if(groupMode==='all'){
     const sorted = sortStocks(STOCKS);
-    const items  = sorted.map(s=>({weight:s.cap, stock:s}));
-    const raw    = squarify(items, {x:0,y:0,w:W,h:H});
+    const total  = sorted.reduce((a,s)=>a+s.cap,0);
+    const items  = sorted.map(s=>({nw:s.cap/total, stock:s}));
+    const raw    = squarify(items, 0, 0, W, H);
     raw.forEach(c=>{ cells.push(c); drawCell(c, PAD); });
   } else {
     // Group by sector or owner
@@ -9669,8 +9684,9 @@ function draw(){
     const gArr = Object.entries(groups).map(([k,arr])=>({key:k, total:arr.reduce((s,i)=>s+i.cap,0), arr}));
     gArr.sort((a,b)=>b.total-a.total);
     // First squarify groups
-    const gItems = gArr.map(g=>({weight:g.total, ...g}));
-    const gCells = squarify(gItems, {x:0,y:0,w:W,h:H});
+    const gTotal = gArr.reduce((a,g)=>a+g.total,0);
+    const gItems = gArr.map(g=>({nw:g.total/gTotal, ...g}));
+    const gCells = squarify(gItems, 0, 0, W, H);
     gCells.forEach((gc, gi)=>{
       const g    = gArr[gi];
       const cmap = groupMode==='sector' ? SECTOR_COLORS : OWNER_COLORS;
@@ -9687,8 +9703,9 @@ function draw(){
       const inner = {x:gc.x+1, y:gc.y+hdrH+1, w:gc.w-2, h:gc.h-hdrH-2};
       if(inner.w<4||inner.h<4) return;
       const sorted = sortStocks(g.arr);
-      const sItems = sorted.map(s=>({weight:s.cap,stock:s}));
-      const sCells = squarify(sItems, inner);
+      const sTotal = sorted.reduce((a,s)=>a+s.cap,0);
+      const sItems = sorted.map(s=>({nw:s.cap/sTotal,stock:s}));
+      const sCells = squarify(sItems, inner.x, inner.y, inner.w, inner.h);
       sCells.forEach(c=>{ cells.push(c); drawCell(c, PAD); });
     });
   }
