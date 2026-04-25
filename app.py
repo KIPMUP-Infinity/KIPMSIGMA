@@ -9269,11 +9269,31 @@ window.addEventListener('resize',()=>{
 
         # Komoditas + Forex + Crypto
         _COM_TICKERS = [
-            ("USD/IDR",  "IDR=X",    "\U0001f4b5", "Rp/USD",  "forex"),
-            ("DXY",      "DX-Y.NYB", "\U0001f4b2", "Index",   "forex"),
-            ("XAU/USD",  "GC=F",     "\U0001f947", "USD/oz",  "commodity"),
-            ("BTC/USD",  "BTC-USD",  "\u20bf",     "USD",     "crypto"),
-            ("ETH/USD",  "ETH-USD",  "\U0001f48e", "USD",     "crypto"),
+            # FOREX
+            ("USD/IDR",        "IDR=X",      "\U0001f4b5", "Rp/USD",    "forex"),
+            ("DXY",            "DX-Y.NYB",   "\U0001f4b2", "Index",     "forex"),
+            # ENERGI
+            ("Coal Newcastle", "MTF=F",      "\U0001f5f3", "USD/t",     "energy"),
+            ("WTI Crude",      "CL=F",       "\U0001f6e2", "USD/bbl",   "energy"),
+            ("Brent Crude",    "BZ=F",       "\U0001f6e2", "USD/bbl",   "energy"),
+            ("Natural Gas",    "NG=F",       "\U0001f525", "USD/MMBtu", "energy"),
+            # LOGAM MULIA
+            ("XAU/USD",        "GC=F",       "\U0001f947", "USD/oz",    "metal"),
+            ("XAG/USD",        "SI=F",       "\U0001f948", "USD/oz",    "metal"),
+            # LOGAM INDUSTRI
+            ("Nikel",          "NI=F",       "\U0001f9f2", "USD/t",     "metal"),
+            ("Tembaga",        "HG=F",       "\U0001f534", "USD/lb",    "metal"),
+            ("Timah",          "TINM.L",     "\U0001f6e1", "USD/t",     "metal"),
+            ("Aluminium",      "ALI=F",      "\u26aa",     "USD/t",     "metal"),
+            # AGRIKULTUR
+            ("CPO Palm Oil",   "FCPO.KL",    "\U0001f33f", "MYR/t",     "agri"),
+            ("Karet",          "RUBBER.SI",  "\U0001f7e2", "USD/kg",    "agri"),
+            ("Kedelai",        "ZS=F",       "\U0001fad8", "USc/bu",    "agri"),
+            ("Jagung",         "ZC=F",       "\U0001f33d", "USc/bu",    "agri"),
+            ("Gandum",         "ZW=F",       "\U0001f33e", "USc/bu",    "agri"),
+            # CRYPTO
+            ("BTC/USD",        "BTC-USD",    "\u20bf",     "USD",       "crypto"),
+            ("ETH/USD",        "ETH-USD",    "\U0001f48e", "USD",       "crypto"),
         ]
 
         @st.cache_data(ttl=300, show_spinner=False)
@@ -9336,21 +9356,40 @@ window.addEventListener('resize',()=>{
         # ── Build baris tabel COMMODITIES ────────────────────────────────────
         _com_rows = []
         _prev_cat = None
-        _cat_label = {"forex": "FOREX", "commodity": "COMMODITIES", "crypto": "CRYPTO"}
+        _cat_label = {
+            "forex":  "🌐 FOREX",
+            "energy": "⚡ ENERGI",
+            "metal":  "🪨 LOGAM MULIA & INDUSTRI",
+            "agri":   "🌿 AGRIKULTUR",
+            "crypto": "🔗 CRYPTO",
+        }
         for name, tk, icon, ccy, cat in _COM_TICKERS:
             if cat != _prev_cat:
-                _com_rows.append({"_divider": True, "label": _cat_label.get(cat, cat)})
+                _com_rows.append({"_divider": True, "label": _cat_label.get(cat, cat.upper())})
                 _prev_cat = cat
             info = _com_data.get(name, {"price": 0, "pct": 0.0})
             px   = info["price"]
             pct  = info["pct"]
-            # Format harga khusus
+            # Format harga khusus per aset
             if px == 0:
                 px_str = "N/A"
             elif name == "USD/IDR":
                 px_str = f"Rp {px:,.0f}"
             elif name in ("BTC/USD", "ETH/USD"):
                 px_str = f"${px:,.0f}"
+            elif name in ("Kedelai", "Jagung", "Gandum"):
+                # Grain futures dalam USc/bu → tampilkan 2 desimal
+                px_str = f"{px:,.2f}"
+            elif name in ("Tembaga",):
+                # HG=F dalam USD/lb, 4 desimal
+                px_str = f"${px:,.4f}"
+            elif name in ("Karet",):
+                px_str = f"${px:,.4f}"
+            elif name in ("CPO Palm Oil",):
+                # FCPO.KL dalam MYR/t
+                px_str = f"MYR {px:,.2f}"
+            elif name in ("Coal Newcastle", "Nikel", "Timah", "Aluminium"):
+                px_str = f"${px:,.2f}"
             else:
                 px_str = f"${px:,.2f}"
             row = _build_row(name, px, pct, icon, ccy)
