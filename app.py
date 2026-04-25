@@ -9405,8 +9405,11 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
     margin-bottom: 16px;
+    min-width: 600px;
   }}
   .frm-grid-wrap {{
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin-bottom: 16px;
   }}
 
@@ -9532,8 +9535,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
   /* Mobile */
   @media (max-width: 860px) {{
-    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; min-width: unset; }}
-    .frm-grid-wrap {{ overflow-x: unset; }}
+    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
     .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
     .frm-cd-num {{ font-size: 1.25rem; }}
     .frm-cd-box {{ min-width: 38px; }}
@@ -9544,37 +9546,10 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     .frm-bars {{ padding: 12px 14px 6px; }}
     .frm-bar-label {{ font-size: 0.875rem; }}
     .frm-bar-pct {{ font-size: 0.875rem; }}
+    .frm-tbl th {{ padding: 6px 8px; font-size: 0.72rem; }}
+    .frm-tbl td {{ padding: 6px 8px; font-size: 0.875rem; }}
     .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
-
-    /* ── MOBILE TABLE FIX: hapus horizontal scroll ── */
-    .frm-tbl-wrap {{ overflow-x: unset; -webkit-overflow-scrolling: unset; }}
-    .frm-tbl {{ table-layout: fixed; width: 100%; }}
-    /* Padding & font SAMA dengan desktop, hanya kolom dipepetkan */
-    .frm-tbl th {{
-      padding: 7px 4px;
-      font-size: 0.72rem;
-      letter-spacing: 0;
-      white-space: nowrap;
-    }}
-    .frm-tbl td {{
-      padding: 7px 4px;
-      font-size: 0.875rem;
-      white-space: nowrap;
-    }}
-    /* Lebar kolom proporsional agar 4 kolom muat di satu layar */
-    .frm-tbl th:nth-child(1), .frm-tbl td:nth-child(1) {{ width: 42%; }}
-    .frm-tbl th:nth-child(2), .frm-tbl td:nth-child(2) {{ width: 20%; }}
-    .frm-tbl th:nth-child(3), .frm-tbl td:nth-child(3) {{ width: 19%; }}
-    .frm-tbl th:nth-child(4), .frm-tbl td:nth-child(4) {{ width: 19%; }}
-    /* Badge direction: lebih kompak, turun ke baris baru agar kolom 1 tidak melebar */
-    .frm-dir-badge {{
-      font-size: 0.65rem;
-      padding: 1px 4px;
-      margin-left: 2px;
-      display: block;
-      width: fit-content;
-      margin-top: 2px;
-    }}
+    .frm-tbl-wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
   }}
 </style>
 </head>
@@ -11169,7 +11144,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
                 </tr>"""
 
-            st.markdown(f"""<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
+            st.markdown(f"""<div class='sigma-stk-wrap' style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
             <table class='sigma-stk-tbl' style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
             <thead><tr style='background:{met_bg};position:sticky;top:0;z-index:2;'>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
@@ -11182,7 +11157,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
 
-            # ── MOBILE-ONLY CSS FIX: inject ke parent document via JS ──
+            # ── MOBILE-ONLY CSS: inject ke parent document sekali via JS ──
             components.html("""
 <script>
 (function() {
@@ -11192,52 +11167,43 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
   s.id = 'sigma-stk-mobile-css';
   s.textContent = `
     @media (max-width: 768px) {
-      /* Wrapper: tidak perlu scroll horizontal */
-      div:has(> table.sigma-stk-tbl) {
-        overflow-x: unset !important;
-        -webkit-overflow-scrolling: unset !important;
+      .sigma-stk-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
       }
-      /* Tabel: fixed layout agar kolom muat semua */
       table.sigma-stk-tbl {
         table-layout: fixed !important;
         width: 100% !important;
-        min-width: unset !important;
+        min-width: 380px !important;
       }
-      /* Header: tengah & nowrap */
       table.sigma-stk-tbl thead th {
         text-align: center !important;
-        padding: 6px 3px !important;
+        padding: 6px 4px !important;
         font-size: 10px !important;
-        white-space: nowrap !important;
         letter-spacing: 0 !important;
       }
-      /* Body cells */
       table.sigma-stk-tbl tbody td {
-        padding: 5px 3px !important;
+        padding: 5px 4px !important;
         font-size: 12px !important;
       }
-      /* Lebar kolom: TICKER, NAMA, FASE, MKTCAP, RS, MOM */
       table.sigma-stk-tbl th:nth-child(1),
-      table.sigma-stk-tbl td:nth-child(1) { width: 14% !important; }
+      table.sigma-stk-tbl td:nth-child(1) { width: 12% !important; }
       table.sigma-stk-tbl th:nth-child(2),
-      table.sigma-stk-tbl td:nth-child(2) { width: 26% !important; }
+      table.sigma-stk-tbl td:nth-child(2) { width: 22% !important; }
       table.sigma-stk-tbl th:nth-child(3),
       table.sigma-stk-tbl td:nth-child(3) { width: 20% !important; }
       table.sigma-stk-tbl th:nth-child(4),
       table.sigma-stk-tbl td:nth-child(4) { width: 18% !important; }
       table.sigma-stk-tbl th:nth-child(5),
-      table.sigma-stk-tbl td:nth-child(5) { width: 11% !important; }
+      table.sigma-stk-tbl td:nth-child(5) { width: 14% !important; }
       table.sigma-stk-tbl th:nth-child(6),
-      table.sigma-stk-tbl td:nth-child(6) { width: 11% !important; }
-      /* Badge FASE: nowrap agar tidak terpotong */
+      table.sigma-stk-tbl td:nth-child(6) { width: 14% !important; }
       table.sigma-stk-tbl tbody td:nth-child(3) span {
         white-space: nowrap !important;
         font-size: 10px !important;
         padding: 2px 4px !important;
         display: inline-block !important;
-        overflow: visible !important;
       }
-      /* Kolom NAMA: boleh wrap agar tidak paksa scroll */
       table.sigma-stk-tbl tbody td:nth-child(2) {
         white-space: normal !important;
         word-break: break-word !important;
@@ -12375,13 +12341,34 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 ]:
                     with col:
                         st.markdown(f"""
-                        <div style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;'>
+                        <div class='sigma-metric-card' style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;'>
                             <div style='font-size:0.8rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
                             <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
                             <div style='font-size:0.875rem;color:{sub_c};margin-top:3px;'>{sub}</div>
                         </div>""", unsafe_allow_html=True)
 
                 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+                # ── MOBILE-ONLY CSS: jarak antar kartu rangkuman ──
+                components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-metric-card-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-metric-card-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      /* Beri jarak bawah pada setiap kartu rangkuman agar tidak saling menempel */
+      .sigma-metric-card {
+        margin-bottom: 12px !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
                 # ════════════════════════════════════════════════════════
                 # DUAL-AXIS CHART: Harga 1 Tahun (line daily) + Shareholders (bar monthly)
@@ -12971,6 +12958,32 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
+        # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
+        components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-sh-gap-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-sh-gap-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      /* Kurangi margin-bottom container tabel screening agar rapat */
+      .sh2-scroll-outer {
+        margin-bottom: 6px !important;
+      }
+      /* Kurangi gap default antar iframe Streamlit di mobile */
+      [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+      [data-testid="stVerticalBlock"] > div > [data-testid="stIFrame"] {
+        margin-bottom: 0px !important;
+        padding-bottom: 0px !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
         st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;'></div>", unsafe_allow_html=True)
         _render_sh_table_v2(_turun_rows, is_naik=False)
 
