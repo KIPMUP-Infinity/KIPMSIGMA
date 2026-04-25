@@ -8090,12 +8090,7 @@ if current_view == "dashboard":
     # ── LIVE MARKET: cache harus di luar tab scope agar tidak di-redefine tiap rerun ──
     @st.cache_data(ttl=300)
     def _fetch_market_data_cached(names_tuple, tickers_tuple):
-        """
-        Fetch market data dengan 3-layer fallback:
-        1. yf.download() batch — paling efisien, handle MultiIndex kedua versi yfinance
-        2. yf.Ticker().fast_info — per-ticker, fast
-        3. yf.Ticker().history() — per-ticker, paling kompatibel
-        """
+        """Batch fetch semua ticker sekaligus. Dipanggil dengan tuple agar hashable untuk cache."""
         import yfinance as yf
         import pandas as pd
         from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -8105,111 +8100,60 @@ if current_view == "dashboard":
         tk_to_name  = dict(zip(ticker_list, name_list))
         result      = {n: {"price": 0, "pct": 0.0} for n in name_list}
 
-        # ── Helper: ekstrak closes dari satu ticker dalam raw batch ─────────
-        def _extract_closes(raw, tk, n_tickers):
-            """Handle semua variasi MultiIndex yfinance (berbeda antar versi)."""
-            import pandas as pd
-            try:
-                if n_tickers == 1:
-                    # Single ticker: bisa flat atau MultiIndex
-                    if isinstance(raw.columns, pd.MultiIndex):
-                        # Coba (Price, Ticker) format — yfinance >= 0.2.50
-                        if "Close" in raw.columns.get_level_values(0):
-                            col = raw["Close"]
-                            return (col.iloc[:, 0] if isinstance(col, pd.DataFrame) else col).dropna()
-                        # Coba (Ticker, Price) format — yfinance < 0.2.50
-                        if tk in raw.columns.get_level_values(0):
-                            return raw[tk]["Close"].dropna()
-                    else:
-                        if "Close" in raw.columns:
-                            return raw["Close"].dropna()
-                else:
-                    # Multi-ticker
-                    if isinstance(raw.columns, pd.MultiIndex):
-                        lvl0 = raw.columns.get_level_values(0).tolist()
-                        lvl1 = raw.columns.get_level_values(1).tolist()
-                        # Format A: (Ticker, Price) — group_by='ticker', yfinance < 1.x
-                        if tk in lvl0:
-                            return raw[tk]["Close"].dropna()
-                        # Format B: (Price, Ticker) — yfinance >= 0.2.50 default group_by='column'
-                        if "Close" in lvl0 and tk in lvl1:
-                            return raw["Close"][tk].dropna()
-            except Exception:
-                pass
-            return pd.Series(dtype=float)
-
-        # ── 1. Batch download ────────────────────────────────────────────────
-        failed = list(ticker_list)  # default semua ke fallback
+        # ── 1. Batch download: 1 HTTP call untuk semua ticker ──────────────────
         try:
             raw = yf.download(
                 ticker_list, period="5d", interval="1d",
                 group_by="ticker", auto_adjust=True,
                 progress=False, threads=True, timeout=25,
             )
-            if raw is not None and len(raw) > 0:
-                failed = []
-                for tk in ticker_list:
-                    name = tk_to_name[tk]
-                    try:
-                        closes = _extract_closes(raw, tk, len(ticker_list))
-                        if len(closes) >= 2:
-                            last = float(closes.iloc[-1])
-                            prev = float(closes.iloc[-2])
-                            result[name] = {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
-                        elif len(closes) == 1:
-                            result[name] = {"price": float(closes.iloc[-1]), "pct": 0.0}
-                        else:
-                            failed.append(tk)
-                    except Exception:
+            failed = []
+            for tk in ticker_list:
+                name = tk_to_name[tk]
+                try:
+                    if len(ticker_list) == 1:
+                        closes = raw["Close"].dropna()
+                    else:
+                        lvl1 = raw.columns.get_level_values(1) if hasattr(raw.columns, "levels") else []
+                        closes = raw[tk]["Close"].dropna() if tk in lvl1 else pd.Series(dtype=float)
+                    if len(closes) >= 2:
+                        last = float(closes.iloc[-1])
+                        prev = float(closes.iloc[-2])
+                        result[name] = {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
+                    elif len(closes) == 1:
+                        result[name] = {"price": float(closes.iloc[-1]), "pct": 0.0}
+                    else:
                         failed.append(tk)
+                except Exception:
+                    failed.append(tk)
         except Exception:
-            pass  # failed tetap semua ticker_list
+            failed = ticker_list[:]
 
-        # ── 2 & 3. Fallback paralel: fast_info → history ─────────────────────
+        # ── 2. Fallback paralel via fast_info / history untuk yang gagal ───────
         def _single(tk):
             try:
-                t = yf.Ticker(tk)
-                # Layer 2: fast_info (paling cepat, tidak semua ticker support)
-                try:
-                    fi = t.fast_info
-                    last = None
-                    prev = None
-                    for attr in ("last_price", "regularMarketPrice", "currentPrice"):
-                        v = getattr(fi, attr, None)
-                        if v is not None and float(v) > 0:
-                            last = float(v)
-                            break
-                    for attr in ("previous_close", "regularMarketPreviousClose"):
-                        v = getattr(fi, attr, None)
-                        if v is not None and float(v) > 0:
-                            prev = float(v)
-                            break
-                    if last and last > 0:
-                        pct = round(((last - prev) / prev) * 100, 2) if (prev and prev > 0) else 0.0
-                        return tk, {"price": last, "pct": pct}
-                except Exception:
-                    pass
-                # Layer 3: history (paling kompatibel)
-                h = t.history(period="5d", auto_adjust=True, timeout=15)
-                if h is not None and len(h) >= 2:
-                    last = float(h["Close"].iloc[-1])
-                    prev = float(h["Close"].iloc[-2])
+                t  = yf.Ticker(tk)
+                fi = t.fast_info
+                last = getattr(fi, "last_price", None) or getattr(fi, "regularMarketPrice", None)
+                prev = getattr(fi, "previous_close", None) or getattr(fi, "regularMarketPreviousClose", None)
+                if last and float(last) > 0:
+                    pct = round(((float(last) - float(prev)) / float(prev)) * 100, 2) if (prev and float(prev) > 0) else 0.0
+                    return tk, {"price": float(last), "pct": pct}
+                h = t.history(period="5d", timeout=12)
+                if len(h) >= 2:
+                    last, prev = float(h["Close"].iloc[-1]), float(h["Close"].iloc[-2])
                     return tk, {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
-                elif h is not None and len(h) == 1:
+                elif len(h) == 1:
                     return tk, {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
             except Exception:
                 pass
             return tk, {"price": 0, "pct": 0.0}
 
         if failed:
-            with ThreadPoolExecutor(max_workers=min(len(failed), 12)) as ex:
-                futures = {ex.submit(_single, tk): tk for tk in failed}
-                for fut in as_completed(futures, timeout=40):
-                    try:
-                        tk, val = fut.result()
-                        result[tk_to_name[tk]] = val
-                    except Exception:
-                        pass
+            with ThreadPoolExecutor(max_workers=min(len(failed), 10)) as ex:
+                for fut in as_completed({ex.submit(_single, tk): tk for tk in failed}):
+                    tk, val = fut.result()
+                    result[tk_to_name[tk]] = val
 
         return result
 
@@ -9307,314 +9251,157 @@ window.addEventListener('resize',()=>{
 
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        
-        # Ticker definitions — gunakan _fetch_market_data_cached yang sudah di-define di luar tab
-        _MKT_INDICES = {
-            "IHSG":      "^JKSE",
-            "LQ45":      "^JKLQ45",
-            "VIX":       "^VIX",
-            "S&P 500":   "^GSPC",
-            "Dow Jones": "^DJI",
-            "Nasdaq":    "^IXIC",
-            "FTSE":      "^FTSE",
-            "Nikkei":    "^N225",
-            "Hang Seng": "^HSI",
-            "Shanghai":  "000001.SS",
-        }
-        _MKT_COMMODITIES = {
-            "USD/IDR":        "IDR=X",
-            "DXY":            "DX-Y.NYB",
-            "EUR/USD":        "EURUSD=X",
-            "GBP/USD":        "GBPUSD=X",
-            "Gold (oz)":      "GC=F",
-            "Silver (oz)":    "SI=F",
-            "Copper":         "HG=F",
-            "WTI Crude":      "CL=F",
-            "Brent Crude":    "BZ=F",
-            "Natural Gas":    "NG=F",
-            "Coal (Futures)": "MTF=F",
-            "Palm Oil":       "FCPO.KL",
-            "Nickel":         "ND=F",
-            "Aluminum":       "ALS=F",
-            "Soybeans":       "ZS=F",
-        }
 
-        with st.spinner("Mendeteksi denyut pasar global..."):
-            idx_data = _fetch_market_data_cached(
-                tuple(_MKT_INDICES.keys()), tuple(_MKT_INDICES.values())
-            )
-            com_data = _fetch_market_data_cached(
-                tuple(_MKT_COMMODITIES.keys()), tuple(_MKT_COMMODITIES.values())
-            )
+        # ── Fetch indices satu per satu (lebih reliable dari batch download) ──
+        _IDX_TICKERS = [
+            ("IHSG",      "^JKSE",      "\U0001f1ee\U0001f1e9", "IDR",  True),
+            ("LQ45",      "^JKLQ45",    "\U0001f1ee\U0001f1e9", "IDR",  True),
+            ("S&P 500",   "^GSPC",      "\U0001f1fa\U0001f1f8", "USD",  False),
+            ("Dow Jones", "^DJI",       "\U0001f1fa\U0001f1f8", "USD",  False),
+            ("Nasdaq",    "^IXIC",      "\U0001f1fa\U0001f1f8", "USD",  False),
+            ("FTSE 100",  "^FTSE",      "\U0001f1ec\U0001f1e7", "GBP",  False),
+            ("Nikkei",    "^N225",      "\U0001f1ef\U0001f1f5", "JPY",  False),
+            ("Hang Seng", "^HSI",       "\U0001f1ed\U0001f1f0", "HKD",  False),
+            ("Shanghai",  "000001.SS",  "\U0001f1e8\U0001f1f3", "CNY",  False),
+            ("VIX",       "^VIX",       "\U0001f4ca",            "pts",  False),
+        ]
 
-        # ── DEBUG: tampilkan jika data kosong semua ──────────────────────────
-        _idx_ok  = sum(1 for v in idx_data.values() if v["price"] > 0)
-        _com_ok  = sum(1 for v in com_data.values() if v["price"] > 0)
-        if _idx_ok == 0 and _com_ok == 0:
-            with st.expander("⚠️ Debug: Data pasar tidak terbaca — klik untuk detail", expanded=True):
-                import yfinance as _yf_dbg
-                st.caption(f"yfinance version: {_yf_dbg.__version__}")
-                st.caption("Mencoba fetch 1 ticker test (^GSPC)...")
+        @st.cache_data(ttl=300, show_spinner=False)
+        def _fetch_indices_v2(ticker_key):
+            """Fetch 1 ticker via history(). ticker_key = tuple of (name, tk) pairs."""
+            import yfinance as yf
+            result = {}
+            for name, tk in ticker_key:
                 try:
-                    _t = _yf_dbg.Ticker("^GSPC")
-                    _h = _t.history(period="5d", timeout=12)
-                    st.caption(f"history() rows: {len(_h)}")
-                    if len(_h) > 0:
-                        st.caption(f"Close[-1]: {_h['Close'].iloc[-1]:.2f}")
+                    h = yf.Ticker(tk).history(period="5d", auto_adjust=True, timeout=15)
+                    if h is not None and len(h) >= 2:
+                        last = float(h["Close"].iloc[-1])
+                        prev = float(h["Close"].iloc[-2])
+                        result[name] = {"price": last, "pct": round((last - prev) / prev * 100, 2)}
+                    elif h is not None and len(h) == 1:
+                        result[name] = {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
                     else:
-                        st.caption("history() kosong — yfinance tidak dapat koneksi ke Yahoo Finance")
-                except Exception as _e:
-                    st.caption(f"history() error: {_e}")
-                st.caption("idx_data sample: " + str({k: v for k, v in list(idx_data.items())[:3]}))
+                        result[name] = {"price": 0, "pct": 0.0}
+                except Exception:
+                    result[name] = {"price": 0, "pct": 0.0}
+            return result
 
+        _tk_key = tuple((n, tk) for n, tk, *_ in _IDX_TICKERS)
+
+        with st.spinner("Memuat data indeks global..."):
+            _idx_data = _fetch_indices_v2(_tk_key)
+
+        # ── Build rows ──────────────────────────────────────────────────────
         import json as _mkt_json
-
-        # ── Shared table CSS (same style as Corporate Action) ───────────────
-        st.markdown(f"""<style>
-        .mkt-wrap {{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;margin-bottom:16px;font-family:'IBM Plex Mono',monospace;}}
-        .mkt-hdr {{padding:10px 16px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.875rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}}
-        .mkt-hdr-badge {{font-size:0.8rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;}}
-        .mkt-scroll {{width:100%;overflow-x:auto;overflow-y:auto;max-height:340px;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
-        .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
-        .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-        table.mkt-tbl {{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;}}
-        table.mkt-tbl thead th {{position:sticky;top:0;z-index:2;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:9px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.8rem;white-space:nowrap;}}
-        table.mkt-tbl tbody td {{padding:9px 14px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:middle;white-space:nowrap;}}
-        table.mkt-tbl tbody tr:last-child td {{border-bottom:none;}}
-        table.mkt-tbl tbody tr:hover td {{background:rgba(139,92,246,0.06);}}
-        .mkt-name {{font-weight:600;font-size:0.875rem;}}
-        .mkt-price {{font-size:0.875rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
-        .mkt-up {{color:#089981;}}
-        .mkt-dn {{color:#f23645;}}
-        .mkt-na {{color:{text_sub};}}
-        .mkt-chg-badge {{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.8rem;font-weight:700;}}
-        @media(max-width:600px){{
-            table.mkt-tbl thead th {{font-size:0.8rem;padding:7px 8px;}}
-            table.mkt-tbl tbody td {{font-size:0.875rem;padding:7px 8px;}}
-        }}
-        </style>""", unsafe_allow_html=True)
-
-        # ── Build indices table rows ────────────────────────────────────────
         _idx_rows = []
-        _idx_labels = {
-            "IHSG":        ("🇮🇩", "IDR"), "LQ45":       ("🇮🇩", "IDR"),
-            "VIX": ("📊", "pts"), "S&P 500": ("🇺🇸", "USD"),
-            "Dow Jones": ("🇺🇸", "USD"), "Nasdaq": ("🇺🇸", "USD"), "FTSE": ("🇬🇧", "GBP"),
-            "Nikkei": ("🇯🇵", "JPY"), "Hang Seng": ("🇭🇰", "HKD"), "Shanghai": ("🇨🇳", "CNY"),
-        }
-        # Names that are Indonesian sub-indices (for visual grouping)
-        _idx_indonesia_names = {"IHSG","LQ45"}
         _global_divider_added = False
-        for name, info in idx_data.items():
-            flag, ccy = _idx_labels.get(name, ("🌐", ""))
-            px = info['price']
-            pct = info['pct']
-            is_id = name in _idx_indonesia_names
-            # Add separator row before first global index
+        for name, tk, flag, ccy, is_id in _IDX_TICKERS:
+            info = _idx_data.get(name, {"price": 0, "pct": 0.0})
+            px   = info["price"]
+            pct  = info["pct"]
             if not is_id and not _global_divider_added:
-                _idx_rows.append({"_divider": True, "label": "──────────── GLOBAL ────────────"})
+                _idx_rows.append({"_divider": True, "label": "GLOBAL INDICES"})
                 _global_divider_added = True
             if px == 0:
-                px_str = "N/A"
-                pct_str = "-"
-                cls = "mkt-na"
-                arrow = ""
+                px_str, pct_str, cls, arrow = "N/A", "-", "mkt-na", ""
             else:
-                px_str = f"{px:,.2f}"
+                px_str  = f"{px:,.2f}"
                 pct_str = f"{abs(pct):.2f}%"
-                cls = "mkt-up" if pct >= 0 else "mkt-dn"
-                arrow = "▲" if pct >= 0 else "▼"
-            bg = "rgba(8,153,129,0.12)" if (pct >= 0 and px > 0) else ("rgba(242,54,69,0.10)" if px > 0 else "rgba(178,181,190,0.06)")
+                cls     = "mkt-up" if pct >= 0 else "mkt-dn"
+                arrow   = "\u25b2" if pct >= 0 else "\u25bc"
+            bg  = "rgba(8,153,129,0.12)"  if (pct >= 0 and px > 0) else ("rgba(242,54,69,0.10)" if px > 0 else "rgba(178,181,190,0.06)")
             bdr = "#089981" if (pct >= 0 and px > 0) else ("#f23645" if px > 0 else "#b2b5be")
-            _idx_rows.append({
-                "flag": flag, "name": name, "ccy": ccy,
-                "price": px_str, "pct": pct_str, "arrow": arrow,
-                "cls": cls, "bg": bg, "bdr": bdr, "is_id": is_id
-            })
-        _idx_json = _mkt_json.dumps(_idx_rows)
+            _idx_rows.append({"flag": flag, "name": name, "ccy": ccy,
+                               "price": px_str, "pct": pct_str, "arrow": arrow,
+                               "cls": cls, "bg": bg, "bdr": bdr, "is_id": is_id})
 
-        # ── Build commodities table rows ────────────────────────────────────
-        _com_rows = []
-        _com_labels = {
-            "USD/IDR":       ("💱", "Rp / USD"),
-            "DXY":           ("💵", "Index"),
-            "EUR/USD":       ("🇪🇺", "EUR/USD"),
-            "GBP/USD":       ("🇬🇧", "GBP/USD"),
-            "Gold (oz)":     ("🥇", "USD/oz"),
-            "Silver (oz)":   ("🥈", "USD/oz"),
-            "Copper":        ("🔶", "USD/lb"),
-            "WTI Crude":     ("🛢️", "USD/bbl"),
-            "Brent Crude":   ("🛢️", "USD/bbl"),
-            "Natural Gas":   ("🔥", "USD/MMBtu"),
-            "Newcastle Coal":("⚫", "USD/ton"),
-            "Palm Oil":      ("🌴", "MYR/ton"),
-            "Nickel":        ("🔩", "USD/lb"),
-            "Aluminum":      ("⚙️", "USD/lb"),
-            "Tin":           ("🪙", "USD/ton"),
-            "Soybeans":      ("🌿", "USD/bu"),
-        }
-        for name, info in com_data.items():
-            icon, ccy = _com_labels.get(name, ("📦", ""))
-            px = info['price']
-            pct = info['pct']
-            if px == 0:
-                px_str = "N/A"
-                pct_str = "-"
-                cls = "mkt-na"
-                arrow = ""
-            else:
-                if name == "USD/IDR":
-                    px_str = f"Rp {px:,.0f}"
-                else:
-                    px_str = f"${px:,.2f}"
-                pct_str = f"{abs(pct):.2f}%"
-                cls = "mkt-up" if pct >= 0 else "mkt-dn"
-                arrow = "▲" if pct >= 0 else "▼"
-            bg = "rgba(8,153,129,0.12)" if (pct >= 0 and px > 0) else ("rgba(242,54,69,0.10)" if px > 0 else "rgba(178,181,190,0.06)")
-            bdr = "#089981" if (pct >= 0 and px > 0) else ("#f23645" if px > 0 else "#b2b5be")
-            _com_rows.append({
-                "icon": icon, "name": name, "ccy": ccy,
-                "price": px_str, "pct": pct_str, "arrow": arrow,
-                "cls": cls, "bg": bg, "bdr": bdr
-            })
-        _com_json = _mkt_json.dumps(_com_rows)
-
-        _now_wib_str = datetime.now().strftime("%d %b %Y · %H:%M WIB")
-
-        # ── Gabungkan idx_rows + com_rows menjadi 1 tabel dengan section divider ──
-        # Tambahkan divider "COMMODITIES & FOREX" sebelum data komoditas
-        _com_divider = {"_section_divider": True, "label": "\U0001f4b1 COMMODITIES & FOREX"}
-        _all_rows = _idx_rows + [_com_divider] + _com_rows
-
-        # ensure_ascii=True → semua karakter non-ASCII di-escape ke \uXXXX
-        # Ini mencegah emoji/Unicode merusak JS parse di browser
-        _all_json = _mkt_json.dumps(_all_rows, ensure_ascii=True)
-
-        # Hitung actual rows untuk height yang akurat
-        _actual_rows = len(_all_rows)  # setelah data terisi
-        _tbl_h = max(44 + 36 + _actual_rows * 40 + 80, 500)
+        _idx_json   = _mkt_json.dumps(_idx_rows, ensure_ascii=True)
+        _now_wib    = datetime.now().strftime("%d %b %Y \u00b7 %H:%M WIB")
+        _n_rows     = len(_idx_rows)
+        _tbl_h      = max(50 + _n_rows * 41 + 40, 300)
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-html,body{{background:transparent;font-family:'DM Sans',sans-serif;width:100%;}}
-.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:18px;overflow:hidden;width:100%;}}
-.mkt-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
-.mkt-badge{{font-size:0.875rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
-.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
-.mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
-.mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:280px;}}
-thead th{{background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
-tbody td{{padding:8px 12px;border-bottom:1px solid rgba(139,92,246,0.08);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.875rem;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;width:100%;overflow:hidden;}}
+.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:16px;overflow:hidden;width:100%;}}
+.mkt-hdr{{padding:11px 16px;background:rgba(139,92,246,0.09);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.13em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
+.mkt-badge{{font-size:0.78rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 8px;white-space:nowrap;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:260px;}}
+thead th{{background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.70rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
+tbody td{{padding:8px 14px;border-bottom:1px solid rgba(139,92,246,0.07);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.875rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(139,92,246,0.05);}}
+tbody tr:hover td{{background:rgba(139,92,246,0.05);transition:background 0.15s;}}
 .nm{{font-weight:600;font-size:0.875rem;color:{text_main};font-family:'DM Sans',sans-serif;}}
-.flag{{margin-right:5px;font-size:1rem;}}
+.flag{{margin-right:6px;font-size:1rem;}}
 .price{{font-size:0.875rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
-.badge{{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
-.ccy{{font-size:0.8rem;color:{text_sub};}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:6px;font-size:0.80rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
+.ccy{{font-size:0.78rem;color:{text_sub};}}
 @media(max-width:600px){{
-  .mkt-wrap{{border-radius:12px;}}
-  .mkt-hdr{{font-size:0.7rem;padding:8px 10px;}}
-  thead th{{font-size:0.7rem;padding:6px 8px;}}
-  tbody td{{font-size:0.8rem;padding:6px 8px;}}
+  .mkt-wrap{{border-radius:10px;}}
+  .mkt-hdr{{font-size:0.68rem;padding:8px 10px;}}
+  thead th{{font-size:0.68rem;padding:6px 8px;}}
+  tbody td{{font-size:0.80rem;padding:6px 8px;}}
   .badge{{font-size:0.75rem;padding:2px 5px;}}
-  .nm{{font-size:0.8rem;}}
-  .price{{font-size:0.8rem;}}
-  table{{min-width:260px;}}
+  .nm,.price{{font-size:0.80rem;}}
 }}
 </style></head><body>
 <div class="mkt-wrap">
   <div class="mkt-hdr">
-    <span>📊 LIVE MARKET &nbsp;·&nbsp; Global Indices &amp; Commodities</span>
-    <span class="mkt-badge" id="mkt-ts">{_now_wib_str}</span>
+    <span>&#128200; GLOBAL INDICES &amp; VOLATILITY</span>
+    <span class="mkt-badge" id="mkt-ts">{_now_wib}</span>
   </div>
-  <div class="mkt-scroll" id="mkt-scroll">
-    <table><thead><tr>
-      <th>ASET / INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
-    </tr></thead>
-    <tbody id="mkt-tb"></tbody></table>
-  </div>
+  <table><thead><tr>
+    <th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>CCY</th>
+  </tr></thead>
+  <tbody id="mkt-tb"></tbody></table>
 </div>
 <script>
 (function(){{
-  var ALL={_all_json};
+  var ROWS={_idx_json};
   var TEXT_SUB='{text_sub}';
+  var h='';
+  ROWS.forEach(function(r){{
+    if(r._divider){{
+      h+='<tr><td colspan="4" style="padding:4px 14px;font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:rgba(139,92,246,0.55);text-transform:uppercase;border-bottom:1px solid {met_border};background:rgba(139,92,246,0.03);font-family:DM Sans,sans-serif;">'+r.label+'</td></tr>';
+      return;
+    }}
+    var up=r.cls==='mkt-up', na=r.cls==='mkt-na';
+    var clr=na?TEXT_SUB:(up?'#089981':'#f23645');
+    var bg =na?'rgba(178,181,190,0.06)':(up?'rgba(8,153,129,0.12)':'rgba(242,54,69,0.10)');
+    var bdr=na?'#b2b5be':(up?'#089981':'#f23645');
+    var pct=na?'&#8212;':(r.arrow+' '+r.pct);
+    var rowBg=r.is_id?'rgba(139,92,246,0.03)':'';
+    h+='<tr style="background:'+rowBg+'">'
+      +'<td><span class="flag">'+r.flag+'</span><span class="nm">'+r.name+'</span></td>'
+      +'<td><span class="price" style="color:'+clr+'">'+r.price+'</span></td>'
+      +'<td><span class="badge" style="background:'+bg+';color:'+clr+';border:1px solid '+bdr+'55;">'+pct+'</span></td>'
+      +'<td><span class="ccy">'+r.ccy+'</span></td>'
+      +'</tr>';
+  }});
+  document.getElementById('mkt-tb').innerHTML=h;
 
-  function buildRows(data, tbId){{
-    var h='';
-    data.forEach(function(r){{
-      // Section divider (Commodities header)
-      if(r._section_divider){{
-        h+='<tr><td colspan="4" style="padding:6px 14px;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;border-bottom:1px solid {met_border};border-top:2px solid {met_border};background:rgba(139,92,246,0.06);font-family:\'DM Sans\',sans-serif;">'+r.label+'</td></tr>';
-        return;
-      }}
-      // Index group divider
-      if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 14px;font-size:0.72rem;color:rgba(110,155,255,0.55);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.12);background:rgba(3,40,238,0.025);font-family:\'DM Sans\',sans-serif;">'+r.label+'</td></tr>';
-        return;
-      }}
-      var up = r.cls==='mkt-up';
-      var na = r.cls==='mkt-na';
-      var clr = na ? TEXT_SUB : (up ? '#089981' : '#f23645');
-      var bg  = na ? 'rgba(178,181,190,0.06)' : (up ? 'rgba(8,153,129,0.12)' : 'rgba(242,54,69,0.10)');
-      var bdr = na ? '#b2b5be' : (up ? '#089981' : '#f23645');
-      var arrow = na ? '' : (up ? '▲' : '▼');
-      var pct = na ? '-' : (arrow+' '+r.pct);
-      // Support both flag (indices) and icon (commodities) keys
-      var fl = r.flag || r.icon || '';
-      var rowBg = r.is_id ? 'rgba(3,40,238,0.025)' : '';
-      h += '<tr style="background:'+rowBg+'">'+
-        '<td><span class="flag">'+fl+'</span><span class="nm">'+r.name+'</span></td>'+
-        '<td><span class="price" style="color:'+clr+'">'+r.price+'</span></td>'+
-        '<td><span class="badge" style="background:'+bg+';color:'+clr+';border:1px solid '+bdr+'44;">'+pct+'</span></td>'+
-        '<td><span class="ccy">'+r.ccy+'</span></td>'+
-        '</tr>';
-    }});
-    document.getElementById(tbId).innerHTML = h;
-  }}
-
-  buildRows(ALL, 'mkt-tb');
-
+  // live clock WIB
   function updateTs(){{
-    var now = new Date();
-    var ofs = now.getTimezoneOffset();
-    var wibLocal = new Date(now.getTime() + (ofs+420)*60000);
-    var months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    var str=wibLocal.getDate()+' '+months[wibLocal.getMonth()]+' '+wibLocal.getFullYear()
-      +' · '+String(wibLocal.getHours()).padStart(2,'0')+':'+String(wibLocal.getMinutes()).padStart(2,'0')+' WIB';
-    var e=document.getElementById('mkt-ts'); if(e) e.textContent=str;
+    var now=new Date(), ofs=now.getTimezoneOffset();
+    var w=new Date(now.getTime()+(ofs+420)*60000);
+    var mo=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    var s=w.getDate()+' '+mo[w.getMonth()]+' '+w.getFullYear()+' \u00b7 '
+         +String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0')+' WIB';
+    var e=document.getElementById('mkt-ts'); if(e) e.textContent=s;
   }}
-  setInterval(updateTs, 60000);
+  setInterval(updateTs,60000);
 
-  // ── Auto-resize iframe: agresif, banyak retry, tidak clipping ──
-  function autoResize() {{
-    // Reset overflow dulu agar pengukuran akurat
-    document.body.style.overflow = 'visible';
-    var wrap = document.querySelector('.mkt-wrap');
-    if (wrap) wrap.style.overflow = 'visible';
-    var h = Math.max(
-      document.documentElement.scrollHeight,
-      document.body.scrollHeight,
-      wrap ? wrap.scrollHeight : 0
-    );
-    h = Math.max(h + 8, 200);
-    try {{
-      window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
-    }} catch(e) {{}}
+  // auto-resize iframe
+  function resize(){{
+    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)+4;
+    try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h}},'*');}}catch(e){{}}
   }}
-  // Kirim berulang: segera, setelah render, setelah font load, setelah data injeksi
-  autoResize();
-  setTimeout(autoResize, 100);
-  setTimeout(autoResize, 400);
-  setTimeout(autoResize, 900);
-  setTimeout(autoResize, 1800);
-  setTimeout(autoResize, 3000);
-  window.addEventListener('resize', function() {{ setTimeout(autoResize, 200); }});
+  resize(); setTimeout(resize,120); setTimeout(resize,500); setTimeout(resize,1200);
+  window.addEventListener('resize',function(){{setTimeout(resize,200);}});
 }})();
-</script></body></html>""", height=_tbl_h, scrolling=True)
+</script></body></html>""", height=_tbl_h, scrolling=False)
 
         # ─────────────────────────────────────────────────────────
         # NEW FEATURE: MARKET BRIEF (DAILY/WEEKLY)
