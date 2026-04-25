@@ -8090,7 +8090,12 @@ if current_view == "dashboard":
     # ── LIVE MARKET: cache harus di luar tab scope agar tidak di-redefine tiap rerun ──
     @st.cache_data(ttl=300)
     def _fetch_market_data_cached(names_tuple, tickers_tuple):
-        """Batch fetch semua ticker sekaligus. Dipanggil dengan tuple agar hashable untuk cache."""
+        """
+        Fetch market data dengan 3-layer fallback:
+        1. yf.download() batch — paling efisien, handle MultiIndex kedua versi yfinance
+        2. yf.Ticker().fast_info — per-ticker, fast
+        3. yf.Ticker().history() — per-ticker, paling kompatibel
+        """
         import yfinance as yf
         import pandas as pd
         from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -8100,79 +8105,111 @@ if current_view == "dashboard":
         tk_to_name  = dict(zip(ticker_list, name_list))
         result      = {n: {"price": 0, "pct": 0.0} for n in name_list}
 
-        # ── 1. Batch download: 1 HTTP call untuk semua ticker ──────────────────
+        # ── Helper: ekstrak closes dari satu ticker dalam raw batch ─────────
+        def _extract_closes(raw, tk, n_tickers):
+            """Handle semua variasi MultiIndex yfinance (berbeda antar versi)."""
+            import pandas as pd
+            try:
+                if n_tickers == 1:
+                    # Single ticker: bisa flat atau MultiIndex
+                    if isinstance(raw.columns, pd.MultiIndex):
+                        # Coba (Price, Ticker) format — yfinance >= 0.2.50
+                        if "Close" in raw.columns.get_level_values(0):
+                            col = raw["Close"]
+                            return (col.iloc[:, 0] if isinstance(col, pd.DataFrame) else col).dropna()
+                        # Coba (Ticker, Price) format — yfinance < 0.2.50
+                        if tk in raw.columns.get_level_values(0):
+                            return raw[tk]["Close"].dropna()
+                    else:
+                        if "Close" in raw.columns:
+                            return raw["Close"].dropna()
+                else:
+                    # Multi-ticker
+                    if isinstance(raw.columns, pd.MultiIndex):
+                        lvl0 = raw.columns.get_level_values(0).tolist()
+                        lvl1 = raw.columns.get_level_values(1).tolist()
+                        # Format A: (Ticker, Price) — group_by='ticker', yfinance < 1.x
+                        if tk in lvl0:
+                            return raw[tk]["Close"].dropna()
+                        # Format B: (Price, Ticker) — yfinance >= 0.2.50 default group_by='column'
+                        if "Close" in lvl0 and tk in lvl1:
+                            return raw["Close"][tk].dropna()
+            except Exception:
+                pass
+            return pd.Series(dtype=float)
+
+        # ── 1. Batch download ────────────────────────────────────────────────
+        failed = list(ticker_list)  # default semua ke fallback
         try:
             raw = yf.download(
                 ticker_list, period="5d", interval="1d",
                 group_by="ticker", auto_adjust=True,
                 progress=False, threads=True, timeout=25,
             )
-            failed = []
-            for tk in ticker_list:
-                name = tk_to_name[tk]
-                try:
-                    closes = pd.Series(dtype=float)
-                    if len(ticker_list) == 1:
-                        # Single ticker: flat columns like ("Close", "^JKSE") or just "Close"
-                        if isinstance(raw.columns, pd.MultiIndex):
-                            if "Close" in raw.columns.get_level_values(0):
-                                closes = raw["Close"].dropna()
-                                if isinstance(closes, pd.DataFrame):
-                                    closes = closes.iloc[:, 0].dropna()
+            if raw is not None and len(raw) > 0:
+                failed = []
+                for tk in ticker_list:
+                    name = tk_to_name[tk]
+                    try:
+                        closes = _extract_closes(raw, tk, len(ticker_list))
+                        if len(closes) >= 2:
+                            last = float(closes.iloc[-1])
+                            prev = float(closes.iloc[-2])
+                            result[name] = {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
+                        elif len(closes) == 1:
+                            result[name] = {"price": float(closes.iloc[-1]), "pct": 0.0}
                         else:
-                            closes = raw["Close"].dropna() if "Close" in raw.columns else pd.Series(dtype=float)
-                    else:
-                        # Multi-ticker: group_by="ticker" → columns are MultiIndex (ticker, field)
-                        # Level 0 = ticker symbol, Level 1 = field (Close, Open, ...)
-                        if isinstance(raw.columns, pd.MultiIndex):
-                            lvl0 = raw.columns.get_level_values(0)
-                            if tk in lvl0:
-                                closes = raw[tk]["Close"].dropna()
-                            else:
-                                failed.append(tk)
-                                continue
-                        else:
-                            # Fallback: try flat access
-                            closes = raw["Close"][tk].dropna() if ("Close" in raw.columns) else pd.Series(dtype=float)
-
-                    if len(closes) >= 2:
-                        last = float(closes.iloc[-1])
-                        prev = float(closes.iloc[-2])
-                        result[name] = {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
-                    elif len(closes) == 1:
-                        result[name] = {"price": float(closes.iloc[-1]), "pct": 0.0}
-                    else:
+                            failed.append(tk)
+                    except Exception:
                         failed.append(tk)
-                except Exception:
-                    failed.append(tk)
         except Exception:
-            failed = ticker_list[:]
+            pass  # failed tetap semua ticker_list
 
-        # ── 2. Fallback paralel via fast_info / history untuk yang gagal ───────
+        # ── 2 & 3. Fallback paralel: fast_info → history ─────────────────────
         def _single(tk):
             try:
-                t  = yf.Ticker(tk)
-                fi = t.fast_info
-                last = getattr(fi, "last_price", None) or getattr(fi, "regularMarketPrice", None)
-                prev = getattr(fi, "previous_close", None) or getattr(fi, "regularMarketPreviousClose", None)
-                if last and float(last) > 0:
-                    pct = round(((float(last) - float(prev)) / float(prev)) * 100, 2) if (prev and float(prev) > 0) else 0.0
-                    return tk, {"price": float(last), "pct": pct}
-                h = t.history(period="5d", timeout=12)
-                if len(h) >= 2:
-                    last, prev = float(h["Close"].iloc[-1]), float(h["Close"].iloc[-2])
+                t = yf.Ticker(tk)
+                # Layer 2: fast_info (paling cepat, tidak semua ticker support)
+                try:
+                    fi = t.fast_info
+                    last = None
+                    prev = None
+                    for attr in ("last_price", "regularMarketPrice", "currentPrice"):
+                        v = getattr(fi, attr, None)
+                        if v is not None and float(v) > 0:
+                            last = float(v)
+                            break
+                    for attr in ("previous_close", "regularMarketPreviousClose"):
+                        v = getattr(fi, attr, None)
+                        if v is not None and float(v) > 0:
+                            prev = float(v)
+                            break
+                    if last and last > 0:
+                        pct = round(((last - prev) / prev) * 100, 2) if (prev and prev > 0) else 0.0
+                        return tk, {"price": last, "pct": pct}
+                except Exception:
+                    pass
+                # Layer 3: history (paling kompatibel)
+                h = t.history(period="5d", auto_adjust=True, timeout=15)
+                if h is not None and len(h) >= 2:
+                    last = float(h["Close"].iloc[-1])
+                    prev = float(h["Close"].iloc[-2])
                     return tk, {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
-                elif len(h) == 1:
+                elif h is not None and len(h) == 1:
                     return tk, {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
             except Exception:
                 pass
             return tk, {"price": 0, "pct": 0.0}
 
         if failed:
-            with ThreadPoolExecutor(max_workers=min(len(failed), 10)) as ex:
-                for fut in as_completed({ex.submit(_single, tk): tk for tk in failed}):
-                    tk, val = fut.result()
-                    result[tk_to_name[tk]] = val
+            with ThreadPoolExecutor(max_workers=min(len(failed), 12)) as ex:
+                futures = {ex.submit(_single, tk): tk for tk in failed}
+                for fut in as_completed(futures, timeout=40):
+                    try:
+                        tk, val = fut.result()
+                        result[tk_to_name[tk]] = val
+                    except Exception:
+                        pass
 
         return result
 
@@ -9309,6 +9346,26 @@ window.addEventListener('resize',()=>{
             com_data = _fetch_market_data_cached(
                 tuple(_MKT_COMMODITIES.keys()), tuple(_MKT_COMMODITIES.values())
             )
+
+        # ── DEBUG: tampilkan jika data kosong semua ──────────────────────────
+        _idx_ok  = sum(1 for v in idx_data.values() if v["price"] > 0)
+        _com_ok  = sum(1 for v in com_data.values() if v["price"] > 0)
+        if _idx_ok == 0 and _com_ok == 0:
+            with st.expander("⚠️ Debug: Data pasar tidak terbaca — klik untuk detail", expanded=True):
+                import yfinance as _yf_dbg
+                st.caption(f"yfinance version: {_yf_dbg.__version__}")
+                st.caption("Mencoba fetch 1 ticker test (^GSPC)...")
+                try:
+                    _t = _yf_dbg.Ticker("^GSPC")
+                    _h = _t.history(period="5d", timeout=12)
+                    st.caption(f"history() rows: {len(_h)}")
+                    if len(_h) > 0:
+                        st.caption(f"Close[-1]: {_h['Close'].iloc[-1]:.2f}")
+                    else:
+                        st.caption("history() kosong — yfinance tidak dapat koneksi ke Yahoo Finance")
+                except Exception as _e:
+                    st.caption(f"history() error: {_e}")
+                st.caption("idx_data sample: " + str({k: v for k, v in list(idx_data.items())[:3]}))
 
         import json as _mkt_json
 
