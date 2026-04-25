@@ -19700,8 +19700,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             with _sh_col2:
                 st.markdown("**🤖 Reko History (Sheets)**")
                 render_history_table("reko", limit=15)
-            render_backup_button()
-
         # ══════════════════════════════════════════════════════════
         # TAB 3 — NET BUY FOREIGN (AUTO dari BS30)
         # ══════════════════════════════════════════════════════════
