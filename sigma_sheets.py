@@ -67,18 +67,63 @@ HEADERS = {
 
 def _get_gspread_client():
     """
-    Inisialisasi gspread client dari Streamlit secrets.
-    Di-cache 1 jam supaya tidak reconnect setiap request.
+    Inisialisasi gspread client. Error detail disimpan ke session_state.
     """
+    _err_msg = None
     try:
-        creds_dict = dict(st.secrets["gsheets_credentials"])
-        # Streamlit secrets kadang escape newline — fix private_key
-        if "private_key" in creds_dict:
-            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
-        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-        client = gspread.authorize(creds)
+        # Step 1: baca secrets
+        try:
+            _raw = st.secrets["gsheets_credentials"]
+        except Exception as _e1:
+            _err_msg = f"[Step1-ReadSecrets] {type(_e1).__name__}: {_e1}"
+            raise
+
+        # Step 2: convert ke dict
+        try:
+            creds_dict = dict(_raw)
+        except Exception as _e2:
+            _err_msg = f"[Step2-DictConvert] {type(_e2).__name__}: {_e2}"
+            raise
+
+        # Step 3: fix private_key newlines
+        try:
+            if "private_key" in creds_dict:
+                pk = str(creds_dict["private_key"])
+                if "\\n" in pk:
+                    pk = pk.replace("\\n", "\n")
+                creds_dict["private_key"] = pk
+        except Exception as _e3:
+            _err_msg = f"[Step3-PrivateKey] {type(_e3).__name__}: {_e3}"
+            raise
+
+        # Step 4: buat credentials object
+        try:
+            creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        except Exception as _e4:
+            _err_msg = f"[Step4-Credentials] {type(_e4).__name__}: {_e4}"
+            raise
+
+        # Step 5: authorize gspread
+        try:
+            client = gspread.authorize(creds)
+        except Exception as _e5:
+            _err_msg = f"[Step5-Authorize] {type(_e5).__name__}: {_e5}"
+            raise
+
+        # Berhasil
+        st.session_state.pop("_sheets_last_error", None)
         return client
-    except Exception as e:
+
+    except Exception as _e:
+        if not _err_msg:
+            _err_msg = f"{type(_e).__name__}: {_e}"
+        try:
+            st.session_state["_sheets_last_error"] = _err_msg
+            if "sheets_errors" not in st.session_state:
+                st.session_state["sheets_errors"] = []
+            st.session_state["sheets_errors"].append(f"[connect] {_err_msg}")
+        except Exception:
+            pass
         return None
 
 
@@ -545,9 +590,8 @@ def render_sheets_status():
                 if client:
                     st.success("✅ Koneksi Google Sheets OK!")
                 else:
-                    _real_err = st.session_state.get("_sheets_last_error", "Unknown error")
-                    st.error(f"❌ Gagal connect.\n\n**Error asli:**\n```\n{_real_err}\n```")
-                    st.info("💡 Cek:\n- Format private_key di secrets (harus multiline `\"\"\"...\"\"\"`)\n- Service account sudah di-share ke Google Sheets\n- gspread + google-auth ada di requirements.txt")
+                    _real_err = st.session_state.get("_sheets_last_error", "Unknown — cek Streamlit logs")
+                    st.error(f"❌ Gagal connect.\n\n**Error detail:**\n```\n{_real_err}\n```")
 
     # Error log
     errors = st.session_state.get("sheets_errors", [])
