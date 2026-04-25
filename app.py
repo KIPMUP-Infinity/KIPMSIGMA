@@ -8101,6 +8101,7 @@ if current_view == "dashboard":
         
         @st.cache_data(ttl=300)
         def get_market_data(ticker_dict):
+            import yfinance as yf
             data = {}
             for name, tk in ticker_dict.items():
                 try: 
@@ -13125,7 +13126,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
         with alpha_tab_insight:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
             col_input, col_btn = st.columns([3, 1])
