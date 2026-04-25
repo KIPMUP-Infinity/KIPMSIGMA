@@ -8054,30 +8054,35 @@ if current_view == "dashboard":
         ("FTSE 100", "^FTSE"),
         ("Nikkei",   "^N225"),
         ("Hang Seng","^HSI"),
-        ("Shanghai", "000001.SS"),
         ("VIX",      "^VIX"),
         # COMMODITIES & FOREX
         ("USD/IDR",  "IDR=X"),
-        ("DXY",      "DX-Y.NYB"),
         ("Gold",     "GC=F"),
         ("WTI",      "CL=F"),
         ("Brent",    "BZ=F"),
-        ("Coal",     "NCF=F"),
-        ("Palm Oil", "MYP=F"),
-        ("Nickel",   "ALI=F"),
+        ("Coal",     "MTF=F"),
+        ("Palm Oil", "FCPO.KL"),
+        ("Nickel",   "ND=F"),
     ]
     _tape_html = ""
+    _tape_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36",
+        "Accept": "application/json",
+    }
     for _name, _tk in _tape_items:
         try:
-            import yfinance as _yf
-            _h = _yf.Ticker(_tk).history(period="2d")
-            if len(_h) >= 2:
-                _p  = _h['Close'].iloc[-1]
-                _pc = _h['Close'].iloc[-2]
-                _chg = (_p - _pc) / _pc * 100
-                _cls = "up" if _chg >= 0 else "dn"
-                _arr = "&#9650;" if _chg >= 0 else "&#9660;"
-                _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
+            import requests as _req
+            _url = f"https://query1.finance.yahoo.com/v8/finance/chart/{_tk}?interval=1d&range=5d"
+            _r = _req.get(_url, headers=_tape_headers, timeout=8)
+            if _r.status_code == 200:
+                _closes = _r.json()["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                _closes = [c for c in _closes if c is not None]
+                if len(_closes) >= 2:
+                    _p, _pc = _closes[-1], _closes[-2]
+                    _chg = (_p - _pc) / _pc * 100
+                    _cls = "up" if _chg >= 0 else "dn"
+                    _arr = "&#9650;" if _chg >= 0 else "&#9660;"
+                    _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
         except: pass
     if _tape_html:
         _tape_double = _tape_html * 2  
@@ -8087,73 +8092,67 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    # ── LIVE MARKET: cache harus di luar tab scope agar tidak di-redefine tiap rerun ──
+    # ── LIVE MARKET: cache di luar tab scope, pakai direct HTTP (bukan yfinance) ──
     @st.cache_data(ttl=300)
     def _fetch_market_data_cached(names_tuple, tickers_tuple):
-        """Batch fetch semua ticker sekaligus. Dipanggil dengan tuple agar hashable untuk cache."""
-        import yfinance as yf
-        import pandas as pd
+        """
+        Fetch harga via Yahoo Finance v8 chart API langsung (requests).
+        Tidak pakai yfinance → lebih reliable di Streamlit Cloud.
+        Parallel fetch via ThreadPoolExecutor.
+        """
+        import requests
         from concurrent.futures import ThreadPoolExecutor, as_completed
 
-        name_list   = list(names_tuple)
+        name_list  = list(names_tuple)
         ticker_list = list(tickers_tuple)
-        tk_to_name  = dict(zip(ticker_list, name_list))
-        result      = {n: {"price": 0, "pct": 0.0} for n in name_list}
+        tk_to_name = dict(zip(ticker_list, name_list))
+        result     = {n: {"price": 0, "pct": 0.0} for n in name_list}
 
-        # ── 1. Batch download: 1 HTTP call untuk semua ticker ──────────────────
-        try:
-            raw = yf.download(
-                ticker_list, period="5d", interval="1d",
-                group_by="ticker", auto_adjust=True,
-                progress=False, threads=True, timeout=25,
-            )
-            failed = []
-            for tk in ticker_list:
-                name = tk_to_name[tk]
-                try:
-                    if len(ticker_list) == 1:
-                        closes = raw["Close"].dropna()
-                    else:
-                        lvl1 = raw.columns.get_level_values(1) if hasattr(raw.columns, "levels") else []
-                        closes = raw[tk]["Close"].dropna() if tk in lvl1 else pd.Series(dtype=float)
-                    if len(closes) >= 2:
-                        last = float(closes.iloc[-1])
-                        prev = float(closes.iloc[-2])
-                        result[name] = {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
-                    elif len(closes) == 1:
-                        result[name] = {"price": float(closes.iloc[-1]), "pct": 0.0}
-                    else:
-                        failed.append(tk)
-                except Exception:
-                    failed.append(tk)
-        except Exception:
-            failed = ticker_list[:]
+        _HEADERS = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
 
-        # ── 2. Fallback paralel via fast_info / history untuk yang gagal ───────
-        def _single(tk):
+        def _fetch_one(tk):
+            # Method 1: Yahoo Finance v8 chart API (paling cepat, 1 candle)
             try:
-                t  = yf.Ticker(tk)
-                fi = t.fast_info
-                last = getattr(fi, "last_price", None) or getattr(fi, "regularMarketPrice", None)
-                prev = getattr(fi, "previous_close", None) or getattr(fi, "regularMarketPreviousClose", None)
-                if last and float(last) > 0:
-                    pct = round(((float(last) - float(prev)) / float(prev)) * 100, 2) if (prev and float(prev) > 0) else 0.0
-                    return tk, {"price": float(last), "pct": pct}
-                h = t.history(period="5d", timeout=12)
-                if len(h) >= 2:
-                    last, prev = float(h["Close"].iloc[-1]), float(h["Close"].iloc[-2])
-                    return tk, {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
-                elif len(h) == 1:
-                    return tk, {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{tk}?interval=1d&range=5d"
+                r = requests.get(url, headers=_HEADERS, timeout=10)
+                if r.status_code == 200:
+                    j = r.json()
+                    closes = j["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+                    closes = [c for c in closes if c is not None]
+                    if len(closes) >= 2:
+                        last, prev = closes[-1], closes[-2]
+                        return tk, {"price": float(last), "pct": round(((last - prev) / prev) * 100, 2)}
+                    elif len(closes) == 1:
+                        return tk, {"price": float(closes[-1]), "pct": 0.0}
             except Exception:
                 pass
+
+            # Method 2: Yahoo Finance v7 quote API (fallback)
+            try:
+                url2 = f"https://query2.finance.yahoo.com/v7/finance/quote?symbols={tk}"
+                r2 = requests.get(url2, headers=_HEADERS, timeout=10)
+                if r2.status_code == 200:
+                    q = r2.json()["quoteResponse"]["result"]
+                    if q:
+                        last = q[0].get("regularMarketPrice", 0)
+                        prev = q[0].get("regularMarketPreviousClose", 0)
+                        if last and last > 0:
+                            pct = round(((last - prev) / prev) * 100, 2) if prev and prev > 0 else 0.0
+                            return tk, {"price": float(last), "pct": pct}
+            except Exception:
+                pass
+
             return tk, {"price": 0, "pct": 0.0}
 
-        if failed:
-            with ThreadPoolExecutor(max_workers=min(len(failed), 10)) as ex:
-                for fut in as_completed({ex.submit(_single, tk): tk for tk in failed}):
-                    tk, val = fut.result()
-                    result[tk_to_name[tk]] = val
+        with ThreadPoolExecutor(max_workers=min(len(ticker_list), 12)) as ex:
+            futs = {ex.submit(_fetch_one, tk): tk for tk in ticker_list}
+            for fut in as_completed(futs):
+                tk, val = fut.result()
+                result[tk_to_name[tk]] = val
 
         return result
 
@@ -24553,6 +24552,46 @@ btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.displ
 }})();
 pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
 }})();
+</script>
+""", height=0)
+
+components.html("""
+<script>
+// ── Mobile Tab Horizontal Scroll Fix ──
+(function() {
+    function fixTabScroll() {
+        var doc = window.parent.document;
+        // Target: Streamlit tab list container and all its parents up to stTabs
+        var tabLists = doc.querySelectorAll('[data-testid="stTabs"] [role="tablist"], [data-testid="stTabs"] [data-baseweb="tab-list"]');
+        tabLists.forEach(function(tl) {
+            tl.style.overflowX = 'auto';
+            tl.style.overflowY = 'hidden';
+            tl.style.flexWrap = 'nowrap';
+            tl.style.webkitOverflowScrolling = 'touch';
+            tl.style.scrollbarWidth = 'none';
+            tl.style.msOverflowStyle = 'none';
+            // Un-clip parents
+            var el = tl.parentElement;
+            for (var i = 0; i < 6 && el; i++) {
+                var cs = window.parent.getComputedStyle(el);
+                if (cs.overflow === 'hidden' || cs.overflowX === 'hidden') {
+                    el.style.overflow = 'visible';
+                    el.style.overflowX = 'auto';
+                }
+                if (el.dataset && el.dataset.testid === 'stTabs') break;
+                el = el.parentElement;
+            }
+            // Make each tab button non-shrinkable
+            tl.querySelectorAll('button[role="tab"]').forEach(function(btn) {
+                btn.style.flexShrink = '0';
+                btn.style.whiteSpace = 'nowrap';
+            });
+        });
+    }
+    // Run immediately and keep polling for Streamlit reruns
+    fixTabScroll();
+    setInterval(fixTabScroll, 800);
+})();
 </script>
 """, height=0)
 
