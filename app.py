@@ -8268,12 +8268,10 @@ if current_view == "dashboard":
         # ── Render both tables via components.html ─────────────────────────
         _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
         _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        # Mobile: dua kolom ditumpuk vertikal → harus dijumlah + gap + header
-        # Desktop: side-by-side → ambil yang TERBESAR + buffer
-        # Gunakan nilai mobile (lebih besar) sebagai default iframe height;
-        # JS autoResize akan koreksi ke nilai desktop saat di desktop.
-        _tbl_h_mobile  = _idx_total_h + _com_total_h + 140
-        _tbl_h = _tbl_h_mobile
+        # Desktop: side-by-side → tinggi iframe = kolom TERBESAR + header + buffer kecil
+        # JS autoResize akan koreksi presisi setelah render
+        # JANGAN pakai mobile height (stacked) sebagai default → menyebabkan whitespace raksasa di desktop
+        _tbl_h = max(_idx_total_h, _com_total_h) + 60  # 60 = header + padding
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -8414,26 +8412,30 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     var isMobile = window.innerWidth <= 600;
     var h;
     if (isMobile) {{
-      // Mobile: stacked — ukur bounding rect tiap kolom secara terpisah
+      // Mobile: stacked — jumlah tinggi semua kolom + gap
       var cols = document.querySelectorAll('.col');
       var total = 0;
       cols.forEach(function(col) {{
         total += col.getBoundingClientRect().height;
       }});
-      h = total + 60; // 60 = gap antar kolom + body padding
+      h = total + 70; // 70 = gap antar kolom + body padding
     }} else {{
-      // Desktop: side-by-side — body.scrollHeight sudah cukup
-      h = document.body.scrollHeight + 8;
+      // Desktop: side-by-side — gunakan bounding rect row (bukan scrollHeight)
+      // scrollHeight bisa membesar tapi tidak mengecil → menyebabkan whitespace
+      var row = document.querySelector('.row');
+      h = row ? Math.ceil(row.getBoundingClientRect().height) + 20
+              : document.body.scrollHeight + 8;
     }}
     h = Math.max(h, 280);
     try {{
       window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
     }} catch(e) {{}}
   }}
-  setTimeout(autoResize, 100);
-  setTimeout(autoResize, 400);
-  setTimeout(autoResize, 900);
-  setTimeout(autoResize, 1800);
+  setTimeout(autoResize, 80);
+  setTimeout(autoResize, 300);
+  setTimeout(autoResize, 700);
+  setTimeout(autoResize, 1500);
+  setTimeout(autoResize, 2500);
   window.addEventListener('resize', function() {{ setTimeout(autoResize, 120); }});
 }})();
 </script></body></html>""", height=_tbl_h, scrolling=False)
@@ -9704,21 +9706,25 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
   }});
 
   grid.innerHTML = html;
-  // Auto-resize iframe to actual content height (fixes mobile cutoff)
+  // Auto-resize iframe to actual content height (fixes mobile cutoff & desktop excess gap)
   function sendHeight() {{
-    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height:h}}, '*');
+    // Gunakan getBoundingClientRect dari elemen paling bawah agar presisi di desktop & mobile
+    var wrap = document.querySelector('.frm-wrap');
+    var h = wrap ? Math.ceil(wrap.getBoundingClientRect().height) + 16
+                 : (document.documentElement.scrollHeight || document.body.scrollHeight);
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: Math.max(h, 200)}}, '*');
   }}
-  // Send after render + small delay for fonts/images
+  // Send after render + small delay for fonts/layout
   sendHeight();
   setTimeout(sendHeight, 200);
   setTimeout(sendHeight, 600);
-  window.addEventListener('resize', sendHeight);
+  setTimeout(sendHeight, 1200);
+  window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
 }})();
 </script>
 </body>
 </html>
-        """, height=1280, scrolling=True)
+        """, height=520, scrolling=False)
 
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
@@ -12903,12 +12909,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
 .lbl{{font-size:0.875rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
-.wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
-/* Mobile: hapus overflow:hidden agar border bawah membungkus konten dengan pas */
+/* === DESKTOP: wrap dengan overflow:hidden agar border radius tetap rapi === */
+.wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;padding-bottom:0;}}
+/* === MOBILE: hapus overflow:hidden agar border bawah membungkus konten dengan pas === */
 @media(max-width:768px){{
-  .wrap{{overflow:visible !important;border-radius:10px !important;}}
+  .wrap{{overflow:visible !important;border-radius:10px !important;padding-bottom:0 !important;}}
 }}
-/* === SCROLL CONTAINER: horizontal saja, vertikal auto === */
+/* === SCROLL CONTAINER: horizontal saja, vertikal tidak perlu di-scroll === */
 .scroll-box{{
   width:100%;
   max-height:660px;          /* ≈15 baris × 44px = 660px - hanya berlaku di desktop */
@@ -12918,6 +12925,8 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
   cursor:grab;
   scrollbar-width:thin;
   scrollbar-color:{_tbl_border} transparent;
+  padding-bottom:0;
+  margin-bottom:0;
 }}
 @media(max-width:768px){{
   .scroll-box{{
@@ -12925,9 +12934,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
     height:auto !important;
     overflow-y:visible !important;
     overflow-x:auto !important;
+    padding-bottom:0 !important;
+    margin-bottom:0 !important;
   }}
   .wrap{{
     overflow:visible !important;
+    padding-bottom:0 !important;
   }}
 }}
 .scroll-box:active{{cursor:grabbing;}}
@@ -13066,6 +13078,8 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
         # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
+        # PENTING: Hanya gunakan class selector spesifik di dalam @media (max-width:768px)
+        # JANGAN pakai [data-testid="stVerticalBlock"] → bocor ke desktop!
         components.html("""
 <script>
 (function() {
@@ -13075,23 +13089,21 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
   s.id = 'sigma-sh-gap-mobile-css';
   s.textContent = `
     @media (max-width: 768px) {
-      /* Hilangkan margin-bottom pada wrapper tabel sh2 */
+      /* Rapatkan wrapper tabel sh-screen agar tidak ada gap besar antar tabel */
       .sh2-scroll-outer {
         margin-bottom: 0px !important;
         padding-bottom: 0px !important;
       }
-      /* Hilangkan gap default Streamlit di antara iframe/block wrapper */
-      [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
-      [data-testid="stVerticalBlock"] > div > [data-testid="stIFrame"] {
-        margin-bottom: 0px !important;
-        padding-bottom: 0px !important;
-      }
-      /* Khusus iframe komponen HTML Streamlit: kurangi margin antar iframe */
-      iframe[title="sigma_sh_screen_naik"],
-      iframe[title="sigma_sh_screen_turun"] {
-        display: block !important;
+      /* Rapatkan iframe Streamlit yang wrap komponen screening khusus mobile */
+      iframe[title="sigma_sh_screen_naik"] {
         margin-bottom: 0 !important;
         margin-top: 0 !important;
+        display: block !important;
+      }
+      iframe[title="sigma_sh_screen_turun"] {
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
+        display: block !important;
       }
     }
   `;
