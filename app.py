@@ -8100,48 +8100,83 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         @st.cache_data(ttl=300)
-        def get_market_data(ticker_dict):
+        def get_market_data(name_tk_pairs: tuple):
+            """name_tk_pairs: tuple of (name, ticker) tuples — hashable untuk st.cache_data."""
             import yfinance as yf
+            import pandas as pd
             data = {}
-            for name, tk in ticker_dict.items():
-                try: 
-                    ticker = yf.Ticker(tk)
-                    hist = ticker.history(period="5d") 
-                    if len(hist) >= 2:
-                        last = float(hist['Close'].iloc[-1])
-                        prev = float(hist['Close'].iloc[-2])
-                        pct = ((last-prev) / prev) * 100
-                        data[name] = {"price": last, "pct": pct}
-                    elif len(hist) == 1:
-                        last = float(hist['Close'].iloc[-1])
-                        data[name] = {"price": last, "pct": 0.0}
-                    else:
-                        data[name] = {"price": 0, "pct": 0}
-                except Exception as e:
-                    data[name] = {"price": 0, "pct": 0}
+            tickers = [tk for _, tk in name_tk_pairs]
+            names   = [nm for nm, _ in name_tk_pairs]
+            try:
+                raw   = yf.download(tickers, period="5d", auto_adjust=True, progress=False, threads=True)
+                if isinstance(raw.columns, pd.MultiIndex):
+                    close = raw['Close']
+                elif 'Close' in raw.columns:
+                    close = raw[['Close']].rename(columns={'Close': tickers[0]})
+                else:
+                    raise ValueError("No Close column")
+                for nm, tk in zip(names, tickers):
+                    try:
+                        col = close[tk].dropna() if tk in close.columns else pd.Series(dtype=float)
+                        if len(col) >= 2:
+                            last = float(col.iloc[-1]); prev = float(col.iloc[-2])
+                            data[nm] = {"price": last, "pct": ((last-prev)/prev)*100}
+                        elif len(col) == 1:
+                            data[nm] = {"price": float(col.iloc[-1]), "pct": 0.0}
+                        else:
+                            data[nm] = {"price": 0, "pct": 0}
+                    except Exception:
+                        data[nm] = {"price": 0, "pct": 0}
+            except Exception:
+                for nm, tk in zip(names, tickers):
+                    try:
+                        hist = yf.Ticker(tk).history(period="5d")
+                        if len(hist) >= 2:
+                            last = float(hist['Close'].iloc[-1]); prev = float(hist['Close'].iloc[-2])
+                            data[nm] = {"price": last, "pct": ((last-prev)/prev)*100}
+                        elif len(hist) == 1:
+                            data[nm] = {"price": float(hist['Close'].iloc[-1]), "pct": 0.0}
+                        else:
+                            data[nm] = {"price": 0, "pct": 0}
+                    except Exception:
+                        data[nm] = {"price": 0, "pct": 0}
             return data
 
-        indices_tickers = {
-            # ── Indonesia ──────────────────────────────────────────
-            "IHSG":        "^JKSE",
-            "LQ45":        "^JKLQ45",
-            # ──────────────────── Global ─────────────────────────
-            "VIX": "^VIX", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
-            "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
-            "Hang Seng": "^HSI", "Shanghai": "000001.SS",
-        }
-        
-        commodities_tickers = {
-            "USD/IDR": "IDR=X", "DXY": "DX-Y.NYB", "EUR/USD": "EURUSD=X", "GBP/USD": "GBPUSD=X",
-            "Gold (oz)": "GC=F", "Silver (oz)": "SI=F", "Copper": "HG=F",
-            "WTI Crude": "CL=F", "Brent Crude": "BZ=F", "Natural Gas": "NG=F",
-            "Newcastle Coal": "NCF=F", "Palm Oil": "MYP=F", "Nickel": "ALI=F",
-            "Aluminum": "ALI=F", "Tin": "SN=F", "Soybeans": "ZS=F",
-        }
-        
+        indices_tickers = (
+            ("IHSG",      "^JKSE"),
+            ("LQ45",      "^JKLQ45"),
+            ("VIX",       "^VIX"),
+            ("S&P 500",   "^GSPC"),
+            ("Dow Jones", "^DJI"),
+            ("Nasdaq",    "^IXIC"),
+            ("FTSE",      "^FTSE"),
+            ("Nikkei",    "^N225"),
+            ("Hang Seng", "^HSI"),
+            ("Shanghai",  "000001.SS"),
+        )
+
+        commodities_tickers = (
+            ("USD/IDR",        "IDR=X"),
+            ("DXY",            "DX-Y.NYB"),
+            ("EUR/USD",        "EURUSD=X"),
+            ("GBP/USD",        "GBPUSD=X"),
+            ("Gold (oz)",      "GC=F"),
+            ("Silver (oz)",    "SI=F"),
+            ("Copper",         "HG=F"),
+            ("WTI Crude",      "CL=F"),
+            ("Brent Crude",    "BZ=F"),
+            ("Natural Gas",    "NG=F"),
+            ("Newcastle Coal", "NCF=F"),
+            ("Palm Oil",       "MYP=F"),
+            ("Nickel",         "NI=F"),
+            ("Aluminum",       "ALI=F"),
+            ("Tin",            "SN=F"),
+            ("Soybeans",       "ZS=F"),
+        )
+
         with st.spinner("Mendeteksi denyut pasar global..."):
-            idx_data = get_market_data(indices_tickers)
-            com_data = get_market_data(commodities_tickers)
+            idx_data  = get_market_data(indices_tickers)
+            com_data  = get_market_data(commodities_tickers)
 
         import json as _mkt_json
 
@@ -13110,7 +13145,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         _alpha_unlocked = True
         st.session_state["alpha_screener_unlocked"] = True
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - ALPHA STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
         alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
