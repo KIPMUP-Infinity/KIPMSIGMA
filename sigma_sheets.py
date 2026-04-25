@@ -542,11 +542,13 @@ def render_sheets_status():
             if not ok:
                 st.error("❌ Credentials tidak ditemukan di Streamlit secrets.\n\nPastikan [gsheets_credentials] dan [gsheets] sudah diisi.")
             else:
-                client = _get_gspread_client()
+                client = _get_gspread_client(force_refresh=True)
                 if client:
                     st.success("✅ Koneksi Google Sheets OK!")
                 else:
-                    st.error("❌ Gagal connect. Cek private_key format di secrets.")
+                    _real_err = st.session_state.get("_sheets_last_error", "Unknown error")
+                    st.error(f"❌ Gagal connect.\n\n**Error asli:**\n```\n{_real_err}\n```")
+                    st.info("💡 Cek:\n- Format private_key di secrets (harus multiline `\"\"\"...\"\"\"`)\n- Service account sudah di-share ke Google Sheets\n- gspread + google-auth ada di requirements.txt")
 
     # Error log
     errors = st.session_state.get("sheets_errors", [])
