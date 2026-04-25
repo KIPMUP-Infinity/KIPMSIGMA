@@ -9546,30 +9546,29 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     .frm-bar-pct {{ font-size: 0.875rem; }}
     .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
 
-    /* ── MOBILE TABLE FIX: no horizontal scroll ── */
+    /* ── MOBILE TABLE FIX: hapus horizontal scroll ── */
     .frm-tbl-wrap {{ overflow-x: unset; -webkit-overflow-scrolling: unset; }}
     .frm-tbl {{ table-layout: fixed; width: 100%; }}
+    /* Padding & font SAMA dengan desktop, hanya kolom dipepetkan */
     .frm-tbl th {{
-      padding: 5px 3px;
-      font-size: 0.65rem;
+      padding: 7px 4px;
+      font-size: 0.72rem;
       letter-spacing: 0;
-      white-space: normal;
-      word-break: break-word;
+      white-space: nowrap;
     }}
     .frm-tbl td {{
-      padding: 5px 3px;
-      font-size: 0.72rem;
-      white-space: normal;
-      word-break: break-word;
+      padding: 7px 4px;
+      font-size: 0.875rem;
+      white-space: nowrap;
     }}
-    /* Lebar kolom tetap proporsional di mobile */
-    .frm-tbl th:nth-child(1), .frm-tbl td:nth-child(1) {{ width: 40%; }}
+    /* Lebar kolom proporsional agar 4 kolom muat di satu layar */
+    .frm-tbl th:nth-child(1), .frm-tbl td:nth-child(1) {{ width: 42%; }}
     .frm-tbl th:nth-child(2), .frm-tbl td:nth-child(2) {{ width: 20%; }}
-    .frm-tbl th:nth-child(3), .frm-tbl td:nth-child(3) {{ width: 20%; }}
-    .frm-tbl th:nth-child(4), .frm-tbl td:nth-child(4) {{ width: 20%; }}
-    /* Badge lebih kecil di mobile */
+    .frm-tbl th:nth-child(3), .frm-tbl td:nth-child(3) {{ width: 19%; }}
+    .frm-tbl th:nth-child(4), .frm-tbl td:nth-child(4) {{ width: 19%; }}
+    /* Badge direction: lebih kompak, turun ke baris baru agar kolom 1 tidak melebar */
     .frm-dir-badge {{
-      font-size: 0.6rem;
+      font-size: 0.65rem;
       padding: 1px 4px;
       margin-left: 2px;
       display: block;
@@ -11171,7 +11170,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 </tr>"""
 
             st.markdown(f"""<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
-            <table style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
+            <table class='sigma-stk-tbl' style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
             <thead><tr style='background:{met_bg};position:sticky;top:0;z-index:2;'>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
                 <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:80px;'>NAMA</th>
@@ -11182,6 +11181,74 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             </tr></thead>
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
+
+            # ── MOBILE-ONLY CSS FIX: inject ke parent document via JS ──
+            components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-stk-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-stk-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      /* Wrapper: tidak perlu scroll horizontal */
+      div:has(> table.sigma-stk-tbl) {
+        overflow-x: unset !important;
+        -webkit-overflow-scrolling: unset !important;
+      }
+      /* Tabel: fixed layout agar kolom muat semua */
+      table.sigma-stk-tbl {
+        table-layout: fixed !important;
+        width: 100% !important;
+        min-width: unset !important;
+      }
+      /* Header: tengah & nowrap */
+      table.sigma-stk-tbl thead th {
+        text-align: center !important;
+        padding: 6px 3px !important;
+        font-size: 10px !important;
+        white-space: nowrap !important;
+        letter-spacing: 0 !important;
+      }
+      /* Body cells */
+      table.sigma-stk-tbl tbody td {
+        padding: 5px 3px !important;
+        font-size: 12px !important;
+      }
+      /* Lebar kolom: TICKER, NAMA, FASE, MKTCAP, RS, MOM */
+      table.sigma-stk-tbl th:nth-child(1),
+      table.sigma-stk-tbl td:nth-child(1) { width: 14% !important; }
+      table.sigma-stk-tbl th:nth-child(2),
+      table.sigma-stk-tbl td:nth-child(2) { width: 26% !important; }
+      table.sigma-stk-tbl th:nth-child(3),
+      table.sigma-stk-tbl td:nth-child(3) { width: 20% !important; }
+      table.sigma-stk-tbl th:nth-child(4),
+      table.sigma-stk-tbl td:nth-child(4) { width: 18% !important; }
+      table.sigma-stk-tbl th:nth-child(5),
+      table.sigma-stk-tbl td:nth-child(5) { width: 11% !important; }
+      table.sigma-stk-tbl th:nth-child(6),
+      table.sigma-stk-tbl td:nth-child(6) { width: 11% !important; }
+      /* Badge FASE: nowrap agar tidak terpotong */
+      table.sigma-stk-tbl tbody td:nth-child(3) span {
+        white-space: nowrap !important;
+        font-size: 10px !important;
+        padding: 2px 4px !important;
+        display: inline-block !important;
+        overflow: visible !important;
+      }
+      /* Kolom NAMA: boleh wrap agar tidak paksa scroll */
+      table.sigma-stk-tbl tbody td:nth-child(2) {
+        white-space: normal !important;
+        word-break: break-word !important;
+        font-size: 11px !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
             st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#8b5cf6;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
 
