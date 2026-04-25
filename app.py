@@ -8100,83 +8100,93 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         @st.cache_data(ttl=300)
-        def get_market_data(name_tk_pairs: tuple):
-            """name_tk_pairs: tuple of (name, ticker) tuples — hashable untuk st.cache_data."""
-            import yfinance as yf
-            import pandas as pd
-            data = {}
-            tickers = [tk for _, tk in name_tk_pairs]
-            names   = [nm for nm, _ in name_tk_pairs]
+        def _fetch_live_market_fmp():
+            """
+            Ambil data indices + commodities via FMP batch API.
+            Return: (idx_dict, com_dict) masing-masing {name: {price, pct}}
+            """
+            import urllib.request as _ur, json as _jj, threading as _thr
+
+            fmp_key = ""
             try:
-                raw   = yf.download(tickers, period="5d", auto_adjust=True, progress=False, threads=True)
-                if isinstance(raw.columns, pd.MultiIndex):
-                    close = raw['Close']
-                elif 'Close' in raw.columns:
-                    close = raw[['Close']].rename(columns={'Close': tickers[0]})
-                else:
-                    raise ValueError("No Close column")
-                for nm, tk in zip(names, tickers):
-                    try:
-                        col = close[tk].dropna() if tk in close.columns else pd.Series(dtype=float)
-                        if len(col) >= 2:
-                            last = float(col.iloc[-1]); prev = float(col.iloc[-2])
-                            data[nm] = {"price": last, "pct": ((last-prev)/prev)*100}
-                        elif len(col) == 1:
-                            data[nm] = {"price": float(col.iloc[-1]), "pct": 0.0}
-                        else:
-                            data[nm] = {"price": 0, "pct": 0}
-                    except Exception:
-                        data[nm] = {"price": 0, "pct": 0}
+                _fmp_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY", "")]
+                fmp_key = next((k for k in _fmp_keys if k and len(k) > 10), "")
             except Exception:
-                for nm, tk in zip(names, tickers):
-                    try:
-                        hist = yf.Ticker(tk).history(period="5d")
-                        if len(hist) >= 2:
-                            last = float(hist['Close'].iloc[-1]); prev = float(hist['Close'].iloc[-2])
-                            data[nm] = {"price": last, "pct": ((last-prev)/prev)*100}
-                        elif len(hist) == 1:
-                            data[nm] = {"price": float(hist['Close'].iloc[-1]), "pct": 0.0}
-                        else:
-                            data[nm] = {"price": 0, "pct": 0}
-                    except Exception:
-                        data[nm] = {"price": 0, "pct": 0}
-            return data
+                pass
 
-        indices_tickers = (
-            ("IHSG",      "^JKSE"),
-            ("LQ45",      "^JKLQ45"),
-            ("VIX",       "^VIX"),
-            ("S&P 500",   "^GSPC"),
-            ("Dow Jones", "^DJI"),
-            ("Nasdaq",    "^IXIC"),
-            ("FTSE",      "^FTSE"),
-            ("Nikkei",    "^N225"),
-            ("Hang Seng", "^HSI"),
-            ("Shanghai",  "000001.SS"),
-        )
+            # ── Mapping nama tampilan → FMP symbol ─────────────────────────
+            idx_map = {
+                "IHSG":      "^JKSE",
+                "LQ45":      "^JKLQ45",
+                "VIX":       "^VIX",
+                "S&P 500":   "^GSPC",
+                "Dow Jones": "^DJI",
+                "Nasdaq":    "^IXIC",
+                "FTSE":      "^FTSE",
+                "Nikkei":    "^N225",
+                "Hang Seng": "^HSI",
+                "Shanghai":  "000001.SS",
+            }
+            com_map = {
+                "USD/IDR":        "USDIDR",
+                "DXY":            "DX",
+                "EUR/USD":        "EURUSD",
+                "GBP/USD":        "GBPUSD",
+                "Gold (oz)":      "GCUSD",
+                "Silver (oz)":    "SIUSD",
+                "Copper":         "HGUSD",
+                "WTI Crude":      "CLUSD",
+                "Brent Crude":    "BZUSD",
+                "Natural Gas":    "NGUSD",
+                "Newcastle Coal": "NCUSD",
+                "Palm Oil":       "MPOUSD",
+                "Nickel":         "LNIUSD",
+                "Aluminum":       "ALUUSD",
+                "Soybeans":       "ZSUSD",
+            }
 
-        commodities_tickers = (
-            ("USD/IDR",        "IDR=X"),
-            ("DXY",            "DX-Y.NYB"),
-            ("EUR/USD",        "EURUSD=X"),
-            ("GBP/USD",        "GBPUSD=X"),
-            ("Gold (oz)",      "GC=F"),
-            ("Silver (oz)",    "SI=F"),
-            ("Copper",         "HG=F"),
-            ("WTI Crude",      "CL=F"),
-            ("Brent Crude",    "BZ=F"),
-            ("Natural Gas",    "NG=F"),
-            ("Newcastle Coal", "NCF=F"),
-            ("Palm Oil",       "MYP=F"),
-            ("Nickel",         "NI=F"),
-            ("Aluminum",       "ALI=F"),
-            ("Tin",            "SN=F"),
-            ("Soybeans",       "ZS=F"),
-        )
+            idx_out = {nm: {"price": 0, "pct": 0} for nm in idx_map}
+            com_out = {nm: {"price": 0, "pct": 0} for nm in com_map}
+
+            if not fmp_key:
+                return idx_out, com_out
+
+            def _fetch(syms_str, out_map, name_map_inv):
+                """Fetch batch dan isi out_map."""
+                try:
+                    url  = f"https://financialmodelingprep.com/api/v3/quote/{syms_str}?apikey={fmp_key}"
+                    req  = _ur.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                    with _ur.urlopen(req, timeout=8) as r:
+                        items = _jj.loads(r.read())
+                    if not isinstance(items, list):
+                        return
+                    for item in items:
+                        sym  = item.get("symbol", "")
+                        nm   = name_map_inv.get(sym)
+                        if not nm:
+                            continue
+                        px   = item.get("price") or 0
+                        pct  = item.get("changesPercentage") or 0
+                        out_map[nm] = {"price": float(px), "pct": float(pct)}
+                except Exception:
+                    pass
+
+            idx_sym_inv = {v: k for k, v in idx_map.items()}
+            com_sym_inv = {v: k for k, v in com_map.items()}
+
+            t1 = _thr.Thread(target=_fetch,
+                             args=(",".join(idx_map.values()), idx_out, idx_sym_inv),
+                             daemon=True)
+            t2 = _thr.Thread(target=_fetch,
+                             args=(",".join(com_map.values()), com_out, com_sym_inv),
+                             daemon=True)
+            t1.start(); t2.start()
+            t1.join(timeout=10); t2.join(timeout=10)
+
+            return idx_out, com_out
 
         with st.spinner("Mendeteksi denyut pasar global..."):
-            idx_data  = get_market_data(indices_tickers)
-            com_data  = get_market_data(commodities_tickers)
+            idx_data, com_data = _fetch_live_market_fmp()
 
         import json as _mkt_json
 
@@ -13161,7 +13171,6 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
         with alpha_tab_insight:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
             col_input, col_btn = st.columns([3, 1])
@@ -16813,7 +16822,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 DAILY PLAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_d        = _wib_now()
             _bs30_cache   = st.session_state.get("sigma_bs30_screened", [])
@@ -17120,7 +17128,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _render_track_record_inline("daily", "#a78bfa", ctx="plan_daily")
         with reco_tab_weekly:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📆 WEEKLY PLAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_w        = _wib_now()
             _bs30_cache_w = st.session_state.get("sigma_bs30_screened", [])
@@ -17412,7 +17419,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _render_track_record_inline("weekly", "#26a69a", ctx="plan_weekly")
         with reco_tab_bsjp:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🌙 BELI SORE JUAL PAGI — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             _now_b = _wib_now()
             _wd_b  = _now_b.weekday()
             _h_b, _m_b = _now_b.hour, _now_b.minute
@@ -18110,7 +18116,6 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 # ─────────────────────────────────────────────
     with alpha_tab_brosum:
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 BROKER SUMMARY - NET BUY/SELL &amp; FOREIGN FLOW</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
 
         bs_tab_screening, bs_tab_history, bs_tab_foreign = st.tabs([
