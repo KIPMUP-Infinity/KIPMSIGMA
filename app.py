@@ -8124,12 +8124,6 @@ if current_view == "dashboard":
             # ── Indonesia ──────────────────────────────────────────
             "IHSG":        "^JKSE",
             "LQ45":        "^JKLQ45",
-            "IDX30":       "^JKIDX30",
-            "IDX80":       "^JKIDX80",
-            "KOMPAS100":   "^JKKLCI",
-            "IDXBUMN20":   "^JKBUMN20",
-            "IDXHIDIV20":  "^JKHIDIV20",
-            "IDXSMC-LIQ":  "^JKSMC",
             # ──────────────────── Global ─────────────────────────
             "VIX": "^VIX", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
             "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
@@ -8179,15 +8173,12 @@ if current_view == "dashboard":
         _idx_rows = []
         _idx_labels = {
             "IHSG":        ("🇮🇩", "IDR"), "LQ45":       ("🇮🇩", "IDR"),
-            "IDX30":       ("🇮🇩", "IDR"), "IDX80":      ("🇮🇩", "IDR"),
-            "KOMPAS100":   ("🇮🇩", "IDR"), "IDXBUMN20":  ("🇮🇩", "IDR"),
-            "IDXHIDIV20":  ("🇮🇩", "IDR"), "IDXSMC-LIQ": ("🇮🇩", "IDR"),
             "VIX": ("📊", "pts"), "S&P 500": ("🇺🇸", "USD"),
             "Dow Jones": ("🇺🇸", "USD"), "Nasdaq": ("🇺🇸", "USD"), "FTSE": ("🇬🇧", "GBP"),
             "Nikkei": ("🇯🇵", "JPY"), "Hang Seng": ("🇭🇰", "HKD"), "Shanghai": ("🇨🇳", "CNY"),
         }
         # Names that are Indonesian sub-indices (for visual grouping)
-        _idx_indonesia_names = {"IHSG","LQ45","IDX30","IDX80","KOMPAS100","IDXBUMN20","IDXHIDIV20","IDXSMC-LIQ"}
+        _idx_indonesia_names = {"IHSG","LQ45"}
         _global_divider_added = False
         for name, info in idx_data.items():
             flag, ccy = _idx_labels.get(name, ("🌐", ""))
@@ -8265,32 +8256,33 @@ if current_view == "dashboard":
 
         _now_wib_str = datetime.now().strftime("%d %b %Y · %H:%M WIB")
 
-        # ── Render both tables via components.html ─────────────────────────
-        _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
-        _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        # Mobile: dua kolom ditumpuk vertikal → harus dijumlah + gap + header
-        # Desktop: side-by-side → ambil yang TERBESAR + buffer
-        # Gunakan nilai mobile (lebih besar) sebagai default iframe height;
-        # JS autoResize akan koreksi ke nilai desktop saat di desktop.
-        _tbl_h_mobile  = _idx_total_h + _com_total_h + 140
-        _tbl_h = _tbl_h_mobile
+        # ── Gabungkan idx_rows + com_rows menjadi 1 tabel dengan section divider ──
+        # Tambahkan divider "COMMODITIES & FOREX" sebelum data komoditas
+        _com_divider = {"_section_divider": True, "label": "💱 COMMODITIES & FOREX"}
+        _all_rows = _idx_rows + [_com_divider] + _com_rows
+
+        _all_json = _mkt_json.dumps(_all_rows)
+
+        # ── Hitung tinggi tabel tunggal ────────────────────────────────────
+        _total_rows_count = len(_idx_rows) + len(_com_rows) + 1  # +1 divider
+        _single_tbl_h = min(44 + _total_rows_count * 38 + 8, 900)
+        # Mobile sama (single column scroll) — pakai nilai yang sama, auto-resize JS akan koreksi
+        _tbl_h = _single_tbl_h
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'DM Sans',sans-serif;}}
-.row{{display:flex;gap:12px;width:100%;}}
-.col{{flex:1;min-width:0;}}
-.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:18px;overflow:hidden;height:100%;}}
+.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:18px;overflow:hidden;width:100%;}}
 .mkt-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
 .mkt-badge{{font-size:0.875rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
-.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.1rem;min-width:320px;}}
-thead th{{position:static;background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
-tbody td{{padding:8px 12px;border-bottom:1px solid rgba(3,40,238,0.10);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.875rem;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:320px;}}
+thead th{{background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 14px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
+tbody td{{padding:8px 14px;border-bottom:1px solid rgba(3,40,238,0.10);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.875rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
 tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 .nm{{font-weight:600;font-size:0.875rem;color:{text_main};font-family:'DM Sans',sans-serif;}}
@@ -8299,18 +8291,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 .badge{{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
 .ccy{{font-size:0.8rem;color:{text_sub};}}
 @media(max-width:768px){{
-  .row{{flex-direction:column;gap:14px;}}
-  .col{{width:100%;min-width:0;}}
-  /* Kolom kedua WAJIB visible — jangan biarkan overflow:hidden memotongnya */
-  .mkt-wrap{{overflow:visible !important;height:auto !important;}}
-  /* Scroll horizontal saja, vertikal ikuti konten */
-  .mkt-scroll{{
-    overflow-x:auto !important;
-    overflow-y:visible !important;
-    -webkit-overflow-scrolling:touch;
-    max-height:none !important;
-    height:auto !important;
-  }}
+  .mkt-wrap{{border-radius:14px;}}
   .mkt-hdr{{font-size:0.875rem;padding:8px 10px;flex-wrap:wrap;gap:4px;}}
   thead th{{font-size:0.8rem;padding:7px 8px;white-space:nowrap;}}
   tbody td{{font-size:0.875rem;padding:7px 8px;white-space:nowrap;}}
@@ -8320,47 +8301,34 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
   table{{min-width:260px;}}
 }}
 </style></head><body>
-<div class="row">
-  <div class="col">
-    <div class="mkt-wrap">
-      <div class="mkt-hdr">
-        <span>📈 GLOBAL INDICES &amp; VOLATILITY</span>
-        <span class="mkt-badge" id="idx-ts">{_now_wib_str}</span>
-      </div>
-      <div class="mkt-scroll" id="idx-scroll">
-        <table><thead><tr>
-          <th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>CCY</th>
-        </tr></thead>
-        <tbody id="idx-tb"></tbody></table>
-      </div>
-    </div>
+<div class="mkt-wrap">
+  <div class="mkt-hdr">
+    <span>📊 LIVE MARKET &nbsp;·&nbsp; Global Indices &amp; Commodities</span>
+    <span class="mkt-badge" id="mkt-ts">{_now_wib_str}</span>
   </div>
-  <div class="col">
-    <div class="mkt-wrap">
-      <div class="mkt-hdr">
-        <span>💱 COMMODITIES &amp; FOREX</span>
-        <span class="mkt-badge" id="com-ts">{_now_wib_str}</span>
-      </div>
-      <div class="mkt-scroll" id="com-scroll">
-        <table><thead><tr>
-          <th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
-        </tr></thead>
-        <tbody id="com-tb"></tbody></table>
-      </div>
-    </div>
+  <div class="mkt-scroll" id="mkt-scroll">
+    <table><thead><tr>
+      <th>ASET / INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
+    </tr></thead>
+    <tbody id="mkt-tb"></tbody></table>
   </div>
 </div>
 <script>
 (function(){{
-  var IDX={_idx_json};
-  var COM={_com_json};
+  var ALL={_all_json};
   var TEXT_SUB='{text_sub}';
 
-  function buildRows(data, tbId, flagKey){{
+  function buildRows(data, tbId){{
     var h='';
     data.forEach(function(r){{
+      // Section divider (Commodities header)
+      if(r._section_divider){{
+        h+='<tr><td colspan="4" style="padding:6px 14px;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;border-bottom:1px solid {met_border};border-top:2px solid {met_border};background:rgba(139,92,246,0.06);font-family:\'DM Sans\',sans-serif;">'+r.label+'</td></tr>';
+        return;
+      }}
+      // Index group divider
       if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.875rem;color:rgba(3,40,238,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.15);background:rgba(3,40,238,0.03);">'+r.label+'</td></tr>';
+        h+='<tr><td colspan="4" style="padding:4px 14px;font-size:0.72rem;color:rgba(110,155,255,0.55);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.12);background:rgba(3,40,238,0.025);font-family:\'DM Sans\',sans-serif;">'+r.label+'</td></tr>';
         return;
       }}
       var up = r.cls==='mkt-up';
@@ -8370,7 +8338,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
       var bdr = na ? '#b2b5be' : (up ? '#089981' : '#f23645');
       var arrow = na ? '' : (up ? '▲' : '▼');
       var pct = na ? '-' : (arrow+' '+r.pct);
-      var fl = r[flagKey] || '';
+      // Support both flag (indices) and icon (commodities) keys
+      var fl = r.flag || r.icon || '';
       var rowBg = r.is_id ? 'rgba(3,40,238,0.025)' : '';
       h += '<tr style="background:'+rowBg+'">'+
         '<td><span class="flag">'+fl+'</span><span class="nm">'+r.name+'</span></td>'+
@@ -8382,72 +8351,36 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     document.getElementById(tbId).innerHTML = h;
   }}
 
-  buildRows(IDX, 'idx-tb', 'flag');
-  buildRows(COM, 'com-tb', 'icon');
-
-  // Equalise scroll heights - HANYA di desktop. Di mobile, biarkan tinggi mengikuti konten.
-  function setHeights(){{
-    var isMobile = window.innerWidth <= 768;
-    if (isMobile) return; // Skip di mobile — jangan kunci maxHeight, kolom kedua harus visible penuh
-    var idxS = document.getElementById('idx-scroll');
-    var comS = document.getElementById('com-scroll');
-    if(!idxS||!comS) return;
-    idxS.style.maxHeight = 'none'; comS.style.maxHeight = 'none';
-    var h = Math.min(Math.max(idxS.scrollHeight, comS.scrollHeight), 560);
-    idxS.style.maxHeight = h+'px';
-    comS.style.maxHeight = h+'px';
-    idxS.style.overflowY = 'auto';
-    comS.style.overflowY = 'auto';
-  }}
-  setTimeout(setHeights, 50);
+  buildRows(ALL, 'mkt-tb');
 
   function updateTs(){{
     var now = new Date();
-    // WIB = UTC+7
-    var wibMs = now.getTime() + (7*60*60*1000)-now.getTimezoneOffset()*60000;
-    // just use UTC offset trick
-    var wib = new Date(now.getTime());
-    var ofs = now.getTimezoneOffset(); // local offset in mins
+    var ofs = now.getTimezoneOffset();
     var wibLocal = new Date(now.getTime() + (ofs+420)*60000);
     var months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     var str=wibLocal.getDate()+' '+months[wibLocal.getMonth()]+' '+wibLocal.getFullYear()
       +' · '+String(wibLocal.getHours()).padStart(2,'0')+':'+String(wibLocal.getMinutes()).padStart(2,'0')+' WIB';
-    var e1=document.getElementById('idx-ts'); if(e1) e1.textContent=str;
-    var e2=document.getElementById('com-ts'); if(e2) e2.textContent=str;
+    var e=document.getElementById('mkt-ts'); if(e) e.textContent=str;
   }}
   setInterval(updateTs, 60000);
 
-  // ── Auto-resize iframe ke tinggi konten aktual ──
+  // ── Auto-resize iframe ke tinggi konten aktual (single table, no side-by-side) ──
   function autoResize() {{
-    var isMobile = window.innerWidth <= 768;
-    var h;
-    if (isMobile) {{
-      // Mobile: stacked layout.
-      // PENTING: ukur scrollHeight body BUKAN getBoundingClientRect (yang dibatasi iframe)
-      // Paksa reflow dulu agar browser hitung ulang tinggi kedua kolom yang stacked
-      var row = document.querySelector('.row');
-      if (row) {{
-        // Reset overflow sementara agar tidak ada clipping saat ukur
-        row.style.overflow = 'visible';
-      }}
-      h = document.documentElement.scrollHeight;
-      if (h < 300) h = document.body.scrollHeight; // fallback
-      h = h + 20; // buffer
-    }} else {{
-      // Desktop: side-by-side — pakai body scrollHeight
-      h = document.body.scrollHeight + 8;
-    }}
-    h = Math.max(h, 280);
+    var h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      document.querySelector('.mkt-wrap') ? document.querySelector('.mkt-wrap').scrollHeight : 0
+    );
+    // Tidak ada gap ekstra — pakai tinggi aktual + buffer minimal
+    h = Math.max(h + 4, 200);
     try {{
       window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
     }} catch(e) {{}}
   }}
-  // Kirim beberapa kali: segera, setelah layout stabil, dan setelah font/gambar load
   setTimeout(autoResize, 80);
   setTimeout(autoResize, 350);
   setTimeout(autoResize, 800);
   setTimeout(autoResize, 1600);
-  setTimeout(autoResize, 2800);
   window.addEventListener('resize', function() {{ setTimeout(autoResize, 150); }});
 }})();
 </script></body></html>""", height=_tbl_h, scrolling=False)
@@ -9438,66 +9371,63 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     padding-bottom: 8px;
   }}
 
-  /* Grid */
-  .frm-grid {{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin-bottom: 16px;
-    min-width: 600px;
-  }}
-  .frm-grid-wrap {{
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    margin-bottom: 16px;
-  }}
-
-  /* Card */
-  .frm-card {{
-    background: {'rgba(8,12,22,0.9)' if is_dark else '#f0f4ff'};
+  /* ── SINGLE VERTICAL TABLE (menggantikan grid 3 kartu) ── */
+  .frm-vtbl-wrap {{
+    background: {'rgba(8,12,22,0.9)' if is_dark else '#f8faff'};
     border: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
     border-radius: 12px;
     overflow: hidden;
+    margin-bottom: 16px;
+    width: 100%;
   }}
-  .frm-card-header {{
+  /* Section header row (tanggal FOMC) */
+  .frm-meeting-hdr {{
     background: rgba(3,40,238,0.07);
     border-bottom: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-    padding: 12px 16px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
   }}
-  .frm-card-date {{
+  .frm-meeting-hdr + .frm-meeting-hdr {{
+    border-top: 2px solid {'rgba(3,40,238,0.25)' if is_dark else '#c7d4f0'};
+  }}
+  .frm-meeting-date {{
     font-size: 0.875rem;
     font-weight: 700;
     color: #6e9bff;
     letter-spacing: 0.06em;
-    margin-bottom: 4px;
   }}
-  .frm-card-meta {{
+  .frm-meeting-meta {{
     display: flex;
-    justify-content: space-between;
+    gap: 14px;
     align-items: center;
+    flex-wrap: wrap;
   }}
-  .frm-card-future {{
+  .frm-meeting-future {{
     font-size: 0.72rem;
     color: {'#6b7a99' if is_dark else '#64748b'};
   }}
-  .frm-card-time {{
+  .frm-meeting-time {{
     font-size: 0.72rem;
     color: #089981;
   }}
 
   /* Bars section */
-  .frm-bars {{ padding: 14px 16px 8px; }}
-  .frm-bar-row {{ margin-bottom: 12px; }}
+  .frm-bars {{ padding: 12px 16px 6px; }}
+  .frm-bar-row {{ margin-bottom: 10px; }}
   .frm-bar-top {{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }}
   .frm-bar-label {{ font-size: 0.875rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; font-weight: 400; }}
   .frm-bar-pct {{ font-size: 0.875rem; font-weight: 700; }}
   .frm-bar-track {{
-    height: 7px;
+    height: 6px;
     border-radius: 4px;
     background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
     overflow: hidden;
@@ -9508,40 +9438,44 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     transition: width 0.4s ease;
   }}
 
-  /* Table section */
-  .frm-tbl-wrap {{
-    border-top: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }}
-  .frm-tbl {{
-    width: 100%;
-    border-collapse: collapse;
-  }}
-  .frm-tbl thead tr {{
-    background: {'rgba(255,255,255,0.03)' if is_dark else 'rgba(0,0,0,0.02)'};
-  }}
-  .frm-tbl th {{
-    padding: 7px 10px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    color: {'#6b7a99' if is_dark else '#64748b'};
-    white-space: nowrap;
-  }}
-  .frm-tbl th:first-child {{ text-align: left; }}
-  .frm-tbl th:not(:first-child) {{ text-align: right; }}
-  .frm-tbl td {{
-    padding: 7px 10px;
-    font-size: 0.875rem;
+  /* Probability detail rows (inline tabel) */
+  .frm-detail-row {{
+    display: flex;
+    align-items: center;
+    padding: 5px 16px;
     border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-    white-space: nowrap;
+    gap: 10px;
+    flex-wrap: wrap;
   }}
-  .frm-tbl td:first-child {{
-    text-align: left;
+  .frm-detail-rate {{
+    font-size: 0.875rem;
     color: {'#9ca3af' if is_dark else '#64748b'};
+    min-width: 100px;
   }}
-  .frm-tbl td:not(:first-child) {{ text-align: right; color: {'#6b7a99' if is_dark else '#9ca3af'}; }}
+  .frm-detail-now {{
+    font-size: 0.875rem;
+    font-weight: 700;
+    min-width: 60px;
+  }}
+  .frm-detail-prev {{
+    font-size: 0.875rem;
+    color: {'#6b7a99' if is_dark else '#9ca3af'};
+    min-width: 55px;
+    text-align: right;
+  }}
+  .frm-detail-prevwk {{
+    font-size: 0.875rem;
+    color: {'#6b7a99' if is_dark else '#9ca3af'};
+    min-width: 55px;
+    text-align: right;
+  }}
+  .frm-detail-footer {{
+    padding: 4px 16px 8px;
+    font-size: 0.72rem;
+    color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
+    text-align: right;
+    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+  }}
   .frm-dir-badge {{
     display: inline-block;
     font-size: 0.72rem;
@@ -9552,13 +9486,25 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     margin-left: 4px;
     vertical-align: middle;
   }}
-  .frm-tbl-footer {{
-    padding: 5px 10px 8px;
-    font-size: 0.72rem;
-    color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
-    text-align: right;
-    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+  .frm-col-hdr {{
+    display: flex;
+    align-items: center;
+    padding: 5px 16px 4px;
+    gap: 10px;
+    border-top: 1px solid {'rgba(3,40,238,0.10)' if is_dark else '#dce8ff'};
+    background: {'rgba(255,255,255,0.02)' if is_dark else 'rgba(0,0,0,0.02)'};
   }}
+  .frm-col-hdr span {{
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    color: {'#6b7a99' if is_dark else '#64748b'};
+    text-transform: uppercase;
+  }}
+  .frm-col-hdr .ch-rate {{ min-width: 100px; }}
+  .frm-col-hdr .ch-now  {{ min-width: 60px; }}
+  .frm-col-hdr .ch-yday {{ min-width: 55px; text-align: right; }}
+  .frm-col-hdr .ch-week {{ min-width: 55px; text-align: right; }}
 
   /* Insight box */
   .frm-insight {{
@@ -9572,60 +9518,30 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     line-height: 1.65;
   }}
 
-  /* ═══════════════════════════════════════════════════════
-     MOBILE ONLY — semua perubahan di bawah TERISOLASI ketat
-     di dalam media query ini. Tidak menyentuh CSS global.
-     ═══════════════════════════════════════════════════════ */
-  @media (max-width: 860px) {{
-    /* Grid: paksa 1 kolom, hapus min-width yang menyebabkan overflow */
-    .frm-grid {{
-      grid-template-columns: 1fr !important;
-      gap: 12px !important;
-      min-width: 0 !important;
-      width: 100% !important;
-    }}
-    /* Grid wrapper: hapus overflow-x scroll, biarkan konten mengalir vertikal */
-    .frm-grid-wrap {{
-      overflow-x: visible !important;
-      overflow-y: visible !important;
-      width: 100% !important;
-      min-width: 0 !important;
-    }}
-    /* Countdown: stack vertikal, kompak */
-    .frm-countdown {{
-      padding: 12px 14px;
-      flex-direction: column;
-      gap: 8px;
-    }}
+  /* Mobile: kompak — single table layout sudah vertikal by default */
+  @media (max-width: 768px) {{
+    .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
     .frm-cd-num {{ font-size: 1.25rem; }}
     .frm-cd-box {{ min-width: 38px; }}
     .frm-cd-boxes {{ justify-content: flex-start; flex-wrap: wrap; }}
-    /* Card meta: stack vertikal */
-    .frm-card-meta {{ flex-direction: column; gap: 2px; align-items: flex-start; }}
-    .frm-card-time {{ font-size: 0.72rem; }}
-    .frm-card-date {{ font-size: 0.875rem; }}
-    /* Bars */
-    .frm-bars {{ padding: 12px 14px 6px; }}
+    .frm-meeting-meta {{ gap: 8px; }}
+    .frm-bars {{ padding: 10px 12px 4px; }}
     .frm-bar-label {{ font-size: 0.875rem; }}
     .frm-bar-pct {{ font-size: 0.875rem; }}
-    /* Tabel: BERIKAN overflow-x:auto agar kolom muat dan bisa digeser */
-    .frm-tbl-wrap {{
-      overflow-x: auto !important;
-      -webkit-overflow-scrolling: touch !important;
-      width: 100% !important;
-    }}
-    .frm-tbl {{
-      width: 100% !important;
-      min-width: 260px;
-      table-layout: auto !important;
-    }}
-    .frm-tbl th {{ padding: 5px 6px; font-size: 0.72rem; letter-spacing: 0; white-space: nowrap; }}
-    .frm-tbl td {{ padding: 5px 6px; font-size: 0.875rem; white-space: nowrap; }}
-    .frm-tbl th:first-child, .frm-tbl td:first-child {{ padding-left: 8px; }}
-    /* Badge kompak */
+    .frm-detail-row {{ padding: 5px 12px; gap: 6px; }}
+    .frm-detail-rate {{ min-width: 90px; font-size: 0.875rem; }}
+    .frm-detail-now {{ min-width: 50px; font-size: 0.875rem; }}
+    .frm-detail-prev {{ min-width: 44px; font-size: 0.875rem; }}
+    .frm-detail-prevwk {{ min-width: 44px; font-size: 0.875rem; }}
+    .frm-col-hdr {{ padding: 4px 12px 3px; gap: 6px; }}
+    .frm-col-hdr .ch-rate {{ min-width: 90px; }}
+    .frm-col-hdr .ch-now  {{ min-width: 50px; }}
+    .frm-col-hdr .ch-yday {{ min-width: 44px; }}
+    .frm-col-hdr .ch-week {{ min-width: 44px; }}
     .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
-    /* Insight */
     .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
+    .frm-meeting-hdr {{ padding: 8px 12px; }}
+    .frm-detail-footer {{ padding: 3px 12px 6px; }}
   }}
 </style>
 </head>
@@ -9642,7 +9558,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
   </div>
 
   <!-- Cards Grid -->
-  <div class="frm-grid-wrap"><div class="frm-grid" id="frm-grid"></div></div>
+  <div class="frm-vtbl-wrap" id="frm-vtbl"></div>
 
   <!-- Insight -->
   <div class="frm-insight">
@@ -9693,80 +9609,84 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
   setInterval(tick, 1000);
 }})();
 
-// Build cards
+// ── Build single vertical table ──
 (function() {{
-  var grid = document.getElementById('frm-grid');
+  var wrap = document.getElementById('frm-vtbl');
   var html = '';
 
-  DATA.forEach(function(mtg) {{
-    // Bars
-    var bars = '';
+  DATA.forEach(function(mtg, idx) {{
+    // Section header — tanggal FOMC
+    var borderTop = idx > 0 ? 'border-top:2px solid rgba(3,40,238,0.22);' : '';
+    html += '<div class="frm-meeting-hdr" style="' + borderTop + '">';
+    html += '<span class="frm-meeting-date">' + (mtg.date_wib || mtg.date) + '</span>';
+    html += '<div class="frm-meeting-meta">';
+    html += '<span class="frm-meeting-future">Future: ' + mtg.future_price + '</span>';
+    html += '<span class="frm-meeting-time">Meeting: ' + mtg.meeting_time + '</span>';
+    html += '</div></div>';
+
+    // Probability bars
+    html += '<div class="frm-bars">';
     mtg.scenarios.forEach(function(sc) {{
       var c = DIR_COLOR[sc.dir] || '#b2b5be';
       var w = Math.max(sc.prob, 1.5);
-      bars += '<div class="frm-bar-row">';
-      bars += '<div class="frm-bar-top">';
-      bars += '<span class="frm-bar-label">' + sc.range + '</span>';
-      bars += '<span class="frm-bar-pct" style="color:' + c + '">' + sc.prob.toFixed(1) + '%</span>';
-      bars += '</div>';
-      bars += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:' + w + '%;background:' + c + ';opacity:0.85;"></div></div>';
-      bars += '</div>';
+      html += '<div class="frm-bar-row">';
+      html += '<div class="frm-bar-top">';
+      html += '<span class="frm-bar-label">'+sc.range+'</span>';
+      html += '<span class="frm-bar-pct" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+      html += '</div>';
+      html += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:'+w+'%;background:'+c+';opacity:0.85;"></div></div>';
+      html += '</div>';
     }});
-
-    // Table rows
-    var rows = '';
-    mtg.scenarios.forEach(function(sc) {{
-      var c = DIR_COLOR[sc.dir] || '#b2b5be';
-      var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
-      var pd = sc.prev_day !== null ? sc.prev_day.toFixed(1) + '%' : '-';
-      var pw = sc.prev_week !== null ? sc.prev_week.toFixed(1) + '%' : '-';
-      var badge = '<span class="frm-dir-badge" style="color:' + c + ';background:' + bc + '">' + DIR_LABEL[sc.dir] + '</span>';
-      rows += '<tr>';
-      rows += '<td>' + sc.range + badge + '</td>';
-      rows += '<td style="font-weight:700;color:' + c + '">' + sc.prob.toFixed(1) + '%</td>';
-      rows += '<td>' + pd + '</td>';
-      rows += '<td>' + pw + '</td>';
-      rows += '</tr>';
-    }});
-
-    html += '<div class="frm-card">';
-    html += '<div class="frm-card-header">';
-    html += '<div class="frm-card-date">' + (mtg.date_wib || mtg.date) + '</div>';
-    html += '<div class="frm-card-meta">';
-    html += '<span class="frm-card-future">Future: ' + mtg.future_price + '</span>';
-    html += '<span class="frm-card-time">Meeting: ' + mtg.meeting_time + '</span>';
-    html += '</div></div>';
-    html += '<div class="frm-bars">' + bars + '</div>';
-    html += '<div class="frm-tbl-wrap"><table class="frm-tbl">';
-    html += '<thead><tr><th>TARGET RATE</th><th>NOW %</th><th>YDAY %</th><th>WEEK %</th></tr></thead>';
-    html += '<tbody>' + rows + '</tbody>';
-    html += '</table></div>';
-    html += '<div class="frm-tbl-footer">Updated: ' + UPDATED + ' · Source: CME FedWatch</div>';
     html += '</div>';
+
+    // Column header
+    html += '<div class="frm-col-hdr">';
+    html += '<span class="ch-rate">TARGET RATE</span>';
+    html += '<span class="ch-now">NOW %</span>';
+    html += '<span class="ch-yday">YDAY %</span>';
+    html += '<span class="ch-week">WEEK %</span>';
+    html += '</div>';
+
+    // Detail rows
+    mtg.scenarios.forEach(function(sc) {{
+      var c  = DIR_COLOR[sc.dir] || '#b2b5be';
+      var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
+      var pd = (sc.prev_day  !== null && sc.prev_day  !== undefined) ? sc.prev_day.toFixed(1)  + '%' : '-';
+      var pw = (sc.prev_week !== null && sc.prev_week !== undefined) ? sc.prev_week.toFixed(1) + '%' : '-';
+      var badge = '<span class="frm-dir-badge" style="color:'+c+';background:'+bc+'">'+DIR_LABEL[sc.dir]+'</span>';
+      html += '<div class="frm-detail-row">';
+      html += '<span class="frm-detail-rate">'+sc.range+badge+'</span>';
+      html += '<span class="frm-detail-now" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+      html += '<span class="frm-detail-prev">'+pd+'</span>';
+      html += '<span class="frm-detail-prevwk">'+pw+'</span>';
+      html += '</div>';
+    }});
+
+    // Footer row
+    html += '<div class="frm-detail-footer">Updated: '+UPDATED+' · Source: CME FedWatch</div>';
   }});
 
-  grid.innerHTML = html;
+  wrap.innerHTML = html;
 
-  // Auto-resize iframe — ukur tinggi konten aktual termasuk semua kartu stacked di mobile
+  // ── Auto-resize: ukur tinggi aktual konten, bukan pakai angka hardcoded ──
   function sendHeight() {{
-    // Gunakan scrollHeight dokumen agar semua kartu yang stacked terukur
     var h = Math.max(
       document.documentElement.scrollHeight,
       document.body.scrollHeight,
       document.querySelector('.frm-wrap') ? document.querySelector('.frm-wrap').scrollHeight : 0
     );
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 16}}, '*');
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 8}}, '*');
   }}
   sendHeight();
-  setTimeout(sendHeight, 200);
-  setTimeout(sendHeight, 600);
-  setTimeout(sendHeight, 1200);
+  setTimeout(sendHeight, 150);
+  setTimeout(sendHeight, 500);
+  setTimeout(sendHeight, 1000);
   window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
 }})();
 </script>
 </body>
 </html>
-        """, height=1280, scrolling=True)
+        """, height=900, scrolling=False)
 
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
