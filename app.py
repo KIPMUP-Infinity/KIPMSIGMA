@@ -9535,7 +9535,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
   /* Mobile */
   @media (max-width: 860px) {{
-    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; min-width: unset; }}
+    .frm-grid-wrap {{ overflow-x: unset; }}
     .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
     .frm-cd-num {{ font-size: 1.25rem; }}
     .frm-cd-box {{ min-width: 38px; }}
@@ -9546,10 +9547,18 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     .frm-bars {{ padding: 12px 14px 6px; }}
     .frm-bar-label {{ font-size: 0.875rem; }}
     .frm-bar-pct {{ font-size: 0.875rem; }}
-    .frm-tbl th {{ padding: 6px 8px; font-size: 0.72rem; }}
-    .frm-tbl td {{ padding: 6px 8px; font-size: 0.875rem; }}
+    .frm-tbl th {{ padding: 4px 5px; font-size: 0.72rem; letter-spacing: 0; }}
+    .frm-tbl td {{ padding: 4px 5px; font-size: 0.875rem; }}
+    .frm-tbl th:first-child, .frm-tbl td:first-child {{ padding-left: 8px; }}
     .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
-    .frm-tbl-wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
+    /* KUNCI: hilangkan overflow-x pada mobile sehingga tidak ada horizontal scroll */
+    .frm-tbl-wrap {{ overflow-x: unset; -webkit-overflow-scrolling: unset; }}
+    /* Kolom pertama boleh wrap agar muat */
+    .frm-tbl td:first-child, .frm-tbl th:first-child {{ white-space: normal; word-break: break-word; max-width: 120px; }}
+    /* Badge ukuran lebih kompak */
+    .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
+    /* Pastikan tabel 100% lebar kartu */
+    .frm-tbl {{ width: 100%; table-layout: fixed; }}
   }}
 </style>
 </head>
@@ -11034,11 +11043,36 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             ]:
                 with col:
                     st.markdown(f"""<div style='background:{c}11;border:1px solid {c}33;
-                        border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;'>
+                        border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;
+                        height:auto;overflow:visible;'>
                         <div style='font-size:0.8rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
                         <div style='font-size:1.6rem;font-weight:700;color:{text_main};'>{val}</div>
                         <div style='font-size:0.8rem;color:{text_sub};'>saham</div>
                     </div>""", unsafe_allow_html=True)
+            # MOBILE-ONLY: Pastikan kartu kategori tidak punya vertical scroll
+            components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-sector-card-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-sector-card-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      /* Hapus vertical scroll pada kartu fase sektor */
+      [data-testid="stMarkdownContainer"] > div[style*="border-radius:8px"][style*="text-align:center"] {
+        height: auto !important;
+        min-height: unset !important;
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
             # Mini RRG untuk sektor ini (plotly kecil, tampilkan saham-saham di dalamnya)
             fig_mini = go.Figure()
@@ -12341,7 +12375,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 ]:
                     with col:
                         st.markdown(f"""
-                        <div class='sigma-metric-card' style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;'>
+                        <div class='sigma-metric-card' style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;height:auto;overflow:visible;'>
                             <div style='font-size:0.8rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
                             <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
                             <div style='font-size:0.875rem;color:{sub_c};margin-top:3px;'>{sub}</div>
@@ -12362,6 +12396,12 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
       /* Beri jarak bawah pada setiap kartu rangkuman agar tidak saling menempel */
       .sigma-metric-card {
         margin-bottom: 12px !important;
+        /* Hapus fixed height & overflow-y agar tidak muncul scroll vertikal di dalam kartu */
+        height: auto !important;
+        min-height: unset !important;
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
       }
     }
   `;
@@ -12483,12 +12523,31 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 )
 
                 st.markdown(f"""
-                <div style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
+                <div class='sh-chart-legend-desktop' style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
                     <span style='color:{price_color};font-weight:600;white-space:nowrap;'>━━ Harga {sh_ticker} (Rp) - Skala Kanan</span>
                     <span style='color:#4285F4;font-weight:600;white-space:nowrap;'>━━ Total Pemegang - Skala Kiri</span>
                     <span style='color:{sh_up_color};white-space:nowrap;'>█ Δ Naik</span>
                     <span style='color:{sh_dn_color};white-space:nowrap;'>█ Δ Turun</span>
                 </div>""", unsafe_allow_html=True)
+                # MOBILE-ONLY: sembunyikan legend horizontal di atas chart (dobel dengan legend bawaan chart)
+                components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-chart-legend-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-chart-legend-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      .sh-chart-legend-desktop {
+        display: none !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -12820,16 +12879,31 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
 .lbl{{font-size:0.875rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
 .wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
-/* === SCROLL CONTAINER: vertikal + horizontal === */
+/* Mobile: hapus overflow:hidden agar border bawah membungkus konten dengan pas */
+@media(max-width:768px){{
+  .wrap{{overflow:visible !important;border-radius:10px !important;}}
+}}
+/* === SCROLL CONTAINER: horizontal saja, vertikal auto === */
 .scroll-box{{
   width:100%;
-  max-height:660px;          /* ≈15 baris × 44px = 660px */
+  max-height:660px;          /* ≈15 baris × 44px = 660px - hanya berlaku di desktop */
   overflow-x:auto !important;
-  overflow-y:auto !important;
+  overflow-y:visible !important;
   -webkit-overflow-scrolling:touch !important;
   cursor:grab;
   scrollbar-width:thin;
   scrollbar-color:{_tbl_border} transparent;
+}}
+@media(max-width:768px){{
+  .scroll-box{{
+    max-height:none !important;
+    height:auto !important;
+    overflow-y:visible !important;
+    overflow-x:auto !important;
+  }}
+  .wrap{{
+    overflow:visible !important;
+  }}
 }}
 .scroll-box:active{{cursor:grabbing;}}
 .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
@@ -12947,6 +13021,14 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
     el.scrollLeft=sL-(e.pageX-el.offsetLeft-sX);
   }});
   render();
+  // Auto-resize iframe ke tinggi konten aktual (penting di mobile karena overflow:visible)
+  function _sendH() {{
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 8}}, '*');
+  }}
+  _sendH();
+  setTimeout(_sendH, 150);
+  setTimeout(_sendH, 400);
 }})();
 </script></body></html>"""
 
@@ -12968,15 +13050,23 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
   s.id = 'sigma-sh-gap-mobile-css';
   s.textContent = `
     @media (max-width: 768px) {
-      /* Kurangi margin-bottom container tabel screening agar rapat */
+      /* Hilangkan margin-bottom pada wrapper tabel sh2 */
       .sh2-scroll-outer {
-        margin-bottom: 6px !important;
+        margin-bottom: 0px !important;
+        padding-bottom: 0px !important;
       }
-      /* Kurangi gap default antar iframe Streamlit di mobile */
+      /* Hilangkan gap default Streamlit di antara iframe/block wrapper */
       [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
       [data-testid="stVerticalBlock"] > div > [data-testid="stIFrame"] {
         margin-bottom: 0px !important;
         padding-bottom: 0px !important;
+      }
+      /* Khusus iframe komponen HTML Streamlit: kurangi margin antar iframe */
+      iframe[title="sigma_sh_screen_naik"],
+      iframe[title="sigma_sh_screen_turun"] {
+        display: block !important;
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
       }
     }
   `;
@@ -12984,7 +13074,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 })();
 </script>
 """, height=0)
-        st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;font-size:0;height:0;'></div>", unsafe_allow_html=True)
         _render_sh_table_v2(_turun_rows, is_naik=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
