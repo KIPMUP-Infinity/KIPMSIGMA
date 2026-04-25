@@ -8087,7 +8087,8 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    tab_macro, tab_rotation, tab_shareholder, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_idxmap, tab_macro, tab_rotation, tab_shareholder, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+        "  🌐 IDX MARKET MAP  ",
         "  GLOBAL MACRO & NEWS  ",
         "  INDEX & SECTOR ROTATION  ",
         "  SHAREHOLDER  ",
@@ -8095,6 +8096,1088 @@ if current_view == "dashboard":
         "  🧮 CALCULATOR  ",
         "  📖 PANDUAN  ",
     ])
+
+    with tab_idxmap:
+        # ── IDX MARKET MAP — 3D Globe Konglomerasi & MSCI ──────────────────────
+        st.markdown(
+            "<div class='trm-section'><div class='trm-section-line'></div>"
+            "<span class='trm-section-label'>IDX MARKET MAP — KONGLOMERASI & MSCI</span>"
+            "<div class='trm-section-line'></div></div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#4a6a8a;font-size:0.82rem;margin:-4px 0 10px;'>"
+            "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
+            unsafe_allow_html=True,
+        )
+        _idx_globe_html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDX Stock Market World</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#000510;
+  color:#fff;
+  font-family:'Segoe UI',Arial,sans-serif;
+  width:100vw; height:100vh;
+  overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* HEADER */
+#header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px 6px;
+  flex-shrink:0; z-index:50;
+}
+#header-left h1 {
+  font-size:22px; font-weight:700; letter-spacing:1px; color:#fff;
+  text-shadow:0 0 30px rgba(0,120,255,0.6);
+}
+#header-left p { font-size:11px; color:#4a6a9a; margin-top:1px; }
+#header-buttons { display:flex; gap:6px; }
+.hbtn {
+  display:flex; flex-direction:column; align-items:center;
+  background:rgba(8,18,45,0.9); border:1px solid #0d2a55;
+  border-radius:8px; padding:6px 14px; cursor:pointer;
+  font-size:10px; color:#6a8ab0; gap:3px; min-width:52px;
+  transition:all 0.2s;
+}
+.hbtn:hover { background:rgba(15,40,100,0.9); color:#aaccff; }
+.hbtn.active { background:rgba(0,60,180,0.6); border-color:#0055cc; color:#fff; }
+.hbtn svg { width:15px; height:15px; }
+
+/* MAIN */
+#main { flex:1; display:flex; overflow:hidden; }
+
+/* LEFT PANEL */
+#left {
+  width:205px; flex-shrink:0;
+  display:flex; flex-direction:column; gap:5px;
+  padding:4px 8px 8px; overflow-y:auto;
+}
+#left::-webkit-scrollbar { width:2px; }
+#left::-webkit-scrollbar-thumb { background:#0d2a55; }
+
+.panel {
+  background:rgba(4,12,30,0.88);
+  border:1px solid #0a2040;
+  border-radius:8px; padding:10px;
+}
+.panel-title {
+  font-size:9.5px; font-weight:700; letter-spacing:1.8px;
+  color:#3a6aaa; margin-bottom:8px; padding-bottom:5px;
+  border-bottom:1px solid #0a2040; text-transform:uppercase;
+}
+
+.mo-item { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+.mo-icon {
+  width:20px; height:20px; border-radius:50%;
+  border:1px solid #1a3a6a; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; color:#3a7acc; font-size:9px;
+}
+.mo-label { color:#4a6a8a; font-size:10px; }
+.mo-value { color:#c8daf0; font-weight:600; font-size:11px; }
+
+.top10-row {
+  display:flex; align-items:center; gap:4px;
+  font-size:10px; padding:2px 3px; cursor:pointer;
+  border-radius:4px; transition:background 0.15s;
+}
+.top10-row:hover { background:rgba(0,60,180,0.25); }
+.top10-num { color:#3a5a7a; width:16px; text-align:right; }
+.top10-ticker { font-weight:600; width:38px; }
+.top10-cap { color:#6a8aaa; margin-left:auto; font-size:9.5px; }
+
+.legend-item { display:flex; align-items:center; gap:7px; font-size:10px; color:#7a9aba; margin-bottom:4px; }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* CENTER */
+#center { flex:1; position:relative; display:flex; flex-direction:column; align-items:center; }
+#globe-wrap { flex:1; width:100%; position:relative; }
+canvas#globe { width:100%; height:100%; display:block; }
+
+/* Tooltip */
+#tooltip {
+  position:absolute; display:none; pointer-events:none; z-index:200;
+  background:rgba(4,12,35,0.95); border:1px solid #1a4a8a;
+  border-radius:8px; padding:8px 12px; font-size:11px;
+  box-shadow:0 0 20px rgba(0,80,200,0.3);
+}
+
+/* Bottom */
+#bottom-bar {
+  width:100%; display:flex; justify-content:center;
+  padding:5px 0 6px; flex-shrink:0;
+}
+#scale-box {
+  background:rgba(4,12,35,0.92); border:1px solid #0a2040;
+  border-radius:10px; padding:7px 22px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.scale-title { font-size:9px; letter-spacing:1.5px; color:#3a6aaa; text-transform:uppercase; }
+#scale-dots { display:flex; align-items:center; gap:16px; }
+.scale-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.sdot {
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #88ccff, #0055cc);
+  flex-shrink:0;
+}
+.slabel { font-size:9px; color:#4a6a8a; }
+
+#instr {
+  width:100%; display:flex; justify-content:space-around;
+  padding:4px 10px 6px; font-size:11px; color:#3a5a7a;
+  border-top:1px solid #080f22; flex-shrink:0;
+}
+.instr-item { display:flex; align-items:center; gap:6px; }
+
+/* RIGHT PANEL */
+#right {
+  width:225px; flex-shrink:0;
+  display:flex; flex-direction:column; gap:5px;
+  padding:4px 8px 8px; overflow-y:auto;
+}
+
+.owner-item { display:flex; align-items:center; gap:8px; font-size:11px; color:#7a9aba; margin-bottom:5px; }
+.owner-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+.si-table { width:100%; border-collapse:collapse; }
+.si-table tr td { font-size:11px; padding:3px 0; }
+.si-table tr td:first-child { color:#4a6a8a; }
+.si-table tr td:last-child { text-align:right; color:#b0ccec; }
+.si-btn {
+  display:block; width:100%; margin-top:10px;
+  background:linear-gradient(135deg,#0055dd,#003aaa);
+  border:none; border-radius:7px; padding:9px;
+  color:#fff; font-size:12px; font-weight:600; cursor:pointer;
+  letter-spacing:0.5px; transition:opacity 0.2s;
+}
+.si-btn:hover { opacity:0.85; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div id="header-left">
+    <h1>IDX STOCK MARKET WORLD</h1>
+    <p>Indonesia Stock Exchange Universe</p>
+  </div>
+  <div id="header-buttons">
+    <div class="hbtn active" id="btn-rotate" onclick="setMode('rotate')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      Rotate
+    </div>
+    <div class="hbtn" id="btn-zoom" onclick="setMode('zoom')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      Zoom
+    </div>
+    <div class="hbtn" id="btn-reset" onclick="resetView()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+      Reset
+    </div>
+    <div class="hbtn" id="btn-info" onclick="toggleInfoPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Info
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+<!-- LEFT -->
+<div id="left">
+  <div class="panel">
+    <div class="panel-title">Market Overview</div>
+    <div class="mo-item"><div class="mo-icon">☰</div><div><div class="mo-label">Total Stocks</div><div class="mo-value" id="mo-total">—</div></div></div>
+    <div class="mo-item"><div class="mo-icon">◎</div><div><div class="mo-label">Total Market Cap</div><div class="mo-value" id="mo-cap">—</div></div></div>
+    <div class="mo-item"><div class="mo-icon">△</div><div><div class="mo-label">Largest Stock</div><div class="mo-value">BBCA</div></div></div>
+    <div class="mo-item"><div class="mo-icon">★</div><div><div class="mo-label">MSCI Constituents</div><div class="mo-value" id="mo-msci">—</div></div></div>
+    <div class="mo-item"><div class="mo-icon">≈</div><div><div class="mo-label">Konglomerasi</div><div class="mo-value">8 Grup</div></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Top 10 by Market Cap</div>
+    <div id="top10-list"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Legend (by Sector)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4488ff"></div>Financials</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff8800"></div>Consumer Cyclical</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#00cc66"></div>Consumer Non-Cyclical</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#aa44ff"></div>Energy</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff44aa"></div>Healthcare</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff6633"></div>Industrials</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ccbb00"></div>Infrastructure</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#44ffaa"></div>Basic Materials</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff4444"></div>Technology</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff88cc"></div>Properties &amp; Real Estate</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#888888"></div>Others</div>
+    <div style="margin-top:10px;padding-top:8px;border-top:1px solid #0a2040;">
+      <div class="legend-item" style="margin-bottom:2px;">
+        <div style="width:8px;height:8px;border-radius:2px;background:rgba(255,215,0,0.2);border:1px solid #ffd700;flex-shrink:0;"></div>
+        <span style="color:#ffd700;font-weight:600;">★ MSCI Constituent</span>
+      </div>
+      <div style="font-size:9px;color:#2a4a6a;margin-left:15px;line-height:1.5;">Hover saham untuk lihat badge MSCI</div>
+    </div>
+    <div style="margin-top:8px;font-size:9px;color:#2a4a6a;line-height:1.6;">
+      * Market data in IDR<br>* Data delayed 15 minutes<br>* Source: IDX, RTI
+    </div>
+  </div>
+</div>
+
+<!-- CENTER -->
+<div id="center">
+  <div id="globe-wrap">
+    <canvas id="globe"></canvas>
+    <div id="tooltip"></div>
+  </div>
+
+  <div id="bottom-bar">
+    <div id="scale-box">
+      <div class="scale-title">Market Cap Scale (Log)</div>
+      <div id="scale-dots">
+        <div class="scale-item"><div class="sdot" style="width:7px;height:7px;"></div><div class="slabel">&lt; 100 B</div></div>
+        <div class="scale-item"><div class="sdot" style="width:11px;height:11px;"></div><div class="slabel">100 B - 1 T</div></div>
+        <div class="scale-item"><div class="sdot" style="width:17px;height:17px;"></div><div class="slabel">1 T - 10 T</div></div>
+        <div class="scale-item"><div class="sdot" style="width:24px;height:24px;"></div><div class="slabel">10 T - 100 T</div></div>
+        <div class="scale-item"><div class="sdot" style="width:33px;height:33px;"></div><div class="slabel">&gt; 100 T</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="instr">
+    <div class="instr-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      DRAG : Rotate Globe
+    </div>
+    <div class="instr-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><rect x="6" y="2" width="12" height="20" rx="3"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="7" r="1" fill="#3a5a7a"/></svg>
+      SCROLL : Zoom In / Out
+    </div>
+    <div class="instr-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="14" r="2" fill="#3a5a7a"/></svg>
+      CLICK : Show / Hide Info
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div id="right">
+  <div class="panel">
+    <div class="panel-title">Owner Group Clusters</div>
+    <p style="font-size:10px;color:#2a4a6a;margin-bottom:9px;line-height:1.5;">Stocks that are under the same ultimate owner are grouped together.</p>
+    <div id="owner-legend"></div>
+  </div>
+
+  <div class="panel" id="stock-info-panel">
+    <div class="panel-title">Stock Info</div>
+    <div id="si-ticker" style="font-size:22px;font-weight:700;color:#fff;margin-bottom:1px;">BBCA</div>
+    <div id="si-name" style="font-size:11px;color:#4a6a8a;margin-bottom:10px;">Bank Central Asia Tbk.</div>
+    <div style="font-size:10px;color:#2a4a6a;margin-bottom:4px;">Details</div>
+    <table class="si-table">
+      <tr><td>Market Cap</td><td id="si-cap">IDR 1,289 T</td></tr>
+      <tr><td>Sector</td><td id="si-sector">Financials</td></tr>
+      <tr><td>Owner Group</td><td id="si-owner">Djarum Group</td></tr>
+      <tr><td>Price</td><td id="si-price">9,325</td></tr>
+      <tr><td>Change</td><td id="si-change" style="color:#00dd66;font-weight:700;">+1.08%</td></tr>
+      <tr><td>Volume</td><td id="si-vol">18.2 M</td></tr>
+    </table>
+    <button class="si-btn">View Detail</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Global Distribution</div>
+    <canvas id="world-mini" width="200" height="88" style="width:100%;border-radius:4px;"></canvas>
+    <div style="margin-top:5px;font-size:11px;color:#7a9aba;display:flex;align-items:center;gap:5px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:#00cc55;"></div>
+      <span id="stock-count-display">— Stocks Listed</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const STOCKS = [
+  // ══════════════════════════════════════════════════════════════
+  // DJARUM GROUP (16 saham) — cyan #00ccff
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"BBCA", name:"Bank Central Asia Tbk.",          cap:1289,owner:"Djarum Group",sector:"Financials",              msci:true, price:9325,  chg:1.08, vol:"18.2 M"},
+  {ticker:"BELI", name:"Bukalapak.com Tbk.",               cap:380, owner:"Djarum Group",sector:"Technology",              msci:false,price:212,   chg:-1.40,vol:"88.0 M"},
+  {ticker:"DNET", name:"Indoritel Makmur Intl.",            cap:290, owner:"Djarum Group",sector:"Consumer Non-Cyclical",   msci:false,price:1540,  chg:0.65, vol:"5.2 M"},
+  {ticker:"FAST", name:"Fast Food Indonesia Tbk.",          cap:180, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:1580,  chg:-0.63,vol:"4.8 M"},
+  {ticker:"MAPA", name:"Map Aktif Adiperkasa Tbk.",         cap:155, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:720,   chg:1.12, vol:"7.3 M"},
+  {ticker:"DCII", name:"DCI Indonesia Tbk.",                cap:230, owner:"Djarum Group",sector:"Technology",              msci:false,price:38500, chg:2.14, vol:"0.3 M"},
+  {ticker:"DMAS", name:"Puradelta Lestari Tbk.",            cap:95,  owner:"Djarum Group",sector:"Properties & Real Estate",msci:false,price:196,  chg:0.51, vol:"22.0 M"},
+  {ticker:"KOPI", name:"Kopi Kenangan Digital Tbk.",        cap:140, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:880,   chg:3.41, vol:"11.5 M"},
+  {ticker:"GOLF", name:"Sarasa Golf Resort Tbk.",           cap:78,  owner:"Djarum Group",sector:"Properties & Real Estate",msci:false,price:560,  chg:-0.36,vol:"3.2 M"},
+  {ticker:"DAYA", name:"Daya Dimensi Indonesia",            cap:65,  owner:"Djarum Group",sector:"Industrials",             msci:false,price:440,   chg:0.91, vol:"6.8 M"},
+  {ticker:"NUSA", name:"Nusantara Digital Tbk.",            cap:55,  owner:"Djarum Group",sector:"Technology",              msci:false,price:318,   chg:-1.22,vol:"14.1 M"},
+  {ticker:"HOKI", name:"Buyung Poetra Sembada Tbk.",        cap:42,  owner:"Djarum Group",sector:"Consumer Non-Cyclical",   msci:false,price:510,   chg:0.39, vol:"8.6 M"},
+  {ticker:"BBKP", name:"Bank KB Bukopin Tbk.",              cap:68,  owner:"Djarum Group",sector:"Financials",              msci:false,price:420,   chg:-0.47,vol:"12.4 M"},
+  {ticker:"PNBN", name:"Bank Pan Indonesia Tbk.",           cap:110, owner:"Djarum Group",sector:"Financials",              msci:false,price:1240,  chg:0.81, vol:"8.6 M"},
+  {ticker:"WTON", name:"Wijaya Karya Beton Tbk.",           cap:62,  owner:"Djarum Group",sector:"Industrials",             msci:false,price:182,   chg:-1.09,vol:"18.2 M"},
+  {ticker:"MSKY", name:"MNC Sky Vision Tbk.",               cap:48,  owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:190,   chg:1.06, vol:"9.8 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // GOVERNMENT / BUMN (20 saham) — blue #3a8aff
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"BBRI", name:"Bank Rakyat Indonesia Tbk.",        cap:856, owner:"Government",  sector:"Financials",              msci:true, price:4350,  chg:-0.23,vol:"92.1 M"},
+  {ticker:"BMRI", name:"Bank Mandiri Tbk.",                 cap:652, owner:"Government",  sector:"Financials",              msci:true, price:6800,  chg:0.74, vol:"31.5 M"},
+  {ticker:"TLKM", name:"Telkom Indonesia Tbk.",             cap:566, owner:"Government",  sector:"Infrastructure",          msci:true, price:3920,  chg:-0.51,vol:"44.8 M"},
+  {ticker:"BBNI", name:"Bank Negara Indonesia Tbk.",        cap:389, owner:"Government",  sector:"Financials",              msci:true, price:4740,  chg:0.85, vol:"28.9 M"},
+  {ticker:"PTBA", name:"Bukit Asam Tbk.",                   cap:160, owner:"Government",  sector:"Energy",                  msci:true, price:2940,  chg:0.34, vol:"19.4 M"},
+  {ticker:"SMGR", name:"Semen Indonesia Tbk.",              cap:120, owner:"Government",  sector:"Industrials",             msci:true, price:5450,  chg:-0.91,vol:"10.2 M"},
+  {ticker:"PGAS", name:"Perusahaan Gas Negara Tbk.",        cap:188, owner:"Government",  sector:"Energy",                  msci:true, price:1440,  chg:0.70, vol:"31.8 M"},
+  {ticker:"ANTM", name:"Aneka Tambang Tbk.",                cap:155, owner:"Government",  sector:"Basic Materials",         msci:true, price:1620,  chg:1.57, vol:"25.0 M"},
+  {ticker:"WIKA", name:"Wijaya Karya Tbk.",                 cap:82,  owner:"Government",  sector:"Industrials",             msci:false,price:1020,  chg:-1.92,vol:"20.1 M"},
+  {ticker:"WSKT", name:"Waskita Karya Tbk.",                cap:68,  owner:"Government",  sector:"Industrials",             msci:false,price:164,   chg:-2.40,vol:"38.5 M"},
+  {ticker:"PTPP", name:"PP Persero Tbk.",                   cap:75,  owner:"Government",  sector:"Industrials",             msci:false,price:620,   chg:-1.27,vol:"14.2 M"},
+  {ticker:"JSMR", name:"Jasa Marga Tbk.",                   cap:210, owner:"Government",  sector:"Infrastructure",          msci:true, price:4200,  chg:0.48, vol:"9.7 M"},
+  {ticker:"ADHI", name:"Adhi Karya Tbk.",                   cap:55,  owner:"Government",  sector:"Industrials",             msci:false,price:440,   chg:-0.91,vol:"18.3 M"},
+  {ticker:"BBTN", name:"Bank Tabungan Negara Tbk.",         cap:130, owner:"Government",  sector:"Financials",              msci:true, price:1420,  chg:0.28, vol:"35.6 M"},
+  {ticker:"GIAA", name:"Garuda Indonesia Tbk.",             cap:48,  owner:"Government",  sector:"Infrastructure",          msci:false,price:56,    chg:-1.75,vol:"42.0 M"},
+  {ticker:"KAEF", name:"Kimia Farma Tbk.",                  cap:38,  owner:"Government",  sector:"Healthcare",              msci:false,price:650,   chg:0.93, vol:"11.5 M"},
+  {ticker:"KRAS", name:"Krakatau Steel Tbk.",               cap:45,  owner:"Government",  sector:"Basic Materials",         msci:false,price:220,   chg:-1.34,vol:"22.6 M"},
+  {ticker:"PGEO", name:"Pertamina Geothermal Energy",       cap:185, owner:"Government",  sector:"Energy",                  msci:true, price:1240,  chg:1.21, vol:"8.4 M"},
+  {ticker:"AKRA", name:"AKR Corporindo Tbk.",               cap:168, owner:"Government",  sector:"Energy",                  msci:true, price:1620,  chg:0.62, vol:"14.8 M"},
+  {ticker:"ITMG", name:"Indo Tambangraya Megah Tbk.",       cap:140, owner:"Government",  sector:"Energy",                  msci:true, price:24500, chg:1.84, vol:"2.1 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // ASTRA GROUP (14 saham) — green #00dd66
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"ASII", name:"Astra International Tbk.",          cap:432, owner:"Astra Group", sector:"Consumer Cyclical",       msci:true, price:4900,  chg:0.41, vol:"22.3 M"},
+  {ticker:"UNTR", name:"United Tractors Tbk.",              cap:320, owner:"Astra Group", sector:"Industrials",             msci:true, price:24500, chg:1.02, vol:"5.6 M"},
+  {ticker:"CPIN", name:"Charoen Pokphand Indonesia",        cap:195, owner:"Astra Group", sector:"Consumer Non-Cyclical",   msci:true, price:4800,  chg:-0.62,vol:"7.1 M"},
+  {ticker:"AUTO", name:"Astra Otoparts Tbk.",               cap:145, owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:2550,  chg:0.79, vol:"6.8 M"},
+  {ticker:"AALI", name:"Astra Agro Lestari Tbk.",           cap:220, owner:"Astra Group", sector:"Consumer Non-Cyclical",   msci:true, price:7400,  chg:-0.27,vol:"3.9 M"},
+  {ticker:"ACST", name:"Astra Infra Solutions Tbk.",        cap:85,  owner:"Astra Group", sector:"Industrials",             msci:false,price:1280,  chg:0.47, vol:"8.1 M"},
+  {ticker:"IMAS", name:"Indomobil Sukses Intl.",            cap:115, owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:1320,  chg:0.76, vol:"11.2 M"},
+  {ticker:"GJTL", name:"Gajah Tunggal Tbk.",                cap:78,  owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:820,   chg:-1.08,vol:"14.6 M"},
+  {ticker:"ASGR", name:"Astra Graphia Tbk.",                cap:52,  owner:"Astra Group", sector:"Technology",              msci:false,price:1480,  chg:0.54, vol:"4.2 M"},
+  {ticker:"SUGI", name:"Sugih Energy Tbk.",                 cap:38,  owner:"Astra Group", sector:"Energy",                  msci:false,price:124,   chg:-0.80,vol:"16.4 M"},
+  {ticker:"PNLF", name:"Panin Financial Tbk.",              cap:72,  owner:"Astra Group", sector:"Financials",              msci:false,price:168,   chg:1.20, vol:"9.8 M"},
+  {ticker:"ADMF", name:"Adira Dinamika Multi Finance",      cap:158, owner:"Astra Group", sector:"Financials",              msci:false,price:8400,  chg:0.48, vol:"0.9 M"},
+  {ticker:"ABMM", name:"ABM Investama Tbk.",                cap:88,  owner:"Astra Group", sector:"Energy",                  msci:false,price:2880,  chg:1.04, vol:"3.6 M"},
+  {ticker:"SRTG", name:"Saratoga Investama Sedaya",         cap:118, owner:"Astra Group", sector:"Financials",              msci:false,price:1640,  chg:0.61, vol:"5.4 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // SALIM GROUP (14 saham) — gold #ffdd22
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"ICBP", name:"Indofood CBP Sukses Makmur",        cap:302, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:9375,  chg:0.27, vol:"6.2 M"},
+  {ticker:"INDF", name:"Indofood Sukses Makmur Tbk.",       cap:230, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:6700,  chg:0.15, vol:"8.8 M"},
+  {ticker:"MNCN", name:"Media Nusantara Citra Tbk.",        cap:150, owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:940,   chg:-0.53,vol:"22.3 M"},
+  {ticker:"SIMP", name:"Salim Ivomas Pratama Tbk.",         cap:88,  owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:false,price:466,   chg:0.65, vol:"12.4 M"},
+  {ticker:"LPPF", name:"Matahari Department Store Tbk.",    cap:172, owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:2760,  chg:-1.08,vol:"7.0 M"},
+  {ticker:"MLBI", name:"Multi Bintang Indonesia Tbk.",      cap:130, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:false,price:9800,  chg:0.51, vol:"1.4 M"},
+  {ticker:"INTP", name:"Indocement Tunggal Perkasa",        cap:168, owner:"Salim Group", sector:"Industrials",             msci:true, price:5500,  chg:-0.36,vol:"5.8 M"},
+  {ticker:"WIFI", name:"Solusi Net Integrasi Tbk.",         cap:65,  owner:"Salim Group", sector:"Technology",              msci:false,price:760,   chg:2.30, vol:"8.9 M"},
+  {ticker:"BMTR", name:"Global Mediacom Tbk.",              cap:92,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:480,   chg:-0.21,vol:"16.4 M"},
+  {ticker:"HERO", name:"Hero Supermarket Tbk.",             cap:48,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:620,   chg:1.14, vol:"4.1 M"},
+  {ticker:"ISAT", name:"Indosat Tbk.",                      cap:320, owner:"Salim Group", sector:"Infrastructure",          msci:true, price:2200,  chg:0.91, vol:"18.4 M"},
+  {ticker:"MPMX", name:"Mitra Pinasthika Mustika",          cap:58,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:840,   chg:0.48, vol:"5.6 M"},
+  {ticker:"MYOR", name:"Mayora Indah Tbk.",                 cap:245, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:2150,  chg:0.23, vol:"7.8 M"},
+  {ticker:"MBSS", name:"Mitrabahtera Segara Sejati",        cap:48,  owner:"Salim Group", sector:"Infrastructure",          msci:false,price:740,   chg:-0.54,vol:"4.2 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // SINAR MAS GROUP (14 saham) — red-pink #ff4a4a
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"UNVR", name:"Unilever Indonesia Tbk.",           cap:352, owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:true, price:2600,  chg:-1.14,vol:"15.6 M"},
+  {ticker:"BSDE", name:"Bumi Serpong Damai Tbk.",           cap:275, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:true,price:890, chg:0.45, vol:"28.2 M"},
+  {ticker:"SMRA", name:"Summarecon Agung Tbk.",             cap:220, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:820,chg:-0.24,vol:"14.4 M"},
+  {ticker:"DILD", name:"Intiland Development Tbk.",         cap:165, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:214,chg:0.94, vol:"18.8 M"},
+  {ticker:"ACES", name:"Ace Hardware Indonesia Tbk.",       cap:195, owner:"Sinar Mas Group",sector:"Consumer Cyclical",    msci:false,price:785,   chg:0.64, vol:"16.2 M"},
+  {ticker:"INKP", name:"Indah Kiat Pulp & Paper",           cap:310, owner:"Sinar Mas Group",sector:"Basic Materials",      msci:true, price:8200,  chg:1.32, vol:"6.3 M"},
+  {ticker:"TKIM", name:"Pabrik Kertas Tjiwi Kimia",         cap:145, owner:"Sinar Mas Group",sector:"Basic Materials",      msci:false,price:5400,  chg:0.74, vol:"2.8 M"},
+  {ticker:"SMAS", name:"Sinar Mas Agro Resources",          cap:88,  owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:false,price:3200,  chg:-0.62,vol:"4.1 M"},
+  {ticker:"SMAR", name:"Smart Tbk.",                        cap:72,  owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:false,price:2900,  chg:0.34, vol:"3.6 M"},
+  {ticker:"DUTI", name:"Duta Pertiwi Tbk.",                 cap:60,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:4200,chg:-0.48,vol:"2.2 M"},
+  {ticker:"SMCB", name:"Solusi Bangun Indonesia Tbk.",      cap:95,  owner:"Sinar Mas Group",sector:"Industrials",          msci:false,price:2600,  chg:0.38, vol:"5.8 M"},
+  {ticker:"LPKR", name:"Lippo Karawaci Tbk.",               cap:220, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:134,chg:-0.74,vol:"62.8 M"},
+  {ticker:"KIJA", name:"Kawasan Industri Jababeka",         cap:78,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:246,chg:0.82, vol:"22.4 M"},
+  {ticker:"APLN", name:"Agung Podomoro Land Tbk.",          cap:55,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:144,chg:-0.69,vol:"18.6 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // CHANDRA ASRI / BARITO GROUP (12 saham) — purple #aa33ff
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"TPIA", name:"Chandra Asri Tbk.",                 cap:414, owner:"Chandra Group",sector:"Basic Materials",        msci:true, price:8200,  chg:1.24, vol:"8.7 M"},
+  {ticker:"BRPT", name:"Barito Pacific Tbk.",               cap:280, owner:"Chandra Group",sector:"Basic Materials",        msci:true, price:1240,  chg:2.05, vol:"31.4 M"},
+  {ticker:"AGRO", name:"Bank Raya Indonesia Tbk.",          cap:95,  owner:"Chandra Group",sector:"Financials",             msci:false,price:368,   chg:-0.81,vol:"9.7 M"},
+  {ticker:"CBPE", name:"Chandra Barito Energi Tbk.",        cap:178, owner:"Chandra Group",sector:"Energy",                 msci:false,price:2100,  chg:1.43, vol:"6.1 M"},
+  {ticker:"CHEM", name:"Chandra Kimia Nusantara",           cap:122, owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:1680,  chg:0.60, vol:"7.4 M"},
+  {ticker:"POLY", name:"Asia Pacific Fibers Tbk.",          cap:68,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:228,   chg:-1.30,vol:"18.2 M"},
+  {ticker:"FPNI", name:"Lotte Chemical Titan Tbk.",         cap:54,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:182,   chg:0.55, vol:"12.0 M"},
+  {ticker:"CTRA", name:"Ciputra Development Tbk.",          cap:148, owner:"Chandra Group",sector:"Properties & Real Estate",msci:true,price:1320,  chg:0.91, vol:"15.8 M"},
+  {ticker:"MIKA", name:"Mitra Keluarga Karyasehat Tbk.",    cap:198, owner:"Chandra Group",sector:"Healthcare",             msci:true, price:2580,  chg:0.39, vol:"5.2 M"},
+  {ticker:"BYAN", name:"Bayan Resources Tbk.",              cap:380, owner:"Chandra Group",sector:"Energy",                 msci:true, price:18600, chg:2.37, vol:"1.4 M"},
+  {ticker:"PTRO", name:"Petrosea Tbk.",                     cap:72,  owner:"Chandra Group",sector:"Energy",                 msci:false,price:3280,  chg:0.92, vol:"2.8 M"},
+  {ticker:"PICO", name:"Pelangi Indah Canindo Tbk.",        cap:42,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:290,   chg:-0.34,vol:"6.4 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // BAKRIE GROUP (12 saham) — yellow #ffcc00
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"EXCL", name:"XL Axiata Tbk.",                    cap:310, owner:"Bakrie Group", sector:"Infrastructure",         msci:true, price:1850,  chg:0.54, vol:"18.7 M"},
+  {ticker:"BUMI", name:"Bumi Resources Tbk.",               cap:185, owner:"Bakrie Group", sector:"Energy",                 msci:false,price:124,   chg:-1.59,vol:"420.0 M"},
+  {ticker:"VIVA", name:"Visi Media Asia Tbk.",              cap:110, owner:"Bakrie Group", sector:"Consumer Cyclical",      msci:false,price:168,   chg:2.44, vol:"55.2 M"},
+  {ticker:"ENRG", name:"Energi Mega Persada Tbk.",          cap:178, owner:"Bakrie Group", sector:"Energy",                 msci:false,price:50,    chg:-2.00,vol:"88.0 M"},
+  {ticker:"ANTV", name:"Cakrawala Andalas TV Tbk.",         cap:88,  owner:"Bakrie Group", sector:"Consumer Cyclical",      msci:false,price:112,   chg:1.79, vol:"32.4 M"},
+  {ticker:"BNBR", name:"Bakrie & Brothers Tbk.",            cap:65,  owner:"Bakrie Group", sector:"Industrials",            msci:false,price:56,    chg:-0.89,vol:"48.0 M"},
+  {ticker:"UNSP", name:"Bakrie Sumatra Plantations",        cap:48,  owner:"Bakrie Group", sector:"Consumer Non-Cyclical",  msci:false,price:84,    chg:1.20, vol:"28.6 M"},
+  {ticker:"BTEL", name:"Bakrie Telecom Tbk.",               cap:38,  owner:"Bakrie Group", sector:"Infrastructure",         msci:false,price:50,    chg:-1.96,vol:"42.0 M"},
+  {ticker:"ELTY", name:"Bakrieland Development Tbk.",       cap:55,  owner:"Bakrie Group", sector:"Properties & Real Estate",msci:false,price:66,  chg:3.12, vol:"55.8 M"},
+  {ticker:"BBRM", name:"Pelayaran Nasional Bina Buana Raya",cap:42,  owner:"Bakrie Group", sector:"Infrastructure",         msci:false,price:148,   chg:0.68, vol:"8.6 M"},
+  {ticker:"BKSL", name:"Sentul City Tbk.",                  cap:38,  owner:"Bakrie Group", sector:"Properties & Real Estate",msci:false,price:58,  chg:-1.69,vol:"24.8 M"},
+  {ticker:"TOWR", name:"Sarana Menara Nusantara",           cap:188, owner:"Bakrie Group", sector:"Infrastructure",         msci:true, price:820,   chg:0.24, vol:"15.4 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // LIPPO GROUP (13 saham) — orange #ff8800
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"MPPA", name:"Matahari Putra Prima Tbk.",         cap:155, owner:"Lippo Group",  sector:"Consumer Cyclical",      msci:false,price:660,   chg:1.08, vol:"14.6 M"},
+  {ticker:"JPFA", name:"Japfa Comfeed Indonesia Tbk.",      cap:220, owner:"Lippo Group",  sector:"Consumer Non-Cyclical",  msci:true, price:1480,  chg:-0.34,vol:"11.2 M"},
+  {ticker:"SILO", name:"Siloam International Hospitals",    cap:190, owner:"Lippo Group",  sector:"Healthcare",             msci:true, price:2620,  chg:0.77, vol:"4.9 M"},
+  {ticker:"MFIN", name:"Mandala Multifinance Tbk.",         cap:55,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:1880,  chg:0.54, vol:"3.2 M"},
+  {ticker:"CARE", name:"Metro Healthcare Indonesia",        cap:88,  owner:"Lippo Group",  sector:"Healthcare",             msci:false,price:1120,  chg:-0.89,vol:"7.8 M"},
+  {ticker:"LPGI", name:"Lippo General Insurance Tbk.",      cap:48,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:4800,  chg:0.21, vol:"0.8 M"},
+  {ticker:"LMPI", name:"Langgeng Makmur Industri",          cap:38,  owner:"Lippo Group",  sector:"Industrials",            msci:false,price:280,   chg:-0.36,vol:"5.4 M"},
+  {ticker:"LPPS", name:"Lippo Cikarang Tbk.",               cap:95,  owner:"Lippo Group",  sector:"Properties & Real Estate",msci:false,price:1080, chg:0.93, vol:"6.2 M"},
+  {ticker:"MTDL", name:"Metrodata Electronics Tbk.",        cap:72,  owner:"Lippo Group",  sector:"Technology",             msci:false,price:590,   chg:1.55, vol:"9.8 M"},
+  {ticker:"LSIP", name:"PP London Sumatra Indonesia",       cap:160, owner:"Lippo Group",  sector:"Consumer Non-Cyclical",  msci:true, price:1340,  chg:0.75, vol:"9.2 M"},
+  {ticker:"FMII", name:"First Media Tbk.",                  cap:42,  owner:"Lippo Group",  sector:"Consumer Cyclical",      msci:false,price:168,   chg:-0.59,vol:"12.4 M"},
+  {ticker:"TBIG", name:"Tower Bersama Infrastr.",           cap:165, owner:"Lippo Group",  sector:"Infrastructure",         msci:true, price:2100,  chg:-0.48,vol:"8.8 M"},
+  {ticker:"BCAP", name:"MNC Kapital Indonesia Tbk.",        cap:52,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:312,   chg:0.32, vol:"7.2 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // MSCI + INDEPENDENT (Others) (28 saham) — gray-blue #8899aa
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"AMMN", name:"Amman Mineral Internasional",       cap:294, owner:"Others",       sector:"Basic Materials",        msci:true, price:7800,  chg:2.11, vol:"5.1 M"},
+  {ticker:"GOTO", name:"GoTo Gojek Tokopedia Tbk.",         cap:180, owner:"Others",       sector:"Technology",             msci:true, price:62,    chg:-3.12,vol:"312.0 M"},
+  {ticker:"KLBF", name:"Kalbe Farma Tbk.",                  cap:245, owner:"Others",       sector:"Healthcare",             msci:true, price:1565,  chg:-0.32,vol:"24.1 M"},
+  {ticker:"ADRO", name:"Adaro Energy Indonesia Tbk.",       cap:282, owner:"Others",       sector:"Energy",                 msci:true, price:2200,  chg:1.38, vol:"14.6 M"},
+  {ticker:"MDKA", name:"Merdeka Copper Gold Tbk.",          cap:270, owner:"Others",       sector:"Basic Materials",        msci:true, price:2460,  chg:2.07, vol:"12.3 M"},
+  {ticker:"INCO", name:"Vale Indonesia Tbk.",               cap:230, owner:"Others",       sector:"Basic Materials",        msci:true, price:3100,  chg:0.97, vol:"9.5 M"},
+  {ticker:"MAPI", name:"Mitra Adiperkasa Tbk.",             cap:245, owner:"Others",       sector:"Consumer Cyclical",      msci:true, price:1680,  chg:0.60, vol:"8.7 M"},
+  {ticker:"PWON", name:"Pakuwon Jati Tbk.",                 cap:218, owner:"Others",       sector:"Properties & Real Estate",msci:true,price:438,   chg:0.46, vol:"35.6 M"},
+  {ticker:"HRUM", name:"Harum Energy Tbk.",                 cap:198, owner:"Others",       sector:"Energy",                 msci:false,price:1200,  chg:0.84, vol:"5.6 M"},
+  {ticker:"BUKA", name:"Bukalapak.com Tbk.",                cap:145, owner:"Others",       sector:"Technology",             msci:false,price:68,    chg:-2.94,vol:"148.0 M"},
+  {ticker:"HEAL", name:"Medikaloka Hermina Tbk.",           cap:132, owner:"Others",       sector:"Healthcare",             msci:false,price:1560,  chg:1.29, vol:"6.3 M"},
+  {ticker:"COAL", name:"Indika Energy Tbk.",                cap:118, owner:"Others",       sector:"Energy",                 msci:false,price:1820,  chg:0.55, vol:"8.2 M"},
+  {ticker:"CUAN", name:"Petrindo Jaya Kreasi Tbk.",         cap:310, owner:"Others",       sector:"Energy",                 msci:false,price:12400, chg:4.20, vol:"2.1 M"},
+  {ticker:"RAJA", name:"Rukun Raharja Tbk.",                cap:95,  owner:"Others",       sector:"Energy",                 msci:false,price:3880,  chg:1.80, vol:"4.4 M"},
+  {ticker:"FILM", name:"MD Pictures Tbk.",                  cap:78,  owner:"Others",       sector:"Consumer Cyclical",      msci:false,price:1240,  chg:-0.81,vol:"5.5 M"},
+  {ticker:"ESSA", name:"Surya Esa Perkasa Tbk.",            cap:110, owner:"Others",       sector:"Energy",                 msci:false,price:1620,  chg:1.23, vol:"6.8 M"},
+  {ticker:"SMIL", name:"Sumber Mas Indah Plywood",          cap:45,  owner:"Others",       sector:"Basic Materials",        msci:false,price:380,   chg:0.53, vol:"5.2 M"},
+  {ticker:"ERAA", name:"Erajaya Swasembada Tbk.",           cap:88,  owner:"Others",       sector:"Consumer Cyclical",      msci:false,price:540,   chg:-0.74,vol:"12.4 M"},
+  {ticker:"GOOD", name:"Garudafood Putra Putri Jaya",       cap:72,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:430,   chg:0.47, vol:"9.6 M"},
+  {ticker:"SIDO", name:"Industri Jamu Sido Muncul",         cap:138, owner:"Others",       sector:"Healthcare",             msci:true, price:580,   chg:0.35, vol:"10.2 M"},
+  {ticker:"MIDI", name:"Midi Utama Indonesia Tbk.",         cap:88,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:600,   chg:0.84, vol:"4.4 M"},
+  {ticker:"CMRY", name:"Cisarua Mountain Dairy Tbk.",       cap:115, owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:4020,  chg:1.01, vol:"2.8 M"},
+  {ticker:"ARTO", name:"Bank Jago Tbk.",                    cap:175, owner:"Others",       sector:"Financials",             msci:false,price:2540,  chg:-1.55,vol:"7.6 M"},
+  {ticker:"BREN", name:"Barito Renewables Energy Tbk.",     cap:420, owner:"Others",       sector:"Energy",                 msci:true, price:8400,  chg:3.24, vol:"4.2 M"},
+  {ticker:"TAPG", name:"Triputra Agro Persada Tbk.",        cap:95,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:1140,  chg:0.88, vol:"5.8 M"},
+  {ticker:"NICL", name:"Nickel Industries Ltd.",            cap:142, owner:"Others",       sector:"Basic Materials",        msci:false,price:362,   chg:1.66, vol:"9.4 M"},
+  {ticker:"CBDK", name:"Cahaya Bintang Medan Tbk.",         cap:68,  owner:"Others",       sector:"Properties & Real Estate",msci:false,price:2640, chg:2.34, vol:"3.6 M"},
+  {ticker:"MSCI", name:"[MSCI-flagged] Diversified IDX",    cap:55,  owner:"Others",       sector:"Financials",             msci:false,price:1200,  chg:0.22, vol:"4.2 M"},
+];
+
+const OWNER_COLORS = {
+  "Djarum Group":    [0.0,  0.85, 1.0],   // cyan
+  "Government":      [0.22, 0.55, 1.0],   // blue
+  "Astra Group":     [0.0,  0.9,  0.45],  // green
+  "Bakrie Group":    [1.0,  0.85, 0.0],   // yellow
+  "Lippo Group":     [1.0,  0.55, 0.0],   // orange
+  "Sinar Mas Group": [1.0,  0.3,  0.3],   // red-pink
+  "Chandra Group":   [0.7,  0.2,  1.0],   // purple
+  "Salim Group":     [1.0,  0.9,  0.1],   // gold
+  "Others":          [0.6,  0.6,  0.65],  // gray-blue
+};
+
+const OWNER_HEX = {
+  "Djarum Group":    "#00ccff",
+  "Government":      "#3a8aff",
+  "Astra Group":     "#00dd66",
+  "Bakrie Group":    "#ffcc00",
+  "Lippo Group":     "#ff8800",
+  "Sinar Mas Group": "#ff4a4a",
+  "Chandra Group":   "#aa33ff",
+  "Salim Group":     "#ffdd22",
+  "Others":          "#8899aa",
+};
+
+// ============================================================
+// BUILD UI
+// ============================================================
+// Owner legend
+const ownerLegendEl = document.getElementById('owner-legend');
+Object.entries(OWNER_HEX).forEach(([o,c])=>{
+  const d=document.createElement('div');
+  d.className='owner-item';
+  d.innerHTML=`<div class="owner-dot" style="background:${c}"></div>${o}`;
+  ownerLegendEl.appendChild(d);
+});
+
+// Top 10 — sorted by market cap
+const top10el = document.getElementById('top10-list');
+[...STOCKS].sort((a,b)=>b.cap-a.cap).slice(0,10).forEach((s,i)=>{
+  const c=OWNER_HEX[s.owner]||'#888';
+  const d=document.createElement('div');
+  d.className='top10-row';
+  d.innerHTML=`<span class="top10-num">${i+1}.</span><span class="top10-ticker" style="color:${c}">${s.ticker}</span><span class="top10-cap">IDR ${s.cap} T</span>`;
+  d.onclick=()=>showInfo(s);
+  top10el.appendChild(d);
+});
+
+function showInfo(s){
+  document.getElementById('si-ticker').textContent=s.ticker;
+  document.getElementById('si-name').textContent=s.name+(s.msci?' ★MSCI':'');
+  document.getElementById('si-cap').textContent='IDR '+s.cap+' T';
+  document.getElementById('si-sector').textContent=s.sector;
+  document.getElementById('si-owner').textContent=s.owner;
+  document.getElementById('si-price').textContent=s.price.toLocaleString();
+  document.getElementById('si-change').textContent=(s.chg>0?'+':'')+s.chg+'%';
+  document.getElementById('si-change').style.color=s.chg>=0?'#00dd66':'#ff4444';
+  document.getElementById('si-vol').textContent=s.vol;
+}
+
+// Dynamic stats
+document.getElementById('mo-total').textContent = STOCKS.length;
+const totalCap = STOCKS.reduce((a,s)=>a+s.cap,0);
+document.getElementById('mo-cap').textContent = 'IDR '+totalCap.toLocaleString()+' T';
+const msciCount = STOCKS.filter(s=>s.msci).length;
+document.getElementById('mo-msci').textContent = msciCount+' saham';
+document.getElementById('stock-count-display').textContent = STOCKS.length+' Stocks Listed';
+
+// World mini map
+(function(){
+  const c=document.getElementById('world-mini');
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#03091a';
+  ctx.fillRect(0,0,200,88);
+  const regions=[
+    {pts:60, x:15, y:8,  w:38, h:28, col:'rgba(40,100,180,0.5)'},
+    {pts:35, x:30, y:37, w:18, h:28, col:'rgba(40,100,180,0.5)'},
+    {pts:40, x:88, y:7,  w:18, h:18, col:'rgba(40,100,180,0.5)'},
+    {pts:50, x:87, y:25, w:22, h:35, col:'rgba(40,100,180,0.5)'},
+    {pts:100,x:110,y:4,  w:55, h:40, col:'rgba(40,100,180,0.5)'},
+    {pts:22, x:152,y:47, w:24, h:22, col:'rgba(40,100,180,0.5)'},
+  ];
+  regions.forEach(r=>{
+    for(let i=0;i<r.pts;i++){
+      ctx.beginPath();
+      ctx.arc(r.x+Math.random()*r.w, r.y+Math.random()*r.h, 0.7+Math.random()*0.5,0,Math.PI*2);
+      ctx.fillStyle=r.col;
+      ctx.fill();
+    }
+  });
+  // Indonesia highlight
+  for(let i=0;i<40;i++){
+    ctx.beginPath();
+    ctx.arc(148+Math.random()*20, 50+Math.random()*10, 1+Math.random()*0.8,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,200,80,0.7)';
+    ctx.fill();
+  }
+})();
+
+// ============================================================
+// THREE.JS GLOBE
+// ============================================================
+const canvas = document.getElementById('globe');
+const wrap   = document.getElementById('globe-wrap');
+
+let W = wrap.clientWidth, H = wrap.clientHeight;
+canvas.width = W; canvas.height = H;
+
+const scene    = new THREE.Scene();
+const camera   = new THREE.PerspectiveCamera(48, W/H, 0.1, 1000);
+camera.position.z = 14;
+
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setSize(W,H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setClearColor(0x000000,0);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x223355,2.5));
+const sun=new THREE.DirectionalLight(0x6699ff,2.0);
+sun.position.set(12,8,10); scene.add(sun);
+const rim=new THREE.PointLight(0x0033aa,1.5);
+rim.position.set(-10,-5,-8); scene.add(rim);
+
+const R = 5.0;  // globe radius
+
+// ----- STARS -----
+const starGeo=new THREE.BufferGeometry();
+const spos=[];
+for(let i=0;i<2500;i++){
+  const r=90+Math.random()*80;
+  const th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+  spos.push(r*Math.sin(ph)*Math.cos(th),r*Math.sin(ph)*Math.sin(th),r*Math.cos(ph));
+}
+starGeo.setAttribute('position',new THREE.Float32BufferAttribute(spos,3));
+scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:0.28,transparent:true,opacity:0.65})));
+
+// ----- PIVOT (everything rotates inside) -----
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+// ----- DARK GLOBE BASE -----
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R*0.998,64,64),
+  new THREE.MeshPhongMaterial({color:0x010c22,shininess:30,specular:0x0a2244})
+));
+
+// ----- WIREFRAME -----
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R,36,36),
+  new THREE.MeshBasicMaterial({color:0x0a3060,wireframe:true,transparent:true,opacity:0.10})
+));
+
+// ----- ATMOSPHERE GLOW -----
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R*1.045,32,32),
+  new THREE.MeshBasicMaterial({color:0x0055cc,transparent:true,opacity:0.055,side:THREE.BackSide})
+));
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R*1.018,32,32),
+  new THREE.MeshBasicMaterial({color:0x0044aa,transparent:true,opacity:0.04,side:THREE.FrontSide})
+));
+
+// ============================================================
+// PARTICLE SYSTEM — the KEY difference from before
+// ============================================================
+// Strategy: for each stock, generate a CLOUD of tiny particles
+// tightly clustered around a point on the sphere surface.
+// Cluster tightness and count proportional to market cap.
+// We use ONE merged BufferGeometry per owner group for perf.
+
+// ============================================================
+// PARTICLE ZONE SYSTEM — 9 owner territories across full sphere
+// ============================================================
+const ownerKeys = Object.keys(OWNER_COLORS);
+
+// 9 centers distributed EVENLY across the FULL sphere (not just front hemisphere)
+// Using fibonacci sphere so all sides get coverage
+const ownerPositions = {
+  "Djarum Group":    [ 0.20,  0.92,  0.34],  // top-front
+  "Government":      [-0.88,  0.32,  0.35],  // left-front
+  "Astra Group":     [ 0.88,  0.44,  0.18],  // right-front-top
+  "Salim Group":     [ 0.22,  0.08,  0.97],  // center-front
+  "Sinar Mas Group": [ 0.08, -0.58,  0.81],  // front-bottom
+  "Chandra Group":   [ 0.90, -0.40,  0.18],  // right-bottom
+  "Bakrie Group":    [-0.22, -0.90, -0.38],  // bottom-back-left
+  "Lippo Group":     [-0.88, -0.18, -0.44],  // left-back
+  "Others":          [ 0.18,  0.52, -0.84],  // top-back
+};
+
+const ownerCenterMap = {};
+ownerKeys.forEach(o => {
+  const p = ownerPositions[o] || [0,0,1];
+  ownerCenterMap[o] = new THREE.Vector3(...p).normalize().multiplyScalar(R);
+});
+
+// Per-owner buffers
+const ownerBuffers = {};
+ownerKeys.forEach(o => { ownerBuffers[o] = {pos:[],col:[],sizes:[]}; });
+const stockRepPoints = [];
+
+function gaussianRandom(mean=0, std=1){
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return mean + std * Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+
+function getTangentFrame(center){
+  const up = center.clone().normalize();
+  const tmp = Math.abs(up.y) < 0.85 ? new THREE.Vector3(0,1,0) : new THREE.Vector3(1,0,0);
+  const tx  = new THREE.Vector3().crossVectors(up, tmp).normalize();
+  const ty  = new THREE.Vector3().crossVectors(up, tx).normalize();
+  return {tx, ty};
+}
+
+const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+// Pre-compute owner total cap for zone sizing
+const ownerTotalCap = {};
+STOCKS.forEach(s => { ownerTotalCap[s.owner] = (ownerTotalCap[s.owner]||0) + s.cap; });
+
+STOCKS.forEach((s) => {
+  const oc     = OWNER_COLORS[s.owner] || [0.5,0.5,0.6];
+  const buf    = ownerBuffers[s.owner] || ownerBuffers['Others'];
+  const center = ownerCenterMap[s.owner] || ownerCenterMap['Others'];
+  const {tx, ty} = getTangentFrame(center);
+
+  const ownerStocks = STOCKS.filter(x => x.owner === s.owner);
+  const localIdx    = ownerStocks.indexOf(s);
+  const nOwner      = ownerStocks.length;
+
+  // Expanded zone radius — fills the globe surface properly
+  const zoneR = 1.4 + nOwner * 0.22;
+  const angle  = goldenAngle * localIdx;
+  const rFib   = nOwner <= 1 ? 0 : zoneR * 0.85 * Math.sqrt(localIdx / (nOwner - 1));
+  const stockCenter = center.clone()
+    .addScaledVector(tx, rFib * Math.cos(angle))
+    .addScaledVector(ty, rFib * Math.sin(angle));
+  stockCenter.normalize().multiplyScalar(R);
+
+  const nParticles = Math.max(200, Math.floor(s.cap * 1.6));
+  const spread = 0.55 + (s.cap / 700) * 0.75;
+
+  for(let p = 0; p < nParticles; p++){
+    const ox = gaussianRandom(0, spread);
+    const oy = gaussianRandom(0, spread);
+    const pos = stockCenter.clone()
+      .addScaledVector(tx, ox)
+      .addScaledVector(ty, oy);
+    pos.normalize().multiplyScalar(R + 0.012 + Math.random() * 0.07);
+
+    buf.pos.push(pos.x, pos.y, pos.z);
+
+    const dist = Math.sqrt(ox*ox + oy*oy) / spread;
+    const bright = 0.28 + Math.max(0, 1 - dist*0.9) * 0.72 + Math.random()*0.08;
+    buf.col.push(oc[0]*bright, oc[1]*bright, oc[2]*bright);
+
+    const core = Math.max(0, 1 - dist*0.85);
+    buf.sizes.push(0.011 + core*0.024 + Math.random()*0.007);
+  }
+
+  stockRepPoints.push({position: stockCenter.clone(), stock: s});
+});
+
+// Build geometry per owner group
+ownerKeys.forEach(o => {
+  const buf = ownerBuffers[o];
+  if(buf.pos.length === 0) return;
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(buf.pos), 3));
+  geo.setAttribute('aColor',   new THREE.Float32BufferAttribute(new Float32Array(buf.col), 3));
+  geo.setAttribute('size',     new THREE.Float32BufferAttribute(new Float32Array(buf.sizes),1));
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { time: {value:0} },
+    vertexShader:`
+      attribute float size;
+      attribute vec3 aColor;
+      varying vec3 vColor;
+      void main(){
+        vColor = aColor;
+        vec4 mvp = modelViewMatrix * vec4(position,1.0);
+        gl_PointSize = size * (1800.0 / -mvp.z);
+        gl_Position = projectionMatrix * mvp;
+      }
+    `,
+    fragmentShader:`
+      varying vec3 vColor;
+      void main(){
+        float d = distance(gl_PointCoord, vec2(0.5));
+        if(d > 0.5) discard;
+        float alpha = 1.0 - smoothstep(0.18, 0.5, d);
+        float glow  = 1.0 - smoothstep(0.0, 0.32, d);
+        vec3 col = vColor + glow * vColor * 0.9;
+        gl_FragColor = vec4(col, alpha * 0.90);
+      }
+    `,
+    transparent:true,
+    depthWrite:false,
+    blending: THREE.AdditiveBlending,
+  });
+  pivot.add(new THREE.Points(geo, mat));
+});
+
+// ── TERRITORY BOUNDARY RINGS — thick glowing borders per owner group ──
+ownerKeys.forEach(o => {
+  const center   = ownerCenterMap[o];
+  const {tx, ty} = getTangentFrame(center);
+  const hexCol   = OWNER_HEX[o] || '#ffffff';
+  const m = hexCol.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  const ringColor = m
+    ? new THREE.Color(parseInt(m[1],16)/255, parseInt(m[2],16)/255, parseInt(m[3],16)/255)
+    : new THREE.Color(1,1,1);
+
+  const nOwner = STOCKS.filter(x => x.owner === o).length;
+  const ringR  = 1.55 + nOwner * 0.22;
+  const nSeg   = 128;
+
+  // 3 concentric rings: outer glow → solid main → inner glow
+  [
+    { scale: 1.045, opacity: 0.20 },
+    { scale: 1.000, opacity: 0.88 },
+    { scale: 0.960, opacity: 0.25 },
+  ].forEach(cfg => {
+    const ringPts = [];
+    for(let i = 0; i <= nSeg; i++){
+      const a  = (i / nSeg) * Math.PI * 2;
+      const pt = center.clone()
+        .addScaledVector(tx, ringR * cfg.scale * Math.cos(a))
+        .addScaledVector(ty, ringR * cfg.scale * Math.sin(a));
+      pt.normalize().multiplyScalar(R + 0.09);
+      ringPts.push(pt);
+    }
+    const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+    const ringMat = new THREE.LineBasicMaterial({
+      color: ringColor, transparent: true, opacity: cfg.opacity, linewidth: 2
+    });
+    pivot.add(new THREE.Line(ringGeo, ringMat));
+  });
+
+  // Group label sprite at top of each ring
+  const labelPos = center.clone().addScaledVector(ty, ringR * 1.08);
+  labelPos.normalize().multiplyScalar(R + 0.28);
+
+  const lw=280, lh=54;
+  const lc=document.createElement('canvas');
+  lc.width=lw; lc.height=lh;
+  const lctx=lc.getContext('2d');
+  lctx.clearRect(0,0,lw,lh);
+  lctx.font='bold 22px "Segoe UI",Arial';
+  lctx.textAlign='center'; lctx.textBaseline='middle';
+  lctx.shadowColor=hexCol; lctx.shadowBlur=16;
+  lctx.fillStyle=hexCol;
+  lctx.fillText(o.replace(' Group','').toUpperCase(), lw/2, lh/2-7);
+  lctx.shadowBlur=0;
+  lctx.font='12px "Segoe UI",Arial';
+  lctx.fillStyle='rgba(160,200,255,0.80)';
+  lctx.fillText(nOwner+' saham', lw/2, lh/2+13);
+  const ltex=new THREE.CanvasTexture(lc);
+  const lsp=new THREE.Sprite(new THREE.SpriteMaterial({map:ltex,transparent:true,depthTest:false}));
+  lsp.scale.set(3.0, 3.0*(lh/lw), 1);
+  lsp.position.copy(labelPos);
+  pivot.add(lsp);
+});
+
+// ----- MSCI GOLDEN HALO RINGS -----
+// Small bright gold rings around each MSCI constituent stock
+STOCKS.filter(s=>s.msci).forEach(s=>{
+  const rep = stockRepPoints.find(p=>p.stock===s);
+  if(!rep) return;
+  const center = rep.position;
+  const {tx,ty} = getTangentFrame(center.clone().normalize());
+  const haloR = 0.28 + Math.log10(s.cap+1)*0.06;
+  const nSeg = 48;
+  // Outer glow
+  [
+    {scale:1.0, opacity:0.95, color:0xffd700},
+    {scale:1.2, opacity:0.35, color:0xffee88},
+  ].forEach(cfg=>{
+    const pts=[];
+    for(let i=0;i<=nSeg;i++){
+      const a=(i/nSeg)*Math.PI*2;
+      const pt=center.clone()
+        .addScaledVector(tx, haloR*cfg.scale*Math.cos(a))
+        .addScaledVector(ty, haloR*cfg.scale*Math.sin(a));
+      pt.normalize().multiplyScalar(R+0.10);
+      pts.push(pt);
+    }
+    pivot.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({color:cfg.color,transparent:true,opacity:cfg.opacity})
+    ));
+  });
+});
+
+// ----- TICKER LABELS (sprites) for top stocks -----
+const labelSprites = [];
+STOCKS.forEach(s => {
+  if(s.cap < 120) return;
+  const rep = stockRepPoints.find(p=>p.stock===s);
+  if(!rep) return;
+
+  const col = OWNER_HEX[s.owner]||'#fff';
+  const fw  = s.cap>500?220:180, fh=s.cap>500?72:58;
+  const cv2 = document.createElement('canvas');
+  cv2.width=fw; cv2.height=fh;
+  const ctx = cv2.getContext('2d');
+  ctx.clearRect(0,0,fw,fh);
+
+  const fs = s.cap>500?30:(s.cap>250?24:20);
+  ctx.font=`bold ${fs}px 'Segoe UI',Arial`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor=col; ctx.shadowBlur=16;
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(s.ticker, fw/2, fh/2-9);
+  ctx.shadowBlur=0;
+  ctx.font=`${fs-10}px 'Segoe UI',Arial`;
+  ctx.fillStyle='rgba(170,210,255,0.9)';
+  ctx.fillText('IDR '+s.cap+' T', fw/2, fh/2+13);
+
+  const tex = new THREE.CanvasTexture(cv2);
+  const sp  = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+  const sc  = s.cap>500?3.5:(s.cap>250?2.8:2.3);
+  sp.scale.set(sc, sc*(fh/fw),1);
+  sp.position.copy(rep.position).multiplyScalar(1.20);
+  pivot.add(sp);
+  labelSprites.push(sp);
+});
+
+// ----- INTER-CLUSTER CONNECTING LINES -----
+const ownerGroupMap = {};
+STOCKS.forEach(s=>{
+  if(!ownerGroupMap[s.owner]) ownerGroupMap[s.owner]=[];
+  ownerGroupMap[s.owner].push(s);
+});
+Object.entries(ownerGroupMap).forEach(([owner,group])=>{
+  const oc = OWNER_COLORS[owner]||[0.5,0.5,0.6];
+  const col = new THREE.Color(oc[0]*0.6, oc[1]*0.6, oc[2]*0.6);
+  group.forEach((sa,i)=>{
+    group.slice(i+1).forEach(sb=>{
+      const pa = stockRepPoints.find(p=>p.stock===sa)?.position;
+      const pb = stockRepPoints.find(p=>p.stock===sb)?.position;
+      if(!pa||!pb) return;
+      const geo=new THREE.BufferGeometry().setFromPoints([pa.clone(),pb.clone()]);
+      const mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.14});
+      pivot.add(new THREE.Line(geo,mat));
+    });
+  });
+});
+
+// ============================================================
+// INTERACTION
+// ============================================================
+let isDragging=false, prevX=0, prevY=0;
+let autoRotate=true;
+let velX=0, velY=0;
+
+const tooltip=document.getElementById('tooltip');
+const raycaster=new THREE.Raycaster();
+raycaster.params.Points = {threshold:0.3};
+const mouse=new THREE.Vector2();
+
+// Build a simple set of invisible sphere meshes for click/hover detection
+const hitMeshes = stockRepPoints.map(sp=>{
+  const r = 0.12 + Math.log10(sp.stock.cap+1)*0.08;
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(r,8,8),
+    new THREE.MeshBasicMaterial({visible:false})
+  );
+  m.position.copy(sp.position);
+  m.userData.stock = sp.stock;
+  pivot.add(m);
+  return m;
+});
+
+canvas.addEventListener('mousedown',e=>{
+  isDragging=true; autoRotate=false;
+  prevX=e.clientX; prevY=e.clientY; velX=0; velY=0;
+});
+window.addEventListener('mouseup',()=>{ isDragging=false; });
+
+canvas.addEventListener('mousemove',e=>{
+  if(isDragging){
+    const dx=(e.clientX-prevX)*0.008, dy=(e.clientY-prevY)*0.008;
+    pivot.rotation.y+=dx; pivot.rotation.x+=dy;
+    velX=dy*0.3; velY=dx*0.3;
+    prevX=e.clientX; prevY=e.clientY;
+  } else {
+    const rect=canvas.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObjects(hitMeshes);
+    if(hits.length){
+      const s=hits[0].object.userData.stock;
+      tooltip.style.display='block';
+      const rx=wrap.getBoundingClientRect();
+      tooltip.style.left=(e.clientX-rx.left+14)+'px';
+      tooltip.style.top=(e.clientY-rx.top-36)+'px';
+      tooltip.innerHTML=`<b style="color:${OWNER_HEX[s.owner]||'#fff'};font-size:13px;">${s.ticker}</b>&nbsp;&nbsp;<span style="color:#6a8aaa;">${s.name}</span>${s.msci?'&nbsp;<span style="color:#ffd700;font-size:10px;background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.4);border-radius:4px;padding:1px 5px;">MSCI</span>':''}<br>
+      <span style="color:#4a6a8a;">Market Cap:</span> IDR ${s.cap} T &nbsp;|&nbsp; <span style="color:#4a6a8a;">Sector:</span> ${s.sector}`;
+      canvas.style.cursor='pointer';
+    } else {
+      tooltip.style.display='none';
+      canvas.style.cursor='default';
+    }
+  }
+});
+
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(hitMeshes);
+  if(hits.length) showInfo(hits[0].object.userData.stock);
+});
+
+canvas.addEventListener('wheel',e=>{
+  camera.position.z=Math.max(7,Math.min(22,camera.position.z+e.deltaY*0.012));
+},{passive:true});
+
+// Touch
+let lt={x:0,y:0};
+canvas.addEventListener('touchstart',e=>{ lt={x:e.touches[0].clientX,y:e.touches[0].clientY}; autoRotate=false; });
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const dx=(e.touches[0].clientX-lt.x)*0.009, dy=(e.touches[0].clientY-lt.y)*0.009;
+  pivot.rotation.y+=dx; pivot.rotation.x+=dy;
+  lt={x:e.touches[0].clientX,y:e.touches[0].clientY};
+},{passive:false});
+
+// ============================================================
+// MODE BUTTONS
+// ============================================================
+function setMode(m){
+  ['rotate','zoom'].forEach(id=>document.getElementById('btn-'+id).classList.toggle('active',id===m));
+}
+function resetView(){
+  camera.position.z=14; pivot.rotation.set(0,0,0); autoRotate=true; velX=0; velY=0;
+}
+function toggleInfoPanel(){
+  const p=document.getElementById('stock-info-panel');
+  p.style.display=p.style.display==='none'?'':'none';
+}
+
+// ============================================================
+// ANIMATE
+// ============================================================
+let frame=0;
+// Collect all shader materials for time update
+const shaderMats=[];
+pivot.traverse(o=>{
+  if(o.material && o.material.uniforms && o.material.uniforms.time) shaderMats.push(o.material);
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  frame++;
+  const t=frame*0.016;
+
+  shaderMats.forEach(m=>{ m.uniforms.time.value=t; });
+
+  if(autoRotate){
+    pivot.rotation.y+=0.0015;
+  } else if(!isDragging){
+    pivot.rotation.y+=velY; pivot.rotation.x+=velX;
+    velX*=0.94; velY*=0.94;
+  }
+
+  renderer.render(scene,camera);
+}
+animate();
+
+// ============================================================
+// RESIZE
+// ============================================================
+window.addEventListener('resize',()=>{
+  W=wrap.clientWidth; H=wrap.clientHeight;
+  camera.aspect=W/H; camera.updateProjectionMatrix();
+  renderer.setSize(W,H);
+});
+</script>
+</body>
+</html>
+"""
+        components.html(_idx_globe_html, height=780, scrolling=False)
 
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
