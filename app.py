@@ -21,6 +21,31 @@ import re
 import time
 import random
 
+# ── SIGMA SHEETS — Google Sheets Persistent Storage ──────────────────────────
+try:
+    from sigma_sheets import (
+        sheets_available, save_broker_scan, load_broker_history,
+        save_reko, load_reko_history, save_journal_entry, load_journal,
+        update_journal_status, render_sheets_status, render_backup_button,
+        render_history_table, log_backup,
+    )
+    _SHEETS_OK = True
+except ImportError:
+    _SHEETS_OK = False
+    def sheets_available(): return False
+    def save_broker_scan(*a, **kw): return False
+    def load_broker_history(*a, **kw): return []
+    def save_reko(*a, **kw): return False
+    def load_reko_history(*a, **kw): return []
+    def save_journal_entry(*a, **kw): return False
+    def load_journal(*a, **kw): return []
+    def update_journal_status(*a, **kw): return False
+    def render_sheets_status(): pass
+    def render_backup_button(): pass
+    def render_history_table(*a, **kw): pass
+    def log_backup(*a, **kw): return False
+# ─────────────────────────────────────────────────────────────────────────────
+
 # ── SIGMA HTML SANITIZER ──
 def _sanitize_html_text(raw) -> str:
     """Hapus tag HTML yang bocor dari string teks sebelum dirender sebagai plain text."""
@@ -15930,6 +15955,34 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             }
             st.session_state[history_key] = history
 
+            # ── Save reko ke Google Sheets ────────────────────────
+            try:
+                _plan_rows_sh = (plan_json.get(plan_type)
+                                 or plan_json.get("daily")
+                                 or plan_json.get("weekly")
+                                 or plan_json.get("bsjp") or [])
+                if isinstance(_plan_rows_sh, list):
+                    for _pr_sh in _plan_rows_sh:
+                        if not isinstance(_pr_sh, dict): continue
+                        _tk_sh = str(_pr_sh.get("ticker", "")).strip().upper()
+                        if not _tk_sh: continue
+                        save_reko(
+                            mode         = plan_type.upper(),
+                            ticker       = _tk_sh,
+                            bias         = str(_pr_sh.get("bias", _pr_sh.get("rating", "BUY"))),
+                            entry_low    = float(_pr_sh.get("entry_low", _pr_sh.get("price", 0)) or 0),
+                            entry_high   = float(_pr_sh.get("entry_high", _pr_sh.get("price", 0)) or 0),
+                            stoploss     = float(_pr_sh.get("sl", 0) or 0),
+                            tp1          = float(_pr_sh.get("tp1", 0) or 0),
+                            tp2          = float(_pr_sh.get("tp2", 0) or 0),
+                            sigma_score  = int(_pr_sh.get("sigma_score", 0) or 0),
+                            grade        = str(_pr_sh.get("rating", _pr_sh.get("grade", ""))),
+                            summary_ai   = str(_pr_sh.get("why_buy", _pr_sh.get("reason", "")))[:400],
+                        )
+            except Exception as _she_r:
+                pass  # Sheets error tidak boleh break main flow
+            # ─────────────────────────────────────────────────────
+
             # ══════════════════════════════════════════════════════
             # AUTO-INJECT ke tr_records sebagai OPEN
             # Setiap saham BUY di plan langsung masuk Track Record
@@ -15988,6 +16041,24 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             if _new_injected:
                 _tr_records.extend(_new_injected)
                 st.session_state["tr_records"] = _tr_records
+                # ── Save journal ke Google Sheets ─────────────────
+                try:
+                    for _ji in _new_injected:
+                        save_journal_entry(
+                            ticker       = str(_ji.get("ticker", "")),
+                            status       = "OPEN",
+                            bias         = str(_ji.get("rating", "BUY")),
+                            entry_price  = float(_ji.get("entry", 0)),
+                            stoploss     = float(_ji.get("sl", 0)),
+                            tp1          = float(_ji.get("tp1", 0)),
+                            tp2          = float(_ji.get("tp2", 0)),
+                            tanggal_entry= str(_ji.get("date", "")),
+                            catatan      = str(_ji.get("auto_note", "")),
+                            setup        = str(_ji.get("type", "")),
+                        )
+                except Exception as _she_j:
+                    pass  # Sheets error tidak boleh break main flow
+                # ─────────────────────────────────────────────────
 
             # Persist ke DB (history + tr_records) — lebih robust dengan retry
             if st.session_state.get("user"):
@@ -18459,6 +18530,24 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             del _bsh[_dk]
                     st.session_state[_bsh_key] = _bsh
                     st.session_state[_auto_key_bs] = True
+                    # ── Save ke Google Sheets ─────────────────────────────
+                    try:
+                        _now_ts = _now_bs.strftime("%Y-%m-%d")
+                        for _bsitem in _aresult[:30]:
+                            save_broker_scan(
+                                ticker          = _bsitem.get("ticker", ""),
+                                date_data       = _now_ts,
+                                verdict         = _bsitem.get("verdict", "WATCH"),
+                                akumulasi_score = float(_bsitem.get("spike", 0)) * 10,
+                                distribusi_score= 0,
+                                net_flow        = float(_bsitem.get("spike", 0)),
+                                top_buyers      = _bsitem.get("top_accum", []),
+                                top_sellers     = _bsitem.get("top_dist", []),
+                                catatan         = f"Auto BS30 · spike={_bsitem.get('spike',0)} · chg={_bsitem.get('chg1d',0)}%",
+                            )
+                    except Exception as _she:
+                        pass  # Sheets error tidak boleh break main flow
+                    # ─────────────────────────────────────────────────────
                     # Persist — termasuk brosum_history agar Weekly Plan bisa pakai data lama
                     if st.session_state.get("user"):
                         for _auto_try in range(2):
@@ -18657,6 +18746,13 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                                   use_container_width=True):
                     st.session_state.pop("_goapi_last_error", None)
                     st.rerun()
+
+            # ── Google Sheets Status ──────────────────────────────────────
+            with st.expander("📊 Google Sheets — Status & Backup", expanded=False):
+                render_sheets_status()
+                st.divider()
+                render_backup_button()
+            # ─────────────────────────────────────────────────────────────
 
             _sc1, _sc2, _sc3 = st.columns([3, 1, 1])
             with _sc1:
@@ -19582,6 +19678,29 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         f"<span style='color:{text_sub};'>Plan tersimpan di tab Weekly → History Trade Plan</span>"
                         f"</div>",
                         unsafe_allow_html=True)
+
+        # ══════════════════════════════════════════════════════════
+        # SHEETS HISTORY — Broker & Reko dari Google Sheets
+        # ══════════════════════════════════════════════════════════
+        with bs_tab_history:
+            pass  # already handled above
+
+        # ── Tambahan: Google Sheets History section (di bawah history lokal) ──
+        if sheets_available():
+            st.divider()
+            st.markdown(
+                "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                "color:#90caf9;margin-bottom:8px;'>☁️ <b>GOOGLE SHEETS HISTORY</b> "
+                "— Data tersimpan permanen, bisa dilihat semua member</div>",
+                unsafe_allow_html=True)
+            _sh_col1, _sh_col2 = st.columns(2)
+            with _sh_col1:
+                st.markdown("**📋 Broker Scan History (Sheets)**")
+                render_history_table("broker", limit=15)
+            with _sh_col2:
+                st.markdown("**🤖 Reko History (Sheets)**")
+                render_history_table("reko", limit=15)
+            render_backup_button()
 
         # ══════════════════════════════════════════════════════════
         # TAB 3 — NET BUY FOREIGN (AUTO dari BS30)
