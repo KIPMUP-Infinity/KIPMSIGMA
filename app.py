@@ -8367,6 +8367,14 @@ canvas#globe { width:100%; height:100%; display:block; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
       Zoom
     </div>
+    <div class="hbtn" id="btn-zoomin" onclick="doZoom(-1.5)" title="Zoom In">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      +
+    </div>
+    <div class="hbtn" id="btn-zoomout" onclick="doZoom(1.5)" title="Zoom Out">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      −
+    </div>
     <div class="hbtn" id="btn-reset" onclick="resetView()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
       Reset
@@ -8796,6 +8804,8 @@ const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
 renderer.setSize(W,H);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.setClearColor(0x000000,0);
+// FIX 3: Globe lebih kecil di mobile
+if(window.innerWidth<=640){ camera.position.z=22; }
 
 // Lighting
 scene.add(new THREE.AmbientLight(0x223355,2.5));
@@ -9139,6 +9149,8 @@ Object.entries(ownerGroupMap).forEach(([owner,group])=>{
 let isDragging=false, prevX=0, prevY=0;
 let autoRotate=true;
 let velX=0, velY=0;
+// FIX 2: currentMode untuk zoom drag
+let currentMode='rotate';
 
 const tooltip=document.getElementById('tooltip');
 const raycaster=new THREE.Raycaster();
@@ -9167,8 +9179,14 @@ window.addEventListener('mouseup',()=>{ isDragging=false; });
 canvas.addEventListener('mousemove',e=>{
   if(isDragging){
     const dx=(e.clientX-prevX)*0.008, dy=(e.clientY-prevY)*0.008;
-    pivot.rotation.y+=dx; pivot.rotation.x+=dy;
-    velX=dy*0.3; velY=dx*0.3;
+    // FIX 2: mode zoom → drag atas/bawah = zoom in/out
+    if(currentMode==='zoom'){
+      const delta=(e.clientY-prevY)*0.06;
+      camera.position.z=Math.max(7,Math.min(28,camera.position.z+delta));
+    } else {
+      pivot.rotation.y+=dx; pivot.rotation.x+=dy;
+      velX=dy*0.3; velY=dx*0.3;
+    }
     prevX=e.clientX; prevY=e.clientY;
   } else {
     const rect=canvas.getBoundingClientRect();
@@ -9207,11 +9225,34 @@ canvas.addEventListener('wheel',e=>{
 
 // Touch
 let lt={x:0,y:0};
-canvas.addEventListener('touchstart',e=>{ lt={x:e.touches[0].clientX,y:e.touches[0].clientY}; autoRotate=false; });
+let lastPinchDist=0;
+canvas.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){ lt={x:e.touches[0].clientX,y:e.touches[0].clientY}; autoRotate=false; }
+  if(e.touches.length===2){
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    lastPinchDist=Math.sqrt(dx*dx+dy*dy);
+  }
+});
 canvas.addEventListener('touchmove',e=>{
   e.preventDefault();
+  // FIX: Pinch-to-zoom 2 jari
+  if(e.touches.length===2){
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const delta=(lastPinchDist-dist)*0.04;
+    camera.position.z=Math.max(7,Math.min(28,camera.position.z+delta));
+    lastPinchDist=dist;
+    return;
+  }
   const dx=(e.touches[0].clientX-lt.x)*0.009, dy=(e.touches[0].clientY-lt.y)*0.009;
-  pivot.rotation.y+=dx; pivot.rotation.x+=dy;
+  if(currentMode==='zoom'){
+    const delta=(e.touches[0].clientY-lt.y)*0.06;
+    camera.position.z=Math.max(7,Math.min(28,camera.position.z+delta));
+  } else {
+    pivot.rotation.y+=dx; pivot.rotation.x+=dy;
+  }
   lt={x:e.touches[0].clientX,y:e.touches[0].clientY};
 },{passive:false});
 
@@ -9219,10 +9260,24 @@ canvas.addEventListener('touchmove',e=>{
 // MODE BUTTONS
 // ============================================================
 function setMode(m){
+  currentMode=m;
+  // FIX 2: update currentMode dan toggle active class
   ['rotate','zoom'].forEach(id=>document.getElementById('btn-'+id).classList.toggle('active',id===m));
+  if(m==='zoom') autoRotate=false;
+  // Update cursor hint
+  canvas.style.cursor = m==='zoom' ? 'ns-resize' : 'grab';
 }
 function resetView(){
-  camera.position.z=14; pivot.rotation.set(0,0,0); autoRotate=true; velX=0; velY=0;
+  camera.position.z=window.innerWidth<=640?22:14;
+  pivot.rotation.set(0,0,0); autoRotate=true; velX=0; velY=0;
+  currentMode='rotate';
+  document.getElementById('btn-rotate').classList.add('active');
+  document.getElementById('btn-zoom').classList.remove('active');
+  canvas.style.cursor='grab';
+}
+// FIX: Tombol Zoom In / Out langsung menggerakkan kamera
+function doZoom(delta){
+  camera.position.z=Math.max(7,Math.min(28,camera.position.z+delta));
 }
 function toggleInfoPanel(){
   const p=document.getElementById('stock-info-panel');
@@ -9659,8 +9714,13 @@ function sortStocks(arr){
 function draw(){
   const W = canvas.parentElement.clientWidth;
   const H = Math.max(window.innerHeight - canvas.getBoundingClientRect().top - 4, 400);
-  canvas.width = W; canvas.height = H;
-  canvas.style.height = H+'px';
+  // FIX BLUR: gunakan devicePixelRatio agar tajam di HiDPI/Retina/100% zoom
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
   // auto iframe resize
   try{window.parent.postMessage({type:'streamlit:setFrameHeight',height:H+80},'*');}catch(e){}
 
@@ -9819,6 +9879,65 @@ canvas.addEventListener('touchend', e=>{
 
 window.addEventListener('resize', draw);
 draw();
+
+// ============================================================
+// FIX 4: REAL-TIME DATA FETCH — Yahoo Finance via allorigins proxy
+// Update setiap 30 detik (IDX data delay ~15 menit, tapi ini se-fresh mungkin)
+// ============================================================
+// Ticker map: IDX ticker → Yahoo Finance symbol (.JK suffix)
+const YF_MAP = {};
+STOCKS.forEach(s=>{ YF_MAP[s.ticker] = s.ticker+'.JK'; });
+
+// Status indicator di toolbar
+const liveBtn = document.createElement('div');
+liveBtn.id='live-status';
+liveBtn.style.cssText='margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:#6a7280;';
+liveBtn.innerHTML='<span id="live-dot" style="width:7px;height:7px;border-radius:50%;background:#37474f;display:inline-block;"></span><span id="live-txt">Memuat data live...</span>';
+document.getElementById('toolbar').appendChild(liveBtn);
+
+let fetchInProgress=false;
+async function fetchLiveData(){
+  if(fetchInProgress) return;
+  fetchInProgress=true;
+  document.getElementById('live-dot').style.background='#ffab00';
+  document.getElementById('live-txt').textContent='Mengambil data...';
+  try{
+    // Ambil batch tickers sekaligus via Yahoo Finance query (max 20 per request)
+    const tickers = STOCKS.map(s=>s.ticker+'.JK').join(',');
+    const url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(tickers)+'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap';
+    // Gunakan allorigins CORS proxy
+    const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(url);
+    const resp = await fetch(proxy,{signal:AbortSignal.timeout(12000)});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const outer = await resp.json();
+    const data = JSON.parse(outer.contents);
+    const quotes = data?.quoteResponse?.result || [];
+    let updated=0;
+    quotes.forEach(q=>{
+      const ticker = q.symbol.replace('.JK','');
+      const s = STOCKS.find(x=>x.ticker===ticker);
+      if(!s) return;
+      if(q.regularMarketPrice) s.price = q.regularMarketPrice;
+      if(typeof q.regularMarketChangePercent==='number') s.chg = parseFloat(q.regularMarketChangePercent.toFixed(2));
+      if(q.regularMarketVolume) s.vol = (q.regularMarketVolume/1e6).toFixed(1)+' M';
+      if(q.marketCap) s.cap = parseFloat((q.marketCap/1e12).toFixed(0))||s.cap;
+      updated++;
+    });
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('live-dot').style.background = updated>0?'#26a69a':'#ef5350';
+    document.getElementById('live-txt').textContent = updated>0?('Live · '+updated+' saham · '+timeStr):'Gagal update · '+timeStr;
+    if(updated>0) draw();
+  } catch(err){
+    document.getElementById('live-dot').style.background='#ef5350';
+    document.getElementById('live-txt').textContent='Offline – data statis';
+  }
+  fetchInProgress=false;
+}
+
+// Fetch pertama kali, lalu setiap 30 detik
+fetchLiveData();
+setInterval(fetchLiveData, 30000);
 </script>
 </body></html>"""
 
