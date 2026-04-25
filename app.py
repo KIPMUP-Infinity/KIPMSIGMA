@@ -18,6 +18,72 @@ import os
 import hashlib
 import bcrypt
 import re
+import time
+import random
+
+# ── SIGMA SHEETS — Google Sheets Persistent Storage ──────────────────────────
+try:
+    from sigma_sheets import (
+        sheets_available, save_broker_scan, load_broker_history,
+        save_reko, load_reko_history, save_journal_entry, load_journal,
+        update_journal_status, render_sheets_status, render_backup_button,
+        render_history_table, log_backup,
+    )
+    _SHEETS_OK = True
+except ImportError:
+    _SHEETS_OK = False
+    def sheets_available(): return False
+    def save_broker_scan(*a, **kw): return False
+    def load_broker_history(*a, **kw): return []
+    def save_reko(*a, **kw): return False
+    def load_reko_history(*a, **kw): return []
+    def save_journal_entry(*a, **kw): return False
+    def load_journal(*a, **kw): return []
+    def update_journal_status(*a, **kw): return False
+    def render_sheets_status(): pass
+    def render_backup_button(): pass
+    def render_history_table(*a, **kw): pass
+    def log_backup(*a, **kw): return False
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── SIGMA HTML SANITIZER ──
+def _sanitize_html_text(raw) -> str:
+    """Hapus tag HTML yang bocor dari string teks sebelum dirender sebagai plain text."""
+    if not isinstance(raw, str):
+        return str(raw) if raw is not None else ""
+    # Hapus semua tag HTML/XML (termasuk </div>, <span>, dll)
+    cleaned = re.sub(r'</?[a-zA-Z][^>]*>', '', raw)
+    return cleaned.strip()
+
+# ── SIGMA GEMINI RATE LIMIT MANAGER ──
+# Menyimpan waktu cooldown per key-hash (dalam memory session)
+_gemini_cooldown: dict = {}
+_BACKOFF_BASE_SEC = 25      # detik cooldown awal setelah 429
+_BACKOFF_MAX_SEC  = 180     # batas atas cooldown eksponensial
+
+def _mark_gemini_key_ratelimited(key: str) -> None:
+    """Tandai key sebagai rate-limited dengan exponential backoff + random jitter."""
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    now = time.time()
+    prev_until = _gemini_cooldown.get(h, 0)
+    if prev_until > now:
+        # Masih dalam cooldown sebelumnya → double + jitter (eksponensial)
+        remaining = prev_until - now
+        wait = min(remaining * 2 + random.uniform(2, 8), _BACKOFF_MAX_SEC)
+    else:
+        # Pertama kali 429 → base + jitter
+        wait = _BACKOFF_BASE_SEC + random.uniform(1, 10)
+    _gemini_cooldown[h] = now + wait
+
+def _gemini_key_available(key: str) -> bool:
+    """Return True jika key tidak sedang dalam cooldown period."""
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    return time.time() >= _gemini_cooldown.get(h, 0)
+
+def _get_available_gemini_keys(all_keys: list) -> list:
+    """Return key yang tidak sedang cooldown. Fallback ke semua key jika semua cooldown."""
+    available = [k for k in all_keys if _gemini_key_available(k)]
+    return available if available else all_keys
 
 # ── SIGMA MODULES: Storage permanen + render Daily/Weekly/BrokSum/Alpha/TrackRecord ──
 try:
@@ -1685,9 +1751,9 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">ZONE CONF {cs}/10</span>
   </div>
   <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
-    <div style="font-size:0.8rem;color:{vc};font-weight:600;margin-bottom:4px;">{result.vol_type}</div>
+    <div style="font-size:0.8rem;color:{vc};font-weight:600;margin-bottom:4px;">{_sanitize_html_text(result.vol_type)}</div>
     <div style="font-size:0.72rem;color:{text_sub};">
-      Frekuensi: <span style="color:{text_main};">{result.vol_freq_signal}</span>
+      Frekuensi: <span style="color:{text_main};">{_sanitize_html_text(result.vol_freq_signal)}</span>
       {("&nbsp;&middot;&nbsp;<span style='color:#00e5a0;font-weight:600;'>✅ True Breakout Terkonfirmasi</span>") if result.breakout_valid else ""}
       {("&nbsp;&middot;&nbsp;<span style='color:#f23645;font-weight:600;'>⛔ False Breakout Terdeteksi</span>") if result.false_breakout else ""}
     </div>
@@ -2006,91 +2072,342 @@ def _fetch_all_data(tickers):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# GOAPI.IO — Stock Market IDX Helper
-# Base URL: https://app.goapi.io/api/v1/idx
-# Auth header: X-Api-Key
-# Secret key: GoAPI_KEY
+# GOAPI.IO — Stock Market IDX
+# Semua kemungkinan base URL dicoba secara berurutan (self-discovery)
+# Hits=0 di dashboard berarti URL masih salah — kode ini probe otomatis
 # ═══════════════════════════════════════════════════════════════════════════════
 
-GOAPI_BASE = "https://app.goapi.io/api/v1/idx"
+# Kandidat base URL — dicoba berurutan sampai ada yang respond bukan 404
+_GOAPI_BASE_CANDIDATES = [
+    "https://api.goapi.io/stock/idx",   # ← BENAR (dari dokumentasi resmi)
+]
+
+# Runtime-resolved base URL (diisi saat pertama kali sukses, atau oleh Test GoAPI)
+GOAPI_BASE = "https://api.goapi.io/stock/idx"  # default, akan di-override jika ditemukan yang benar
+
 
 def _goapi_headers():
     key = st.secrets.get("GoAPI_KEY", "")
-    return {"X-Api-Key": key, "Accept": "application/json"}
+    return {"X-API-KEY": key, "Accept": "application/json"}
+
 
 def _goapi_available():
-    return bool(st.secrets.get("GoAPI_KEY", ""))
+    """Cek apakah GoAPI key tersedia dan valid."""
+    key = st.secrets.get("GoAPI_KEY", "")
+    return bool(key and key.strip() and len(key.strip()) > 5)
+
+
+def _goapi_resolve_base(force: bool = False) -> str:
+    """
+    Probe semua kandidat base URL dan return yang pertama kali berhasil
+    (bukan 404 untuk endpoint /{symbol}/broker_summary).
+    Hasil di-cache di session_state["_goapi_base_resolved"].
+    """
+    global GOAPI_BASE
+    # Gunakan cache dulu
+    if not force:
+        cached = None
+        try:
+            cached = st.session_state.get("_goapi_base_resolved")
+        except Exception:
+            pass
+        if cached:
+            GOAPI_BASE = cached
+            return cached
+
+    from datetime import date as _d, timedelta as _td
+    # Pakai tanggal yang paling mungkin ada datanya
+    today = _d.today()
+    test_date = None
+    for delta in range(1, 8):
+        cand = today - _td(days=delta)
+        if cand.weekday() < 5:
+            test_date = str(cand)
+            break
+    if not test_date:
+        test_date = str(today - _td(days=1))
+
+    key = st.secrets.get("GoAPI_KEY", "")
+    headers = {"X-API-KEY": key, "Accept": "application/json"}
+
+    for base in _GOAPI_BASE_CANDIDATES:
+        try:
+            r = requests.get(
+                f"{base}/TLKM/broker_summary",
+                params={"date": test_date, "investor": "ALL"},
+                headers=headers, timeout=8)
+            # 200 atau 401/403/429 = URL-nya ditemukan (auth issue, bukan path issue)
+            if r.status_code in (200, 401, 403, 429):
+                GOAPI_BASE = base
+                try:
+                    st.session_state["_goapi_base_resolved"] = base
+                except Exception:
+                    pass
+                return base
+            # 404 = path tidak ada → coba berikutnya
+        except Exception:
+            continue
+    # Tidak ada yang cocok — kembalikan default
+    return GOAPI_BASE
 
 def goapi_get_price(ticker: str) -> dict:
-    """Harga real-time satu saham dari GoAPI."""
+    """Harga real-time satu saham dari GoAPI. Endpoint: /stock/idx/{symbol}"""
     try:
-        r = requests.get(f"{GOAPI_BASE}/stock/{ticker}", headers=_goapi_headers(), timeout=10)
-        r.raise_for_status()
-        return r.json()
+        r = requests.get(f"{GOAPI_BASE}/{ticker}", headers=_goapi_headers(), timeout=10)
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+        # Response: {"status":"success","data":{"results":[{...}]}} atau {"data":{...}}
+        if isinstance(data, dict):
+            inner = data.get("data", data)
+            if isinstance(inner, dict):
+                results = inner.get("results", [])
+                if results and isinstance(results, list):
+                    return results[0]
+                return inner
+            elif isinstance(inner, list) and inner:
+                return inner[0]
+        return data
     except Exception:
         return {}
 
 def goapi_get_prices(tickers: list) -> dict:
-    """Harga real-time multiple ticker sekaligus."""
+    """Harga real-time multiple ticker. Endpoint: /stock/idx/prices?symbols=A,B,C"""
     try:
         symbols = ",".join(tickers)
-        r = requests.get(f"{GOAPI_BASE}/stock", params={"symbols": symbols},
+        r = requests.get(f"{GOAPI_BASE}/prices", params={"symbols": symbols},
                          headers=_goapi_headers(), timeout=12)
-        r.raise_for_status()
-        return r.json()
+        if r.status_code != 200:
+            return {}
+        data = r.json()
+        # Response: {"status":"success","data":{"results":[{symbol,close,...}]}}
+        # Return dict keyed by symbol for easy lookup
+        if isinstance(data, dict):
+            inner = data.get("data", {})
+            results = inner.get("results", []) if isinstance(inner, dict) else []
+            return {row["symbol"]: row for row in results if isinstance(row, dict) and "symbol" in row}
+        return {}
     except Exception:
         return {}
+
+def _last_trading_date(max_lookback: int = 7) -> str:
+    """
+    Cari hari bursa terakhir (T-1 atau lebih).
+    Skip Sabtu (5) dan Minggu (6). Fallback sampai max_lookback hari.
+    """
+    from datetime import date as _d, timedelta as _td
+    today = _d.today()
+    for delta in range(1, max_lookback + 1):
+        candidate = today - _td(days=delta)
+        if candidate.weekday() < 5:
+            return str(candidate)
+    return str(today - _td(days=1))
+
+
+def _trading_date_candidates(date_str: str = None, max_lookback: int = 5) -> list:
+    """
+    Buat list kandidat tanggal hari bursa untuk dicoba secara berurutan (dari terbaru ke terlama).
+    Jika date_str diberikan, mulai dari situ lalu mundur.
+    Jika tidak, mulai dari T-1 lalu mundur sampai max_lookback hari bursa.
+    Digunakan untuk auto-retry GoAPI broker-summary.
+    """
+    from datetime import date as _d, timedelta as _td, datetime as _dtt
+    if date_str:
+        try:
+            start = _dtt.strptime(date_str, "%Y-%m-%d").date()
+        except Exception:
+            start = _d.today() - _td(days=1)
+    else:
+        start = _d.today() - _td(days=1)
+    candidates = []
+    delta = 0
+    while len(candidates) < max_lookback:
+        cand = start - _td(days=delta)
+        if cand.weekday() < 5:
+            candidates.append(str(cand))
+        delta += 1
+        if delta > 30:
+            break
+    return candidates
+
 
 def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     """
     Broker summary per saham dari GoAPI.
-    Return: list of broker rows (format siap pakai di SIGMA brosum parser).
-    date_str: 'YYYY-MM-DD', default = hari ini
+    Endpoint resmi: GET https://api.goapi.io/stock/idx/{symbol}/broker_summary
+    Params: date (YYYY-MM-DD), investor (LOCAL|FOREIGN|ALL)
+    Return: list of broker rows normalized untuk SIGMA parser.
+
+    Auto-retry: jika 404/kosong, mundur ke T-2, T-3 dst (maks 5 hari bursa).
     """
+    _goapi_resolve_base()
+    candidates = _trading_date_candidates(date_str, max_lookback=10)  # extended: GoAPI kadang delay >5 hari
+    last_err = f"Semua tanggal dicoba kosong: {candidates}"
+    _debug_log = []  # collect per-date results for better error reporting
+    for _try_date in candidates:
+        try:
+            # URL baru: /{symbol}/broker_summary  (bukan /broker-summary?symbol=)
+            r = requests.get(
+                f"{GOAPI_BASE}/{ticker}/broker_summary",
+                params={"date": _try_date, "investor": "ALL"},
+                headers=_goapi_headers(), timeout=20)
+            if r.status_code == 429:
+                last_err = f"HTTP 429 Rate Limit untuk {ticker} ({_try_date})"
+                try:
+                    import streamlit as _st_g
+                    _st_g.session_state["_goapi_last_error"] = last_err
+                except Exception:
+                    pass
+                return []
+            if r.status_code == 404:
+                last_err = f"HTTP 404 untuk {ticker} ({_try_date})"
+                continue
+            if r.status_code != 200:
+                last_err = f"HTTP {r.status_code} untuk {ticker} ({_try_date})"
+                try:
+                    _eb = r.json()
+                    last_err += f" — {_eb.get('message', _eb.get('error', r.text[:80]))}"
+                except Exception:
+                    last_err += f" — {r.text[:80]}"
+                continue
+            # HTTP 200
+            data = r.json()
+            # Response format: {"status":"success","data":{"results":[...]}}
+            if isinstance(data, dict):
+                _status = str(data.get("status", "success")).lower()
+                if _status in ("error", "fail", "failed", "0", "false"):
+                    last_err = f"{ticker} ({_try_date}): {data.get('message', str(data)[:80])}"
+                    continue
+                # Coba semua kemungkinan key untuk rows (fixed operator precedence)
+                _inner = data.get("data", {})
+                if isinstance(_inner, dict):
+                    rows = (_inner.get("results") or
+                            _inner.get("broker_summary") or
+                            _inner.get("brokerSummary") or
+                            data.get("results") or
+                            data.get("brokerSummary") or
+                            data.get("broker_summary") or [])
+                elif isinstance(_inner, list):
+                    rows = _inner
+                else:
+                    rows = (data.get("results") or
+                            data.get("brokerSummary") or
+                            data.get("broker_summary") or [])
+                if isinstance(rows, dict):
+                    rows = list(rows.values())
+            elif isinstance(data, list):
+                rows = data
+            else:
+                rows = []
+
+            if not rows:
+                last_err = f"{ticker} ({_try_date}): HTTP 200 tapi data kosong"
+                _debug_log.append(f"{_try_date}:EMPTY")
+                continue
+
+            # Normalize — response GoAPI baru punya field berbeda dari versi lama
+            normalized = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                # Format baru: {"broker":{"code":"XL","name":"..."},"side":"BUY","lot":87051,...}
+                broker_obj = row.get("broker", {})
+                broker_code = str(row.get("code", broker_obj.get("code",
+                              row.get("broker_code", row.get("brokerCode",
+                              row.get("BrokerID", "?"))))))
+                broker_name = row.get("name", broker_obj.get("name",
+                              row.get("broker_name", row.get("BrokerName", ""))))
+
+                side     = str(row.get("side", "")).upper()  # "BUY" atau "SELL"
+                lot      = float(row.get("lot", row.get("buy_lot", row.get("sell_lot", 0))) or 0)
+                value    = float(row.get("value", row.get("buy_value", row.get("sell_value", 0))) or 0)
+                avg      = float(row.get("avg", row.get("avg_buy", row.get("avg_sell", 0))) or 0)
+                investor = row.get("investor", "LOCAL")
+
+                # Konversi format baru (per-side per-row) ke format lama (buy+sell per broker)
+                # Format lama yang dipakai SIGMA: BuyVolume, SellVolume, BuyValue, SellValue, AvgBuy, AvgSell
+                if side == "BUY":
+                    normalized.append({
+                        "BrokerID":    broker_code,
+                        "BrokerName":  broker_name,
+                        "BuyVolume":   lot,
+                        "SellVolume":  0.0,
+                        "BuyValue":    value,
+                        "SellValue":   0.0,
+                        "AvgBuy":      avg,
+                        "AvgSell":     0.0,
+                        "InvestorBuy": investor,
+                        "InvestorSell": None,
+                        "_source":     "GoAPI",
+                        "_date":       _try_date,
+                    })
+                elif side == "SELL":
+                    normalized.append({
+                        "BrokerID":    broker_code,
+                        "BrokerName":  broker_name,
+                        "BuyVolume":   0.0,
+                        "SellVolume":  lot,
+                        "BuyValue":    0.0,
+                        "SellValue":   value,
+                        "AvgBuy":      0.0,
+                        "AvgSell":     avg,
+                        "InvestorBuy": None,
+                        "InvestorSell": investor,
+                        "_source":     "GoAPI",
+                        "_date":       _try_date,
+                    })
+                else:
+                    # Format lama (fallback): row sudah punya BuyVolume/SellVolume
+                    buy_lot  = float(row.get("buy_lot",   row.get("buyLot",   row.get("BuyVolume",  0))) or 0)
+                    sell_lot = float(row.get("sell_lot",  row.get("sellLot",  row.get("SellVolume", 0))) or 0)
+                    normalized.append({
+                        "BrokerID":    broker_code,
+                        "BrokerName":  broker_name,
+                        "BuyVolume":   buy_lot,
+                        "SellVolume":  sell_lot,
+                        "BuyValue":    float(row.get("buy_value",  row.get("BuyValue",  0)) or 0),
+                        "SellValue":   float(row.get("sell_value", row.get("SellValue", 0)) or 0),
+                        "AvgBuy":      float(row.get("avg_buy",    row.get("AvgBuy",    0)) or 0),
+                        "AvgSell":     float(row.get("avg_sell",   row.get("AvgSell",   0)) or 0),
+                        "InvestorBuy":  row.get("investor_buy",  row.get("InvestorBuy",  investor)),
+                        "InvestorSell": row.get("investor_sell", row.get("InvestorSell", None)),
+                        "_source":     "GoAPI",
+                        "_date":       _try_date,
+                    })
+            if not normalized:
+                last_err = f"{ticker} ({_try_date}): rows ada tapi semua tidak valid"
+                continue
+            return normalized
+        except Exception as _ge:
+            last_err = f"Exception {ticker} ({_try_date}): {type(_ge).__name__}: {str(_ge)[:80]}"
+            continue
+
+    # Semua kandidat gagal
+    last_err = f"{last_err} | debug: {'; '.join(_debug_log) if _debug_log else 'no attempts logged'}"
     try:
-        from datetime import date as _d
-        if date_str is None:
-            date_str = str(_d.today())
-        r = requests.get(f"{GOAPI_BASE}/broker-summary",
-                         params={"symbol": ticker, "date": date_str},
-                         headers=_goapi_headers(), timeout=20)
-        r.raise_for_status()
-        data = r.json()
-        # GoAPI returns {"data": [...]} or list directly
-        if isinstance(data, dict):
-            rows = data.get("data", data.get("brokerSummary", []))
-        elif isinstance(data, list):
-            rows = data
-        else:
-            rows = []
-        # Normalize keys agar kompatibel dengan parser SIGMA (BrokerID, BuyVolume, SellVolume, BuyValue, SellValue)
-        normalized = []
-        for row in rows:
-            normalized.append({
-                "BrokerID":   str(row.get("broker_code", row.get("brokerCode", row.get("BrokerID", row.get("broker", "?"))))),
-                "BrokerName": row.get("broker_name", row.get("brokerName", row.get("BrokerName", ""))),
-                "BuyVolume":  float(row.get("buy_lot", row.get("buyLot", row.get("BuyVolume", 0))) or 0),
-                "SellVolume": float(row.get("sell_lot", row.get("sellLot", row.get("SellVolume", 0))) or 0),
-                "BuyValue":   float(row.get("buy_value", row.get("buyValue", row.get("BuyValue", 0))) or 0),
-                "SellValue":  float(row.get("sell_value", row.get("sellValue", row.get("SellValue", 0))) or 0),
-                "AvgBuy":     float(row.get("avg_buy", row.get("avgBuy", 0)) or 0),
-                "AvgSell":    float(row.get("avg_sell", row.get("avgSell", 0)) or 0),
-                "InvestorBuy":  row.get("investor_buy", row.get("investorBuy", None)),
-                "InvestorSell": row.get("investor_sell", row.get("investorSell", None)),
-                "_source": "GoAPI",
-            })
-        return normalized
+        import streamlit as _st_g
+        _st_g.session_state["_goapi_last_error"] = last_err
     except Exception:
-        return []
+        pass
+    return []
 
 def goapi_get_historical(ticker: str, date_from: str, date_to: str) -> list:
-    """OHLCV historis dari GoAPI — max range 1 tahun."""
+    """OHLCV historis dari GoAPI — max range 1 tahun. Endpoint: /{symbol}/historical"""
     try:
-        r = requests.get(f"{GOAPI_BASE}/historical",
-                         params={"symbol": ticker, "from": date_from, "to": date_to},
+        r = requests.get(f"{GOAPI_BASE}/{ticker}/historical",
+                         params={"from": date_from, "to": date_to},
                          headers=_goapi_headers(), timeout=20)
-        r.raise_for_status()
+        if r.status_code != 200:
+            return []
         data = r.json()
+        # Response: {"data":{"results":[{...}]}}
+        if isinstance(data, dict):
+            inner = data.get("data", data)
+            if isinstance(inner, dict):
+                results = inner.get("results", inner.get("data", []))
+                return results if isinstance(results, list) else []
+            elif isinstance(inner, list):
+                return inner
         if isinstance(data, dict):
             return data.get("data", data.get("historical", []))
         return data if isinstance(data, list) else []
@@ -2099,7 +2416,7 @@ def goapi_get_historical(ticker: str, date_from: str, date_to: str) -> list:
 
 def goapi_get_top_gainer() -> list:
     try:
-        r = requests.get(f"{GOAPI_BASE}/top-gainer", headers=_goapi_headers(), timeout=10)
+        r = requests.get(f"{GOAPI_BASE}/top_gainer", headers=_goapi_headers(), timeout=10)
         r.raise_for_status()
         data = r.json()
         return data.get("data", data) if isinstance(data, dict) else data
@@ -2108,7 +2425,7 @@ def goapi_get_top_gainer() -> list:
 
 def goapi_get_top_loser() -> list:
     try:
-        r = requests.get(f"{GOAPI_BASE}/top-loser", headers=_goapi_headers(), timeout=10)
+        r = requests.get(f"{GOAPI_BASE}/top_loser", headers=_goapi_headers(), timeout=10)
         r.raise_for_status()
         data = r.json()
         return data.get("data", data) if isinstance(data, dict) else data
@@ -2125,12 +2442,17 @@ def goapi_get_trending() -> list:
         return []
 
 def goapi_get_profile(ticker: str) -> dict:
-    """Company profile + fundamental dari GoAPI."""
+    """Company profile + fundamental. Endpoint: /stock/idx/{symbol}/profile"""
     try:
-        r = requests.get(f"{GOAPI_BASE}/profile/{ticker}", headers=_goapi_headers(), timeout=12)
-        r.raise_for_status()
+        r = requests.get(f"{GOAPI_BASE}/{ticker}/profile", headers=_goapi_headers(), timeout=12)
+        if r.status_code != 200:
+            return {}
         data = r.json()
-        return data.get("data", data) if isinstance(data, dict) else {}
+        # Response: {"status":"success","data":{profile fields...}}
+        if isinstance(data, dict):
+            inner = data.get("data", data)
+            return inner if isinstance(inner, dict) else data
+        return {}
     except Exception:
         return {}
 
@@ -5009,7 +5331,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
-            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records","auto_plan_history_daily","auto_plan_history_weekly","auto_plan_history_bsjp","sigma_bs30_screened","sigma_bs30_ts","sigma_bs30_history","brosum_history"]:
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records","auto_plan_history_daily","auto_plan_history_weekly","auto_plan_history_bsjp","sigma_bs30_screened","sigma_bs30_ts","sigma_bs30_history","brosum_history","brosum_hist_use_key","brosum_hist_use_data","brosum_hist_use_date"]:
                 if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
@@ -5037,7 +5359,7 @@ if st.session_state.user and not st.session_state.data_loaded:
             "mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event",
             "ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp",
             "alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker",
-            "tr_records","auto_plan_history_daily","auto_plan_history_weekly",
+            "tr_records","auto_plan_history_daily","auto_plan_history_weekly","brosum_hist_use_key","brosum_hist_use_data",
             "auto_plan_history_bsjp","sigma_bs30_screened","sigma_bs30_ts",
             "sigma_bs30_history","brosum_history",
         ]
@@ -6811,14 +7133,16 @@ def _get_gemini_keys():
     return keys
 
 def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
-    """Gemini Vision - PRIMARY untuk semua request gambar. Auto-rotate key & model."""
+    """Gemini Vision - PRIMARY untuk semua request gambar. Auto-rotate key & model + backoff 429."""
     import urllib.request, json as _j
-    keys = _get_gemini_keys()
-    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
-    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    all_keys = _get_gemini_keys()
+    if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    keys = _get_available_gemini_keys(all_keys)
     models = ["gemini-2.5-flash", "gemini-2.0-flash"]
     last_err = ""
     for api_key in keys:
+        if not _gemini_key_available(api_key):
+            continue
         for model_name in models:
             try:
                 _parts = []
@@ -6833,24 +7157,35 @@ def _call_gemini_vision(prompt, img_b64, img_mime, multi_imgs=None):
                 with urllib.request.urlopen(req, timeout=45) as r: data = _j.loads(r.read())
                 return data["candidates"][0]["content"]["parts"][0]["text"], model_name
             except Exception as e:
-                last_err = str(e); continue
+                err_str = str(e)
+                last_err = err_str
+                if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower() or "exhausted" in err_str.lower():
+                    _mark_gemini_key_ratelimited(api_key)
+                    break  # skip ke key berikutnya
+                continue
     raise Exception(f"Gemini Vision gagal semua model/key: {last_err}")
 
 def _call_gemini_text(messages):
     """
     Gemini Text - FALLBACK untuk text jika semua Groq 70B rate limit.
     Auto-rotate 6 key + 2 model. Smart truncation ≤ 30.000 token.
+    Exponential backoff per key saat 429.
     """
     import urllib.request, json as _j
 
     # Budget Gemini: context window besar (1M token), tapi kita batasi 30k agar respons cepat
     GEMINI_PROMPT_MAX_TOKENS = 24000  # sisakan ruang untuk system prompt + output
 
-    keys = _get_gemini_keys()
-    if not keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    all_keys = _get_gemini_keys()
+    if not all_keys: raise Exception("Tidak ada Gemini API key yang valid di Secrets")
+    # Prioritaskan key yang tidak sedang cooldown
+    keys = _get_available_gemini_keys(all_keys)
     models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
     last_err = ""
     for api_key in keys:
+        # Skip key yang sedang cooldown (double-check)
+        if not _gemini_key_available(api_key):
+            continue
         for model_name in models:
             try:
                 gemini_contents = []
@@ -6878,8 +7213,9 @@ def _call_gemini_text(messages):
             except Exception as e:
                 err_str = str(e)
                 last_err = err_str
-                # 429 quota habis → skip ke key berikutnya
+                # 429 quota habis → tandai cooldown eksponensial + skip ke key berikutnya
                 if "429" in err_str or "quota" in err_str.lower() or "rate" in err_str.lower() or "exhausted" in err_str.lower():
+                    _mark_gemini_key_ratelimited(api_key)
                     break  # coba key berikutnya
                 continue   # error lain → coba model berikutnya
     raise Exception(f"Gemini Text gagal semua model/key: {last_err}")
@@ -7511,6 +7847,96 @@ if current_view == "dashboard":
         .sh-screen-table th {{ font-size: 0.7rem !important; padding: 5px 5px !important; }}
         .sh-screen-table td {{ padding: 5px 5px !important; }}
         [data-testid="stTextInput"] input {{ font-size: 0.95rem !important; }}
+
+        /* ── GLOBAL TABLE SCROLL FIX (mobile) ── */
+        [data-testid="stDataFrame"] {{
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        [data-testid="stDataFrame"] > div {{
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        /* Prevent double scroll on nested iframes (components.html) */
+        [data-testid="stCustomComponentV1"] iframe {{
+            border: none !important;
+            max-width: 100% !important;
+        }}
+        /* Fix horizontal overflow on columns */
+        [data-testid="column"] {{
+            min-width: 0 !important;
+            overflow: hidden !important;
+            word-break: break-word !important;
+        }}
+        /* Prevent text overflow in containers */
+        .stMarkdown, .stMarkdown p {{
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+        }}
+        /* Inline HTML tables (markdown) responsive — prevent double scrollbar */
+        [data-testid="stMarkdownContainer"] div[style*="overflow-x"] {{
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        /* stMarkdownContainer must NOT clip its scrollable table children */
+        [data-testid="stMarkdownContainer"] {{
+            overflow-x: visible !important;
+            max-width: 100% !important;
+        }}
+        /* Single-axis scroll: tables scroll only horizontally, no vertical container scroll */
+        [data-testid="stMarkdownContainer"] table {{
+            display: block !important;
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            max-width: 100% !important;
+            -webkit-overflow-scrolling: touch !important;
+        }}
+        /* But if already inside a scroll-wrapper div, use normal table display */
+        [data-testid="stMarkdownContainer"] div[style*="overflow-x"] table {{
+            display: table !important;
+            overflow-x: unset !important;
+        }}
+        /* Tab bar horizontal scroll on mobile */
+        [data-testid="stTabs"] [data-baseweb="tab-list"] {{
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            flex-wrap: nowrap !important;
+            -webkit-overflow-scrolling: touch !important;
+            scrollbar-width: none !important;
+            padding-bottom: 2px !important;
+        }}
+        [data-testid="stTabs"] [data-baseweb="tab-list"]::-webkit-scrollbar {{
+            display: none !important;
+        }}
+        [data-testid="stTabs"] button[role="tab"] {{
+            flex-shrink: 0 !important;
+            font-size: 0.65rem !important;
+            padding: 5px 10px !important;
+            white-space: nowrap !important;
+        }}
+        /* Metrics stack properly on tiny screens */
+        @media (max-width: 420px) {{
+            [data-testid="stMetricValue"] {{ font-size: 1.05rem !important; }}
+            [data-testid="stMetricLabel"] {{ font-size: 0.58rem !important; }}
+            [data-testid="column"] {{ padding: 0 4px !important; }}
+        }}
+        /* Expander header */
+        [data-testid="stExpander"] summary {{
+            font-size: 0.82rem !important;
+            padding: 10px 12px !important;
+        }}
+        /* Number inputs and selectboxes on mobile */
+        [data-testid="stNumberInput"] input,
+        [data-testid="stSelectbox"] div {{
+            font-size: 0.9rem !important;
+        }}
+        /* Buttons full-width on mobile */
+        [data-testid="stVerticalBlock"] .stButton > button {{
+            width: 100% !important;
+            font-size: 0.76rem !important;
+            padding: 10px 14px !important;
+        }}
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -7628,37 +8054,30 @@ if current_view == "dashboard":
         ("FTSE 100", "^FTSE"),
         ("Nikkei",   "^N225"),
         ("Hang Seng","^HSI"),
+        ("Shanghai", "000001.SS"),
         ("VIX",      "^VIX"),
         # COMMODITIES & FOREX
         ("USD/IDR",  "IDR=X"),
+        ("DXY",      "DX-Y.NYB"),
         ("Gold",     "GC=F"),
         ("WTI",      "CL=F"),
         ("Brent",    "BZ=F"),
-        ("Coal",     "MTF=F"),
-        ("Palm Oil", "FCPO.KL"),
-        ("Nickel",   "ND=F"),
+        ("Coal",     "NCF=F"),
+        ("Palm Oil", "MYP=F"),
+        ("Nickel",   "ALI=F"),
     ]
     _tape_html = ""
-    _tape_sess = requests.Session()
-    _tape_sess.headers.update({
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
-        "Accept": "application/json",
-        "Referer": "https://finance.yahoo.com/",
-    })
-    _tape_sess.cookies.set("GUC", "AQABCAFn", domain=".yahoo.com")
     for _name, _tk in _tape_items:
         try:
-            _url = f"https://query1.finance.yahoo.com/v8/finance/chart/{_tk}?interval=1d&range=5d"
-            _r = _tape_sess.get(_url, timeout=8)
-            if _r.status_code == 200:
-                _closes = _r.json()["chart"]["result"][0]["indicators"]["quote"][0]["close"]
-                _closes = [c for c in _closes if c is not None]
-                if len(_closes) >= 2:
-                    _p, _pc = _closes[-1], _closes[-2]
-                    _chg = (_p - _pc) / _pc * 100
-                    _cls = "up" if _chg >= 0 else "dn"
-                    _arr = "&#9650;" if _chg >= 0 else "&#9660;"
-                    _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
+            import yfinance as _yf
+            _h = _yf.Ticker(_tk).history(period="2d")
+            if len(_h) >= 2:
+                _p  = _h['Close'].iloc[-1]
+                _pc = _h['Close'].iloc[-2]
+                _chg = (_p - _pc) / _pc * 100
+                _cls = "up" if _chg >= 0 else "dn"
+                _arr = "&#9650;" if _chg >= 0 else "&#9660;"
+                _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
         except: pass
     if _tape_html:
         _tape_double = _tape_html * 2  
@@ -7668,7 +8087,97 @@ if current_view == "dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-    tab_macro, tab_rotation, tab_shareholder, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    # ── LIVE MARKET: cache harus di luar tab scope agar tidak di-redefine tiap rerun ──
+    @st.cache_data(ttl=300)
+    def _fetch_market_data_cached(names_tuple, tickers_tuple):
+        """Batch fetch semua ticker sekaligus. Dipanggil dengan tuple agar hashable untuk cache."""
+        import yfinance as yf
+        import pandas as pd
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        name_list   = list(names_tuple)
+        ticker_list = list(tickers_tuple)
+        tk_to_name  = dict(zip(ticker_list, name_list))
+        result      = {n: {"price": 0, "pct": 0.0} for n in name_list}
+
+        # ── 1. Batch download: 1 HTTP call untuk semua ticker ──────────────────
+        try:
+            raw = yf.download(
+                ticker_list, period="5d", interval="1d",
+                group_by="ticker", auto_adjust=True,
+                progress=False, threads=True, timeout=25,
+            )
+            failed = []
+            for tk in ticker_list:
+                name = tk_to_name[tk]
+                try:
+                    closes = pd.Series(dtype=float)
+                    if len(ticker_list) == 1:
+                        # Single ticker: flat columns like ("Close", "^JKSE") or just "Close"
+                        if isinstance(raw.columns, pd.MultiIndex):
+                            if "Close" in raw.columns.get_level_values(0):
+                                closes = raw["Close"].dropna()
+                                if isinstance(closes, pd.DataFrame):
+                                    closes = closes.iloc[:, 0].dropna()
+                        else:
+                            closes = raw["Close"].dropna() if "Close" in raw.columns else pd.Series(dtype=float)
+                    else:
+                        # Multi-ticker: group_by="ticker" → columns are MultiIndex (ticker, field)
+                        # Level 0 = ticker symbol, Level 1 = field (Close, Open, ...)
+                        if isinstance(raw.columns, pd.MultiIndex):
+                            lvl0 = raw.columns.get_level_values(0)
+                            if tk in lvl0:
+                                closes = raw[tk]["Close"].dropna()
+                            else:
+                                failed.append(tk)
+                                continue
+                        else:
+                            # Fallback: try flat access
+                            closes = raw["Close"][tk].dropna() if ("Close" in raw.columns) else pd.Series(dtype=float)
+
+                    if len(closes) >= 2:
+                        last = float(closes.iloc[-1])
+                        prev = float(closes.iloc[-2])
+                        result[name] = {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
+                    elif len(closes) == 1:
+                        result[name] = {"price": float(closes.iloc[-1]), "pct": 0.0}
+                    else:
+                        failed.append(tk)
+                except Exception:
+                    failed.append(tk)
+        except Exception:
+            failed = ticker_list[:]
+
+        # ── 2. Fallback paralel via fast_info / history untuk yang gagal ───────
+        def _single(tk):
+            try:
+                t  = yf.Ticker(tk)
+                fi = t.fast_info
+                last = getattr(fi, "last_price", None) or getattr(fi, "regularMarketPrice", None)
+                prev = getattr(fi, "previous_close", None) or getattr(fi, "regularMarketPreviousClose", None)
+                if last and float(last) > 0:
+                    pct = round(((float(last) - float(prev)) / float(prev)) * 100, 2) if (prev and float(prev) > 0) else 0.0
+                    return tk, {"price": float(last), "pct": pct}
+                h = t.history(period="5d", timeout=12)
+                if len(h) >= 2:
+                    last, prev = float(h["Close"].iloc[-1]), float(h["Close"].iloc[-2])
+                    return tk, {"price": last, "pct": round(((last - prev) / prev) * 100, 2)}
+                elif len(h) == 1:
+                    return tk, {"price": float(h["Close"].iloc[-1]), "pct": 0.0}
+            except Exception:
+                pass
+            return tk, {"price": 0, "pct": 0.0}
+
+        if failed:
+            with ThreadPoolExecutor(max_workers=min(len(failed), 10)) as ex:
+                for fut in as_completed({ex.submit(_single, tk): tk for tk in failed}):
+                    tk, val = fut.result()
+                    result[tk_to_name[tk]] = val
+
+        return result
+
+    tab_idxmap, tab_macro, tab_rotation, tab_shareholder, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+        "  🌐 IDX MARKET MAP  ",
         "  GLOBAL MACRO & NEWS  ",
         "  INDEX & SECTOR ROTATION  ",
         "  SHAREHOLDER  ",
@@ -7677,94 +8186,1129 @@ if current_view == "dashboard":
         "  📖 PANDUAN  ",
     ])
 
+    with tab_idxmap:
+        # ── IDX MARKET MAP — 3D Globe Konglomerasi & MSCI ──────────────────────
+        st.markdown(
+            "<div class='trm-section'><div class='trm-section-line'></div>"
+            "<span class='trm-section-label'>IDX MARKET MAP — KONGLOMERASI & MSCI</span>"
+            "<div class='trm-section-line'></div></div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#4a6a8a;font-size:0.82rem;margin:-4px 0 10px;'>"
+            "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
+            unsafe_allow_html=True,
+        )
+        _idx_globe_html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDX Stock Market World</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#000510;
+  color:#fff;
+  font-family:'Segoe UI',Arial,sans-serif;
+  width:100vw; height:100vh;
+  overflow:hidden;
+  display:flex; flex-direction:column;
+}
+
+/* HEADER */
+#header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px 6px;
+  flex-shrink:0; z-index:50;
+}
+#header-left h1 {
+  font-size:22px; font-weight:700; letter-spacing:1px; color:#fff;
+  text-shadow:0 0 30px rgba(0,120,255,0.6);
+}
+#header-left p { font-size:11px; color:#4a6a9a; margin-top:1px; }
+#header-buttons { display:flex; gap:6px; }
+.hbtn {
+  display:flex; flex-direction:column; align-items:center;
+  background:rgba(8,18,45,0.9); border:1px solid #0d2a55;
+  border-radius:8px; padding:6px 14px; cursor:pointer;
+  font-size:10px; color:#6a8ab0; gap:3px; min-width:52px;
+  transition:all 0.2s;
+}
+.hbtn:hover { background:rgba(15,40,100,0.9); color:#aaccff; }
+.hbtn.active { background:rgba(0,60,180,0.6); border-color:#0055cc; color:#fff; }
+.hbtn svg { width:15px; height:15px; }
+
+/* MAIN */
+#main { flex:1; display:flex; overflow:hidden; }
+
+/* LEFT PANEL */
+#left {
+  width:205px; flex-shrink:0;
+  display:flex; flex-direction:column; gap:5px;
+  padding:4px 8px 8px; overflow-y:auto;
+}
+#left::-webkit-scrollbar { width:2px; }
+#left::-webkit-scrollbar-thumb { background:#0d2a55; }
+
+.panel {
+  background:rgba(4,12,30,0.88);
+  border:1px solid #0a2040;
+  border-radius:8px; padding:10px;
+}
+.panel-title {
+  font-size:9.5px; font-weight:700; letter-spacing:1.8px;
+  color:#3a6aaa; margin-bottom:8px; padding-bottom:5px;
+  border-bottom:1px solid #0a2040; text-transform:uppercase;
+}
+
+.mo-item { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+.mo-icon {
+  width:20px; height:20px; border-radius:50%;
+  border:1px solid #1a3a6a; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; color:#3a7acc; font-size:9px;
+}
+.mo-label { color:#4a6a8a; font-size:10px; }
+.mo-value { color:#c8daf0; font-weight:600; font-size:11px; }
+
+.top10-row {
+  display:flex; align-items:center; gap:4px;
+  font-size:10px; padding:2px 3px; cursor:pointer;
+  border-radius:4px; transition:background 0.15s;
+}
+.top10-row:hover { background:rgba(0,60,180,0.25); }
+.top10-num { color:#3a5a7a; width:16px; text-align:right; }
+.top10-ticker { font-weight:600; width:38px; }
+.top10-cap { color:#6a8aaa; margin-left:auto; font-size:9.5px; }
+
+.legend-item { display:flex; align-items:center; gap:7px; font-size:10px; color:#7a9aba; margin-bottom:4px; }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+/* CENTER */
+#center { flex:1; position:relative; display:flex; flex-direction:column; align-items:center; }
+#globe-wrap { flex:1; width:100%; position:relative; }
+canvas#globe { width:100%; height:100%; display:block; }
+
+/* Tooltip */
+#tooltip {
+  position:absolute; display:none; pointer-events:none; z-index:200;
+  background:rgba(4,12,35,0.95); border:1px solid #1a4a8a;
+  border-radius:8px; padding:8px 12px; font-size:11px;
+  box-shadow:0 0 20px rgba(0,80,200,0.3);
+}
+
+/* Bottom */
+#bottom-bar {
+  width:100%; display:flex; justify-content:center;
+  padding:5px 0 6px; flex-shrink:0;
+}
+#scale-box {
+  background:rgba(4,12,35,0.92); border:1px solid #0a2040;
+  border-radius:10px; padding:7px 22px;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.scale-title { font-size:9px; letter-spacing:1.5px; color:#3a6aaa; text-transform:uppercase; }
+#scale-dots { display:flex; align-items:center; gap:16px; }
+.scale-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.sdot {
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 35%, #88ccff, #0055cc);
+  flex-shrink:0;
+}
+.slabel { font-size:9px; color:#4a6a8a; }
+
+#instr {
+  width:100%; display:flex; justify-content:space-around;
+  padding:4px 10px 6px; font-size:11px; color:#3a5a7a;
+  border-top:1px solid #080f22; flex-shrink:0;
+}
+.instr-item { display:flex; align-items:center; gap:6px; }
+
+/* RIGHT PANEL */
+#right {
+  width:225px; flex-shrink:0;
+  display:flex; flex-direction:column; gap:5px;
+  padding:4px 8px 8px; overflow-y:auto;
+}
+
+.owner-item { display:flex; align-items:center; gap:8px; font-size:11px; color:#7a9aba; margin-bottom:5px; }
+.owner-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+.si-table { width:100%; border-collapse:collapse; }
+.si-table tr td { font-size:11px; padding:3px 0; }
+.si-table tr td:first-child { color:#4a6a8a; }
+.si-table tr td:last-child { text-align:right; color:#b0ccec; }
+.si-btn {
+  display:block; width:100%; margin-top:10px;
+  background:linear-gradient(135deg,#0055dd,#003aaa);
+  border:none; border-radius:7px; padding:9px;
+  color:#fff; font-size:12px; font-weight:600; cursor:pointer;
+  letter-spacing:0.5px; transition:opacity 0.2s;
+}
+.si-btn:hover { opacity:0.85; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div id="header-left">
+    <h1>IDX STOCK MARKET WORLD</h1>
+    <p>Indonesia Stock Exchange Universe</p>
+  </div>
+  <div id="header-buttons">
+    <div class="hbtn active" id="btn-rotate" onclick="setMode('rotate')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+      Rotate
+    </div>
+    <div class="hbtn" id="btn-zoom" onclick="setMode('zoom')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      Zoom
+    </div>
+    <div class="hbtn" id="btn-reset" onclick="resetView()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+      Reset
+    </div>
+    <div class="hbtn" id="btn-info" onclick="toggleInfoPanel()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Info
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+<!-- LEFT -->
+<div id="left">
+  <div class="panel">
+    <div class="panel-title">Market Overview</div>
+    <div class="mo-item"><div class="mo-icon">☰</div><div><div class="mo-label">Total Stocks</div><div class="mo-value" id="mo-total">—</div></div></div>
+    <div class="mo-item"><div class="mo-icon">◎</div><div><div class="mo-label">Total Market Cap</div><div class="mo-value" id="mo-cap">—</div></div></div>
+    <div class="mo-item"><div class="mo-icon">△</div><div><div class="mo-label">Largest Stock</div><div class="mo-value">BBCA</div></div></div>
+    <div class="mo-item"><div class="mo-icon">★</div><div><div class="mo-label">MSCI Constituents</div><div class="mo-value" id="mo-msci">—</div></div></div>
+    <div class="mo-item"><div class="mo-icon">≈</div><div><div class="mo-label">Konglomerasi</div><div class="mo-value">8 Grup</div></div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Top 10 by Market Cap</div>
+    <div id="top10-list"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Legend (by Sector)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4488ff"></div>Financials</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff8800"></div>Consumer Cyclical</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#00cc66"></div>Consumer Non-Cyclical</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#aa44ff"></div>Energy</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff44aa"></div>Healthcare</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff6633"></div>Industrials</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ccbb00"></div>Infrastructure</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#44ffaa"></div>Basic Materials</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff4444"></div>Technology</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ff88cc"></div>Properties &amp; Real Estate</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#888888"></div>Others</div>
+    <div style="margin-top:10px;padding-top:8px;border-top:1px solid #0a2040;">
+      <div class="legend-item" style="margin-bottom:2px;">
+        <div style="width:8px;height:8px;border-radius:2px;background:rgba(255,215,0,0.2);border:1px solid #ffd700;flex-shrink:0;"></div>
+        <span style="color:#ffd700;font-weight:600;">★ MSCI Constituent</span>
+      </div>
+      <div style="font-size:9px;color:#2a4a6a;margin-left:15px;line-height:1.5;">Hover saham untuk lihat badge MSCI</div>
+    </div>
+    <div style="margin-top:8px;font-size:9px;color:#2a4a6a;line-height:1.6;">
+      * Market data in IDR<br>* Data delayed 15 minutes<br>* Source: IDX, RTI
+    </div>
+  </div>
+</div>
+
+<!-- CENTER -->
+<div id="center">
+  <div id="globe-wrap">
+    <canvas id="globe"></canvas>
+    <div id="tooltip"></div>
+  </div>
+
+  <div id="bottom-bar">
+    <div id="scale-box">
+      <div class="scale-title">Market Cap Scale (Log)</div>
+      <div id="scale-dots">
+        <div class="scale-item"><div class="sdot" style="width:7px;height:7px;"></div><div class="slabel">&lt; 100 B</div></div>
+        <div class="scale-item"><div class="sdot" style="width:11px;height:11px;"></div><div class="slabel">100 B - 1 T</div></div>
+        <div class="scale-item"><div class="sdot" style="width:17px;height:17px;"></div><div class="slabel">1 T - 10 T</div></div>
+        <div class="scale-item"><div class="sdot" style="width:24px;height:24px;"></div><div class="slabel">10 T - 100 T</div></div>
+        <div class="scale-item"><div class="sdot" style="width:33px;height:33px;"></div><div class="slabel">&gt; 100 T</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="instr">
+    <div class="instr-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+      DRAG : Rotate Globe
+    </div>
+    <div class="instr-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><rect x="6" y="2" width="12" height="20" rx="3"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="7" r="1" fill="#3a5a7a"/></svg>
+      SCROLL : Zoom In / Out
+    </div>
+    <div class="instr-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="14" r="2" fill="#3a5a7a"/></svg>
+      CLICK : Show / Hide Info
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT -->
+<div id="right">
+  <div class="panel">
+    <div class="panel-title">Owner Group Clusters</div>
+    <p style="font-size:10px;color:#2a4a6a;margin-bottom:9px;line-height:1.5;">Stocks that are under the same ultimate owner are grouped together.</p>
+    <div id="owner-legend"></div>
+  </div>
+
+  <div class="panel" id="stock-info-panel">
+    <div class="panel-title">Stock Info</div>
+    <div id="si-ticker" style="font-size:22px;font-weight:700;color:#fff;margin-bottom:1px;">BBCA</div>
+    <div id="si-name" style="font-size:11px;color:#4a6a8a;margin-bottom:10px;">Bank Central Asia Tbk.</div>
+    <div style="font-size:10px;color:#2a4a6a;margin-bottom:4px;">Details</div>
+    <table class="si-table">
+      <tr><td>Market Cap</td><td id="si-cap">IDR 1,289 T</td></tr>
+      <tr><td>Sector</td><td id="si-sector">Financials</td></tr>
+      <tr><td>Owner Group</td><td id="si-owner">Djarum Group</td></tr>
+      <tr><td>Price</td><td id="si-price">9,325</td></tr>
+      <tr><td>Change</td><td id="si-change" style="color:#00dd66;font-weight:700;">+1.08%</td></tr>
+      <tr><td>Volume</td><td id="si-vol">18.2 M</td></tr>
+    </table>
+    <button class="si-btn">View Detail</button>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Global Distribution</div>
+    <canvas id="world-mini" width="200" height="88" style="width:100%;border-radius:4px;"></canvas>
+    <div style="margin-top:5px;font-size:11px;color:#7a9aba;display:flex;align-items:center;gap:5px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:#00cc55;"></div>
+      <span id="stock-count-display">— Stocks Listed</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const STOCKS = [
+  // ══════════════════════════════════════════════════════════════
+  // DJARUM GROUP (16 saham) — cyan #00ccff
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"BBCA", name:"Bank Central Asia Tbk.",          cap:1289,owner:"Djarum Group",sector:"Financials",              msci:true, price:9325,  chg:1.08, vol:"18.2 M"},
+  {ticker:"BELI", name:"Bukalapak.com Tbk.",               cap:380, owner:"Djarum Group",sector:"Technology",              msci:false,price:212,   chg:-1.40,vol:"88.0 M"},
+  {ticker:"DNET", name:"Indoritel Makmur Intl.",            cap:290, owner:"Djarum Group",sector:"Consumer Non-Cyclical",   msci:false,price:1540,  chg:0.65, vol:"5.2 M"},
+  {ticker:"FAST", name:"Fast Food Indonesia Tbk.",          cap:180, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:1580,  chg:-0.63,vol:"4.8 M"},
+  {ticker:"MAPA", name:"Map Aktif Adiperkasa Tbk.",         cap:155, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:720,   chg:1.12, vol:"7.3 M"},
+  {ticker:"DCII", name:"DCI Indonesia Tbk.",                cap:230, owner:"Djarum Group",sector:"Technology",              msci:false,price:38500, chg:2.14, vol:"0.3 M"},
+  {ticker:"DMAS", name:"Puradelta Lestari Tbk.",            cap:95,  owner:"Djarum Group",sector:"Properties & Real Estate",msci:false,price:196,  chg:0.51, vol:"22.0 M"},
+  {ticker:"KOPI", name:"Kopi Kenangan Digital Tbk.",        cap:140, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:880,   chg:3.41, vol:"11.5 M"},
+  {ticker:"GOLF", name:"Sarasa Golf Resort Tbk.",           cap:78,  owner:"Djarum Group",sector:"Properties & Real Estate",msci:false,price:560,  chg:-0.36,vol:"3.2 M"},
+  {ticker:"DAYA", name:"Daya Dimensi Indonesia",            cap:65,  owner:"Djarum Group",sector:"Industrials",             msci:false,price:440,   chg:0.91, vol:"6.8 M"},
+  {ticker:"NUSA", name:"Nusantara Digital Tbk.",            cap:55,  owner:"Djarum Group",sector:"Technology",              msci:false,price:318,   chg:-1.22,vol:"14.1 M"},
+  {ticker:"HOKI", name:"Buyung Poetra Sembada Tbk.",        cap:42,  owner:"Djarum Group",sector:"Consumer Non-Cyclical",   msci:false,price:510,   chg:0.39, vol:"8.6 M"},
+  {ticker:"BBKP", name:"Bank KB Bukopin Tbk.",              cap:68,  owner:"Djarum Group",sector:"Financials",              msci:false,price:420,   chg:-0.47,vol:"12.4 M"},
+  {ticker:"PNBN", name:"Bank Pan Indonesia Tbk.",           cap:110, owner:"Djarum Group",sector:"Financials",              msci:false,price:1240,  chg:0.81, vol:"8.6 M"},
+  {ticker:"WTON", name:"Wijaya Karya Beton Tbk.",           cap:62,  owner:"Djarum Group",sector:"Industrials",             msci:false,price:182,   chg:-1.09,vol:"18.2 M"},
+  {ticker:"MSKY", name:"MNC Sky Vision Tbk.",               cap:48,  owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:190,   chg:1.06, vol:"9.8 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // GOVERNMENT / BUMN (20 saham) — blue #3a8aff
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"BBRI", name:"Bank Rakyat Indonesia Tbk.",        cap:856, owner:"Government",  sector:"Financials",              msci:true, price:4350,  chg:-0.23,vol:"92.1 M"},
+  {ticker:"BMRI", name:"Bank Mandiri Tbk.",                 cap:652, owner:"Government",  sector:"Financials",              msci:true, price:6800,  chg:0.74, vol:"31.5 M"},
+  {ticker:"TLKM", name:"Telkom Indonesia Tbk.",             cap:566, owner:"Government",  sector:"Infrastructure",          msci:true, price:3920,  chg:-0.51,vol:"44.8 M"},
+  {ticker:"BBNI", name:"Bank Negara Indonesia Tbk.",        cap:389, owner:"Government",  sector:"Financials",              msci:true, price:4740,  chg:0.85, vol:"28.9 M"},
+  {ticker:"PTBA", name:"Bukit Asam Tbk.",                   cap:160, owner:"Government",  sector:"Energy",                  msci:true, price:2940,  chg:0.34, vol:"19.4 M"},
+  {ticker:"SMGR", name:"Semen Indonesia Tbk.",              cap:120, owner:"Government",  sector:"Industrials",             msci:true, price:5450,  chg:-0.91,vol:"10.2 M"},
+  {ticker:"PGAS", name:"Perusahaan Gas Negara Tbk.",        cap:188, owner:"Government",  sector:"Energy",                  msci:true, price:1440,  chg:0.70, vol:"31.8 M"},
+  {ticker:"ANTM", name:"Aneka Tambang Tbk.",                cap:155, owner:"Government",  sector:"Basic Materials",         msci:true, price:1620,  chg:1.57, vol:"25.0 M"},
+  {ticker:"WIKA", name:"Wijaya Karya Tbk.",                 cap:82,  owner:"Government",  sector:"Industrials",             msci:false,price:1020,  chg:-1.92,vol:"20.1 M"},
+  {ticker:"WSKT", name:"Waskita Karya Tbk.",                cap:68,  owner:"Government",  sector:"Industrials",             msci:false,price:164,   chg:-2.40,vol:"38.5 M"},
+  {ticker:"PTPP", name:"PP Persero Tbk.",                   cap:75,  owner:"Government",  sector:"Industrials",             msci:false,price:620,   chg:-1.27,vol:"14.2 M"},
+  {ticker:"JSMR", name:"Jasa Marga Tbk.",                   cap:210, owner:"Government",  sector:"Infrastructure",          msci:true, price:4200,  chg:0.48, vol:"9.7 M"},
+  {ticker:"ADHI", name:"Adhi Karya Tbk.",                   cap:55,  owner:"Government",  sector:"Industrials",             msci:false,price:440,   chg:-0.91,vol:"18.3 M"},
+  {ticker:"BBTN", name:"Bank Tabungan Negara Tbk.",         cap:130, owner:"Government",  sector:"Financials",              msci:true, price:1420,  chg:0.28, vol:"35.6 M"},
+  {ticker:"GIAA", name:"Garuda Indonesia Tbk.",             cap:48,  owner:"Government",  sector:"Infrastructure",          msci:false,price:56,    chg:-1.75,vol:"42.0 M"},
+  {ticker:"KAEF", name:"Kimia Farma Tbk.",                  cap:38,  owner:"Government",  sector:"Healthcare",              msci:false,price:650,   chg:0.93, vol:"11.5 M"},
+  {ticker:"KRAS", name:"Krakatau Steel Tbk.",               cap:45,  owner:"Government",  sector:"Basic Materials",         msci:false,price:220,   chg:-1.34,vol:"22.6 M"},
+  {ticker:"PGEO", name:"Pertamina Geothermal Energy",       cap:185, owner:"Government",  sector:"Energy",                  msci:true, price:1240,  chg:1.21, vol:"8.4 M"},
+  {ticker:"AKRA", name:"AKR Corporindo Tbk.",               cap:168, owner:"Government",  sector:"Energy",                  msci:true, price:1620,  chg:0.62, vol:"14.8 M"},
+  {ticker:"ITMG", name:"Indo Tambangraya Megah Tbk.",       cap:140, owner:"Government",  sector:"Energy",                  msci:true, price:24500, chg:1.84, vol:"2.1 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // ASTRA GROUP (14 saham) — green #00dd66
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"ASII", name:"Astra International Tbk.",          cap:432, owner:"Astra Group", sector:"Consumer Cyclical",       msci:true, price:4900,  chg:0.41, vol:"22.3 M"},
+  {ticker:"UNTR", name:"United Tractors Tbk.",              cap:320, owner:"Astra Group", sector:"Industrials",             msci:true, price:24500, chg:1.02, vol:"5.6 M"},
+  {ticker:"CPIN", name:"Charoen Pokphand Indonesia",        cap:195, owner:"Astra Group", sector:"Consumer Non-Cyclical",   msci:true, price:4800,  chg:-0.62,vol:"7.1 M"},
+  {ticker:"AUTO", name:"Astra Otoparts Tbk.",               cap:145, owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:2550,  chg:0.79, vol:"6.8 M"},
+  {ticker:"AALI", name:"Astra Agro Lestari Tbk.",           cap:220, owner:"Astra Group", sector:"Consumer Non-Cyclical",   msci:true, price:7400,  chg:-0.27,vol:"3.9 M"},
+  {ticker:"ACST", name:"Astra Infra Solutions Tbk.",        cap:85,  owner:"Astra Group", sector:"Industrials",             msci:false,price:1280,  chg:0.47, vol:"8.1 M"},
+  {ticker:"IMAS", name:"Indomobil Sukses Intl.",            cap:115, owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:1320,  chg:0.76, vol:"11.2 M"},
+  {ticker:"GJTL", name:"Gajah Tunggal Tbk.",                cap:78,  owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:820,   chg:-1.08,vol:"14.6 M"},
+  {ticker:"ASGR", name:"Astra Graphia Tbk.",                cap:52,  owner:"Astra Group", sector:"Technology",              msci:false,price:1480,  chg:0.54, vol:"4.2 M"},
+  {ticker:"SUGI", name:"Sugih Energy Tbk.",                 cap:38,  owner:"Astra Group", sector:"Energy",                  msci:false,price:124,   chg:-0.80,vol:"16.4 M"},
+  {ticker:"PNLF", name:"Panin Financial Tbk.",              cap:72,  owner:"Astra Group", sector:"Financials",              msci:false,price:168,   chg:1.20, vol:"9.8 M"},
+  {ticker:"ADMF", name:"Adira Dinamika Multi Finance",      cap:158, owner:"Astra Group", sector:"Financials",              msci:false,price:8400,  chg:0.48, vol:"0.9 M"},
+  {ticker:"ABMM", name:"ABM Investama Tbk.",                cap:88,  owner:"Astra Group", sector:"Energy",                  msci:false,price:2880,  chg:1.04, vol:"3.6 M"},
+  {ticker:"SRTG", name:"Saratoga Investama Sedaya",         cap:118, owner:"Astra Group", sector:"Financials",              msci:false,price:1640,  chg:0.61, vol:"5.4 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // SALIM GROUP (14 saham) — gold #ffdd22
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"ICBP", name:"Indofood CBP Sukses Makmur",        cap:302, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:9375,  chg:0.27, vol:"6.2 M"},
+  {ticker:"INDF", name:"Indofood Sukses Makmur Tbk.",       cap:230, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:6700,  chg:0.15, vol:"8.8 M"},
+  {ticker:"MNCN", name:"Media Nusantara Citra Tbk.",        cap:150, owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:940,   chg:-0.53,vol:"22.3 M"},
+  {ticker:"SIMP", name:"Salim Ivomas Pratama Tbk.",         cap:88,  owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:false,price:466,   chg:0.65, vol:"12.4 M"},
+  {ticker:"LPPF", name:"Matahari Department Store Tbk.",    cap:172, owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:2760,  chg:-1.08,vol:"7.0 M"},
+  {ticker:"MLBI", name:"Multi Bintang Indonesia Tbk.",      cap:130, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:false,price:9800,  chg:0.51, vol:"1.4 M"},
+  {ticker:"INTP", name:"Indocement Tunggal Perkasa",        cap:168, owner:"Salim Group", sector:"Industrials",             msci:true, price:5500,  chg:-0.36,vol:"5.8 M"},
+  {ticker:"WIFI", name:"Solusi Net Integrasi Tbk.",         cap:65,  owner:"Salim Group", sector:"Technology",              msci:false,price:760,   chg:2.30, vol:"8.9 M"},
+  {ticker:"BMTR", name:"Global Mediacom Tbk.",              cap:92,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:480,   chg:-0.21,vol:"16.4 M"},
+  {ticker:"HERO", name:"Hero Supermarket Tbk.",             cap:48,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:620,   chg:1.14, vol:"4.1 M"},
+  {ticker:"ISAT", name:"Indosat Tbk.",                      cap:320, owner:"Salim Group", sector:"Infrastructure",          msci:true, price:2200,  chg:0.91, vol:"18.4 M"},
+  {ticker:"MPMX", name:"Mitra Pinasthika Mustika",          cap:58,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:840,   chg:0.48, vol:"5.6 M"},
+  {ticker:"MYOR", name:"Mayora Indah Tbk.",                 cap:245, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:2150,  chg:0.23, vol:"7.8 M"},
+  {ticker:"MBSS", name:"Mitrabahtera Segara Sejati",        cap:48,  owner:"Salim Group", sector:"Infrastructure",          msci:false,price:740,   chg:-0.54,vol:"4.2 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // SINAR MAS GROUP (14 saham) — red-pink #ff4a4a
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"UNVR", name:"Unilever Indonesia Tbk.",           cap:352, owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:true, price:2600,  chg:-1.14,vol:"15.6 M"},
+  {ticker:"BSDE", name:"Bumi Serpong Damai Tbk.",           cap:275, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:true,price:890, chg:0.45, vol:"28.2 M"},
+  {ticker:"SMRA", name:"Summarecon Agung Tbk.",             cap:220, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:820,chg:-0.24,vol:"14.4 M"},
+  {ticker:"DILD", name:"Intiland Development Tbk.",         cap:165, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:214,chg:0.94, vol:"18.8 M"},
+  {ticker:"ACES", name:"Ace Hardware Indonesia Tbk.",       cap:195, owner:"Sinar Mas Group",sector:"Consumer Cyclical",    msci:false,price:785,   chg:0.64, vol:"16.2 M"},
+  {ticker:"INKP", name:"Indah Kiat Pulp & Paper",           cap:310, owner:"Sinar Mas Group",sector:"Basic Materials",      msci:true, price:8200,  chg:1.32, vol:"6.3 M"},
+  {ticker:"TKIM", name:"Pabrik Kertas Tjiwi Kimia",         cap:145, owner:"Sinar Mas Group",sector:"Basic Materials",      msci:false,price:5400,  chg:0.74, vol:"2.8 M"},
+  {ticker:"SMAS", name:"Sinar Mas Agro Resources",          cap:88,  owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:false,price:3200,  chg:-0.62,vol:"4.1 M"},
+  {ticker:"SMAR", name:"Smart Tbk.",                        cap:72,  owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:false,price:2900,  chg:0.34, vol:"3.6 M"},
+  {ticker:"DUTI", name:"Duta Pertiwi Tbk.",                 cap:60,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:4200,chg:-0.48,vol:"2.2 M"},
+  {ticker:"SMCB", name:"Solusi Bangun Indonesia Tbk.",      cap:95,  owner:"Sinar Mas Group",sector:"Industrials",          msci:false,price:2600,  chg:0.38, vol:"5.8 M"},
+  {ticker:"LPKR", name:"Lippo Karawaci Tbk.",               cap:220, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:134,chg:-0.74,vol:"62.8 M"},
+  {ticker:"KIJA", name:"Kawasan Industri Jababeka",         cap:78,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:246,chg:0.82, vol:"22.4 M"},
+  {ticker:"APLN", name:"Agung Podomoro Land Tbk.",          cap:55,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:144,chg:-0.69,vol:"18.6 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // CHANDRA ASRI / BARITO GROUP (12 saham) — purple #aa33ff
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"TPIA", name:"Chandra Asri Tbk.",                 cap:414, owner:"Chandra Group",sector:"Basic Materials",        msci:true, price:8200,  chg:1.24, vol:"8.7 M"},
+  {ticker:"BRPT", name:"Barito Pacific Tbk.",               cap:280, owner:"Chandra Group",sector:"Basic Materials",        msci:true, price:1240,  chg:2.05, vol:"31.4 M"},
+  {ticker:"AGRO", name:"Bank Raya Indonesia Tbk.",          cap:95,  owner:"Chandra Group",sector:"Financials",             msci:false,price:368,   chg:-0.81,vol:"9.7 M"},
+  {ticker:"CBPE", name:"Chandra Barito Energi Tbk.",        cap:178, owner:"Chandra Group",sector:"Energy",                 msci:false,price:2100,  chg:1.43, vol:"6.1 M"},
+  {ticker:"CHEM", name:"Chandra Kimia Nusantara",           cap:122, owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:1680,  chg:0.60, vol:"7.4 M"},
+  {ticker:"POLY", name:"Asia Pacific Fibers Tbk.",          cap:68,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:228,   chg:-1.30,vol:"18.2 M"},
+  {ticker:"FPNI", name:"Lotte Chemical Titan Tbk.",         cap:54,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:182,   chg:0.55, vol:"12.0 M"},
+  {ticker:"CTRA", name:"Ciputra Development Tbk.",          cap:148, owner:"Chandra Group",sector:"Properties & Real Estate",msci:true,price:1320,  chg:0.91, vol:"15.8 M"},
+  {ticker:"MIKA", name:"Mitra Keluarga Karyasehat Tbk.",    cap:198, owner:"Chandra Group",sector:"Healthcare",             msci:true, price:2580,  chg:0.39, vol:"5.2 M"},
+  {ticker:"BYAN", name:"Bayan Resources Tbk.",              cap:380, owner:"Chandra Group",sector:"Energy",                 msci:true, price:18600, chg:2.37, vol:"1.4 M"},
+  {ticker:"PTRO", name:"Petrosea Tbk.",                     cap:72,  owner:"Chandra Group",sector:"Energy",                 msci:false,price:3280,  chg:0.92, vol:"2.8 M"},
+  {ticker:"PICO", name:"Pelangi Indah Canindo Tbk.",        cap:42,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:290,   chg:-0.34,vol:"6.4 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // BAKRIE GROUP (12 saham) — yellow #ffcc00
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"EXCL", name:"XL Axiata Tbk.",                    cap:310, owner:"Bakrie Group", sector:"Infrastructure",         msci:true, price:1850,  chg:0.54, vol:"18.7 M"},
+  {ticker:"BUMI", name:"Bumi Resources Tbk.",               cap:185, owner:"Bakrie Group", sector:"Energy",                 msci:false,price:124,   chg:-1.59,vol:"420.0 M"},
+  {ticker:"VIVA", name:"Visi Media Asia Tbk.",              cap:110, owner:"Bakrie Group", sector:"Consumer Cyclical",      msci:false,price:168,   chg:2.44, vol:"55.2 M"},
+  {ticker:"ENRG", name:"Energi Mega Persada Tbk.",          cap:178, owner:"Bakrie Group", sector:"Energy",                 msci:false,price:50,    chg:-2.00,vol:"88.0 M"},
+  {ticker:"ANTV", name:"Cakrawala Andalas TV Tbk.",         cap:88,  owner:"Bakrie Group", sector:"Consumer Cyclical",      msci:false,price:112,   chg:1.79, vol:"32.4 M"},
+  {ticker:"BNBR", name:"Bakrie & Brothers Tbk.",            cap:65,  owner:"Bakrie Group", sector:"Industrials",            msci:false,price:56,    chg:-0.89,vol:"48.0 M"},
+  {ticker:"UNSP", name:"Bakrie Sumatra Plantations",        cap:48,  owner:"Bakrie Group", sector:"Consumer Non-Cyclical",  msci:false,price:84,    chg:1.20, vol:"28.6 M"},
+  {ticker:"BTEL", name:"Bakrie Telecom Tbk.",               cap:38,  owner:"Bakrie Group", sector:"Infrastructure",         msci:false,price:50,    chg:-1.96,vol:"42.0 M"},
+  {ticker:"ELTY", name:"Bakrieland Development Tbk.",       cap:55,  owner:"Bakrie Group", sector:"Properties & Real Estate",msci:false,price:66,  chg:3.12, vol:"55.8 M"},
+  {ticker:"BBRM", name:"Pelayaran Nasional Bina Buana Raya",cap:42,  owner:"Bakrie Group", sector:"Infrastructure",         msci:false,price:148,   chg:0.68, vol:"8.6 M"},
+  {ticker:"BKSL", name:"Sentul City Tbk.",                  cap:38,  owner:"Bakrie Group", sector:"Properties & Real Estate",msci:false,price:58,  chg:-1.69,vol:"24.8 M"},
+  {ticker:"TOWR", name:"Sarana Menara Nusantara",           cap:188, owner:"Bakrie Group", sector:"Infrastructure",         msci:true, price:820,   chg:0.24, vol:"15.4 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // LIPPO GROUP (13 saham) — orange #ff8800
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"MPPA", name:"Matahari Putra Prima Tbk.",         cap:155, owner:"Lippo Group",  sector:"Consumer Cyclical",      msci:false,price:660,   chg:1.08, vol:"14.6 M"},
+  {ticker:"JPFA", name:"Japfa Comfeed Indonesia Tbk.",      cap:220, owner:"Lippo Group",  sector:"Consumer Non-Cyclical",  msci:true, price:1480,  chg:-0.34,vol:"11.2 M"},
+  {ticker:"SILO", name:"Siloam International Hospitals",    cap:190, owner:"Lippo Group",  sector:"Healthcare",             msci:true, price:2620,  chg:0.77, vol:"4.9 M"},
+  {ticker:"MFIN", name:"Mandala Multifinance Tbk.",         cap:55,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:1880,  chg:0.54, vol:"3.2 M"},
+  {ticker:"CARE", name:"Metro Healthcare Indonesia",        cap:88,  owner:"Lippo Group",  sector:"Healthcare",             msci:false,price:1120,  chg:-0.89,vol:"7.8 M"},
+  {ticker:"LPGI", name:"Lippo General Insurance Tbk.",      cap:48,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:4800,  chg:0.21, vol:"0.8 M"},
+  {ticker:"LMPI", name:"Langgeng Makmur Industri",          cap:38,  owner:"Lippo Group",  sector:"Industrials",            msci:false,price:280,   chg:-0.36,vol:"5.4 M"},
+  {ticker:"LPPS", name:"Lippo Cikarang Tbk.",               cap:95,  owner:"Lippo Group",  sector:"Properties & Real Estate",msci:false,price:1080, chg:0.93, vol:"6.2 M"},
+  {ticker:"MTDL", name:"Metrodata Electronics Tbk.",        cap:72,  owner:"Lippo Group",  sector:"Technology",             msci:false,price:590,   chg:1.55, vol:"9.8 M"},
+  {ticker:"LSIP", name:"PP London Sumatra Indonesia",       cap:160, owner:"Lippo Group",  sector:"Consumer Non-Cyclical",  msci:true, price:1340,  chg:0.75, vol:"9.2 M"},
+  {ticker:"FMII", name:"First Media Tbk.",                  cap:42,  owner:"Lippo Group",  sector:"Consumer Cyclical",      msci:false,price:168,   chg:-0.59,vol:"12.4 M"},
+  {ticker:"TBIG", name:"Tower Bersama Infrastr.",           cap:165, owner:"Lippo Group",  sector:"Infrastructure",         msci:true, price:2100,  chg:-0.48,vol:"8.8 M"},
+  {ticker:"BCAP", name:"MNC Kapital Indonesia Tbk.",        cap:52,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:312,   chg:0.32, vol:"7.2 M"},
+
+  // ══════════════════════════════════════════════════════════════
+  // MSCI + INDEPENDENT (Others) (28 saham) — gray-blue #8899aa
+  // ══════════════════════════════════════════════════════════════
+  {ticker:"AMMN", name:"Amman Mineral Internasional",       cap:294, owner:"Others",       sector:"Basic Materials",        msci:true, price:7800,  chg:2.11, vol:"5.1 M"},
+  {ticker:"GOTO", name:"GoTo Gojek Tokopedia Tbk.",         cap:180, owner:"Others",       sector:"Technology",             msci:true, price:62,    chg:-3.12,vol:"312.0 M"},
+  {ticker:"KLBF", name:"Kalbe Farma Tbk.",                  cap:245, owner:"Others",       sector:"Healthcare",             msci:true, price:1565,  chg:-0.32,vol:"24.1 M"},
+  {ticker:"ADRO", name:"Adaro Energy Indonesia Tbk.",       cap:282, owner:"Others",       sector:"Energy",                 msci:true, price:2200,  chg:1.38, vol:"14.6 M"},
+  {ticker:"MDKA", name:"Merdeka Copper Gold Tbk.",          cap:270, owner:"Others",       sector:"Basic Materials",        msci:true, price:2460,  chg:2.07, vol:"12.3 M"},
+  {ticker:"INCO", name:"Vale Indonesia Tbk.",               cap:230, owner:"Others",       sector:"Basic Materials",        msci:true, price:3100,  chg:0.97, vol:"9.5 M"},
+  {ticker:"MAPI", name:"Mitra Adiperkasa Tbk.",             cap:245, owner:"Others",       sector:"Consumer Cyclical",      msci:true, price:1680,  chg:0.60, vol:"8.7 M"},
+  {ticker:"PWON", name:"Pakuwon Jati Tbk.",                 cap:218, owner:"Others",       sector:"Properties & Real Estate",msci:true,price:438,   chg:0.46, vol:"35.6 M"},
+  {ticker:"HRUM", name:"Harum Energy Tbk.",                 cap:198, owner:"Others",       sector:"Energy",                 msci:false,price:1200,  chg:0.84, vol:"5.6 M"},
+  {ticker:"BUKA", name:"Bukalapak.com Tbk.",                cap:145, owner:"Others",       sector:"Technology",             msci:false,price:68,    chg:-2.94,vol:"148.0 M"},
+  {ticker:"HEAL", name:"Medikaloka Hermina Tbk.",           cap:132, owner:"Others",       sector:"Healthcare",             msci:false,price:1560,  chg:1.29, vol:"6.3 M"},
+  {ticker:"COAL", name:"Indika Energy Tbk.",                cap:118, owner:"Others",       sector:"Energy",                 msci:false,price:1820,  chg:0.55, vol:"8.2 M"},
+  {ticker:"CUAN", name:"Petrindo Jaya Kreasi Tbk.",         cap:310, owner:"Others",       sector:"Energy",                 msci:false,price:12400, chg:4.20, vol:"2.1 M"},
+  {ticker:"RAJA", name:"Rukun Raharja Tbk.",                cap:95,  owner:"Others",       sector:"Energy",                 msci:false,price:3880,  chg:1.80, vol:"4.4 M"},
+  {ticker:"FILM", name:"MD Pictures Tbk.",                  cap:78,  owner:"Others",       sector:"Consumer Cyclical",      msci:false,price:1240,  chg:-0.81,vol:"5.5 M"},
+  {ticker:"ESSA", name:"Surya Esa Perkasa Tbk.",            cap:110, owner:"Others",       sector:"Energy",                 msci:false,price:1620,  chg:1.23, vol:"6.8 M"},
+  {ticker:"SMIL", name:"Sumber Mas Indah Plywood",          cap:45,  owner:"Others",       sector:"Basic Materials",        msci:false,price:380,   chg:0.53, vol:"5.2 M"},
+  {ticker:"ERAA", name:"Erajaya Swasembada Tbk.",           cap:88,  owner:"Others",       sector:"Consumer Cyclical",      msci:false,price:540,   chg:-0.74,vol:"12.4 M"},
+  {ticker:"GOOD", name:"Garudafood Putra Putri Jaya",       cap:72,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:430,   chg:0.47, vol:"9.6 M"},
+  {ticker:"SIDO", name:"Industri Jamu Sido Muncul",         cap:138, owner:"Others",       sector:"Healthcare",             msci:true, price:580,   chg:0.35, vol:"10.2 M"},
+  {ticker:"MIDI", name:"Midi Utama Indonesia Tbk.",         cap:88,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:600,   chg:0.84, vol:"4.4 M"},
+  {ticker:"CMRY", name:"Cisarua Mountain Dairy Tbk.",       cap:115, owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:4020,  chg:1.01, vol:"2.8 M"},
+  {ticker:"ARTO", name:"Bank Jago Tbk.",                    cap:175, owner:"Others",       sector:"Financials",             msci:false,price:2540,  chg:-1.55,vol:"7.6 M"},
+  {ticker:"BREN", name:"Barito Renewables Energy Tbk.",     cap:420, owner:"Others",       sector:"Energy",                 msci:true, price:8400,  chg:3.24, vol:"4.2 M"},
+  {ticker:"TAPG", name:"Triputra Agro Persada Tbk.",        cap:95,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:1140,  chg:0.88, vol:"5.8 M"},
+  {ticker:"NICL", name:"Nickel Industries Ltd.",            cap:142, owner:"Others",       sector:"Basic Materials",        msci:false,price:362,   chg:1.66, vol:"9.4 M"},
+  {ticker:"CBDK", name:"Cahaya Bintang Medan Tbk.",         cap:68,  owner:"Others",       sector:"Properties & Real Estate",msci:false,price:2640, chg:2.34, vol:"3.6 M"},
+  {ticker:"MSCI", name:"[MSCI-flagged] Diversified IDX",    cap:55,  owner:"Others",       sector:"Financials",             msci:false,price:1200,  chg:0.22, vol:"4.2 M"},
+];
+
+const OWNER_COLORS = {
+  "Djarum Group":    [0.0,  0.85, 1.0],   // cyan
+  "Government":      [0.22, 0.55, 1.0],   // blue
+  "Astra Group":     [0.0,  0.9,  0.45],  // green
+  "Bakrie Group":    [1.0,  0.85, 0.0],   // yellow
+  "Lippo Group":     [1.0,  0.55, 0.0],   // orange
+  "Sinar Mas Group": [1.0,  0.3,  0.3],   // red-pink
+  "Chandra Group":   [0.7,  0.2,  1.0],   // purple
+  "Salim Group":     [1.0,  0.9,  0.1],   // gold
+  "Others":          [0.6,  0.6,  0.65],  // gray-blue
+};
+
+const OWNER_HEX = {
+  "Djarum Group":    "#00ccff",
+  "Government":      "#3a8aff",
+  "Astra Group":     "#00dd66",
+  "Bakrie Group":    "#ffcc00",
+  "Lippo Group":     "#ff8800",
+  "Sinar Mas Group": "#ff4a4a",
+  "Chandra Group":   "#aa33ff",
+  "Salim Group":     "#ffdd22",
+  "Others":          "#8899aa",
+};
+
+// ============================================================
+// BUILD UI
+// ============================================================
+// Owner legend
+const ownerLegendEl = document.getElementById('owner-legend');
+Object.entries(OWNER_HEX).forEach(([o,c])=>{
+  const d=document.createElement('div');
+  d.className='owner-item';
+  d.innerHTML=`<div class="owner-dot" style="background:${c}"></div>${o}`;
+  ownerLegendEl.appendChild(d);
+});
+
+// Top 10 — sorted by market cap
+const top10el = document.getElementById('top10-list');
+[...STOCKS].sort((a,b)=>b.cap-a.cap).slice(0,10).forEach((s,i)=>{
+  const c=OWNER_HEX[s.owner]||'#888';
+  const d=document.createElement('div');
+  d.className='top10-row';
+  d.innerHTML=`<span class="top10-num">${i+1}.</span><span class="top10-ticker" style="color:${c}">${s.ticker}</span><span class="top10-cap">IDR ${s.cap} T</span>`;
+  d.onclick=()=>showInfo(s);
+  top10el.appendChild(d);
+});
+
+function showInfo(s){
+  document.getElementById('si-ticker').textContent=s.ticker;
+  document.getElementById('si-name').textContent=s.name+(s.msci?' ★MSCI':'');
+  document.getElementById('si-cap').textContent='IDR '+s.cap+' T';
+  document.getElementById('si-sector').textContent=s.sector;
+  document.getElementById('si-owner').textContent=s.owner;
+  document.getElementById('si-price').textContent=s.price.toLocaleString();
+  document.getElementById('si-change').textContent=(s.chg>0?'+':'')+s.chg+'%';
+  document.getElementById('si-change').style.color=s.chg>=0?'#00dd66':'#ff4444';
+  document.getElementById('si-vol').textContent=s.vol;
+}
+
+// Dynamic stats
+document.getElementById('mo-total').textContent = STOCKS.length;
+const totalCap = STOCKS.reduce((a,s)=>a+s.cap,0);
+document.getElementById('mo-cap').textContent = 'IDR '+totalCap.toLocaleString()+' T';
+const msciCount = STOCKS.filter(s=>s.msci).length;
+document.getElementById('mo-msci').textContent = msciCount+' saham';
+document.getElementById('stock-count-display').textContent = STOCKS.length+' Stocks Listed';
+
+// World mini map
+(function(){
+  const c=document.getElementById('world-mini');
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#03091a';
+  ctx.fillRect(0,0,200,88);
+  const regions=[
+    {pts:60, x:15, y:8,  w:38, h:28, col:'rgba(40,100,180,0.5)'},
+    {pts:35, x:30, y:37, w:18, h:28, col:'rgba(40,100,180,0.5)'},
+    {pts:40, x:88, y:7,  w:18, h:18, col:'rgba(40,100,180,0.5)'},
+    {pts:50, x:87, y:25, w:22, h:35, col:'rgba(40,100,180,0.5)'},
+    {pts:100,x:110,y:4,  w:55, h:40, col:'rgba(40,100,180,0.5)'},
+    {pts:22, x:152,y:47, w:24, h:22, col:'rgba(40,100,180,0.5)'},
+  ];
+  regions.forEach(r=>{
+    for(let i=0;i<r.pts;i++){
+      ctx.beginPath();
+      ctx.arc(r.x+Math.random()*r.w, r.y+Math.random()*r.h, 0.7+Math.random()*0.5,0,Math.PI*2);
+      ctx.fillStyle=r.col;
+      ctx.fill();
+    }
+  });
+  // Indonesia highlight
+  for(let i=0;i<40;i++){
+    ctx.beginPath();
+    ctx.arc(148+Math.random()*20, 50+Math.random()*10, 1+Math.random()*0.8,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,200,80,0.7)';
+    ctx.fill();
+  }
+})();
+
+// ============================================================
+// THREE.JS GLOBE
+// ============================================================
+const canvas = document.getElementById('globe');
+const wrap   = document.getElementById('globe-wrap');
+
+let W = wrap.clientWidth, H = wrap.clientHeight;
+canvas.width = W; canvas.height = H;
+
+const scene    = new THREE.Scene();
+const camera   = new THREE.PerspectiveCamera(48, W/H, 0.1, 1000);
+camera.position.z = 14;
+
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setSize(W,H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setClearColor(0x000000,0);
+
+// Lighting
+scene.add(new THREE.AmbientLight(0x223355,2.5));
+const sun=new THREE.DirectionalLight(0x6699ff,2.0);
+sun.position.set(12,8,10); scene.add(sun);
+const rim=new THREE.PointLight(0x0033aa,1.5);
+rim.position.set(-10,-5,-8); scene.add(rim);
+
+const R = 5.0;  // globe radius
+
+// ----- STARS -----
+const starGeo=new THREE.BufferGeometry();
+const spos=[];
+for(let i=0;i<2500;i++){
+  const r=90+Math.random()*80;
+  const th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+  spos.push(r*Math.sin(ph)*Math.cos(th),r*Math.sin(ph)*Math.sin(th),r*Math.cos(ph));
+}
+starGeo.setAttribute('position',new THREE.Float32BufferAttribute(spos,3));
+scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xffffff,size:0.28,transparent:true,opacity:0.65})));
+
+// ----- PIVOT (everything rotates inside) -----
+const pivot = new THREE.Group();
+scene.add(pivot);
+
+// ----- DARK GLOBE BASE -----
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R*0.998,64,64),
+  new THREE.MeshPhongMaterial({color:0x010c22,shininess:30,specular:0x0a2244})
+));
+
+// ----- WIREFRAME -----
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R,36,36),
+  new THREE.MeshBasicMaterial({color:0x0a3060,wireframe:true,transparent:true,opacity:0.10})
+));
+
+// ----- ATMOSPHERE GLOW -----
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R*1.045,32,32),
+  new THREE.MeshBasicMaterial({color:0x0055cc,transparent:true,opacity:0.055,side:THREE.BackSide})
+));
+pivot.add(new THREE.Mesh(
+  new THREE.SphereGeometry(R*1.018,32,32),
+  new THREE.MeshBasicMaterial({color:0x0044aa,transparent:true,opacity:0.04,side:THREE.FrontSide})
+));
+
+// ============================================================
+// PARTICLE SYSTEM — the KEY difference from before
+// ============================================================
+// Strategy: for each stock, generate a CLOUD of tiny particles
+// tightly clustered around a point on the sphere surface.
+// Cluster tightness and count proportional to market cap.
+// We use ONE merged BufferGeometry per owner group for perf.
+
+// ============================================================
+// PARTICLE ZONE SYSTEM — 9 owner territories across full sphere
+// ============================================================
+const ownerKeys = Object.keys(OWNER_COLORS);
+
+// 9 centers distributed EVENLY across the FULL sphere (not just front hemisphere)
+// Using fibonacci sphere so all sides get coverage
+const ownerPositions = {
+  "Djarum Group":    [ 0.20,  0.92,  0.34],  // top-front
+  "Government":      [-0.88,  0.32,  0.35],  // left-front
+  "Astra Group":     [ 0.88,  0.44,  0.18],  // right-front-top
+  "Salim Group":     [ 0.22,  0.08,  0.97],  // center-front
+  "Sinar Mas Group": [ 0.08, -0.58,  0.81],  // front-bottom
+  "Chandra Group":   [ 0.90, -0.40,  0.18],  // right-bottom
+  "Bakrie Group":    [-0.22, -0.90, -0.38],  // bottom-back-left
+  "Lippo Group":     [-0.88, -0.18, -0.44],  // left-back
+  "Others":          [ 0.18,  0.52, -0.84],  // top-back
+};
+
+const ownerCenterMap = {};
+ownerKeys.forEach(o => {
+  const p = ownerPositions[o] || [0,0,1];
+  ownerCenterMap[o] = new THREE.Vector3(...p).normalize().multiplyScalar(R);
+});
+
+// Per-owner buffers
+const ownerBuffers = {};
+ownerKeys.forEach(o => { ownerBuffers[o] = {pos:[],col:[],sizes:[]}; });
+const stockRepPoints = [];
+
+function gaussianRandom(mean=0, std=1){
+  let u=0,v=0;
+  while(u===0) u=Math.random();
+  while(v===0) v=Math.random();
+  return mean + std * Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+
+function getTangentFrame(center){
+  const up = center.clone().normalize();
+  const tmp = Math.abs(up.y) < 0.85 ? new THREE.Vector3(0,1,0) : new THREE.Vector3(1,0,0);
+  const tx  = new THREE.Vector3().crossVectors(up, tmp).normalize();
+  const ty  = new THREE.Vector3().crossVectors(up, tx).normalize();
+  return {tx, ty};
+}
+
+const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+
+// Pre-compute owner total cap for zone sizing
+const ownerTotalCap = {};
+STOCKS.forEach(s => { ownerTotalCap[s.owner] = (ownerTotalCap[s.owner]||0) + s.cap; });
+
+STOCKS.forEach((s) => {
+  const oc     = OWNER_COLORS[s.owner] || [0.5,0.5,0.6];
+  const buf    = ownerBuffers[s.owner] || ownerBuffers['Others'];
+  const center = ownerCenterMap[s.owner] || ownerCenterMap['Others'];
+  const {tx, ty} = getTangentFrame(center);
+
+  const ownerStocks = STOCKS.filter(x => x.owner === s.owner);
+  const localIdx    = ownerStocks.indexOf(s);
+  const nOwner      = ownerStocks.length;
+
+  // Expanded zone radius — fills the globe surface properly
+  const zoneR = 1.4 + nOwner * 0.22;
+  const angle  = goldenAngle * localIdx;
+  const rFib   = nOwner <= 1 ? 0 : zoneR * 0.85 * Math.sqrt(localIdx / (nOwner - 1));
+  const stockCenter = center.clone()
+    .addScaledVector(tx, rFib * Math.cos(angle))
+    .addScaledVector(ty, rFib * Math.sin(angle));
+  stockCenter.normalize().multiplyScalar(R);
+
+  const nParticles = Math.max(200, Math.floor(s.cap * 1.6));
+  const spread = 0.55 + (s.cap / 700) * 0.75;
+
+  for(let p = 0; p < nParticles; p++){
+    const ox = gaussianRandom(0, spread);
+    const oy = gaussianRandom(0, spread);
+    const pos = stockCenter.clone()
+      .addScaledVector(tx, ox)
+      .addScaledVector(ty, oy);
+    pos.normalize().multiplyScalar(R + 0.012 + Math.random() * 0.07);
+
+    buf.pos.push(pos.x, pos.y, pos.z);
+
+    const dist = Math.sqrt(ox*ox + oy*oy) / spread;
+    const bright = 0.28 + Math.max(0, 1 - dist*0.9) * 0.72 + Math.random()*0.08;
+    buf.col.push(oc[0]*bright, oc[1]*bright, oc[2]*bright);
+
+    const core = Math.max(0, 1 - dist*0.85);
+    buf.sizes.push(0.011 + core*0.024 + Math.random()*0.007);
+  }
+
+  stockRepPoints.push({position: stockCenter.clone(), stock: s});
+});
+
+// Build geometry per owner group
+ownerKeys.forEach(o => {
+  const buf = ownerBuffers[o];
+  if(buf.pos.length === 0) return;
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(buf.pos), 3));
+  geo.setAttribute('aColor',   new THREE.Float32BufferAttribute(new Float32Array(buf.col), 3));
+  geo.setAttribute('size',     new THREE.Float32BufferAttribute(new Float32Array(buf.sizes),1));
+
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { time: {value:0} },
+    vertexShader:`
+      attribute float size;
+      attribute vec3 aColor;
+      varying vec3 vColor;
+      void main(){
+        vColor = aColor;
+        vec4 mvp = modelViewMatrix * vec4(position,1.0);
+        gl_PointSize = size * (1800.0 / -mvp.z);
+        gl_Position = projectionMatrix * mvp;
+      }
+    `,
+    fragmentShader:`
+      varying vec3 vColor;
+      void main(){
+        float d = distance(gl_PointCoord, vec2(0.5));
+        if(d > 0.5) discard;
+        float alpha = 1.0 - smoothstep(0.18, 0.5, d);
+        float glow  = 1.0 - smoothstep(0.0, 0.32, d);
+        vec3 col = vColor + glow * vColor * 0.9;
+        gl_FragColor = vec4(col, alpha * 0.90);
+      }
+    `,
+    transparent:true,
+    depthWrite:false,
+    blending: THREE.AdditiveBlending,
+  });
+  pivot.add(new THREE.Points(geo, mat));
+});
+
+// ── TERRITORY BOUNDARY RINGS — thick glowing borders per owner group ──
+ownerKeys.forEach(o => {
+  const center   = ownerCenterMap[o];
+  const {tx, ty} = getTangentFrame(center);
+  const hexCol   = OWNER_HEX[o] || '#ffffff';
+  const m = hexCol.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  const ringColor = m
+    ? new THREE.Color(parseInt(m[1],16)/255, parseInt(m[2],16)/255, parseInt(m[3],16)/255)
+    : new THREE.Color(1,1,1);
+
+  const nOwner = STOCKS.filter(x => x.owner === o).length;
+  const ringR  = 1.55 + nOwner * 0.22;
+  const nSeg   = 128;
+
+  // 3 concentric rings: outer glow → solid main → inner glow
+  [
+    { scale: 1.045, opacity: 0.20 },
+    { scale: 1.000, opacity: 0.88 },
+    { scale: 0.960, opacity: 0.25 },
+  ].forEach(cfg => {
+    const ringPts = [];
+    for(let i = 0; i <= nSeg; i++){
+      const a  = (i / nSeg) * Math.PI * 2;
+      const pt = center.clone()
+        .addScaledVector(tx, ringR * cfg.scale * Math.cos(a))
+        .addScaledVector(ty, ringR * cfg.scale * Math.sin(a));
+      pt.normalize().multiplyScalar(R + 0.09);
+      ringPts.push(pt);
+    }
+    const ringGeo = new THREE.BufferGeometry().setFromPoints(ringPts);
+    const ringMat = new THREE.LineBasicMaterial({
+      color: ringColor, transparent: true, opacity: cfg.opacity, linewidth: 2
+    });
+    pivot.add(new THREE.Line(ringGeo, ringMat));
+  });
+
+  // Group label sprite at top of each ring
+  const labelPos = center.clone().addScaledVector(ty, ringR * 1.08);
+  labelPos.normalize().multiplyScalar(R + 0.28);
+
+  const lw=280, lh=54;
+  const lc=document.createElement('canvas');
+  lc.width=lw; lc.height=lh;
+  const lctx=lc.getContext('2d');
+  lctx.clearRect(0,0,lw,lh);
+  lctx.font='bold 22px "Segoe UI",Arial';
+  lctx.textAlign='center'; lctx.textBaseline='middle';
+  lctx.shadowColor=hexCol; lctx.shadowBlur=16;
+  lctx.fillStyle=hexCol;
+  lctx.fillText(o.replace(' Group','').toUpperCase(), lw/2, lh/2-7);
+  lctx.shadowBlur=0;
+  lctx.font='12px "Segoe UI",Arial';
+  lctx.fillStyle='rgba(160,200,255,0.80)';
+  lctx.fillText(nOwner+' saham', lw/2, lh/2+13);
+  const ltex=new THREE.CanvasTexture(lc);
+  const lsp=new THREE.Sprite(new THREE.SpriteMaterial({map:ltex,transparent:true,depthTest:false}));
+  lsp.scale.set(3.0, 3.0*(lh/lw), 1);
+  lsp.position.copy(labelPos);
+  pivot.add(lsp);
+});
+
+// ----- MSCI GOLDEN HALO RINGS -----
+// Small bright gold rings around each MSCI constituent stock
+STOCKS.filter(s=>s.msci).forEach(s=>{
+  const rep = stockRepPoints.find(p=>p.stock===s);
+  if(!rep) return;
+  const center = rep.position;
+  const {tx,ty} = getTangentFrame(center.clone().normalize());
+  const haloR = 0.28 + Math.log10(s.cap+1)*0.06;
+  const nSeg = 48;
+  // Outer glow
+  [
+    {scale:1.0, opacity:0.95, color:0xffd700},
+    {scale:1.2, opacity:0.35, color:0xffee88},
+  ].forEach(cfg=>{
+    const pts=[];
+    for(let i=0;i<=nSeg;i++){
+      const a=(i/nSeg)*Math.PI*2;
+      const pt=center.clone()
+        .addScaledVector(tx, haloR*cfg.scale*Math.cos(a))
+        .addScaledVector(ty, haloR*cfg.scale*Math.sin(a));
+      pt.normalize().multiplyScalar(R+0.10);
+      pts.push(pt);
+    }
+    pivot.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({color:cfg.color,transparent:true,opacity:cfg.opacity})
+    ));
+  });
+});
+
+// ----- TICKER LABELS (sprites) for top stocks -----
+const labelSprites = [];
+STOCKS.forEach(s => {
+  if(s.cap < 120) return;
+  const rep = stockRepPoints.find(p=>p.stock===s);
+  if(!rep) return;
+
+  const col = OWNER_HEX[s.owner]||'#fff';
+  const fw  = s.cap>500?220:180, fh=s.cap>500?72:58;
+  const cv2 = document.createElement('canvas');
+  cv2.width=fw; cv2.height=fh;
+  const ctx = cv2.getContext('2d');
+  ctx.clearRect(0,0,fw,fh);
+
+  const fs = s.cap>500?30:(s.cap>250?24:20);
+  ctx.font=`bold ${fs}px 'Segoe UI',Arial`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor=col; ctx.shadowBlur=16;
+  ctx.fillStyle='#ffffff';
+  ctx.fillText(s.ticker, fw/2, fh/2-9);
+  ctx.shadowBlur=0;
+  ctx.font=`${fs-10}px 'Segoe UI',Arial`;
+  ctx.fillStyle='rgba(170,210,255,0.9)';
+  ctx.fillText('IDR '+s.cap+' T', fw/2, fh/2+13);
+
+  const tex = new THREE.CanvasTexture(cv2);
+  const sp  = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+  const sc  = s.cap>500?3.5:(s.cap>250?2.8:2.3);
+  sp.scale.set(sc, sc*(fh/fw),1);
+  sp.position.copy(rep.position).multiplyScalar(1.20);
+  pivot.add(sp);
+  labelSprites.push(sp);
+});
+
+// ----- INTER-CLUSTER CONNECTING LINES -----
+const ownerGroupMap = {};
+STOCKS.forEach(s=>{
+  if(!ownerGroupMap[s.owner]) ownerGroupMap[s.owner]=[];
+  ownerGroupMap[s.owner].push(s);
+});
+Object.entries(ownerGroupMap).forEach(([owner,group])=>{
+  const oc = OWNER_COLORS[owner]||[0.5,0.5,0.6];
+  const col = new THREE.Color(oc[0]*0.6, oc[1]*0.6, oc[2]*0.6);
+  group.forEach((sa,i)=>{
+    group.slice(i+1).forEach(sb=>{
+      const pa = stockRepPoints.find(p=>p.stock===sa)?.position;
+      const pb = stockRepPoints.find(p=>p.stock===sb)?.position;
+      if(!pa||!pb) return;
+      const geo=new THREE.BufferGeometry().setFromPoints([pa.clone(),pb.clone()]);
+      const mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.14});
+      pivot.add(new THREE.Line(geo,mat));
+    });
+  });
+});
+
+// ============================================================
+// INTERACTION
+// ============================================================
+let isDragging=false, prevX=0, prevY=0;
+let autoRotate=true;
+let velX=0, velY=0;
+
+const tooltip=document.getElementById('tooltip');
+const raycaster=new THREE.Raycaster();
+raycaster.params.Points = {threshold:0.3};
+const mouse=new THREE.Vector2();
+
+// Build a simple set of invisible sphere meshes for click/hover detection
+const hitMeshes = stockRepPoints.map(sp=>{
+  const r = 0.12 + Math.log10(sp.stock.cap+1)*0.08;
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(r,8,8),
+    new THREE.MeshBasicMaterial({visible:false})
+  );
+  m.position.copy(sp.position);
+  m.userData.stock = sp.stock;
+  pivot.add(m);
+  return m;
+});
+
+canvas.addEventListener('mousedown',e=>{
+  isDragging=true; autoRotate=false;
+  prevX=e.clientX; prevY=e.clientY; velX=0; velY=0;
+});
+window.addEventListener('mouseup',()=>{ isDragging=false; });
+
+canvas.addEventListener('mousemove',e=>{
+  if(isDragging){
+    const dx=(e.clientX-prevX)*0.008, dy=(e.clientY-prevY)*0.008;
+    pivot.rotation.y+=dx; pivot.rotation.x+=dy;
+    velX=dy*0.3; velY=dx*0.3;
+    prevX=e.clientX; prevY=e.clientY;
+  } else {
+    const rect=canvas.getBoundingClientRect();
+    mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+    mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+    raycaster.setFromCamera(mouse,camera);
+    const hits=raycaster.intersectObjects(hitMeshes);
+    if(hits.length){
+      const s=hits[0].object.userData.stock;
+      tooltip.style.display='block';
+      const rx=wrap.getBoundingClientRect();
+      tooltip.style.left=(e.clientX-rx.left+14)+'px';
+      tooltip.style.top=(e.clientY-rx.top-36)+'px';
+      tooltip.innerHTML=`<b style="color:${OWNER_HEX[s.owner]||'#fff'};font-size:13px;">${s.ticker}</b>&nbsp;&nbsp;<span style="color:#6a8aaa;">${s.name}</span>${s.msci?'&nbsp;<span style="color:#ffd700;font-size:10px;background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.4);border-radius:4px;padding:1px 5px;">MSCI</span>':''}<br>
+      <span style="color:#4a6a8a;">Market Cap:</span> IDR ${s.cap} T &nbsp;|&nbsp; <span style="color:#4a6a8a;">Sector:</span> ${s.sector}`;
+      canvas.style.cursor='pointer';
+    } else {
+      tooltip.style.display='none';
+      canvas.style.cursor='default';
+    }
+  }
+});
+
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(hitMeshes);
+  if(hits.length) showInfo(hits[0].object.userData.stock);
+});
+
+canvas.addEventListener('wheel',e=>{
+  camera.position.z=Math.max(7,Math.min(22,camera.position.z+e.deltaY*0.012));
+},{passive:true});
+
+// Touch
+let lt={x:0,y:0};
+canvas.addEventListener('touchstart',e=>{ lt={x:e.touches[0].clientX,y:e.touches[0].clientY}; autoRotate=false; });
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const dx=(e.touches[0].clientX-lt.x)*0.009, dy=(e.touches[0].clientY-lt.y)*0.009;
+  pivot.rotation.y+=dx; pivot.rotation.x+=dy;
+  lt={x:e.touches[0].clientX,y:e.touches[0].clientY};
+},{passive:false});
+
+// ============================================================
+// MODE BUTTONS
+// ============================================================
+function setMode(m){
+  ['rotate','zoom'].forEach(id=>document.getElementById('btn-'+id).classList.toggle('active',id===m));
+}
+function resetView(){
+  camera.position.z=14; pivot.rotation.set(0,0,0); autoRotate=true; velX=0; velY=0;
+}
+function toggleInfoPanel(){
+  const p=document.getElementById('stock-info-panel');
+  p.style.display=p.style.display==='none'?'':'none';
+}
+
+// ============================================================
+// ANIMATE
+// ============================================================
+let frame=0;
+// Collect all shader materials for time update
+const shaderMats=[];
+pivot.traverse(o=>{
+  if(o.material && o.material.uniforms && o.material.uniforms.time) shaderMats.push(o.material);
+});
+
+function animate(){
+  requestAnimationFrame(animate);
+  frame++;
+  const t=frame*0.016;
+
+  shaderMats.forEach(m=>{ m.uniforms.time.value=t; });
+
+  if(autoRotate){
+    pivot.rotation.y+=0.0015;
+  } else if(!isDragging){
+    pivot.rotation.y+=velY; pivot.rotation.x+=velX;
+    velX*=0.94; velY*=0.94;
+  }
+
+  renderer.render(scene,camera);
+}
+animate();
+
+// ============================================================
+// RESIZE
+// ============================================================
+window.addEventListener('resize',()=>{
+  W=wrap.clientWidth; H=wrap.clientHeight;
+  camera.aspect=W/H; camera.updateProjectionMatrix();
+  renderer.setSize(W,H);
+});
+</script>
+</body>
+</html>
+"""
+        components.html(_idx_globe_html, height=780, scrolling=False)
+
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
-        @st.cache_data(ttl=300)
-        def get_market_data(ticker_dict):
-            """Fetch via Yahoo Finance v8 chart API (requests). Parallel, no yfinance."""
-            import requests
-            from concurrent.futures import ThreadPoolExecutor, as_completed
-
-            # Session dengan cookie consent Yahoo agar tidak di-block
-            _S = requests.Session()
-            _S.headers.update({
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-                "Accept": "application/json, text/plain, */*",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Referer": "https://finance.yahoo.com/",
-            })
-            # Set cookie consent supaya tidak di-redirect
-            _S.cookies.set("GUC", "AQABCAFn", domain=".yahoo.com")
-            _S.cookies.set("GUCS", "AQABCAFn", domain=".yahoo.com")
-
-            def _fetch_one(name, tk):
-                # Method 1: v8 chart API
-                try:
-                    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{tk}?interval=1d&range=5d"
-                    r = _S.get(url, timeout=10)
-                    if r.status_code == 200:
-                        j = r.json()
-                        closes = j["chart"]["result"][0]["indicators"]["quote"][0]["close"]
-                        closes = [c for c in closes if c is not None]
-                        if len(closes) >= 2:
-                            last, prev = closes[-1], closes[-2]
-                            return name, {"price": float(last), "pct": round(((last-prev)/prev)*100, 2)}
-                        elif len(closes) == 1:
-                            return name, {"price": float(closes[-1]), "pct": 0.0}
-                except Exception:
-                    pass
-                # Method 2: v7 quote API (fallback)
-                try:
-                    url2 = f"https://query2.finance.yahoo.com/v7/finance/quote?symbols={tk}"
-                    r2 = _S.get(url2, timeout=10)
-                    if r2.status_code == 200:
-                        q = r2.json().get("quoteResponse", {}).get("result", [])
-                        if q:
-                            last = q[0].get("regularMarketPrice", 0)
-                            prev = q[0].get("regularMarketPreviousClose", 0)
-                            if last and last > 0:
-                                pct = round(((last-prev)/prev)*100, 2) if prev and prev > 0 else 0.0
-                                return name, {"price": float(last), "pct": pct}
-                except Exception:
-                    pass
-                return name, {"price": 0, "pct": 0}
-
-            data = {n: {"price": 0, "pct": 0} for n in ticker_dict}
-            with ThreadPoolExecutor(max_workers=min(len(ticker_dict), 12)) as ex:
-                futs = {ex.submit(_fetch_one, name, tk): name for name, tk in ticker_dict.items()}
-                for fut in as_completed(futs):
-                    name, val = fut.result()
-                    data[name] = val
-            return data
-
-        indices_tickers = {
-            # ── Indonesia ──────────────────────────────────────────
-            "IHSG":        "^JKSE",
-            "LQ45":        "^JKLQ45",
-            "IDX30":       "^JKIDX30",
-            "IDX80":       "^JKIDX80",
-            "KOMPAS100":   "^JKKLCI",
-            "IDXBUMN20":   "^JKBUMN20",
-            "IDXHIDIV20":  "^JKHIDIV20",
-            "IDXSMC-LIQ":  "^JKSMC",
-            # ── Global ─────────────────────────────────────────────
-            "VIX": "^VIX", "S&P 500": "^GSPC", "Dow Jones": "^DJI",
-            "Nasdaq": "^IXIC", "FTSE": "^FTSE", "Nikkei": "^N225",
-            "Hang Seng": "^HSI", "Shanghai": "000001.SS",
+        # Ticker definitions — gunakan _fetch_market_data_cached yang sudah di-define di luar tab
+        _MKT_INDICES = {
+            "IHSG":      "^JKSE",
+            "LQ45":      "^JKLQ45",
+            "VIX":       "^VIX",
+            "S&P 500":   "^GSPC",
+            "Dow Jones": "^DJI",
+            "Nasdaq":    "^IXIC",
+            "FTSE":      "^FTSE",
+            "Nikkei":    "^N225",
+            "Hang Seng": "^HSI",
+            "Shanghai":  "000001.SS",
         }
-        
-        commodities_tickers = {
-            "USD/IDR": "IDR=X", "DXY": "DX-Y.NYB", "EUR/USD": "EURUSD=X", "GBP/USD": "GBPUSD=X",
-            "Gold (oz)": "GC=F", "Silver (oz)": "SI=F", "Copper": "HG=F",
-            "WTI Crude": "CL=F", "Brent Crude": "BZ=F", "Natural Gas": "NG=F",
-            "Coal (Futures)": "MTF=F", "Palm Oil": "FCPO.KL", "Nickel": "ND=F",
-            "Aluminum": "ALS=F", "Tin": "SN=F", "Soybeans": "ZS=F",
+        _MKT_COMMODITIES = {
+            "USD/IDR":        "IDR=X",
+            "DXY":            "DX-Y.NYB",
+            "EUR/USD":        "EURUSD=X",
+            "GBP/USD":        "GBPUSD=X",
+            "Gold (oz)":      "GC=F",
+            "Silver (oz)":    "SI=F",
+            "Copper":         "HG=F",
+            "WTI Crude":      "CL=F",
+            "Brent Crude":    "BZ=F",
+            "Natural Gas":    "NG=F",
+            "Coal (Futures)": "MTF=F",
+            "Palm Oil":       "FCPO.KL",
+            "Nickel":         "ND=F",
+            "Aluminum":       "ALS=F",
+            "Soybeans":       "ZS=F",
         }
-        
+
         with st.spinner("Mendeteksi denyut pasar global..."):
-            idx_data = get_market_data(indices_tickers)
-            com_data = get_market_data(commodities_tickers)
+            idx_data = _fetch_market_data_cached(
+                tuple(_MKT_INDICES.keys()), tuple(_MKT_INDICES.values())
+            )
+            com_data = _fetch_market_data_cached(
+                tuple(_MKT_COMMODITIES.keys()), tuple(_MKT_COMMODITIES.values())
+            )
 
         import json as _mkt_json
 
@@ -7797,15 +9341,12 @@ if current_view == "dashboard":
         _idx_rows = []
         _idx_labels = {
             "IHSG":        ("🇮🇩", "IDR"), "LQ45":       ("🇮🇩", "IDR"),
-            "IDX30":       ("🇮🇩", "IDR"), "IDX80":      ("🇮🇩", "IDR"),
-            "KOMPAS100":   ("🇮🇩", "IDR"), "IDXBUMN20":  ("🇮🇩", "IDR"),
-            "IDXHIDIV20":  ("🇮🇩", "IDR"), "IDXSMC-LIQ": ("🇮🇩", "IDR"),
             "VIX": ("📊", "pts"), "S&P 500": ("🇺🇸", "USD"),
             "Dow Jones": ("🇺🇸", "USD"), "Nasdaq": ("🇺🇸", "USD"), "FTSE": ("🇬🇧", "GBP"),
             "Nikkei": ("🇯🇵", "JPY"), "Hang Seng": ("🇭🇰", "HKD"), "Shanghai": ("🇨🇳", "CNY"),
         }
         # Names that are Indonesian sub-indices (for visual grouping)
-        _idx_indonesia_names = {"IHSG","LQ45","IDX30","IDX80","KOMPAS100","IDXBUMN20","IDXHIDIV20","IDXSMC-LIQ"}
+        _idx_indonesia_names = {"IHSG","LQ45"}
         _global_divider_added = False
         for name, info in idx_data.items():
             flag, ccy = _idx_labels.get(name, ("🌐", ""))
@@ -7814,7 +9355,7 @@ if current_view == "dashboard":
             is_id = name in _idx_indonesia_names
             # Add separator row before first global index
             if not is_id and not _global_divider_added:
-                _idx_rows.append({"_divider": True, "label": "── GLOBAL ─────────────"})
+                _idx_rows.append({"_divider": True, "label": "──────────── GLOBAL ────────────"})
                 _global_divider_added = True
             if px == 0:
                 px_str = "N/A"
@@ -7833,27 +9374,27 @@ if current_view == "dashboard":
                 "price": px_str, "pct": pct_str, "arrow": arrow,
                 "cls": cls, "bg": bg, "bdr": bdr, "is_id": is_id
             })
-        _idx_json = _mkt_json.dumps(_idx_rows, ensure_ascii=True)
+        _idx_json = _mkt_json.dumps(_idx_rows)
 
         # ── Build commodities table rows ────────────────────────────────────
         _com_rows = []
         _com_labels = {
-            "USD/IDR":        ("💱", "Rp / USD"),
-            "DXY":            ("💵", "Index"),
-            "EUR/USD":        ("🇪🇺", "EUR/USD"),
-            "GBP/USD":        ("🇬🇧", "GBP/USD"),
-            "Gold (oz)":      ("🥇", "USD/oz"),
-            "Silver (oz)":    ("🥈", "USD/oz"),
-            "Copper":         ("🔶", "USD/lb"),
-            "WTI Crude":      ("🛢️", "USD/bbl"),
-            "Brent Crude":    ("🛢️", "USD/bbl"),
-            "Natural Gas":    ("🔥", "USD/MMBtu"),
-            "Coal (Futures)": ("⚫", "USD/ton"),
-            "Palm Oil":       ("🌴", "MYR/ton"),
-            "Nickel":         ("🔩", "USD/ton"),
-            "Aluminum":       ("⚙️", "USD/lb"),
-            "Tin":            ("🪙", "USD/ton"),
-            "Soybeans":       ("🌿", "USD/bu"),
+            "USD/IDR":       ("💱", "Rp / USD"),
+            "DXY":           ("💵", "Index"),
+            "EUR/USD":       ("🇪🇺", "EUR/USD"),
+            "GBP/USD":       ("🇬🇧", "GBP/USD"),
+            "Gold (oz)":     ("🥇", "USD/oz"),
+            "Silver (oz)":   ("🥈", "USD/oz"),
+            "Copper":        ("🔶", "USD/lb"),
+            "WTI Crude":     ("🛢️", "USD/bbl"),
+            "Brent Crude":   ("🛢️", "USD/bbl"),
+            "Natural Gas":   ("🔥", "USD/MMBtu"),
+            "Newcastle Coal":("⚫", "USD/ton"),
+            "Palm Oil":      ("🌴", "MYR/ton"),
+            "Nickel":        ("🔩", "USD/lb"),
+            "Aluminum":      ("⚙️", "USD/lb"),
+            "Tin":           ("🪙", "USD/ton"),
+            "Soybeans":      ("🌿", "USD/bu"),
         }
         for name, info in com_data.items():
             icon, ccy = _com_labels.get(name, ("📦", ""))
@@ -7879,94 +9420,83 @@ if current_view == "dashboard":
                 "price": px_str, "pct": pct_str, "arrow": arrow,
                 "cls": cls, "bg": bg, "bdr": bdr
             })
-        _com_json = _mkt_json.dumps(_com_rows, ensure_ascii=True)
+        _com_json = _mkt_json.dumps(_com_rows)
 
         _now_wib_str = datetime.now().strftime("%d %b %Y · %H:%M WIB")
 
-        # ── Render both tables via components.html ─────────────────────────
-        _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
-        _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        # Desktop: side-by-side → ambil yang TERBESAR + buffer kecil.
-        # Mobile (≤600px): CSS flex-direction:column → JS resize handle via postMessage.
-        # Jangan sum() keduanya — iframe jadi 2× terlalu tinggi di desktop.
-        _tbl_h = max(_idx_total_h, _com_total_h) + 24
+        # ── Gabungkan idx_rows + com_rows menjadi 1 tabel dengan section divider ──
+        # Tambahkan divider "COMMODITIES & FOREX" sebelum data komoditas
+        _com_divider = {"_section_divider": True, "label": "\U0001f4b1 COMMODITIES & FOREX"}
+        _all_rows = _idx_rows + [_com_divider] + _com_rows
+
+        # ensure_ascii=True → semua karakter non-ASCII di-escape ke \uXXXX
+        # Ini mencegah emoji/Unicode merusak JS parse di browser
+        _all_json = _mkt_json.dumps(_all_rows, ensure_ascii=True)
+
+        # Hitung actual rows untuk height yang akurat
+        _actual_rows = len(_all_rows)  # setelah data terisi
+        _tbl_h = max(44 + 36 + _actual_rows * 40 + 80, 500)
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'DM Sans',sans-serif;}}
-.row{{display:flex;gap:12px;width:100%;}}
-.col{{flex:1;min-width:0;}}
-.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:18px;overflow:hidden;height:100%;}}
+html,body{{background:transparent;font-family:'DM Sans',sans-serif;width:100%;}}
+.mkt-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:18px;overflow:hidden;width:100%;}}
 .mkt-hdr{{padding:12px 16px;background:rgba(139,92,246,0.08);border-bottom:1px solid {met_border};font-size:0.72rem;font-weight:700;letter-spacing:0.14em;color:#8b5cf6;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;font-family:'DM Sans',sans-serif;}}
 .mkt-badge{{font-size:0.875rem;color:{text_sub};background:rgba(255,255,255,0.05);border:1px solid {met_border};border-radius:10px;padding:2px 7px;white-space:nowrap;}}
-.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.mkt-scroll{{width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
 .mkt-scroll::-webkit-scrollbar{{width:4px;height:4px;}}
 .mkt-scroll::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:1.1rem;min-width:320px;}}
-thead th{{position:static;background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
-tbody td{{padding:8px 12px;border-bottom:1px solid rgba(3,40,238,0.10);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.875rem;}}
+table{{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;min-width:280px;}}
+thead th{{background:rgba(139,92,246,0.06);color:#8b5cf6;padding:8px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.08em;font-weight:700;font-size:0.72rem;white-space:nowrap;text-transform:uppercase;font-family:'DM Sans',sans-serif;}}
+tbody td{{padding:8px 12px;border-bottom:1px solid rgba(139,92,246,0.08);color:{text_main};vertical-align:middle;white-space:nowrap;font-size:0.875rem;}}
 tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
+tbody tr:hover td{{background:rgba(139,92,246,0.05);}}
 .nm{{font-weight:600;font-size:0.875rem;color:{text_main};font-family:'DM Sans',sans-serif;}}
-.flag{{margin-right:5px;font-size:1.1rem;}}
+.flag{{margin-right:5px;font-size:1rem;}}
 .price{{font-size:0.875rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
 .badge{{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
 .ccy{{font-size:0.8rem;color:{text_sub};}}
 @media(max-width:600px){{
-  .row{{flex-direction:column;gap:14px;}}
-  .col{{width:100%;}}
-  .mkt-hdr{{font-size:0.875rem;padding:8px 10px;}}
-  thead th{{font-size:0.8rem;padding:7px 8px;}}
-  tbody td{{font-size:0.875rem;padding:7px 8px;}}
-  .badge{{font-size:0.8rem;padding:2px 5px;}}
-  .nm{{font-size:0.875rem;}}
-  .price{{font-size:0.875rem;}}
-  table{{min-width:280px;}}
+  .mkt-wrap{{border-radius:12px;}}
+  .mkt-hdr{{font-size:0.7rem;padding:8px 10px;}}
+  thead th{{font-size:0.7rem;padding:6px 8px;}}
+  tbody td{{font-size:0.8rem;padding:6px 8px;}}
+  .badge{{font-size:0.75rem;padding:2px 5px;}}
+  .nm{{font-size:0.8rem;}}
+  .price{{font-size:0.8rem;}}
+  table{{min-width:260px;}}
 }}
 </style></head><body>
-<div class="row">
-  <div class="col">
-    <div class="mkt-wrap">
-      <div class="mkt-hdr">
-        <span>📈 GLOBAL INDICES &amp; VOLATILITY</span>
-        <span class="mkt-badge" id="idx-ts">{_now_wib_str}</span>
-      </div>
-      <div class="mkt-scroll" id="idx-scroll">
-        <table><thead><tr>
-          <th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>CCY</th>
-        </tr></thead>
-        <tbody id="idx-tb"></tbody></table>
-      </div>
-    </div>
+<div class="mkt-wrap">
+  <div class="mkt-hdr">
+    <span>📊 LIVE MARKET &nbsp;·&nbsp; Global Indices &amp; Commodities</span>
+    <span class="mkt-badge" id="mkt-ts">{_now_wib_str}</span>
   </div>
-  <div class="col">
-    <div class="mkt-wrap">
-      <div class="mkt-hdr">
-        <span>💱 COMMODITIES &amp; FOREX</span>
-        <span class="mkt-badge" id="com-ts">{_now_wib_str}</span>
-      </div>
-      <div class="mkt-scroll" id="com-scroll">
-        <table><thead><tr>
-          <th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
-        </tr></thead>
-        <tbody id="com-tb"></tbody></table>
-      </div>
-    </div>
+  <div class="mkt-scroll" id="mkt-scroll">
+    <table><thead><tr>
+      <th>ASET / INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
+    </tr></thead>
+    <tbody id="mkt-tb"></tbody></table>
   </div>
 </div>
 <script>
 (function(){{
-  var IDX={_idx_json};
-  var COM={_com_json};
+  var ALL={_all_json};
   var TEXT_SUB='{text_sub}';
 
-  function buildRows(data, tbId, flagKey){{
+  function buildRows(data, tbId){{
     var h='';
     data.forEach(function(r){{
+      // Section divider (Commodities header)
+      if(r._section_divider){{
+        h+='<tr><td colspan="4" style="padding:6px 14px;font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#8b5cf6;text-transform:uppercase;border-bottom:1px solid {met_border};border-top:2px solid {met_border};background:rgba(139,92,246,0.06);font-family:\'DM Sans\',sans-serif;">'+r.label+'</td></tr>';
+        return;
+      }}
+      // Index group divider
       if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 12px;font-size:0.875rem;color:rgba(3,40,238,0.45);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.15);background:rgba(3,40,238,0.03);">'+r.label+'</td></tr>';
+        h+='<tr><td colspan="4" style="padding:4px 14px;font-size:0.72rem;color:rgba(110,155,255,0.55);letter-spacing:0.1em;border-bottom:1px solid rgba(3,40,238,0.12);background:rgba(3,40,238,0.025);font-family:\'DM Sans\',sans-serif;">'+r.label+'</td></tr>';
         return;
       }}
       var up = r.cls==='mkt-up';
@@ -7976,7 +9506,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
       var bdr = na ? '#b2b5be' : (up ? '#089981' : '#f23645');
       var arrow = na ? '' : (up ? '▲' : '▼');
       var pct = na ? '-' : (arrow+' '+r.pct);
-      var fl = r[flagKey] || '';
+      // Support both flag (indices) and icon (commodities) keys
+      var fl = r.flag || r.icon || '';
       var rowBg = r.is_id ? 'rgba(3,40,238,0.025)' : '';
       h += '<tr style="background:'+rowBg+'">'+
         '<td><span class="flag">'+fl+'</span><span class="nm">'+r.name+'</span></td>'+
@@ -7988,63 +9519,45 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     document.getElementById(tbId).innerHTML = h;
   }}
 
-  buildRows(IDX, 'idx-tb', 'flag');
-  buildRows(COM, 'com-tb', 'icon');
-
-  // Equalise scroll heights - cap at 520px to keep both cols same size
-  function setHeights(){{
-    var idxS = document.getElementById('idx-scroll');
-    var comS = document.getElementById('com-scroll');
-    if(!idxS||!comS) return;
-    // Remove max-height first to measure natural height
-    idxS.style.maxHeight = 'none'; comS.style.maxHeight = 'none';
-    var h = Math.min(Math.max(idxS.scrollHeight, comS.scrollHeight), 560);
-    idxS.style.maxHeight = h+'px';
-    comS.style.maxHeight = h+'px';
-    idxS.style.overflowY = 'auto';
-    comS.style.overflowY = 'auto';
-  }}
-  setTimeout(setHeights, 50);
+  buildRows(ALL, 'mkt-tb');
 
   function updateTs(){{
     var now = new Date();
-    // WIB = UTC+7
-    var wibMs = now.getTime() + (7*60*60*1000)-now.getTimezoneOffset()*60000;
-    // just use UTC offset trick
-    var wib = new Date(now.getTime());
-    var ofs = now.getTimezoneOffset(); // local offset in mins
+    var ofs = now.getTimezoneOffset();
     var wibLocal = new Date(now.getTime() + (ofs+420)*60000);
     var months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
     var str=wibLocal.getDate()+' '+months[wibLocal.getMonth()]+' '+wibLocal.getFullYear()
       +' · '+String(wibLocal.getHours()).padStart(2,'0')+':'+String(wibLocal.getMinutes()).padStart(2,'0')+' WIB';
-    var e1=document.getElementById('idx-ts'); if(e1) e1.textContent=str;
-    var e2=document.getElementById('com-ts'); if(e2) e2.textContent=str;
+    var e=document.getElementById('mkt-ts'); if(e) e.textContent=str;
   }}
   setInterval(updateTs, 60000);
 
-  // ── Auto-resize iframe ke tinggi konten aktual ──
+  // ── Auto-resize iframe: agresif, banyak retry, tidak clipping ──
   function autoResize() {{
-    var isMobile = window.innerWidth <= 600;
-    var h;
-    if (isMobile) {{
-      // Mobile: stacked → total scroll height kedua div
-      var idxW = document.getElementById('idx-scroll');
-      var comW = document.getElementById('com-scroll');
-      h = (idxW ? idxW.scrollHeight : 0) + (comW ? comW.scrollHeight : 0) + 120;
-    }} else {{
-      // Desktop: side-by-side → ambil yang paling tinggi + header + sedikit buffer
-      h = document.body.scrollHeight + 4;
-    }}
+    // Reset overflow dulu agar pengukuran akurat
+    document.body.style.overflow = 'visible';
+    var wrap = document.querySelector('.mkt-wrap');
+    if (wrap) wrap.style.overflow = 'visible';
+    var h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      wrap ? wrap.scrollHeight : 0
+    );
+    h = Math.max(h + 8, 200);
     try {{
       window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
     }} catch(e) {{}}
   }}
-  setTimeout(autoResize, 80);
-  setTimeout(autoResize, 300);
-  setTimeout(autoResize, 800);
-  window.addEventListener('resize', autoResize);
+  // Kirim berulang: segera, setelah render, setelah font load, setelah data injeksi
+  autoResize();
+  setTimeout(autoResize, 100);
+  setTimeout(autoResize, 400);
+  setTimeout(autoResize, 900);
+  setTimeout(autoResize, 1800);
+  setTimeout(autoResize, 3000);
+  window.addEventListener('resize', function() {{ setTimeout(autoResize, 200); }});
 }})();
-</script></body></html>""", height=_tbl_h, scrolling=False)
+</script></body></html>""", height=_tbl_h, scrolling=True)
 
         # ─────────────────────────────────────────────────────────
         # NEW FEATURE: MARKET BRIEF (DAILY/WEEKLY)
@@ -8070,7 +9583,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
             <span class='mb-tag'>&#129302; AI Powered (Groq)</span>
             <span class='mb-tag'>&#127470;&#127465; IDX Focused</span>
             <span class='mb-tag'>&#128202; Sentiment Meter</span>
-            <span class='mb-tag'>&#127919; Sektoral Watchlist</span>
+
         </div>
         """, unsafe_allow_html=True)
 
@@ -8451,7 +9964,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         .news-entry-sigma:hover {{ background: rgba(3,40,238,0.05); }}
         .news-title-sigma {{ color: {text_main}; font-size: 15px; line-height: 1.5; margin-bottom: 5px; }}
         .news-meta-sigma {{ color: {text_sub}; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }}
-        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; }} .news-title-sigma {{ font-size: 14px !important; }} }}
+        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; margin-bottom: 16px !important; }} .news-title-sigma {{ font-size: 14px !important; }} .news-box {{ margin-bottom: 16px !important; }} }}
         .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
         .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
         </style>
@@ -8479,7 +9992,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
         with col_n1:
             content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
             st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
+            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column; margin-bottom:16px;'>
                 <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
             </div>""", unsafe_allow_html=True)
@@ -9032,60 +10545,63 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     padding-bottom: 8px;
   }}
 
-  /* Grid */
-  .frm-grid {{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin-bottom: 16px;
-  }}
-
-  /* Card */
-  .frm-card {{
-    background: {'rgba(8,12,22,0.9)' if is_dark else '#f0f4ff'};
+  /* ── SINGLE VERTICAL TABLE (menggantikan grid 3 kartu) ── */
+  .frm-vtbl-wrap {{
+    background: {'rgba(8,12,22,0.9)' if is_dark else '#f8faff'};
     border: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
     border-radius: 12px;
     overflow: hidden;
+    margin-bottom: 16px;
+    width: 100%;
   }}
-  .frm-card-header {{
+  /* Section header row (tanggal FOMC) */
+  .frm-meeting-hdr {{
     background: rgba(3,40,238,0.07);
     border-bottom: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-    padding: 12px 16px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
   }}
-  .frm-card-date {{
+  .frm-meeting-hdr + .frm-meeting-hdr {{
+    border-top: 2px solid {'rgba(3,40,238,0.25)' if is_dark else '#c7d4f0'};
+  }}
+  .frm-meeting-date {{
     font-size: 0.875rem;
     font-weight: 700;
     color: #6e9bff;
     letter-spacing: 0.06em;
-    margin-bottom: 4px;
   }}
-  .frm-card-meta {{
+  .frm-meeting-meta {{
     display: flex;
-    justify-content: space-between;
+    gap: 14px;
     align-items: center;
+    flex-wrap: wrap;
   }}
-  .frm-card-future {{
+  .frm-meeting-future {{
     font-size: 0.72rem;
     color: {'#6b7a99' if is_dark else '#64748b'};
   }}
-  .frm-card-time {{
+  .frm-meeting-time {{
     font-size: 0.72rem;
     color: #089981;
   }}
 
   /* Bars section */
-  .frm-bars {{ padding: 14px 16px 8px; }}
-  .frm-bar-row {{ margin-bottom: 12px; }}
+  .frm-bars {{ padding: 12px 16px 6px; }}
+  .frm-bar-row {{ margin-bottom: 10px; }}
   .frm-bar-top {{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }}
   .frm-bar-label {{ font-size: 0.875rem; color: {'#e8eaf0' if is_dark else '#1a202c'}; font-weight: 400; }}
   .frm-bar-pct {{ font-size: 0.875rem; font-weight: 700; }}
   .frm-bar-track {{
-    height: 7px;
+    height: 6px;
     border-radius: 4px;
     background: {'rgba(255,255,255,0.06)' if is_dark else 'rgba(0,0,0,0.06)'};
     overflow: hidden;
@@ -9096,40 +10612,44 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     transition: width 0.4s ease;
   }}
 
-  /* Table section */
-  .frm-tbl-wrap {{
-    border-top: 1px solid {'rgba(3,40,238,0.18)' if is_dark else '#e2e8f0'};
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }}
-  .frm-tbl {{
-    width: 100%;
-    border-collapse: collapse;
-  }}
-  .frm-tbl thead tr {{
-    background: {'rgba(255,255,255,0.03)' if is_dark else 'rgba(0,0,0,0.02)'};
-  }}
-  .frm-tbl th {{
-    padding: 7px 10px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.07em;
-    color: {'#6b7a99' if is_dark else '#64748b'};
-    white-space: nowrap;
-  }}
-  .frm-tbl th:first-child {{ text-align: left; }}
-  .frm-tbl th:not(:first-child) {{ text-align: right; }}
-  .frm-tbl td {{
-    padding: 7px 10px;
-    font-size: 0.875rem;
+  /* Probability detail rows (inline tabel) */
+  .frm-detail-row {{
+    display: flex;
+    align-items: center;
+    padding: 5px 16px;
     border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
-    white-space: nowrap;
+    gap: 10px;
+    flex-wrap: wrap;
   }}
-  .frm-tbl td:first-child {{
-    text-align: left;
+  .frm-detail-rate {{
+    font-size: 0.875rem;
     color: {'#9ca3af' if is_dark else '#64748b'};
+    min-width: 100px;
   }}
-  .frm-tbl td:not(:first-child) {{ text-align: right; color: {'#6b7a99' if is_dark else '#9ca3af'}; }}
+  .frm-detail-now {{
+    font-size: 0.875rem;
+    font-weight: 700;
+    min-width: 60px;
+  }}
+  .frm-detail-prev {{
+    font-size: 0.875rem;
+    color: {'#6b7a99' if is_dark else '#9ca3af'};
+    min-width: 55px;
+    text-align: right;
+  }}
+  .frm-detail-prevwk {{
+    font-size: 0.875rem;
+    color: {'#6b7a99' if is_dark else '#9ca3af'};
+    min-width: 55px;
+    text-align: right;
+  }}
+  .frm-detail-footer {{
+    padding: 4px 16px 8px;
+    font-size: 0.72rem;
+    color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
+    text-align: right;
+    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+  }}
   .frm-dir-badge {{
     display: inline-block;
     font-size: 0.72rem;
@@ -9140,13 +10660,25 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     margin-left: 4px;
     vertical-align: middle;
   }}
-  .frm-tbl-footer {{
-    padding: 5px 10px 8px;
-    font-size: 0.72rem;
-    color: {'rgba(107,122,153,0.6)' if is_dark else '#9ca3af'};
-    text-align: right;
-    border-top: 1px solid {'rgba(255,255,255,0.04)' if is_dark else 'rgba(0,0,0,0.04)'};
+  .frm-col-hdr {{
+    display: flex;
+    align-items: center;
+    padding: 5px 16px 4px;
+    gap: 10px;
+    border-top: 1px solid {'rgba(3,40,238,0.10)' if is_dark else '#dce8ff'};
+    background: {'rgba(255,255,255,0.02)' if is_dark else 'rgba(0,0,0,0.02)'};
   }}
+  .frm-col-hdr span {{
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    color: {'#6b7a99' if is_dark else '#64748b'};
+    text-transform: uppercase;
+  }}
+  .frm-col-hdr .ch-rate {{ min-width: 100px; }}
+  .frm-col-hdr .ch-now  {{ min-width: 60px; }}
+  .frm-col-hdr .ch-yday {{ min-width: 55px; text-align: right; }}
+  .frm-col-hdr .ch-week {{ min-width: 55px; text-align: right; }}
 
   /* Insight box */
   .frm-insight {{
@@ -9160,23 +10692,30 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     line-height: 1.65;
   }}
 
-  /* Mobile */
-  @media (max-width: 860px) {{
-    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+  /* Mobile: kompak — single table layout sudah vertikal by default */
+  @media (max-width: 768px) {{
     .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
     .frm-cd-num {{ font-size: 1.25rem; }}
     .frm-cd-box {{ min-width: 38px; }}
     .frm-cd-boxes {{ justify-content: flex-start; flex-wrap: wrap; }}
-    .frm-card-meta {{ flex-direction: column; gap: 2px; align-items: flex-start; }}
-    .frm-card-time {{ font-size: 0.72rem; }}
-    .frm-card-date {{ font-size: 0.875rem; }}
-    .frm-bars {{ padding: 12px 14px 6px; }}
+    .frm-meeting-meta {{ gap: 8px; }}
+    .frm-bars {{ padding: 10px 12px 4px; }}
     .frm-bar-label {{ font-size: 0.875rem; }}
     .frm-bar-pct {{ font-size: 0.875rem; }}
-    .frm-tbl th {{ padding: 6px 8px; font-size: 0.72rem; }}
-    .frm-tbl td {{ padding: 6px 8px; font-size: 0.875rem; }}
+    .frm-detail-row {{ padding: 5px 12px; gap: 6px; }}
+    .frm-detail-rate {{ min-width: 90px; font-size: 0.875rem; }}
+    .frm-detail-now {{ min-width: 50px; font-size: 0.875rem; }}
+    .frm-detail-prev {{ min-width: 44px; font-size: 0.875rem; }}
+    .frm-detail-prevwk {{ min-width: 44px; font-size: 0.875rem; }}
+    .frm-col-hdr {{ padding: 4px 12px 3px; gap: 6px; }}
+    .frm-col-hdr .ch-rate {{ min-width: 90px; }}
+    .frm-col-hdr .ch-now  {{ min-width: 50px; }}
+    .frm-col-hdr .ch-yday {{ min-width: 44px; }}
+    .frm-col-hdr .ch-week {{ min-width: 44px; }}
+    .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
     .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
-    .frm-tbl-wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
+    .frm-meeting-hdr {{ padding: 8px 12px; }}
+    .frm-detail-footer {{ padding: 3px 12px 6px; }}
   }}
 </style>
 </head>
@@ -9193,7 +10732,7 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
   </div>
 
   <!-- Cards Grid -->
-  <div class="frm-grid" id="frm-grid"></div>
+  <div class="frm-vtbl-wrap" id="frm-vtbl"></div>
 
   <!-- Insight -->
   <div class="frm-insight">
@@ -9244,74 +10783,89 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
   setInterval(tick, 1000);
 }})();
 
-// Build cards
+// ── Build single vertical table ──
 (function() {{
-  var grid = document.getElementById('frm-grid');
+  var wrap = document.getElementById('frm-vtbl');
   var html = '';
 
-  DATA.forEach(function(mtg) {{
-    // Bars
-    var bars = '';
+  DATA.forEach(function(mtg, idx) {{
+    // Section header — tanggal FOMC
+    var borderTop = idx > 0 ? 'border-top:2px solid rgba(3,40,238,0.22);' : '';
+    html += '<div class="frm-meeting-hdr" style="' + borderTop + '">';
+    html += '<span class="frm-meeting-date">' + (mtg.date_wib || mtg.date) + '</span>';
+    html += '<div class="frm-meeting-meta">';
+    html += '<span class="frm-meeting-future">Future: ' + mtg.future_price + '</span>';
+    html += '<span class="frm-meeting-time">Meeting: ' + mtg.meeting_time + '</span>';
+    html += '</div></div>';
+
+    // Probability bars
+    html += '<div class="frm-bars">';
     mtg.scenarios.forEach(function(sc) {{
       var c = DIR_COLOR[sc.dir] || '#b2b5be';
       var w = Math.max(sc.prob, 1.5);
-      bars += '<div class="frm-bar-row">';
-      bars += '<div class="frm-bar-top">';
-      bars += '<span class="frm-bar-label">' + sc.range + '</span>';
-      bars += '<span class="frm-bar-pct" style="color:' + c + '">' + sc.prob.toFixed(1) + '%</span>';
-      bars += '</div>';
-      bars += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:' + w + '%;background:' + c + ';opacity:0.85;"></div></div>';
-      bars += '</div>';
+      html += '<div class="frm-bar-row">';
+      html += '<div class="frm-bar-top">';
+      html += '<span class="frm-bar-label">'+sc.range+'</span>';
+      html += '<span class="frm-bar-pct" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+      html += '</div>';
+      html += '<div class="frm-bar-track"><div class="frm-bar-fill" style="width:'+w+'%;background:'+c+';opacity:0.85;"></div></div>';
+      html += '</div>';
     }});
-
-    // Table rows
-    var rows = '';
-    mtg.scenarios.forEach(function(sc) {{
-      var c = DIR_COLOR[sc.dir] || '#b2b5be';
-      var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
-      var pd = sc.prev_day !== null ? sc.prev_day.toFixed(1) + '%' : '-';
-      var pw = sc.prev_week !== null ? sc.prev_week.toFixed(1) + '%' : '-';
-      var badge = '<span class="frm-dir-badge" style="color:' + c + ';background:' + bc + '">' + DIR_LABEL[sc.dir] + '</span>';
-      rows += '<tr>';
-      rows += '<td>' + sc.range + badge + '</td>';
-      rows += '<td style="font-weight:700;color:' + c + '">' + sc.prob.toFixed(1) + '%</td>';
-      rows += '<td>' + pd + '</td>';
-      rows += '<td>' + pw + '</td>';
-      rows += '</tr>';
-    }});
-
-    html += '<div class="frm-card">';
-    html += '<div class="frm-card-header">';
-    html += '<div class="frm-card-date">' + (mtg.date_wib || mtg.date) + '</div>';
-    html += '<div class="frm-card-meta">';
-    html += '<span class="frm-card-future">Future: ' + mtg.future_price + '</span>';
-    html += '<span class="frm-card-time">Meeting: ' + mtg.meeting_time + '</span>';
-    html += '</div></div>';
-    html += '<div class="frm-bars">' + bars + '</div>';
-    html += '<div class="frm-tbl-wrap"><table class="frm-tbl">';
-    html += '<thead><tr><th>TARGET RATE</th><th>NOW %</th><th>YDAY %</th><th>WEEK %</th></tr></thead>';
-    html += '<tbody>' + rows + '</tbody>';
-    html += '</table></div>';
-    html += '<div class="frm-tbl-footer">Updated: ' + UPDATED + ' · Source: CME FedWatch</div>';
     html += '</div>';
+
+    // Column header
+    html += '<div class="frm-col-hdr">';
+    html += '<span class="ch-rate">TARGET RATE</span>';
+    html += '<span class="ch-now">NOW %</span>';
+    html += '<span class="ch-yday">YDAY %</span>';
+    html += '<span class="ch-week">WEEK %</span>';
+    html += '</div>';
+
+    // Detail rows
+    mtg.scenarios.forEach(function(sc) {{
+      var c  = DIR_COLOR[sc.dir] || '#b2b5be';
+      var bc = DIR_BADGE_BG[sc.dir] || 'transparent';
+      var pd = (sc.prev_day  !== null && sc.prev_day  !== undefined) ? sc.prev_day.toFixed(1)  + '%' : '-';
+      var pw = (sc.prev_week !== null && sc.prev_week !== undefined) ? sc.prev_week.toFixed(1) + '%' : '-';
+      var badge = '<span class="frm-dir-badge" style="color:'+c+';background:'+bc+'">'+DIR_LABEL[sc.dir]+'</span>';
+      html += '<div class="frm-detail-row">';
+      html += '<span class="frm-detail-rate">'+sc.range+badge+'</span>';
+      html += '<span class="frm-detail-now" style="color:'+c+'">'+sc.prob.toFixed(1)+'%</span>';
+      html += '<span class="frm-detail-prev">'+pd+'</span>';
+      html += '<span class="frm-detail-prevwk">'+pw+'</span>';
+      html += '</div>';
+    }});
+
+    // Footer row
+    html += '<div class="frm-detail-footer">Updated: '+UPDATED+' · Source: CME FedWatch</div>';
   }});
 
-  grid.innerHTML = html;
-  // Auto-resize iframe to actual content height (fixes mobile cutoff)
+  wrap.innerHTML = html;
+
+  // ── Auto-resize: ukur tinggi aktual konten, bukan pakai angka hardcoded ──
   function sendHeight() {{
-    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height:h}}, '*');
+    // Reset overflow agar scrollHeight akurat
+    document.body.style.overflow = 'visible';
+    var fw = document.querySelector('.frm-wrap');
+    if (fw) fw.style.overflow = 'visible';
+    var h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      fw ? fw.scrollHeight : 0
+    );
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 12}}, '*');
   }}
-  // Send after render + small delay for fonts/images
   sendHeight();
-  setTimeout(sendHeight, 200);
-  setTimeout(sendHeight, 600);
-  window.addEventListener('resize', sendHeight);
+  setTimeout(sendHeight, 100);
+  setTimeout(sendHeight, 400);
+  setTimeout(sendHeight, 900);
+  setTimeout(sendHeight, 1800);
+  window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
 }})();
 </script>
 </body>
 </html>
-        """, height=660, scrolling=False)
+        """, height=1100, scrolling=False)
 
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
@@ -9588,11 +11142,31 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
   pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.45);
   white-space:normal;min-width:240px;max-width:380px;
   font-family:'DM Sans',sans-serif;}}
-@media(max-width:600px){{
-  table{{min-width:480px;}}
-  .ev-name{{max-width:130px;}}
-  tbody td{{font-size:0.875rem;padding:7px 8px;}}
-  thead th{{font-size:0.72rem;padding:7px 8px;}}
+@media(max-width:768px){{
+  /* Hapus overflow:hidden dari cal-wrap agar scroll horizontal tidak terpotong */
+  .cal-wrap{{overflow:visible !important;}}
+  /* Pastikan scroll-box punya overflow-x:auto yang bekerja */
+  .scroll-box{{
+    overflow-x:auto !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    max-height:400px !important;
+    width:100% !important;
+  }}
+  /* Kurangi min-width tabel agar lebih pas di mobile, tapi tetap bisa scroll horizontal */
+  table{{min-width:480px !important;}}
+  /* Header filter buttons: scroll horizontal agar tidak wrap terlalu banyak baris */
+  .hdr-right{{
+    overflow-x:auto;
+    flex-wrap:nowrap !important;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:2px;
+    gap:4px;
+  }}
+  .f-btn{{padding:3px 8px;font-size:0.72rem;white-space:nowrap;}}
+  .ev-name{{max-width:110px;}}
+  tbody td{{font-size:0.8rem;padding:6px 8px;}}
+  thead th{{font-size:0.72rem;padding:6px 8px;}}
 }}
 </style></head><body>
 <div class="cal-wrap">
@@ -9795,6 +11369,8 @@ TUGASMU — Analisa dampak event ini secara menyeluruh:
 
 Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gunakan Bahasa Indonesia. Tetap faktual, presisi, dan actionable — bukan generik."""
 
+            _ec_ai_resp = None
+            _ec_ai_model = "error"
             with st.spinner("⚡ SIGMA AI menganalisa dampak data ekonomi ke XAU, IDR, DXY, IHSG..."):
                 try:
                     _ec_ai_resp, _ec_ai_model = _call_groq_text([{"role":"user","content":_ec_prompt}])
@@ -9802,8 +11378,12 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     try:
                         _ec_ai_resp, _ec_ai_model = _call_gemini_text([{"role":"user","content":_ec_prompt}])
                     except Exception as _ec_e2:
-                        _ec_ai_resp = f"Gagal memanggil AI: {_ec_e2}"
+                        _ec_ai_resp = None
                         _ec_ai_model = "error"
+
+            if not _ec_ai_resp or _ec_ai_model == "error":
+                st.error("⚠️ Terjadi kesalahan: API Limit tercapai atau timeout. Silakan coba beberapa saat lagi.", icon="🚫")
+                st.stop()
 
             # ── Render hasil AI dalam card ──────────────────────
             _act_display = _use_actual if _use_actual not in ("—","") else "Belum rilis"
@@ -10655,11 +12235,36 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             ]:
                 with col:
                     st.markdown(f"""<div style='background:{c}11;border:1px solid {c}33;
-                        border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;'>
+                        border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;
+                        height:auto;overflow:visible;'>
                         <div style='font-size:0.8rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
                         <div style='font-size:1.6rem;font-weight:700;color:{text_main};'>{val}</div>
                         <div style='font-size:0.8rem;color:{text_sub};'>saham</div>
                     </div>""", unsafe_allow_html=True)
+            # MOBILE-ONLY: Pastikan kartu kategori tidak punya vertical scroll
+            components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-sector-card-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-sector-card-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      /* Hapus vertical scroll pada kartu fase sektor */
+      [data-testid="stMarkdownContainer"] > div[style*="border-radius:8px"][style*="text-align:center"] {
+        height: auto !important;
+        min-height: unset !important;
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
             # Mini RRG untuk sektor ini (plotly kecil, tampilkan saham-saham di dalamnya)
             fig_mini = go.Figure()
@@ -10750,13 +12355,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 rs_pct = max(0, min(100, (stk["rs"]-85) / 30 * 100))
                 _mc_disp = stk.get("mktcap","-")
                 tbl_rows += f"""<tr>
-                    <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;'>{stk["ticker"]}</td>
+                    <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;white-space:nowrap;'>{stk["ticker"]}</td>
                     <td style='font-size:13px;color:{text_sub};'>{stk["nama"]}</td>
                     <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
                         font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
-                        font-family:'DM Sans',sans-serif;'>{stk.get("fase","")}</span></td>
+                        font-family:'DM Sans',sans-serif;white-space:nowrap;display:inline-block;'>{stk.get("fase","")}</span></td>
                     <td style='font-size:13px;color:#8b5cf6;font-weight:600;'>{_mc_disp}</td>
-                    <td style='font-size:13px;'>
+                    <td style='font-size:13px;min-width:64px;'>
                         <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
                         <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
                             <div style='height:100%;width:{rs_pct:.0f}%;background:{fc2};border-radius:2px;'></div>
@@ -10765,18 +12370,77 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
                 </tr>"""
 
-            st.markdown(f"""<div style='overflow-y:auto;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
-            <table style='width:100%;border-collapse:collapse;font-family:'DM Sans',sans-serif;'>
-            <thead><tr style='background:{met_bg};position:sticky;top:0;'>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};'>TICKER</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>NAMA</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>FASE</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};'>MKT CAP</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>RS</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.1em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};'>MOM</th>
+            st.markdown(f"""<div class='sigma-stk-wrap' style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
+            <table class='sigma-stk-tbl' style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
+            <thead><tr style='background:{met_bg};position:sticky;top:0;z-index:2;'>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:80px;'>NAMA</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FASE</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>MKT CAP</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:64px;'>RS</th>
+                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:60px;'>MOM</th>
             </tr></thead>
             <tbody>{tbl_rows}</tbody>
             </table></div>""", unsafe_allow_html=True)
+
+            # ── MOBILE-ONLY CSS: inject ke parent document sekali via JS ──
+            components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-stk-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-stk-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      .sigma-stk-wrap {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+      table.sigma-stk-tbl {
+        table-layout: fixed !important;
+        width: 100% !important;
+        min-width: 380px !important;
+      }
+      table.sigma-stk-tbl thead th {
+        text-align: center !important;
+        padding: 6px 4px !important;
+        font-size: 10px !important;
+        letter-spacing: 0 !important;
+      }
+      table.sigma-stk-tbl tbody td {
+        padding: 5px 4px !important;
+        font-size: 12px !important;
+      }
+      table.sigma-stk-tbl th:nth-child(1),
+      table.sigma-stk-tbl td:nth-child(1) { width: 12% !important; }
+      table.sigma-stk-tbl th:nth-child(2),
+      table.sigma-stk-tbl td:nth-child(2) { width: 22% !important; }
+      table.sigma-stk-tbl th:nth-child(3),
+      table.sigma-stk-tbl td:nth-child(3) { width: 20% !important; }
+      table.sigma-stk-tbl th:nth-child(4),
+      table.sigma-stk-tbl td:nth-child(4) { width: 18% !important; }
+      table.sigma-stk-tbl th:nth-child(5),
+      table.sigma-stk-tbl td:nth-child(5) { width: 14% !important; }
+      table.sigma-stk-tbl th:nth-child(6),
+      table.sigma-stk-tbl td:nth-child(6) { width: 14% !important; }
+      table.sigma-stk-tbl tbody td:nth-child(3) span {
+        white-space: nowrap !important;
+        font-size: 10px !important;
+        padding: 2px 4px !important;
+        display: inline-block !important;
+      }
+      table.sigma-stk-tbl tbody td:nth-child(2) {
+        white-space: normal !important;
+        word-break: break-word !important;
+        font-size: 11px !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
             st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#8b5cf6;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
 
@@ -11031,7 +12695,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         df_conglo = pd.DataFrame(conglo_data)
         
         grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
-        selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list)
+        selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list, key="conglo_grup_sel")
         
         if selected_grup != "Semua Grup":
             df_display = df_conglo[df_conglo["Grup"] == selected_grup]
@@ -11821,10 +13485,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                 # Badge sumber data
                 src_color = "#089981" if "IDX" in data_source else ("#4285F4" if "KSEI" in data_source else ("#8b5cf6" if "SIGMA" in data_source else "#9b59b6"))
-                st.markdown(f"""<div style='display:inline-block;font-family:'DM Sans',sans-serif;font-size:0.8rem;
+                st.markdown(f"""<div style='display:block;font-family:DM Sans,sans-serif;font-size:0.8rem;
                     letter-spacing:0.1em;color:{src_color};border:1px solid {src_color}44;
-                    background:{src_color}11;padding:3px 10px;border-radius:4px;margin-bottom:8px;'>
-                    ● SUMBER: {data_source}</div>""", unsafe_allow_html=True)
+                    background:{src_color}11;padding:5px 12px;border-radius:4px;
+                    margin-top:10px;margin-bottom:16px;clear:both;line-height:1.6;'>
+                    &#9679; SUMBER: {data_source}</div>""", unsafe_allow_html=True)
 
                 # Warning jika data adalah estimasi
                 if is_estimated:
@@ -11902,13 +13567,40 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 ]:
                     with col:
                         st.markdown(f"""
-                        <div style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;'>
+                        <div class='sigma-metric-card' style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:14px 16px;height:auto;overflow:visible;'>
                             <div style='font-size:0.8rem;letter-spacing:0.12em;color:{text_sub};text-transform:uppercase;font-weight:600;margin-bottom:4px;'>{title}</div>
                             <div style='font-size:{"1.0" if title=="Sinyal" else "1.35"}rem;font-weight:700;color:{sinyal_color if title=="Sinyal" else text_main};'>{val}</div>
                             <div style='font-size:0.875rem;color:{sub_c};margin-top:3px;'>{sub}</div>
                         </div>""", unsafe_allow_html=True)
 
-                st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
+                # ── MOBILE-ONLY CSS: jarak antar kartu rangkuman ──
+                components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-metric-card-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-metric-card-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      /* Beri jarak bawah pada setiap kartu rangkuman agar tidak saling menempel */
+      .sigma-metric-card {
+        margin-bottom: 12px !important;
+        /* Hapus fixed height & overflow-y agar tidak muncul scroll vertikal di dalam kartu */
+        height: auto !important;
+        min-height: unset !important;
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
                 # ════════════════════════════════════════════════════════
                 # DUAL-AXIS CHART: Harga 1 Tahun (line daily) + Shareholders (bar monthly)
@@ -12023,12 +13715,31 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 )
 
                 st.markdown(f"""
-                <div style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
-                    <span style='color:{price_color};font-weight:600;'>━━ Harga {sh_ticker} (Rp) - Skala Kanan</span>
-                    <span style='color:#4285F4;font-weight:600;'>━━ Total Pemegang - Skala Kiri</span>
-                    <span style='color:{sh_up_color};'>█ Δ Naik</span>
-                    <span style='color:{sh_dn_color};'>█ Δ Turun</span>
+                <div class='sh-chart-legend-desktop' style='display:flex;gap:20px;font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:6px;flex-wrap:wrap;'>
+                    <span style='color:{price_color};font-weight:600;white-space:nowrap;'>━━ Harga {sh_ticker} (Rp) - Skala Kanan</span>
+                    <span style='color:#4285F4;font-weight:600;white-space:nowrap;'>━━ Total Pemegang - Skala Kiri</span>
+                    <span style='color:{sh_up_color};white-space:nowrap;'>█ Δ Naik</span>
+                    <span style='color:{sh_dn_color};white-space:nowrap;'>█ Δ Turun</span>
                 </div>""", unsafe_allow_html=True)
+                # MOBILE-ONLY: sembunyikan legend horizontal di atas chart (dobel dengan legend bawaan chart)
+                components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-chart-legend-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-chart-legend-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      .sh-chart-legend-desktop {
+        display: none !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
 
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
@@ -12360,16 +14071,31 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
 .lbl{{font-size:0.875rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
 .wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
-/* === SCROLL CONTAINER: vertikal + horizontal === */
+/* Mobile: hapus overflow:hidden agar border bawah membungkus konten dengan pas */
+@media(max-width:768px){{
+  .wrap{{overflow:visible !important;border-radius:10px !important;}}
+}}
+/* === SCROLL CONTAINER: horizontal saja, vertikal auto === */
 .scroll-box{{
   width:100%;
-  max-height:660px;          /* ≈15 baris × 44px = 660px */
+  max-height:660px;          /* ≈15 baris × 44px = 660px - hanya berlaku di desktop */
   overflow-x:auto !important;
-  overflow-y:auto !important;
+  overflow-y:visible !important;
   -webkit-overflow-scrolling:touch !important;
   cursor:grab;
   scrollbar-width:thin;
   scrollbar-color:{_tbl_border} transparent;
+}}
+@media(max-width:768px){{
+  .scroll-box{{
+    max-height:none !important;
+    height:auto !important;
+    overflow-y:visible !important;
+    overflow-x:auto !important;
+  }}
+  .wrap{{
+    overflow:visible !important;
+  }}
 }}
 .scroll-box:active{{cursor:grabbing;}}
 .scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
@@ -12487,6 +14213,14 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
     el.scrollLeft=sL-(e.pageX-el.offsetLeft-sX);
   }});
   render();
+  // Auto-resize iframe ke tinggi konten aktual (penting di mobile karena overflow:visible)
+  function _sendH() {{
+    var h = document.documentElement.scrollHeight || document.body.scrollHeight;
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 8}}, '*');
+  }}
+  _sendH();
+  setTimeout(_sendH, 150);
+  setTimeout(_sendH, 400);
 }})();
 </script></body></html>"""
 
@@ -12498,7 +14232,41 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
-        st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;'></div>", unsafe_allow_html=True)
+        # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
+        components.html("""
+<script>
+(function() {
+  var pd = window.parent.document;
+  if (pd.getElementById('sigma-sh-gap-mobile-css')) return;
+  var s = pd.createElement('style');
+  s.id = 'sigma-sh-gap-mobile-css';
+  s.textContent = `
+    @media (max-width: 768px) {
+      /* Hilangkan margin-bottom pada wrapper tabel sh2 */
+      .sh2-scroll-outer {
+        margin-bottom: 0px !important;
+        padding-bottom: 0px !important;
+      }
+      /* Hilangkan gap default Streamlit di antara iframe/block wrapper */
+      [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+      [data-testid="stVerticalBlock"] > div > [data-testid="stIFrame"] {
+        margin-bottom: 0px !important;
+        padding-bottom: 0px !important;
+      }
+      /* Khusus iframe komponen HTML Streamlit: kurangi margin antar iframe */
+      iframe[title="sigma_sh_screen_naik"],
+      iframe[title="sigma_sh_screen_turun"] {
+        display: block !important;
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
+      }
+    }
+  `;
+  pd.head.appendChild(s);
+})();
+</script>
+""", height=0)
+        st.markdown("<div style='margin-top:0px;margin-bottom:0px;line-height:0;font-size:0;height:0;'></div>", unsafe_allow_html=True)
         _render_sh_table_v2(_turun_rows, is_naik=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -12509,7 +14277,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         _alpha_unlocked = True
         st.session_state["alpha_screener_unlocked"] = True
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER - ALPHA STOCK INSIGHT &amp; REKOMENDASI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
         alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_trackrecord = st.tabs([
@@ -12523,17 +14291,156 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         ])
 
 
+
         with alpha_tab_insight:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SIGMA AI &mdash; AUTO TECHNICAL &amp; FUNDAMENTAL INSIGHT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+            # ── IDX GLOBE VISUALIZATION ─────────────────────────────────────
+            _globe_html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:transparent;font-family:ui-sans-serif,system-ui,sans-serif;}
+#cw{position:relative;width:100%;display:flex;flex-direction:column;align-items:center;}
+canvas{display:block;cursor:grab;}canvas:active{cursor:grabbing;}
+#tip{position:absolute;pointer-events:none;background:rgba(10,10,30,0.92);border:1px solid rgba(139,92,246,0.5);border-radius:10px;padding:7px 12px;font-size:12px;color:#e8e0ff;white-space:nowrap;display:none;z-index:10;}
+#tip .tn{font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:2px;}
+#tip .tv{color:#a5b4fc;}
+#sub{text-align:center;font-size:10px;color:rgba(150,140,200,0.65);padding:4px 0 2px;letter-spacing:0.07em;}
+#leg{display:flex;flex-wrap:wrap;gap:4px 12px;padding:4px 16px 8px;justify-content:center;}
+.li{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(180,170,220,0.8);}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+</style></head><body>
+<div id="cw">
+  <canvas id="g" width="520" height="520"></canvas>
+  <div id="tip"><div class="tn" id="ttn"></div><div class="tv" id="ttv"></div></div>
+  <div id="sub">IDX &middot; 900+ STOCKS &middot; SIZE = MARKET CAP &middot; DRAG TO ROTATE</div>
+  <div id="leg"></div>
+</div>
+<script>
+const SEC=[
+  {n:'Banking',c:'#7c3aed',s:['BBCA','BBRI','BMRI','BBNI','BNGA','BJTM','BDMN','NISP','MEGA','PNBN','BTPS','ARTO','BBYB','BACA','AGRS']},
+  {n:'Consumer',c:'#0ea5e9',s:['ICBP','INDF','UNVR','MYOR','GOOD','CLEO','DLTA','MLBI','ULTJ','CAMP','SKBM','HOKI','DMRT','AISA','ALTO']},
+  {n:'Energy',c:'#f59e0b',s:['ADRO','PTBA','ITMG','BUMI','INCO','ANTM','TINS','MDKA','HRUM','BOSS','GEMS','ESSA','MBAP','SMMT','AADI']},
+  {n:'Telco & Tech',c:'#10b981',s:['TLKM','EXCL','ISAT','FREN','GOTO','BUKA','EMTK','MTEL','TOWR','TBIG','EDGE','DCII','WIFI','SUPR','LAND']},
+  {n:'Property',c:'#ec4899',s:['BSDE','SMRA','PWON','CTRA','ASRI','LPKR','JRPT','BEST','DMAS','MDLN','PLIN','GPRA','KIJA','MKPI','NIRO']},
+  {n:'Healthcare',c:'#06b6d4',s:['KLBF','SIDO','KAEF','MIKA','HEAL','PRDA','PYFA','TSPC','DVLA','MERK','INAF','SOHO','ALDO','PEHA','BMHS']},
+  {n:'Infra & Const',c:'#f97316',s:['WIKA','PTPP','WSKT','ADHI','JSMR','GIAA','SMGR','INTP','WTON','SMBR','NRCA','ACST','TOTL','CMNP','META']},
+  {n:'Finance',c:'#a78bfa',s:['BBLD','ADMF','BFIN','WOM','MFIN','PANS','TRIM','PEGE','SMMA','MAYA','BPFI','TIFA','HDFA','CFIN','VRNA']},
+  {n:'Mining & Basic',c:'#34d399',s:['VALE','TPIA','BRPT','AKRA','PGAS','MEDC','ENRG','BIPI','RUIS','SRTG','DEWA','ELSA','ARTI','WIIM','MBSS']},
+  {n:'Diversified',c:'#f472b6',s:['ASII','AALI','LSIP','UNTR','HMSP','GGRM','MAPI','ERAA','ACES','ROTI','MIDI','DOID','BATA','JPFA','BMTR']},
+];
+const BIG={'BBCA':17,'BBRI':16,'BMRI':15,'TLKM':14,'ASII':13,'BBNI':12,'ICBP':11,'INDF':11,'ADRO':10,'UNVR':10,'GOTO':9,'KLBF':9,'PTBA':9,'VALE':8,'HMSP':8,'GGRM':8};
+const W=520,H=520,CX=260,CY=260,R=200;
+const cv=document.getElementById('g'),ctx=cv.getContext('2d');
+const tip=document.getElementById('tip');
+const nodes=[];
+let total=0;
+SEC.forEach((sec,si)=>{
+  sec.s.forEach(tk=>{
+    const i=total++;
+    const phi=Math.PI*(3-Math.sqrt(5));
+    const y=1-(i/899)*2,r=Math.sqrt(1-y*y),t=phi*i;
+    nodes.push({tk,si,x:Math.cos(t)*r,y,z:Math.sin(t)*r,sz:BIG[tk]||(2+Math.random()*3),c:sec.c,n:sec.n});
+  });
+});
+for(let i=nodes.length;i<920;i++){
+  const phi=Math.PI*(3-Math.sqrt(5));
+  const y=1-(i/919)*2,r=Math.sqrt(1-y*y),t=phi*i,si=i%SEC.length;
+  nodes.push({tk:'',si,x:Math.cos(t)*r,y,z:Math.sin(t)*r,sz:1+Math.random()*2,c:SEC[si].c,n:SEC[si].n});
+}
+let rX=0.3,rY=0,drag=false,lx=0,ly=0,vX=0,vY=0.004,mx=-999,my=-999;
+function proj(x,y,z){
+  const cY=Math.cos(rY),sY=Math.sin(rY);
+  let x1=x*cY+z*sY,z1=-x*sY+z*cY;
+  const cX=Math.cos(rX),sX=Math.sin(rX);
+  let y1=y*cX-z1*sX,z2=y*sX+z1*cX;
+  const f=2.8,sc=R*(f/(f+z2+1));
+  return{sx:CX+x1*sc,sy:CY-y1*sc,z:z2,v:z2>-0.3};
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<10;i++){
+    const lat=(i/10)*Math.PI*2;
+    ctx.beginPath();let first=true;
+    for(let j=0;j<=72;j++){
+      const lon=(j/72)*Math.PI*2;
+      const p=proj(Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon));
+      if(!p.v){first=true;continue;}
+      first?ctx.moveTo(p.sx,p.sy):ctx.lineTo(p.sx,p.sy);first=false;
+    }
+    ctx.strokeStyle='rgba(139,92,246,0.07)';ctx.lineWidth=0.5;ctx.stroke();
+  }
+  for(let i=0;i<7;i++){
+    const lon=(i/7)*Math.PI*2;
+    ctx.beginPath();let first=true;
+    for(let j=0;j<=50;j++){
+      const lat=(j/50)*Math.PI-Math.PI/2;
+      const p=proj(Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon));
+      if(!p.v){first=true;continue;}
+      first?ctx.moveTo(p.sx,p.sy):ctx.lineTo(p.sx,p.sy);first=false;
+    }
+    ctx.strokeStyle='rgba(139,92,246,0.05)';ctx.lineWidth=0.5;ctx.stroke();
+  }
+  const gr=ctx.createRadialGradient(CX,CY,R*0.88,CX,CY,R*1.1);
+  gr.addColorStop(0,'rgba(139,92,246,0)');gr.addColorStop(1,'rgba(139,92,246,0.15)');
+  ctx.beginPath();ctx.arc(CX,CY,R*1.1,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+  let hov=null;
+  const proj2=nodes.map(n=>{const p=proj(n.x,n.y,n.z);return{...n,...p};}).sort((a,b)=>a.z-b.z);
+  proj2.forEach(n=>{
+    if(!n.v)return;
+    const d=(n.z+1)/2,sz=n.sz*(0.55+0.45*d),al=0.3+0.7*d;
+    const dx=n.sx-mx,dy=n.sy-my;
+    if(dx*dx+dy*dy<(sz+5)*(sz+5)&&n.tk)hov=n;
+    ctx.beginPath();ctx.arc(n.sx,n.sy,sz,0,Math.PI*2);
+    const hx=Math.round(al*255).toString(16).padStart(2,'0');
+    ctx.fillStyle=n.c+hx;ctx.fill();
+    if(sz>5){ctx.strokeStyle=n.c+'66';ctx.lineWidth=0.7;ctx.stroke();}
+    if(sz>9&&n.tk&&d>0.55){
+      ctx.fillStyle='rgba(255,255,255,'+(0.75*d)+')';
+      ctx.font='bold '+(Math.round(sz*0.75+2))+'px ui-sans-serif,sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(n.tk,n.sx,n.sy);
+    }
+  });
+  if(hov){
+    document.getElementById('ttn').textContent=hov.tk;
+    document.getElementById('ttv').textContent=hov.n;
+    tip.style.display='block';
+    let tx=hov.sx+14,ty=hov.sy-30;
+    if(tx>400)tx=hov.sx-tip.offsetWidth-10;
+    tip.style.left=tx+'px';tip.style.top=ty+'px';
+  }else tip.style.display='none';
+}
+function loop(){
+  if(!drag){rY+=vY;rX+=vX;vX*=0.97;vY=vY*0.985+0.004*(1-Math.abs(vY/0.008));rX=Math.max(-0.55,Math.min(0.55,rX));}
+  draw();requestAnimationFrame(loop);
+}
+cv.addEventListener('mousedown',e=>{drag=true;lx=e.offsetX;ly=e.offsetY;vX=0;vY=0;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(drag){rY+=e.movementX*0.008;rX+=e.movementY*0.008;rX=Math.max(-0.55,Math.min(0.55,rX));vY=e.movementX*0.006;vX=e.movementY*0.004;}
+  const rc=cv.getBoundingClientRect();mx=e.clientX-rc.left;my=e.clientY-rc.top;
+});
+cv.addEventListener('mouseleave',()=>{mx=-999;my=-999;});
+cv.addEventListener('touchstart',e=>{e.preventDefault();drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;vX=0;vY=0;},{passive:false});
+cv.addEventListener('touchend',()=>drag=false);
+cv.addEventListener('touchmove',e=>{
+  e.preventDefault();const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;
+  rY+=dx*0.008;rX+=dy*0.008;rX=Math.max(-0.55,Math.min(0.55,rX));vY=dx*0.006;vX=dy*0.004;
+  lx=e.touches[0].clientX;ly=e.touches[0].clientY;
+},{passive:false});
+const ld=document.getElementById('leg');
+SEC.forEach(s=>{const el=document.createElement('div');el.className='li';el.innerHTML='<div class="ld" style="background:'+s.c+'"></div>'+s.n;ld.appendChild(el);});
+loop();
+</script></body></html>"""
+            components.html(_globe_html, height=640, scrolling=False)
+
+            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin:12px 0 20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
             col_input, col_btn = st.columns([3, 1])
             with col_input:
-                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA").upper()
+                ticker_input = st.text_input("KODE SAHAM / TICKER IDX:", "BBCA", key="alpha_ticker_input").upper()
             with col_btn:
                 st.markdown("<br>", unsafe_allow_html=True)
-                run_analysis = st.button("▶ ANALYZE", use_container_width=True)
+                run_analysis = st.button("▶ ANALYZE", use_container_width=True, key="alpha_run_btn")
         
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
@@ -12562,6 +14469,25 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                 _insight_cache_key  = None
                 _use_cached_insight = False
                 _ai_cache_hit       = False
+
+                # ── PERBAIKAN: Restore ai_data dari cache TANPA harus klik Analyze ──
+                # Ini memastikan TP/SL box di bawah chart tetap tampil setelah analisa sebelumnya
+                if not df_chart.empty:
+                    try:
+                        _last_close = float(df_chart['Close'].iloc[-1])
+                        _last_date  = df_chart.index[-1].strftime('%Y%m%d')
+                        _insight_cache_key = f"sigma_insight_{ticker_input}_{_last_date}_{int(_last_close)}"
+                        _cached_prev = st.session_state.get(_insight_cache_key)
+                        if _cached_prev and not run_analysis:
+                            # Tanpa klik Analyze → restore ai_data dari cache agar TP/SL tetap tampil
+                            _prev_price    = _cached_prev.get('price', 0)
+                            _prev_diff_pct = abs(_last_close - _prev_price) / _prev_price if _prev_price > 0 else 1
+                            if _prev_diff_pct < 0.02:   # dalam 2% → masih relevan
+                                ai_data         = _cached_prev.get('ai_data')
+                                ai_text_verdict = _cached_prev.get('ai_text_verdict', '')
+                    except Exception:
+                        pass
+
                 if not df_chart.empty:
                     try:
                         _last_close = float(df_chart['Close'].iloc[-1])
@@ -13323,6 +15249,63 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
                         st.plotly_chart(fig, use_container_width=True)
 
+                        # ── Trade Plan Info Box (Buy Area / Target / TP / SL) ─
+                        if ai_data:
+                            _ib_el  = ai_data.get('entry_low')
+                            _ib_eh  = ai_data.get('entry_high')
+                            _ib_sl  = ai_data.get('stop_loss')
+                            _ib_tp1 = ai_data.get('tp1')
+                            _ib_tp2 = ai_data.get('tp2')
+                            _ib_tp3 = ai_data.get('tp3')
+                            _plan_boxes = ""
+                            if _ib_el and _ib_eh:
+                                try:
+                                    _plan_boxes += (
+                                        f"<div style='background:rgba(8,153,129,0.13);border:1px solid #089981;"
+                                        f"border-radius:8px;padding:10px 14px;min-width:160px;'>"
+                                        f"<div style='font-size:0.72rem;color:#089981;letter-spacing:0.1em;"
+                                        f"font-weight:700;margin-bottom:4px;'>🟩 BUY AREA</div>"
+                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
+                                        f"color:#e8eaf0;'>Rp{float(_ib_el):,.0f} &ndash; Rp{float(_ib_eh):,.0f}</div>"
+                                        f"</div>"
+                                    )
+                                except: pass
+                            if _ib_tp1:
+                                try:
+                                    _tp_str = f"TP1: Rp{float(_ib_tp1):,.0f}"
+                                    if _ib_tp2:
+                                        _tp_str += f"&nbsp;&nbsp;|&nbsp;&nbsp;TP2: Rp{float(_ib_tp2):,.0f}"
+                                    if _ib_tp3:
+                                        _tp_str += f"&nbsp;&nbsp;|&nbsp;&nbsp;TP3: Rp{float(_ib_tp3):,.0f}"
+                                    _plan_boxes += (
+                                        f"<div style='background:rgba(139,92,246,0.13);border:1px solid #8b5cf6;"
+                                        f"border-radius:8px;padding:10px 14px;min-width:160px;'>"
+                                        f"<div style='font-size:0.72rem;color:#8b5cf6;letter-spacing:0.1em;"
+                                        f"font-weight:700;margin-bottom:4px;'>🎯 TARGET &amp; TAKE PROFIT</div>"
+                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
+                                        f"color:#e8eaf0;'>{_tp_str}</div>"
+                                        f"</div>"
+                                    )
+                                except: pass
+                            if _ib_sl:
+                                try:
+                                    _plan_boxes += (
+                                        f"<div style='background:rgba(242,54,69,0.10);border:1px solid #f23645;"
+                                        f"border-radius:8px;padding:10px 14px;min-width:120px;'>"
+                                        f"<div style='font-size:0.72rem;color:#f23645;letter-spacing:0.1em;"
+                                        f"font-weight:700;margin-bottom:4px;'>🛑 STOP LOSS</div>"
+                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
+                                        f"color:#e8eaf0;'>Rp{float(_ib_sl):,.0f}</div>"
+                                        f"</div>"
+                                    )
+                                except: pass
+                            if _plan_boxes:
+                                st.markdown(
+                                    f"<div style='display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;"
+                                    f"margin-bottom:6px;'>{_plan_boxes}</div>",
+                                    unsafe_allow_html=True
+                                )
+
                         # ── EMA Legend ────────────────────────────────────────
                         ema_items = [
                             ('#0ea5e9','EMA 13 - Fast (Momentum)'),
@@ -13331,7 +15314,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                             ('#8b5cf6','EMA 200 - Major Trend'),
                             ('#f5a623','Vol MA20 - Avg Volume'),
                         ]
-                        leg = "<div style='display:flex;flex-wrap:wrap;gap:18px;padding:6px 4px;margin-top:-6px;'>"
+                        leg = "<div style='display:flex;flex-direction:column;gap:8px;padding:6px 4px;margin-top:-6px;'>"
                         for clr, lbl in ema_items:
                             leg += (f"<span style='display:flex;align-items:center;gap:6px;'>"
                                     f"<span style='display:inline-block;width:28px;height:3px;"
@@ -13751,16 +15734,22 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
             import threading
             from datetime import date as _d, timedelta
 
-            # Cari T-1 bursa (skip weekend)
-            today = _d.today()
-            # Cari hari terakhir bursa (skip Sabtu=5, Minggu=6)
-            delta = 1
-            while True:
-                candidate = today - timedelta(days=delta)
-                if candidate.weekday() < 5:  # Senin-Jumat
-                    break
-                delta += 1
-            date_str = str(candidate)
+            # Cari T-1 bursa menggunakan helper yang sudah benar
+            # (tidak pakai today() — GoAPI belum publish data hari ini)
+            date_str = _last_trading_date()
+
+            # Siapkan juga T-2 sebagai fallback jika T-1 semua kosong
+            _t2 = None
+            try:
+                from datetime import date as _dd2, timedelta as _td2
+                _t1_obj = _dd2.fromisoformat(date_str)
+                for _fb_delta in range(1, 6):
+                    _fb_cand = _t1_obj - _td2(days=_fb_delta)
+                    if _fb_cand.weekday() < 5:
+                        _t2 = str(_fb_cand)
+                        break
+            except Exception:
+                pass
 
             scored = []
             calls_used = [0]
@@ -13798,6 +15787,11 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
                     rows = goapi_get_broker_summary(tk, date_str)
                     with lock:
                         calls_used[0] += 1
+                    # Fallback ke T-2 jika T-1 kosong (data belum publish)
+                    if not rows and _t2:
+                        rows = goapi_get_broker_summary(tk, _t2)
+                        with lock:
+                            calls_used[0] += 1
                     if not rows:
                         return
 
@@ -14911,10 +16905,42 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
         def _rule_based_plan_v2(price_data_map, bs30_cache, plan_type="daily"):
             """
-            Extended version of _rule_based_plan:
-            - Enriches each row with accum_days, accum_streak, top_accum/top_dist brokers
-            - Weekly mode: boosts score for multi-day accumulation + belum naik banyak
-            - Includes fundamental bonus from fa_score proxy
+            ═══════════════════════════════════════════════════════════════════
+            SIGMA MULTI-SCREENER ENGINE v3 — by MnM Strategy+ / KIPM-UP
+            ═══════════════════════════════════════════════════════════════════
+
+            Mengintegrasikan 4 SCREENER LOGIKA sekaligus dalam satu scoring:
+
+            [1] BIG ACCUMULATION
+                → Bandar Accum/Dist score > 20
+                → Value transaksi > 3 Miliar/hari (likuiditas cukup)
+                → Top 3 broker pembeli mendominasi > 20% total pembelian
+                Signal: block trade, smart money masuk diam-diam
+
+            [2] BANDAR ACCUMULATION UPTREND
+                → Bandar Value (net buy value broker) > rata-rata kemarin
+                → Value MA20 > 1 Miliar (saham likuid)
+                → Previous bandar value ≤ hari ini (tren akumulasi naik)
+                → Bandar value hari ini > kemarin (konfirmasi naik)
+                Signal: bandar sedang dalam proses akumulasi bertahap
+
+            [3] FOREIGN FLOW UPTREND
+                → Net Foreign Buy/Sell > 1 Miliar hari ini
+                → Net Foreign Buy MA20 > 1 Miliar (konsisten masuk)
+                → Net Foreign Buy Streak ≥ 2 hari berturut
+                → Foreign Flow hari ini > MA Foreign Flow (tren naik)
+                Signal: hot money asing masuk, biasanya pre-breakout besar
+
+            [4] 1 MONTH NET FOREIGN FLOW
+                → Kumulatif net foreign flow 1 bulan > 10 Miliar
+                → Value MA20 > 1 Miliar (saham likuid)
+                Signal: akumulasi sistematis jangka menengah oleh asing
+
+            SCORING:
+            - Setiap screener memberi poin tambahan (0–35 poin per screener)
+            - Skor total dipakai untuk ranking final top_n kandidat
+            - GoAPI (30 req/day) dipakai untuk konfirmasi broker di top 30
+            ═══════════════════════════════════════════════════════════════════
             """
             import math
 
@@ -14929,59 +16955,163 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 t = _tick(p)
                 return int(round(p / t) * t)
 
-            # Build bs30 lookup
+            # ── Build bs30 lookup (GoAPI broker data yang sudah terkonfirmasi) ──
             _bs_map = {s.get("ticker",""): s for s in (bs30_cache or [])}
 
             candidates = []
             for tk, d in price_data_map.items():
                 bs_data  = _bs_map.get(tk, {})
-                bsr_bs   = d.get("bullish_score", 0)
-                spike    = d.get("spike", 1)
                 price    = d.get("price", 0)
+                if price <= 50: continue  # buang saham penny/suspend
+
+                bsr_bs   = d.get("bullish_score", 0)
+                spike    = d.get("spike", 1.0)
+                spike_p  = d.get("spike_prev", 1.0)   # spike hari kemarin
                 chg      = d.get("chg", 0)
                 chg5     = d.get("chg5d", 0)
+                vol      = d.get("vol", 0)
+                vol5     = d.get("vol5", 1)
+                val_est  = price * vol                 # estimasi nilai transaksi (Rp)
+                val5_est = price * vol5                # estimasi nilai MA5
+
+                # Data GoAPI dari bs30_cache
                 accum_d  = bs_data.get("accum_days", 0)
                 accum_s  = bs_data.get("accum_streak", 0)
                 verdict  = bs_data.get("verdict", "")
                 goapi_ok = bs_data.get("goapi_confirmed", False)
+                top_accum= bs_data.get("top_accum", [])   # daftar broker akumulasi
+                top_dist = bs_data.get("top_dist", [])
+                bpr      = bs_data.get("bpr", 0)           # broker pressure ratio
 
-                if bsr_bs < 2 or price <= 50 or spike < 1.2:
-                    continue
+                # ── Filter minimum dasar ──
+                if bsr_bs < 1 and spike < 1.2:
+                    continue  # saham sama sekali tidak ada signal
 
-                # Base composite score
-                composite = bsr_bs * 20 + min(spike * 5, 30) + (10 if chg > 0 else 0)
+                # ══════════════════════════════════════════════════════════
+                # BASE SCORE dari teknikal dasar
+                # ══════════════════════════════════════════════════════════
+                composite = 0
+                composite += bsr_bs * 15          # max 60 (bullish score 0-4)
+                composite += min(spike * 4, 25)   # max 25 (volume spike bonus)
+                composite += 5 if chg > 0 else 0  # momentum positif hari ini
 
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 1 — BIG ACCUMULATION
+                # Bandar Accum score + nilai transaksi besar + broker dominasi
+                # ══════════════════════════════════════════════════════════
+                sc1_score = 0
+                if goapi_ok and "AKUMULASI" in verdict:
+                    sc1_score += 20   # GoAPI konfirmasi akumulasi
+                    if bpr > 20:
+                        sc1_score += 10  # Bandar Accum/Dist > 20 (dominasi broker beli)
+                    if len(top_accum) <= 3 and len(top_accum) > 0:
+                        sc1_score += 5   # ≤3 broker akumulasi = block trade / smart money
+                if val_est > 3_000_000_000:
+                    sc1_score += 8    # Value > 3 Miliar/hari
+                elif val_est > 1_000_000_000:
+                    sc1_score += 4    # Value > 1 Miliar/hari (partial)
+
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 2 — BANDAR ACCUMULATION UPTREND
+                # Volume/value bandar tren naik (spike hari ini > kemarin)
+                # + likuiditas cukup (Value MA20 > 1M)
+                # ══════════════════════════════════════════════════════════
+                sc2_score = 0
+                if val5_est > 1_000_000_000:       # Value MA5 proxy > 1 Miliar
+                    sc2_score += 8
+                if spike > spike_p and spike > 1.2:
+                    sc2_score += 12  # Volume spike hari ini > kemarin = tren akumulasi naik
+                if accum_s >= 2:
+                    sc2_score += 10  # Akumulasi ≥2 hari berturut = konsisten
+                elif accum_s >= 1:
+                    sc2_score += 5
+                if accum_d >= 2:
+                    sc2_score += 8   # Minimal 2 hari akumulasi dalam 3 hari terakhir
+
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 3 — FOREIGN FLOW UPTREND
+                # Net foreign buy > MA + streak ≥2 hari
+                # (diperkirakan dari arah broker asing di GoAPI)
+                # ══════════════════════════════════════════════════════════
+                sc3_score = 0
+                if goapi_ok:
+                    # Identifikasi broker asing dari top_accum
+                    _ALL_BROKER_CODES = _bs_map.get("__broker_codes__", {})
+                    foreign_accum = [b for b in top_accum if
+                                     _ALL_BROKERS.get(b, ("",""))[1] == "FOREIGN"]
+                    if len(foreign_accum) >= 2:
+                        sc3_score += 20  # ≥2 broker asing akumulasi = Foreign Flow Uptrend
+                    elif len(foreign_accum) == 1:
+                        sc3_score += 10  # 1 broker asing akumulasi
+                    # Streak sinyal: jika spike hari ini & kemarin keduanya tinggi
+                    # dan harga naik = surrogate untuk Foreign Buy Streak ≥2
+                    if spike > 1.5 and spike_p > 1.2 and chg > 0:
+                        sc3_score += 10  # proxy foreign buy streak ≥2
+                    if sc3_score > 0 and val5_est > 1_000_000_000:
+                        sc3_score += 5   # MA value cukup besar = konfirmasi
+
+                # ══════════════════════════════════════════════════════════
+                # SCREENER 4 — 1 MONTH NET FOREIGN FLOW
+                # Akumulasi asing jangka menengah (chg5d proxy)
+                # Saham yang sudah diakumulasi asing 1 bulan = zona tunggu breakout
+                # ══════════════════════════════════════════════════════════
+                sc4_score = 0
+                # chg5d sebagai proxy tren 1 minggu (surrogate untuk 1-month net foreign)
+                # Kombinasi: harga masih sideways/belum breakout + volume konsisten
+                if chg5 > 0 and chg5 < 8 and spike >= 1.3:
+                    # Naik moderat (<8%) + volume masih aktif = masih dalam fase akumulasi
+                    sc4_score += 15
+                elif chg5 > 8:
+                    # Sudah breakout → mungkin sudah terlambat untuk foreign flow entry
+                    sc4_score -= 5
+                if val5_est > 1_000_000_000 and chg5 > 0:
+                    sc4_score += 8   # Value MA > 1M + tren positif 5 hari = konsisten
+
+                # ── Tandai screener mana yang dipenuhi ──
+                screeners_hit = []
+                if sc1_score >= 20:  screeners_hit.append("BigAccum")
+                if sc2_score >= 15:  screeners_hit.append("BandarUptrend")
+                if sc3_score >= 15:  screeners_hit.append("ForeignFlow")
+                if sc4_score >= 15:  screeners_hit.append("1M-Foreign")
+
+                # ── BONUS CONFLUENCE: semakin banyak screener = semakin kuat ──
+                n_screeners = len(screeners_hit)
+                if n_screeners >= 3:
+                    composite += 30  # Triple confluence = SANGAT KUAT
+                elif n_screeners == 2:
+                    composite += 18  # Double confluence = KUAT
+                elif n_screeners == 1:
+                    composite += 8   # Single screener = VALID
+
+                composite += sc1_score + sc2_score + sc3_score + sc4_score
+
+                # ── Plan type modifier ──
                 if plan_type == "weekly":
-                    # Weekly scoring: reward multi-day accum, penalize saham sudah naik banyak
                     composite += accum_d * 12 + accum_s * 8
-                    if "AKUMULASI" in verdict:
-                        composite += 25 if goapi_ok else 15
-                    # Bonus: belum naik banyak (masih di zona akumulasi)
                     if chg5 < 3:
                         composite += 15   # belum breakout = potensi masih besar
                     elif chg5 > 10:
                         composite -= 20   # sudah naik banyak = risiko distribusi
-                    # Fundamental proxy bonus
                     composite += min(bs_data.get("fa_score", 0) or 0, 10)
                 else:
-                    # Daily: reward momentum hari ini
-                    if chg > 2: composite += 15
-                    if "AKUMULASI" in verdict and goapi_ok: composite += 20
+                    if chg > 2: composite += 15  # momentum hari ini untuk daily
 
-                candidates.append((tk, d, bs_data, composite))
+                candidates.append((tk, d, bs_data, composite, screeners_hit, sc1_score, sc2_score, sc3_score, sc4_score))
 
             candidates.sort(key=lambda x: x[3], reverse=True)
             top_n = 7 if plan_type == "weekly" else 5
             top_candidates = candidates[:top_n]
 
+            # ── Avoid candidates ──
             avoid_cands = []
             for tk, d in price_data_map.items():
                 if d.get("bearish_score", 0) >= 3 and d.get("spike", 1) >= 1.5:
                     avoid_cands.append((tk, d))
             avoid_cands.sort(key=lambda x: x[1].get("bearish_score",0), reverse=True)
 
+            # ── Build result rows ──
             result_rows = []
-            for tk, d, bs_data, sc in top_candidates:
+            for tk, d, bs_data, sc, screeners_hit, sc1, sc2, sc3, sc4 in top_candidates:
                 price  = d.get("price", 100)
                 low    = d.get("low",   price * 0.97)
                 high   = d.get("high",  price * 1.03)
@@ -14992,6 +17122,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 bsr_bs = d.get("bullish_score", 0)
                 accum_d= bs_data.get("accum_days", 0)
                 accum_s= bs_data.get("accum_streak", 0)
+                verdict= bs_data.get("verdict", "")
+                bpr    = bs_data.get("bpr", 0)
 
                 entry_low  = _r(min(ema5, low) * 0.995)
                 entry_high = _r(max(ema5, price) * 1.002)
@@ -14999,17 +17131,17 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 sl         = _r(entry_low - max(atr_proxy, price * 0.025))
 
                 if plan_type == "weekly":
-                    tp_mult = 1.08 if bsr_bs >= 3 else 1.06
-                    horizon = "2-4 minggu" if accum_d >= 2 else "1-2 minggu"
+                    tp_mult = 1.10 if "BigAccum" in screeners_hit else (1.08 if bsr_bs >= 3 else 1.06)
+                    horizon = "3-5 minggu" if "ForeignFlow" in screeners_hit else ("2-4 minggu" if accum_d >= 2 else "1-2 minggu")
                 elif plan_type == "daily":
-                    tp_mult = 1.04
+                    tp_mult = 1.045 if sc1 >= 20 else 1.04
                     horizon = "Intraday" if spike >= 3 else "1-3 hari"
                 else:
                     tp_mult = 1.03
                     horizon = "Overnight / next open"
 
                 tp1 = _r(entry_high * tp_mult)
-                tp2 = _r(entry_high * (tp_mult + 0.03)) if bsr_bs >= 3 else None
+                tp2 = _r(entry_high * (tp_mult + 0.03)) if bsr_bs >= 3 or sc1 >= 20 else None
                 risk   = entry_high - sl
                 reward = tp1 - entry_high
                 rr     = round(reward / risk, 1) if risk > 0 else 0
@@ -15027,39 +17159,54 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 else:
                     wyckoff, wyckoff_pct = "Ranging", 50
 
+                # ── Reasons: gabungkan sinyal dari semua screener ──
                 reasons = []
-                if spike >= 3:    reasons.append(f"Vol spike {spike:.1f}x")
-                if bsr_bs >= 3:   reasons.append("BullScore tinggi")
-                if accum_d >= 2:  reasons.append(f"Akum {accum_d} hari")
-                if chg > 1:       reasons.append(f"+{chg:.1f}% hari ini")
-                verdict = bs_data.get("verdict","")
-                if "AKUMULASI" in verdict: reasons.append(verdict)
+                if spike >= 3:                   reasons.append(f"Vol spike {spike:.1f}x")
+                if bsr_bs >= 3:                  reasons.append("BullScore tinggi")
+                if accum_d >= 2:                 reasons.append(f"Akum {accum_d} hari berturut")
+                if chg > 1:                      reasons.append(f"+{chg:.1f}% hari ini")
+                if "AKUMULASI" in verdict:        reasons.append("GoAPI: Akumulasi ✅")
+                if "BigAccum" in screeners_hit:   reasons.append(f"BigAccum (BPR {bpr:.0f}%)")
+                if "BandarUptrend" in screeners_hit: reasons.append("Bandar Uptrend ↗")
+                if "ForeignFlow" in screeners_hit:  reasons.append("Foreign Flow ↑")
+                if "1M-Foreign" in screeners_hit:   reasons.append("1M Foreign Accum")
                 why = " · ".join(reasons) if reasons else "Setup teknikal valid"
 
+                # ── Screener label untuk tampilan ──
+                screener_label = " + ".join(screeners_hit) if screeners_hit else "Teknikal"
+
                 row = {
-                    "ticker":      tk,
-                    "name":        bs_data.get("name", tk),
-                    "price":       int(price),
-                    "ta_score":    min(95, int(bsr_bs * 22 + spike * 4)),
-                    "fa_score":    int(bs_data.get("fa_score", 55) or 55),
-                    "combined":    round(min(99, sc * 0.6), 1),
-                    "vol_spike":   f"{spike:.1f}x",
-                    "vol_type":    vol_type,
-                    "vol_trend":   "Harga naik + Vol naik \u2705" if chg > 0 and spike > 1 else "Vol spike + Harga diam",
-                    "rsi":         round(45 + chg5 * 1.5, 1),
-                    "macd":        "Bullish crossover" if chg5 > 2 else "Mendekati sinyal",
-                    "wyckoff":     wyckoff,
-                    "wyckoff_pct": wyckoff_pct,
-                    "entry_low":   entry_low,
-                    "entry_high":  entry_high,
-                    "tp1":         tp1,
-                    "tp2":         tp2,
-                    "sl":          sl,
-                    "horizon":     horizon,
-                    "acc_weeks":   f"{accum_s} hari" if accum_s else "\u2014",
-                    "why_buy":     why[:90],
-                    "rating":      "STRONG BUY" if sc > 80 else ("BUY" if bsr_bs >= 3 else "HOLD"),
-                    "rr":          rr,
+                    "ticker":         tk,
+                    "name":           bs_data.get("name", tk),
+                    "price":          int(price),
+                    "ta_score":       min(95, int(bsr_bs * 22 + spike * 4)),
+                    "fa_score":       int(bs_data.get("fa_score", 55) or 55),
+                    "combined":       round(min(99, sc * 0.45), 1),
+                    "vol_spike":      f"{spike:.1f}x",
+                    "vol_type":       vol_type,
+                    "vol_trend":      "Harga naik + Vol naik ✅" if chg > 0 and spike > 1 else "Vol spike + Harga diam",
+                    "rsi":            round(45 + chg5 * 1.5, 1),
+                    "macd":           "Bullish crossover" if chg5 > 2 else "Mendekati sinyal",
+                    "wyckoff":        wyckoff,
+                    "wyckoff_pct":    wyckoff_pct,
+                    "entry_low":      entry_low,
+                    "entry_high":     entry_high,
+                    "tp1":            tp1,
+                    "tp2":            tp2,
+                    "sl":             sl,
+                    "horizon":        horizon,
+                    "acc_weeks":      f"{accum_s} hari" if accum_s else "—",
+                    "why_buy":        why[:120],
+                    "screener_match": screener_label,
+                    "n_screeners":    len(screeners_hit),
+                    "sc_bigaccum":    sc1,
+                    "sc_bandar_up":   sc2,
+                    "sc_foreign":     sc3,
+                    "sc_1m_foreign":  sc4,
+                    "rating":         ("STRONG BUY" if len(screeners_hit) >= 3
+                                       else ("BUY" if len(screeners_hit) >= 1 or bsr_bs >= 3
+                                             else "HOLD")),
+                    "rr":             rr,
                     "bandar_verdict": verdict,
                 }
                 result_rows.append(row)
@@ -15075,17 +17222,20 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "fa_score": 45,
                     "combined": max(5, round(50 - brs * 12, 1)),
                     "vol_signal": f"Bearish spike {spike:.1f}x" if spike > 1.5 else "Tren turun",
-                    "reason": f"BearScore {brs}/4 \u00b7 hindari sementara",
+                    "reason": f"BearScore {brs}/4 · hindari sementara",
                     "rating": "AVOID",
                 })
 
-            avg_chg = sum(d.get("chg", 0) for _, d, _, _ in top_candidates[:3]) / max(len(top_candidates[:3]), 1)
-            if avg_chg > 1:
-                outlook = f"Pasar {plan_type} cenderung bullish ({avg_chg:+.1f}% avg top picks). Fokus block trade konfirmasi."
+            avg_chg = sum(d.get("chg", 0) for _, d, _, _, _, _, _, _, _ in top_candidates[:3]) / max(len(top_candidates[:3]), 1)
+            n_confluence = sum(1 for _, _, _, _, sh, _, _, _, _ in top_candidates if len(sh) >= 2)
+            if avg_chg > 1 and n_confluence >= 2:
+                outlook = f"🟢 Pasar {plan_type} BULLISH — {n_confluence} saham multi-screener confluence. Fokus BigAccum + ForeignFlow."
+            elif avg_chg > 0:
+                outlook = f"🟡 Pasar {plan_type} moderat positif ({avg_chg:+.1f}% avg). Selektif di screener terkonfirmasi GoAPI."
             elif avg_chg < -1:
-                outlook = f"Bias {plan_type} mixed-bearish. Selektif, tunggu konfirmasi volume."
+                outlook = f"🔴 Bias {plan_type} mixed-bearish. Tunggu konfirmasi volume + Foreign Flow sebelum entry."
             else:
-                outlook = f"Pasar {plan_type} sideways-ranging. Entry hanya di zona demand konfirmasi."
+                outlook = f"⚪ Pasar {plan_type} sideways. Entry hanya di zona demand + konfirmasi ≥2 screener."
 
             return {plan_type: result_rows, "avoid": avoid_rows, "outlook": outlook}
 
@@ -15111,17 +17261,49 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             }
             st.session_state[history_key] = history
 
+            # ── Save reko ke Google Sheets ────────────────────────
+            try:
+                _plan_rows_sh = (plan_json.get(plan_type)
+                                 or plan_json.get("daily")
+                                 or plan_json.get("weekly")
+                                 or plan_json.get("bsjp") or [])
+                if isinstance(_plan_rows_sh, list):
+                    for _pr_sh in _plan_rows_sh:
+                        if not isinstance(_pr_sh, dict): continue
+                        _tk_sh = str(_pr_sh.get("ticker", "")).strip().upper()
+                        if not _tk_sh: continue
+                        save_reko(
+                            mode         = plan_type.upper(),
+                            ticker       = _tk_sh,
+                            bias         = str(_pr_sh.get("bias", _pr_sh.get("rating", "BUY"))),
+                            entry_low    = float(_pr_sh.get("entry_low", _pr_sh.get("price", 0)) or 0),
+                            entry_high   = float(_pr_sh.get("entry_high", _pr_sh.get("price", 0)) or 0),
+                            stoploss     = float(_pr_sh.get("sl", 0) or 0),
+                            tp1          = float(_pr_sh.get("tp1", 0) or 0),
+                            tp2          = float(_pr_sh.get("tp2", 0) or 0),
+                            sigma_score  = int(_pr_sh.get("sigma_score", 0) or 0),
+                            grade        = str(_pr_sh.get("rating", _pr_sh.get("grade", ""))),
+                            summary_ai   = str(_pr_sh.get("why_buy", _pr_sh.get("reason", "")))[:400],
+                        )
+            except Exception as _she_r:
+                pass  # Sheets error tidak boleh break main flow
+            # ─────────────────────────────────────────────────────
+
             # ══════════════════════════════════════════════════════
             # AUTO-INJECT ke tr_records sebagai OPEN
             # Setiap saham BUY di plan langsung masuk Track Record
             # Skip duplikat: ticker + date + type sudah ada
             # ══════════════════════════════════════════════════════
             _type_label = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}.get(plan_type, plan_type)
-            _plan_rows  = (plan_json.get(plan_type)
-                           or plan_json.get("bsjp")
-                           or plan_json.get("daily")
-                           or plan_json.get("weekly")
-                           or [])
+            # Cari rows dari semua kemungkinan key (v1 & v2 pakai key yg sama dgn plan_type)
+            _plan_rows = (plan_json.get(plan_type)
+                          or plan_json.get("daily")
+                          or plan_json.get("weekly")
+                          or plan_json.get("bsjp")
+                          or [])
+            # Pastikan list, bukan None/dict
+            if not isinstance(_plan_rows, list):
+                _plan_rows = []
             _tr_records = st.session_state.get("tr_records", [])
 
             # Buat set existing keys agar tidak duplikat
@@ -15165,15 +17347,47 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             if _new_injected:
                 _tr_records.extend(_new_injected)
                 st.session_state["tr_records"] = _tr_records
-
-            # Persist ke DB (history + tr_records)
-            if st.session_state.get("user"):
+                # ── Save journal ke Google Sheets ─────────────────
                 try:
-                    _sv = load_user(st.session_state.user["email"]) or {}
-                    _sv[history_key] = history
-                    _sv["tr_records"] = _tr_records
-                    save_user(st.session_state.user["email"], _sv)
-                except: pass
+                    for _ji in _new_injected:
+                        save_journal_entry(
+                            ticker       = str(_ji.get("ticker", "")),
+                            status       = "OPEN",
+                            bias         = str(_ji.get("rating", "BUY")),
+                            entry_price  = float(_ji.get("entry", 0)),
+                            stoploss     = float(_ji.get("sl", 0)),
+                            tp1          = float(_ji.get("tp1", 0)),
+                            tp2          = float(_ji.get("tp2", 0)),
+                            tanggal_entry= str(_ji.get("date", "")),
+                            catatan      = str(_ji.get("auto_note", "")),
+                            setup        = str(_ji.get("type", "")),
+                        )
+                except Exception as _she_j:
+                    pass  # Sheets error tidak boleh break main flow
+                # ─────────────────────────────────────────────────
+
+            # Persist ke DB (history + tr_records) — lebih robust dengan retry
+            if st.session_state.get("user"):
+                _persist_ok = False
+                for _persist_try in range(2):
+                    try:
+                        _sv = load_user(st.session_state.user["email"]) or {}
+                        _sv[history_key] = history
+                        _sv["tr_records"] = _tr_records
+                        # Pastikan brosum_history juga tersinkron
+                        if st.session_state.get("brosum_history"):
+                            _sv["brosum_history"] = st.session_state["brosum_history"]
+                        save_user(st.session_state.user["email"], _sv)
+                        _persist_ok = True
+                        break
+                    except Exception as _pe:
+                        if _persist_try == 0:
+                            import time as _t_persist; _t_persist.sleep(0.3)
+                        else:
+                            # Simpan ke session state fallback key agar tidak hilang
+                            st.session_state[f"_persist_pending_{history_key}"] = {
+                                "history": history, "tr_records": _tr_records
+                            }
 
             # ── Mirror ke sigma_modules: storage permanen JSON lokal ──
             if _SIGMA_MODULES_AVAILABLE:
@@ -15544,7 +17758,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 </body></html>"""
             components.html(_hist_html, height=_total_h, scrolling=True)
 
-        def _render_track_record_inline(plan_type="daily", accent="#a78bfa"):
+        def _render_track_record_inline(plan_type="daily", accent="#a78bfa", ctx="main"):
             """
             Track Record yang 100% terhubung ke History Plan.
             Setiap saham di History Plan otomatis masuk sebagai OPEN.
@@ -15604,7 +17818,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                             _res_opt = st.selectbox(
                                 "HASIL:",
                                 ["— Masih OPEN —", "✅ TP1 HIT", "🎯 TP2 HIT", "🛑 SL HIT", "📤 Manual Exit"],
-                                key=f"tr_res_{plan_type}_{_or.get('id','')}")
+                                key=f"tr_res_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
                             if _res_opt != "— Masih OPEN —":
                                 _ex_price = st.number_input(
                                     "Harga Exit (Rp):",
@@ -15612,8 +17826,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                                     value=int(_or.get("tp1",0)) if "TP1" in _res_opt
                                           else int(_or.get("tp2",0)) if "TP2" in _res_opt
                                           else int(_or.get("sl",0)) if "SL" in _res_opt else 0,
-                                    key=f"tr_exp_{plan_type}_{_or.get('id','')}")
-                                if st.button("💾 SIMPAN", key=f"tr_upd_{plan_type}_{_or.get('id','')}",
+                                    key=f"tr_exp_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
+                                if st.button("💾 SIMPAN", key=f"tr_upd_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}",
                                              use_container_width=True):
                                     _entry_v = _or.get("entry", 0)
                                     _exit_v  = _ex_price if _ex_price > 0 else (
@@ -15835,6 +18049,31 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 </body></html>"""
             components.html(_tr_html, height=700, scrolling=True)
 
+        # ── Coba flush pending persists yang gagal sebelumnya ──
+        for _ppk in list(st.session_state.keys()):
+            if _ppk.startswith("_persist_pending_"):
+                _pdata = st.session_state.get(_ppk, {})
+                if _pdata and st.session_state.get("user"):
+                    try:
+                        _sv2 = load_user(st.session_state.user["email"]) or {}
+                        _hk2 = _ppk.replace("_persist_pending_", "")
+                        _sv2[_hk2] = _pdata.get("history", {})
+                        _sv2["tr_records"] = _pdata.get("tr_records", _sv2.get("tr_records", []))
+                        save_user(st.session_state.user["email"], _sv2)
+                        del st.session_state[_ppk]
+                    except: pass
+
+        # ── Restore history dari DB jika belum ada di session state ──
+        if st.session_state.get("user"):
+            for _hkey in ["auto_plan_history_daily", "auto_plan_history_weekly",
+                          "auto_plan_history_bsjp", "tr_records", "brosum_history"]:
+                if _hkey not in st.session_state:
+                    try:
+                        _sv3 = load_user(st.session_state.user["email"]) or {}
+                        if _sv3.get(_hkey):
+                            st.session_state[_hkey] = _sv3[_hkey]
+                    except: pass
+
         # ── Jalankan auto-generate & auto-update track record saat tab dibuka ──
         # (di luar context tab agar berjalan sekali saat halaman load)
         _auto_generate_if_needed("daily")
@@ -15845,7 +18084,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
         # ─── TAB DAILY ────────────────────────────────────────────────────
         with reco_tab_daily:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📅 DAILY PLAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_d        = _wib_now()
             _bs30_cache   = st.session_state.get("sigma_bs30_screened", [])
@@ -15900,12 +18138,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         </div>
                     </div>""", unsafe_allow_html=True)
                 elif not _today_entry and _bs30_count > 0:
-                    # Belum jam 21:00 atau belum auto-generate — tampilkan preview dari cache
+                    # Belum jam 21:00 atau belum auto-generate
+                    # PENTING: langsung SIMPAN ke history (bukan sekedar preview)
+                    # Supaya plan masuk History Trade Plan, History Summary, dan Track Record
                     _preview_map = _reco_fetch_prices(tuple(s["ticker"] for s in _bs30_cache if s.get("ticker")))
                     if _preview_map:
-                        _today_entry = {"plan": _rule_based_plan_v2(_preview_map, _bs30_cache, "daily"),
-                                        "generated_at": "Preview (update jam 21:00 WIB)",
-                                        "date": _now_d.strftime("%d %b %Y")}
+                        _preview_plan = _rule_based_plan_v2(_preview_map, _bs30_cache, "daily")
+                        _preview_slot = f"{_today_key}_manual"
+                        # Cek apakah slot manual hari ini sudah ada (hindari double-save)
+                        _dh_check = st.session_state.get("auto_plan_history_daily", {})
+                        if _preview_slot not in _dh_check:
+                            _save_auto_plan_to_history("daily", _preview_plan, _preview_slot,
+                                                       _now_d.strftime("%d %b %Y"), "Generate Manual")
+                        _daily_hist  = st.session_state.get("auto_plan_history_daily", {})
+                        _today_entry = _daily_hist.get(_preview_slot)
 
                 if _today_entry:
                     _plan_data = _today_entry.get("plan", {})
@@ -15959,8 +18205,40 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 "TOP ACCUM BROKER": _top_accum,
                                 "TOP DIST BROKER":  _top_dist,
                             })
-                        import pandas as _pd_tp
-                        st.dataframe(_pd_tp.DataFrame(_tp_rows), use_container_width=True, hide_index=True)
+                        # Build responsive HTML table - no double scroll
+                        _tp_hdr = ["TICKER","PRICE","ENTRY ZONE","TP1","TP2","SL","RR","HORIZON","VOL","RATING","ALASAN","TOP ACCUM","TOP DIST"]
+                        _tp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;border-bottom:1px solid rgba(167,139,250,0.25);text-align:left;'>{h}</th>" for h in _tp_hdr)
+                        _tp_trs = ""
+                        for _tri2, _r2 in enumerate(_tp_rows):
+                            _rat2  = _r2.get("RATING","—")
+                            _rc2   = "#089981" if _rat2=="BUY" else "#f5a623" if _rat2=="HOLD" else "#f23645"
+                            _bg2   = "rgba(167,139,250,0.04)" if _tri2%2==0 else "transparent"
+                            _tp_trs += (
+                                f"<tr style='background:{_bg2};'>"
+                                f"<td style='padding:7px 10px;font-weight:700;color:#a78bfa;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_r2.get('TICKER','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('PRICE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_r2.get('ENTRY ZONE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>{_r2.get('TP1','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{_r2.get('TP2','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>{_r2.get('SL','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('RR','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_r2.get('HORIZON','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('VOL','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rc2};font-weight:700;font-size:0.8rem;'>{_rat2}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.77rem;max-width:180px;'>{_r2.get('ALASAN','')}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_r2.get('TOP ACCUM BROKER','')}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_r2.get('TOP DIST BROKER','')}</td>"
+                                "</tr>"
+                            )
+                        st.markdown(
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
+                            "-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(167,139,250,0.2);margin-bottom:4px;'>"
+                            "<table style='border-collapse:collapse;min-width:960px;width:max-content;'>"
+                            f"<thead><tr style='background:rgba(167,139,250,0.08);'>{_tp_th}</tr></thead>"
+                            f"<tbody>{_tp_trs}</tbody>"
+                            "</table></div>",
+                            unsafe_allow_html=True)
 
                     # ── Summary Card Top Saham ──
                     if _rows_buy:
@@ -16019,13 +18297,35 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                             f"</div>", unsafe_allow_html=True)
                                 st.caption(f"📌 {_r.get('why_buy','—')}")
 
-                    # ── Saham Hindari ──
+                    # ── Saham Hindari (Daily) ──
                     if _rows_avoid:
-                        with st.expander(f"⛔ Hindari Hari Ini ({len(_rows_avoid)} saham)", expanded=False):
-                            import pandas as _pd_av
-                            _av_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {a.get('price',0):,}",
-                                         "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _rows_avoid]
-                            st.dataframe(_pd_av.DataFrame(_av_rows), use_container_width=True, hide_index=True)
+                        _av_html_rows = "".join(
+                            f"<tr style='background:rgba(242,54,69,0.10);'>"
+                            f"<td style='padding:8px 12px;font-weight:700;color:#ff4d4d;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;letter-spacing:0.05em;'>{a.get('ticker','')}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;color:#ff6b6b;font-size:0.8rem;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
+                            f"<td style='padding:8px 12px;color:#ffb3b3;font-size:0.78rem;'>{a.get('reason','—')}</td>"
+                            f"<td style='padding:8px 12px;color:#ff4d4d;font-weight:700;white-space:nowrap;font-size:0.78rem;'>{a.get('vol_signal','—')}</td>"
+                            "</tr>"
+                            for a in _rows_avoid
+                        )
+                        st.markdown(
+                            "<div style='margin-top:16px;'>"
+                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
+                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI HARI INI</span>"
+                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_rows_avoid)}</span>"
+                            "</div>"
+                            "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
+                            "<table style='width:100%;border-collapse:collapse;min-width:300px;'>"
+                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>TICKER</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>PRICE</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>ALASAN</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>VOL</th>"
+                            "</tr></thead>"
+                            f"<tbody>{_av_html_rows}</tbody>"
+                            "</table></div></div>",
+                            unsafe_allow_html=True)
 
             # ════════════════════════════════════════════
             # TAB 2 — HISTORY TRADE PLAN
@@ -16087,12 +18387,9 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # TAB 4 — TRACK RECORD (Daily)
             # ════════════════════════════════════════════
             with _d_tab_trackrecord:
-                _render_track_record_inline("daily", "#a78bfa")
-
-        # ─── TAB WEEKLY ───────────────────────────────────────────────────
+                _render_track_record_inline("daily", "#a78bfa", ctx="plan_daily")
         with reco_tab_weekly:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📆 WEEKLY PLAN — SIGMA BANDARMOLOGI ENGINE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             _now_w        = _wib_now()
             _bs30_cache_w = st.session_state.get("sigma_bs30_screened", [])
@@ -16143,13 +18440,17 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         "dari akumulasi data broker 5 hari terakhir."
                         "</div></div>", unsafe_allow_html=True)
                 elif not _week_entry and _bs30_count_w > 0:
+                    # PENTING: langsung SIMPAN ke history (bukan sekedar preview)
                     _pm_prev = _reco_fetch_prices(tuple(s["ticker"] for s in _bs30_cache_w if s.get("ticker")))
                     if _pm_prev:
-                        _week_entry = {
-                            "plan": _rule_based_plan_v2(_pm_prev, _bs30_cache_w, "weekly"),
-                            "generated_at": "Preview (update Sabtu 12:00 WIB)",
-                            "date": _now_w.strftime("%d %b %Y"),
-                        }
+                        _pm_plan   = _rule_based_plan_v2(_pm_prev, _bs30_cache_w, "weekly")
+                        _pm_slot   = f"{_this_week}_manual"
+                        _wh_check  = st.session_state.get("auto_plan_history_weekly", {})
+                        if _pm_slot not in _wh_check:
+                            _save_auto_plan_to_history("weekly", _pm_plan, _pm_slot,
+                                                       _now_w.strftime("%d %b %Y"), "Generate Manual")
+                        _weekly_hist = st.session_state.get("auto_plan_history_weekly", {})
+                        _week_entry  = _weekly_hist.get(_pm_slot)
 
                 if _week_entry:
                     _wplan  = _week_entry.get("plan", {})
@@ -16198,7 +18499,41 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 "TOP ACCUM":     ", ".join(_wta) if _wta else "—",
                                 "TOP DIST":      ", ".join(_wtd) if _wtd else "—",
                             })
-                        st.dataframe(_pd_wp.DataFrame(_wtp_rows), use_container_width=True, hide_index=True)
+                        # Responsive HTML table — no double scroll on mobile
+                        _wtp_hdr = ["TICKER","PRICE","ENTRY ZONE","TP1","TP2","SL","RR","HORIZON","ACC DAYS","SCORE","RATING","ALASAN","TOP ACCUM","TOP DIST"]
+                        _wtp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:#26a69a;border-bottom:1px solid rgba(38,166,154,0.25);text-align:left;'>{h}</th>" for h in _wtp_hdr)
+                        _wtp_trs = ""
+                        for _wri3, _wr3 in enumerate(_wtp_rows):
+                            _rat3 = _wr3.get("RATING","—")
+                            _rc3  = "#089981" if _rat3=="BUY" else "#f5a623" if _rat3=="HOLD" else "#f23645"
+                            _bg3  = "rgba(38,166,154,0.05)" if _wri3%2==0 else "transparent"
+                            _wtp_trs += (
+                                f"<tr style='background:{_bg3};'>"
+                                f"<td style='padding:7px 10px;font-weight:700;color:#26a69a;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_wr3.get('TICKER','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('PRICE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_wr3.get('ENTRY ZONE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>{_wr3.get('TP1','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{_wr3.get('TP2','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>{_wr3.get('SL','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('RR','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_wr3.get('HORIZON','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('ACC DAYS','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_wr3.get('SCORE','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rc3};font-weight:700;font-size:0.8rem;'>{_rat3}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.77rem;max-width:180px;'>{_wr3.get('ALASAN','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.75rem;'>{_wr3.get('TOP ACCUM','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.75rem;'>{_wr3.get('TOP DIST','')}</td>"
+                                "</tr>"
+                            )
+                        st.markdown(
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
+                            "-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(38,166,154,0.2);margin-bottom:4px;'>"
+                            "<table style='border-collapse:collapse;min-width:1000px;width:max-content;'>"
+                            f"<thead><tr style='background:rgba(38,166,154,0.08);'>{_wtp_th}</tr></thead>"
+                            f"<tbody>{_wtp_trs}</tbody>"
+                            "</table></div>",
+                            unsafe_allow_html=True)
 
                     # ── Summary Cards Weekly ──
                     if _wrows:
@@ -16255,11 +18590,33 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 st.caption(f"📌 {_wr.get('why_buy','—')}")
 
                     if _wavoid:
-                        with st.expander(f"⛔ Hindari Minggu Ini ({len(_wavoid)} saham)", expanded=False):
-                            import pandas as _pd_wav
-                            _wav_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {a.get('price',0):,}",
-                                          "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _wavoid]
-                            st.dataframe(_pd_wav.DataFrame(_wav_rows), use_container_width=True, hide_index=True)
+                        _wav_html = "".join(
+                            f"<tr style='background:rgba(242,54,69,0.10);'>"
+                            f"<td style='padding:8px 12px;font-weight:700;color:#ff4d4d;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;letter-spacing:0.05em;'>{a.get('ticker','')}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;color:#ff6b6b;font-size:0.8rem;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
+                            f"<td style='padding:8px 12px;color:#ffb3b3;font-size:0.78rem;'>{a.get('reason','—')}</td>"
+                            f"<td style='padding:8px 12px;color:#ff4d4d;font-weight:700;white-space:nowrap;font-size:0.78rem;'>{a.get('vol_signal','—')}</td>"
+                            "</tr>"
+                            for a in _wavoid
+                        )
+                        st.markdown(
+                            "<div style='margin-top:16px;'>"
+                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
+                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI MINGGU INI</span>"
+                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_wavoid)}</span>"
+                            "</div>"
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
+                            "<table style='border-collapse:collapse;min-width:300px;width:max-content;'>"
+                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>TICKER</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>PRICE</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>ALASAN</th>"
+                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>VOL</th>"
+                            "</tr></thead>"
+                            f"<tbody>{_wav_html}</tbody>"
+                            "</table></div></div>",
+                            unsafe_allow_html=True)
 
             # ============================================================
             # WEEKLY TAB 2 — HISTORY TRADE PLAN
@@ -16321,12 +18678,9 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # WEEKLY TAB 4 — TRACK RECORD
             # ============================================================
             with _w_tab_trackrecord:
-                _render_track_record_inline("weekly", "#26a69a")
-
-        # ─── TAB BSJP ─────────────────────────────────────────────────────
+                _render_track_record_inline("weekly", "#26a69a", ctx="plan_weekly")
         with reco_tab_bsjp:
 
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🌙 BELI SORE JUAL PAGI — AUTO SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             _now_b = _wib_now()
             _wd_b  = _now_b.weekday()
             _h_b, _m_b = _now_b.hour, _now_b.minute
@@ -16421,25 +18775,40 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             f"📈 TRADE PLAN BSJP — {_today_b_entry.get('date','')}</div>",
                             unsafe_allow_html=True)
 
-                        import pandas as _pd_bp
-                        _btp_rows = []
-                        for _br in _brows_buy:
-                            _btp_rows.append({
-                                "TICKER":       _br.get("ticker",""),
-                                "PRICE":        f"Rp {int(_br.get('price',0)):,}",
-                                "ENTRY LOW":    f"Rp {int(_br.get('entry_low',0)):,}",
-                                "ENTRY HIGH":   f"Rp {int(_br.get('entry_high',0)):,}",
-                                "TP1":          f"Rp {int(_br.get('tp1',0)):,}",
-                                "TP2":          f"Rp {int(_br.get('tp2',0)):,}" if _br.get("tp2") else "—",
-                                "SL":           f"Rp {int(_br.get('sl',0)):,}",
-                                "RR":           f"{_br.get('rr',0)}x",
-                                "VOL SPIKE":    _br.get("vol_spike","—"),
-                                "STREAK":       f"{_br.get('consec_up',0)}d" if _br.get('consec_up') else "—",
-                                "CLOSE%":       f"{float(_br.get('close_pct_range',50)):.0f}%",
-                                "RATING":       _br.get("rating","—"),
-                                "ALASAN":       _br.get("why_buy","—"),
-                            })
-                        st.dataframe(_pd_bp.DataFrame(_btp_rows), use_container_width=True, hide_index=True)
+                        # Build mobile-friendly HTML table (no double scroll)
+                        _btp_hdr = ["TICKER","PRICE","ENTRY LOW","ENTRY HIGH","TP1","TP2","SL","RR","VOL","STREAK","CLOSE%","RATING","ALASAN"]
+                        _btp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;border-bottom:1px solid rgba(245,166,35,0.25);text-align:left;'>{h}</th>" for h in _btp_hdr)
+                        _btp_trs = ""
+                        for _bri2, _br in enumerate(_brows_buy):
+                            _rat = _br.get("rating","—")
+                            _rat_c = "#089981" if _rat=="BUY" else "#f5a623" if _rat=="HOLD" else "#f23645"
+                            _btp_trs += (
+                                f"<tr style='background:{'rgba(245,166,35,0.04)' if _bri2%2==0 else 'transparent'};'>"
+                                f"<td style='padding:7px 10px;font-weight:700;color:#f5a623;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_br.get('ticker','')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('price',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('entry_low',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('entry_high',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>Rp {int(_br.get('tp1',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{f'Rp {int(_br.get('tp2',0)):,}' if _br.get('tp2') else '—'}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>Rp {int(_br.get('sl',0)):,}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_br.get('rr',0)}x</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_br.get('vol_spike','—')}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{f'{_br.get('consec_up',0)}d' if _br.get('consec_up') else '—'}</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{float(_br.get('close_pct_range',50)):.0f}%</td>"
+                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rat_c};font-weight:700;font-size:0.8rem;'>{_rat}</td>"
+                                f"<td style='padding:7px 10px;font-size:0.78rem;max-width:200px;'>{_br.get('why_buy','—')}</td>"
+                                f"</tr>"
+                            )
+                        _btp_html = (
+                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
+                            "-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(245,166,35,0.2);margin-bottom:4px;'>"
+                            "<table style='border-collapse:collapse;min-width:900px;width:max-content;'>"
+                            f"<thead><tr style='background:rgba(245,166,35,0.08);'>{_btp_th}</tr></thead>"
+                            f"<tbody>{_btp_trs}</tbody>"
+                            "</table></div>"
+                        )
+                        st.markdown(_btp_html, unsafe_allow_html=True)
 
                     # ── Summary Cards BSJP ──
                     if _brows_buy:
@@ -16474,11 +18843,34 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 st.caption(f"📌 {_br.get('why_buy','—')}")
 
                     if _brows_avoid:
-                        with st.expander(f"⛔ Hindari Malam Ini ({len(_brows_avoid)} saham)", expanded=False):
-                            import pandas as _pd_bav
-                            _bav_rows = [{"TICKER": a.get("ticker",""), "PRICE": f"Rp {int(a.get('price',0)):,}",
-                                          "ALASAN": a.get("reason","—"), "VOL": a.get("vol_signal","—")} for a in _brows_avoid]
-                            st.dataframe(_pd_bav.DataFrame(_bav_rows), use_container_width=True, hide_index=True)
+                        _bav_rows_html = "".join([
+                            f"<tr style='background:rgba(242,54,69,0.10);'>"
+                            f"<td style='color:#ff4d4d;font-weight:700;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-family:IBM Plex Mono,monospace;font-size:0.82rem;letter-spacing:0.05em;white-space:nowrap;'>{a.get('ticker','')}</td>"
+                            f"<td style='color:#ff6b6b;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.82rem;white-space:nowrap;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
+                            f"<td style='color:#ffb3b3;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.8rem;'>{a.get('reason','—')}</td>"
+                            f"<td style='color:#ff4d4d;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.8rem;font-weight:700;white-space:nowrap;'>{a.get('vol_signal','—')}</td>"
+                            f"</tr>"
+                            for a in _brows_avoid
+                        ])
+                        _bav_html = (
+                            "<div style='margin-top:16px;'>"
+                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
+                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI MALAM INI</span>"
+                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_brows_avoid)}</span>"
+                            "</div>"
+                            "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
+                            "<table style='width:100%;border-collapse:collapse;min-width:320px;'>"
+                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>TICKER</th>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>PRICE</th>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>ALASAN</th>"
+                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>VOL</th>"
+                            "</tr></thead>"
+                            f"<tbody>{_bav_rows_html}</tbody>"
+                            "</table></div></div>"
+                        )
+                        st.markdown(_bav_html, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                         <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
@@ -16545,9 +18937,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # BSJP TAB 4 — TRACK RECORD
             # ════════════════════════════════════════════
             with _b_tab_trackrecord:
-                _render_track_record_inline("bsjp", "#f5a623")
-
-        # ─── TAB FUNDAMENTAL SCREENER ─────────────────────────────────────
+                _render_track_record_inline("bsjp", "#f5a623", ctx="plan_bsjp")
         with reco_tab_fundamental:
 
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -16988,7 +19378,6 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 # ─────────────────────────────────────────────
     with alpha_tab_brosum:
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 BROKER SUMMARY - NET BUY/SELL &amp; FOREIGN FLOW</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
 
         bs_tab_screening, bs_tab_history, bs_tab_foreign = st.tabs([
@@ -17443,15 +19832,37 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             del _bsh[_dk]
                     st.session_state[_bsh_key] = _bsh
                     st.session_state[_auto_key_bs] = True
-                    # Persist
+                    # ── Save ke Google Sheets ─────────────────────────────
+                    try:
+                        _now_ts = _now_bs.strftime("%Y-%m-%d")
+                        for _bsitem in _aresult[:30]:
+                            save_broker_scan(
+                                ticker          = _bsitem.get("ticker", ""),
+                                date_data       = _now_ts,
+                                verdict         = _bsitem.get("verdict", "WATCH"),
+                                akumulasi_score = float(_bsitem.get("spike", 0)) * 10,
+                                distribusi_score= 0,
+                                net_flow        = float(_bsitem.get("spike", 0)),
+                                top_buyers      = _bsitem.get("top_accum", []),
+                                top_sellers     = _bsitem.get("top_dist", []),
+                                catatan         = f"Auto BS30 · spike={_bsitem.get('spike',0)} · chg={_bsitem.get('chg1d',0)}%",
+                            )
+                    except Exception as _she:
+                        pass  # Sheets error tidak boleh break main flow
+                    # ─────────────────────────────────────────────────────
+                    # Persist — termasuk brosum_history agar Weekly Plan bisa pakai data lama
                     if st.session_state.get("user"):
-                        try:
-                            _sv = load_user(st.session_state.user["email"]) or {}
-                            _sv["sigma_bs30_screened"] = st.session_state["sigma_bs30_screened"]
-                            _sv["sigma_bs30_ts"] = st.session_state["sigma_bs30_ts"]
-                            _sv["brosum_history"] = _bsh
-                            save_user(st.session_state.user["email"], _sv)
-                        except: pass
+                        for _auto_try in range(2):
+                            try:
+                                _sv = load_user(st.session_state.user["email"]) or {}
+                                _sv["sigma_bs30_screened"] = st.session_state["sigma_bs30_screened"]
+                                _sv["sigma_bs30_ts"] = st.session_state["sigma_bs30_ts"]
+                                _sv["brosum_history"] = _bsh
+                                save_user(st.session_state.user["email"], _sv)
+                                break
+                            except:
+                                if _auto_try == 0:
+                                    import time as _t2; _t2.sleep(0.3)
             except: pass
 
         # Jalankan auto-generate setiap kali tab dibuka
@@ -17484,9 +19895,9 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                 <span style='color:#f59e0b;font-weight:700;'>STEP 1</span> &nbsp;Seluruh saham IHSG (900+) →
                 <b style='color:{text_main};'>200 saham Market Cap terbesar IDX (Non-Banking)</b><br>
                 <span style='color:#a78bfa;font-weight:700;'>STEP 2</span> &nbsp;200 saham →
-                <b style='color:{text_main};'>100 saham</b> dengan <b>harga ≤ Rp8.000</b> + <b>volume spike abnormal</b><br>
+                <b style='color:{text_main};'>100 saham</b> dengan <b>harga ≤ Rp8.000</b> + <b>delta volume 1 bulan</b> (likuiditas aktif)<br>
                 <span style='color:#26a69a;font-weight:700;'>STEP 3</span> &nbsp;100 saham →
-                <b style='color:{text_main};'>30 saham</b> pola akumulasi + GoAPI konfirmasi broker<br>
+                <b style='color:{text_main};'>30 saham</b> teknikal EMA + 4 screener Stockbit + GoAPI konfirmasi broker<br>
                 <span style='color:#60a5fa;font-weight:700;'>AUTO-GENERATE</span> &nbsp;Setiap hari kerja jam <b>20:30 WIB</b> — tidak perlu klik manual
             </div>
             <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{"#26a69a" if _bs30_existing else "#f59e0b"};
@@ -17495,6 +19906,155 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
               if _bs30_existing
               else "⏳ Auto-generate: " + _next_bs + " · Atau klik Generate Manual di bawah"}
             </div></div>""", unsafe_allow_html=True)
+
+            # ── GoAPI status indicator + test button ──
+            _goapi_key_ok = _goapi_available()
+            _goapi_last_err = st.session_state.get("_goapi_last_error", "")
+            _goapi_status_c = "#26a69a" if _goapi_key_ok else "#f23645"
+            _goapi_status_lbl = "✅ Key Aktif" if _goapi_key_ok else "❌ Key Tidak Ada"
+            _gapi_col1, _gapi_col2, _gapi_col3 = st.columns([2, 1, 1])
+            with _gapi_col1:
+                st.markdown(
+                    f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                    f"color:{_goapi_status_c};padding:6px 0;'>"
+                    f"🔗 GoAPI: <b>{_goapi_status_lbl}</b>"
+                    f"{'  ·  <span style="color:#f59e0b;">' + _goapi_last_err[:60] + '...</span>' if _goapi_last_err else ''}"
+                    f"</div>",
+                    unsafe_allow_html=True)
+            with _gapi_col2:
+                if st.button("🔍 Test GoAPI", key="btn_test_goapi",
+                             use_container_width=True,
+                             help="Test koneksi GoAPI secara langsung"):
+                    if not _goapi_key_ok:
+                        st.error("❌ GoAPI_KEY tidak ditemukan di Streamlit secrets.")
+                    else:
+                        with st.spinner("Testing GoAPI — probe URL + tanggal..."):
+                            try:
+                                _test_dates = _trading_date_candidates(max_lookback=10)
+                                _found_url   = None
+                                _found_date  = None
+                                _found_rows  = 0
+                                _url_results = []  # [(url, date, code, note)]
+
+                                # Probe semua kandidat base URL x tanggal terbaru
+                                for _base_url in _GOAPI_BASE_CANDIDATES:
+                                    for _td_try in _test_dates[:5]:  # coba 5 tanggal per URL
+                                        try:
+                                            _tr = requests.get(
+                                                f"{_base_url}/TLKM/broker_summary",
+                                                params={"date": _td_try, "investor": "ALL"},
+                                                headers=_goapi_headers(), timeout=8)
+                                            _tc = _tr.status_code
+                                            if _tc == 404:
+                                                _url_results.append((_base_url, _td_try, _tc, "path tidak ditemukan"))
+                                            if _tc == 401:
+                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi key salah/expired"))
+                                                _found_url = _base_url
+                                                break
+                                            if _tc == 403:
+                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi key tidak punya akses"))
+                                                _found_url = _base_url
+                                                break
+                                            if _tc == 429:
+                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi rate limit"))
+                                                _found_url = _base_url
+                                                break
+                                            if _tc == 200:
+                                                try:
+                                                    _tj = _tr.json()
+                                                except Exception:
+                                                    _tj = {}
+                                                # Ekstrak rows dengan benar: response = {"data":{"results":[...]}}
+                                                _inner2 = _tj.get("data", {})
+                                                if isinstance(_inner2, dict):
+                                                    _d2 = (_inner2.get("results") or
+                                                           _inner2.get("broker_summary") or
+                                                           _inner2.get("brokerSummary") or
+                                                           _tj.get("results") or [])
+                                                elif isinstance(_inner2, list):
+                                                    _d2 = _inner2
+                                                else:
+                                                    _d2 = (_tj.get("results") or
+                                                           _tj.get("brokerSummary") or
+                                                           _tj.get("broker_summary") or
+                                                           (_tj if isinstance(_tj, list) else []))
+                                                _rc = len(_d2) if isinstance(_d2, list) else 0
+                                                if _rc > 0:
+                                                    _found_url  = _base_url
+                                                    _found_date = _td_try
+                                                    _found_rows = _rc
+                                                    _url_results.append((_base_url, _td_try, _tc, f"✅ {_rc} rows"))
+                                                    break
+                                                else:
+                                                    _url_results.append((_base_url, _td_try, _tc, "200 tapi data kosong"))
+                                                    continue  # coba tanggal berikutnya
+                                            else:
+                                                _url_results.append((_base_url, _td_try, _tc, _tr.text[:60]))
+                                                break
+                                        except Exception as _ue:
+                                            _url_results.append((_base_url, _td_try, 0, str(_ue)[:60]))
+                                            break
+                                    if _found_url and _found_rows > 0:
+                                        break  # URL dengan data ketemu
+
+                                # Tampilkan hasil
+                                if _found_url and _found_rows > 0:
+                                    st.session_state["_goapi_base_resolved"] = _found_url
+                                    st.session_state.pop("_goapi_last_error", None)
+                                    st.success(
+                                        f"✅ GoAPI OK!\n\n"
+                                        f"**URL yang benar:** `{_found_url}`\n"
+                                        f"**Data tanggal:** {_found_date}\n"
+                                        f"**Broker rows:** {_found_rows} untuk TLKM\n\n"
+                                        f"⚠️ Copy URL di atas, lalu update `GOAPI_BASE` di baris ~2056 kode.")
+                                elif _found_url:
+                                    st.session_state["_goapi_base_resolved"] = _found_url
+                                    _url_note = next((n for u, d, c, n in _url_results if u == _found_url), "")
+                                    st.warning(
+                                        f"⚠️ URL ditemukan tapi ada masalah auth/data:\n\n"
+                                        f"**URL:** `{_found_url}`\n"
+                                        f"**Status:** {_url_note}\n\n"
+                                        f"Cek GoAPI_KEY di Streamlit secrets.")
+                                else:
+                                    # Tampilkan semua hasil probe untuk diagnosis
+                                    _summary_lines = "\n".join(
+                                        f"* `{u.replace('https://','')}/TLKM/broker_summary` → **{c}** ({n})"
+                                        for u, d, c, n in _url_results[:12]
+                                    )
+                                    _dates_tried = ", ".join(d for _, d, _, _ in _url_results[:12])
+                                    # Ambil raw response preview untuk debug
+                                    _raw_preview = ""
+                                    try:
+                                        _last_r = requests.get(
+                                            f"{_GOAPI_BASE_CANDIDATES[0]}/TLKM/broker_summary",
+                                            params={"date": _test_dates[0], "investor": "ALL"},
+                                            headers=_goapi_headers(), timeout=8)
+                                        _raw_preview = _last_r.text[:400]
+                                    except Exception as _rpe:
+                                        _raw_preview = f"(gagal fetch: {_rpe})"
+                                    st.error(
+                                        f"❌ Tidak ada URL yang berhasil dari {len(_GOAPI_BASE_CANDIDATES)} kandidat.\n\n"
+                                        f"**Tanggal dicoba:** {_dates_tried}\n\n"
+                                        f"**Hasil probe:**\n{_summary_lines}\n\n"
+                                        f"**Raw response GoAPI (tanggal terbaru):**\n```\n{_raw_preview}\n```\n\n"
+                                        f"**Kemungkinan penyebab:**\n"
+                                        f"- GoAPI tidak punya data broker_summary untuk periode ini\n"
+                                        f"- Endpoint broker_summary tidak termasuk di plan GoAPI kamu\n"
+                                        f"- Cek dashboard GoAPI → Usage → apakah broker_summary ada di plan")
+                            except Exception as _te:
+                                st.error(f"❌ Connection error: {type(_te).__name__}: {_te}")
+            with _gapi_col3:
+                if _goapi_last_err and st.button("🗑 Clear Error", key="btn_clear_goapi_err",
+                                                  use_container_width=True):
+                    st.session_state.pop("_goapi_last_error", None)
+                    st.rerun()
+
+            # ── Google Sheets Status ──────────────────────────────────────
+            with st.expander("📊 Google Sheets — Status & Backup", expanded=False):
+                render_sheets_status()
+                st.divider()
+                render_backup_button()
+            # ─────────────────────────────────────────────────────────────
 
             _sc1, _sc2, _sc3 = st.columns([3, 1, 1])
             with _sc1:
@@ -17515,9 +20075,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                 else:
                     st.markdown(f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#26a69a;'>🔓 Generate Manual Unlocked</span>", unsafe_allow_html=True)
             with _sc2:
-                _btn_screen30 = st.button("🔍 GENERATE MANUAL", use_container_width=True, key="btn_screen30",
-                                          help="Jalankan screening sekarang tanpa menunggu jadwal 20:30",
-                                          disabled=not st.session_state.get("brosum_manual_unlocked", False))
+                # Gunakan on_click callback agar button state tidak hilang setelah rerun unlock
+                def _do_unlock_and_generate():
+                    st.session_state["brosum_gen_triggered"] = True
+
+                _btn_screen30 = st.button(
+                    "🔍 GENERATE MANUAL",
+                    use_container_width=True,
+                    key="btn_screen30",
+                    help="Jalankan screening sekarang tanpa menunggu jadwal 20:30",
+                    disabled=not st.session_state.get("brosum_manual_unlocked", False)
+                )
+                # Sinkronkan: jika tombol diklik, set flag
+                if _btn_screen30:
+                    st.session_state["brosum_gen_triggered"] = True
             with _sc3:
                 if _bs30_existing:
                     if st.button("🗑 Reset", use_container_width=True, key="btn_screen30_reset"):
@@ -17525,7 +20096,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         st.session_state["sigma_bs30_ts"] = ""
                         st.rerun()
 
-            if _btn_screen30:
+            # Baca dan clear flag sebelum pipeline — mencegah double-trigger
+            _do_screen30 = st.session_state.pop("brosum_gen_triggered", False)
+
+            if _do_screen30:
                 # ═══════════════════════════════════════════════════════════
                 # SIGMA SCREENING PIPELINE v2 — 200 → 100 → 30 + GoAPI
                 # ═══════════════════════════════════════════════════════════
@@ -17579,7 +20153,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     _high_df  = _raw_data.get("High",   None)
                     _low_df   = _raw_data.get("Low",    None)
 
-                    _prog_bar.progress(30, text="⚡ STEP 2/4 — Filter harga ≤ Rp8.000 + volume spike...")
+                    _prog_bar.progress(30, text="⚡ STEP 2/4 — Liquid filter: delta volume 1 bulan + harga ≤ Rp8.000...")
                     _step2 = []
                     for _tk in _SIGMA_200:
                         _ck = f"{_tk}.JK"
@@ -17588,44 +20162,232 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         if len(_cs) < 5: continue
                         _pr = float(_cs.iloc[-1])
                         if _pr > 8000: continue
-                        _spk = 1.0
+
+                        _spk = 1.0; _delta_vol = 0.0; _avg_daily_val = 0.0
+                        _vol_trend_score = 0  # skor likuiditas aktif 1 bulan
                         if _vol_df is not None and _ck in _vol_df.columns:
                             _vs = _vol_df[_ck].dropna()
-                            if len(_vs) >= 21:
-                                _avg20    = float(_vs.iloc[-21:-1].mean())
+                            if len(_vs) >= 5:
+                                _lookback = min(len(_vs)-1, 20)
+                                _avg20    = float(_vs.iloc[-_lookback-1:-1].mean())
                                 _todayvol = float(_vs.iloc[-1])
                                 _spk = round(_todayvol / _avg20, 2) if _avg20 > 0 else 1.0
-                        if _spk < 1.5: continue
+
+                                # ── DELTA VOLUME 1 BULAN: cek apakah volume TREN NAIK ──
+                                # Bandingkan avg vol 5 hari terakhir vs avg vol 5 hari pertama bulan ini
+                                if len(_vs) >= 15:
+                                    _vol_early = float(_vs.iloc[:min(5, len(_vs)//3)].mean())
+                                    _vol_late  = float(_vs.iloc[-5:].mean())
+                                    _delta_vol = (_vol_late - _vol_early) / max(_vol_early, 1)
+
+                                # ── NILAI TRANSAKSI HARIAN RATA-RATA (proxy likuiditas) ──
+                                # Minimal Rp 5 Miliar/hari agar layak ditradingkan
+                                _avg_daily_val = _avg20 * _pr
+                                # Skor likuiditas: semakin aktif diperdagangkan = skor lebih tinggi
+                                if _avg_daily_val >= 50_000_000_000:   _vol_trend_score = 40  # >50M/hari: sangat likuid
+                                elif _avg_daily_val >= 20_000_000_000: _vol_trend_score = 30  # >20M/hari: likuid
+                                elif _avg_daily_val >= 5_000_000_000:  _vol_trend_score = 20  # >5M/hari: cukup likuid
+                                elif _avg_daily_val >= 1_000_000_000:  _vol_trend_score = 10  # >1M/hari: minimal
+                                else: _vol_trend_score = 0
+
+                                # Bonus jika volume tren NAIK dalam 1 bulan (aktif ditransaksikan)
+                                if _delta_vol > 0.3:   _vol_trend_score += 15  # tren naik kuat
+                                elif _delta_vol > 0.1: _vol_trend_score += 8   # tren naik moderat
+                                elif _delta_vol < -0.3: _vol_trend_score -= 10 # tren turun
+
+                        # Filter minimum: avg daily value ≥ 500 Juta/hari (liquid enough to trade)
+                        if _avg_daily_val < 500_000_000 and _spk < 1.5: continue
+
                         _chg = round((_cs.iloc[-1]-_cs.iloc[-2])/_cs.iloc[-2]*100, 2) if len(_cs)>=2 else 0
-                        _step2.append({"ticker":_tk,"price":_pr,"spike":_spk,"chg1d":_chg,"closes":list(_cs.tail(10))})
-                    _step2.sort(key=lambda x: x["spike"], reverse=True)
+                        # Liquid score gabungan: vol trend + spike hari ini
+                        _liquid_score = _vol_trend_score + min(_spk * 8, 30)
+                        _step2.append({
+                            "ticker": _tk, "price": _pr, "spike": _spk,
+                            "chg1d": _chg, "closes": list(_cs.tail(10)),
+                            "delta_vol": round(_delta_vol, 3),
+                            "avg_daily_val": _avg_daily_val,
+                            "vol_trend_score": _vol_trend_score,
+                            "liquid_score": _liquid_score,
+                        })
+                    # Rank 100 terbaik berdasarkan liquid_score (bukan hanya spike hari ini)
+                    _step2.sort(key=lambda x: x["liquid_score"], reverse=True)
                     _step2 = _step2[:100]
 
-                    _prog_bar.progress(55, text=f"⚡ STEP 3/4 — Pattern akumulasi dari {len(_step2)} kandidat...")
+                    _prog_bar.progress(55, text=f"⚡ STEP 3/4 — Teknikal EMA + 4 Screener dari {len(_step2)} kandidat...")
+
+                    # ── Helper EMA sederhana (inline, tanpa import tambahan) ──
+                    def _s3_ema(vals, period):
+                        if len(vals) < 2: return vals[-1] if vals else 0
+                        k = 2 / (period + 1)
+                        e = sum(vals[:min(period, len(vals))]) / min(period, len(vals))
+                        for v in vals[min(period, len(vals)):]:
+                            e = v * k + e * (1 - k)
+                        return e
+
                     _step3 = []
                     for _si in _step2:
                         _stk = _si["ticker"]; _ck = f"{_stk}.JK"
                         _accum_days = 0; _accum_streak = 0; _last_accum = True
-                        if _vol_df is not None and _ck in _vol_df.columns and _high_df is not None and _ck in _high_df.columns:
-                            _vs2  = _vol_df[_ck].dropna()
-                            _hs   = _high_df[_ck].dropna()
-                            _ls   = _low_df[_ck].dropna() if _low_df is not None and _ck in _low_df.columns else _hs
+                        _pre_accum_soft = False
+
+                        # ── Ambil data lengkap ──
+                        _cs2 = _close_df[_ck].dropna() if _ck in _close_df.columns else None
+                        _vs2 = _vol_df[_ck].dropna() if (_vol_df is not None and _ck in _vol_df.columns) else None
+                        _hs2 = _high_df[_ck].dropna() if (_high_df is not None and _ck in _high_df.columns) else None
+                        _ls2 = _low_df[_ck].dropna() if (_low_df is not None and _ck in _low_df.columns) else None
+
+                        # ════════════════════════════════════════════════════
+                        # TEKNIKAL: EMA alignment (proxy MnM Strategy+)
+                        # ════════════════════════════════════════════════════
+                        _ta_score = 0
+                        _ta_signals = []
+                        if _cs2 is not None and len(_cs2) >= 5:
+                            _clist = list(_cs2.values)
+                            _price = _clist[-1]
+                            _ema5  = _s3_ema(_clist, 5)
+                            _ema13 = _s3_ema(_clist, min(13, len(_clist)))
+                            _ema21 = _s3_ema(_clist, min(21, len(_clist)))
+                            _ema50 = _s3_ema(_clist, min(50, len(_clist)))
+
+                            # EMA alignment bullish
+                            if _price > _ema5:  _ta_score += 10
+                            if _price > _ema13: _ta_score += 10
+                            if _price > _ema21: _ta_score += 15; _ta_signals.append("P>EMA21")
+                            if _price > _ema50: _ta_score += 15; _ta_signals.append("P>EMA50")
+                            if _ema5 > _ema13:  _ta_score += 8
+                            if _ema13 > _ema21: _ta_score += 8; _ta_signals.append("EMA13>21")
+
+                            # Struktur HH/HL (uptrend structure)
+                            if len(_clist) >= 10:
+                                _highs10 = list(_hs2.values[-10:]) if _hs2 is not None and len(_hs2) >= 10 else _clist[-10:]
+                                _lows10  = list(_ls2.values[-10:]) if _ls2 is not None and len(_ls2) >= 10 else _clist[-10:]
+                                if _highs10[-1] > _highs10[-6] and _lows10[-1] > _lows10[-6]:
+                                    _ta_score += 20; _ta_signals.append("HH/HL")
+                                elif _highs10[-1] < _highs10[-6] and _lows10[-1] < _lows10[-6]:
+                                    _ta_score -= 15  # downtrend
+
+                            # Price near EMA21 (ideal entry zone MnM)
+                            if _ema21 > 0:
+                                _dist21 = abs(_price - _ema21) / _ema21 * 100
+                                if _dist21 <= 2.0 and _price >= _ema21:
+                                    _ta_score += 12; _ta_signals.append("near EMA21")
+
+                        # ════════════════════════════════════════════════════
+                        # POLA AKUMULASI (3 hari terakhir) — sama seperti sebelumnya
+                        # ════════════════════════════════════════════════════
+                        if _vs2 is not None and _hs2 is not None:
                             for _di in range(1, 4):
-                                if len(_vs2) < _di+20 or len(_close_df[_ck].dropna()) < _di+1: break
-                                _vi   = float(_vs2.iloc[-_di])
-                                _avg20i = float(_vs2.iloc[-_di-20:-_di].mean())
-                                _chgi  = abs(float(_close_df[_ck].dropna().iloc[-_di] - _close_df[_ck].dropna().iloc[-_di-1]) /
-                                            _close_df[_ck].dropna().iloc[-_di-1] * 100)
-                                if _vi >= _avg20i * 1.5 and _chgi <= 1.5:
-                                    _accum_days += 1
-                                    if _last_accum: _accum_streak += 1
-                                else:
-                                    _last_accum = False
-                        if _accum_days == 0: continue
-                        _score_mult = {1: 1.0, 2: 1.4, 3: 2.0}.get(_accum_days, 1.0)
-                        _step3.append({**_si, "accum_days": _accum_days, "accum_streak": _accum_streak,
-                                       "pre_accum": True, "score_mult": _score_mult})
-                    _step3.sort(key=lambda x: x["spike"]*x.get("score_mult",1), reverse=True)
+                                if (_cs2 is not None and len(_cs2) > _di+1 and
+                                        len(_vs2) >= _di+5):
+                                    _vi    = float(_vs2.iloc[-_di])
+                                    _lbk   = min(len(_vs2)-_di-1, 20)
+                                    _avg20i = float(_vs2.iloc[-_di-_lbk:-_di].mean()) if _lbk > 0 else _vi
+                                    _chgi  = abs(float(_cs2.iloc[-_di] - _cs2.iloc[-_di-1]) /
+                                                 _cs2.iloc[-_di-1] * 100) if _cs2.iloc[-_di-1] != 0 else 99
+                                    if _vi >= _avg20i * 1.3 and _chgi <= 2.0:
+                                        _accum_days += 1
+                                        if _last_accum: _accum_streak += 1
+                                    elif _vi >= _avg20i * 1.0 and _chgi <= 3.0:
+                                        _pre_accum_soft = True
+                                    else:
+                                        _last_accum = False
+
+                        # ════════════════════════════════════════════════════
+                        # 4 SCREENER SCORING (Stockbit standard)
+                        # ════════════════════════════════════════════════════
+                        _screener_scores = {"BigAccum": 0, "BandarUptrend": 0,
+                                            "ForeignFlow": 0, "1M_Foreign": 0}
+                        _screeners_hit_s3 = []
+
+                        # SCREENER 1 — BIG ACCUMULATION
+                        # Value transaksi > 3 Miliar + volume spike > 20% anomali
+                        _avg_val = _si.get("avg_daily_val", 0)
+                        _spk_s3  = _si.get("spike", 1.0)
+                        if _avg_val >= 3_000_000_000:
+                            _screener_scores["BigAccum"] += 20
+                            if _spk_s3 >= 1.5: _screener_scores["BigAccum"] += 10
+                            if _accum_days >= 1: _screener_scores["BigAccum"] += 5
+                        elif _avg_val >= 1_000_000_000:
+                            _screener_scores["BigAccum"] += 8
+
+                        # SCREENER 2 — BANDAR ACCUMULATION UPTREND
+                        # Volume hari ini > kemarin + value MA20 > 1 Miliar + streak
+                        _spk_prev = (_vs2.iloc[-2] / float(_vs2.iloc[-22:-2].mean())
+                                     if _vs2 is not None and len(_vs2) >= 22 else 1.0)
+                        if _avg_val >= 1_000_000_000:
+                            _screener_scores["BandarUptrend"] += 8
+                        if _spk_s3 > _spk_prev and _spk_s3 >= 1.2:
+                            _screener_scores["BandarUptrend"] += 12
+                        if _accum_streak >= 2:
+                            _screener_scores["BandarUptrend"] += 10
+                        elif _accum_streak >= 1:
+                            _screener_scores["BandarUptrend"] += 5
+                        if _accum_days >= 2:
+                            _screener_scores["BandarUptrend"] += 8
+
+                        # SCREENER 3 — FOREIGN FLOW UPTREND (proxy dari delta volume + chg)
+                        # Surrogate: volume spike 2 hari berturut + harga naik = hot money signal
+                        if _spk_s3 >= 1.5 and _spk_prev >= 1.2 and _si.get("chg1d", 0) > 0:
+                            _screener_scores["ForeignFlow"] += 20
+                        if _si.get("delta_vol", 0) > 0.2 and _avg_val >= 1_000_000_000:
+                            _screener_scores["ForeignFlow"] += 10
+                        if _accum_streak >= 2 and _si.get("chg1d", 0) > 0:
+                            _screener_scores["ForeignFlow"] += 8
+
+                        # SCREENER 4 — 1 MONTH NET FOREIGN FLOW (proxy)
+                        # Delta volume 1 bulan positif + nilai transaksi besar = akumulasi sistematis
+                        _dv = _si.get("delta_vol", 0)
+                        if _dv > 0.2 and _avg_val >= 1_000_000_000:
+                            _screener_scores["1M_Foreign"] += 20
+                        elif _dv > 0.05:
+                            _screener_scores["1M_Foreign"] += 10
+                        if _avg_val >= 5_000_000_000 and _dv > 0:
+                            _screener_scores["1M_Foreign"] += 8
+
+                        # Tandai screener yang lolos
+                        _SC_THRESHOLD = {"BigAccum": 20, "BandarUptrend": 15,
+                                         "ForeignFlow": 15, "1M_Foreign": 15}
+                        for _scn, _sct in _SC_THRESHOLD.items():
+                            if _screener_scores[_scn] >= _sct:
+                                _screeners_hit_s3.append(_scn)
+
+                        # ── Skor final STEP 3 ──
+                        _n_sc = len(_screeners_hit_s3)
+                        _confluence_bonus = {0: 0, 1: 10, 2: 25, 3: 45, 4: 70}.get(_n_sc, 0)
+
+                        # Loloskan: minimal 1 screener ATAU akumulasi ATAU spike kuat + liquid
+                        _has_signal = (_n_sc >= 1 or _accum_days >= 1 or _pre_accum_soft
+                                       or (_spk_s3 >= 1.5 and _avg_val >= 1_000_000_000))
+                        if not _has_signal:
+                            continue
+
+                        _score_mult = {0: 0.7, 1: 1.0, 2: 1.4, 3: 2.0}.get(_accum_days, 1.0)
+                        if _accum_days == 0 and _pre_accum_soft: _score_mult = 0.7
+
+                        # Final composite score untuk ranking
+                        _final_score = (
+                            _si["liquid_score"] * 0.3          # likuiditas & activity
+                            + _ta_score * 0.25                  # teknikal EMA/struktur
+                            + _confluence_bonus                  # screener confluence
+                            + _spk_s3 * 8                       # volume spike hari ini
+                            + _accum_days * 12                  # pola akumulasi
+                        )
+
+                        _step3.append({
+                            **_si,
+                            "accum_days": _accum_days,
+                            "accum_streak": _accum_streak,
+                            "pre_accum": (_accum_days > 0 or _pre_accum_soft),
+                            "score_mult": _score_mult,
+                            "ta_score_s3": _ta_score,
+                            "ta_signals_s3": _ta_signals,
+                            "screeners_hit_s3": _screeners_hit_s3,
+                            "n_screeners_s3": _n_sc,
+                            "screener_scores_s3": _screener_scores,
+                            "final_score_s3": _final_score,
+                        })
+
+                    _step3.sort(key=lambda x: x["final_score_s3"], reverse=True)
                     _top30 = _step3[:30]
 
                     _prog_bar.progress(75, text=f"⚡ STEP 4/4 — GoAPI konfirmasi {len(_top30)} saham final...")
@@ -17633,30 +20395,173 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     for _si in _top30:
                         _stk = _si["ticker"]
                         if not _goapi_available():
-                            _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0})
+                            _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0,
+                                        "screeners_hit":[],"foreign_accum_count":0})
                             continue
                         try:
                             from datetime import date as _gd, timedelta as _gtd
-                            _gdate = str(_gd.today())
-                            _grows = goapi_get_broker_summary(_stk, _gdate)
-                            if not _grows:
-                                _grows = goapi_get_broker_summary(_stk, str(_gd.today()-_gtd(days=1)))
+                            # Retry T, T-1, T-2, T-3 — data BEI sering baru tersedia H+1
+                            _grows = []
+                            _gdate_used = ""
+                            for _gday_back in range(0, 4):
+                                _gdate_try = str(_gd.today() - _gtd(days=_gday_back))
+                                _grows_try = goapi_get_broker_summary(_stk, _gdate_try)
+                                if _grows_try:
+                                    _grows = _grows_try
+                                    _gdate_used = _gdate_try
+                                    break
+                            _gdate = _gdate_used or str(_gd.today())
+
                             _net_b = 0; _top_acc = []; _top_dist_g = []
+                            _total_buy_val = 0; _total_vol = 0
+                            _foreign_accum = []; _foreign_dist = []
                             for _gr in (_grows or []):
-                                _gbr = str(_gr.get("BrokerID","?"))
-                                _gbl = float(_gr.get("BuyVolume",0) or 0)
-                                _gsl = float(_gr.get("SellVolume",0) or 0)
-                                _gn  = _gbl - _gsl
-                                _net_b += _gn
-                                if _gn > 0: _top_acc.append(_gbr)
-                                else: _top_dist_g.append(_gbr)
-                            _verdict  = "AKUMULASI" if _net_b > 0 else ("DISTRIBUSI" if _net_b < 0 else "")
-                            _bpr = round(abs(_net_b) / max(sum(float(r.get("BuyVolume",0) or 0) for r in _grows), 1) * 100, 1) if _grows else 0
-                            _si.update({"verdict": _verdict, "top_accum": _top_acc[:3],
-                                        "top_dist": _top_dist_g[:3], "goapi_confirmed": bool(_grows),
-                                        "bpr": _bpr})
-                            if _grows: _confirmed_count += 1
-                        except: _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0})
+                                _gbr  = str(_gr.get("BrokerID","?"))
+                                _gbl  = float(_gr.get("BuyVolume",0) or 0)
+                                _gsl  = float(_gr.get("SellVolume",0) or 0)
+                                _gn   = _gbl - _gsl
+                                _gbv  = float(_gr.get("BuyValue",0) or 0)
+                                _net_b       += _gn
+                                _total_buy_val += _gbv
+                                _total_vol   += _gbl
+                                if _gn > 0:
+                                    _top_acc.append(_gbr)
+                                    if _ALL_BROKERS.get(_gbr, ("",""))[1] == "FOREIGN":
+                                        _foreign_accum.append(_gbr)
+                                else:
+                                    _top_dist_g.append(_gbr)
+                                    if _ALL_BROKERS.get(_gbr, ("",""))[1] == "FOREIGN":
+                                        _foreign_dist.append(_gbr)
+
+                            _verdict = "AKUMULASI" if _net_b > 0 else ("DISTRIBUSI" if _net_b < 0 else "")
+                            _bpr = round(abs(_net_b) / max(_total_vol, 1) * 100, 1) if _grows else 0
+
+                            # ── Hitung net foreign flow value (untuk Screener 4) ──
+                            _net_foreign_val = 0
+                            for _gr in (_grows or []):
+                                _gbr_id = str(_gr.get("BrokerID","?"))
+                                if _ALL_BROKERS.get(_gbr_id, ("",""))[1] == "FOREIGN":
+                                    _gbv2  = float(_gr.get("BuyValue",0) or 0)
+                                    _gsv2  = float(_gr.get("SellValue",0) or 0)
+                                    _net_foreign_val += (_gbv2 - _gsv2)
+
+                            # ── Evaluasi 4 screener — SEMUA berbasis data GoAPI real ──
+                            _sc_hits = []
+
+                            # Screener 1: Big Accumulation
+                            # → Top 3 broker pembeli mendominasi >20% pembelian total + value >3M
+                            _n_buyer_brokers  = len(_top_acc)
+                            _n_seller_brokers = len(_top_dist_g)
+                            if (
+                                _bpr > 20 and
+                                _n_buyer_brokers <= 5 and
+                                _total_buy_val > 3_000_000_000 and
+                                _verdict == "AKUMULASI"
+                            ):
+                                _sc_hits.append("BigAccum")
+
+                            # Screener 2: Bandar Accumulation Uptrend
+                            # → IDX logic (counter-intuitive): FEW buyer brokers + MANY seller brokers = ACCUMULATION
+                            # Bandar menyerap supply pelan-pelan → few concentrated buyers vs many distributed sellers
+                            _is_concentrated_buy = (
+                                _n_buyer_brokers >= 1 and
+                                _n_buyer_brokers <= 4 and          # sedikit broker beli = concentrated smart money
+                                _n_seller_brokers >= _n_buyer_brokers and  # banyak yang jual = distribusi retail
+                                _net_b > 0 and                     # net beli tetap positif
+                                _si.get("accum_streak", 0) >= 2    # dikonfirmasi pola volume yfinance
+                            )
+                            if _is_concentrated_buy:
+                                _sc_hits.append("BandarUptrend")
+
+                            # Screener 3: Foreign Flow Uptrend
+                            # → ≥2 broker asing net beli + net foreign positif + streak beli ≥2 hari
+                            _net_foreign_positive = _net_foreign_val > 1_000_000_000   # >1M net foreign buy
+                            if (
+                                len(_foreign_accum) >= 2 and
+                                len(_foreign_accum) > len(_foreign_dist) and
+                                _net_foreign_positive
+                            ):
+                                _sc_hits.append("ForeignFlow")
+
+                            # Screener 4: 1 Month Net Foreign Flow
+                            # → Proxy: net foreign value hari ini >1B + tidak ada distribusi besar asing
+                            # (data GoAPI per hari, bukan 1 bulan — ini best-effort)
+                            _foreign_net_dominant = (
+                                len(_foreign_accum) >= 1 and
+                                _net_foreign_val > 1_000_000_000 and   # threshold 1M IDR net foreign
+                                len(_foreign_dist) == 0 and            # tidak ada broker asing yang distribusi
+                                _si.get("price", 0) <= 8000            # konfirmasi universe
+                            )
+                            if _foreign_net_dominant:
+                                _sc_hits.append("1M-Foreign")
+
+                            # ── goapi_confirmed = True HANYA jika akumulasi terverifikasi ──
+                            # Tidak cukup sekadar data ada — harus AKUMULASI nyata
+                            _goapi_real_confirmed = (
+                                bool(_grows) and
+                                _verdict == "AKUMULASI" and
+                                _net_b > 0
+                            )
+
+                            _si.update({
+                                "verdict":             _verdict,
+                                "top_accum":           _top_acc[:3],
+                                "top_dist":            _top_dist_g[:3],
+                                "goapi_confirmed":     _goapi_real_confirmed,
+                                "goapi_data_ok":       bool(_grows),    # flag terpisah: GoAPI return data
+                                "bpr":                 _bpr,
+                                "screeners_hit":       _sc_hits,
+                                "foreign_accum_count": len(_foreign_accum),
+                                "n_screeners":         len(_sc_hits),
+                                "net_foreign_val":     _net_foreign_val,
+                                "n_buyer_brokers":     _n_buyer_brokers,
+                                "n_seller_brokers":    _n_seller_brokers,
+                            })
+                            if _goapi_real_confirmed: _confirmed_count += 1
+                        except Exception as _goapi_exc:
+                            _err_msg = f"{_stk}: {type(_goapi_exc).__name__}: {str(_goapi_exc)[:80]}"
+                            st.session_state["_goapi_last_error"] = _err_msg
+                            _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,
+                                        "goapi_data_ok":False,"bpr":0,
+                                        "screeners_hit":[],"foreign_accum_count":0,"n_screeners":0})
+
+                    # ── POST-GoAPI RE-RANKING — screener confluence + teknikal + GoAPI ──
+                    # Gabungkan: screeners dari STEP 3 + GoAPI verification + teknikal score
+                    def _goapi_final_score(s):
+                        # Screeners dari STEP 3 (4 screener Stockbit)
+                        n_sc3  = s.get("n_screeners_s3", 0)
+                        # Screeners dari GoAPI (tambahan konfirmasi broker)
+                        n_sc_g = len(s.get("screeners_hit", []))
+                        # Total screener hit (gabungan)
+                        n_sc_total = max(n_sc3, n_sc_g)
+                        accum  = 1 if s.get("verdict") == "AKUMULASI" else 0
+                        conf   = 1 if s.get("goapi_confirmed") else 0
+                        bpr    = min(s.get("bpr", 0) / 100, 1.0)
+                        spike  = min(s.get("spike", 1) / 5, 1.0)
+                        astrk  = min(s.get("accum_streak", 0) / 3, 1.0)
+                        ta_sc  = min(s.get("ta_score_s3", 0) / 80, 1.0)     # 0–1
+                        liq_sc = min(s.get("liquid_score", 0) / 55, 1.0)    # 0–1
+                        hm     = 0.5 if s.get("high_momentum") else 0
+                        return (
+                            n_sc_total * 30    # screener confluence (dominan)
+                            + accum * 20        # GoAPI konfirmasi akumulasi
+                            + conf * 15         # GoAPI verified
+                            + ta_sc * 15        # EMA/struktur teknikal
+                            + liq_sc * 10       # likuiditas aktif
+                            + bpr * 8           # broker pressure ratio
+                            + spike * 8         # volume spike
+                            + astrk * 8         # streak akumulasi
+                            + hm * 5            # high momentum
+                        )
+
+                    # Sinkronkan screeners_hit dari STEP 3 jika GoAPI tidak confirm screener
+                    for _s30 in _top30:
+                        if not _s30.get("screeners_hit"):
+                            _s30["screeners_hit"] = _s30.get("screeners_hit_s3", [])
+                        if not _s30.get("n_screeners"):
+                            _s30["n_screeners"] = _s30.get("n_screeners_s3", 0)
+
+                    _top30.sort(key=_goapi_final_score, reverse=True)
 
                     # Consecutive momentum tracking
                     _screen_history = st.session_state.get("sigma_bs30_history", {})
@@ -17698,6 +20603,73 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             save_user(st.session_state.user["email"], _sv)
                         except: pass
                     _prog_bar.progress(100, text=f"✅ Selesai — {len(_top30)} saham screened, {_confirmed_count} GoAPI confirmed")
+
+                    # ── Tampilkan error GoAPI jika ada ──
+                    _last_goapi_err = st.session_state.pop("_goapi_last_error", "")
+                    if _confirmed_count == 0 and _goapi_available():
+                        if _last_goapi_err:
+                            _is_404 = "404" in _last_goapi_err
+                            _is_429 = "429" in _last_goapi_err
+                            if _is_404:
+                                st.warning(
+                                    f"⚠️ **GoAPI Error 404** — Data broker BEI belum tersedia untuk tanggal yang diminta.\n\n"
+                                    f"**Detail:** `{_last_goapi_err}`\n\n"
+                                    f"**Kemungkinan penyebab:**\n"
+                                    f"- GoAPI biasanya baru publish data setelah **20:00 WIB** — coba generate lagi malam ini\n"
+                                    f"- Tanggal adalah hari libur nasional (GoAPI tidak punya data)\n"
+                                    f"- GoAPI sedang maintenance endpoint `/broker-summary`\n\n"
+                                    f"Sistem tetap menampilkan 30 saham dari scoring teknikal + volume (tanpa GoAPI)."
+                                )
+                            elif _is_429:
+                                st.warning(
+                                    f"⚠️ **GoAPI Rate Limit (429)** — Kuota harian habis.\n\n"
+                                    f"Plan Free: 30 request/hari · Monthly: 500 request. Coba lagi besok atau upgrade plan.\n\n"
+                                    f"Sistem tetap menampilkan 30 saham dari scoring teknikal + volume (tanpa GoAPI)."
+                                )
+                            else:
+                                st.warning(
+                                    f"⚠️ **GoAPI Error** — API key terdeteksi tapi semua request gagal.\n\n"
+                                    f"**Detail error terakhir:** `{_last_goapi_err}`\n\n"
+                                    f"**Kemungkinan penyebab:**\n"
+                                    f"- Data broker BEI belum tersedia (trading baru selesai / weekend)\n"
+                                    f"- Rate limit GoAPI tercapai (plan free: 30 req/hari)\n"
+                                    f"- Key GoAPI sudah expired atau tidak aktif\n\n"
+                                    f"Sistem tetap menampilkan 30 saham dari scoring teknikal + volume (tanpa GoAPI)."
+                                )
+                        else:
+                            st.info(
+                                "ℹ️ **GoAPI Confirmed: 0** — Data broker tidak tersedia saat ini.\n\n"
+                                "Kemungkinan: pasar belum buka / hari libur / rate limit.\n"
+                                "Saham ditampilkan berdasarkan scoring teknikal + 4 screener volume."
+                            )
+                    elif _last_goapi_err:
+                        st.caption(f"⚠️ GoAPI: {_last_goapi_err}")
+
+                    # ══ AUTO-GENERATE Daily + Weekly plan segera setelah broksum selesai ══
+                    # Supaya plan langsung masuk History, Summary, dan Track Record
+                    # tanpa harus tunggu jam 21:00 atau Sabtu 12:00
+                    try:
+                        _post_tickers = [s["ticker"] for s in _top30 if s.get("ticker")]
+                        if _post_tickers:
+                            _post_price_map = _reco_fetch_prices(tuple(_post_tickers))
+                            if _post_price_map:
+                                _post_now = _wib_now()
+                                _post_date_key = _post_now.strftime("%Y-%m-%d")
+                                _post_week_key = _post_now.strftime("%G-W%V")
+                                _post_ts = _post_now.strftime("%d %b %Y")
+                                _post_slot_d = f"{_post_date_key}_broksum"
+                                _post_slot_w = f"{_post_week_key}_broksum"
+                                # Daily plan — selalu save/overwrite slot broksum hari ini
+                                _post_plan_d = _rule_based_plan_v2(_post_price_map, _top30, "daily")
+                                _save_auto_plan_to_history("daily", _post_plan_d, _post_slot_d,
+                                                           _post_ts, "Post-BrokSum Generate")
+                                # Weekly plan — selalu save/overwrite slot broksum minggu ini
+                                _post_plan_w = _rule_based_plan_v2(_post_price_map, _top30, "weekly")
+                                _save_auto_plan_to_history("weekly", _post_plan_w, _post_slot_w,
+                                                           _post_ts, "Post-BrokSum Generate")
+                    except Exception:
+                        pass  # jangan crash pipeline utama
+
                     st.rerun()
                 else:
                     st.error("Gagal mengambil data yfinance. Coba lagi.")
@@ -17706,13 +20678,15 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             if _bs30_existing:
                 _hm_list        = [s for s in _bs30_existing if s.get("high_momentum")]
                 _confirmed_list = [s for s in _bs30_existing if s.get("goapi_confirmed")]
+                _multi_sc_list  = [s for s in _bs30_existing if s.get("n_screeners", 0) >= 2]
 
-                st.markdown(f"""<div style='display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;
+                st.markdown(f"""<div style='display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;
                     font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};'>
-                    <span>📊 Total: <b style='color:{text_main};'>{len(_bs30_existing)}</b> saham</span>
-                    <span>⭐ HIGH MOMENTUM: <b style='color:#f59e0b;'>{len(_hm_list)}</b></span>
-                    <span>🔗 GoAPI Confirmed: <b style='color:#26a69a;'>{len(_confirmed_list)}</b></span>
-                    <span>🕐 Update: <b style='color:{text_main};'>{_bs30_ts}</b></span>
+                    <span style='white-space:nowrap;'>📊 Total: <b style='color:{text_main};'>{len(_bs30_existing)}</b> saham</span>
+                    <span style='white-space:nowrap;'>⭐ HIGH MOMENTUM: <b style='color:#f59e0b;'>{len(_hm_list)}</b></span>
+                    <span style='white-space:nowrap;'>🔗 GoAPI Confirmed: <b style='color:#26a69a;'>{len(_confirmed_list)}</b></span>
+                    <span style='white-space:nowrap;'>🎯 Multi-Screener: <b style='color:#c084fc;'>{len(_multi_sc_list)}</b></span>
+                    <span style='white-space:nowrap;background:{"rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.04)"};border:1px solid {met_border};border-radius:6px;padding:2px 8px;'>🕐 <b style='color:{text_main};'>{_bs30_ts}</b></span>
                 </div>""", unsafe_allow_html=True)
 
                 st.markdown(f"""<div style='font-family:IBM Plex Mono,monospace;font-size:0.67rem;color:{text_sub};margin-bottom:10px;'>
@@ -17741,7 +20715,37 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     _pre_acc = _sitem.get("pre_accum", False)
                     _astreak = _sitem.get("accum_streak", 0)
                     _adays   = _sitem.get("accum_days", 0)
+                    _sc_hits = _sitem.get("screeners_hit", _sitem.get("screeners_hit_s3", []))
+                    _n_sc    = max(len(_sc_hits), _sitem.get("n_screeners_s3", 0))
                     _is_sel  = st.session_state.get("bs30_selected_ticker") == _stk
+
+                    _n_sc_disp  = _sitem.get("n_screeners_s3", _sitem.get("n_screeners", 0))
+                    _sc_hits_s3 = _sitem.get("screeners_hit_s3", _sitem.get("screeners_hit", []))
+                    _liq_sc     = _sitem.get("liquid_score", 0)
+                    _ta_sc_disp = _sitem.get("ta_score_s3", 0)
+
+                    # Build screener badge HTML
+                    _sc_badge_map = {
+                        "BigAccum":     ("#26a69a", "💰BA"),
+                        "BandarUptrend":("#a78bfa", "📈BU"),
+                        "ForeignFlow":  ("#60a5fa", "🌐FF"),
+                        "1M_Foreign":   ("#f59e0b", "📅1M"),
+                    }
+                    _sc_badges_html = "".join(
+                        f"<span style='background:{_sc_badge_map.get(_sc,('#888',_sc))[0]}22;"
+                        f"color:{_sc_badge_map.get(_sc,('#888',_sc))[0]};border:1px solid "
+                        f"{_sc_badge_map.get(_sc,('#888',_sc))[0]}55;border-radius:3px;"
+                        f"font-size:0.55rem;padding:1px 4px;margin:0 1px;white-space:nowrap;'>"
+                        f"{_sc_badge_map.get(_sc,('#888',_sc))[1]}</span>"
+                        for _sc in (_sc_hits_s3 or _sc_hits)[:4]
+                    )
+                    _liq_val_card = _sitem.get("avg_daily_val", 0)
+                    if _liq_val_card >= 20_000_000_000:
+                        _liq_badge = "<span style='background:#26a69a22;color:#26a69a;border:1px solid #26a69a44;border-radius:3px;font-size:0.52rem;padding:1px 3px;'>LIQ★★</span>"
+                    elif _liq_val_card >= 5_000_000_000:
+                        _liq_badge = "<span style='background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:3px;font-size:0.52rem;padding:1px 3px;'>LIQ★</span>"
+                    else:
+                        _liq_badge = ""
 
                     if _verdict == "AKUMULASI":
                         _border_c = "rgba(38,166,154,0.6)"; _bg_c = "rgba(38,166,154,0.10)"; _label_c = "#26a69a"
@@ -17773,6 +20777,50 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     _broker_line = f"<br><span style='color:#64748b;font-size:0.60rem;'>{_brokers_str}</span>" if _brokers_str else ""
                     _sel_line    = f"<br><span style='color:#60a5fa;font-size:0.62rem;'>▶ DIPILIH</span>" if _is_sel else ""
 
+                    # ── Screener badges (gabungan GoAPI + STEP 3 data) ──
+                    _BADGE_MAP = {
+                        "BigAccum":      ("#f97316", "BA"),
+                        "BandarUptrend": ("#a78bfa", "BU"),
+                        "ForeignFlow":   ("#38bdf8", "FF"),
+                        "1M-Foreign":    ("#34d399", "1M"),
+                        "1M_Foreign":    ("#34d399", "1M"),  # alias underscore
+                    }
+                    # Gabungan screener dari GoAPI dan STEP 3
+                    _all_sc = list(dict.fromkeys(list(_sc_hits) + list(_sc_hits_s3)))
+                    _badges_html = ""
+                    if _all_sc:
+                        _badge_parts = []
+                        for _badge_key in ["BigAccum", "BandarUptrend", "ForeignFlow", "1M-Foreign", "1M_Foreign"]:
+                            if _badge_key in _all_sc and _badge_key != "1M_Foreign":
+                                _bc, _bl = _BADGE_MAP[_badge_key]
+                                _badge_parts.append(
+                                    f"<span style='background:{_bc}22;color:{_bc};border:1px solid {_bc}55;"
+                                    f"border-radius:3px;padding:0 3px;font-size:0.57rem;font-weight:700;'>{_bl}</span>"
+                                )
+                            elif _badge_key == "1M_Foreign" and "1M-Foreign" not in _all_sc and "1M_Foreign" in _all_sc:
+                                _bc, _bl = _BADGE_MAP["1M_Foreign"]
+                                _badge_parts.append(
+                                    f"<span style='background:{_bc}22;color:{_bc};border:1px solid {_bc}55;"
+                                    f"border-radius:3px;padding:0 3px;font-size:0.57rem;font-weight:700;'>{_bl}</span>"
+                                )
+                        # Tambahkan liquid badge
+                        if _liq_badge:
+                            _badge_parts.insert(0, _liq_badge)
+                        _badges_html = "<br>" + " ".join(_badge_parts) if _badge_parts else ""
+                    elif _liq_badge:
+                        _badges_html = "<br>" + _liq_badge
+                    # TA score line jika cukup tinggi
+                    _ta_line = ""
+                    if _ta_sc_disp >= 50:
+                        _ta_c = "#26a69a" if _ta_sc_disp >= 70 else "#f59e0b"
+                        _ta_line = f"<br><span style='color:{_ta_c};font-size:0.59rem;'>TA:{_ta_sc_disp}</span>"
+                    # Confluence label
+                    _confluence_line = ""
+                    if _n_sc >= 3:
+                        _confluence_line = f"<br><span style='color:#c084fc;font-size:0.62rem;font-weight:700;'>🎯 CONFLUENCE ×{_n_sc}</span>"
+                    elif _n_sc == 2:
+                        _confluence_line = f"<br><span style='color:#c084fc;font-size:0.60rem;'>⚡ 2-screener</span>"
+
                     with _s30_cols[_si % 5]:
                         _ticker_color  = "#f59e0b" if _hm else text_main
                         _spk_color     = "#26a69a" if _spk >= 3 else ("#f59e0b" if _spk >= 2 else text_main)
@@ -17787,7 +20835,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             f"<div style='color:{text_sub};font-size:0.67rem;margin-top:3px;line-height:1.65;'>"
                             f"<span style='color:{_spk_color};'>{_spk:.1f}x</span>"
                             f" <span style='color:{_chg_color};'>{_chg:+.1f}%</span>"
-                            f"{_streak_line}{_hm_line}{_verdict_line}{_broker_line}{_sel_line}"
+                            f"{_streak_line}{_hm_line}{_verdict_line}{_broker_line}"
+                            f"{_badges_html}{_ta_line}{_confluence_line}{_sel_line}"
                             f"</div></div>"
                         )
                         st.markdown(_card_html, unsafe_allow_html=True)
@@ -17833,105 +20882,204 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             if not _bsh_all:
                 st.info("📭 Belum ada History BrokSum. Data akan muncul setelah screening pertama (auto jam 20:30 WIB).")
             else:
-                st.markdown(f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:14px;'>"
-                            f"Riwayat hasil screening 30 saham. Klik tanggal untuk lihat detail.</div>",
-                            unsafe_allow_html=True)
+                st.markdown(
+                    f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{text_sub};margin-bottom:4px;'>"
+                    f"📂 Riwayat hasil screening hingga 30 hari. "
+                    f"Gunakan tombol <b style='color:#26a69a;'>📈 Pakai utk Weekly Plan</b> "
+                    f"untuk membuat Weekly Plan dari data historis BrokSum.</div>",
+                    unsafe_allow_html=True)
+
+                # Tombol "pakai untuk weekly" dari history — kunci untuk analisa multi-hari
+                _use_hist_key = st.session_state.get("brosum_hist_use_key", "")
+
                 _today_bs = _wib_now().strftime("%Y-%m-%d")
                 for _bhdk in sorted(_bsh_all.keys(), reverse=True)[:30]:
                     _bhde  = _bsh_all[_bhdk]
                     _bhdsc = _bhde.get("screened", [])
                     _is_today_bh = (_bhdk == _today_bs)
                     _bh_badge = "  🟢 HARI INI" if _is_today_bh else ""
-                    _bh_lbl   = f"📊 {_bhde.get('date', _bhdk)} — {len(_bhdsc)} saham{_bh_badge}"
+                    _bh_acc_cnt  = sum(1 for s in _bhdsc if s.get("verdict") == "AKUMULASI")
+                    _bh_hm_cnt   = sum(1 for s in _bhdsc if s.get("high_momentum"))
+                    _bh_lbl = (f"📊 {_bhde.get('date', _bhdk)} — {len(_bhdsc)} saham "
+                               f"· ✅{_bh_acc_cnt} Akum · ⭐{_bh_hm_cnt} HM{_bh_badge}")
                     with st.expander(_bh_lbl, expanded=_is_today_bh):
-                        st.caption(f"Generated: {_bhde.get('generated_at','—')}")
+                        _bhcol_info, _bhcol_btn = st.columns([3, 1])
+                        with _bhcol_info:
+                            st.caption(f"Generated: {_bhde.get('generated_at','—')}")
+                        with _bhcol_btn:
+                            _use_btn_key = f"use_hist_{_bhdk}"
+                            if st.button("📈 Pakai utk Weekly Plan",
+                                         key=_use_btn_key,
+                                         use_container_width=True,
+                                         help=f"Gunakan data BrokSum {_bhde.get('date',_bhdk)} sebagai basis Weekly Plan"):
+                                # Simpan data historis ini ke session state untuk dipakai Weekly Plan
+                                st.session_state["brosum_hist_use_key"] = _bhdk
+                                st.session_state["brosum_hist_use_data"] = _bhdsc
+                                st.session_state["brosum_hist_use_date"] = _bhde.get("date", _bhdk)
+                                # Generate weekly plan dari data historis ini
+                                _bh_tickers = [s["ticker"] for s in _bhdsc if s.get("ticker")]
+                                if _bh_tickers:
+                                    try:
+                                        with st.spinner(f"⚡ Membuat Weekly Plan dari data {_bhde.get('date',_bhdk)}..."):
+                                            _bh_price_map = _reco_fetch_prices(tuple(_bh_tickers))
+                                            if _bh_price_map:
+                                                _bh_weekly = _rule_based_plan_v2(_bh_price_map, _bhdsc, "weekly")
+                                                _bh_wslot  = f"{_bhdk.replace('-','')}_hist_weekly"
+                                                _bh_wdate  = _bhde.get("date", _bhdk)
+                                                _save_auto_plan_to_history(
+                                                    "weekly", _bh_weekly, _bh_wslot,
+                                                    _bh_wdate, f"Dari BrokSum {_bh_wdate}")
+                                                st.success(f"✅ Weekly Plan dari BrokSum {_bh_wdate} berhasil disimpan ke History Weekly!")
+                                            else:
+                                                st.warning("Gagal mengambil harga terkini. Coba lagi.")
+                                    except Exception as _bhe2:
+                                        st.error(f"Error: {_bhe2}")
+
                         _bh_hm   = [s for s in _bhdsc if s.get("high_momentum")]
                         _bh_acc  = [s for s in _bhdsc if s.get("verdict") == "AKUMULASI"]
                         _bh_dist = [s for s in _bhdsc if s.get("verdict") == "DISTRIBUSI"]
-                        _bhc1,_bhc2,_bhc3 = st.columns(3)
-                        _bhc1.metric("High Momentum ⭐", len(_bh_hm))
-                        _bhc2.metric("GoAPI Akumulasi ✅", len(_bh_acc))
-                        _bhc3.metric("Distribusi ⚠️", len(_bh_dist))
+                        _bh_sc   = [s for s in _bhdsc if s.get("n_screeners_s3", 0) >= 2
+                                    or s.get("n_screeners", 0) >= 2]
+                        _bhc1, _bhc2, _bhc3, _bhc4 = st.columns(4)
+                        _bhc1.metric("⭐ High Momentum", len(_bh_hm))
+                        _bhc2.metric("✅ GoAPI Akumulasi", len(_bh_acc))
+                        _bhc3.metric("🎯 Multi-Screener", len(_bh_sc))
+                        _bhc4.metric("⚠️ Distribusi", len(_bh_dist))
+
                         import pandas as _pd_bh
                         _bh_rows = []
                         for _bhs in _bhdsc:
+                            _sc3_hits = _bhs.get("screeners_hit_s3", _bhs.get("screeners_hit", []))
+                            _liq_val  = _bhs.get("avg_daily_val", 0)
+                            _liq_disp = (f"Rp {_liq_val/1e9:.1f}M/hari" if _liq_val >= 1e9
+                                         else f"Rp {_liq_val/1e6:.0f}Jt/hari" if _liq_val >= 1e6 else "—")
                             _bh_rows.append({
-                                "TICKER":    _bhs.get("ticker",""),
-                                "PRICE":     f"Rp {int(_bhs.get('price',0)):,}",
-                                "VOL SPIKE": f"{_bhs.get('spike',0):.1f}x",
-                                "CHG":       f"{_bhs.get('chg1d',0):+.1f}%",
-                                "AKUM DAYS": _bhs.get("accum_days",0),
-                                "VERDICT":   _bhs.get("verdict","Pre-Accum" if _bhs.get("pre_accum") else "—"),
-                                "MOMENTUM":  f"★ {_bhs.get('momentum_days',0)}d" if _bhs.get("high_momentum") else "—",
-                                "TOP ACCUM": " ".join(_bhs.get("top_accum",[])[:3]) or "—",
+                                "TICKER":       _bhs.get("ticker",""),
+                                "PRICE":        f"Rp {int(_bhs.get('price',0)):,}",
+                                "VOL SPIKE":    f"{_bhs.get('spike',0):.1f}x",
+                                "CHG":          f"{_bhs.get('chg1d',0):+.1f}%",
+                                "DELTA VOL":    f"{_bhs.get('delta_vol',0):+.2f}" if _bhs.get("delta_vol") else "—",
+                                "LIKUIDITAS":   _liq_disp,
+                                "AKUM DAYS":    _bhs.get("accum_days", 0),
+                                "SCREENERS":    " + ".join(_sc3_hits) if _sc3_hits else "—",
+                                "TA SCORE":     _bhs.get("ta_score_s3", "—"),
+                                "VERDICT":      _bhs.get("verdict","Pre-Accum" if _bhs.get("pre_accum") else "—"),
+                                "MOMENTUM":     f"★ {_bhs.get('momentum_days',0)}d" if _bhs.get("high_momentum") else "—",
+                                "TOP ACCUM":    " ".join(_bhs.get("top_accum",[])[:3]) or "—",
                             })
                         st.dataframe(_pd_bh.DataFrame(_bh_rows), use_container_width=True, hide_index=True)
 
+                # Tampilkan status jika ada data historis yg sedang dipakai
+                if st.session_state.get("brosum_hist_use_key"):
+                    _active_hist = st.session_state.get("brosum_hist_use_date", "")
+                    st.markdown(
+                        f"<div style='background:rgba(38,166,154,0.08);border:1px solid rgba(38,166,154,0.3);"
+                        f"border-radius:8px;padding:10px 14px;margin-top:12px;"
+                        f"font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:#26a69a;'>"
+                        f"📌 Weekly Plan sedang menggunakan data BrokSum: <b>{_active_hist}</b> · "
+                        f"<span style='color:{text_sub};'>Plan tersimpan di tab Weekly → History Trade Plan</span>"
+                        f"</div>",
+                        unsafe_allow_html=True)
+
         # ══════════════════════════════════════════════════════════
-        # TAB 3 — NET BUY FOREIGN
+        # SHEETS HISTORY — Broker & Reko dari Google Sheets
+        # ══════════════════════════════════════════════════════════
+        with bs_tab_history:
+            pass  # already handled above
+
+        # ── Tambahan: Google Sheets History section (di bawah history lokal) ──
+        if sheets_available():
+            st.divider()
+            st.markdown(
+                "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                "color:#90caf9;margin-bottom:8px;'>☁️ <b>GOOGLE SHEETS HISTORY</b> "
+                "— Data tersimpan permanen, bisa dilihat semua member</div>",
+                unsafe_allow_html=True)
+            _sh_col1, _sh_col2 = st.columns(2)
+            with _sh_col1:
+                st.markdown("**📋 Broker Scan History (Sheets)**")
+                render_history_table("broker", limit=15)
+            with _sh_col2:
+                st.markdown("**🤖 Reko History (Sheets)**")
+                render_history_table("reko", limit=15)
+        # ══════════════════════════════════════════════════════════
+        # TAB 3 — NET BUY FOREIGN (AUTO dari BS30)
         # ══════════════════════════════════════════════════════════
         with bs_tab_foreign:
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Monitoring aliran dana asing secara keseluruhan di pasar IDX.</p>", unsafe_allow_html=True)
-            col_f1, col_f2 = st.columns([3,1])
-            with col_f1:
-                bs_foreign_tickers_raw = st.text_input("KODE SAHAM (pisah koma, maks 10):", "BBCA,BBRI,TLKM,BMRI,ASII", key="bs_foreign_tickers")
-            with col_f2:
-                st.markdown("<br>", unsafe_allow_html=True)
-                bs_foreign_run = st.button("🌐 LOAD FOREIGN FLOW", use_container_width=True, key="bs_foreign_run")
-            if bs_foreign_run:
-                _ftickers = [t.strip().upper() for t in bs_foreign_tickers_raw.split(",") if t.strip()][:10]
-                with st.spinner("Mengambil foreign flow per saham..."):
+            st.markdown(
+                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};margin-bottom:12px;'>"
+                "🌐 <b>AUTO NET FOREIGN FLOW</b> · Data dari 30 saham hasil Broker Screening · "
+                "Diperbarui otomatis saat Broker Screening dijalankan</p>",
+                unsafe_allow_html=True)
+
+            _fbs30      = st.session_state.get("sigma_bs30_screened", [])
+            _fbs30_ts   = st.session_state.get("sigma_bs30_ts", "")
+
+            if not _fbs30:
+                st.info("📭 Belum ada data. Jalankan Broker Screening terlebih dahulu untuk mengisi data 30 saham.")
+            else:
+                st.caption(f"📅 Data dari screening: {_fbs30_ts}  ·  {len(_fbs30)} saham")
+                _ftickers_auto = [s.get("ticker","") for s in _fbs30 if s.get("ticker")][:30]
+
+                with st.spinner(f"Mengambil foreign flow {len(_ftickers_auto)} saham dari BS30..."):
                     _fresults = []
-                    for _ftk in _ftickers:
-                        _fdata = _fetch_idx_broker_summary(_ftk, "daily")
-                        _f_net=0; _l_net=0; _f_buy=0; _f_sell=0
-                        for row in _fdata:
-                            broker = str(row.get("BrokerID", row.get("Code","?")))
-                            buy_lot = float(row.get("BuyVolume",0) or 0)
-                            sell_lot= float(row.get("SellVolume",0) or 0)
-                            net = buy_lot-sell_lot
-                            binfo = _ALL_BROKERS.get(broker); is_f = binfo[1]=="FOREIGN" if binfo else False
-                            if is_f: _f_net+=net; _f_buy+=buy_lot; _f_sell+=sell_lot
-                            else: _l_net+=net
-                        _fresults.append({"ticker":_ftk,"f_net":_f_net,"l_net":_l_net,"f_buy":_f_buy,"f_sell":_f_sell})
-                import json as _ffj
-                _fr_json = _ffj.dumps(_fresults, ensure_ascii=False)
-                _G2="#26a69a"; _R2="#f23645"; _P2="#a78bfa"
-                _TXT2=text_main; _tbl2="rgba(8,12,22,0.95)" if is_dark else "#fff"
-                _brd2="rgba(124,58,237,0.15)" if is_dark else "#e2e8f0"
-                _hdr2="rgba(124,58,237,0.08)" if is_dark else "#f8fafc"
-                _fflow_html = f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT2};font-size:0.875rem;}}
-.card{{background:{_tbl2};border:1px solid {_brd2};border-radius:10px;overflow:hidden;}}
-.scroll{{width:100%;overflow-x:auto;}}
-table{{width:100%;border-collapse:collapse;min-width:540px;}}
-thead th{{background:{_hdr2};color:{_P2};padding:9px 12px;text-align:left;border-bottom:1px solid {_brd2};font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;white-space:nowrap;}}
-tbody td{{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.875rem;}}
-tbody tr:hover td{{background:rgba(124,58,237,0.06);}}
-.tk{{font-weight:700;color:{_P2};}}
-.pos{{color:{_G2};font-weight:700;}}.neg{{color:{_R2};font-weight:700;}}
-</style></head><body>
-<div class="card"><div class="scroll"><table>
-<thead><tr><th>TICKER</th><th>🌐 FOREIGN NET (LOT)</th><th>F.BUY</th><th>F.SELL</th><th>🏠 LOKAL NET</th><th>SINYAL</th></tr></thead>
-<tbody id="ff-tb"></tbody></table></div></div>
-<script>(function(){{
-  var D={_fr_json};
-  D.forEach(function(r){{
-    var sig=r.f_net>500?'✅ AKUMULASI':r.f_net<-500?'⚠️ DISTRIBUSI':'- NETRAL';
-    var sc=r.f_net>500?'{_G2}':r.f_net<-500?'{_R2}':'{_TXT2}';
-    document.getElementById('ff-tb').innerHTML+='<tr>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td class="'+(r.f_net>=0?'pos':'neg')+'">'+(r.f_net>=0?'+':'')+parseInt(r.f_net).toLocaleString('id-ID')+'</td>'+
-      '<td>'+parseInt(r.f_buy).toLocaleString('id-ID')+'</td>'+
-      '<td>'+parseInt(r.f_sell).toLocaleString('id-ID')+'</td>'+
-      '<td class="'+(r.l_net>=0?'pos':'neg')+'">'+(r.l_net>=0?'+':'')+parseInt(r.l_net).toLocaleString('id-ID')+'</td>'+
-      '<td style="color:'+sc+';font-weight:700;">'+sig+'</td>'+
-    '</tr>';
-  }});
-}})();</script></body></html>"""
-                components.html(_fflow_html, height=500, scrolling=True)
+                    for _ftk in _ftickers_auto:
+                        try:
+                            _fdata = _fetch_idx_broker_summary(_ftk, "daily")
+                            _f_net=0; _l_net=0; _f_buy=0; _f_sell=0
+                            for row in _fdata:
+                                broker   = str(row.get("BrokerID", row.get("Code","?")))
+                                buy_lot  = float(row.get("BuyVolume",0) or 0)
+                                sell_lot = float(row.get("SellVolume",0) or 0)
+                                net      = buy_lot - sell_lot
+                                binfo    = _ALL_BROKERS.get(broker)
+                                is_f     = binfo[1]=="FOREIGN" if binfo else False
+                                if is_f: _f_net+=net; _f_buy+=buy_lot; _f_sell+=sell_lot
+                                else:    _l_net+=net
+                            _fresults.append({"ticker":_ftk,"f_net":_f_net,"l_net":_l_net,"f_buy":_f_buy,"f_sell":_f_sell})
+                        except: pass
+                    _fresults.sort(key=lambda x: x["f_net"], reverse=True)
+
+                if _fresults:
+                    _G2="#26a69a"; _R2="#f23645"; _P2="#a78bfa"
+                    _rows_ff = ""
+                    for _i_ff, _r_ff in enumerate(_fresults):
+                        _sig = "✅ AKUMULASI" if _r_ff["f_net"]>500 else "⚠️ DISTRIBUSI" if _r_ff["f_net"]<-500 else "— NETRAL"
+                        _sc  = _G2 if _r_ff["f_net"]>500 else _R2 if _r_ff["f_net"]<-500 else text_sub
+                        _fn_disp = ("+" if _r_ff["f_net"]>=0 else "") + f"{int(_r_ff['f_net']):,}"
+                        _ln_disp = ("+" if _r_ff["l_net"]>=0 else "") + f"{int(_r_ff['l_net']):,}"
+                        _bg_row  = ("rgba(38,166,154,0.06)" if _r_ff["f_net"]>500
+                                    else "rgba(242,54,69,0.05)" if _r_ff["f_net"]<-500
+                                    else ("rgba(255,255,255,0.02)" if _i_ff%2==0 else "transparent"))
+                        _rows_ff += (
+                            f"<tr style='background:{_bg_row};'>"
+                            f"<td style='padding:8px 12px;font-weight:700;color:{_P2};font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_r_ff['ticker']}</td>"
+                            f"<td style='padding:8px 12px;color:{'#26a69a' if _r_ff['f_net']>=0 else '#f23645'};font-weight:700;white-space:nowrap;font-size:0.82rem;'>{_fn_disp}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;font-size:0.8rem;'>{int(_r_ff['f_buy']):,}</td>"
+                            f"<td style='padding:8px 12px;white-space:nowrap;font-size:0.8rem;'>{int(_r_ff['f_sell']):,}</td>"
+                            f"<td style='padding:8px 12px;color:{'#26a69a' if _r_ff['l_net']>=0 else '#f23645'};white-space:nowrap;font-size:0.82rem;'>{_ln_disp}</td>"
+                            f"<td style='padding:8px 12px;color:{_sc};font-weight:700;white-space:nowrap;font-size:0.8rem;'>{_sig}</td>"
+                            f"</tr>"
+                        )
+                    _ff_html = (
+                        "<div style='width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;"
+                        "border-radius:10px;border:1px solid rgba(124,58,237,0.2);'>"
+                        "<table style='border-collapse:collapse;min-width:560px;width:max-content;'>"
+                        "<thead><tr style='background:rgba(124,58,237,0.1);'>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TICKER</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>🌐 FOREIGN NET (LOT)</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>F.BUY</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>F.SELL</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>🏠 LOKAL NET</th>"
+                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>SINYAL</th>"
+                        "</tr></thead>"
+                        f"<tbody>{_rows_ff}</tbody>"
+                        "</table></div>"
+                    )
+                    st.markdown(_ff_html, unsafe_allow_html=True)
+                else:
+                    st.warning("Tidak ada data foreign flow yang berhasil diambil.")
+
 
 
 # ─────────────────────────────────────────────
@@ -18007,15 +21155,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.06);}}
                 st.dataframe(_pd_gtr.DataFrame(_gtr_rows), use_container_width=True, hide_index=True)
 
         with _gtr_tab_daily:
-            _render_track_record_inline("daily", "#a78bfa")
-
-        with _gtr_tab_weekly:
-            _render_track_record_inline("weekly", "#26a69a")
-
-        with _gtr_tab_bsjp:
-            _render_track_record_inline("bsjp", "#f5a623")
-
-        with _gtr_tab_stats:
+            _render_track_record_inline("daily", "#a78bfa", ctx="gtr_daily")
+            _render_track_record_inline("weekly", "#26a69a", ctx="gtr_weekly")
+            _render_track_record_inline("bsjp", "#f5a623", ctx="gtr_bsjp")
             # Statistik per tipe + overall
             _records_s = st.session_state.get("tr_records", [])
             _closed_s  = [r for r in _records_s if r.get("status") == "CLOSED"]
@@ -21619,39 +24761,3 @@ js_code = """
 </script>
 """
 components.html(js_code, height=0)
-
-components.html("""
-<script>
-// Mobile Tab Horizontal Scroll Fix
-(function() {
-    function fixTabScroll() {
-        var doc = window.parent.document;
-        var tabLists = doc.querySelectorAll('[data-testid="stTabs"] [role="tablist"], [data-testid="stTabs"] [data-baseweb="tab-list"]');
-        tabLists.forEach(function(tl) {
-            tl.style.overflowX = "auto";
-            tl.style.overflowY = "hidden";
-            tl.style.flexWrap = "nowrap";
-            tl.style.webkitOverflowScrolling = "touch";
-            tl.style.scrollbarWidth = "none";
-            tl.style.msOverflowStyle = "none";
-            var el = tl.parentElement;
-            for (var i = 0; i < 6 && el; i++) {
-                var cs = window.parent.getComputedStyle(el);
-                if (cs.overflow === "hidden" || cs.overflowX === "hidden") {
-                    el.style.overflow = "visible";
-                    el.style.overflowX = "auto";
-                }
-                if (el.dataset && el.dataset.testid === "stTabs") break;
-                el = el.parentElement;
-            }
-            tl.querySelectorAll('button[role="tab"]').forEach(function(btn) {
-                btn.style.flexShrink = "0";
-                btn.style.whiteSpace = "nowrap";
-            });
-        });
-    }
-    fixTabScroll();
-    setInterval(fixTabScroll, 800);
-})();
-</script>
-""", height=0)
