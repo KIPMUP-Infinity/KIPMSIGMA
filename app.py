@@ -8264,10 +8264,10 @@ if current_view == "dashboard":
         _all_json = _mkt_json.dumps(_all_rows)
 
         # ── Hitung tinggi tabel tunggal ────────────────────────────────────
-        _total_rows_count = len(_idx_rows) + len(_com_rows) + 1  # +1 divider
-        _single_tbl_h = min(44 + _total_rows_count * 38 + 8, 900)
-        # Mobile sama (single column scroll) — pakai nilai yang sama, auto-resize JS akan koreksi
-        _tbl_h = _single_tbl_h
+        # Gunakan estimasi worst-case agar iframe TIDAK terlalu kecil saat data lambat load.
+        # Jangan pakai len(_idx_rows) yang bisa 0 saat yfinance belum selesai!
+        _EXPECTED_ROWS = 30  # IHSG+LQ45 + divider + 8 global + section-div + 16 commodities
+        _tbl_h = min(44 + 16 + _EXPECTED_ROWS * 38 + 60, 1200)
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -8364,24 +8364,30 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
   }}
   setInterval(updateTs, 60000);
 
-  // ── Auto-resize iframe ke tinggi konten aktual (single table, no side-by-side) ──
+  // ── Auto-resize iframe: agresif, banyak retry, tidak clipping ──
   function autoResize() {{
+    // Reset overflow dulu agar pengukuran akurat
+    document.body.style.overflow = 'visible';
+    var wrap = document.querySelector('.mkt-wrap');
+    if (wrap) wrap.style.overflow = 'visible';
     var h = Math.max(
       document.documentElement.scrollHeight,
       document.body.scrollHeight,
-      document.querySelector('.mkt-wrap') ? document.querySelector('.mkt-wrap').scrollHeight : 0
+      wrap ? wrap.scrollHeight : 0
     );
-    // Tidak ada gap ekstra — pakai tinggi aktual + buffer minimal
-    h = Math.max(h + 4, 200);
+    h = Math.max(h + 8, 200);
     try {{
       window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
     }} catch(e) {{}}
   }}
-  setTimeout(autoResize, 80);
-  setTimeout(autoResize, 350);
-  setTimeout(autoResize, 800);
-  setTimeout(autoResize, 1600);
-  window.addEventListener('resize', function() {{ setTimeout(autoResize, 150); }});
+  // Kirim berulang: segera, setelah render, setelah font load, setelah data injeksi
+  autoResize();
+  setTimeout(autoResize, 100);
+  setTimeout(autoResize, 400);
+  setTimeout(autoResize, 900);
+  setTimeout(autoResize, 1800);
+  setTimeout(autoResize, 3000);
+  window.addEventListener('resize', function() {{ setTimeout(autoResize, 200); }});
 }})();
 </script></body></html>""", height=_tbl_h, scrolling=False)
 
@@ -9670,23 +9676,28 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
   // ── Auto-resize: ukur tinggi aktual konten, bukan pakai angka hardcoded ──
   function sendHeight() {{
+    // Reset overflow agar scrollHeight akurat
+    document.body.style.overflow = 'visible';
+    var fw = document.querySelector('.frm-wrap');
+    if (fw) fw.style.overflow = 'visible';
     var h = Math.max(
       document.documentElement.scrollHeight,
       document.body.scrollHeight,
-      document.querySelector('.frm-wrap') ? document.querySelector('.frm-wrap').scrollHeight : 0
+      fw ? fw.scrollHeight : 0
     );
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 8}}, '*');
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 12}}, '*');
   }}
   sendHeight();
-  setTimeout(sendHeight, 150);
-  setTimeout(sendHeight, 500);
-  setTimeout(sendHeight, 1000);
+  setTimeout(sendHeight, 100);
+  setTimeout(sendHeight, 400);
+  setTimeout(sendHeight, 900);
+  setTimeout(sendHeight, 1800);
   window.addEventListener('resize', function() {{ setTimeout(sendHeight, 150); }});
 }})();
 </script>
 </body>
 </html>
-        """, height=900, scrolling=False)
+        """, height=1100, scrolling=False)
 
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
