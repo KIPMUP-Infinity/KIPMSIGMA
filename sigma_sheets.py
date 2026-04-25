@@ -65,7 +65,6 @@ HEADERS = {
 # KONEKSI & AUTH
 # ─────────────────────────────────────────────
 
-@st.cache_resource(ttl=3600)
 def _get_gspread_client():
     """
     Inisialisasi gspread client dari Streamlit secrets.
@@ -542,7 +541,7 @@ def render_sheets_status():
             if not ok:
                 st.error("❌ Credentials tidak ditemukan di Streamlit secrets.\n\nPastikan [gsheets_credentials] dan [gsheets] sudah diisi.")
             else:
-                client = _get_gspread_client(force_refresh=True)
+                client = _get_gspread_client()
                 if client:
                     st.success("✅ Koneksi Google Sheets OK!")
                 else:
