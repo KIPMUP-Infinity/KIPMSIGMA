@@ -8268,10 +8268,12 @@ if current_view == "dashboard":
         # ── Render both tables via components.html ─────────────────────────
         _idx_total_h = min(42 + len(_idx_rows) * 40 + 4, 600)
         _com_total_h = min(42 + len(_com_rows) * 40 + 4, 600)
-        # Desktop: side-by-side → tinggi iframe = kolom TERBESAR + header + buffer kecil
-        # JS autoResize akan koreksi presisi setelah render
-        # JANGAN pakai mobile height (stacked) sebagai default → menyebabkan whitespace raksasa di desktop
-        _tbl_h = max(_idx_total_h, _com_total_h) + 60  # 60 = header + padding
+        # Mobile: dua kolom ditumpuk vertikal → harus dijumlah + gap + header
+        # Desktop: side-by-side → ambil yang TERBESAR + buffer
+        # Gunakan nilai mobile (lebih besar) sebagai default iframe height;
+        # JS autoResize akan koreksi ke nilai desktop saat di desktop.
+        _tbl_h_mobile  = _idx_total_h + _com_total_h + 140
+        _tbl_h = _tbl_h_mobile
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -8296,12 +8298,19 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 .price{{font-size:0.875rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
 .badge{{display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
 .ccy{{font-size:0.8rem;color:{text_sub};}}
-@media(max-width:600px){{
+@media(max-width:768px){{
   .row{{flex-direction:column;gap:14px;}}
   .col{{width:100%;min-width:0;}}
-  /* PENTING: overflow visible agar kolom ke-2 tidak terpotong saat stacked */
-  .mkt-wrap{{overflow:visible;-webkit-overflow-scrolling:touch;}}
-  .mkt-scroll{{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:none!important;}}
+  /* Kolom kedua WAJIB visible — jangan biarkan overflow:hidden memotongnya */
+  .mkt-wrap{{overflow:visible !important;height:auto !important;}}
+  /* Scroll horizontal saja, vertikal ikuti konten */
+  .mkt-scroll{{
+    overflow-x:auto !important;
+    overflow-y:visible !important;
+    -webkit-overflow-scrolling:touch;
+    max-height:none !important;
+    height:auto !important;
+  }}
   .mkt-hdr{{font-size:0.875rem;padding:8px 10px;flex-wrap:wrap;gap:4px;}}
   thead th{{font-size:0.8rem;padding:7px 8px;white-space:nowrap;}}
   tbody td{{font-size:0.875rem;padding:7px 8px;white-space:nowrap;}}
@@ -8376,12 +8385,13 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
   buildRows(IDX, 'idx-tb', 'flag');
   buildRows(COM, 'com-tb', 'icon');
 
-  // Equalise scroll heights - cap at 520px to keep both cols same size
+  // Equalise scroll heights - HANYA di desktop. Di mobile, biarkan tinggi mengikuti konten.
   function setHeights(){{
+    var isMobile = window.innerWidth <= 768;
+    if (isMobile) return; // Skip di mobile — jangan kunci maxHeight, kolom kedua harus visible penuh
     var idxS = document.getElementById('idx-scroll');
     var comS = document.getElementById('com-scroll');
     if(!idxS||!comS) return;
-    // Remove max-height first to measure natural height
     idxS.style.maxHeight = 'none'; comS.style.maxHeight = 'none';
     var h = Math.min(Math.max(idxS.scrollHeight, comS.scrollHeight), 560);
     idxS.style.maxHeight = h+'px';
@@ -8409,34 +8419,36 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
   // ── Auto-resize iframe ke tinggi konten aktual ──
   function autoResize() {{
-    var isMobile = window.innerWidth <= 600;
+    var isMobile = window.innerWidth <= 768;
     var h;
     if (isMobile) {{
-      // Mobile: stacked — jumlah tinggi semua kolom + gap
-      var cols = document.querySelectorAll('.col');
-      var total = 0;
-      cols.forEach(function(col) {{
-        total += col.getBoundingClientRect().height;
-      }});
-      h = total + 70; // 70 = gap antar kolom + body padding
-    }} else {{
-      // Desktop: side-by-side — gunakan bounding rect row (bukan scrollHeight)
-      // scrollHeight bisa membesar tapi tidak mengecil → menyebabkan whitespace
+      // Mobile: stacked layout.
+      // PENTING: ukur scrollHeight body BUKAN getBoundingClientRect (yang dibatasi iframe)
+      // Paksa reflow dulu agar browser hitung ulang tinggi kedua kolom yang stacked
       var row = document.querySelector('.row');
-      h = row ? Math.ceil(row.getBoundingClientRect().height) + 20
-              : document.body.scrollHeight + 8;
+      if (row) {{
+        // Reset overflow sementara agar tidak ada clipping saat ukur
+        row.style.overflow = 'visible';
+      }}
+      h = document.documentElement.scrollHeight;
+      if (h < 300) h = document.body.scrollHeight; // fallback
+      h = h + 20; // buffer
+    }} else {{
+      // Desktop: side-by-side — pakai body scrollHeight
+      h = document.body.scrollHeight + 8;
     }}
     h = Math.max(h, 280);
     try {{
       window.parent.postMessage({{ type: 'streamlit:setFrameHeight', height: h }}, '*');
     }} catch(e) {{}}
   }}
+  // Kirim beberapa kali: segera, setelah layout stabil, dan setelah font/gambar load
   setTimeout(autoResize, 80);
-  setTimeout(autoResize, 300);
-  setTimeout(autoResize, 700);
-  setTimeout(autoResize, 1500);
-  setTimeout(autoResize, 2500);
-  window.addEventListener('resize', function() {{ setTimeout(autoResize, 120); }});
+  setTimeout(autoResize, 350);
+  setTimeout(autoResize, 800);
+  setTimeout(autoResize, 1600);
+  setTimeout(autoResize, 2800);
+  window.addEventListener('resize', function() {{ setTimeout(autoResize, 150); }});
 }})();
 </script></body></html>""", height=_tbl_h, scrolling=False)
 
@@ -9560,32 +9572,60 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
     line-height: 1.65;
   }}
 
-  /* Mobile */
+  /* ═══════════════════════════════════════════════════════
+     MOBILE ONLY — semua perubahan di bawah TERISOLASI ketat
+     di dalam media query ini. Tidak menyentuh CSS global.
+     ═══════════════════════════════════════════════════════ */
   @media (max-width: 860px) {{
-    .frm-grid {{ grid-template-columns: 1fr; gap: 12px; min-width: unset; }}
-    .frm-grid-wrap {{ overflow-x: unset; }}
-    .frm-countdown {{ padding: 12px 14px; flex-direction: column; gap: 8px; }}
+    /* Grid: paksa 1 kolom, hapus min-width yang menyebabkan overflow */
+    .frm-grid {{
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+      min-width: 0 !important;
+      width: 100% !important;
+    }}
+    /* Grid wrapper: hapus overflow-x scroll, biarkan konten mengalir vertikal */
+    .frm-grid-wrap {{
+      overflow-x: visible !important;
+      overflow-y: visible !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }}
+    /* Countdown: stack vertikal, kompak */
+    .frm-countdown {{
+      padding: 12px 14px;
+      flex-direction: column;
+      gap: 8px;
+    }}
     .frm-cd-num {{ font-size: 1.25rem; }}
     .frm-cd-box {{ min-width: 38px; }}
     .frm-cd-boxes {{ justify-content: flex-start; flex-wrap: wrap; }}
+    /* Card meta: stack vertikal */
     .frm-card-meta {{ flex-direction: column; gap: 2px; align-items: flex-start; }}
     .frm-card-time {{ font-size: 0.72rem; }}
     .frm-card-date {{ font-size: 0.875rem; }}
+    /* Bars */
     .frm-bars {{ padding: 12px 14px 6px; }}
     .frm-bar-label {{ font-size: 0.875rem; }}
     .frm-bar-pct {{ font-size: 0.875rem; }}
-    .frm-tbl th {{ padding: 4px 5px; font-size: 0.72rem; letter-spacing: 0; }}
-    .frm-tbl td {{ padding: 4px 5px; font-size: 0.875rem; }}
+    /* Tabel: BERIKAN overflow-x:auto agar kolom muat dan bisa digeser */
+    .frm-tbl-wrap {{
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      width: 100% !important;
+    }}
+    .frm-tbl {{
+      width: 100% !important;
+      min-width: 260px;
+      table-layout: auto !important;
+    }}
+    .frm-tbl th {{ padding: 5px 6px; font-size: 0.72rem; letter-spacing: 0; white-space: nowrap; }}
+    .frm-tbl td {{ padding: 5px 6px; font-size: 0.875rem; white-space: nowrap; }}
     .frm-tbl th:first-child, .frm-tbl td:first-child {{ padding-left: 8px; }}
-    .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
-    /* KUNCI: hilangkan overflow-x pada mobile sehingga tidak ada horizontal scroll */
-    .frm-tbl-wrap {{ overflow-x: unset; -webkit-overflow-scrolling: unset; }}
-    /* Kolom pertama boleh wrap agar muat */
-    .frm-tbl td:first-child, .frm-tbl th:first-child {{ white-space: normal; word-break: break-word; max-width: 120px; }}
-    /* Badge ukuran lebih kompak */
+    /* Badge kompak */
     .frm-dir-badge {{ font-size: 0.65rem; padding: 1px 4px; margin-left: 2px; }}
-    /* Pastikan tabel 100% lebar kartu */
-    .frm-tbl {{ width: 100%; table-layout: fixed; }}
+    /* Insight */
+    .frm-insight {{ font-size: 0.875rem; padding: 10px 14px; }}
   }}
 </style>
 </head>
@@ -9706,15 +9746,17 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
   }});
 
   grid.innerHTML = html;
-  // Auto-resize iframe to actual content height (fixes mobile cutoff & desktop excess gap)
+
+  // Auto-resize iframe — ukur tinggi konten aktual termasuk semua kartu stacked di mobile
   function sendHeight() {{
-    // Gunakan getBoundingClientRect dari elemen paling bawah agar presisi di desktop & mobile
-    var wrap = document.querySelector('.frm-wrap');
-    var h = wrap ? Math.ceil(wrap.getBoundingClientRect().height) + 16
-                 : (document.documentElement.scrollHeight || document.body.scrollHeight);
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: Math.max(h, 200)}}, '*');
+    // Gunakan scrollHeight dokumen agar semua kartu yang stacked terukur
+    var h = Math.max(
+      document.documentElement.scrollHeight,
+      document.body.scrollHeight,
+      document.querySelector('.frm-wrap') ? document.querySelector('.frm-wrap').scrollHeight : 0
+    );
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height: h + 16}}, '*');
   }}
-  // Send after render + small delay for fonts/layout
   sendHeight();
   setTimeout(sendHeight, 200);
   setTimeout(sendHeight, 600);
@@ -9724,7 +9766,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 </script>
 </body>
 </html>
-        """, height=520, scrolling=False)
+        """, height=1280, scrolling=True)
 
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
@@ -10001,11 +10043,31 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
   pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,0.45);
   white-space:normal;min-width:240px;max-width:380px;
   font-family:'DM Sans',sans-serif;}}
-@media(max-width:600px){{
-  table{{min-width:480px;}}
-  .ev-name{{max-width:130px;}}
-  tbody td{{font-size:0.875rem;padding:7px 8px;}}
-  thead th{{font-size:0.72rem;padding:7px 8px;}}
+@media(max-width:768px){{
+  /* Hapus overflow:hidden dari cal-wrap agar scroll horizontal tidak terpotong */
+  .cal-wrap{{overflow:visible !important;}}
+  /* Pastikan scroll-box punya overflow-x:auto yang bekerja */
+  .scroll-box{{
+    overflow-x:auto !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    max-height:400px !important;
+    width:100% !important;
+  }}
+  /* Kurangi min-width tabel agar lebih pas di mobile, tapi tetap bisa scroll horizontal */
+  table{{min-width:480px !important;}}
+  /* Header filter buttons: scroll horizontal agar tidak wrap terlalu banyak baris */
+  .hdr-right{{
+    overflow-x:auto;
+    flex-wrap:nowrap !important;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:2px;
+    gap:4px;
+  }}
+  .f-btn{{padding:3px 8px;font-size:0.72rem;white-space:nowrap;}}
+  .ev-name{{max-width:110px;}}
+  tbody td{{font-size:0.8rem;padding:6px 8px;}}
+  thead th{{font-size:0.72rem;padding:6px 8px;}}
 }}
 </style></head><body>
 <div class="cal-wrap">
@@ -12909,13 +12971,12 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
 .lbl{{font-size:0.875rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{acc};font-weight:700;margin-bottom:8px;padding:0 2px;display:block;}}
-/* === DESKTOP: wrap dengan overflow:hidden agar border radius tetap rapi === */
-.wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;padding-bottom:0;}}
-/* === MOBILE: hapus overflow:hidden agar border bawah membungkus konten dengan pas === */
+.wrap{{background:{met_bg};border:1px solid {_tbl_border};border-radius:10px;overflow:hidden;}}
+/* Mobile: hapus overflow:hidden agar border bawah membungkus konten dengan pas */
 @media(max-width:768px){{
-  .wrap{{overflow:visible !important;border-radius:10px !important;padding-bottom:0 !important;}}
+  .wrap{{overflow:visible !important;border-radius:10px !important;}}
 }}
-/* === SCROLL CONTAINER: horizontal saja, vertikal tidak perlu di-scroll === */
+/* === SCROLL CONTAINER: horizontal saja, vertikal auto === */
 .scroll-box{{
   width:100%;
   max-height:660px;          /* ≈15 baris × 44px = 660px - hanya berlaku di desktop */
@@ -12925,8 +12986,6 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
   cursor:grab;
   scrollbar-width:thin;
   scrollbar-color:{_tbl_border} transparent;
-  padding-bottom:0;
-  margin-bottom:0;
 }}
 @media(max-width:768px){{
   .scroll-box{{
@@ -12934,12 +12993,9 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;padding:0;}}
     height:auto !important;
     overflow-y:visible !important;
     overflow-x:auto !important;
-    padding-bottom:0 !important;
-    margin-bottom:0 !important;
   }}
   .wrap{{
     overflow:visible !important;
-    padding-bottom:0 !important;
   }}
 }}
 .scroll-box:active{{cursor:grabbing;}}
@@ -13078,8 +13134,6 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
         _render_sh_table_v2(_naik_rows, is_naik=True)
         # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
-        # PENTING: Hanya gunakan class selector spesifik di dalam @media (max-width:768px)
-        # JANGAN pakai [data-testid="stVerticalBlock"] → bocor ke desktop!
         components.html("""
 <script>
 (function() {
@@ -13089,21 +13143,23 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
   s.id = 'sigma-sh-gap-mobile-css';
   s.textContent = `
     @media (max-width: 768px) {
-      /* Rapatkan wrapper tabel sh-screen agar tidak ada gap besar antar tabel */
+      /* Hilangkan margin-bottom pada wrapper tabel sh2 */
       .sh2-scroll-outer {
         margin-bottom: 0px !important;
         padding-bottom: 0px !important;
       }
-      /* Rapatkan iframe Streamlit yang wrap komponen screening khusus mobile */
-      iframe[title="sigma_sh_screen_naik"] {
-        margin-bottom: 0 !important;
-        margin-top: 0 !important;
-        display: block !important;
+      /* Hilangkan gap default Streamlit di antara iframe/block wrapper */
+      [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+      [data-testid="stVerticalBlock"] > div > [data-testid="stIFrame"] {
+        margin-bottom: 0px !important;
+        padding-bottom: 0px !important;
       }
+      /* Khusus iframe komponen HTML Streamlit: kurangi margin antar iframe */
+      iframe[title="sigma_sh_screen_naik"],
       iframe[title="sigma_sh_screen_turun"] {
+        display: block !important;
         margin-bottom: 0 !important;
         margin-top: 0 !important;
-        display: block !important;
       }
     }
   `;
