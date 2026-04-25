@@ -8100,93 +8100,61 @@ if current_view == "dashboard":
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         
         @st.cache_data(ttl=300)
-        def _fetch_live_market_fmp():
-            """
-            Ambil data indices + commodities via FMP batch API.
-            Return: (idx_dict, com_dict) masing-masing {name: {price, pct}}
-            """
-            import urllib.request as _ur, json as _jj, threading as _thr
-
-            fmp_key = ""
-            try:
-                _fmp_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY", "")]
-                fmp_key = next((k for k in _fmp_keys if k and len(k) > 10), "")
-            except Exception:
-                pass
-
-            # ── Mapping nama tampilan → FMP symbol ─────────────────────────
-            idx_map = {
-                "IHSG":      "^JKSE",
-                "LQ45":      "^JKLQ45",
-                "VIX":       "^VIX",
-                "S&P 500":   "^GSPC",
-                "Dow Jones": "^DJI",
-                "Nasdaq":    "^IXIC",
-                "FTSE":      "^FTSE",
-                "Nikkei":    "^N225",
-                "Hang Seng": "^HSI",
-                "Shanghai":  "000001.SS",
-            }
-            com_map = {
-                "USD/IDR":        "USDIDR",
-                "DXY":            "DX",
-                "EUR/USD":        "EURUSD",
-                "GBP/USD":        "GBPUSD",
-                "Gold (oz)":      "GCUSD",
-                "Silver (oz)":    "SIUSD",
-                "Copper":         "HGUSD",
-                "WTI Crude":      "CLUSD",
-                "Brent Crude":    "BZUSD",
-                "Natural Gas":    "NGUSD",
-                "Newcastle Coal": "NCUSD",
-                "Palm Oil":       "MPOUSD",
-                "Nickel":         "LNIUSD",
-                "Aluminum":       "ALUUSD",
-                "Soybeans":       "ZSUSD",
-            }
-
-            idx_out = {nm: {"price": 0, "pct": 0} for nm in idx_map}
-            com_out = {nm: {"price": 0, "pct": 0} for nm in com_map}
-
-            if not fmp_key:
-                return idx_out, com_out
-
-            def _fetch(syms_str, out_map, name_map_inv):
-                """Fetch batch dan isi out_map."""
+        def get_market_data(ticker_dict):
+            import yfinance as yf
+            data = {}
+            for name, tk in ticker_dict.items():
                 try:
-                    url  = f"https://financialmodelingprep.com/api/v3/quote/{syms_str}?apikey={fmp_key}"
-                    req  = _ur.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-                    with _ur.urlopen(req, timeout=8) as r:
-                        items = _jj.loads(r.read())
-                    if not isinstance(items, list):
-                        return
-                    for item in items:
-                        sym  = item.get("symbol", "")
-                        nm   = name_map_inv.get(sym)
-                        if not nm:
-                            continue
-                        px   = item.get("price") or 0
-                        pct  = item.get("changesPercentage") or 0
-                        out_map[nm] = {"price": float(px), "pct": float(pct)}
+                    ticker = yf.Ticker(tk)
+                    hist = ticker.history(period="5d")
+                    if len(hist) >= 2:
+                        last = float(hist['Close'].iloc[-1])
+                        prev = float(hist['Close'].iloc[-2])
+                        pct  = ((last - prev) / prev) * 100
+                        data[name] = {"price": last, "pct": pct}
+                    elif len(hist) == 1:
+                        last = float(hist['Close'].iloc[-1])
+                        data[name] = {"price": last, "pct": 0.0}
+                    else:
+                        data[name] = {"price": 0, "pct": 0}
                 except Exception:
-                    pass
+                    data[name] = {"price": 0, "pct": 0}
+            return data
 
-            idx_sym_inv = {v: k for k, v in idx_map.items()}
-            com_sym_inv = {v: k for k, v in com_map.items()}
+        indices_tickers = {
+            "IHSG":      "^JKSE",
+            "LQ45":      "^JKLQ45",
+            "VIX":       "^VIX",
+            "S&P 500":   "^GSPC",
+            "Dow Jones": "^DJI",
+            "Nasdaq":    "^IXIC",
+            "FTSE":      "^FTSE",
+            "Nikkei":    "^N225",
+            "Hang Seng": "^HSI",
+            "Shanghai":  "000001.SS",
+        }
 
-            t1 = _thr.Thread(target=_fetch,
-                             args=(",".join(idx_map.values()), idx_out, idx_sym_inv),
-                             daemon=True)
-            t2 = _thr.Thread(target=_fetch,
-                             args=(",".join(com_map.values()), com_out, com_sym_inv),
-                             daemon=True)
-            t1.start(); t2.start()
-            t1.join(timeout=10); t2.join(timeout=10)
-
-            return idx_out, com_out
+        commodities_tickers = {
+            "USD/IDR":        "IDR=X",
+            "DXY":            "DX-Y.NYB",
+            "EUR/USD":        "EURUSD=X",
+            "GBP/USD":        "GBPUSD=X",
+            "Gold (oz)":      "GC=F",
+            "Silver (oz)":    "SI=F",
+            "Copper":         "HG=F",
+            "WTI Crude":      "CL=F",
+            "Brent Crude":    "BZ=F",
+            "Natural Gas":    "NG=F",
+            "Newcastle Coal": "NCF=F",
+            "Palm Oil":       "MYP=F",
+            "Nickel":         "NI=F",
+            "Aluminum":       "ALI=F",
+            "Soybeans":       "ZS=F",
+        }
 
         with st.spinner("Mendeteksi denyut pasar global..."):
-            idx_data, com_data = _fetch_live_market_fmp()
+            idx_data = get_market_data(indices_tickers)
+            com_data = get_market_data(commodities_tickers)
 
         import json as _mkt_json
 
@@ -13169,9 +13137,149 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
         ])
 
 
+
         with alpha_tab_insight:
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+            # ── IDX GLOBE VISUALIZATION ─────────────────────────────────────
+            _globe_html = """<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:transparent;font-family:ui-sans-serif,system-ui,sans-serif;}
+#cw{position:relative;width:100%;display:flex;flex-direction:column;align-items:center;}
+canvas{display:block;cursor:grab;}canvas:active{cursor:grabbing;}
+#tip{position:absolute;pointer-events:none;background:rgba(10,10,30,0.92);border:1px solid rgba(139,92,246,0.5);border-radius:10px;padding:7px 12px;font-size:12px;color:#e8e0ff;white-space:nowrap;display:none;z-index:10;}
+#tip .tn{font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:2px;}
+#tip .tv{color:#a5b4fc;}
+#sub{text-align:center;font-size:10px;color:rgba(150,140,200,0.65);padding:4px 0 2px;letter-spacing:0.07em;}
+#leg{display:flex;flex-wrap:wrap;gap:4px 12px;padding:4px 16px 8px;justify-content:center;}
+.li{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(180,170,220,0.8);}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+</style></head><body>
+<div id="cw">
+  <canvas id="g" width="520" height="520"></canvas>
+  <div id="tip"><div class="tn" id="ttn"></div><div class="tv" id="ttv"></div></div>
+  <div id="sub">IDX &middot; 900+ STOCKS &middot; SIZE = MARKET CAP &middot; DRAG TO ROTATE</div>
+  <div id="leg"></div>
+</div>
+<script>
+const SEC=[
+  {n:'Banking',c:'#7c3aed',s:['BBCA','BBRI','BMRI','BBNI','BNGA','BJTM','BDMN','NISP','MEGA','PNBN','BTPS','ARTO','BBYB','BACA','AGRS']},
+  {n:'Consumer',c:'#0ea5e9',s:['ICBP','INDF','UNVR','MYOR','GOOD','CLEO','DLTA','MLBI','ULTJ','CAMP','SKBM','HOKI','DMRT','AISA','ALTO']},
+  {n:'Energy',c:'#f59e0b',s:['ADRO','PTBA','ITMG','BUMI','INCO','ANTM','TINS','MDKA','HRUM','BOSS','GEMS','ESSA','MBAP','SMMT','AADI']},
+  {n:'Telco & Tech',c:'#10b981',s:['TLKM','EXCL','ISAT','FREN','GOTO','BUKA','EMTK','MTEL','TOWR','TBIG','EDGE','DCII','WIFI','SUPR','LAND']},
+  {n:'Property',c:'#ec4899',s:['BSDE','SMRA','PWON','CTRA','ASRI','LPKR','JRPT','BEST','DMAS','MDLN','PLIN','GPRA','KIJA','MKPI','NIRO']},
+  {n:'Healthcare',c:'#06b6d4',s:['KLBF','SIDO','KAEF','MIKA','HEAL','PRDA','PYFA','TSPC','DVLA','MERK','INAF','SOHO','ALDO','PEHA','BMHS']},
+  {n:'Infra & Const',c:'#f97316',s:['WIKA','PTPP','WSKT','ADHI','JSMR','GIAA','SMGR','INTP','WTON','SMBR','NRCA','ACST','TOTL','CMNP','META']},
+  {n:'Finance',c:'#a78bfa',s:['BBLD','ADMF','BFIN','WOM','MFIN','PANS','TRIM','PEGE','SMMA','MAYA','BPFI','TIFA','HDFA','CFIN','VRNA']},
+  {n:'Mining & Basic',c:'#34d399',s:['VALE','TPIA','BRPT','AKRA','PGAS','MEDC','ENRG','BIPI','RUIS','SRTG','DEWA','ELSA','ARTI','WIIM','MBSS']},
+  {n:'Diversified',c:'#f472b6',s:['ASII','AALI','LSIP','UNTR','HMSP','GGRM','MAPI','ERAA','ACES','ROTI','MIDI','DOID','BATA','JPFA','BMTR']},
+];
+const BIG={'BBCA':17,'BBRI':16,'BMRI':15,'TLKM':14,'ASII':13,'BBNI':12,'ICBP':11,'INDF':11,'ADRO':10,'UNVR':10,'GOTO':9,'KLBF':9,'PTBA':9,'VALE':8,'HMSP':8,'GGRM':8};
+const W=520,H=520,CX=260,CY=260,R=200;
+const cv=document.getElementById('g'),ctx=cv.getContext('2d');
+const tip=document.getElementById('tip');
+const nodes=[];
+let total=0;
+SEC.forEach((sec,si)=>{
+  sec.s.forEach(tk=>{
+    const i=total++;
+    const phi=Math.PI*(3-Math.sqrt(5));
+    const y=1-(i/899)*2,r=Math.sqrt(1-y*y),t=phi*i;
+    nodes.push({tk,si,x:Math.cos(t)*r,y,z:Math.sin(t)*r,sz:BIG[tk]||(2+Math.random()*3),c:sec.c,n:sec.n});
+  });
+});
+for(let i=nodes.length;i<920;i++){
+  const phi=Math.PI*(3-Math.sqrt(5));
+  const y=1-(i/919)*2,r=Math.sqrt(1-y*y),t=phi*i,si=i%SEC.length;
+  nodes.push({tk:'',si,x:Math.cos(t)*r,y,z:Math.sin(t)*r,sz:1+Math.random()*2,c:SEC[si].c,n:SEC[si].n});
+}
+let rX=0.3,rY=0,drag=false,lx=0,ly=0,vX=0,vY=0.004,mx=-999,my=-999;
+function proj(x,y,z){
+  const cY=Math.cos(rY),sY=Math.sin(rY);
+  let x1=x*cY+z*sY,z1=-x*sY+z*cY;
+  const cX=Math.cos(rX),sX=Math.sin(rX);
+  let y1=y*cX-z1*sX,z2=y*sX+z1*cX;
+  const f=2.8,sc=R*(f/(f+z2+1));
+  return{sx:CX+x1*sc,sy:CY-y1*sc,z:z2,v:z2>-0.3};
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  for(let i=0;i<10;i++){
+    const lat=(i/10)*Math.PI*2;
+    ctx.beginPath();let first=true;
+    for(let j=0;j<=72;j++){
+      const lon=(j/72)*Math.PI*2;
+      const p=proj(Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon));
+      if(!p.v){first=true;continue;}
+      first?ctx.moveTo(p.sx,p.sy):ctx.lineTo(p.sx,p.sy);first=false;
+    }
+    ctx.strokeStyle='rgba(139,92,246,0.07)';ctx.lineWidth=0.5;ctx.stroke();
+  }
+  for(let i=0;i<7;i++){
+    const lon=(i/7)*Math.PI*2;
+    ctx.beginPath();let first=true;
+    for(let j=0;j<=50;j++){
+      const lat=(j/50)*Math.PI-Math.PI/2;
+      const p=proj(Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon));
+      if(!p.v){first=true;continue;}
+      first?ctx.moveTo(p.sx,p.sy):ctx.lineTo(p.sx,p.sy);first=false;
+    }
+    ctx.strokeStyle='rgba(139,92,246,0.05)';ctx.lineWidth=0.5;ctx.stroke();
+  }
+  const gr=ctx.createRadialGradient(CX,CY,R*0.88,CX,CY,R*1.1);
+  gr.addColorStop(0,'rgba(139,92,246,0)');gr.addColorStop(1,'rgba(139,92,246,0.15)');
+  ctx.beginPath();ctx.arc(CX,CY,R*1.1,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+  let hov=null;
+  const proj2=nodes.map(n=>{const p=proj(n.x,n.y,n.z);return{...n,...p};}).sort((a,b)=>a.z-b.z);
+  proj2.forEach(n=>{
+    if(!n.v)return;
+    const d=(n.z+1)/2,sz=n.sz*(0.55+0.45*d),al=0.3+0.7*d;
+    const dx=n.sx-mx,dy=n.sy-my;
+    if(dx*dx+dy*dy<(sz+5)*(sz+5)&&n.tk)hov=n;
+    ctx.beginPath();ctx.arc(n.sx,n.sy,sz,0,Math.PI*2);
+    const hx=Math.round(al*255).toString(16).padStart(2,'0');
+    ctx.fillStyle=n.c+hx;ctx.fill();
+    if(sz>5){ctx.strokeStyle=n.c+'66';ctx.lineWidth=0.7;ctx.stroke();}
+    if(sz>9&&n.tk&&d>0.55){
+      ctx.fillStyle='rgba(255,255,255,'+(0.75*d)+')';
+      ctx.font='bold '+(Math.round(sz*0.75+2))+'px ui-sans-serif,sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(n.tk,n.sx,n.sy);
+    }
+  });
+  if(hov){
+    document.getElementById('ttn').textContent=hov.tk;
+    document.getElementById('ttv').textContent=hov.n;
+    tip.style.display='block';
+    let tx=hov.sx+14,ty=hov.sy-30;
+    if(tx>400)tx=hov.sx-tip.offsetWidth-10;
+    tip.style.left=tx+'px';tip.style.top=ty+'px';
+  }else tip.style.display='none';
+}
+function loop(){
+  if(!drag){rY+=vY;rX+=vX;vX*=0.97;vY=vY*0.985+0.004*(1-Math.abs(vY/0.008));rX=Math.max(-0.55,Math.min(0.55,rX));}
+  draw();requestAnimationFrame(loop);
+}
+cv.addEventListener('mousedown',e=>{drag=true;lx=e.offsetX;ly=e.offsetY;vX=0;vY=0;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(drag){rY+=e.movementX*0.008;rX+=e.movementY*0.008;rX=Math.max(-0.55,Math.min(0.55,rX));vY=e.movementX*0.006;vX=e.movementY*0.004;}
+  const rc=cv.getBoundingClientRect();mx=e.clientX-rc.left;my=e.clientY-rc.top;
+});
+cv.addEventListener('mouseleave',()=>{mx=-999;my=-999;});
+cv.addEventListener('touchstart',e=>{e.preventDefault();drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;vX=0;vY=0;},{passive:false});
+cv.addEventListener('touchend',()=>drag=false);
+cv.addEventListener('touchmove',e=>{
+  e.preventDefault();const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;
+  rY+=dx*0.008;rX+=dy*0.008;rX=Math.max(-0.55,Math.min(0.55,rX));vY=dx*0.006;vX=dy*0.004;
+  lx=e.touches[0].clientX;ly=e.touches[0].clientY;
+},{passive:false});
+const ld=document.getElementById('leg');
+SEC.forEach(s=>{const el=document.createElement('div');el.className='li';el.innerHTML='<div class="ld" style="background:'+s.c+'"></div>'+s.n;ld.appendChild(el);});
+loop();
+</script></body></html>"""
+            components.html(_globe_html, height=640, scrolling=False)
+
+            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin:12px 0 20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
             col_input, col_btn = st.columns([3, 1])
             with col_input:
