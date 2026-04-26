@@ -14143,7 +14143,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder = st.tabs([
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder, alpha_tab_trackrecord = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
             "  📅 DAILY PLAN  ",
             "  📆 WEEKLY PLAN  ",
@@ -14151,6 +14151,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             "  📊 FUNDAMENTAL SCREENER  ",
             "  🏦 BROKER SUMMARY  ",
             "  👥 SHAREHOLDER  ",
+            "  🏆 TRACK RECORD  ",
         ])
 
         with alpha_tab_shareholder:
@@ -15510,6 +15511,264 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
+
+
+        with alpha_tab_trackrecord:
+            # ════════════════════════════════════════════════════════════════
+            # TAB TRACK RECORD PUSAT — BSJP + DAILY + WEEKLY
+            # ════════════════════════════════════════════════════════════════
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📋 TRACK RECORD PUSAT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>"
+                "Rekap semua trading plan · BSJP · Daily · Weekly · Hit Target / Hit SL / Open</p>",
+                unsafe_allow_html=True)
+
+            # ── Kumpulkan semua records dari 3 sumber ──
+            def _tr_collect_all():
+                """Kumpulkan semua trade record dari auto_plan_history + tr_records."""
+                all_plans = []
+
+                # 1. tr_records (sudah dalam format record)
+                for rec in st.session_state.get("tr_records", []):
+                    r = dict(rec)
+                    if "plan_type" not in r:
+                        r["plan_type"] = r.get("mode", "BSJP")
+                    all_plans.append(r)
+
+                # 2. Dari auto_plan_history_bsjp
+                for key, entry in st.session_state.get("auto_plan_history_bsjp", {}).items():
+                    if not isinstance(entry, dict): continue
+                    tickers = entry.get("tickers", entry.get("saham_list", []))
+                    if isinstance(tickers, list):
+                        for t in tickers:
+                            if isinstance(t, dict) and t.get("ticker"):
+                                # Cek apakah sudah ada di tr_records
+                                exists = any(
+                                    r.get("ticker") == t.get("ticker") and
+                                    r.get("plan_date", "")[:10] == key[:10]
+                                    for r in all_plans
+                                )
+                                if not exists:
+                                    all_plans.append({
+                                        "ticker": t.get("ticker",""),
+                                        "plan_type": "BSJP",
+                                        "plan_date": key,
+                                        "bias": t.get("bias","BUY"),
+                                        "entry_low": t.get("entry_low", t.get("entry",0)),
+                                        "entry_high": t.get("entry_high", t.get("entry",0)),
+                                        "stoploss": t.get("stoploss", t.get("sl",0)),
+                                        "tp1": t.get("tp1",0),
+                                        "tp2": t.get("tp2",0),
+                                        "status": t.get("status","OPEN"),
+                                        "result_pct": t.get("result_pct",0),
+                                    })
+
+                # 3. Dari auto_plan_history_daily
+                for key, entry in st.session_state.get("auto_plan_history_daily", {}).items():
+                    if not isinstance(entry, dict): continue
+                    tickers = entry.get("tickers", entry.get("saham_list", []))
+                    if isinstance(tickers, list):
+                        for t in tickers:
+                            if isinstance(t, dict) and t.get("ticker"):
+                                exists = any(
+                                    r.get("ticker") == t.get("ticker") and
+                                    r.get("plan_date", "")[:10] == key[:10] and
+                                    r.get("plan_type") == "DAILY"
+                                    for r in all_plans
+                                )
+                                if not exists:
+                                    all_plans.append({
+                                        "ticker": t.get("ticker",""),
+                                        "plan_type": "DAILY",
+                                        "plan_date": key,
+                                        "bias": t.get("bias","BUY"),
+                                        "entry_low": t.get("entry_low", t.get("entry",0)),
+                                        "entry_high": t.get("entry_high", t.get("entry",0)),
+                                        "stoploss": t.get("stoploss", t.get("sl",0)),
+                                        "tp1": t.get("tp1",0),
+                                        "tp2": t.get("tp2",0),
+                                        "status": t.get("status","OPEN"),
+                                        "result_pct": t.get("result_pct",0),
+                                    })
+
+                # 4. Dari auto_plan_history_weekly
+                for key, entry in st.session_state.get("auto_plan_history_weekly", {}).items():
+                    if not isinstance(entry, dict): continue
+                    tickers = entry.get("tickers", entry.get("saham_list", []))
+                    if isinstance(tickers, list):
+                        for t in tickers:
+                            if isinstance(t, dict) and t.get("ticker"):
+                                exists = any(
+                                    r.get("ticker") == t.get("ticker") and
+                                    r.get("plan_date", "")[:7] == key[:7] and
+                                    r.get("plan_type") == "WEEKLY"
+                                    for r in all_plans
+                                )
+                                if not exists:
+                                    all_plans.append({
+                                        "ticker": t.get("ticker",""),
+                                        "plan_type": "WEEKLY",
+                                        "plan_date": key,
+                                        "bias": t.get("bias","BUY"),
+                                        "entry_low": t.get("entry_low", t.get("entry",0)),
+                                        "entry_high": t.get("entry_high", t.get("entry",0)),
+                                        "stoploss": t.get("stoploss", t.get("sl",0)),
+                                        "tp1": t.get("tp1",0),
+                                        "tp2": t.get("tp2",0),
+                                        "status": t.get("status","OPEN"),
+                                        "result_pct": t.get("result_pct",0),
+                                    })
+
+                # Juga cek dari Reko History Sheets
+                try:
+                    _rh_sheets = load_reko_history(limit=200)
+                    for rh in _rh_sheets:
+                        if not isinstance(rh, dict): continue
+                        exists = any(
+                            r.get("ticker") == rh.get("ticker","") and
+                            r.get("plan_date","")[:10] == str(rh.get("timestamp",""))[:10] and
+                            r.get("plan_type") == rh.get("mode","BSJP")
+                            for r in all_plans
+                        )
+                        if not exists and rh.get("ticker"):
+                            all_plans.append({
+                                "ticker": rh.get("ticker",""),
+                                "plan_type": rh.get("mode","BSJP"),
+                                "plan_date": str(rh.get("timestamp",""))[:10],
+                                "bias": rh.get("bias","BUY"),
+                                "entry_low": rh.get("entry_low",0),
+                                "entry_high": rh.get("entry_high",0),
+                                "stoploss": rh.get("stoploss",0),
+                                "tp1": rh.get("tp1",0),
+                                "tp2": rh.get("tp2",0),
+                                "status": rh.get("status","OPEN"),
+                                "result_pct": rh.get("result_pct",0),
+                            })
+                except: pass
+
+                # Sort by date desc
+                all_plans.sort(key=lambda x: str(x.get("plan_date","") or ""), reverse=True)
+                return all_plans
+
+            _all_tr = _tr_collect_all()
+
+            # ── Filter controls ──
+            _tr_col_f1, _tr_col_f2, _tr_col_f3 = st.columns([2,2,2])
+            with _tr_col_f1:
+                _tr_type_filter = st.selectbox("Jenis Plan", ["SEMUA", "BSJP", "DAILY", "WEEKLY"], key="tr_type_filter")
+            with _tr_col_f2:
+                _tr_status_filter = st.selectbox("Status", ["SEMUA", "OPEN", "TP1", "TP2", "SL", "CLOSED"], key="tr_status_filter")
+            with _tr_col_f3:
+                _tr_limit = st.selectbox("Tampilkan", [50, 100, 200, "SEMUA"], key="tr_limit_filter")
+
+            _tr_filtered = [
+                r for r in _all_tr
+                if (_tr_type_filter == "SEMUA" or r.get("plan_type","") == _tr_type_filter)
+                and (_tr_status_filter == "SEMUA" or r.get("status","OPEN") == _tr_status_filter)
+            ]
+            if _tr_limit != "SEMUA":
+                _tr_filtered = _tr_filtered[:int(_tr_limit)]
+
+            # ── Summary Stats ──
+            _tr_total  = len(_all_tr)
+            _tr_open   = sum(1 for r in _all_tr if r.get("status","OPEN") == "OPEN")
+            _tr_tp     = sum(1 for r in _all_tr if r.get("status","") in ("TP1","TP2","CLOSED"))
+            _tr_sl     = sum(1 for r in _all_tr if r.get("status","") == "SL")
+            _tr_wr     = round(_tr_tp / (_tr_tp + _tr_sl) * 100, 1) if (_tr_tp + _tr_sl) > 0 else 0
+            _tr_clr_wr = "#26a69a" if _tr_wr >= 60 else "#f23645" if _tr_wr < 40 else "#ffd54f"
+
+            _stat_html = f"""
+            <div style='display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;'>
+                <div style='background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.25);border-radius:8px;padding:10px 18px;min-width:90px;text-align:center;'>
+                    <div style='font-size:1.4rem;font-weight:700;color:#a78bfa;font-family:IBM Plex Mono,monospace;'>{_tr_total}</div>
+                    <div style='font-size:0.66rem;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;'>Total</div>
+                </div>
+                <div style='background:rgba(255,213,79,0.08);border:1px solid rgba(255,213,79,0.2);border-radius:8px;padding:10px 18px;min-width:90px;text-align:center;'>
+                    <div style='font-size:1.4rem;font-weight:700;color:#ffd54f;font-family:IBM Plex Mono,monospace;'>{_tr_open}</div>
+                    <div style='font-size:0.66rem;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;'>Open</div>
+                </div>
+                <div style='background:rgba(38,166,154,0.08);border:1px solid rgba(38,166,154,0.2);border-radius:8px;padding:10px 18px;min-width:90px;text-align:center;'>
+                    <div style='font-size:1.4rem;font-weight:700;color:#26a69a;font-family:IBM Plex Mono,monospace;'>{_tr_tp}</div>
+                    <div style='font-size:0.66rem;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;'>Hit TP</div>
+                </div>
+                <div style='background:rgba(242,54,69,0.08);border:1px solid rgba(242,54,69,0.2);border-radius:8px;padding:10px 18px;min-width:90px;text-align:center;'>
+                    <div style='font-size:1.4rem;font-weight:700;color:#f23645;font-family:IBM Plex Mono,monospace;'>{_tr_sl}</div>
+                    <div style='font-size:0.66rem;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;'>Hit SL</div>
+                </div>
+                <div style='background:rgba(38,166,154,0.08);border:1px solid {_tr_clr_wr}40;border-radius:8px;padding:10px 18px;min-width:100px;text-align:center;'>
+                    <div style='font-size:1.4rem;font-weight:700;color:{_tr_clr_wr};font-family:IBM Plex Mono,monospace;'>{_tr_wr}%</div>
+                    <div style='font-size:0.66rem;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;'>Win Rate</div>
+                </div>
+            </div>
+            """
+            st.markdown(_stat_html, unsafe_allow_html=True)
+
+            # ── Tabel Track Record ──
+            if not _tr_filtered:
+                st.info("📭 Belum ada data track record. Generate plan terlebih dahulu.")
+            else:
+                _G = "#26a69a"; _R = "#f23645"; _P = "#a78bfa"; _Y = "#ffd54f"
+                _rows_tr = ""
+                for _i_tr, _rec in enumerate(_tr_filtered):
+                    _status = _rec.get("status","OPEN")
+                    _ptype  = _rec.get("plan_type","BSJP")
+                    _sc_status = _G if _status in ("TP1","TP2","CLOSED") else _R if _status == "SL" else _Y
+                    _sc_type   = "#a78bfa" if _ptype == "BSJP" else "#4fc3f7" if _ptype == "DAILY" else "#81c784"
+                    _bg_row    = ("rgba(38,166,154,0.05)" if _status in ("TP1","TP2")
+                                  else "rgba(242,54,69,0.04)" if _status == "SL"
+                                  else ("rgba(255,255,255,0.018)" if _i_tr%2==0 else "transparent"))
+                    _res_pct   = _rec.get("result_pct",0) or 0
+                    _res_disp  = (f"+{_res_pct:.1f}%" if _res_pct > 0 else f"{_res_pct:.1f}%") if _res_pct != 0 else "—"
+                    _res_clr   = _G if _res_pct > 0 else _R if _res_pct < 0 else "#64748b"
+                    _pdate     = str(_rec.get("plan_date",""))[:10]
+                    _entry_lo  = _rec.get("entry_low",0) or 0
+                    _entry_hi  = _rec.get("entry_high",0) or 0
+                    _entry_disp = f"{int(_entry_lo):,}–{int(_entry_hi):,}" if _entry_hi and _entry_hi != _entry_lo else f"{int(_entry_lo):,}"
+                    _rows_tr += (
+                        f"<tr style='background:{_bg_row};'>"
+                        f"<td style='padding:7px 10px;color:#94a3b8;font-size:0.72rem;white-space:nowrap;'>{_pdate}</td>"
+                        f"<td style='padding:7px 10px;font-weight:700;color:{_sc_type};font-family:IBM Plex Mono,monospace;font-size:0.78rem;white-space:nowrap;'>{_ptype}</td>"
+                        f"<td style='padding:7px 10px;font-weight:700;color:{_P};font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_rec.get('ticker','')}</td>"
+                        f"<td style='padding:7px 10px;color:{'#26a69a' if _rec.get('bias','BUY')=='BUY' else '#f23645'};font-weight:600;font-size:0.75rem;white-space:nowrap;'>{_rec.get('bias','BUY')}</td>"
+                        f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_entry_disp}</td>"
+                        f"<td style='padding:7px 10px;color:{_R};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('stoploss',0) or 0):,}</td>"
+                        f"<td style='padding:7px 10px;color:{_G};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('tp1',0) or 0):,}</td>"
+                        f"<td style='padding:7px 10px;color:{_G};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('tp2',0) or 0):,}</td>"
+                        f"<td style='padding:7px 10px;font-weight:700;color:{_sc_status};font-size:0.75rem;white-space:nowrap;'>{_status}</td>"
+                        f"<td style='padding:7px 10px;font-weight:700;color:{_res_clr};font-size:0.78rem;white-space:nowrap;'>{_res_disp}</td>"
+                        f"</tr>"
+                    )
+
+                _tr_table_html = (
+                    "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                    "border-radius:10px;border:1px solid rgba(124,58,237,0.2);'>"
+                    "<table style='border-collapse:collapse;min-width:700px;width:max-content;'>"
+                    "<thead><tr style='background:rgba(124,58,237,0.1);'>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TGL</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>JENIS</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TICKER</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>BIAS</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>ENTRY</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>SL</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TP1</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TP2</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>STATUS</th>"
+                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>HASIL</th>"
+                    "</tr></thead>"
+                    f"<tbody>{_rows_tr}</tbody></table></div>"
+                )
+                st.markdown(_tr_table_html, unsafe_allow_html=True)
+                st.caption(f"Menampilkan {len(_tr_filtered)} dari {_tr_total} record total")
+
+            # ── Reko History dari Sheets ──
+            if sheets_available():
+                st.divider()
+                st.markdown(
+                    "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                    "color:#90caf9;margin-bottom:8px;'>☁️ <b>REKO HISTORY (Google Sheets)</b>"
+                    " — Data lengkap semua plan tersimpan</div>",
+                    unsafe_allow_html=True)
+                render_history_table("reko", limit=50)
 
         with alpha_tab_insight:
 
@@ -19274,7 +19533,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  📊 HISTORY SUMMARY  ",
-                "  🏆 TRACK RECORD  ",
+                "  ⚖️ VERDICT  ",
             ])
 
             # ════════════════════════════════════════════
@@ -19593,7 +19852,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 "  📋 TRADE PLAN & SUMMARY  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  📊 HISTORY SUMMARY  ",
-                "  🏆 TRACK RECORD  ",
+                "  ⚖️ VERDICT  ",
             ])
 
             # ============================================================
@@ -19893,7 +20152,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             _b_tab_plan, _b_tab_hist, _b_tab_trackrecord = st.tabs([
                 "  🌙 TRADE PLAN  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
-                "  🏆 TRACK RECORD  ",
+                "  ⚖️ VERDICT  ",
             ])
 
             # ════════════════════════════════════════════
@@ -22118,21 +22377,15 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         with bs_tab_history:
             pass  # already handled above
 
-        # ── Tambahan: Google Sheets History section (di bawah history lokal) ──
+        # ── Google Sheets: Broker Scan History saja (Reko History ada di tab Track Record) ──
         if sheets_available():
             st.divider()
             st.markdown(
                 "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
-                "color:#90caf9;margin-bottom:8px;'>☁️ <b>GOOGLE SHEETS HISTORY</b> "
+                "color:#90caf9;margin-bottom:8px;'>☁️ <b>BROKER SCAN HISTORY</b> "
                 "— Data tersimpan permanen, bisa dilihat semua member</div>",
                 unsafe_allow_html=True)
-            _sh_col1, _sh_col2 = st.columns(2)
-            with _sh_col1:
-                st.markdown("**📋 Broker Scan History (Sheets)**")
-                render_history_table("broker", limit=15)
-            with _sh_col2:
-                st.markdown("**🤖 Reko History (Sheets)**")
-                render_history_table("reko", limit=15)
+            render_history_table("broker", limit=30)
         # ══════════════════════════════════════════════════════════
         # TAB 3 — NET BUY FOREIGN (AUTO dari BS30)
         # ══════════════════════════════════════════════════════════
