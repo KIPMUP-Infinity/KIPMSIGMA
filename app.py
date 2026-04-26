@@ -16852,7 +16852,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         # AUTO-SCHEDULED TRADE PLAN SYSTEM
         # Daily  : Senin-Jumat jam 21:00 WIB
         # Weekly : Sabtu jam 12:00 WIB
-        # BSJP   : Senin-Jumat jam 15:30 WIB (closing BEI)
+        # BSJP   : Senin-Jumat jam 15:40 WIB (closing BEI)
         # History 30 hari | Track Record auto-update jam 21:00
         # RULE-BASED (tidak butuh AI call → tidak kena rate limit)
         # ══════════════════════════════════════════════════════════════════
@@ -16892,17 +16892,17 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
         def _auto_plan_slot_bsjp(dt=None):
             """
-            Slot BSJP: hanya Senin–Jumat, generate jam 15:30 WIB.
+            Slot BSJP: hanya Senin–Jumat, generate jam 15:40 WIB.
             Returns: 'closing' | 'pre_closing' | 'weekend_skip'
             """
             d = dt or _wib_now()
             h, m, wd = d.hour, d.minute, d.weekday()  # 0=Senin
             if wd >= 5:  # Sabtu & Minggu — skip
                 return "weekend_skip"
-            # Jam 15:30–23:59 → slot closing (satu kali per hari)
-            if h > 15 or (h == 15 and m >= 30):
+            # Jam 15:40–23:59 → slot closing (satu kali per hari)
+            if h > 15 or (h == 15 and m >= 40):
                 return "closing"
-            # Sebelum 15:30 → belum waktunya
+            # Sebelum 15:40 → belum waktunya
             return "pre_closing"
 
         def _should_auto_generate(plan_type="daily"):
@@ -17676,7 +17676,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             Jadwal:
               daily  → Senin-Jumat jam 21:00 WIB
               weekly → Sabtu jam 12:00 WIB
-              bsjp   → Senin-Jumat jam 15:30 WIB (closing BEI)
+              bsjp   → Senin-Jumat jam 15:40 WIB (closing BEI)
             """
             now = _wib_now()
             wd  = now.weekday()  # 0=Senin … 6=Minggu
@@ -17695,7 +17695,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             if plan_type == "bsjp":
                 slot = _auto_plan_slot_bsjp(now)
                 if slot in ("pre_closing", "weekend_skip"):
-                    return False   # belum 15:30 WIB atau weekend
+                    return False   # belum 15:40 WIB atau weekend
             elif plan_type == "weekly":
                 slot = _auto_plan_slot(now)
                 if slot not in ("saturday_noon",):
@@ -17735,7 +17735,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
                     # Label slot untuk history
                     if plan_type == "bsjp":
-                        _slot_label = "Sesi Closing (15:30)"
+                        _slot_label = "Sesi Closing (15:40)"
                     elif plan_type == "weekly":
                         _slot_label = "Sabtu Siang (12:00)"
                     else:
@@ -17756,14 +17756,22 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
         def _auto_update_track_record():
             """
-            Update track record otomatis jam 21:00 WIB.
+            Update track record otomatis mulai jam 20:30 WIB.
             Cek apakah TP/SL sudah tersentuh untuk semua posisi OPEN.
+            Berjalan tiap jam setelah 20:30 WIB hari kerja.
             """
             now = _wib_now()
-            # Hanya jalankan di jam 21:00-21:30 atau kalau belum diupdate hari ini
-            tr_update_key = f"tr_auto_updated_{_auto_plan_date_key(now)}"
+            wd  = now.weekday()
+            # Skip weekend
+            if wd >= 5:
+                return
+            # Hanya jalankan mulai jam 20:30 WIB
+            if now.hour < 20 or (now.hour == 20 and now.minute < 30):
+                return
+            # Cek sudah update dalam jam ini (anti-spam rerun)
+            tr_update_key = f"tr_auto_updated_{now.strftime('%Y-%m-%d_%H')}"
             if st.session_state.get(tr_update_key):
-                return  # Sudah update hari ini
+                return  # Sudah update dalam jam ini
 
             records = st.session_state.get("tr_records", [])
             open_records = [r for r in records if r.get("status") == "OPEN"]
@@ -18013,7 +18021,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
   }});
 
   if(DATA.length > 0) renderSlot(0);
-  else content.innerHTML = '<div style="text-align:center;padding:30px;color:{_sub_c};font-size:0.875rem;">Belum ada history plan. BSJP auto-generate jam 15:30 WIB (Senin–Jumat). Daily jam 21:00 WIB. Weekly Sabtu jam 12:00 WIB.</div>';
+  else content.innerHTML = '<div style="text-align:center;padding:30px;color:{_sub_c};font-size:0.875rem;">Belum ada history plan. BSJP auto-generate jam 15:40 WIB (Senin–Jumat). Daily jam 21:00 WIB. Weekly Sabtu jam 12:00 WIB.</div>';
 
   // Adaptive height
   setTimeout(function(){{
@@ -18046,7 +18054,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             🔗 <b style='color:{accent};'>AUTO-LINKED KE HISTORY PLAN</b> &nbsp;·&nbsp;
             Setiap saham dari {_type_label} Plan otomatis masuk sebagai <b>OPEN</b> &nbsp;·&nbsp;
             {_hist_count} history tersimpan &nbsp;·&nbsp; {len(_filtered)} trade tercatat<br>
-            ✏️ Tugas kamu: pilih posisi OPEN dan update apakah <b>TP HIT</b> atau <b>SL HIT</b>
+            ✏️ Tugas kamu: pilih posisi OPEN dan update apakah <b>TP HIT</b> atau <b>SL HIT</b> &nbsp;·&nbsp; Auto-check TP/SL jam <b>20:30 WIB</b>
             </div>""", unsafe_allow_html=True)
 
             # ══════════════════════════════════════════════════════
@@ -18234,7 +18242,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};}}
-.stats-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}}
+.stats-grid{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}}
 .stat-box{{background:{_tbl_bg};border:1px solid {_border};border-radius:8px;padding:12px 14px;}}
 .stat-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_sub_c};margin-bottom:4px;}}
 .stat-val{{font-size:1.4rem;font-weight:700;line-height:1.1;}}
@@ -18259,19 +18267,26 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 .badge-loss{{background:rgba(242,54,69,0.12);color:{_R};border:1px solid {_R}55;}}
 .badge-open{{background:rgba(245,166,35,0.12);color:{_Y};border:1px solid {_Y}55;}}
 .note-cell{{max-width:180px;white-space:normal;font-size:0.72rem;color:{_sub_c};line-height:1.4;}}
+@media(max-width:900px){{.stats-grid{{grid-template-columns:repeat(3,1fr);}}}}
 @media(max-width:640px){{.stats-grid{{grid-template-columns:1fr 1fr;}}}}
 </style></head><body>
-<div class="ts-note">🔄 Auto-update setiap hari jam 21:00 WIB &nbsp;·&nbsp; Terakhir cek: {_now_wib}</div>
+<div class="ts-note">🔄 Auto-update setiap hari jam 20:30 WIB &nbsp;·&nbsp; Terakhir cek: {_now_wib}</div>
 <div class="stats-grid">
   <div class="stat-box"><div class="stat-lbl">Win Rate</div>
     <div class="stat-val" style="color:{'#089981' if win_rate>=55 else ('#f5a623' if win_rate>=45 else '#f23645')};">{win_rate}%</div>
-    <div class="stat-sub">{len(wins)} WIN · {len(losses)} LOSS</div></div>
+    <div class="stat-sub">{len(wins)} WIN · {len(losses)} LOSS · {len(closed)} closed</div></div>
   <div class="stat-box"><div class="stat-lbl">Total Trade</div>
     <div class="stat-val" style="color:{_P};">{len(records)}</div>
-    <div class="stat-sub">{len(open_r)} masih OPEN</div></div>
+    <div class="stat-sub">{len(open_r)} OPEN · {len(closed)} CLOSED</div></div>
   <div class="stat-box"><div class="stat-lbl">Total P&L</div>
     <div class="stat-val" style="color:{'#089981' if total_pnl>=0 else '#f23645'};">{'+'if total_pnl>=0 else ''}{total_pnl}%</div>
-    <div class="stat-sub">Avg WIN: +{avg_win}% | Avg LOSS: {avg_loss}%</div></div>
+    <div class="stat-sub">Avg WIN: +{avg_win}% · Avg LOSS: {avg_loss}%</div></div>
+  <div class="stat-box"><div class="stat-lbl">Profit Factor</div>
+    <div class="stat-val" style="color:{'#089981' if (avg_win*len(wins))>0 and (abs(avg_loss)*len(losses))>0 and round(avg_win*len(wins)/(abs(avg_loss)*len(losses)+0.01),2)>=1.5 else '#f5a623'};">{round(avg_win*len(wins)/(abs(avg_loss)*len(losses)+0.01),2) if losses else 'N/A'}</div>
+    <div class="stat-sub">Gain / Loss ratio</div></div>
+  <div class="stat-box"><div class="stat-lbl">Streak</div>
+    <div class="stat-val" style="color:{_Y};">{len([r for r in sorted(records,key=lambda x:x.get('date',''),reverse=True)[:5] if r.get('result')=='WIN'])} / 5</div>
+    <div class="stat-sub">WIN dari 5 trade terakhir</div></div>
 </div>
 <div class="tbl-wrap"><div class="scroll"><table>
 <thead><tr>
@@ -18293,15 +18308,17 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
     var pnl = r.pnl_pct||r.unrealized_pnl||0;
     var pnlStr = pnl?'<span class="'+(pnl>=0?'win':'loss')+'">'+(pnl>=0?'+':'')+pnl+'%</span>':'-';
     var note = r.auto_note || r.reason || '-';
-    tb.innerHTML += '<tr>'+
-      '<td style="color:{_sub_c};">'+r.id+'</td>'+
-      '<td style="color:{_sub_c};">'+( r.exit_date||r.date||'-')+'</td>'+
+    var typeColor = r.type==='BSJP'?'#f5a623':r.type==='Weekly'?'#26a69a':'#a78bfa';
+    var rowBg = r.result==='WIN'?'rgba(8,153,129,0.04)':r.result==='LOSS'?'rgba(242,54,69,0.04)':'transparent';
+    tb.innerHTML += '<tr style="background:'+rowBg+'">'+
+      '<td style="color:{_sub_c};font-size:0.72rem;">'+r.id+'</td>'+
+      '<td style="color:{_sub_c};font-size:0.75rem;">'+( r.date||'-')+'</td>'+
       '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td style="color:{_P};">'+( r.type||'-')+'</td>'+
+      '<td><span style="color:'+typeColor+';font-weight:700;font-size:0.72rem;background:'+typeColor+'22;padding:2px 6px;border-radius:4px;">'+( r.type||'-')+'</span></td>'+
       '<td>'+fmt(r.entry)+'</td>'+
-      '<td>'+fmt(r.tp1)+'</td>'+
+      '<td style="color:#26a69a;font-weight:600;">'+fmt(r.tp1)+'</td>'+
       '<td class="loss">'+fmt(r.sl)+'</td>'+
-      '<td>'+fmt(r.exit_price)+'</td>'+
+      '<td style="font-weight:700;">'+fmt(r.exit_price)+'</td>'+
       '<td>'+pnlStr+'</td>'+
       '<td><span class="badge '+badgeCls+'">'+st_lbl+'</span></td>'+
       '<td class="note-cell">'+note+'</td>'+
@@ -18342,7 +18359,18 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                     except: pass
 
         # ── Jalankan auto-generate & auto-update track record saat tab dibuka ──
-        # (di luar context tab agar berjalan sekali saat halaman load)
+        # PENTING: restore history dari DB DULU sebelum auto-generate
+        # agar slot_key check tidak salah ketika session state baru/reset
+        if st.session_state.get("user"):
+            for _pre_hkey in ["auto_plan_history_daily", "auto_plan_history_weekly",
+                              "auto_plan_history_bsjp", "tr_records"]:
+                if _pre_hkey not in st.session_state:
+                    try:
+                        _pre_sv = load_user(st.session_state.user["email"]) or {}
+                        if _pre_sv.get(_pre_hkey):
+                            st.session_state[_pre_hkey] = _pre_sv[_pre_hkey]
+                    except: pass
+
         _auto_generate_if_needed("daily")
         _auto_generate_if_needed("weekly")
         _auto_generate_if_needed("bsjp")
@@ -18582,7 +18610,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_rows_avoid)}</span>"
                             "</div>"
                             "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
-                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
+                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);width:100%;'>"
                             "<table style='width:100%;border-collapse:collapse;min-width:300px;'>"
                             "<thead><tr style='background:rgba(242,54,69,0.2);'>"
                             "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>TICKER</th>"
@@ -18953,13 +18981,13 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             _h_b, _m_b = _now_b.hour, _now_b.minute
             # Hitung jadwal generate berikutnya
             if _wd_b >= 5:
-                _next_b = "Senin jam 15:30 WIB"
+                _next_b = "Senin jam 15:40 WIB"
             elif _h_b > 15 or (_h_b == 15 and _m_b >= 30):
-                _next_b = "Besok jam 15:30 WIB"
+                _next_b = "Besok jam 15:40 WIB"
             else:
-                _next_b = "Hari ini jam 15:30 WIB"
+                _next_b = "Hari ini jam 15:40 WIB"
             st.markdown(f"""<div style='background:{"rgba(245,166,35,0.07)" if is_dark else "#fffbeb"};border:1px solid rgba(245,166,35,0.25);border-left:3px solid #f5a623;border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{text_sub};'>
-⚡ <b style='color:#f5a623;'>AUTO-SCHEDULE AKTIF</b> &nbsp;·&nbsp; BSJP plan auto-generate <b>15:30 WIB</b>, Senin–Jumat &nbsp;·&nbsp; Generate berikutnya: <b style='color:{text_main};'>{_next_b}</b><br>
+⚡ <b style='color:#f5a623;'>AUTO-SCHEDULE AKTIF</b> &nbsp;·&nbsp; BSJP plan auto-generate <b>15:40 WIB</b>, Senin–Jumat &nbsp;·&nbsp; Generate berikutnya: <b style='color:{text_main};'>{_next_b}</b><br>
 ⚠️ Strategi overnight: sizing maks <b>5–10%</b> portofolio per posisi. Risiko gap-down dari berita semalam.
 </div>""", unsafe_allow_html=True)
 
@@ -19069,7 +19097,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
                             "-webkit-overflow-scrolling:touch;"
                             "border-radius:8px;border:1px solid rgba(245,166,35,0.2);margin-bottom:4px;'>"
-                            "<table style='border-collapse:collapse;min-width:900px;width:max-content;'>"
+                            "<table style='border-collapse:collapse;width:100%;table-layout:auto;'>"
                             f"<thead><tr style='background:rgba(245,166,35,0.08);'>{_btp_th}</tr></thead>"
                             f"<tbody>{_btp_trs}</tbody>"
                             "</table></div>"
@@ -19094,7 +19122,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             "</div>"
                             "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
                             "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
-                            "<table style='width:100%;border-collapse:collapse;min-width:320px;'>"
+                            "<table style='width:100%;border-collapse:collapse;table-layout:auto;'>"
                             "<thead><tr style='background:rgba(242,54,69,0.2);'>"
                             "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>TICKER</th>"
                             "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>PRICE</th>"
@@ -19110,7 +19138,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🌙</div>
                         <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};margin:0;">
                             Klik <span style='color:#f5a623;'>Generate BSJP</span> untuk kandidat overnight trade hari ini<br>
-                            <span style='color:{text_sub};opacity:0.6;font-size:0.65rem;'>Auto-generate aktif jam 15:30 WIB · Senin–Jumat · Semua saham ≤ Rp8.000</span></p>
+                            <span style='color:{text_sub};opacity:0.6;font-size:0.65rem;'>Auto-generate aktif jam 15:40 WIB · Senin–Jumat · Semua saham ≤ Rp8.000</span></p>
                     </div>""", unsafe_allow_html=True)
 
             # ════════════════════════════════════════════
