@@ -5853,7 +5853,7 @@ body {{ background: #080c14; }}
             </div>
 
             <ul class="card-features">
-                <li><span class="feat-dot"></span>Global Macro &amp; News &#8212; Live Market Pulse</li>
+                <li><span class="feat-dot"></span>News &amp; Calendar &#8212; Live Market Pulse</li>
                 <li><span class="feat-dot"></span>Index &amp; Sector Rotation &#8212; IDX Heatmap</li>
                 <li><span class="feat-dot"></span>Shareholder &#8212; Foreign Flow &amp; Ownership</li>
                 <li><span class="feat-dot"></span>⚡ Alpha Screener &#8212; AI Stock Insight, Daily, Weekly, BSJP &amp; Fundamental Screener</li>
@@ -8159,7 +8159,7 @@ if current_view == "dashboard":
 
     tab_idxmap, tab_macro, tab_rotation, tab_shareholder, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  🌐 IDX MARKET MAP  ",
-        "  GLOBAL MACRO & NEWS  ",
+        "  NEWS & CALENDAR  ",
         "  INDEX & SECTOR ROTATION  ",
         "  SHAREHOLDER  ",
         "  ⚡ ALPHA SCREENER  ",
@@ -9670,22 +9670,48 @@ function isMarketHours(){
   return !isWeekend()&&mins>=555&&mins<=905;
 }
 // Include previousClose for weekend fallback
-function buildYFUrl(tickers){
-  return 'https://query1.finance.yahoo.com/v8/finance/quote?symbols='+encodeURIComponent(tickers)
+function buildYFUrl(tickers,ver){
+  var base=ver===7
+    ?'https://query1.finance.yahoo.com/v7/finance/quote?symbols='
+    :'https://query1.finance.yahoo.com/v8/finance/quote?symbols=';
+  return base+encodeURIComponent(tickers)
     +'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap,regularMarketPreviousClose';
+}
+async function fetchBatch(batch){
+  // Try v7 then v8 for each proxy
+  for(const ver of [7,8]){
+    const yfUrl=buildYFUrl(batch.join(','),ver);
+    for(const pf of PROXIES){
+      try{
+        const res=await tryProxy(pf,yfUrl);
+        if(res&&res.length>0)return res;
+      }catch(e){}
+    }
+  }
+  return [];
 }
 async function tryProxy(pfn,yfUrl){
   const resp=await fetch(pfn(yfUrl),{signal:AbortSignal.timeout(14000)});
   if(!resp.ok)throw new Error('HTTP '+resp.status);
   const outer=await resp.json();
-  const raw=(outer&&outer.contents)?outer.contents:JSON.stringify(outer);
+  // Handle allorigins wrapper: {contents: "...json string..."}
+  let raw;
+  if(outer&&typeof outer.contents==='string'){
+    raw=outer.contents;
+  } else if(outer&&outer.contents){
+    raw=JSON.stringify(outer.contents);
+  } else {
+    raw=JSON.stringify(outer);
+  }
   const data=JSON.parse(typeof raw==='string'?raw:JSON.stringify(raw));
   return data?.quoteResponse?.result||[];
 }
 const PROXIES=[
   u=>'https://corsproxy.io/?'+encodeURIComponent(u),
-  u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
   u=>'https://api.allorigins.win/get?url='+encodeURIComponent(u),
+  u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+  u=>'https://thingproxy.freeboard.io/fetch/'+u,
+  u=>'https://cors-anywhere.herokuapp.com/'+u,
 ];
 let fetching=false;
 async function fetchLive(){
@@ -9694,12 +9720,10 @@ async function fetchLive(){
   setStatus('#ffab00',weekend?'Mengambil data penutupan Jumat...':'Mengambil data realtime...');
   try{
     const all=STOCKS.map(s=>s.t+'.JK');
-    const batches=[all.slice(0,100),all.slice(100)].filter(b=>b.length>0);
+    const batches=[all.slice(0,80),all.slice(80)].filter(b=>b.length>0);
     let quotes=[];
     for(const batch of batches){
-      const yfUrl=buildYFUrl(batch.join(','));
-      let res=[];
-      for(const pf of PROXIES){try{res=await tryProxy(pf,yfUrl);if(res.length>0)break;}catch(e){}}
+      const res=await fetchBatch(batch);
       quotes=[...quotes,...res];
     }
     let updated=0;
@@ -9721,10 +9745,10 @@ async function fetchLive(){
       setStatus('#26a69a',lbl);
       document.getElementById('last-update').textContent='Update: '+ts+(weekend?' (weekend)':'');
     } else {
-      setStatus('#ef5350','Proxy gagal \u2013 seed data');
-      document.getElementById('last-update').textContent='';
+      setStatus('#ef5350','Proxy gagal \u2013 tampil seed data · coba lagi...');
+      document.getElementById('last-update').textContent='Retry dalam 60s';
     }
-    draw(); // always redraw whether updated or not
+    draw();
   }catch(err){
     setStatus('#ef5350','Error \u2013 seed data');
     draw();
@@ -9734,34 +9758,15 @@ async function fetchLive(){
 
 draw(); // Render seed data IMMEDIATELY
 fetchLive();
-setInterval(fetchLive,isWeekend()?600000:30000);
+// Refresh: setiap 30s saat market, 10 menit saat weekend; retry 60s jika gagal
+setInterval(fetchLive, isWeekend()?600000:30000);
 </script>
 </body></html>"""
 
-        # ── IDX STOCK HEATMAP — PERTAMA (di atas) ─────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX STOCK HEATMAP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        components.html(_heatmap_html, height=680, scrolling=False)
-
-        # ── IDX MARKET MAP GLOBE — KEDUA (di bawah) ───────────────────────────
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown(
-            "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>IDX MARKET MAP</span>"
-            "<div class='trm-section-line'></div></div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<p style='color:#4a6a8a;font-size:0.82rem;margin:-4px 0 10px;'>"
-            "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
-            unsafe_allow_html=True,
-        )
-        components.html(_idx_globe_html, height=820, scrolling=False)
-
-    with tab_macro:
+        # ── LIVE MARKET — DI ATAS HEATMAP ─────────────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         # ── Definisi ticker ─────────────────────────────────────────────────
-        # S&P 500 di atas VIX sesuai permintaan
         _IDX_TICKERS = [
             ("IHSG",      "^JKSE",      "\U0001f1ee\U0001f1e9", "IDR",  True),
             ("LQ45",      "^JKLQ45",    "\U0001f1ee\U0001f1e9", "IDR",  True),
@@ -9774,39 +9779,30 @@ setInterval(fetchLive,isWeekend()?600000:30000);
             ("Hang Seng", "^HSI",       "\U0001f1ed\U0001f1f0", "HKD",  False),
             ("Shanghai",  "000001.SS",  "\U0001f1e8\U0001f1f3", "CNY",  False),
         ]
-
-        # Komoditas + Forex + Crypto
         _COM_TICKERS = [
-            # FOREX
             ("USD/IDR",        "IDR=X",      "\U0001f4b5", "Rp/USD",    "forex"),
             ("DXY",            "DX-Y.NYB",   "\U0001f4b2", "Index",     "forex"),
-            # ENERGI
             ("Coal Newcastle", "MTF=F",      "\U0001f5f3", "USD/t",     "energy"),
             ("WTI Crude",      "CL=F",       "\U0001f6e2", "USD/bbl",   "energy"),
             ("Brent Crude",    "BZ=F",       "\U0001f6e2", "USD/bbl",   "energy"),
             ("Natural Gas",    "NG=F",       "\U0001f525", "USD/MMBtu", "energy"),
-            # LOGAM MULIA
             ("XAU/USD",        "GC=F",       "\U0001f947", "USD/oz",    "metal"),
             ("XAG/USD",        "SI=F",       "\U0001f948", "USD/oz",    "metal"),
-            # LOGAM INDUSTRI
             ("Nikel",          "NI=F",       "\U0001f9f2", "USD/t",     "metal"),
             ("Tembaga",        "HG=F",       "\U0001f534", "USD/lb",    "metal"),
             ("Timah",          "TINM.L",     "\U0001f6e1", "USD/t",     "metal"),
             ("Aluminium",      "ALI=F",      "\u26aa",     "USD/t",     "metal"),
-            # AGRIKULTUR
             ("CPO Palm Oil",   "FCPO.KL",    "\U0001f33f", "MYR/t",     "agri"),
             ("Karet",          "RUBBER.SI",  "\U0001f7e2", "USD/kg",    "agri"),
             ("Kedelai",        "ZS=F",       "\U0001fad8", "USc/bu",    "agri"),
             ("Jagung",         "ZC=F",       "\U0001f33d", "USc/bu",    "agri"),
             ("Gandum",         "ZW=F",       "\U0001f33e", "USc/bu",    "agri"),
-            # CRYPTO
             ("BTC/USD",        "BTC-USD",    "\u20bf",     "USD",       "crypto"),
             ("ETH/USD",        "ETH-USD",    "\U0001f48e", "USD",       "crypto"),
         ]
 
         @st.cache_data(ttl=300, show_spinner=False)
         def _fetch_tickers_v3(ticker_key):
-            """Fetch per-ticker via history(). ticker_key = tuple of (name, tk) pairs."""
             import yfinance as yf
             result = {}
             for name, tk in ticker_key:
@@ -9833,15 +9829,12 @@ setInterval(fetchLive,isWeekend()?600000:30000);
 
         import json as _mkt_json
 
-        # ── Build baris tabel INDICES ────────────────────────────────────────
         def _build_row(name, px, pct, flag, ccy, is_id=False):
             if px == 0:
                 return {"flag": flag, "name": name, "ccy": ccy,
                         "price": "N/A", "pct": "-", "arrow": "",
-                        "cls": "mkt-na",
-                        "bg": "rgba(178,181,190,0.06)", "bdr": "#b2b5be",
-                        "is_id": is_id}
-            up  = pct >= 0
+                        "cls": "mkt-na", "bg": "rgba(178,181,190,0.06)", "bdr": "#b2b5be", "is_id": is_id}
+            up = pct >= 0
             return {"flag": flag, "name": name, "ccy": ccy,
                     "price": f"{px:,.2f}",
                     "pct":   f"{abs(pct):.2f}%",
@@ -9861,56 +9854,35 @@ setInterval(fetchLive,isWeekend()?600000:30000);
             _idx_rows.append(_build_row(name, info["price"], info["pct"], flag, ccy, is_id))
         _idx_json = _mkt_json.dumps(_idx_rows, ensure_ascii=True)
 
-        # ── Build baris tabel COMMODITIES ────────────────────────────────────
         _com_rows = []
         _prev_cat = None
         _cat_label = {
-            "forex":  "🌐 FOREX",
-            "energy": "⚡ ENERGI",
-            "metal":  "🪨 LOGAM MULIA & INDUSTRI",
-            "agri":   "🌿 AGRIKULTUR",
-            "crypto": "🔗 CRYPTO",
+            "forex":  "🌐 FOREX", "energy": "⚡ ENERGI",
+            "metal":  "🪨 LOGAM MULIA & INDUSTRI", "agri": "🌿 AGRIKULTUR", "crypto": "🔗 CRYPTO",
         }
         for name, tk, icon, ccy, cat in _COM_TICKERS:
             if cat != _prev_cat:
                 _com_rows.append({"_divider": True, "label": _cat_label.get(cat, cat.upper())})
                 _prev_cat = cat
             info = _com_data.get(name, {"price": 0, "pct": 0.0})
-            px   = info["price"]
-            pct  = info["pct"]
-            # Format harga khusus per aset
-            if px == 0:
-                px_str = "N/A"
-            elif name == "USD/IDR":
-                px_str = f"Rp {px:,.0f}"
-            elif name in ("BTC/USD", "ETH/USD"):
-                px_str = f"${px:,.0f}"
-            elif name in ("Kedelai", "Jagung", "Gandum"):
-                # Grain futures dalam USc/bu → tampilkan 2 desimal
-                px_str = f"{px:,.2f}"
-            elif name in ("Tembaga",):
-                # HG=F dalam USD/lb, 4 desimal
-                px_str = f"${px:,.4f}"
-            elif name in ("Karet",):
-                px_str = f"${px:,.4f}"
-            elif name in ("CPO Palm Oil",):
-                # FCPO.KL dalam MYR/t
-                px_str = f"MYR {px:,.2f}"
-            elif name in ("Coal Newcastle", "Nikel", "Timah", "Aluminium"):
-                px_str = f"${px:,.2f}"
-            else:
-                px_str = f"${px:,.2f}"
+            px = info["price"]; pct = info["pct"]
+            if px == 0: px_str = "N/A"
+            elif name == "USD/IDR": px_str = f"Rp {px:,.0f}"
+            elif name in ("BTC/USD", "ETH/USD"): px_str = f"${px:,.0f}"
+            elif name in ("Kedelai", "Jagung", "Gandum"): px_str = f"{px:,.2f}"
+            elif name in ("Tembaga", "Karet"): px_str = f"${px:,.4f}"
+            elif name == "CPO Palm Oil": px_str = f"MYR {px:,.2f}"
+            else: px_str = f"${px:,.2f}"
             row = _build_row(name, px, pct, icon, ccy)
-            row["price"] = px_str   # override format
+            row["price"] = px_str
             _com_rows.append(row)
         _com_json = _mkt_json.dumps(_com_rows, ensure_ascii=True)
 
         _now_wib  = datetime.now().strftime("%d %b %Y \u00b7 %H:%M WIB")
         _idx_h    = max(38 + len(_idx_rows) * 30 + 10, 200)
         _com_h    = max(38 + len(_com_rows) * 30 + 10, 160)
-        _total_h  = _idx_h + _com_h + 8    # 8px gap antar tabel
+        _total_h  = _idx_h + _com_h + 8
 
-        # ── Shared CSS template ───────────────────────────────────────────────
         _tbl_css = f"""
 *{{box-sizing:border-box;margin:0;padding:0;}}
 html,body{{background:transparent;font-family:'DM Sans',sans-serif;width:100%;overflow:hidden;}}
@@ -9927,106 +9899,101 @@ tbody tr:hover td{{background:rgba(139,92,246,0.05);transition:background 0.15s;
 .price{{font-size:0.80rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
 .badge{{display:inline-block;padding:1px 6px;border-radius:5px;font-size:0.74rem;font-weight:700;font-family:'IBM Plex Mono',monospace;}}
 .ccy{{font-size:0.72rem;color:{text_sub};}}
-/* BUG2 FIX: hilangkan gap bawah tabel komoditas */
 .mkt-wrap:last-child{{margin-bottom:0;}}
 table{{margin-bottom:0!important;}}
 @media(max-width:600px){{
-  .mkt-wrap{{border-radius:8px;margin-bottom:3px;}}
   .mkt-hdr{{font-size:0.63rem;padding:4px 8px;}}
   thead th{{font-size:0.62rem;padding:3px 6px;}}
   tbody td{{font-size:0.72rem;padding:2px 6px;}}
   .badge{{font-size:0.75rem;padding:2px 5px;}}
-  .nm,.price{{font-size:0.80rem;}}
 }}"""
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>{_tbl_css}</style></head><body>
-
-<!-- ═══ TABEL 1: GLOBAL INDICES & VOLATILITY ═══ -->
 <div class="mkt-wrap">
   <div class="mkt-hdr">
     <span>&#128200; GLOBAL INDICES &amp; VOLATILITY</span>
     <span class="mkt-badge" id="mkt-ts">{_now_wib}</span>
   </div>
-  <table><thead><tr>
-    <th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>CCY</th>
-  </tr></thead>
+  <table><thead><tr><th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>CCY</th></tr></thead>
   <tbody id="idx-tb"></tbody></table>
 </div>
-
-<!-- ═══ TABEL 2: COMMODITIES, FOREX & CRYPTO ═══ -->
 <div class="mkt-wrap" style="margin-bottom:0;">
   <div class="mkt-hdr">
     <span>&#128202; KOMODITAS, FOREX &amp; CRYPTO</span>
     <span class="mkt-badge" id="com-ts">{_now_wib}</span>
   </div>
-  <table><thead><tr>
-    <th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th>
-  </tr></thead>
+  <table><thead><tr><th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th></tr></thead>
   <tbody id="com-tb"></tbody></table>
 </div>
-
 <script>
 (function(){{
   var IDX={_idx_json};
   var COM={_com_json};
   var TEXT_SUB='{text_sub}';
   var MET_BORDER='{met_border}';
-
-  function buildRows(rows, tbId){{
+  function buildRows(rows,tbId){{
     var h='';
     rows.forEach(function(r){{
       if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 14px;font-size:0.68rem;font-weight:700;'
-          +'letter-spacing:0.12em;color:rgba(139,92,246,0.6);text-transform:uppercase;'
-          +'border-bottom:1px solid '+MET_BORDER+';background:rgba(139,92,246,0.04);'
-          +'font-family:DM Sans,sans-serif;">'+r.label+'</td></tr>';
+        h+='<tr><td colspan="4" style="padding:4px 14px;font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:rgba(139,92,246,0.6);text-transform:uppercase;border-bottom:1px solid '+MET_BORDER+';background:rgba(139,92,246,0.04);font-family:DM Sans,sans-serif;">'+r.label+'</td></tr>';
         return;
       }}
-      var up=r.cls==='mkt-up', na=r.cls==='mkt-na';
+      var up=r.cls==='mkt-up',na=r.cls==='mkt-na';
       var clr=na?TEXT_SUB:(up?'#089981':'#f23645');
-      var bg =na?'rgba(178,181,190,0.06)':(up?'rgba(8,153,129,0.12)':'rgba(242,54,69,0.10)');
+      var bg=na?'rgba(178,181,190,0.06)':(up?'rgba(8,153,129,0.12)':'rgba(242,54,69,0.10)');
       var bdr=na?'#b2b5be':(up?'#089981':'#f23645');
       var pct=na?'&#8212;':(r.arrow+' '+r.pct);
       var rowBg=r.is_id?'rgba(139,92,246,0.03)':'';
-      h+='<tr style="background:'+rowBg+'">'
-        +'<td><span class="flag">'+r.flag+'</span><span class="nm">'+r.name+'</span></td>'
-        +'<td><span class="price" style="color:'+clr+'">'+r.price+'</span></td>'
-        +'<td><span class="badge" style="background:'+bg+';color:'+clr+';border:1px solid '+bdr+'55;">'+pct+'</span></td>'
-        +'<td><span class="ccy">'+r.ccy+'</span></td>'
-        +'</tr>';
+      h+='<tr style="background:'+rowBg+'"><td><span class="flag">'+r.flag+'</span><span class="nm">'+r.name+'</span></td><td><span class="price" style="color:'+clr+'">'+r.price+'</span></td><td><span class="badge" style="background:'+bg+';color:'+clr+';border:1px solid '+bdr+'55;">'+pct+'</span></td><td><span class="ccy">'+r.ccy+'</span></td></tr>';
     }});
     document.getElementById(tbId).innerHTML=h;
   }}
-
   buildRows(IDX,'idx-tb');
   buildRows(COM,'com-tb');
-
-  // live clock WIB
   function updateTs(){{
-    var now=new Date(), ofs=now.getTimezoneOffset();
+    var now=new Date(),ofs=now.getTimezoneOffset();
     var w=new Date(now.getTime()+(ofs+420)*60000);
     var mo=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    var s=w.getDate()+' '+mo[w.getMonth()]+' '+w.getFullYear()+' \u00b7 '
-         +String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0')+' WIB';
+    var s=w.getDate()+' '+mo[w.getMonth()]+' '+w.getFullYear()+' \u00b7 '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0')+' WIB';
     ['mkt-ts','com-ts'].forEach(function(id){{var e=document.getElementById(id);if(e)e.textContent=s;}});
   }}
   setInterval(updateTs,60000);
-
-  // auto-resize iframe — ukur total tinggi kedua tabel
   function resize(){{
-    // BUG2 FIX: paksa body compact, ukur tinggi real konten saja
-    document.body.style.padding='0';
-    document.body.style.margin='0';
+    document.body.style.padding='0';document.body.style.margin='0';
     var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
     try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h}},'*');}}catch(e){{}}
   }}
-  resize(); setTimeout(resize,120); setTimeout(resize,500); setTimeout(resize,1200);
+  resize();setTimeout(resize,120);setTimeout(resize,500);setTimeout(resize,1200);
   window.addEventListener('resize',function(){{setTimeout(resize,200);}});
 }})();
 </script></body></html>""", height=_total_h, scrolling=False)
 
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+        # ── IDX STOCK HEATMAP — PERTAMA (di atas) ─────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX STOCK HEATMAP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        components.html(_heatmap_html, height=680, scrolling=False)
+
+        # ── IDX MARKET MAP GLOBE — KEDUA (di bawah) ───────────────────────────
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='trm-section'><div class='trm-section-line'></div>"
+            "<span class='trm-section-label'>IDX MARKET MAP</span>"
+            "<div class='trm-section-line'></div></div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#4a6a8a;font-size:0.82rem;margin:-4px 0 10px;'>"
+            "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
+            unsafe_allow_html=True,
+        )
+        components.html(_idx_globe_html, height=960, scrolling=False)
+
+    with tab_macro:
+        # ─────────────────────────────────────────────────────────
+        # NEWS AND CALENDAR TAB — Market Brief, News, Calendar
         # ─────────────────────────────────────────────────────────
         # NEW FEATURE: MARKET BRIEF (DAILY/WEEKLY)
         # ─────────────────────────────────────────────────────────
@@ -10648,6 +10615,18 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                 except: pass
                 return datetime(2099, 1, 1)
             all_items.sort(key=lambda x: _parse_dt(x["Tanggal"]))
+
+            # ── Filter: buang tanggal yang sudah lewat lebih dari 2 hari ──────
+            from datetime import date as _ca_date_cls, timedelta as _ca_td
+            _ca_today    = _ca_date_cls.today()
+            _ca_cutoff   = _ca_today - _ca_td(days=2)
+            def _ca_ok(row):
+                try:
+                    _dt = _parse_dt(row["Tanggal"])
+                    return _dt.date() >= _ca_cutoff
+                except: return True
+            all_items = [r for r in all_items if _ca_ok(r)]
+
             return all_items
 
         # ── Event type → badge color mapping ─────────────────────
@@ -11336,6 +11315,111 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 </html>
         """, height=1200, scrolling=False)
 
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # ─────────────────────────────────────────────────────────
+        # INDEX REBALANCING SCHEDULE — LQ45, MSCI, FTSE, dll
+        # ─────────────────────────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 INDEX REBALANCING SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <p style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:14px;line-height:1.65;'>
+        Jadwal rebalancing indeks lokal &amp; global yang berdampak ke saham-saham IDX.
+        Saat rebalancing: dana pasif (ETF/fund) wajib beli/jual sesuai perubahan komposisi —
+        <b style='color:#ffd700;'>bisa terjadi capital inflow/outflow besar ke IDX.</b>
+        </p>
+        """, unsafe_allow_html=True)
+
+        _reb_data = [
+            {"indeks":"LQ45","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"HIGH","keterangan":"45 saham likuid terbesar IDX. Efektif awal Februari & Agustus. Pengumuman ~2 minggu sebelumnya. Saham masuk → beli besar ETF LQ45/Reksa Dana."},
+            {"indeks":"IDX30","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"30 saham top LQ45. Rebalancing bersamaan LQ45. Digunakan produk ETF IDX30."},
+            {"indeks":"IDX80","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"80 saham likuid. Basis IDX High Dividend 20. Rebalancing bersamaan LQ45/IDX30."},
+            {"indeks":"IDX High Div 20","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"20 saham dividen tinggi dari IDX80. Populer untuk reksa dana & ETF dividen."},
+            {"indeks":"KOMPAS100","penyelenggara":"BEI+Kompas","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"100 saham fundamental kuat. Jadwal rebalancing mengikuti LQ45."},
+            {"indeks":"IDXBUMN20","penyelenggara":"BEI","periode":"Annual","bulan":"Agu","tanggal_2026":"03 Agu 2026","dampak":"MEDIUM","keterangan":"20 saham BUMN. Rebalancing tahunan. Perubahan bisa mempengaruhi saham BUMN secara signifikan."},
+            {"indeks":"JII (Jakarta Islamic)","penyelenggara":"BEI+DSN","periode":"Semi-Annual","bulan":"Jun & Des","tanggal_2026":"01 Jun 2026 / 01 Des 2026","dampak":"LOW","keterangan":"30 saham syariah terlikuid. Rebalancing Juni & Desember. Relevan untuk reksa dana syariah."},
+            {"indeks":"MSCI Indonesia","penyelenggara":"MSCI","periode":"Quarterly","bulan":"Feb/Mei/Agu/Nov","tanggal_2026":"27 Feb / 29 Mei / 28 Agu / 27 Nov 2026","dampak":"HIGH","keterangan":"Review kuartalan MSCI EM. Saham masuk/keluar MSCI Indonesia → dana asing pasif wajib beli/jual. Capital flow terbesar di IDX. Effective date: hari kerja terakhir bulan."},
+            {"indeks":"MSCI EM (IDX bobot)","penyelenggara":"MSCI","periode":"Quarterly","bulan":"Feb/Mei/Agu/Nov","tanggal_2026":"27 Feb / 29 Mei / 28 Agu / 27 Nov 2026","dampak":"HIGH","keterangan":"Perubahan bobot Indonesia di MSCI EM (AUM ~$700B) → inflow/outflow besar ke seluruh IDX. Upgrade bobot = dana asing masuk proporsional."},
+            {"indeks":"FTSE Russell EM","penyelenggara":"FTSE Russell","periode":"Quarterly","bulan":"Mar/Jun/Sep/Des","tanggal_2026":"20 Mar / 19 Jun / 18 Sep / 18 Des 2026","dampak":"HIGH","keterangan":"Review kuartalan FTSE EM Index. Indonesia sebagai constituent. Perubahan bobot → capital flow dari fund global tracking FTSE."},
+            {"indeks":"S&P DJI Indonesia","penyelenggara":"S&P Global","periode":"Semi-Annual","bulan":"Jun & Des","tanggal_2026":"19 Jun 2026 / 18 Des 2026","dampak":"MEDIUM","keterangan":"Rebalancing S&P Indonesia BMI / S&P Indonesia Composite. Berpengaruh ke dana tracking S&P Index."},
+            {"indeks":"MSCI ACWI (Ex-US)","penyelenggara":"MSCI","periode":"Quarterly","bulan":"Feb/Mei/Agu/Nov","tanggal_2026":"27 Feb / 29 Mei / 28 Agu / 27 Nov 2026","dampak":"MEDIUM","keterangan":"All Country World Index. Perubahan bobot emerging vs developed berdampak ke aliran dana global ke IDX."},
+            {"indeks":"JP Morgan GBI-EM","penyelenggara":"JP Morgan","periode":"Monthly","bulan":"Tiap Bulan","tanggal_2026":"Akhir setiap bulan","dampak":"MEDIUM","keterangan":"Bond index. Rebalancing bulanan. Berdampak ke IDR & yield SBN yang mempengaruhi valuation saham IDX."},
+        ]
+        _reb_clr = {"HIGH":"#f23645","MEDIUM":"#f59e0b","LOW":"#4285F4"}
+        _reb_bg  = {"HIGH":"rgba(242,54,69,0.13)","MEDIUM":"rgba(245,158,11,0.13)","LOW":"rgba(66,133,244,0.11)"}
+        import json as _reb_json_mod
+        _reb_json_str = _reb_json_mod.dumps(_reb_data, ensure_ascii=False)
+        _reb_clr_str  = _reb_json_mod.dumps(_reb_clr)
+        _reb_bg_str   = _reb_json_mod.dumps(_reb_bg)
+
+        components.html(f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'DM Sans',sans-serif;}}
+.reb-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
+.hint{{display:none;text-align:center;font-size:0.8rem;color:{text_sub};padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {met_border};}}
+.scroll-box{{width:100%;max-height:440px;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
+.scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
+.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
+table{{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;}}
+thead th{{position:sticky;top:0;z-index:2;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.75rem;white-space:nowrap;}}
+tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:top;font-size:0.8rem;}}
+tbody tr:last-child td{{border-bottom:none;}}
+tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
+.sep-row td{{padding:4px 12px;font-size:0.72rem;letter-spacing:0.1em;color:rgba(139,92,246,0.55);background:rgba(139,92,246,0.04);border-bottom:1px solid rgba(139,92,246,0.12);font-weight:700;white-space:nowrap;}}
+.bdg{{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap;}}
+.idx-name{{font-weight:700;font-size:0.875rem;color:{text_main};white-space:nowrap;}}
+.idx-org{{font-size:0.72rem;color:{text_sub};margin-top:2px;white-space:nowrap;}}
+.ket{{font-size:0.8rem;color:{text_sub};white-space:normal;max-width:340px;line-height:1.45;}}
+.tgl{{font-size:0.78rem;color:{text_main};white-space:nowrap;}}
+.per{{font-size:0.8rem;color:{text_sub};white-space:nowrap;}}
+@media(max-width:600px){{.hint{{display:block;}}thead th{{font-size:0.7rem;padding:7px 8px;}}tbody td{{padding:7px 8px;}}}}
+</style></head><body>
+<div class="reb-wrap">
+  <div class="hint">← geser kiri / kanan →</div>
+  <div class="scroll-box">
+    <table>
+      <thead><tr>
+        <th>INDEKS</th><th>PERIODE</th><th>BULAN</th><th>TANGGAL 2026</th><th>DAMPAK</th><th>KETERANGAN</th>
+      </tr></thead>
+      <tbody id="reb-tb"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+(function(){{
+  var ROWS={_reb_json_str};
+  var CLR={_reb_clr_str};
+  var BG={_reb_bg_str};
+  var _lokal=['BEI','BEI+Kompas','BEI+DSN'];
+  var lastSep='',h='';
+  ROWS.forEach(function(r){{
+    var isLocal=_lokal.indexOf(r['penyelenggara'])>=0;
+    var sep=isLocal?'\U0001f1ee\U0001f1e9 INDEKS INDONESIA':'\U0001f30d INDEKS GLOBAL (Dampak ke IDX)';
+    if(sep!==lastSep){{h+='<tr class="sep-row"><td colspan="6">'+sep+'</td></tr>';lastSep=sep;}}
+    var dk=r['dampak'];
+    var clr=CLR[dk]||'#b2b5be';
+    var bg=BG[dk]||'rgba(178,181,190,0.08)';
+    h+='<tr>'+
+      '<td><div class="idx-name">'+r['indeks']+'</div><div class="idx-org">'+r['penyelenggara']+'</div></td>'+
+      '<td class="per">'+r['periode']+'</td>'+
+      '<td class="per">'+r['bulan']+'</td>'+
+      '<td class="tgl">'+r['tanggal_2026']+'</td>'+
+      '<td><span class="bdg" style="background:'+bg+';color:'+clr+';border:1px solid '+clr+'44;">'+dk+'</span></td>'+
+      '<td class="ket">'+r['keterangan']+'</td>'+
+      '</tr>';
+  }});
+  document.getElementById('reb-tb').innerHTML=h;
+  function resize(){{
+    var h2=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)+4;
+    try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h2}},'*');}}catch(e){{}}
+  }}
+  setTimeout(resize,100);setTimeout(resize,500);
+}})();
+</script></body></html>""", height=520, scrolling=False)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
         # ─────────────────────────────────────────────────────────
@@ -11508,6 +11592,21 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 return datetime.strptime(f"{p[0].zfill(2)}/{mn}/{p[2]}","%d/%m/%Y")
             except: return datetime(2099,1,1)
         _ec_raw.sort(key=_ec_sort_key)
+
+        # ── Filter tanggal yang sudah lewat (sembunyikan > 2 hari lalu) ────────
+        from datetime import date as _ec_date_cls, timedelta as _ec_td
+        _ec_today = _ec_date_cls.today()
+        _ec_cutoff = _ec_today - _ec_td(days=2)  # tampilkan mulai dari 2 hari lalu
+        def _ec_date_ok(row):
+            try:
+                _m2 = {"jan":1,"feb":2,"mar":3,"apr":4,"mei":5,"may":5,"jun":6,"jul":7,
+                        "agu":8,"aug":8,"sep":9,"okt":10,"oct":10,"nov":11,"des":12,"dec":12}
+                parts = row["tgl"].strip().split()
+                _mn = _m2.get(parts[1][:3].lower(), 1)
+                _dt = _ec_date_cls(int(parts[2]), _mn, int(parts[0]))
+                return _dt >= _ec_cutoff
+            except: return True  # jika parse gagal, tampilkan saja
+        _ec_raw = [r for r in _ec_raw if _ec_date_ok(r)]
 
         # ── Enrich with realtime actual ──────────────────────────
         import json as _cal_json
