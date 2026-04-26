@@ -8520,10 +8520,10 @@ canvas#globe { width:100%; height:100%; display:block; }
 // ── STOCKS: injected live from Python yfinance ──────────────────────────
 const _LIVE = __SIGMA_LIVE_DATA__;
 const _STATIC_META = __SIGMA_STATIC_META__;
-const STOCKS = Object.keys(_STATIC_META).map(tk => {{
+const STOCKS = Object.keys(_STATIC_META).map(tk => {
   const m = _STATIC_META[tk];
-  const l = _LIVE[tk] || {{}};
-  return {{
+  const l = _LIVE[tk] || {};
+  return {
     ticker: tk,
     name:   m.name,
     cap:    m.cap,
@@ -8533,8 +8533,8 @@ const STOCKS = Object.keys(_STATIC_META).map(tk => {{
     price:  l.price || m.price,
     chg:    l.chg   !== undefined ? l.chg : m.chg,
     vol:    l.vol   || m.vol,
-  }};
-}});
+  };
+});
 
 const OWNER_COLORS = {
   "Djarum Group":    [0.0,  0.85, 1.0],   // cyan
