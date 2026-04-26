@@ -9328,70 +9328,42 @@ window.addEventListener('resize',()=>{
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{background:#0d0f14;font-family:'Segoe UI',Arial,sans-serif;overflow:hidden;width:100%;height:100%;}
-
-/* TOOLBAR */
-#toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#131722;border-bottom:1px solid #1e2433;flex-wrap:wrap;}
-.tb-label{font-size:11px;font-weight:700;color:#9098a3;letter-spacing:0.05em;}
-.tb-btn{background:#1e2433;border:1px solid #2a3350;border-radius:6px;color:#9098a3;
-  font-size:11px;padding:4px 10px;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:4px;}
-.tb-btn:hover,.tb-btn.active{background:#2962ff;border-color:#2962ff;color:#fff;}
-.tb-sep{width:1px;height:20px;background:#1e2433;}
-#sortby{background:#1e2433;border:1px solid #2a3350;border-radius:6px;color:#9098a3;
-  font-size:11px;padding:4px 8px;cursor:pointer;outline:none;}
-
-/* LEGEND BAR */
-#legend{display:flex;align-items:center;gap:4px;padding:5px 12px;background:#131722;border-bottom:1px solid #1e2433;}
-.lg-label{font-size:10px;color:#6a7280;margin-right:4px;}
-.lg-bar{display:flex;gap:2px;align-items:center;}
-.lg-cell{height:12px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,0.8);padding:0 4px;}
-.lg-pct{font-size:10px;color:#6a7280;}
-.lg-mid{font-size:10px;color:#9098a3;margin:0 4px;}
-
-/* HEATMAP CANVAS AREA */
-#hmap-wrap{width:100%;overflow:hidden;position:relative;}
+#statusbar{display:flex;align-items:center;gap:8px;padding:5px 14px;background:#131722;border-bottom:1px solid #1e2433;font-size:11px;color:#6a7280;}
+#live-dot{width:8px;height:8px;border-radius:50%;background:#37474f;flex-shrink:0;}
+#live-txt{color:#6a7280;}
+#last-update{margin-left:auto;font-size:10px;color:#4a5568;}
+#legend{display:flex;align-items:center;gap:3px;padding:5px 14px;background:#131722;border-bottom:1px solid #1e2433;}
+.lg-label{font-size:10px;color:#6a7280;margin-right:6px;}
+.lg-cell{height:13px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;color:rgba(255,255,255,0.85);padding:0 6px;font-weight:600;}
+#hmap-wrap{width:100%;position:relative;overflow:hidden;}
 #hmap-canvas{display:block;}
-
-/* TOOLTIP */
 #tip{position:fixed;display:none;pointer-events:none;z-index:999;
-  background:rgba(13,15,20,0.96);border:1px solid #2a3a5a;border-radius:10px;
-  padding:10px 14px;min-width:180px;box-shadow:0 4px 24px rgba(0,0,0,0.5);}
-.tip-ticker{font-size:15px;font-weight:700;color:#fff;margin-bottom:2px;}
-.tip-name{font-size:10px;color:#6a8aaa;margin-bottom:6px;line-height:1.3;}
-.tip-row{display:flex;justify-content:space-between;gap:16px;font-size:11px;color:#9098a3;margin-bottom:2px;}
-.tip-val{color:#c8daf0;font-weight:600;}
-.tip-chg-pos{color:#26a69a;font-size:13px;font-weight:700;}
-.tip-chg-neg{color:#ef5350;font-size:13px;font-weight:700;}
-.tip-sector{display:inline-block;font-size:9px;padding:2px 7px;border-radius:10px;
-  background:rgba(41,98,255,0.2);color:#5585ff;border:1px solid rgba(41,98,255,0.3);margin-top:4px;}
+  background:rgba(10,12,20,0.97);border:1px solid #2a3a5a;border-radius:10px;
+  padding:11px 15px;min-width:190px;box-shadow:0 4px 28px rgba(0,0,0,0.6);}
+.tip-ticker{font-size:16px;font-weight:800;color:#fff;margin-bottom:2px;letter-spacing:.02em;}
+.tip-name{font-size:10px;color:#5a7a9a;margin-bottom:7px;line-height:1.4;}
+.tip-row{display:flex;justify-content:space-between;gap:16px;font-size:11px;color:#7a8a9a;margin-bottom:3px;}
+.tip-val{color:#c0d8f0;font-weight:700;}
+.tip-chg-pos{color:#26a69a;font-size:15px;font-weight:800;margin:5px 0 3px;}
+.tip-chg-neg{color:#ef5350;font-size:15px;font-weight:800;margin:5px 0 3px;}
 </style>
 </head><body>
 
-<div id="toolbar">
-  <span class="tb-label">KELOMPOK:</span>
-  <button class="tb-btn active" onclick="setGroup('sector')">Sektor</button>
-  <button class="tb-btn" onclick="setGroup('owner')">Konglomerasi</button>
-  <button class="tb-btn" onclick="setGroup('all')">Semua</button>
-  <div class="tb-sep"></div>
-  <span class="tb-label">SORT:</span>
-  <select id="sortby" onchange="resort()">
-    <option value="cap">Market Cap</option>
-    <option value="chg_desc">Naik Terbesar</option>
-    <option value="chg_asc">Turun Terbesar</option>
-    <option value="alpha">Alphabetical</option>
-  </select>
+<div id="statusbar">
+  <span id="live-dot"></span>
+  <span id="live-txt">Memuat data realtime...</span>
+  <span id="last-update"></span>
 </div>
 
 <div id="legend">
   <span class="lg-label">Perubahan 1 Hari:</span>
-  <div class="lg-bar">
-    <div class="lg-cell" style="background:#7b1c1c;width:32px;">-5%</div>
-    <div class="lg-cell" style="background:#c62828;width:28px;">-3%</div>
-    <div class="lg-cell" style="background:#ef5350;width:24px;">-1%</div>
-    <div class="lg-cell" style="background:#37474f;width:20px;color:#9098a3">0</div>
-    <div class="lg-cell" style="background:#2e7d32;width:24px;">+1%</div>
-    <div class="lg-cell" style="background:#43a047;width:28px;">+3%</div>
-    <div class="lg-cell" style="background:#1b5e20;width:32px;">+5%</div>
-  </div>
+  <div class="lg-cell" style="background:#7b1c1c;width:36px;">&#x2264;-5%</div>
+  <div class="lg-cell" style="background:#c62828;width:30px;">-3%</div>
+  <div class="lg-cell" style="background:#d32f2f;width:26px;">-1%</div>
+  <div class="lg-cell" style="background:#37474f;width:22px;color:#9098a3">0</div>
+  <div class="lg-cell" style="background:#2e7d32;width:26px;">+1%</div>
+  <div class="lg-cell" style="background:#388e3c;width:30px;">+3%</div>
+  <div class="lg-cell" style="background:#1b5e20;width:36px;">&#x2265;+5%</div>
 </div>
 
 <div id="hmap-wrap"><canvas id="hmap-canvas"></canvas></div>
@@ -9399,567 +9371,347 @@ html,body{background:#0d0f14;font-family:'Segoe UI',Arial,sans-serif;overflow:hi
   <div class="tip-ticker" id="tip-ticker"></div>
   <div class="tip-name" id="tip-name"></div>
   <div class="tip-row"><span>Harga</span><span class="tip-val" id="tip-price"></span></div>
-  <div class="tip-row"><span>Market Cap</span><span class="tip-val" id="tip-cap"></span></div>
+  <div class="tip-row"><span>Mkt Cap</span><span class="tip-val" id="tip-cap"></span></div>
   <div class="tip-row"><span>Volume</span><span class="tip-val" id="tip-vol"></span></div>
   <div id="tip-chg"></div>
-  <div><span class="tip-sector" id="tip-sector"></span></div>
 </div>
 
 <script>
-const STOCKS = [
-
-  // ══════════════════════════════════════════════════════════════
-  // DJARUM GROUP (16 saham) — cyan #00ccff
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"BBCA", name:"Bank Central Asia Tbk.",          cap:1289,owner:"Djarum Group",sector:"Financials",              msci:true, price:9325,  chg:1.08, vol:"18.2 M"},
-  {ticker:"BELI", name:"Bukalapak.com Tbk.",               cap:380, owner:"Djarum Group",sector:"Technology",              msci:false,price:212,   chg:-1.40,vol:"88.0 M"},
-  {ticker:"DNET", name:"Indoritel Makmur Intl.",            cap:290, owner:"Djarum Group",sector:"Consumer Non-Cyclical",   msci:false,price:1540,  chg:0.65, vol:"5.2 M"},
-  {ticker:"FAST", name:"Fast Food Indonesia Tbk.",          cap:180, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:1580,  chg:-0.63,vol:"4.8 M"},
-  {ticker:"MAPA", name:"Map Aktif Adiperkasa Tbk.",         cap:155, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:720,   chg:1.12, vol:"7.3 M"},
-  {ticker:"DCII", name:"DCI Indonesia Tbk.",                cap:230, owner:"Djarum Group",sector:"Technology",              msci:false,price:38500, chg:2.14, vol:"0.3 M"},
-  {ticker:"DMAS", name:"Puradelta Lestari Tbk.",            cap:95,  owner:"Djarum Group",sector:"Properties & Real Estate",msci:false,price:196,  chg:0.51, vol:"22.0 M"},
-  {ticker:"KOPI", name:"Kopi Kenangan Digital Tbk.",        cap:140, owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:880,   chg:3.41, vol:"11.5 M"},
-  {ticker:"GOLF", name:"Sarasa Golf Resort Tbk.",           cap:78,  owner:"Djarum Group",sector:"Properties & Real Estate",msci:false,price:560,  chg:-0.36,vol:"3.2 M"},
-  {ticker:"DAYA", name:"Daya Dimensi Indonesia",            cap:65,  owner:"Djarum Group",sector:"Industrials",             msci:false,price:440,   chg:0.91, vol:"6.8 M"},
-  {ticker:"NUSA", name:"Nusantara Digital Tbk.",            cap:55,  owner:"Djarum Group",sector:"Technology",              msci:false,price:318,   chg:-1.22,vol:"14.1 M"},
-  {ticker:"HOKI", name:"Buyung Poetra Sembada Tbk.",        cap:42,  owner:"Djarum Group",sector:"Consumer Non-Cyclical",   msci:false,price:510,   chg:0.39, vol:"8.6 M"},
-  {ticker:"BBKP", name:"Bank KB Bukopin Tbk.",              cap:68,  owner:"Djarum Group",sector:"Financials",              msci:false,price:420,   chg:-0.47,vol:"12.4 M"},
-  {ticker:"PNBN", name:"Bank Pan Indonesia Tbk.",           cap:110, owner:"Djarum Group",sector:"Financials",              msci:false,price:1240,  chg:0.81, vol:"8.6 M"},
-  {ticker:"WTON", name:"Wijaya Karya Beton Tbk.",           cap:62,  owner:"Djarum Group",sector:"Industrials",             msci:false,price:182,   chg:-1.09,vol:"18.2 M"},
-  {ticker:"MSKY", name:"MNC Sky Vision Tbk.",               cap:48,  owner:"Djarum Group",sector:"Consumer Cyclical",       msci:false,price:190,   chg:1.06, vol:"9.8 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // GOVERNMENT / BUMN (20 saham) — blue #3a8aff
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"BBRI", name:"Bank Rakyat Indonesia Tbk.",        cap:856, owner:"Government",  sector:"Financials",              msci:true, price:4350,  chg:-0.23,vol:"92.1 M"},
-  {ticker:"BMRI", name:"Bank Mandiri Tbk.",                 cap:652, owner:"Government",  sector:"Financials",              msci:true, price:6800,  chg:0.74, vol:"31.5 M"},
-  {ticker:"TLKM", name:"Telkom Indonesia Tbk.",             cap:566, owner:"Government",  sector:"Infrastructure",          msci:true, price:3920,  chg:-0.51,vol:"44.8 M"},
-  {ticker:"BBNI", name:"Bank Negara Indonesia Tbk.",        cap:389, owner:"Government",  sector:"Financials",              msci:true, price:4740,  chg:0.85, vol:"28.9 M"},
-  {ticker:"PTBA", name:"Bukit Asam Tbk.",                   cap:160, owner:"Government",  sector:"Energy",                  msci:true, price:2940,  chg:0.34, vol:"19.4 M"},
-  {ticker:"SMGR", name:"Semen Indonesia Tbk.",              cap:120, owner:"Government",  sector:"Industrials",             msci:true, price:5450,  chg:-0.91,vol:"10.2 M"},
-  {ticker:"PGAS", name:"Perusahaan Gas Negara Tbk.",        cap:188, owner:"Government",  sector:"Energy",                  msci:true, price:1440,  chg:0.70, vol:"31.8 M"},
-  {ticker:"ANTM", name:"Aneka Tambang Tbk.",                cap:155, owner:"Government",  sector:"Basic Materials",         msci:true, price:1620,  chg:1.57, vol:"25.0 M"},
-  {ticker:"WIKA", name:"Wijaya Karya Tbk.",                 cap:82,  owner:"Government",  sector:"Industrials",             msci:false,price:1020,  chg:-1.92,vol:"20.1 M"},
-  {ticker:"WSKT", name:"Waskita Karya Tbk.",                cap:68,  owner:"Government",  sector:"Industrials",             msci:false,price:164,   chg:-2.40,vol:"38.5 M"},
-  {ticker:"PTPP", name:"PP Persero Tbk.",                   cap:75,  owner:"Government",  sector:"Industrials",             msci:false,price:620,   chg:-1.27,vol:"14.2 M"},
-  {ticker:"JSMR", name:"Jasa Marga Tbk.",                   cap:210, owner:"Government",  sector:"Infrastructure",          msci:true, price:4200,  chg:0.48, vol:"9.7 M"},
-  {ticker:"ADHI", name:"Adhi Karya Tbk.",                   cap:55,  owner:"Government",  sector:"Industrials",             msci:false,price:440,   chg:-0.91,vol:"18.3 M"},
-  {ticker:"BBTN", name:"Bank Tabungan Negara Tbk.",         cap:130, owner:"Government",  sector:"Financials",              msci:true, price:1420,  chg:0.28, vol:"35.6 M"},
-  {ticker:"GIAA", name:"Garuda Indonesia Tbk.",             cap:48,  owner:"Government",  sector:"Infrastructure",          msci:false,price:56,    chg:-1.75,vol:"42.0 M"},
-  {ticker:"KAEF", name:"Kimia Farma Tbk.",                  cap:38,  owner:"Government",  sector:"Healthcare",              msci:false,price:650,   chg:0.93, vol:"11.5 M"},
-  {ticker:"KRAS", name:"Krakatau Steel Tbk.",               cap:45,  owner:"Government",  sector:"Basic Materials",         msci:false,price:220,   chg:-1.34,vol:"22.6 M"},
-  {ticker:"PGEO", name:"Pertamina Geothermal Energy",       cap:185, owner:"Government",  sector:"Energy",                  msci:true, price:1240,  chg:1.21, vol:"8.4 M"},
-  {ticker:"AKRA", name:"AKR Corporindo Tbk.",               cap:168, owner:"Government",  sector:"Energy",                  msci:true, price:1620,  chg:0.62, vol:"14.8 M"},
-  {ticker:"ITMG", name:"Indo Tambangraya Megah Tbk.",       cap:140, owner:"Government",  sector:"Energy",                  msci:true, price:24500, chg:1.84, vol:"2.1 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // ASTRA GROUP (14 saham) — green #00dd66
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"ASII", name:"Astra International Tbk.",          cap:432, owner:"Astra Group", sector:"Consumer Cyclical",       msci:true, price:4900,  chg:0.41, vol:"22.3 M"},
-  {ticker:"UNTR", name:"United Tractors Tbk.",              cap:320, owner:"Astra Group", sector:"Industrials",             msci:true, price:24500, chg:1.02, vol:"5.6 M"},
-  {ticker:"CPIN", name:"Charoen Pokphand Indonesia",        cap:195, owner:"Astra Group", sector:"Consumer Non-Cyclical",   msci:true, price:4800,  chg:-0.62,vol:"7.1 M"},
-  {ticker:"AUTO", name:"Astra Otoparts Tbk.",               cap:145, owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:2550,  chg:0.79, vol:"6.8 M"},
-  {ticker:"AALI", name:"Astra Agro Lestari Tbk.",           cap:220, owner:"Astra Group", sector:"Consumer Non-Cyclical",   msci:true, price:7400,  chg:-0.27,vol:"3.9 M"},
-  {ticker:"ACST", name:"Astra Infra Solutions Tbk.",        cap:85,  owner:"Astra Group", sector:"Industrials",             msci:false,price:1280,  chg:0.47, vol:"8.1 M"},
-  {ticker:"IMAS", name:"Indomobil Sukses Intl.",            cap:115, owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:1320,  chg:0.76, vol:"11.2 M"},
-  {ticker:"GJTL", name:"Gajah Tunggal Tbk.",                cap:78,  owner:"Astra Group", sector:"Consumer Cyclical",       msci:false,price:820,   chg:-1.08,vol:"14.6 M"},
-  {ticker:"ASGR", name:"Astra Graphia Tbk.",                cap:52,  owner:"Astra Group", sector:"Technology",              msci:false,price:1480,  chg:0.54, vol:"4.2 M"},
-  {ticker:"SUGI", name:"Sugih Energy Tbk.",                 cap:38,  owner:"Astra Group", sector:"Energy",                  msci:false,price:124,   chg:-0.80,vol:"16.4 M"},
-  {ticker:"PNLF", name:"Panin Financial Tbk.",              cap:72,  owner:"Astra Group", sector:"Financials",              msci:false,price:168,   chg:1.20, vol:"9.8 M"},
-  {ticker:"ADMF", name:"Adira Dinamika Multi Finance",      cap:158, owner:"Astra Group", sector:"Financials",              msci:false,price:8400,  chg:0.48, vol:"0.9 M"},
-  {ticker:"ABMM", name:"ABM Investama Tbk.",                cap:88,  owner:"Astra Group", sector:"Energy",                  msci:false,price:2880,  chg:1.04, vol:"3.6 M"},
-  {ticker:"SRTG", name:"Saratoga Investama Sedaya",         cap:118, owner:"Astra Group", sector:"Financials",              msci:false,price:1640,  chg:0.61, vol:"5.4 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // SALIM GROUP (14 saham) — gold #ffdd22
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"ICBP", name:"Indofood CBP Sukses Makmur",        cap:302, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:9375,  chg:0.27, vol:"6.2 M"},
-  {ticker:"INDF", name:"Indofood Sukses Makmur Tbk.",       cap:230, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:6700,  chg:0.15, vol:"8.8 M"},
-  {ticker:"MNCN", name:"Media Nusantara Citra Tbk.",        cap:150, owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:940,   chg:-0.53,vol:"22.3 M"},
-  {ticker:"SIMP", name:"Salim Ivomas Pratama Tbk.",         cap:88,  owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:false,price:466,   chg:0.65, vol:"12.4 M"},
-  {ticker:"LPPF", name:"Matahari Department Store Tbk.",    cap:172, owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:2760,  chg:-1.08,vol:"7.0 M"},
-  {ticker:"MLBI", name:"Multi Bintang Indonesia Tbk.",      cap:130, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:false,price:9800,  chg:0.51, vol:"1.4 M"},
-  {ticker:"INTP", name:"Indocement Tunggal Perkasa",        cap:168, owner:"Salim Group", sector:"Industrials",             msci:true, price:5500,  chg:-0.36,vol:"5.8 M"},
-  {ticker:"WIFI", name:"Solusi Net Integrasi Tbk.",         cap:65,  owner:"Salim Group", sector:"Technology",              msci:false,price:760,   chg:2.30, vol:"8.9 M"},
-  {ticker:"BMTR", name:"Global Mediacom Tbk.",              cap:92,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:480,   chg:-0.21,vol:"16.4 M"},
-  {ticker:"HERO", name:"Hero Supermarket Tbk.",             cap:48,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:620,   chg:1.14, vol:"4.1 M"},
-  {ticker:"ISAT", name:"Indosat Tbk.",                      cap:320, owner:"Salim Group", sector:"Infrastructure",          msci:true, price:2200,  chg:0.91, vol:"18.4 M"},
-  {ticker:"MPMX", name:"Mitra Pinasthika Mustika",          cap:58,  owner:"Salim Group", sector:"Consumer Cyclical",       msci:false,price:840,   chg:0.48, vol:"5.6 M"},
-  {ticker:"MYOR", name:"Mayora Indah Tbk.",                 cap:245, owner:"Salim Group", sector:"Consumer Non-Cyclical",   msci:true, price:2150,  chg:0.23, vol:"7.8 M"},
-  {ticker:"MBSS", name:"Mitrabahtera Segara Sejati",        cap:48,  owner:"Salim Group", sector:"Infrastructure",          msci:false,price:740,   chg:-0.54,vol:"4.2 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // SINAR MAS GROUP (14 saham) — red-pink #ff4a4a
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"UNVR", name:"Unilever Indonesia Tbk.",           cap:352, owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:true, price:2600,  chg:-1.14,vol:"15.6 M"},
-  {ticker:"BSDE", name:"Bumi Serpong Damai Tbk.",           cap:275, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:true,price:890, chg:0.45, vol:"28.2 M"},
-  {ticker:"SMRA", name:"Summarecon Agung Tbk.",             cap:220, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:820,chg:-0.24,vol:"14.4 M"},
-  {ticker:"DILD", name:"Intiland Development Tbk.",         cap:165, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:214,chg:0.94, vol:"18.8 M"},
-  {ticker:"ACES", name:"Ace Hardware Indonesia Tbk.",       cap:195, owner:"Sinar Mas Group",sector:"Consumer Cyclical",    msci:false,price:785,   chg:0.64, vol:"16.2 M"},
-  {ticker:"INKP", name:"Indah Kiat Pulp & Paper",           cap:310, owner:"Sinar Mas Group",sector:"Basic Materials",      msci:true, price:8200,  chg:1.32, vol:"6.3 M"},
-  {ticker:"TKIM", name:"Pabrik Kertas Tjiwi Kimia",         cap:145, owner:"Sinar Mas Group",sector:"Basic Materials",      msci:false,price:5400,  chg:0.74, vol:"2.8 M"},
-  {ticker:"SMAS", name:"Sinar Mas Agro Resources",          cap:88,  owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:false,price:3200,  chg:-0.62,vol:"4.1 M"},
-  {ticker:"SMAR", name:"Smart Tbk.",                        cap:72,  owner:"Sinar Mas Group",sector:"Consumer Non-Cyclical",msci:false,price:2900,  chg:0.34, vol:"3.6 M"},
-  {ticker:"DUTI", name:"Duta Pertiwi Tbk.",                 cap:60,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:4200,chg:-0.48,vol:"2.2 M"},
-  {ticker:"SMCB", name:"Solusi Bangun Indonesia Tbk.",      cap:95,  owner:"Sinar Mas Group",sector:"Industrials",          msci:false,price:2600,  chg:0.38, vol:"5.8 M"},
-  {ticker:"LPKR", name:"Lippo Karawaci Tbk.",               cap:220, owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:134,chg:-0.74,vol:"62.8 M"},
-  {ticker:"KIJA", name:"Kawasan Industri Jababeka",         cap:78,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:246,chg:0.82, vol:"22.4 M"},
-  {ticker:"APLN", name:"Agung Podomoro Land Tbk.",          cap:55,  owner:"Sinar Mas Group",sector:"Properties & Real Estate",msci:false,price:144,chg:-0.69,vol:"18.6 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // CHANDRA ASRI / BARITO GROUP (12 saham) — purple #aa33ff
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"TPIA", name:"Chandra Asri Tbk.",                 cap:414, owner:"Chandra Group",sector:"Basic Materials",        msci:true, price:8200,  chg:1.24, vol:"8.7 M"},
-  {ticker:"BRPT", name:"Barito Pacific Tbk.",               cap:280, owner:"Chandra Group",sector:"Basic Materials",        msci:true, price:1240,  chg:2.05, vol:"31.4 M"},
-  {ticker:"AGRO", name:"Bank Raya Indonesia Tbk.",          cap:95,  owner:"Chandra Group",sector:"Financials",             msci:false,price:368,   chg:-0.81,vol:"9.7 M"},
-  {ticker:"CBPE", name:"Chandra Barito Energi Tbk.",        cap:178, owner:"Chandra Group",sector:"Energy",                 msci:false,price:2100,  chg:1.43, vol:"6.1 M"},
-  {ticker:"CHEM", name:"Chandra Kimia Nusantara",           cap:122, owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:1680,  chg:0.60, vol:"7.4 M"},
-  {ticker:"POLY", name:"Asia Pacific Fibers Tbk.",          cap:68,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:228,   chg:-1.30,vol:"18.2 M"},
-  {ticker:"FPNI", name:"Lotte Chemical Titan Tbk.",         cap:54,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:182,   chg:0.55, vol:"12.0 M"},
-  {ticker:"CTRA", name:"Ciputra Development Tbk.",          cap:148, owner:"Chandra Group",sector:"Properties & Real Estate",msci:true,price:1320,  chg:0.91, vol:"15.8 M"},
-  {ticker:"MIKA", name:"Mitra Keluarga Karyasehat Tbk.",    cap:198, owner:"Chandra Group",sector:"Healthcare",             msci:true, price:2580,  chg:0.39, vol:"5.2 M"},
-  {ticker:"BYAN", name:"Bayan Resources Tbk.",              cap:380, owner:"Chandra Group",sector:"Energy",                 msci:true, price:18600, chg:2.37, vol:"1.4 M"},
-  {ticker:"PTRO", name:"Petrosea Tbk.",                     cap:72,  owner:"Chandra Group",sector:"Energy",                 msci:false,price:3280,  chg:0.92, vol:"2.8 M"},
-  {ticker:"PICO", name:"Pelangi Indah Canindo Tbk.",        cap:42,  owner:"Chandra Group",sector:"Basic Materials",        msci:false,price:290,   chg:-0.34,vol:"6.4 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // BAKRIE GROUP (12 saham) — yellow #ffcc00
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"EXCL", name:"XL Axiata Tbk.",                    cap:310, owner:"Bakrie Group", sector:"Infrastructure",         msci:true, price:1850,  chg:0.54, vol:"18.7 M"},
-  {ticker:"BUMI", name:"Bumi Resources Tbk.",               cap:185, owner:"Bakrie Group", sector:"Energy",                 msci:false,price:124,   chg:-1.59,vol:"420.0 M"},
-  {ticker:"VIVA", name:"Visi Media Asia Tbk.",              cap:110, owner:"Bakrie Group", sector:"Consumer Cyclical",      msci:false,price:168,   chg:2.44, vol:"55.2 M"},
-  {ticker:"ENRG", name:"Energi Mega Persada Tbk.",          cap:178, owner:"Bakrie Group", sector:"Energy",                 msci:false,price:50,    chg:-2.00,vol:"88.0 M"},
-  {ticker:"ANTV", name:"Cakrawala Andalas TV Tbk.",         cap:88,  owner:"Bakrie Group", sector:"Consumer Cyclical",      msci:false,price:112,   chg:1.79, vol:"32.4 M"},
-  {ticker:"BNBR", name:"Bakrie & Brothers Tbk.",            cap:65,  owner:"Bakrie Group", sector:"Industrials",            msci:false,price:56,    chg:-0.89,vol:"48.0 M"},
-  {ticker:"UNSP", name:"Bakrie Sumatra Plantations",        cap:48,  owner:"Bakrie Group", sector:"Consumer Non-Cyclical",  msci:false,price:84,    chg:1.20, vol:"28.6 M"},
-  {ticker:"BTEL", name:"Bakrie Telecom Tbk.",               cap:38,  owner:"Bakrie Group", sector:"Infrastructure",         msci:false,price:50,    chg:-1.96,vol:"42.0 M"},
-  {ticker:"ELTY", name:"Bakrieland Development Tbk.",       cap:55,  owner:"Bakrie Group", sector:"Properties & Real Estate",msci:false,price:66,  chg:3.12, vol:"55.8 M"},
-  {ticker:"BBRM", name:"Pelayaran Nasional Bina Buana Raya",cap:42,  owner:"Bakrie Group", sector:"Infrastructure",         msci:false,price:148,   chg:0.68, vol:"8.6 M"},
-  {ticker:"BKSL", name:"Sentul City Tbk.",                  cap:38,  owner:"Bakrie Group", sector:"Properties & Real Estate",msci:false,price:58,  chg:-1.69,vol:"24.8 M"},
-  {ticker:"TOWR", name:"Sarana Menara Nusantara",           cap:188, owner:"Bakrie Group", sector:"Infrastructure",         msci:true, price:820,   chg:0.24, vol:"15.4 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // LIPPO GROUP (13 saham) — orange #ff8800
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"MPPA", name:"Matahari Putra Prima Tbk.",         cap:155, owner:"Lippo Group",  sector:"Consumer Cyclical",      msci:false,price:660,   chg:1.08, vol:"14.6 M"},
-  {ticker:"JPFA", name:"Japfa Comfeed Indonesia Tbk.",      cap:220, owner:"Lippo Group",  sector:"Consumer Non-Cyclical",  msci:true, price:1480,  chg:-0.34,vol:"11.2 M"},
-  {ticker:"SILO", name:"Siloam International Hospitals",    cap:190, owner:"Lippo Group",  sector:"Healthcare",             msci:true, price:2620,  chg:0.77, vol:"4.9 M"},
-  {ticker:"MFIN", name:"Mandala Multifinance Tbk.",         cap:55,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:1880,  chg:0.54, vol:"3.2 M"},
-  {ticker:"CARE", name:"Metro Healthcare Indonesia",        cap:88,  owner:"Lippo Group",  sector:"Healthcare",             msci:false,price:1120,  chg:-0.89,vol:"7.8 M"},
-  {ticker:"LPGI", name:"Lippo General Insurance Tbk.",      cap:48,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:4800,  chg:0.21, vol:"0.8 M"},
-  {ticker:"LMPI", name:"Langgeng Makmur Industri",          cap:38,  owner:"Lippo Group",  sector:"Industrials",            msci:false,price:280,   chg:-0.36,vol:"5.4 M"},
-  {ticker:"LPPS", name:"Lippo Cikarang Tbk.",               cap:95,  owner:"Lippo Group",  sector:"Properties & Real Estate",msci:false,price:1080, chg:0.93, vol:"6.2 M"},
-  {ticker:"MTDL", name:"Metrodata Electronics Tbk.",        cap:72,  owner:"Lippo Group",  sector:"Technology",             msci:false,price:590,   chg:1.55, vol:"9.8 M"},
-  {ticker:"LSIP", name:"PP London Sumatra Indonesia",       cap:160, owner:"Lippo Group",  sector:"Consumer Non-Cyclical",  msci:true, price:1340,  chg:0.75, vol:"9.2 M"},
-  {ticker:"FMII", name:"First Media Tbk.",                  cap:42,  owner:"Lippo Group",  sector:"Consumer Cyclical",      msci:false,price:168,   chg:-0.59,vol:"12.4 M"},
-  {ticker:"TBIG", name:"Tower Bersama Infrastr.",           cap:165, owner:"Lippo Group",  sector:"Infrastructure",         msci:true, price:2100,  chg:-0.48,vol:"8.8 M"},
-  {ticker:"BCAP", name:"MNC Kapital Indonesia Tbk.",        cap:52,  owner:"Lippo Group",  sector:"Financials",             msci:false,price:312,   chg:0.32, vol:"7.2 M"},
-
-  // ══════════════════════════════════════════════════════════════
-  // MSCI + INDEPENDENT (Others) (28 saham) — gray-blue #8899aa
-  // ══════════════════════════════════════════════════════════════
-  {ticker:"AMMN", name:"Amman Mineral Internasional",       cap:294, owner:"Others",       sector:"Basic Materials",        msci:true, price:7800,  chg:2.11, vol:"5.1 M"},
-  {ticker:"GOTO", name:"GoTo Gojek Tokopedia Tbk.",         cap:180, owner:"Others",       sector:"Technology",             msci:true, price:62,    chg:-3.12,vol:"312.0 M"},
-  {ticker:"KLBF", name:"Kalbe Farma Tbk.",                  cap:245, owner:"Others",       sector:"Healthcare",             msci:true, price:1565,  chg:-0.32,vol:"24.1 M"},
-  {ticker:"ADRO", name:"Adaro Energy Indonesia Tbk.",       cap:282, owner:"Others",       sector:"Energy",                 msci:true, price:2200,  chg:1.38, vol:"14.6 M"},
-  {ticker:"MDKA", name:"Merdeka Copper Gold Tbk.",          cap:270, owner:"Others",       sector:"Basic Materials",        msci:true, price:2460,  chg:2.07, vol:"12.3 M"},
-  {ticker:"INCO", name:"Vale Indonesia Tbk.",               cap:230, owner:"Others",       sector:"Basic Materials",        msci:true, price:3100,  chg:0.97, vol:"9.5 M"},
-  {ticker:"MAPI", name:"Mitra Adiperkasa Tbk.",             cap:245, owner:"Others",       sector:"Consumer Cyclical",      msci:true, price:1680,  chg:0.60, vol:"8.7 M"},
-  {ticker:"PWON", name:"Pakuwon Jati Tbk.",                 cap:218, owner:"Others",       sector:"Properties & Real Estate",msci:true,price:438,   chg:0.46, vol:"35.6 M"},
-  {ticker:"HRUM", name:"Harum Energy Tbk.",                 cap:198, owner:"Others",       sector:"Energy",                 msci:false,price:1200,  chg:0.84, vol:"5.6 M"},
-  {ticker:"BUKA", name:"Bukalapak.com Tbk.",                cap:145, owner:"Others",       sector:"Technology",             msci:false,price:68,    chg:-2.94,vol:"148.0 M"},
-  {ticker:"HEAL", name:"Medikaloka Hermina Tbk.",           cap:132, owner:"Others",       sector:"Healthcare",             msci:false,price:1560,  chg:1.29, vol:"6.3 M"},
-  {ticker:"COAL", name:"Indika Energy Tbk.",                cap:118, owner:"Others",       sector:"Energy",                 msci:false,price:1820,  chg:0.55, vol:"8.2 M"},
-  {ticker:"CUAN", name:"Petrindo Jaya Kreasi Tbk.",         cap:310, owner:"Others",       sector:"Energy",                 msci:false,price:12400, chg:4.20, vol:"2.1 M"},
-  {ticker:"RAJA", name:"Rukun Raharja Tbk.",                cap:95,  owner:"Others",       sector:"Energy",                 msci:false,price:3880,  chg:1.80, vol:"4.4 M"},
-  {ticker:"FILM", name:"MD Pictures Tbk.",                  cap:78,  owner:"Others",       sector:"Consumer Cyclical",      msci:false,price:1240,  chg:-0.81,vol:"5.5 M"},
-  {ticker:"ESSA", name:"Surya Esa Perkasa Tbk.",            cap:110, owner:"Others",       sector:"Energy",                 msci:false,price:1620,  chg:1.23, vol:"6.8 M"},
-  {ticker:"SMIL", name:"Sumber Mas Indah Plywood",          cap:45,  owner:"Others",       sector:"Basic Materials",        msci:false,price:380,   chg:0.53, vol:"5.2 M"},
-  {ticker:"ERAA", name:"Erajaya Swasembada Tbk.",           cap:88,  owner:"Others",       sector:"Consumer Cyclical",      msci:false,price:540,   chg:-0.74,vol:"12.4 M"},
-  {ticker:"GOOD", name:"Garudafood Putra Putri Jaya",       cap:72,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:430,   chg:0.47, vol:"9.6 M"},
-  {ticker:"SIDO", name:"Industri Jamu Sido Muncul",         cap:138, owner:"Others",       sector:"Healthcare",             msci:true, price:580,   chg:0.35, vol:"10.2 M"},
-  {ticker:"MIDI", name:"Midi Utama Indonesia Tbk.",         cap:88,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:600,   chg:0.84, vol:"4.4 M"},
-  {ticker:"CMRY", name:"Cisarua Mountain Dairy Tbk.",       cap:115, owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:4020,  chg:1.01, vol:"2.8 M"},
-  {ticker:"ARTO", name:"Bank Jago Tbk.",                    cap:175, owner:"Others",       sector:"Financials",             msci:false,price:2540,  chg:-1.55,vol:"7.6 M"},
-  {ticker:"BREN", name:"Barito Renewables Energy Tbk.",     cap:420, owner:"Others",       sector:"Energy",                 msci:true, price:8400,  chg:3.24, vol:"4.2 M"},
-  {ticker:"TAPG", name:"Triputra Agro Persada Tbk.",        cap:95,  owner:"Others",       sector:"Consumer Non-Cyclical",  msci:false,price:1140,  chg:0.88, vol:"5.8 M"},
-  {ticker:"NICL", name:"Nickel Industries Ltd.",            cap:142, owner:"Others",       sector:"Basic Materials",        msci:false,price:362,   chg:1.66, vol:"9.4 M"},
-  {ticker:"CBDK", name:"Cahaya Bintang Medan Tbk.",         cap:68,  owner:"Others",       sector:"Properties & Real Estate",msci:false,price:2640, chg:2.34, vol:"3.6 M"},
-  {ticker:"MSCI", name:"[MSCI-flagged] Diversified IDX",    cap:55,  owner:"Others",       sector:"Financials",             msci:false,price:1200,  chg:0.22, vol:"4.2 M"},
-
+const SEED=[
+  {t:"BBCA",n:"Bank Central Asia Tbk.",c:1289,p:9325,g:1.08,v:18.2},
+  {t:"BBRI",n:"Bank Rakyat Indonesia Tbk.",c:856,p:4350,g:-0.23,v:92.1},
+  {t:"BMRI",n:"Bank Mandiri Tbk.",c:652,p:6800,g:0.74,v:31.5},
+  {t:"TLKM",n:"Telkom Indonesia Tbk.",c:566,p:3920,g:-0.51,v:44.8},
+  {t:"BREN",n:"Barito Renewables Energy",c:420,p:8400,g:3.24,v:4.2},
+  {t:"TPIA",n:"Chandra Asri Tbk.",c:414,p:8200,g:1.24,v:8.7},
+  {t:"ASII",n:"Astra International Tbk.",c:432,p:4900,g:0.41,v:22.3},
+  {t:"BBNI",n:"Bank Negara Indonesia Tbk.",c:389,p:4740,g:0.85,v:28.9},
+  {t:"BYAN",n:"Bayan Resources Tbk.",c:380,p:18600,g:2.37,v:1.4},
+  {t:"BELI",n:"Bukalapak.com Tbk.",c:380,p:212,g:-1.40,v:88.0},
+  {t:"UNVR",n:"Unilever Indonesia Tbk.",c:352,p:2600,g:-1.14,v:15.6},
+  {t:"CUAN",n:"Petrindo Jaya Kreasi Tbk.",c:310,p:12400,g:4.20,v:2.1},
+  {t:"EXCL",n:"XL Axiata Tbk.",c:310,p:1850,g:0.54,v:18.7},
+  {t:"INKP",n:"Indah Kiat Pulp & Paper",c:310,p:8200,g:1.32,v:6.3},
+  {t:"ISAT",n:"Indosat Tbk.",c:320,p:2200,g:0.91,v:18.4},
+  {t:"UNTR",n:"United Tractors Tbk.",c:320,p:24500,g:1.02,v:5.6},
+  {t:"ICBP",n:"Indofood CBP Sukses Makmur",c:302,p:9375,g:0.27,v:6.2},
+  {t:"AMMN",n:"Amman Mineral Internasional",c:294,p:7800,g:2.11,v:5.1},
+  {t:"DNET",n:"Indoritel Makmur Intl.",c:290,p:1540,g:0.65,v:5.2},
+  {t:"BRPT",n:"Barito Pacific Tbk.",c:280,p:1240,g:2.05,v:31.4},
+  {t:"ADRO",n:"Adaro Energy Indonesia Tbk.",c:282,p:2200,g:1.38,v:14.6},
+  {t:"BSDE",n:"Bumi Serpong Damai Tbk.",c:275,p:890,g:0.45,v:28.2},
+  {t:"MDKA",n:"Merdeka Copper Gold Tbk.",c:270,p:2460,g:2.07,v:12.3},
+  {t:"KLBF",n:"Kalbe Farma Tbk.",c:245,p:1565,g:-0.32,v:24.1},
+  {t:"MAPI",n:"Mitra Adiperkasa Tbk.",c:245,p:1680,g:0.60,v:8.7},
+  {t:"MYOR",n:"Mayora Indah Tbk.",c:245,p:2150,g:0.23,v:7.8},
+  {t:"INDF",n:"Indofood Sukses Makmur Tbk.",c:230,p:6700,g:0.15,v:8.8},
+  {t:"INCO",n:"Vale Indonesia Tbk.",c:230,p:3100,g:0.97,v:9.5},
+  {t:"AALI",n:"Astra Agro Lestari Tbk.",c:220,p:7400,g:-0.27,v:3.9},
+  {t:"SMRA",n:"Summarecon Agung Tbk.",c:220,p:820,g:-0.24,v:14.4},
+  {t:"LPKR",n:"Lippo Karawaci Tbk.",c:220,p:134,g:-0.74,v:62.8},
+  {t:"JPFA",n:"Japfa Comfeed Indonesia Tbk.",c:220,p:1480,g:-0.34,v:11.2},
+  {t:"PWON",n:"Pakuwon Jati Tbk.",c:218,p:438,g:0.46,v:35.6},
+  {t:"JSMR",n:"Jasa Marga Tbk.",c:210,p:4200,g:0.48,v:9.7},
+  {t:"MIKA",n:"Mitra Keluarga Karyasehat",c:198,p:2580,g:0.39,v:5.2},
+  {t:"HRUM",n:"Harum Energy Tbk.",c:198,p:1200,g:0.84,v:5.6},
+  {t:"TOWR",n:"Sarana Menara Nusantara",c:188,p:820,g:0.24,v:15.4},
+  {t:"PGAS",n:"Perusahaan Gas Negara Tbk.",c:188,p:1440,g:0.70,v:31.8},
+  {t:"PGEO",n:"Pertamina Geothermal Energy",c:185,p:1240,g:1.21,v:8.4},
+  {t:"BUMI",n:"Bumi Resources Tbk.",c:185,p:124,g:-1.59,v:420.0},
+  {t:"ENRG",n:"Energi Mega Persada Tbk.",c:178,p:50,g:-2.00,v:88.0},
+  {t:"CBPE",n:"Chandra Barito Energi Tbk.",c:178,p:2100,g:1.43,v:6.1},
+  {t:"ARTO",n:"Bank Jago Tbk.",c:175,p:2540,g:-1.55,v:7.6},
+  {t:"DILD",n:"Intiland Development Tbk.",c:165,p:214,g:0.94,v:18.8},
+  {t:"TBIG",n:"Tower Bersama Infrastr.",c:165,p:2100,g:-0.48,v:8.8},
+  {t:"LSIP",n:"PP London Sumatra Indonesia",c:160,p:1340,g:0.75,v:9.2},
+  {t:"PTBA",n:"Bukit Asam Tbk.",c:160,p:2940,g:0.34,v:19.4},
+  {t:"ADMF",n:"Adira Dinamika Multi Finance",c:158,p:8400,g:0.48,v:0.9},
+  {t:"ANTM",n:"Aneka Tambang Tbk.",c:155,p:1620,g:1.57,v:25.0},
+  {t:"MAPA",n:"Map Aktif Adiperkasa Tbk.",c:155,p:720,g:1.12,v:7.3},
+  {t:"MPPA",n:"Matahari Putra Prima Tbk.",c:155,p:660,g:1.08,v:14.6},
+  {t:"MNCN",n:"Media Nusantara Citra Tbk.",c:150,p:940,g:-0.53,v:22.3},
+  {t:"TKIM",n:"Pabrik Kertas Tjiwi Kimia",c:145,p:5400,g:0.74,v:2.8},
+  {t:"AUTO",n:"Astra Otoparts Tbk.",c:145,p:2550,g:0.79,v:6.8},
+  {t:"BUKA",n:"Bukalapak.com Tbk.",c:145,p:68,g:-2.94,v:148.0},
+  {t:"NICL",n:"Nickel Industries Ltd.",c:142,p:362,g:1.66,v:9.4},
+  {t:"ITMG",n:"Indo Tambangraya Megah Tbk.",c:140,p:24500,g:1.84,v:2.1},
+  {t:"KOPI",n:"Kopi Kenangan Digital Tbk.",c:140,p:880,g:3.41,v:11.5},
+  {t:"SIDO",n:"Industri Jamu Sido Muncul",c:138,p:580,g:0.35,v:10.2},
+  {t:"BBTN",n:"Bank Tabungan Negara Tbk.",c:130,p:1420,g:0.28,v:35.6},
+  {t:"MLBI",n:"Multi Bintang Indonesia Tbk.",c:130,p:9800,g:0.51,v:1.4},
+  {t:"HEAL",n:"Medikaloka Hermina Tbk.",c:132,p:1560,g:1.29,v:6.3},
+  {t:"CHEM",n:"Chandra Kimia Nusantara",c:122,p:1680,g:0.60,v:7.4},
+  {t:"SMGR",n:"Semen Indonesia Tbk.",c:120,p:5450,g:-0.91,v:10.2},
+  {t:"SRTG",n:"Saratoga Investama Sedaya",c:118,p:1640,g:0.61,v:5.4},
+  {t:"COAL",n:"Indika Energy Tbk.",c:118,p:1820,g:0.55,v:8.2},
+  {t:"IMAS",n:"Indomobil Sukses Intl.",c:115,p:1320,g:0.76,v:11.2},
+  {t:"CMRY",n:"Cisarua Mountain Dairy Tbk.",c:115,p:4020,g:1.01,v:2.8},
+  {t:"PNBN",n:"Bank Pan Indonesia Tbk.",c:110,p:1240,g:0.81,v:8.6},
+  {t:"ESSA",n:"Surya Esa Perkasa Tbk.",c:110,p:1620,g:1.23,v:6.8},
+  {t:"VIVA",n:"Visi Media Asia Tbk.",c:110,p:168,g:2.44,v:55.2},
+  {t:"AKRA",n:"AKR Corporindo Tbk.",c:168,p:1620,g:0.62,v:14.8},
+  {t:"INTP",n:"Indocement Tunggal Perkasa",c:168,p:5500,g:-0.36,v:5.8},
+  {t:"LPPF",n:"Matahari Department Store",c:172,p:2760,g:-1.08,v:7.0},
+  {t:"CTRA",n:"Ciputra Development Tbk.",c:148,p:1320,g:0.91,v:15.8},
+  {t:"ACES",n:"Ace Hardware Indonesia Tbk.",c:195,p:785,g:0.64,v:16.2},
+  {t:"SILO",n:"Siloam International Hospitals",c:190,p:2620,g:0.77,v:4.9},
+  {t:"GOTO",n:"GoTo Gojek Tokopedia Tbk.",c:180,p:62,g:-3.12,v:312.0},
+  {t:"FAST",n:"Fast Food Indonesia Tbk.",c:180,p:1580,g:-0.63,v:4.8},
+  {t:"CPIN",n:"Charoen Pokphand Indonesia",c:195,p:4800,g:-0.62,v:7.1},
+  {t:"SMCB",n:"Solusi Bangun Indonesia Tbk.",c:95,p:2600,g:0.38,v:5.8},
+  {t:"ABMM",n:"ABM Investama Tbk.",c:88,p:2880,g:1.04,v:3.6},
+  {t:"ANTV",n:"Cakrawala Andalas TV Tbk.",c:88,p:112,g:1.79,v:32.4},
+  {t:"BMTR",n:"Global Mediacom Tbk.",c:92,p:480,g:-0.21,v:16.4},
+  {t:"ERAA",n:"Erajaya Swasembada Tbk.",c:88,p:540,g:-0.74,v:12.4},
+  {t:"SMAS",n:"Sinar Mas Agro Resources",c:88,p:3200,g:-0.62,v:4.1},
+  {t:"SIMP",n:"Salim Ivomas Pratama Tbk.",c:88,p:466,g:0.65,v:12.4},
+  {t:"CARE",n:"Metro Healthcare Indonesia",c:88,p:1120,g:-0.89,v:7.8},
+  {t:"MIDI",n:"Midi Utama Indonesia Tbk.",c:88,p:600,g:0.84,v:4.4},
+  {t:"PTPP",n:"PP Persero Tbk.",c:75,p:620,g:-1.27,v:14.2},
+  {t:"PNLF",n:"Panin Financial Tbk.",c:72,p:168,g:1.20,v:9.8},
+  {t:"PTRO",n:"Petrosea Tbk.",c:72,p:3280,g:0.92,v:2.8},
+  {t:"SMAR",n:"Smart Tbk.",c:72,p:2900,g:0.34,v:3.6},
+  {t:"FILM",n:"MD Pictures Tbk.",c:78,p:1240,g:-0.81,v:5.5},
+  {t:"GJTL",n:"Gajah Tunggal Tbk.",c:78,p:820,g:-1.08,v:14.6},
+  {t:"KIJA",n:"Kawasan Industri Jababeka",c:78,p:246,g:0.82,v:22.4},
+  {t:"MTDL",n:"Metrodata Electronics Tbk.",c:72,p:590,g:1.55,v:9.8},
+  {t:"GOOD",n:"Garudafood Putra Putri Jaya",c:72,p:430,g:0.47,v:9.6},
+  {t:"DMAS",n:"Puradelta Lestari Tbk.",c:95,p:196,g:0.51,v:22.0},
+  {t:"WIKA",n:"Wijaya Karya Tbk.",c:82,p:1020,g:-1.92,v:20.1},
+  {t:"ACST",n:"Astra Infra Solutions Tbk.",c:85,p:1280,g:0.47,v:8.1},
+  {t:"TAPG",n:"Triputra Agro Persada Tbk.",c:95,p:1140,g:0.88,v:5.8},
+  {t:"AGRO",n:"Bank Raya Indonesia Tbk.",c:95,p:368,g:-0.81,v:9.7},
+  {t:"RAJA",n:"Rukun Raharja Tbk.",c:95,p:3880,g:1.80,v:4.4},
+  {t:"LPPS",n:"Lippo Cikarang Tbk.",c:95,p:1080,g:0.93,v:6.2},
+  {t:"BBKP",n:"Bank KB Bukopin Tbk.",c:68,p:420,g:-0.47,v:12.4},
+  {t:"WSKT",n:"Waskita Karya Tbk.",c:68,p:164,g:-2.40,v:38.5},
+  {t:"CBDK",n:"Cahaya Bintang Medan Tbk.",c:68,p:2640,g:2.34,v:3.6},
+  {t:"POLY",n:"Asia Pacific Fibers Tbk.",c:68,p:228,g:-1.30,v:18.2},
+  {t:"BNBR",n:"Bakrie & Brothers Tbk.",c:65,p:56,g:-0.89,v:48.0},
+  {t:"DAYA",n:"Daya Dimensi Indonesia",c:65,p:440,g:0.91,v:6.8},
+  {t:"WIFI",n:"Solusi Net Integrasi Tbk.",c:65,p:760,g:2.30,v:8.9},
+  {t:"WTON",n:"Wijaya Karya Beton Tbk.",c:62,p:182,g:-1.09,v:18.2},
+  {t:"DUTI",n:"Duta Pertiwi Tbk.",c:60,p:4200,g:-0.48,v:2.2},
+  {t:"MFIN",n:"Mandala Multifinance Tbk.",c:55,p:1880,g:0.54,v:3.2},
+  {t:"ELTY",n:"Bakrieland Development Tbk.",c:55,p:66,g:3.12,v:55.8},
+  {t:"ADHI",n:"Adhi Karya Tbk.",c:55,p:440,g:-0.91,v:18.3},
+  {t:"NUSA",n:"Nusantara Digital Tbk.",c:55,p:318,g:-1.22,v:14.1},
+  {t:"APLN",n:"Agung Podomoro Land Tbk.",c:55,p:144,g:-0.69,v:18.6},
+  {t:"ASGR",n:"Astra Graphia Tbk.",c:52,p:1480,g:0.54,v:4.2},
+  {t:"BCAP",n:"MNC Kapital Indonesia Tbk.",c:52,p:312,g:0.32,v:7.2},
+  {t:"FPNI",n:"Lotte Chemical Titan Tbk.",c:54,p:182,g:0.55,v:12.0},
+  {t:"MSKY",n:"MNC Sky Vision Tbk.",c:48,p:190,g:1.06,v:9.8},
+  {t:"GIAA",n:"Garuda Indonesia Tbk.",c:48,p:56,g:-1.75,v:42.0},
+  {t:"LPGI",n:"Lippo General Insurance Tbk.",c:48,p:4800,g:0.21,v:0.8},
+  {t:"MBSS",n:"Mitrabahtera Segara Sejati",c:48,p:740,g:-0.54,v:4.2},
+  {t:"HERO",n:"Hero Supermarket Tbk.",c:48,p:620,g:1.14,v:4.1},
+  {t:"UNSP",n:"Bakrie Sumatra Plantations",c:48,p:84,g:1.20,v:28.6},
+  {t:"MPMX",n:"Mitra Pinasthika Mustika",c:58,p:840,g:0.48,v:5.6},
+  {t:"GOLF",n:"Sarasa Golf Resort Tbk.",c:78,p:560,g:-0.36,v:3.2},
+  {t:"SMIL",n:"Sumber Mas Indah Plywood",c:45,p:380,g:0.53,v:5.2},
+  {t:"KRAS",n:"Krakatau Steel Tbk.",c:45,p:220,g:-1.34,v:22.6},
+  {t:"PICO",n:"Pelangi Indah Canindo Tbk.",c:42,p:290,g:-0.34,v:6.4},
+  {t:"HOKI",n:"Buyung Poetra Sembada Tbk.",c:42,p:510,g:0.39,v:8.6},
+  {t:"BBRM",n:"Pelayaran Nasional Bina Buana",c:42,p:148,g:0.68,v:8.6},
+  {t:"FMII",n:"First Media Tbk.",c:42,p:168,g:-0.59,v:12.4},
+  {t:"LMPI",n:"Langgeng Makmur Industri",c:38,p:280,g:-0.36,v:5.4},
+  {t:"BKSL",n:"Sentul City Tbk.",c:38,p:58,g:-1.69,v:24.8},
+  {t:"BTEL",n:"Bakrie Telecom Tbk.",c:38,p:50,g:-1.96,v:42.0},
+  {t:"KAEF",n:"Kimia Farma Tbk.",c:38,p:650,g:0.93,v:11.5},
+  {t:"SUGI",n:"Sugih Energy Tbk.",c:38,p:124,g:-0.80,v:16.4},
 ];
+const seen=new Set();
+const STOCKS=SEED.filter(s=>{if(seen.has(s.t))return false;seen.add(s.t);return true;});
 
-const SECTOR_COLORS = {
-  'Financials':           {bg:'#1a3a6a', hi:'#2962ff'},
-  'Consumer Cyclical':    {bg:'#4a2200', hi:'#ff6d00'},
-  'Consumer Non-Cyclical':{bg:'#1a3a1a', hi:'#43a047'},
-  'Energy':               {bg:'#3a2800', hi:'#ffab00'},
-  'Healthcare':           {bg:'#3a1a3a', hi:'#ab47bc'},
-  'Industrials':          {bg:'#2a1a00', hi:'#fb8c00'},
-  'Infrastructure':       {bg:'#002a3a', hi:'#00acc1'},
-  'Basic Materials':      {bg:'#003a2a', hi:'#26a69a'},
-  'Technology':           {bg:'#1a003a', hi:'#7e57c2'},
-  'Properties & Real Estate':{bg:'#3a1a00', hi:'#ff7043'},
-  'Others':               {bg:'#1a1a1a', hi:'#78909c'},
-};
-const OWNER_COLORS = {
-  'Djarum Group':{bg:'#1a1f3a',hi:'#3d5afe'},
-  'Government':{bg:'#002235',hi:'#0288d1'},
-  'Astra Group':{bg:'#1a3a1a',hi:'#43a047'},
-  'Bakrie Group':{bg:'#3a2800',hi:'#ff8f00'},
-  'Lippo Group':{bg:'#3a003a',hi:'#e040fb'},
-  'Sinar Mas Group':{bg:'#003a3a',hi:'#00bcd4'},
-  'Chandra Group':{bg:'#2a3a00',hi:'#c6d600'},
-  'Salim Group':{bg:'#3a1500',hi:'#ff5722'},
-  'Others':{bg:'#1e1e2a',hi:'#607d8b'},
-};
+function squarify(items,x,y,w,h){
+  const out=[];
+  function worst(row,side){
+    const s=row.reduce((a,i)=>a+i.nw,0);
+    return Math.max(side*side*Math.max(...row.map(i=>i.nw))/(s*s),(s*s)/(side*side*Math.min(...row.map(i=>i.nw))));
+  }
+  function layoutRow(row,rx,ry,rw,rh){
+    const rs=row.reduce((a,i)=>a+i.nw,0),hz=rw>=rh,strip=hz?rs/rh:rs/rw;
+    let off=0;
+    row.forEach(it=>{
+      const f=it.nw/rs;
+      if(hz){out.push({...it,x:rx,y:ry+off,w:strip,h:f*rh});off+=f*rh;}
+      else{out.push({...it,x:rx+off,y:ry,w:f*rw,h:strip});off+=f*rw;}
+    });
+    return hz?{x:rx+strip,y:ry,w:rw-strip,h:rh}:{x:rx,y:ry+strip,w:rw,h:rh-strip};
+  }
+  function tile(its,tx,ty,tw,th){
+    if(!its.length)return;
+    if(its.length===1){out.push({...its[0],x:tx,y:ty,w:tw,h:th});return;}
+    const side=Math.min(tw,th);let row=[],rem=[...its];
+    while(rem.length){
+      const it=rem[0];
+      if(!row.length||worst([...row,it],side)<=worst(row,side)){row.push(it);rem.shift();}
+      else{const r=layoutRow(row,tx,ty,tw,th);tx=r.x;ty=r.y;tw=r.w;th=r.h;row=[];}
+    }
+    if(row.length)layoutRow(row,tx,ty,tw,th);
+  }
+  const total=items.reduce((a,i)=>a+i.nw,0),area=w*h;
+  items=items.map(i=>({...i,nw:i.nw/total*area}));
+  tile(items,x,y,w,h);return out;
+}
 
 function chgColor(c){
-  if(c<=-5) return '#7b1c1c';
-  if(c<=-3) return '#c62828';
-  if(c<=-1) return '#d32f2f';
-  if(c<0)   return '#ef5350';
-  if(c===0) return '#37474f';
-  if(c<1)   return '#2e7d32';
-  if(c<3)   return '#388e3c';
-  if(c<5)   return '#43a047';
-  return '#1b5e20';
+  if(c<=-5)return'#7b1c1c';if(c<=-3)return'#c62828';if(c<=-1)return'#d32f2f';
+  if(c<0)return'#ef5350';if(c===0)return'#37474f';
+  if(c<1)return'#2e7d32';if(c<3)return'#388e3c';if(c<5)return'#43a047';
+  return'#1b5e20';
 }
 
-let groupMode = 'sector';
-let sortMode  = 'cap';
-const canvas  = document.getElementById('hmap-canvas');
-const ctx     = canvas.getContext('2d');
-const tip     = document.getElementById('tip');
-
-function setGroup(m){ groupMode=m; document.querySelectorAll('.tb-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); draw(); }
-function resort(){ sortMode=document.getElementById('sortby').value; draw(); }
-
-// Squarify treemap algorithm
-// ── CORRECT SQUARIFY TREEMAP ─────────────────────────────────
-function squarify(items, x, y, w, h) {
-  // items must already have .nw (normalized weight = fraction of total area)
-  const out = [];
-  function worst(row, side) {
-    const s = row.reduce((a, i) => a + i.nw, 0);
-    const maxNw = Math.max(...row.map(i => i.nw));
-    const minNw = Math.min(...row.map(i => i.nw));
-    return Math.max((side * side * maxNw) / (s * s), (s * s) / (side * side * minNw));
-  }
-  function layoutRow(row, x, y, w, h) {
-    const rowSum = row.reduce((a, i) => a + i.nw, 0);
-    const horiz  = w >= h;
-    const strip  = horiz ? rowSum / h : rowSum / w;
-    let offset = 0;
-    row.forEach(item => {
-      const frac = item.nw / rowSum;
-      if (horiz) {
-        out.push({ ...item, x: x, y: y + offset, w: strip, h: frac * h });
-        offset += frac * h;
-      } else {
-        out.push({ ...item, x: x + offset, y: y, w: frac * w, h: strip });
-        offset += frac * w;
-      }
-    });
-    if (horiz) return { x: x + strip, y, w: w - strip, h };
-    else       return { x, y: y + strip, w, h: h - strip };
-  }
-  function tile(items, x, y, w, h) {
-    if (!items.length) return;
-    if (items.length === 1) {
-      out.push({ ...items[0], x, y, w, h });
-      return;
-    }
-    const side = Math.min(w, h);
-    let row = [], remaining = [...items];
-    while (remaining.length) {
-      const item = remaining[0];
-      if (!row.length || worst([...row, item], side) <= worst(row, side)) {
-        row.push(item);
-        remaining.shift();
-      } else {
-        const rect = layoutRow(row, x, y, w, h);
-        x = rect.x; y = rect.y; w = rect.w; h = rect.h;
-        row = [];
-      }
-    }
-    if (row.length) layoutRow(row, x, y, w, h);
-  }
-  // normalize weights to area
-  const totalW = items.reduce((a, i) => a + i.nw, 0);
-  const area   = w * h;
-  items = items.map(i => ({ ...i, nw: i.nw / totalW * area }));
-  tile(items, x, y, w, h);
-  return out;
-}
-
-let cells = [];
-
-function sortStocks(arr){
-  if(sortMode==='cap') return [...arr].sort((a,b)=>b.cap-a.cap);
-  if(sortMode==='chg_desc') return [...arr].sort((a,b)=>b.chg-a.chg);
-  if(sortMode==='chg_asc') return [...arr].sort((a,b)=>a.chg-b.chg);
-  return [...arr].sort((a,b)=>a.ticker.localeCompare(b.ticker));
-}
+const canvas=document.getElementById('hmap-canvas');
+const ctx=canvas.getContext('2d');
+let cells=[];
 
 function draw(){
-  const W = canvas.parentElement.clientWidth;
-  const H = Math.max(window.innerHeight - canvas.getBoundingClientRect().top - 4, 400);
-  // FIX BLUR: gunakan devicePixelRatio agar tajam di HiDPI/Retina/100% zoom
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-  // FIX BLUR: reset transform dulu sebelum scale, agar tidak accumulated
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.scale(dpr, dpr);
-  // auto iframe resize
-  try{window.parent.postMessage({type:'streamlit:setFrameHeight',height:H+80},'*');}catch(e){}
-
-  ctx.clearRect(0,0,W,H);
-  cells = [];
-
-  const PAD = 2;
-
-  if(groupMode==='all'){
-    const sorted = sortStocks(STOCKS);
-    const total  = sorted.reduce((a,s)=>a+s.cap,0);
-    const items  = sorted.map(s=>({nw:s.cap/total, stock:s}));
-    const raw    = squarify(items, 0, 0, W, H);
-    raw.forEach(c=>{ cells.push(c); drawCell(c, PAD); });
-  } else {
-    // Group by sector or owner
-    const keyFn = groupMode==='sector' ? s=>s.sector : s=>s.owner;
-    const groups = {};
-    STOCKS.forEach(s=>{ const k=keyFn(s); if(!groups[k]) groups[k]=[]; groups[k].push(s); });
-    // Sort groups by total cap
-    const gArr = Object.entries(groups).map(([k,arr])=>({key:k, total:arr.reduce((s,i)=>s+i.cap,0), arr}));
-    gArr.sort((a,b)=>b.total-a.total);
-    // First squarify groups
-    const gTotal = gArr.reduce((a,g)=>a+g.total,0);
-    const gItems = gArr.map(g=>({nw:g.total/gTotal, ...g}));
-    const gCells = squarify(gItems, 0, 0, W, H);
-    gCells.forEach((gc, gi)=>{
-      const g    = gArr[gi];
-      const cmap = groupMode==='sector' ? SECTOR_COLORS : OWNER_COLORS;
-      const col  = cmap[g.key] || {bg:'#1a1a1a',hi:'#607d8b'};
-      // Draw group header
-      const hdrH = Math.min(18, gc.h*0.12);
-      ctx.fillStyle = col.hi+'33';
-      ctx.fillRect(gc.x+1, gc.y+1, gc.w-2, hdrH);
-      ctx.fillStyle = col.hi;
-      ctx.font = `bold ${Math.min(10, hdrH*0.7)}px 'Segoe UI',Arial`;
-      ctx.textBaseline='middle';
-      ctx.fillText(g.key.toUpperCase(), gc.x+6, gc.y+hdrH/2+1);
-      // Draw stocks inside
-      const inner = {x:gc.x+1, y:gc.y+hdrH+1, w:gc.w-2, h:gc.h-hdrH-2};
-      if(inner.w<4||inner.h<4) return;
-      const sorted = sortStocks(g.arr);
-      const sTotal = sorted.reduce((a,s)=>a+s.cap,0);
-      const sItems = sorted.map(s=>({nw:s.cap/sTotal,stock:s}));
-      const sCells = squarify(sItems, inner.x, inner.y, inner.w, inner.h);
-      sCells.forEach(c=>{ cells.push(c); drawCell(c, PAD); });
-    });
-  }
+  const W=canvas.parentElement.clientWidth;
+  const H=Math.max(window.innerHeight-canvas.getBoundingClientRect().top-4,400);
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  ctx.setTransform(1,0,0,1,0,0);ctx.scale(dpr,dpr);
+  try{window.parent.postMessage({type:'streamlit:setFrameHeight',height:H+60},'*');}catch(e){}
+  ctx.clearRect(0,0,W,H);cells=[];
+  const sorted=[...STOCKS].sort((a,b)=>b.c-a.c);
+  const total=sorted.reduce((a,s)=>a+s.c,0);
+  const items=sorted.map(s=>({nw:s.c/total,stock:s}));
+  const raw=squarify(items,0,0,W,H);
+  raw.forEach(c=>{cells.push(c);drawCell(c);});
 }
 
-function drawCell(c, pad){
-  const {x,y,w,h,stock:s} = c;
-  const bg = chgColor(s.chg);
-  // Cell background
-  ctx.fillStyle = bg;
-  ctx.beginPath();
-  const r=Math.min(4, w/6, h/6);
-  ctx.roundRect(x+pad,y+pad,w-pad*2,h-pad*2,r);
-  ctx.fill();
-  // Border glow on large cells
-  if(w>60&&h>40){
-    ctx.strokeStyle='rgba(255,255,255,0.08)';
-    ctx.lineWidth=1;
-    ctx.stroke();
+function drawCell(c){
+  const {x,y,w,h,stock:s}=c;
+  const PAD=2,rx=x+PAD,ry=y+PAD,rw=w-PAD*2,rh=h-PAD*2;
+  if(rw<3||rh<3)return;
+  const rad=Math.min(4,rw/8,rh/8);
+  ctx.fillStyle=chgColor(s.g);
+  ctx.beginPath();ctx.roundRect(rx,ry,rw,rh,rad);ctx.fill();
+  if(rw>80&&rh>50){
+    const gr=ctx.createRadialGradient(rx+rw/2,ry+rh/2,0,rx+rw/2,ry+rh/2,Math.max(rw,rh)/1.8);
+    gr.addColorStop(0,'rgba(255,255,255,0.07)');gr.addColorStop(1,'rgba(0,0,0,0.14)');
+    ctx.fillStyle=gr;ctx.beginPath();ctx.roundRect(rx,ry,rw,rh,rad);ctx.fill();
   }
-  // Vignette gradient on large cells
-  if(w>100&&h>60){
-    const grad=ctx.createRadialGradient(x+w/2,y+h/2,0,x+w/2,y+h/2,Math.max(w,h)/2);
-    grad.addColorStop(0,'rgba(255,255,255,0.07)');
-    grad.addColorStop(1,'rgba(0,0,0,0.18)');
-    ctx.fillStyle=grad;
-    ctx.beginPath(); ctx.roundRect(x+pad,y+pad,w-pad*2,h-pad*2,r); ctx.fill();
-  }
-  // Text
-  const cw=w-pad*2, ch=h-pad*2;
-  if(cw<18||ch<12) return;
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  const cx2=x+w/2, cy2=y+h/2;
-  // Ticker
-  const tfs = Math.min(18, cw/4.5, ch/3);
-  if(tfs>5){
-    ctx.font=`bold ${tfs}px 'Segoe UI',Arial`;
+  if(rw<14||rh<10)return;
+  ctx.save();
+  ctx.beginPath();ctx.roundRect(rx+1,ry+1,rw-2,rh-2,rad);ctx.clip();
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  const cx2=rx+rw/2,cy2=ry+rh/2;
+  // Ticker: font size tightly constrained to cell dimensions
+  const maxByW=Math.floor(rw*0.82/(Math.max(s.t.length,3)*0.62));
+  const maxByH=Math.floor(rh*0.40);
+  const tfs=Math.min(maxByW,maxByH,18);
+  const pfs=Math.min(Math.floor(tfs*0.68),11);
+  const showPct=rh>tfs*2.5&&pfs>=5;
+  if(tfs>=5){
+    ctx.font='700 '+tfs+'px \'Segoe UI\',Arial';
     ctx.fillStyle='rgba(255,255,255,0.95)';
-    ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=4;
-    if(ch>tfs*2.2) ctx.fillText(s.ticker, cx2, cy2-tfs*0.55);
-    else ctx.fillText(s.ticker, cx2, cy2);
+    ctx.shadowColor='rgba(0,0,0,0.65)';ctx.shadowBlur=3;
+    ctx.fillText(s.t,cx2,showPct?cy2-pfs*0.85:cy2);
     ctx.shadowBlur=0;
   }
-  // Change %
-  const pfs = Math.min(12, cw/6, ch/4);
-  if(pfs>5&&ch>tfs*2.2){
-    const sign = s.chg>=0?'+':'';
-    ctx.font=`${pfs}px 'Segoe UI',Arial`;
-    ctx.fillStyle='rgba(255,255,255,0.85)';
-    ctx.fillText(sign+s.chg.toFixed(2)+'%', cx2, cy2+tfs*0.55);
+  if(showPct){
+    const sign=s.g>=0?'+':'';
+    ctx.font=pfs+'px \'Segoe UI\',Arial';
+    ctx.fillStyle='rgba(255,255,255,0.88)';
+    ctx.fillText(sign+s.g.toFixed(2)+'%',cx2,cy2+tfs*0.68);
   }
+  ctx.restore();
 }
 
-// Hover tooltip
-canvas.addEventListener('mousemove', e=>{
+const tip=document.getElementById('tip');
+function showTip(s,cx,cy){
+  const sign=s.g>=0?'+':'';
+  document.getElementById('tip-ticker').textContent=s.t;
+  document.getElementById('tip-name').textContent=s.n;
+  document.getElementById('tip-price').textContent='Rp '+s.p.toLocaleString('id-ID');
+  document.getElementById('tip-cap').textContent='IDR '+s.c.toLocaleString('id-ID')+' T';
+  document.getElementById('tip-vol').textContent=s.v>=1?s.v.toFixed(1)+' M':'-';
+  document.getElementById('tip-chg').innerHTML='<div class="tip-chg-'+(s.g>=0?'pos':'neg')+'">'+sign+s.g.toFixed(2)+'%</div>';
+  const tw=210,th=175;
+  let tx=cx+14,ty=cy-20;
+  if(tx+tw>window.innerWidth)tx=cx-tw-14;
+  if(ty+th>window.innerHeight)ty=window.innerHeight-th-8;
+  tip.style.left=tx+'px';tip.style.top=ty+'px';tip.style.display='block';
+}
+function findCell(mx,my){
+  for(let i=cells.length-1;i>=0;i--){const c=cells[i];if(mx>=c.x&&mx<=c.x+c.w&&my>=c.y&&my<=c.y+c.h)return c;}
+  return null;
+}
+canvas.addEventListener('mousemove',e=>{
   const r=canvas.getBoundingClientRect();
-  const mx=e.clientX-r.left, my=e.clientY-r.top;
-  let hit=null;
-  for(let i=cells.length-1;i>=0;i--){
-    const c=cells[i];
-    if(mx>=c.x&&mx<=c.x+c.w&&my>=c.y&&my<=c.y+c.h){hit=c;break;}
-  }
-  if(hit){
-    const s=hit.stock;
-    const sign=s.chg>=0?'+':'';
-    const clr=s.chg>=0?'#26a69a':'#ef5350';
-    document.getElementById('tip-ticker').textContent=s.ticker;
-    document.getElementById('tip-name').textContent=s.name;
-    document.getElementById('tip-price').textContent='Rp '+s.price.toLocaleString('id-ID');
-    document.getElementById('tip-cap').textContent='IDR '+s.cap+' T';
-    document.getElementById('tip-vol').textContent=s.vol;
-    document.getElementById('tip-chg').innerHTML='<div style="font-size:16px;font-weight:700;color:'+clr+';margin:4px 0;">'+sign+s.chg.toFixed(2)+'%</div>';
-    document.getElementById('tip-sector').textContent=s.sector;
-    const tw=200, th=160;
-    let tx=e.clientX+14, ty=e.clientY-20;
-    if(tx+tw>window.innerWidth) tx=e.clientX-tw-14;
-    if(ty+th>window.innerHeight) ty=window.innerHeight-th-8;
-    tip.style.left=tx+'px'; tip.style.top=ty+'px'; tip.style.display='block';
-    canvas.style.cursor='pointer';
-  } else { tip.style.display='none'; canvas.style.cursor='default'; }
+  const hit=findCell(e.clientX-r.left,e.clientY-r.top);
+  if(hit){showTip(hit.stock,e.clientX,e.clientY);canvas.style.cursor='crosshair';}
+  else{tip.style.display='none';canvas.style.cursor='default';}
 });
-canvas.addEventListener('mouseleave',()=>{ tip.style.display='none'; });
-
-// Mobile touch tooltip
-canvas.addEventListener('touchend', e=>{
+canvas.addEventListener('mouseleave',()=>{tip.style.display='none';});
+canvas.addEventListener('touchend',e=>{
   e.preventDefault();
-  const r=canvas.getBoundingClientRect();
-  const t=e.changedTouches[0];
-  const mx=t.clientX-r.left, my=t.clientY-r.top;
-  let hit=null;
-  for(let i=cells.length-1;i>=0;i--){
-    const c=cells[i];
-    if(mx>=c.x&&mx<=c.x+c.w&&my>=c.y&&my<=c.y+c.h){hit=c;break;}
-  }
-  if(hit){
-    const s=hit.stock;
-    const sign=s.chg>=0?'+':'';
-    const clr=s.chg>=0?'#26a69a':'#ef5350';
-    document.getElementById('tip-ticker').textContent=s.ticker;
-    document.getElementById('tip-name').textContent=s.name;
-    document.getElementById('tip-price').textContent='Rp '+s.price.toLocaleString('id-ID');
-    document.getElementById('tip-cap').textContent='IDR '+s.cap+' T';
-    document.getElementById('tip-vol').textContent=s.vol;
-    document.getElementById('tip-chg').innerHTML='<div style="font-size:16px;font-weight:700;color:'+clr+';margin:4px 0;">'+sign+s.chg.toFixed(2)+'%</div>';
-    document.getElementById('tip-sector').textContent=s.sector;
-    tip.style.left='50%'; tip.style.transform='translateX(-50%)';
-    tip.style.top=(t.clientY-180)+'px'; tip.style.display='block';
-    setTimeout(()=>{tip.style.display='none';},2500);
-  }
+  const r=canvas.getBoundingClientRect(),t=e.changedTouches[0];
+  const hit=findCell(t.clientX-r.left,t.clientY-r.top);
+  if(hit){showTip(hit.stock,t.clientX,t.clientY);setTimeout(()=>{tip.style.display='none';},2800);}
 });
+window.addEventListener('resize',draw);
 
-window.addEventListener('resize', draw);
-draw();
-
-// ============================================================
-// FIX FETCH: Real-time data via multiple CORS proxy fallback
-// Proxy 1: corsproxy.io  (lebih reliable)
-// Proxy 2: api.codetabs.com
-// Proxy 3: allorigins.win (fallback terakhir)
-// ============================================================
-const YF_MAP = {};
-STOCKS.forEach(s=>{ YF_MAP[s.ticker] = s.ticker+'.JK'; });
-
-// Status indicator di toolbar
-const liveBtn = document.createElement('div');
-liveBtn.id='live-status';
-liveBtn.style.cssText='margin-left:auto;display:flex;align-items:center;gap:5px;font-size:10px;color:#6a7280;';
-liveBtn.innerHTML='<span id="live-dot" style="width:7px;height:7px;border-radius:50%;background:#37474f;display:inline-block;"></span><span id="live-txt">Memuat data live...</span>';
-document.getElementById('toolbar').appendChild(liveBtn);
-
-let fetchInProgress=false;
-
-// Bangun URL Yahoo Finance v8 (lebih stabil dari v7)
+function setStatus(color,txt){
+  document.getElementById('live-dot').style.background=color;
+  document.getElementById('live-txt').textContent=txt;
+}
 function buildYFUrl(tickers){
-  return 'https://query1.finance.yahoo.com/v8/finance/quote?symbols='
-    +encodeURIComponent(tickers)
-    +'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap';
+  return 'https://query1.finance.yahoo.com/v8/finance/quote?symbols='+encodeURIComponent(tickers)+'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap';
 }
-
-async function tryFetch(proxyFn, yfUrl){
-  const url = proxyFn(yfUrl);
-  const resp = await fetch(url,{signal:AbortSignal.timeout(10000)});
-  if(!resp.ok) throw new Error('HTTP '+resp.status);
-  const outer = await resp.json();
-  // allorigins wraps in .contents, codetabs wraps in .contents, corsproxy is direct
-  const raw = (typeof outer==='object' && outer.contents) ? outer.contents : JSON.stringify(outer);
-  const data = JSON.parse(typeof raw==='string'?raw:JSON.stringify(raw));
-  return data?.quoteResponse?.result || data?.quoteResponse?.result || [];
+async function tryProxy(pfn,yfUrl){
+  const resp=await fetch(pfn(yfUrl),{signal:AbortSignal.timeout(12000)});
+  if(!resp.ok)throw new Error('HTTP '+resp.status);
+  const outer=await resp.json();
+  const raw=(outer&&outer.contents)?outer.contents:JSON.stringify(outer);
+  const data=JSON.parse(typeof raw==='string'?raw:JSON.stringify(raw));
+  return data?.quoteResponse?.result||[];
 }
-
-const PROXIES = [
-  // Proxy 1: corsproxy.io — direct JSON response
-  url => 'https://corsproxy.io/?'+encodeURIComponent(url),
-  // Proxy 2: codetabs
-  url => 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url),
-  // Proxy 3: allorigins (fallback)
-  url => 'https://api.allorigins.win/get?url='+encodeURIComponent(url),
+const PROXIES=[
+  u=>'https://corsproxy.io/?'+encodeURIComponent(u),
+  u=>'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u),
+  u=>'https://api.allorigins.win/get?url='+encodeURIComponent(u),
 ];
-
-async function fetchLiveData(){
-  if(fetchInProgress) return;
-  fetchInProgress=true;
-  document.getElementById('live-dot').style.background='#ffab00';
-  document.getElementById('live-txt').textContent='Mengambil data...';
+let fetching=false;
+async function fetchLive(){
+  if(fetching)return;fetching=true;
+  setStatus('#ffab00','Mengambil data...');
   try{
-    const tickers = STOCKS.map(s=>s.ticker+'.JK').join(',');
-    const yfUrl = buildYFUrl(tickers);
-    let quotes = [], lastErr = null;
-    // Coba tiap proxy sampai berhasil
-    for(let i=0;i<PROXIES.length;i++){
-      try{
-        quotes = await tryFetch(PROXIES[i], yfUrl);
-        if(quotes && quotes.length>0) break;
-      }catch(e){ lastErr=e; }
+    const all=STOCKS.map(s=>s.t+'.JK');
+    const batches=[all.slice(0,100),all.slice(100)].filter(b=>b.length>0);
+    let quotes=[];
+    for(const batch of batches){
+      const yfUrl=buildYFUrl(batch.join(','));
+      let res=[];
+      for(const pf of PROXIES){try{res=await tryProxy(pf,yfUrl);if(res.length>0)break;}catch(e){}}
+      quotes=[...quotes,...res];
     }
     let updated=0;
     quotes.forEach(q=>{
-      const ticker = q.symbol.replace('.JK','');
-      const s = STOCKS.find(x=>x.ticker===ticker);
-      if(!s) return;
-      if(q.regularMarketPrice!=null) s.price = q.regularMarketPrice;
-      if(typeof q.regularMarketChangePercent==='number') s.chg = parseFloat(q.regularMarketChangePercent.toFixed(2));
-      if(q.regularMarketVolume) s.vol = (q.regularMarketVolume/1e6).toFixed(1)+' M';
-      if(q.marketCap) s.cap = parseFloat((q.marketCap/1e12).toFixed(0))||s.cap;
+      const tk=q.symbol.replace('.JK','');
+      const s=STOCKS.find(x=>x.t===tk);
+      if(!s)return;
+      if(q.regularMarketPrice!=null)s.p=q.regularMarketPrice;
+      if(typeof q.regularMarketChangePercent==='number')s.g=parseFloat(q.regularMarketChangePercent.toFixed(2));
+      if(q.regularMarketVolume)s.v=parseFloat((q.regularMarketVolume/1e6).toFixed(1));
+      if(q.marketCap&&q.marketCap>0)s.c=Math.max(1,Math.round(q.marketCap/1e12));
       updated++;
     });
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    document.getElementById('live-dot').style.background = updated>0?'#26a69a':'#ef5350';
-    document.getElementById('live-txt').textContent = updated>0?('Live · '+updated+' · '+timeStr):'Coba lagi...';
-    if(updated>0) draw();
-  }catch(err){
-    document.getElementById('live-dot').style.background='#ef5350';
-    document.getElementById('live-txt').textContent='Gagal – data statis';
-  }
-  fetchInProgress=false;
+    const now=new Date();
+    const ts=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    setStatus(updated>0?'#26a69a':'#ef5350',updated>0?('\u2713 Live \u00b7 '+updated+' saham'):'Gagal \u00b7 data statis');
+    document.getElementById('last-update').textContent=updated>0?'Update: '+ts:'';
+    if(updated>0)draw();
+  }catch(err){setStatus('#ef5350','Gagal \u2013 tampil data statis');}
+  fetching=false;
 }
 
-// Fetch pertama kali, lalu setiap 30 detik
-fetchLiveData();
-setInterval(fetchLiveData, 30000);
+draw();
+fetchLive();
+setInterval(fetchLive,30000);
 </script>
 </body></html>"""
 
