@@ -15525,129 +15525,93 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
             # ── Kumpulkan semua records dari 3 sumber ──
             def _tr_collect_all():
-                """Kumpulkan semua trade record dari auto_plan_history + tr_records."""
+                """Kumpulkan semua trade record dari auto_plan_history + tr_records.
+                SUMBER PRIORITAS: auto_plan_history_* (data lengkap dari session_state/Sheets).
+                Reko History Sheets TIDAK dipakai di sini — sudah ada di bawah tabel terpisah.
+                Dedup key: (ticker, plan_type, plan_date[:10])
+                """
                 all_plans = []
+                # Set untuk dedup cepat
+                _seen = set()  # (ticker, plan_type, date[:10])
 
-                # 1. tr_records (sudah dalam format record)
+                def _add(rec):
+                    k = (rec.get("ticker",""), rec.get("plan_type",""), str(rec.get("plan_date","") or "")[:10])
+                    if k in _seen: return
+                    _seen.add(k)
+                    all_plans.append(rec)
+
+                # 1. tr_records (format record lengkap — prioritas tertinggi karena bisa ada status update)
                 for rec in st.session_state.get("tr_records", []):
                     r = dict(rec)
                     if "plan_type" not in r:
                         r["plan_type"] = r.get("mode", "BSJP")
-                    all_plans.append(r)
+                    _add(r)
 
                 # 2. Dari auto_plan_history_bsjp
                 for key, entry in st.session_state.get("auto_plan_history_bsjp", {}).items():
                     if not isinstance(entry, dict): continue
                     tickers = entry.get("tickers", entry.get("saham_list", []))
-                    if isinstance(tickers, list):
-                        for t in tickers:
-                            if isinstance(t, dict) and t.get("ticker"):
-                                # Cek apakah sudah ada di tr_records
-                                exists = any(
-                                    r.get("ticker") == t.get("ticker") and
-                                    r.get("plan_date", "")[:10] == key[:10]
-                                    for r in all_plans
-                                )
-                                if not exists:
-                                    all_plans.append({
-                                        "ticker": t.get("ticker",""),
-                                        "plan_type": "BSJP",
-                                        "plan_date": key,
-                                        "bias": t.get("bias","BUY"),
-                                        "entry_low": t.get("entry_low", t.get("entry",0)),
-                                        "entry_high": t.get("entry_high", t.get("entry",0)),
-                                        "stoploss": t.get("stoploss", t.get("sl",0)),
-                                        "tp1": t.get("tp1",0),
-                                        "tp2": t.get("tp2",0),
-                                        "status": t.get("status","OPEN"),
-                                        "result_pct": t.get("result_pct",0),
-                                    })
+                    if not isinstance(tickers, list): continue
+                    for t in tickers:
+                        if not isinstance(t, dict) or not t.get("ticker"): continue
+                        _add({
+                            "ticker":     t.get("ticker",""),
+                            "plan_type":  "BSJP",
+                            "plan_date":  key[:10],
+                            "bias":       t.get("bias","BUY"),
+                            "entry_low":  t.get("entry_low", t.get("entry",0)),
+                            "entry_high": t.get("entry_high", t.get("entry",0)),
+                            "stoploss":   t.get("stoploss", t.get("sl",0)),
+                            "tp1":        t.get("tp1",0),
+                            "tp2":        t.get("tp2",0),
+                            "status":     t.get("status","OPEN"),
+                            "result_pct": t.get("result_pct",0),
+                        })
 
                 # 3. Dari auto_plan_history_daily
                 for key, entry in st.session_state.get("auto_plan_history_daily", {}).items():
                     if not isinstance(entry, dict): continue
                     tickers = entry.get("tickers", entry.get("saham_list", []))
-                    if isinstance(tickers, list):
-                        for t in tickers:
-                            if isinstance(t, dict) and t.get("ticker"):
-                                exists = any(
-                                    r.get("ticker") == t.get("ticker") and
-                                    r.get("plan_date", "")[:10] == key[:10] and
-                                    r.get("plan_type") == "DAILY"
-                                    for r in all_plans
-                                )
-                                if not exists:
-                                    all_plans.append({
-                                        "ticker": t.get("ticker",""),
-                                        "plan_type": "DAILY",
-                                        "plan_date": key,
-                                        "bias": t.get("bias","BUY"),
-                                        "entry_low": t.get("entry_low", t.get("entry",0)),
-                                        "entry_high": t.get("entry_high", t.get("entry",0)),
-                                        "stoploss": t.get("stoploss", t.get("sl",0)),
-                                        "tp1": t.get("tp1",0),
-                                        "tp2": t.get("tp2",0),
-                                        "status": t.get("status","OPEN"),
-                                        "result_pct": t.get("result_pct",0),
-                                    })
+                    if not isinstance(tickers, list): continue
+                    for t in tickers:
+                        if not isinstance(t, dict) or not t.get("ticker"): continue
+                        _add({
+                            "ticker":     t.get("ticker",""),
+                            "plan_type":  "DAILY",
+                            "plan_date":  key[:10],
+                            "bias":       t.get("bias","BUY"),
+                            "entry_low":  t.get("entry_low", t.get("entry",0)),
+                            "entry_high": t.get("entry_high", t.get("entry",0)),
+                            "stoploss":   t.get("stoploss", t.get("sl",0)),
+                            "tp1":        t.get("tp1",0),
+                            "tp2":        t.get("tp2",0),
+                            "status":     t.get("status","OPEN"),
+                            "result_pct": t.get("result_pct",0),
+                        })
 
                 # 4. Dari auto_plan_history_weekly
                 for key, entry in st.session_state.get("auto_plan_history_weekly", {}).items():
                     if not isinstance(entry, dict): continue
                     tickers = entry.get("tickers", entry.get("saham_list", []))
-                    if isinstance(tickers, list):
-                        for t in tickers:
-                            if isinstance(t, dict) and t.get("ticker"):
-                                exists = any(
-                                    r.get("ticker") == t.get("ticker") and
-                                    r.get("plan_date", "")[:7] == key[:7] and
-                                    r.get("plan_type") == "WEEKLY"
-                                    for r in all_plans
-                                )
-                                if not exists:
-                                    all_plans.append({
-                                        "ticker": t.get("ticker",""),
-                                        "plan_type": "WEEKLY",
-                                        "plan_date": key,
-                                        "bias": t.get("bias","BUY"),
-                                        "entry_low": t.get("entry_low", t.get("entry",0)),
-                                        "entry_high": t.get("entry_high", t.get("entry",0)),
-                                        "stoploss": t.get("stoploss", t.get("sl",0)),
-                                        "tp1": t.get("tp1",0),
-                                        "tp2": t.get("tp2",0),
-                                        "status": t.get("status","OPEN"),
-                                        "result_pct": t.get("result_pct",0),
-                                    })
+                    if not isinstance(tickers, list): continue
+                    for t in tickers:
+                        if not isinstance(t, dict) or not t.get("ticker"): continue
+                        _add({
+                            "ticker":     t.get("ticker",""),
+                            "plan_type":  "WEEKLY",
+                            "plan_date":  key[:10],
+                            "bias":       t.get("bias","BUY"),
+                            "entry_low":  t.get("entry_low", t.get("entry",0)),
+                            "entry_high": t.get("entry_high", t.get("entry",0)),
+                            "stoploss":   t.get("stoploss", t.get("sl",0)),
+                            "tp1":        t.get("tp1",0),
+                            "tp2":        t.get("tp2",0),
+                            "status":     t.get("status","OPEN"),
+                            "result_pct": t.get("result_pct",0),
+                        })
 
-                # Juga cek dari Reko History Sheets
-                try:
-                    _rh_sheets = load_reko_history(limit=200)
-                    for rh in _rh_sheets:
-                        if not isinstance(rh, dict): continue
-                        exists = any(
-                            r.get("ticker") == rh.get("ticker","") and
-                            r.get("plan_date","")[:10] == str(rh.get("timestamp",""))[:10] and
-                            r.get("plan_type") == rh.get("mode","BSJP")
-                            for r in all_plans
-                        )
-                        if not exists and rh.get("ticker"):
-                            all_plans.append({
-                                "ticker": rh.get("ticker",""),
-                                "plan_type": rh.get("mode","BSJP"),
-                                "plan_date": str(rh.get("timestamp",""))[:10],
-                                "bias": rh.get("bias","BUY"),
-                                "entry_low": rh.get("entry_low",0),
-                                "entry_high": rh.get("entry_high",0),
-                                "stoploss": rh.get("stoploss",0),
-                                "tp1": rh.get("tp1",0),
-                                "tp2": rh.get("tp2",0),
-                                "status": rh.get("status","OPEN"),
-                                "result_pct": rh.get("result_pct",0),
-                            })
-                except: pass
-
-                # Sort by date desc
-                all_plans.sort(key=lambda x: str(x.get("plan_date","") or ""), reverse=True)
+                # Sort by date desc, lalu ticker
+                all_plans.sort(key=lambda x: (str(x.get("plan_date","") or ""), x.get("ticker","")), reverse=True)
                 return all_plans
 
             _all_tr = _tr_collect_all()
