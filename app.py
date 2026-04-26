@@ -9710,1065 +9710,186 @@ table{{margin-bottom:0!important;}}
 
         components.html(f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>{_tbl_css}</style></head><body>
-<div class="mkt-wrap">
-  <div class="mkt-hdr">
-    <span>&#128200; GLOBAL INDICES &amp; VOLATILITY</span>
-    <span class="mkt-badge" id="mkt-ts">{_now_wib}</span>
-  </div>
-  <table><thead><tr><th>INDEKS</th><th>HARGA</th><th>PERUBAHAN</th><th>CCY</th></tr></thead>
-  <tbody id="idx-tb"></tbody></table>
-</div>
-<div class="mkt-wrap" style="margin-bottom:0;">
-  <div class="mkt-hdr">
-    <span>&#128202; KOMODITAS, FOREX &amp; CRYPTO</span>
-    <span class="mkt-badge" id="com-ts">{_now_wib}</span>
-  </div>
-  <table><thead><tr><th>ASET</th><th>HARGA</th><th>PERUBAHAN</th><th>SATUAN</th></tr></thead>
-  <tbody id="com-tb"></tbody></table>
-</div>
-<script>
-(function(){{
-  var IDX={_idx_json};
-  var COM={_com_json};
-  var TEXT_SUB='{text_sub}';
-  var MET_BORDER='{met_border}';
-  function buildRows(rows,tbId){{
-    var h='';
-    rows.forEach(function(r){{
-      if(r._divider){{
-        h+='<tr><td colspan="4" style="padding:4px 14px;font-size:0.68rem;font-weight:700;letter-spacing:0.12em;color:rgba(139,92,246,0.6);text-transform:uppercase;border-bottom:1px solid '+MET_BORDER+';background:rgba(139,92,246,0.04);font-family:DM Sans,sans-serif;">'+r.label+'</td></tr>';
-        return;
-      }}
-      var up=r.cls==='mkt-up',na=r.cls==='mkt-na';
-      var clr=na?TEXT_SUB:(up?'#089981':'#f23645');
-      var bg=na?'rgba(178,181,190,0.06)':(up?'rgba(8,153,129,0.12)':'rgba(242,54,69,0.10)');
-      var bdr=na?'#b2b5be':(up?'#089981':'#f23645');
-      var pct=na?'&#8212;':(r.arrow+' '+r.pct);
-      var rowBg=r.is_id?'rgba(139,92,246,0.03)':'';
-      h+='<tr style="background:'+rowBg+'"><td><span class="flag">'+r.flag+'</span><span class="nm">'+r.name+'</span></td><td><span class="price" style="color:'+clr+'">'+r.price+'</span></td><td><span class="badge" style="background:'+bg+';color:'+clr+';border:1px solid '+bdr+'55;">'+pct+'</span></td><td><span class="ccy">'+r.ccy+'</span></td></tr>';
-    }});
-    document.getElementById(tbId).innerHTML=h;
-  }}
-  buildRows(IDX,'idx-tb');
-  buildRows(COM,'com-tb');
-  function updateTs(){{
-    var now=new Date(),ofs=now.getTimezoneOffset();
-    var w=new Date(now.getTime()+(ofs+420)*60000);
-    var mo=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    var s=w.getDate()+' '+mo[w.getMonth()]+' '+w.getFullYear()+' \u00b7 '+String(w.getHours()).padStart(2,'0')+':'+String(w.getMinutes()).padStart(2,'0')+' WIB';
-    ['mkt-ts','com-ts'].forEach(function(id){{var e=document.getElementById(id);if(e)e.textContent=s;}});
-  }}
-  setInterval(updateTs,60000);
-  function resize(){{
-    document.body.style.padding='0';document.body.style.margin='0';
-    var h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
-    try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h}},'*');}}catch(e){{}}
-  }}
-  resize();setTimeout(resize,120);setTimeout(resize,500);setTimeout(resize,1200);
-  window.addEventListener('resize',function(){{setTimeout(resize,200);}});
-}})();
-</script></body></html>""", height=_total_h, scrolling=False)
-
-        # ── IDX MARKET MAP GLOBE ───────────────────────────────────────────────
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown(
-            "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>IDX MARKET MAP</span>"
-            "<div class='trm-section-line'></div></div>",
-            unsafe_allow_html=True,
-        )
-        components.html(_idx_globe_html, height=960, scrolling=False)
-
-    with tab_macro:
-        # ─────────────────────────────────────────────────────────
-        # NEWS AND CALENDAR TAB — Market Brief, News, Calendar
-        # ─────────────────────────────────────────────────────────
-        # NEW FEATURE: MARKET BRIEF (DAILY/WEEKLY)
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MARKET BRIEF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <style>
-        .mb-desc {{ font-family:'DM Sans',sans-serif; font-size:0.875rem; color:{text_sub}; margin-bottom:12px; line-height:1.6; }}
-        .mb-tags {{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }}
-        .mb-tag  {{ font-family:'DM Sans',sans-serif; font-size:0.8rem; color:{text_sub};
-            background:rgba(255,255,255,0.05); border:1px solid {met_border};
-            border-radius:20px; padding:3px 10px; white-space:nowrap; }}
-        @media (max-width:768px) {{
-            .mb-desc {{ font-size:0.8rem; }}
-            .mb-tags {{ gap:6px; }}
-            .mb-tag  {{ font-size:0.8rem; padding:2px 8px; }}
-        }}
-        </style>
-        <p class='mb-desc'>Analisis pasar berbasis AI - IHSG, Global Markets, Forex, Komoditas, Sentimen &amp; Tactical View. Sumber: CNBC Indonesia, CNBC Global, Bloomberg &amp; MarketWatch.</p>
-        <div class='mb-tags'>
-            <span class='mb-tag'>&#128240; Multi-Source RSS</span>
-            <span class='mb-tag'>&#129302; AI Powered (Groq)</span>
-            <span class='mb-tag'>&#127470;&#127465; IDX Focused</span>
-            <span class='mb-tag'>&#128202; Sentiment Meter</span>
-
-        </div>
-        """, unsafe_allow_html=True)
-
-        mb_col1, mb_col2 = st.columns([1, 1])
-        with mb_col1:
-            req_daily = st.button("🔄 DAILY REVIEW (24 Jam)", use_container_width=True, key="btn_mb_daily")
-        with mb_col2:
-            req_weekly = st.button("🗓️ WEEKLY REVIEW (7 Hari)", use_container_width=True, key="btn_mb_weekly")
-
-        if req_daily or req_weekly:
-            mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
-            mode_key  = "daily" if req_daily else "weekly"
-            with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
-                import feedparser as _fp
-                from datetime import timezone, timedelta as _td
-                _wib = timezone(_td(hours=7))
-                _now_wib = datetime.now(_wib)
-                _cutoff_daily  = _now_wib-_td(hours=24)
-                _cutoff_weekly = _now_wib-_td(days=7)
-                _cutoff = _cutoff_daily if req_daily else _cutoff_weekly
-
-                # ── Fetch multi-source headline (RSS backup) ──────────────────────
-                dom_news, glob_news = [], []
-                _rss_sources = [
-                    ("https://www.cnbcindonesia.com/market/rss",          dom_news),
-                    ("https://www.cnbcindonesia.com/economy/rss",         dom_news),
-                    ("https://www.cnbcindonesia.com/news/rss",            dom_news),
-                    ("https://www.cnbc.com/id/15839069/device/rss/rss.html", glob_news),
-                    ("https://feeds.content.dowjones.io/public/rss/mw-marketpulse", glob_news),
-                    ("https://www.ft.com/news-feed?format=rss",           glob_news),
-                    ("https://feeds.a.dj.com/rss/RSSMarketsMain.xml",     glob_news),
-                    ("https://www.aljazeera.com/xml/rss/all.xml",         glob_news),
-                    ("https://feeds.bbci.co.uk/news/world/rss.xml",       glob_news),
-                ]
-                import time as _time
-                import email.utils as _eu
-                for _url, _target in _rss_sources:
-                    try:
-                        _feed = _fp.parse(_url)
-                        for _e in _feed.entries[:15]:
-                            _t = _e.get("title","").strip()
-                            if not _t or _t in _target:
-                                continue
-                            # Coba parse tanggal entry untuk filter waktu
-                            _pub = None
-                            for _attr in ("published_parsed","updated_parsed"):
-                                _pv = getattr(_e, _attr, None)
-                                if _pv:
-                                    try:
-                                        _pub = datetime(*_pv[:6], tzinfo=timezone.utc)
-                                        break
-                                    except: pass
-                            # Jika ada tanggal dan lebih lama dari cutoff, skip
-                            if _pub and _pub < _cutoff.astimezone(timezone.utc):
-                                continue
-                            _target.append(_t)
-                            if len(_target) >= 15:
-                                break
-                    except: pass
-
-                # ── FETCH HARGA REAL-TIME - diinjeksikan ke prompt sebagai FAKTA ──
-                # Ini KRITIS: tanpa ini, Groq akan karang harga dari training data (LAMA)
-                _today = datetime.now().strftime("%d %B %Y, %H:%M WIB")
-                _rt_data = {}
-
-                def _fetch_realtime_prices():
-                    import urllib.request, json as _rj, threading as _rt
-                    _res = {}
-                    def _get():
-                        try:
-                            import yfinance as _yf
-                            for _sym2, _key2 in [("^JKSE","ihsg"), ("USDIDR=X","usdidr"), ("GC=F","gold"),
-                                                  ("CL=F","wti"), ("BZ=F","brent"), ("^GSPC","spx"),
-                                                  ("^DJI","dji"), ("^N225","nikkei")]:
-                                try:
-                                    _tw = _yf.Ticker(_sym2)
-                                    _hw = _tw.history(period="5d")
-                                    if not _hw.empty:
-                                        _lw = float(_hw['Close'].iloc[-1])
-                                        _pw = float(_hw['Close'].iloc[-2]) if len(_hw)>1 else _lw
-                                        _cw = ((_lw-_pw)/_pw*100) if _pw else 0
-                                        _res[f"{_key2}_price"] = round(_lw, 2)
-                                        _res[f"{_key2}_chg"]   = round(_cw, 2)
-                                except: pass
-                        except: pass
-                        # Komoditas fallback via FMP
-                        try:
-                            _fmp_k = st.secrets.get("FMP_KEY","")
-                            if _fmp_k and not _res.get("gold_price"):
-                                _url = f"https://financialmodelingprep.com/api/v3/quote/GCUSD,CLUSD,BZUSD?apikey={_fmp_k}"
-                                _req = urllib.request.Request(_url, headers={"User-Agent":"Mozilla/5.0"})
-                                with urllib.request.urlopen(_req, timeout=6) as _r3:
-                                    _d3 = _rj.loads(_r3.read())
-                                for _item in _d3:
-                                    _sym = _item.get("symbol","")
-                                    _px  = _item.get("price")
-                                    _cx  = round(_item.get("changesPercentage") or 0, 2)
-                                    if _sym=="GCUSD" and _px: _res["gold_price"]=_px; _res["gold_chg"]=_cx
-                                    elif _sym=="CLUSD" and _px: _res["wti_price"]=_px; _res["wti_chg"]=_cx
-                                    elif _sym=="BZUSD" and _px: _res["brent_price"]=_px; _res["brent_chg"]=_cx
-                        except: pass
-                    _th = _rt.Thread(target=_get, daemon=True)
-                    _th.start()
-                    _th.join(timeout=14)
-                    return _res
-
-                _rt_data = _fetch_realtime_prices()
-
-                def _fmt_price_block(d):
-                    lines = []
-                    pairs = [
-                        ("ihsg_price","ihsg_chg","IHSG","",""),
-                        ("usdidr_price","usdidr_chg","USD/IDR","Rp ",""),
-                        ("gold_price","gold_chg","Gold XAU/USD","$",""),
-                        ("wti_price","wti_chg","WTI Crude Oil","$","/bbl"),
-                        ("brent_price","brent_chg","Brent Crude","$","/bbl"),
-                        ("spx_price","spx_chg","S&P 500","",""),
-                        ("dji_price","dji_chg","Dow Jones","",""),
-                        ("nikkei_price","nikkei_chg","Nikkei 225","",""),
-                    ]
-                    for pk,ck,name,prefix,suffix in pairs:
-                        if d.get(pk):
-                            _c = d.get(ck,0)
-                            _arrow = "▲" if _c>=0 else "▼"
-                            if pk=="usdidr_price":
-                                lines.append(f"• {name}: {prefix}{d[pk]:,.0f}{suffix} ({_arrow}{abs(_c):.2f}%)")
-                            else:
-                                lines.append(f"• {name}: {prefix}{d[pk]:,.2f}{suffix} ({_arrow}{abs(_c):.2f}%)")
-                    return "\n".join(lines) if lines else "⚠ Harga real-time tidak berhasil di-fetch, gunakan estimasi terbaru."
-
-                _rt_block = _fmt_price_block(_rt_data)
-
-                # ── Anthropic API dengan web_search tool untuk data REAL-TIME ────
-                _anthropic_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-
-                def _call_anthropic_with_search(user_prompt, max_tok=4000):
-                    """Gunakan Anthropic API + web_search untuk data real-time."""
-                    import urllib.request, json as _j
-                    _payload = {
-                        "model": "claude-opus-4-5",
-                        "max_tokens": max_tok,
-                        "tools": [{"type": "web_search_20250305", "name": "web_search"}],
-                        "messages": [{"role": "user", "content": user_prompt}]
-                    }
-                    _req = urllib.request.Request(
-                        "https://api.anthropic.com/v1/messages",
-                        data=_j.dumps(_payload).encode(),
-                        headers={
-                            "Content-Type": "application/json",
-                            "x-api-key": _anthropic_key,
-                            "anthropic-version": "2023-06-01",
-                            "anthropic-beta": "interleaved-thinking-2025-05-14"
-                        },
-                        method="POST"
-                    )
-                    with urllib.request.urlopen(_req, timeout=90) as _r:
-                        _data = _j.loads(_r.read())
-                    # Gabungkan semua text block dari response
-                    _full_text = ""
-                    for _block in _data.get("content", []):
-                        if _block.get("type") == "text":
-                            _full_text += _block.get("text", "")
-                    return _full_text.strip() if _full_text else None
-
-                # ── Build prompt - BERBEDA antara Daily dan Weekly ────────
-                _rss_dom_str  = chr(10).join([f"• {h}" for h in dom_news[:15]]) if dom_news else "⚠ Tidak tersedia."
-                _rss_glob_str = chr(10).join([f"• {h}" for h in glob_news[:15]]) if glob_news else "⚠ Tidak tersedia."
-
-                if req_daily:
-                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal - platform riset saham IDX/BEI profesional.
-Tanggal & waktu sekarang: **{_today}** | Mode: **DAILY REVIEW - 24 JAM TERAKHIR SAJA**
-
-⚠️ PERINTAH WAKTU KERAS: Kamu HANYA boleh membahas berita, data, dan peristiwa yang terjadi dalam 24 JAM TERAKHIR (sejak {_today}). Gunakan web search untuk memverifikasi berita terkini hari ini. JANGAN bahas berita yang lebih dari 24 jam lalu.
-
-═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI - WAJIB GUNAKAN ANGKA INI) ═══
-{_rt_block}
-⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
-Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
-═══════════════════════════════════════════════════════════════════════════
-
-BERITA RSS 24 JAM TERAKHIR (gunakan sebagai konteks, cari yang paling baru):
-Domestik: {_rss_dom_str}
-Global: {_rss_glob_str}
-
-FORMAT OUTPUT - Bahasa Indonesia, maks 600 kata, Markdown:
-
-## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
-Gunakan harga IHSG dan USD/IDR dari DATA REAL-TIME di atas. Tambahkan konteks: sentimen lokal, saham/sektor bergerak berdasarkan berita RSS hari ini. (2 paragraf)
-
-## 🌍 KATALIS GLOBAL 24 JAM TERAKHIR
-Gunakan harga S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME di atas. Tambahkan konteks makro dari berita terkini hari ini. (1-2 paragraf)
-
-## ⚔️ GEOPOLITIK & RISIKO GLOBAL (24 Jam Terakhir)
-**WAJIB SPESIFIK dari berita RSS hari ini**: Kebijakan tarif Trump terbaru, perang Rusia-Ukraina, China-Taiwan/Laut China Selatan, konflik Timur Tengah (Iran/Israel/Gaza). Dampak ke IDX, Rupiah, komoditas. (2 paragraf)
-
-## 💱 FOREX & KOMODITAS (Harga Aktual - WIB)
-Gunakan USD/IDR, Gold, WTI, Brent dari DATA REAL-TIME di atas. Sektor IDX terdampak?
-
-## 📊 SENTIMENT METER
-- IHSG: [skor]/100 - [label berdasarkan data real-time]
-- Global Risk: [skor]/100 - [Risk-On/Mixed/Risk-Off]
-- Geopolitik Risk: [Tinggi/Sedang/Rendah]
-- IDR: [Rendah/Sedang/Tinggi tekanan]
-
-## ⚡ TACTICAL VIEW
-Stance + support/resistance IHSG (berdasarkan level real-time di atas) + 1-2 sektor pantau.
-
-## 🎯 WATCHLIST SEKTORAL (3 sektor)
-(✅/⚠/❌) Sektor - status - 1 kalimat alasan.
-
-Padat & actionable. Hindari basa-basi. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Semua waktu dalam WIB."""
-
-                else:  # weekly
-                    mb_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal - platform riset saham IDX/BEI.
-Tanggal & waktu sekarang: **{_today}** | Mode: **WEEKLY REVIEW - 7 HARI TERAKHIR**
-
-⚠️ PERINTAH WAKTU KERAS: Kamu HANYA boleh membahas berita, data, dan peristiwa yang terjadi dalam 7 HARI TERAKHIR (sejak 7 hari sebelum {_today}). Gunakan web search untuk mencari dan memverifikasi perkembangan penting minggu ini. JANGAN bahas berita yang lebih dari 7 hari lalu.
-
-═══ DATA HARGA REAL-TIME (SUDAH TERVERIFIKASI - WAJIB GUNAKAN ANGKA INI) ═══
-{_rt_block}
-⚠ PERINGATAN KERAS: DILARANG mengganti, mengubah, atau mengabaikan angka harga di atas.
-Angka-angka ini adalah data LIVE yang baru saja di-fetch. Gunakan PERSIS seperti tertulis.
-═══════════════════════════════════════════════════════════════════════════
-
-BERITA RSS 7 HARI TERAKHIR (konteks narasi & analisis minggu ini):
-Domestik: {_rss_dom_str}
-Global: {_rss_glob_str}
-
-FORMAT OUTPUT - Bahasa Indonesia, padat & strategis. Maks 800 kata total.
-
-## 📅 REKAP IHSG MINGGU INI (7 Hari Terakhir)
-Gunakan harga IHSG dari DATA REAL-TIME sebagai level penutupan terkini. Analisis tren 5 hari berdasarkan konteks berita RSS minggu ini (sektor outperformer/underperformer, foreign flow). (2-3 paragraf)
-
-## 🌍 KATALIS GLOBAL MINGGU INI
-Gunakan S&P 500, Dow Jones, Nikkei dari DATA REAL-TIME. Tambahkan konteks: keputusan Fed/data AS, China/Asia, komoditas (gold, WTI, Brent) dengan ANGKA DARI DATA REAL-TIME. (2 paragraf)
-
-## ⚔️ GEOPOLITIK MINGGU INI - ANALISIS MENDALAM (7 Hari Terakhir)
-**WAJIB DETAIL dari berita RSS minggu ini**: Perkembangan tarif/perang dagang Trump, eskalasi Rusia-Ukraina, China (Taiwan/regulasi/ekonomi), Timur Tengah, sanksi energi. Rating dampak ke IDX (HIGH/MED/LOW) per isu. (2-3 paragraf)
-
-## 📊 SENTIMENT METER MINGGUAN
-- **IHSG:** [angka]/100 - [label - berdasarkan level real-time]
-- **Foreign Flow:** [Net Buy/Sell/Mixed] - estimasi arah
-- **Global Risk:** [angka]/100 - [label]
-- **Geopolitik Risk:** [Tinggi/Sedang/Rendah]
-- **IDR:** [Menguat/Melemah/Stabil - berdasarkan data real-time]
-
-## 🔮 OUTLOOK & TACTICAL VIEW MINGGU DEPAN
-Event penting (FOMC, data AS, dll) + stance + 2-3 sektor rotasi + risiko utama. (2 paragraf)
-
-## 🎯 WATCHLIST SEKTORAL (5 sektor)
-(✅/⚠/❌) **Sektor** - Status - Outlook - Contoh saham - Alasan geopolitik/makro
-
-Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Semua waktu dalam WIB."""
-
-                # ── Eksekusi: Coba Anthropic API dulu (dengan web search), fallback ke Groq ──
-                mb_res = None
-                _source_used = "Groq"
-
-                if _anthropic_key:
-                    try:
-                        mb_res = _call_anthropic_with_search(mb_prompt, max_tok=5000 if mode_key == "weekly" else 4000)
-                        if mb_res:
-                            _source_used = "Anthropic+WebSearch"
-                    except Exception as _ae:
-                        mb_res = None  # fallback ke Groq
-
-                if not mb_res:
-                    try:
-                        _max_tok = 3000 if mode_key == "daily" else 5000
-                        mb_res, _ = _call_groq_primary(mb_prompt, max_tokens=_max_tok)
-                        _source_used = "Groq"
-                    except Exception as e:
-                        mb_res = f"⚠ Gagal generate Market Brief: {e}"
-                        _source_used = "Error"
-
-                # Tambahkan watermark sumber data
-                if mb_res and not mb_res.startswith("⚠"):
-                    _src_badge = "🌐 Real-time Web Search" if _source_used == "Anthropic+WebSearch" else "📡 RSS Feeds"
-                    mb_res = mb_res + f"\n\n---\n*Sumber data: {_src_badge} · {_today}*"
-
-                if mode_key == "daily":
-                    st.session_state["mb_daily_content"]   = mb_res
-                    st.session_state["mb_daily_timestamp"] = _today
-                    if st.session_state.user:
-                        _sv = load_user(st.session_state.user["email"]) or {}
-                        _sv["mb_daily_content"] = mb_res; _sv["mb_daily_timestamp"] = _today
-                        save_user(st.session_state.user["email"], _sv)
-                else:
-                    st.session_state["mb_weekly_content"]   = mb_res
-                    st.session_state["mb_weekly_timestamp"] = _today
-                    if st.session_state.user:
-                        _sv = load_user(st.session_state.user["email"]) or {}
-                        _sv["mb_weekly_content"] = mb_res; _sv["mb_weekly_timestamp"] = _today
-                        save_user(st.session_state.user["email"], _sv)
-                # backward compat
-                st.session_state["mb_content"]    = mb_res
-                st.session_state["mb_mode"]       = mode_str
-                st.session_state["mb_timestamp"]  = _today
-                st.session_state["mb_mode_key"]   = mode_key
-
-        # ── Render Daily Brief (jika ada) ──────────────────────────────────
-        def _render_mb_block(content, ts, mode_key):
-            _mb_icon  = "🔄" if mode_key == "daily" else "🗓️"
-            _mb_color = "#4285F4" if mode_key == "daily" else "#8b5cf6"
-            _mb_title = "DAILY MARKET BRIEF - 24 JAM TERAKHIR" if mode_key == "daily" else "WEEKLY MARKET BRIEF - REKAP 7 HARI"
-            st.markdown(f"""
-            <style>
-            .mb-container {{ background:{met_bg}; border:1px solid {met_border}; border-left:4px solid {_mb_color};
-                border-radius:10px; padding:0; margin-bottom:20px; overflow:hidden; }}
-            .mb-header {{ background:rgba(3,40,238,0.08); padding:14px 18px; border-radius:16px 16px 0 0;
-                border-bottom:1px solid {met_border}; display:flex; align-items:center;
-                justify-content:space-between; flex-wrap:wrap; gap:8px; }}
-            .mb-title {{ font-family:'IBM Plex Mono',monospace; font-size:0.875rem; color:{_mb_color};
-                font-weight:700; letter-spacing:1.2px; }}
-            .mb-badge {{ font-family:'IBM Plex Mono',monospace; font-size:0.8rem; color:{text_sub};
-                background:rgba(255,255,255,0.06); padding:3px 10px; border-radius:20px;
-                border:1px solid {met_border}; white-space:nowrap; }}
-            @media (max-width: 768px) {{
-                .mb-header {{ padding:10px 14px; }}
-                .mb-title {{ font-size:0.875rem; }}
-            }}
-            </style>
-            <div class='mb-container'>
-                <div class='mb-header'>
-                    <span class='mb-title'>{_mb_icon} {_mb_title}</span>
-                    <span class='mb-badge'>🕐 {ts}</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown(content)
-
-        if st.session_state.get("mb_daily_content"):
-            _render_mb_block(
-                st.session_state["mb_daily_content"],
-                st.session_state.get("mb_daily_timestamp", ""),
-                "daily"
-            )
-
-        if st.session_state.get("mb_weekly_content"):
-            _render_mb_block(
-                st.session_state["mb_weekly_content"],
-                st.session_state.get("mb_weekly_timestamp", ""),
-                "weekly"
-            )
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        # ─────────────────────────────────────────────────────────
-
-        # ---------------------------------------------------------
-        # LIVE MARKET NEWS
-        # ---------------------------------------------------------
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE NEWS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        st.markdown(f"""
-        <style>
-        .news-card-sigma {{
-            background: {met_bg};
-            border: 1px solid {met_border};
-            border-radius: 12px;
-            height: 500px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }}
-        .news-header-sigma {{
-            padding: 12px 15px;
-            background: rgba(124,58,237,0.1);
-            border-bottom: 1px solid {met_border};
-            color: #6e9bff;
-            font-family: 'IBM Plex Mono', monospace;
-            font-weight: 700;
-            font-size: 13px;
-            letter-spacing: 1px;
-        }}
-        .news-scroll-sigma {{ flex: 1; overflow-y: auto; padding: 10px; }}
-        .news-entry-sigma {{ display: block; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); text-decoration: none !important; transition: 0.2s ease; }}
-        .news-entry-sigma:hover {{ background: rgba(3,40,238,0.05); }}
-        .news-title-sigma {{ color: {text_main}; font-size: 15px; line-height: 1.5; margin-bottom: 5px; }}
-        .news-meta-sigma {{ color: {text_sub}; font-size: 12px; font-family: 'IBM Plex Mono', monospace; }}
-        @media (max-width: 768px) {{ .news-card-sigma {{ height: 360px !important; margin-bottom: 16px !important; }} .news-title-sigma {{ font-size: 14px !important; }} .news-box {{ margin-bottom: 16px !important; }} }}
-        .news-scroll-sigma::-webkit-scrollbar {{ width: 4px; }}
-        .news-scroll-sigma::-webkit-scrollbar-thumb {{ background: {met_border}; border-radius: 10px; }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        def render_news_feed(url, tag_label):
-            import feedparser
-            try:
-                feed = feedparser.parse(url)
-                html_str = ""
-                for entry in feed.entries[:10]:
-                    date_str = entry.get('published', '')[:16]
-                    html_str += f"""
-                    <a href='{entry.link}' target='_blank' style='text-decoration:none;'>
-                        <div style='padding:10px; border-bottom:1px solid rgba(255,255,255,0.05);'>
-                            <div style='color:{text_main}; font-size:14px; line-height:1.4;'>{entry.title}</div>
-                            <div style='color:{text_sub}; font-size:13px; margin-top:4px;'>[{tag_label}] • {date_str}</div>
-                        </div>
-                    </a>"""
-                return html_str if html_str else "No news found."
-            except:
-                return "Failed to load news."
-
-        col_n1, col_n2 = st.columns(2)
-        with col_n1:
-            content_id = render_news_feed("https://www.cnbcindonesia.com/market/rss", "DOMESTIC")
-            st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column; margin-bottom:16px;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🇮🇩 DOMESTIC NEWS</div>
-                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_id}</div>
-            </div>""", unsafe_allow_html=True)
-
-        with col_n2:
-            content_glob = render_news_feed("https://www.cnbc.com/id/15839069/device/rss/rss.html", "GLOBAL")
-            st.markdown(f"""
-            <div class='news-box' style='background:{met_bg}; border:1px solid {met_border}; border-radius:10px; min-height:380px; max-height:500px; overflow:hidden; display:flex; flex-direction:column;'>
-                <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
-                <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
-            </div>""", unsafe_allow_html=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # ─────────────────────────────────────────────────────────
-        # INDEX ANNOUNCEMENTS — MSCI, IDX, FTSE, JP Morgan
-        # Fetch pengumuman resmi terbaru dari provider indeks
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📢 INDEX ANNOUNCEMENTS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:12px;text-transform:uppercase;'>Pengumuman resmi terbaru dari MSCI · IDX · FTSE Russell · JP Morgan</p>", unsafe_allow_html=True)
-
-        @st.cache_data(ttl=1800)
-        def _fetch_index_announcements():
-            """Fetch press releases / announcements dari MSCI, IDX, FTSE, JP Morgan via RSS / API."""
-            import feedparser, urllib.request, json as _j, time as _t
-            results = []
-
-            # ── MSCI Press Releases (RSS) ──
-            try:
-                feed = feedparser.parse("https://www.msci.com/rss/press-releases")
-                for e in (feed.entries or [])[:6]:
-                    title = (e.get("title") or "").strip()
-                    link  = e.get("link", "#")
-                    pub   = e.get("published", "")[:16]
-                    if title:
-                        results.append({"src": "MSCI", "color": "#6e9bff", "title": title, "link": link, "date": pub})
-            except: pass
-
-            # ── IDX Pengumuman (JSON API) ──
-            try:
-                _hdr = {"User-Agent":"Mozilla/5.0","Referer":"https://www.idx.co.id/","Accept":"application/json"}
-                _url = "https://www.idx.co.id/primary/Helper/GetAnnouncement?start=0&length=10&code=&csrfmiddlewaretoken="
-                _req = urllib.request.Request(_url, headers=_hdr)
-                with urllib.request.urlopen(_req, timeout=6) as r:
-                    _d = _j.loads(r.read())
-                for row in (_d.get("data") or [])[:6]:
-                    title = (row.get("Title") or row.get("title") or row.get("Subject") or "").strip()
-                    link  = row.get("Url") or row.get("url") or "https://www.idx.co.id/id/berita/pengumuman"
-                    pub   = (row.get("Date") or row.get("date") or "")[:16]
-                    if title:
-                        results.append({"src": "IDX", "color": "#f59e0b", "title": title, "link": link, "date": pub})
-            except: pass
-
-            # ── FTSE Russell Press Releases (RSS) ──
-            try:
-                feed2 = feedparser.parse("https://www.ftserussell.com/rss/news")
-                for e in (feed2.entries or [])[:5]:
-                    title = (e.get("title") or "").strip()
-                    link  = e.get("link", "#")
-                    pub   = e.get("published", "")[:16]
-                    kw = ["index","review","rebalanc","indonesia","constituen","addition","deletion","em"]
-                    if title and any(k in title.lower() for k in kw):
-                        results.append({"src": "FTSE", "color": "#00c853", "title": title, "link": link, "date": pub})
-            except: pass
-
-            # ── JP Morgan GBI-EM (press / research RSS) ──
-            try:
-                feed3 = feedparser.parse("https://www.jpmorgan.com/content/dam/jpm/commercial-banking/news/rss/press-releases.rss")
-                for e in (feed3.entries or [])[:4]:
-                    title = (e.get("title") or "").strip()
-                    link  = e.get("link", "#")
-                    pub   = e.get("published", "")[:16]
-                    kw = ["gbi","bond index","em index","indonesia","rebalanc","fixed income"]
-                    if title and any(k in title.lower() for k in kw):
-                        results.append({"src": "JP Morgan", "color": "#e879f9", "title": title, "link": link, "date": pub})
-            except: pass
-
-            return results
-
-        _ann_data = _fetch_index_announcements()
-
-        # Render announcement cards
-        _ann_src_colors = {"MSCI":"#6e9bff","IDX":"#f59e0b","FTSE":"#00c853","JP Morgan":"#e879f9"}
-        _ann_src_icons  = {"MSCI":"📊","IDX":"🇮🇩","FTSE":"🌐","JP Morgan":"🏦"}
-
-        if _ann_data:
-            _ann_html = f"""
-            <style>
-            .ann-wrap{{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}}
-            .ann-card{{
-                display:flex;align-items:flex-start;gap:10px;
-                padding:10px 14px;border-radius:9px;
-                background:{met_bg};border:1px solid {met_border};
-                text-decoration:none;transition:border-color 0.18s;
-            }}
-            .ann-card:hover{{border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.04);}}
-            .ann-src{{
-                display:inline-flex;align-items:center;justify-content:center;
-                font-size:0.62rem;font-weight:800;letter-spacing:0.08em;
-                padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:2px;
-            }}
-            .ann-content{{flex:1;min-width:0;}}
-            .ann-title{{font-size:0.83rem;color:{text_main};line-height:1.4;font-weight:500;}}
-            .ann-date{{font-size:0.68rem;color:{text_sub};margin-top:3px;font-family:'IBM Plex Mono',monospace;}}
-            </style>
-            <div class="ann-wrap">
-            """
-            for item in _ann_data:
-                clr = _ann_src_colors.get(item["src"], "#8899aa")
-                icon = _ann_src_icons.get(item["src"], "📄")
-                _ann_html += f"""
-                <a class="ann-card" href="{item['link']}" target="_blank">
-                    <span class="ann-src" style="background:{clr}22;color:{clr};border:1px solid {clr}44;">{icon} {item['src']}</span>
-                    <div class="ann-content">
-                        <div class="ann-title">{item['title']}</div>
-                        <div class="ann-date">{item['date']}</div>
-                    </div>
-                </a>"""
-            _ann_html += "</div>"
-            st.markdown(_ann_html, unsafe_allow_html=True)
-        else:
-            # Fallback: tampilkan link manual ke sumber resmi
-            st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:16px;'>
-            <p style='color:{text_sub};font-size:0.8rem;margin-bottom:10px;'>Tidak dapat memuat pengumuman otomatis. Cek langsung di sumber resmi:</p>
-            <div style='display:flex;flex-direction:column;gap:6px;'>
-                <a href='https://www.msci.com/our-solutions/indexes/press-releases' target='_blank' style='color:#6e9bff;font-size:0.82rem;text-decoration:none;'>📊 MSCI Press Releases →</a>
-                <a href='https://www.idx.co.id/id/berita/pengumuman' target='_blank' style='color:#f59e0b;font-size:0.82rem;text-decoration:none;'>🇮🇩 IDX Pengumuman →</a>
-                <a href='https://www.ftserussell.com/press-release' target='_blank' style='color:#00c853;font-size:0.82rem;text-decoration:none;'>🌐 FTSE Russell Press Releases →</a>
-                <a href='https://www.jpmorgan.com/insights' target='_blank' style='color:#e879f9;font-size:0.82rem;text-decoration:none;'>🏦 JP Morgan Insights →</a>
-            </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        # Tanggal > 1 bulan lalu dihilangkan secara otomatis
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 INDEX REBALANCING SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-        from datetime import datetime as _dt_reb, timedelta as _td_reb
-        _today_reb = _dt_reb.today()
-        _cutoff_reb = _today_reb - _td_reb(days=32)  # hapus jika sudah >1 bulan lalu
-
-        # Data rebalancing: setiap entry punya list tanggal terpisah
-        # next_dates: list datetime untuk cek apakah masih relevan
-        # display_dates: string tanggal yang muncul di UI (hanya yang belum kadaluarsa)
-        _reb_events_raw = [
-            # ─── LOKAL ───
-            {
-                "indeks": "LQ45", "penyelenggara": "BEI", "periode": "Semi-Annual", "dampak": "HIGH",
-                "keterangan": "45 saham likuid terbesar IDX. Pengumuman ~2 minggu sebelum efektif. Saham masuk → akumulasi besar ETF LQ45/Reksa Dana.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
-                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
-                ],
-                "kategori": "🇮🇩 INDONESIA"
-            },
-            {
-                "indeks": "IDX30", "penyelenggara": "BEI", "periode": "Semi-Annual", "dampak": "MEDIUM",
-                "keterangan": "30 saham top LQ45. Rebalancing bersamaan LQ45. Dipakai produk ETF IDX30.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
-                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
-                ],
-                "kategori": "🇮🇩 INDONESIA"
-            },
-            {
-                "indeks": "IDX80 & IDX High Div 20", "penyelenggara": "BEI", "periode": "Semi-Annual", "dampak": "MEDIUM",
-                "keterangan": "80 saham likuid + 20 saham dividen tinggi dari IDX80. Rebalancing bersamaan LQ45/IDX30.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
-                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
-                ],
-                "kategori": "🇮🇩 INDONESIA"
-            },
-            {
-                "indeks": "KOMPAS100", "penyelenggara": "BEI + Kompas", "periode": "Semi-Annual", "dampak": "MEDIUM",
-                "keterangan": "100 saham fundamental kuat. Jadwal mengikuti LQ45.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
-                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
-                ],
-                "kategori": "🇮🇩 INDONESIA"
-            },
-            {
-                "indeks": "IDXBUMN20", "penyelenggara": "BEI", "periode": "Annual", "dampak": "MEDIUM",
-                "keterangan": "20 saham BUMN. Rebalancing tahunan. Perubahan signifikan ke saham BUMN.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
-                ],
-                "kategori": "🇮🇩 INDONESIA"
-            },
-            {
-                "indeks": "JII (Jakarta Islamic)", "penyelenggara": "BEI + DSN", "periode": "Semi-Annual", "dampak": "LOW",
-                "keterangan": "30 saham syariah terlikuid. Relevan untuk reksa dana syariah.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,6,1), "label": "01 Jun 2026", "type": "Efektif", "pengumuman": "±18 Mei 2026"},
-                    {"tgl": _dt_reb(2026,12,1), "label": "01 Des 2026", "type": "Efektif", "pengumuman": "±18 Nov 2026"},
-                ],
-                "kategori": "🇮🇩 INDONESIA"
-            },
-            # ─── GLOBAL ───
-            {
-                "indeks": "MSCI Indonesia", "penyelenggara": "MSCI", "periode": "Quarterly", "dampak": "HIGH",
-                "keterangan": "Capital flow terbesar di IDX. Saham masuk/keluar → dana asing pasif wajib beli/jual. Effective date: hari kerja terakhir bulan.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,2,27), "label": "27 Feb 2026", "type": "Efektif", "pengumuman": "~13 Feb 2026"},
-                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "~15 Mei 2026"},
-                    {"tgl": _dt_reb(2026,8,28), "label": "28 Agu 2026", "type": "Efektif", "pengumuman": "~14 Agu 2026"},
-                    {"tgl": _dt_reb(2026,11,27), "label": "27 Nov 2026", "type": "Efektif", "pengumuman": "~13 Nov 2026"},
-                ],
-                "kategori": "🌍 GLOBAL"
-            },
-            {
-                "indeks": "MSCI EM (IDX bobot)", "penyelenggara": "MSCI", "periode": "Quarterly", "dampak": "HIGH",
-                "keterangan": "Perubahan bobot Indonesia di MSCI EM (AUM ~$700B). Upgrade bobot = dana asing masuk proporsional.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,2,27), "label": "27 Feb 2026", "type": "Efektif", "pengumuman": "~13 Feb 2026"},
-                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "~15 Mei 2026"},
-                    {"tgl": _dt_reb(2026,8,28), "label": "28 Agu 2026", "type": "Efektif", "pengumuman": "~14 Agu 2026"},
-                    {"tgl": _dt_reb(2026,11,27), "label": "27 Nov 2026", "type": "Efektif", "pengumuman": "~13 Nov 2026"},
-                ],
-                "kategori": "🌍 GLOBAL"
-            },
-            {
-                "indeks": "FTSE Russell EM", "penyelenggara": "FTSE Russell", "periode": "Quarterly", "dampak": "HIGH",
-                "keterangan": "Review kuartalan FTSE EM. Perubahan bobot Indonesia → capital flow dari fund global.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,3,20), "label": "20 Mar 2026", "type": "Efektif", "pengumuman": "~6 Mar 2026"},
-                    {"tgl": _dt_reb(2026,6,19), "label": "19 Jun 2026", "type": "Efektif", "pengumuman": "~5 Jun 2026"},
-                    {"tgl": _dt_reb(2026,9,18), "label": "18 Sep 2026", "type": "Efektif", "pengumuman": "~4 Sep 2026"},
-                    {"tgl": _dt_reb(2026,12,18), "label": "18 Des 2026", "type": "Efektif", "pengumuman": "~4 Des 2026"},
-                ],
-                "kategori": "🌍 GLOBAL"
-            },
-            {
-                "indeks": "S&P DJI Indonesia", "penyelenggara": "S&P Global", "periode": "Semi-Annual", "dampak": "MEDIUM",
-                "keterangan": "S&P Indonesia BMI / S&P Indonesia Composite. Berpengaruh ke dana tracking S&P Index.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,6,19), "label": "19 Jun 2026", "type": "Efektif", "pengumuman": "~5 Jun 2026"},
-                    {"tgl": _dt_reb(2026,12,18), "label": "18 Des 2026", "type": "Efektif", "pengumuman": "~4 Des 2026"},
-                ],
-                "kategori": "🌍 GLOBAL"
-            },
-            {
-                "indeks": "MSCI ACWI (Ex-US)", "penyelenggara": "MSCI", "periode": "Quarterly", "dampak": "MEDIUM",
-                "keterangan": "Perubahan bobot emerging vs developed berdampak ke aliran dana global ke IDX.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,2,27), "label": "27 Feb 2026", "type": "Efektif", "pengumuman": "~13 Feb 2026"},
-                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "~15 Mei 2026"},
-                    {"tgl": _dt_reb(2026,8,28), "label": "28 Agu 2026", "type": "Efektif", "pengumuman": "~14 Agu 2026"},
-                    {"tgl": _dt_reb(2026,11,27), "label": "27 Nov 2026", "type": "Efektif", "pengumuman": "~13 Nov 2026"},
-                ],
-                "kategori": "🌍 GLOBAL"
-            },
-            {
-                "indeks": "JP Morgan GBI-EM", "penyelenggara": "JP Morgan", "periode": "Monthly", "dampak": "MEDIUM",
-                "keterangan": "Bond index. Rebalancing bulanan akhir bulan. Berdampak ke IDR & yield SBN → valuation saham IDX.",
-                "dates": [
-                    {"tgl": _dt_reb(2026,4,30), "label": "30 Apr 2026", "type": "Efektif", "pengumuman": "Mid-Apr"},
-                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "Mid-Mei"},
-                    {"tgl": _dt_reb(2026,6,30), "label": "30 Jun 2026", "type": "Efektif", "pengumuman": "Mid-Jun"},
-                    {"tgl": _dt_reb(2026,7,31), "label": "31 Jul 2026", "type": "Efektif", "pengumuman": "Mid-Jul"},
-                    {"tgl": _dt_reb(2026,8,31), "label": "31 Agu 2026", "type": "Efektif", "pengumuman": "Mid-Agu"},
-                ],
-                "kategori": "🌍 GLOBAL"
-            },
-        ]
-
-        # ── Filter: hapus event yang SEMUA tanggalnya sudah > 1 bulan lalu ──
-        # Untuk entry dengan multiple dates, tampilkan hanya tanggal yg belum kadaluarsa
-        _reb_events_filtered = []
-        for ev in _reb_events_raw:
-            _valid_dates = [d for d in ev["dates"] if d["tgl"] >= _cutoff_reb]
-            if _valid_dates:
-                ev_copy = dict(ev)
-                ev_copy["dates"] = _valid_dates
-                # Ambil tanggal efektif terdekat sebagai acuan sort
-                ev_copy["next_date"] = min(d["tgl"] for d in _valid_dates)
-                _reb_events_filtered.append(ev_copy)
-
-        # Sort by next_date ascending (event terdekat dulu)
-        _reb_events_filtered.sort(key=lambda x: x["next_date"])
-
-        # Build JSON untuk JS — setiap entry menghasilkan DUA kartu terpisah:
-        # 1. Kartu PENGUMUMAN (di kiri, menonjol, dengan countdown ke tgl pengumuman)
-        # 2. Kartu EFEKTIF (di bawahnya, info lengkap + semua date chips)
-        import json as _reb_json_v2
-        import re as _re_reb
-
-        MONTHS_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"]
-
-        def _parse_pengumuman_date(peng_str: str, efektif_dt):
-            """
-            Coba parse string pengumuman jadi datetime. Format yang didukung:
-            '~15 Mei 2026', '±19 Jan 2026', 'Mid-Apr', 'Mid-Mei', dsb.
-            Return (datetime|None, label_str).
-            """
-            import datetime as _dtpx
-            peng_str = peng_str.strip()
-            # Format: ~DD Mon YYYY atau ±DD Mon YYYY
-            m = _re_reb.match(r'[~±]?(\d{1,2})\s+(\w+)\s+(\d{4})', peng_str)
-            if m:
-                day_p, mon_p, yr_p = int(m.group(1)), m.group(2), int(m.group(3))
-                idx = next((i for i,x in enumerate(MONTHS_ID) if x.lower()==mon_p.lower()[:3]), None)
-                if idx is not None:
-                    try:
-                        dt = _dtpx.datetime(yr_p, idx+1, day_p)
-                        return dt, peng_str
-                    except: pass
-            # Format: Mid-Mon (estimasi tgl 15)
-            m2 = _re_reb.match(r'Mid-?(\w+)', peng_str, _re_reb.IGNORECASE)
-            if m2:
-                mon_abbr = m2.group(1)[:3].capitalize()
-                idx = next((i for i,x in enumerate(MONTHS_ID) if x.lower()==mon_abbr.lower()), None)
-                if idx is not None:
-                    yr_est = efektif_dt.year
-                    try:
-                        dt = _dtpx.datetime(yr_est, idx+1, 15)
-                        return dt, peng_str
-                    except: pass
-            return None, peng_str
-
-        _reb_js_data = []
-        for ev in _reb_events_filtered:
-            _nd = ev["dates"][0]  # tanggal efektif terdekat
-            _days_to_efektif = (ev["next_date"] - _today_reb).days
-            peng_str = _nd["pengumuman"]
-            peng_dt, peng_label = _parse_pengumuman_date(peng_str, _nd["tgl"])
-            if peng_dt is not None:
-                _days_to_peng = (peng_dt - _today_reb).days
-                peng_day = peng_dt.day
-                peng_mon = MONTHS_ID[peng_dt.month-1] + " " + str(peng_dt.year)
-            else:
-                _days_to_peng = None
-                peng_day = "—"
-                peng_mon = peng_label
-
-            # Kartu PENGUMUMAN
-            _reb_js_data.append({
-                "card_type": "pengumuman",
-                "indeks": ev["indeks"],
-                "penyelenggara": ev["penyelenggara"],
-                "periode": ev["periode"],
-                "dampak": ev["dampak"],
-                "keterangan": ev["keterangan"],
-                "kategori": ev["kategori"],
-                "date_label": peng_label,
-                "date_day": peng_day,
-                "date_mon": peng_mon,
-                "days_to": _days_to_peng,
-                "efektif_label": _nd["label"],
-                "all_dates": [],
-            })
-            # Kartu EFEKTIF
-            _reb_js_data.append({
-                "card_type": "efektif",
-                "indeks": ev["indeks"],
-                "penyelenggara": ev["penyelenggara"],
-                "periode": ev["periode"],
-                "dampak": ev["dampak"],
-                "keterangan": ev["keterangan"],
-                "kategori": ev["kategori"],
-                "date_label": _nd["label"],
-                "date_day": (lambda p: p["tgl"].day)(ev["dates"][0]),
-                "date_mon": MONTHS_ID[ev["dates"][0]["tgl"].month-1] + " " + str(ev["dates"][0]["tgl"].year),
-                "days_to": _days_to_efektif,
-                "efektif_label": _nd["label"],
-                "all_dates": [{"label": d["label"]} for d in ev["dates"]],
-            })
-        _reb_js_str = _reb_json_v2.dumps(_reb_js_data, ensure_ascii=False)
-
-        components.html(f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding:0;}}
-.reb-wrap{{display:flex;flex-direction:column;gap:8px;}}
-.day-group-header{{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 14px;margin-top:4px;
-  font-size:0.78rem;font-weight:700;letter-spacing:0.09em;
-  color:rgba(139,92,246,0.7);background:rgba(139,92,246,0.06);
-  border-radius:8px;border-left:3px solid rgba(139,92,246,0.5);
+body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding:0 0 8px;}}
+.cal-wrap{{width:100%;border-radius:10px;overflow:hidden;border:1px solid {met_border};}}
+.cal-hdr{{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:rgba(139,92,246,0.09);
+  border-bottom:1px solid {met_border};
+  font-size:0.7rem;font-weight:700;letter-spacing:0.13em;color:#8b5cf6;text-transform:uppercase;
+  font-family:'DM Sans',sans-serif;
 }}
-.reb-card{{
-  background:{met_bg};border:1px solid {met_border};
-  border-radius:10px;overflow:hidden;
-  transition:border-color 0.2s;
+.cal-hdr-right{{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}}
+.hdr-badge{{font-size:0.68rem;color:{text_sub};background:rgba(255,255,255,0.05);
+  border:1px solid {met_border};border-radius:8px;padding:2px 8px;white-space:nowrap;}}
+.date-group{{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;
+  background:rgba(139,92,246,0.04);
+  border-top:1px solid {met_border};
+  font-size:0.73rem;font-weight:700;letter-spacing:0.09em;
+  color:rgba(139,92,246,0.75);
+  font-family:'DM Sans',sans-serif;
 }}
-.reb-card:hover{{border-color:rgba(139,92,246,0.35);}}
-.card-left{{
-  display:flex;flex-direction:column;justify-content:center;align-items:center;
-  min-width:72px;padding:10px 8px;
-  background:rgba(139,92,246,0.07);border-right:1px solid {met_border};
-  flex-shrink:0;
+.cat-group{{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 14px;
+  background:rgba(139,92,246,0.03);
+  border-top:1px solid {met_border};
+  font-size:0.68rem;font-weight:700;letter-spacing:0.12em;
+  color:rgba(139,92,246,0.55);text-transform:uppercase;
+  font-family:'DM Sans',sans-serif;
 }}
-.card-label-top{{font-size:0.6rem;text-transform:uppercase;color:{text_sub};letter-spacing:0.1em;margin-bottom:2px;}}
-.card-day{{font-size:1.4rem;font-weight:800;color:{text_main};line-height:1;}}
-.card-mon{{font-size:0.65rem;text-transform:uppercase;color:{text_sub};letter-spacing:0.1em;margin-top:2px;}}
-.card-countdown{{
-  font-size:0.65rem;font-weight:600;
-  padding:2px 6px;border-radius:4px;margin-top:4px;
+table{{width:100%;border-collapse:collapse;}}
+thead th{{
+  background:rgba(139,92,246,0.06);
+  color:#8b5cf6;padding:6px 10px;
+  text-align:left;border-bottom:1px solid {met_border};
+  letter-spacing:0.08em;font-weight:700;font-size:0.68rem;
+  white-space:nowrap;text-transform:uppercase;
+  font-family:'DM Sans',sans-serif;
+}}
+tbody tr{{border-bottom:1px solid rgba(139,92,246,0.07);}}
+tbody tr:hover{{background:rgba(139,92,246,0.04);}}
+tbody td{{
+  padding:7px 10px;
+  color:{text_main};
+  vertical-align:middle;
   white-space:nowrap;
+  font-size:0.78rem;
+  font-family:'DM Sans',sans-serif;
 }}
-.card-body{{display:flex;flex:1;gap:0;flex-wrap:wrap;padding:10px 12px;align-items:center;gap:10px;}}
-.card-main{{flex:1;min-width:0;}}
-.card-title{{font-size:0.92rem;font-weight:700;color:{text_main};}}
-.card-org{{font-size:0.73rem;color:{text_sub};margin-top:1px;}}
-.card-ket{{font-size:0.78rem;color:{text_sub};margin-top:4px;line-height:1.45;}}
-.card-meta{{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}}
-.bdg{{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.72rem;font-weight:700;white-space:nowrap;}}
-.card-timeline{{display:flex;flex-direction:column;gap:0;align-items:flex-end;}}
-.tl-row{{display:flex;align-items:center;gap:5px;}}
-.tl-dot{{width:7px;height:7px;border-radius:50%;flex-shrink:0;}}
-.tl-lbl{{font-size:0.68rem;color:{text_sub};white-space:nowrap;}}
-.tl-val{{font-size:0.72rem;color:{text_main};font-weight:600;white-space:nowrap;margin-left:4px;}}
-.tl-line{{width:1px;height:10px;background:{met_border};margin:1px 3px 1px auto;}}
-.all-dates{{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}}
-.date-chip{{font-size:0.68rem;padding:2px 7px;border-radius:10px;
+.td-indeks{{font-weight:700;font-size:0.82rem;color:{text_main};}}
+.td-org{{font-size:0.68rem;color:{text_sub};margin-top:1px;}}
+.td-date{{font-size:0.82rem;font-weight:700;color:{text_main};}}
+.td-date-sub{{font-size:0.67rem;color:{text_sub};margin-top:1px;}}
+.td-type-peng{{font-size:0.7rem;font-weight:700;color:#f59e0b;}}
+.td-type-eff{{font-size:0.7rem;font-weight:700;color:#8b5cf6;}}
+.td-ket{{font-size:0.72rem;color:{text_sub};white-space:normal;min-width:160px;line-height:1.45;}}
+.chips{{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}}
+.chip{{font-size:0.63rem;padding:1px 6px;border-radius:8px;
   background:rgba(255,255,255,0.04);border:1px solid {met_border};color:{text_sub};}}
-@media(max-width:540px){{
-  .card-body{{flex-direction:column;align-items:flex-start;}}
-  .card-meta{{align-items:flex-start;flex-direction:row;flex-wrap:wrap;}}
-  .card-timeline{{align-items:flex-start;}}
-  .tl-line{{display:none;}}
-  .card-left{{min-width:60px;}}
-  .card-day{{font-size:1.15rem;}}
+.chip-first{{color:#8b5cf6;border-color:rgba(139,92,246,0.4);}}
+.cd-badge{{
+  display:inline-block;padding:3px 8px;border-radius:5px;
+  font-size:0.7rem;font-weight:700;white-space:nowrap;
+  font-family:'IBM Plex Mono',monospace;
+}}
+.imp-badge{{
+  display:inline-block;padding:3px 8px;border-radius:4px;
+  font-size:0.7rem;font-weight:700;white-space:nowrap;
+}}
+@media(max-width:600px){{
+  thead th.hide-sm,tbody td.hide-sm{{display:none;}}
+  tbody td{{padding:6px 7px;font-size:0.75rem;}}
+  .td-ket{{min-width:100px;}}
 }}
 </style></head><body>
-<div class="reb-wrap" id="reb-container"></div>
+<div class="cal-wrap">
+  <div class="cal-hdr">
+    <span>📊 INDEX REBALANCING SCHEDULE</span>
+    <div class="cal-hdr-right">
+      <span class="hdr-badge">🌍 GLOBAL</span>
+      <span class="hdr-badge">🇮🇩 INDONESIA</span>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>INDEKS</th>
+        <th>TANGGAL</th>
+        <th>TYPE</th>
+        <th class="hide-sm">KETERANGAN</th>
+        <th>COUNTDOWN</th>
+        <th>DAMPAK</th>
+      </tr>
+    </thead>
+    <tbody id="reb-tbody"></tbody>
+  </table>
+</div>
 <script>
 (function(){{
   var DATA={_reb_js_str};
   var CLR={{"HIGH":"#f23645","MEDIUM":"#f59e0b","LOW":"#4285F4"}};
   var BG={{"HIGH":"rgba(242,54,69,0.13)","MEDIUM":"rgba(245,158,11,0.13)","LOW":"rgba(66,133,244,0.11)"}};
-  var MONTHS=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
-
-  function parseDate(label){{
-    var parts=label.split(' ');
-    if(parts.length<3) return null;
-    var day=parseInt(parts[0]);
-    var mon=MONTHS.indexOf(parts[1]);
-    var yr=parseInt(parts[2]);
-    return {{day:day,mon:mon,yr:yr}};
-  }}
 
   function countdown(days){{
+    if(days===null||days===undefined) return {{txt:'—',cls:'color:{text_sub};background:rgba(106,138,154,0.07);border:1px solid rgba(106,138,154,0.2)'}};
     if(days<0) return {{txt:'Sudah Lewat',cls:'color:#6a8a9a;background:rgba(106,138,154,0.1);border:1px solid rgba(106,138,154,0.2)'}};
     if(days===0) return {{txt:'HARI INI',cls:'color:#f23645;background:rgba(242,54,69,0.15);border:1px solid rgba(242,54,69,0.4)'}};
     if(days===1) return {{txt:'Besok',cls:'color:#f59e0b;background:rgba(245,158,11,0.13);border:1px solid rgba(245,158,11,0.4)'}};
     if(days<=7) return {{txt:days+' hari lagi',cls:'color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3)'}};
     if(days<=30) return {{txt:days+' hari lagi',cls:'color:#4285F4;background:rgba(66,133,244,0.1);border:1px solid rgba(66,133,244,0.3)'}};
-    return {{txt:days+' hari lagi',cls:'color:#6a8a9a;background:rgba(106,138,154,0.06);border:1px solid rgba(106,138,154,0.2)'}};
+    return {{txt:days+' hari lagi',cls:'color:{text_sub};background:rgba(106,138,154,0.06);border:1px solid rgba(106,138,154,0.2)'}};
   }}
 
-  var container=document.getElementById('reb-container');
-  var lastKat='';
+  var tbody=document.getElementById('reb-tbody');
   var h='';
+  var lastKat='';
+  var lastDateGroup='';
 
   DATA.forEach(function(ev){{
-    // Group header saat kategori berubah, tapi hanya untuk card pengumuman
-    if(ev.card_type==='pengumuman' && ev.kategori!==lastKat){{
-      h+='<div class="day-group-header">'+ev.kategori+'</div>';
-      lastKat=ev.kategori;
-    }}
+    var isPeng=(ev.card_type==='pengumuman');
     var dk=ev.dampak;
     var clr=CLR[dk]||'#b2b5be';
     var bg=BG[dk]||'rgba(178,181,190,0.08)';
-    var isPeng=(ev.card_type==='pengumuman');
-    var dayStr=ev.date_day;
-    var monStr=ev.date_mon;
+    var cd=countdown(ev.days_to);
 
-    // Countdown
-    var cd;
-    if(ev.days_to===null||ev.days_to===undefined){{
-      cd={{txt:ev.date_label,cls:'color:#6a8a9a;background:rgba(106,138,154,0.07);border:1px solid rgba(106,138,154,0.2)'}};
-    }} else {{
-      cd=countdown(ev.days_to);
+    // Category group separator (only on pengumuman rows when kategori changes)
+    if(isPeng && ev.kategori!==lastKat){{
+      h+='<tr><td colspan="6" style="padding:0;"><div class="cat-group">'+ev.kategori+'</div></td></tr>';
+      lastKat=ev.kategori;
+      lastDateGroup='';
     }}
 
-    // Left panel color / icon
-    var leftBg=isPeng?'rgba(245,158,11,0.08)':'rgba(139,92,246,0.07)';
-    var leftBdr=isPeng?'rgba(245,158,11,0.25)':'rgba(139,92,246,0.2)';
-    var dotColor=isPeng?'#f59e0b':clr;
-    var typeLabel=isPeng?'Pengumuman':'Efektif';
-
-    // Connector line between Pengumuman and Efektif card
-    var connectorTop='';
-    var connectorBot='';
-    if(isPeng){{
-      connectorBot='<div class="pair-connector"></div>';
+    // Date group separator — show when date label changes (pengumuman only)
+    if(isPeng && ev.efektif_label!==lastDateGroup){{
+      h+='<tr><td colspan="6" style="padding:0;"><div class="date-group">📅 Efektif: '+ev.efektif_label+'</div></td></tr>';
+      lastDateGroup=ev.efektif_label;
     }}
 
-    // Date chips (only on Efektif card)
-    var chipsHtml='';
+    // Date display
+    var dateHtml='<div class="td-date">'+ev.date_day+'</div><div class="td-date-sub">'+ev.date_mon+'</div>';
+
+    // Type badge
+    var typeHtml=isPeng
+      ? '<span class="td-type-peng">📢 PENGUMUMAN</span>'
+      : '<span class="td-type-eff">✅ EFEKTIF</span>';
+
+    // Keterangan with chips for efektif cards
+    var ketHtml='<div class="td-ket">'+ev.keterangan+'</div>';
     if(!isPeng && ev.all_dates && ev.all_dates.length>1){{
-      chipsHtml='<div class="all-dates">';
+      ketHtml+='<div class="chips">';
       ev.all_dates.forEach(function(d,i){{
-        chipsHtml+='<span class="date-chip" style="'+(i===0?'border-color:'+clr+'55;color:'+clr+';':'')+'">'+(i===0?'▶ ':'')+d.label+'</span>';
+        ketHtml+='<span class="chip'+(i===0?' chip-first':'')+'">'+(i===0?'▶ ':'')+d.label+'</span>';
       }});
-      chipsHtml+='</div>';
+      ketHtml+='</div>';
     }}
 
-    // Card body: pengumuman = compact header, efektif = full detail
-    var bodyContent;
-    if(isPeng){{
-      bodyContent=
-        '<div class="card-main">'+
-          '<div class="card-title" style="font-size:0.85rem;font-weight:600;">'+ev.indeks+'</div>'+
-          '<div class="card-org" style="font-size:0.7rem;">'+ev.penyelenggara+' · '+ev.periode+'</div>'+
-        '</div>'+
-        '<div class="card-meta">'+
-          '<span class="bdg" style="background:'+bg+';color:'+clr+';border:1px solid '+clr+'44;font-size:0.65rem;">'+dk+'</span>'+
-          '<span style="font-size:0.65rem;color:#f59e0b;font-weight:600;">📢 PENGUMUMAN</span>'+
-        '</div>';
-    }} else {{
-      bodyContent=
-        '<div class="card-main">'+
-          '<div class="card-title">'+ev.indeks+'</div>'+
-          '<div class="card-org">'+ev.penyelenggara+' &nbsp;·&nbsp; '+ev.periode+'</div>'+
-          '<div class="card-ket">'+ev.keterangan+'</div>'+
-          chipsHtml+
-        '</div>'+
-        '<div class="card-meta">'+
-          '<span class="bdg" style="background:'+bg+';color:'+clr+';border:1px solid '+clr+'44;">'+dk+'</span>'+
-          '<span style="font-size:0.65rem;color:'+clr+';font-weight:600;">✅ EFEKTIF</span>'+
-        '</div>';
-    }}
+    // Row background for pengumuman (subtle amber tint)
+    var rowBg=isPeng?'background:rgba(245,158,11,0.04);':'';
 
-    h+='<div class="reb-card" style="'+(isPeng?'border-bottom:1px dashed rgba(245,158,11,0.2);':'')+'">' +
-      '<div style="display:flex;">'+
-        '<div class="card-left" style="background:'+leftBg+';border-right:1px solid '+leftBdr+';">'+
-          '<div class="card-label-top" style="color:'+(isPeng?'#f59e0b':'rgba(139,92,246,0.7)')+';">'+typeLabel+'</div>'+
-          '<div class="card-day" style="color:'+(isPeng?'#f59e0b':'inherit')+'">'+dayStr+'</div>'+
-          '<div class="card-mon">'+monStr+'</div>'+
-          '<div class="card-countdown" style="'+cd.cls+'">'+cd.txt+'</div>'+
-        '</div>'+
-        '<div class="card-body">'+bodyContent+'</div>'+
-      '</div>'+
-    '</div>'+
-    (isPeng?'<div style="width:2px;height:10px;background:rgba(245,158,11,0.3);margin-left:36px;"></div>':'<div style="height:6px;"></div>');
+    h+='<tr style="'+rowBg+'">';
+    h+='<td><div class="td-indeks">'+ev.indeks+'</div><div class="td-org">'+ev.penyelenggara+' · '+ev.periode+'</div></td>';
+    h+='<td>'+dateHtml+'</td>';
+    h+='<td>'+typeHtml+'</td>';
+    h+='<td class="hide-sm">'+ketHtml+'</td>';
+    h+='<td><span class="cd-badge" style="'+cd.cls+'">'+cd.txt+'</span></td>';
+    h+='<td><span class="imp-badge" style="background:'+bg+';color:'+clr+';border:1px solid '+clr+'44;">'+dk+'</span></td>';
+    h+='</tr>';
   }});
-  container.innerHTML=h;
+
+  tbody.innerHTML=h;
 
   function resize(){{
-    var ht=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)+8;
+    var ht=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)+12;
     try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:ht}},'*');}}catch(e){{}}
   }}
   setTimeout(resize,120);setTimeout(resize,600);setTimeout(resize,1400);
 }})();
-</script></body></html>""", height=800, scrolling=False)
+</script></body></html>""", height=900, scrolling=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -13714,6 +12835,20 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         _alpha_unlocked = True
         st.session_state["alpha_screener_unlocked"] = True
 
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
+
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder, alpha_tab_trackrecord = st.tabs([
+            "  ⚡ ALPHA STOCK INSIGHT  ",
+            "  📅 DAILY PLAN  ",
+            "  📆 WEEKLY PLAN  ",
+            "  🌙 BELI SORE JUAL PAGI  ",
+            "  📊 FUNDAMENTAL SCREENER  ",
+            "  🏦 BROKER SUMMARY  ",
+            "  👥 SHAREHOLDER  ",
+            "  🏆 TRACK RECORD  ",
+        ])
+
         with alpha_tab_shareholder:
 
             # ── SHAREHOLDER TRACKER ─────────────────────────────────────────
@@ -15070,22 +14205,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             _render_sh_table_v2(_turun_rows, is_naik=False)
 
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
-
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder, alpha_tab_trackrecord = st.tabs([
-            "  ⚡ ALPHA STOCK INSIGHT  ",
-            "  📅 DAILY PLAN  ",
-            "  📆 WEEKLY PLAN  ",
-            "  🌙 BELI SORE JUAL PAGI  ",
-            "  📊 FUNDAMENTAL SCREENER  ",
-            "  🏦 BROKER SUMMARY  ",
-            "  👥 SHAREHOLDER  ",
-            "  🏆 TRACK RECORD  ",
-        ])
-
 
 
         with alpha_tab_insight:
