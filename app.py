@@ -5497,7 +5497,27 @@ if "code" in st.query_params and st.session_state.user is None:
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
             st.session_state.current_view = saved.get("current_view", "chat")
-            if saved.get("sessions"): st.session_state.sessions = saved["sessions"]; st.session_state.active_id = saved.get("active_id")
+            st.session_state.selected_system = saved.get("selected_system", "chat")
+            if saved.get("sessions"):
+                _loaded_s = saved["sessions"]
+                for _s in _loaded_s:
+                    if not _s.get("messages"): _s["messages"] = [SYSTEM_PROMPT]
+                    elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
+                    else: _s["messages"][0] = SYSTEM_PROMPT
+                st.session_state.sessions = _loaded_s
+                st.session_state.active_id = saved.get("active_id")
+            # Restore semua field kritis
+            for _rk in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts",
+                        "reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp",
+                        "mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event",
+                        "ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp",
+                        "alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker",
+                        "tr_records","auto_plan_history_daily","auto_plan_history_weekly",
+                        "auto_plan_history_bsjp","sigma_bs30_screened","sigma_bs30_ts",
+                        "sigma_bs30_history","brosum_history","brosum_hist_use_key",
+                        "brosum_hist_use_data","brosum_hist_use_date"]:
+                if saved.get(_rk) is not None:
+                    st.session_state[_rk] = saved[_rk]
         st.session_state.data_loaded = True
         token = str(uuid.uuid4()).replace("-","")
         _save_token(token, info)
@@ -8077,67 +8097,64 @@ active = get_active()
 current_view = st.session_state.get("current_view", "chat")
 
 if user:
+    # ── EARLY RESTORE: pastikan data kritis ada di session_state sebelum save ──
+    _CRITICAL_KEYS = [
+        "tr_records","auto_plan_history_daily","auto_plan_history_weekly",
+        "auto_plan_history_bsjp","brosum_history","sigma_bs30_screened",
+        "sigma_bs30_ts","sigma_bs30_history","brosum_hist_use_key",
+        "brosum_hist_use_data","brosum_hist_use_date",
+        "reco_daily_result","reco_weekly_result","reco_bsjp_result",
+        "mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp",
+    ]
+    _need_early_restore = any(k not in st.session_state for k in _CRITICAL_KEYS)
+    if _need_early_restore:
+        _er_saved = load_user(user["email"]) or {}
+        for _erk in _CRITICAL_KEYS:
+            if _erk not in st.session_state and _er_saved.get(_erk) is not None:
+                st.session_state[_erk] = _er_saved[_erk]
+
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     
-    # ── SAFE SAVE: merge dengan data existing di DB sebelum overwrite ──
-    # Pakai cache session_state agar tidak hit Sheets API setiap page load
-    _sv_cache_key = f"_sv_cache_{_ukey(user['email'])}"
-    if _sv_cache_key not in st.session_state:
-        st.session_state[_sv_cache_key] = load_user(user["email"]) or {}
-    _existing_sv = st.session_state[_sv_cache_key]
-
-    def _ss(key, default=None):
-        """Ambil dari session_state jika ada, fallback ke existing DB value."""
-        v = st.session_state.get(key)
-        if v is not None:
-            return v
-        return _existing_sv.get(key, default)
-
+    # ── SMART SAVE: hanya simpan session/theme di sini (setiap render) ──
+    # Data kritis (plan history, tr_records) disimpan LANGSUNG saat berubah
+    # bukan di sini, untuk menghindari overwrite dengan None
     save_user(user["email"], {
         "theme": st.session_state.get("theme", "dark"),
         "sessions": sessions_to_save,
         "active_id": st.session_state.active_id,
         "current_view": st.session_state.get("current_view", "chat"),
         "selected_system": st.session_state.get("selected_system", "chat"),
-        "reco_daily_result":  _ss("reco_daily_result"),
-        "reco_daily_ts":      _ss("reco_daily_ts"),
-        "reco_weekly_result": _ss("reco_weekly_result"),
-        "reco_weekly_ts":     _ss("reco_weekly_ts"),
-        "reco_bsjp_result":   _ss("reco_bsjp_result"),
-        "reco_bsjp_ts":       _ss("reco_bsjp_ts"),
-        "mb_daily_content":   _ss("mb_daily_content"),
-        "mb_daily_timestamp": _ss("mb_daily_timestamp"),
-        "mb_weekly_content":  _ss("mb_weekly_content"),
-        "mb_weekly_timestamp":_ss("mb_weekly_timestamp"),
-        "ec_ai_result":       _ss("ec_ai_result"),
-        "ec_ai_event":        _ss("ec_ai_event"),
-        "ec_ai_actual":       _ss("ec_ai_actual"),
-        "ec_ai_beat_miss":    _ss("ec_ai_beat_miss"),
-        "ec_ai_model":        _ss("ec_ai_model"),
-        "ec_ai_timestamp":    _ss("ec_ai_timestamp"),
-        "alpha_insight_last_key":    _ss("alpha_insight_last_key"),
-        "alpha_insight_last_data":   _ss("alpha_insight_last_data"),
-        "alpha_insight_last_ticker": _ss("alpha_insight_last_ticker"),
-        # ── Data kritis yang WAJIB pakai merge ──
-        "tr_records":                _ss("tr_records", []),
-        "auto_plan_history_daily":   _ss("auto_plan_history_daily", {}),
-        "auto_plan_history_weekly":  _ss("auto_plan_history_weekly", {}),
-        "auto_plan_history_bsjp":    _ss("auto_plan_history_bsjp", {}),
-        "brosum_history":            _ss("brosum_history", {}),
-        "sigma_bs30_screened":       _ss("sigma_bs30_screened", []),
-        "sigma_bs30_ts":             _ss("sigma_bs30_ts", ""),
-        "brosum_hist_use_key":       _ss("brosum_hist_use_key"),
-        "brosum_hist_use_data":      _ss("brosum_hist_use_data"),
-        "brosum_hist_use_date":      _ss("brosum_hist_use_date"),
-        "sigma_bs30_history":        _ss("sigma_bs30_history", {}),
+        "reco_daily_result":  st.session_state.get("reco_daily_result"),
+        "reco_daily_ts":      st.session_state.get("reco_daily_ts"),
+        "reco_weekly_result": st.session_state.get("reco_weekly_result"),
+        "reco_weekly_ts":     st.session_state.get("reco_weekly_ts"),
+        "reco_bsjp_result":   st.session_state.get("reco_bsjp_result"),
+        "reco_bsjp_ts":       st.session_state.get("reco_bsjp_ts"),
+        "mb_daily_content":   st.session_state.get("mb_daily_content"),
+        "mb_daily_timestamp": st.session_state.get("mb_daily_timestamp"),
+        "mb_weekly_content":  st.session_state.get("mb_weekly_content"),
+        "mb_weekly_timestamp":st.session_state.get("mb_weekly_timestamp"),
+        "ec_ai_result":       st.session_state.get("ec_ai_result"),
+        "ec_ai_event":        st.session_state.get("ec_ai_event"),
+        "ec_ai_actual":       st.session_state.get("ec_ai_actual"),
+        "ec_ai_beat_miss":    st.session_state.get("ec_ai_beat_miss"),
+        "ec_ai_model":        st.session_state.get("ec_ai_model"),
+        "ec_ai_timestamp":    st.session_state.get("ec_ai_timestamp"),
+        "alpha_insight_last_key":    st.session_state.get("alpha_insight_last_key"),
+        "alpha_insight_last_data":   st.session_state.get("alpha_insight_last_data"),
+        "alpha_insight_last_ticker": st.session_state.get("alpha_insight_last_ticker"),
+        "tr_records":               st.session_state.get("tr_records", []),
+        "auto_plan_history_daily":  st.session_state.get("auto_plan_history_daily", {}),
+        "auto_plan_history_weekly": st.session_state.get("auto_plan_history_weekly", {}),
+        "auto_plan_history_bsjp":   st.session_state.get("auto_plan_history_bsjp", {}),
+        "brosum_history":           st.session_state.get("brosum_history", {}),
+        "sigma_bs30_screened":      st.session_state.get("sigma_bs30_screened", []),
+        "sigma_bs30_ts":            st.session_state.get("sigma_bs30_ts", ""),
+        "brosum_hist_use_key":      st.session_state.get("brosum_hist_use_key"),
+        "brosum_hist_use_data":     st.session_state.get("brosum_hist_use_data"),
+        "brosum_hist_use_date":     st.session_state.get("brosum_hist_use_date"),
+        "sigma_bs30_history":       st.session_state.get("sigma_bs30_history", {}),
     })
-    # Update cache dengan data terbaru setelah save berhasil
-    st.session_state[_sv_cache_key] = {
-        k: _ss(k, {}) for k in [
-            "auto_plan_history_daily","auto_plan_history_weekly","auto_plan_history_bsjp",
-            "tr_records","brosum_history","sigma_bs30_screened","sigma_bs30_ts",
-        ]
-    }
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
 if st.session_state.user is None:
