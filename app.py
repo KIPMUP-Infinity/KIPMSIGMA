@@ -8158,7 +8158,7 @@ if current_view == "dashboard":
         return result
 
     tab_idxmap, tab_macro, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
-        "  🌐 IDX MARKET MAP  ",
+        "  🌐 MARKET MAP  ",
         "  NEWS & CALENDAR  ",
         "  INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
@@ -8168,7 +8168,7 @@ if current_view == "dashboard":
 
     with tab_idxmap:
         # ════════════════════════════════════════════════════════
-        # 1. IDX MARKET MAP GLOBE — didefinisikan dulu (variabel),
+        # 1. MARKET MAP GLOBE — didefinisikan dulu (variabel),
         #    di-render SETELAH heatmap (di bawah)
         # ════════════════════════════════════════════════════════
 
@@ -9770,11 +9770,11 @@ table{{margin-bottom:0!important;}}
 }})();
 </script></body></html>""", height=_total_h, scrolling=False)
 
-        # ── IDX MARKET MAP GLOBE ───────────────────────────────────────────────
+        # ── MARKET MAP GLOBE ───────────────────────────────────────────────
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         st.markdown(
             "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>IDX MARKET MAP</span>"
+            "<span class='trm-section-label'>MARKET MAP</span>"
             "<div class='trm-section-line'></div></div>",
             unsafe_allow_html=True,
         )
@@ -10338,16 +10338,88 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             _ann_html += "</div>"
             st.markdown(_ann_html, unsafe_allow_html=True)
         else:
-            # Fallback: tampilkan link manual ke sumber resmi
+            # Fallback: tampilkan kartu sumber resmi yang menarik
             st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {met_border};border-radius:10px;padding:16px;'>
-            <p style='color:{text_sub};font-size:0.8rem;margin-bottom:10px;'>Tidak dapat memuat pengumuman otomatis. Cek langsung di sumber resmi:</p>
-            <div style='display:flex;flex-direction:column;gap:6px;'>
-                <a href='https://www.msci.com/our-solutions/indexes/press-releases' target='_blank' style='color:#6e9bff;font-size:0.82rem;text-decoration:none;'>📊 MSCI Press Releases →</a>
-                <a href='https://www.idx.co.id/id/berita/pengumuman' target='_blank' style='color:#f59e0b;font-size:0.82rem;text-decoration:none;'>🇮🇩 IDX Pengumuman →</a>
-                <a href='https://www.ftserussell.com/press-release' target='_blank' style='color:#00c853;font-size:0.82rem;text-decoration:none;'>🌐 FTSE Russell Press Releases →</a>
-                <a href='https://www.jpmorgan.com/insights' target='_blank' style='color:#e879f9;font-size:0.82rem;text-decoration:none;'>🏦 JP Morgan Insights →</a>
-            </div>
+            <style>
+            .ann-fallback-grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:4px;}}
+            @media(max-width:640px){{.ann-fallback-grid{{grid-template-columns:1fr;}}}}
+            .ann-source-card{{
+              display:flex;flex-direction:column;gap:8px;
+              padding:16px 18px;border-radius:12px;
+              background:{met_bg};border:1px solid {met_border};
+              text-decoration:none;
+              transition:border-color 0.2s,transform 0.15s,background 0.2s;
+              position:relative;overflow:hidden;
+            }}
+            .ann-source-card::before{{
+              content:'';position:absolute;top:0;left:0;right:0;height:2px;
+              background:var(--accent-clr);opacity:0.7;
+            }}
+            .ann-source-card:hover{{
+              border-color:var(--accent-clr);
+              background:rgba(255,255,255,0.03);
+              transform:translateY(-2px);
+            }}
+            .ann-sc-header{{display:flex;align-items:center;gap:10px;}}
+            .ann-sc-icon{{font-size:1.5rem;}}
+            .ann-sc-name{{font-size:0.9rem;font-weight:800;letter-spacing:0.07em;color:var(--accent-clr);font-family:'DM Sans',sans-serif;}}
+            .ann-sc-tag{{font-size:0.62rem;padding:1px 7px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid var(--accent-clr);color:var(--accent-clr);font-weight:700;letter-spacing:0.1em;}}
+            .ann-sc-desc{{font-size:0.75rem;color:{text_sub};line-height:1.55;font-family:'DM Sans',sans-serif;}}
+            .ann-sc-link{{font-size:0.72rem;color:var(--accent-clr);font-weight:700;letter-spacing:0.06em;display:flex;align-items:center;gap:4px;}}
+            .ann-sc-link::after{{content:'→';}}
+            .ann-fallback-note{{
+              font-size:0.72rem;color:{text_sub};margin-bottom:12px;
+              font-family:'DM Sans',sans-serif;letter-spacing:0.05em;
+              padding:8px 14px;border-radius:6px;background:rgba(139,92,246,0.06);
+              border-left:3px solid rgba(139,92,246,0.4);
+            }}
+            </style>
+            <p class="ann-fallback-note">⚠️ Pengumuman otomatis tidak tersedia. Kunjungi sumber resmi di bawah untuk info terbaru:</p>
+            <div class="ann-fallback-grid">
+              <a class="ann-source-card" style="--accent-clr:#6e9bff;" href="https://www.msci.com/our-solutions/indexes/press-releases" target="_blank">
+                <div class="ann-sc-header">
+                  <span class="ann-sc-icon">📊</span>
+                  <div>
+                    <div class="ann-sc-name">MSCI</div>
+                    <span class="ann-sc-tag">GLOBAL INDEX</span>
+                  </div>
+                </div>
+                <div class="ann-sc-desc">Press releases resmi MSCI — perubahan komposisi indeks MSCI Indonesia, EM, ACWI. Paling berpengaruh ke capital flow IDX.</div>
+                <div class="ann-sc-link">Buka Press Releases</div>
+              </a>
+              <a class="ann-source-card" style="--accent-clr:#f59e0b;" href="https://www.idx.co.id/id/berita/pengumuman" target="_blank">
+                <div class="ann-sc-header">
+                  <span class="ann-sc-icon">🇮🇩</span>
+                  <div>
+                    <div class="ann-sc-name">IDX</div>
+                    <span class="ann-sc-tag">BURSA EFEK INDONESIA</span>
+                  </div>
+                </div>
+                <div class="ann-sc-desc">Pengumuman resmi Bursa Efek Indonesia — perubahan LQ45, IDX30, KOMPAS100, corporate action, dan suspensi saham.</div>
+                <div class="ann-sc-link">Buka Pengumuman IDX</div>
+              </a>
+              <a class="ann-source-card" style="--accent-clr:#00c853;" href="https://www.ftserussell.com/press-release" target="_blank">
+                <div class="ann-sc-header">
+                  <span class="ann-sc-icon">🌐</span>
+                  <div>
+                    <div class="ann-sc-name">FTSE Russell</div>
+                    <span class="ann-sc-tag">GLOBAL INDEX</span>
+                  </div>
+                </div>
+                <div class="ann-sc-desc">Perubahan komposisi FTSE EM, FTSE All-World. Review kuartalan FTSE berdampak ke capital flow dari fund global.</div>
+                <div class="ann-sc-link">Buka Press Releases</div>
+              </a>
+              <a class="ann-source-card" style="--accent-clr:#e879f9;" href="https://www.jpmorgan.com/insights" target="_blank">
+                <div class="ann-sc-header">
+                  <span class="ann-sc-icon">🏦</span>
+                  <div>
+                    <div class="ann-sc-name">JP Morgan</div>
+                    <span class="ann-sc-tag">BOND INDEX</span>
+                  </div>
+                </div>
+                <div class="ann-sc-desc">Update GBI-EM Global Diversified — indeks obligasi pemerintah EM. Rebalancing bulanan berdampak ke IDR dan yield SBN.</div>
+                <div class="ann-sc-link">Buka JP Morgan Insights</div>
+              </a>
             </div>
             """, unsafe_allow_html=True)
 
@@ -10699,7 +10771,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
   }}
   setTimeout(resize,120);setTimeout(resize,600);setTimeout(resize,1400);
 }})();
-</script></body></html>""", height=900, scrolling=False)
+</script></body></html>""", height=1100, scrolling=True)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -22528,15 +22600,111 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s
     </style>""", unsafe_allow_html=True)
 
             # ── Sub-tabs Panduan ─────────────────────────────────────────────
-            pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7 = st.tabs([
+            pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7 = st.tabs([
+                "  🌐 MARKET MAP  ",
                 "  🌍 Global Macro & News  ",
-                "  🔄 Index & Sector Rotation  ",
+                "  🔄 Index & Rebalancing  ",
                 "  👥 Shareholder  ",
                 "  ⚡ Alpha Screener  ",
                 "  🧮 Kalkulator  ",
                 "  📊 Broker Summary  ",
                 "  🔬 Cara Kerja Screener  ",
             ])
+
+            # ══════════════════════════════════════════════════════════════
+            # PANDUAN 0 - MARKET MAP
+            # ══════════════════════════════════════════════════════════════
+            with pg_tab0:
+                _guide_html_0 = f"""<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+    *{{box-sizing:border-box;margin:0;padding:0;}}
+    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+    .wrap{{max-width:100%;padding:4px 0 32px;}}
+    .hero{{background:linear-gradient(135deg,rgba(139,92,246,0.13),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.3);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
+    .hero-badge{{display:inline-block;font-size:0.68rem;font-weight:800;letter-spacing:0.15em;padding:3px 10px;border-radius:20px;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.5);color:#a78bfa;margin-bottom:10px;}}
+    .hero-title{{font-size:1.35rem;font-weight:800;color:#a78bfa;letter-spacing:0.05em;margin-bottom:8px;}}
+    .hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
+    .sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(139,92,246,0.2);}}
+    .sec-icon{{font-size:1.4rem;}}
+    .sec-title{{font-size:1.05rem;font-weight:700;color:#a78bfa;letter-spacing:0.06em;}}
+    .card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+    .card.p{{border-left:3px solid #a78bfa;}}
+    .card.b{{border-left:3px solid #60a5fa;}}
+    .card.g{{border-left:3px solid #26a69a;}}
+    .card.y{{border-left:3px solid #fbbf24;}}
+    .card-title{{font-size:0.875rem;font-weight:700;color:#60a5fa;margin-bottom:8px;}}
+    .card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
+    .card-body b{{color:#a78bfa;}}
+    .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
+    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+    .tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+    @media(max-width:600px){{.grid2{{grid-template-columns:1fr;}}}}
+    .metric-box{{background:rgba(139,92,246,0.07);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:12px 14px;text-align:center;}}
+    .metric-val{{font-size:1.3rem;font-weight:800;color:#a78bfa;}}
+    .metric-lbl{{font-size:0.68rem;color:{_SUB};margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;}}
+    .heatmap-demo{{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:14px 0;}}
+    .hm-cell{{border-radius:6px;padding:10px 6px;text-align:center;font-size:0.72rem;font-weight:700;}}
+    .hm-strong-up{{background:rgba(8,153,129,0.35);color:#4ade80;border:1px solid rgba(8,153,129,0.5);}}
+    .hm-up{{background:rgba(8,153,129,0.18);color:#26a69a;border:1px solid rgba(8,153,129,0.3);}}
+    .hm-flat{{background:rgba(178,181,190,0.1);color:#7c86a2;border:1px solid rgba(178,181,190,0.2);}}
+    .hm-dn{{background:rgba(242,54,69,0.18);color:#f23645;border:1px solid rgba(242,54,69,0.3);}}
+    .hm-strong-dn{{background:rgba(242,54,69,0.35);color:#f87171;border:1px solid rgba(242,54,69,0.5);}}
+    </style></head><body><div class="wrap">
+
+    <div class="hero">
+      <div class="hero-badge">🌐 MARKET MAP</div>
+      <div class="hero-title">Peta Visual Seluruh Pasar IDX</div>
+      <div class="hero-sub">Heatmap real-time seluruh saham IDX dikelompokkan per sektor — warna menunjukkan performa harian. Sekilas tahu mana sektor yang naik, turun, atau sideways tanpa harus cek satu per satu.</div>
+    </div>
+
+    <div class="sec-head"><span class="sec-icon">🎨</span><div><div class="sec-title">CARA MEMBACA HEATMAP</div></div></div>
+    <div class="heatmap-demo">
+      <div class="hm-cell hm-strong-up">BBCA<br>+3.2%</div>
+      <div class="hm-cell hm-up">TLKM<br>+1.1%</div>
+      <div class="hm-cell hm-flat">ASII<br>0.0%</div>
+      <div class="hm-cell hm-dn">UNVR<br>-1.4%</div>
+      <div class="hm-cell hm-strong-dn">GOTO<br>-3.8%</div>
+    </div>
+    <div class="card b">
+      <div class="card-body">
+        <b>🟢 Hijau Terang</b> = naik kuat (&gt;+2%) &nbsp;|&nbsp; <b>🟢 Hijau</b> = naik (+0.5%–2%)<br>
+        <b>⬜ Abu-abu</b> = flat (-0.5%–+0.5%) &nbsp;|&nbsp; <b>🔴 Merah</b> = turun (-0.5% – -2%)<br>
+        <b>🔴 Merah Tua</b> = turun kuat (&lt;-2%) &nbsp;|&nbsp; <b>Ukuran kotak</b> = proporsi market cap
+      </div>
+    </div>
+
+    <div class="sec-head"><span class="sec-icon">🔍</span><div><div class="sec-title">CARA PAKAI MARKET MAP</div></div></div>
+    <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>🌐 MARKET MAP</b> di navigasi utama. Heatmap otomatis memuat data live dari Yahoo Finance / IDX.</div></div>
+    <div class="step"><div class="snum">2</div><div class="stext"><b>Identifikasi sektor dominan</b> — lihat mana sektor yang paling banyak hijau. Itu sinyal rotasi sektor sedang terjadi ke sana.</div></div>
+    <div class="step"><div class="snum">3</div><div class="stext"><b>Zoom in sektor</b> — klik atau hover kotak saham untuk melihat detail ticker, harga, dan persentase perubahan.</div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">Kombinasikan dengan tab <b>INDEX & SECTOR ROTATION</b> untuk konfirmasi arah rotasi sektor secara lebih mendalam.</div></div>
+    <div class="tip">💡 <b>Pro Tip:</b> Gunakan Market Map di awal sesi trading (09:00–09:30 WIB) untuk cepat identifikasi sektor mana yang dibeli/dijual bandar pagi itu.</div>
+
+    <div class="sec-head"><span class="sec-icon">📊</span><div><div class="sec-title">FITUR-FITUR MARKET MAP</div></div></div>
+    <div class="grid2">
+      <div class="card p">
+        <div class="card-title">🌐 Heatmap Saham IDX</div>
+        <div class="card-body">Visualisasi seluruh saham IDX dikelompokkan per sektor dengan warna performa real-time. Ukuran proporsional market cap.</div>
+      </div>
+      <div class="card b">
+        <div class="card-title">📈 Index & Komoditas Global</div>
+        <div class="card-body">Tabel live: IHSG, LQ45, S&amp;P500, Dow Jones, Nikkei, FTSE, dan komoditas utama (emas, minyak, CPO, batu bara).</div>
+      </div>
+      <div class="card g">
+        <div class="card-title">🔄 Sektor Performance</div>
+        <div class="card-body">Ranking sektor IDX berdasarkan performa hari ini — identifikasi sektor terkuat dan terlemah dalam hitungan detik.</div>
+      </div>
+      <div class="card y">
+        <div class="card-title">⚡ Auto Refresh</div>
+        <div class="card-body">Data diperbarui otomatis setiap kali halaman di-reload. Gunakan shortcut <b>R</b> di Streamlit untuk refresh cepat.</div>
+      </div>
+    </div>
+
+    </div></body></html>"""
+                components.html(_guide_html_0, height=1000, scrolling=True)
 
             # ══════════════════════════════════════════════════════════════
             # PANDUAN 1 - GLOBAL MACRO & NEWS
