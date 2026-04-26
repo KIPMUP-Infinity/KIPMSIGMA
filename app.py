@@ -8193,77 +8193,26 @@ body {
   display:flex; flex-direction:column;
 }
 
-/* HEADER */
-#header {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 16px 6px;
-  flex-shrink:0; z-index:50;
+/* TOP BAR — hanya Reset & Info */
+#topbar {
+  display:flex; align-items:center; justify-content:flex-end;
+  padding:4px 10px 2px;
+  flex-shrink:0; z-index:50; gap:5px;
 }
-#header-left h1 {
-  font-size:22px; font-weight:700; letter-spacing:1px; color:#fff;
-  text-shadow:0 0 30px rgba(0,120,255,0.6);
-}
-#header-left p { font-size:11px; color:#4a6a9a; margin-top:1px; }
-#header-buttons { display:flex; gap:6px; }
 .hbtn {
-  display:flex; flex-direction:column; align-items:center;
+  display:flex; align-items:center; justify-content:center;
   background:rgba(8,18,45,0.9); border:1px solid #0d2a55;
-  border-radius:8px; padding:6px 14px; cursor:pointer;
-  font-size:10px; color:#6a8ab0; gap:3px; min-width:52px;
+  border-radius:7px; padding:5px 8px; cursor:pointer;
+  color:#6a8ab0; min-width:32px; height:30px;
   transition:all 0.2s;
 }
 .hbtn:hover { background:rgba(15,40,100,0.9); color:#aaccff; }
-.hbtn.active { background:rgba(0,60,180,0.6); border-color:#0055cc; color:#fff; }
 .hbtn svg { width:15px; height:15px; }
 
-/* MAIN */
-#main { flex:1; display:flex; overflow:hidden; }
-
-/* LEFT PANEL */
-#left {
-  width:205px; flex-shrink:0;
-  display:flex; flex-direction:column; gap:5px;
-  padding:4px 8px 8px; overflow-y:auto;
+/* GLOBE area — takes remaining height minus bottom panel */
+#globe-wrap {
+  flex:1; width:100%; position:relative; min-height:0;
 }
-#left::-webkit-scrollbar { width:2px; }
-#left::-webkit-scrollbar-thumb { background:#0d2a55; }
-
-.panel {
-  background:rgba(4,12,30,0.88);
-  border:1px solid #0a2040;
-  border-radius:8px; padding:10px;
-}
-.panel-title {
-  font-size:9.5px; font-weight:700; letter-spacing:1.8px;
-  color:#3a6aaa; margin-bottom:8px; padding-bottom:5px;
-  border-bottom:1px solid #0a2040; text-transform:uppercase;
-}
-
-.mo-item { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
-.mo-icon {
-  width:20px; height:20px; border-radius:50%;
-  border:1px solid #1a3a6a; display:flex; align-items:center;
-  justify-content:center; flex-shrink:0; color:#3a7acc; font-size:9px;
-}
-.mo-label { color:#4a6a8a; font-size:10px; }
-.mo-value { color:#c8daf0; font-weight:600; font-size:11px; }
-
-.top10-row {
-  display:flex; align-items:center; gap:4px;
-  font-size:10px; padding:2px 3px; cursor:pointer;
-  border-radius:4px; transition:background 0.15s;
-}
-.top10-row:hover { background:rgba(0,60,180,0.25); }
-.top10-num { color:#3a5a7a; width:16px; text-align:right; }
-.top10-ticker { font-weight:600; width:38px; }
-.top10-cap { color:#6a8aaa; margin-left:auto; font-size:9.5px; }
-
-.legend-item { display:flex; align-items:center; gap:7px; font-size:10px; color:#7a9aba; margin-bottom:4px; }
-.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-
-/* CENTER */
-#center { flex:1; position:relative; display:flex; flex-direction:column; align-items:center; }
-#globe-wrap { flex:1; width:100%; position:relative; }
 canvas#globe { width:100%; height:100%; display:block; }
 
 /* Tooltip */
@@ -8274,208 +8223,77 @@ canvas#globe { width:100%; height:100%; display:block; }
   box-shadow:0 0 20px rgba(0,80,200,0.3);
 }
 
-/* Bottom */
-#bottom-bar {
-  width:100%; display:flex; justify-content:center;
-  padding:5px 0 6px; flex-shrink:0;
-}
-#scale-box {
-  background:rgba(4,12,35,0.92); border:1px solid #0a2040;
-  border-radius:10px; padding:7px 22px;
-  display:flex; flex-direction:column; align-items:center; gap:6px;
-}
-.scale-title { font-size:9px; letter-spacing:1.5px; color:#3a6aaa; text-transform:uppercase; }
-#scale-dots { display:flex; align-items:center; gap:16px; }
-.scale-item { display:flex; flex-direction:column; align-items:center; gap:4px; }
-.sdot {
-  border-radius:50%;
-  background:radial-gradient(circle at 35% 35%, #88ccff, #0055cc);
-  flex-shrink:0;
-}
-.slabel { font-size:9px; color:#4a6a8a; }
-
-#instr {
-  width:100%; display:flex; justify-content:space-around;
-  padding:4px 10px 6px; font-size:11px; color:#3a5a7a;
-  border-top:1px solid #080f22; flex-shrink:0;
-}
-.instr-item { display:flex; align-items:center; gap:6px; }
-
-/* RIGHT PANEL */
-#right {
-  width:225px; flex-shrink:0;
-  display:flex; flex-direction:column; gap:5px;
-  padding:4px 8px 8px; overflow-y:auto;
+/* BOTTOM PANEL — Top10 + Stock Info side by side */
+#bottom-panel {
+  display:flex; gap:8px; padding:8px 10px 8px;
+  flex-shrink:0; background:rgba(0,3,14,0.92);
+  border-top:1px solid #0a1a35; overflow:hidden;
 }
 
-.owner-item { display:flex; align-items:center; gap:8px; font-size:11px; color:#7a9aba; margin-bottom:5px; }
-.owner-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+/* TOP 10 */
+#top10-box {
+  background:rgba(4,12,30,0.88); border:1px solid #0a2040;
+  border-radius:8px; padding:8px 10px; flex:1; min-width:0;
+}
+.panel-title {
+  font-size:9px; font-weight:700; letter-spacing:1.8px;
+  color:#3a6aaa; margin-bottom:6px;
+  text-transform:uppercase;
+}
+.top10-row {
+  display:flex; align-items:center; gap:4px;
+  font-size:10px; padding:2px 3px; cursor:pointer;
+  border-radius:4px; transition:background 0.15s;
+}
+.top10-row:hover { background:rgba(0,60,180,0.25); }
+.top10-num { color:#3a5a7a; width:14px; text-align:right; flex-shrink:0; }
+.top10-ticker { font-weight:600; width:36px; flex-shrink:0; }
+.top10-cap { color:#6a8aaa; margin-left:auto; font-size:9px; white-space:nowrap; }
 
+/* STOCK INFO */
+#si-box {
+  background:rgba(4,12,30,0.88); border:1px solid #0a2040;
+  border-radius:8px; padding:8px 10px; width:200px; flex-shrink:0;
+}
 .si-table { width:100%; border-collapse:collapse; }
-.si-table tr td { font-size:11px; padding:3px 0; }
+.si-table tr td { font-size:10px; padding:2px 0; }
 .si-table tr td:first-child { color:#4a6a8a; }
 .si-table tr td:last-child { text-align:right; color:#b0ccec; }
-.si-btn {
-  display:block; width:100%; margin-top:10px;
-  background:linear-gradient(135deg,#0055dd,#003aaa);
-  border:none; border-radius:7px; padding:9px;
-  color:#fff; font-size:12px; font-weight:600; cursor:pointer;
-  letter-spacing:0.5px; transition:opacity 0.2s;
-}
-.si-btn:hover { opacity:0.85; }
 
-/* ── MOBILE RESPONSIVE ─────────────────────────────── */
-@media (max-width: 640px) {
-  #header { padding:6px 10px 4px; }
-  #header-left h1 { font-size:14px; letter-spacing:0.5px; }
-  #header-left p { display:none; }
-  .hbtn { padding:4px 8px; font-size:9px; min-width:38px; }
-  .hbtn svg { width:12px; height:12px; }
-  /* Sembunyikan panel kiri & kanan, globe full-width */
-  #left { display:none; }
-  #right { display:none; }
-  #center { width:100%; }
-  /* Bottom bar lebih kompak */
-  #bottom-bar { padding:3px 0 4px; }
-  #scale-box { padding:4px 10px; }
-  .scale-title { font-size:8px; }
-  #scale-dots { gap:10px; }
-  .slabel { font-size:8px; }
-  #instr { font-size:9px; padding:3px 6px 4px; }
-  #instr .instr-item:nth-child(2) { display:none; }
+@media (max-width:500px) {
+  #bottom-panel { flex-direction:column; padding:6px 8px; }
+  #si-box { width:100%; }
 }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
-<div id="header">
-  <div id="header-left">
-    <h1>IDX STOCK MARKET WORLD</h1>
-    <p>Indonesia Stock Exchange Universe</p>
+<!-- TOP BAR: Reset + Info only (icon-only) -->
+<div id="topbar">
+  <div class="hbtn" id="btn-reset" onclick="resetView()" title="Reset View">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
   </div>
-  <div id="header-buttons">
-    <div class="hbtn active" id="btn-rotate" onclick="setMode('rotate')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
-      Rotate
-    </div>
-    <div class="hbtn" id="btn-zoom" onclick="setMode('zoom')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      Zoom
-    </div>
-    <div class="hbtn" id="btn-zoomin" onclick="doZoom(-1.5)" title="Zoom In">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      +
-    </div>
-    <div class="hbtn" id="btn-zoomout" onclick="doZoom(1.5)" title="Zoom Out">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-      −
-    </div>
-    <div class="hbtn" id="btn-reset" onclick="resetView()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
-      Reset
-    </div>
-    <div class="hbtn" id="btn-info" onclick="toggleInfoPanel()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      Info
-    </div>
+  <div class="hbtn" id="btn-info" onclick="toggleInfoPanel()" title="Info">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
   </div>
 </div>
 
-<!-- MAIN -->
-<div id="main">
+<!-- GLOBE -->
+<div id="globe-wrap">
+  <canvas id="globe"></canvas>
+  <div id="tooltip"></div>
+</div>
 
-<!-- LEFT -->
-<div id="left">
-  <div class="panel">
-    <div class="panel-title">Market Overview</div>
-    <div class="mo-item"><div class="mo-icon">☰</div><div><div class="mo-label">Total Stocks</div><div class="mo-value" id="mo-total">—</div></div></div>
-    <div class="mo-item"><div class="mo-icon">◎</div><div><div class="mo-label">Total Market Cap</div><div class="mo-value" id="mo-cap">—</div></div></div>
-    <div class="mo-item"><div class="mo-icon">△</div><div><div class="mo-label">Largest Stock</div><div class="mo-value">BBCA</div></div></div>
-    <div class="mo-item"><div class="mo-icon">★</div><div><div class="mo-label">MSCI Constituents</div><div class="mo-value" id="mo-msci">—</div></div></div>
-    <div class="mo-item"><div class="mo-icon">≈</div><div><div class="mo-label">Konglomerasi</div><div class="mo-value">8 Grup</div></div></div>
-  </div>
-
-  <div class="panel">
+<!-- BOTTOM PANEL: Top10 + Stock Info -->
+<div id="bottom-panel">
+  <div id="top10-box">
     <div class="panel-title">Top 10 by Market Cap</div>
     <div id="top10-list"></div>
   </div>
-
-  <div class="panel">
-    <div class="panel-title">Legend (by Sector)</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#4488ff"></div>Financials</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ff8800"></div>Consumer Cyclical</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#00cc66"></div>Consumer Non-Cyclical</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#aa44ff"></div>Energy</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ff44aa"></div>Healthcare</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ff6633"></div>Industrials</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ccbb00"></div>Infrastructure</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#44ffaa"></div>Basic Materials</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ff4444"></div>Technology</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#ff88cc"></div>Properties &amp; Real Estate</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#888888"></div>Others</div>
-    <div style="margin-top:10px;padding-top:8px;border-top:1px solid #0a2040;">
-      <div class="legend-item" style="margin-bottom:2px;">
-        <div style="width:8px;height:8px;border-radius:2px;background:rgba(255,215,0,0.2);border:1px solid #ffd700;flex-shrink:0;"></div>
-        <span style="color:#ffd700;font-weight:600;">★ MSCI Constituent</span>
-      </div>
-      <div style="font-size:9px;color:#2a4a6a;margin-left:15px;line-height:1.5;">Hover saham untuk lihat badge MSCI</div>
-    </div>
-    <div style="margin-top:8px;font-size:9px;color:#2a4a6a;line-height:1.6;">
-      * Market data in IDR<br>* Data delayed 15 minutes<br>* Source: IDX, RTI
-    </div>
-  </div>
-</div>
-
-<!-- CENTER -->
-<div id="center">
-  <div id="globe-wrap">
-    <canvas id="globe"></canvas>
-    <div id="tooltip"></div>
-  </div>
-
-  <div id="bottom-bar">
-    <div id="scale-box">
-      <div class="scale-title">Market Cap Scale (Log)</div>
-      <div id="scale-dots">
-        <div class="scale-item"><div class="sdot" style="width:7px;height:7px;"></div><div class="slabel">&lt; 100 B</div></div>
-        <div class="scale-item"><div class="sdot" style="width:11px;height:11px;"></div><div class="slabel">100 B - 1 T</div></div>
-        <div class="scale-item"><div class="sdot" style="width:17px;height:17px;"></div><div class="slabel">1 T - 10 T</div></div>
-        <div class="scale-item"><div class="sdot" style="width:24px;height:24px;"></div><div class="slabel">10 T - 100 T</div></div>
-        <div class="scale-item"><div class="sdot" style="width:33px;height:33px;"></div><div class="slabel">&gt; 100 T</div></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="instr">
-    <div class="instr-item">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
-      DRAG : Rotate Globe
-    </div>
-    <div class="instr-item">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><rect x="6" y="2" width="12" height="20" rx="3"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="7" r="1" fill="#3a5a7a"/></svg>
-      SCROLL : Zoom In / Out
-    </div>
-    <div class="instr-item">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a7a" stroke-width="1.5"><rect x="6" y="2" width="12" height="20" rx="3"/><circle cx="12" cy="14" r="2" fill="#3a5a7a"/></svg>
-      CLICK : Show / Hide Info
-    </div>
-  </div>
-</div>
-
-<!-- RIGHT -->
-<div id="right">
-  <div class="panel">
-    <div class="panel-title">Owner Group Clusters</div>
-    <p style="font-size:10px;color:#2a4a6a;margin-bottom:9px;line-height:1.5;">Stocks that are under the same ultimate owner are grouped together.</p>
-    <div id="owner-legend"></div>
-  </div>
-
-  <div class="panel" id="stock-info-panel">
+  <div id="si-box">
     <div class="panel-title">Stock Info</div>
-    <div id="si-ticker" style="font-size:22px;font-weight:700;color:#fff;margin-bottom:1px;">BBCA</div>
-    <div id="si-name" style="font-size:11px;color:#4a6a8a;margin-bottom:10px;">Bank Central Asia Tbk.</div>
-    <div style="font-size:10px;color:#2a4a6a;margin-bottom:4px;">Details</div>
+    <div id="si-ticker" style="font-size:18px;font-weight:700;color:#fff;margin-bottom:1px;">BBCA</div>
+    <div id="si-name" style="font-size:10px;color:#4a6a8a;margin-bottom:6px;">Bank Central Asia Tbk.</div>
     <table class="si-table">
       <tr><td>Market Cap</td><td id="si-cap">IDR 1,289 T</td></tr>
       <tr><td>Sector</td><td id="si-sector">Financials</td></tr>
@@ -8484,16 +8302,6 @@ canvas#globe { width:100%; height:100%; display:block; }
       <tr><td>Change</td><td id="si-change" style="color:#00dd66;font-weight:700;">+1.08%</td></tr>
       <tr><td>Volume</td><td id="si-vol">18.2 M</td></tr>
     </table>
-    <button class="si-btn">View Detail</button>
-  </div>
-
-  <div class="panel">
-    <div class="panel-title">Global Distribution</div>
-    <canvas id="world-mini" width="200" height="88" style="width:100%;border-radius:4px;"></canvas>
-    <div style="margin-top:5px;font-size:11px;color:#7a9aba;display:flex;align-items:center;gap:5px;">
-      <div style="width:8px;height:8px;border-radius:50%;background:#00cc55;"></div>
-      <span id="stock-count-display">— Stocks Listed</span>
-    </div>
   </div>
 </div>
 
@@ -9970,23 +9778,12 @@ table{{margin-bottom:0!important;}}
 }})();
 </script></body></html>""", height=_total_h, scrolling=False)
 
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-        # ── IDX STOCK HEATMAP — PERTAMA (di atas) ─────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX STOCK HEATMAP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        components.html(_heatmap_html, height=680, scrolling=False)
-
-        # ── IDX MARKET MAP GLOBE — KEDUA (di bawah) ───────────────────────────
+        # ── IDX MARKET MAP GLOBE ───────────────────────────────────────────────
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         st.markdown(
             "<div class='trm-section'><div class='trm-section-line'></div>"
             "<span class='trm-section-label'>IDX MARKET MAP</span>"
             "<div class='trm-section-line'></div></div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<p style='color:#4a6a8a;font-size:0.82rem;margin:-4px 0 10px;'>"
-            "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
             unsafe_allow_html=True,
         )
         components.html(_idx_globe_html, height=960, scrolling=False)
@@ -10439,6 +10236,312 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                 <div style='padding:10px 14px; background:rgba(124,58,237,0.1); border-bottom:1px solid {met_border}; color:#8b5cf6; font-weight:bold; font-size:13px; font-family:'DM Sans',sans-serif; letter-spacing:0.08em;'>🌎 GLOBAL NEWS</div>
                 <div style='flex:1; overflow-y:auto; scrollbar-width:thin;'>{content_glob}</div>
             </div>""", unsafe_allow_html=True)
+
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+        # ─────────────────────────────────────────────────────────
+        # INDEX REBALANCING SCHEDULE — Economic Calendar Style
+        # Tanggal > 1 bulan lalu dihilangkan secara otomatis
+        # ─────────────────────────────────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 INDEX REBALANCING SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        from datetime import datetime as _dt_reb, timedelta as _td_reb
+        _today_reb = _dt_reb.today()
+        _cutoff_reb = _today_reb - _td_reb(days=32)  # hapus jika sudah >1 bulan lalu
+
+        # Data rebalancing: setiap entry punya list tanggal terpisah
+        # next_dates: list datetime untuk cek apakah masih relevan
+        # display_dates: string tanggal yang muncul di UI (hanya yang belum kadaluarsa)
+        _reb_events_raw = [
+            # ─── LOKAL ───
+            {
+                "indeks": "LQ45", "penyelenggara": "BEI", "periode": "Semi-Annual", "dampak": "HIGH",
+                "keterangan": "45 saham likuid terbesar IDX. Pengumuman ~2 minggu sebelum efektif. Saham masuk → akumulasi besar ETF LQ45/Reksa Dana.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
+                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
+                ],
+                "kategori": "🇮🇩 INDONESIA"
+            },
+            {
+                "indeks": "IDX30", "penyelenggara": "BEI", "periode": "Semi-Annual", "dampak": "MEDIUM",
+                "keterangan": "30 saham top LQ45. Rebalancing bersamaan LQ45. Dipakai produk ETF IDX30.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
+                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
+                ],
+                "kategori": "🇮🇩 INDONESIA"
+            },
+            {
+                "indeks": "IDX80 & IDX High Div 20", "penyelenggara": "BEI", "periode": "Semi-Annual", "dampak": "MEDIUM",
+                "keterangan": "80 saham likuid + 20 saham dividen tinggi dari IDX80. Rebalancing bersamaan LQ45/IDX30.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
+                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
+                ],
+                "kategori": "🇮🇩 INDONESIA"
+            },
+            {
+                "indeks": "KOMPAS100", "penyelenggara": "BEI + Kompas", "periode": "Semi-Annual", "dampak": "MEDIUM",
+                "keterangan": "100 saham fundamental kuat. Jadwal mengikuti LQ45.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,2,2), "label": "02 Feb 2026", "type": "Efektif", "pengumuman": "±19 Jan 2026"},
+                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
+                ],
+                "kategori": "🇮🇩 INDONESIA"
+            },
+            {
+                "indeks": "IDXBUMN20", "penyelenggara": "BEI", "periode": "Annual", "dampak": "MEDIUM",
+                "keterangan": "20 saham BUMN. Rebalancing tahunan. Perubahan signifikan ke saham BUMN.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,8,3), "label": "03 Agu 2026", "type": "Efektif", "pengumuman": "±20 Jul 2026"},
+                ],
+                "kategori": "🇮🇩 INDONESIA"
+            },
+            {
+                "indeks": "JII (Jakarta Islamic)", "penyelenggara": "BEI + DSN", "periode": "Semi-Annual", "dampak": "LOW",
+                "keterangan": "30 saham syariah terlikuid. Relevan untuk reksa dana syariah.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,6,1), "label": "01 Jun 2026", "type": "Efektif", "pengumuman": "±18 Mei 2026"},
+                    {"tgl": _dt_reb(2026,12,1), "label": "01 Des 2026", "type": "Efektif", "pengumuman": "±18 Nov 2026"},
+                ],
+                "kategori": "🇮🇩 INDONESIA"
+            },
+            # ─── GLOBAL ───
+            {
+                "indeks": "MSCI Indonesia", "penyelenggara": "MSCI", "periode": "Quarterly", "dampak": "HIGH",
+                "keterangan": "Capital flow terbesar di IDX. Saham masuk/keluar → dana asing pasif wajib beli/jual. Effective date: hari kerja terakhir bulan.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,2,27), "label": "27 Feb 2026", "type": "Efektif", "pengumuman": "~13 Feb 2026"},
+                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "~15 Mei 2026"},
+                    {"tgl": _dt_reb(2026,8,28), "label": "28 Agu 2026", "type": "Efektif", "pengumuman": "~14 Agu 2026"},
+                    {"tgl": _dt_reb(2026,11,27), "label": "27 Nov 2026", "type": "Efektif", "pengumuman": "~13 Nov 2026"},
+                ],
+                "kategori": "🌍 GLOBAL"
+            },
+            {
+                "indeks": "MSCI EM (IDX bobot)", "penyelenggara": "MSCI", "periode": "Quarterly", "dampak": "HIGH",
+                "keterangan": "Perubahan bobot Indonesia di MSCI EM (AUM ~$700B). Upgrade bobot = dana asing masuk proporsional.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,2,27), "label": "27 Feb 2026", "type": "Efektif", "pengumuman": "~13 Feb 2026"},
+                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "~15 Mei 2026"},
+                    {"tgl": _dt_reb(2026,8,28), "label": "28 Agu 2026", "type": "Efektif", "pengumuman": "~14 Agu 2026"},
+                    {"tgl": _dt_reb(2026,11,27), "label": "27 Nov 2026", "type": "Efektif", "pengumuman": "~13 Nov 2026"},
+                ],
+                "kategori": "🌍 GLOBAL"
+            },
+            {
+                "indeks": "FTSE Russell EM", "penyelenggara": "FTSE Russell", "periode": "Quarterly", "dampak": "HIGH",
+                "keterangan": "Review kuartalan FTSE EM. Perubahan bobot Indonesia → capital flow dari fund global.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,3,20), "label": "20 Mar 2026", "type": "Efektif", "pengumuman": "~6 Mar 2026"},
+                    {"tgl": _dt_reb(2026,6,19), "label": "19 Jun 2026", "type": "Efektif", "pengumuman": "~5 Jun 2026"},
+                    {"tgl": _dt_reb(2026,9,18), "label": "18 Sep 2026", "type": "Efektif", "pengumuman": "~4 Sep 2026"},
+                    {"tgl": _dt_reb(2026,12,18), "label": "18 Des 2026", "type": "Efektif", "pengumuman": "~4 Des 2026"},
+                ],
+                "kategori": "🌍 GLOBAL"
+            },
+            {
+                "indeks": "S&P DJI Indonesia", "penyelenggara": "S&P Global", "periode": "Semi-Annual", "dampak": "MEDIUM",
+                "keterangan": "S&P Indonesia BMI / S&P Indonesia Composite. Berpengaruh ke dana tracking S&P Index.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,6,19), "label": "19 Jun 2026", "type": "Efektif", "pengumuman": "~5 Jun 2026"},
+                    {"tgl": _dt_reb(2026,12,18), "label": "18 Des 2026", "type": "Efektif", "pengumuman": "~4 Des 2026"},
+                ],
+                "kategori": "🌍 GLOBAL"
+            },
+            {
+                "indeks": "MSCI ACWI (Ex-US)", "penyelenggara": "MSCI", "periode": "Quarterly", "dampak": "MEDIUM",
+                "keterangan": "Perubahan bobot emerging vs developed berdampak ke aliran dana global ke IDX.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,2,27), "label": "27 Feb 2026", "type": "Efektif", "pengumuman": "~13 Feb 2026"},
+                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "~15 Mei 2026"},
+                    {"tgl": _dt_reb(2026,8,28), "label": "28 Agu 2026", "type": "Efektif", "pengumuman": "~14 Agu 2026"},
+                    {"tgl": _dt_reb(2026,11,27), "label": "27 Nov 2026", "type": "Efektif", "pengumuman": "~13 Nov 2026"},
+                ],
+                "kategori": "🌍 GLOBAL"
+            },
+            {
+                "indeks": "JP Morgan GBI-EM", "penyelenggara": "JP Morgan", "periode": "Monthly", "dampak": "MEDIUM",
+                "keterangan": "Bond index. Rebalancing bulanan akhir bulan. Berdampak ke IDR & yield SBN → valuation saham IDX.",
+                "dates": [
+                    {"tgl": _dt_reb(2026,4,30), "label": "30 Apr 2026", "type": "Efektif", "pengumuman": "Mid-Apr"},
+                    {"tgl": _dt_reb(2026,5,29), "label": "29 Mei 2026", "type": "Efektif", "pengumuman": "Mid-Mei"},
+                    {"tgl": _dt_reb(2026,6,30), "label": "30 Jun 2026", "type": "Efektif", "pengumuman": "Mid-Jun"},
+                    {"tgl": _dt_reb(2026,7,31), "label": "31 Jul 2026", "type": "Efektif", "pengumuman": "Mid-Jul"},
+                    {"tgl": _dt_reb(2026,8,31), "label": "31 Agu 2026", "type": "Efektif", "pengumuman": "Mid-Agu"},
+                ],
+                "kategori": "🌍 GLOBAL"
+            },
+        ]
+
+        # ── Filter: hapus event yang SEMUA tanggalnya sudah > 1 bulan lalu ──
+        # Untuk entry dengan multiple dates, tampilkan hanya tanggal yg belum kadaluarsa
+        _reb_events_filtered = []
+        for ev in _reb_events_raw:
+            _valid_dates = [d for d in ev["dates"] if d["tgl"] >= _cutoff_reb]
+            if _valid_dates:
+                ev_copy = dict(ev)
+                ev_copy["dates"] = _valid_dates
+                # Ambil tanggal terdekat sebagai next_date untuk sorting
+                ev_copy["next_date"] = min(d["tgl"] for d in _valid_dates)
+                _reb_events_filtered.append(ev_copy)
+
+        # Sort by next_date ascending (event terdekat dulu)
+        _reb_events_filtered.sort(key=lambda x: x["next_date"])
+
+        # Build JSON untuk JS
+        import json as _reb_json_v2
+        _reb_js_data = []
+        for ev in _reb_events_filtered:
+            _days_to_next = (ev["next_date"] - _today_reb).days
+            _reb_js_data.append({
+                "indeks": ev["indeks"],
+                "penyelenggara": ev["penyelenggara"],
+                "periode": ev["periode"],
+                "dampak": ev["dampak"],
+                "keterangan": ev["keterangan"],
+                "kategori": ev["kategori"],
+                "next_label": ev["dates"][0]["label"],
+                "next_type": ev["dates"][0]["type"],
+                "pengumuman": ev["dates"][0]["pengumuman"],
+                "days_to": _days_to_next,
+                "all_dates": [{"label": d["label"], "type": d["type"]} for d in ev["dates"]],
+            })
+        _reb_js_str = _reb_json_v2.dumps(_reb_js_data, ensure_ascii=False)
+
+        components.html(f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding:0;}}
+.reb-wrap{{display:flex;flex-direction:column;gap:8px;}}
+.day-group-header{{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 14px;margin-top:4px;
+  font-size:0.78rem;font-weight:700;letter-spacing:0.09em;
+  color:rgba(139,92,246,0.7);background:rgba(139,92,246,0.06);
+  border-radius:8px;border-left:3px solid rgba(139,92,246,0.5);
+}}
+.reb-card{{
+  background:{met_bg};border:1px solid {met_border};
+  border-radius:10px;overflow:hidden;
+  transition:border-color 0.2s;
+}}
+.reb-card:hover{{border-color:rgba(139,92,246,0.35);}}
+.card-left{{
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  min-width:68px;padding:10px 8px;
+  background:rgba(139,92,246,0.07);border-right:1px solid {met_border};
+  flex-shrink:0;
+}}
+.card-day{{font-size:1.4rem;font-weight:800;color:{text_main};line-height:1;}}
+.card-mon{{font-size:0.65rem;text-transform:uppercase;color:{text_sub};letter-spacing:0.1em;margin-top:2px;}}
+.card-countdown{{
+  font-size:0.65rem;font-weight:600;
+  padding:2px 6px;border-radius:4px;margin-top:4px;
+  white-space:nowrap;
+}}
+.card-body{{display:flex;flex:1;gap:0;flex-wrap:wrap;padding:10px 12px;align-items:center;gap:10px;}}
+.card-main{{flex:1;min-width:0;}}
+.card-title{{font-size:0.92rem;font-weight:700;color:{text_main};}}
+.card-org{{font-size:0.73rem;color:{text_sub};margin-top:1px;}}
+.card-ket{{font-size:0.78rem;color:{text_sub};margin-top:4px;line-height:1.45;}}
+.card-meta{{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}}
+.bdg{{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.72rem;font-weight:700;white-space:nowrap;}}
+.card-type{{font-size:0.7rem;color:{text_sub};}}
+.card-pengumuman{{font-size:0.7rem;color:{text_sub};}}
+.all-dates{{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}}
+.date-chip{{font-size:0.68rem;padding:2px 7px;border-radius:10px;
+  background:rgba(255,255,255,0.04);border:1px solid {met_border};color:{text_sub};}}
+@media(max-width:540px){{
+  .card-body{{flex-direction:column;align-items:flex-start;}}
+  .card-meta{{align-items:flex-start;flex-direction:row;flex-wrap:wrap;}}
+  .card-left{{min-width:56px;}}
+  .card-day{{font-size:1.15rem;}}
+}}
+</style></head><body>
+<div class="reb-wrap" id="reb-container"></div>
+<script>
+(function(){{
+  var DATA={_reb_js_str};
+  var CLR={{"HIGH":"#f23645","MEDIUM":"#f59e0b","LOW":"#4285F4"}};
+  var BG={{"HIGH":"rgba(242,54,69,0.13)","MEDIUM":"rgba(245,158,11,0.13)","LOW":"rgba(66,133,244,0.11)"}};
+  var MONTHS=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+
+  function parseDate(label){{
+    var parts=label.split(' ');
+    if(parts.length<3) return null;
+    var day=parseInt(parts[0]);
+    var mon=MONTHS.indexOf(parts[1]);
+    var yr=parseInt(parts[2]);
+    return {{day:day,mon:mon,yr:yr}};
+  }}
+
+  function countdown(days){{
+    if(days<0) return {{txt:'Sudah Lewat',cls:'color:#6a8a9a;background:rgba(106,138,154,0.1);border:1px solid rgba(106,138,154,0.2)'}};
+    if(days===0) return {{txt:'HARI INI',cls:'color:#f23645;background:rgba(242,54,69,0.15);border:1px solid rgba(242,54,69,0.4)'}};
+    if(days===1) return {{txt:'Besok',cls:'color:#f59e0b;background:rgba(245,158,11,0.13);border:1px solid rgba(245,158,11,0.4)'}};
+    if(days<=7) return {{txt:days+' hari lagi',cls:'color:#f59e0b;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3)'}};
+    if(days<=30) return {{txt:days+' hari lagi',cls:'color:#4285F4;background:rgba(66,133,244,0.1);border:1px solid rgba(66,133,244,0.3)'}};
+    return {{txt:days+' hari lagi',cls:'color:#6a8a9a;background:rgba(106,138,154,0.06);border:1px solid rgba(106,138,154,0.2)'}};
+  }}
+
+  var container=document.getElementById('reb-container');
+  var lastKat='';
+  var h='';
+
+  DATA.forEach(function(ev){{
+    if(ev.kategori!==lastKat){{
+      h+='<div class="day-group-header">'+ev.kategori+'</div>';
+      lastKat=ev.kategori;
+    }}
+    var dk=ev.dampak;
+    var clr=CLR[dk]||'#b2b5be';
+    var bg=BG[dk]||'rgba(178,181,190,0.08)';
+    var cd=countdown(ev.days_to);
+    var pd=parseDate(ev.next_label);
+    var dayStr=pd?pd.day:'—';
+    var monStr=pd?MONTHS[pd.mon]+' '+pd.yr:'';
+    // All dates chips (skip first if only 1, or show all)
+    var chipsHtml='';
+    if(ev.all_dates.length>1){{
+      chipsHtml='<div class="all-dates">';
+      ev.all_dates.forEach(function(d,i){{
+        chipsHtml+='<span class="date-chip'+(i===0?' style="border-color:'+clr+'44;color:'+clr+';"':'')+'">'+(i===0?'▶ ':'')+d.label+'</span>';
+      }});
+      chipsHtml+='</div>';
+    }}
+    h+='<div class="reb-card"><div style="display:flex;">'+
+      '<div class="card-left">'+
+        '<div class="card-day">'+dayStr+'</div>'+
+        '<div class="card-mon">'+monStr+'</div>'+
+        '<div class="card-countdown" style="'+cd.cls+'">'+cd.txt+'</div>'+
+      '</div>'+
+      '<div class="card-body">'+
+        '<div class="card-main">'+
+          '<div class="card-title">'+ev.indeks+'</div>'+
+          '<div class="card-org">'+ev.penyelenggara+' &nbsp;·&nbsp; '+ev.periode+'</div>'+
+          '<div class="card-ket">'+ev.keterangan+'</div>'+
+          chipsHtml+
+        '</div>'+
+        '<div class="card-meta">'+
+          '<span class="bdg" style="background:'+bg+';color:'+clr+';border:1px solid '+clr+'44;">'+dk+'</span>'+
+          '<div class="card-type">'+ev.next_type+'</div>'+
+          '<div class="card-pengumuman">Pengumuman: '+ev.pengumuman+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div></div>';
+  }});
+  container.innerHTML=h;
+
+  function resize(){{
+    var ht=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)+8;
+    try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:ht}},'*');}}catch(e){{}}
+  }}
+  setTimeout(resize,120);setTimeout(resize,600);setTimeout(resize,1400);
+}})();
+</script></body></html>""", height=800, scrolling=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # ─────────────────────────────────────────────────────────
@@ -11314,109 +11417,6 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 </body>
 </html>
         """, height=1200, scrolling=False)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        # ─────────────────────────────────────────────────────────
-        # INDEX REBALANCING SCHEDULE — LQ45, MSCI, FTSE, dll
-        # ─────────────────────────────────────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📊 INDEX REBALANCING SCHEDULE</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""
-        <p style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:14px;line-height:1.65;'>
-        Jadwal rebalancing indeks lokal &amp; global yang berdampak ke saham-saham IDX.
-        Saat rebalancing: dana pasif (ETF/fund) wajib beli/jual sesuai perubahan komposisi —
-        <b style='color:#ffd700;'>bisa terjadi capital inflow/outflow besar ke IDX.</b>
-        </p>
-        """, unsafe_allow_html=True)
-
-        _reb_data = [
-            {"indeks":"LQ45","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"HIGH","keterangan":"45 saham likuid terbesar IDX. Efektif awal Februari & Agustus. Pengumuman ~2 minggu sebelumnya. Saham masuk → beli besar ETF LQ45/Reksa Dana."},
-            {"indeks":"IDX30","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"30 saham top LQ45. Rebalancing bersamaan LQ45. Digunakan produk ETF IDX30."},
-            {"indeks":"IDX80","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"80 saham likuid. Basis IDX High Dividend 20. Rebalancing bersamaan LQ45/IDX30."},
-            {"indeks":"IDX High Div 20","penyelenggara":"BEI","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"20 saham dividen tinggi dari IDX80. Populer untuk reksa dana & ETF dividen."},
-            {"indeks":"KOMPAS100","penyelenggara":"BEI+Kompas","periode":"Semi-Annual","bulan":"Feb & Agu","tanggal_2026":"02 Feb 2026 / 03 Agu 2026","dampak":"MEDIUM","keterangan":"100 saham fundamental kuat. Jadwal rebalancing mengikuti LQ45."},
-            {"indeks":"IDXBUMN20","penyelenggara":"BEI","periode":"Annual","bulan":"Agu","tanggal_2026":"03 Agu 2026","dampak":"MEDIUM","keterangan":"20 saham BUMN. Rebalancing tahunan. Perubahan bisa mempengaruhi saham BUMN secara signifikan."},
-            {"indeks":"JII (Jakarta Islamic)","penyelenggara":"BEI+DSN","periode":"Semi-Annual","bulan":"Jun & Des","tanggal_2026":"01 Jun 2026 / 01 Des 2026","dampak":"LOW","keterangan":"30 saham syariah terlikuid. Rebalancing Juni & Desember. Relevan untuk reksa dana syariah."},
-            {"indeks":"MSCI Indonesia","penyelenggara":"MSCI","periode":"Quarterly","bulan":"Feb/Mei/Agu/Nov","tanggal_2026":"27 Feb / 29 Mei / 28 Agu / 27 Nov 2026","dampak":"HIGH","keterangan":"Review kuartalan MSCI EM. Saham masuk/keluar MSCI Indonesia → dana asing pasif wajib beli/jual. Capital flow terbesar di IDX. Effective date: hari kerja terakhir bulan."},
-            {"indeks":"MSCI EM (IDX bobot)","penyelenggara":"MSCI","periode":"Quarterly","bulan":"Feb/Mei/Agu/Nov","tanggal_2026":"27 Feb / 29 Mei / 28 Agu / 27 Nov 2026","dampak":"HIGH","keterangan":"Perubahan bobot Indonesia di MSCI EM (AUM ~$700B) → inflow/outflow besar ke seluruh IDX. Upgrade bobot = dana asing masuk proporsional."},
-            {"indeks":"FTSE Russell EM","penyelenggara":"FTSE Russell","periode":"Quarterly","bulan":"Mar/Jun/Sep/Des","tanggal_2026":"20 Mar / 19 Jun / 18 Sep / 18 Des 2026","dampak":"HIGH","keterangan":"Review kuartalan FTSE EM Index. Indonesia sebagai constituent. Perubahan bobot → capital flow dari fund global tracking FTSE."},
-            {"indeks":"S&P DJI Indonesia","penyelenggara":"S&P Global","periode":"Semi-Annual","bulan":"Jun & Des","tanggal_2026":"19 Jun 2026 / 18 Des 2026","dampak":"MEDIUM","keterangan":"Rebalancing S&P Indonesia BMI / S&P Indonesia Composite. Berpengaruh ke dana tracking S&P Index."},
-            {"indeks":"MSCI ACWI (Ex-US)","penyelenggara":"MSCI","periode":"Quarterly","bulan":"Feb/Mei/Agu/Nov","tanggal_2026":"27 Feb / 29 Mei / 28 Agu / 27 Nov 2026","dampak":"MEDIUM","keterangan":"All Country World Index. Perubahan bobot emerging vs developed berdampak ke aliran dana global ke IDX."},
-            {"indeks":"JP Morgan GBI-EM","penyelenggara":"JP Morgan","periode":"Monthly","bulan":"Tiap Bulan","tanggal_2026":"Akhir setiap bulan","dampak":"MEDIUM","keterangan":"Bond index. Rebalancing bulanan. Berdampak ke IDR & yield SBN yang mempengaruhi valuation saham IDX."},
-        ]
-        _reb_clr = {"HIGH":"#f23645","MEDIUM":"#f59e0b","LOW":"#4285F4"}
-        _reb_bg  = {"HIGH":"rgba(242,54,69,0.13)","MEDIUM":"rgba(245,158,11,0.13)","LOW":"rgba(66,133,244,0.11)"}
-        import json as _reb_json_mod
-        _reb_json_str = _reb_json_mod.dumps(_reb_data, ensure_ascii=False)
-        _reb_clr_str  = _reb_json_mod.dumps(_reb_clr)
-        _reb_bg_str   = _reb_json_mod.dumps(_reb_bg)
-
-        components.html(f"""<!DOCTYPE html><html><head>
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'DM Sans',sans-serif;}}
-.reb-wrap{{background:{met_bg};border:1px solid {met_border};border-radius:10px;overflow:hidden;}}
-.hint{{display:none;text-align:center;font-size:0.8rem;color:{text_sub};padding:3px 0;letter-spacing:0.08em;border-bottom:1px solid {met_border};}}
-.scroll-box{{width:100%;max-height:440px;overflow-x:auto;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:{met_border} transparent;}}
-.scroll-box::-webkit-scrollbar{{width:5px;height:5px;}}
-.scroll-box::-webkit-scrollbar-thumb{{background:{met_border};border-radius:10px;}}
-table{{width:max-content;min-width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;}}
-thead th{{position:sticky;top:0;z-index:2;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:9px 12px;text-align:left;border-bottom:1px solid {met_border};letter-spacing:0.06em;font-weight:700;font-size:0.75rem;white-space:nowrap;}}
-tbody td{{padding:9px 12px;border-bottom:1px solid {met_border};color:{text_main};vertical-align:top;font-size:0.8rem;}}
-tbody tr:last-child td{{border-bottom:none;}}
-tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
-.sep-row td{{padding:4px 12px;font-size:0.72rem;letter-spacing:0.1em;color:rgba(139,92,246,0.55);background:rgba(139,92,246,0.04);border-bottom:1px solid rgba(139,92,246,0.12);font-weight:700;white-space:nowrap;}}
-.bdg{{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.75rem;font-weight:700;white-space:nowrap;}}
-.idx-name{{font-weight:700;font-size:0.875rem;color:{text_main};white-space:nowrap;}}
-.idx-org{{font-size:0.72rem;color:{text_sub};margin-top:2px;white-space:nowrap;}}
-.ket{{font-size:0.8rem;color:{text_sub};white-space:normal;max-width:340px;line-height:1.45;}}
-.tgl{{font-size:0.78rem;color:{text_main};white-space:nowrap;}}
-.per{{font-size:0.8rem;color:{text_sub};white-space:nowrap;}}
-@media(max-width:600px){{.hint{{display:block;}}thead th{{font-size:0.7rem;padding:7px 8px;}}tbody td{{padding:7px 8px;}}}}
-</style></head><body>
-<div class="reb-wrap">
-  <div class="hint">← geser kiri / kanan →</div>
-  <div class="scroll-box">
-    <table>
-      <thead><tr>
-        <th>INDEKS</th><th>PERIODE</th><th>BULAN</th><th>TANGGAL 2026</th><th>DAMPAK</th><th>KETERANGAN</th>
-      </tr></thead>
-      <tbody id="reb-tb"></tbody>
-    </table>
-  </div>
-</div>
-<script>
-(function(){{
-  var ROWS={_reb_json_str};
-  var CLR={_reb_clr_str};
-  var BG={_reb_bg_str};
-  var _lokal=['BEI','BEI+Kompas','BEI+DSN'];
-  var lastSep='',h='';
-  ROWS.forEach(function(r){{
-    var isLocal=_lokal.indexOf(r['penyelenggara'])>=0;
-    var sep=isLocal?'\U0001f1ee\U0001f1e9 INDEKS INDONESIA':'\U0001f30d INDEKS GLOBAL (Dampak ke IDX)';
-    if(sep!==lastSep){{h+='<tr class="sep-row"><td colspan="6">'+sep+'</td></tr>';lastSep=sep;}}
-    var dk=r['dampak'];
-    var clr=CLR[dk]||'#b2b5be';
-    var bg=BG[dk]||'rgba(178,181,190,0.08)';
-    h+='<tr>'+
-      '<td><div class="idx-name">'+r['indeks']+'</div><div class="idx-org">'+r['penyelenggara']+'</div></td>'+
-      '<td class="per">'+r['periode']+'</td>'+
-      '<td class="per">'+r['bulan']+'</td>'+
-      '<td class="tgl">'+r['tanggal_2026']+'</td>'+
-      '<td><span class="bdg" style="background:'+bg+';color:'+clr+';border:1px solid '+clr+'44;">'+dk+'</span></td>'+
-      '<td class="ket">'+r['keterangan']+'</td>'+
-      '</tr>';
-  }});
-  document.getElementById('reb-tb').innerHTML=h;
-  function resize(){{
-    var h2=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)+4;
-    try{{window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h2}},'*');}}catch(e){{}}
-  }}
-  setTimeout(resize,100);setTimeout(resize,500);
-}})();
-</script></body></html>""", height=520, scrolling=False)
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
