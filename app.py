@@ -8520,15 +8520,6 @@ const OWNER_HEX = {
 // ============================================================
 // BUILD UI
 // ============================================================
-// Owner legend
-const ownerLegendEl = document.getElementById('owner-legend');
-Object.entries(OWNER_HEX).forEach(([o,c])=>{
-  const d=document.createElement('div');
-  d.className='owner-item';
-  d.innerHTML=`<div class="owner-dot" style="background:${c}"></div>${o}`;
-  ownerLegendEl.appendChild(d);
-});
-
 // Top 10 — sorted by market cap
 const top10el = document.getElementById('top10-list');
 [...STOCKS].sort((a,b)=>b.cap-a.cap).slice(0,10).forEach((s,i)=>{
@@ -8552,17 +8543,19 @@ function showInfo(s){
   document.getElementById('si-vol').textContent=s.vol;
 }
 
-// Dynamic stats
-document.getElementById('mo-total').textContent = STOCKS.length;
+// Dynamic stats (null-safe — some panels may not exist)
+function _setTxt(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+_setTxt('mo-total', STOCKS.length);
 const totalCap = STOCKS.reduce((a,s)=>a+s.cap,0);
-document.getElementById('mo-cap').textContent = 'IDR '+totalCap.toLocaleString()+' T';
+_setTxt('mo-cap', 'IDR '+totalCap.toLocaleString()+' T');
 const msciCount = STOCKS.filter(s=>s.msci).length;
-document.getElementById('mo-msci').textContent = msciCount+' saham';
-document.getElementById('stock-count-display').textContent = STOCKS.length+' Stocks Listed';
+_setTxt('mo-msci', msciCount+' saham');
+_setTxt('stock-count-display', STOCKS.length+' Stocks Listed');
 
-// World mini map
+// World mini map (null-safe)
 (function(){
   const c=document.getElementById('world-mini');
+  if(!c) return;
   const ctx=c.getContext('2d');
   ctx.fillStyle='#03091a';
   ctx.fillRect(0,0,200,88);
@@ -9085,7 +9078,7 @@ function doZoom(delta){
 }
 function toggleInfoPanel(){
   const p=document.getElementById('stock-info-panel');
-  p.style.display=p.style.display==='none'?'':'none';
+  if(p) p.style.display=p.style.display==='none'?'':'none';
 }
 
 // ============================================================
@@ -10383,18 +10376,19 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             if _valid_dates:
                 ev_copy = dict(ev)
                 ev_copy["dates"] = _valid_dates
-                # Ambil tanggal terdekat sebagai next_date untuk sorting
+                # Ambil tanggal efektif terdekat sebagai acuan sort
                 ev_copy["next_date"] = min(d["tgl"] for d in _valid_dates)
                 _reb_events_filtered.append(ev_copy)
 
         # Sort by next_date ascending (event terdekat dulu)
         _reb_events_filtered.sort(key=lambda x: x["next_date"])
 
-        # Build JSON untuk JS
+        # Build JSON untuk JS — setiap entry punya next_efektif + pengumuman label
         import json as _reb_json_v2
         _reb_js_data = []
         for ev in _reb_events_filtered:
-            _days_to_next = (ev["next_date"] - _today_reb).days
+            _nd = ev["dates"][0]  # tanggal efektif terdekat
+            _days_to_efektif = (ev["next_date"] - _today_reb).days
             _reb_js_data.append({
                 "indeks": ev["indeks"],
                 "penyelenggara": ev["penyelenggara"],
@@ -10402,11 +10396,13 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                 "dampak": ev["dampak"],
                 "keterangan": ev["keterangan"],
                 "kategori": ev["kategori"],
-                "next_label": ev["dates"][0]["label"],
-                "next_type": ev["dates"][0]["type"],
-                "pengumuman": ev["dates"][0]["pengumuman"],
-                "days_to": _days_to_next,
-                "all_dates": [{"label": d["label"], "type": d["type"]} for d in ev["dates"]],
+                # Efektif date (primary countdown)
+                "efektif_label": _nd["label"],
+                "days_to_efektif": _days_to_efektif,
+                # Pengumuman (shown as secondary info)
+                "pengumuman": _nd["pengumuman"],
+                # All future efektif dates for chips
+                "all_dates": [{"label": d["label"]} for d in ev["dates"]],
             })
         _reb_js_str = _reb_json_v2.dumps(_reb_js_data, ensure_ascii=False)
 
@@ -10431,10 +10427,11 @@ body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding
 .reb-card:hover{{border-color:rgba(139,92,246,0.35);}}
 .card-left{{
   display:flex;flex-direction:column;justify-content:center;align-items:center;
-  min-width:68px;padding:10px 8px;
+  min-width:72px;padding:10px 8px;
   background:rgba(139,92,246,0.07);border-right:1px solid {met_border};
   flex-shrink:0;
 }}
+.card-label-top{{font-size:0.6rem;text-transform:uppercase;color:{text_sub};letter-spacing:0.1em;margin-bottom:2px;}}
 .card-day{{font-size:1.4rem;font-weight:800;color:{text_main};line-height:1;}}
 .card-mon{{font-size:0.65rem;text-transform:uppercase;color:{text_sub};letter-spacing:0.1em;margin-top:2px;}}
 .card-countdown{{
@@ -10447,17 +10444,23 @@ body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding
 .card-title{{font-size:0.92rem;font-weight:700;color:{text_main};}}
 .card-org{{font-size:0.73rem;color:{text_sub};margin-top:1px;}}
 .card-ket{{font-size:0.78rem;color:{text_sub};margin-top:4px;line-height:1.45;}}
-.card-meta{{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;}}
+.card-meta{{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}}
 .bdg{{display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.72rem;font-weight:700;white-space:nowrap;}}
-.card-type{{font-size:0.7rem;color:{text_sub};}}
-.card-pengumuman{{font-size:0.7rem;color:{text_sub};}}
-.all-dates{{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}}
+.card-timeline{{display:flex;flex-direction:column;gap:0;align-items:flex-end;}}
+.tl-row{{display:flex;align-items:center;gap:5px;}}
+.tl-dot{{width:7px;height:7px;border-radius:50%;flex-shrink:0;}}
+.tl-lbl{{font-size:0.68rem;color:{text_sub};white-space:nowrap;}}
+.tl-val{{font-size:0.72rem;color:{text_main};font-weight:600;white-space:nowrap;margin-left:4px;}}
+.tl-line{{width:1px;height:10px;background:{met_border};margin:1px 3px 1px auto;}}
+.all-dates{{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}}
 .date-chip{{font-size:0.68rem;padding:2px 7px;border-radius:10px;
   background:rgba(255,255,255,0.04);border:1px solid {met_border};color:{text_sub};}}
 @media(max-width:540px){{
   .card-body{{flex-direction:column;align-items:flex-start;}}
   .card-meta{{align-items:flex-start;flex-direction:row;flex-wrap:wrap;}}
-  .card-left{{min-width:56px;}}
+  .card-timeline{{align-items:flex-start;}}
+  .tl-line{{display:none;}}
+  .card-left{{min-width:60px;}}
   .card-day{{font-size:1.15rem;}}
 }}
 </style></head><body>
@@ -10499,21 +10502,27 @@ body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding
     var dk=ev.dampak;
     var clr=CLR[dk]||'#b2b5be';
     var bg=BG[dk]||'rgba(178,181,190,0.08)';
-    var cd=countdown(ev.days_to);
-    var pd=parseDate(ev.next_label);
+
+    // Parse efektif date for display
+    var pd=parseDate(ev.efektif_label);
     var dayStr=pd?pd.day:'—';
-    var monStr=pd?MONTHS[pd.mon]+' '+pd.yr:'';
-    // All dates chips (skip first if only 1, or show all)
+    var monStr=pd?(MONTHS[pd.mon]+' '+pd.yr):'';
+    var cd=countdown(ev.days_to_efektif);
+
+    // Build date chips (remaining efektif dates)
     var chipsHtml='';
     if(ev.all_dates.length>1){{
       chipsHtml='<div class="all-dates">';
       ev.all_dates.forEach(function(d,i){{
-        chipsHtml+='<span class="date-chip'+(i===0?' style="border-color:'+clr+'44;color:'+clr+';"':'')+'">'+(i===0?'▶ ':'')+d.label+'</span>';
+        chipsHtml+='<span class="date-chip" style="'+(i===0?'border-color:'+clr+'55;color:'+clr+';':'')+'">'+(i===0?'▶ ':'')+d.label+'</span>';
       }});
       chipsHtml+='</div>';
     }}
+
+    // Card: LEFT = efektif date+countdown | BODY = info | META = badge + pengumuman → efektif row
     h+='<div class="reb-card"><div style="display:flex;">'+
       '<div class="card-left">'+
+        '<div class="card-label-top">Efektif</div>'+
         '<div class="card-day">'+dayStr+'</div>'+
         '<div class="card-mon">'+monStr+'</div>'+
         '<div class="card-countdown" style="'+cd.cls+'">'+cd.txt+'</div>'+
@@ -10527,8 +10536,11 @@ body{{background:transparent;font-family:'DM Sans','Segoe UI',sans-serif;padding
         '</div>'+
         '<div class="card-meta">'+
           '<span class="bdg" style="background:'+bg+';color:'+clr+';border:1px solid '+clr+'44;">'+dk+'</span>'+
-          '<div class="card-type">'+ev.next_type+'</div>'+
-          '<div class="card-pengumuman">Pengumuman: '+ev.pengumuman+'</div>'+
+          '<div class="card-timeline">'+
+            '<div class="tl-row"><span class="tl-dot" style="background:#f59e0b;"></span><span class="tl-lbl">Pengumuman</span><span class="tl-val">'+ev.pengumuman+'</span></div>'+
+            '<div class="tl-line"></div>'+
+            '<div class="tl-row"><span class="tl-dot" style="background:'+clr+';"></span><span class="tl-lbl">Efektif</span><span class="tl-val">'+ev.efektif_label+'</span></div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
     '</div></div>';
