@@ -3545,9 +3545,21 @@ os.makedirs(DATA_DIR, exist_ok=True)
 # =========================================================
 def _ukey(email): return hashlib.md5(email.encode()).hexdigest()
 
-def _get_db_sheet(sheet_name: str):
-    """Connect ke SIGMA_DATABASE dan return worksheet dengan nama sheet_name.
-    Buat worksheet baru otomatis jika belum ada."""
+# ═══════════════════════════════════════════════════════════════
+# SIGMA DATABASE — Google Sheets Persistent Storage
+# Sheet: SIGMA_DATABASE → worksheet "users" (1 row per user)
+# Format: key=email_hash, value=JSON blob semua data user
+# ═══════════════════════════════════════════════════════════════
+
+# In-memory cache: worksheet object + row index
+_db_ws_cache   = {}   # {sheet_name: worksheet_object}
+_db_row_index  = {}   # {sheet_name: {key: row_number}}
+_db_data_cache = {}   # {sheet_name: {key: value}}
+_db_cache_ts   = {}   # {sheet_name: float timestamp}
+_CACHE_TTL     = 60   # detik sebelum re-fetch dari Sheets
+
+def _get_gspread_client():
+    """Return authorized gspread client. Cache di session_state."""
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -3557,83 +3569,110 @@ def _get_db_sheet(sheet_name: str):
             "https://www.googleapis.com/auth/drive",
         ]
         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-        gc = gspread.authorize(creds)
+        return gspread.authorize(creds)
+    except Exception as _e:
+        return None
+
+def _get_db_sheet(sheet_name: str):
+    """Return worksheet object. Cache in-process."""
+    if sheet_name in _db_ws_cache:
+        return _db_ws_cache[sheet_name]
+    gc = _get_gspread_client()
+    if gc is None:
+        return None
+    try:
+        import gspread
         sid = st.secrets["gsheets"]["spreadsheet_database"]
-        wb = gc.open_by_key(sid)
+        wb  = gc.open_by_key(sid)
         try:
             ws = wb.worksheet(sheet_name)
         except gspread.exceptions.WorksheetNotFound:
-            ws = wb.add_worksheet(title=sheet_name, rows=5000, cols=5)
+            ws = wb.add_worksheet(title=sheet_name, rows=2000, cols=3)
             ws.append_row(["key", "value", "updated_at"])
+        _db_ws_cache[sheet_name] = ws
         return ws
-    except Exception as e:
+    except Exception:
         return None
 
-# ── In-memory cache untuk kurangi API calls ke Sheets ──
-_db_cache: dict = {}  # {sheet_name: {key: value}}
-_db_cache_ts: dict = {}  # {sheet_name: timestamp}
-_CACHE_TTL = 30  # detik
+def _db_load_sheet(sheet_name: str) -> dict:
+    """Fetch seluruh sheet → dict {key: parsed_value}. Dengan TTL cache."""
+    now = time.time()
+    if sheet_name in _db_data_cache and (now - _db_cache_ts.get(sheet_name, 0)) < _CACHE_TTL:
+        return _db_data_cache[sheet_name]
+    ws = _get_db_sheet(sheet_name)
+    if ws is None:
+        return _db_data_cache.get(sheet_name, {})
+    try:
+        all_vals = ws.get_all_values()   # lebih cepat dari get_all_records
+        result   = {}
+        row_idx  = {}
+        for i, row in enumerate(all_vals):
+            if i == 0: continue          # skip header
+            if not row or not row[0].strip(): continue
+            k = row[0].strip()
+            v = row[1].strip() if len(row) > 1 else ""
+            try:    result[k] = json.loads(v)
+            except: result[k] = v
+            row_idx[k] = i + 1          # 1-indexed row number di Sheets
+        _db_data_cache[sheet_name] = result
+        _db_row_index[sheet_name]  = row_idx
+        _db_cache_ts[sheet_name]   = now
+        return result
+    except Exception:
+        return _db_data_cache.get(sheet_name, {})
 
 def _db_read_all(sheet_name: str) -> dict:
-    """Baca semua rows dari worksheet, return dict {key: value}. Dengan cache."""
-    now = time.time()
-    if sheet_name in _db_cache and (now - _db_cache_ts.get(sheet_name, 0)) < _CACHE_TTL:
-        return _db_cache[sheet_name]
-    ws = _get_db_sheet(sheet_name)
-    if ws is None:
-        return _db_cache.get(sheet_name, {})
-    try:
-        rows = ws.get_all_records()
-        result = {}
-        for row in rows:
-            k = str(row.get("key", "")).strip()
-            v = str(row.get("value", "")).strip()
-            if k:
-                try: result[k] = json.loads(v)
-                except: result[k] = v
-        _db_cache[sheet_name] = result
-        _db_cache_ts[sheet_name] = now
-        return result
-    except:
-        return _db_cache.get(sheet_name, {})
+    """Public alias untuk _db_load_sheet."""
+    return _db_load_sheet(sheet_name)
 
 def _db_write(sheet_name: str, key: str, value) -> bool:
-    """Tulis satu key-value ke worksheet. Update row jika key sudah ada."""
+    """Tulis key-value ke worksheet (upsert). Return True jika berhasil."""
     ws = _get_db_sheet(sheet_name)
+    # Fallback lokal kalau Sheets tidak available
     if ws is None:
-        # Fallback ke file lokal jika Sheets tidak available
         try:
-            p = os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json")
-            with open(p, "w") as f: json.dump(value, f, ensure_ascii=False)
+            with open(os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json"), "w") as _f:
+                json.dump(value, _f, ensure_ascii=False)
         except: pass
         return False
     try:
         value_str = json.dumps(value, ensure_ascii=False)
-        # Update cache dulu
-        if sheet_name not in _db_cache: _db_cache[sheet_name] = {}
-        _db_cache[sheet_name][key] = value
-        _db_cache_ts[sheet_name] = time.time()
-        # Cek apakah key sudah ada
+        now_str   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # Pastikan data cache ter-load supaya row_index akurat
+        _db_load_sheet(sheet_name)
+
+        row_idx = _db_row_index.get(sheet_name, {}).get(key)
+        if row_idx:
+            # Update row yang sudah ada (2 cell sekaligus)
+            ws.update(f"B{row_idx}:C{row_idx}", [[value_str, now_str]])
+        else:
+            # Tambah row baru
+            ws.append_row([key, value_str, now_str], value_input_option="RAW")
+            # Update index cache
+            if sheet_name not in _db_row_index:
+                _db_row_index[sheet_name] = {}
+            # Row baru ada di akhir — invalidate cache agar re-fetch
+            _db_cache_ts[sheet_name] = 0
+
+        # Update in-memory cache
+        if sheet_name not in _db_data_cache:
+            _db_data_cache[sheet_name] = {}
+        _db_data_cache[sheet_name][key] = value
+
+        # Tulis fallback lokal juga (double-safety)
         try:
-            cell = ws.find(key, in_column=1)
-            ws.update_cell(cell.row, 2, value_str)
-            ws.update_cell(cell.row, 3, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        except gspread.exceptions.CellNotFound:
-            ws.append_row([key, value_str, datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+            with open(os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json"), "w") as _f:
+                json.dump(value, _f, ensure_ascii=False)
+        except: pass
         return True
-    except Exception as e:
-        # Fallback ke file lokal
+    except Exception as _e:
+        # Fallback lokal
         try:
-            p = os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json")
-            with open(p, "w") as f: json.dump(value, f, ensure_ascii=False)
+            with open(os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json"), "w") as _f:
+                json.dump(value, _f, ensure_ascii=False)
         except: pass
         return False
-
-# ── Import gspread di level module (untuk exception handling di _db_write) ──
-try:
-    import gspread as _gspread_mod
-except ImportError:
-    _gspread_mod = None
 
 # ── Public API: save_user / load_user ──
 def save_user(email: str, data: dict):
@@ -3641,6 +3680,8 @@ def save_user(email: str, data: dict):
     key = _ukey(email)
     # Primary: Google Sheets
     ok = _db_write("users", key, data)
+    # Invalidate Sheets cache supaya load_user berikutnya baca data terbaru
+    _db_cache_ts.pop("users", None)
     # Always write fallback lokal juga (cadangan)
     try:
         with open(os.path.join(DATA_DIR, f"{key}.json"), "w") as f:
@@ -8038,33 +8079,65 @@ current_view = st.session_state.get("current_view", "chat")
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     
+    # ── SAFE SAVE: merge dengan data existing di DB sebelum overwrite ──
+    # Pakai cache session_state agar tidak hit Sheets API setiap page load
+    _sv_cache_key = f"_sv_cache_{_ukey(user['email'])}"
+    if _sv_cache_key not in st.session_state:
+        st.session_state[_sv_cache_key] = load_user(user["email"]) or {}
+    _existing_sv = st.session_state[_sv_cache_key]
+
+    def _ss(key, default=None):
+        """Ambil dari session_state jika ada, fallback ke existing DB value."""
+        v = st.session_state.get(key)
+        if v is not None:
+            return v
+        return _existing_sv.get(key, default)
+
     save_user(user["email"], {
-        "theme": st.session_state.get("theme", "dark"), 
-        "sessions": sessions_to_save, 
+        "theme": st.session_state.get("theme", "dark"),
+        "sessions": sessions_to_save,
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat"), 
+        "current_view": st.session_state.get("current_view", "chat"),
         "selected_system": st.session_state.get("selected_system", "chat"),
-        "reco_daily_result": st.session_state.get("reco_daily_result"),
-        "reco_daily_ts": st.session_state.get("reco_daily_ts"),
-        "reco_weekly_result": st.session_state.get("reco_weekly_result"),
-        "reco_weekly_ts": st.session_state.get("reco_weekly_ts"),
-        "reco_bsjp_result": st.session_state.get("reco_bsjp_result"),
-        "reco_bsjp_ts": st.session_state.get("reco_bsjp_ts"),
-        "mb_daily_content": st.session_state.get("mb_daily_content"),
-        "mb_daily_timestamp": st.session_state.get("mb_daily_timestamp"),
-        "mb_weekly_content": st.session_state.get("mb_weekly_content"),
-        "mb_weekly_timestamp": st.session_state.get("mb_weekly_timestamp"),
-        "ec_ai_result": st.session_state.get("ec_ai_result"),
-        "ec_ai_event": st.session_state.get("ec_ai_event"),
-        "ec_ai_actual": st.session_state.get("ec_ai_actual"),
-        "ec_ai_beat_miss": st.session_state.get("ec_ai_beat_miss"),
-        "ec_ai_model": st.session_state.get("ec_ai_model"),
-        "ec_ai_timestamp": st.session_state.get("ec_ai_timestamp"),
-        "alpha_insight_last_key": st.session_state.get("alpha_insight_last_key"),
-        "alpha_insight_last_data": st.session_state.get("alpha_insight_last_data"),
-        "alpha_insight_last_ticker": st.session_state.get("alpha_insight_last_ticker"),
-        "tr_records": st.session_state.get("tr_records", []),
+        "reco_daily_result":  _ss("reco_daily_result"),
+        "reco_daily_ts":      _ss("reco_daily_ts"),
+        "reco_weekly_result": _ss("reco_weekly_result"),
+        "reco_weekly_ts":     _ss("reco_weekly_ts"),
+        "reco_bsjp_result":   _ss("reco_bsjp_result"),
+        "reco_bsjp_ts":       _ss("reco_bsjp_ts"),
+        "mb_daily_content":   _ss("mb_daily_content"),
+        "mb_daily_timestamp": _ss("mb_daily_timestamp"),
+        "mb_weekly_content":  _ss("mb_weekly_content"),
+        "mb_weekly_timestamp":_ss("mb_weekly_timestamp"),
+        "ec_ai_result":       _ss("ec_ai_result"),
+        "ec_ai_event":        _ss("ec_ai_event"),
+        "ec_ai_actual":       _ss("ec_ai_actual"),
+        "ec_ai_beat_miss":    _ss("ec_ai_beat_miss"),
+        "ec_ai_model":        _ss("ec_ai_model"),
+        "ec_ai_timestamp":    _ss("ec_ai_timestamp"),
+        "alpha_insight_last_key":    _ss("alpha_insight_last_key"),
+        "alpha_insight_last_data":   _ss("alpha_insight_last_data"),
+        "alpha_insight_last_ticker": _ss("alpha_insight_last_ticker"),
+        # ── Data kritis yang WAJIB pakai merge ──
+        "tr_records":                _ss("tr_records", []),
+        "auto_plan_history_daily":   _ss("auto_plan_history_daily", {}),
+        "auto_plan_history_weekly":  _ss("auto_plan_history_weekly", {}),
+        "auto_plan_history_bsjp":    _ss("auto_plan_history_bsjp", {}),
+        "brosum_history":            _ss("brosum_history", {}),
+        "sigma_bs30_screened":       _ss("sigma_bs30_screened", []),
+        "sigma_bs30_ts":             _ss("sigma_bs30_ts", ""),
+        "brosum_hist_use_key":       _ss("brosum_hist_use_key"),
+        "brosum_hist_use_data":      _ss("brosum_hist_use_data"),
+        "brosum_hist_use_date":      _ss("brosum_hist_use_date"),
+        "sigma_bs30_history":        _ss("sigma_bs30_history", {}),
     })
+    # Update cache dengan data terbaru setelah save berhasil
+    st.session_state[_sv_cache_key] = {
+        k: _ss(k, {}) for k in [
+            "auto_plan_history_daily","auto_plan_history_weekly","auto_plan_history_bsjp",
+            "tr_records","brosum_history","sigma_bs30_screened","sigma_bs30_ts",
+        ]
+    }
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
 if st.session_state.user is None:
