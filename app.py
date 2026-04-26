@@ -9770,6 +9770,16 @@ table{{margin-bottom:0!important;}}
 }})();
 </script></body></html>""", height=_total_h, scrolling=False)
 
+        # ── IDX HEATMAP — DI BAWAH LIVE MARKET ────────────────────────────
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='trm-section'><div class='trm-section-line'></div>"
+            "<span class='trm-section-label'>IDX STOCK HEATMAP</span>"
+            "<div class='trm-section-line'></div></div>",
+            unsafe_allow_html=True,
+        )
+        components.html(_heatmap_html, height=620, scrolling=False)
+
         # ── MARKET MAP GLOBE ───────────────────────────────────────────────
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         st.markdown(
@@ -13718,7 +13728,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.session_state["alpha_screener_unlocked"] = True
 
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily &middot; Weekly &middot; BSJP &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
         alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder, alpha_tab_trackrecord = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
@@ -21751,8 +21761,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
             font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};line-height:1.8;'>
         🔗 <b style='color:#26a69a;'>AUTO-LINKED</b> &nbsp;·&nbsp;
-        Setiap plan (Daily/Weekly/BSJP) yang di-generate otomatis masuk ke sini sebagai OPEN &nbsp;·&nbsp;
-        Lihat detail per tipe di tab masing-masing (Daily → Track Record, Weekly → Track Record, BSJP → Track Record)
+        Setiap plan yang di-generate otomatis masuk ke sini sebagai OPEN &nbsp;·&nbsp;
+        Lihat detail history di tab History Plan · Lihat statistik di tab Statistik
         </div>""", unsafe_allow_html=True)
 
         if "tr_records" not in st.session_state:
@@ -21760,12 +21770,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
         _all_tr = st.session_state.get("tr_records", [])
 
-        # ── Tabs: Overview + per type ──
-        _gtr_tab_all, _gtr_tab_daily, _gtr_tab_weekly, _gtr_tab_bsjp, _gtr_tab_stats = st.tabs([
+        # ── Tabs: Overview + History Plan + Statistik ──
+        _gtr_tab_all, _gtr_tab_daily, _gtr_tab_stats = st.tabs([
             "  📊 OVERVIEW SEMUA  ",
-            "  📅 DAILY  ",
-            "  📆 WEEKLY  ",
-            "  🌙 BSJP  ",
+            "  📅 HISTORY PLAN  ",
             "  📈 STATISTIK  ",
         ])
 
@@ -21814,8 +21822,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
         with _gtr_tab_daily:
             _render_track_record_inline("daily", "#a78bfa", ctx="gtr_daily")
-            _render_track_record_inline("weekly", "#26a69a", ctx="gtr_weekly")
-            _render_track_record_inline("bsjp", "#f5a623", ctx="gtr_bsjp")
+
+        with _gtr_tab_stats:
             # Statistik per tipe + overall
             _records_s = st.session_state.get("tr_records", [])
             _closed_s  = [r for r in _records_s if r.get("status") == "CLOSED"]
@@ -23873,68 +23881,40 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT_s
     </div></div>
 
     <div class="feat">
-    <div class="feat-title">📌 ⚡ Alpha Screener - Daily / Weekly / BSJP</div>
-    <div class="stext">Tab ⚡ Alpha Screener adalah pusat analisa dan kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam tiga mode: <span class="hi">Harian</span>, <span class="yl">Mingguan</span>, dan <span class="ok">Buy-Sell-JP (BSJP)</span>.</div>
+    <div class="feat-title">📌 ⚡ Alpha Screener - Daily Plan</div>
+    <div class="stext">Tab ⚡ Alpha Screener adalah pusat analisa dan kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam mode <span class="hi">Daily Plan</span> dengan tracking performa di tab <span class="ok">History Plan</span>.</div>
     </div>
 
     <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📅</div>
-    <div><div class="sec-title">MODE 1 - Rekomendasi Harian</div>
+    <div><div class="sec-title">DAILY PLAN - Rekomendasi Harian</div>
     <div class="sec-desc">Watchlist saham untuk trading dalam 1-3 hari ke depan berdasarkan sentimen pasar hari ini.</div>
     </div></div>
 
     <div class="feat blue">
-    <div class="feat-title">🌅 Cara Menggunakan Rekomendasi Harian</div>
+    <div class="feat-title">🌅 Cara Menggunakan Daily Plan</div>
     <div class="steps">
     <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>⚡ Alpha Screener</b> dari navigasi atas SIGMA Terminal.</div></div>
     <div class="step"><div class="snum">2</div><div class="stext">Klik tombol <b>"🌅 Generate Rekomendasi Harian"</b> - AI akan memproses kondisi makro hari ini + sinyal teknikal intraday.</div></div>
     <div class="step"><div class="snum">3</div><div class="stext">Output berisi: <span class="ok">daftar saham</span> + <span class="hi">alasan singkat</span> + <span class="yl">level entry estimasi</span> + <span class="dn">catatan risiko</span>.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Hasil disimpan otomatis di <b>session state</b> - tidak hilang saat kamu pindah tab lalu kembali.</div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">Hasil otomatis masuk ke <b>🏆 Track Record → History Plan</b> sebagai OPEN untuk tracking performa.</div></div>
     </div>
     <div class="tip">💡 Best practice: Generate di pagi hari sebelum market buka (08.30–09.00 WIB) untuk mendapat konteks pre-market yang relevan.</div>
     </div>
 
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">📆</div>
-    <div><div class="sec-title">MODE 2 - Rekomendasi Mingguan</div>
-    <div class="sec-desc">Swing trade watchlist untuk horizon 1-4 minggu berdasarkan rotasi sektor dan fundamental jangka menengah.</div>
+    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🏆</div>
+    <div><div class="sec-title">TRACK RECORD - History Plan & Statistik</div>
+    <div class="sec-desc">Rekam jejak performa semua plan yang sudah di-generate. Auto-linked dari setiap Daily Plan yang dibuat.</div>
     </div></div>
 
     <div class="feat green">
-    <div class="feat-title">📈 Cara Menggunakan Rekomendasi Mingguan</div>
+    <div class="feat-title">📊 Cara Membaca Track Record</div>
     <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"📆 Generate Rekomendasi Mingguan"</b> di tab ⚡ Alpha Screener.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">AI mempertimbangkan: rotasi sektor dari RRG, sentimen makro minggu ini, jadwal corporate action, dan momentum fundamental.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Output lebih detail dari harian: menyertakan <b>target price</b>, <b>stop loss</b>, <b>time horizon</b>, dan konteks sektoral.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Cocok untuk <b>swing trader</b> MnM Strategy+ yang ingin entry di awal minggu dan holding beberapa hari.</div></div>
+    <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>🏆 Track Record</b> di dalam Alpha Screener - semua plan yang di-generate otomatis masuk sebagai OPEN.</div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">Tab <b>Overview Semua</b> menampilkan win rate, total trade, P&L, dan tabel semua posisi (OPEN + CLOSED).</div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">Tab <b>History Plan</b> menampilkan detail tracking per saham - update status TP/SL untuk menutup posisi.</div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">Tab <b>Statistik</b> menampilkan analisa mendalam: win rate, expectancy, avg win/loss, dan verdict SIGMA.</div></div>
     </div>
-    <div class="tip">💡 Generate tiap Senin pagi atau Jumat sore setelah market tutup untuk perencanaan week ahead.</div>
-    </div>
-
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon">🔄</div>
-    <div><div class="sec-title">MODE 3 - Buy / Sell / JP (BSJP)</div>
-    <div class="sec-desc">Klasifikasi posisi: saham mana yang layak dibeli, dijual, atau hold (Jaga Posisi) berdasarkan kondisi terkini.</div>
-    </div></div>
-
-    <div class="feat yellow">
-    <div class="feat-title">🔁 Cara Menggunakan BSJP</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Klik tombol <b>"🔄 Generate Buy-Sell-JP"</b> - AI akan mengklasifikasi saham ke tiga kategori berdasarkan kondisi teknikal + makro terkini.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Output tiga kolom: <span class="ok">BUY</span> (entry potensial), <span class="dn">SELL / REDUCE</span> (kurangi atau keluar), <span class="yl">JP / HOLD</span> (tahan posisi, jangan panik jual).</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Setiap saham disertai <b>reasoning singkat AI</b> - bukan hanya listing nama, tapi konteks kenapa masuk kategori tersebut.</div></div>
-    </div>
-    <div class="grid3">
-    <div class="gcard green">
-    <div class="gcard-title">✅ BUY</div>
-    <div class="gcard-val">Saham di area support kuat, volume meningkat, sentimen sektoral positif, atau mendekati breakout dari konsolidasi.</div>
-    </div>
-    <div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
-    <div class="gcard-title" style="color:{_R};">⬇️ SELL/REDUCE</div>
-    <div class="gcard-val">Saham di area resistance, volume distribusi, sentimen negatif, atau sudah mencapai TP - pertimbangkan profit taking.</div>
-    </div>
-    <div class="gcard yellow">
-    <div class="gcard-title">⏸️ JP / HOLD</div>
-    <div class="gcard-val">Masih dalam tren tapi belum konfirmasi. Tahan posisi, set trailing stop, tunggu sinyal lebih jelas sebelum action.</div>
-    </div>
-    </div>
+    <div class="tip">💡 Update hasil trade di History Plan secara rutin untuk mendapatkan statistik yang akurat dan meaningful.</div>
     </div>
 
     <div class="feat red">
