@@ -3541,34 +3541,187 @@ DATA_DIR = os.path.join(os.path.expanduser("~"), ".sigma_data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # =========================================================
-# PERSISTENCE
+# GOOGLE SHEETS PERSISTENT STORAGE — SIGMA_DATABASE
 # =========================================================
 def _ukey(email): return hashlib.md5(email.encode()).hexdigest()
 
-def save_user(email, data):
+def _get_db_sheet(sheet_name: str):
+    """Connect ke SIGMA_DATABASE dan return worksheet dengan nama sheet_name.
+    Buat worksheet baru otomatis jika belum ada."""
     try:
-        with open(os.path.join(DATA_DIR, f"{_ukey(email)}.json"), "w") as f:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        creds_dict = dict(st.secrets["gsheets_credentials"])
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        gc = gspread.authorize(creds)
+        sid = st.secrets["gsheets"]["spreadsheet_database"]
+        wb = gc.open_by_key(sid)
+        try:
+            ws = wb.worksheet(sheet_name)
+        except gspread.exceptions.WorksheetNotFound:
+            ws = wb.add_worksheet(title=sheet_name, rows=5000, cols=5)
+            ws.append_row(["key", "value", "updated_at"])
+        return ws
+    except Exception as e:
+        return None
+
+# ── In-memory cache untuk kurangi API calls ke Sheets ──
+_db_cache: dict = {}  # {sheet_name: {key: value}}
+_db_cache_ts: dict = {}  # {sheet_name: timestamp}
+_CACHE_TTL = 30  # detik
+
+def _db_read_all(sheet_name: str) -> dict:
+    """Baca semua rows dari worksheet, return dict {key: value}. Dengan cache."""
+    now = time.time()
+    if sheet_name in _db_cache and (now - _db_cache_ts.get(sheet_name, 0)) < _CACHE_TTL:
+        return _db_cache[sheet_name]
+    ws = _get_db_sheet(sheet_name)
+    if ws is None:
+        return _db_cache.get(sheet_name, {})
+    try:
+        rows = ws.get_all_records()
+        result = {}
+        for row in rows:
+            k = str(row.get("key", "")).strip()
+            v = str(row.get("value", "")).strip()
+            if k:
+                try: result[k] = json.loads(v)
+                except: result[k] = v
+        _db_cache[sheet_name] = result
+        _db_cache_ts[sheet_name] = now
+        return result
+    except:
+        return _db_cache.get(sheet_name, {})
+
+def _db_write(sheet_name: str, key: str, value) -> bool:
+    """Tulis satu key-value ke worksheet. Update row jika key sudah ada."""
+    ws = _get_db_sheet(sheet_name)
+    if ws is None:
+        # Fallback ke file lokal jika Sheets tidak available
+        try:
+            p = os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json")
+            with open(p, "w") as f: json.dump(value, f, ensure_ascii=False)
+        except: pass
+        return False
+    try:
+        value_str = json.dumps(value, ensure_ascii=False)
+        # Update cache dulu
+        if sheet_name not in _db_cache: _db_cache[sheet_name] = {}
+        _db_cache[sheet_name][key] = value
+        _db_cache_ts[sheet_name] = time.time()
+        # Cek apakah key sudah ada
+        try:
+            cell = ws.find(key, in_column=1)
+            ws.update_cell(cell.row, 2, value_str)
+            ws.update_cell(cell.row, 3, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        except gspread.exceptions.CellNotFound:
+            ws.append_row([key, value_str, datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
+        return True
+    except Exception as e:
+        # Fallback ke file lokal
+        try:
+            p = os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json")
+            with open(p, "w") as f: json.dump(value, f, ensure_ascii=False)
+        except: pass
+        return False
+
+# ── Import gspread di level module (untuk exception handling di _db_write) ──
+try:
+    import gspread as _gspread_mod
+except ImportError:
+    _gspread_mod = None
+
+# ── Public API: save_user / load_user ──
+def save_user(email: str, data: dict):
+    """Simpan data user ke SIGMA_DATABASE sheet 'users'. Fallback ke file lokal."""
+    key = _ukey(email)
+    # Primary: Google Sheets
+    ok = _db_write("users", key, data)
+    # Always write fallback lokal juga (cadangan)
+    try:
+        with open(os.path.join(DATA_DIR, f"{key}.json"), "w") as f:
             json.dump(data, f, ensure_ascii=False)
     except: pass
 
-def load_user(email):
+def load_user(email: str):
+    """Load data user dari SIGMA_DATABASE sheet 'users'. Fallback ke file lokal."""
+    key = _ukey(email)
+    # Primary: Google Sheets
     try:
-        p = os.path.join(DATA_DIR, f"{_ukey(email)}.json")
+        all_data = _db_read_all("users")
+        if key in all_data:
+            return all_data[key]
+    except: pass
+    # Fallback: file lokal
+    try:
+        p = os.path.join(DATA_DIR, f"{key}.json")
         if os.path.exists(p):
             with open(p) as f: return json.load(f)
     except: pass
     return None
 
-# Username/password auth
+# ── Accounts (username/password auth) ──
 def get_accounts():
+    """Load accounts dari SIGMA_DATABASE sheet 'accounts'. Fallback ke file lokal."""
+    try:
+        all_data = _db_read_all("accounts")
+        if all_data:
+            return all_data
+    except: pass
+    # Fallback
     p = os.path.join(DATA_DIR, "accounts.json")
     if os.path.exists(p):
-        with open(p) as f: return json.load(f)
+        try:
+            with open(p) as f: return json.load(f)
+        except: pass
     return {}
 
-def save_accounts(acc):
-    with open(os.path.join(DATA_DIR, "accounts.json"), "w") as f:
-        json.dump(acc, f)
+def save_accounts(acc: dict):
+    """Simpan setiap account sebagai row terpisah di sheet 'accounts'."""
+    # Simpan setiap username sebagai key
+    for username, udata in acc.items():
+        _db_write("accounts", username, udata)
+    # Fallback lokal
+    try:
+        with open(os.path.join(DATA_DIR, "accounts.json"), "w") as f:
+            json.dump(acc, f)
+    except: pass
+
+# ── Token auth (session token) — pakai sheet 'tokens' ──
+def _save_token(token: str, info: dict):
+    """Simpan session token ke Sheets + file lokal."""
+    _db_write("tokens", token, info)
+    try:
+        with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f:
+            json.dump(info, f)
+    except: pass
+
+def _load_token(token: str):
+    """Load session token dari Sheets. Fallback ke file lokal."""
+    try:
+        all_tokens = _db_read_all("tokens")
+        if token in all_tokens:
+            return all_tokens[token]
+    except: pass
+    # Fallback
+    try:
+        p = os.path.join(DATA_DIR, f"token_{token}.json")
+        if os.path.exists(p):
+            with open(p) as f: return json.load(f)
+    except: pass
+    return None
+
+def _delete_token(token: str):
+    """Hapus token dari cache + file lokal (tidak perlu hapus dari Sheets karena TTL natural)."""
+    if "tokens" in _db_cache and token in _db_cache.get("tokens", {}):
+        del _db_cache["tokens"][token]
+    try:
+        os.remove(os.path.join(DATA_DIR, f"token_{token}.json"))
+    except: pass
 
 def register_user(username, password, display_name):
     acc = get_accounts()
@@ -5306,7 +5459,7 @@ if "code" in st.query_params and st.session_state.user is None:
             if saved.get("sessions"): st.session_state.sessions = saved["sessions"]; st.session_state.active_id = saved.get("active_id")
         st.session_state.data_loaded = True
         token = str(uuid.uuid4()).replace("-","")
-        with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f: json.dump(info, f)
+        _save_token(token, info)
         st.session_state.current_token = token
         st.query_params.clear()
         st.query_params["sigma_token"] = token
@@ -5315,10 +5468,11 @@ if "code" in st.query_params and st.session_state.user is None:
 # ─── AUTO-LOGIN VIA TOKEN ───
 if "sigma_token" in st.query_params and st.session_state.user is None:
     token = st.query_params.get("sigma_token", "")
-    token_file = os.path.join(DATA_DIR, f"token_{token}.json")
-    if os.path.exists(token_file):
+    
+    user_info = _load_token(token)
+    if user_info:
         try:
-            with open(token_file) as f: user_info = json.load(f)
+            
             st.session_state.user = user_info; st.session_state.current_token = token
             saved = load_user(user_info["email"])
             if saved:
@@ -6087,7 +6241,7 @@ def show_login():
                 info = login_user(uname.strip(), pwd)
                 if info:
                     token = str(uuid.uuid4()).replace("-","")
-                    with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f: json.dump(info, f)
+                    _save_token(token, info)
                     st.query_params["sigma_token"] = token
                     st.session_state.user = info; st.session_state.current_token = token; st.session_state.data_loaded = False
                     st.rerun()
@@ -6189,7 +6343,7 @@ if "do" in st.query_params:
     
     if _do == "logout":
         if _tok:
-            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
+            try: _delete_token(_tok)
             except: pass
         st.session_state.clear(); st.query_params.clear()
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
@@ -7345,7 +7499,7 @@ if "do" in st.query_params:
     _tok = st.query_params.get("sigma_token", st.session_state.get("current_token", ""))
     if _do == "logout":
         if _tok:
-            try: os.remove(os.path.join(DATA_DIR, f"token_{_tok}.json"))
+            try: _delete_token(_tok)
             except: pass
         st.session_state.clear(); st.query_params.clear()
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
@@ -17757,10 +17911,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         def _auto_update_track_record():
             """
             Update track record otomatis mulai jam 20:30 WIB.
-            Logika per tipe:
-            - BSJP: beli sore (15:40), jual pagi H+1. Hasil baru bisa dicek HARI BERIKUTNYA.
-                    Artinya: untuk BSJP entry tanggal X, cek TP/SL di data hari X+1 (H+1 open/high/low).
-            - Daily/Weekly: cek data hari yang sama (jam 20:30 sudah ada data closing).
+            Cek apakah TP/SL sudah tersentuh untuk semua posisi OPEN.
+            Berjalan tiap jam setelah 20:30 WIB hari kerja.
             """
             now = _wib_now()
             wd  = now.weekday()
@@ -17776,29 +17928,11 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 return  # Sudah update dalam jam ini
 
             records = st.session_state.get("tr_records", [])
-            today_str = now.strftime("%Y-%m-%d")
-
-            # Pisahkan OPEN records: BSJP vs non-BSJP
-            # BSJP hanya bisa diupdate jika entry date BUKAN hari ini
-            # (karena BSJP beli sore hari X, hasilnya baru diketahui pada hari X+1)
-            open_records_daily = [
-                r for r in records
-                if r.get("status") == "OPEN"
-                and r.get("type", "").upper() != "BSJP"
-            ]
-            open_records_bsjp = [
-                r for r in records
-                if r.get("status") == "OPEN"
-                and r.get("type", "").upper() == "BSJP"
-                and r.get("date", "").replace(" ", "") != today_str  # bukan entry hari ini
-            ]
-
-            open_records = open_records_daily + open_records_bsjp
+            open_records = [r for r in records if r.get("status") == "OPEN"]
             if not open_records:
-                st.session_state[tr_update_key] = True
                 return
 
-            # Fetch harga terkini untuk semua ticker yang eligible
+            # Fetch harga terkini untuk semua ticker yang OPEN
             open_tickers = list(set(r["ticker"] for r in open_records))
             try:
                 import threading as _thr_tr
@@ -17806,24 +17940,13 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 _lock_tr = _thr_tr.Lock()
                 def _fetch_tr(tk):
                     try:
-                        # Ambil 5 hari terakhir — hari ini (iloc[-1]) adalah data terbaru
                         h = yf.Ticker(f"{tk}.JK").history(period="5d")
                         if not h.empty:
-                            hi_today = float(h["High"].iloc[-1])
-                            lo_today = float(h["Low"].iloc[-1])
-                            cl_today = float(h["Close"].iloc[-1])
-                            op_today = float(h["Open"].iloc[-1])
-                            # Data hari sebelumnya (untuk BSJP yang entry kemarin, cek hari ini = H+1)
-                            hi_h1 = hi_today  # "hari ini" adalah H+1 bagi BSJP yang entry kemarin
-                            lo_h1 = lo_today
-                            op_h1 = op_today
+                            hi = float(h["High"].iloc[-1])
+                            lo = float(h["Low"].iloc[-1])
+                            cl = float(h["Close"].iloc[-1])
                             with _lock_tr:
-                                _prices_tr[tk] = {
-                                    "high": hi_today, "low": lo_today,
-                                    "close": cl_today, "open": op_today,
-                                    # H+1 data untuk BSJP (sama dengan today karena kita cek malam)
-                                    "h1_high": hi_h1, "h1_low": lo_h1, "h1_open": op_h1,
-                                }
+                                _prices_tr[tk] = {"high": hi, "low": lo, "close": cl}
                     except: pass
                 _thr_list = [_thr_tr.Thread(target=_fetch_tr, args=(tk,)) for tk in open_tickers]
                 for t in _thr_list: t.start()
@@ -17834,25 +17957,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     if r.get("status") != "OPEN": continue
                     tk = r["ticker"]
                     if tk not in _prices_tr: continue
-
-                    _is_bsjp = r.get("type", "").upper() == "BSJP"
-                    _entry_date = r.get("date", "")
-
-                    # BSJP: skip jika entry hari ini (belum ada data H+1)
-                    if _is_bsjp and _entry_date.replace(" ", "") == today_str:
-                        continue
-
-                    # Pilih data harga yang dipakai
-                    if _is_bsjp:
-                        # Untuk BSJP, pakai H+1 data (open/high/low hari berikutnya dari entry)
-                        hi = _prices_tr[tk]["h1_high"]
-                        lo = _prices_tr[tk]["h1_low"]
-                        cl = _prices_tr[tk]["h1_open"]  # exit idealnya di open H+1
-                    else:
-                        hi = _prices_tr[tk]["high"]
-                        lo = _prices_tr[tk]["low"]
-                        cl = _prices_tr[tk]["close"]
-
+                    hi = _prices_tr[tk]["high"]
+                    lo = _prices_tr[tk]["low"]
+                    cl = _prices_tr[tk]["close"]
                     entry = r.get("entry", 0)
                     tp1 = r.get("tp1", 0)
                     sl  = r.get("sl", 0)
@@ -17860,23 +17967,21 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
                     hit_tp  = tp1 > 0 and hi >= tp1
                     hit_sl  = sl  > 0 and lo <= sl
-
-                    _h1_note = " (H+1)" if _is_bsjp else ""
                     if hit_tp:
                         r["status"]     = "CLOSED"
                         r["exit_price"] = tp1
                         r["result"]     = "WIN"
                         r["pnl_pct"]    = round((tp1 - entry) / entry * 100, 2)
-                        r["exit_date"]  = today_str
-                        r["auto_note"]  = f"✅ TP1 Rp{tp1:,} tersentuh{_h1_note} (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
+                        r["exit_date"]  = now.strftime("%Y-%m-%d")
+                        r["auto_note"]  = f"✅ TP1 Rp{tp1:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
                         changed = True
                     elif hit_sl:
                         r["status"]     = "CLOSED"
                         r["exit_price"] = sl
                         r["result"]     = "LOSS"
                         r["pnl_pct"]    = round((sl - entry) / entry * 100, 2)
-                        r["exit_date"]  = today_str
-                        r["auto_note"]  = f"🛑 SL Rp{sl:,} tersentuh{_h1_note} (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
+                        r["exit_date"]  = now.strftime("%Y-%m-%d")
+                        r["auto_note"]  = f"🛑 SL Rp{sl:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
                         changed = True
                     else:
                         # Update current P&L unrealized
@@ -18086,8 +18191,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             """
             Track Record yang 100% terhubung ke History Plan.
             Setiap saham di History Plan otomatis masuk sebagai OPEN.
-            Menampilkan statistik win rate + tabel lengkap.
-            BSJP: hasil baru bisa diketahui H+1 (auto-update jam 20:30 WIB hari berikutnya).
+            User hanya perlu update hasil: TP1/TP2/SL HIT.
             """
             _type_label = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}.get(plan_type, plan_type)
             _all_records = st.session_state.get("tr_records", [])
@@ -18096,81 +18200,160 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             # ── Info Banner ──
             _hist_key   = f"auto_plan_history_{plan_type}"
             _hist_count = len(st.session_state.get(_hist_key, {}))
-            _bsjp_note  = " &nbsp;·&nbsp; ⏰ BSJP: hasil dicek H+1 (hari berikutnya)" if plan_type == "bsjp" else ""
             st.markdown(f"""
             <div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};
                 border:1px solid rgba(38,166,154,0.2);border-left:3px solid {accent};
                 border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
                 font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};line-height:1.8;'>
             🔗 <b style='color:{accent};'>AUTO-LINKED KE HISTORY PLAN</b> &nbsp;·&nbsp;
-            {_hist_count} history tersimpan &nbsp;·&nbsp; {len(_filtered)} trade tercatat{_bsjp_note}<br>
-            🔄 Auto-check TP/SL jam <b>20:30 WIB</b> setiap hari kerja
+            Setiap saham dari {_type_label} Plan otomatis masuk sebagai <b>OPEN</b> &nbsp;·&nbsp;
+            {_hist_count} history tersimpan &nbsp;·&nbsp; {len(_filtered)} trade tercatat<br>
+            ✏️ Tugas kamu: pilih posisi OPEN dan update apakah <b>TP HIT</b> atau <b>SL HIT</b> &nbsp;·&nbsp; Auto-check TP/SL jam <b>20:30 WIB</b>
             </div>""", unsafe_allow_html=True)
 
-            if not _filtered:
-                st.markdown(f"""<div style='text-align:center;padding:32px 20px;opacity:0.5;'>
-                    <div style='font-size:2rem;margin-bottom:10px;'>🏆</div>
-                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'>
-                    Belum ada trade tercatat.<br>
-                    Generate {_type_label} Plan → saham otomatis masuk ke sini sebagai OPEN.</div>
-                </div>""", unsafe_allow_html=True)
-                return
+            # ══════════════════════════════════════════════════════
+            # SECTION A — UPDATE HASIL TRADE (OPEN → CLOSED)
+            # ══════════════════════════════════════════════════════
+            _open_list = [r for r in _filtered if r.get("status", "OPEN") == "OPEN"]
+
+            if _open_list:
+                st.markdown(
+                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
+                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
+                    f"✏️ UPDATE HASIL — {len(_open_list)} posisi OPEN</div>",
+                    unsafe_allow_html=True)
+
+                # Tampilkan kartu per posisi OPEN
+                for _oi, _or in enumerate(_open_list):
+                    _or_idx = next((i for i, r in enumerate(_all_records)
+                                    if r.get("id") == _or.get("id")), None)
+                    if _or_idx is None: continue
+
+                    with st.container(border=True):
+                        _oc1, _oc2, _oc3 = st.columns([2, 3, 2])
+                        with _oc1:
+                            st.markdown(
+                                f"**{_or.get('ticker','')}** &nbsp;"
+                                f"<span style='color:{accent};font-size:11px;'>{_or.get('date','')}</span><br>"
+                                f"<span style='font-size:11px;color:#888;'>{_or.get('slot', _or.get('type',''))}</span>",
+                                unsafe_allow_html=True)
+                            st.caption(f"Entry: Rp {int(_or.get('entry',0)):,}")
+                        with _oc2:
+                            _lv1, _lv2, _lv3 = st.columns(3)
+                            _lv1.metric("TP1", f"Rp {int(_or.get('tp1',0)):,}")
+                            _lv2.metric("TP2", f"Rp {int(_or.get('tp2',0)):,}" if _or.get('tp2') else "—")
+                            _lv3.metric("SL",  f"Rp {int(_or.get('sl',0)):,}")
+                        with _oc3:
+                            _res_opt = st.selectbox(
+                                "HASIL:",
+                                ["— Masih OPEN —", "✅ TP1 HIT", "🎯 TP2 HIT", "🛑 SL HIT", "📤 Manual Exit"],
+                                key=f"tr_res_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
+                            if _res_opt != "— Masih OPEN —":
+                                _ex_price = st.number_input(
+                                    "Harga Exit (Rp):",
+                                    min_value=0,
+                                    value=int(_or.get("tp1",0)) if "TP1" in _res_opt
+                                          else int(_or.get("tp2",0)) if "TP2" in _res_opt
+                                          else int(_or.get("sl",0)) if "SL" in _res_opt else 0,
+                                    key=f"tr_exp_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
+                                if st.button("💾 SIMPAN", key=f"tr_upd_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}",
+                                             use_container_width=True):
+                                    _entry_v = _or.get("entry", 0)
+                                    _exit_v  = _ex_price if _ex_price > 0 else (
+                                        _or.get("tp1",0) if "TP1" in _res_opt else
+                                        _or.get("tp2",0) if "TP2" in _res_opt else
+                                        _or.get("sl",0))
+                                    _pnl_v   = round((_exit_v - _entry_v) / _entry_v * 100, 2) if _entry_v else 0
+                                    _res_v   = "WIN" if _pnl_v >= 0 else "LOSS"
+                                    _tag     = ("TP1 HIT" if "TP1" in _res_opt
+                                                else "TP2 HIT" if "TP2" in _res_opt
+                                                else "SL HIT" if "SL" in _res_opt
+                                                else "Manual Exit")
+                                    _all_records[_or_idx].update({
+                                        "status":     "CLOSED",
+                                        "exit_price": _exit_v,
+                                        "pnl_pct":    _pnl_v,
+                                        "result":     _res_v,
+                                        "exit_date":  _wib_now().strftime("%Y-%m-%d"),
+                                        "auto_note":  _tag,
+                                    })
+                                    st.session_state["tr_records"] = _all_records
+                                    if st.session_state.get("user"):
+                                        try:
+                                            _sv = load_user(st.session_state.user["email"]) or {}
+                                            _sv["tr_records"] = _all_records
+                                            save_user(st.session_state.user["email"], _sv)
+                                        except: pass
+                                    st.success(f"✅ {_or.get('ticker','')} → {_tag} | P&L: {'+'if _pnl_v>=0 else ''}{_pnl_v}%")
+                                    st.rerun()
+            else:
+                if _filtered:
+                    st.info("✅ Semua posisi sudah CLOSED. Tidak ada yang perlu diupdate.")
+                else:
+                    st.markdown(f"""<div style='text-align:center;padding:32px 20px;opacity:0.5;'>
+                        <div style='font-size:2rem;margin-bottom:10px;'>🏆</div>
+                        <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'>
+                        Belum ada trade tercatat.<br>
+                        Generate {_type_label} Plan → saham otomatis masuk ke sini sebagai OPEN.</div>
+                    </div>""", unsafe_allow_html=True)
+                    return
+
+            st.markdown("---")
 
             # ══════════════════════════════════════════════════════
-            # SECTION A — STATISTIK WIN RATE SUMMARY
+            # SECTION B — STATISTIK WIN RATE
             # ══════════════════════════════════════════════════════
-            _closed_f = [r for r in _filtered if r.get("status") == "CLOSED"]
-            _open_f   = [r for r in _filtered if r.get("status") != "CLOSED"]
-            _wins_f   = [r for r in _closed_f if r.get("result") == "WIN"]
-            _loss_f   = [r for r in _closed_f if r.get("result") == "LOSS"]
-            _wr_f     = round(len(_wins_f)/len(_closed_f)*100,1) if _closed_f else 0
-            _avg_w_f  = round(sum(r.get("pnl_pct",0) for r in _wins_f)/len(_wins_f),2) if _wins_f else 0
-            _avg_l_f  = round(sum(r.get("pnl_pct",0) for r in _loss_f)/len(_loss_f),2) if _loss_f else 0
-            _tot_pnl_f= round(sum(r.get("pnl_pct",0) for r in _closed_f),2)
+            if _filtered:
+                _closed_f = [r for r in _filtered if r.get("status") == "CLOSED"]
+                _open_f   = [r for r in _filtered if r.get("status") != "CLOSED"]
+                _wins_f   = [r for r in _closed_f if r.get("result") == "WIN"]
+                _loss_f   = [r for r in _closed_f if r.get("result") == "LOSS"]
+                _wr_f     = round(len(_wins_f)/len(_closed_f)*100,1) if _closed_f else 0
+                _avg_w_f  = round(sum(r.get("pnl_pct",0) for r in _wins_f)/len(_wins_f),2) if _wins_f else 0
+                _avg_l_f  = round(sum(r.get("pnl_pct",0) for r in _loss_f)/len(_loss_f),2) if _loss_f else 0
+                _tot_pnl_f= round(sum(r.get("pnl_pct",0) for r in _closed_f),2)
 
-            st.markdown(
-                f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
-                f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
-                f"📊 STATISTIK {_type_label.upper()} TRACK RECORD</div>",
-                unsafe_allow_html=True)
+                st.markdown(
+                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
+                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
+                    f"📊 STATISTIK {_type_label.upper()} TRACK RECORD</div>",
+                    unsafe_allow_html=True)
 
-            _mc1,_mc2,_mc3,_mc4 = st.columns(4)
-            _mc1.metric("Win Rate",
-                        f"{_wr_f}%",
-                        f"{len(_wins_f)} WIN · {len(_loss_f)} LOSS",
-                        delta_color="normal" if _wr_f >= 50 else "inverse")
-            _mc2.metric("Total Trade", len(_filtered), f"{len(_open_f)} masih OPEN")
-            _mc3.metric("Total P&L (Closed)",
-                        f"{'+'if _tot_pnl_f>=0 else ''}{_tot_pnl_f}%",
-                        delta_color="normal" if _tot_pnl_f >= 0 else "inverse")
-            _mc4.metric("Avg Win / Avg Loss", f"+{_avg_w_f}% / {_avg_l_f}%")
+                _mc1,_mc2,_mc3,_mc4 = st.columns(4)
+                _mc1.metric("Win Rate",
+                            f"{_wr_f}%",
+                            f"{len(_wins_f)} WIN · {len(_loss_f)} LOSS",
+                            delta_color="normal" if _wr_f >= 50 else "inverse")
+                _mc2.metric("Total Trade", len(_filtered), f"{len(_open_f)} masih OPEN")
+                _mc3.metric("Total P&L (Closed)",
+                            f"{'+'if _tot_pnl_f>=0 else ''}{_tot_pnl_f}%",
+                            delta_color="normal" if _tot_pnl_f >= 0 else "inverse")
+                _mc4.metric("Avg Win / Avg Loss", f"+{_avg_w_f}% / {_avg_l_f}%")
 
-            st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
 
-            # ══════════════════════════════════════════════════════
-            # SECTION B — TABEL LENGKAP
-            # ══════════════════════════════════════════════════════
-            import pandas as _pd_tr
-            _tbl_rows = []
-            for _rf in sorted(_filtered, key=lambda x: x.get("date",""), reverse=True):
-                _pnl_v = _rf.get("pnl_pct", 0)
-                _stat  = _rf.get("result", "OPEN")
-                _emoji = "✅" if _stat == "WIN" else ("🛑" if _stat == "LOSS" else "⏳")
-                _tbl_rows.append({
-                    "#":        _rf.get("id",""),
-                    "TANGGAL":  _rf.get("date",""),
-                    "TICKER":   _rf.get("ticker",""),
-                    "SESI":     _rf.get("slot", _rf.get("type","")),
-                    "ENTRY":    f"Rp {int(_rf.get('entry',0)):,}",
-                    "TP1":      f"Rp {int(_rf.get('tp1',0)):,}",
-                    "TP2":      f"Rp {int(_rf.get('tp2',0)):,}" if _rf.get("tp2") else "—",
-                    "SL":       f"Rp {int(_rf.get('sl',0)):,}",
-                    "EXIT":     f"Rp {int(_rf.get('exit_price',0)):,}" if _rf.get("exit_price",0) > 0 else "—",
-                    "P&L":      f"{'+'if _pnl_v>=0 else ''}{_pnl_v}%" if _pnl_v else "—",
-                    "HASIL":    f"{_emoji} {_stat}",
-                    "KET":      (_rf.get("auto_note","") or _rf.get("reason",""))[:55],
-                })
-            st.dataframe(_pd_tr.DataFrame(_tbl_rows), use_container_width=True, hide_index=True)
+                # ── Tabel Lengkap ──
+                import pandas as _pd_tr
+                _tbl_rows = []
+                for _rf in sorted(_filtered, key=lambda x: x.get("date",""), reverse=True):
+                    _pnl_v = _rf.get("pnl_pct", 0)
+                    _stat  = _rf.get("result", "OPEN")
+                    _emoji = "✅" if _stat == "WIN" else ("🛑" if _stat == "LOSS" else "⏳")
+                    _tbl_rows.append({
+                        "#":        _rf.get("id",""),
+                        "TANGGAL":  _rf.get("date",""),
+                        "TICKER":   _rf.get("ticker",""),
+                        "SESI":     _rf.get("slot", _rf.get("type","")),
+                        "ENTRY":    f"Rp {int(_rf.get('entry',0)):,}",
+                        "TP1":      f"Rp {int(_rf.get('tp1',0)):,}",
+                        "TP2":      f"Rp {int(_rf.get('tp2',0)):,}" if _rf.get("tp2") else "—",
+                        "SL":       f"Rp {int(_rf.get('sl',0)):,}",
+                        "EXIT":     f"Rp {int(_rf.get('exit_price',0)):,}" if _rf.get("exit_price",0) > 0 else "—",
+                        "P&L":      f"{'+'if _pnl_v>=0 else ''}{_pnl_v}%" if _pnl_v else "—",
+                        "HASIL":    f"{_emoji} {_stat}",
+                        "KET":      (_rf.get("auto_note","") or _rf.get("reason",""))[:45],
+                    })
+                st.dataframe(_pd_tr.DataFrame(_tbl_rows), use_container_width=True, hide_index=True)
 
         def _render_auto_track_record():
             """Render track record yang ter-update otomatis."""
@@ -18329,47 +18512,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             st.session_state[_hkey] = _sv3[_hkey]
                     except: pass
 
-        # ── BSJP Sanitizer: revert record BSJP yang closed di hari yang sama dengan entry ──
-        # (kesalahan dari versi lama yang cek TP/SL di hari yang sama, bukan H+1)
-        _tr_all = st.session_state.get("tr_records", [])
-        _tr_changed = False
-        for _r in _tr_all:
-            if (_r.get("type", "").upper() == "BSJP"
-                    and _r.get("status") == "CLOSED"
-                    and _r.get("exit_date", "") == _r.get("date", "2000-01-01").replace(" Apr ", "-04-").replace(" Jan ", "-01-").replace(" Feb ", "-02-").replace(" Mar ", "-03-").replace(" May ", "-05-").replace(" Jun ", "-06-").replace(" Jul ", "-07-").replace(" Aug ", "-08-").replace(" Sep ", "-09-").replace(" Oct ", "-10-").replace(" Nov ", "-11-").replace(" Dec ", "-12-")):
-                # Cek lebih simpel: bandingkan string tanggal langsung
-                _entry_d = _r.get("date", "")
-                _exit_d  = _r.get("exit_date", "")
-                # Normalise: entry_d bisa "26 Apr 2026" atau "2026-04-26"
-                try:
-                    from datetime import datetime as _dtp
-                    if "-" in _entry_d:
-                        _ed_parsed = _dtp.strptime(_entry_d, "%Y-%m-%d").date()
-                    else:
-                        _ed_parsed = _dtp.strptime(_entry_d, "%d %b %Y").date()
-                    if "-" in _exit_d:
-                        _exd_parsed = _dtp.strptime(_exit_d, "%Y-%m-%d").date()
-                    else:
-                        _exd_parsed = _dtp.strptime(_exit_d, "%d %b %Y").date()
-                    if _ed_parsed == _exd_parsed:
-                        # Reset ke OPEN — ini salah update di hari yang sama
-                        _r["status"]     = "OPEN"
-                        _r["result"]     = "-"
-                        _r["exit_price"] = 0
-                        _r["pnl_pct"]    = 0
-                        _r["exit_date"]  = ""
-                        _r["auto_note"]  = _r.get("auto_note", "").replace("✅ ", "⏳ REVERTED — ").replace("🛑 ", "⏳ REVERTED — ")
-                        _tr_changed = True
-                except: pass
-        if _tr_changed:
-            st.session_state["tr_records"] = _tr_all
-            if st.session_state.get("user"):
-                try:
-                    _sv_san = load_user(st.session_state.user["email"]) or {}
-                    _sv_san["tr_records"] = _tr_all
-                    save_user(st.session_state.user["email"], _sv_san)
-                except: pass
-
         # ── Jalankan auto-generate & auto-update track record saat tab dibuka ──
         # PENTING: restore history dari DB DULU sebelum auto-generate
         # agar slot_key check tidak salah ketika session state baru/reset
@@ -18382,6 +18524,67 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         if _pre_sv.get(_pre_hkey):
                             st.session_state[_pre_hkey] = _pre_sv[_pre_hkey]
                     except: pass
+
+        # ══════════════════════════════════════════════════════════════════
+        # AUTO-REFRESH BROSUM: jalankan di sini (bukan hanya di tab BrokSum)
+        # agar plan bisa generate meski user tidak buka tab Broker Summary
+        # ══════════════════════════════════════════════════════════════════
+        def _ensure_brosum_fresh():
+            """Pastikan sigma_bs30_screened ada dan fresh (hari ini).
+            Kalau belum ada atau sudah dari hari kemarin → auto-fetch ulang."""
+            _now_ef   = _wib_now()
+            _wd_ef    = _now_ef.weekday()
+            if _wd_ef >= 5: return  # skip weekend
+
+            _bs_existing  = st.session_state.get("sigma_bs30_screened", [])
+            _bs_ts        = st.session_state.get("sigma_bs30_ts", "")
+            _today_str    = _now_ef.strftime("%Y-%m-%d")
+
+            # Cek apakah data hari ini sudah ada (dari ts atau dari history)
+            _already_today = _today_str in _bs_ts if _bs_ts else False
+
+            # Juga cek dari brosum_history
+            if not _already_today:
+                _bsh = st.session_state.get("brosum_history", {})
+                if _today_str in _bsh and _bsh[_today_str].get("screened"):
+                    # Restore dari history ke session_state
+                    st.session_state["sigma_bs30_screened"] = _bsh[_today_str]["screened"]
+                    st.session_state["sigma_bs30_ts"] = _bsh[_today_str].get("generated_at", _today_str)
+                    _already_today = True
+
+            # Juga cek dari DB (kalau session baru setelah login)
+            if not _already_today and st.session_state.get("user"):
+                try:
+                    _sv_ef = load_user(st.session_state.user["email"]) or {}
+                    # Cek history di DB
+                    _bsh_db = _sv_ef.get("brosum_history", {})
+                    if _today_str in _bsh_db and _bsh_db[_today_str].get("screened"):
+                        st.session_state["sigma_bs30_screened"] = _bsh_db[_today_str]["screened"]
+                        st.session_state["sigma_bs30_ts"] = _bsh_db[_today_str].get("generated_at", _today_str)
+                        st.session_state["brosum_history"] = _bsh_db
+                        _already_today = True
+                except: pass
+
+            # Kalau belum ada data hari ini sama sekali → pakai data terakhir yang ada
+            # (sebagai fallback sementara, supaya plan tidak kosong)
+            if not _already_today and not _bs_existing:
+                _bsh = st.session_state.get("brosum_history", {})
+                if _bsh:
+                    _last_bsh_key = sorted(_bsh.keys())[-1]
+                    _last_bsh = _bsh[_last_bsh_key]
+                    if _last_bsh.get("screened"):
+                        st.session_state["sigma_bs30_screened"] = _last_bsh["screened"]
+                        st.session_state["sigma_bs30_ts"] = _last_bsh.get("generated_at", _last_bsh_key) + " (data kemarin)"
+
+            # Kalau jam sudah >= 20:30 dan belum ada data hari ini → auto-fetch
+            _hour_ok = _now_ef.hour > 20 or (_now_ef.hour == 20 and _now_ef.minute >= 30)
+            _auto_key_ef = f"brosum_ensure_{_today_str}"
+            if not _already_today and _hour_ok and not st.session_state.get(_auto_key_ef):
+                st.session_state[_auto_key_ef] = True  # lock agar tidak loop
+                _auto_generate_brosum_screening()
+
+        _ensure_brosum_fresh()
+        # ════════════════════════════════════════════════════════════════
 
         _auto_generate_if_needed("daily")
         _auto_generate_if_needed("weekly")
@@ -18422,17 +18625,32 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             ])
 
             # ════════════════════════════════════════════
-            # TAB 1 — TRADE PLAN & SUMMARY (hari ini)
+            # TAB 1 — TRADE PLAN & SUMMARY (hari ini / terakhir)
             # ════════════════════════════════════════════
             with _d_tab_plan:
                 _daily_hist = st.session_state.get("auto_plan_history_daily", {})
                 _today_key  = _now_d.strftime("%Y-%m-%d")
                 # Cari entry hari ini (key mengandung tanggal hari ini)
                 _today_entry = None
+                _is_latest_daily = True
                 for _dk, _dv in sorted(_daily_hist.items(), reverse=True):
                     if _dk.startswith(_today_key):
                         _today_entry = _dv
                         break
+                # Fallback: tampilkan plan terakhir yg ada supaya tidak kosong
+                if not _today_entry and _daily_hist:
+                    _last_dk = sorted(_daily_hist.keys())[-1]
+                    _today_entry = _daily_hist[_last_dk]
+                    _is_latest_daily = False
+
+                # Banner: tampilkan info kalau plan ini bukan plan hari ini
+                if _today_entry and not _is_latest_daily:
+                    st.markdown(
+                        "<div style='background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);"
+                        "border-radius:8px;padding:10px 14px;font-size:0.78rem;margin-bottom:10px;color:#fbbf24;'>"
+                        "⏳ <b>Plan terbaru hari ini belum tersedia.</b> Menampilkan plan terakhir yang tercatat. "
+                        "Plan baru akan otomatis dibuat jam <b>21:00 WIB</b> hari kerja.</div>",
+                        unsafe_allow_html=True)
 
                 if not _today_entry and not _bs30_count:
                     st.markdown(f"""
@@ -18732,10 +18950,25 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _weekly_hist = st.session_state.get("auto_plan_history_weekly", {})
                 _this_week   = _now_w.strftime("%G-W%V")
                 _week_entry  = None
+                _is_latest_weekly = True
                 for _wk, _wv in sorted(_weekly_hist.items(), reverse=True):
                     if _wk.startswith(_this_week[:8]):
                         _week_entry = _wv
                         break
+                # Fallback: tampilkan weekly plan terakhir yg ada
+                if not _week_entry and _weekly_hist:
+                    _last_wk = sorted(_weekly_hist.keys())[-1]
+                    _week_entry = _weekly_hist[_last_wk]
+                    _is_latest_weekly = False
+
+                # Banner plan lama weekly
+                if _week_entry and not _is_latest_weekly:
+                    st.markdown(
+                        "<div style='background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);"
+                        "border-radius:8px;padding:10px 14px;font-size:0.78rem;margin-bottom:10px;color:#fbbf24;'>"
+                        "⏳ <b>Weekly plan minggu ini belum tersedia.</b> Menampilkan weekly plan terakhir yang tercatat. "
+                        "Plan baru otomatis dibuat setiap <b>Sabtu 12:00 WIB</b>.</div>",
+                        unsafe_allow_html=True)
 
                 if not _week_entry and not _bs30_count_w:
                     st.markdown(
@@ -19018,10 +19251,25 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _bsjp_hist_all = st.session_state.get("auto_plan_history_bsjp", {})
                 _today_b_key   = _now_b.strftime("%Y-%m-%d")
                 _today_b_entry = None
+                _is_latest_bsjp = True
                 for _bk, _bv in sorted(_bsjp_hist_all.items(), reverse=True):
                     if _bk.startswith(_today_b_key):
                         _today_b_entry = _bv
                         break
+                # Fallback: tampilkan BSJP plan terakhir yg ada (hari sebelumnya)
+                if not _today_b_entry and _bsjp_hist_all:
+                    _last_bk = sorted(_bsjp_hist_all.keys())[-1]
+                    _today_b_entry = _bsjp_hist_all[_last_bk]
+                    _is_latest_bsjp = False
+
+                # Banner plan lama BSJP
+                if _today_b_entry and not _is_latest_bsjp:
+                    st.markdown(
+                        "<div style='background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);"
+                        "border-radius:8px;padding:10px 14px;font-size:0.78rem;margin-bottom:10px;color:#fbbf24;'>"
+                        "⏳ <b>BSJP plan hari ini belum di-generate.</b> Menampilkan BSJP plan terakhir yang tercatat. "
+                        "Klik <b>▶ GENERATE BSJP</b> untuk membuat plan hari ini.</div>",
+                        unsafe_allow_html=True)
 
                 # Tombol generate manual
                 _bcol1, _bcol2 = st.columns([4, 1])
@@ -19994,9 +20242,15 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             if not (_now_bs.hour > 20 or (_now_bs.hour == 20 and _now_bs.minute >= 30)):
                 return  # belum 20:30
 
-            _auto_key_bs = f"brosum_auto_{_now_bs.strftime('%Y-%m-%d')}"
+            _today_bs_str = _now_bs.strftime("%Y-%m-%d")
+            _auto_key_bs  = f"brosum_auto_{_today_bs_str}"
             if st.session_state.get(_auto_key_bs): return  # sudah jalan hari ini
-            if st.session_state.get("sigma_bs30_screened"): return  # sudah ada cache
+
+            # Cek apakah data yang ada sudah dari hari ini (bukan cache lama)
+            _bs_ts_cur = st.session_state.get("sigma_bs30_ts", "")
+            if st.session_state.get("sigma_bs30_screened") and _today_bs_str in _bs_ts_cur:
+                return  # data hari ini sudah ada, skip
+            # Kalau ada tapi dari hari kemarin → lanjut generate ulang
 
             # Jalankan screening (silent background)
             try:
