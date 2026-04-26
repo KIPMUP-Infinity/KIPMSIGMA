@@ -5523,6 +5523,521 @@ if st.session_state.user and not st.session_state.data_loaded:
     st.session_state.data_loaded = True
     restore_images_from_messages()
 
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SIGMA GLOBAL SCHEDULER — Dipanggil setiap page load (bukan hanya saat tab dibuka)
+# Jadwal:
+#   06:00 WIB  → Daily Review (Market Brief 24 jam) — auto-generate
+#   15:40 WIB  → BSJP Plan — auto-generate
+#   20:30 WIB  → Broker Summary Screening — auto-refresh
+#   21:00 WIB  → Daily Plan — auto-generate
+#   Sabtu 12:00 → Weekly Plan — auto-generate
+# ═══════════════════════════════════════════════════════════════════════════════
+def _sigma_run_global_scheduler():
+    """Master scheduler — dipanggil di setiap page rerun."""
+    if not st.session_state.get("user"):
+        return  # hanya untuk user yang sudah login
+
+    from datetime import timezone, timedelta as _td_sch
+    _wib_sch  = timezone(_td_sch(hours=7))
+    _now_sch  = datetime.now(_wib_sch)
+    _wd_sch   = _now_sch.weekday()        # 0=Senin … 6=Minggu
+    _today_s  = _now_sch.strftime("%Y-%m-%d")
+    _hour_s   = _now_sch.hour
+    _min_s    = _now_sch.minute
+
+    def _is_weekday(): return _wd_sch < 5
+    def _past(h, m=0): return _hour_s > h or (_hour_s == h and _min_s >= m)
+
+    # ── Restore data dari DB jika session baru ──────────────────────────────
+    _restore_keys_sch = [
+        "auto_plan_history_daily", "auto_plan_history_weekly",
+        "auto_plan_history_bsjp", "tr_records", "brosum_history",
+        "sigma_bs30_screened", "sigma_bs30_ts",
+        "mb_daily_content", "mb_daily_timestamp",
+    ]
+    _need_restore = any(k not in st.session_state for k in _restore_keys_sch)
+    if _need_restore:
+        try:
+            _sv_sch = load_user(st.session_state.user["email"]) or {}
+            for _rk in _restore_keys_sch:
+                if _rk not in st.session_state and _sv_sch.get(_rk) is not None:
+                    st.session_state[_rk] = _sv_sch[_rk]
+        except: pass
+
+    # ══════════════════════════════════════════════════════════════
+    # [1] JAM 06:00 — DAILY REVIEW (Market Brief 24 Jam) AUTO-GENERATE
+    # ══════════════════════════════════════════════════════════════
+    if _is_weekday() and _past(6):
+        _dr_auto_key = f"daily_review_auto_{_today_s}"
+        if not st.session_state.get(_dr_auto_key):
+            # Cek apakah sudah ada review hari ini
+            _mb_ts = st.session_state.get("mb_daily_timestamp", "")
+            _mb_content = st.session_state.get("mb_daily_content", "")
+            _already_today_dr = _today_s in _mb_ts if _mb_ts else False
+
+            if not _already_today_dr and _mb_content:
+                # Ada konten tapi dari kemarin — mark sudah coba hari ini nanti
+                pass
+
+            if not _already_today_dr:
+                st.session_state[_dr_auto_key] = True  # lock dulu
+                try:
+                    import feedparser as _fp_sch
+                    _wib_tz2 = timezone(_td_sch(hours=7))
+                    _now_dr  = datetime.now(_wib_tz2)
+                    _cutoff_dr = _now_dr - _td_sch(hours=24)
+
+                    dom_news_sch, glob_news_sch = [], []
+                    _rss_sch = [
+                        ("https://www.cnbcindonesia.com/market/rss",          dom_news_sch),
+                        ("https://www.cnbcindonesia.com/economy/rss",         dom_news_sch),
+                        ("https://www.cnbc.com/id/15839069/device/rss/rss.html", glob_news_sch),
+                        ("https://feeds.a.dj.com/rss/RSSMarketsMain.xml",     glob_news_sch),
+                        ("https://feeds.bbci.co.uk/news/world/rss.xml",       glob_news_sch),
+                    ]
+                    for _url_sch, _target_sch in _rss_sch:
+                        try:
+                            _feed_sch = _fp_sch.parse(_url_sch)
+                            for _e_sch in _feed_sch.entries[:12]:
+                                _t_sch = _e_sch.get("title","").strip()
+                                if _t_sch and _t_sch not in _target_sch:
+                                    _target_sch.append(_t_sch)
+                                    if len(_target_sch) >= 12: break
+                        except: pass
+
+                    import yfinance as _yf_dr
+                    _rt_sch = {}
+                    for _sym_dr, _key_dr in [("^JKSE","ihsg"),("USDIDR=X","usdidr"),("GC=F","gold"),
+                                              ("CL=F","wti"),("^GSPC","spx"),("^DJI","dji")]:
+                        try:
+                            _hw_dr = _yf_dr.Ticker(_sym_dr).history(period="5d")
+                            if not _hw_dr.empty:
+                                _lv = float(_hw_dr["Close"].iloc[-1])
+                                _pv = float(_hw_dr["Close"].iloc[-2]) if len(_hw_dr)>1 else _lv
+                                _cv = round((_lv-_pv)/_pv*100, 2) if _pv else 0
+                                _rt_sch[f"{_key_dr}_price"] = round(_lv,2)
+                                _rt_sch[f"{_key_dr}_chg"]   = _cv
+                        except: pass
+
+                    _today_str_dr = _now_dr.strftime("%d %B %Y, %H:%M WIB")
+                    _dom_str_dr   = "\n".join(f"• {h}" for h in dom_news_sch[:10]) or "⚠ Tidak tersedia"
+                    _glob_str_dr  = "\n".join(f"• {h}" for h in glob_news_sch[:10]) or "⚠ Tidak tersedia"
+
+                    def _fmt_rt(d):
+                        out = []
+                        for pk,ck,nm,pre,suf in [
+                            ("ihsg_price","ihsg_chg","IHSG","",""),
+                            ("usdidr_price","usdidr_chg","USD/IDR","Rp ",""),
+                            ("gold_price","gold_chg","Gold XAU","$",""),
+                            ("wti_price","wti_chg","WTI Oil","$","/bbl"),
+                            ("spx_price","spx_chg","S&P 500","",""),
+                        ]:
+                            if d.get(pk):
+                                _c = d.get(ck,0)
+                                _a = "▲" if _c>=0 else "▼"
+                                if pk=="usdidr_price":
+                                    out.append(f"• {nm}: {pre}{d[pk]:,.0f}{suf} ({_a}{abs(_c):.2f}%)")
+                                else:
+                                    out.append(f"• {nm}: {pre}{d[pk]:,.2f}{suf} ({_a}{abs(_c):.2f}%)")
+                        return "\n".join(out) if out else "Data tidak tersedia"
+
+                    _rt_block_dr = _fmt_rt(_rt_sch)
+
+                    _dr_prompt = f"""Kamu adalah Chief Market Analyst SIGMA Terminal.
+Tanggal & waktu sekarang: **{_today_str_dr}** | Mode: **DAILY REVIEW - 24 JAM TERAKHIR**
+
+⚠️ Bahas HANYA berita dan data dalam 24 JAM TERAKHIR.
+
+═══ DATA HARGA REAL-TIME ═══
+{_rt_block_dr}
+⚠ GUNAKAN ANGKA INI PERSIS. JANGAN UBAH.
+═══════════════════════════
+
+BERITA DOMESTIK:
+{_dom_str_dr}
+
+BERITA GLOBAL:
+{_glob_str_dr}
+
+FORMAT - Bahasa Indonesia, max 600 kata, Markdown:
+## 🇮🇩 IHSG & PASAR DOMESTIK HARI INI
+## 🌍 KATALIS GLOBAL 24 JAM TERAKHIR
+## ⚔️ GEOPOLITIK & RISIKO GLOBAL
+## 💱 FOREX & KOMODITAS
+## 📊 SENTIMENT METER
+## ⚡ TACTICAL VIEW
+## 🎯 WATCHLIST SEKTORAL (3 sektor)
+
+Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
+
+                    _dr_result = None
+                    _ant_key_sch = st.secrets.get("ANTHROPIC_API_KEY","")
+                    if _ant_key_sch:
+                        try:
+                            import urllib.request as _ur_sch, json as _jsch
+                            _pl_sch = {
+                                "model": "claude-sonnet-4-5",
+                                "max_tokens": 4000,
+                                "tools": [{"type":"web_search_20250305","name":"web_search"}],
+                                "messages": [{"role":"user","content": _dr_prompt}]
+                            }
+                            _req_sch = _ur_sch.Request(
+                                "https://api.anthropic.com/v1/messages",
+                                data=_jsch.dumps(_pl_sch).encode(),
+                                headers={"Content-Type":"application/json",
+                                         "x-api-key": _ant_key_sch,
+                                         "anthropic-version":"2023-06-01",
+                                         "anthropic-beta":"web-search-2025-03-05"}
+                            )
+                            with _ur_sch.urlopen(_req_sch, timeout=45) as _r_sch:
+                                _d_sch = _jsch.loads(_r_sch.read())
+                            _dr_result = "".join(b.get("text","") for b in _d_sch.get("content",[]) if b.get("type")=="text").strip() or None
+                        except: pass
+
+                    if not _dr_result:
+                        try:
+                            _groq_sch = Groq(api_key=st.secrets.get("GROQ_API_KEY",""))
+                            _resp_sch  = _groq_sch.chat.completions.create(
+                                model="llama-3.3-70b-versatile",
+                                messages=[{"role":"user","content":_dr_prompt}],
+                                max_tokens=3000,
+                            )
+                            _dr_result = _resp_sch.choices[0].message.content
+                        except: pass
+
+                    if _dr_result:
+                        _dr_result += f"\n\n---\n*Auto-generated jam 06:00 WIB · {_today_str_dr}*"
+                        st.session_state["mb_daily_content"]   = _dr_result
+                        st.session_state["mb_daily_timestamp"] = _today_str_dr
+                        try:
+                            _sv_dr = load_user(st.session_state.user["email"]) or {}
+                            _sv_dr["mb_daily_content"]   = _dr_result
+                            _sv_dr["mb_daily_timestamp"] = _today_str_dr
+                            save_user(st.session_state.user["email"], _sv_dr)
+                        except: pass
+                    else:
+                        # Gagal generate — unlock agar bisa retry
+                        del st.session_state[_dr_auto_key]
+                except:
+                    if _dr_auto_key in st.session_state:
+                        del st.session_state[_dr_auto_key]
+
+    # ══════════════════════════════════════════════════════════════
+    # [2] JAM 20:30 — BROKER SUMMARY SCREENING AUTO-REFRESH
+    # ══════════════════════════════════════════════════════════════
+    if _is_weekday() and _past(20, 30):
+        _bs_auto_key = f"brosum_global_auto_{_today_s}"
+        if not st.session_state.get(_bs_auto_key):
+            _bs_ts = st.session_state.get("sigma_bs30_ts","")
+            _already_bs = _today_s in _bs_ts if _bs_ts else False
+            if not _already_bs:
+                st.session_state[_bs_auto_key] = True
+                try:
+                    import yfinance as _yf_bs
+                    from datetime import date as _da_bs, timedelta as _tda_bs
+                    _BS30 = [
+                        "TLKM","ASII","UNVR","ICBP","INDF","KLBF","GGRM","HMSP","MYOR","CPIN",
+                        "ADRO","ITMG","PTBA","ANTM","INCO","MDKA","NCKL","MBMA","BRMS","AMMN",
+                        "SMGR","INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES",
+                        "HEAL","MIKA","SILO","KAEF","TSPC","PGAS","MEDC","AALI","LSIP","SIMP",
+                        "TBIG","TOWR","LINK","TPIA","BRPT","UNTR","BFIN","ADMF","TMAS","SMDR",
+                        "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
+                    ]
+                    _end_bs   = _da_bs.today()
+                    _start_bs = _end_bs - _tda_bs(days=30)
+                    _raw_bs   = _yf_bs.download(
+                        " ".join(f"{t}.JK" for t in _BS30),
+                        start=str(_start_bs), end=str(_end_bs),
+                        progress=False, auto_adjust=True, threads=True
+                    )
+                    _cl_bs = _raw_bs.get("Close", _raw_bs)
+                    _vl_bs = _raw_bs.get("Volume", None)
+                    _result_bs = []
+                    for _tk_bs in _BS30:
+                        try:
+                            _ck_bs = f"{_tk_bs}.JK"
+                            if _ck_bs not in _cl_bs.columns: continue
+                            _cs_bs = _cl_bs[_ck_bs].dropna()
+                            _vs_bs = _vl_bs[_ck_bs].dropna() if _vl_bs is not None and _ck_bs in _vl_bs.columns else None
+                            if len(_cs_bs) < 5: continue
+                            _pr_bs = float(_cs_bs.iloc[-1])
+                            if _pr_bs > 8000: continue
+                            _spk_bs = 1.0
+                            if _vs_bs is not None and len(_vs_bs) >= 20:
+                                _avg20_bs = float(_vs_bs.iloc[-21:-1].mean())
+                                _tvol_bs  = float(_vs_bs.iloc[-1])
+                                _spk_bs   = round(_tvol_bs / _avg20_bs, 2) if _avg20_bs > 0 else 1.0
+                            if _spk_bs < 1.5: continue
+                            _chg_bs = round((_cs_bs.iloc[-1]-_cs_bs.iloc[-2])/_cs_bs.iloc[-2]*100, 2) if len(_cs_bs)>=2 else 0
+                            _result_bs.append({
+                                "ticker": _tk_bs, "price": _pr_bs, "spike": _spk_bs, "chg1d": _chg_bs,
+                                "high_momentum": False, "momentum_days": 0, "verdict": "",
+                                "pre_accum": _spk_bs >= 1.5, "top_accum": [], "top_dist": [],
+                                "accum_days": 0, "goapi_confirmed": False
+                            })
+                        except: continue
+
+                    if _result_bs:
+                        _result_bs.sort(key=lambda x: x["spike"], reverse=True)
+                        _ts_new = _now_sch.strftime("%d %b %Y, %H:%M WIB (Auto 20:30)")
+                        st.session_state["sigma_bs30_screened"] = _result_bs[:30]
+                        st.session_state["sigma_bs30_ts"]       = _ts_new
+                        # Simpan ke history
+                        _bsh_sch = st.session_state.get("brosum_history", {})
+                        _bsh_sch[_today_s] = {
+                            "date": _now_sch.strftime("%d %b %Y"),
+                            "generated_at": _ts_new,
+                            "screened": _result_bs[:30],
+                        }
+                        if len(_bsh_sch) > 30:
+                            for _dk_sch in sorted(_bsh_sch.keys())[:-30]:
+                                del _bsh_sch[_dk_sch]
+                        st.session_state["brosum_history"] = _bsh_sch
+                        # Simpan ke Sheets + DB
+                        try:
+                            _sv_bs = load_user(st.session_state.user["email"]) or {}
+                            _sv_bs["sigma_bs30_screened"] = _result_bs[:30]
+                            _sv_bs["sigma_bs30_ts"]       = _ts_new
+                            _sv_bs["brosum_history"]      = _bsh_sch
+                            save_user(st.session_state.user["email"], _sv_bs)
+                        except: pass
+                    else:
+                        del st.session_state[_bs_auto_key]
+                except:
+                    if _bs_auto_key in st.session_state:
+                        del st.session_state[_bs_auto_key]
+
+    # ══════════════════════════════════════════════════════════════
+    # [3] JAM 21:00 — DAILY PLAN AUTO-GENERATE
+    # ══════════════════════════════════════════════════════════════
+    if _is_weekday() and _past(21):
+        _dp_auto_key = f"daily_plan_global_{_today_s}"
+        if not st.session_state.get(_dp_auto_key):
+            _dph = st.session_state.get("auto_plan_history_daily", {})
+            _slot_dp = f"{_today_s}_2100"
+            if _slot_dp not in _dph:
+                st.session_state[_dp_auto_key] = True
+                try:
+                    # Pastikan ada bs30 cache (pakai data apapun yg ada)
+                    _bs30_dp = st.session_state.get("sigma_bs30_screened", [])
+                    if not _bs30_dp:
+                        # Coba ambil dari history
+                        _bsh_dp = st.session_state.get("brosum_history", {})
+                        if _bsh_dp:
+                            _last_dp = sorted(_bsh_dp.keys())[-1]
+                            _bs30_dp = _bsh_dp[_last_dp].get("screened", [])
+                    if _bs30_dp:
+                        import sys as _sys_dp
+                        # Ambil _WATCHLIST_RECO dari session atau fallback ke ticker dari bs30
+                        _tickers_dp = tuple(s["ticker"] for s in _bs30_dp if s.get("ticker"))
+                        # Fetch prices secara global (tidak butuh dalam context tab)
+                        import yfinance as _yf_dp
+                        _pm_dp = {}
+                        for _tk_dp in _tickers_dp[:30]:
+                            try:
+                                _h_dp = _yf_dp.Ticker(f"{_tk_dp}.JK").history(period="5d")
+                                if not _h_dp.empty:
+                                    _pm_dp[_tk_dp] = {
+                                        "close": float(_h_dp["Close"].iloc[-1]),
+                                        "high":  float(_h_dp["High"].iloc[-1]),
+                                        "low":   float(_h_dp["Low"].iloc[-1]),
+                                        "volume":float(_h_dp["Volume"].iloc[-1]) if "Volume" in _h_dp else 0,
+                                        "prev_close": float(_h_dp["Close"].iloc[-2]) if len(_h_dp)>1 else float(_h_dp["Close"].iloc[-1]),
+                                    }
+                            except: pass
+                        if _pm_dp:
+                            # Gunakan fungsi scoring sederhana dari bs30 data
+                            _plan_dp = {"daily": [], "avoid": [], "outlook": "Auto-generated jam 21:00 WIB"}
+                            for _s_dp in _bs30_dp[:20]:
+                                _tk2 = _s_dp.get("ticker","")
+                                if _tk2 not in _pm_dp: continue
+                                _pd2 = _pm_dp[_tk2]
+                                _cl2 = _pd2["close"]
+                                _spk = _s_dp.get("spike",1.0)
+                                if _spk >= 2.0:
+                                    _plan_dp["daily"].append({
+                                        "ticker": _tk2, "price": int(_cl2),
+                                        "entry_low": int(_cl2*0.99), "entry_high": int(_cl2*1.01),
+                                        "tp1": int(_cl2*1.04), "tp2": int(_cl2*1.07),
+                                        "sl": int(_cl2*0.97), "rr": "1:1.5",
+                                        "horizon": "1-3 hari", "rating": "BUY",
+                                        "vol_spike": f"{_spk:.1f}x",
+                                        "why_buy": f"Volume spike {_spk:.1f}x avg20 · Auto-screened 20:30",
+                                    })
+                            if _plan_dp["daily"]:
+                                # Simpan ke history
+                                _dph_cur = st.session_state.get("auto_plan_history_daily", {})
+                                _gen_at  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
+                                _dph_cur[_slot_dp] = {
+                                    "date": _now_sch.strftime("%d %b %Y"),
+                                    "slot": "Sesi Malam (21:00)",
+                                    "plan": _plan_dp,
+                                    "generated_at": _gen_at,
+                                }
+                                st.session_state["auto_plan_history_daily"] = _dph_cur
+                                # Persist
+                                try:
+                                    _sv_dp = load_user(st.session_state.user["email"]) or {}
+                                    _sv_dp["auto_plan_history_daily"] = _dph_cur
+                                    save_user(st.session_state.user["email"], _sv_dp)
+                                except: pass
+                except:
+                    if _dp_auto_key in st.session_state:
+                        del st.session_state[_dp_auto_key]
+
+    # ══════════════════════════════════════════════════════════════
+    # [4] JAM 15:40 — BSJP PLAN AUTO-GENERATE
+    # ══════════════════════════════════════════════════════════════
+    if _is_weekday() and _past(15, 40):
+        _bsjp_auto_key = f"bsjp_plan_global_{_today_s}"
+        if not st.session_state.get(_bsjp_auto_key):
+            _bsjp_h = st.session_state.get("auto_plan_history_bsjp", {})
+            _slot_bsjp = f"{_today_s}_1540"
+            if _slot_bsjp not in _bsjp_h:
+                st.session_state[_bsjp_auto_key] = True
+                try:
+                    _bs30_bsjp = st.session_state.get("sigma_bs30_screened", [])
+                    if not _bs30_bsjp:
+                        _bsh_bsjp = st.session_state.get("brosum_history", {})
+                        if _bsh_bsjp:
+                            _last_bsjp = sorted(_bsh_bsjp.keys())[-1]
+                            _bs30_bsjp = _bsh_bsjp[_last_bsjp].get("screened", [])
+
+                    import yfinance as _yf_bsjp
+                    _pm_bsjp = {}
+                    _tickers_bsjp = [s["ticker"] for s in _bs30_bsjp if s.get("ticker")][:30]
+                    for _tk_bsjp in _tickers_bsjp:
+                        try:
+                            _h_bsjp = _yf_bsjp.Ticker(f"{_tk_bsjp}.JK").history(period="5d")
+                            if not _h_bsjp.empty:
+                                _pm_bsjp[_tk_bsjp] = {
+                                    "close": float(_h_bsjp["Close"].iloc[-1]),
+                                    "high":  float(_h_bsjp["High"].iloc[-1]),
+                                    "low":   float(_h_bsjp["Low"].iloc[-1]),
+                                    "volume":float(_h_bsjp["Volume"].iloc[-1]) if "Volume" in _h_bsjp else 0,
+                                    "prev_close": float(_h_bsjp["Close"].iloc[-2]) if len(_h_bsjp)>1 else float(_h_bsjp["Close"].iloc[-1]),
+                                }
+                        except: pass
+
+                    if _pm_bsjp:
+                        _plan_bsjp = {"bsjp": [], "avoid": [], "outlook": "Auto-generated jam 15:40 WIB (Sesi Closing BEI)"}
+                        for _s_bsjp in _bs30_bsjp[:20]:
+                            _tk_b2 = _s_bsjp.get("ticker","")
+                            if _tk_b2 not in _pm_bsjp: continue
+                            _pd_b2 = _pm_bsjp[_tk_b2]
+                            _cl_b2 = _pd_b2["close"]
+                            _spk_b = _s_bsjp.get("spike",1.0)
+                            # BSJP: beli closing hari ini, jual besok pagi
+                            if _spk_b >= 1.8 and _pd_b2.get("close",0) > 0:
+                                _tp_b = round(_cl_b2 * 1.03)
+                                _sl_b = round(_cl_b2 * 0.98)
+                                _plan_bsjp["bsjp"].append({
+                                    "ticker": _tk_b2, "price": int(_cl_b2),
+                                    "entry_low": int(_cl_b2*0.998), "entry_high": int(_cl_b2*1.002),
+                                    "tp1": _tp_b, "tp2": round(_cl_b2*1.05),
+                                    "sl": _sl_b, "rr": "1:1.5",
+                                    "horizon": "H+1 pagi",
+                                    "rating": "BSJP",
+                                    "vol_spike": f"{_spk_b:.1f}x",
+                                    "why_buy": f"Spike {_spk_b:.1f}x closing · Target gap-up H+1",
+                                })
+                        if _plan_bsjp["bsjp"]:
+                            _bsjp_h_cur = st.session_state.get("auto_plan_history_bsjp", {})
+                            _gen_bsjp   = _now_sch.strftime("%d %b %Y, %H:%M WIB")
+                            _bsjp_h_cur[_slot_bsjp] = {
+                                "date": _now_sch.strftime("%d %b %Y"),
+                                "slot": "Sesi Closing (15:40)",
+                                "plan": _plan_bsjp,
+                                "generated_at": _gen_bsjp,
+                            }
+                            st.session_state["auto_plan_history_bsjp"] = _bsjp_h_cur
+                            try:
+                                _sv_bsjp = load_user(st.session_state.user["email"]) or {}
+                                _sv_bsjp["auto_plan_history_bsjp"] = _bsjp_h_cur
+                                save_user(st.session_state.user["email"], _sv_bsjp)
+                            except: pass
+                except:
+                    if _bsjp_auto_key in st.session_state:
+                        del st.session_state[_bsjp_auto_key]
+
+    # ══════════════════════════════════════════════════════════════
+    # [5] SABTU JAM 12:00 — WEEKLY PLAN AUTO-GENERATE
+    # ══════════════════════════════════════════════════════════════
+    if _wd_sch == 5 and _past(12):  # Sabtu
+        _week_iso = _now_sch.strftime("%G-W%V")
+        _wp_auto_key = f"weekly_plan_global_{_week_iso}"
+        if not st.session_state.get(_wp_auto_key):
+            _wph = st.session_state.get("auto_plan_history_weekly", {})
+            _slot_wp = f"{_week_iso}_1200"
+            if _slot_wp not in _wph:
+                st.session_state[_wp_auto_key] = True
+                try:
+                    _bs30_wp = st.session_state.get("sigma_bs30_screened", [])
+                    if not _bs30_wp:
+                        _bsh_wp = st.session_state.get("brosum_history", {})
+                        if _bsh_wp:
+                            _last_wp = sorted(_bsh_wp.keys())[-1]
+                            _bs30_wp = _bsh_wp[_last_wp].get("screened", [])
+
+                    import yfinance as _yf_wp
+                    _pm_wp = {}
+                    for _tk_wp in [s["ticker"] for s in _bs30_wp if s.get("ticker")][:30]:
+                        try:
+                            _h_wp = _yf_wp.Ticker(f"{_tk_wp}.JK").history(period="10d")
+                            if not _h_wp.empty:
+                                _pm_wp[_tk_wp] = {
+                                    "close": float(_h_wp["Close"].iloc[-1]),
+                                    "high":  float(_h_wp["High"].max()),
+                                    "low":   float(_h_wp["Low"].min()),
+                                    "volume":float(_h_wp["Volume"].iloc[-1]) if "Volume" in _h_wp else 0,
+                                    "prev_close": float(_h_wp["Close"].iloc[-2]) if len(_h_wp)>1 else float(_h_wp["Close"].iloc[-1]),
+                                }
+                        except: pass
+
+                    if _pm_wp:
+                        _plan_wp = {"weekly": [], "avoid": [], "outlook": "Auto-generated Sabtu 12:00 WIB — weekly swing plan"}
+                        for _s_wp in _bs30_wp[:20]:
+                            _tk_w2 = _s_wp.get("ticker","")
+                            if _tk_w2 not in _pm_wp: continue
+                            _pd_w2 = _pm_wp[_tk_w2]
+                            _cl_w2 = _pd_w2["close"]
+                            _spk_w = _s_wp.get("spike",1.0)
+                            if _spk_w >= 1.6:
+                                _plan_wp["weekly"].append({
+                                    "ticker": _tk_w2, "price": int(_cl_w2),
+                                    "entry_low": int(_cl_w2*0.99), "entry_high": int(_cl_w2*1.01),
+                                    "tp1": int(_cl_w2*1.07), "tp2": int(_cl_w2*1.12),
+                                    "sl": int(_cl_w2*0.96), "rr": "1:2",
+                                    "horizon": "3-5 hari",
+                                    "rating": "BUY",
+                                    "vol_spike": f"{_spk_w:.1f}x",
+                                    "why_buy": f"Swing kandidat · spike {_spk_w:.1f}x · weekly trend",
+                                })
+                        if _plan_wp["weekly"]:
+                            _wph_cur = st.session_state.get("auto_plan_history_weekly", {})
+                            _gen_wp  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
+                            _wph_cur[_slot_wp] = {
+                                "date": _now_sch.strftime("%d %b %Y"),
+                                "slot": "Sabtu Siang (12:00)",
+                                "plan": _plan_wp,
+                                "generated_at": _gen_wp,
+                            }
+                            st.session_state["auto_plan_history_weekly"] = _wph_cur
+                            try:
+                                _sv_wp = load_user(st.session_state.user["email"]) or {}
+                                _sv_wp["auto_plan_history_weekly"] = _wph_cur
+                                save_user(st.session_state.user["email"], _sv_wp)
+                            except: pass
+                except:
+                    if _wp_auto_key in st.session_state:
+                        del st.session_state[_wp_auto_key]
+
+# Jalankan scheduler setiap page load
+if st.session_state.get("user"):
+    _sigma_run_global_scheduler()
+
+
 st.markdown(f"""
 <style>
 * {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
