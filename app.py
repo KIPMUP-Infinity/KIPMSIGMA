@@ -8230,11 +8230,13 @@ canvas#globe { width:100%; height:100%; display:block; }
 #top10-box {
   background:rgba(4,12,30,0.88); border:1px solid #0a2040;
   border-radius:8px; padding:8px 10px; flex:1; min-width:0;
+  overflow-y:auto; max-height:220px;
 }
 .panel-title {
   font-size:9px; font-weight:700; letter-spacing:1.8px;
   color:#3a6aaa; margin-bottom:6px;
-  text-transform:uppercase;
+  text-transform:uppercase; position:sticky; top:0;
+  background:rgba(4,12,30,0.97); padding-bottom:3px; z-index:1;
 }
 .top10-row {
   display:flex; align-items:center; gap:4px;
@@ -8242,9 +8244,10 @@ canvas#globe { width:100%; height:100%; display:block; }
   border-radius:4px; transition:background 0.15s;
 }
 .top10-row:hover { background:rgba(0,60,180,0.25); }
-.top10-num { color:#3a5a7a; width:14px; text-align:right; flex-shrink:0; }
+.top10-num { color:#3a5a7a; width:20px; text-align:right; flex-shrink:0; }
 .top10-ticker { font-weight:600; width:36px; flex-shrink:0; }
 .top10-cap { color:#6a8aaa; margin-left:auto; font-size:9px; white-space:nowrap; }
+.top10-chg { font-size:9px; font-weight:700; width:42px; text-align:right; flex-shrink:0; white-space:nowrap; }
 
 /* STOCK INFO */
 #si-box {
@@ -8283,7 +8286,7 @@ canvas#globe { width:100%; height:100%; display:block; }
 <!-- BOTTOM PANEL: Top10 + Stock Info -->
 <div id="bottom-panel">
   <div id="top10-box">
-    <div class="panel-title">Top 10 by Market Cap</div>
+    <div class="panel-title">Top 100 by Market Cap</div>
     <div id="top10-list"></div>
   </div>
   <div id="si-box">
@@ -8516,13 +8519,15 @@ const OWNER_HEX = {
 // ============================================================
 // BUILD UI
 // ============================================================
-// Top 10 — sorted by market cap
+// Top 100 — sorted by market cap
 const top10el = document.getElementById('top10-list');
-[...STOCKS].sort((a,b)=>b.cap-a.cap).slice(0,10).forEach((s,i)=>{
+[...STOCKS].sort((a,b)=>b.cap-a.cap).slice(0,100).forEach((s,i)=>{
   const c=OWNER_HEX[s.owner]||'#888';
+  const chgColor = s.chg > 0.5 ? '#00dd66' : s.chg < -0.5 ? '#ff4444' : '#8899aa';
+  const chgLabel = s.chg > 0 ? '+'+s.chg.toFixed(2)+'%' : s.chg.toFixed(2)+'%';
   const d=document.createElement('div');
   d.className='top10-row';
-  d.innerHTML=`<span class="top10-num">${i+1}.</span><span class="top10-ticker" style="color:${c}">${s.ticker}</span><span class="top10-cap">IDR ${s.cap} T</span>`;
+  d.innerHTML=`<span class="top10-num">${i+1}.</span><span class="top10-ticker" style="color:${c}">${s.ticker}</span><span class="top10-cap">IDR ${s.cap} T</span><span class="top10-chg" style="color:${chgColor}">${chgLabel}</span>`;
   d.onclick=()=>showInfo(s);
   top10el.appendChild(d);
 });
@@ -9334,7 +9339,7 @@ table{{margin-bottom:0!important;}}
             "<div class='trm-section-line'></div></div>",
             unsafe_allow_html=True,
         )
-        components.html(_idx_globe_html, height=960, scrolling=False)
+        components.html(_idx_globe_html, height=1100, scrolling=False)
 
     with tab_macro:
         # ─────────────────────────────────────────────────────────
