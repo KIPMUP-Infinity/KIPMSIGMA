@@ -3674,36 +3674,104 @@ def _db_write(sheet_name: str, key: str, value) -> bool:
         except: pass
         return False
 
-# ── Public API: save_user / load_user ──
+# ── Public API: save_user / load_user (PER-FIELD STORAGE) ──
+# Setiap field kritis disimpan sebagai row terpisah di sheet 'user_data'
+# Format key: "{email_hash}:{field_name}"
+# Ini menghindari race condition overwrite blob JSON besar
+
+# Field-field yang disimpan per-row (tidak boleh overwrite satu sama lain)
+_PERFIELD_KEYS = [
+    "auto_plan_history_bsjp", "auto_plan_history_daily", "auto_plan_history_weekly",
+    "tr_records", "brosum_history", "sigma_bs30_screened", "sigma_bs30_ts",
+    "sigma_bs30_history", "brosum_hist_use_key", "brosum_hist_use_data",
+    "brosum_hist_use_date",
+]
+# Field-field session (disimpan satu blob di sheet 'users' — boleh overwrite)
+_SESSION_KEYS = [
+    "theme", "sessions", "active_id", "current_view", "selected_system",
+    "reco_daily_result", "reco_daily_ts", "reco_weekly_result", "reco_weekly_ts",
+    "reco_bsjp_result", "reco_bsjp_ts", "mb_daily_content", "mb_daily_timestamp",
+    "mb_weekly_content", "mb_weekly_timestamp", "ec_ai_result", "ec_ai_event",
+    "ec_ai_actual", "ec_ai_beat_miss", "ec_ai_model", "ec_ai_timestamp",
+    "alpha_insight_last_key", "alpha_insight_last_data", "alpha_insight_last_ticker",
+]
+
 def save_user(email: str, data: dict):
-    """Simpan data user ke SIGMA_DATABASE sheet 'users'. Fallback ke file lokal."""
+    """Simpan data user dengan per-field storage untuk field kritis.
+    Field kritis → row terpisah di 'user_data' (tidak bisa saling overwrite).
+    Field session → satu blob di 'users' (bisa overwrite, tidak kritis)."""
     key = _ukey(email)
-    # Primary: Google Sheets
-    ok = _db_write("users", key, data)
-    # Invalidate Sheets cache supaya load_user berikutnya baca data terbaru
-    _db_cache_ts.pop("users", None)
-    # Always write fallback lokal juga (cadangan)
+
+    # 1. Pisahkan field kritis dari data yang dikirim
+    session_data = {}
+    for k, v in data.items():
+        if k in _PERFIELD_KEYS:
+            # Hanya simpan kalau nilainya tidak kosong (tidak overwrite dengan None/{}/[])
+            if v is not None and v != {} and v != []:
+                _db_write("user_data", f"{key}:{k}", v)
+        else:
+            session_data[k] = v
+
+    # 2. Simpan session blob (theme, sessions, dll) — overwrite OK
+    if session_data:
+        _db_write("users", key, session_data)
+        _db_cache_ts.pop("users", None)
+
+    # 3. Fallback lokal untuk session data
     try:
         with open(os.path.join(DATA_DIR, f"{key}.json"), "w") as f:
-            json.dump(data, f, ensure_ascii=False)
+            json.dump(session_data, f, ensure_ascii=False)
     except: pass
 
-def load_user(email: str):
-    """Load data user dari SIGMA_DATABASE sheet 'users'. Fallback ke file lokal."""
+def save_field(email: str, field: str, value):
+    """Simpan satu field kritis langsung ke Sheets tanpa menyentuh field lain.
+    Gunakan ini setelah generate plan, update tr_records, dll."""
+    if value is None or value == {} or value == []:
+        return  # Jangan overwrite dengan kosong
     key = _ukey(email)
-    # Primary: Google Sheets
+    if field in _PERFIELD_KEYS:
+        _db_write("user_data", f"{key}:{field}", value)
+    else:
+        # Untuk field non-kritis, load dulu lalu merge
+        existing = load_user(email) or {}
+        existing[field] = value
+        _db_write("users", key, existing)
+        _db_cache_ts.pop("users", None)
+
+def load_user(email: str):
+    """Load semua data user — merge dari 'users' (session) + 'user_data' (per-field kritis).
+    Return dict lengkap semua field."""
+    key = _ukey(email)
+    result = {}
+
+    # 1. Load session data dari 'users'
     try:
-        all_data = _db_read_all("users")
-        if key in all_data:
-            return all_data[key]
+        all_users = _db_read_all("users")
+        if key in all_users and isinstance(all_users[key], dict):
+            result.update(all_users[key])
     except: pass
-    # Fallback: file lokal
+
+    # 2. Load per-field kritis dari 'user_data'
     try:
-        p = os.path.join(DATA_DIR, f"{key}.json")
-        if os.path.exists(p):
-            with open(p) as f: return json.load(f)
+        all_fields = _db_read_all("user_data")
+        prefix = f"{key}:"
+        for fkey, fval in all_fields.items():
+            if fkey.startswith(prefix):
+                field_name = fkey[len(prefix):]
+                if fval is not None and fval != {} and fval != []:
+                    result[field_name] = fval
     except: pass
-    return None
+
+    # 3. Fallback lokal kalau Sheets gagal
+    if not result:
+        try:
+            p = os.path.join(DATA_DIR, f"{key}.json")
+            if os.path.exists(p):
+                with open(p) as f:
+                    result = json.load(f)
+        except: pass
+
+    return result if result else None
 
 # ── Accounts (username/password auth) ──
 def get_accounts():
@@ -5855,13 +5923,12 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             for _dk_sch in sorted(_bsh_sch.keys())[:-30]:
                                 del _bsh_sch[_dk_sch]
                         st.session_state["brosum_history"] = _bsh_sch
-                        # Simpan ke Sheets + DB
+                        # Simpan ke Sheets — per-field, tidak bisa overwrite field lain
                         try:
-                            _sv_bs = load_user(st.session_state.user["email"]) or {}
-                            _sv_bs["sigma_bs30_screened"] = _result_bs[:30]
-                            _sv_bs["sigma_bs30_ts"]       = _ts_new
-                            _sv_bs["brosum_history"]      = _bsh_sch
-                            save_user(st.session_state.user["email"], _sv_bs)
+                            _ue = st.session_state.user["email"]
+                            save_field(_ue, "sigma_bs30_screened", _result_bs[:30])
+                            save_field(_ue, "sigma_bs30_ts",       _ts_new)
+                            save_field(_ue, "brosum_history",      _bsh_sch)
                         except: pass
                     else:
                         del st.session_state[_bs_auto_key]
@@ -5939,9 +6006,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                 st.session_state["auto_plan_history_daily"] = _dph_cur
                                 # Persist
                                 try:
-                                    _sv_dp = load_user(st.session_state.user["email"]) or {}
-                                    _sv_dp["auto_plan_history_daily"] = _dph_cur
-                                    save_user(st.session_state.user["email"], _sv_dp)
+                                    save_field(st.session_state.user["email"], "auto_plan_history_daily", _dph_cur)
                                 except: pass
                 except:
                     if _dp_auto_key in st.session_state:
@@ -6014,9 +6079,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             }
                             st.session_state["auto_plan_history_bsjp"] = _bsjp_h_cur
                             try:
-                                _sv_bsjp = load_user(st.session_state.user["email"]) or {}
-                                _sv_bsjp["auto_plan_history_bsjp"] = _bsjp_h_cur
-                                save_user(st.session_state.user["email"], _sv_bsjp)
+                                save_field(st.session_state.user["email"], "auto_plan_history_bsjp", _bsjp_h_cur)
                             except: pass
                 except:
                     if _bsjp_auto_key in st.session_state:
@@ -6086,9 +6149,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             }
                             st.session_state["auto_plan_history_weekly"] = _wph_cur
                             try:
-                                _sv_wp = load_user(st.session_state.user["email"]) or {}
-                                _sv_wp["auto_plan_history_weekly"] = _wph_cur
-                                save_user(st.session_state.user["email"], _sv_wp)
+                                save_field(st.session_state.user["email"], "auto_plan_history_weekly", _wph_cur)
                             except: pass
                 except:
                     if _wp_auto_key in st.session_state:
@@ -8106,18 +8167,20 @@ if user:
         "reco_daily_result","reco_weekly_result","reco_bsjp_result",
         "mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp",
     ]
-    _need_early_restore = any(k not in st.session_state for k in _CRITICAL_KEYS)
-    if _need_early_restore:
+    # Restore kalau BELUM pernah di-restore di session ini (bukan cek per-key)
+    # Ini memastikan data dari Sheets selalu di-load saat baru login/refresh
+    if not st.session_state.get("_sigma_restored_from_db"):
         _er_saved = load_user(user["email"]) or {}
         for _erk in _CRITICAL_KEYS:
-            if _erk not in st.session_state and _er_saved.get(_erk) is not None:
+            if _er_saved.get(_erk) is not None and _er_saved[_erk] not in ({}, [], ""):
                 st.session_state[_erk] = _er_saved[_erk]
+        st.session_state["_sigma_restored_from_db"] = True
 
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     
-    # ── SMART SAVE: hanya simpan session/theme di sini (setiap render) ──
-    # Data kritis (plan history, tr_records) disimpan LANGSUNG saat berubah
-    # bukan di sini, untuk menghindari overwrite dengan None
+    # ── RENDER LOOP SAVE: HANYA session/theme (TIDAK BOLEH field kritis di sini) ──
+    # Field kritis (plan history, tr_records, brosum) HANYA disimpan via save_field()
+    # saat data berubah — bukan setiap render — agar tidak pernah overwrite dengan kosong
     save_user(user["email"], {
         "theme": st.session_state.get("theme", "dark"),
         "sessions": sessions_to_save,
@@ -8143,17 +8206,8 @@ if user:
         "alpha_insight_last_key":    st.session_state.get("alpha_insight_last_key"),
         "alpha_insight_last_data":   st.session_state.get("alpha_insight_last_data"),
         "alpha_insight_last_ticker": st.session_state.get("alpha_insight_last_ticker"),
-        "tr_records":               st.session_state.get("tr_records", []),
-        "auto_plan_history_daily":  st.session_state.get("auto_plan_history_daily", {}),
-        "auto_plan_history_weekly": st.session_state.get("auto_plan_history_weekly", {}),
-        "auto_plan_history_bsjp":   st.session_state.get("auto_plan_history_bsjp", {}),
-        "brosum_history":           st.session_state.get("brosum_history", {}),
-        "sigma_bs30_screened":      st.session_state.get("sigma_bs30_screened", []),
-        "sigma_bs30_ts":            st.session_state.get("sigma_bs30_ts", ""),
-        "brosum_hist_use_key":      st.session_state.get("brosum_hist_use_key"),
-        "brosum_hist_use_data":     st.session_state.get("brosum_hist_use_data"),
-        "brosum_hist_use_date":     st.session_state.get("brosum_hist_use_date"),
-        "sigma_bs30_history":       st.session_state.get("sigma_bs30_history", {}),
+        # !! JANGAN TAMBAHKAN tr_records / auto_plan_history_* / brosum_history DI SINI !!
+        # Field kritis hanya boleh disimpan via save_field() saat data berubah.
     })
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
@@ -18395,15 +18449,13 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             # Persist ke DB (history + tr_records) — lebih robust dengan retry
             if st.session_state.get("user"):
                 _persist_ok = False
+                _ue5 = st.session_state.user["email"]
                 for _persist_try in range(2):
                     try:
-                        _sv = load_user(st.session_state.user["email"]) or {}
-                        _sv[history_key] = history
-                        _sv["tr_records"] = _tr_records
-                        # Pastikan brosum_history juga tersinkron
+                        save_field(_ue5, history_key, history)
+                        save_field(_ue5, "tr_records", _tr_records)
                         if st.session_state.get("brosum_history"):
-                            _sv["brosum_history"] = st.session_state["brosum_history"]
-                        save_user(st.session_state.user["email"], _sv)
+                            save_field(_ue5, "brosum_history", st.session_state["brosum_history"])
                         _persist_ok = True
                         break
                     except Exception as _pe:
@@ -18597,9 +18649,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     st.session_state["tr_records"] = records
                     if st.session_state.get("user"):
                         try:
-                            _sv = load_user(st.session_state.user["email"]) or {}
-                            _sv["tr_records"] = records
-                            save_user(st.session_state.user["email"], _sv)
+                            save_field(st.session_state.user["email"], "tr_records", records)
                         except: pass
 
                 st.session_state[tr_update_key] = True
@@ -18885,9 +18935,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                                     st.session_state["tr_records"] = _all_records
                                     if st.session_state.get("user"):
                                         try:
-                                            _sv = load_user(st.session_state.user["email"]) or {}
-                                            _sv["tr_records"] = _all_records
-                                            save_user(st.session_state.user["email"], _sv)
+                                            save_field(st.session_state.user["email"], "tr_records", _all_records)
                                         except: pass
                                     st.success(f"✅ {_or.get('ticker','')} → {_tag} | P&L: {'+'if _pnl_v>=0 else ''}{_pnl_v}%")
                                     st.rerun()
@@ -20942,8 +20990,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 _sv = load_user(st.session_state.user["email"]) or {}
                                 _sv["sigma_bs30_screened"] = st.session_state["sigma_bs30_screened"]
                                 _sv["sigma_bs30_ts"] = st.session_state["sigma_bs30_ts"]
-                                _sv["brosum_history"] = _bsh
-                                save_user(st.session_state.user["email"], _sv)
+                                save_field(st.session_state.user["email"], "brosum_history", _bsh)
                                 break
                             except:
                                 if _auto_try == 0:
@@ -21684,8 +21731,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             _sv = load_user(st.session_state.user["email"]) or {}
                             _sv["sigma_bs30_screened"] = _top30
                             _sv["sigma_bs30_ts"] = _ts_now
-                            _sv["brosum_history"] = _bsh2
-                            save_user(st.session_state.user["email"], _sv)
+                            save_field(st.session_state.user["email"], "brosum_history", _bsh2)
                         except: pass
                     _prog_bar.progress(100, text=f"✅ Selesai — {len(_top30)} saham screened, {_confirmed_count} GoAPI confirmed")
 
