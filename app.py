@@ -9659,11 +9659,23 @@ function setStatus(color,txt){
   document.getElementById('live-dot').style.background=color;
   document.getElementById('live-txt').textContent=txt;
 }
+// Weekend/holiday detection
+function isWeekend(){
+  const now=new Date(),wib=new Date(now.getTime()+7*3600000);
+  const d=wib.getUTCDay();return d===0||d===6;
+}
+function isMarketHours(){
+  const now=new Date(),wib=new Date(now.getTime()+7*3600000);
+  const mins=wib.getUTCHours()*60+wib.getUTCMinutes();
+  return !isWeekend()&&mins>=555&&mins<=905;
+}
+// Include previousClose for weekend fallback
 function buildYFUrl(tickers){
-  return 'https://query1.finance.yahoo.com/v8/finance/quote?symbols='+encodeURIComponent(tickers)+'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap';
+  return 'https://query1.finance.yahoo.com/v8/finance/quote?symbols='+encodeURIComponent(tickers)
+    +'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap,regularMarketPreviousClose';
 }
 async function tryProxy(pfn,yfUrl){
-  const resp=await fetch(pfn(yfUrl),{signal:AbortSignal.timeout(12000)});
+  const resp=await fetch(pfn(yfUrl),{signal:AbortSignal.timeout(14000)});
   if(!resp.ok)throw new Error('HTTP '+resp.status);
   const outer=await resp.json();
   const raw=(outer&&outer.contents)?outer.contents:JSON.stringify(outer);
@@ -9678,7 +9690,8 @@ const PROXIES=[
 let fetching=false;
 async function fetchLive(){
   if(fetching)return;fetching=true;
-  setStatus('#ffab00','Mengambil data...');
+  const weekend=isWeekend();
+  setStatus('#ffab00',weekend?'Mengambil data penutupan Jumat...':'Mengambil data realtime...');
   try{
     const all=STOCKS.map(s=>s.t+'.JK');
     const batches=[all.slice(0,100),all.slice(100)].filter(b=>b.length>0);
@@ -9694,7 +9707,8 @@ async function fetchLive(){
       const tk=q.symbol.replace('.JK','');
       const s=STOCKS.find(x=>x.t===tk);
       if(!s)return;
-      if(q.regularMarketPrice!=null)s.p=q.regularMarketPrice;
+      const price=q.regularMarketPrice!=null?q.regularMarketPrice:q.regularMarketPreviousClose;
+      if(price!=null)s.p=price;
       if(typeof q.regularMarketChangePercent==='number')s.g=parseFloat(q.regularMarketChangePercent.toFixed(2));
       if(q.regularMarketVolume)s.v=parseFloat((q.regularMarketVolume/1e6).toFixed(1));
       if(q.marketCap&&q.marketCap>0)s.c=Math.max(1,Math.round(q.marketCap/1e12));
@@ -9702,22 +9716,31 @@ async function fetchLive(){
     });
     const now=new Date();
     const ts=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    setStatus(updated>0?'#26a69a':'#ef5350',updated>0?('\u2713 Live \u00b7 '+updated+' saham'):'Gagal \u00b7 data statis');
-    document.getElementById('last-update').textContent=updated>0?'Update: '+ts:'';
-    if(updated>0)draw();
-  }catch(err){setStatus('#ef5350','Gagal \u2013 tampil data statis');}
+    if(updated>0){
+      const lbl=weekend?'\u2713 Data Jumat \u00b7 '+updated+' saham':(isMarketHours()?'\u2713 Live \u00b7 '+updated+' saham':'\u2713 Penutupan \u00b7 '+updated+' saham');
+      setStatus('#26a69a',lbl);
+      document.getElementById('last-update').textContent='Update: '+ts+(weekend?' (weekend)':'');
+    } else {
+      setStatus('#ef5350','Proxy gagal \u2013 seed data');
+      document.getElementById('last-update').textContent='';
+    }
+    draw(); // always redraw whether updated or not
+  }catch(err){
+    setStatus('#ef5350','Error \u2013 seed data');
+    draw();
+  }
   fetching=false;
 }
 
-draw();
+draw(); // Render seed data IMMEDIATELY
 fetchLive();
-setInterval(fetchLive,30000);
+setInterval(fetchLive,isWeekend()?600000:30000);
 </script>
 </body></html>"""
 
         # ── IDX STOCK HEATMAP — PERTAMA (di atas) ─────────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX STOCK HEATMAP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        components.html(_heatmap_html, height=620, scrolling=False)
+        components.html(_heatmap_html, height=680, scrolling=False)
 
         # ── IDX MARKET MAP GLOBE — KEDUA (di bawah) ───────────────────────────
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
@@ -9732,7 +9755,7 @@ setInterval(fetchLive,30000);
             "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
             unsafe_allow_html=True,
         )
-        components.html(_idx_globe_html, height=680, scrolling=False)
+        components.html(_idx_globe_html, height=820, scrolling=False)
 
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
