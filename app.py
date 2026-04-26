@@ -17757,8 +17757,10 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         def _auto_update_track_record():
             """
             Update track record otomatis mulai jam 20:30 WIB.
-            Cek apakah TP/SL sudah tersentuh untuk semua posisi OPEN.
-            Berjalan tiap jam setelah 20:30 WIB hari kerja.
+            Logika per tipe:
+            - BSJP: beli sore (15:40), jual pagi H+1. Hasil baru bisa dicek HARI BERIKUTNYA.
+                    Artinya: untuk BSJP entry tanggal X, cek TP/SL di data hari X+1 (H+1 open/high/low).
+            - Daily/Weekly: cek data hari yang sama (jam 20:30 sudah ada data closing).
             """
             now = _wib_now()
             wd  = now.weekday()
@@ -17774,11 +17776,29 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 return  # Sudah update dalam jam ini
 
             records = st.session_state.get("tr_records", [])
-            open_records = [r for r in records if r.get("status") == "OPEN"]
+            today_str = now.strftime("%Y-%m-%d")
+
+            # Pisahkan OPEN records: BSJP vs non-BSJP
+            # BSJP hanya bisa diupdate jika entry date BUKAN hari ini
+            # (karena BSJP beli sore hari X, hasilnya baru diketahui pada hari X+1)
+            open_records_daily = [
+                r for r in records
+                if r.get("status") == "OPEN"
+                and r.get("type", "").upper() != "BSJP"
+            ]
+            open_records_bsjp = [
+                r for r in records
+                if r.get("status") == "OPEN"
+                and r.get("type", "").upper() == "BSJP"
+                and r.get("date", "").replace(" ", "") != today_str  # bukan entry hari ini
+            ]
+
+            open_records = open_records_daily + open_records_bsjp
             if not open_records:
+                st.session_state[tr_update_key] = True
                 return
 
-            # Fetch harga terkini untuk semua ticker yang OPEN
+            # Fetch harga terkini untuk semua ticker yang eligible
             open_tickers = list(set(r["ticker"] for r in open_records))
             try:
                 import threading as _thr_tr
@@ -17786,13 +17806,24 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 _lock_tr = _thr_tr.Lock()
                 def _fetch_tr(tk):
                     try:
+                        # Ambil 5 hari terakhir — hari ini (iloc[-1]) adalah data terbaru
                         h = yf.Ticker(f"{tk}.JK").history(period="5d")
                         if not h.empty:
-                            hi = float(h["High"].iloc[-1])
-                            lo = float(h["Low"].iloc[-1])
-                            cl = float(h["Close"].iloc[-1])
+                            hi_today = float(h["High"].iloc[-1])
+                            lo_today = float(h["Low"].iloc[-1])
+                            cl_today = float(h["Close"].iloc[-1])
+                            op_today = float(h["Open"].iloc[-1])
+                            # Data hari sebelumnya (untuk BSJP yang entry kemarin, cek hari ini = H+1)
+                            hi_h1 = hi_today  # "hari ini" adalah H+1 bagi BSJP yang entry kemarin
+                            lo_h1 = lo_today
+                            op_h1 = op_today
                             with _lock_tr:
-                                _prices_tr[tk] = {"high": hi, "low": lo, "close": cl}
+                                _prices_tr[tk] = {
+                                    "high": hi_today, "low": lo_today,
+                                    "close": cl_today, "open": op_today,
+                                    # H+1 data untuk BSJP (sama dengan today karena kita cek malam)
+                                    "h1_high": hi_h1, "h1_low": lo_h1, "h1_open": op_h1,
+                                }
                     except: pass
                 _thr_list = [_thr_tr.Thread(target=_fetch_tr, args=(tk,)) for tk in open_tickers]
                 for t in _thr_list: t.start()
@@ -17803,9 +17834,25 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     if r.get("status") != "OPEN": continue
                     tk = r["ticker"]
                     if tk not in _prices_tr: continue
-                    hi = _prices_tr[tk]["high"]
-                    lo = _prices_tr[tk]["low"]
-                    cl = _prices_tr[tk]["close"]
+
+                    _is_bsjp = r.get("type", "").upper() == "BSJP"
+                    _entry_date = r.get("date", "")
+
+                    # BSJP: skip jika entry hari ini (belum ada data H+1)
+                    if _is_bsjp and _entry_date.replace(" ", "") == today_str:
+                        continue
+
+                    # Pilih data harga yang dipakai
+                    if _is_bsjp:
+                        # Untuk BSJP, pakai H+1 data (open/high/low hari berikutnya dari entry)
+                        hi = _prices_tr[tk]["h1_high"]
+                        lo = _prices_tr[tk]["h1_low"]
+                        cl = _prices_tr[tk]["h1_open"]  # exit idealnya di open H+1
+                    else:
+                        hi = _prices_tr[tk]["high"]
+                        lo = _prices_tr[tk]["low"]
+                        cl = _prices_tr[tk]["close"]
+
                     entry = r.get("entry", 0)
                     tp1 = r.get("tp1", 0)
                     sl  = r.get("sl", 0)
@@ -17813,21 +17860,23 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
                     hit_tp  = tp1 > 0 and hi >= tp1
                     hit_sl  = sl  > 0 and lo <= sl
+
+                    _h1_note = " (H+1)" if _is_bsjp else ""
                     if hit_tp:
                         r["status"]     = "CLOSED"
                         r["exit_price"] = tp1
                         r["result"]     = "WIN"
                         r["pnl_pct"]    = round((tp1 - entry) / entry * 100, 2)
-                        r["exit_date"]  = now.strftime("%Y-%m-%d")
-                        r["auto_note"]  = f"✅ TP1 Rp{tp1:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
+                        r["exit_date"]  = today_str
+                        r["auto_note"]  = f"✅ TP1 Rp{tp1:,} tersentuh{_h1_note} (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
                         changed = True
                     elif hit_sl:
                         r["status"]     = "CLOSED"
                         r["exit_price"] = sl
                         r["result"]     = "LOSS"
                         r["pnl_pct"]    = round((sl - entry) / entry * 100, 2)
-                        r["exit_date"]  = now.strftime("%Y-%m-%d")
-                        r["auto_note"]  = f"🛑 SL Rp{sl:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
+                        r["exit_date"]  = today_str
+                        r["auto_note"]  = f"🛑 SL Rp{sl:,} tersentuh{_h1_note} (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
                         changed = True
                     else:
                         # Update current P&L unrealized
@@ -18037,7 +18086,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             """
             Track Record yang 100% terhubung ke History Plan.
             Setiap saham di History Plan otomatis masuk sebagai OPEN.
-            User hanya perlu update hasil: TP1/TP2/SL HIT.
+            Menampilkan statistik win rate + tabel lengkap.
+            BSJP: hasil baru bisa diketahui H+1 (auto-update jam 20:30 WIB hari berikutnya).
             """
             _type_label = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}.get(plan_type, plan_type)
             _all_records = st.session_state.get("tr_records", [])
@@ -18046,160 +18096,81 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             # ── Info Banner ──
             _hist_key   = f"auto_plan_history_{plan_type}"
             _hist_count = len(st.session_state.get(_hist_key, {}))
+            _bsjp_note  = " &nbsp;·&nbsp; ⏰ BSJP: hasil dicek H+1 (hari berikutnya)" if plan_type == "bsjp" else ""
             st.markdown(f"""
             <div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};
                 border:1px solid rgba(38,166,154,0.2);border-left:3px solid {accent};
                 border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
                 font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};line-height:1.8;'>
             🔗 <b style='color:{accent};'>AUTO-LINKED KE HISTORY PLAN</b> &nbsp;·&nbsp;
-            Setiap saham dari {_type_label} Plan otomatis masuk sebagai <b>OPEN</b> &nbsp;·&nbsp;
-            {_hist_count} history tersimpan &nbsp;·&nbsp; {len(_filtered)} trade tercatat<br>
-            ✏️ Tugas kamu: pilih posisi OPEN dan update apakah <b>TP HIT</b> atau <b>SL HIT</b> &nbsp;·&nbsp; Auto-check TP/SL jam <b>20:30 WIB</b>
+            {_hist_count} history tersimpan &nbsp;·&nbsp; {len(_filtered)} trade tercatat{_bsjp_note}<br>
+            🔄 Auto-check TP/SL jam <b>20:30 WIB</b> setiap hari kerja
             </div>""", unsafe_allow_html=True)
 
-            # ══════════════════════════════════════════════════════
-            # SECTION A — UPDATE HASIL TRADE (OPEN → CLOSED)
-            # ══════════════════════════════════════════════════════
-            _open_list = [r for r in _filtered if r.get("status", "OPEN") == "OPEN"]
-
-            if _open_list:
-                st.markdown(
-                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
-                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
-                    f"✏️ UPDATE HASIL — {len(_open_list)} posisi OPEN</div>",
-                    unsafe_allow_html=True)
-
-                # Tampilkan kartu per posisi OPEN
-                for _oi, _or in enumerate(_open_list):
-                    _or_idx = next((i for i, r in enumerate(_all_records)
-                                    if r.get("id") == _or.get("id")), None)
-                    if _or_idx is None: continue
-
-                    with st.container(border=True):
-                        _oc1, _oc2, _oc3 = st.columns([2, 3, 2])
-                        with _oc1:
-                            st.markdown(
-                                f"**{_or.get('ticker','')}** &nbsp;"
-                                f"<span style='color:{accent};font-size:11px;'>{_or.get('date','')}</span><br>"
-                                f"<span style='font-size:11px;color:#888;'>{_or.get('slot', _or.get('type',''))}</span>",
-                                unsafe_allow_html=True)
-                            st.caption(f"Entry: Rp {int(_or.get('entry',0)):,}")
-                        with _oc2:
-                            _lv1, _lv2, _lv3 = st.columns(3)
-                            _lv1.metric("TP1", f"Rp {int(_or.get('tp1',0)):,}")
-                            _lv2.metric("TP2", f"Rp {int(_or.get('tp2',0)):,}" if _or.get('tp2') else "—")
-                            _lv3.metric("SL",  f"Rp {int(_or.get('sl',0)):,}")
-                        with _oc3:
-                            _res_opt = st.selectbox(
-                                "HASIL:",
-                                ["— Masih OPEN —", "✅ TP1 HIT", "🎯 TP2 HIT", "🛑 SL HIT", "📤 Manual Exit"],
-                                key=f"tr_res_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
-                            if _res_opt != "— Masih OPEN —":
-                                _ex_price = st.number_input(
-                                    "Harga Exit (Rp):",
-                                    min_value=0,
-                                    value=int(_or.get("tp1",0)) if "TP1" in _res_opt
-                                          else int(_or.get("tp2",0)) if "TP2" in _res_opt
-                                          else int(_or.get("sl",0)) if "SL" in _res_opt else 0,
-                                    key=f"tr_exp_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
-                                if st.button("💾 SIMPAN", key=f"tr_upd_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}",
-                                             use_container_width=True):
-                                    _entry_v = _or.get("entry", 0)
-                                    _exit_v  = _ex_price if _ex_price > 0 else (
-                                        _or.get("tp1",0) if "TP1" in _res_opt else
-                                        _or.get("tp2",0) if "TP2" in _res_opt else
-                                        _or.get("sl",0))
-                                    _pnl_v   = round((_exit_v - _entry_v) / _entry_v * 100, 2) if _entry_v else 0
-                                    _res_v   = "WIN" if _pnl_v >= 0 else "LOSS"
-                                    _tag     = ("TP1 HIT" if "TP1" in _res_opt
-                                                else "TP2 HIT" if "TP2" in _res_opt
-                                                else "SL HIT" if "SL" in _res_opt
-                                                else "Manual Exit")
-                                    _all_records[_or_idx].update({
-                                        "status":     "CLOSED",
-                                        "exit_price": _exit_v,
-                                        "pnl_pct":    _pnl_v,
-                                        "result":     _res_v,
-                                        "exit_date":  _wib_now().strftime("%Y-%m-%d"),
-                                        "auto_note":  _tag,
-                                    })
-                                    st.session_state["tr_records"] = _all_records
-                                    if st.session_state.get("user"):
-                                        try:
-                                            _sv = load_user(st.session_state.user["email"]) or {}
-                                            _sv["tr_records"] = _all_records
-                                            save_user(st.session_state.user["email"], _sv)
-                                        except: pass
-                                    st.success(f"✅ {_or.get('ticker','')} → {_tag} | P&L: {'+'if _pnl_v>=0 else ''}{_pnl_v}%")
-                                    st.rerun()
-            else:
-                if _filtered:
-                    st.info("✅ Semua posisi sudah CLOSED. Tidak ada yang perlu diupdate.")
-                else:
-                    st.markdown(f"""<div style='text-align:center;padding:32px 20px;opacity:0.5;'>
-                        <div style='font-size:2rem;margin-bottom:10px;'>🏆</div>
-                        <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'>
-                        Belum ada trade tercatat.<br>
-                        Generate {_type_label} Plan → saham otomatis masuk ke sini sebagai OPEN.</div>
-                    </div>""", unsafe_allow_html=True)
-                    return
-
-            st.markdown("---")
+            if not _filtered:
+                st.markdown(f"""<div style='text-align:center;padding:32px 20px;opacity:0.5;'>
+                    <div style='font-size:2rem;margin-bottom:10px;'>🏆</div>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'>
+                    Belum ada trade tercatat.<br>
+                    Generate {_type_label} Plan → saham otomatis masuk ke sini sebagai OPEN.</div>
+                </div>""", unsafe_allow_html=True)
+                return
 
             # ══════════════════════════════════════════════════════
-            # SECTION B — STATISTIK WIN RATE
+            # SECTION A — STATISTIK WIN RATE SUMMARY
             # ══════════════════════════════════════════════════════
-            if _filtered:
-                _closed_f = [r for r in _filtered if r.get("status") == "CLOSED"]
-                _open_f   = [r for r in _filtered if r.get("status") != "CLOSED"]
-                _wins_f   = [r for r in _closed_f if r.get("result") == "WIN"]
-                _loss_f   = [r for r in _closed_f if r.get("result") == "LOSS"]
-                _wr_f     = round(len(_wins_f)/len(_closed_f)*100,1) if _closed_f else 0
-                _avg_w_f  = round(sum(r.get("pnl_pct",0) for r in _wins_f)/len(_wins_f),2) if _wins_f else 0
-                _avg_l_f  = round(sum(r.get("pnl_pct",0) for r in _loss_f)/len(_loss_f),2) if _loss_f else 0
-                _tot_pnl_f= round(sum(r.get("pnl_pct",0) for r in _closed_f),2)
+            _closed_f = [r for r in _filtered if r.get("status") == "CLOSED"]
+            _open_f   = [r for r in _filtered if r.get("status") != "CLOSED"]
+            _wins_f   = [r for r in _closed_f if r.get("result") == "WIN"]
+            _loss_f   = [r for r in _closed_f if r.get("result") == "LOSS"]
+            _wr_f     = round(len(_wins_f)/len(_closed_f)*100,1) if _closed_f else 0
+            _avg_w_f  = round(sum(r.get("pnl_pct",0) for r in _wins_f)/len(_wins_f),2) if _wins_f else 0
+            _avg_l_f  = round(sum(r.get("pnl_pct",0) for r in _loss_f)/len(_loss_f),2) if _loss_f else 0
+            _tot_pnl_f= round(sum(r.get("pnl_pct",0) for r in _closed_f),2)
 
-                st.markdown(
-                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
-                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
-                    f"📊 STATISTIK {_type_label.upper()} TRACK RECORD</div>",
-                    unsafe_allow_html=True)
+            st.markdown(
+                f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
+                f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
+                f"📊 STATISTIK {_type_label.upper()} TRACK RECORD</div>",
+                unsafe_allow_html=True)
 
-                _mc1,_mc2,_mc3,_mc4 = st.columns(4)
-                _mc1.metric("Win Rate",
-                            f"{_wr_f}%",
-                            f"{len(_wins_f)} WIN · {len(_loss_f)} LOSS",
-                            delta_color="normal" if _wr_f >= 50 else "inverse")
-                _mc2.metric("Total Trade", len(_filtered), f"{len(_open_f)} masih OPEN")
-                _mc3.metric("Total P&L (Closed)",
-                            f"{'+'if _tot_pnl_f>=0 else ''}{_tot_pnl_f}%",
-                            delta_color="normal" if _tot_pnl_f >= 0 else "inverse")
-                _mc4.metric("Avg Win / Avg Loss", f"+{_avg_w_f}% / {_avg_l_f}%")
+            _mc1,_mc2,_mc3,_mc4 = st.columns(4)
+            _mc1.metric("Win Rate",
+                        f"{_wr_f}%",
+                        f"{len(_wins_f)} WIN · {len(_loss_f)} LOSS",
+                        delta_color="normal" if _wr_f >= 50 else "inverse")
+            _mc2.metric("Total Trade", len(_filtered), f"{len(_open_f)} masih OPEN")
+            _mc3.metric("Total P&L (Closed)",
+                        f"{'+'if _tot_pnl_f>=0 else ''}{_tot_pnl_f}%",
+                        delta_color="normal" if _tot_pnl_f >= 0 else "inverse")
+            _mc4.metric("Avg Win / Avg Loss", f"+{_avg_w_f}% / {_avg_l_f}%")
 
-                st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
 
-                # ── Tabel Lengkap ──
-                import pandas as _pd_tr
-                _tbl_rows = []
-                for _rf in sorted(_filtered, key=lambda x: x.get("date",""), reverse=True):
-                    _pnl_v = _rf.get("pnl_pct", 0)
-                    _stat  = _rf.get("result", "OPEN")
-                    _emoji = "✅" if _stat == "WIN" else ("🛑" if _stat == "LOSS" else "⏳")
-                    _tbl_rows.append({
-                        "#":        _rf.get("id",""),
-                        "TANGGAL":  _rf.get("date",""),
-                        "TICKER":   _rf.get("ticker",""),
-                        "SESI":     _rf.get("slot", _rf.get("type","")),
-                        "ENTRY":    f"Rp {int(_rf.get('entry',0)):,}",
-                        "TP1":      f"Rp {int(_rf.get('tp1',0)):,}",
-                        "TP2":      f"Rp {int(_rf.get('tp2',0)):,}" if _rf.get("tp2") else "—",
-                        "SL":       f"Rp {int(_rf.get('sl',0)):,}",
-                        "EXIT":     f"Rp {int(_rf.get('exit_price',0)):,}" if _rf.get("exit_price",0) > 0 else "—",
-                        "P&L":      f"{'+'if _pnl_v>=0 else ''}{_pnl_v}%" if _pnl_v else "—",
-                        "HASIL":    f"{_emoji} {_stat}",
-                        "KET":      (_rf.get("auto_note","") or _rf.get("reason",""))[:45],
-                    })
-                st.dataframe(_pd_tr.DataFrame(_tbl_rows), use_container_width=True, hide_index=True)
+            # ══════════════════════════════════════════════════════
+            # SECTION B — TABEL LENGKAP
+            # ══════════════════════════════════════════════════════
+            import pandas as _pd_tr
+            _tbl_rows = []
+            for _rf in sorted(_filtered, key=lambda x: x.get("date",""), reverse=True):
+                _pnl_v = _rf.get("pnl_pct", 0)
+                _stat  = _rf.get("result", "OPEN")
+                _emoji = "✅" if _stat == "WIN" else ("🛑" if _stat == "LOSS" else "⏳")
+                _tbl_rows.append({
+                    "#":        _rf.get("id",""),
+                    "TANGGAL":  _rf.get("date",""),
+                    "TICKER":   _rf.get("ticker",""),
+                    "SESI":     _rf.get("slot", _rf.get("type","")),
+                    "ENTRY":    f"Rp {int(_rf.get('entry',0)):,}",
+                    "TP1":      f"Rp {int(_rf.get('tp1',0)):,}",
+                    "TP2":      f"Rp {int(_rf.get('tp2',0)):,}" if _rf.get("tp2") else "—",
+                    "SL":       f"Rp {int(_rf.get('sl',0)):,}",
+                    "EXIT":     f"Rp {int(_rf.get('exit_price',0)):,}" if _rf.get("exit_price",0) > 0 else "—",
+                    "P&L":      f"{'+'if _pnl_v>=0 else ''}{_pnl_v}%" if _pnl_v else "—",
+                    "HASIL":    f"{_emoji} {_stat}",
+                    "KET":      (_rf.get("auto_note","") or _rf.get("reason",""))[:55],
+                })
+            st.dataframe(_pd_tr.DataFrame(_tbl_rows), use_container_width=True, hide_index=True)
 
         def _render_auto_track_record():
             """Render track record yang ter-update otomatis."""
@@ -18357,6 +18328,47 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         if _sv3.get(_hkey):
                             st.session_state[_hkey] = _sv3[_hkey]
                     except: pass
+
+        # ── BSJP Sanitizer: revert record BSJP yang closed di hari yang sama dengan entry ──
+        # (kesalahan dari versi lama yang cek TP/SL di hari yang sama, bukan H+1)
+        _tr_all = st.session_state.get("tr_records", [])
+        _tr_changed = False
+        for _r in _tr_all:
+            if (_r.get("type", "").upper() == "BSJP"
+                    and _r.get("status") == "CLOSED"
+                    and _r.get("exit_date", "") == _r.get("date", "2000-01-01").replace(" Apr ", "-04-").replace(" Jan ", "-01-").replace(" Feb ", "-02-").replace(" Mar ", "-03-").replace(" May ", "-05-").replace(" Jun ", "-06-").replace(" Jul ", "-07-").replace(" Aug ", "-08-").replace(" Sep ", "-09-").replace(" Oct ", "-10-").replace(" Nov ", "-11-").replace(" Dec ", "-12-")):
+                # Cek lebih simpel: bandingkan string tanggal langsung
+                _entry_d = _r.get("date", "")
+                _exit_d  = _r.get("exit_date", "")
+                # Normalise: entry_d bisa "26 Apr 2026" atau "2026-04-26"
+                try:
+                    from datetime import datetime as _dtp
+                    if "-" in _entry_d:
+                        _ed_parsed = _dtp.strptime(_entry_d, "%Y-%m-%d").date()
+                    else:
+                        _ed_parsed = _dtp.strptime(_entry_d, "%d %b %Y").date()
+                    if "-" in _exit_d:
+                        _exd_parsed = _dtp.strptime(_exit_d, "%Y-%m-%d").date()
+                    else:
+                        _exd_parsed = _dtp.strptime(_exit_d, "%d %b %Y").date()
+                    if _ed_parsed == _exd_parsed:
+                        # Reset ke OPEN — ini salah update di hari yang sama
+                        _r["status"]     = "OPEN"
+                        _r["result"]     = "-"
+                        _r["exit_price"] = 0
+                        _r["pnl_pct"]    = 0
+                        _r["exit_date"]  = ""
+                        _r["auto_note"]  = _r.get("auto_note", "").replace("✅ ", "⏳ REVERTED — ").replace("🛑 ", "⏳ REVERTED — ")
+                        _tr_changed = True
+                except: pass
+        if _tr_changed:
+            st.session_state["tr_records"] = _tr_all
+            if st.session_state.get("user"):
+                try:
+                    _sv_san = load_user(st.session_state.user["email"]) or {}
+                    _sv_san["tr_records"] = _tr_all
+                    save_user(st.session_state.user["email"], _sv_san)
+                except: pass
 
         # ── Jalankan auto-generate & auto-update track record saat tab dibuka ──
         # PENTING: restore history dari DB DULU sebelum auto-generate
