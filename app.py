@@ -17001,7 +17001,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
             # ── Limit kandidat ──
             if is_bsjp:
-                top_candidates = candidates         # BSJP: tampilkan SEMUA tanpa batas
+                top_candidates = candidates[:20]    # BSJP: maksimal 20 kandidat terbaik
             else:
                 top_n = 7 if plan_type == "weekly" else 5
                 top_candidates = candidates[:top_n]
@@ -18963,11 +18963,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 ⚠️ Strategi overnight: sizing maks <b>5–10%</b> portofolio per posisi. Risiko gap-down dari berita semalam.
 </div>""", unsafe_allow_html=True)
 
-            # ── 4 sub-tab BSJP ──
-            _b_tab_plan, _b_tab_hist, _b_tab_hist_sum, _b_tab_trackrecord = st.tabs([
-                "  🌙 TRADE PLAN & SUMMARY  ",
+            # ── 3 sub-tab BSJP ──
+            _b_tab_plan, _b_tab_hist, _b_tab_trackrecord = st.tabs([
+                "  🌙 TRADE PLAN  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
-                "  📊 HISTORY SUMMARY  ",
                 "  🏆 TRACK RECORD  ",
             ])
 
@@ -19077,38 +19076,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         )
                         st.markdown(_btp_html, unsafe_allow_html=True)
 
-                    # ── Summary Cards BSJP ──
-                    if _brows_buy:
-                        st.markdown(
-                            f"<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
-                            f"text-transform:uppercase;color:#f5a623;margin:16px 0 8px;'>"
-                            f"⚡ SUMMARY TOP PICKS BSJP</div>", unsafe_allow_html=True)
-                        for _bri, _br in enumerate(_brows_buy[:8], 1):
-                            _btk = _br.get("ticker","")
-                            with st.container(border=True):
-                                _bch, _bcs = st.columns([4,1])
-                                with _bch:
-                                    st.markdown(
-                                        f"**#{_bri} {_btk}**  "
-                                        f"<span style='font-size:12px'>Rp {int(_br.get('price',0)):,}</span>",
-                                        unsafe_allow_html=True)
-                                with _bcs:
-                                    _brating = _br.get("rating","BUY")
-                                    _brat_color = "#089981" if _brating == "BUY" else "#f5a623"
-                                    st.markdown(
-                                        f"<div style='text-align:right'>"
-                                        f"<span style='font-size:18px;font-weight:700;color:#f5a623'>{_br.get('combined',_br.get('vol_spike','—'))}</span>"
-                                        f"<br><span style='font-size:9px;color:#666'>VOL</span>"
-                                        f"<br><span style='color:{_brat_color};font-weight:700;font-size:11px'>► {_brating}</span>"
-                                        f"</div>", unsafe_allow_html=True)
-                                _bc1,_bc2,_bc3,_bc4,_bc5 = st.columns(5)
-                                _bc1.metric("Entry Low",  f"Rp {int(_br.get('entry_low',0)):,}")
-                                _bc2.metric("TP1",        f"Rp {int(_br.get('tp1',0)):,}")
-                                _bc3.metric("SL",         f"Rp {int(_br.get('sl',0)):,}")
-                                _bc4.metric("RR",         f"{_br.get('rr',0)}x")
-                                _bc5.metric("Streak",     f"{_br.get('consec_up',0)}d" if _br.get('consec_up') else "—")
-                                st.caption(f"📌 {_br.get('why_buy','—')}")
-
                     if _brows_avoid:
                         _bav_rows_html = "".join([
                             f"<tr style='background:rgba(242,54,69,0.10);'>"
@@ -19153,55 +19120,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _render_auto_history("bsjp")
 
             # ════════════════════════════════════════════
-            # BSJP TAB 3 — HISTORY SUMMARY
-            # ════════════════════════════════════════════
-            with _b_tab_hist_sum:
-                _bsjp_hist_ss = st.session_state.get("auto_plan_history_bsjp", {})
-                if not _bsjp_hist_ss:
-                    st.info("📭 Belum ada History Summary BSJP. Data akan muncul setelah plan pertama dibuat (auto jam 15:30 WIB).")
-                else:
-                    _today_b_iso = _now_b.strftime("%Y-%m-%d")
-                    for _bhk in sorted(_bsjp_hist_ss.keys(), reverse=True)[:30]:
-                        _bhe    = _bsjp_hist_ss[_bhk]
-                        _bhplan = _bhe.get("plan", {})
-                        _bhrows = _bhplan.get("bsjp", [])
-                        _bhdate = _bhe.get("date", _bhk[:10])
-                        _bhts   = _bhe.get("generated_at","—")
-                        _bhout  = _bhplan.get("outlook", _bhplan.get("kondisi",""))
-                        _is_today_b = _bhk.startswith(_today_b_iso)
-                        _bbadge = "  🟢 HARI INI" if _is_today_b else ""
-                        _blabel = f"🌙 {_bhdate} — {_bhe.get('slot','—')} · {len(_bhrows)} kandidat{_bbadge}"
-                        with st.expander(_blabel, expanded=_is_today_b):
-                            st.caption(f"Generated {_bhts}")
-                            if _bhout:
-                                st.markdown(
-                                    f"<div style='padding:8px 12px;border-left:3px solid #f5a623;"
-                                    f"background:rgba(245,166,35,0.06);border-radius:0 6px 6px 0;"
-                                    f"font-size:0.8rem;margin-bottom:12px;line-height:1.6;'>"
-                                    f"💡 {_bhout}</div>", unsafe_allow_html=True)
-                            for _bhi2, _bhr in enumerate(_bhrows[:8], 1):
-                                _bhtk = _bhr.get("ticker","")
-                                with st.container(border=True):
-                                    _bhhc, _bhsc = st.columns([4,1])
-                                    with _bhhc:
-                                        st.markdown(
-                                            f"**#{_bhi2} {_bhtk}** &nbsp;"
-                                            f"<span style='font-size:12px'>Rp {int(_bhr.get('price',0)):,}</span>",
-                                            unsafe_allow_html=True)
-                                    with _bhsc:
-                                        st.markdown(
-                                            f"<div style='text-align:right'>"
-                                            f"<span style='font-size:16px;font-weight:700;color:#f5a623'>{_bhr.get('rating','BUY')}</span>"
-                                            f"</div>", unsafe_allow_html=True)
-                                    _bhc1,_bhc2,_bhc3,_bhc4 = st.columns(4)
-                                    _bhc1.metric("TP1",    f"Rp {int(_bhr.get('tp1',0)):,}")
-                                    _bhc2.metric("SL",     f"Rp {int(_bhr.get('sl',0)):,}")
-                                    _bhc3.metric("RR",     f"{_bhr.get('rr',0)}x")
-                                    _bhc4.metric("VOL",    _bhr.get("vol_spike","—"))
-                                    st.caption(f"📌 {_bhr.get('why_buy','—')}")
-
-            # ════════════════════════════════════════════
-            # BSJP TAB 4 — TRACK RECORD
+            # BSJP TAB 3 — TRACK RECORD
             # ════════════════════════════════════════════
             with _b_tab_trackrecord:
                 _render_track_record_inline("bsjp", "#f5a623", ctx="plan_bsjp")
