@@ -8168,18 +8168,14 @@ if current_view == "dashboard":
     ])
 
     with tab_idxmap:
-        # ── IDX MARKET MAP — 3D Globe Konglomerasi & MSCI ──────────────────────
-        st.markdown(
-            "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>IDX MARKET MAP — KONGLOMERASI & MSCI</span>"
-            "<div class='trm-section-line'></div></div>",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            "<p style='color:#4a6a8a;font-size:0.82rem;margin:-4px 0 10px;'>"
-            "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
-            unsafe_allow_html=True,
-        )
+        # ════════════════════════════════════════════════════════
+        # 1. IDX MARKET MAP GLOBE — ditampilkan PERTAMA (di atas)
+        # ════════════════════════════════════════════════════════
+
+        # ════════════════════════════════════════════════════════
+        # 2. IDX STOCK HEATMAP — didefinisikan dulu (variabel),
+        #    di-render SETELAH globe di bawah
+        # ════════════════════════════════════════════════════════
         _idx_globe_html = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9324,12 +9320,7 @@ window.addEventListener('resize',()=>{
 </body>
 </html>
 """
-        components.html(_idx_globe_html, height=680, scrolling=False)
-
         # ── IDX STOCK HEATMAP ─────────────────────────────────────────────────
-        st.markdown("<div style=\'height:8px\'></div>", unsafe_allow_html=True)
-        st.markdown("<div class=\'trm-section\'><div class=\'trm-section-line\'></div><span class=\'trm-section-label\'>IDX STOCK HEATMAP</span><div class=\'trm-section-line\'></div></div>", unsafe_allow_html=True)
-
         _heatmap_html = """<!DOCTYPE html>
 <html><head>
 <meta charset="UTF-8">
@@ -9720,6 +9711,8 @@ function draw(){
   canvas.height = H * dpr;
   canvas.style.width  = W + 'px';
   canvas.style.height = H + 'px';
+  // FIX BLUR: reset transform dulu sebelum scale, agar tidak accumulated
+  ctx.setTransform(1,0,0,1,0,0);
   ctx.scale(dpr, dpr);
   // auto iframe resize
   try{window.parent.postMessage({type:'streamlit:setFrameHeight',height:H+80},'*');}catch(e){}
@@ -9881,10 +9874,11 @@ window.addEventListener('resize', draw);
 draw();
 
 // ============================================================
-// FIX 4: REAL-TIME DATA FETCH — Yahoo Finance via allorigins proxy
-// Update setiap 30 detik (IDX data delay ~15 menit, tapi ini se-fresh mungkin)
+// FIX FETCH: Real-time data via multiple CORS proxy fallback
+// Proxy 1: corsproxy.io  (lebih reliable)
+// Proxy 2: api.codetabs.com
+// Proxy 3: allorigins.win (fallback terakhir)
 // ============================================================
-// Ticker map: IDX ticker → Yahoo Finance symbol (.JK suffix)
 const YF_MAP = {};
 STOCKS.forEach(s=>{ YF_MAP[s.ticker] = s.ticker+'.JK'; });
 
@@ -9896,28 +9890,56 @@ liveBtn.innerHTML='<span id="live-dot" style="width:7px;height:7px;border-radius
 document.getElementById('toolbar').appendChild(liveBtn);
 
 let fetchInProgress=false;
+
+// Bangun URL Yahoo Finance v8 (lebih stabil dari v7)
+function buildYFUrl(tickers){
+  return 'https://query1.finance.yahoo.com/v8/finance/quote?symbols='
+    +encodeURIComponent(tickers)
+    +'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap';
+}
+
+async function tryFetch(proxyFn, yfUrl){
+  const url = proxyFn(yfUrl);
+  const resp = await fetch(url,{signal:AbortSignal.timeout(10000)});
+  if(!resp.ok) throw new Error('HTTP '+resp.status);
+  const outer = await resp.json();
+  // allorigins wraps in .contents, codetabs wraps in .contents, corsproxy is direct
+  const raw = (typeof outer==='object' && outer.contents) ? outer.contents : JSON.stringify(outer);
+  const data = JSON.parse(typeof raw==='string'?raw:JSON.stringify(raw));
+  return data?.quoteResponse?.result || data?.quoteResponse?.result || [];
+}
+
+const PROXIES = [
+  // Proxy 1: corsproxy.io — direct JSON response
+  url => 'https://corsproxy.io/?'+encodeURIComponent(url),
+  // Proxy 2: codetabs
+  url => 'https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(url),
+  // Proxy 3: allorigins (fallback)
+  url => 'https://api.allorigins.win/get?url='+encodeURIComponent(url),
+];
+
 async function fetchLiveData(){
   if(fetchInProgress) return;
   fetchInProgress=true;
   document.getElementById('live-dot').style.background='#ffab00';
   document.getElementById('live-txt').textContent='Mengambil data...';
   try{
-    // Ambil batch tickers sekaligus via Yahoo Finance query (max 20 per request)
     const tickers = STOCKS.map(s=>s.ticker+'.JK').join(',');
-    const url = 'https://query1.finance.yahoo.com/v7/finance/quote?symbols='+encodeURIComponent(tickers)+'&fields=regularMarketPrice,regularMarketChangePercent,regularMarketVolume,marketCap';
-    // Gunakan allorigins CORS proxy
-    const proxy = 'https://api.allorigins.win/get?url='+encodeURIComponent(url);
-    const resp = await fetch(proxy,{signal:AbortSignal.timeout(12000)});
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const outer = await resp.json();
-    const data = JSON.parse(outer.contents);
-    const quotes = data?.quoteResponse?.result || [];
+    const yfUrl = buildYFUrl(tickers);
+    let quotes = [], lastErr = null;
+    // Coba tiap proxy sampai berhasil
+    for(let i=0;i<PROXIES.length;i++){
+      try{
+        quotes = await tryFetch(PROXIES[i], yfUrl);
+        if(quotes && quotes.length>0) break;
+      }catch(e){ lastErr=e; }
+    }
     let updated=0;
     quotes.forEach(q=>{
       const ticker = q.symbol.replace('.JK','');
       const s = STOCKS.find(x=>x.ticker===ticker);
       if(!s) return;
-      if(q.regularMarketPrice) s.price = q.regularMarketPrice;
+      if(q.regularMarketPrice!=null) s.price = q.regularMarketPrice;
       if(typeof q.regularMarketChangePercent==='number') s.chg = parseFloat(q.regularMarketChangePercent.toFixed(2));
       if(q.regularMarketVolume) s.vol = (q.regularMarketVolume/1e6).toFixed(1)+' M';
       if(q.marketCap) s.cap = parseFloat((q.marketCap/1e12).toFixed(0))||s.cap;
@@ -9926,11 +9948,11 @@ async function fetchLiveData(){
     const now = new Date();
     const timeStr = now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     document.getElementById('live-dot').style.background = updated>0?'#26a69a':'#ef5350';
-    document.getElementById('live-txt').textContent = updated>0?('Live · '+updated+' saham · '+timeStr):'Gagal update · '+timeStr;
+    document.getElementById('live-txt').textContent = updated>0?('Live · '+updated+' · '+timeStr):'Coba lagi...';
     if(updated>0) draw();
-  } catch(err){
+  }catch(err){
     document.getElementById('live-dot').style.background='#ef5350';
-    document.getElementById('live-txt').textContent='Offline – data statis';
+    document.getElementById('live-txt').textContent='Gagal – data statis';
   }
   fetchInProgress=false;
 }
@@ -9941,6 +9963,23 @@ setInterval(fetchLiveData, 30000);
 </script>
 </body></html>"""
 
+        # ── IDX MARKET MAP GLOBE — PERTAMA (di atas) ──────────────────────────
+        st.markdown(
+            "<div class='trm-section'><div class='trm-section-line'></div>"
+            "<span class='trm-section-label'>IDX MARKET MAP — KONGLOMERASI & MSCI</span>"
+            "<div class='trm-section-line'></div></div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#4a6a8a;font-size:0.82rem;margin:-4px 0 10px;'>"
+            "Visualisasi 143 saham IDX berdasarkan grup konglomerasi · Hover untuk detail · Drag/scroll untuk navigasi 3D</p>",
+            unsafe_allow_html=True,
+        )
+        components.html(_idx_globe_html, height=680, scrolling=False)
+
+        # ── IDX STOCK HEATMAP — KEDUA (di bawah) ─────────────────────────────
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX STOCK HEATMAP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         components.html(_heatmap_html, height=620, scrolling=False)
 
     with tab_macro:
@@ -14949,223 +14988,7 @@ tbody tr:hover td{{background:rgba(255,255,255,0.03);}}
 
         with alpha_tab_insight:
 
-            # ── IDX BUBBLE CHART (menggantikan globe 3D yang cluttered) ───────
-            _globe_html = """<!DOCTYPE html><html><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:transparent;font-family:ui-sans-serif,system-ui,sans-serif;overflow:hidden;}
-#cw{position:relative;width:100%;display:flex;flex-direction:column;align-items:center;}
-canvas{display:block;}
-#tip{position:absolute;pointer-events:none;background:rgba(10,10,30,0.95);border:1px solid rgba(139,92,246,0.55);border-radius:10px;padding:8px 13px;font-size:12px;color:#e8e0ff;white-space:nowrap;display:none;z-index:10;box-shadow:0 4px 20px rgba(0,0,0,0.4);}
-#tip .tn{font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:3px;}
-#tip .ts{font-size:11px;color:#a5b4fc;margin-bottom:2px;}
-#tip .tc{font-size:11px;color:#94a3b8;}
-#sub{text-align:center;font-size:10px;color:rgba(150,140,200,0.65);padding:4px 0 2px;letter-spacing:0.07em;}
-#leg{display:flex;flex-wrap:wrap;gap:4px 12px;padding:4px 16px 8px;justify-content:center;}
-.li{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(180,170,220,0.8);}
-.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-</style></head><body>
-<div id="cw">
-  <canvas id="g"></canvas>
-  <div id="tip"><div class="tn" id="ttn"></div><div class="ts" id="tts"></div><div class="tc" id="ttc"></div></div>
-  <div id="sub">IDX TOP STOCKS &middot; SIZE = MARKET CAP &middot; HOVER UNTUK DETAIL</div>
-  <div id="leg"></div>
-</div>
-<script>
-// BUG3 FIX: Ganti globe 3D → 2D Bubble Chart bersih, hanya tampilkan saham terdepan
-const SEC=[
-  {n:'Banking',     c:'#7c3aed'},
-  {n:'Consumer',    c:'#0ea5e9'},
-  {n:'Energy',      c:'#f59e0b'},
-  {n:'Telco & Tech',c:'#10b981'},
-  {n:'Property',    c:'#ec4899'},
-  {n:'Healthcare',  c:'#06b6d4'},
-  {n:'Infra',       c:'#f97316'},
-  {n:'Finance',     c:'#a78bfa'},
-  {n:'Mining',      c:'#34d399'},
-  {n:'Diversified', c:'#f472b6'},
-];
-// Data saham utama: [ticker, sektor-index, market-cap-T, perubahan%]
-const STOCKS=[
-  ['BBCA',0,1289,1.08],['BBRI',0,856,-0.23],['BMRI',0,652,0.74],['BBNI',0,389,0.85],
-  ['TLKM',3,566,-0.51],['ASII',9,520,0.32],['ICBP',1,480,0.27],['INDF',1,420,0.15],
-  ['ADRO',2,282,1.38],['UNVR',1,352,-1.14],['BREN',2,420,3.24],['GOTO',3,180,-3.12],
-  ['AMMN',8,294,2.11],['MDKA',8,270,2.07],['KLBF',5,245,-0.32],['MAPI',9,245,0.60],
-  ['PWON',4,218,0.46],['CUAN',2,310,4.20],['JPFA',1,220,-0.34],['VALE',8,230,0.97],
-  ['PTBA',2,160,0.34],['INCO',8,230,0.97],['BSDE',4,275,0.45],['HMSP',9,310,-0.45],
-  ['SMRA',4,130,-0.24],['PGAS',2,188,0.70],['EXCL',3,180,0.54],['ISAT',3,155,0.91],
-  ['JSMR',6,210,0.48],['TBIG',6,165,-0.48],['ANTM',8,155,1.57],['BRPT',8,280,2.05],
-  ['BBTN',0,130,0.28],['DCII',3,230,2.14],['SILO',5,190,0.77],['MIKA',5,155,0.39],
-  ['UNTR',9,320,1.02],['HRUM',2,198,0.84],['TLKM',3,566,-0.51],['BUKA',3,145,-2.94],
-  ['ARTO',0,175,-1.55],['SIDO',5,138,0.35],['TOWR',6,188,0.24],['AKRA',2,168,0.62],
-];
-// Deduplicate
-const seen=new Set(); const DATA=STOCKS.filter(s=>{if(seen.has(s[0]))return false;seen.add(s[0]);return true;});
-
-const W=Math.min(window.innerWidth,680), H=280;
-const cv=document.getElementById('g');
-cv.width=W; cv.height=H;
-const ctx=cv.getContext('2d');
-const tip=document.getElementById('tip');
-let mx=-999,my=-999;
-
-// Layout: bubble packed per sektor, diatur secara grid
-// Hitung radius setiap bubble dari market cap
-const maxCap=Math.max(...DATA.map(d=>d[2]));
-const minR=10, maxR=52;
-function capToR(cap){ return minR+(maxR-minR)*Math.pow(cap/maxCap,0.45); }
-
-// Tata letak: pack dalam area dengan force simulation sederhana
-const bubbles=DATA.map((d,i)=>{
-  const r=capToR(d[2]);
-  const sec=SEC[d[1]];
-  // Posisi awal: spiral dari tengah
-  const angle=(i/DATA.length)*Math.PI*6;
-  const dist=20+i*9;
-  return{
-    tk:d[0], si:d[1], cap:d[2], chg:d[3],
-    r, c:sec.c, sn:sec.n,
-    x: W/2 + Math.cos(angle)*dist,
-    y: H/2 + Math.sin(angle)*dist*0.55,
-    vx:0, vy:0
-  };
-});
-
-// Force layout: 80 iterasi untuk posisi optimal
-for(let iter=0;iter<120;iter++){
-  // Repulsion antar bubble
-  for(let i=0;i<bubbles.length;i++){
-    for(let j=i+1;j<bubbles.length;j++){
-      const a=bubbles[i],b=bubbles[j];
-      const dx=b.x-a.x, dy=b.y-a.y;
-      const dist=Math.sqrt(dx*dx+dy*dy)||0.1;
-      const minD=a.r+b.r+4;
-      if(dist<minD){
-        const force=(minD-dist)/dist*0.55;
-        const fx=dx*force, fy=dy*force;
-        a.vx-=fx; a.vy-=fy; b.vx+=fx; b.vy+=fy;
-      }
-    }
-    // Gravity ke tengah
-    const a=bubbles[i];
-    a.vx+=(W/2-a.x)*0.018;
-    a.vy+=(H/2-a.y)*0.018;
-  }
-  bubbles.forEach(b=>{
-    b.x+=b.vx*0.38; b.y+=b.vy*0.38;
-    b.vx*=0.7; b.vy*=0.7;
-    // Batas canvas
-    b.x=Math.max(b.r+4,Math.min(W-b.r-4,b.x));
-    b.y=Math.max(b.r+4,Math.min(H-b.r-4,b.y));
-  });
-}
-
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  // Background subtle grid
-  ctx.strokeStyle='rgba(139,92,246,0.05)'; ctx.lineWidth=0.5;
-  for(let x=0;x<W;x+=60){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-
-  let hov=null;
-  // Urutkan: bubble kecil duluan, besar di atas
-  const sorted=[...bubbles].sort((a,b)=>a.r-b.r);
-  sorted.forEach(b=>{
-    const dx=b.x-mx,dy=b.y-my;
-    const isHov=(dx*dx+dy*dy<(b.r+3)*(b.r+3));
-    if(isHov) hov=b;
-
-    // Glow jika hover
-    if(isHov){
-      ctx.beginPath(); ctx.arc(b.x,b.y,b.r+5,0,Math.PI*2);
-      ctx.fillStyle=b.c+'30'; ctx.fill();
-    }
-
-    // Bubble utama dengan gradient radial
-    const grad=ctx.createRadialGradient(b.x-b.r*0.28,b.y-b.r*0.28,b.r*0.08,b.x,b.y,b.r);
-    grad.addColorStop(0,b.c+'ee');
-    grad.addColorStop(0.6,b.c+'bb');
-    grad.addColorStop(1,b.c+'55');
-    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.fillStyle=grad; ctx.fill();
-
-    // Border
-    ctx.strokeStyle=isHov?b.c+'ff':b.c+'88';
-    ctx.lineWidth=isHov?1.5:0.7;
-    ctx.stroke();
-
-    // Label ticker (hanya jika cukup besar)
-    if(b.r>=14){
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      const fs=Math.min(13,b.r*0.52);
-      ctx.font=`bold ${fs}px ui-sans-serif,sans-serif`;
-      ctx.fillStyle='rgba(255,255,255,0.92)';
-      ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=3;
-      if(b.r>22){
-        // Tampilkan ticker + chg%
-        ctx.fillText(b.tk,b.x,b.y-fs*0.55);
-        const sign=b.chg>=0?'+':'';
-        const chgClr=b.chg>=0?'#6ee7b7':'#fca5a5';
-        ctx.font=`${Math.max(8,fs*0.75)}px ui-sans-serif,sans-serif`;
-        ctx.fillStyle=chgClr;
-        ctx.fillText(sign+b.chg.toFixed(2)+'%',b.x,b.y+fs*0.65);
-      } else {
-        ctx.fillText(b.tk,b.x,b.y);
-      }
-      ctx.shadowBlur=0;
-    }
-  });
-
-  if(hov){
-    const sign=hov.chg>=0?'+':'';
-    const chgClr=hov.chg>=0?'#6ee7b7':'#fca5a5';
-    document.getElementById('ttn').textContent=hov.tk;
-    document.getElementById('tts').innerHTML='<span style="color:'+hov.c+'">'+hov.sn+'</span>';
-    document.getElementById('ttc').innerHTML='IDR '+hov.cap+' T &nbsp;·&nbsp; <span style="color:'+chgClr+'">'+sign+hov.chg.toFixed(2)+'%</span>';
-    tip.style.display='block';
-    let tx=hov.x+hov.r+8, ty=hov.y-40;
-    if(tx+180>W) tx=hov.x-hov.r-8-180;
-    if(ty<0) ty=0;
-    tip.style.left=tx+'px'; tip.style.top=ty+'px';
-  } else tip.style.display='none';
-}
-
-cv.addEventListener('mousemove',e=>{
-  const rc=cv.getBoundingClientRect();
-  mx=e.clientX-rc.left; my=e.clientY-rc.top;
-  draw();
-});
-cv.addEventListener('mouseleave',()=>{mx=-999;my=-999;draw();});
-
-// Touch support
-cv.addEventListener('touchmove',e=>{
-  e.preventDefault();
-  const rc=cv.getBoundingClientRect();
-  mx=e.touches[0].clientX-rc.left; my=e.touches[0].clientY-rc.top;
-  draw();
-},{passive:false});
-cv.addEventListener('touchend',()=>{mx=-999;my=-999;draw();});
-
-// Legend
-const ld=document.getElementById('leg');
-SEC.forEach(s=>{
-  const el=document.createElement('div');el.className='li';
-  el.innerHTML='<div class="ld" style="background:'+s.c+'"></div>'+s.n;
-  ld.appendChild(el);
-});
-
-// Resize support
-function onResize(){
-  const nw=Math.min(window.innerWidth,680);
-  if(nw!==cv.width){cv.width=nw; cv.height=H; draw();}
-}
-window.addEventListener('resize',onResize);
-draw();
-</script></body></html>"""
-            components.html(_globe_html, height=380, scrolling=False)
-
-            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin:12px 0 20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin:0 0 20px;text-transform:uppercase;'>Analisis instan &middot; Data Live IDX &middot; Auto-Drawing Trade Plan</p>", unsafe_allow_html=True)
 
             col_input, col_btn = st.columns([3, 1])
             with col_input:
