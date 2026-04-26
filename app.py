@@ -8169,12 +8169,12 @@ if current_view == "dashboard":
 
     with tab_idxmap:
         # ════════════════════════════════════════════════════════
-        # 1. IDX MARKET MAP GLOBE — ditampilkan PERTAMA (di atas)
+        # 1. IDX MARKET MAP GLOBE — didefinisikan dulu (variabel),
+        #    di-render SETELAH heatmap (di bawah)
         # ════════════════════════════════════════════════════════
 
         # ════════════════════════════════════════════════════════
-        # 2. IDX STOCK HEATMAP — didefinisikan dulu (variabel),
-        #    di-render SETELAH globe di bawah
+        # 2. IDX STOCK HEATMAP — ditampilkan PERTAMA (di atas)
         # ════════════════════════════════════════════════════════
         _idx_globe_html = """<!DOCTYPE html>
 <html lang="en">
@@ -9963,10 +9963,15 @@ setInterval(fetchLiveData, 30000);
 </script>
 </body></html>"""
 
-        # ── IDX MARKET MAP GLOBE — PERTAMA (di atas) ──────────────────────────
+        # ── IDX STOCK HEATMAP — PERTAMA (di atas) ─────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX STOCK HEATMAP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        components.html(_heatmap_html, height=620, scrolling=False)
+
+        # ── IDX MARKET MAP GLOBE — KEDUA (di bawah) ───────────────────────────
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
         st.markdown(
             "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>IDX MARKET MAP — KONGLOMERASI & MSCI</span>"
+            "<span class='trm-section-label'>IDX MARKET MAP</span>"
             "<div class='trm-section-line'></div></div>",
             unsafe_allow_html=True,
         )
@@ -9976,11 +9981,6 @@ setInterval(fetchLiveData, 30000);
             unsafe_allow_html=True,
         )
         components.html(_idx_globe_html, height=680, scrolling=False)
-
-        # ── IDX STOCK HEATMAP — KEDUA (di bawah) ─────────────────────────────
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX STOCK HEATMAP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        components.html(_heatmap_html, height=620, scrolling=False)
 
     with tab_macro:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
