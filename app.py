@@ -18929,12 +18929,23 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};}}
-.hist-nav{{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}}
-.slot-btn{{padding:6px 12px;border-radius:6px;border:1px solid {_border};
-  background:transparent;color:{_sub_c};cursor:pointer;font-size:0.72rem;
-  font-family:'IBM Plex Mono',monospace;letter-spacing:0.06em;transition:all 0.15s;white-space:nowrap;}}
-.slot-btn.active{{background:rgba(124,58,237,0.18);color:{accent};border-color:{accent};font-weight:700;}}
-.slot-btn:hover{{border-color:{accent};color:{accent};}}
+/* ── Accordion ── */
+.acc-item{{border:1px solid {_border};border-radius:8px;margin-bottom:8px;overflow:hidden;}}
+.acc-header{{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;cursor:pointer;background:rgba(124,58,237,0.06);
+  transition:background 0.15s;user-select:none;}}
+.acc-header:hover{{background:rgba(124,58,237,0.14);}}
+.acc-header.open{{background:rgba(124,58,237,0.16);border-bottom:1px solid {_border};}}
+.acc-label{{font-size:0.82rem;font-weight:700;color:{accent};letter-spacing:0.06em;}}
+.acc-meta{{font-size:0.7rem;color:{_sub_c};margin-left:10px;font-weight:400;}}
+.acc-right{{display:flex;align-items:center;gap:10px;}}
+.acc-count{{font-size:0.68rem;color:{_sub_c};background:rgba(124,58,237,0.12);
+  border-radius:10px;padding:2px 8px;white-space:nowrap;}}
+.acc-arrow{{font-size:0.9rem;color:{accent};transition:transform 0.2s;}}
+.acc-arrow.open{{transform:rotate(180deg);}}
+.acc-body{{display:none;padding:12px 14px;}}
+.acc-body.open{{display:block;}}
+/* ── Content ── */
 .outlook-box{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);
   border-left:3px solid {accent};border-radius:0 8px 8px 0;
   padding:10px 14px;font-size:0.8rem;color:{_txt};margin-bottom:12px;line-height:1.65;}}
@@ -18958,16 +18969,13 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 .red{{color:#f23645;font-weight:600;}}
 .sec-hd{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;
   color:{accent};font-weight:700;margin:12px 0 6px;display:block;}}
-.gen-ts{{font-size:0.72rem;color:{_sub_c};margin-bottom:10px;}}
+.gen-ts{{font-size:0.7rem;color:{_sub_c};margin-bottom:10px;}}
 </style></head><body>
-<div class="hist-nav" id="hist-nav"></div>
-<div id="hist-content"></div>
+<div id="accordion"></div>
 <script>
 (function(){{
   var DATA = JSON.parse('{_data_json}');
-  var nav = document.getElementById('hist-nav');
-  var content = document.getElementById('hist-content');
-  var currentIdx = 0;
+  var container = document.getElementById('accordion');
 
   function fmt(n){{ return n ? 'Rp '+parseInt(n).toLocaleString('id-ID') : '-'; }}
   function ratingBadge(r){{
@@ -18976,25 +18984,14 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
     if(r==='HOLD') return '<span class="hold">◉ HOLD</span>';
     return '<span class="avoid-lbl">✕ AVOID</span>';
   }}
-  function pct(a,b){{
-    if(!a||!b||b===0) return '-';
-    var p=((b-a)/a*100).toFixed(1);
-    return '<span class="'+(p>=0?'grn':'red')+'">'+(p>=0?'+':'')+p+'%</span>';
-  }}
 
-  function renderSlot(idx){{
-    var d = DATA[idx];
-    if(!d) return;
+  function buildContent(d){{
     var rows = d.rows || [];
     var avoid = d.avoid || [];
     var html = '';
-    html += '<div class="gen-ts">🕐 Generated: ' + (d.generated_at||'-') + '</div>';
+    if(d.generated_at) html += '<div class="gen-ts">🕐 Generated: ' + d.generated_at + '</div>';
+    if(d.outlook) html += '<div class="outlook-box">💡 ' + d.outlook + '</div>';
 
-    if(d.outlook){{
-      html += '<div class="outlook-box">💡 ' + d.outlook + '</div>';
-    }}
-
-    // BUY table
     if(rows.length > 0){{
       html += '<span class="sec-hd">📈 TRADE PLAN — ' + d.label + '</span>';
       html += '<div class="tbl-wrap"><div class="scroll"><table>';
@@ -19009,16 +19006,15 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
           '<td>'+(r.tp2?fmt(r.tp2):'-')+'</td>'+
           '<td class="red">'+fmt(r.sl)+'</td>'+
           '<td>'+(r.rr?'<span style="color:#a78bfa;font-weight:700;">'+r.rr+'x</span>':'-')+'</td>'+
-          '<td style="color:#60a5fa;">'+( r.horizon||'-')+'</td>'+
+          '<td style="color:#60a5fa;">'+(r.horizon||'-')+'</td>'+
           '<td>'+(r.vol_spike||'-')+'</td>'+
           '<td>'+ratingBadge(r.rating)+'</td>'+
-          '<td style="max-width:160px;white-space:normal;font-size:0.72rem;">'+( r.why_buy||'-')+'</td>'+
+          '<td style="max-width:160px;white-space:normal;font-size:0.72rem;">'+(r.why_buy||'-')+'</td>'+
         '</tr>';
       }});
       html += '</tbody></table></div></div>';
     }}
 
-    // AVOID table
     if(avoid.length > 0){{
       html += '<span class="sec-hd">⛔ HINDARI</span>';
       html += '<div class="tbl-wrap"><div class="scroll"><table>';
@@ -19033,33 +19029,71 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
       }});
       html += '</tbody></table></div></div>';
     }}
-
-    content.innerHTML = html;
+    return html;
   }}
 
-  // Build nav buttons
+  if(DATA.length === 0){{
+    container.innerHTML = '<div style="text-align:center;padding:30px;color:{_sub_c};font-size:0.875rem;">Belum ada history plan tersimpan.</div>';
+    return;
+  }}
+
   DATA.forEach(function(d, i){{
-    var btn = document.createElement('button');
-    btn.className = 'slot-btn' + (i===0?' active':'');
-    btn.textContent = d.label;
-    btn.onclick = (function(idx){{
-      return function(){{
-        document.querySelectorAll('.slot-btn').forEach(function(b){{b.classList.remove('active');}});
-        btn.classList.add('active');
-        renderSlot(idx);
-      }};
-    }})(i);
-    nav.appendChild(btn);
+    var item = document.createElement('div');
+    item.className = 'acc-item';
+
+    var nrows = (d.rows||[]).length;
+    var navoid = (d.avoid||[]).length;
+    var countTxt = nrows + ' saham' + (navoid?' · '+navoid+' hindari':'');
+
+    var header = document.createElement('div');
+    header.className = 'acc-header' + (i===0?' open':'');
+    header.innerHTML =
+      '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">' +
+        '<span class="acc-label">📅 ' + d.label + '</span>' +
+        (d.generated_at ? '<span class="acc-meta">· ' + d.generated_at + '</span>' : '') +
+      '</div>' +
+      '<div class="acc-right">' +
+        '<span class="acc-count">' + countTxt + '</span>' +
+        '<span class="acc-arrow' + (i===0?' open':'') + '">▼</span>' +
+      '</div>';
+
+    var body = document.createElement('div');
+    body.className = 'acc-body' + (i===0?' open':'');
+    // Lazy render: hanya render content saat pertama kali dibuka
+    var rendered = false;
+    if(i===0){{ body.innerHTML = buildContent(d); rendered = true; }}
+
+    header.addEventListener('click', function(){{
+      var isOpen = body.classList.contains('open');
+      if(isOpen){{
+        body.classList.remove('open');
+        header.classList.remove('open');
+        header.querySelector('.acc-arrow').classList.remove('open');
+      }} else {{
+        body.classList.add('open');
+        header.classList.add('open');
+        header.querySelector('.acc-arrow').classList.add('open');
+        if(!rendered){{ body.innerHTML = buildContent(d); rendered = true; }}
+        // Scroll ke item ini
+        setTimeout(function(){{
+          item.scrollIntoView({{behavior:'smooth', block:'start'}});
+        }}, 80);
+      }}
+      // Adaptive height
+      setTimeout(function(){{
+        window.parent.postMessage({{type:'streamlit:setFrameHeight', height:document.body.scrollHeight+30}}, '*');
+      }}, 300);
+    }});
+
+    item.appendChild(header);
+    item.appendChild(body);
+    container.appendChild(item);
   }});
 
-  if(DATA.length > 0) renderSlot(0);
-  else content.innerHTML = '<div style="text-align:center;padding:30px;color:{_sub_c};font-size:0.875rem;">Belum ada history plan. BSJP auto-generate jam 15:40 WIB (Senin–Jumat). Daily jam 21:00 WIB. Weekly Sabtu jam 12:00 WIB.</div>';
-
-  // Adaptive height
+  // Initial height
   setTimeout(function(){{
-    var h = document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight', height:h+20}}, '*');
-  }}, 300);
+    window.parent.postMessage({{type:'streamlit:setFrameHeight', height:document.body.scrollHeight+30}}, '*');
+  }}, 200);
 }})();
 </script>
 </body></html>"""
