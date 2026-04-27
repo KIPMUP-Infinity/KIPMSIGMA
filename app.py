@@ -6086,6 +6086,77 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                         del st.session_state[_bsjp_auto_key]
 
     # ══════════════════════════════════════════════════════════════
+    # [4b] JAM 16:00 — AUTO-UPDATE TRACK RECORD POST-BSJP
+    # Cek TP/SL 20 menit setelah market close untuk posisi BSJP hari ini
+    # ══════════════════════════════════════════════════════════════
+    if _wd_sch < 5 and _past(16):  # Senin-Jumat jam 16:00+
+        _tr_post_key = f"tr_post_bsjp_{_today_s}"
+        if not st.session_state.get(_tr_post_key):
+            try:
+                _records_post = st.session_state.get("tr_records", [])
+                _open_post = [r for r in _records_post
+                              if r.get("status") == "OPEN"
+                              and (r.get("type","").upper() in ("BSJP","DAILY")
+                                   or r.get("plan_type","").upper() in ("BSJP","DAILY"))]
+                if _open_post:
+                    import yfinance as _yf_post
+                    import threading as _thr_post
+                    _prices_post = {}
+                    _lock_post = _thr_post.Lock()
+                    def _fetch_post(tk):
+                        try:
+                            h = _yf_post.Ticker(f"{tk}.JK").history(period="2d")
+                            if not h.empty:
+                                with _lock_post:
+                                    _prices_post[tk] = {
+                                        "high":  float(h["High"].iloc[-1]),
+                                        "low":   float(h["Low"].iloc[-1]),
+                                        "close": float(h["Close"].iloc[-1]),
+                                    }
+                        except: pass
+                    _tks_post = list(set(r["ticker"] for r in _open_post))
+                    _ts_post = [_thr_post.Thread(target=_fetch_post, args=(t,)) for t in _tks_post]
+                    for t in _ts_post: t.start()
+                    for t in _ts_post: t.join(timeout=10)
+                    _changed_post = False
+                    for r in _records_post:
+                        if r.get("status") != "OPEN": continue
+                        tk = r["ticker"]
+                        if tk not in _prices_post: continue
+                        hi = _prices_post[tk]["high"]
+                        lo = _prices_post[tk]["low"]
+                        _e_lo = r.get("entry_low", r.get("entry", 0)) or 0
+                        _e_hi = r.get("entry_high", _e_lo) or _e_lo
+                        entry = (_e_lo + _e_hi) // 2 if _e_lo and _e_hi else r.get("entry", 0)
+                        tp1 = r.get("tp1", 0) or 0
+                        tp2 = r.get("tp2", 0) or 0
+                        sl  = r.get("sl",  0) or 0
+                        if entry <= 0: continue
+                        _now_s = _now_sch.strftime("%d %b %Y, %H:%M WIB")
+                        if tp2 > 0 and hi >= tp2:
+                            r.update({"status": "TP2", "exit_price": tp2, "result": "WIN",
+                                      "pnl_pct": round((tp2-entry)/entry*100, 2),
+                                      "exit_date": _today_s, "auto_note": f"🎯 TP2 Rp{tp2:,} tersentuh post-market ({_now_s})"})
+                            _changed_post = True
+                        elif tp1 > 0 and hi >= tp1:
+                            r.update({"status": "TP1", "exit_price": tp1, "result": "WIN",
+                                      "pnl_pct": round((tp1-entry)/entry*100, 2),
+                                      "exit_date": _today_s, "auto_note": f"✅ TP1 Rp{tp1:,} tersentuh post-market ({_now_s})"})
+                            _changed_post = True
+                        elif sl > 0 and lo <= sl:
+                            r.update({"status": "SL", "exit_price": sl, "result": "LOSS",
+                                      "pnl_pct": round((sl-entry)/entry*100, 2),
+                                      "exit_date": _today_s, "auto_note": f"🛑 SL Rp{sl:,} tersentuh post-market ({_now_s})"})
+                            _changed_post = True
+                    if _changed_post:
+                        st.session_state["tr_records"] = _records_post
+                        if st.session_state.get("user"):
+                            try: save_field(st.session_state.user["email"], "tr_records", _records_post)
+                            except: pass
+                st.session_state[_tr_post_key] = True
+            except: pass
+
+    # ══════════════════════════════════════════════════════════════
     # [5] SABTU JAM 12:00 — WEEKLY PLAN AUTO-GENERATE
     # ══════════════════════════════════════════════════════════════
     if _wd_sch == 5 and _past(12):  # Sabtu
@@ -8172,8 +8243,13 @@ if user:
     if not st.session_state.get("_sigma_restored_from_db"):
         _er_saved = load_user(user["email"]) or {}
         for _erk in _CRITICAL_KEYS:
-            if _er_saved.get(_erk) is not None and _er_saved[_erk] not in ({}, [], ""):
-                st.session_state[_erk] = _er_saved[_erk]
+            _erv = _er_saved.get(_erk)
+            if _erv is not None and _erv not in ({}, [], ""):
+                # sigma_bs30_history disimpan sebagai dict-of-list di Sheets
+                # restore kembali ke dict-of-set untuk momentum tracking
+                if _erk == "sigma_bs30_history" and isinstance(_erv, dict):
+                    _erv = {k: set(v) if isinstance(v, list) else v for k, v in _erv.items()}
+                st.session_state[_erk] = _erv
         st.session_state["_sigma_restored_from_db"] = True
 
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
@@ -18630,7 +18706,12 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "id":         len(_tr_records) + len(_new_injected) + 1,
                     "ticker":     _ptk,
                     "type":       _type_label,
-                    "entry":      _safe_int(_pr.get("entry_low", _pr.get("price", 0))),
+                    "plan_type":  _type_label,
+                    "entry_low":  _safe_int(_pr.get("entry_low", _pr.get("price", 0))),
+                    "entry_high": _safe_int(_pr.get("entry_high", _pr.get("price", 0))),
+                    "entry":      _safe_int((_pr.get("entry_low", _pr.get("price", 0)) or 0) + 
+                                   (_pr.get("entry_high", _pr.get("price", 0)) or 0)) // 2
+                                  or _safe_int(_pr.get("entry_low", _pr.get("price", 0))),
                     "tp1":        _safe_int(_pr.get("tp1")),
                     "tp2":        _safe_int(_pr.get("tp2")),
                     "sl":         _safe_int(_pr.get("sl")),
@@ -18840,26 +18921,51 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     hi = _prices_tr[tk]["high"]
                     lo = _prices_tr[tk]["low"]
                     cl = _prices_tr[tk]["close"]
-                    entry = r.get("entry", 0)
-                    tp1 = r.get("tp1", 0)
-                    sl  = r.get("sl", 0)
+
+                    # Gunakan entry_low/entry_high kalau ada (lebih akurat)
+                    # entry = midpoint zona, bukan hanya entry_low
+                    _e_lo  = r.get("entry_low",  r.get("entry", 0)) or 0
+                    _e_hi  = r.get("entry_high", _e_lo) or _e_lo
+                    entry  = (_e_lo + _e_hi) // 2 if _e_lo and _e_hi else r.get("entry", 0)
+                    if not entry: entry = r.get("entry", 0)
+
+                    tp1 = r.get("tp1", 0) or 0
+                    tp2 = r.get("tp2", 0) or 0
+                    sl  = r.get("sl",  0) or 0
+
+                    # Untuk Weekly Plan — skip cek SL intraday (horizon 5-7 hari)
+                    # SL dianggap hit hanya kalau close di bawah SL (bukan low intraday)
+                    _is_weekly = r.get("type","").upper() == "WEEKLY" or r.get("plan_type","").upper() == "WEEKLY"
+                    _sl_price  = cl if _is_weekly else lo   # weekly: cek close, bukan low
+
                     if entry <= 0: continue
 
-                    hit_tp  = tp1 > 0 and hi >= tp1
-                    hit_sl  = sl  > 0 and lo <= sl
-                    if hit_tp:
-                        r["status"]     = "CLOSED"
+                    # Cek TP2 dulu (prioritas tertinggi)
+                    hit_tp2 = tp2 > 0 and hi >= tp2
+                    hit_tp1 = tp1 > 0 and hi >= tp1
+                    hit_sl  = sl  > 0 and _sl_price <= sl
+
+                    if hit_tp2:
+                        r["status"]     = "TP2"
+                        r["exit_price"] = tp2
+                        r["result"]     = "WIN"
+                        r["pnl_pct"]    = round((tp2 - entry) / entry * 100, 2) if entry else 0
+                        r["exit_date"]  = now.strftime("%Y-%m-%d")
+                        r["auto_note"]  = f"🎯 TP2 Rp{tp2:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
+                        changed = True
+                    elif hit_tp1:
+                        r["status"]     = "TP1"
                         r["exit_price"] = tp1
                         r["result"]     = "WIN"
-                        r["pnl_pct"]    = round((tp1 - entry) / entry * 100, 2)
+                        r["pnl_pct"]    = round((tp1 - entry) / entry * 100, 2) if entry else 0
                         r["exit_date"]  = now.strftime("%Y-%m-%d")
                         r["auto_note"]  = f"✅ TP1 Rp{tp1:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
                         changed = True
                     elif hit_sl:
-                        r["status"]     = "CLOSED"
+                        r["status"]     = "SL"
                         r["exit_price"] = sl
                         r["result"]     = "LOSS"
-                        r["pnl_pct"]    = round((sl - entry) / entry * 100, 2)
+                        r["pnl_pct"]    = round((sl - entry) / entry * 100, 2) if entry else 0
                         r["exit_date"]  = now.strftime("%Y-%m-%d")
                         r["auto_note"]  = f"🛑 SL Rp{sl:,} tersentuh (auto-update {now.strftime('%d %b %Y, %H:%M WIB')})"
                         changed = True
@@ -19107,7 +19213,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             """
             _type_label = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}.get(plan_type, plan_type)
             _all_records = st.session_state.get("tr_records", [])
-            _filtered    = [r for r in _all_records if r.get("type","").lower() == _type_label.lower()]
+            _filtered    = [r for r in _all_records 
+                            if r.get("type","").lower() == _type_label.lower()
+                            or r.get("plan_type","").lower() == _type_label.lower()]
 
             # ── Info Banner ──
             _hist_key   = f"auto_plan_history_{plan_type}"
@@ -21960,6 +22068,13 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         for _dk in sorted(_screen_history.keys())[:-10]:
                             del _screen_history[_dk]
                     st.session_state["sigma_bs30_history"] = _screen_history
+                    # Persist sigma_bs30_history ke Sheets
+                    if st.session_state.get("user"):
+                        try:
+                            # Konversi set ke list untuk JSON serialization
+                            _sh_serializable = {k: list(v) for k, v in _screen_history.items()}
+                            save_field(st.session_state.user["email"], "sigma_bs30_history", _sh_serializable)
+                        except: pass
                     _recent_dates = sorted(_screen_history.keys(), reverse=True)
                     for s in _top30:
                         _streak = 0
@@ -21985,10 +22100,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         except: pass
                     if st.session_state.get("user"):
                         try:
-                            _sv = load_user(st.session_state.user["email"]) or {}
-                            _sv["sigma_bs30_screened"] = _top30
-                            _sv["sigma_bs30_ts"] = _ts_now
-                            save_field(st.session_state.user["email"], "brosum_history", _bsh2)
+                            _ue_bs = st.session_state.user["email"]
+                            save_field(_ue_bs, "sigma_bs30_screened", _top30)
+                            save_field(_ue_bs, "sigma_bs30_ts",       _ts_now)
+                            save_field(_ue_bs, "brosum_history",      _bsh2)
                         except: pass
                     _prog_bar.progress(100, text=f"✅ Selesai — {len(_top30)} saham screened, {_confirmed_count} GoAPI confirmed")
 
@@ -22304,6 +22419,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 st.session_state["brosum_hist_use_key"] = _bhdk
                                 st.session_state["brosum_hist_use_data"] = _bhdsc
                                 st.session_state["brosum_hist_use_date"] = _bhde.get("date", _bhdk)
+                                # Persist ke Sheets agar tidak hilang saat restart
+                                if st.session_state.get("user"):
+                                    try:
+                                        _ue4 = st.session_state.user["email"]
+                                        save_field(_ue4, "brosum_hist_use_key",  _bhdk)
+                                        save_field(_ue4, "brosum_hist_use_data", _bhdsc)
+                                        save_field(_ue4, "brosum_hist_use_date", _bhde.get("date", _bhdk))
+                                    except: pass
                                 # Generate weekly plan dari data historis ini
                                 _bh_tickers = [s["ticker"] for s in _bhdsc if s.get("ticker")]
                                 if _bh_tickers:
