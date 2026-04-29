@@ -6091,7 +6091,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
     # [4b] JAM 16:00 — AUTO-UPDATE TRACK RECORD POST-BSJP
     # Cek TP/SL 20 menit setelah market close untuk posisi BSJP hari ini
     # ══════════════════════════════════════════════════════════════
-    if _wd_sch < 5 and _past(16):  # Senin-Jumat jam 16:00+
+    if _wd_sch < 5 and _past(15, 45):  # Senin-Jumat jam 15:45+ (setelah BSJP generate)
         _tr_post_key = f"tr_post_bsjp_{_today_s}"
         if not st.session_state.get(_tr_post_key):
             try:
@@ -6107,6 +6107,17 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                     _lock_post = _thr_post.Lock()
                     def _fetch_post(tk):
                         try:
+                            # Pakai interval 1m period 1d untuk high/low intraday paling akurat
+                            h1m = _yf_post.Ticker(f"{tk}.JK").history(period="1d", interval="1m")
+                            if not h1m.empty:
+                                with _lock_post:
+                                    _prices_post[tk] = {
+                                        "high":  float(h1m["High"].max()),
+                                        "low":   float(h1m["Low"].min()),
+                                        "close": float(h1m["Close"].iloc[-1]),
+                                    }
+                                return
+                            # Fallback: daily
                             h = _yf_post.Ticker(f"{tk}.JK").history(period="2d")
                             if not h.empty:
                                 with _lock_post:
@@ -9120,8 +9131,8 @@ if current_view == "dashboard":
     ])
 
 
-    # ── GLOBE LIVE DATA FETCH (daily TTL) ────────────────────────────────
-    @st.cache_data(ttl=86400, show_spinner=False)
+    # ── GLOBE LIVE DATA FETCH (hourly TTL) ────────────────────────────────
+    @st.cache_data(ttl=3600, show_spinner=False)
     def _fetch_globe_live_data():
         """Fetch live price, chg%, volume, market cap untuk semua saham globe.
         Cache 24 jam (auto-refresh tiap hari). Fallback ke data statis jika gagal."""
@@ -9320,6 +9331,17 @@ if current_view == "dashboard":
         return result
 
     _globe_live = _fetch_globe_live_data()
+    # ── Refresh manual Globe ──────────────────────────────────────────────
+    _globe_col1, _globe_col2 = st.columns([4, 1])
+    with _globe_col2:
+        if st.button("🔄 Refresh Globe", key="globe_refresh_btn", use_container_width=True,
+                     help="Paksa fetch harga live baru untuk Market Map Globe"):
+            _fetch_globe_live_data.clear()
+            st.session_state["globe_last_refresh"] = datetime.now().strftime("%d %b %Y %H:%M WIB")
+            st.rerun()
+    _globe_ts = st.session_state.get("globe_last_refresh", "Auto (cache 1 jam)")
+    with _globe_col1:
+        st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh tiap 1 jam")
     # ─────────────────────────────────────────────────────────────────────
 
     with tab_idxmap:
@@ -11554,9 +11576,19 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
                 key="ca_evt_filter", label_visibility="collapsed")
         with ca_filter_col3:
             ca_refresh = st.button("🔄 Refresh", use_container_width=True, key="ca_refresh_btn")
+        if ca_refresh:
+            st.session_state["ca_last_refresh"] = datetime.now().strftime("%d %b %Y %H:%M WIB")
+        _ca_ts_disp = st.session_state.get("ca_last_refresh", "Auto (buka pertama hari ini)")
+        st.caption(f"🕐 Refresh terakhir: {_ca_ts_disp} · Auto-refresh setiap hari pertama buka tab")
 
         if ca_refresh:
             st.cache_data.clear()
+
+        # ── Auto-refresh harian: pertama kali buka tab setiap hari baru ──
+        _ca_auto_key = f"ca_auto_loaded_{datetime.now().strftime('%Y%m%d')}"
+        if not st.session_state.get(_ca_auto_key):
+            st.cache_data.clear()
+            st.session_state[_ca_auto_key] = True
 
         with st.spinner("Mengambil jadwal korporasi IDX (3 bulan ke depan)..."):
             ca_data_raw = fetch_idx_corporate_actions()
@@ -12546,12 +12578,12 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
     <span>📅 ECONOMIC CALENDAR — ID · US &nbsp;·&nbsp; Apr–Jul 2026</span>
     <div class="hdr-right">
       <span class="ec-badge" id="ec-cnt">— events</span>
-      <button class="f-btn on"  onclick="ef('ALL')">🌐 SEMUA</button>
+      <button class="f-btn"     onclick="ef('ALL')">🌐 SEMUA</button>
       <button class="f-btn"     onclick="ef('ID')">🇮🇩 ID</button>
       <button class="f-btn"     onclick="ef('US')">🇺🇸 USD</button>
       <button class="f-btn"     onclick="ef('HIGH')">🔴 HIGH</button>
       <button class="f-btn"     onclick="ef('ACT')">✅ ACTUAL</button>
-      <button class="f-btn"     onclick="ef('UPCOMING')">📅 UPCOMING</button>
+      <button class="f-btn on"  onclick="ef('UPCOMING')">📅 UPCOMING</button>
       <button class="f-btn"     onclick="ef('PAST')">🕐 SUDAH LEWAT</button>
     </div>
   </div>
@@ -12574,7 +12606,7 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
 <script>
 (function(){{
   var ROWS={_ec_json};
-  var AF='ALL';
+  var AF='UPCOMING';
 
   function parseNum(s){{
     if(!s||s==='—'||s==='-') return null;
@@ -12930,9 +12962,21 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     pass
             return _results
 
+        # Tombol force-refresh RRG — hapus cache lalu rerun
+        _rrg_refresh_col1, _rrg_refresh_col2 = st.columns([4, 1])
+        with _rrg_refresh_col2:
+            if st.button("🔄 Refresh Data", key="rrg_force_refresh", use_container_width=True,
+                         help="Paksa update data Sector Rotation sekarang (bypass cache slot)"):
+                _compute_rrg_live.clear()
+                _screen_top500_by_mktcap.clear()
+                st.cache_data.clear()
+                st.rerun()
+
         _live_rrg = _compute_rrg_live(_update_slot)
         _last_update_slot = "13:00" if _update_slot.endswith("PM") else ("21:00" if _update_slot.endswith("NIGHT") else "sebelum 13:00")
         _next_update = "21:00" if _update_slot.endswith("PM") else ("13:00 besok" if _update_slot.endswith("NIGHT") else "13:00")
+        with _rrg_refresh_col1:
+            st.markdown(f"<p style='font-size:0.72rem;color:#64748b;margin-top:6px;'>🕐 Slot aktif: <b>{_update_slot}</b> · Update berikutnya: <b>{_next_update} WIB</b></p>", unsafe_allow_html=True)
 
         # ── MARKET CAP SCREENING - Top 500 IDX, exclude suspended >1 bulan ─
         @st.cache_data(ttl=86400, show_spinner=False)
@@ -14317,6 +14361,15 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
             # ── SHAREHOLDER TRACKER ─────────────────────────────────────────
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>👥 SHAREHOLDER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+            # ── Notifikasi data hardcoded ──
+            st.info(
+                "📋 **Data pemegang saham** bersumber dari laporan bulanan IDX (AKSes). "
+                "Data terakhir tersedia: **Maret 2026**. "
+                "Update manual diperlukan setiap awal bulan (developer perlu tambah data baru ke kode). "
+                "Untuk data real-time, kunjungi [AKSes IDX](https://akses.idx.co.id) langsung.",
+                icon="ℹ️"
+            )
             import datetime as _dt
             import pandas as pd
 
@@ -15775,14 +15828,39 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
             _all_tr = _tr_collect_all()
 
+            # ── Tombol Manual Trigger Auto-Update ──
+            _tr_hdr_col1, _tr_hdr_col2, _tr_hdr_col3 = st.columns([3, 2, 2])
+            with _tr_hdr_col2:
+                _tr_force_refresh = st.button("🔄 Update Harga Sekarang", use_container_width=True, key="tr_force_refresh_btn",
+                    help="Ambil harga live & update status TP/SL semua posisi OPEN sekarang")
+            with _tr_hdr_col3:
+                _tr_now_wib = _wib_now() if callable(locals().get("_wib_now")) else datetime.now()
+                _tr_last_upd = st.session_state.get("tr_last_manual_update", "—")
+                st.markdown(f"<p style='font-size:0.7rem;color:#64748b;text-align:right;margin-top:8px;'>🕐 Update terakhir:<br><b>{_tr_last_upd}</b></p>", unsafe_allow_html=True)
+
+            if _tr_force_refresh:
+                # Hapus anti-spam key supaya _auto_update_track_record() bisa jalan ulang
+                for _k in list(st.session_state.keys()):
+                    if _k.startswith("tr_intra_") or _k.startswith("tr_final_"):
+                        del st.session_state[_k]
+                _auto_update_track_record()
+                st.session_state["tr_last_manual_update"] = datetime.now().strftime("%d %b %Y %H:%M WIB") if not callable(locals().get("_wib_now")) else _wib_now().strftime("%d %b %Y %H:%M WIB")
+                st.success("✅ Status track record berhasil di-update!", icon="✅")
+                st.rerun()
+
+            st.divider()
+
             # ── Filter controls ──
-            _tr_col_f1, _tr_col_f2, _tr_col_f3 = st.columns([2,2,2])
+            _tr_col_f1, _tr_col_f2, _tr_col_f3, _tr_col_f4 = st.columns([2, 2, 2, 1])
             with _tr_col_f1:
                 _tr_type_filter = st.selectbox("Jenis Plan", ["SEMUA", "BSJP", "DAILY", "WEEKLY"], key="tr_type_filter")
             with _tr_col_f2:
                 _tr_status_filter = st.selectbox("Status", ["SEMUA", "OPEN", "TP1", "TP2", "SL", "CLOSED"], key="tr_status_filter")
             with _tr_col_f3:
                 _tr_limit = st.selectbox("Tampilkan", [50, 100, 200, "SEMUA"], key="tr_limit_filter")
+            with _tr_col_f4:
+                _tr_show_edit = st.checkbox("✏️ Edit", value=False, key="tr_show_edit_mode",
+                    help="Aktifkan mode edit untuk update status manual per baris")
 
             _tr_filtered = [
                 r for r in _all_tr
@@ -15831,57 +15909,134 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.info("📭 Belum ada data track record. Generate plan terlebih dahulu.")
             else:
                 _G = "#26a69a"; _R = "#f23645"; _P = "#a78bfa"; _Y = "#ffd54f"
-                _rows_tr = ""
-                for _i_tr, _rec in enumerate(_tr_filtered):
-                    _status = _rec.get("status","OPEN")
-                    _ptype  = _rec.get("plan_type","BSJP")
-                    _sc_status = _G if _status in ("TP1","TP2","CLOSED") else _R if _status == "SL" else _Y
-                    _sc_type   = "#a78bfa" if _ptype == "BSJP" else "#4fc3f7" if _ptype == "DAILY" else "#81c784"
-                    _bg_row    = ("rgba(38,166,154,0.05)" if _status in ("TP1","TP2")
-                                  else "rgba(242,54,69,0.04)" if _status == "SL"
-                                  else ("rgba(255,255,255,0.018)" if _i_tr%2==0 else "transparent"))
-                    _res_pct   = _rec.get("result_pct",0) or 0
-                    _res_disp  = (f"+{_res_pct:.1f}%" if _res_pct > 0 else f"{_res_pct:.1f}%") if _res_pct != 0 else "—"
-                    _res_clr   = _G if _res_pct > 0 else _R if _res_pct < 0 else "#64748b"
-                    _pdate     = str(_rec.get("plan_date",""))[:10]
-                    _entry_lo  = _rec.get("entry_low",0) or 0
-                    _entry_hi  = _rec.get("entry_high",0) or 0
-                    _entry_disp = f"{int(_entry_lo):,}–{int(_entry_hi):,}" if _entry_hi and _entry_hi != _entry_lo else f"{int(_entry_lo):,}"
-                    _rows_tr += (
-                        f"<tr style='background:{_bg_row};'>"
-                        f"<td style='padding:7px 10px;color:#94a3b8;font-size:0.72rem;white-space:nowrap;'>{_pdate}</td>"
-                        f"<td style='padding:7px 10px;font-weight:700;color:{_sc_type};font-family:IBM Plex Mono,monospace;font-size:0.78rem;white-space:nowrap;'>{_ptype}</td>"
-                        f"<td style='padding:7px 10px;font-weight:700;color:{_P};font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_rec.get('ticker','')}</td>"
-                        f"<td style='padding:7px 10px;color:{'#26a69a' if _rec.get('bias','BUY')=='BUY' else '#f23645'};font-weight:600;font-size:0.75rem;white-space:nowrap;'>{_rec.get('bias','BUY')}</td>"
-                        f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_entry_disp}</td>"
-                        f"<td style='padding:7px 10px;color:{_R};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('stoploss',0) or 0):,}</td>"
-                        f"<td style='padding:7px 10px;color:{_G};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('tp1',0) or 0):,}</td>"
-                        f"<td style='padding:7px 10px;color:{_G};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('tp2',0) or 0):,}</td>"
-                        f"<td style='padding:7px 10px;font-weight:700;color:{_sc_status};font-size:0.75rem;white-space:nowrap;'>{_status}</td>"
-                        f"<td style='padding:7px 10px;font-weight:700;color:{_res_clr};font-size:0.78rem;white-space:nowrap;'>{_res_disp}</td>"
-                        f"</tr>"
-                    )
 
-                _tr_table_html = (
-                    "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
-                    "border-radius:10px;border:1px solid rgba(124,58,237,0.2);'>"
-                    "<table style='border-collapse:collapse;min-width:700px;width:max-content;'>"
-                    "<thead><tr style='background:rgba(124,58,237,0.1);'>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TGL</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>JENIS</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TICKER</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>BIAS</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>ENTRY</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>SL</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TP1</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TP2</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>STATUS</th>"
-                    f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>HASIL</th>"
-                    "</tr></thead>"
-                    f"<tbody>{_rows_tr}</tbody></table></div>"
-                )
-                st.markdown(_tr_table_html, unsafe_allow_html=True)
-                st.caption(f"Menampilkan {len(_tr_filtered)} dari {_tr_total} record total")
+                # ── MODE EDIT: Tampilkan kontrol per baris jika edit diaktifkan ──
+                if _tr_show_edit:
+                    st.markdown(f"<p style='font-size:0.72rem;color:{_Y};margin-bottom:10px;'>✏️ Mode Edit Aktif — Update status langsung dari tabel ini. Perubahan disimpan ke Sheets.</p>", unsafe_allow_html=True)
+                    _edit_changed = False
+                    _tr_records_live = list(st.session_state.get("tr_records", []))
+
+                    for _i_tr, _rec in enumerate(_tr_filtered):
+                        _status  = _rec.get("status", "OPEN")
+                        _ptype   = _rec.get("plan_type", "BSJP")
+                        _ticker  = _rec.get("ticker", "")
+                        _pdate   = str(_rec.get("plan_date", ""))[:10]
+                        _entry_lo = _rec.get("entry_low", 0) or 0
+                        _entry_hi = _rec.get("entry_high", 0) or 0
+                        _entry_disp = f"{int(_entry_lo):,}–{int(_entry_hi):,}" if _entry_hi and _entry_hi != _entry_lo else f"{int(_entry_lo):,}"
+                        _sc_type = "#a78bfa" if _ptype == "BSJP" else "#4fc3f7" if _ptype == "DAILY" else "#81c784"
+                        _sc_status = _G if _status in ("TP1","TP2","CLOSED") else _R if _status == "SL" else _Y
+
+                        _ec1, _ec2, _ec3, _ec4, _ec5 = st.columns([1.2, 1.5, 2, 2, 1.5])
+                        with _ec1:
+                            st.markdown(f"<p style='font-size:0.72rem;color:#94a3b8;margin-top:8px;'>{_pdate}</p>", unsafe_allow_html=True)
+                        with _ec2:
+                            st.markdown(f"<p style='font-size:0.78rem;font-weight:700;color:{_sc_type};font-family:IBM Plex Mono,monospace;margin-top:8px;'>{_ptype} · <span style='color:#a78bfa;'>{_ticker}</span></p>", unsafe_allow_html=True)
+                        with _ec3:
+                            st.markdown(f"<p style='font-size:0.72rem;color:#94a3b8;margin-top:8px;'>Entry {_entry_disp} · SL {int(_rec.get('stoploss',0) or 0):,}</p>", unsafe_allow_html=True)
+                        with _ec4:
+                            _new_status = st.selectbox(
+                                "Status",
+                                ["OPEN","TP1","TP2","SL","CLOSED"],
+                                index=["OPEN","TP1","TP2","SL","CLOSED"].index(_status) if _status in ["OPEN","TP1","TP2","SL","CLOSED"] else 0,
+                                key=f"tr_edit_status_{_i_tr}_{_ticker}_{_pdate}",
+                                label_visibility="collapsed"
+                            )
+                        with _ec5:
+                            _new_pct_val = _rec.get("result_pct", 0) or 0
+                            _new_pct = st.number_input(
+                                "Hasil %",
+                                value=float(_new_pct_val),
+                                step=0.1,
+                                format="%.1f",
+                                key=f"tr_edit_pct_{_i_tr}_{_ticker}_{_pdate}",
+                                label_visibility="collapsed"
+                            )
+                        # Terapkan perubahan ke tr_records
+                        if _new_status != _status or abs(_new_pct - _new_pct_val) > 0.05:
+                            for _lr in _tr_records_live:
+                                _lr_key = (str(_lr.get("ticker","")), str(_lr.get("plan_type", _lr.get("mode",""))), str(_lr.get("plan_date",""))[:10])
+                                _rec_key = (_ticker, _ptype, _pdate)
+                                if _lr_key == _rec_key:
+                                    _lr["status"]     = _new_status
+                                    _lr["result_pct"] = _new_pct
+                                    if _new_status in ("TP1","TP2"):
+                                        _lr["result"] = "WIN"
+                                    elif _new_status == "SL":
+                                        _lr["result"] = "LOSS"
+                                    _edit_changed = True
+                        if _i_tr < len(_tr_filtered) - 1:
+                            st.markdown("<hr style='border:none;border-top:1px solid rgba(124,58,237,0.1);margin:2px 0;'>", unsafe_allow_html=True)
+
+                    if _edit_changed:
+                        st.session_state["tr_records"] = _tr_records_live
+                        if st.session_state.get("user"):
+                            try:
+                                save_field(st.session_state.user["email"], "tr_records", _tr_records_live)
+                            except: pass
+                        st.toast("✅ Status berhasil disimpan", icon="✅")
+
+                    st.caption(f"Menampilkan {len(_tr_filtered)} dari {_tr_total} record total · Mode Edit Aktif")
+
+                else:
+                    # ── MODE NORMAL: HTML table read-only ──
+                    _rows_tr = ""
+                    for _i_tr, _rec in enumerate(_tr_filtered):
+                        _status = _rec.get("status","OPEN")
+                        _ptype  = _rec.get("plan_type","BSJP")
+                        _sc_status = _G if _status in ("TP1","TP2","CLOSED") else _R if _status == "SL" else _Y
+                        _sc_type   = "#a78bfa" if _ptype == "BSJP" else "#4fc3f7" if _ptype == "DAILY" else "#81c784"
+                        _bg_row    = ("rgba(38,166,154,0.05)" if _status in ("TP1","TP2")
+                                      else "rgba(242,54,69,0.04)" if _status == "SL"
+                                      else ("rgba(255,255,255,0.018)" if _i_tr%2==0 else "transparent"))
+                        _res_pct   = _rec.get("result_pct",0) or 0
+                        _res_disp  = (f"+{_res_pct:.1f}%" if _res_pct > 0 else f"{_res_pct:.1f}%") if _res_pct != 0 else "—"
+                        _res_clr   = _G if _res_pct > 0 else _R if _res_pct < 0 else "#64748b"
+                        _pdate     = str(_rec.get("plan_date",""))[:10]
+                        _entry_lo  = _rec.get("entry_low",0) or 0
+                        _entry_hi  = _rec.get("entry_high",0) or 0
+                        _entry_disp = f"{int(_entry_lo):,}–{int(_entry_hi):,}" if _entry_hi and _entry_hi != _entry_lo else f"{int(_entry_lo):,}"
+                        # Unrealized P&L badge
+                        _unreal = _rec.get("unrealized_pnl", None)
+                        _unreal_disp = ""
+                        if _status == "OPEN" and _unreal is not None:
+                            _unreal_clr = _G if float(_unreal) >= 0 else _R
+                            _unreal_disp = f"<span style='color:{_unreal_clr};font-size:0.68rem;'> ({'+' if float(_unreal)>=0 else ''}{float(_unreal):.1f}%)</span>"
+                        _rows_tr += (
+                            f"<tr style='background:{_bg_row};'>"
+                            f"<td style='padding:7px 10px;color:#94a3b8;font-size:0.72rem;white-space:nowrap;'>{_pdate}</td>"
+                            f"<td style='padding:7px 10px;font-weight:700;color:{_sc_type};font-family:IBM Plex Mono,monospace;font-size:0.78rem;white-space:nowrap;'>{_ptype}</td>"
+                            f"<td style='padding:7px 10px;font-weight:700;color:{_P};font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_rec.get('ticker','')}</td>"
+                            f"<td style='padding:7px 10px;color:{'#26a69a' if _rec.get('bias','BUY')=='BUY' else '#f23645'};font-weight:600;font-size:0.75rem;white-space:nowrap;'>{_rec.get('bias','BUY')}</td>"
+                            f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_entry_disp}</td>"
+                            f"<td style='padding:7px 10px;color:{_R};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('stoploss',0) or 0):,}</td>"
+                            f"<td style='padding:7px 10px;color:{_G};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('tp1',0) or 0):,}</td>"
+                            f"<td style='padding:7px 10px;color:{_G};font-size:0.75rem;white-space:nowrap;'>{int(_rec.get('tp2',0) or 0):,}</td>"
+                            f"<td style='padding:7px 10px;font-weight:700;color:{_sc_status};font-size:0.75rem;white-space:nowrap;'>{_status}{_unreal_disp}</td>"
+                            f"<td style='padding:7px 10px;font-weight:700;color:{_res_clr};font-size:0.78rem;white-space:nowrap;'>{_res_disp}</td>"
+                            f"</tr>"
+                        )
+
+                    _tr_table_html = (
+                        "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                        "border-radius:10px;border:1px solid rgba(124,58,237,0.2);'>"
+                        "<table style='border-collapse:collapse;min-width:700px;width:max-content;'>"
+                        "<thead><tr style='background:rgba(124,58,237,0.1);'>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TGL</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>JENIS</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TICKER</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>BIAS</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>ENTRY</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>SL</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TP1</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TP2</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>STATUS</th>"
+                        f"<th style='padding:9px 10px;text-align:left;font-size:0.66rem;letter-spacing:0.1em;color:{_P};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>HASIL</th>"
+                        "</tr></thead>"
+                        f"<tbody>{_rows_tr}</tbody></table></div>"
+                    )
+                    st.markdown(_tr_table_html, unsafe_allow_html=True)
+                    st.caption(f"Menampilkan {len(_tr_filtered)} dari {_tr_total} record total · Centang ✏️ Edit untuk update status per baris")
 
             # ── Reko History dari Sheets ──
             if sheets_available():
@@ -18955,47 +19110,93 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
         def _auto_update_track_record():
             """
-            Update track record otomatis mulai jam 20:30 WIB.
-            Cek apakah TP/SL sudah tersentuh untuk semua posisi OPEN.
-            Berjalan tiap jam setelah 20:30 WIB hari kerja.
+            Update track record otomatis:
+            - BSJP/DAILY: mulai jam 15:45 WIB (15 menit setelah BSJP generate)
+              pakai high/low hari ini (1d) — intraday detection
+            - WEEKLY: mulai jam 20:30 WIB, pakai close 5 hari — tidak false stop
+            - Final pass: jam 20:30 untuk semua tipe
             """
             now = _wib_now()
             wd  = now.weekday()
-            # Skip weekend
             if wd >= 5:
                 return
-            # Hanya jalankan mulai jam 20:30 WIB
-            if now.hour < 20 or (now.hour == 20 and now.minute < 30):
+
+            # Tentukan mode berdasarkan jam:
+            # 15:45–20:29 → hanya update BSJP + DAILY (pakai data intraday)
+            # 20:30+ → update semua tipe (BSJP, DAILY, WEEKLY)
+            _is_intraday_window = (now.hour == 15 and now.minute >= 45) or                                   (16 <= now.hour < 20) or                                   (now.hour == 20 and now.minute < 30)
+            _is_final_window    = now.hour > 20 or (now.hour == 20 and now.minute >= 30)
+
+            if not _is_intraday_window and not _is_final_window:
                 return
-            # Cek sudah update dalam jam ini (anti-spam rerun)
-            tr_update_key = f"tr_auto_updated_{now.strftime('%Y-%m-%d_%H')}"
+
+            # Anti-spam: intraday update tiap 15 menit, final update tiap jam
+            if _is_intraday_window:
+                _slot = f"{now.hour}_{now.minute // 15}"  # 4 slot per jam
+                tr_update_key = f"tr_intra_{now.strftime('%Y-%m-%d')}_{_slot}"
+            else:
+                tr_update_key = f"tr_final_{now.strftime('%Y-%m-%d_%H')}"
+
             if st.session_state.get(tr_update_key):
-                return  # Sudah update dalam jam ini
+                return
 
             records = st.session_state.get("tr_records", [])
             open_records = [r for r in records if r.get("status") == "OPEN"]
             if not open_records:
                 return
 
-            # Fetch harga terkini untuk semua ticker yang OPEN
+            # Filter berdasarkan window
+            if _is_intraday_window and not _is_final_window:
+                # Hanya proses BSJP dan DAILY — WEEKLY skip dulu
+                open_records = [r for r in open_records
+                                if r.get("type","").upper() in ("BSJP","DAILY")
+                                or r.get("plan_type","").upper() in ("BSJP","DAILY")]
+
+            if not open_records:
+                st.session_state[tr_update_key] = True
+                return
+
             open_tickers = list(set(r["ticker"] for r in open_records))
+
             try:
                 import threading as _thr_tr
                 _prices_tr = {}
                 _lock_tr = _thr_tr.Lock()
+
                 def _fetch_tr(tk):
                     try:
+                        # Ambil data: intraday window → 1d interval 1m untuk high/low akurat
+                        # Final window → 5d harian cukup
+                        if _is_intraday_window and not _is_final_window:
+                            # Ambil data hari ini (interval 1m, period 1d)
+                            import yfinance as _yf_intra
+                            h1 = _yf_intra.Ticker(f"{tk}.JK").history(period="1d", interval="1m")
+                            if not h1.empty:
+                                hi = float(h1["High"].max())
+                                lo = float(h1["Low"].min())
+                                cl = float(h1["Close"].iloc[-1])
+                                with _lock_tr:
+                                    _prices_tr[tk] = {"high": hi, "low": lo, "close": cl}
+                                return
+                        # Fallback: daily bar
                         h = yf.Ticker(f"{tk}.JK").history(period="5d")
                         if not h.empty:
-                            hi = float(h["High"].iloc[-1])
-                            lo = float(h["Low"].iloc[-1])
-                            cl = float(h["Close"].iloc[-1])
+                            # BUG 6 FIX: untuk weekly, ambil multi-day range
                             with _lock_tr:
-                                _prices_tr[tk] = {"high": hi, "low": lo, "close": cl}
+                                _prices_tr[tk] = {
+                                    "high":  float(h["High"].iloc[-1]),
+                                    "low":   float(h["Low"].iloc[-1]),
+                                    "close": float(h["Close"].iloc[-1]),
+                                    # high/low sejak plan dibuat (max 5 hari)
+                                    "high_5d": float(h["High"].max()),
+                                    "low_5d":  float(h["Low"].min()),
+                                    "close_prev": float(h["Close"].iloc[-2]) if len(h) >= 2 else float(h["Close"].iloc[-1]),
+                                }
                     except: pass
+
                 _thr_list = [_thr_tr.Thread(target=_fetch_tr, args=(tk,)) for tk in open_tickers]
                 for t in _thr_list: t.start()
-                for t in _thr_list: t.join(timeout=12)
+                for t in _thr_list: t.join(timeout=15)
 
                 changed = False
                 for r in records:
@@ -19017,16 +19218,27 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     tp2 = r.get("tp2", 0) or 0
                     sl  = r.get("sl",  0) or 0
 
-                    # Untuk Weekly Plan — skip cek SL intraday (horizon 5-7 hari)
-                    # SL dianggap hit hanya kalau close di bawah SL (bukan low intraday)
+                    # BUG 6 FIX: Weekly pakai range harga 5 hari (high_5d/low_5d)
+                    # bukan hanya high/low hari ini — menghindari false stop-out
                     _is_weekly = r.get("type","").upper() == "WEEKLY" or r.get("plan_type","").upper() == "WEEKLY"
-                    _sl_price  = cl if _is_weekly else lo   # weekly: cek close, bukan low
+
+                    if _is_weekly:
+                        # TP: pakai high 5 hari (bisa hit kapanpun dalam minggu ini)
+                        # SL: pakai CLOSE hari ini saja — intraday low bisa spike lalu recover
+                        _hi_use = _prices_tr[tk].get("high_5d", hi)
+                        _lo_use = lo  # tetap pakai low 1d untuk check (tapi SL cek dari close)
+                        _sl_price = cl  # weekly SL hanya valid kalau close di bawah SL
+                    else:
+                        # BSJP/DAILY: pakai high/low hari ini (intraday detection)
+                        _hi_use   = hi
+                        _lo_use   = lo
+                        _sl_price = lo  # intraday: low menyentuh SL = kena
 
                     if entry <= 0: continue
 
                     # Cek TP2 dulu (prioritas tertinggi)
-                    hit_tp2 = tp2 > 0 and hi >= tp2
-                    hit_tp1 = tp1 > 0 and hi >= tp1
+                    hit_tp2 = tp2 > 0 and _hi_use >= tp2
+                    hit_tp1 = tp1 > 0 and _hi_use >= tp1
                     hit_sl  = sl  > 0 and _sl_price <= sl
 
                     if hit_tp2:
@@ -22726,6 +22938,61 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             _kc_text    = text_main
             _kc_sub     = text_sub
 
+            # ── Live Price Fetch Widget ──────────────────────────────────────
+            st.markdown(
+                f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};"
+                f"border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:16px;'>"
+                f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{_kc_gold};font-weight:700;"
+                f"letter-spacing:0.08em;'>⚡ AMBIL HARGA LIVE</span>"
+                f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{_kc_sub};margin-left:8px;'>"
+                f"Ketik ticker IDX → klik Ambil → harga otomatis terisi di kalkulator</span></div>",
+                unsafe_allow_html=True
+            )
+            _kc_fetch_col1, _kc_fetch_col2, _kc_fetch_col3 = st.columns([2, 1, 2])
+            with _kc_fetch_col1:
+                _kc_ticker_input = st.text_input(
+                    "Ticker IDX", placeholder="contoh: BBCA, TLKM, GOTO",
+                    key="kc_ticker_input", label_visibility="collapsed"
+                ).strip().upper().replace(".JK", "")
+            with _kc_fetch_col2:
+                _kc_fetch_btn = st.button("⚡ Ambil Harga", use_container_width=True, key="kc_fetch_price_btn")
+            with _kc_fetch_col3:
+                _kc_price_display = st.empty()
+
+            if _kc_fetch_btn and _kc_ticker_input:
+                with st.spinner(f"Mengambil harga {_kc_ticker_input}..."):
+                    try:
+                        import yfinance as _yf_kc
+                        _kc_hist = _yf_kc.Ticker(f"{_kc_ticker_input}.JK").history(period="2d")
+                        if not _kc_hist.empty:
+                            _kc_price_live = float(_kc_hist["Close"].iloc[-1])
+                            _kc_chg = float(_kc_hist["Close"].iloc[-1] - _kc_hist["Close"].iloc[-2]) / float(_kc_hist["Close"].iloc[-2]) * 100 if len(_kc_hist) >= 2 else 0
+                            _kc_chg_clr = _kc_green if _kc_chg >= 0 else _kc_red
+                            st.session_state["kc_fetched_price"] = int(_kc_price_live)
+                            st.session_state["kc_fetched_ticker"] = _kc_ticker_input
+                            _kc_price_display.markdown(
+                                f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
+                                f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
+                                f"<span style='color:{_kc_gold};font-weight:700;font-size:1rem;'>Rp {int(_kc_price_live):,}</span> "
+                                f"<span style='color:{_kc_chg_clr};font-size:0.8rem;'>{_kc_chg:+.2f}%</span> "
+                                f"<span style='color:{_kc_sub};font-size:0.72rem;'>· {_kc_ticker_input}</span></div>",
+                                unsafe_allow_html=True
+                            )
+                        else:
+                            st.warning(f"Ticker {_kc_ticker_input} tidak ditemukan di yfinance.")
+                    except Exception as _kc_err:
+                        st.warning(f"Gagal ambil harga: {_kc_err}")
+            elif st.session_state.get("kc_fetched_price"):
+                _kc_price_display.markdown(
+                    f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
+                    f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
+                    f"<span style='color:{_kc_sub};font-size:0.72rem;'>Harga terakhir ({st.session_state.get('kc_fetched_ticker','')}):</span> "
+                    f"<span style='color:{_kc_gold};font-weight:700;'>Rp {st.session_state['kc_fetched_price']:,}</span></div>",
+                    unsafe_allow_html=True
+                )
+
+            st.divider()
+
             # ── Sub-tabs
             ktab_ara, ktab_avg = st.tabs([
                 "  📈 ARA / ARB Calculator  ",
@@ -23318,7 +23585,21 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
         with tab_panduan:
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:20px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
+
+            # ── Versi & tanggal panduan ──────────────────────────────────────
+            _PANDUAN_VERSION = "v2.5"
+            _PANDUAN_LAST_UPDATED = "30 Apr 2026"
+            _pan_col1, _pan_col2 = st.columns([3, 2])
+            with _pan_col1:
+                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:4px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
+            with _pan_col2:
+                st.markdown(
+                    f"<div style='text-align:right;font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:#64748b;margin-bottom:4px;'>"
+                    f"📋 Versi Panduan: <b style='color:#a78bfa;'>{_PANDUAN_VERSION}</b> · "
+                    f"Diperbarui: <b>{_PANDUAN_LAST_UPDATED}</b></div>",
+                    unsafe_allow_html=True
+                )
+            st.caption("⚠️ Panduan ini diperbarui manual setiap ada perubahan fitur besar. Jika ada fitur baru yang belum terdokumentasi, lihat changelog di header aplikasi.")
 
             _P   = "#a78bfa"   # purple accent
             _B   = "#60a5fa"   # blue accent
