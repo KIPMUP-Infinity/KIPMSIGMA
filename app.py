@@ -3685,6 +3685,8 @@ _PERFIELD_KEYS = [
     "tr_records", "brosum_history", "sigma_bs30_screened", "sigma_bs30_ts",
     "sigma_bs30_history", "brosum_hist_use_key", "brosum_hist_use_data",
     "brosum_hist_use_date",
+    "fs_results", "fs_ts", "fs_sektor",  # Fundamental Screener
+    "alpha_insight_last_key", "alpha_insight_last_data", "alpha_insight_last_ticker",  # Alpha Insight
 ]
 # Field-field session (disimpan satu blob di sheet 'users' — boleh overwrite)
 _SESSION_KEYS = [
@@ -6157,6 +6159,66 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
             except: pass
 
     # ══════════════════════════════════════════════════════════════
+    # [5a] SABTU JAM 07:00 — FUNDAMENTAL SCREENER AUTO-REFRESH
+    # Cache 7 hari — refresh setiap Sabtu pagi sebelum Weekly Plan
+    # ══════════════════════════════════════════════════════════════
+    if _wd_sch == 5 and _past(7) and not _past(8):  # Sabtu jam 07:00-08:00
+        _fs_auto_key = f"fs_auto_{_now_sch.strftime('%G-W%V')}"
+        if not st.session_state.get(_fs_auto_key) and st.session_state.get("user"):
+            try:
+                # Cek apakah sudah pernah refresh minggu ini
+                _fs_ts_stored = st.session_state.get("fs_ts", "")
+                _fs_week_done = False
+                if _fs_ts_stored:
+                    try:
+                        _fs_dt2 = datetime.strptime(_fs_ts_stored[:11].strip(), "%d %b %Y")
+                        _fs_week_done = (datetime.now() - _fs_dt2).days < 7
+                    except: pass
+                if not _fs_week_done:
+                    import yfinance as _yf_fs, threading as _thr_fs
+                    _fs_auto_tickers = tuple(_WATCHLIST_RECO[:80])  # top 80 watchlist
+                    _fs_auto_results = {}
+                    _fs_lock = _thr_fs.Lock()
+                    def _fs_auto_one(tk):
+                        try:
+                            inf = _yf_fs.Ticker(f"{tk}.JK").info
+                            roe = (inf.get("returnOnEquity") or 0)*100
+                            npm = (inf.get("profitMargins") or 0)*100
+                            der = inf.get("debtToEquity") or 0
+                            cr  = inf.get("currentRatio") or 0
+                            pbv = inf.get("priceToBook") or 0
+                            eps = inf.get("trailingEps") or 0
+                            score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
+                            with _fs_lock:
+                                _fs_auto_results[tk] = {
+                                    "name": (inf.get("shortName") or tk)[:22],
+                                    "price": inf.get("currentPrice") or inf.get("regularMarketPrice") or 0,
+                                    "roe":roe,"npm":npm,"der":der,"cr":cr,"pbv":pbv,"eps":eps,"score":score,
+                                    "roa": (inf.get("returnOnAssets") or 0)*100,
+                                    "pe": inf.get("trailingPE") or 0,
+                                    "div": (inf.get("dividendYield") or 0)*100,
+                                    "mkcap": inf.get("marketCap") or 0,
+                                    "eps_g": 0,
+                                }
+                        except: pass
+                    _fs_ths = [_thr_fs.Thread(target=_fs_auto_one, args=(t,)) for t in _fs_auto_tickers]
+                    for t in _fs_ths: t.start()
+                    for t in _fs_ths: t.join(timeout=25)
+                    if _fs_auto_results:
+                        _fs_auto_ts = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        st.session_state["fs_results"] = _fs_auto_results
+                        st.session_state["fs_ts"]      = _fs_auto_ts
+                        st.session_state["fs_sektor"]  = "Semua Sektor"
+                        _ue_fsa = st.session_state.user["email"]
+                        save_field(_ue_fsa, "fs_results", _fs_auto_results)
+                        save_field(_ue_fsa, "fs_ts",      _fs_auto_ts)
+                        save_field(_ue_fsa, "fs_sektor",  "Semua Sektor")
+                st.session_state[_fs_auto_key] = True
+            except:
+                if _fs_auto_key in st.session_state:
+                    del st.session_state[_fs_auto_key]
+
+    # ══════════════════════════════════════════════════════════════
     # [5] SABTU JAM 12:00 — WEEKLY PLAN AUTO-GENERATE
     # ══════════════════════════════════════════════════════════════
     if _wd_sch == 5 and _past(12):  # Sabtu
@@ -8237,6 +8299,7 @@ if user:
         "brosum_hist_use_data","brosum_hist_use_date",
         "reco_daily_result","reco_weekly_result","reco_bsjp_result",
         "mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp",
+        "fs_results","fs_ts","fs_sektor",
     ]
     # Restore kalau BELUM pernah di-restore di session ini (bukan cek per-key)
     # Ini memastikan data dari Sheets selalu di-load saat baru login/refresh
@@ -12346,19 +12409,30 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         for ev in _ec_raw:
             dk = ev["dampak"]
             _actual_rt = _get_actual(ev["event"])
+            # Tentukan apakah event sudah lewat (is_past)
+            _ev_past = False
+            try:
+                _m2p = {"jan":1,"feb":2,"mar":3,"apr":4,"mei":5,"may":5,"jun":6,"jul":7,
+                         "agu":8,"aug":8,"sep":9,"okt":10,"oct":10,"nov":11,"des":12,"dec":12}
+                _parts_p = ev["tgl"].strip().split()
+                _mn_p = _m2p.get(_parts_p[1][:3].lower(), 1)
+                _ev_dt = _ec_date_cls(int(_parts_p[2]), _mn_p, int(_parts_p[0]))
+                _ev_past = _ev_dt < _ec_today
+            except: pass
             _ec_rows.append({
-                "neg":   ev["neg"],
-                "flag":  "🇮🇩" if ev["neg"]=="ID" else "🇺🇸",
-                "tgl":   ev["tgl"],
-                "jam":   ev["jam"],
-                "event": ev["event"],
-                "fc":    ev["fc"],
-                "prev":  ev["prev"],
-                "actual":_actual_rt,
-                "d_lbl": _d_lbl.get(dk,"LOW"),
-                "d_clr": _d_clr.get(dk,"#4285F4"),
-                "d_bg":  _d_bg.get(dk,"rgba(66,133,244,0.10)"),
-                "tip":   ev["tip"].replace('"','&quot;').replace("'","&#39;"),
+                "neg":    ev["neg"],
+                "flag":   "🇮🇩" if ev["neg"]=="ID" else "🇺🇸",
+                "tgl":    ev["tgl"],
+                "jam":    ev["jam"],
+                "event":  ev["event"],
+                "fc":     ev["fc"],
+                "prev":   ev["prev"],
+                "actual": _actual_rt,
+                "d_lbl":  _d_lbl.get(dk,"LOW"),
+                "d_clr":  _d_clr.get(dk,"#4285F4"),
+                "d_bg":   _d_bg.get(dk,"rgba(66,133,244,0.10)"),
+                "tip":    ev["tip"].replace('"','&quot;').replace("'","&#39;"),
+                "is_past": _ev_past,
             })
         _ec_json = _cal_json.dumps(_ec_rows, ensure_ascii=False)
 
@@ -12476,6 +12550,8 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
       <button class="f-btn"     onclick="ef('US')">🇺🇸 USD</button>
       <button class="f-btn"     onclick="ef('HIGH')">🔴 HIGH</button>
       <button class="f-btn"     onclick="ef('ACT')">✅ ACTUAL</button>
+      <button class="f-btn"     onclick="ef('UPCOMING')">📅 UPCOMING</button>
+      <button class="f-btn"     onclick="ef('PAST')">🕐 SUDAH LEWAT</button>
     </div>
   </div>
   <div class="scroll-box" id="ec-sb">
@@ -12519,23 +12595,27 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
       if(AF==='ALL') return true;
       if(AF==='HIGH') return r.d_lbl==='HIGH';
       if(AF==='ACT') return r.actual&&r.actual!=='—';
+      if(AF==='UPCOMING') return !r.is_past;
+      if(AF==='PAST') return r.is_past;
       return r.neg===AF;
     }});
 
     var h='', lastDate='';
     rows.forEach(function(r){{
       if(r.tgl!==lastDate){{
-        h+='<tr class="sep-row"><td colspan="8">'+r.tgl+'</td></tr>';
+        var dateLabel = r.tgl + (r.is_past ? ' <span style="font-size:0.62rem;color:#64748b;background:rgba(100,116,139,0.15);border-radius:4px;padding:1px 5px;margin-left:4px;">LEWAT</span>' : ' <span style="font-size:0.62rem;color:#26a69a;background:rgba(38,166,154,0.12);border-radius:4px;padding:1px 5px;margin-left:4px;">UPCOMING</span>');
+        h+='<tr class="sep-row"><td colspan="8">'+dateLabel+'</td></tr>';
         lastDate=r.tgl;
       }}
-      var rowBg=r.neg==='ID'?'rgba(8,153,129,0.05)':'rgba(66,133,244,0.04)';
+      var rowBg=r.is_past?'rgba(100,116,139,0.05)':(r.neg==='ID'?'rgba(8,153,129,0.05)':'rgba(66,133,244,0.04)');
+      var rowOpacity=r.is_past?'opacity:0.55;':'opacity:1;';
       var ac=r.actual&&r.actual!=='—'?r.actual:'—';
       var aClass=actClass(ac,r.fc);
       var actHtml=ac==='—'
         ?'<span class="act-val act-none">pending</span>'
         :'<span class="act-val '+aClass+'">'+ac+'</span>';
 
-      h+='<tr style="background:'+rowBg+'">'+
+      h+='<tr style="background:'+rowBg+';'+rowOpacity+'">'+
         '<td><div class="flag-cell"><span class="fl">'+r.flag+'</span><span class="neg">'+r.neg+'</span></div></td>'+
         '<td><span class="dt-d">'+r.tgl+'</span></td>'+
         '<td><span class="dt-j">'+r.jam+'</span></td>'+
@@ -12556,7 +12636,9 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
          (AF==='ID'&&b.textContent.indexOf('ID')>-1&&b.textContent.indexOf('INDONESIA')<0)||
          (AF==='US'&&b.textContent.indexOf('USD')>-1)||
          (AF==='HIGH'&&b.textContent.indexOf('HIGH')>-1)||
-         (AF==='ACT'&&b.textContent.indexOf('ACTUAL')>-1))
+         (AF==='ACT'&&b.textContent.indexOf('ACTUAL')>-1)||
+         (AF==='UPCOMING'&&b.textContent.indexOf('UPCOMING')>-1)||
+         (AF==='PAST'&&b.textContent.indexOf('LEWAT')>-1))
         b.classList.add('on');
     }});
   }}
@@ -16307,11 +16389,12 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                             st.session_state["alpha_insight_last_data"]   = _cache_payload
                                             st.session_state["alpha_insight_last_ticker"] = ticker_input
                                             if st.session_state.get("user"):
-                                                _sv = load_user(st.session_state.user["email"]) or {}
-                                                _sv["alpha_insight_last_key"]    = _insight_cache_key
-                                                _sv["alpha_insight_last_data"]   = _cache_payload
-                                                _sv["alpha_insight_last_ticker"] = ticker_input
-                                                save_user(st.session_state.user["email"], _sv)
+                                                try:
+                                                    _ue_ins = st.session_state.user["email"]
+                                                    save_field(_ue_ins, "alpha_insight_last_key",    _insight_cache_key)
+                                                    save_field(_ue_ins, "alpha_insight_last_data",   _cache_payload)
+                                                    save_field(_ue_ins, "alpha_insight_last_ticker", ticker_input)
+                                                except: pass
                                         except Exception:
                                             pass
 
@@ -20538,12 +20621,42 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             return results
 
                         _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
+                        _fs_ts_now = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                         st.session_state["fs_results"]  = _fs_data
-                        st.session_state["fs_ts"]       = datetime.now().strftime("%d %b %Y, %H:%M WIB")
+                        st.session_state["fs_ts"]       = _fs_ts_now
                         st.session_state["fs_sort_key"] = _fs_sort
+                        st.session_state["fs_sektor"]   = _fs_sektor
+                        # Persist ke Sheets — cache 7 hari per field
+                        if st.session_state.get("user"):
+                            try:
+                                _ue_fs = st.session_state.user["email"]
+                                save_field(_ue_fs, "fs_results", _fs_data)
+                                save_field(_ue_fs, "fs_ts",      _fs_ts_now)
+                                save_field(_ue_fs, "fs_sektor",  _fs_sektor)
+                            except: pass
 
+                # Auto-load dari Sheets kalau session kosong
+                if not st.session_state.get("fs_results") and st.session_state.get("user"):
+                    try:
+                        _fs_from_db = load_user(st.session_state.user["email"]) or {}
+                        if _fs_from_db.get("fs_results"):
+                            st.session_state["fs_results"] = _fs_from_db["fs_results"]
+                            st.session_state["fs_ts"]      = _fs_from_db.get("fs_ts", "")
+                            st.session_state["fs_sektor"]  = _fs_from_db.get("fs_sektor", "Semua Sektor")
+                    except: pass
+                # Staleness check: kalau data > 7 hari, tampilkan banner refresh
+                _fs_stale = False
+                _fs_ts_raw = st.session_state.get("fs_ts", "")
+                if _fs_ts_raw:
+                    try:
+                        from datetime import datetime as _dfs
+                        _fs_dt = _dfs.strptime(_fs_ts_raw[:11].strip(), "%d %b %Y")
+                        _fs_stale = (datetime.now() - _fs_dt).days >= 7
+                    except: pass
                 _fs_data = st.session_state.get("fs_results", {})
                 _fs_ts   = st.session_state.get("fs_ts", "")
+                if _fs_stale and _fs_data:
+                    st.warning(f"⚠️ Data Fundamental Screener sudah lebih dari 7 hari ({_fs_ts}). Klik SCREEN untuk refresh.")
                 _fs_sk   = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
 
                 if _fs_data:
