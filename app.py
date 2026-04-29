@@ -8300,6 +8300,7 @@ if user:
         "reco_daily_result","reco_weekly_result","reco_bsjp_result",
         "mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp",
         "fs_results","fs_ts","fs_sektor",
+        "alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker",
     ]
     # Restore kalau BELUM pernah di-restore di session ini (bukan cek per-key)
     # Ini memastikan data dari Sheets selalu di-load saat baru login/refresh
@@ -18792,8 +18793,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "plan_type":  _type_label,
                     "entry_low":  _safe_int(_pr.get("entry_low", _pr.get("price", 0))),
                     "entry_high": _safe_int(_pr.get("entry_high", _pr.get("price", 0))),
-                    "entry":      _safe_int((_pr.get("entry_low", _pr.get("price", 0)) or 0) + 
-                                   (_pr.get("entry_high", _pr.get("price", 0)) or 0)) // 2
+                    "entry":      (_safe_int((_pr.get("entry_low", _pr.get("price", 0)) or 0)
+                                   + (_pr.get("entry_high", _pr.get("price", 0)) or 0)) // 2)
                                   or _safe_int(_pr.get("entry_low", _pr.get("price", 0))),
                     "tp1":        _safe_int(_pr.get("tp1")),
                     "tp2":        _safe_int(_pr.get("tp2")),
@@ -20636,7 +20637,13 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             except: pass
 
                 # Auto-load dari Sheets kalau session kosong
-                if not st.session_state.get("fs_results") and st.session_state.get("user"):
+                # _sigma_restored_from_db sudah handle ini via CRITICAL_KEYS
+                # Tapi kalau restored_from_db belum jalan (belum login penuh), coba manual
+                if not st.session_state.get("fs_results") and st.session_state.get("user") \
+                        and st.session_state.get("_sigma_restored_from_db"):
+                    # Sudah di-restore tapi masih kosong = memang belum pernah screen
+                    pass  # tidak perlu load lagi
+                elif not st.session_state.get("fs_results") and st.session_state.get("user"):
                     try:
                         _fs_from_db = load_user(st.session_state.user["email"]) or {}
                         if _fs_from_db.get("fs_results"):
