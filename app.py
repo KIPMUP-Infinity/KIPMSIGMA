@@ -15975,11 +15975,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.markdown(f"<p style='font-size:0.7rem;color:#64748b;text-align:right;margin-top:8px;'>🕐 Update terakhir:<br><b>{_tr_last_upd}</b></p>", unsafe_allow_html=True)
 
             if _tr_force_refresh:
-                # Hapus anti-spam key supaya _auto_update_track_record() bisa jalan ulang
+                # Force update: bypass time window & anti-spam
                 for _k in list(st.session_state.keys()):
-                    if _k.startswith("tr_intra_") or _k.startswith("tr_final_"):
+                    if _k.startswith("tr_intra_") or _k.startswith("tr_final_") or _k.startswith("tr_force_"):
                         del st.session_state[_k]
-                _auto_update_track_record()
+                _auto_update_track_record(force=True)
                 st.session_state["tr_last_manual_update"] = datetime.now().strftime("%d %b %Y %H:%M WIB") if not callable(locals().get("_wib_now")) else _wib_now().strftime("%d %b %Y %H:%M WIB")
                 st.success("✅ Status track record berhasil di-update!", icon="✅")
                 st.rerun()
@@ -19244,36 +19244,48 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             except Exception:
                 return False
 
-        def _auto_update_track_record():
+        def _auto_update_track_record(force=False):
             """
             Update track record otomatis:
             - BSJP/DAILY: mulai jam 15:45 WIB (15 menit setelah BSJP generate)
               pakai high/low hari ini (1d) — intraday detection
             - WEEKLY: mulai jam 20:30 WIB, pakai close 5 hari — tidak false stop
             - Final pass: jam 20:30 untuk semua tipe
+            - force=True: bypass time window check (tombol manual)
             """
             now = _wib_now()
             wd  = now.weekday()
-            if wd >= 5:
+            # Weekend skip — tapi kalau force=True tetap jalan
+            if wd >= 5 and not force:
                 return
 
             # Tentukan mode berdasarkan jam:
             # 15:45–20:29 → hanya update BSJP + DAILY (pakai data intraday)
             # 20:30+ → update semua tipe (BSJP, DAILY, WEEKLY)
-            _is_intraday_window = (now.hour == 15 and now.minute >= 45) or                                   (16 <= now.hour < 20) or                                   (now.hour == 20 and now.minute < 30)
+            _is_intraday_window = (now.hour == 15 and now.minute >= 45) or \
+                                   (16 <= now.hour < 20) or \
+                                   (now.hour == 20 and now.minute < 30)
             _is_final_window    = now.hour > 20 or (now.hour == 20 and now.minute >= 30)
+
+            # Kalau force=True, selalu anggap sebagai final window (update semua)
+            if force:
+                _is_intraday_window = False
+                _is_final_window    = True
 
             if not _is_intraday_window and not _is_final_window:
                 return
 
             # Anti-spam: intraday update tiap 15 menit, final update tiap jam
-            if _is_intraday_window:
+            # Kalau force=True, skip anti-spam check
+            if _is_intraday_window and not force:
                 _slot = f"{now.hour}_{now.minute // 15}"  # 4 slot per jam
                 tr_update_key = f"tr_intra_{now.strftime('%Y-%m-%d')}_{_slot}"
-            else:
+            elif not force:
                 tr_update_key = f"tr_final_{now.strftime('%Y-%m-%d_%H')}"
+            else:
+                tr_update_key = f"tr_force_{now.strftime('%Y-%m-%d_%H%M')}"
 
-            if st.session_state.get(tr_update_key):
+            if st.session_state.get(tr_update_key) and not force:
                 return
 
             records = st.session_state.get("tr_records", [])
@@ -19414,7 +19426,11 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                         except: pass
 
                 st.session_state[tr_update_key] = True
-            except: pass
+            except Exception as _tr_err:
+                # Log error tapi jangan crash app
+                try:
+                    st.session_state["tr_last_error"] = str(_tr_err)[:200]
+                except: pass
 
         def _render_auto_history(plan_type="daily"):
             """Render tabel history plan yang sudah tersimpan."""
