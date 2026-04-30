@@ -14361,7 +14361,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder, alpha_tab_trackrecord = st.tabs([
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
             "  📅 DAILY PLAN  ",
             "  📆 WEEKLY PLAN  ",
@@ -14369,6 +14369,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             "  📊 FUNDAMENTAL SCREENER  ",
             "  🏦 BROKER SUMMARY  ",
             "  👥 SHAREHOLDER  ",
+            "  📋 ANALISA IPO  ",
             "  🏆 TRACK RECORD  ",
         ])
 
@@ -15751,6 +15752,208 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
 
+
+        with alpha_tab_ipo:
+            # ════════════════════════════════════════════════════════════════
+            # TAB ANALISA IPO — Upload PDF Prospektus → SIGMA Bedah Otomatis
+            # ════════════════════════════════════════════════════════════════
+            st.markdown(
+                "<div class='trm-section'><div class='trm-section-line'></div>"
+                "<span class='trm-section-label'>📋 ANALISA IPO — BEDAH PROSPEKTUS</span>"
+                "<div class='trm-section-line'></div></div>",
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                f"letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;'>"
+                "Upload PDF Prospektus e-IPO → SIGMA akan membedah: valuasi harga/nominal, "
+                "manajemen risiko lot, underwriter track record, tujuan dana, dan jadwal lengkap.</p>",
+                unsafe_allow_html=True
+            )
+
+            # ── Info cards ─────────────────────────────────────────────────
+            _ipo_c1, _ipo_c2, _ipo_c3 = st.columns(3)
+            with _ipo_c1:
+                st.markdown(f"""<div style='background:{"rgba(167,139,250,0.08)" if is_dark else "#f5f3ff"};
+                    border:1px solid rgba(167,139,250,0.25);border-left:3px solid #a78bfa;
+                    border-radius:0 8px 8px 0;padding:10px 14px;font-family:IBM Plex Mono,monospace;
+                    font-size:0.72rem;color:{text_sub};line-height:1.7;'>
+                    <b style='color:#a78bfa;'>STEP 1</b><br>
+                    Masukkan nama/kode emiten di field di bawah</div>""", unsafe_allow_html=True)
+            with _ipo_c2:
+                st.markdown(f"""<div style='background:{"rgba(167,139,250,0.08)" if is_dark else "#f5f3ff"};
+                    border:1px solid rgba(167,139,250,0.25);border-left:3px solid #a78bfa;
+                    border-radius:0 8px 8px 0;padding:10px 14px;font-family:IBM Plex Mono,monospace;
+                    font-size:0.72rem;color:{text_sub};line-height:1.7;'>
+                    <b style='color:#a78bfa;'>STEP 2</b><br>
+                    Upload PDF Prospektus dari e-IPO.co.id atau OJK</div>""", unsafe_allow_html=True)
+            with _ipo_c3:
+                st.markdown(f"""<div style='background:{"rgba(167,139,250,0.08)" if is_dark else "#f5f3ff"};
+                    border:1px solid rgba(167,139,250,0.25);border-left:3px solid #a78bfa;
+                    border-radius:0 8px 8px 0;padding:10px 14px;font-family:IBM Plex Mono,monospace;
+                    font-size:0.72rem;color:{text_sub};line-height:1.7;'>
+                    <b style='color:#a78bfa;'>STEP 3</b><br>
+                    Klik ANALISA → SIGMA bedah seluruh isi prospektus</div>""", unsafe_allow_html=True)
+
+            st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+            # ── Input: nama emiten ─────────────────────────────────────────
+            _ipo_emiten = st.text_input(
+                "Nama / Kode Emiten IPO",
+                placeholder="Contoh: CBPE, Cakra Buana Resources, dll.",
+                key="ipo_tab_emiten_input",
+                help="Nama atau kode saham emiten yang akan IPO. Tidak harus kode resmi — nama perusahaan juga OK."
+            )
+
+            # ── Upload PDF ─────────────────────────────────────────────────
+            _ipo_pdf_file = st.file_uploader(
+                "Upload Prospektus IPO (PDF)",
+                type=["pdf"],
+                key="ipo_tab_pdf_uploader",
+                help="Download PDF dari e-IPO.co.id atau idx.co.id/prospektus. Max ~200MB."
+            )
+
+            # ── State management: simpan hasil analisa ────────────────────
+            if "ipo_tab_result" not in st.session_state:
+                st.session_state["ipo_tab_result"] = None
+            if "ipo_tab_emiten_last" not in st.session_state:
+                st.session_state["ipo_tab_emiten_last"] = ""
+
+            # ── Tombol analisa ─────────────────────────────────────────────
+            _ipo_col_btn, _ipo_col_clear = st.columns([3, 1])
+            with _ipo_col_btn:
+                _ipo_run = st.button(
+                    "🔍 ANALISA PROSPEKTUS",
+                    key="ipo_tab_run_btn",
+                    use_container_width=True,
+                    type="primary",
+                    disabled=not (_ipo_pdf_file and _ipo_emiten.strip())
+                )
+            with _ipo_col_clear:
+                if st.button("🗑️ Clear", key="ipo_tab_clear_btn", use_container_width=True):
+                    st.session_state["ipo_tab_result"] = None
+                    st.session_state["ipo_tab_emiten_last"] = ""
+                    st.rerun()
+
+            # ── Validasi & eksekusi analisa ────────────────────────────────
+            if _ipo_run:
+                if not _ipo_emiten.strip():
+                    st.warning("⚠️ Masukkan nama atau kode emiten terlebih dahulu.")
+                elif not _ipo_pdf_file:
+                    st.warning("⚠️ Upload file PDF Prospektus terlebih dahulu.")
+                else:
+                    with st.spinner("📖 Membaca & Membedah Ratusan Halaman Prospektus IPO..."):
+                        try:
+                            # Baca PDF dengan fitz (sudah diimport di top)
+                            _ipo_raw = _ipo_pdf_file.read()
+                            _ipo_doc = fitz.open(stream=_ipo_raw, filetype="pdf")
+                            _ipo_txt = ""
+                            for _pg in _ipo_doc:
+                                _ipo_txt += _pg.get_text()
+                            _ipo_doc.close()
+
+                            # Truncate ke 12.000 char (sama dengan chat engine)
+                            _ipo_pdf_content = (
+                                f"[PDF: {_ipo_pdf_file.name} | "
+                                f"{len(_ipo_txt):,} karakter terbaca]\n"
+                                + _ipo_txt[:12000]
+                            )
+
+                            _ipo_emiten_clean = _ipo_emiten.strip().upper()
+                            _ipo_full_prompt  = TEMPLATE_IPO.format(
+                                emiten=_ipo_emiten_clean,
+                                pdf_content=_ipo_pdf_content
+                            )
+
+                            # Panggil AI: Gemini primary (terbaik untuk PDF panjang)
+                            _ipo_ans = None
+                            _ipo_model_used = ""
+                            try:
+                                _ipo_ans, _ = _call_gemini_text(
+                                    [{"role": "user", "content": _ipo_full_prompt}]
+                                )
+                                _ipo_model_used = "✨ Gemini-PDF"
+                            except Exception as _e1:
+                                try:
+                                    _ipo_ans, _ = _call_cerebras(_ipo_full_prompt, [])
+                                    _ipo_model_used = "⚡ Cerebras"
+                                except Exception as _e2:
+                                    try:
+                                        _ipo_ans, _ = _call_groq_primary(_ipo_full_prompt, [], max_tokens=16000)
+                                        _ipo_model_used = "⚡ Groq/Llama"
+                                    except Exception as _e3:
+                                        _ipo_ans = (
+                                            "❌ Semua model AI tidak merespons. "
+                                            "Coba lagi dalam beberapa detik.\n\n"
+                                            f"`Error: {str(_e3)[:200]}`"
+                                        )
+                                        _ipo_model_used = "Error"
+
+                            if _ipo_ans:
+                                _ipo_ans = _sanitize_html_text(_ipo_ans)
+                                st.session_state["ipo_tab_result"] = {
+                                    "emiten":     _ipo_emiten_clean,
+                                    "filename":   _ipo_pdf_file.name,
+                                    "result":     _ipo_ans,
+                                    "model":      _ipo_model_used,
+                                    "timestamp":  _wib_now().strftime("%d %b %Y, %H:%M WIB"),
+                                }
+                                st.session_state["ipo_tab_emiten_last"] = _ipo_emiten_clean
+
+                        except Exception as _ipo_err:
+                            st.error(f"❌ Gagal membaca PDF: {str(_ipo_err)[:300]}")
+
+            # ── Render hasil analisa ───────────────────────────────────────
+            _ipo_result = st.session_state.get("ipo_tab_result")
+            if _ipo_result:
+                st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+                # Header hasil
+                st.markdown(
+                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
+                    f"text-transform:uppercase;color:#a78bfa;margin-bottom:6px;'>"
+                    f"📋 HASIL BEDAH — {_ipo_result['emiten']}</div>",
+                    unsafe_allow_html=True
+                )
+                st.caption(
+                    f"📄 {_ipo_result['filename']} · "
+                    f"{_ipo_result['model']} · "
+                    f"{_ipo_result['timestamp']}"
+                )
+
+                # Output analisa dalam container scrollable
+                with st.container(border=True):
+                    st.markdown(_ipo_result["result"])
+
+                # Tombol download hasil
+                st.download_button(
+                    label="⬇️ Download Hasil Analisa (.txt)",
+                    data=(
+                        f"SIGMA — BEDAH PROSPEKTUS IPO\n"
+                        f"Emiten  : {_ipo_result['emiten']}\n"
+                        f"File    : {_ipo_result['filename']}\n"
+                        f"Model   : {_ipo_result['model']}\n"
+                        f"Waktu   : {_ipo_result['timestamp']}\n"
+                        f"{'='*60}\n\n"
+                        + _ipo_result["result"]
+                    ).encode("utf-8"),
+                    file_name=f"SIGMA_IPO_{_ipo_result['emiten']}_{_wib_now().strftime('%Y%m%d')}.txt",
+                    mime="text/plain",
+                    key="ipo_tab_download_btn",
+                )
+
+            elif not _ipo_run:
+                # Placeholder saat belum ada analisa
+                st.markdown(f"""
+                <div style='text-align:center;padding:40px 20px;opacity:0.45;'>
+                    <div style='font-size:2.5rem;margin-bottom:12px;'>📄</div>
+                    <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;
+                    letter-spacing:0.1em;text-transform:uppercase;color:{text_sub};line-height:1.8;'>
+                    Isi nama emiten · Upload PDF Prospektus · Klik ANALISA<br>
+                    SIGMA akan membedah valuasi, risiko lot, underwriter & tujuan dana<br>
+                    <span style='color:#a78bfa;font-weight:700;'>Didukung: Gemini · Cerebras · Groq</span>
+                    </div>
+                </div>""", unsafe_allow_html=True)
 
         with alpha_tab_trackrecord:
             # ════════════════════════════════════════════════════════════════
