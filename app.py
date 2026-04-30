@@ -9331,17 +9331,13 @@ if current_view == "dashboard":
         return result
 
     _globe_live = _fetch_globe_live_data()
-    # ── Refresh manual Globe ──────────────────────────────────────────────
-    _globe_col1, _globe_col2 = st.columns([4, 1])
-    with _globe_col2:
-        if st.button("🔄 Refresh Globe", key="globe_refresh_btn", use_container_width=True,
-                     help="Paksa fetch harga live baru untuk Market Map Globe"):
-            _fetch_globe_live_data.clear()
-            st.session_state["globe_last_refresh"] = datetime.now().strftime("%d %b %Y %H:%M WIB")
-            st.rerun()
-    _globe_ts = st.session_state.get("globe_last_refresh", "Auto (cache 1 jam)")
-    with _globe_col1:
-        st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh tiap 1 jam")
+    # ── Globe: background auto-refresh tiap jam (slot berubah = cache dibust) ──
+    _globe_hour_slot = datetime.now().strftime("%Y%m%d_%H")
+    if st.session_state.get("_globe_prev_slot", "") != _globe_hour_slot:
+        try: _fetch_globe_live_data.clear()
+        except Exception: pass
+        _globe_live = _fetch_globe_live_data()
+        st.session_state["_globe_prev_slot"] = _globe_hour_slot
     # ─────────────────────────────────────────────────────────────────────
 
     with tab_idxmap:
@@ -10358,6 +10354,18 @@ table{{margin-bottom:0!important;}}
             "<div class='trm-section-line'></div></div>",
             unsafe_allow_html=True,
         )
+        # ── Refresh Globe (hanya tampil di tab Market Map) ──
+        _gc1, _gc2 = st.columns([4, 1])
+        with _gc2:
+            if st.button("🔄 Refresh Globe", key="globe_refresh_btn", use_container_width=True,
+                         help="Paksa fetch harga live baru untuk Market Map Globe"):
+                _fetch_globe_live_data.clear()
+                _globe_live = _fetch_globe_live_data()
+                st.session_state["globe_last_refresh"] = datetime.now().strftime("%d %b %Y %H:%M WIB")
+                st.rerun()
+        _globe_ts = st.session_state.get("globe_last_refresh", "Auto (cache 1 jam)")
+        with _gc1:
+            st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh tiap 1 jam")
         _idx_globe_html = (
             _idx_globe_html
             .replace("__SIGMA_LIVE_DATA__", _globe_live_js)
@@ -12900,6 +12908,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         if _h >= 21:
             _update_slot = f"{_now_wib.strftime('%Y%m%d')}_NIGHT"
 
+        # ── Background trigger: bust cache saat slot berubah (tanpa tunggu user buka tab) ──
+        _rrg_prev_slot = st.session_state.get("_rrg_prev_slot", "")
+        if _rrg_prev_slot != _update_slot and _rrg_prev_slot:
+            try: _compute_rrg_live.clear()
+            except Exception: pass
+        st.session_state["_rrg_prev_slot"] = _update_slot
+
         @st.cache_data(ttl=3600, show_spinner=False)
         def _compute_rrg_live(slot_key: str):
             """
@@ -14362,15 +14377,27 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             # ── SHAREHOLDER TRACKER ─────────────────────────────────────────
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>👥 SHAREHOLDER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-            # ── Notifikasi data hardcoded ──
-            st.info(
-                "📋 **Data pemegang saham** bersumber dari laporan bulanan IDX (AKSes). "
-                "Data terakhir tersedia: **Maret 2026**. "
-                "Update manual diperlukan setiap awal bulan (developer perlu tambah data baru ke kode). "
-                "Untuk data real-time, kunjungi [AKSes IDX](https://akses.idx.co.id) langsung.",
-                icon="ℹ️"
-            )
+            # ── Notifikasi data hardcoded + staleness check bulanan ──
             import datetime as _dt
+            _sh_now = _dt.datetime.now()
+            _sh_data_month = "2026-03"  # Update string ini saat data baru ditambahkan
+            _sh_data_dt    = _dt.datetime.strptime(_sh_data_month + "-01", "%Y-%m-%d")
+            _sh_stale_days = (_sh_now - _sh_data_dt).days
+            if _sh_stale_days > 45:
+                st.warning(
+                    f"⚠️ **Data Shareholder sudah {_sh_stale_days} hari** (terakhir: {_sh_data_month}). "
+                    "Data bulan baru belum ditambahkan ke kode. Developer: perbarui `get_manual_sh_db_full()` "
+                    "dan ubah `_sh_data_month` di atas.",
+                    icon="⚠️"
+                )
+            else:
+                st.info(
+                    "📋 **Data pemegang saham** bersumber dari laporan bulanan IDX (AKSes). "
+                    f"Data terakhir tersedia: **{_sh_data_month}**. "
+                    "Update manual diperlukan setiap awal bulan (developer perlu tambah data baru ke kode). "
+                    "Untuk data real-time, kunjungi [AKSes IDX](https://akses.idx.co.id) langsung.",
+                    icon="ℹ️"
+                )
             import pandas as pd
 
             # ════════════════════════════════════════════════════════════════
@@ -19501,174 +19528,6 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 </body></html>"""
             components.html(_hist_html, height=_total_h, scrolling=True)
 
-        def _render_track_record_inline(plan_type="daily", accent="#a78bfa", ctx="main"):
-            """
-            Track Record yang 100% terhubung ke History Plan.
-            Setiap saham di History Plan otomatis masuk sebagai OPEN.
-            User hanya perlu update hasil: TP1/TP2/SL HIT.
-            """
-            _type_label = {"daily": "Daily", "weekly": "Weekly", "bsjp": "BSJP"}.get(plan_type, plan_type)
-            _all_records = st.session_state.get("tr_records", [])
-            _filtered    = [r for r in _all_records 
-                            if r.get("type","").lower() == _type_label.lower()
-                            or r.get("plan_type","").lower() == _type_label.lower()]
-
-            # ── Info Banner ──
-            _hist_key   = f"auto_plan_history_{plan_type}"
-            _hist_count = len(st.session_state.get(_hist_key, {}))
-            st.markdown(f"""
-            <div style='background:{"rgba(38,166,154,0.07)" if is_dark else "#f0fdf4"};
-                border:1px solid rgba(38,166,154,0.2);border-left:3px solid {accent};
-                border-radius:0 8px 8px 0;padding:10px 16px;margin-bottom:16px;
-                font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};line-height:1.8;'>
-            🔗 <b style='color:{accent};'>AUTO-LINKED KE HISTORY PLAN</b> &nbsp;·&nbsp;
-            Setiap saham dari {_type_label} Plan otomatis masuk sebagai <b>OPEN</b> &nbsp;·&nbsp;
-            {_hist_count} history tersimpan &nbsp;·&nbsp; {len(_filtered)} trade tercatat<br>
-            ✏️ Tugas kamu: pilih posisi OPEN dan update apakah <b>TP HIT</b> atau <b>SL HIT</b> &nbsp;·&nbsp; Auto-check TP/SL jam <b>20:30 WIB</b>
-            </div>""", unsafe_allow_html=True)
-
-            # ══════════════════════════════════════════════════════
-            # SECTION A — UPDATE HASIL TRADE (OPEN → CLOSED)
-            # ══════════════════════════════════════════════════════
-            _open_list = [r for r in _filtered if r.get("status", "OPEN") == "OPEN"]
-
-            if _open_list:
-                st.markdown(
-                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
-                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
-                    f"✏️ UPDATE HASIL — {len(_open_list)} posisi OPEN</div>",
-                    unsafe_allow_html=True)
-
-                # Tampilkan kartu per posisi OPEN
-                for _oi, _or in enumerate(_open_list):
-                    _or_idx = next((i for i, r in enumerate(_all_records)
-                                    if r.get("id") == _or.get("id")), None)
-                    if _or_idx is None: continue
-
-                    with st.container(border=True):
-                        _oc1, _oc2, _oc3 = st.columns([2, 3, 2])
-                        with _oc1:
-                            st.markdown(
-                                f"**{_or.get('ticker','')}** &nbsp;"
-                                f"<span style='color:{accent};font-size:11px;'>{_or.get('date','')}</span><br>"
-                                f"<span style='font-size:11px;color:#888;'>{_or.get('slot', _or.get('type',''))}</span>",
-                                unsafe_allow_html=True)
-                            st.caption(f"Entry: Rp {int(_or.get('entry',0)):,}")
-                        with _oc2:
-                            _lv1, _lv2, _lv3 = st.columns(3)
-                            _lv1.metric("TP1", f"Rp {int(_or.get('tp1',0)):,}")
-                            _lv2.metric("TP2", f"Rp {int(_or.get('tp2',0)):,}" if _or.get('tp2') else "—")
-                            _lv3.metric("SL",  f"Rp {int(_or.get('sl',0)):,}")
-                        with _oc3:
-                            _res_opt = st.selectbox(
-                                "HASIL:",
-                                ["— Masih OPEN —", "✅ TP1 HIT", "🎯 TP2 HIT", "🛑 SL HIT", "📤 Manual Exit"],
-                                key=f"tr_res_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
-                            if _res_opt != "— Masih OPEN —":
-                                _ex_price = st.number_input(
-                                    "Harga Exit (Rp):",
-                                    min_value=0,
-                                    value=int(_or.get("tp1",0)) if "TP1" in _res_opt
-                                          else int(_or.get("tp2",0)) if "TP2" in _res_opt
-                                          else int(_or.get("sl",0)) if "SL" in _res_opt else 0,
-                                    key=f"tr_exp_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}")
-                                if st.button("💾 SIMPAN", key=f"tr_upd_{ctx}_{plan_type}_{_oi}_{_or.get('id','')}",
-                                             use_container_width=True):
-                                    _entry_v = _or.get("entry", 0)
-                                    _exit_v  = _ex_price if _ex_price > 0 else (
-                                        _or.get("tp1",0) if "TP1" in _res_opt else
-                                        _or.get("tp2",0) if "TP2" in _res_opt else
-                                        _or.get("sl",0))
-                                    _pnl_v   = round((_exit_v - _entry_v) / _entry_v * 100, 2) if _entry_v else 0
-                                    _res_v   = "WIN" if _pnl_v >= 0 else "LOSS"
-                                    _tag     = ("TP1 HIT" if "TP1" in _res_opt
-                                                else "TP2 HIT" if "TP2" in _res_opt
-                                                else "SL HIT" if "SL" in _res_opt
-                                                else "Manual Exit")
-                                    _all_records[_or_idx].update({
-                                        "status":     "CLOSED",
-                                        "exit_price": _exit_v,
-                                        "pnl_pct":    _pnl_v,
-                                        "result":     _res_v,
-                                        "exit_date":  _wib_now().strftime("%Y-%m-%d"),
-                                        "auto_note":  _tag,
-                                    })
-                                    st.session_state["tr_records"] = _all_records
-                                    if st.session_state.get("user"):
-                                        try:
-                                            save_field(st.session_state.user["email"], "tr_records", _all_records)
-                                        except: pass
-                                    st.success(f"✅ {_or.get('ticker','')} → {_tag} | P&L: {'+'if _pnl_v>=0 else ''}{_pnl_v}%")
-                                    st.rerun()
-            else:
-                if _filtered:
-                    st.info("✅ Semua posisi sudah CLOSED. Tidak ada yang perlu diupdate.")
-                else:
-                    st.markdown(f"""<div style='text-align:center;padding:32px 20px;opacity:0.5;'>
-                        <div style='font-size:2rem;margin-bottom:10px;'>🏆</div>
-                        <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;'>
-                        Belum ada trade tercatat.<br>
-                        Generate {_type_label} Plan → saham otomatis masuk ke sini sebagai OPEN.</div>
-                    </div>""", unsafe_allow_html=True)
-                    return
-
-            st.markdown("---")
-
-            # ══════════════════════════════════════════════════════
-            # SECTION B — STATISTIK WIN RATE
-            # ══════════════════════════════════════════════════════
-            if _filtered:
-                _closed_f = [r for r in _filtered if r.get("status") == "CLOSED"]
-                _open_f   = [r for r in _filtered if r.get("status") != "CLOSED"]
-                _wins_f   = [r for r in _closed_f if r.get("result") == "WIN"]
-                _loss_f   = [r for r in _closed_f if r.get("result") == "LOSS"]
-                _wr_f     = round(len(_wins_f)/len(_closed_f)*100,1) if _closed_f else 0
-                _avg_w_f  = round(sum(r.get("pnl_pct",0) for r in _wins_f)/len(_wins_f),2) if _wins_f else 0
-                _avg_l_f  = round(sum(r.get("pnl_pct",0) for r in _loss_f)/len(_loss_f),2) if _loss_f else 0
-                _tot_pnl_f= round(sum(r.get("pnl_pct",0) for r in _closed_f),2)
-
-                st.markdown(
-                    f"<div style='font-size:0.72rem;font-weight:700;letter-spacing:0.12em;"
-                    f"text-transform:uppercase;color:{accent};margin-bottom:10px;'>"
-                    f"📊 STATISTIK {_type_label.upper()} TRACK RECORD</div>",
-                    unsafe_allow_html=True)
-
-                _mc1,_mc2,_mc3,_mc4 = st.columns(4)
-                _mc1.metric("Win Rate",
-                            f"{_wr_f}%",
-                            f"{len(_wins_f)} WIN · {len(_loss_f)} LOSS",
-                            delta_color="normal" if _wr_f >= 50 else "inverse")
-                _mc2.metric("Total Trade", len(_filtered), f"{len(_open_f)} masih OPEN")
-                _mc3.metric("Total P&L (Closed)",
-                            f"{'+'if _tot_pnl_f>=0 else ''}{_tot_pnl_f}%",
-                            delta_color="normal" if _tot_pnl_f >= 0 else "inverse")
-                _mc4.metric("Avg Win / Avg Loss", f"+{_avg_w_f}% / {_avg_l_f}%")
-
-                st.markdown("<br>", unsafe_allow_html=True)
-
-                # ── Tabel Lengkap ──
-                import pandas as _pd_tr
-                _tbl_rows = []
-                for _rf in sorted(_filtered, key=lambda x: x.get("date",""), reverse=True):
-                    _pnl_v = _rf.get("pnl_pct", 0)
-                    _stat  = _rf.get("result", "OPEN")
-                    _emoji = "✅" if _stat == "WIN" else ("🛑" if _stat == "LOSS" else "⏳")
-                    _tbl_rows.append({
-                        "#":        _rf.get("id",""),
-                        "TANGGAL":  _rf.get("date",""),
-                        "TICKER":   _rf.get("ticker",""),
-                        "SESI":     _rf.get("slot", _rf.get("type","")),
-                        "ENTRY":    f"Rp {int(_rf.get('entry',0)):,}",
-                        "TP1":      f"Rp {int(_rf.get('tp1',0)):,}",
-                        "TP2":      f"Rp {int(_rf.get('tp2',0)):,}" if _rf.get("tp2") else "—",
-                        "SL":       f"Rp {int(_rf.get('sl',0)):,}",
-                        "EXIT":     f"Rp {int(_rf.get('exit_price',0)):,}" if _rf.get("exit_price",0) > 0 else "—",
-                        "P&L":      f"{'+'if _pnl_v>=0 else ''}{_pnl_v}%" if _pnl_v else "—",
-                        "HASIL":    f"{_emoji} {_stat}",
-                        "KET":      (_rf.get("auto_note","") or _rf.get("reason",""))[:45],
-                    })
-                st.dataframe(_pd_tr.DataFrame(_tbl_rows), use_container_width=True, hide_index=True)
-
         def _render_auto_track_record():
             """Render track record yang ter-update otomatis."""
             records = st.session_state.get("tr_records", [])
@@ -20226,7 +20085,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # TAB 4 — TRACK RECORD (Daily)
             # ════════════════════════════════════════════
             with _d_tab_trackrecord:
-                _render_track_record_inline("daily", "#a78bfa", ctx="plan_daily")
+                _render_auto_track_record()
         with reco_tab_weekly:
 
 
@@ -20532,7 +20391,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # WEEKLY TAB 4 — TRACK RECORD
             # ============================================================
             with _w_tab_trackrecord:
-                _render_track_record_inline("weekly", "#26a69a", ctx="plan_weekly")
+                _render_auto_track_record()
         with reco_tab_bsjp:
 
             _now_b = _wib_now()
@@ -20725,7 +20584,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
             # BSJP TAB 3 — TRACK RECORD
             # ════════════════════════════════════════════
             with _b_tab_trackrecord:
-                _render_track_record_inline("bsjp", "#f5a623", ctx="plan_bsjp")
+                _render_auto_track_record()
         with reco_tab_fundamental:
 
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
