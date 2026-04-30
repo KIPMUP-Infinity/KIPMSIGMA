@@ -1738,11 +1738,23 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     else:          vc, vbg = "#f23645", "rgba(242,54,69,0.08)"
 
     # ── Pre-build zone signals HTML (avoid nested f-string leak) ──
+    # Sanitize setiap sinyal agar tidak ada tag HTML mentah (</div>, <span>, dll) yang bocor
     _zone_sigs_html = (
         f'<div style="border-top:1px solid {met_border};padding-top:8px;margin-top:10px;">'
-        + "".join(f'<div style="font-size:0.72rem;color:{text_sub};margin-bottom:3px;">{s}</div>' for s in result.zone_signals[:4])
+        + "".join(
+            f'<div style="font-size:0.72rem;color:{text_sub};margin-bottom:3px;">'
+            f'{_sanitize_html_text(s)}</div>'
+            for s in result.zone_signals[:4]
+        )
         + '</div>'
     ) if result.zone_signals else ''
+
+    # ── Pre-build semua conditional HTML di luar f-string utama ──
+    _breakout_html   = "&nbsp;&middot;&nbsp;<span style='color:#00e5a0;font-weight:600;'>✅ True Breakout Terkonfirmasi</span>" if result.breakout_valid else ""
+    _false_bo_html   = "&nbsp;&middot;&nbsp;<span style='color:#f23645;font-weight:600;'>⛔ False Breakout Terdeteksi</span>" if result.false_breakout else ""
+    _vol_type_clean  = _sanitize_html_text(result.vol_type)
+    _vol_freq_clean  = _sanitize_html_text(result.vol_freq_signal)
+    _accum_score     = int(result.accum_score) if result.accum_score is not None else 0
 
     html = f"""
 <div style="background:{met_bg};border:1px solid {met_border};border-radius:8px;padding:14px;margin:8px 0;font-family:'DM Sans',sans-serif;">
@@ -1751,12 +1763,8 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:{cc};background:{cc}22;border:1px solid {cc}55;border-radius:4px;padding:2px 6px;">ZONE CONF {cs}/10</span>
   </div>
   <div style="background:{vbg};border:1px solid {vc}33;border-radius:6px;padding:10px 12px;margin-bottom:10px;">
-    <div style="font-size:0.8rem;color:{vc};font-weight:600;margin-bottom:4px;">{_sanitize_html_text(result.vol_type)}</div>
-    <div style="font-size:0.72rem;color:{text_sub};">
-      Frekuensi: <span style="color:{text_main};">{_sanitize_html_text(result.vol_freq_signal)}</span>
-      {("&nbsp;&middot;&nbsp;<span style='color:#00e5a0;font-weight:600;'>✅ True Breakout Terkonfirmasi</span>") if result.breakout_valid else ""}
-      {("&nbsp;&middot;&nbsp;<span style='color:#f23645;font-weight:600;'>⛔ False Breakout Terdeteksi</span>") if result.false_breakout else ""}
-    </div>
+    <div style="font-size:0.8rem;color:{vc};font-weight:600;margin-bottom:4px;">{_vol_type_clean}</div>
+    <div style="font-size:0.72rem;color:{text_sub};">Frekuensi: <span style="color:{text_main};">{_vol_freq_clean}</span>{_breakout_html}{_false_bo_html}</div>
   </div>
   <div style="margin-bottom:8px;">
     <div style="display:flex;justify-content:space-between;font-size:10px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
@@ -1768,10 +1776,10 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
   </div>
   <div>
     <div style="display:flex;justify-content:space-between;font-size:10px;color:{text_sub};font-family:'IBM Plex Mono',monospace;margin-bottom:3px;">
-      <span>Akumulasi Score</span><span style="color:#00e5a0;font-weight:600;">{result.accum_score}/100</span>
+      <span>Akumulasi Score</span><span style="color:#00e5a0;font-weight:600;">{_accum_score}/100</span>
     </div>
     <div style="background:rgba(255,255,255,0.06);border-radius:3px;height:5px;">
-      <div style="width:{result.accum_score}%;height:100%;background:#00e5a0;border-radius:3px;"></div>
+      <div style="width:{_accum_score}%;height:100%;background:#00e5a0;border-radius:3px;"></div>
     </div>
   </div>
   {_zone_sigs_html}
@@ -15806,11 +15814,18 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             )
 
             # ── Upload PDF ─────────────────────────────────────────────────
+            st.markdown(
+                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
+                f"letter-spacing:0.08em;color:{text_sub};margin-bottom:4px;margin-top:8px;'>"
+                "Upload Prospektus IPO (PDF) &nbsp;·&nbsp; Max ~200MB</p>",
+                unsafe_allow_html=True
+            )
             _ipo_pdf_file = st.file_uploader(
                 "Upload Prospektus IPO (PDF)",
                 type=["pdf"],
                 key="ipo_tab_pdf_uploader",
-                help="Download PDF dari e-IPO.co.id atau idx.co.id/prospektus. Max ~200MB."
+                help="Download PDF dari e-IPO.co.id atau idx.co.id/prospektus. Max ~200MB.",
+                label_visibility="collapsed"
             )
 
             # ── State management: simpan hasil analisa ────────────────────
@@ -21805,11 +21820,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             _goapi_status_lbl = "✅ Key Aktif" if _goapi_key_ok else "❌ Key Tidak Ada"
             _gapi_col1, _gapi_col2, _gapi_col3 = st.columns([2, 1, 1])
             with _gapi_col1:
+                _goapi_err_html = (
+                    f"&nbsp;&nbsp;&middot;&nbsp;&nbsp;<span style='color:#f59e0b;'>{_goapi_last_err[:60]}...</span>"
+                    if _goapi_last_err else ""
+                )
                 st.markdown(
                     f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
                     f"color:{_goapi_status_c};padding:6px 0;'>"
-                    f"🔗 GoAPI: <b>{_goapi_status_lbl}</b>"
-                    f"{'  ·  <span style="color:#f59e0b;">' + _goapi_last_err[:60] + '...</span>' if _goapi_last_err else ''}"
+                    f"🔗 GoAPI: <b>{_goapi_status_lbl}</b>{_goapi_err_html}"
                     f"</div>",
                     unsafe_allow_html=True)
             with _gapi_col2:
