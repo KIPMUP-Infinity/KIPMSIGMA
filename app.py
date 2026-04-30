@@ -7582,10 +7582,30 @@ if "do" in st.query_params:
         st.session_state.clear(); st.query_params.clear()
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
-    elif _do == "go_home": 
+    elif _do == "go_home" or _do == "view_hub":
+        # Kembali ke Command Hub
         st.session_state.selected_system = None
+        st.session_state.current_view = None
         try: del st.query_params["do"]
-        except: 
+        except:
+            try: st.query_params.pop("do", None)
+            except: pass
+        st.rerun()
+    elif _do == "view_chat":
+        # Masuk ke SIGMA AI
+        st.session_state.selected_system = "chat"
+        st.session_state.current_view = "chat"
+        try: del st.query_params["do"]
+        except:
+            try: st.query_params.pop("do", None)
+            except: pass
+        st.rerun()
+    elif _do == "view_dashboard":
+        # Masuk ke SIGMA Terminal
+        st.session_state.selected_system = "dashboard"
+        st.session_state.current_view = "dashboard"
+        try: del st.query_params["do"]
+        except:
             try: st.query_params.pop("do", None)
             except: pass
         st.rerun()
@@ -8753,7 +8773,10 @@ if "do" in st.query_params:
     elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_ai": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
-    elif _do == "go_home": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "go_home" or _do == "view_hub":
+        st.session_state.selected_system = None
+        st.session_state.current_view = None
+        st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_light": st.session_state.theme = "light"; st.query_params.pop("do", None); st.rerun()
     elif _do == "newchat":
@@ -8858,7 +8881,11 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     except: pass
     st.session_state.amnesia_fixed = True
 
-current_view = st.session_state.get("current_view", "chat")
+current_view = st.session_state.get("current_view", None)
+
+# ── ROUTING v4.0 — tampilkan hub kalau belum pilih modul
+if current_view is None or st.session_state.get("selected_system") is None:
+    show_system_selector()
 
 if current_view == "dashboard":
     try:
