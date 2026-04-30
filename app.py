@@ -23771,8 +23771,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             # ── Sub-tabs Panduan ─────────────────────────────────────────────
             pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8, pg_tab9 = st.tabs([
                 "  🌐 MARKET MAP  ",
-                "  🌍 Global Macro & News  ",
-                "  🔄 Index & Rebalancing  ",
+                "  📰 NEWS & CALENDAR  ",
+                "  🔄 INDEX & SECTOR ROTATION  ",
                 "  👥 Shareholder  ",
                 "  ⚡ Alpha Screener  ",
                 "  📋 Analisa IPO  ",
@@ -23804,18 +23804,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     .card.b{{border-left:3px solid #60a5fa;}}
     .card.g{{border-left:3px solid #26a69a;}}
     .card.y{{border-left:3px solid #fbbf24;}}
+    .card.r{{border-left:3px solid #f23645;}}
     .card-title{{font-size:0.875rem;font-weight:700;color:#60a5fa;margin-bottom:8px;}}
     .card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
     .card-body b{{color:#a78bfa;}}
     .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
     .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
     .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+    .stext b{{color:#a78bfa;}}
+    .stext .ok{{color:#26a69a;font-weight:700;}}
+    .stext .dn{{color:#f23645;font-weight:700;}}
+    .stext .yl{{color:#fbbf24;font-weight:700;}}
     .tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+    .warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
     .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    @media(max-width:600px){{.grid2{{grid-template-columns:1fr;}}}}
-    .metric-box{{background:rgba(139,92,246,0.07);border:1px solid rgba(139,92,246,0.2);border-radius:8px;padding:12px 14px;text-align:center;}}
-    .metric-val{{font-size:1.3rem;font-weight:800;color:#a78bfa;}}
-    .metric-lbl{{font-size:0.68rem;color:{_SUB};margin-top:4px;letter-spacing:0.1em;text-transform:uppercase;}}
     .heatmap-demo{{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:14px 0;}}
     .hm-cell{{border-radius:6px;padding:10px 6px;text-align:center;font-size:0.72rem;font-weight:700;}}
     .hm-strong-up{{background:rgba(8,153,129,0.35);color:#4ade80;border:1px solid rgba(8,153,129,0.5);}}
@@ -23823,15 +23825,78 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     .hm-flat{{background:rgba(178,181,190,0.1);color:#7c86a2;border:1px solid rgba(178,181,190,0.2);}}
     .hm-dn{{background:rgba(242,54,69,0.18);color:#f23645;border:1px solid rgba(242,54,69,0.3);}}
     .hm-strong-dn{{background:rgba(242,54,69,0.35);color:#f87171;border:1px solid rgba(242,54,69,0.5);}}
+    .ticker-row{{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;margin-bottom:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}}
+    .ticker-name{{font-size:0.8rem;font-weight:700;color:#a78bfa;min-width:90px;}}
+    .ticker-val{{font-size:0.875rem;color:{_TXT};flex:1;}}
+    .ticker-up{{color:#26a69a;font-weight:700;}}
+    .ticker-dn{{color:#f23645;font-weight:700;}}
+    @media(max-width:600px){{.grid2{{grid-template-columns:1fr;}}.heatmap-demo{{grid-template-columns:repeat(3,1fr);}}}}
     </style></head><body><div class="wrap">
 
     <div class="hero">
       <div class="hero-badge">🌐 MARKET MAP</div>
-      <div class="hero-title">Peta Visual Seluruh Pasar IDX</div>
-      <div class="hero-sub">Heatmap real-time seluruh saham IDX dikelompokkan per sektor — warna menunjukkan performa harian. Sekilas tahu mana sektor yang naik, turun, atau sideways tanpa harus cek satu per satu.</div>
+      <div class="hero-title">Pusat Pantau Pasar — Live Market + Globe Heatmap</div>
+      <div class="hero-sub">
+        Tab pertama SIGMA Terminal. Berisi dua bagian utama: <b>Live Market</b> (harga aset global real-time: indeks, komoditas, forex) 
+        dan <b>Market Map Globe</b> (heatmap 3D interaktif seluruh saham IDX dikelompokkan per sektor).
+      </div>
     </div>
 
-    <div class="sec-head"><span class="sec-icon">🎨</span><div><div class="sec-title">CARA MEMBACA HEATMAP</div></div></div>
+    <!-- ══ BAGIAN 1: LIVE MARKET ══ -->
+    <div class="sec-head"><span class="sec-icon">📊</span>
+    <div><div class="sec-title">BAGIAN 1 — LIVE MARKET</div>
+    <div style="font-size:0.8rem;color:{_SUB};margin-top:2px;">Ticker harga real-time: Indeks Global · Komoditas · Forex · Kripto</div>
+    </div></div>
+
+    <div class="card p">
+    <div class="card-title">Apa yang ditampilkan Live Market?</div>
+    <div class="card-body">
+      Live Market adalah <b>ticker berjalan + tabel harga</b> yang menampilkan kondisi pasar global sebelum dan sesama sesi IDX berlangsung.
+      Data diambil dari Yahoo Finance dan diperbarui setiap kali halaman di-reload.
+    </div>
+    </div>
+
+    <div class="card b">
+    <div class="card-title">Instrumen yang Dipantau</div>
+    <div class="card-body">
+      <b style="color:#a78bfa;">Indeks Global:</b><br>
+      <div class="ticker-row"><span class="ticker-name">IHSG</span><span class="ticker-val">Benchmark IDX — acuan utama pasar saham Indonesia</span></div>
+      <div class="ticker-row"><span class="ticker-name">S&amp;P500</span><span class="ticker-val">Indeks 500 saham terbesar AS — pemimpin sentimen global</span></div>
+      <div class="ticker-row"><span class="ticker-name">Nasdaq</span><span class="ticker-val">Indeks teknologi AS — sensitif terhadap suku bunga Fed</span></div>
+      <div class="ticker-row"><span class="ticker-name">Nikkei</span><span class="ticker-val">Bursa Jepang — bellwether Asia, berkorelasi dengan USD/JPY</span></div>
+      <div class="ticker-row"><span class="ticker-name">Hang Seng</span><span class="ticker-val">Bursa Hong Kong — proxy sentimen Tiongkok</span></div>
+      <br><b style="color:#a78bfa;">Komoditas (relevan untuk IDX):</b><br>
+      <div class="ticker-row"><span class="ticker-name">Gold / Emas</span><span class="ticker-val">Safe haven — naik saat ketidakpastian tinggi. Relevan: ANTM, MDKA</span></div>
+      <div class="ticker-row"><span class="ticker-name">WTI / Brent</span><span class="ticker-val">Minyak mentah — naik positif untuk ELSA, MEDC, PGAS</span></div>
+      <div class="ticker-row"><span class="ticker-name">Coal</span><span class="ticker-val">Batu bara — penggerak utama ADRO, BYAN, ITMG, PTBA</span></div>
+      <div class="ticker-row"><span class="ticker-name">CPO</span><span class="ticker-val">Crude Palm Oil — relevan untuk AALI, LSIP, SIMP, SSMS</span></div>
+      <div class="ticker-row"><span class="ticker-name">Nickel</span><span class="ticker-val">Nikel — relevan untuk INCO, NCKL, MBMA</span></div>
+      <br><b style="color:#a78bfa;">Forex:</b><br>
+      <div class="ticker-row"><span class="ticker-name">DXY</span><span class="ticker-val">Dollar Index — DXY naik = Rupiah melemah = IHSG tertekan</span></div>
+      <div class="ticker-row"><span class="ticker-name">USD/IDR</span><span class="ticker-val">Nilai tukar — indikator langsung tekanan capital flow</span></div>
+      <div class="ticker-row"><span class="ticker-name">VIX</span><span class="ticker-val">Fear Index — VIX &gt;25 = pasar cemas (risk-off), &lt;15 = tenang (risk-on)</span></div>
+    </div>
+    </div>
+
+    <div class="card g">
+    <div class="card-title">💡 Cara Membaca Live Market untuk Trading IDX</div>
+    <div class="card-body">
+    <div class="step"><div class="snum">1</div><div class="stext">Cek S&amp;P500 dan Nasdaq semalam (sesi AS). Jika keduanya turun &gt;1%, waspadai <b>tekanan di opening IHSG</b> hari ini.</div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">Lihat <b>DXY</b>: jika naik, Rupiah cenderung melemah → capital outflow dari IDX. Jika turun → risk-on, positif untuk IHSG.</div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">Pantau komoditas relevan dengan emiten yang kamu pegang. <span class="ok">Coal naik</span> = ADRO/BYAN bullish. <span class="ok">Gold naik</span> = ANTM/MDKA bullish.</div></div>
+    <div class="step"><div class="snum">4</div><div class="stext"><b>VIX &gt; 25</b>: pertimbangkan kurangi posisi atau tahan entry baru. <b>VIX &lt; 15</b>: kondisi relatif aman untuk ekspansi.</div></div>
+    </div>
+    </div>
+    <div class="tip">💡 <b>Best Time:</b> Buka Live Market pukul 08:45–09:00 WIB sebelum sesi IDX buka. Ini memberi konteks apakah IHSG akan gap up, gap down, atau flat di pembukaan.</div>
+
+    <!-- ══ BAGIAN 2: MARKET MAP GLOBE ══ -->
+    <div class="sec-head" style="margin-top:24px;"><span class="sec-icon">🌐</span>
+    <div><div class="sec-title">BAGIAN 2 — MARKET MAP GLOBE (Heatmap 3D)</div>
+    <div style="font-size:0.8rem;color:{_SUB};margin-top:2px;">Visualisasi 3D interaktif seluruh saham IDX dikelompokkan per sektor, diwarnai performa harian</div>
+    </div></div>
+
+    <div class="card b">
+    <div class="card-title">Cara Membaca Warna Heatmap</div>
     <div class="heatmap-demo">
       <div class="hm-cell hm-strong-up">BBCA<br>+3.2%</div>
       <div class="hm-cell hm-up">TLKM<br>+1.1%</div>
@@ -23839,46 +23904,33 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
       <div class="hm-cell hm-dn">UNVR<br>-1.4%</div>
       <div class="hm-cell hm-strong-dn">GOTO<br>-3.8%</div>
     </div>
-    <div class="card b">
-      <div class="card-body">
-        <b>🟢 Hijau Terang</b> = naik kuat (&gt;+2%) &nbsp;|&nbsp; <b>🟢 Hijau</b> = naik (+0.5%–2%)<br>
-        <b>⬜ Abu-abu</b> = flat (-0.5%–+0.5%) &nbsp;|&nbsp; <b>🔴 Merah</b> = turun (-0.5% – -2%)<br>
-        <b>🔴 Merah Tua</b> = turun kuat (&lt;-2%) &nbsp;|&nbsp; <b>Ukuran kotak</b> = proporsi market cap
-      </div>
+    <div class="card-body">
+      <span class="ok">■ Hijau Terang</span> = naik kuat (&gt;+2%) &nbsp;|&nbsp;
+      <span class="ok">■ Hijau</span> = naik (+0.5%–2%)<br>
+      <span style="color:#7c86a2;">■ Abu-abu</span> = flat (-0.5%–+0.5%) &nbsp;|&nbsp;
+      <span class="dn">■ Merah</span> = turun (-0.5% – -2%)<br>
+      <span class="dn">■ Merah Tua</span> = turun kuat (&lt;-2%) &nbsp;|&nbsp;
+      <b>Ukuran kotak</b> = proporsi market cap emiten
+    </div>
     </div>
 
-    <div class="sec-head"><span class="sec-icon">🔍</span><div><div class="sec-title">CARA PAKAI MARKET MAP</div></div></div>
-    <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>🌐 MARKET MAP</b> di navigasi utama. Heatmap otomatis memuat data live dari Yahoo Finance / IDX.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext"><b>Identifikasi sektor dominan</b> — lihat mana sektor yang paling banyak hijau. Itu sinyal rotasi sektor sedang terjadi ke sana.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext"><b>Zoom in sektor</b> — klik atau hover kotak saham untuk melihat detail ticker, harga, dan persentase perubahan.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Kombinasikan dengan tab <b>INDEX & SECTOR ROTATION</b> untuk konfirmasi arah rotasi sektor secara lebih mendalam.</div></div>
-    <div class="tip">💡 <b>Pro Tip:</b> Gunakan Market Map di awal sesi trading (09:00–09:30 WIB) untuk cepat identifikasi sektor mana yang dibeli/dijual bandar pagi itu.</div>
-
-    <div class="sec-head"><span class="sec-icon">📊</span><div><div class="sec-title">FITUR-FITUR MARKET MAP</div></div></div>
-    <div class="grid2">
-      <div class="card p">
-        <div class="card-title">🌐 Heatmap Saham IDX</div>
-        <div class="card-body">Visualisasi seluruh saham IDX dikelompokkan per sektor dengan warna performa real-time. Ukuran proporsional market cap.</div>
-      </div>
-      <div class="card b">
-        <div class="card-title">📈 Index & Komoditas Global</div>
-        <div class="card-body">Tabel live: IHSG, LQ45, S&amp;P500, Dow Jones, Nikkei, FTSE, dan komoditas utama (emas, minyak, CPO, batu bara).</div>
-      </div>
-      <div class="card g">
-        <div class="card-title">🔄 Sektor Performance</div>
-        <div class="card-body">Ranking sektor IDX berdasarkan performa hari ini — identifikasi sektor terkuat dan terlemah dalam hitungan detik.</div>
-      </div>
-      <div class="card y">
-        <div class="card-title">⚡ Auto Refresh</div>
-        <div class="card-body">Data diperbarui otomatis setiap kali halaman di-reload. Gunakan shortcut <b>R</b> di Streamlit untuk refresh cepat.</div>
-      </div>
+    <div class="card p">
+    <div class="card-title">Cara Pakai Market Map Globe</div>
+    <div class="card-body">
+    <div class="step"><div class="snum">1</div><div class="stext"><b>Lihat sekilas</b> — warna dominan apa? Hijau merata = market breadth positif. Merah merata = tekanan luas. Campur = rotasi sektoral.</div></div>
+    <div class="step"><div class="snum">2</div><div class="stext"><b>Identifikasi sektor</b> — sektor mana yang paling banyak hijau? Itu sinyal dana mengalir ke sana hari ini.</div></div>
+    <div class="step"><div class="snum">3</div><div class="stext"><b>Hover / Klik</b> kotak saham untuk melihat ticker, harga, dan persentase perubahan secara detail.</div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">Kombinasikan dengan tab <b>INDEX & SECTOR ROTATION</b> untuk konfirmasi apakah rotasi sektor ini sudah berlangsung lama (momentum kuat) atau baru mulai.</div></div>
     </div>
+    </div>
+
+    <div class="warn">⚠️ <b>Catatan:</b> Market Map Globe memuat data semua saham IDX — proses loading awal bisa memakan 5–10 detik tergantung koneksi. Klik tombol <b>"🔄 Refresh Globe"</b> jika data terlihat stale.</div>
 
     </div></body></html>"""
-                components.html(_guide_html_0, height=1000, scrolling=True)
+                components.html(_guide_html_0, height=1800, scrolling=True)
 
             # ══════════════════════════════════════════════════════════════
-            # PANDUAN 1 - GLOBAL MACRO & NEWS
+            # PANDUAN 1 - NEWS & CALENDAR
             # ══════════════════════════════════════════════════════════════
             with pg_tab1:
                 _guide_html_1 = f"""<!DOCTYPE html><html><head>
@@ -23886,284 +23938,237 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     <style>
     *{{box-sizing:border-box;margin:0;padding:0;}}
     body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-
-    /* Layout */
     .wrap{{max-width:100%;padding:4px 0;}}
-
-    /* Section header */
-    .sec-head{{
-      display:flex;align-items:center;gap:12px;
-      margin:28px 0 14px;
-      padding-bottom:10px;
-      border-bottom:1px solid rgba(124,58,237,0.25);
-    }}
+    .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(124,58,237,0.25);}}
     .sec-icon{{font-size:1.6rem;}}
     .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
     .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-
-    /* Feature cards */
-    .feat{{
-      background:{_FEAT_BG};
-      border:1px solid {_FEAT_BD};
-      border-left:4px solid {_P};
-      border-radius:0 10px 10px 0;
-      padding:18px 20px;
-      margin-bottom:14px;
-    }}
+    .feat{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
     .feat.blue{{border-left-color:{_B};}}
     .feat.green{{border-left-color:{_G};}}
     .feat.yellow{{border-left-color:{_Y};}}
-
-    .feat-title{{
-      font-size:1.1rem;font-weight:700;color:{_B};
-      margin-bottom:10px;display:flex;align-items:center;gap:8px;
-    }}
+    .feat.red{{border-left-color:{_R};}}
+    .feat-title{{font-size:1.1rem;font-weight:700;color:{_B};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
     .feat.blue .feat-title{{color:{_B};}}
     .feat.green .feat-title{{color:{_G};}}
     .feat.yellow .feat-title{{color:{_Y};}}
-
-    /* Steps */
+    .feat.red .feat-title{{color:{_R};}}
     .steps{{margin:10px 0 6px;}}
     .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{
-      min-width:24px;height:24px;border-radius:50%;
-      background:linear-gradient(135deg,{_P},{_B});
-      color:#fff;font-size:0.72rem;font-weight:700;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
-    }}
+    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
     .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
     .stext b{{color:{_B};}}
     .stext .hi{{color:{_P};font-weight:700;}}
     .stext .ok{{color:{_G};font-weight:700;}}
     .stext .dn{{color:{_R};font-weight:700;}}
     .stext .yl{{color:{_Y};font-weight:700;}}
-
-    /* Tip/Warn boxes */
-    .tip{{
-      background:rgba(96,165,250,0.07);border-left:3px solid {_B};
-      border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
-      font-size:0.875rem;color:{_TXT};line-height:1.72;
-    }}
-    .warn{{
-      background:rgba(251,191,36,0.07);border-left:3px solid {_Y};
-      border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
-      font-size:0.875rem;color:{_TXT};line-height:1.72;
-    }}
-
-    /* Grid */
+    .tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+    .warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
     .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
     .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
-    .gcard{{
-      background:rgba(124,58,237,0.06);
-      border:1px solid rgba(124,58,237,0.2);
-      border-radius:8px;padding:12px 14px;
-    }}
+    .gcard{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:12px 14px;}}
+    .gcard.blue{{border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.06);}}
+    .gcard.green{{border-color:rgba(38,166,154,0.3);background:rgba(38,166,154,0.06);}}
+    .gcard.red{{border-color:rgba(242,54,69,0.25);background:rgba(242,54,69,0.06);}}
+    .gcard.yellow{{border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.06);}}
     .gcard-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
     .gcard-val{{font-size:0.875rem;font-weight:700;color:{_P};}}
     .gcard-sub{{font-size:0.8rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
-
-    /* Badge */
     .bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;}}
     .bdg-p{{background:rgba(124,58,237,0.18);color:{_P};}}
     .bdg-b{{background:rgba(96,165,250,0.15);color:{_B};}}
     .bdg-g{{background:rgba(38,166,154,0.15);color:{_G};}}
     .bdg-r{{background:rgba(242,54,69,0.12);color:{_R};}}
     .bdg-y{{background:rgba(251,191,36,0.12);color:{_Y};}}
-
-    /* Divider */
     .div{{height:1px;background:rgba(124,58,237,0.15);margin:24px 0;}}
-
-    @media(max-width:600px){{
-      .grid2,.grid3{{grid-template-columns:1fr;}}
-      .feat{{padding:14px 13px;}}
-    }}
+    @media(max-width:600px){{.grid2,.grid3{{grid-template-columns:1fr;}}.feat{{padding:14px 13px;}}}}
     </style></head><body><div class="wrap">
 
     <!-- ══ OVERVIEW ══ -->
     <div class="sec-head">
-      <span class="sec-icon">🌍</span>
+      <span class="sec-icon">📰</span>
       <div>
-        <div class="sec-title">GLOBAL MACRO &amp; NEWS</div>
-        <div class="sec-desc">Pantau kondisi makro dunia, harga aset global, dan berita pasar yang mempengaruhi IDX secara real-time</div>
+        <div class="sec-title">NEWS &amp; CALENDAR</div>
+        <div class="sec-desc">Pusat berita pasar, pengumuman indeks, kalender ekonomi, monitor suku bunga Fed, dan analisa AI dampak data ekonomi ke IDX</div>
       </div>
     </div>
 
     <div class="grid3">
-      <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">6 Sub-Fitur</div><div class="gcard-sub">Market, Macro, News, Komoditas, FOMC, Kalender</div></div>
-      <div class="gcard"><div class="gcard-lbl">Update</div><div class="gcard-val">Real-time</div><div class="gcard-sub">Data live dari Yahoo Finance, FMP, Alpha Vantage</div></div>
-      <div class="gcard"><div class="gcard-lbl">Relevansi IDX</div><div class="gcard-val">Sangat Tinggi</div><div class="gcard-sub">Komoditas & DXY langsung mempengaruhi IHSG</div></div>
+      <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">8 Bagian</div><div class="gcard-sub">Market Brief · Live News · Index Announcements · Rebalancing · Corp Action · Fed Monitor · Eco Calendar · EC AI Analyst</div></div>
+      <div class="gcard"><div class="gcard-lbl">Update</div><div class="gcard-val">Real-time</div><div class="gcard-sub">RSS live dari CNBC ID, CNBC Global, MSCI, IDX, FTSE · CME FedWatch</div></div>
+      <div class="gcard"><div class="gcard-lbl">Relevansi IDX</div><div class="gcard-val">Sangat Tinggi</div><div class="gcard-sub">Berita &amp; data ekonomi adalah penggerak utama sentimen harian IHSG</div></div>
     </div>
 
-    <!-- ══ 1. LIVE MARKET ══ -->
+    <!-- ══ 1. MARKET BRIEF ══ -->
     <div class="div"></div>
     <div class="feat">
-      <div class="feat-title">📊 1 · LIVE MARKET - Harga Aset Real-Time</div>
+      <div class="feat-title">📋 1 · MARKET BRIEF - Ringkasan Pasar Harian</div>
       <div class="steps">
         <div class="step"><div class="snum">1</div><div class="stext">
-          <b>Lihat harga terkini</b> IHSG, S&amp;P500, Dow Jones, Nasdaq, Nikkei, Hang Seng, Shanghai - semua dalam satu layar.
-          Angka hijau (<span class="ok">▲</span>) = naik dari penutupan sebelumnya, merah (<span class="dn">▼</span>) = turun.
+          <b>Market Brief</b> adalah ringkasan kondisi pasar berbasis AI yang di-generate setiap pagi — mencakup sentimen global (S&amp;P500, Nasdaq, Asia), kondisi IHSG, Forex, Komoditas, dan Tactical View untuk hari tersebut.
+          Sumber data: CNBC Indonesia, CNBC Global, Bloomberg, MarketWatch (via Multi-Source RSS).
         </div></div>
         <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cek DXY (Dollar Index)</b> dan <b>USD/IDR</b> - DXY naik berarti Rupiah cenderung melemah, capital outflow dari EM termasuk IDX.
-          DXY turun = Rupiah menguat = positif untuk IHSG.
+          <b>Cara baca:</b> Perhatikan <span class="hi">bias utama</span> (Bullish / Bearish / Sideways) dan <span class="hi">faktor risiko</span> (downside risk). Jika keduanya searah = sinyal lebih kuat untuk memutuskan posisi hari ini.
         </div></div>
         <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Pantau Komoditas:</b> Gold (emas), WTI &amp; Brent (minyak), CPO, Coal, Nickel.
-          Harga komoditas naik = positif untuk emiten eksportir (ADRO, ANTM, INCO, AALI).
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>VIX (Volatility Index):</b> <span class="yl">VIX &gt; 25</span> = pasar global sedang cemas, waspada risk-off. 
-          <span class="ok">VIX &lt; 15</span> = kondisi pasar tenang, aman untuk ekspansi posisi.
+          Market Brief juga memuat ringkasan <b>event ekonomi hari ini</b> yang berpotensi mempengaruhi volatilitas — kombinasikan dengan Economic Calendar di bawah untuk jadwal lengkap.
         </div></div>
       </div>
-      <div class="tip">💡 <b>Tip:</b> Lihat Live Market setiap pagi sebelum sesi pembukaan BEI (08:45 WIB). Jika S&P500 dan Nasdaq turun &gt;1% semalam, waspadai tekanan di opening IHSG hari ini.</div>
+      <div class="tip">💡 <b>Workflow Pagi:</b> Baca Market Brief terlebih dahulu → cek Live News → baru masuk ke Alpha Screener untuk analisa emiten spesifik. Urutan ini memastikan kamu paham konteks makro sebelum masuk level mikro saham.</div>
     </div>
 
-    <!-- ══ 2. MACRO INDICATORS ══ -->
+    <!-- ══ 2. LIVE NEWS ══ -->
     <div class="feat blue">
-      <div class="feat-title">📈 2 · MACRO INDICATORS - Data Ekonomi Kunci</div>
+      <div class="feat-title">📡 2 · LIVE NEWS - Berita Pasar Terkini</div>
       <div class="steps">
         <div class="step"><div class="snum">1</div><div class="stext">
-          <b>BI Rate (Bank Indonesia):</b> Suku bunga acuan Indonesia. BI Rate turun = positif untuk properti (BSDE, CTRA), perbankan (NIM melebar), dan obligasi. BI Rate naik = perbankan lebih selektif, properti tertekan.
+          <b>🇮🇩 Domestic News:</b> Feed langsung dari CNBC Indonesia — meliputi aksi korporasi (dividen, rights issue, buyback), laporan keuangan, kebijakan BI, dan berita emiten BEI.
         </div></div>
         <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Fed Funds Rate (Amerika):</b> Suku bunga AS. Fed hike = DXY naik → Rupiah melemah → IHSG tertekan. Fed cut = sebaliknya. Pantau jadwal FOMC di sub-fitur FedWatch.
+          <b>🌎 Global News:</b> Feed dari CNBC Global — berita tentang perang dagang, keputusan Fed, data ekonomi AS, geopolitik, dan sentimen global yang mempengaruhi pasar EM termasuk IDX.
         </div></div>
         <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Inflasi CPI Indonesia:</b> CPI &gt; 5% = tekanan daya beli, BI cenderung hawkish. CPI rendah = ruang BI untuk cut rate lebih lebar.
+          <b>Filter relevansi:</b> Fokus pada berita yang menyebut kata kunci komoditas (oil, coal, nickel, CPO), geopolitik (tarif, sanksi), atau makro (Fed, inflation, GDP, BI Rate).
         </div></div>
         <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Current Account &amp; Neraca Perdagangan:</b> Surplus = positif untuk Rupiah. Defisit &gt; 3% PDB = waspada pelemahan Rupiah.
+          Setelah membaca berita, langsung ketik di <b>SIGMA AI Chat</b>: <span class="hi">"Kesimpulan dampak [topik berita]"</span> untuk analisa otomatis dampaknya ke IHSG dan emiten terkait.
         </div></div>
       </div>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="gcard"><div class="gcard-lbl">Dampak DXY Naik</div><div class="gcard-val" style="color:{_R};">⚠️ Risk-Off</div><div class="gcard-sub">Rupiah melemah · Capital outflow · IHSG tertekan · Emiten importir rugi</div></div>
-        <div class="gcard"><div class="gcard-lbl">Dampak DXY Turun</div><div class="gcard-val" style="color:{_G};">✅ Risk-On</div><div class="gcard-sub">Rupiah menguat · Capital inflow · IHSG naik · Emiten eksportir tertekan</div></div>
-      </div>
+      <div class="warn">⚠️ Berita bisa memicu pergerakan jangka pendek yang tidak mencerminkan fundamental. Selalu kombinasikan dengan analisa teknikal dan fundamental sebelum eksekusi.</div>
     </div>
 
-    <!-- ══ 3. MARKET BRIEF ══ -->
+    <!-- ══ 3. INDEX ANNOUNCEMENTS ══ -->
     <div class="feat green">
-      <div class="feat-title">📰 3 · MARKET BRIEF - Ringkasan Harian</div>
+      <div class="feat-title">📢 3 · INDEX ANNOUNCEMENTS - Pengumuman Resmi Indeks</div>
       <div class="steps">
         <div class="step"><div class="snum">1</div><div class="stext">
-          Market Brief hadir setiap pagi dengan ringkasan kondisi pasar: sentimen global, arah IHSG hari ini, sektor yang perlu diperhatikan, dan event ekonomi penting hari ini.
+          Menampilkan <b>press release dan pengumuman resmi terbaru</b> dari MSCI, IDX, FTSE Russell, dan JP Morgan — sumber primer perubahan komposisi indeks yang mempengaruhi aliran dana passive fund.
         </div></div>
         <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cara baca:</b> Perhatikan <span class="hi">bias utama</span> (Bullish/Bearish/Sideways), kemudian cek <span class="hi">faktor risiko</span> (downside risk). Jika keduanya searah = sinyal lebih kuat.
+          Setiap pengumuman dilabeli dengan sumber: <span class="bdg bdg-b">MSCI</span> <span class="bdg bdg-y" style="background:rgba(245,158,11,0.15);color:#f59e0b;">IDX</span> <span class="bdg bdg-g">FTSE</span> — klik link untuk baca dokumen resmi lengkap.
         </div></div>
         <div class="step"><div class="snum">3</div><div class="stext">
-          Market Brief juga mencantumkan <b>jadwal rilis data ekonomi</b> (CPI, PDB, neraca dagang) yang berpotensi mempengaruhi volatilitas harian.
+          <b>Yang perlu diwaspadai:</b> Pengumuman perubahan komposisi indeks (addition/deletion) biasanya mendahului pergerakan besar di saham terkait karena passive fund wajib rebalancing mengikuti komposisi baru.
         </div></div>
       </div>
-      <div class="tip">💡 <b>Cara Pakai:</b> Baca Market Brief → cek Live Market → baru buka ALPHA STOCK INSIGHT untuk analisa emiten spesifik. Urutan ini memastikan kamu paham konteks makro sebelum masuk ke level mikro saham.</div>
+      <div class="tip">💡 Pantau Index Announcements setiap minggu — khususnya menjelang jadwal review MSCI (Februari &amp; Agustus) dan FTSE (Maret, Juni, September, Desember).</div>
     </div>
 
-    <!-- ══ 4. NEWS FEED ══ -->
-    <div class="feat">
-      <div class="feat-title">📡 4 · NEWS FEED - Berita Pasar Terkini</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>IDX News:</b> Berita langsung dari TradingView - meliputi aksi korporasi (dividen, rights issue, buyback), laporan keuangan, dan berita emiten BEI.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Global News:</b> Feed dari Reuters, Bloomberg, CNBC Global - berita tentang perang dagang, keputusan Fed, data ekonomi AS, dan sentimen global.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Filter relevansi:</b> Fokus pada berita yang menyebut kata kunci komoditas (oil, coal, nickel, CPO), geopolitik (tarif, sanksi, perang), atau makro (Fed, inflation, GDP).
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          Setelah membaca berita, kamu bisa langsung ketik di <b>SIGMA AI Chat</b>: <span class="hi">"Kesimpulan dampak [topik berita]"</span> untuk mendapat analisa dampaknya ke IHSG dan emiten terkait.
-        </div></div>
-      </div>
-      <div class="warn">⚠️ <b>Perhatian:</b> Berita bisa memicu pergerakan harga jangka pendek yang tidak mencerminkan fundamental. Selalu kombinasikan dengan analisa teknikal dan fundamental sebelum eksekusi.</div>
-    </div>
-
-    <!-- ══ 5. ECONOMIC CALENDAR ══ -->
-    <div class="feat blue">
-      <div class="feat-title">📅 5 · ECONOMIC CALENDAR - Jadwal Rilis Data</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          Kalender Ekonomi menampilkan jadwal rilis data penting: <b>NFP (Non-Farm Payroll), CPI AS, PDB Indonesia, FOMC Meeting, BI Rate Decision</b>, dan lainnya.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cara baca Importance Badge:</b> 
-          <span class="bdg bdg-r">HIGH</span> = bisa sebabkan volatilitas besar (NFP, CPI, FOMC) · 
-          <span class="bdg bdg-y">MED</span> = berpengaruh tapi lebih terbatas · 
-          <span class="bdg bdg-b">LOW</span> = biasanya tidak menggerakkan pasar signifikan.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          Perhatikan kolom <b>Forecast vs Previous:</b> Jika hasil rilis jauh di atas/bawah forecast = pasar bereaksi kuat. Jika sesuai ekspektasi = reaksi minimal (buy the rumor, sell the news).
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Strategi sebelum data penting:</b> Kurangi posisi besar 1–2 hari sebelum rilis HIGH impact data. Masuk kembali setelah volatilitas awal mereda.
-        </div></div>
-      </div>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="gcard"><div class="gcard-lbl">Data HIGH Impact (IDX)</div><div class="gcard-val" style="color:{_R};">Waspadai</div><div class="gcard-sub">FOMC · NFP · CPI AS · BI Rate · GDP Indonesia · PDB</div></div>
-        <div class="gcard"><div class="gcard-lbl">Data MED Impact (IDX)</div><div class="gcard-val" style="color:{_Y};">Monitor</div><div class="gcard-sub">PMI · Trade Balance · Industrial Production · Retail Sales</div></div>
-      </div>
-    </div>
-
-    <!-- ══ 6. FOMC FEDWATCH ══ -->
+    <!-- ══ 4. INDEX REBALANCING SCHEDULE ══ -->
     <div class="feat yellow">
-      <div class="feat-title">🏦 6 · FOMC FEDWATCH - Probabilitas Suku Bunga Fed</div>
+      <div class="feat-title">📊 4 · INDEX REBALANCING SCHEDULE - Jadwal Rebalancing</div>
       <div class="steps">
         <div class="step"><div class="snum">1</div><div class="stext">
-          FedWatch menampilkan <b>probabilitas pasar</b> untuk keputusan Fed di setiap FOMC meeting berikutnya - data dari CME FedWatch Tool yang dipakai profesional Wall Street.
+          Menampilkan <b>jadwal rebalancing mendatang</b> untuk MSCI, FTSE, LQ45, IDX30, dan indeks lainnya — disertai tanggal pengumuman, tanggal efektif, dan status (upcoming / in progress / completed).
         </div></div>
         <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cara baca:</b> Angka % di setiap skenario (HOLD/CUT/HIKE) = probabilitas pasar futures. Jika "HOLD 95%" artinya pasar hampir pasti Fed tidak akan mengubah suku bunga.
+          <b>Kenapa penting?</b> Saat rebalancing, ETF dan passive fund yang tracking indeks tersebut <b>wajib</b> membeli saham yang masuk dan menjual saham yang keluar. Volume transaksi ini bisa sangat besar dan menggerakkan harga.
         </div></div>
         <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Dampak ke IDX:</b> 
-          <span class="ok">Fed CUT</span> = DXY turun → Rupiah menguat → capital inflow ke EM → IHSG cenderung naik, terutama sektor Properti dan Perbankan.
+          <b>Strategi rebalancing:</b> Posisikan diri di calon saham NEW ENTRY 1–2 minggu sebelum tanggal efektif. Jual pada atau segera setelah tanggal efektif saat passive fund selesai membeli (sell the news).
+        </div></div>
+        <div class="step"><div class="snum">4</div><div class="stext">
+          Untuk saham yang <b>keluar (deletion)</b> dari indeks: kurangi atau keluar posisi sebelum tanggal efektif karena passive fund akan menjual dalam jumlah besar.
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ══ 5. UPCOMING CORPORATE ACTION ══ -->
+    <div class="feat">
+      <div class="feat-title">🏢 5 · UPCOMING CORPORATE ACTION - Aksi Korporasi</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><div class="stext">
+          Menampilkan <b>jadwal aksi korporasi mendatang</b> untuk emiten IDX — meliputi pembagian dividen (cum date, ex date, payment date), rights issue, stock split, dan RUPS.
+        </div></div>
+        <div class="step"><div class="snum">2</div><div class="stext">
+          <b>Cara baca Dividen:</b> Perhatikan <span class="hi">Cum Date</span> — kamu harus sudah pegang saham sebelum/pada tanggal ini untuk berhak menerima dividen. Setelah Ex Date, harga biasanya turun sebesar nilai dividen.
+        </div></div>
+        <div class="step"><div class="snum">3</div><div class="stext">
+          <b>Strategi dividen:</b> Beli sebelum Cum Date untuk dapat dividen. Atau justru <span class="yl">hindari buy mendekati Ex Date</span> jika tujuanmu bukan dividend capture — harga turun ex-dividend bisa lebih besar dari nilai dividennya.
+        </div></div>
+        <div class="step"><div class="snum">4</div><div class="stext">
+          Untuk <b>Rights Issue</b>: perhatikan harga pelaksanaan (exercise price) dan rasionya. Rights issue dengan harga di bawah pasar (discounted) biasanya memberikan tekanan jual pada saham sebelum periode pelaksanaan.
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ══ 6. FED RATE MONITOR ══ -->
+    <div class="feat yellow">
+      <div class="feat-title">🏦 6 · FED RATE MONITOR TOOL - Probabilitas Suku Bunga Fed</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><div class="stext">
+          Menampilkan <b>probabilitas pasar</b> untuk keputusan Fed di setiap FOMC meeting berikutnya — data dari CME 30-Day Fed Fund Futures, alat yang sama dipakai profesional Wall Street.
+        </div></div>
+        <div class="step"><div class="snum">2</div><div class="stext">
+          <b>Cara baca:</b> Angka % di setiap skenario (HOLD / CUT / HIKE) = probabilitas pasar futures. Contoh: "HOLD 98.9%" artinya pasar hampir pasti Fed tidak akan mengubah suku bunga di meeting tersebut.
+        </div></div>
+        <div class="step"><div class="snum">3</div><div class="stext">
+          <b>Dampak ke IDX:</b>
+          <span class="ok">Fed CUT</span> = DXY turun → Rupiah menguat → capital inflow ke EM → IHSG cenderung naik, terutama sektor Properti (BSDE, CTRA) dan Perbankan (BBCA, BMRI).
           <span class="dn">Fed HIKE</span> = DXY naik → Rupiah melemah → capital outflow → IHSG tertekan.
         </div></div>
         <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Countdown Timer</b> di FedWatch menunjukkan sisa waktu menuju keputusan FOMC berikutnya - sehingga kamu tahu kapan volatilitas besar berpotensi terjadi.
+          <b>Countdown Timer</b> menunjukkan sisa waktu menuju keputusan FOMC berikutnya — sehingga kamu tahu kapan volatilitas besar berpotensi terjadi dan bisa menyesuaikan ukuran posisi.
         </div></div>
         <div class="step"><div class="snum">5</div><div class="stext">
-          <b>Probability shift:</b> Jika probabilitas HOLD turun dari 80% menjadi 60% dalam sepekan = pasar mulai repricing → bisa sebabkan volatilitas pada DXY dan EM assets.
+          <b>Probability shift:</b> Jika probabilitas HOLD turun drastis dalam sepekan (misalnya dari 95% ke 70%) = pasar sedang repricing → waspadai volatilitas tinggi pada DXY dan aset EM.
         </div></div>
       </div>
-      <div class="tip">💡 <b>Cara Pakai Pro:</b> Cek FedWatch tiap Senin pagi. Jika probabilitas CUT di meeting berikutnya &gt; 60% → posisikan diri di sektor Rate-Sensitive: Properti (BSDE, CTRA), Perbankan (BBCA, BMRI), dan Obligasi.</div>
-      <div class="warn">⚠️ <b>Ingat:</b> Probabilitas FedWatch adalah ekspektasi pasar, BUKAN keputusan resmi Fed. Fed bisa mengejutkan pasar kapan saja - selalu gunakan stop loss.</div>
+      <div class="tip">💡 <b>Cara Pakai Pro:</b> Cek Fed Rate Monitor tiap Senin pagi. Jika probabilitas CUT di meeting berikutnya &gt;60% → posisikan diri di sektor rate-sensitive: Properti, Perbankan, dan saham dengan utang besar.</div>
+      <div class="warn">⚠️ Probabilitas FedWatch adalah ekspektasi pasar futures, BUKAN keputusan resmi Fed. Fed bisa mengejutkan pasar — selalu gunakan stop loss.</div>
     </div>
 
-    <!-- ══ QUICK REFERENCE ══ -->
-    <div class="div"></div>
-    <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
-      <div style="font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:12px;">⚡ QUICK REFERENCE - Dampak Makro ke IDX</div>
-      <div class="grid2">
-        <div>
-          <div style="font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-ON ✅ (IHSG Cenderung Naik)</div>
-          <div style="font-size:0.875rem;color:{_TXT};line-height:1.85;">
-            • DXY melemah &amp; Rupiah menguat<br>
-            • VIX &lt; 20 (pasar tenang)<br>
-            • Fed dovish / probabilitas CUT naik<br>
-            • Komoditas ekspor naik (coal, CPO, nickel)<br>
-            • Capital inflow ke EM meningkat<br>
-            • Data ekonomi AS solid tapi tidak terlalu panas
-          </div>
-        </div>
-        <div>
-          <div style="font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-OFF ⚠️ (IHSG Cenderung Turun)</div>
-          <div style="font-size:0.875rem;color:{_TXT};line-height:1.85;">
-            • DXY menguat &amp; Rupiah melemah<br>
-            • VIX &gt; 25 (pasar cemas)<br>
-            • Fed hawkish / probabilitas HIKE naik<br>
-            • Ketegangan geopolitik meningkat<br>
-            • Capital outflow dari EM<br>
-            • CPI AS melebihi ekspektasi (inflasi tinggi)
-          </div>
-        </div>
+    <!-- ══ 7. ECONOMIC CALENDAR ══ -->
+    <div class="feat blue">
+      <div class="feat-title">📅 7 · ECONOMIC CALENDAR — ID · US - Kalender Data Ekonomi</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><div class="stext">
+          Menampilkan jadwal rilis data ekonomi penting Indonesia dan Amerika Serikat: <b>NFP, CPI AS, PDB Indonesia, FOMC Meeting, BI Rate Decision, PMI, Trade Balance</b>, dan lainnya dalam satu tampilan terpadu.
+        </div></div>
+        <div class="step"><div class="snum">2</div><div class="stext">
+          <b>Cara baca Importance Badge:</b>
+          <span class="bdg bdg-r">HIGH</span> = bisa sebabkan volatilitas besar (NFP, CPI, FOMC) ·
+          <span class="bdg bdg-y">MED</span> = berpengaruh tapi lebih terbatas ·
+          <span class="bdg bdg-b">LOW</span> = biasanya tidak menggerakkan pasar signifikan.
+        </div></div>
+        <div class="step"><div class="snum">3</div><div class="stext">
+          <b>Kolom Forecast vs Previous:</b> Jika hasil rilis jauh di atas/bawah forecast = pasar bereaksi kuat. Jika sesuai ekspektasi = reaksi minimal (buy the rumor, sell the news).
+        </div></div>
+        <div class="step"><div class="snum">4</div><div class="stext">
+          <b>Strategi sebelum data HIGH impact:</b> Kurangi posisi besar 1–2 hari sebelum rilis. Masuk kembali setelah volatilitas awal mereda dan arah jelas.
+        </div></div>
       </div>
+      <div class="grid2" style="margin-top:12px;">
+        <div class="gcard red"><div class="gcard-lbl">Data HIGH Impact (IDX)</div><div class="gcard-val" style="color:{_R};">Waspadai</div><div class="gcard-sub">FOMC · NFP · CPI AS · BI Rate · GDP Indonesia</div></div>
+        <div class="gcard yellow"><div class="gcard-lbl">Data MED Impact (IDX)</div><div class="gcard-val" style="color:{_Y};">Monitor</div><div class="gcard-sub">PMI · Trade Balance · Industrial Production · Retail Sales</div></div>
+      </div>
+    </div>
+
+    <!-- ══ 8. EC AI ANALYST ══ -->
+    <div class="feat red">
+      <div class="feat-title">⚡ 8 · EC AI ANALYST — DAMPAK DATA EKONOMI</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><div class="stext">
+          <b>EC AI Analyst</b> adalah fitur AI yang menganalisa dampak rilis data ekonomi terhadap empat aset utama secara simultan:
+          <b style="color:#FFD700;">XAU/USD (Emas)</b>, <b style="color:#4285F4;">USD/IDR (Rupiah)</b>, <b style="color:{_G};">DXY (Dollar Index)</b>, dan <b style="color:{_P};">IHSG/IDX</b>.
+        </div></div>
+        <div class="step"><div class="snum">2</div><div class="stext">
+          <b>Cara pakai:</b> Pilih event ekonomi dari dropdown (semua event US dan ID tersedia) → sistem otomatis menampilkan data Forecast, Actual (real-time), dan Previous untuk event tersebut.
+        </div></div>
+        <div class="step"><div class="snum">3</div><div class="stext">
+          <b>Override Actual (Simulasi Skenario):</b> Kamu bisa memasukkan angka custom di kolom "Override Actual" untuk mensimulasikan dampak sebelum data resmi dirilis — misalnya "bagaimana jika CPI beat di 0.5%?". Kosongkan untuk pakai data aktual real-time.
+        </div></div>
+        <div class="step"><div class="snum">4</div><div class="stext">
+          Klik tombol <span class="hi">⚡ ANALISA DAMPAK</span> → AI akan menjelaskan dua skenario sekaligus: dampak jika data <span class="ok">beat forecast</span> dan dampak jika data <span class="dn">miss forecast</span> — beserta implikasinya ke masing-masing aset.
+        </div></div>
+      </div>
+      <div class="tip">💡 <b>Best Practice:</b> Gunakan EC AI Analyst 30 menit sebelum rilis data HIGH impact. Baca kedua skenario (beat &amp; miss), lalu siapkan dua rencana trading yang berbeda agar kamu bisa bereaksi cepat setelah data keluar.</div>
     </div>
 
     </div></body></html>"""
 
-                components.html(_guide_html_1, height=2800, scrolling=True)
+                components.html(_guide_html_1, height=3200, scrolling=True)
 
             # ══════════════════════════════════════════════════════════════
             # PANDUAN 2 - INDEX & SECTOR ROTATION
@@ -24252,7 +24257,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     </div>
 
     <div class="grid3">
-      <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">4 Sub-Fitur</div><div class="gcard-sub">RRG Chart · Saham per Sektor · MSCI Tracker · FTSE Tracker</div></div>
+      <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">6 Sub-Fitur</div><div class="gcard-sub">Sector Rotation (RRG) · MSCI Tracker · FTSE Tracker · LQ45 · IDX30 · Peta Konglomerasi</div></div>
       <div class="gcard"><div class="gcard-lbl">Saham Terscreening</div><div class="gcard-val">500 IDX</div><div class="gcard-sub">Top 30/sektor by market cap · Exclude suspended &gt;1 bulan</div></div>
       <div class="gcard"><div class="gcard-lbl">Update RRG</div><div class="gcard-val">2× Sehari</div><div class="gcard-sub">Update otomatis jam 13:00 &amp; 21:00 WIB</div></div>
     </div>
@@ -24432,6 +24437,61 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
       <div class="tip">💡 <b>Insight:</b> Saham yang masuk MSCI atau FTSE tidak langsung naik drastis - pasar biasanya sudah "pricing in" jauh sebelum tanggal efektif. Yang lebih penting adalah <b>perubahan bobot</b> (weight increase) yang memaksa passive fund menambah pembelian.</div>
     </div>
 
+    <!-- ══ 6. LQ45 ══ -->
+    <div class="feat green">
+      <div class="feat-title">📊 6 · LQ45 INDEX — 45 SAHAM AKTIF</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><div class="stext">
+          <b>Apa itu LQ45?</b> LQ45 adalah indeks yang memuat 45 saham dengan <b>likuiditas tinggi dan kapitalisasi besar</b> di IDX. Direview setiap 6 bulan oleh BEI (Februari &amp; Agustus efektif). Banyak reksa dana dan ETF lokal menggunakan LQ45 sebagai benchmark.
+        </div></div>
+        <div class="step"><div class="snum">2</div><div class="stext">
+          Halaman ini menampilkan <b>daftar lengkap konstituen LQ45</b> saat ini beserta harga dan performa harian — memudahkan kamu memantau universe saham paling likuid di IDX sekaligus.
+        </div></div>
+        <div class="step"><div class="snum">3</div><div class="stext">
+          <b>Strategi LQ45 Rebalancing:</b> Saat BEI mengumumkan perubahan komposisi LQ45, saham yang masuk cenderung mengalami kenaikan permintaan. Pantau pengumuman di bagian <b>Index Announcements</b> (tab NEWS &amp; CALENDAR).
+        </div></div>
+        <div class="step"><div class="snum">4</div><div class="stext">
+          LQ45 juga digunakan sebagai universe saham untuk <b>Sector Rotation (RRG)</b> di atas — saham yang ada di LQ45 dan posisi sektornya sedang IMPROVING/LEADING = kandidat entry terkuat.
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ══ 7. IDX30 ══ -->
+    <div class="feat blue">
+      <div class="feat-title">📊 7 · IDX30 INDEX — 30 SAHAM BLUECHIP</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><div class="stext">
+          <b>Apa itu IDX30?</b> IDX30 adalah 30 saham terpilih dari LQ45 dengan <b>likuiditas dan kapitalisasi tertinggi</b> — inilah blue chip inti IDX. Indeks ini lebih ketat dari LQ45 dan sering digunakan sebagai benchmark utama pengelola dana institusi Indonesia.
+        </div></div>
+        <div class="step"><div class="snum">2</div><div class="stext">
+          Halaman ini menampilkan <b>daftar dan performa konstituen IDX30</b> saat ini. Saham-saham ini biasanya memiliki spread bid-ask tipis dan volume sangat tinggi — ideal untuk trading jangka pendek maupun investasi jangka panjang.
+        </div></div>
+        <div class="step"><div class="snum">3</div><div class="stext">
+          <b>Perbandingan LQ45 vs IDX30:</b> LQ45 lebih luas (45 saham) sedangkan IDX30 lebih terkonsentrasi. Jika kamu hanya bisa memantau sedikit saham, IDX30 adalah shortlist terbaik.
+        </div></div>
+      </div>
+    </div>
+
+    <!-- ══ 8. PETA KONGLOMERASI ══ -->
+    <div class="feat red">
+      <div class="feat-title">🗺️ 8 · PETA KONGLOMERASI INDONESIA</div>
+      <div class="steps">
+        <div class="step"><div class="snum">1</div><div class="stext">
+          <b>Peta Konglomerasi</b> menampilkan visualisasi hubungan kepemilikan dan afiliasi antar emiten IDX berdasarkan kelompok usaha (konglomerat) — misalnya Grup Astra, Grup Djarum, Grup Salim, Grup Bakrie, dan lainnya.
+        </div></div>
+        <div class="step"><div class="snum">2</div><div class="stext">
+          <b>Kenapa penting?</b> Saham dalam satu konglomerat sering bergerak <b>searah atau berkorelasi</b>. Jika saham induk konglomerat sedang dalam sentimen positif, anak-anak perusahaan di IDX cenderung ikut terangkat.
+        </div></div>
+        <div class="step"><div class="snum">3</div><div class="stext">
+          Gunakan peta ini untuk mengidentifikasi <b>eksposur tersembunyi</b> — mungkin kamu memegang 3 saham yang ternyata semuanya berasal dari satu konglomerat, sehingga portofoliomu tidak se-diversifikasi yang kamu kira.
+        </div></div>
+        <div class="step"><div class="snum">4</div><div class="stext">
+          Sangat berguna saat ada <b>berita korporasi besar</b> (akuisisi, masalah utang, skandal) yang menyangkut satu kelompok usaha — bantu kamu cepat mengidentifikasi emiten mana saja yang terpengaruh.
+        </div></div>
+      </div>
+      <div class="tip">💡 Kombinasikan Peta Konglomerasi dengan Shareholder Tracker untuk melihat apakah perubahan kepemilikan saham berkaitan dengan restrukturisasi dalam satu kelompok usaha.</div>
+    </div>
+
     <!-- ══ KOMBINASI ANALISA ══ -->
     <div class="div"></div>
     <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
@@ -24444,10 +24504,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
           <b>Buka detail sektor:</b> Klik bubble atau tombol sektor → lihat 30 saham terscreening dengan market cap terbesar. Fokus pada saham di kuadran LEADING dan IMPROVING.
         </div></div>
         <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Cek MSCI/FTSE:</b> Apakah saham yang kamu incar termasuk dalam MSCI Standard atau FTSE? Jika ya, ada lapisan demand tambahan dari passive fund.
+          <b>Cek MSCI/FTSE/LQ45/IDX30:</b> Apakah saham yang kamu incar termasuk dalam indeks-indeks tersebut? Jika ya, ada lapisan demand tambahan dari passive fund dan reksa dana lokal.
         </div></div>
         <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Validasi dengan Macro:</b> Kembali ke tab Global Macro - apakah kondisi risk-on mendukung sektor tersebut? Misalnya: sektor Energi + Komoditas naik = konfluensi kuat.
+          <b>Validasi dengan NEWS &amp; CALENDAR:</b> Kembali ke tab NEWS &amp; CALENDAR — apakah kondisi makro (Fed Rate Monitor, Economic Calendar) mendukung sektor tersebut? Misalnya: sektor Energi + Komoditas naik = konfluensi kuat.
         </div></div>
         <div class="step"><div class="snum">5</div><div class="stext">
           <b>Analisa emiten spesifik:</b> Setelah sektor dan saham terpilih, gunakan <b>⚡ Alpha Screener → AI Stock Insight</b> atau ketik di <b>SIGMA AI Chat</b> untuk analisa fundamental dan teknikal mendalam.
@@ -24457,7 +24517,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
     </div></body></html>"""
 
-                components.html(_guide_html_2, height=3400, scrolling=True)
+                components.html(_guide_html_2, height=4800, scrolling=True)
 
             # ══════════════════════════════════════════════════════════════
             # PANDUAN 3 - SHAREHOLDER
