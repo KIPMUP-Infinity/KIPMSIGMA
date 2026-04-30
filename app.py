@@ -8210,6 +8210,18 @@ div[data-testid="stDecoration"] {{ display: none !important; height: 0 !importan
 [data-testid="stMarkdownContainer"] li > p {{
     margin-bottom: 0 !important;
 }}
+
+/* ─── FIX: HIDE DUPLICATE UPLOAD TEXT IN FILE UPLOADER ─────────────────────
+   Streamlit internal file_uploader renders a drag-drop instruction span
+   "Drag and drop file here" / "upload" yang tumpang tindih saat label_visibility
+   collapsed. Sembunyikan span instruksi internal, bukan browse button-nya. */
+[data-testid="stFileUploaderDropzoneInstructions"] > div > span {{
+    display: none !important;
+}}
+[data-testid="stFileUploaderDropzoneInstructions"] > div > small {{
+    font-size: 0.72rem !important;
+    color: #64748b !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 _hist_items = ""
@@ -23667,7 +23679,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             # ── Versi & tanggal panduan ──────────────────────────────────────
-            _PANDUAN_VERSION = "v2.5"
+            _PANDUAN_VERSION = "v3.0"
             _PANDUAN_LAST_UPDATED = "30 Apr 2026"
             _pan_col1, _pan_col2 = st.columns([3, 2])
             with _pan_col1:
@@ -23757,12 +23769,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     </style>""", unsafe_allow_html=True)
 
             # ── Sub-tabs Panduan ─────────────────────────────────────────────
-            pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7 = st.tabs([
+            pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8, pg_tab9 = st.tabs([
                 "  🌐 MARKET MAP  ",
                 "  🌍 Global Macro & News  ",
                 "  🔄 Index & Rebalancing  ",
                 "  👥 Shareholder  ",
                 "  ⚡ Alpha Screener  ",
+                "  📋 Analisa IPO  ",
+                "  🏆 Track Record  ",
                 "  🧮 Kalkulator  ",
                 "  📊 Broker Summary  ",
                 "  🔬 Cara Kerja Screener  ",
@@ -24647,14 +24661,24 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
     <!-- HEADER -->
     <div class="sec-head"><div class="sec-icon">🤖</div>
-    <div><div class="sec-title">ALPHA STOCK INSIGHT - Panduan Visual Lengkap</div>
-    <div class="sec-desc">Analisa saham IDX berbasis AI: Chart Interaktif, Volume Dual-Panel, Risk Level Trade Plan, dan Fundamental Screener.</div>
+    <div><div class="sec-title">ALPHA SCREENER - Panduan Visual Lengkap</div>
+    <div class="sec-desc">Hub analisa IDX terpadu: AI Stock Insight, Daily/Weekly Plan, BSJP, Fundamental Screener, Broker Summary, Shareholder, Analisa IPO, dan Track Record — semuanya dalam satu tab.</div>
     </div></div>
 
-    <!-- APA ITU -->
+    <!-- SUB-TAB OVERVIEW -->
     <div class="feat">
-    <div class="feat-title">📌 ⚡ Alpha Screener - AI Stock Insight</div>
-    <div class="stext">Engine analisa terpadu SIGMA Terminal. Masukkan kode saham → sistem otomatis tarik data harga, volume, fundamental, dan makro → AI generate analisa lengkap dengan <span class="hi">chart 5-panel interaktif</span>, <span class="ok">trade plan tervisualisasi</span>, <span class="yl">risk level otomatis</span>, dan Volume Intelligence Engine.</div>
+    <div class="feat-title">📌 9 Sub-Tab Alpha Screener</div>
+    <div class="stext" style="line-height:2;">
+      <span class="hi">⚡ AI Stock Insight</span> — Analisa AI per saham dengan chart 5-panel + trade plan<br>
+      <span class="hi">📅 Daily Plan</span> — Rekomendasi harian berdasarkan kondisi pasar hari ini<br>
+      <span class="hi">📆 Weekly Plan</span> — Watchlist swing trading 1–2 minggu ke depan<br>
+      <span class="hi">🌙 Beli Sore Jual Pagi (BSJP)</span> — Strategi overnight trading berbasis momentum EOD<br>
+      <span class="hi">📊 Fundamental Screener</span> — Filter saham berdasarkan metrik fundamental IDX<br>
+      <span class="hi">🏦 Broker Summary</span> — Analisa bandarmologi dari data broker net buy/sell<br>
+      <span class="hi">👥 Shareholder</span> — Tracker jumlah pemegang saham (akumulasi/distribusi)<br>
+      <span class="hi">📋 Analisa IPO</span> — Bedah prospektus IPO otomatis dari PDF e-IPO<br>
+      <span class="hi">🏆 Track Record</span> — Rekam jejak performa semua plan yang di-generate
+    </div>
     </div>
 
     <!-- ═══════════════════════════════════════════════════════ -->
@@ -25075,7 +25099,238 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     </div></body></html>"""
                 components.html(_guide_html_4b, height=2000, scrolling=True)
 
+            # ══════════════════════════════════════════════════════════════
+            # PANDUAN 5 - ANALISA IPO
+            # ══════════════════════════════════════════════════════════════
             with pg_tab5:
+                _guide_html_ipo = f"""<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+    *{{box-sizing:border-box;margin:0;padding:0;}}
+    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+    .wrap{{max-width:100%;padding:4px 0 32px;}}
+    .hero{{background:linear-gradient(135deg,rgba(167,139,250,0.13),rgba(96,165,250,0.08));border:1px solid rgba(167,139,250,0.3);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
+    .hero-badge{{display:inline-block;font-size:0.68rem;font-weight:800;letter-spacing:0.15em;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.18);border:1px solid rgba(167,139,250,0.5);color:#a78bfa;margin-bottom:10px;}}
+    .hero-title{{font-size:1.35rem;font-weight:800;color:#a78bfa;letter-spacing:0.05em;margin-bottom:8px;}}
+    .hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
+    .sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(167,139,250,0.25);}}
+    .sec-icon{{font-size:1.4rem;}}
+    .sec-title{{font-size:1.05rem;font-weight:700;color:#a78bfa;letter-spacing:0.06em;}}
+    .card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+    .card.p{{border-left:3px solid #a78bfa;}}
+    .card.b{{border-left:3px solid #60a5fa;}}
+    .card.g{{border-left:3px solid #26a69a;}}
+    .card.y{{border-left:3px solid #fbbf24;}}
+    .card.r{{border-left:3px solid #f23645;}}
+    .card-title{{font-size:0.875rem;font-weight:700;color:#60a5fa;margin-bottom:8px;}}
+    .card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
+    .card-body b{{color:#a78bfa;}}
+    .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
+    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+    .tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+    .warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+    .danger{{background:rgba(242,54,69,0.08);border-left:3px solid #f23645;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+    .ratio-row{{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;border-radius:8px;}}
+    .ratio-label{{font-weight:700;font-size:0.8rem;min-width:80px;}}
+    .ratio-bar{{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.08);position:relative;}}
+    .ratio-fill{{height:100%;border-radius:4px;}}
+    @media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
+    </style></head><body><div class="wrap">
+
+    <div class="hero">
+      <div class="hero-badge">📋 ANALISA IPO</div>
+      <div class="hero-title">Bedah Prospektus IPO Otomatis</div>
+      <div class="hero-sub">
+        SIGMA membaca ratusan halaman prospektus IPO dan menghasilkan analisa komprehensif: valuasi harga vs nominal, 
+        tujuan dana, track record underwriter, risiko lot, dan jadwal lengkap — semua dalam hitungan detik.
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-icon">📍</div>
+    <div><div class="sec-title">CARA MENGGUNAKAN ANALISA IPO</div></div></div>
+
+    <div class="card p">
+    <div class="card-title">Step-by-Step: Upload & Analisa</div>
+    <div class="card-body">
+    <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b>⚡ Alpha Screener</b> dari navigasi atas, lalu klik sub-tab <b>📋 ANALISA IPO</b>.</div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">Isi <b>Nama / Kode Emiten</b> di field yang tersedia. Bisa nama perusahaan atau kode saham (belum resmi pun OK).</div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">Download PDF Prospektus dari <b>e-IPO.co.id</b> atau <b>idx.co.id/prospektus</b>, lalu upload di area drag-drop. Max 200MB.</div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">Klik tombol <b>"🔍 ANALISA PROSPEKTUS"</b> — SIGMA membaca dan membedah seluruh dokumen, lalu menghasilkan laporan lengkap.</div></div>
+    <div class="tip">💡 Proses baca ratusan halaman memerlukan 15-30 detik. Jangan klik ulang selama spinner berjalan.</div>
+    </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-icon">🔍</div>
+    <div><div class="sec-title">APA YANG DIBEDAH SIGMA?</div></div></div>
+
+    <div class="grid2">
+    <div class="card g">
+    <div class="card-title">📊 Valuasi & Harga</div>
+    <div class="card-body">
+      <b>Rasio Harga/Nominal:</b> Dihitung otomatis.<br>
+      ≤3x = murah · 3–7x = wajar<br>
+      >7x = mahal / hati-hati<br><br>
+      <b>PBV, PER estimasi</b> dibandingkan sektor.<br>
+      <b>EPS proyeksi</b> dari target pendapatan di prospektus.
+    </div>
+    </div>
+    <div class="card b">
+    <div class="card-title">🎯 Tujuan Dana IPO</div>
+    <div class="card-body">
+      SIGMA membedah untuk apa dana IPO digunakan:<br>
+      <b>Ekspansi bisnis</b> → sinyal positif<br>
+      <b>Bayar utang</b> → hati-hati<br>
+      <b>Modal kerja</b> → netral<br>
+      <b>Akuisisi</b> → perlu cek detail
+    </div>
+    </div>
+    <div class="card y">
+    <div class="card-title">🏦 Track Record Underwriter</div>
+    <div class="card-body">
+      Penjamin emisi berpengaruh besar pada performa IPO.<br>
+      SIGMA mengevaluasi reputasi dan track record penjamin (BRI Danareksa, Mandiri Sekuritas, dll) dari data di prospektus.
+    </div>
+    </div>
+    <div class="card p">
+    <div class="card-title">📅 Jadwal & Struktur Penawaran</div>
+    <div class="card-body">
+      Tanggal masa penawaran, allotment, listing.<br>
+      Jumlah saham dilepas ke publik.<br>
+      Harga penawaran & kisaran lot minimum.<br>
+      Lock-up period pemegang saham lama.
+    </div>
+    </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-icon">⚠️</div>
+    <div><div class="sec-title">RASIO HARGA / NOMINAL — PANDUAN INTERPRETASI</div></div></div>
+
+    <div class="card r">
+    <div class="card-title">🔢 Cara Hitung & Baca Rasio</div>
+    <div class="card-body">
+      <b>Formula:</b> Harga IPO ÷ Nilai Nominal Saham<br><br>
+      <div class="ratio-row" style="background:rgba(38,166,154,0.1);">
+        <span class="ratio-label" style="color:#26a69a;">≤ 3x</span>
+        <span class="stext">✅ <b>MURAH</b> — valuasi konservatif, potensi ARA tinggi di hari listing</span>
+      </div>
+      <div class="ratio-row" style="background:rgba(251,191,36,0.1);">
+        <span class="ratio-label" style="color:#fbbf24;">3x – 7x</span>
+        <span class="stext">⚠️ <b>WAJAR</b> — sesuai standar pasar, perlu cek fundamental & underwriter</span>
+      </div>
+      <div class="ratio-row" style="background:rgba(242,54,69,0.1);">
+        <span class="ratio-label" style="color:#f23645;">> 7x</span>
+        <span class="stext">🚨 <b>HATI-HATI TINGGI</b> — sangat mahal vs nominal, risiko koreksi besar pasca listing</span>
+      </div>
+    </div>
+    </div>
+
+    <div class="danger">🚨 <b>Penting:</b> Analisa IPO SIGMA adalah referensi dan bahan riset, bukan rekomendasi beli/jual. Selalu DYOR dan pahami bahwa IPO mengandung risiko tinggi — harga bisa turun di bawah harga penawaran setelah listing.</div>
+
+    </div></body></html>"""
+                components.html(_guide_html_ipo, height=2200, scrolling=True)
+
+            # ══════════════════════════════════════════════════════════════
+            # PANDUAN 6 - TRACK RECORD
+            # ══════════════════════════════════════════════════════════════
+            with pg_tab6:
+                _guide_html_tr = f"""<!DOCTYPE html><html><head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+    *{{box-sizing:border-box;margin:0;padding:0;}}
+    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+    .wrap{{max-width:100%;padding:4px 0 32px;}}
+    .hero{{background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(38,166,154,0.08));border:1px solid rgba(251,191,36,0.25);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
+    .hero-title{{font-size:1.35rem;font-weight:800;color:#fbbf24;letter-spacing:0.05em;margin-bottom:8px;}}
+    .hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
+    .sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(251,191,36,0.2);}}
+    .sec-icon{{font-size:1.4rem;}}
+    .sec-title{{font-size:1.05rem;font-weight:700;color:#fbbf24;letter-spacing:0.06em;}}
+    .card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+    .card.y{{border-left:3px solid #fbbf24;}}
+    .card.g{{border-left:3px solid #26a69a;}}
+    .card.b{{border-left:3px solid #60a5fa;}}
+    .card.r{{border-left:3px solid #f23645;}}
+    .card.p{{border-left:3px solid #a78bfa;}}
+    .card-title{{font-size:0.875rem;font-weight:700;color:#fbbf24;margin-bottom:8px;}}
+    .card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
+    .card-body b{{color:#a78bfa;}}
+    .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
+    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#26a69a);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+    .tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+    .warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+    .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0;}}
+    .stat-card{{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:14px;text-align:center;}}
+    .stat-label{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:6px;}}
+    .stat-val{{font-size:1.2rem;font-weight:800;color:#a78bfa;}}
+    .stat-sub{{font-size:0.72rem;color:{_SUB};margin-top:4px;}}
+    @media(max-width:640px){{.grid3{{grid-template-columns:1fr;}}}}
+    </style></head><body><div class="wrap">
+
+    <div class="hero">
+      <div class="hero-title">🏆 TRACK RECORD — Rekam Jejak Performa</div>
+      <div class="hero-sub">
+        Sistem pencatatan dan evaluasi performa semua plan yang di-generate SIGMA. 
+        Tersedia di dalam tab <b>Alpha Screener → 🏆 Track Record</b>. 
+        Setiap Daily Plan / Weekly Plan yang di-generate otomatis masuk sebagai posisi OPEN untuk ditracking.
+      </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-icon">📋</div>
+    <div><div class="sec-title">CARA MENGGUNAKAN TRACK RECORD</div></div></div>
+
+    <div class="card y">
+    <div class="card-title">Step-by-Step: Dari Generate sampai Evaluasi</div>
+    <div class="card-body">
+    <div class="step"><div class="snum">1</div><div class="stext">Setiap kali kamu <b>Generate Daily/Weekly Plan</b>, saham-saham yang masuk otomatis tercatat sebagai posisi <b style="color:#fbbf24;">OPEN</b> di Track Record.</div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">Buka tab <b>🏆 Track Record</b> → sub-tab <b>History Plan</b> untuk melihat semua posisi yang sedang open.</div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">Setelah trade selesai (hit TP atau SL), <b>update status</b> posisi: klik tombol update dan pilih hasil aktual (TP1/TP2/SL/Manual).</div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">Sub-tab <b>Overview Semua</b> menampilkan agregat seluruh performa: win rate, total trade, P&amp;L kumulatif, dan tabel lengkap.</div></div>
+    <div class="step"><div class="snum">5</div><div class="stext">Sub-tab <b>Statistik</b> menampilkan analisa mendalam: expectancy per trade, average win/loss, streak terbaik/terburuk, dan <b>verdict SIGMA</b>.</div></div>
+    <div class="tip">💡 Update status trade secara rutin setelah eksekusi agar statistik akurat. Sistem tidak bisa update otomatis karena tidak terhubung ke akun broker.</div>
+    </div>
+    </div>
+
+    <div class="sec-head"><div class="sec-icon">📊</div>
+    <div><div class="sec-title">METRIK YANG DILACAK</div></div></div>
+
+    <div class="grid3">
+    <div class="stat-card">
+      <div class="stat-label">Win Rate</div>
+      <div class="stat-val" style="color:#26a69a;">%</div>
+      <div class="stat-sub">Persentase trade yang profit. Target: &gt;50% untuk strategi RR 1:2+</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Expectancy</div>
+      <div class="stat-val" style="color:#60a5fa;">R</div>
+      <div class="stat-sub">Rata-rata profit per trade dalam satuan R (risk unit). Positif = sistem profitable</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Trade</div>
+      <div class="stat-val" style="color:#fbbf24;">#</div>
+      <div class="stat-sub">Jumlah trade tercatat. Minimal 20 trade untuk statistik signifikan secara statistik</div>
+    </div>
+    </div>
+
+    <div class="card g">
+    <div class="card-title">📈 Cara Membaca Verdict SIGMA</div>
+    <div class="card-body">
+      Setelah minimal 10 trade tercatat, SIGMA mengeluarkan <b>Verdict</b> berdasarkan win rate + expectancy gabungan:<br><br>
+      ✅ <b style="color:#26a69a;">SISTEM BAGUS</b> — Win rate &gt;55% + Expectancy positif<br>
+      ⚠️ <b style="color:#fbbf24;">PERLU EVALUASI</b> — Win rate 40–55% atau expectancy tipis<br>
+      🚨 <b style="color:#f23645;">SISTEM BERMASALAH</b> — Win rate &lt;40% atau expectancy negatif<br><br>
+      Verdict ini bukan penilaian SIGMA sebagai tool, tapi cerminan <b>eksekusi dan disiplin trader</b>.
+    </div>
+    </div>
+
+    <div class="warn">⚠️ <b>Catatan Penting:</b> Track Record SIGMA tersimpan per-sesi login. Jika browser dibersihkan atau logout, data mungkin tidak tersimpan permanen. Untuk backup, gunakan fitur Export jika tersedia, atau catat manual di spreadsheet pribadi.</div>
+
+    </div></body></html>"""
+                components.html(_guide_html_tr, height=2000, scrolling=True)
+
+            with pg_tab7:
                 _guide_html_6 = f"""<!DOCTYPE html><html><head>
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <style>
@@ -25211,9 +25466,9 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
             # ══════════════════════════════════════════════════════════════
             # ══════════════════════════════════════════════════════════════
-            # PANDUAN - BROKER SUMMARY (pg_tab6)
+            # PANDUAN - BROKER SUMMARY (pg_tab8)
             # ══════════════════════════════════════════════════════════════
-            with pg_tab6:
+            with pg_tab8:
                 _guide_html_brosum = f"""<!DOCTYPE html><html><head>
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <style>
@@ -25462,9 +25717,9 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                 components.html(_guide_html_brosum, height=2400, scrolling=True)
 
             # ══════════════════════════════════════════════════════════════
-            # PANDUAN 7 - CARA KERJA SCREENER (HOW IT WORKS)
+            # PANDUAN 9 - CARA KERJA SCREENER (HOW IT WORKS)
             # ══════════════════════════════════════════════════════════════
-            with pg_tab7:
+            with pg_tab9:
                 _P7 = "#a78bfa"
                 _B7 = "#60a5fa"
                 _G7 = "#26a69a"
