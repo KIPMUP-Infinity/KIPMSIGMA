@@ -6517,14 +6517,20 @@ def show_system_selector():
     section[data-testid="stMain"],
     [data-testid="stMainBlockContainer"],
     [data-testid="stVerticalBlock"],
-    [data-testid="stBottom"]           { background: #020617 !important;
-                                         max-width:100% !important;
+    [data-testid="stBottom"]           { max-width:100% !important;
                                          padding:0 !important; margin:0 !important; gap:0 !important; }
+    /* Dark mode only background */
+    [data-theme="dark"] .stApp,
+    [data-theme="dark"] [data-testid="stAppViewContainer"],
+    [data-theme="dark"] section[data-testid="stMain"],
+    [data-theme="dark"] [data-testid="stMainBlockContainer"],
+    [data-theme="dark"] [data-testid="stVerticalBlock"],
+    [data-theme="dark"] [data-testid="stBottom"] { background: #020617 !important; }
     /* sembunyikan wrapper button Streamlit yg jadi spacer */
     [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div { gap:0 !important; }
-    /* Tombol navigasi — invisible wrapper, full-width clickable */
+    /* Tombol navigasi — visible, styled, di bawah card */
     div[data-testid="stMainBlockContainer"] .stButton > button {
-        display: none !important;
+        display: flex !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -6536,16 +6542,24 @@ def show_system_selector():
   /* scroll top */
   try { window.parent.scrollTo({top:0,behavior:'instant'}); } catch(e){}
 
+  /* Only inject dark background if NOT light mode */
+  var isLight = pd.documentElement.getAttribute('data-theme') === 'light' ||
+                pd.body.classList.contains('light') ||
+                (window.parent.matchMedia && window.parent.matchMedia('(prefers-color-scheme: light)').matches &&
+                 pd.documentElement.getAttribute('data-theme') !== 'dark');
+
   /* background */
   if (!pd.getElementById('sigma-hub-bg')) {
     var s = pd.createElement('style');
     s.id = 'sigma-hub-bg';
     s.textContent = `
-      .stApp, [data-testid="stAppViewContainer"] {
+      [data-theme="dark"] .stApp, [data-theme="dark"] [data-testid="stAppViewContainer"],
+      .stApp:not([data-theme="light"]) { 
         background: #020617 !important;
         position: relative;
       }
-      .stApp::before {
+      [data-theme="dark"] .stApp::before,
+      .stApp:not([data-theme="light"])::before {
         content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
         background:
           radial-gradient(ellipse 90% 55% at 50% -8%, rgba(99,102,241,0.10) 0%, transparent 55%),
@@ -6556,8 +6570,8 @@ def show_system_selector():
     pd.head.appendChild(s);
   }
 
-  /* starfield */
-  if (!pd.getElementById('sigma-hub-stars')) {
+  /* starfield — dark mode only */
+  if (!isLight && !pd.getElementById('sigma-hub-stars')) {
     var sw = pd.createElement('div');
     sw.id = 'sigma-hub-stars';
     sw.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;';
@@ -6583,6 +6597,10 @@ def show_system_selector():
       pd.head.appendChild(sc);
     }
     pd.body.appendChild(sw);
+  } else if (isLight) {
+    /* remove stars if switching to light */
+    var existStars = pd.getElementById('sigma-hub-stars');
+    if (existStars) existStars.remove();
   }
 
   /* beam dihapus — tidak ada garis tipis di background */
@@ -6730,9 +6748,8 @@ html,body{{background:transparent;font-family:var(--fb);color:var(--text);overfl
 </head>
 <body>
 <div class="wrap">
-  <div class="eyebrow">Pilih Modul</div>
   <div class="title">SIGMA SYSTEM</div>
-  <div class="sub">Market Intelligence System · v4.0</div>
+  <div class="sub">SIGMA V4.0</div>
   <div class="userpill">
     <span class="udot"></span>
     Selamat datang, {_name}
@@ -6818,7 +6835,7 @@ html,body{{background:transparent;font-family:var(--fb);color:var(--text);overfl
 
   </div>
   <div class="footer-note">
-    SIGMA SYSTEM v4.0 &nbsp;·&nbsp; <span>Market Intelligence System</span> &nbsp;·&nbsp; Powered by AI + Bandarmology
+    SIGMA SYSTEM v4.0 &nbsp;·&nbsp; <span>Strategic Intelligence &amp; Global Market Analysis</span> &nbsp;·&nbsp; Powered by MarketnMocha
   </div>
 </div>
 </body>
@@ -6836,7 +6853,7 @@ html,body{{background:transparent;font-family:var(--fb);color:var(--text);overfl
         overflow: visible !important; z-index: auto !important;
         gap: 22px !important;
         max-width: 940px !important;
-        margin: -28px auto 0 !important;
+        margin: -16px auto 0 !important;
         padding: 0 0 32px !important;
     }
     /* Tiap kolom button */
