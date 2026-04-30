@@ -6314,7 +6314,31 @@ if st.session_state.get("user"):
 
 st.markdown(f"""
 <style>
-* {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
+/* ═══ SIGMA v4.0 — FONT IMPORT ═══ */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Syne:wght@500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ═══ SIGMA v4.0 — DESIGN TOKENS ═══ */
+:root {{
+  --sigma-bg:        #020617;
+  --sigma-bg1:       #040d24;
+  --sigma-glass:     rgba(8,18,48,0.72);
+  --sigma-border:    rgba(255,255,255,0.07);
+  --sigma-border-hi: rgba(99,102,241,0.35);
+  --sigma-indigo:    #6366f1;
+  --sigma-blue:      #3b82f6;
+  --sigma-emerald:   #10b981;
+  --sigma-purple:    #a855f7;
+  --sigma-text:      #e2e8f0;
+  --sigma-text2:     #94a3b8;
+  --sigma-text3:     #475569;
+  --sigma-font-d:    'Rajdhani', 'Segoe UI', sans-serif;
+  --sigma-font-b:    'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --sigma-font-m:    'JetBrains Mono', 'Courier New', monospace;
+  --sigma-font-u:    'Syne', 'Segoe UI', sans-serif;
+}}
+
+/* ═══ SIGMA v4.0 — BASE RESET ═══ */
+* {{ font-family: var(--sigma-font-b) !important; box-sizing: border-box; }}
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
 section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
 section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
@@ -6394,7 +6418,327 @@ hr {{ border-color: {C['border']} !important; }}
 """, unsafe_allow_html=True)
 
 def show_system_selector():
-    """SIGMA v3.0 - Premium Command Hub UI"""
+    """SIGMA v4.0 - Command Hub UI"""
+    import streamlit.components.v1 as components
+    _user = st.session_state.user
+    _name = (_user.get("name") or _user.get("email","")).split()[0] if _user else "Trader"
+
+    st.markdown("""
+    <style>
+    [data-testid="stSidebar"] { display: none !important; }
+    header[data-testid="stHeader"] { display: none !important; }
+    #MainMenu { display: none !important; }
+    footer { display: none !important; }
+    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"], [data-testid="stVerticalBlock"] {
+        background: #020617 !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        gap: 0 !important;
+    }
+    [data-testid="stHorizontalBlock"] {
+        position: fixed !important; bottom: -400px !important;
+        opacity: 0 !important; height: 1px !important;
+        overflow: hidden !important; z-index: -999 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    components.html("""<script>
+(function(){
+  try { window.parent.scrollTo({top:0,behavior:'instant'}); } catch(e){}
+  setTimeout(function(){ try{window.parent.scrollTo({top:0,behavior:'instant'});}catch(e){} },150);
+})();
+</script>""", height=0)
+
+    components.html(f"""<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;}}
+:root{{
+  --bg:#020617;--glass:rgba(8,18,48,0.88);
+  --indigo:#6366f1;--blue:#3b82f6;--emerald:#10b981;--purple:#a855f7;--amber:#f59e0b;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
+  --fd:'Rajdhani',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;--fu:'Syne',sans-serif;
+}}
+body{{background:var(--bg);font-family:var(--fb);min-height:100vh;overflow-x:hidden;color:var(--text);}}
+body::before{{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -8%,rgba(99,102,241,0.1) 0%,transparent 55%),
+    radial-gradient(ellipse 55% 40% at 88% 95%,rgba(16,185,129,0.05) 0%,transparent 50%),
+    radial-gradient(ellipse 40% 35% at 8% 80%,rgba(59,130,246,0.05) 0%,transparent 50%);
+}}
+/* ── Starfield ── */
+#stars{{position:fixed;inset:0;pointer-events:none;overflow:hidden;}}
+.star{{position:absolute;border-radius:50%;background:rgba(255,255,255,0.8);animation:twinkle var(--d,3s) ease-in-out infinite var(--dl,0s);}}
+@keyframes twinkle{{0%,100%{{opacity:0.15;transform:scale(1);}}50%{{opacity:1;transform:scale(1.5);}}}}
+/* ── Light beam ── */
+.beam{{position:fixed;top:-20vh;left:50%;transform:translateX(-50%);width:1px;height:110vh;
+  background:linear-gradient(to bottom,transparent,rgba(99,102,241,0.18),transparent);
+  pointer-events:none;animation:beam 4s ease-in-out infinite;}}
+@keyframes beam{{0%,100%{{opacity:0.3;}}50%{{opacity:0.7;}}}}
+/* ── Wrap ── */
+.wrap{{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 20px 52px;position:relative;z-index:1;}}
+/* ── Header ── */
+.hdr{{text-align:center;margin-bottom:44px;}}
+.eyebrow{{font-family:var(--fm);font-size:0.62rem;letter-spacing:0.28em;text-transform:uppercase;color:rgba(99,102,241,0.7);
+  margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;}}
+.eyebrow::before,.eyebrow::after{{content:'';flex:1;max-width:70px;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.45));}}
+.eyebrow::after{{background:linear-gradient(90deg,rgba(99,102,241,0.45),transparent);}}
+.title{{font-family:var(--fd);font-size:clamp(2.4rem,6vw,3.8rem);font-weight:700;letter-spacing:0.14em;
+  background:linear-gradient(135deg,#f1f5f9 0%,#c7d2fe 40%,#67e8f9 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.05;}}
+.sub{{font-family:var(--fm);font-size:0.72rem;color:rgba(148,163,184,0.65);letter-spacing:0.1em;margin-top:8px;}}
+.userpill{{display:inline-flex;align-items:center;gap:8px;margin-top:16px;
+  background:rgba(8,18,48,0.85);border:1px solid rgba(99,102,241,0.22);border-radius:50px;padding:7px 18px;
+  font-family:var(--fm);font-size:0.68rem;color:rgba(165,180,252,0.85);}}
+.udot{{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 8px var(--emerald);animation:udot 2s ease-in-out infinite;}}
+@keyframes udot{{0%,100%{{opacity:0.7;transform:scale(1);}}50%{{opacity:1;transform:scale(1.3);}}}}
+/* ── Divider ── */
+.divider{{width:100%;max-width:940px;display:flex;align-items:center;gap:14px;margin-bottom:34px;}}
+.divline{{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.2),transparent);}}
+.divlabel{{font-family:var(--fm);font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;
+  color:var(--indigo);padding:4px 16px;border-radius:20px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);}}
+/* ── Grid ── */
+.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;width:100%;max-width:940px;}}
+/* ── Card base ── */
+.card{{background:var(--glass);border:1px solid rgba(255,255,255,0.07);border-radius:22px;
+  padding:30px 26px 26px;position:relative;overflow:hidden;cursor:pointer;text-decoration:none;display:block;
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.3s,border-color 0.3s;
+  backdrop-filter:blur(16px);animation:rise 0.5s ease both;}}
+.card:nth-child(1){{animation-delay:0.05s;}}
+.card:nth-child(2){{animation-delay:0.12s;}}
+.card:nth-child(3){{animation-delay:0.19s;}}
+@keyframes rise{{from{{opacity:0;transform:translateY(24px);}}to{{opacity:1;transform:translateY(0);}}}}
+.card::before{{content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:22px 22px 0 0;}}
+.c-ai::before   {{background:linear-gradient(90deg,transparent,rgba(59,130,246,0.7),transparent);}}
+.c-term::before {{background:linear-gradient(90deg,transparent,rgba(167,139,250,0.7),transparent);}}
+.c-kipm::before {{background:linear-gradient(90deg,transparent,rgba(16,185,129,0.4),transparent);}}
+/* Glow blob */
+.glow{{position:absolute;width:220px;height:220px;border-radius:50%;filter:blur(70px);opacity:0;top:-60px;right:-40px;transition:opacity 0.4s;pointer-events:none;}}
+.c-ai   .glow{{background:rgba(59,130,246,0.3);}}
+.c-term .glow{{background:rgba(139,92,246,0.25);}}
+.c-kipm .glow{{background:rgba(16,185,129,0.18);}}
+.card:hover .glow{{opacity:1;}}
+/* Hover */
+.card:not(.disabled):hover{{transform:translateY(-8px);}}
+.c-ai:not(.disabled):hover  {{border-color:rgba(59,130,246,0.4);box-shadow:0 24px 60px rgba(59,130,246,0.14),0 0 0 1px rgba(59,130,246,0.12);}}
+.c-term:not(.disabled):hover{{border-color:rgba(167,139,250,0.4);box-shadow:0 24px 60px rgba(139,92,246,0.12),0 0 0 1px rgba(167,139,250,0.12);}}
+.c-kipm.disabled{{cursor:default;opacity:0.65;}}
+/* Corner brackets */
+.tl,.br{{position:absolute;width:13px;height:13px;opacity:0.28;transition:opacity 0.3s;}}
+.tl{{top:15px;left:15px;border-top:1px solid;border-left:1px solid;border-radius:4px 0 0 0;}}
+.br{{bottom:15px;right:15px;border-bottom:1px solid;border-right:1px solid;border-radius:0 0 4px 0;}}
+.c-ai   .tl,.c-ai   .br{{border-color:rgba(59,130,246,0.9);}}
+.c-term .tl,.c-term .br{{border-color:rgba(167,139,250,0.9);}}
+.c-kipm .tl,.c-kipm .br{{border-color:rgba(16,185,129,0.7);}}
+.card:hover .tl,.card:hover .br{{opacity:0.65;}}
+/* Badge */
+.badge{{position:absolute;top:18px;right:18px;font-family:var(--fm);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;border-radius:20px;font-weight:600;}}
+.c-ai   .badge{{background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.28);}}
+.c-term .badge{{background:rgba(167,139,250,0.1);color:#c4b5fd;border:1px solid rgba(167,139,250,0.28);}}
+.c-kipm .badge{{background:rgba(245,158,11,0.1);color:#fbbf24;border:1px solid rgba(245,158,11,0.28);}}
+/* Visual area */
+.vis{{height:110px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;position:relative;}}
+/* Radar (AI card) */
+.radar{{width:96px;height:96px;position:relative;}}
+.rring{{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(59,130,246,0.18);}}
+.rring:nth-child(2){{inset:16px;border-color:rgba(59,130,246,0.28);}}
+.rring:nth-child(3){{inset:32px;border-color:rgba(59,130,246,0.4);}}
+.rring:nth-child(4){{inset:46px;border-color:rgba(59,130,246,0.65);}}
+.rsweep{{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,transparent 0deg,rgba(59,130,246,0.45) 60deg,transparent 61deg);animation:rspin 3s linear infinite;}}
+@keyframes rspin{{to{{transform:rotate(360deg);}}}}
+.rdot{{position:absolute;width:5px;height:5px;border-radius:50%;background:#3b82f6;box-shadow:0 0 7px #3b82f6;}}
+.rdot:nth-child(6){{top:24%;left:61%;}}
+.rdot:nth-child(7){{top:58%;left:22%;}}
+.rdot:nth-child(8){{top:72%;left:64%;}}
+.rax{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}}
+.rxl{{width:1px;height:100%;background:rgba(59,130,246,0.18);position:absolute;}}
+.ryl{{width:100%;height:1px;background:rgba(59,130,246,0.18);position:absolute;}}
+/* Circuit grid (Terminal card) */
+.circ{{width:108px;height:88px;position:relative;overflow:hidden;}}
+.cgrid{{position:absolute;inset:0;background-image:linear-gradient(rgba(167,139,250,0.12) 1px,transparent 1px),linear-gradient(90deg,rgba(167,139,250,0.12) 1px,transparent 1px);background-size:16px 16px;}}
+.cscan{{position:absolute;height:2px;width:100%;left:0;background:linear-gradient(90deg,transparent,rgba(167,139,250,0.7),transparent);animation:csweep var(--cd,2.2s) ease-in-out infinite var(--cdl,0s);}}
+@keyframes csweep{{0%{{top:0%;opacity:0;}}10%{{opacity:1;}}90%{{opacity:0.8;}}100%{{top:100%;opacity:0;}}}}
+.cnode{{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cc,#a855f7);box-shadow:0 0 6px var(--cc,#a855f7);animation:nblink 2s ease-in-out infinite var(--cdl,0s);}}
+@keyframes nblink{{0%,100%{{opacity:0.3;}}50%{{opacity:1;}}}}
+.ccandles{{position:absolute;bottom:8px;display:flex;gap:5px;align-items:flex-end;left:50%;transform:translateX(-50%);}}
+.ccandle{{width:8px;border-radius:1px;box-shadow:0 0 4px var(--cc2);}}
+/* Book (KIPM card) */
+.book-wrap{{position:relative;width:76px;height:88px;display:flex;align-items:center;justify-content:center;}}
+.book{{width:58px;height:72px;border-radius:4px 8px 8px 4px;
+  background:linear-gradient(135deg,rgba(16,185,129,0.14),rgba(5,150,105,0.07));
+  border:1px solid rgba(16,185,129,0.24);position:relative;overflow:hidden;
+  box-shadow:4px 4px 18px rgba(16,185,129,0.1);animation:bfloat 4s ease-in-out infinite;}}
+@keyframes bfloat{{0%,100%{{transform:translateY(0) rotate(-2deg);}}50%{{transform:translateY(-7px) rotate(2deg);}}}}
+.book::before{{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;background:rgba(16,185,129,0.22);border-right:1px solid rgba(16,185,129,0.28);}}
+.blines{{position:absolute;inset:10px 10px;display:flex;flex-direction:column;gap:7px;}}
+.bline{{height:1px;border-radius:1px;opacity:0.5;}}
+.bglow{{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:70px;height:16px;background:rgba(16,185,129,0.18);filter:blur(10px);border-radius:50%;}}
+.soontag{{position:absolute;top:-8px;right:-14px;background:rgba(245,158,11,0.14);color:#fbbf24;
+  border:1px solid rgba(245,158,11,0.28);border-radius:7px;padding:2px 7px;
+  font-family:var(--fm);font-size:0.5rem;letter-spacing:0.1em;white-space:nowrap;}}
+/* Card text */
+.cname{{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:var(--text);letter-spacing:0.06em;margin-bottom:4px;}}
+.ctag{{font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:14px;font-weight:500;}}
+.c-ai   .ctag{{color:rgba(96,165,250,0.75);}}
+.c-term .ctag{{color:rgba(196,181,253,0.75);}}
+.c-kipm .ctag{{color:rgba(16,185,129,0.6);}}
+.cdesc{{font-size:0.78rem;color:rgba(226,232,240,0.42);line-height:1.78;margin-bottom:22px;}}
+.cbtn{{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;border-radius:10px;
+  font-family:var(--fu);font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;
+  width:100%;border:none;cursor:pointer;transition:all 0.22s;}}
+.c-ai   .cbtn{{background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.3);}}
+.c-term .cbtn{{background:rgba(167,139,250,0.1);color:#c4b5fd;border:1px solid rgba(167,139,250,0.3);}}
+.c-kipm .cbtn{{background:rgba(16,185,129,0.07);color:rgba(16,185,129,0.55);border:1px solid rgba(16,185,129,0.2);cursor:default;}}
+.card:not(.disabled):hover .cbtn{{filter:brightness(1.35);transform:translateY(-1px);}}
+/* Footer */
+.footer{{margin-top:44px;font-family:var(--fm);font-size:0.58rem;letter-spacing:0.1em;color:rgba(71,85,105,0.6);text-align:center;}}
+.footer span{{color:rgba(99,102,241,0.5);}}
+/* Mobile */
+@media(max-width:700px){{
+  .grid{{grid-template-columns:1fr;max-width:380px;}}
+  .title{{font-size:2.2rem;}}
+  .wrap{{padding:28px 16px 44px;}}
+}}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div class="beam"></div>
+<div class="wrap">
+  <div class="hdr">
+    <div class="eyebrow">Select Module</div>
+    <div class="title">SIGMA TERMINAL</div>
+    <div class="sub">Market Intelligence System · v4.0</div>
+    <div class="userpill">
+      <span class="udot"></span>
+      Welcome, {_name}
+    </div>
+  </div>
+  <div class="divider">
+    <div class="divline"></div>
+    <div class="divlabel">Command Hub</div>
+    <div class="divline"></div>
+  </div>
+  <div class="grid">
+
+    <!-- SIGMA AI -->
+    <a class="card c-ai" href="javascript:void(0)" onclick="navTo('chat')">
+      <div class="glow"></div>
+      <div class="tl"></div><div class="br"></div>
+      <span class="badge">AI Chat</span>
+      <div class="vis">
+        <div class="radar">
+          <div class="rring"></div><div class="rring"></div>
+          <div class="rring"></div><div class="rring"></div>
+          <div class="rsweep"></div>
+          <div class="rax"><div class="rxl"></div><div class="ryl"></div></div>
+          <div class="rdot"></div><div class="rdot"></div><div class="rdot"></div>
+        </div>
+      </div>
+      <div class="cname">SIGMA AI</div>
+      <div class="ctag">Intelligent Analysis</div>
+      <div class="cdesc">Analisa saham IDX dengan AI cerdas berbasis Bandarmologi + MnM Strategy. Tanya apa saja tentang market.</div>
+      <button class="cbtn" onclick="event.preventDefault();navTo('chat')">Enter Module →</button>
+    </a>
+
+    <!-- SIGMA Terminal -->
+    <a class="card c-term" href="javascript:void(0)" onclick="navTo('dashboard')">
+      <div class="glow"></div>
+      <div class="tl"></div><div class="br"></div>
+      <span class="badge">Terminal</span>
+      <div class="vis">
+        <div class="circ">
+          <div class="cgrid"></div>
+          <div class="cscan" style="--cd:2.2s;--cdl:0s;"></div>
+          <div class="cscan" style="--cd:3.1s;--cdl:0.9s;"></div>
+          <div class="cnode" style="--cc:#a855f7;top:22%;left:15%;--cdl:0s;"></div>
+          <div class="cnode" style="--cc:#6366f1;top:60%;left:74%;--cdl:0.5s;"></div>
+          <div class="cnode" style="--cc:#c4b5fd;top:78%;left:38%;--cdl:1s;"></div>
+          <div class="ccandles">
+            <div class="ccandle" style="height:22px;background:#10b981;--cc2:#10b981;"></div>
+            <div class="ccandle" style="height:14px;background:#ef4444;--cc2:#ef4444;"></div>
+            <div class="ccandle" style="height:32px;background:#10b981;--cc2:#10b981;"></div>
+            <div class="ccandle" style="height:20px;background:#10b981;--cc2:#10b981;"></div>
+            <div class="ccandle" style="height:11px;background:#ef4444;--cc2:#ef4444;"></div>
+            <div class="ccandle" style="height:27px;background:#10b981;--cc2:#10b981;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cname">SIGMA Terminal</div>
+      <div class="ctag">Market Intelligence</div>
+      <div class="cdesc">Dashboard premium: Alpha Screener, Rotasi Sektor, Bandarmologi, RRG, Market Map & lebih.</div>
+      <button class="cbtn" onclick="event.preventDefault();navTo('dashboard')">Enter Module →</button>
+    </a>
+
+    <!-- KIPM Academy - Coming Soon -->
+    <div class="card c-kipm disabled">
+      <div class="glow"></div>
+      <div class="tl"></div><div class="br"></div>
+      <span class="badge">Coming Soon</span>
+      <div class="vis">
+        <div class="book-wrap">
+          <div class="book">
+            <div class="blines">
+              <div class="bline" style="background:#10b981;width:78%;"></div>
+              <div class="bline" style="background:#6366f1;width:60%;"></div>
+              <div class="bline" style="background:#10b981;width:72%;"></div>
+              <div class="bline" style="background:#94a3b8;width:48%;"></div>
+              <div class="bline" style="background:#10b981;width:68%;"></div>
+              <div class="bline" style="background:#94a3b8;width:38%;"></div>
+            </div>
+          </div>
+          <div class="bglow"></div>
+          <div class="soontag">In Development</div>
+        </div>
+      </div>
+      <div class="cname">KIPM Academy</div>
+      <div class="ctag">Education Hub</div>
+      <div class="cdesc">Panduan trading, strategi bandarmologi, materi edukasi pasar modal IDX — sedang dikembangkan.</div>
+      <button class="cbtn" disabled>Segera Hadir ·</button>
+    </div>
+
+  </div>
+  <div class="footer">
+    SIGMA TERMINAL v4.0 &nbsp;·&nbsp; <span>Market Intelligence System</span> &nbsp;·&nbsp; Powered by AI + Bandarmology &nbsp;·&nbsp; MnM Strategy+
+  </div>
+</div>
+<script>
+// Stars
+(function(){{
+  var w=document.getElementById('stars');
+  for(var i=0;i<100;i++){{
+    var s=document.createElement('div'); s.className='star';
+    var sz=0.7+Math.random()*1.4;
+    s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;'
+      +'width:'+sz+'px;height:'+sz+'px;'
+      +'--d:'+(2.5+Math.random()*5)+'s;--dl:-'+(Math.random()*5)+'s;'
+      +'opacity:'+(0.1+Math.random()*0.5)+';';
+    w.appendChild(s);
+  }}
+}})();
+// Nav
+function navTo(view){{
+  try{{
+    var u=new URL(window.parent.location.href);
+    u.searchParams.set('do','view_'+view);
+    window.parent.location.href=u.toString();
+  }}catch(e){{}}
+}}
+</script>
+</body>
+</html>
+""", height=880, scrolling=False)
+    st.stop()
+
     _user = st.session_state.user
     _name = (_user.get("name") or _user.get("email","")).split()[0] if _user else "Trader"
     _terminal_url = st.secrets.get("SIGMA_TERMINAL_URL", "")
@@ -6750,7 +7094,200 @@ function navTo(view){{
 
 
 def show_login():
-    """SIGMA v3.0 - Premium Login Screen"""
+    """SIGMA v4.0 - Premium Login Screen (Google OAuth)"""
+    import streamlit.components.v1 as components
+
+    st.markdown(f"""
+    <style>
+    [data-testid="stSidebar"] {{ display: none !important; }}
+    header[data-testid="stHeader"] {{ display: none !important; }}
+    #MainMenu {{ display: none !important; }}
+    footer {{ display: none !important; }}
+    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{
+        background: #020617 !important;
+        min-height: 100vh !important;
+    }}
+    [data-testid="stMainBlockContainer"] {{
+        max-width: 400px !important;
+        margin: 0 auto !important;
+        padding: 0 20px 40px !important;
+        background: transparent !important;
+    }}
+    [data-testid="stVerticalBlock"] {{ gap: 0 !important; }}
+    [data-testid="stAlert"] {{ border-radius: 10px !important; margin-top: 10px !important; }}
+    @media(max-width:768px){{
+        [data-testid="stMainBlockContainer"]{{max-width:92%!important;}}
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Inject parent-frame styles (hide Streamlit chrome)
+    components.html("""<script>
+(function(){{
+  var pd=window.parent.document;
+  var fs=pd.getElementById('sigma-v4-chrome-hide');
+  if(!fs){{
+    var s=pd.createElement('style'); s.id='sigma-v4-chrome-hide';
+    s.textContent='.viewerBadge_container__r5tak,[class*="viewerBadge"],[class*="styles_viewerBadge"],#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"],header[data-testid="stHeader"],.stDeployButton,.stAppDeployButton{{display:none!important;}}';
+    pd.head.appendChild(s);
+  }}
+  var bg=pd.getElementById('sigma-v4-bg');
+  if(!bg){{
+    var bs=pd.createElement('style'); bs.id='sigma-v4-bg';
+    bs.textContent='.stApp,[data-testid="stAppViewContainer"]{{background:#020617!important;}}';
+    pd.head.appendChild(bs);
+  }}
+}})();
+</script>""", height=0)
+
+    # Hero section rendered via components.html for full control
+    components.html("""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'JetBrains Mono',monospace;overflow:hidden;}}
+/* Particles */
+#particles{{position:fixed;top:0;left:50%;transform:translateX(-50%);width:400px;height:340px;pointer-events:none;overflow:hidden;}}
+.pdot{{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(99,102,241,0.7);animation:pfloat var(--d,8s) ease-in-out infinite var(--dl,0s);}}
+@keyframes pfloat{{0%,100%{{transform:translateY(0) translateX(0);opacity:0;}}20%{{opacity:1;}}80%{{opacity:0.7;}}100%{{transform:translateY(-90px) translateX(15px);opacity:0;}}}}
+/* Horizon glow */
+.horizon{{
+  position:fixed;bottom:0;left:0;right:0;height:40vh;pointer-events:none;
+  background:radial-gradient(ellipse 100% 70% at 50% 120%,rgba(99,102,241,0.15) 0%,rgba(59,130,246,0.06) 40%,transparent 70%);
+}}
+/* Starfield */
+#stars{{position:fixed;inset:0;pointer-events:none;overflow:hidden;}}
+.star{{position:absolute;border-radius:50%;background:rgba(255,255,255,0.85);animation:twinkle var(--d,3s) ease-in-out infinite var(--dl,0s);}}
+@keyframes twinkle{{0%,100%{{opacity:0.12;}}50%{{opacity:0.9;}}}}
+/* Content */
+.hero{{padding:36px 0 24px;text-align:center;}}
+.icon-wrap{{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:62px;height:62px;border-radius:18px;margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(99,102,241,0.22),rgba(59,130,246,0.14));
+  border:1px solid rgba(99,102,241,0.38);
+  font-size:1.7rem;font-weight:900;font-family:'Rajdhani',sans-serif;color:#a5b4fc;
+  box-shadow:0 0 28px rgba(99,102,241,0.32),0 0 80px rgba(99,102,241,0.08);
+  animation:iconpulse 3s ease-in-out infinite;
+}}
+@keyframes iconpulse{{0%,100%{{box-shadow:0 0 28px rgba(99,102,241,0.32),0 0 80px rgba(99,102,241,0.08);}}50%{{box-shadow:0 0 44px rgba(99,102,241,0.55),0 0 120px rgba(99,102,241,0.15);}}}}
+.logo{{font-family:'Rajdhani',sans-serif;font-size:2.1rem;font-weight:700;letter-spacing:0.2em;
+  background:linear-gradient(135deg,#c7d2fe,#818cf8 50%,#3b82f6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}}
+.sub{{font-size:0.57rem;color:rgba(124,134,162,0.65);letter-spacing:0.22em;text-transform:uppercase;margin-top:7px;}}
+.scanline{{width:110px;height:1px;margin:13px auto 0;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.6),transparent);position:relative;overflow:hidden;}}
+.scanline::after{{content:'';position:absolute;top:0;left:-100%;width:40%;height:100%;background:rgba(165,180,252,0.9);animation:scan 2.5s ease-in-out infinite;}}
+@keyframes scan{{0%{{left:-100%;}}100%{{left:200%;}}}}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div id="particles"></div>
+<div class="horizon"></div>
+<div class="hero">
+  <div class="icon-wrap">Σ</div>
+  <div class="logo">SIGMA</div>
+  <div class="sub">Market Intelligence System</div>
+  <div class="scanline"></div>
+</div>
+<script>
+// Stars
+(function(){{
+  var w=document.getElementById('stars');
+  for(var i=0;i<70;i++){{
+    var s=document.createElement('div');s.className='star';
+    var sz=0.6+Math.random()*1.2;
+    s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;'
+      +'width:'+sz+'px;height:'+sz+'px;'
+      +'--d:'+(2+Math.random()*5)+'s;--dl:-'+(Math.random()*5)+'s;'
+      +'opacity:'+(0.1+Math.random()*0.4)+';';
+    w.appendChild(s);
+  }}
+}})();
+// Particles
+(function(){{
+  var w=document.getElementById('particles');
+  for(var i=0;i<24;i++){{
+    var d=document.createElement('div');d.className='pdot';
+    d.style.cssText='left:'+Math.random()*100+'%;top:'+(20+Math.random()*80)+'%;'
+      +'--d:'+(5+Math.random()*7)+'s;--dl:-'+(Math.random()*7)+'s;';
+    w.appendChild(d);
+  }}
+}})();
+</script>
+</body>
+</html>
+""", height=300)
+
+    # Google OAuth button via Streamlit markdown
+    try:
+        auth_url = google_auth_url()
+        st.markdown(f"""
+        <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@700&display=swap" rel="stylesheet">
+        <div style="
+            background:rgba(8,18,48,0.82);
+            border:1px solid rgba(99,102,241,0.18);
+            border-radius:20px;
+            padding:26px 24px 22px;
+            backdrop-filter:blur(24px);
+            box-shadow:0 32px 80px rgba(2,6,23,0.8),0 0 0 1px rgba(255,255,255,0.04) inset;
+            position:relative;
+            overflow:hidden;
+            margin-top:-10px;
+        ">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),transparent);"></div>
+          <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(148,163,184,0.55);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Masuk dengan akun Google</div>
+            <div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3),transparent);margin:0 auto;"></div>
+          </div>
+          <a href="{auth_url}" style="
+            display:flex;align-items:center;justify-content:center;gap:12px;
+            background:rgba(255,255,255,0.97);color:#1a1a2e;
+            border-radius:12px;padding:14px 20px;
+            text-decoration:none;
+            font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;letter-spacing:0.06em;
+            box-shadow:0 6px 24px rgba(0,0,0,0.35),0 2px 8px rgba(0,0,0,0.2);
+            transition:all 0.22s;
+          ">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Lanjutkan dengan Google
+          </a>
+          <div style="display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);background:rgba(8,18,48,0.6);">
+              <div style="width:5px;height:5px;border-radius:50%;background:#6366f1;box-shadow:0 0 5px #6366f1;"></div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;color:rgba(148,163,184,0.7);text-transform:uppercase;">AI Powered</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);background:rgba(8,18,48,0.6);">
+              <div style="width:5px;height:5px;border-radius:50%;background:#3b82f6;box-shadow:0 0 5px #3b82f6;"></div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;color:rgba(148,163,184,0.7);text-transform:uppercase;">Real-time Data</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);background:rgba(8,18,48,0.6);">
+              <div style="width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;"></div>
+              <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;color:rgba(148,163,184,0.7);text-transform:uppercase;">Secure System</span>
+            </div>
+          </div>
+        </div>
+        <p style="text-align:center;color:rgba(124,134,162,0.3);font-family:'JetBrains Mono',monospace;
+            font-size:0.58rem;margin-top:16px;line-height:1.8;padding:0 8px;letter-spacing:0.06em;">
+          Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
+          Analisa bersifat <em>do your own research</em> &amp; disclaimer berlaku.
+        </p>
+        """, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Google login error: {e}")
+
+    st.stop()
+
     import streamlit.components.v1 as components
 
     st.markdown(f"""
