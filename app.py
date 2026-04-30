@@ -5574,8 +5574,9 @@ if "code" in st.query_params and st.session_state.user is None:
         saved = load_user(info["email"])
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
-            st.session_state.current_view = saved.get("current_view", "chat")
-            st.session_state.selected_system = saved.get("selected_system", "chat")
+            # Setelah OAuth login segar → selalu tampilkan hub dulu
+            st.session_state.current_view = None
+            st.session_state.selected_system = None
             if saved.get("sessions"):
                 _loaded_s = saved["sessions"]
                 for _s in _loaded_s:
@@ -6505,106 +6506,73 @@ def show_system_selector():
     import streamlit.components.v1 as components
     _user = st.session_state.user
     _name = (_user.get("name") or _user.get("email","")).split()[0] if _user else "Trader"
+    _is_dark = st.session_state.get("theme", "dark") == "dark"
+    _hub_bg   = "#020617" if _is_dark else "#f0f4ff"
+    _card_bg  = "rgba(8,18,48,0.88)" if _is_dark else "rgba(255,255,255,0.92)"
+    _card_border = "rgba(255,255,255,0.07)" if _is_dark else "rgba(99,102,241,0.18)"
+    _text_col = "#e2e8f0" if _is_dark else "#0f172a"
+    _text2    = "#94a3b8" if _is_dark else "#475569"
+    _sub_col  = "rgba(148,163,184,0.65)" if _is_dark else "rgba(71,85,105,0.7)"
+    _footer_col = "rgba(71,85,105,0.6)" if _is_dark else "rgba(71,85,105,0.5)"
+    _pill_bg  = "rgba(8,18,48,0.85)" if _is_dark else "rgba(99,102,241,0.08)"
+    _pill_border = "rgba(99,102,241,0.22)" if _is_dark else "rgba(99,102,241,0.3)"
+    _pill_text = "rgba(165,180,252,0.85)" if _is_dark else "#4f46e5"
+    _cdesc_col = "rgba(226,232,240,0.42)" if _is_dark else "rgba(15,23,42,0.55)"
 
     # ── 1. Sembunyikan semua chrome Streamlit ──────────────────
-    st.markdown("""
+    st.markdown(f"""
     <style>
-    [data-testid="stSidebar"]          { display: none !important; }
-    header[data-testid="stHeader"]     { display: none !important; }
-    #MainMenu, footer                  { display: none !important; }
+    [data-testid="stSidebar"]          {{ display: none !important; }}
+    header[data-testid="stHeader"]     {{ display: none !important; }}
+    #MainMenu, footer                  {{ display: none !important; }}
     .stApp,
     [data-testid="stAppViewContainer"],
     section[data-testid="stMain"],
     [data-testid="stMainBlockContainer"],
     [data-testid="stVerticalBlock"],
-    [data-testid="stBottom"]           { max-width:100% !important;
-                                         padding:0 !important; margin:0 !important; gap:0 !important; }
-    /* Dark mode only background */
-    [data-theme="dark"] .stApp,
-    [data-theme="dark"] [data-testid="stAppViewContainer"],
-    [data-theme="dark"] section[data-testid="stMain"],
-    [data-theme="dark"] [data-testid="stMainBlockContainer"],
-    [data-theme="dark"] [data-testid="stVerticalBlock"],
-    [data-theme="dark"] [data-testid="stBottom"] { background: #020617 !important; }
+    [data-testid="stBottom"]           {{ background: {_hub_bg} !important;
+                                         max-width:100% !important;
+                                         padding:0 !important; margin:0 !important; gap:0 !important; }}
     /* sembunyikan wrapper button Streamlit yg jadi spacer */
-    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div { gap:0 !important; }
+    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div {{ gap:0 !important; }}
     /* Tombol navigasi — visible, styled, di bawah card */
-    div[data-testid="stMainBlockContainer"] .stButton > button {
+    div[data-testid="stMainBlockContainer"] .stButton > button {{
         display: flex !important;
-    }
+    }}
     </style>
     """, unsafe_allow_html=True)
 
     # ── 2. Inject background + stars ke parent frame ───────────
-    components.html("""<script>
-(function(){
+    components.html(f"""<script>
+(function(){{
   var pd = window.parent.document;
-  /* scroll top */
-  try { window.parent.scrollTo({top:0,behavior:'instant'}); } catch(e){}
+  try {{ window.parent.scrollTo({{top:0,behavior:'instant'}}); }} catch(e){{}}
 
-  /* Only inject dark background if NOT light mode */
-  var isLight = pd.documentElement.getAttribute('data-theme') === 'light' ||
-                pd.body.classList.contains('light') ||
-                (window.parent.matchMedia && window.parent.matchMedia('(prefers-color-scheme: light)').matches &&
-                 pd.documentElement.getAttribute('data-theme') !== 'dark');
+  /* Background — pakai warna dari Python (sudah tahu tema) */
+  var existBg = pd.getElementById('sigma-hub-bg');
+  if (existBg) existBg.remove();
+  var s = pd.createElement('style');
+  s.id = 'sigma-hub-bg';
+  s.textContent = `.stApp, [data-testid="stAppViewContainer"] {{
+    background: {_hub_bg} !important;
+    position: relative;
+  }}` + {'`' + """.stApp::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(99,102,241,0.10) 0%, transparent 55%),
+      radial-gradient(ellipse 55% 40% at 88% 95%, rgba(16,185,129,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 35% at  8% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
+  }""" + '`' if _is_dark else '""'};
+  pd.head.appendChild(s);
 
-  /* background */
-  if (!pd.getElementById('sigma-hub-bg')) {
-    var s = pd.createElement('style');
-    s.id = 'sigma-hub-bg';
-    s.textContent = `
-      [data-theme="dark"] .stApp, [data-theme="dark"] [data-testid="stAppViewContainer"],
-      .stApp:not([data-theme="light"]) { 
-        background: #020617 !important;
-        position: relative;
-      }
-      [data-theme="dark"] .stApp::before,
-      .stApp:not([data-theme="light"])::before {
-        content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-        background:
-          radial-gradient(ellipse 90% 55% at 50% -8%, rgba(99,102,241,0.10) 0%, transparent 55%),
-          radial-gradient(ellipse 55% 40% at 88% 95%, rgba(16,185,129,0.05) 0%, transparent 50%),
-          radial-gradient(ellipse 40% 35% at  8% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
-      }
-    `;
-    pd.head.appendChild(s);
-  }
-
-  /* starfield — dark mode only */
-  if (!isLight && !pd.getElementById('sigma-hub-stars')) {
-    var sw = pd.createElement('div');
-    sw.id = 'sigma-hub-stars';
-    sw.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;';
-    for (var i=0; i<100; i++) {
-      var star = pd.createElement('div');
-      var sz   = 0.6 + Math.random()*1.4;
-      var dur  = 2.5 + Math.random()*5;
-      var del  = -(Math.random()*6);
-      star.style.cssText =
-        'position:absolute;border-radius:50%;' +
-        'background:rgba(255,255,255,0.85);' +
-        'left:' + Math.random()*100 + '%;' +
-        'top:'  + Math.random()*100 + '%;' +
-        'width:' + sz + 'px;height:' + sz + 'px;' +
-        'opacity:' + (0.1+Math.random()*0.5) + ';' +
-        'animation:sigTwinkle ' + dur + 's ease-in-out infinite ' + del + 's;';
-      sw.appendChild(star);
-    }
-    if (!pd.getElementById('sigma-star-css')) {
-      var sc = pd.createElement('style');
-      sc.id  = 'sigma-star-css';
-      sc.textContent = '@keyframes sigTwinkle{0%,100%{opacity:0.1;transform:scale(1);}50%{opacity:0.9;transform:scale(1.5);}}';
-      pd.head.appendChild(sc);
-    }
-    pd.body.appendChild(sw);
-  } else if (isLight) {
-    /* remove stars if switching to light */
-    var existStars = pd.getElementById('sigma-hub-stars');
-    if (existStars) existStars.remove();
-  }
-
-  /* beam dihapus — tidak ada garis tipis di background */
-})();
+  /* Starfield — dark mode only */
+  var existStars = pd.getElementById('sigma-hub-stars');
+  if (existStars) existStars.remove();
+  {'var sw = pd.createElement("div"); sw.id = "sigma-hub-stars";' if _is_dark else '// no stars in light mode'}
+  {'sw.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;";' if _is_dark else ''}
+  {'for(var i=0;i<100;i++){var star=pd.createElement("div");var sz=0.6+Math.random()*1.4;var dur=2.5+Math.random()*5;var del=-(Math.random()*6);star.style.cssText="position:absolute;border-radius:50%;background:rgba(255,255,255,0.85);left:"+Math.random()*100+"%;top:"+Math.random()*100+"%;width:"+sz+"px;height:"+sz+"px;opacity:"+(0.1+Math.random()*0.5)+";animation:sigTwinkle "+dur+"s ease-in-out infinite "+del+"s;";sw.appendChild(star);}' if _is_dark else ''}
+  {'''if (!pd.getElementById('sigma-star-css')) { var sc = pd.createElement('style'); sc.id='sigma-star-css'; sc.textContent='@keyframes sigTwinkle{0%,100%{opacity:0.1;transform:scale(1);}50%{opacity:0.9;transform:scale(1.5);}}'; pd.head.appendChild(sc); } pd.body.appendChild(sw);''' if _is_dark else ''}
+}})();
 </script>""", height=0)
 
     # ── 3. Render Command Hub HTML (visual only, no nav) ───────
@@ -6622,7 +6590,7 @@ def show_system_selector():
   --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
   --fd:'Rajdhani',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;--fu:'Syne',sans-serif;
 }}
-html,body{{background:transparent;font-family:var(--fb);color:var(--text);overflow-x:hidden;margin:0;padding:0;}}
+html,body{{background:transparent;font-family:var(--fb);color:{_text_col};overflow-x:hidden;margin:0;padding:0;}}
 /* ── Header ── */
 .wrap{{display:flex;flex-direction:column;align-items:center;padding:40px 20px 10px;}}
 .eyebrow{{font-family:var(--fm);font-size:0.62rem;letter-spacing:0.28em;text-transform:uppercase;
@@ -6630,12 +6598,12 @@ html,body{{background:transparent;font-family:var(--fb);color:var(--text);overfl
 .eyebrow::before,.eyebrow::after{{content:'';flex:1;max-width:70px;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.45));}}
 .eyebrow::after{{background:linear-gradient(90deg,rgba(99,102,241,0.45),transparent);}}
 .title{{font-family:var(--fd);font-size:clamp(2.2rem,6vw,3.6rem);font-weight:700;letter-spacing:0.14em;
-  background:linear-gradient(135deg,#f1f5f9 0%,#c7d2fe 40%,#67e8f9 100%);
+  background:{'linear-gradient(135deg,#f1f5f9 0%,#c7d2fe 40%,#67e8f9 100%)' if _is_dark else 'linear-gradient(135deg,#1e1b4b 0%,#4f46e5 40%,#0891b2 100%)'};
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.05;text-align:center;}}
-.sub{{font-family:var(--fm);font-size:0.72rem;color:rgba(148,163,184,0.65);letter-spacing:0.1em;margin-top:8px;text-align:center;}}
+.sub{{font-family:var(--fm);font-size:0.72rem;color:{_sub_col};letter-spacing:0.1em;margin-top:8px;text-align:center;}}
 .userpill{{display:inline-flex;align-items:center;gap:8px;margin-top:16px;
-  background:rgba(8,18,48,0.85);border:1px solid rgba(99,102,241,0.22);border-radius:50px;padding:7px 18px;
-  font-family:var(--fm);font-size:0.68rem;color:rgba(165,180,252,0.85);}}
+  background:{_pill_bg};border:1px solid {_pill_border};border-radius:50px;padding:7px 18px;
+  font-family:var(--fm);font-size:0.68rem;color:{_pill_text};}}
 .udot{{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 8px var(--emerald);
   animation:udot 2s ease-in-out infinite;display:inline-block;}}
 @keyframes udot{{0%,100%{{opacity:0.7;transform:scale(1);}}50%{{opacity:1;transform:scale(1.3);}}}}
@@ -6647,7 +6615,7 @@ html,body{{background:transparent;font-family:var(--fb);color:var(--text);overfl
 /* ── Grid ── */
 .grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;width:100%;max-width:940px;}}
 /* ── Card ── */
-.card{{background:rgba(8,18,48,0.88);border:1px solid rgba(255,255,255,0.07);border-radius:22px;
+.card{{background:{_card_bg};border:1px solid {_card_border};border-radius:22px;
   padding:30px 26px 20px;position:relative;overflow:hidden;
   backdrop-filter:blur(16px);animation:rise 0.5s ease both;}}
 .card:nth-child(1){{animation-delay:0.05s;}}
@@ -6728,15 +6696,15 @@ html,body{{background:transparent;font-family:var(--fb);color:var(--text);overfl
   border:1px solid rgba(245,158,11,0.28);border-radius:7px;padding:2px 7px;
   font-family:var(--fm);font-size:0.5rem;letter-spacing:0.1em;white-space:nowrap;}}
 /* Card text */
-.cname{{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:var(--text);letter-spacing:0.06em;margin-bottom:4px;}}
+.cname{{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:{_text_col};letter-spacing:0.06em;margin-bottom:4px;}}
 .ctag{{font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;font-weight:500;}}
 .c-ai   .ctag{{color:rgba(96,165,250,0.75);}}
 .c-term .ctag{{color:rgba(196,181,253,0.75);}}
 .c-kipm .ctag{{color:rgba(16,185,129,0.6);}}
-.cdesc{{font-size:0.78rem;color:rgba(226,232,240,0.42);line-height:1.75;margin-bottom:10px;}}
+.cdesc{{font-size:0.78rem;color:{_cdesc_col};line-height:1.75;margin-bottom:10px;}}
 /* Footer inside html */
 .footer-note{{margin-top:10px;font-family:var(--fm);font-size:0.58rem;letter-spacing:0.1em;
-  color:rgba(71,85,105,0.6);text-align:center;padding-bottom:4px;}}
+  color:{_footer_col};text-align:center;padding-bottom:4px;}}
 .footer-note span{{color:rgba(99,102,241,0.5);}}
 /* Mobile */
 @media(max-width:700px){{
