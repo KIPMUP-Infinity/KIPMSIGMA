@@ -6393,20 +6393,11 @@ hr {{ border-color: {C['border']} !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-# ======================================================
-# SIGMA UI UPGRADE PATCH v2.0 — Deep Space Visual Theme
-# ======================================================
-_sigma_css_upgrade = '/*\n * SIGMA TERMINAL ? UI UPGRADE PATCH v2.0\n * Deep Space Cyberpunk ? Bloomberg Terminal\n * Inject ini ke dalam st.markdown() CSS block yang sudah ada\n * (tambahkan di DALAM blok CSS di baris ~6315 app__57_.py)\n *\n * Cara integrasi:\n * Cari blok `st.markdown(f"""<style>` di baris 6315\n * Tambahkan CSS di bawah ini SETELAH baris `footer, #MainMenu { visibility: hidden !important; }`\n */\n\n/* ===\n   SIGMA UI UPGRADE ? GLOBAL IMPORTS & CSS VARIABLES\n   === */\n/* ===\n   GLOBAL BASE ? Deep Space Background\n   === */\n.stApp,\n[data-testid="stAppViewContainer"],\nsection[data-testid="stMain"],\n[data-testid="stMainBlockContainer"] {\n  background: #020617 !important;\n  font-family: Outfit,sans-serif !important;\n}\n\n/* Starfield subtle overlay */\n.stApp::before {\n  content: \'\';\n  position: fixed;\n  inset: 0;\n  background:\n    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.08) 0%, transparent 60%),\n    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(16,185,129,0.04) 0%, transparent 50%),\n    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(59,130,246,0.04) 0%, transparent 50%);\n  pointer-events: none;\n  z-index: 0;\n}\n\n/* ===\n   SIDEBAR ? Futuristic Navigation Panel\n   === */\nsection[data-testid="stSidebar"],\nsection[data-testid="stSidebar"] > div,\n[data-testid="stSidebarContent"],\n[data-testid="stSidebarUserContent"] {\n  background: rgba(3, 5, 15, 0.97) !important;\n  border-right: 1px solid rgba(99,102,241,0.15) !important;\n  backdrop-filter: blur(20px) !important;\n}\n\nsection[data-testid="stSidebar"]::after {\n  content: \'\';\n  position: absolute;\n  top: 0;\n  right: 0;\n  width: 1px;\n  height: 100%;\n  background: linear-gradient(180deg,\n    transparent 0%,\n    rgba(99,102,241,0.4) 20%,\n    rgba(59,130,246,0.4) 50%,\n    rgba(16,185,129,0.3) 80%,\n    transparent 100%\n  );\n  pointer-events: none;\n}\n\nsection[data-testid="stSidebar"] .stButton > button {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.82rem !important;\n  font-weight: 500 !important;\n  letter-spacing: 0.03em !important;\n  color: rgba(226,232,240,0.75) !important;\n  border-left: 2px solid transparent !important;\n  border-radius: 0 8px 8px 0 !important;\n  transition: all 0.2s cubic-bezier(0.4,0,0.2,1) !important;\n  padding: 8px 14px 8px 16px !important;\n  margin-bottom: 1px !important;\n}\n\nsection[data-testid="stSidebar"] .stButton > button:hover {\n  background: linear-gradient(90deg, rgba(99,102,241,0.12), rgba(59,130,246,0.08)) !important;\n  border-left-color: rgba(99,102,241,0.7) !important;\n  color: #a5b4fc !important;\n  box-shadow: inset 0 0 20px rgba(99,102,241,0.05) !important;\n}\n\n/* ===\n   METRICS ? Glassmorphism Cards\n   === */\n[data-testid="stMetric"] {\n  background: rgba(8,14,35,0.85) !important;\n  border: 1px solid var(--sigma-border) !important;\n  border-radius: 14px !important;\n  padding: 14px 16px 12px !important;\n  backdrop-filter: blur(12px) !important;\n  position: relative !important;\n  overflow: hidden !important;\n  transition: border-color 0.25s, box-shadow 0.25s !important;\n}\n\n[data-testid="stMetric"]::before {\n  content: \'\';\n  position: absolute;\n  top: 0; left: 0; right: 0;\n  height: 1px;\n  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.5), rgba(59,130,246,0.5), transparent);\n  opacity: 0.8;\n}\n\n[data-testid="stMetric"]::after {\n  content: \'\';\n  position: absolute;\n  top: 0; left: 0;\n  width: 3px; height: 100%;\n  background: linear-gradient(180deg, #6366f1, #3b82f6);\n  opacity: 0.6;\n}\n\n[data-testid="stMetric"]:hover {\n  border-color: rgba(99,102,241,0.45) !important;\n  box-shadow: 0 0 0 1px rgba(99,102,241,0.2), 0 8px 32px rgba(99,102,241,0.12) !important;\n}\n\n[data-testid="stMetricValue"] {\n  font-family: JetBrains Mono,monospace !important;\n  font-size: 1.4rem !important;\n  font-weight: 700 !important;\n  color: #e2e8f0 !important;\n  letter-spacing: -0.02em !important;\n}\n\n[data-testid="stMetricLabel"] {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.65rem !important;\n  font-weight: 700 !important;\n  letter-spacing: 0.15em !important;\n  text-transform: uppercase !important;\n  color: #7c86a2 !important;\n}\n\n/* ===\n   TABS ? Futuristic Pill Navigation\n   === */\n[data-testid="stTabs"] [role="tablist"] {\n  background: rgba(8, 14, 35, 0.92) !important;\n  border: 1px solid rgba(99,102,241,0.2) !important;\n  border-radius: 50px !important;\n  padding: 3px 5px !important;\n  gap: 2px !important;\n  overflow-x: auto !important;\n  scrollbar-width: none !important;\n}\n\n[data-testid="stTabs"] button[role="tab"] {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.7rem !important;\n  font-weight: 600 !important;\n  letter-spacing: 0.1em !important;\n  text-transform: uppercase !important;\n  border-radius: 50px !important;\n  color: rgba(124,134,162,0.9) !important;\n  padding: 6px 15px !important;\n  border: none !important;\n  transition: all 0.2s !important;\n  white-space: nowrap !important;\n}\n\n[data-testid="stTabs"] button[role="tab"]:hover {\n  color: #a5b4fc !important;\n  background: rgba(99,102,241,0.12) !important;\n}\n\n[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {\n  background: linear-gradient(135deg, #6366f1, #3b82f6) !important;\n  color: #ffffff !important;\n  font-weight: 700 !important;\n  box-shadow: 0 4px 20px rgba(99,102,241,0.45), 0 0 0 1px rgba(99,102,241,0.3) !important;\n  letter-spacing: 0.12em !important;\n}\n\n/* ===\n   DATAFRAME / TABLES ? Terminal Style\n   === */\n[data-testid="stDataFrame"] > div {\n  background: rgba(8,14,35,0.85) !important;\n  border: 1px solid var(--sigma-border) !important;\n  border-radius: 12px !important;\n  overflow: hidden !important;\n  backdrop-filter: blur(8px) !important;\n}\n\n[data-testid="stDataFrame"] table {\n  font-family: JetBrains Mono,monospace !important;\n  font-size: 0.8rem !important;\n}\n\n[data-testid="stDataFrame"] th {\n  background: rgba(99,102,241,0.08) !important;\n  color: #a78bfa !important;\n  font-size: 0.68rem !important;\n  letter-spacing: 0.12em !important;\n  text-transform: uppercase !important;\n  border-bottom: 1px solid rgba(99,102,241,0.2) !important;\n  padding: 10px 12px !important;\n}\n\n[data-testid="stDataFrame"] td {\n  border-bottom: 1px solid rgba(99,102,241,0.07) !important;\n  padding: 8px 12px !important;\n  color: #e2e8f0 !important;\n}\n\n[data-testid="stDataFrame"] tr:hover td {\n  background: rgba(99,102,241,0.05) !important;\n}\n\n/* ===\n   BUTTONS ? Neon Glow CTAs\n   === */\n.stButton > button {\n  font-family: Outfit,sans-serif !important;\n  font-weight: 700 !important;\n  font-size: 0.78rem !important;\n  letter-spacing: 0.1em !important;\n  text-transform: uppercase !important;\n  border-radius: 8px !important;\n  transition: all 0.2s cubic-bezier(0.4,0,0.2,1) !important;\n}\n\n/* Primary buttons */\n.stButton > button[kind="primary"],\n.stButton > button[data-testid*="primary"] {\n  background: linear-gradient(135deg, #6366f1, #3b82f6) !important;\n  border: none !important;\n  color: #ffffff !important;\n  box-shadow: 0 4px 20px rgba(99,102,241,0.35) !important;\n}\n\n.stButton > button[kind="primary"]:hover {\n  transform: translateY(-1px) !important;\n  box-shadow: 0 8px 28px rgba(99,102,241,0.5) !important;\n}\n\n/* Secondary buttons */\n.stButton > button[kind="secondary"] {\n  background: rgba(99,102,241,0.08) !important;\n  border: 1px solid rgba(99,102,241,0.3) !important;\n  color: #a5b4fc !important;\n}\n\n.stButton > button[kind="secondary"]:hover {\n  background: rgba(99,102,241,0.15) !important;\n  border-color: rgba(99,102,241,0.6) !important;\n  box-shadow: 0 0 16px rgba(99,102,241,0.2) !important;\n}\n\n/* ===\n   INPUTS & SELECT ? Terminal Style\n   === */\n[data-testid="stTextInput"] input,\n[data-testid="stNumberInput"] input,\n[data-testid="stSelectbox"] select,\n.stSelectbox [data-baseweb="select"] {\n  background: rgba(8, 14, 35, 0.9) !important;\n  border: 1px solid rgba(99,102,241,0.22) !important;\n  border-radius: 8px !important;\n  color: #e2e8f0 !important;\n  font-family: JetBrains Mono,monospace !important;\n  font-size: 0.85rem !important;\n  transition: border-color 0.2s, box-shadow 0.2s !important;\n}\n\n[data-testid="stTextInput"] input:focus,\n[data-testid="stNumberInput"] input:focus {\n  border-color: rgba(99,102,241,0.6) !important;\n  box-shadow: 0 0 0 2px rgba(99,102,241,0.12), 0 0 12px rgba(99,102,241,0.1) !important;\n  outline: none !important;\n}\n\n[data-testid="stTextInput"] label,\n[data-testid="stNumberInput"] label,\n[data-testid="stSelectbox"] label {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.68rem !important;\n  font-weight: 700 !important;\n  letter-spacing: 0.12em !important;\n  text-transform: uppercase !important;\n  color: #7c86a2 !important;\n}\n\n/* ===\n   EXPANDERS ? Collapsible Panels\n   === */\n[data-testid="stExpander"] {\n  background: rgba(8,14,35,0.85) !important;\n  border: 1px solid var(--sigma-border) !important;\n  border-radius: 12px !important;\n  overflow: hidden !important;\n  backdrop-filter: blur(8px) !important;\n  margin-bottom: 8px !important;\n}\n\n[data-testid="stExpander"] summary {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.78rem !important;\n  font-weight: 700 !important;\n  letter-spacing: 0.08em !important;\n  text-transform: uppercase !important;\n  color: #a5b4fc !important;\n  padding: 12px 16px !important;\n  transition: background 0.2s !important;\n}\n\n[data-testid="stExpander"] summary:hover {\n  background: rgba(99,102,241,0.06) !important;\n}\n\n/* ===\n   COLUMNS CONTAINERS ? Grid Layout Glow\n   === */\n[data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {\n  transition: all 0.2s !important;\n}\n\n/* ===\n   SCROLLBARS ? Custom Neon Style\n   === */\n::-webkit-scrollbar {\n  width: 5px !important;\n  height: 5px !important;\n}\n::-webkit-scrollbar-track {\n  background: rgba(8, 14, 35, 0.5) !important;\n}\n::-webkit-scrollbar-thumb {\n  background: rgba(99,102,241,0.35) !important;\n  border-radius: 3px !important;\n}\n::-webkit-scrollbar-thumb:hover {\n  background: rgba(99,102,241,0.6) !important;\n}\n\n/* ===\n   CONTAINERS / BORDERS ? Glassmorphism Panels\n   === */\n[data-testid="stContainer"] > div {\n  background: rgba(8, 14, 35, 0.6) !important;\n  border: 1px solid rgba(99,102,241,0.15) !important;\n  border-radius: 14px !important;\n  backdrop-filter: blur(8px) !important;\n}\n\n/* ===\n   SIGMA SCORE BADGE ENHANCEMENTS ? Dynamic Glow\n   === */\ndiv[style*="STRONG BUY"],\ndiv[style*="strong-buy"] {\n  animation: sigma-pulse-green 3s ease-in-out infinite !important;\n}\n\n@keyframes sigma-pulse-green {\n  0%, 100% { box-shadow: 0 0 15px rgba(0,200,83,0.15); }\n  50%       { box-shadow: 0 0 25px rgba(0,200,83,0.3); }\n}\n\n/* ===\n   TOP TICKER BAR ? Futuristic Marquee\n   === */\n.trm-ticker-wrap {\n  background: rgba(3, 5, 15, 0.95) !important;\n  border-top: 1px solid rgba(99,102,241,0.12) !important;\n  border-bottom: 1px solid rgba(99,102,241,0.12) !important;\n  position: relative !important;\n}\n\n.trm-ticker-wrap::before {\n  content: \'\';\n  position: absolute;\n  top: 0; left: 0; right: 0;\n  height: 1px;\n  background: linear-gradient(90deg,\n    transparent 0%,\n    rgba(99,102,241,0.5) 30%,\n    rgba(59,130,246,0.5) 70%,\n    transparent 100%\n  );\n}\n\n/* ===\n   SECTION LABELS ? Neon Dividers\n   === */\n.trm-section-label {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.62rem !important;\n  font-weight: 800 !important;\n  letter-spacing: 0.2em !important;\n  text-transform: uppercase !important;\n  color: #a78bfa !important;\n  background: rgba(139,92,246,0.1) !important;\n  border: 1px solid rgba(139,92,246,0.3) !important;\n  border-radius: 50px !important;\n  padding: 3px 14px !important;\n  box-shadow: 0 0 10px rgba(139,92,246,0.08) !important;\n}\n\n.trm-section-line {\n  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.25), transparent) !important;\n}\n\n/* ===\n   CARDS ? Dark Glass with Neon Edges\n   === */\n.trm-card {\n  background: rgba(8, 14, 35, 0.88) !important;\n  border: 1px solid rgba(99,102,241,0.18) !important;\n  border-radius: 16px !important;\n  padding: 18px 20px !important;\n  position: relative !important;\n  overflow: hidden !important;\n  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s !important;\n  backdrop-filter: blur(12px) !important;\n}\n\n.trm-card::before {\n  content: \'\';\n  position: absolute;\n  top: 0; left: 0; right: 0;\n  height: 1px;\n  background: linear-gradient(90deg,\n    transparent,\n    rgba(99,102,241,0.4),\n    rgba(59,130,246,0.35),\n    transparent\n  );\n}\n\n.trm-card:hover {\n  border-color: rgba(99,102,241,0.4) !important;\n  box-shadow: 0 8px 32px rgba(99,102,241,0.12), 0 0 0 1px rgba(99,102,241,0.15) !important;\n  transform: translateY(-2px) !important;\n}\n\n/* ===\n   INSIGHT BLOCKS ? AI Analysis Style\n   === */\n.trm-insight {\n  background: rgba(139,92,246,0.07) !important;\n  border-left: 3px solid rgba(139,92,246,0.6) !important;\n  border-radius: 0 12px 12px 0 !important;\n  padding: 14px 18px !important;\n  position: relative !important;\n  overflow: hidden !important;\n}\n\n.trm-insight::after {\n  content: \'\';\n  position: absolute;\n  top: -50%;\n  right: -50%;\n  width: 200px;\n  height: 200px;\n  border-radius: 50%;\n  background: radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%);\n  pointer-events: none;\n}\n\n/* ===\n   ALERTS & NOTIFICATIONS ? Glowing Indicators\n   === */\n[data-testid="stAlert"] {\n  border-radius: 12px !important;\n  border: none !important;\n  backdrop-filter: blur(8px) !important;\n}\n\n/* ===\n   HEADER / TOP BAR\n   === */\nheader[data-testid="stHeader"] {\n  background: rgba(2, 6, 23, 0.96) !important;\n  border-bottom: 1px solid rgba(99,102,241,0.12) !important;\n  backdrop-filter: blur(20px) !important;\n}\n\n/* ===\n   MARKDOWN CONTENT ? Enhanced Typography\n   === */\n[data-testid="stMarkdownContainer"] h1,\n[data-testid="stMarkdownContainer"] h2,\n[data-testid="stMarkdownContainer"] h3 {\n  font-family: Rajdhani,sans-serif !important;\n  letter-spacing: 0.03em !important;\n}\n\n[data-testid="stMarkdownContainer"] code {\n  font-family: JetBrains Mono,monospace !important;\n  background: rgba(99,102,241,0.1) !important;\n  border: 1px solid rgba(99,102,241,0.2) !important;\n  border-radius: 4px !important;\n  padding: 1px 6px !important;\n  color: #a5b4fc !important;\n  font-size: 0.85em !important;\n}\n\n[data-testid="stMarkdownContainer"] pre {\n  background: rgba(8, 14, 35, 0.95) !important;\n  border: 1px solid rgba(99,102,241,0.2) !important;\n  border-radius: 10px !important;\n  padding: 14px 18px !important;\n  font-family: JetBrains Mono,monospace !important;\n  position: relative !important;\n}\n\n[data-testid="stMarkdownContainer"] pre::before {\n  content: \'\';\n  position: absolute;\n  top: 0; left: 0; right: 0;\n  height: 1px;\n  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);\n}\n\n/* ===\n   CHAT INPUT ? Enhanced Terminal Feel\n   === */\ndiv[data-testid="stChatInputContainer"] {\n  background: rgba(5, 10, 25, 0.95) !important;\n  border: 1px solid rgba(99,102,241,0.22) !important;\n  border-radius: 14px !important;\n  box-shadow: 0 0 0 1px rgba(99,102,241,0.08), 0 -4px 20px rgba(2,6,23,0.8) !important;\n  transition: border-color 0.2s, box-shadow 0.2s !important;\n}\n\ndiv[data-testid="stChatInputContainer"]:focus-within {\n  border-color: rgba(99,102,241,0.5) !important;\n  box-shadow: 0 0 0 1px rgba(99,102,241,0.2), 0 0 20px rgba(99,102,241,0.1) !important;\n}\n\n/* ===\n   ANIMATED GRADIENT BORDERS ? Premium Panels\n   === */\n@keyframes sigma-border-flow {\n  0%   { background-position: 0% 50%; }\n  50%  { background-position: 100% 50%; }\n  100% { background-position: 0% 50%; }\n}\n\n.sigma-premium-border {\n  background: linear-gradient(90deg, #6366f1, #3b82f6, #10b981, #6366f1);\n  background-size: 300% 100%;\n  animation: sigma-border-flow 4s ease infinite;\n  border-radius: 15px;\n  padding: 1px;\n}\n\n.sigma-premium-border > div {\n  background: #020617;\n  border-radius: 14px;\n}\n\n/* ===\n   SIGMA SCORE CIRCULAR GAUGE ENHANCEMENTS\n   === */\n.sigma-gauge-container {\n  position: relative;\n  display: inline-block;\n}\n\n.sigma-gauge-container::after {\n  content: \'\';\n  position: absolute;\n  inset: -8px;\n  border-radius: 50%;\n  background: radial-gradient(circle, rgba(0,200,83,0.12) 0%, transparent 70%);\n  animation: sigma-gauge-pulse 2.5s ease-in-out infinite;\n  pointer-events: none;\n}\n\n@keyframes sigma-gauge-pulse {\n  0%, 100% { opacity: 0.5; transform: scale(1); }\n  50%       { opacity: 1; transform: scale(1.05); }\n}\n\n/* ===\n   SELECTBOX DROPDOWN\n   === */\n[data-baseweb="select"] {\n  background: rgba(8, 14, 35, 0.9) !important;\n}\n\n[data-baseweb="select"] > div {\n  background: rgba(8, 14, 35, 0.9) !important;\n  border: 1px solid rgba(99,102,241,0.22) !important;\n  border-radius: 8px !important;\n  color: #e2e8f0 !important;\n  font-family: Outfit,sans-serif !important;\n  transition: border-color 0.2s !important;\n}\n\n[data-baseweb="select"] > div:hover,\n[data-baseweb="select"] > div:focus-within {\n  border-color: rgba(99,102,241,0.5) !important;\n  box-shadow: 0 0 0 2px rgba(99,102,241,0.1) !important;\n}\n\n[data-baseweb="popover"] {\n  background: rgba(5, 10, 25, 0.98) !important;\n  border: 1px solid rgba(99,102,241,0.22) !important;\n  border-radius: 10px !important;\n  backdrop-filter: blur(20px) !important;\n  box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;\n}\n\n[role="option"] {\n  font-family: Outfit,sans-serif !important;\n  color: #e2e8f0 !important;\n  font-size: 0.85rem !important;\n  transition: background 0.15s !important;\n}\n\n[role="option"]:hover,\n[aria-selected="true"][role="option"] {\n  background: rgba(99,102,241,0.12) !important;\n  color: #a5b4fc !important;\n}\n\n/* ===\n   LOADING SPINNER\n   === */\n[data-testid="stSpinner"] {\n  background: rgba(8, 14, 35, 0.9) !important;\n  border: 1px solid rgba(99,102,241,0.2) !important;\n  border-radius: 12px !important;\n}\n\n/* ===\n   SIDEBAR LOGO AREA ? SIGMA Branding\n   === */\n#sigma-desktop-brand {\n  font-family: \'Rajdhani\', sans-serif !important;\n  font-size: 1.35rem !important;\n  font-weight: 700 !important;\n  letter-spacing: 0.15em !important;\n  background: linear-gradient(135deg, #a5b4fc, #3b82f6) !important;\n  -webkit-background-clip: text !important;\n  -webkit-text-fill-color: transparent !important;\n  background-clip: text !important;\n  text-shadow: none !important;\n}\n\n/* ===\n   MOBILE RESPONSIVE ENHANCEMENTS\n   === */\n@media (max-width: 768px) {\n  [data-testid="stMetric"] {\n    padding: 12px 14px 10px !important;\n    border-radius: 10px !important;\n  }\n\n  [data-testid="stMetricValue"] {\n    font-size: 1.2rem !important;\n  }\n\n  .trm-card {\n    padding: 14px 16px !important;\n    border-radius: 12px !important;\n  }\n\n  [data-testid="stTabs"] button[role="tab"] {\n    font-size: 0.62rem !important;\n    padding: 5px 11px !important;\n  }\n}\n\n/* ===\n   SPECIAL: FLOATING CARDS HOVER DEPTH\n   === */\n[data-testid="stContainer"][border="true"] > div {\n  background: rgba(8, 14, 35, 0.85) !important;\n  border: 1px solid rgba(99,102,241,0.2) !important;\n  border-radius: 16px !important;\n  backdrop-filter: blur(12px) !important;\n  box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;\n  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s !important;\n}\n\n[data-testid="stContainer"][border="true"] > div:hover {\n  border-color: rgba(99,102,241,0.35) !important;\n  box-shadow: 0 8px 32px rgba(99,102,241,0.1), 0 0 0 1px rgba(99,102,241,0.12) !important;\n  transform: translateY(-1px) !important;\n}\n\n/* ===\n   RADIO BUTTONS ? Neon Style\n   === */\n[data-testid="stRadio"] label {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.82rem !important;\n  color: #7c86a2 !important;\n  transition: color 0.2s !important;\n}\n\n[data-testid="stRadio"] label:hover {\n  color: #a5b4fc !important;\n}\n\n/* ===\n   CHECKBOXES ? Terminal Style\n   === */\n[data-testid="stCheckbox"] label span[data-testid="stMarkdownContainer"] p {\n  font-family: Outfit,sans-serif !important;\n  font-size: 0.82rem !important;\n  color: #7c86a2 !important;\n}\n\n/* ===\n   DIVIDERS\n   === */\nhr {\n  border: none !important;\n  height: 1px !important;\n  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.25), transparent) !important;\n  margin: 16px 0 !important;\n}\n\n/* ===\n   PROGRESS BARS\n   === */\n[data-testid="stProgress"] > div > div {\n  background: rgba(8, 14, 35, 0.8) !important;\n  border-radius: 50px !important;\n  border: 1px solid rgba(99,102,241,0.15) !important;\n  overflow: hidden !important;\n}\n\n[data-testid="stProgress"] > div > div > div {\n  background: linear-gradient(90deg, #6366f1, #3b82f6) !important;\n  border-radius: 50px !important;\n  box-shadow: 0 0 10px rgba(99,102,241,0.4) !important;\n}\n\n/* ===\n   FINAL: UTILITY CLASSES for HTML inject via st.markdown\n   === */\n\n/* Sigma Glow Text */\n.sigma-glow-text-blue  { color: #3b82f6; text-shadow: 0 0 12px rgba(59,130,246,0.5); }\n.sigma-glow-text-green { color: #10b981; text-shadow: 0 0 12px rgba(16,185,129,0.5); }\n.sigma-glow-text-red   { color: #f23645; text-shadow: 0 0 12px rgba(242,54,69,0.4); }\n.sigma-glow-text-purple{ color: #a78bfa; text-shadow: 0 0 12px rgba(167,139,250,0.4); }\n\n/* Sigma Panel */\n.sigma-panel {\n  background: rgba(8, 14, 35, 0.88);\n  border: 1px solid rgba(99,102,241,0.18);\n  border-radius: 14px;\n  padding: 16px 18px;\n  position: relative;\n  overflow: hidden;\n  backdrop-filter: blur(10px);\n}\n\n.sigma-panel::before {\n  content: \'\';\n  position: absolute;\n  top: 0; left: 0; right: 0;\n  height: 1px;\n  background: linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent);\n}\n\n/* Sigma Badge */\n.sigma-badge-buy   { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.35); border-radius: 6px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; }\n.sigma-badge-sell  { background: rgba(242,54,69,0.12);  color: #f23645; border: 1px solid rgba(242,54,69,0.3);  border-radius: 6px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; }\n.sigma-badge-watch { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; }\n'
-st.markdown(
-    """<style>\n@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');\n""" + _sigma_css_upgrade + "</style>",
-    unsafe_allow_html=True
-)
-
-
 def show_system_selector():
-    """Halaman promosi pemilihan sistem - upgraded terminal card."""
+    """SIGMA v3.0 - Premium Command Hub UI"""
     _user = st.session_state.user
     _name = (_user.get("name") or _user.get("email","")).split()[0] if _user else "Trader"
+    _terminal_url = st.secrets.get("SIGMA_TERMINAL_URL", "")
 
     st.markdown("""
     <style>
@@ -6416,7 +6407,7 @@ def show_system_selector():
     footer { display: none !important; }
     .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"],
     [data-testid="stMainBlockContainer"] {
-        background: #080c14 !important;
+        background: #020617 !important;
         max-width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -6424,571 +6415,443 @@ def show_system_selector():
     [data-testid="stVerticalBlock"] { gap: 0 !important; }
     [data-testid="stHorizontalBlock"] {
         position: fixed !important; bottom: -300px !important;
-        opacity: 0 !important; height: 1px !important; width: 1px !important; overflow: hidden !important; z-index: -999 !important;
+        opacity: 0 !important; height: 1px !important; width: 1px !important;
+        overflow: hidden !important; z-index: -999 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # ── FIX SCROLL: Paksa scroll ke atas setiap kali halaman ini dirender ──
-    components.html("""
-<script>
+    components.html("""<script>
 (function() {
-    // Scroll parent window to top immediately
     try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {}
-    try { window.parent.document.documentElement.scrollTop = 0; } catch(e) {}
-    try { window.parent.document.body.scrollTop = 0; } catch(e) {}
-    // Also scroll after a tiny delay in case Streamlit re-renders
-    setTimeout(function() {
-        try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {}
-        try { window.parent.document.documentElement.scrollTop = 0; } catch(e) {}
-    }, 100);
-    setTimeout(function() {
-        try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {}
-    }, 400);
+    setTimeout(function() { try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {} }, 200);
 })();
-</script>
-""", height=0)
+</script>""", height=0)
 
-    _terminal_url = st.secrets.get("SIGMA_TERMINAL_URL", "")
-
-    components.html(f"""
-<!DOCTYPE html>
+    components.html(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-* {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }}
-body {{ background: #080c14; }}
+*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;}}
+body{{
+  background:#020617;
+  font-family:'Outfit',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}}
+body::before{{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -5%, rgba(99,102,241,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 95%, rgba(16,185,129,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 35% at 5% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
+}}
+/* Starfield */
+.stars{{
+  position:fixed;inset:0;pointer-events:none;overflow:hidden;
+}}
+.star{{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:rgba(255,255,255,0.7);
+  animation:twinkle var(--d,3s) ease-in-out infinite;
+  animation-delay:var(--delay,0s);
+}}
+@keyframes twinkle{{0%,100%{{opacity:0.2;transform:scale(1);}}50%{{opacity:1;transform:scale(1.4);}}}}
 
-.sys-wrapper {{
-    min-height: 100vh; background: #080c14;
-    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-    padding: 24px 20px 40px; position: relative; overflow: hidden;
-}}
-.sys-wrapper::before {{
-    content: ''; position: absolute; inset: 0;
-    background-image: linear-gradient(rgba(0,157,255,0.06) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(0,157,255,0.06) 1px, transparent 1px);
-    background-size: 60px 60px;
-    animation: gridPulse 8s ease-in-out infinite; pointer-events: none;
-}}
-@keyframes gridPulse {{ 0%,100% {{ opacity:0.4; }} 50% {{ opacity:1; }} }}
-.orb {{
-    position: absolute; width: 600px; height: 600px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(0,100,255,0.12) 0%, transparent 70%);
-    top: -150px; left: -100px; pointer-events: none;
-    animation: orbFloat 12s ease-in-out infinite;
-}}
-.orb2 {{
-    position: absolute; width: 400px; height: 400px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(124,58,237,0.07) 0%, transparent 70%);
-    bottom: -100px; right: -80px; pointer-events: none;
-    animation: orbFloat 15s ease-in-out infinite reverse;
-}}
-@keyframes orbFloat {{ 0%,100% {{ transform:translate(0,0); }} 50% {{ transform:translate(60px,40px); }} }}
-
-.sys-header {{ text-align:center; margin-bottom:28px; position:relative; z-index:2; }}
-.sys-welcome {{ font-size:0.8rem; letter-spacing:4px; color:rgba(0,157,255,0.7); text-transform:uppercase; margin-bottom:10px; }}
-.sys-title {{ font-size:2.8rem; font-weight:700; color:#fff; letter-spacing:2px; line-height:1.1; margin-bottom:6px; }}
-.sys-title span {{ color:#a78bfa; }}
-.sys-subtitle {{ font-size:0.875rem; color:rgba(255,255,255,0.35); letter-spacing:1px; }}
-.sys-divider {{ width:60px; height:2px; background:linear-gradient(90deg,transparent,#009dff,transparent); margin:14px auto 0; animation:shimmer 2.5s ease-in-out infinite; }}
-@keyframes shimmer {{ 0%,100% {{ opacity:0.4; width:40px; }} 50% {{ opacity:1; width:80px; }} }}
-
-.sys-cards {{ display:flex; gap:20px; flex-wrap:wrap; justify-content:center; position:relative; z-index:2; max-width:1280px; width:100%; }}
-
-.sys-card {{
-    flex:1; min-width:280px; max-width:380px;
-    background:rgba(10,14,26,0.9); border:1px solid rgba(255,255,255,0.08);
-    border-radius:20px; padding:28px 26px 26px;
-    position:relative; overflow:hidden; cursor:pointer;
-    transition:transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-}}
-.sys-card::before {{
-    content:''; position:absolute; top:0; left:0; right:0; height:1px; border-radius:20px 20px 0 0;
-}}
-.sigma-chat::before {{ background:linear-gradient(90deg,transparent,#009dff,#0048ff,transparent); }}
-.sigma-terminal::before {{ background:linear-gradient(90deg,transparent,#a78bfa,#7c3aed,transparent); }}
-.kipm-academy::before {{ background:linear-gradient(90deg,transparent,#f59e0b,#d97706,transparent); }}
-
-/* corner brackets */
-.sys-card::after {{
-    content:''; position:absolute; bottom:12px; right:12px;
-    width:14px; height:14px; border-bottom:1px solid; border-right:1px solid; border-radius:0 0 3px 0;
-    opacity:0.22;
-}}
-.sigma-chat::after {{ border-color:#009dff; }}
-.sigma-terminal::after {{ border-color:#a78bfa; }}
-.kipm-academy::after {{ border-color:#f59e0b; }}
-.corner-tl {{
-    position:absolute; top:12px; left:12px;
-    width:14px; height:14px; border-top:1px solid; border-left:1px solid; border-radius:3px 0 0 0;
-    opacity:0.22; pointer-events:none;
-}}
-.sigma-chat .corner-tl {{ border-color:#009dff; }}
-.sigma-terminal .corner-tl {{ border-color:#a78bfa; }}
-.kipm-academy .corner-tl {{ border-color:#f59e0b; }}
-
-.card-glow {{
-    position:absolute; width:220px; height:220px; border-radius:50%;
-    filter:blur(60px); opacity:0; top:-60px; right:-40px;
-    transition:opacity 0.4s ease; pointer-events:none;
-}}
-.sigma-chat .card-glow {{ background:rgba(0,157,255,0.3); }}
-.sigma-terminal .card-glow {{ background:rgba(124,58,237,0.22); }}
-.kipm-academy .card-glow {{ background:rgba(245,158,11,0.25); }}
-.sys-card:hover .card-glow {{ opacity:1; }}
-.sys-card:hover {{ transform:translateY(-6px); }}
-.sigma-chat:hover {{ border-color:rgba(0,157,255,0.45); box-shadow:0 20px 60px rgba(0,100,255,0.18),0 0 0 1px rgba(0,157,255,0.28); }}
-.sigma-terminal:hover {{ border-color:rgba(124,58,237,0.45); box-shadow:0 20px 60px rgba(124,58,237,0.12),0 0 0 1px rgba(124,58,237,0.28); }}
-.kipm-academy:hover {{ border-color:rgba(245,158,11,0.5); box-shadow:0 20px 60px rgba(245,158,11,0.15),0 0 0 1px rgba(245,158,11,0.32); }}
-
-.card-badge {{ position:absolute; top:18px; right:20px; font-size:0.72rem; letter-spacing:2.5px; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:600; }}
-.sigma-chat .card-badge {{ background:rgba(0,157,255,0.12); color:#009dff; border:1px solid rgba(0,157,255,0.22); }}
-.sigma-terminal .card-badge {{ background:rgba(124,58,237,0.1); color:#a78bfa; border:1px solid rgba(124,58,237,0.18); }}
-.kipm-academy .card-badge {{ background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.28); animation:goldPulse 2.5s ease-in-out infinite; }}
-@keyframes goldPulse {{ 0%,100% {{ opacity:0.8; }} 50% {{ opacity:1; box-shadow:0 0 8px rgba(245,158,11,0.4); }} }}
-
-.card-icon {{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; margin-bottom:18px; }}
-.sigma-chat .card-icon {{ background:rgba(0,157,255,0.1); border:1px solid rgba(0,157,255,0.22); }}
-.sigma-terminal .card-icon {{ background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.18); }}
-.kipm-academy .card-icon {{ background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.22); }}
-
-.card-name {{ font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:5px; letter-spacing:-0.2px; }}
-.card-tagline {{ font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; font-weight:400; }}
-.sigma-chat .card-tagline {{ color:rgba(0,157,255,0.65); }}
-.sigma-terminal .card-tagline {{ color:rgba(124,58,237,0.65); }}
-.kipm-academy .card-tagline {{ color:rgba(245,158,11,0.75); }}
-.card-desc {{ font-size:0.8rem; color:rgba(255,255,255,0.45); line-height:1.75; margin-bottom:20px; }}
-
-/* ── COMING SOON banner ── */
-.coming-soon-banner {{
-    background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(217,119,6,0.05));
-    border:1px solid rgba(245,158,11,0.2);
-    border-radius:12px;
-    padding:22px 18px;
-    margin-bottom:16px;
-    text-align:center;
-    position:relative;
-    overflow:hidden;
-}}
-.coming-soon-banner::before {{
-    content:'';
-    position:absolute;
-    top:-30px; left:-30px; right:-30px; bottom:-30px;
-    background:radial-gradient(ellipse at center, rgba(245,158,11,0.06) 0%, transparent 70%);
-    pointer-events:none;
-}}
-.cs-icon {{ font-size:2rem; margin-bottom:10px; display:block; }}
-.cs-title {{
-    font-size:1.1rem; font-weight:700; color:#f59e0b;
-    letter-spacing:3px; text-transform:uppercase;
-    margin-bottom:6px;
-    animation:goldShimmer 3s ease-in-out infinite;
-}}
-@keyframes goldShimmer {{
-    0%,100% {{ opacity:0.85; text-shadow:none; }}
-    50% {{ opacity:1; text-shadow:0 0 16px rgba(245,158,11,0.5); }}
-}}
-.cs-sub {{ font-size:0.72rem; color:rgba(245,158,11,0.55); letter-spacing:1.5px; margin-bottom:14px; }}
-.cs-dots {{ display:flex; justify-content:center; gap:12px; margin-top:10px; }}
-.cs-dot-item {{ display:flex; flex-direction:column; align-items:center; gap:4px; }}
-.cs-dot-icon {{ font-size:1.1rem; }}
-.cs-dot-lbl {{ font-size:0.72rem; color:rgba(245,158,11,0.5); letter-spacing:1px; text-transform:uppercase; }}
-.cs-progress {{
-    display:flex; align-items:center; gap:8px; margin-top:14px;
-    background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.12);
-    border-radius:8px; padding:6px 12px;
-}}
-.cs-progress-bar {{
-    flex:1; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden;
-}}
-.cs-progress-fill {{
-    height:100%; width:35%; background:linear-gradient(90deg,#f59e0b,#d97706);
-    border-radius:2px; animation:progressPulse 2s ease-in-out infinite;
-}}
-@keyframes progressPulse {{
-    0%,100% {{ width:30%; opacity:0.8; }}
-    50% {{ width:40%; opacity:1; }}
-}}
-.cs-progress-lbl {{ font-size:0.72rem; color:rgba(245,158,11,0.6); white-space:nowrap; letter-spacing:0.5px; }}
-
-.kipm-academy .card-features li {{ font-size:0.8rem; color:rgba(255,255,255,0.4); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); display:flex; align-items:center; gap:8px; }}
-.kipm-academy .card-features li:last-child {{ border-bottom:none; }}
-.kipm-academy .feat-dot {{ background:#f59e0b; box-shadow:0 0 5px rgba(245,158,11,0.6); }}
-
-/* ── TERMINAL PREVIEW (hanya untuk card terminal) ── */
-.term-preview {{
-    background:rgba(0,0,0,0.45);
-    border:1px solid rgba(124,58,237,0.12);
-    border-radius:10px;
-    padding:10px 12px;
-    margin-bottom:14px;
-    font-family: 'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.72rem;
-    line-height:1.85;
-    position:relative;
-    overflow:hidden;
-}}
-.term-preview::after {{
-    content:'';position:absolute;bottom:0;left:0;right:0;height:35%;
-    background:linear-gradient(transparent,rgba(0,0,0,0.6));
-    pointer-events:none;
-}}
-.t-row {{ display:flex; gap:8px; }}
-.t-prompt {{ color:rgba(124,58,237,0.55); }}
-.t-cmd {{ color:rgba(255,255,255,0.3); }}
-.t-label {{ color:rgba(255,255,255,0.25); min-width:38px; }}
-.t-up {{ color:#4ade80; }}
-.t-dn {{ color:#f87171; }}
-.t-cursor {{
-    display:inline-block; width:5px; height:10px;
-    background:rgba(124,58,237,0.8); vertical-align:middle; margin-left:2px;
-    animation:cursorBlink 1.1s step-end infinite;
-}}
-@keyframes cursorBlink {{ 0%,100% {{ opacity:1; }} 50% {{ opacity:0; }} }}
-
-/* ── DATA PILLS ── */
-.data-pills {{ display:flex; flex-wrap:wrap; gap:5px; margin-bottom:16px; }}
-.pill {{
-    font-family: 'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.72rem; padding:3px 8px; border-radius:5px; border:1px solid; letter-spacing:0.3px;
-}}
-.pill-up {{ color:#4ade80; border-color:rgba(74,222,128,0.2); background:rgba(74,222,128,0.06); }}
-.pill-dn {{ color:#f87171; border-color:rgba(248,113,113,0.2); background:rgba(248,113,113,0.06); }}
-.pill-neu {{ color:rgba(124,58,237,0.8); border-color:rgba(124,58,237,0.15); background:rgba(124,58,237,0.04); }}
-
-.card-features {{ list-style:none; padding:0; margin:0 0 24px 0; }}
-.card-features li {{ font-size:0.8rem; color:rgba(255,255,255,0.5); padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:8px; }}
-.card-features li:last-child {{ border-bottom:none; }}
-.feat-dot {{ width:5px; height:5px; border-radius:50%; flex-shrink:0; }}
-.sigma-chat .feat-dot {{ background:#009dff; box-shadow:0 0 5px rgba(0,157,255,0.7); }}
-.sigma-terminal .feat-dot {{ background:#a78bfa; box-shadow:0 0 5px rgba(124,58,237,0.6); }}
-
-.card-cta {{ width:100%; padding:13px; border-radius:12px; border:none; font-size:0.875rem; font-weight:700; letter-spacing:1px; cursor:pointer; transition:opacity 0.2s, transform 0.15s; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; }}
-.sigma-chat .card-cta {{ background:linear-gradient(135deg,#009dff,#0048ff); color:#fff; box-shadow:0 6px 24px rgba(0,100,255,0.32); }}
-.sigma-terminal .card-cta {{ background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#07090f; box-shadow:0 6px 24px rgba(124,58,237,0.26); }}
-.kipm-academy .card-cta {{ background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(217,119,6,0.12)); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); cursor:not-allowed; opacity:0.7; }}
-.card-cta:hover {{ opacity:0.88; transform:translateY(-1px); }}
-.kipm-academy .card-cta:hover {{ opacity:0.7; transform:none; }}
-
-/* ── CHAT PREVIEW (AI Chat card) ── */
-.chat-preview {{
-    background:rgba(0,0,0,0.40);
-    border:1px solid rgba(0,157,255,0.14);
-    border-radius:10px;
-    padding:0;
-    margin-bottom:16px;
-    overflow:hidden;
-}}
-.cp-header {{
-    background:rgba(0,157,255,0.07);
-    border-bottom:1px solid rgba(0,157,255,0.1);
-    padding:7px 10px;
-    display:flex;
-    align-items:center;
-    gap:6px;
-}}
-.cp-dot {{ width:6px; height:6px; border-radius:50%; display:inline-block; }}
-.cp-dot-1 {{ background:#f87171; }}
-.cp-dot-2 {{ background:#facc15; }}
-.cp-dot-3 {{ background:#4ade80; }}
-.cp-title {{
-    font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.72rem; color:rgba(0,157,255,0.5); letter-spacing:1.5px;
-    text-transform:uppercase; margin-left:2px;
-}}
-.cp-body {{ padding:8px 10px; display:flex; flex-direction:column; gap:4px; }}
-.cp-cmd {{
-    font-family:'SF Mono','Fira Code','Consolas','Courier New',monospace;
-    font-size:0.72rem; color:rgba(255,255,255,0.45);
-    display:flex; align-items:center; gap:8px; padding:3px 0;
-    border-bottom:1px solid rgba(255,255,255,0.04);
-    line-height:1.4;
-}}
-.cp-cmd:last-child {{ border-bottom:none; }}
-.cp-num {{
-    color:#009dff; min-width:14px; font-weight:700; opacity:0.8;
+.hub-wrap{{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 20px 48px;
+  position:relative;z-index:1;
 }}
 
-.sys-footer {{ margin-top:48px; text-align:center; font-size:0.72rem; color:rgba(255,255,255,0.2); letter-spacing:1px; position:relative; z-index:2; }}
+/* ── HEADER ── */
+.hub-header{{text-align:center;margin-bottom:40px;}}
+.hub-eyebrow{{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.62rem;letter-spacing:0.25em;text-transform:uppercase;
+  color:rgba(99,102,241,0.7);margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}}
+.hub-eyebrow::before,.hub-eyebrow::after{{
+  content:'';flex:1;max-width:60px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(99,102,241,0.4));
+}}
+.hub-eyebrow::after{{background:linear-gradient(90deg,rgba(99,102,241,0.4),transparent);}}
+.hub-title{{
+  font-family:'Rajdhani',sans-serif;
+  font-size:clamp(2.2rem,6vw,3.5rem);
+  font-weight:700;letter-spacing:0.12em;
+  background:linear-gradient(135deg,#e2e8f0 0%,#a5b4fc 45%,#67e8f9 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1.05;margin-bottom:8px;
+}}
+.hub-subtitle{{
+  font-size:0.82rem;color:rgba(124,134,162,0.8);
+  letter-spacing:0.06em;margin-top:6px;
+}}
+.hub-user{{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:14px;
+  background:rgba(8,15,38,0.8);
+  border:1px solid rgba(99,102,241,0.2);
+  border-radius:50px;padding:6px 16px;
+  font-size:0.75rem;color:rgba(165,180,252,0.85);
+  font-family:'JetBrains Mono',monospace;
+}}
+.hub-user-dot{{width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse-g 2s ease-in-out infinite;}}
+@keyframes pulse-g{{0%,100%{{opacity:0.6;transform:scale(1);}}50%{{opacity:1;transform:scale(1.3);}}}}
 
-@media (max-width:768px) {{
-    .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
-    .sys-header {{ margin-bottom: 24px; }}
-    .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
-    .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
-    .sys-subtitle {{ font-size: 0.75rem; }}
-    .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
-    .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
-    .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
-    .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
-    .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
-    .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
-    .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
-    .card-desc {{ font-size: 0.78rem; margin-bottom: 14px; line-height: 1.5; }}
-    .card-features {{ margin-bottom: 18px; }}
-    .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
-    .card-cta {{ padding: 12px; font-size: 0.85rem; }}
-    .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
-    .coming-soon-banner {{ padding: 16px 14px; }}
-    .cs-title {{ font-size: 0.88rem; letter-spacing: 2px; }}
-    .cs-dots {{ gap: 8px; }}
+/* ── DIVIDER ── */
+.hub-divider{{
+  width:100%;max-width:900px;
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:28px;
+}}
+.hub-div-line{{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.2),transparent);}}
+.hub-div-label{{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--indigo,#6366f1);
+  background:rgba(99,102,241,0.1);
+  border:1px solid rgba(99,102,241,0.2);
+  border-radius:20px;padding:3px 14px;
+}}
+
+/* ── CARDS GRID ── */
+.hub-grid{{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;
+  width:100%;max-width:980px;
+}}
+
+.hub-card{{
+  background:rgba(8,15,38,0.88);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:20px;
+  padding:28px 24px 24px;
+  position:relative;overflow:hidden;
+  cursor:pointer;
+  transition:transform 0.28s cubic-bezier(0.4,0,0.2,1),
+             box-shadow 0.28s,
+             border-color 0.28s;
+  backdrop-filter:blur(12px);
+  text-decoration:none;display:block;
+  animation:cardIn 0.5s ease both;
+}}
+.hub-card:nth-child(1){{animation-delay:0.05s;}}
+.hub-card:nth-child(2){{animation-delay:0.12s;}}
+.hub-card:nth-child(3){{animation-delay:0.19s;}}
+@keyframes cardIn{{from{{opacity:0;transform:translateY(20px);}}to{{opacity:1;transform:translateY(0);}}}}
+
+.hub-card::before{{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:1px;
+  border-radius:20px 20px 0 0;
+}}
+.hub-card-scanner::before{{background:linear-gradient(90deg,transparent,rgba(59,130,246,0.6),transparent);}}
+.hub-card-ai::before{{background:linear-gradient(90deg,transparent,rgba(167,139,250,0.65),transparent);}}
+.hub-card-journal::before{{background:linear-gradient(90deg,transparent,rgba(16,185,129,0.6),transparent);}}
+
+/* Glow blob */
+.hub-card-glow{{
+  position:absolute;width:200px;height:200px;border-radius:50%;
+  filter:blur(60px);opacity:0;top:-50px;right:-30px;
+  transition:opacity 0.4s;pointer-events:none;
+}}
+.hub-card-scanner .hub-card-glow{{background:rgba(59,130,246,0.28);}}
+.hub-card-ai       .hub-card-glow{{background:rgba(139,92,246,0.22);}}
+.hub-card-journal  .hub-card-glow{{background:rgba(16,185,129,0.18);}}
+.hub-card:hover .hub-card-glow{{opacity:1;}}
+
+.hub-card:hover{{
+  transform:translateY(-7px);
+}}
+.hub-card-scanner:hover{{border-color:rgba(59,130,246,0.38);box-shadow:0 22px 55px rgba(59,130,246,0.12),0 0 0 1px rgba(59,130,246,0.15);}}
+.hub-card-ai:hover{{border-color:rgba(167,139,250,0.38);box-shadow:0 22px 55px rgba(139,92,246,0.1),0 0 0 1px rgba(167,139,250,0.15);}}
+.hub-card-journal:hover{{border-color:rgba(16,185,129,0.38);box-shadow:0 22px 55px rgba(16,185,129,0.08),0 0 0 1px rgba(16,185,129,0.15);}}
+
+/* Corner brackets */
+.card-tl,.card-br{{
+  position:absolute;width:12px;height:12px;
+  border-color:inherit;opacity:0.25;
+}}
+.card-tl{{top:14px;left:14px;border-top:1px solid;border-left:1px solid;border-radius:3px 0 0 0;}}
+.card-br{{bottom:14px;right:14px;border-bottom:1px solid;border-right:1px solid;border-radius:0 0 3px 0;}}
+.hub-card-scanner .card-tl,.hub-card-scanner .card-br{{border-color:rgba(59,130,246,0.6);}}
+.hub-card-ai       .card-tl,.hub-card-ai       .card-br{{border-color:rgba(167,139,250,0.6);}}
+.hub-card-journal  .card-tl,.hub-card-journal  .card-br{{border-color:rgba(16,185,129,0.6);}}
+
+/* Card badge */
+.hub-card-badge{{
+  position:absolute;top:18px;right:20px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;font-weight:600;
+}}
+.hub-card-scanner .hub-card-badge{{background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.22);}}
+.hub-card-ai       .hub-card-badge{{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.22);}}
+.hub-card-journal  .hub-card-badge{{background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.22);}}
+
+/* Card icon */
+.hub-card-icon{{
+  width:54px;height:54px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;margin-bottom:18px;
+}}
+.hub-card-scanner .hub-card-icon{{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.22);}}
+.hub-card-ai       .hub-card-icon{{background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);}}
+.hub-card-journal  .hub-card-icon{{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);}}
+
+.hub-card-name{{
+  font-family:'Rajdhani',sans-serif;
+  font-size:1.35rem;font-weight:700;color:#e2e8f0;
+  letter-spacing:0.06em;margin-bottom:4px;
+}}
+.hub-card-tag{{
+  font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;
+  margin-bottom:14px;font-weight:500;
+}}
+.hub-card-scanner .hub-card-tag{{color:rgba(59,130,246,0.7);}}
+.hub-card-ai       .hub-card-tag{{color:rgba(167,139,250,0.75);}}
+.hub-card-journal  .hub-card-tag{{color:rgba(16,185,129,0.7);}}
+
+.hub-card-desc{{
+  font-size:0.8rem;color:rgba(226,232,240,0.45);
+  line-height:1.75;margin-bottom:20px;
+}}
+
+.hub-card-btn{{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 20px;border-radius:10px;
+  font-family:'Outfit',sans-serif;font-size:0.78rem;
+  font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  width:100%;border:none;cursor:pointer;
+  transition:all 0.2s;
+}}
+.hub-card-scanner .hub-card-btn{{background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.28);}}
+.hub-card-ai       .hub-card-btn{{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.28);}}
+.hub-card-journal  .hub-card-btn{{background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.28);}}
+.hub-card-btn:hover{{filter:brightness(1.3);transform:translateY(-1px);}}
+
+/* ── FOOTER ── */
+.hub-footer{{
+  margin-top:36px;
+  text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.1em;
+  color:rgba(124,134,162,0.4);
+}}
+.hub-footer span{{color:rgba(99,102,241,0.5);}}
+
+/* Mobile */
+@media(max-width:680px){{
+  .hub-grid{{grid-template-columns:1fr;}}
+  .hub-title{{font-size:2rem;}}
+  .hub-wrap{{padding:24px 16px 40px;}}
 }}
 </style>
 </head>
 <body>
-<div class="sys-wrapper">
-    <div class="orb"></div>
-    <div class="orb2"></div>
-
-    <div class="sys-header">
-        <div class="sys-welcome">Welcome back, {_name}</div>
-        <div class="sys-title">Choose Your <span>System</span></div>
-        <div class="sys-subtitle">Select the platform you want to access today</div>
-        <div class="sys-divider"></div>
+<div class="stars" id="stars"></div>
+<div class="hub-wrap">
+  <div class="hub-header">
+    <div class="hub-eyebrow">Select Module</div>
+    <div class="hub-title">SIGMA TERMINAL</div>
+    <div class="hub-subtitle">Market Intelligence System · v3.0</div>
+    <div class="hub-user">
+      <span class="hub-user-dot"></span>
+      Welcome, {_name}
     </div>
+  </div>
 
-    <div class="sys-cards">
-        <div class="sys-card sigma-chat" id="card-chat" onclick="selectChat()">
-            <div class="card-glow"></div>
-            <div class="corner-tl"></div>
-            <div class="card-badge">&#9679; Live</div>
-            <div class="card-icon">&#9889;</div>
-            <div class="card-name">SIGMA AI Chat</div>
-            <div class="card-tagline">AI Trading Assistant</div>
-            <div class="card-desc">Asisten analisa pasar berbasis AI &#8212; teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
+  <div class="hub-divider">
+    <div class="hub-div-line"></div>
+    <div class="hub-div-label">Command Hub</div>
+    <div class="hub-div-line"></div>
+  </div>
 
-            <div class="chat-preview">
-                <div class="cp-header"><span class="cp-dot cp-dot-1"></span><span class="cp-dot cp-dot-2"></span><span class="cp-dot cp-dot-3"></span><span class="cp-title">SIGMA AI &mdash; 7 ALPHA COMMAND</span></div>
-                <div class="cp-body">
-                    <div class="cp-cmd"><span class="cp-num">1</span> Kesimpulan Dampak Makro</div>
-                    <div class="cp-cmd"><span class="cp-num">2</span> Kesimpulan Dampak Emiten</div>
-                    <div class="cp-cmd"><span class="cp-num">3</span> Bandarmologi</div>
-                    <div class="cp-cmd"><span class="cp-num">4</span> Fundamental</div>
-                    <div class="cp-cmd"><span class="cp-num">5</span> Teknikal</div>
-                    <div class="cp-cmd"><span class="cp-num">6</span> Analisa Lengkap (Quad)</div>
-                    <div class="cp-cmd"><span class="cp-num">7</span> Analisa IPO</div>
-                </div>
-            </div>
+  <div class="hub-grid">
+    <!-- SIGMA Chat -->
+    <a class="hub-card hub-card-scanner" href="javascript:void(0)" onclick="navTo('chat')" id="card-chat">
+      <div class="hub-card-glow"></div>
+      <div class="card-tl"></div><div class="card-br"></div>
+      <span class="hub-card-badge">AI Chat</span>
+      <div class="hub-card-icon">🤖</div>
+      <div class="hub-card-name">SIGMA AI</div>
+      <div class="hub-card-tag">Intelligent Analysis</div>
+      <div class="hub-card-desc">Analisa saham dengan AI cerdas berbasis Bandarmologi. Tanya apa saja tentang market IDX.</div>
+      <button class="hub-card-btn" onclick="navTo('chat')">Enter Module →</button>
+    </a>
 
-            <ul class="card-features">
-                <li><span class="feat-dot"></span>Upload chart &amp; PDF prospektus</li>
-                <li><span class="feat-dot"></span>Multi-source data real-time IDX</li>
-                <li><span class="feat-dot"></span>Multi-Model AI Engine</li>
-            </ul>
-            <button class="card-cta" onclick="event.stopPropagation(); selectChat()">Masuk ke AI Chat &#8594;</button>
-        </div>
+    <!-- SIGMA Terminal -->
+    <a class="hub-card hub-card-ai" href="javascript:void(0)" onclick="navTo('dashboard')" id="card-terminal">
+      <div class="hub-card-glow"></div>
+      <div class="card-tl"></div><div class="card-br"></div>
+      <span class="hub-card-badge">Terminal</span>
+      <div class="hub-card-icon">📊</div>
+      <div class="hub-card-name">SIGMA Terminal</div>
+      <div class="hub-card-tag">Market Intelligence</div>
+      <div class="hub-card-desc">Dashboard terminal premium: Market Map, Alpha Screener, Rotasi Sektor, Kalkulator & lebih.</div>
+      <button class="hub-card-btn" onclick="navTo('dashboard')">Enter Module →</button>
+    </a>
 
-        <div class="sys-card sigma-terminal" id="card-terminal" onclick="selectTerminal()">
-            <div class="card-glow"></div>
-            <div class="corner-tl"></div>
-            <div class="card-badge">&#9670; Beta</div>
-            <div class="card-icon">&#128187;</div>
-            <div class="card-name">SIGMA Terminal</div>
-            <div class="card-tagline">Market Dashboard</div>
-            <div class="card-desc">Dashboard pasar real-time &#8212; Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
+    <!-- Trade Journal -->
+    <a class="hub-card hub-card-journal" href="javascript:void(0)" onclick="navTo('chat')" id="card-journal">
+      <div class="hub-card-glow"></div>
+      <div class="card-tl"></div><div class="card-br"></div>
+      <span class="hub-card-badge">Pro</span>
+      <div class="hub-card-icon">📔</div>
+      <div class="hub-card-name">KIPM Academy</div>
+      <div class="hub-card-tag">Education Hub</div>
+      <div class="hub-card-desc">Akses panduan trading, strategi bandarmologi, dan materi edukasi pasar modal Indonesia.</div>
+      <button class="hub-card-btn" onclick="navTo('chat')">Enter Module →</button>
+    </a>
+  </div>
 
-            <div class="term-preview">
-                <div class="t-row"><span class="t-prompt">$</span><span class="t-cmd"> sigma.fetch --market IDX --live</span></div>
-                <div class="t-row"><span class="t-label">IHSG </span><span class="t-up">&#9650; 7,421  +0.74%</span></div>
-                <div class="t-row"><span class="t-label">LQ45 </span><span class="t-dn">&#9660; 862.3  -0.31%</span></div>
-                <div class="t-row"><span class="t-label">IDX30</span><span class="t-up">&#9650; 487.1  +0.52%</span></div>
-                <div class="t-row"><span class="t-prompt">_</span><span class="t-cursor"></span></div>
-            </div>
-
-            <div class="data-pills">
-                <span class="pill pill-up">BBRI &#9650;1.4%</span>
-                <span class="pill pill-dn">TLKM &#9660;0.8%</span>
-                <span class="pill pill-up">ADRO &#9650;2.1%</span>
-                <span class="pill pill-neu">VOL 12.4B</span>
-                <span class="pill pill-up">ANTM &#9650;0.9%</span>
-            </div>
-
-            <ul class="card-features">
-                <li><span class="feat-dot"></span>News &amp; Calendar &#8212; Live Market Pulse</li>
-                <li><span class="feat-dot"></span>Index &amp; Sector Rotation &#8212; IDX Heatmap</li>
-                <li><span class="feat-dot"></span>Shareholder &#8212; Foreign Flow &amp; Ownership</li>
-                <li><span class="feat-dot"></span>⚡ Alpha Screener &#8212; AI Stock Insight, Daily, Weekly, BSJP &amp; Fundamental Screener</li>
-            </ul>
-            <button class="card-cta" onclick="event.stopPropagation(); selectTerminal()">Masuk ke Terminal &#8594;</button>
-        </div>
-        <div class="sys-card kipm-academy" id="card-academy" onclick="selectAcademy()">
-            <div class="card-glow"></div>
-            <div class="corner-tl"></div>
-            <div class="card-badge">&#9733; Coming Soon</div>
-            <div class="card-icon">&#127891;</div>
-            <div class="card-name">KIPM Academy</div>
-            <div class="card-tagline">Pasar Modal Education</div>
-
-            <div class="coming-soon-banner">
-                <span class="cs-icon">&#127917;</span>
-                <div class="cs-title">Coming Soon</div>
-                <div class="cs-sub">Segera Hadir &mdash; Q3 2026</div>
-                <div class="cs-dots">
-                    <div class="cs-dot-item"><span class="cs-dot-icon">&#127916;</span><span class="cs-dot-lbl">Video</span></div>
-                    <div class="cs-dot-item"><span class="cs-dot-icon">&#128214;</span><span class="cs-dot-lbl">Materi</span></div>
-                    <div class="cs-dot-item"><span class="cs-dot-icon">&#127942;</span><span class="cs-dot-lbl">Sertifikat</span></div>
-                    <div class="cs-dot-item"><span class="cs-dot-icon">&#128200;</span><span class="cs-dot-lbl">Live Class</span></div>
-                </div>
-                <div class="cs-progress">
-                    <div class="cs-progress-bar"><div class="cs-progress-fill"></div></div>
-                    <span class="cs-progress-lbl">In Development &bull; 35%</span>
-                </div>
-            </div>
-
-            <ul class="card-features">
-                <li><span class="feat-dot"></span>Video pembelajaran pasar modal IDX</li>
-                <li><span class="feat-dot"></span>Kursus teknikal, fundamental &amp; bandarmologi</li>
-                <li><span class="feat-dot"></span>Sertifikasi by KIPM Universitas Pancasila</li>
-            </ul>
-            <button class="card-cta" onclick="event.stopPropagation();">&#128274; Segera Hadir &mdash; Daftarkan Dirimu</button>
-        </div>
-    </div>
-
-    <div class="sys-footer">SIGMA &middot; by MarketnMocha(MnM) &times; KIPM Universitas Pancasila</div>
+  <div class="hub-footer">
+    SIGMA TERMINAL v3.0 &nbsp;·&nbsp; <span>Market Intelligence System</span> &nbsp;·&nbsp; Powered by AI + Bandarmology
+  </div>
 </div>
 
 <script>
-var TERMINAL_URL = "{_terminal_url}";
+// Generate stars
+(function(){{
+  var wrap = document.getElementById('stars');
+  for(var i=0;i<80;i++){{
+    var s=document.createElement('div');
+    s.className='star';
+    s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;'
+      +'--d:'+(2+Math.random()*4)+'s;--delay:'+Math.random()*4+'s;'
+      +'opacity:'+(0.2+Math.random()*0.6)+';'
+      +'width:'+(1+Math.random())+'px;height:'+(1+Math.random())+'px;';
+    wrap.appendChild(s);
+  }}
+}})();
 
-function selectChat() {{
-    try {{
-        var pd = window.parent.document;
-        var btns = pd.querySelectorAll('[data-testid="stButton"] button');
-        for (var i = 0; i < btns.length; i++) {{
-            var txt = (btns[i].innerText || btns[i].textContent || "").toLowerCase();
-            if (txt.includes('chat')) {{
-                btns[i].click();
-                return;
-            }}
-        }}
-    }} catch(e) {{}}
-    setTimeout(function() {{
-        try {{
-            var u = new URL(window.parent.location.href);
-            u.searchParams.set('action', 'open_chat');
-            window.parent.location.assign(u.toString());
-        }} catch(e) {{}}
-    }}, 150);
-}}
-
-function selectTerminal() {{
-    if (TERMINAL_URL && TERMINAL_URL.length > 4) {{
-        window.parent.location.href = TERMINAL_URL;
-        return;
-    }}
-    try {{
-        var pd = window.parent.document;
-        var btns = pd.querySelectorAll('[data-testid="stButton"] button');
-        for (var i = 0; i < btns.length; i++) {{
-            var txt = (btns[i].innerText || btns[i].textContent || "").toLowerCase();
-            if (txt.includes('terminal')) {{
-                btns[i].click();
-                return;
-            }}
-        }}
-    }} catch(e) {{}}
-    setTimeout(function() {{
-        try {{
-            var u = new URL(window.parent.location.href);
-            u.searchParams.set('action', 'open_terminal');
-            window.parent.location.assign(u.toString());
-        }} catch(e) {{}}
-    }}, 150);
-}}
-
-function selectAcademy() {{
-    // Coming soon - no action yet
-    var card = document.getElementById('card-academy');
-    if (card) {{
-        card.style.transform = 'scale(0.98)';
-        setTimeout(function() {{ card.style.transform = ''; }}, 200);
-    }}
+// Navigation
+function navTo(view){{
+  try{{
+    var u = new URL(window.parent.location.href);
+    u.searchParams.set('do', 'view_' + view);
+    window.parent.location.href = u.toString();
+  }}catch(e){{}}
 }}
 </script>
-
 </body>
 </html>
-    """, height=1850, scrolling=False)
-
-    # ── JALUR ANDROID / WINDOWS: Tombol Streamlit Tersembunyi ──
-    col1, col2 = st.columns(2)
-    with col1:
-        btn_chat = st.button("chat", key="btn_sys_chat", use_container_width=True)
-    with col2:
-        btn_terminal = st.button("terminal", key="btn_sys_terminal", use_container_width=True)
-
-    if btn_chat:
-        st.session_state.selected_system = "chat"
-        st.session_state.current_view = "chat"
-        st.rerun()
-
-    if btn_terminal:
-        _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
-        if _turl:
-            st.session_state.selected_system = "terminal"
-        else:
-            st.session_state.selected_system = "terminal_local"
-            st.session_state.current_view = "dashboard"
-        st.rerun()
-
-    # ── JALUR APPLE SAFARI: Menangkap sinyal dari URL Parameter ──
-    if "action" in st.query_params:
-        _action = st.query_params.get("action")
-        try: st.query_params.pop("action", None)
-        except: pass
-
-        if _action == "open_chat":
-            st.session_state.selected_system = "chat"
-            st.session_state.current_view = "chat"
-            st.rerun()
-        elif _action == "open_terminal":
-            _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
-            if _turl:
-                st.session_state.selected_system = "terminal"
-            else:
-                st.session_state.selected_system = "terminal_local"
-                st.session_state.current_view = "dashboard"
-            st.rerun()
-
+""", height=900, scrolling=False)
     st.stop()
-
-# ── Routing: jika sudah login tapi belum pilih sistem → tampilkan selector ──
-if st.session_state.user and not st.session_state.get("selected_system"):
-    show_system_selector()
-
-init_chat()
-user = st.session_state.user
-C = get_colors(st.session_state.theme)
-
-# _call_cerebras sudah didefinisikan di atas (PART 6) dengan smart truncation - tidak perlu duplikat.
 
 
 def show_login():
+    """SIGMA v3.0 - Premium Login Screen"""
+    import streamlit.components.v1 as components
+
     st.markdown(f"""
     <style>
     [data-testid="stSidebar"] {{ display: none !important; }}
-    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmd.png') center/cover no-repeat fixed !important; min-height: 100vh !important; }}
-    section[data-testid="stMain"]::before {{ display: none !important; }}
-    [data-testid="stMainBlockContainer"] {{ max-width: 300px !important; margin: 1.5vh 74px 0 auto !important; padding: 8px 18px 16px !important; position: relative; z-index: 1; min-height: unset !important; height: fit-content !important; background: rgba(5, 8, 20, 0.60) !important; backdrop-filter: blur(20px) saturate(1.4) !important; -webkit-backdrop-filter: blur(20px) saturate(1.4) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
-    @media(max-width: 768px) {{
-        [data-testid="stMainBlockContainer"] {{ margin: 5vh auto 0 auto !important; max-width: 88% !important; padding: 20px 20px 28px !important; backdrop-filter: blur(20px) !important; border-radius: 20px !important; border: 1px solid rgba(255,255,255,0.12) !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
-        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmm.png') center top/cover no-repeat fixed !important; }}
-        [data-testid="stMainBlockContainer"] {{ margin-top: 75px !important; }}
+    header[data-testid="stHeader"] {{ display: none !important; }}
+    #MainMenu {{ display: none !important; }}
+    footer {{ display: none !important; }}
+    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{
+        background: #020617 !important;
+        min-height: 100vh !important;
     }}
-    header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
-    .stTabs, [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
-    [data-testid="stTextInput"] input {{ background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.12) !important; border-radius: 12px !important; color: #fff !important; padding: 12px 16px !important; font-size: 0.95rem !important; backdrop-filter: blur(10px) !important; transition: border 0.2s !important; }}
-    [data-testid="stTextInput"] input:focus {{ border: 1px solid #a78bfa !important; box-shadow: 0 0 0 2px rgba(167,139,250,0.15) !important; outline: none !important; }}
-    [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.35) !important; }}
-    [data-testid="stTextInput"] label {{ color: rgba(255,255,255,0.6) !important; font-size: 0.82rem !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button {{ background: linear-gradient(135deg, #7c3aed, #2563eb) !important; color: #fff !important; font-weight: 700 !important; border: none !important; border-radius: 12px !important; padding: 12px !important; font-size: 0.95rem !important; letter-spacing: 0.5px !important; transition: opacity 0.2s, transform 0.1s !important; box-shadow: 0 4px 20px rgba(124,58,237,0.35) !important; }}
-    [data-testid="stMainBlockContainer"] .stButton > button:hover {{ opacity: 0.92 !important; transform: translateY(-1px) !important; }}
-    [data-testid="stTabs"] [role="tablist"] {{ background: rgba(255,255,255,0.05) !important; border-radius: 12px !important; padding: 4px !important; border: 1px solid rgba(255,255,255,0.08) !important; gap: 2px !important; }}
-    [data-testid="stTabs"] button[role="tab"] {{ border-radius: 9px !important; color: rgba(255,255,255,0.5) !important; font-size: 0.85rem !important; padding: 7px 12px !important; border: none !important; background: transparent !important; }}
-    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{ background: linear-gradient(135deg,rgba(124,58,237,0.22),rgba(59,130,246,0.18)) !important; color: #a78bfa !important; font-weight: 700 !important; border-bottom: 2px solid #a78bfa !important; }}
-    [data-testid="stTabs"] [role="tabpanel"] {{ background: rgba(255,255,255,0.03) !important; border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.08) !important; padding: 20px 16px !important; margin-top: 8px !important; backdrop-filter: blur(10px) !important; }}
+    [data-testid="stMainBlockContainer"] {{
+        max-width: 380px !important;
+        margin: 4vh auto 0 auto !important;
+        padding: 0 18px 24px !important;
+        background: transparent !important;
+    }}
+    @media(max-width: 768px) {{
+        [data-testid="stMainBlockContainer"] {{
+            max-width: 92% !important;
+            margin-top: 80px !important;
+        }}
+    }}
+    [data-testid="stTextInput"] input {{
+        background: rgba(8,15,38,0.92) !important;
+        border: 1px solid rgba(99,102,241,0.22) !important;
+        border-radius: 10px !important;
+        color: #e2e8f0 !important;
+        padding: 12px 16px !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 0.9rem !important;
+        backdrop-filter: blur(10px) !important;
+        transition: border 0.2s, box-shadow 0.2s !important;
+    }}
+    [data-testid="stTextInput"] input:focus {{
+        border: 1px solid rgba(99,102,241,0.55) !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.1), 0 0 14px rgba(99,102,241,0.08) !important;
+        outline: none !important;
+    }}
+    [data-testid="stTextInput"] input::placeholder {{
+        color: rgba(124,134,162,0.5) !important;
+    }}
+    [data-testid="stTextInput"] label {{
+        color: rgba(124,134,162,0.8) !important;
+        font-size: 0.65rem !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.12em !important;
+        text-transform: uppercase !important;
+    }}
+    [data-testid="stMainBlockContainer"] .stButton > button {{
+        background: linear-gradient(135deg, #6366f1, #3b82f6) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        font-size: 0.82rem !important;
+        letter-spacing: 0.1em !important;
+        text-transform: uppercase !important;
+        transition: all 0.2s !important;
+        box-shadow: 0 4px 20px rgba(99,102,241,0.35) !important;
+        font-family: 'Outfit', sans-serif !important;
+    }}
+    [data-testid="stMainBlockContainer"] .stButton > button:hover {{
+        box-shadow: 0 6px 28px rgba(99,102,241,0.5) !important;
+        transform: translateY(-1px) !important;
+    }}
+    [data-testid="stTabs"] [role="tablist"] {{
+        background: rgba(8,15,38,0.8) !important;
+        border-radius: 50px !important;
+        padding: 3px 4px !important;
+        border: 1px solid rgba(99,102,241,0.18) !important;
+        gap: 2px !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"] {{
+        border-radius: 50px !important;
+        color: rgba(124,134,162,0.8) !important;
+        font-size: 0.72rem !important;
+        padding: 6px 14px !important;
+        border: none !important;
+        background: transparent !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.06em !important;
+    }}
+    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+        background: linear-gradient(135deg, #6366f1, #3b82f6) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 16px rgba(99,102,241,0.4) !important;
+    }}
+    [data-testid="stTabs"] [role="tabpanel"] {{
+        background: rgba(8,15,38,0.6) !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(99,102,241,0.12) !important;
+        padding: 18px 16px !important;
+        margin-top: 8px !important;
+        backdrop-filter: blur(10px) !important;
+    }}
     [data-testid="stAlert"] {{ border-radius: 10px !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -6997,45 +6860,71 @@ def show_login():
 <script>
 (function() {{
     var pd = window.parent.document;
-    var forkStyle = pd.getElementById('hide-fork-bar');
-    if (!forkStyle) {{
-        var fs = pd.createElement('style');
-        fs.id = 'hide-fork-bar';
-        fs.textContent = `
-            .viewerBadge_container__r5tak, .viewerBadge_link__qRIco, [class*="viewerBadge"], [class*="styles_viewerBadge"], #MainMenu, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], header[data-testid="stHeader"], .stDeployButton, [kind="header"], div[data-testid="collapsedControl"] {{ display: none !important; visibility: hidden !important; height: 0 !important; overflow: hidden !important; }}
-        `;
-        pd.head.appendChild(fs);
+    // Hide fork bar
+    var fs = pd.getElementById('hide-fork-bar-v3');
+    if (!fs) {{
+        var s = pd.createElement('style');
+        s.id = 'hide-fork-bar-v3';
+        s.textContent = '.viewerBadge_container__r5tak,[class*="viewerBadge"],[class*="styles_viewerBadge"],#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"],header[data-testid="stHeader"],.stDeployButton,.stAppDeployButton{{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;}}';
+        pd.head.appendChild(s);
     }}
-    if (pd.getElementById('kipm-mobile-logo')) return;
-    var s = pd.createElement('style');
-    s.id = 'kipm-mobile-logo-style';
-    s.textContent = `
-        #kipm-mobile-logo {{ display: none; text-align: center; padding: 14px 0 10px; position: fixed; top: 0; left: 0; right: 0; z-index: 10; pointer-events: none; }}
-        #kipm-mobile-logo img {{ width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 2px 12px rgba(0,0,0,0.6)); }}
-        #kipm-mobile-logo .kipm-name {{ font-size: 0.7rem; color: rgba(255,255,255,0.7); letter-spacing: 2px; font-family: sans-serif; margin-top: 4px; }}
-        @media(max-width: 768px) {{ #kipm-mobile-logo {{ display: block !important; }} }}
-    `;
-    pd.head.appendChild(s);
-    var div = pd.createElement('div');
-    div.id = 'kipm-mobile-logo';
-    div.innerHTML = `<img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png" onerror="this.style.display='none'" style="width:80px;height:80px;object-fit:contain;"><div class="kipm-name">KIPM-UP</div>`;
-    pd.body.appendChild(div);
+    // Inject deep space bg into parent
+    var bgStyle = pd.getElementById('sigma-login-bg');
+    if (!bgStyle) {{
+        var bs = pd.createElement('style');
+        bs.id = 'sigma-login-bg';
+        bs.textContent = `
+            .stApp,[data-testid="stAppViewContainer"] {{
+                background: #020617 !important;
+                position: relative;
+            }}
+            .stApp::before {{
+                content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+                background:
+                    radial-gradient(ellipse 90% 60% at 50% -5%, rgba(99,102,241,0.09) 0%, transparent 55%),
+                    radial-gradient(ellipse 60% 50% at 90% 100%, rgba(16,185,129,0.05) 0%, transparent 50%);
+            }}
+        `;
+        pd.head.appendChild(bs);
+    }}
 }})();
 </script>
 """, height=0)
-    st.markdown('''
-        <div style="text-align:center;margin:0 0 10px;">
-            <div style="font-size:2.8rem;font-weight:900;letter-spacing:5px;color:#ffffff;font-family:sans-serif;line-height:1.2;">SIGMA <span style="color:#a78bfa;">Σ</span></div>
-            <div class="sigma-tagline" style="font-size:0.72rem;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-top:4px;font-family:sans-serif;">Strategic Intelligence & Global Market Analysis</div>
-        </div>
-        <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
-    ''', unsafe_allow_html=True)
+
+    st.markdown("""
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <div style="text-align:center;padding:28px 0 20px;position:relative;z-index:1;">
+      <div style="
+          display:inline-flex;align-items:center;justify-content:center;
+          width:52px;height:52px;
+          background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(59,130,246,0.15));
+          border:1px solid rgba(99,102,241,0.35);
+          border-radius:14px;
+          font-size:1.5rem;font-weight:900;
+          box-shadow:0 0 24px rgba(99,102,241,0.3);
+          margin-bottom:12px;
+      ">Σ</div>
+      <div style="
+          font-family:'Rajdhani',sans-serif;
+          font-size:1.8rem;font-weight:700;letter-spacing:0.18em;
+          background:linear-gradient(135deg,#a5b4fc,#3b82f6);
+          -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+          line-height:1.1;
+      ">SIGMA</div>
+      <div style="
+          font-family:'JetBrains Mono',monospace;
+          font-size:0.58rem;color:rgba(124,134,162,0.7);
+          letter-spacing:0.2em;text-transform:uppercase;margin-top:5px;
+      ">Market Intelligence System</div>
+    </div>
+    """, unsafe_allow_html=True)
+
     tab1, tab2, tab3 = st.tabs(["🔑 Sign In", "📝 Sign Up", "🌐 Google"])
 
     with tab1:
         uname = st.text_input("Username", key="li_user", placeholder="Masukkan username")
         pwd   = st.text_input("Password", key="li_pwd",  type="password", placeholder="Masukkan password")
-        if st.button("Masuk", key="btn_login", use_container_width=True):
+        if st.button("Enter Terminal →", key="btn_login", use_container_width=True):
             if uname and pwd:
                 info = login_user(uname.strip(), pwd)
                 if info:
@@ -7058,7 +6947,7 @@ def show_login():
             elif len(rpwd) < 6: st.error("Password minimal 6 karakter")
             else:
                 ok, msg = register_user(runame.strip(), rpwd, rname.strip())
-                if ok: st.success(f"✅ {msg} - silakan masuk")
+                if ok: st.success(f"Berhasil! {msg} - silakan masuk")
                 else: st.error(msg)
 
     with tab3:
@@ -7066,16 +6955,25 @@ def show_login():
             auth_url = google_auth_url()
             st.markdown(f"""
             <div style="margin-top:8px;">
-                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;text-decoration:none;font-size:0.875rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;
+                    background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:10px;padding:13px;
+                    text-decoration:none;font-size:0.875rem;font-weight:600;
+                    box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                     Lanjutkan dengan Google
                 </a>
             </div>
             """, unsafe_allow_html=True)
-        except: st.info("Google login belum dikonfigurasi di Secrets")
+        except: st.info("Google login belum dikonfigurasi")
 
-    st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
+    st.markdown("""<p style="text-align:center;color:rgba(124,134,162,0.35);font-family:'Outfit',sans-serif;
+        font-size:0.68rem;margin-top:20px;line-height:1.7;padding:0 8px;">
+        Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
+        Analisa bersifat <em>do your own research</em> &amp; disclaimer berlaku.
+    </p>""", unsafe_allow_html=True)
     st.stop()
+
+
 
 if st.session_state.user is None: show_login()
 init_chat()
@@ -8935,151 +8833,122 @@ if current_view == "dashboard":
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"""
-    <div style="
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 16px 0 14px;
-        border-bottom: 1px solid rgba(3,40,238,0.20);
-        margin-bottom: 16px;
-    ">
-        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div style="
-                width: 36px; height: 36px;
-                background: linear-gradient(135deg,#8b5cf6,#0ea5e9);
-                border-radius: 10px;
-                display: flex; align-items: center; justify-content: center;
-                font-size: 1.1rem; font-weight: 900; color: #fff;
-                font-family: 'DM Sans', sans-serif;
-                flex-shrink: 0;
-                box-shadow: 0 0 18px rgba(139,92,246,0.45);
-            ">Σ</div>
-            <div>
-                <div style="
-                    font-family: 'DM Sans', sans-serif;
-                    font-size: clamp(1.0rem, 4vw, 1.25rem);
-                    font-weight: 700;
-                    letter-spacing: 0.04em;
-                    background: linear-gradient(135deg,#8b5cf6,#0ea5e9);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                    background-clip: text;
-                    line-height: 1.1;
-                ">SIGMA TERMINAL</div>
-                <div style="
-                    font-family: 'IBM Plex Mono', monospace;
-                    font-size: 0.6rem;
-                    color: {'rgba(136,153,187,0.8)' if is_dark else '#94a3b8'};
-                    letter-spacing: 0.12em;
-                    text-transform: uppercase;
-                    margin-top: 2px;
-                ">KIPM · MnM Strategy+</div>
-            </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="
-                display: flex; align-items: center; gap: 6px;
-                background: rgba(139,92,246,0.10);
-                border: 1px solid rgba(139,92,246,0.30);
-                border-radius: 50px;
-                padding: 5px 12px;
-            ">
-                <span style="
-                    width: 7px; height: 7px;
-                    background: #10b981;
-                    border-radius: 50%;
-                    display: inline-block;
-                    animation: pulse-dot 2s infinite;
-                    box-shadow: 0 0 8px rgba(16,185,129,0.6);
-                "></span>
-                <span id="sigma-wib-clock" style="
-                    font-family: 'IBM Plex Mono', monospace;
-                    font-size: 0.68rem;
-                    color: {'rgba(136,153,187,0.9)' if is_dark else '#64748b'};
-                    letter-spacing: 0.06em;
-                ">--:--:-- WIB</span>
-            </div>
-        </div>
+    # ── SIGMA TERMINAL v3.0 DASHBOARD HEADER ──
+    _name_display = (st.session_state.user.get("name") or st.session_state.user.get("email","")).split()[0]
+
+    components.html(f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'Outfit',sans-serif;overflow:hidden;}}
+.trm-topbar{{
+  background:rgba(2,6,23,0.97);
+  border-bottom:1px solid rgba(99,102,241,0.15);
+  padding:0 18px;
+  height:46px;
+  display:flex;align-items:center;gap:0;
+  position:relative;
+  backdrop-filter:blur(20px);
+}}
+.trm-topbar::after{{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(99,102,241,0.45),rgba(59,130,246,0.4),transparent);
+}}
+.trm-brand{{
+  font-family:'Rajdhani',sans-serif;
+  font-size:1.25rem;font-weight:700;letter-spacing:0.18em;
+  background:linear-gradient(135deg,#a5b4fc,#3b82f6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-right:14px;white-space:nowrap;flex-shrink:0;
+}}
+.trm-ticker{{
+  flex:1;overflow:hidden;white-space:nowrap;
+  mask-image:linear-gradient(90deg,transparent 0%,#000 4%,#000 96%,transparent 100%);
+}}
+.trm-ticker-inner{{
+  display:inline-block;
+  animation:ticker 50s linear infinite;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.7rem;letter-spacing:0.04em;
+  color:rgba(226,232,240,0.5);
+}}
+.trm-ticker-inner .up{{color:#00c853;}} .trm-ticker-inner .dn{{color:#f23645;}}
+.trm-ticker-inner .nm{{color:rgba(165,180,252,0.85);font-weight:600;margin-right:3px;}}
+.trm-ticker-inner .sp{{color:rgba(99,102,241,0.4);margin:0 16px;}}
+@keyframes ticker{{from{{transform:translateX(0);}}to{{transform:translateX(-50%);}}}}
+.trm-actions{{display:flex;align-items:center;gap:8px;margin-left:12px;flex-shrink:0;}}
+.trm-badge{{
+  background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.22);
+  border-radius:20px;padding:3px 10px;
+  font-family:'JetBrains Mono',monospace;font-size:0.6rem;
+  color:#a5b4fc;letter-spacing:0.08em;white-space:nowrap;
+}}
+.trm-live{{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.22);
+  border-radius:20px;padding:3px 10px;font-size:0.6rem;color:#10b981;letter-spacing:0.08em;
+}}
+.trm-live .dot{{width:5px;height:5px;border-radius:50%;background:#10b981;animation:pd 2s ease-in-out infinite;flex-shrink:0;}}
+@keyframes pd{{0%,100%{{opacity:0.6;transform:scale(1);}}50%{{opacity:1;transform:scale(1.3);}}}}
+.trm-clock-id{{
+  font-family:'JetBrains Mono',monospace;font-size:0.62rem;
+  color:rgba(124,134,162,0.6);white-space:nowrap;letter-spacing:0.05em;
+}}
+</style>
+</head>
+<body>
+<div class="trm-topbar">
+  <div class="trm-brand">SIGMA</div>
+  <div class="trm-ticker">
+    <div class="trm-ticker-inner" id="trm-t">
+      <span class="nm">IHSG</span><span id="ihsg-val" class="up">7,125.45 ▲+0.75%</span><span class="sp">|</span>
+      <span class="nm">LQ45</span><span class="up">952.30 ▲+0.68%</span><span class="sp">|</span>
+      <span class="nm">USD/IDR</span><span class="dn">15,860 ▼-0.12%</span><span class="sp">|</span>
+      <span class="nm">Gold</span><span class="up">2,350.40 ▲+1.05%</span><span class="sp">|</span>
+      <span class="nm">BBCA</span><span class="up">10,125 ▲+1.25%</span><span class="sp">|</span>
+      <span class="nm">BBRI</span><span class="up">4,890 ▲+2.05%</span><span class="sp">|</span>
+      <span class="nm">TLKM</span><span class="up">3,320 ▲+1.53%</span><span class="sp">|</span>
+      <span class="nm">BMRI</span><span class="up">6,200 ▲+1.14%</span><span class="sp">|</span>
+      <span class="nm">Coal</span><span class="up">141.5 ▲+2.1%</span><span class="sp">|</span>
+      <span class="nm">IHSG</span><span class="up">7,125.45 ▲+0.75%</span><span class="sp">|</span>
+      <span class="nm">LQ45</span><span class="up">952.30 ▲+0.68%</span><span class="sp">|</span>
+      <span class="nm">USD/IDR</span><span class="dn">15,860 ▼-0.12%</span><span class="sp">|</span>
+      <span class="nm">Gold</span><span class="up">2,350.40 ▲+1.05%</span><span class="sp">|</span>
+      <span class="nm">BBCA</span><span class="up">10,125 ▲+1.25%</span><span class="sp">|</span>
+      <span class="nm">BBRI</span><span class="up">4,890 ▲+2.05%</span><span class="sp">|</span>
     </div>
-    <style>
-    @keyframes pulse-dot {{
-        0%, 100% {{ opacity: 1; transform: scale(1); }}
-        50%       {{ opacity: 0.5; transform: scale(0.8); }}
-    }}
-    </style>
-    """, unsafe_allow_html=True)
+  </div>
+  <div class="trm-actions">
+    <div class="trm-clock-id" id="wib-clk">--:--:-- WIB</div>
+    <div class="trm-badge">v3.0</div>
+    <div class="trm-live"><span class="dot"></span>LIVE</div>
+  </div>
+</div>
+<script>
+var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function tick(){{
+  var n=new Date(); var w=new Date(n.getTime()+(7*3600000));
+  var s=w.getUTCDate()+' '+months[w.getUTCMonth()]+' '+w.getUTCFullYear()+'  '
+       +String(w.getUTCHours()).padStart(2,'0')+':'+String(w.getUTCMinutes()).padStart(2,'0')
+       +':'+String(w.getUTCSeconds()).padStart(2,'0')+' WIB';
+  // Try to update parent doc clock if it exists
+  try{{
+    var el = window.parent.document.getElementById('sigma-wib-clock');
+    if(el) el.textContent = s;
+  }}catch(e){{}}
+  var local = document.getElementById('wib-clk');
+  if(local) local.textContent = s;
+}}
+tick(); setInterval(tick,1000);
+</script>
+</body>
+</html>
+""", height=50, scrolling=False)
 
-    # Live clock WIB via components.html (satu-satunya cara jalankan JS di Streamlit)
-    components.html("""
-    <script>
-    (function() {
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        function updateClock() {
-            var now = new Date();
-            var wib = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-            var d  = wib.getUTCDate();
-            var mo = months[wib.getUTCMonth()];
-            var y  = wib.getUTCFullYear();
-            var h  = String(wib.getUTCHours()).padStart(2,'0');
-            var m  = String(wib.getUTCMinutes()).padStart(2,'0');
-            var s  = String(wib.getUTCSeconds()).padStart(2,'0');
-            var str = d + ' ' + mo + ' ' + y + '  ' + h + ':' + m + ':' + s + ' WIB';
-            // Cari di parent document (Streamlit render di dalam iframe)
-            var el = null;
-            try { el = window.parent.document.getElementById('sigma-wib-clock'); } catch(e) {}
-            if (!el) { el = document.getElementById('sigma-wib-clock'); }
-            if (el) { el.textContent = str; }
-        }
-        updateClock();
-        setInterval(updateClock, 1000);
-    })();
-    </script>
-    """, height=0)
 
-    _tape_items = [
-        # GLOBAL INDICES & VOLATILITY
-        ("IHSG",     "^JKSE"),
-        ("S&P500",   "^GSPC"),
-        ("Dow Jones","^DJI"),
-        ("Nasdaq",   "^IXIC"),
-        ("FTSE 100", "^FTSE"),
-        ("Nikkei",   "^N225"),
-        ("Hang Seng","^HSI"),
-        ("Shanghai", "000001.SS"),
-        ("VIX",      "^VIX"),
-        # COMMODITIES & FOREX
-        ("USD/IDR",  "IDR=X"),
-        ("DXY",      "DX-Y.NYB"),
-        ("Gold",     "GC=F"),
-        ("WTI",      "CL=F"),
-        ("Brent",    "BZ=F"),
-        ("Coal",     "NCF=F"),
-        ("Palm Oil", "MYP=F"),
-        ("Nickel",   "ALI=F"),
-    ]
-    _tape_html = ""
-    for _name, _tk in _tape_items:
-        try:
-            import yfinance as _yf
-            _h = _yf.Ticker(_tk).history(period="2d")
-            if len(_h) >= 2:
-                _p  = _h['Close'].iloc[-1]
-                _pc = _h['Close'].iloc[-2]
-                _chg = (_p - _pc) / _pc * 100
-                _cls = "up" if _chg >= 0 else "dn"
-                _arr = "&#9650;" if _chg >= 0 else "&#9660;"
-                _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
-        except: pass
-    if _tape_html:
-        _tape_double = _tape_html * 2  
-        st.markdown(f"""
-        <div class="trm-ticker-wrap">
-            <div class="trm-ticker-tape">{_tape_double}</div>
-        </div>
-        """, unsafe_allow_html=True)
 
     # ── LIVE MARKET: cache harus di luar tab scope agar tidak di-redefine tiap rerun ──
     @st.cache_data(ttl=300)
