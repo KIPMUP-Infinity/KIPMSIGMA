@@ -3864,18 +3864,18 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#050a15"  if dark else "#f8fafc",      # dark navy / putih bersih
-        "sidebar_bg":   "#03050a"  if dark else "#ffffff",      # sidebar pure white di light
-        "text":         "#e2e8f0"  if dark else "#0f172a",      # teks terang / slate-900
-        "text_muted":   "#64748b"  if dark else "#475569",      # slate-500 di kedua mode
-        "border":       "#1a2f50"  if dark else "#cbd5e1",      # slate-300 di light — tegas tapi bersih
-        "hover":        "#0d1c36"  if dark else "#f1f5f9",      # slate-100 di light
-        "input_bg":     "#081020"  if dark else "#f8fafc",      # putih di light
-        "bubble":       "#1B2A4A"  if dark else "#6366f1",      # indigo di light
+        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap original
+        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk sidebar
+        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan
+        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
+        "border":       "#1a2f50" if dark else "#8a8aaa",       # Border lebih visible (sedikit lebih terang dari #132545)
+        "hover":        "#0d1c36" if dark else "#c4c4d8",       # Efek hover kebiruan
+        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat deep blue
+        "bubble":       "#1B2A4A",
         "bubble_text":  "#ffffff",
-        "divider":      "#1a2f50"  if dark else "#e2e8f0",      # slate-200 di light — visible
-        "gold":         "#b89fff"  if dark else "#6366f1",      # indigo di light
-        "active_bg":    "#0d1c36"  if dark else "#e0e7ff",      # indigo-100 di light
+        "divider":      "#1a2f50" if dark else "#8a8aaa",       # Garis pemisah sedikit lebih terang
+        "gold":         "#b89fff",                               # Ungu/violet lebih terang dari #a78bfa
+        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
     }
 
 # =========================================================
@@ -5335,22 +5335,22 @@ def _smart_truncate_prompt(text, max_tokens=22000):
     if tail_cut < 0 or tail_cut > tail_start + 200: tail_cut = tail_start
     return text[:head_cut] + "\n\n[... sebagian data tengah dipotong otomatis untuk efisiensi token ...]\n\n" + text[tail_cut:]
 
-def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=32000, temperature=0.7):
+def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, temperature=0.7):
     """
     Groq PRIMARY - LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
     Key rotation otomatis saat 429 rate limit - coba semua key sebelum menyerah.
-    Smart truncation: total konteks dijaga ≤ 131.072 token (LLaMA 3.3 70B context window).
+    Smart truncation: total konteks dijaga ≤ 30.000 token.
     """
     from groq import Groq
 
-    # ── Budget token: 131.072 total context window LLaMA 3.3 70B ──
-    # System prompt ~4000 token, history ~6000 token, output max 32000 → sisakan 89000 untuk prompt user
+    # ── Budget token: 30.000 total context window ──
+    # System prompt ~2000 token, history ~3000 token, output max_tokens → sisakan 22000 untuk prompt user
     SYSTEM_TOKEN_EST = _estimate_tokens(GROQ_SYSTEM_PROMPT)
-    HISTORY_TOKEN_BUDGET = 6000   # max token untuk history (naik dari 3000)
-    OUTPUT_BUDGET = min(max_tokens, 32000)
-    TOTAL_BUDGET = 131072
+    HISTORY_TOKEN_BUDGET = 3000   # max token untuk history
+    OUTPUT_BUDGET = min(max_tokens, 16000)
+    TOTAL_BUDGET = 30000
     PROMPT_BUDGET = TOTAL_BUDGET-SYSTEM_TOKEN_EST-HISTORY_TOKEN_BUDGET-OUTPUT_BUDGET
-    PROMPT_BUDGET = max(PROMPT_BUDGET, 16000)  # minimal 16000 token untuk prompt
+    PROMPT_BUDGET = max(PROMPT_BUDGET, 8000)  # minimal 8000 token untuk prompt
 
     # Truncate prompt jika melebihi budget
     full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=PROMPT_BUDGET)
@@ -5574,9 +5574,8 @@ if "code" in st.query_params and st.session_state.user is None:
         saved = load_user(info["email"])
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
-            # Setelah OAuth login segar → selalu tampilkan hub dulu
-            st.session_state.current_view = None
-            st.session_state.selected_system = None
+            st.session_state.current_view = saved.get("current_view", "chat")
+            st.session_state.selected_system = saved.get("selected_system", "chat")
             if saved.get("sessions"):
                 _loaded_s = saved["sessions"]
                 for _s in _loaded_s:
@@ -6315,114 +6314,7 @@ if st.session_state.get("user"):
 
 st.markdown(f"""
 <style>
-/* ═══ SIGMA v4.0 — FONT IMPORT ═══ */
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Syne:wght@500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-/* ═══ SIGMA v4.0 — DESIGN TOKENS ═══ */
-:root {{
-  --sigma-bg:        #020617;
-  --sigma-bg1:       #040d24;
-  --sigma-glass:     rgba(8,18,48,0.72);
-  --sigma-border:    rgba(255,255,255,0.07);
-  --sigma-border-hi: rgba(99,102,241,0.35);
-  --sigma-indigo:    #6366f1;
-  --sigma-blue:      #3b82f6;
-  --sigma-emerald:   #10b981;
-  --sigma-purple:    #a855f7;
-  --sigma-text:      #e2e8f0;
-  --sigma-text2:     #94a3b8;
-  --sigma-text3:     #475569;
-  --sigma-font-d:    'Rajdhani', 'Segoe UI', sans-serif;
-  --sigma-font-b:    'DM Sans', ui-sans-serif, system-ui, sans-serif;
-  --sigma-font-m:    'JetBrains Mono', 'Courier New', monospace;
-  --sigma-font-u:    'Syne', 'Segoe UI', sans-serif;
-}}
-
-/* ═══ SIGMA v4.0 — BASE RESET ═══ */
-* {{ font-family: var(--sigma-font-b) !important; box-sizing: border-box; }}
-
-/* ═══ SIGMA v4.0 — LIGHT MODE FIXES ═══ */
-/* Background + semua container */
-[data-theme="light"] .stApp,
-[data-theme="light"] [data-testid="stAppViewContainer"],
-[data-theme="light"] section[data-testid="stMain"],
-[data-theme="light"] [data-testid="stMainBlockContainer"] {{
-    background: #f8fafc !important;
-    color: #0f172a !important;
-}}
-/* Text light mode */
-[data-theme="light"] p,
-[data-theme="light"] span,
-[data-theme="light"] div,
-[data-theme="light"] label,
-[data-theme="light"] li {{
-    color: #0f172a !important;
-}}
-/* Sidebar light */
-[data-theme="light"] section[data-testid="stSidebar"],
-[data-theme="light"] section[data-testid="stSidebar"] > div {{
-    background: #ffffff !important;
-    border-right: 1px solid #e2e8f0 !important;
-}}
-[data-theme="light"] section[data-testid="stSidebar"] span,
-[data-theme="light"] section[data-testid="stSidebar"] p,
-[data-theme="light"] section[data-testid="stSidebar"] div {{
-    color: #0f172a !important;
-}}
-/* Table borders light mode — tegas */
-[data-theme="light"] [data-testid="stDataFrame"] table,
-[data-theme="light"] table {{ border-collapse: collapse !important; }}
-[data-theme="light"] [data-testid="stDataFrame"] td,
-[data-theme="light"] [data-testid="stDataFrame"] th,
-[data-theme="light"] td, [data-theme="light"] th {{
-    border: 1px solid #cbd5e1 !important;
-    color: #0f172a !important;
-    background: #ffffff !important;
-}}
-[data-theme="light"] [data-testid="stDataFrame"] thead th {{
-    background: #f1f5f9 !important;
-    font-weight: 700 !important;
-    border-bottom: 2px solid #94a3b8 !important;
-}}
-/* Input light */
-[data-theme="light"] [data-testid="stTextInput"] input,
-[data-theme="light"] [data-testid="stChatInput"] textarea,
-[data-theme="light"] textarea, [data-theme="light"] input {{
-    background: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid #cbd5e1 !important;
-}}
-/* Button light */
-[data-theme="light"] .stButton > button {{
-    background: #6366f1 !important;
-    color: #ffffff !important;
-    border: none !important;
-}}
-/* HR divider tegas */
-[data-theme="light"] hr {{
-    border-color: #cbd5e1 !important;
-    opacity: 1 !important;
-}}
-/* Selectbox / dropdown light */
-[data-theme="light"] [data-testid="stSelectbox"] > div,
-[data-theme="light"] [data-baseweb="select"] {{
-    background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #0f172a !important;
-}}
-/* Metric light */
-[data-theme="light"] [data-testid="stMetric"] {{ background: #f1f5f9 !important; border-radius: 10px !important; }}
-[data-theme="light"] [data-testid="stMetric"] * {{ color: #0f172a !important; }}
-/* Tabs light */
-[data-theme="light"] [data-testid="stTabs"] button[role="tab"] {{
-    color: #475569 !important;
-    border-bottom: 2px solid transparent !important;
-}}
-[data-theme="light"] [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
-    color: #6366f1 !important;
-    border-bottom-color: #6366f1 !important;
-    background: transparent !important;
-}}
+* {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
 section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
 section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
@@ -6502,588 +6394,363 @@ hr {{ border-color: {C['border']} !important; }}
 """, unsafe_allow_html=True)
 
 def show_system_selector():
-    """SIGMA v4.0 - Command Hub UI — fixed background + nav"""
-    import streamlit.components.v1 as components
+    """SIGMA v3.0 - Premium Command Hub UI"""
     _user = st.session_state.user
     _name = (_user.get("name") or _user.get("email","")).split()[0] if _user else "Trader"
-    _is_dark = st.session_state.get("theme", "dark") == "dark"
-    _hub_bg   = "#020617" if _is_dark else "#f0f4ff"
-    _card_bg  = "rgba(8,18,48,0.88)" if _is_dark else "rgba(255,255,255,0.92)"
-    _card_border = "rgba(255,255,255,0.07)" if _is_dark else "rgba(99,102,241,0.18)"
-    _text_col = "#e2e8f0" if _is_dark else "#0f172a"
-    _text2    = "#94a3b8" if _is_dark else "#475569"
-    _sub_col  = "rgba(148,163,184,0.65)" if _is_dark else "rgba(71,85,105,0.7)"
-    _footer_col = "rgba(71,85,105,0.6)" if _is_dark else "rgba(71,85,105,0.5)"
-    _pill_bg  = "rgba(8,18,48,0.85)" if _is_dark else "rgba(99,102,241,0.08)"
-    _pill_border = "rgba(99,102,241,0.22)" if _is_dark else "rgba(99,102,241,0.3)"
-    _pill_text = "rgba(165,180,252,0.85)" if _is_dark else "#4f46e5"
-    _cdesc_col = "rgba(226,232,240,0.42)" if _is_dark else "rgba(15,23,42,0.55)"
+    _terminal_url = st.secrets.get("SIGMA_TERMINAL_URL", "")
 
-    # ── 1. Sembunyikan semua chrome Streamlit ──────────────────
-    st.markdown(f"""
-    <style>
-    [data-testid="stSidebar"]          {{ display: none !important; }}
-    header[data-testid="stHeader"]     {{ display: none !important; }}
-    #MainMenu, footer                  {{ display: none !important; }}
-    .stApp,
-    [data-testid="stAppViewContainer"],
-    section[data-testid="stMain"],
-    [data-testid="stMainBlockContainer"],
-    [data-testid="stVerticalBlock"],
-    [data-testid="stBottom"]           {{ background: {_hub_bg} !important;
-                                         max-width:100% !important;
-                                         padding:0 !important; margin:0 !important; gap:0 !important; }}
-    /* sembunyikan wrapper button Streamlit yg jadi spacer */
-    [data-testid="stMainBlockContainer"] > div > div > div[data-testid="stVerticalBlock"] > div {{ gap:0 !important; }}
-    /* Tombol navigasi — visible, styled, di bawah card */
-    div[data-testid="stMainBlockContainer"] .stButton > button {{
-        display: flex !important;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
-
-    # ── 2. Inject background + stars ke parent frame ───────────
-    components.html(f"""<script>
-(function(){{
-  var pd = window.parent.document;
-  try {{ window.parent.scrollTo({{top:0,behavior:'instant'}}); }} catch(e){{}}
-
-  /* Background — pakai warna dari Python (sudah tahu tema) */
-  var existBg = pd.getElementById('sigma-hub-bg');
-  if (existBg) existBg.remove();
-  var s = pd.createElement('style');
-  s.id = 'sigma-hub-bg';
-  s.textContent = `.stApp, [data-testid="stAppViewContainer"] {{
-    background: {_hub_bg} !important;
-    position: relative;
-  }}` + {'`' + """.stApp::before {
-    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-    background:
-      radial-gradient(ellipse 90% 55% at 50% -8%, rgba(99,102,241,0.10) 0%, transparent 55%),
-      radial-gradient(ellipse 55% 40% at 88% 95%, rgba(16,185,129,0.05) 0%, transparent 50%),
-      radial-gradient(ellipse 40% 35% at  8% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
-  }""" + '`' if _is_dark else '""'};
-  pd.head.appendChild(s);
-
-  /* Starfield — dark mode only */
-  var existStars = pd.getElementById('sigma-hub-stars');
-  if (existStars) existStars.remove();
-  {'var sw = pd.createElement("div"); sw.id = "sigma-hub-stars";' if _is_dark else '// no stars in light mode'}
-  {'sw.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;";' if _is_dark else ''}
-  {'for(var i=0;i<100;i++){var star=pd.createElement("div");var sz=0.6+Math.random()*1.4;var dur=2.5+Math.random()*5;var del=-(Math.random()*6);star.style.cssText="position:absolute;border-radius:50%;background:rgba(255,255,255,0.85);left:"+Math.random()*100+"%;top:"+Math.random()*100+"%;width:"+sz+"px;height:"+sz+"px;opacity:"+(0.1+Math.random()*0.5)+";animation:sigTwinkle "+dur+"s ease-in-out infinite "+del+"s;";sw.appendChild(star);}' if _is_dark else ''}
-  {'''if (!pd.getElementById('sigma-star-css')) { var sc = pd.createElement('style'); sc.id='sigma-star-css'; sc.textContent='@keyframes sigTwinkle{0%,100%{opacity:0.1;transform:scale(1);}50%{opacity:0.9;transform:scale(1.5);}}'; pd.head.appendChild(sc); } pd.body.appendChild(sw);''' if _is_dark else ''}
-}})();
-</script>""", height=0)
-
-    # ── 3. Render Command Hub HTML (visual only, no nav) ───────
-    components.html(f"""<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
-<style>
-*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;}}
-:root{{
-  --indigo:#6366f1;--blue:#3b82f6;--emerald:#10b981;--purple:#a855f7;--amber:#f59e0b;
-  --text:#e2e8f0;--text2:#94a3b8;--text3:#475569;
-  --fd:'Rajdhani',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;--fu:'Syne',sans-serif;
-}}
-html,body{{background:transparent;font-family:var(--fb);color:{_text_col};overflow-x:hidden;margin:0;padding:0;}}
-/* ── Header ── */
-.wrap{{display:flex;flex-direction:column;align-items:center;padding:40px 20px 10px;}}
-.eyebrow{{font-family:var(--fm);font-size:0.62rem;letter-spacing:0.28em;text-transform:uppercase;
-  color:rgba(99,102,241,0.7);margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;}}
-.eyebrow::before,.eyebrow::after{{content:'';flex:1;max-width:70px;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.45));}}
-.eyebrow::after{{background:linear-gradient(90deg,rgba(99,102,241,0.45),transparent);}}
-.title{{font-family:var(--fd);font-size:clamp(2.2rem,6vw,3.6rem);font-weight:700;letter-spacing:0.14em;
-  background:{'linear-gradient(135deg,#f1f5f9 0%,#c7d2fe 40%,#67e8f9 100%)' if _is_dark else 'linear-gradient(135deg,#1e1b4b 0%,#4f46e5 40%,#0891b2 100%)'};
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.05;text-align:center;}}
-.sub{{font-family:var(--fm);font-size:0.72rem;color:{_sub_col};letter-spacing:0.1em;margin-top:8px;text-align:center;}}
-.userpill{{display:inline-flex;align-items:center;gap:8px;margin-top:16px;
-  background:{_pill_bg};border:1px solid {_pill_border};border-radius:50px;padding:7px 18px;
-  font-family:var(--fm);font-size:0.68rem;color:{_pill_text};}}
-.udot{{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 8px var(--emerald);
-  animation:udot 2s ease-in-out infinite;display:inline-block;}}
-@keyframes udot{{0%,100%{{opacity:0.7;transform:scale(1);}}50%{{opacity:1;transform:scale(1.3);}}}}
-/* ── Divider ── */
-.divider{{width:100%;max-width:940px;display:flex;align-items:center;gap:14px;margin:28px 0 24px;}}
-.divline{{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.2),transparent);}}
-.divlabel{{font-family:var(--fm);font-size:0.6rem;letter-spacing:0.22em;text-transform:uppercase;
-  color:var(--indigo);padding:4px 16px;border-radius:20px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);}}
-/* ── Grid ── */
-.grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;width:100%;max-width:940px;}}
-/* ── Card ── */
-.card{{background:{_card_bg};border:1px solid {_card_border};border-radius:22px;
-  padding:30px 26px 20px;position:relative;overflow:hidden;
-  backdrop-filter:blur(16px);animation:rise 0.5s ease both;}}
-.card:nth-child(1){{animation-delay:0.05s;}}
-.card:nth-child(2){{animation-delay:0.12s;}}
-.card:nth-child(3){{animation-delay:0.19s;opacity:0.68;}}
-@keyframes rise{{from{{opacity:0;transform:translateY(24px);}}to{{opacity:1;transform:translateY(0);}}}}
-.card::before{{content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:22px 22px 0 0;}}
-.c-ai::before   {{background:linear-gradient(90deg,transparent,rgba(59,130,246,0.7),transparent);}}
-.c-term::before {{background:linear-gradient(90deg,transparent,rgba(167,139,250,0.7),transparent);}}
-.c-kipm::before {{background:linear-gradient(90deg,transparent,rgba(16,185,129,0.4),transparent);}}
-/* Glow */
-.glow{{position:absolute;width:220px;height:220px;border-radius:50%;filter:blur(70px);
-  top:-60px;right:-40px;pointer-events:none;}}
-.c-ai   .glow{{background:rgba(59,130,246,0.25);}}
-.c-term .glow{{background:rgba(139,92,246,0.2);}}
-.c-kipm .glow{{background:rgba(16,185,129,0.15);}}
-/* Corner brackets */
-.tl,.br{{position:absolute;width:13px;height:13px;opacity:0.28;}}
-.tl{{top:15px;left:15px;border-top:1px solid;border-left:1px solid;border-radius:4px 0 0 0;}}
-.br{{bottom:15px;right:15px;border-bottom:1px solid;border-right:1px solid;border-radius:0 0 4px 0;}}
-.c-ai   .tl,.c-ai   .br{{border-color:rgba(59,130,246,0.9);}}
-.c-term .tl,.c-term .br{{border-color:rgba(167,139,250,0.9);}}
-.c-kipm .tl,.c-kipm .br{{border-color:rgba(16,185,129,0.7);}}
-/* Badge */
-.badge{{position:absolute;top:18px;right:18px;font-family:var(--fm);font-size:0.58rem;letter-spacing:0.12em;
-  text-transform:uppercase;padding:3px 10px;border-radius:20px;font-weight:600;}}
-.c-ai   .badge{{background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.28);}}
-.c-term .badge{{background:rgba(167,139,250,0.1);color:#c4b5fd;border:1px solid rgba(167,139,250,0.28);}}
-.c-kipm .badge{{background:rgba(245,158,11,0.1);color:#fbbf24;border:1px solid rgba(245,158,11,0.28);}}
-/* Visual */
-.vis{{height:110px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;}}
-/* Radar */
-.radar{{width:96px;height:96px;position:relative;}}
-.rring{{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(59,130,246,0.18);}}
-.rring:nth-child(2){{inset:16px;border-color:rgba(59,130,246,0.28);}}
-.rring:nth-child(3){{inset:32px;border-color:rgba(59,130,246,0.4);}}
-.rring:nth-child(4){{inset:46px;border-color:rgba(59,130,246,0.65);}}
-.rsweep{{position:absolute;inset:0;border-radius:50%;
-  background:conic-gradient(from 0deg,transparent 0deg,rgba(59,130,246,0.45) 60deg,transparent 61deg);
-  animation:rspin 3s linear infinite;}}
-@keyframes rspin{{to{{transform:rotate(360deg);}}}}
-.rdot{{position:absolute;width:5px;height:5px;border-radius:50%;background:#3b82f6;box-shadow:0 0 7px #3b82f6;}}
-.rdot:nth-child(6){{top:24%;left:61%;}}
-.rdot:nth-child(7){{top:58%;left:22%;}}
-.rdot:nth-child(8){{top:72%;left:64%;}}
-.rax{{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}}
-.rxl{{width:1px;height:100%;background:rgba(59,130,246,0.18);position:absolute;}}
-.ryl{{width:100%;height:1px;background:rgba(59,130,246,0.18);position:absolute;}}
-/* Circuit */
-.circ{{width:108px;height:88px;position:relative;overflow:hidden;}}
-.cgrid{{position:absolute;inset:0;
-  background-image:linear-gradient(rgba(167,139,250,0.12) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(167,139,250,0.12) 1px,transparent 1px);
-  background-size:16px 16px;}}
-.cscan{{position:absolute;height:2px;width:100%;left:0;
-  background:linear-gradient(90deg,transparent,rgba(167,139,250,0.7),transparent);
-  animation:csweep var(--cd,2.2s) ease-in-out infinite var(--cdl,0s);}}
-@keyframes csweep{{0%{{top:0%;opacity:0;}}10%{{opacity:1;}}90%{{opacity:0.8;}}100%{{top:100%;opacity:0;}}}}
-.cnode{{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--cc,#a855f7);
-  box-shadow:0 0 6px var(--cc,#a855f7);animation:nblink 2s ease-in-out infinite var(--cdl,0s);}}
-@keyframes nblink{{0%,100%{{opacity:0.3;}}50%{{opacity:1;}}}}
-.ccandles{{position:absolute;bottom:8px;display:flex;gap:5px;align-items:flex-end;left:50%;transform:translateX(-50%);}}
-.ccandle{{width:8px;border-radius:1px;}}
-/* Book */
-.book-wrap{{position:relative;width:76px;height:88px;display:flex;align-items:center;justify-content:center;}}
-.book{{width:58px;height:72px;border-radius:4px 8px 8px 4px;
-  background:linear-gradient(135deg,rgba(16,185,129,0.14),rgba(5,150,105,0.07));
-  border:1px solid rgba(16,185,129,0.24);position:relative;overflow:hidden;
-  animation:bfloat 4s ease-in-out infinite;}}
-@keyframes bfloat{{0%,100%{{transform:translateY(0) rotate(-2deg);}}50%{{transform:translateY(-7px) rotate(2deg);}}}}
-.book::before{{content:'';position:absolute;left:0;top:0;bottom:0;width:8px;
-  background:rgba(16,185,129,0.22);border-right:1px solid rgba(16,185,129,0.28);}}
-.blines{{position:absolute;inset:10px 10px;display:flex;flex-direction:column;gap:7px;}}
-.bline{{height:1px;border-radius:1px;opacity:0.5;}}
-.bglow{{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
-  width:70px;height:16px;background:rgba(16,185,129,0.18);filter:blur(10px);border-radius:50%;}}
-.soontag{{position:absolute;top:-8px;right:-14px;background:rgba(245,158,11,0.14);color:#fbbf24;
-  border:1px solid rgba(245,158,11,0.28);border-radius:7px;padding:2px 7px;
-  font-family:var(--fm);font-size:0.5rem;letter-spacing:0.1em;white-space:nowrap;}}
-/* Card text */
-.cname{{font-family:var(--fd);font-size:1.4rem;font-weight:700;color:{_text_col};letter-spacing:0.06em;margin-bottom:4px;}}
-.ctag{{font-size:0.62rem;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;font-weight:500;}}
-.c-ai   .ctag{{color:rgba(96,165,250,0.75);}}
-.c-term .ctag{{color:rgba(196,181,253,0.75);}}
-.c-kipm .ctag{{color:rgba(16,185,129,0.6);}}
-.cdesc{{font-size:0.78rem;color:{_cdesc_col};line-height:1.75;margin-bottom:10px;}}
-/* Footer inside html */
-.footer-note{{margin-top:10px;font-family:var(--fm);font-size:0.58rem;letter-spacing:0.1em;
-  color:{_footer_col};text-align:center;padding-bottom:4px;}}
-.footer-note span{{color:rgba(99,102,241,0.5);}}
-/* Mobile */
-@media(max-width:700px){{
-  .grid{{grid-template-columns:1fr;max-width:380px;}}
-  .title{{font-size:2.2rem;}}
-  .wrap{{padding:28px 16px 8px;}}
-}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="title">SIGMA SYSTEM</div>
-  <div class="sub">SIGMA V4.0</div>
-  <div class="userpill">
-    <span class="udot"></span>
-    Selamat datang, {_name}
-  </div>
-  <div class="divider">
-    <div class="divline"></div>
-    <div class="divlabel">Command Hub</div>
-    <div class="divline"></div>
-  </div>
-  <div class="grid">
-
-    <!-- SIGMA AI -->
-    <div class="card c-ai">
-      <div class="glow"></div>
-      <div class="tl"></div><div class="br"></div>
-      <span class="badge">AI Chat</span>
-      <div class="vis">
-        <div class="radar">
-          <div class="rring"></div><div class="rring"></div>
-          <div class="rring"></div><div class="rring"></div>
-          <div class="rsweep"></div>
-          <div class="rax"><div class="rxl"></div><div class="ryl"></div></div>
-          <div class="rdot"></div><div class="rdot"></div><div class="rdot"></div>
-        </div>
-      </div>
-      <div class="cname">SIGMA AI</div>
-      <div class="ctag">Intelligent Analysis</div>
-      <div class="cdesc">Analisa saham IDX dengan AI cerdas berbasis Bandarmologi + MnM Strategy.</div>
-    </div>
-
-    <!-- SIGMA Terminal -->
-    <div class="card c-term">
-      <div class="glow"></div>
-      <div class="tl"></div><div class="br"></div>
-      <span class="badge">Terminal</span>
-      <div class="vis">
-        <div class="circ">
-          <div class="cgrid"></div>
-          <div class="cscan" style="--cd:2.2s;--cdl:0s;"></div>
-          <div class="cscan" style="--cd:3.1s;--cdl:0.9s;"></div>
-          <div class="cnode" style="--cc:#a855f7;top:22%;left:15%;--cdl:0s;"></div>
-          <div class="cnode" style="--cc:#6366f1;top:60%;left:74%;--cdl:0.5s;"></div>
-          <div class="cnode" style="--cc:#c4b5fd;top:78%;left:38%;--cdl:1s;"></div>
-          <div class="ccandles">
-            <div class="ccandle" style="height:22px;background:#10b981;"></div>
-            <div class="ccandle" style="height:14px;background:#ef4444;"></div>
-            <div class="ccandle" style="height:32px;background:#10b981;"></div>
-            <div class="ccandle" style="height:20px;background:#10b981;"></div>
-            <div class="ccandle" style="height:11px;background:#ef4444;"></div>
-            <div class="ccandle" style="height:27px;background:#10b981;"></div>
-          </div>
-        </div>
-      </div>
-      <div class="cname">SIGMA Terminal</div>
-      <div class="ctag">Market Intelligence</div>
-      <div class="cdesc">Dashboard premium: Alpha Screener, Rotasi Sektor, Bandarmologi, RRG & lebih.</div>
-    </div>
-
-    <!-- KIPM Academy -->
-    <div class="card c-kipm">
-      <div class="glow"></div>
-      <div class="tl"></div><div class="br"></div>
-      <span class="badge">Coming Soon</span>
-      <div class="vis">
-        <div class="book-wrap">
-          <div class="book">
-            <div class="blines">
-              <div class="bline" style="background:#10b981;width:78%;"></div>
-              <div class="bline" style="background:#6366f1;width:60%;"></div>
-              <div class="bline" style="background:#10b981;width:72%;"></div>
-              <div class="bline" style="background:#94a3b8;width:48%;"></div>
-              <div class="bline" style="background:#10b981;width:68%;"></div>
-            </div>
-          </div>
-          <div class="bglow"></div>
-          <div class="soontag">In Development</div>
-        </div>
-      </div>
-      <div class="cname">KIPM Academy</div>
-      <div class="ctag">Education Hub</div>
-      <div class="cdesc">Panduan trading, strategi bandarmologi, materi edukasi pasar modal IDX.</div>
-    </div>
-
-  </div>
-  <div class="footer-note">
-    SIGMA SYSTEM v4.0 &nbsp;·&nbsp; <span>Strategic Intelligence &amp; Global Market Analysis</span> &nbsp;·&nbsp; Powered by MarketnMocha
-  </div>
-</div>
-</body>
-</html>
-""", height=760, scrolling=False)
-
-    # ── 4. Tombol navigasi native Streamlit — menyatu dengan card ──
     st.markdown("""
     <style>
-    /* Reset semua gap dan padding wrapper */
-    div[data-testid="stMainBlockContainer"] > div > div { gap: 0 !important; }
-    div[data-testid="stHorizontalBlock"] {
-        position: static !important; bottom: auto !important;
-        opacity: 1 !important; height: auto !important;
-        overflow: visible !important; z-index: auto !important;
-        gap: 22px !important;
-        max-width: 940px !important;
-        margin: -16px auto 0 !important;
-        padding: 0 0 32px !important;
-    }
-    /* Tiap kolom button */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
-        padding: 0 !important; flex: 1 !important;
-    }
-    /* Styling tombol AI */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton > button {
-        background: rgba(59,130,246,0.12)  !important;
-        color: #60a5fa !important;
-        border: 1px solid rgba(59,130,246,0.35) !important;
-        border-radius: 0 0 18px 18px !important;
-        border-top: none !important;
-    }
-    /* Styling tombol Terminal */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton > button {
-        background: rgba(167,139,250,0.12) !important;
-        color: #c4b5fd !important;
-        border: 1px solid rgba(167,139,250,0.35) !important;
-        border-radius: 0 0 18px 18px !important;
-        border-top: none !important;
-    }
-    /* Styling tombol KIPM disabled */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(3) .stButton > button {
-        background: rgba(16,185,129,0.06)  !important;
-        color: rgba(16,185,129,0.45) !important;
-        border: 1px solid rgba(16,185,129,0.18) !important;
-        border-radius: 0 0 18px 18px !important;
-        border-top: none !important;
-        cursor: not-allowed !important;
-    }
-    /* Base button style semua */
-    div[data-testid="stHorizontalBlock"] .stButton > button {
-        width: 100% !important;
-        font-family: 'Syne', 'Segoe UI', sans-serif !important;
-        font-size: 0.72rem !important; font-weight: 700 !important;
-        letter-spacing: 0.14em !important; text-transform: uppercase !important;
-        padding: 14px 20px !important;
-        transition: all 0.22s !important;
-        box-shadow: none !important;
-    }
-    div[data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton > button:hover {
-        background: rgba(59,130,246,0.22) !important;
-        box-shadow: 0 8px 24px rgba(59,130,246,0.18) !important;
-    }
-    div[data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton > button:hover {
-        background: rgba(167,139,250,0.22) !important;
-        box-shadow: 0 8px 24px rgba(139,92,246,0.15) !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("⚡ Masuk SIGMA AI", key="hub_btn_ai", use_container_width=True):
-            st.session_state.selected_system = "chat"
-            st.session_state.current_view    = "chat"
-            st.rerun()
-    with col2:
-        if st.button("📊 Masuk SIGMA Terminal", key="hub_btn_term", use_container_width=True):
-            st.session_state.selected_system = "dashboard"
-            st.session_state.current_view    = "dashboard"
-            st.rerun()
-    with col3:
-        st.button("🎓 Segera Hadir", key="hub_btn_kipm", use_container_width=True, disabled=True)
-
-    st.stop()
-def show_login():
-    """SIGMA v4.0 - Premium Login Screen (Google OAuth)"""
-    import streamlit.components.v1 as components
-
-    st.markdown(f"""
-    <style>
-    [data-testid="stSidebar"] {{ display: none !important; }}
-    header[data-testid="stHeader"] {{ display: none !important; }}
-    #MainMenu {{ display: none !important; }}
-    footer {{ display: none !important; }}
-    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{
+    [data-testid="stSidebar"] { display: none !important; }
+    header[data-testid="stHeader"] { display: none !important; }
+    #MainMenu { display: none !important; }
+    footer { display: none !important; }
+    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"] {
         background: #020617 !important;
-        min-height: 100vh !important;
-    }}
-    [data-testid="stMainBlockContainer"] {{
-        max-width: 400px !important;
-        margin: 0 auto !important;
-        padding: 0 20px 40px !important;
-        background: transparent !important;
-    }}
-    [data-testid="stVerticalBlock"] {{ gap: 0 !important; }}
-    [data-testid="stAlert"] {{ border-radius: 10px !important; margin-top: 10px !important; }}
-    @media(max-width:768px){{
-        [data-testid="stMainBlockContainer"]{{max-width:92%!important;}}
-    }}
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    [data-testid="stVerticalBlock"] { gap: 0 !important; }
+    [data-testid="stHorizontalBlock"] {
+        position: fixed !important; bottom: -300px !important;
+        opacity: 0 !important; height: 1px !important; width: 1px !important;
+        overflow: hidden !important; z-index: -999 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-    # Inject parent-frame styles (hide Streamlit chrome)
     components.html("""<script>
-(function(){{
-  var pd=window.parent.document;
-  var fs=pd.getElementById('sigma-v4-chrome-hide');
-  if(!fs){{
-    var s=pd.createElement('style'); s.id='sigma-v4-chrome-hide';
-    s.textContent='.viewerBadge_container__r5tak,[class*="viewerBadge"],[class*="styles_viewerBadge"],#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"],header[data-testid="stHeader"],.stDeployButton,.stAppDeployButton{{display:none!important;}}';
-    pd.head.appendChild(s);
-  }}
-  var bg=pd.getElementById('sigma-v4-bg');
-  if(!bg){{
-    var bs=pd.createElement('style'); bs.id='sigma-v4-bg';
-    bs.textContent='.stApp,[data-testid="stAppViewContainer"]{{background:#020617!important;}}';
-    pd.head.appendChild(bs);
-  }}
-}})();
+(function() {
+    try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {}
+    setTimeout(function() { try { window.parent.scrollTo({top: 0, behavior: 'instant'}); } catch(e) {} }, 200);
+})();
 </script>""", height=0)
 
-    # Hero section rendered via components.html for full control
-    components.html("""<!DOCTYPE html>
+    components.html(f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'JetBrains Mono',monospace;overflow:hidden;}}
-/* Particles */
-#particles{{position:fixed;top:0;left:50%;transform:translateX(-50%);width:400px;height:340px;pointer-events:none;overflow:hidden;}}
-.pdot{{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(99,102,241,0.7);animation:pfloat var(--d,8s) ease-in-out infinite var(--dl,0s);}}
-@keyframes pfloat{{0%,100%{{transform:translateY(0) translateX(0);opacity:0;}}20%{{opacity:1;}}80%{{opacity:0.7;}}100%{{transform:translateY(-90px) translateX(15px);opacity:0;}}}}
-/* Horizon glow */
-.horizon{{
-  position:fixed;bottom:0;left:0;right:0;height:40vh;pointer-events:none;
-  background:radial-gradient(ellipse 100% 70% at 50% 120%,rgba(99,102,241,0.15) 0%,rgba(59,130,246,0.06) 40%,transparent 70%);
+*,*::before,*::after{{box-sizing:border-box;margin:0;padding:0;}}
+body{{
+  background:#020617;
+  font-family:'Outfit',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}}
+body::before{{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -5%, rgba(99,102,241,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 95%, rgba(16,185,129,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 35% at 5% 80%, rgba(59,130,246,0.05) 0%, transparent 50%);
 }}
 /* Starfield */
-#stars{{position:fixed;inset:0;pointer-events:none;overflow:hidden;}}
-.star{{position:absolute;border-radius:50%;background:rgba(255,255,255,0.85);animation:twinkle var(--d,3s) ease-in-out infinite var(--dl,0s);}}
-@keyframes twinkle{{0%,100%{{opacity:0.12;}}50%{{opacity:0.9;}}}}
-/* Content */
-.hero{{padding:36px 0 24px;text-align:center;}}
-.icon-wrap{{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:62px;height:62px;border-radius:18px;margin-bottom:14px;
-  background:linear-gradient(135deg,rgba(99,102,241,0.22),rgba(59,130,246,0.14));
-  border:1px solid rgba(99,102,241,0.38);
-  font-size:1.7rem;font-weight:900;font-family:'Rajdhani',sans-serif;color:#a5b4fc;
-  box-shadow:0 0 28px rgba(99,102,241,0.32),0 0 80px rgba(99,102,241,0.08);
-  animation:iconpulse 3s ease-in-out infinite;
+.stars{{
+  position:fixed;inset:0;pointer-events:none;overflow:hidden;
 }}
-@keyframes iconpulse{{0%,100%{{box-shadow:0 0 28px rgba(99,102,241,0.32),0 0 80px rgba(99,102,241,0.08);}}50%{{box-shadow:0 0 44px rgba(99,102,241,0.55),0 0 120px rgba(99,102,241,0.15);}}}}
-.logo{{font-family:'Rajdhani',sans-serif;font-size:2.1rem;font-weight:700;letter-spacing:0.2em;
-  background:linear-gradient(135deg,#c7d2fe,#818cf8 50%,#3b82f6);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}}
-.sub{{font-size:0.57rem;color:rgba(124,134,162,0.65);letter-spacing:0.22em;text-transform:uppercase;margin-top:7px;}}
-.scanline{{width:110px;height:1px;margin:13px auto 0;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.6),transparent);position:relative;overflow:hidden;}}
-.scanline::after{{content:'';position:absolute;top:0;left:-100%;width:40%;height:100%;background:rgba(165,180,252,0.9);animation:scan 2.5s ease-in-out infinite;}}
-@keyframes scan{{0%{{left:-100%;}}100%{{left:200%;}}}}
+.star{{
+  position:absolute;width:2px;height:2px;border-radius:50%;
+  background:rgba(255,255,255,0.7);
+  animation:twinkle var(--d,3s) ease-in-out infinite;
+  animation-delay:var(--delay,0s);
+}}
+@keyframes twinkle{{0%,100%{{opacity:0.2;transform:scale(1);}}50%{{opacity:1;transform:scale(1.4);}}}}
+
+.hub-wrap{{
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 20px 48px;
+  position:relative;z-index:1;
+}}
+
+/* ── HEADER ── */
+.hub-header{{text-align:center;margin-bottom:40px;}}
+.hub-eyebrow{{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.62rem;letter-spacing:0.25em;text-transform:uppercase;
+  color:rgba(99,102,241,0.7);margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}}
+.hub-eyebrow::before,.hub-eyebrow::after{{
+  content:'';flex:1;max-width:60px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(99,102,241,0.4));
+}}
+.hub-eyebrow::after{{background:linear-gradient(90deg,rgba(99,102,241,0.4),transparent);}}
+.hub-title{{
+  font-family:'Rajdhani',sans-serif;
+  font-size:clamp(2.2rem,6vw,3.5rem);
+  font-weight:700;letter-spacing:0.12em;
+  background:linear-gradient(135deg,#e2e8f0 0%,#a5b4fc 45%,#67e8f9 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1.05;margin-bottom:8px;
+}}
+.hub-subtitle{{
+  font-size:0.82rem;color:rgba(124,134,162,0.8);
+  letter-spacing:0.06em;margin-top:6px;
+}}
+.hub-user{{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:14px;
+  background:rgba(8,15,38,0.8);
+  border:1px solid rgba(99,102,241,0.2);
+  border-radius:50px;padding:6px 16px;
+  font-size:0.75rem;color:rgba(165,180,252,0.85);
+  font-family:'JetBrains Mono',monospace;
+}}
+.hub-user-dot{{width:6px;height:6px;border-radius:50%;background:#10b981;animation:pulse-g 2s ease-in-out infinite;}}
+@keyframes pulse-g{{0%,100%{{opacity:0.6;transform:scale(1);}}50%{{opacity:1;transform:scale(1.3);}}}}
+
+/* ── DIVIDER ── */
+.hub-divider{{
+  width:100%;max-width:900px;
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:28px;
+}}
+.hub-div-line{{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.2),transparent);}}
+.hub-div-label{{
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;
+  color:var(--indigo,#6366f1);
+  background:rgba(99,102,241,0.1);
+  border:1px solid rgba(99,102,241,0.2);
+  border-radius:20px;padding:3px 14px;
+}}
+
+/* ── CARDS GRID ── */
+.hub-grid{{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;
+  width:100%;max-width:980px;
+}}
+
+.hub-card{{
+  background:rgba(8,15,38,0.88);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:20px;
+  padding:28px 24px 24px;
+  position:relative;overflow:hidden;
+  cursor:pointer;
+  transition:transform 0.28s cubic-bezier(0.4,0,0.2,1),
+             box-shadow 0.28s,
+             border-color 0.28s;
+  backdrop-filter:blur(12px);
+  text-decoration:none;display:block;
+  animation:cardIn 0.5s ease both;
+}}
+.hub-card:nth-child(1){{animation-delay:0.05s;}}
+.hub-card:nth-child(2){{animation-delay:0.12s;}}
+.hub-card:nth-child(3){{animation-delay:0.19s;}}
+@keyframes cardIn{{from{{opacity:0;transform:translateY(20px);}}to{{opacity:1;transform:translateY(0);}}}}
+
+.hub-card::before{{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:1px;
+  border-radius:20px 20px 0 0;
+}}
+.hub-card-scanner::before{{background:linear-gradient(90deg,transparent,rgba(59,130,246,0.6),transparent);}}
+.hub-card-ai::before{{background:linear-gradient(90deg,transparent,rgba(167,139,250,0.65),transparent);}}
+.hub-card-journal::before{{background:linear-gradient(90deg,transparent,rgba(16,185,129,0.6),transparent);}}
+
+/* Glow blob */
+.hub-card-glow{{
+  position:absolute;width:200px;height:200px;border-radius:50%;
+  filter:blur(60px);opacity:0;top:-50px;right:-30px;
+  transition:opacity 0.4s;pointer-events:none;
+}}
+.hub-card-scanner .hub-card-glow{{background:rgba(59,130,246,0.28);}}
+.hub-card-ai       .hub-card-glow{{background:rgba(139,92,246,0.22);}}
+.hub-card-journal  .hub-card-glow{{background:rgba(16,185,129,0.18);}}
+.hub-card:hover .hub-card-glow{{opacity:1;}}
+
+.hub-card:hover{{
+  transform:translateY(-7px);
+}}
+.hub-card-scanner:hover{{border-color:rgba(59,130,246,0.38);box-shadow:0 22px 55px rgba(59,130,246,0.12),0 0 0 1px rgba(59,130,246,0.15);}}
+.hub-card-ai:hover{{border-color:rgba(167,139,250,0.38);box-shadow:0 22px 55px rgba(139,92,246,0.1),0 0 0 1px rgba(167,139,250,0.15);}}
+.hub-card-journal:hover{{border-color:rgba(16,185,129,0.38);box-shadow:0 22px 55px rgba(16,185,129,0.08),0 0 0 1px rgba(16,185,129,0.15);}}
+
+/* Corner brackets */
+.card-tl,.card-br{{
+  position:absolute;width:12px;height:12px;
+  border-color:inherit;opacity:0.25;
+}}
+.card-tl{{top:14px;left:14px;border-top:1px solid;border-left:1px solid;border-radius:3px 0 0 0;}}
+.card-br{{bottom:14px;right:14px;border-bottom:1px solid;border-right:1px solid;border-radius:0 0 3px 0;}}
+.hub-card-scanner .card-tl,.hub-card-scanner .card-br{{border-color:rgba(59,130,246,0.6);}}
+.hub-card-ai       .card-tl,.hub-card-ai       .card-br{{border-color:rgba(167,139,250,0.6);}}
+.hub-card-journal  .card-tl,.hub-card-journal  .card-br{{border-color:rgba(16,185,129,0.6);}}
+
+/* Card badge */
+.hub-card-badge{{
+  position:absolute;top:18px;right:20px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;font-weight:600;
+}}
+.hub-card-scanner .hub-card-badge{{background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.22);}}
+.hub-card-ai       .hub-card-badge{{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.22);}}
+.hub-card-journal  .hub-card-badge{{background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.22);}}
+
+/* Card icon */
+.hub-card-icon{{
+  width:54px;height:54px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.5rem;margin-bottom:18px;
+}}
+.hub-card-scanner .hub-card-icon{{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.22);}}
+.hub-card-ai       .hub-card-icon{{background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);}}
+.hub-card-journal  .hub-card-icon{{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);}}
+
+.hub-card-name{{
+  font-family:'Rajdhani',sans-serif;
+  font-size:1.35rem;font-weight:700;color:#e2e8f0;
+  letter-spacing:0.06em;margin-bottom:4px;
+}}
+.hub-card-tag{{
+  font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;
+  margin-bottom:14px;font-weight:500;
+}}
+.hub-card-scanner .hub-card-tag{{color:rgba(59,130,246,0.7);}}
+.hub-card-ai       .hub-card-tag{{color:rgba(167,139,250,0.75);}}
+.hub-card-journal  .hub-card-tag{{color:rgba(16,185,129,0.7);}}
+
+.hub-card-desc{{
+  font-size:0.8rem;color:rgba(226,232,240,0.45);
+  line-height:1.75;margin-bottom:20px;
+}}
+
+.hub-card-btn{{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 20px;border-radius:10px;
+  font-family:'Outfit',sans-serif;font-size:0.78rem;
+  font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  width:100%;border:none;cursor:pointer;
+  transition:all 0.2s;
+}}
+.hub-card-scanner .hub-card-btn{{background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.28);}}
+.hub-card-ai       .hub-card-btn{{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.28);}}
+.hub-card-journal  .hub-card-btn{{background:rgba(16,185,129,0.1);color:#10b981;border:1px solid rgba(16,185,129,0.28);}}
+.hub-card-btn:hover{{filter:brightness(1.3);transform:translateY(-1px);}}
+
+/* ── FOOTER ── */
+.hub-footer{{
+  margin-top:36px;
+  text-align:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6rem;letter-spacing:0.1em;
+  color:rgba(124,134,162,0.4);
+}}
+.hub-footer span{{color:rgba(99,102,241,0.5);}}
+
+/* Mobile */
+@media(max-width:680px){{
+  .hub-grid{{grid-template-columns:1fr;}}
+  .hub-title{{font-size:2rem;}}
+  .hub-wrap{{padding:24px 16px 40px;}}
+}}
 </style>
 </head>
 <body>
-<div id="stars"></div>
-<div id="particles"></div>
-<div class="horizon"></div>
-<div class="hero">
-  <div class="icon-wrap">Σ</div>
-  <div class="logo">SIGMA</div>
-  <div class="sub">Market Intelligence System</div>
-  <div class="scanline"></div>
+<div class="stars" id="stars"></div>
+<div class="hub-wrap">
+  <div class="hub-header">
+    <div class="hub-eyebrow">Select Module</div>
+    <div class="hub-title">SIGMA TERMINAL</div>
+    <div class="hub-subtitle">Market Intelligence System · v3.0</div>
+    <div class="hub-user">
+      <span class="hub-user-dot"></span>
+      Welcome, {_name}
+    </div>
+  </div>
+
+  <div class="hub-divider">
+    <div class="hub-div-line"></div>
+    <div class="hub-div-label">Command Hub</div>
+    <div class="hub-div-line"></div>
+  </div>
+
+  <div class="hub-grid">
+    <!-- SIGMA Chat -->
+    <a class="hub-card hub-card-scanner" href="javascript:void(0)" onclick="navTo('chat')" id="card-chat">
+      <div class="hub-card-glow"></div>
+      <div class="card-tl"></div><div class="card-br"></div>
+      <span class="hub-card-badge">AI Chat</span>
+      <div class="hub-card-icon">🤖</div>
+      <div class="hub-card-name">SIGMA AI</div>
+      <div class="hub-card-tag">Intelligent Analysis</div>
+      <div class="hub-card-desc">Analisa saham dengan AI cerdas berbasis Bandarmologi. Tanya apa saja tentang market IDX.</div>
+      <button class="hub-card-btn" onclick="navTo('chat')">Enter Module →</button>
+    </a>
+
+    <!-- SIGMA Terminal -->
+    <a class="hub-card hub-card-ai" href="javascript:void(0)" onclick="navTo('dashboard')" id="card-terminal">
+      <div class="hub-card-glow"></div>
+      <div class="card-tl"></div><div class="card-br"></div>
+      <span class="hub-card-badge">Terminal</span>
+      <div class="hub-card-icon">📊</div>
+      <div class="hub-card-name">SIGMA Terminal</div>
+      <div class="hub-card-tag">Market Intelligence</div>
+      <div class="hub-card-desc">Dashboard terminal premium: Market Map, Alpha Screener, Rotasi Sektor, Kalkulator & lebih.</div>
+      <button class="hub-card-btn" onclick="navTo('dashboard')">Enter Module →</button>
+    </a>
+
+    <!-- Trade Journal -->
+    <a class="hub-card hub-card-journal" href="javascript:void(0)" onclick="navTo('chat')" id="card-journal">
+      <div class="hub-card-glow"></div>
+      <div class="card-tl"></div><div class="card-br"></div>
+      <span class="hub-card-badge">Pro</span>
+      <div class="hub-card-icon">📔</div>
+      <div class="hub-card-name">KIPM Academy</div>
+      <div class="hub-card-tag">Education Hub</div>
+      <div class="hub-card-desc">Akses panduan trading, strategi bandarmologi, dan materi edukasi pasar modal Indonesia.</div>
+      <button class="hub-card-btn" onclick="navTo('chat')">Enter Module →</button>
+    </a>
+  </div>
+
+  <div class="hub-footer">
+    SIGMA TERMINAL v3.0 &nbsp;·&nbsp; <span>Market Intelligence System</span> &nbsp;·&nbsp; Powered by AI + Bandarmology
+  </div>
 </div>
+
 <script>
-// Stars
+// Generate stars
 (function(){{
-  var w=document.getElementById('stars');
-  for(var i=0;i<70;i++){{
-    var s=document.createElement('div');s.className='star';
-    var sz=0.6+Math.random()*1.2;
+  var wrap = document.getElementById('stars');
+  for(var i=0;i<80;i++){{
+    var s=document.createElement('div');
+    s.className='star';
     s.style.cssText='left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;'
-      +'width:'+sz+'px;height:'+sz+'px;'
-      +'--d:'+(2+Math.random()*5)+'s;--dl:-'+(Math.random()*5)+'s;'
-      +'opacity:'+(0.1+Math.random()*0.4)+';';
-    w.appendChild(s);
+      +'--d:'+(2+Math.random()*4)+'s;--delay:'+Math.random()*4+'s;'
+      +'opacity:'+(0.2+Math.random()*0.6)+';'
+      +'width:'+(1+Math.random())+'px;height:'+(1+Math.random())+'px;';
+    wrap.appendChild(s);
   }}
 }})();
-// Particles
-(function(){{
-  var w=document.getElementById('particles');
-  for(var i=0;i<24;i++){{
-    var d=document.createElement('div');d.className='pdot';
-    d.style.cssText='left:'+Math.random()*100+'%;top:'+(20+Math.random()*80)+'%;'
-      +'--d:'+(5+Math.random()*7)+'s;--dl:-'+(Math.random()*7)+'s;';
-    w.appendChild(d);
-  }}
-}})();
+
+// Navigation
+function navTo(view){{
+  try{{
+    var u = new URL(window.parent.location.href);
+    u.searchParams.set('do', 'view_' + view);
+    window.parent.location.href = u.toString();
+  }}catch(e){{}}
+}}
 </script>
 </body>
 </html>
-""", height=300)
-
-    # Google OAuth button via Streamlit markdown
-    try:
-        auth_url = google_auth_url()
-        st.markdown(f"""
-        <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=JetBrains+Mono:wght@400;500&family=Syne:wght@700&display=swap" rel="stylesheet">
-        <div style="
-            background:rgba(8,18,48,0.82);
-            border:1px solid rgba(99,102,241,0.18);
-            border-radius:20px;
-            padding:26px 24px 22px;
-            backdrop-filter:blur(24px);
-            box-shadow:0 32px 80px rgba(2,6,23,0.8),0 0 0 1px rgba(255,255,255,0.04) inset;
-            position:relative;
-            overflow:hidden;
-            margin-top:-10px;
-        ">
-          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.5),transparent);"></div>
-          <div style="text-align:center;margin-bottom:20px;">
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:rgba(148,163,184,0.55);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px;">Masuk dengan akun Google</div>
-            <div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.3),transparent);margin:0 auto;"></div>
-          </div>
-          <a href="{auth_url}" style="
-            display:flex;align-items:center;justify-content:center;gap:12px;
-            background:rgba(255,255,255,0.97);color:#1a1a2e;
-            border-radius:12px;padding:14px 20px;
-            text-decoration:none;
-            font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;letter-spacing:0.06em;
-            box-shadow:0 6px 24px rgba(0,0,0,0.35),0 2px 8px rgba(0,0,0,0.2);
-            transition:all 0.22s;
-          ">
-            <svg width="20" height="20" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Lanjutkan dengan Google
-          </a>
-          <div style="display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap;">
-            <div style="display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);background:rgba(8,18,48,0.6);">
-              <div style="width:5px;height:5px;border-radius:50%;background:#6366f1;box-shadow:0 0 5px #6366f1;"></div>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;color:rgba(148,163,184,0.7);text-transform:uppercase;">AI Powered</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);background:rgba(8,18,48,0.6);">
-              <div style="width:5px;height:5px;border-radius:50%;background:#3b82f6;box-shadow:0 0 5px #3b82f6;"></div>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;color:rgba(148,163,184,0.7);text-transform:uppercase;">Real-time Data</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;border:1px solid rgba(255,255,255,0.06);background:rgba(8,18,48,0.6);">
-              <div style="width:5px;height:5px;border-radius:50%;background:#10b981;box-shadow:0 0 5px #10b981;"></div>
-              <span style="font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.1em;color:rgba(148,163,184,0.7);text-transform:uppercase;">Secure System</span>
-            </div>
-          </div>
-        </div>
-        <p style="text-align:center;color:rgba(124,134,162,0.3);font-family:'JetBrains Mono',monospace;
-            font-size:0.58rem;margin-top:16px;line-height:1.8;padding:0 8px;letter-spacing:0.06em;">
-          Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
-          Analisa bersifat <em>do your own research</em> &amp; disclaimer berlaku.
-        </p>
-        """, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Google login error: {e}")
-
+""", height=900, scrolling=False)
     st.stop()
 
+
+def show_login():
+    """SIGMA v3.0 - Premium Login Screen"""
     import streamlit.components.v1 as components
 
     st.markdown(f"""
@@ -7378,30 +7045,10 @@ if "do" in st.query_params:
         st.session_state.clear(); st.query_params.clear()
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
-    elif _do == "go_home" or _do == "view_hub":
-        # Kembali ke Command Hub
+    elif _do == "go_home": 
         st.session_state.selected_system = None
-        st.session_state.current_view = None
         try: del st.query_params["do"]
-        except:
-            try: st.query_params.pop("do", None)
-            except: pass
-        st.rerun()
-    elif _do == "view_chat":
-        # Masuk ke SIGMA AI
-        st.session_state.selected_system = "chat"
-        st.session_state.current_view = "chat"
-        try: del st.query_params["do"]
-        except:
-            try: st.query_params.pop("do", None)
-            except: pass
-        st.rerun()
-    elif _do == "view_dashboard":
-        # Masuk ke SIGMA Terminal
-        st.session_state.selected_system = "dashboard"
-        st.session_state.current_view = "dashboard"
-        try: del st.query_params["do"]
-        except:
+        except: 
             try: st.query_params.pop("do", None)
             except: pass
         st.rerun()
@@ -8569,10 +8216,7 @@ if "do" in st.query_params:
     elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_ai": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
-    elif _do == "go_home" or _do == "view_hub":
-        st.session_state.selected_system = None
-        st.session_state.current_view = None
-        st.query_params.pop("do", None); st.rerun()
+    elif _do == "go_home": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_dark": st.session_state.theme = "dark"; st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_light": st.session_state.theme = "light"; st.query_params.pop("do", None); st.rerun()
     elif _do == "newchat":
@@ -8677,11 +8321,7 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     except: pass
     st.session_state.amnesia_fixed = True
 
-current_view = st.session_state.get("current_view", None)
-
-# ── ROUTING v4.0 — tampilkan hub kalau belum pilih modul
-if current_view is None or st.session_state.get("selected_system") is None:
-    show_system_selector()
+current_view = st.session_state.get("current_view", "chat")
 
 if current_view == "dashboard":
     try:
@@ -27093,6 +26733,82 @@ components.html("""
 </script>
 """, height=0)
 
+
+# ── SIGMA GLOBAL STARFIELD INJECTOR (dari v4) ──
+# Menginjeksi background bintang kelap-kelip ke window.parent untuk semua halaman dark mode
+_is_dark = st.session_state.get("theme", "dark") == "dark"
+if _is_dark:
+    components.html("""<script>
+(function(){
+  var pd = window.parent.document;
+
+  /* ── Background overlay (radial gradient langit malam) ── */
+  if (!pd.getElementById('sigma-global-bg')) {
+    var s = pd.createElement('style');
+    s.id = 'sigma-global-bg';
+    s.textContent = `
+      .stApp, [data-testid="stAppViewContainer"] {
+        background: #050a15 !important;
+        position: relative;
+      }
+      .stApp::after {
+        content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+        background:
+          radial-gradient(ellipse 90% 55% at 50% -8%, rgba(99,102,241,0.09) 0%, transparent 55%),
+          radial-gradient(ellipse 55% 40% at 88% 95%, rgba(16,185,129,0.04) 0%, transparent 50%),
+          radial-gradient(ellipse 40% 35% at  8% 80%, rgba(59,130,246,0.04) 0%, transparent 50%);
+      }
+    `;
+    pd.head.appendChild(s);
+  }
+
+  /* ── Starfield: 120 bintang kelap-kelip ── */
+  if (!pd.getElementById('sigma-global-stars')) {
+    var sw = pd.createElement('div');
+    sw.id = 'sigma-global-stars';
+    sw.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;';
+    for (var i = 0; i < 120; i++) {
+      var star = pd.createElement('div');
+      var sz  = 0.5 + Math.random() * 1.6;
+      var dur = 2.2 + Math.random() * 5.5;
+      var del = -(Math.random() * 7);
+      /* Variasi warna: putih, biru pucat, ungu pucat */
+      var colors = [
+        'rgba(255,255,255,0.85)',
+        'rgba(165,180,252,0.75)',
+        'rgba(147,210,255,0.7)'
+      ];
+      var col = colors[Math.floor(Math.random() * colors.length)];
+      star.style.cssText =
+        'position:absolute;border-radius:50%;' +
+        'background:' + col + ';' +
+        'left:' + Math.random()*100 + '%;' +
+        'top:'  + Math.random()*100 + '%;' +
+        'width:' + sz + 'px;height:' + sz + 'px;' +
+        'opacity:' + (0.08 + Math.random()*0.45) + ';' +
+        'animation:sigTwinkleGlobal ' + dur + 's ease-in-out infinite ' + del + 's;';
+      sw.appendChild(star);
+    }
+    if (!pd.getElementById('sigma-star-global-css')) {
+      var sc = pd.createElement('style');
+      sc.id  = 'sigma-star-global-css';
+      sc.textContent = '@keyframes sigTwinkleGlobal{0%,100%{opacity:0.08;transform:scale(1);}50%{opacity:0.95;transform:scale(1.6);}}';
+      pd.head.appendChild(sc);
+    }
+    pd.body.appendChild(sw);
+  }
+})();
+</script>""", height=0)
+else:
+    # Light mode: hapus starfield jika ada
+    components.html("""<script>
+(function(){
+  var pd = window.parent.document;
+  var s = pd.getElementById('sigma-global-stars'); if(s) s.remove();
+  var bg = pd.getElementById('sigma-global-bg'); if(bg) bg.remove();
+  var css = pd.getElementById('sigma-star-global-css'); if(css) css.remove();
+})();
+</script>""", height=0)
 
 # ── USER BUBBLE JS INJECTOR ──
 _bubble_css = """
