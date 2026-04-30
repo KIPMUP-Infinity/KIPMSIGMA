@@ -3864,18 +3864,18 @@ def login_user(username, password):
 def get_colors(theme="dark"):
     dark = theme == "dark"
     return {
-        "bg":           "#050a15" if dark else "#f0f0f0",       # Navy super gelap original
-        "sidebar_bg":   "#03050a" if dark else "#e3e3e3",       # Lebih gelap untuk sidebar
-        "text":         "#e2e8f0" if dark else "#0d0d0d",       # Putih kebiruan
-        "text_muted":   "#64748b" if dark else "#6e6e80",       # Abu-abu slate
-        "border":       "#1a2f50" if dark else "#8a8aaa",       # Border lebih visible (sedikit lebih terang dari #132545)
-        "hover":        "#0d1c36" if dark else "#c4c4d8",       # Efek hover kebiruan
-        "input_bg":     "#081020" if dark else "#ffffff",       # Kolom chat deep blue
-        "bubble":       "#1B2A4A",
+        "bg":           "#050a15"  if dark else "#f8fafc",      # dark navy / putih bersih
+        "sidebar_bg":   "#03050a"  if dark else "#ffffff",      # sidebar pure white di light
+        "text":         "#e2e8f0"  if dark else "#0f172a",      # teks terang / slate-900
+        "text_muted":   "#64748b"  if dark else "#475569",      # slate-500 di kedua mode
+        "border":       "#1a2f50"  if dark else "#cbd5e1",      # slate-300 di light — tegas tapi bersih
+        "hover":        "#0d1c36"  if dark else "#f1f5f9",      # slate-100 di light
+        "input_bg":     "#081020"  if dark else "#f8fafc",      # putih di light
+        "bubble":       "#1B2A4A"  if dark else "#6366f1",      # indigo di light
         "bubble_text":  "#ffffff",
-        "divider":      "#1a2f50" if dark else "#8a8aaa",       # Garis pemisah sedikit lebih terang
-        "gold":         "#b89fff",                               # Ungu/violet lebih terang dari #a78bfa
-        "active_bg":    "#0d1c36" if dark else "#c8c8c8",
+        "divider":      "#1a2f50"  if dark else "#e2e8f0",      # slate-200 di light — visible
+        "gold":         "#b89fff"  if dark else "#6366f1",      # indigo di light
+        "active_bg":    "#0d1c36"  if dark else "#e0e7ff",      # indigo-100 di light
     }
 
 # =========================================================
@@ -5335,22 +5335,22 @@ def _smart_truncate_prompt(text, max_tokens=22000):
     if tail_cut < 0 or tail_cut > tail_start + 200: tail_cut = tail_start
     return text[:head_cut] + "\n\n[... sebagian data tengah dipotong otomatis untuk efisiensi token ...]\n\n" + text[tail_cut:]
 
-def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, temperature=0.7):
+def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=32000, temperature=0.7):
     """
     Groq PRIMARY - LLaMA 3.3 70B dengan GROQ_SYSTEM_PROMPT.
     Key rotation otomatis saat 429 rate limit - coba semua key sebelum menyerah.
-    Smart truncation: total konteks dijaga ≤ 30.000 token.
+    Smart truncation: total konteks dijaga ≤ 131.072 token (LLaMA 3.3 70B context window).
     """
     from groq import Groq
 
-    # ── Budget token: 30.000 total context window ──
-    # System prompt ~2000 token, history ~3000 token, output max_tokens → sisakan 22000 untuk prompt user
+    # ── Budget token: 131.072 total context window LLaMA 3.3 70B ──
+    # System prompt ~4000 token, history ~6000 token, output max 32000 → sisakan 89000 untuk prompt user
     SYSTEM_TOKEN_EST = _estimate_tokens(GROQ_SYSTEM_PROMPT)
-    HISTORY_TOKEN_BUDGET = 3000   # max token untuk history
-    OUTPUT_BUDGET = min(max_tokens, 16000)
-    TOTAL_BUDGET = 30000
+    HISTORY_TOKEN_BUDGET = 6000   # max token untuk history (naik dari 3000)
+    OUTPUT_BUDGET = min(max_tokens, 32000)
+    TOTAL_BUDGET = 131072
     PROMPT_BUDGET = TOTAL_BUDGET-SYSTEM_TOKEN_EST-HISTORY_TOKEN_BUDGET-OUTPUT_BUDGET
-    PROMPT_BUDGET = max(PROMPT_BUDGET, 8000)  # minimal 8000 token untuk prompt
+    PROMPT_BUDGET = max(PROMPT_BUDGET, 16000)  # minimal 16000 token untuk prompt
 
     # Truncate prompt jika melebihi budget
     full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=PROMPT_BUDGET)
@@ -6339,6 +6339,89 @@ st.markdown(f"""
 
 /* ═══ SIGMA v4.0 — BASE RESET ═══ */
 * {{ font-family: var(--sigma-font-b) !important; box-sizing: border-box; }}
+
+/* ═══ SIGMA v4.0 — LIGHT MODE FIXES ═══ */
+/* Background + semua container */
+[data-theme="light"] .stApp,
+[data-theme="light"] [data-testid="stAppViewContainer"],
+[data-theme="light"] section[data-testid="stMain"],
+[data-theme="light"] [data-testid="stMainBlockContainer"] {{
+    background: #f8fafc !important;
+    color: #0f172a !important;
+}}
+/* Text light mode */
+[data-theme="light"] p,
+[data-theme="light"] span,
+[data-theme="light"] div,
+[data-theme="light"] label,
+[data-theme="light"] li {{
+    color: #0f172a !important;
+}}
+/* Sidebar light */
+[data-theme="light"] section[data-testid="stSidebar"],
+[data-theme="light"] section[data-testid="stSidebar"] > div {{
+    background: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+}}
+[data-theme="light"] section[data-testid="stSidebar"] span,
+[data-theme="light"] section[data-testid="stSidebar"] p,
+[data-theme="light"] section[data-testid="stSidebar"] div {{
+    color: #0f172a !important;
+}}
+/* Table borders light mode — tegas */
+[data-theme="light"] [data-testid="stDataFrame"] table,
+[data-theme="light"] table {{ border-collapse: collapse !important; }}
+[data-theme="light"] [data-testid="stDataFrame"] td,
+[data-theme="light"] [data-testid="stDataFrame"] th,
+[data-theme="light"] td, [data-theme="light"] th {{
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+}}
+[data-theme="light"] [data-testid="stDataFrame"] thead th {{
+    background: #f1f5f9 !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #94a3b8 !important;
+}}
+/* Input light */
+[data-theme="light"] [data-testid="stTextInput"] input,
+[data-theme="light"] [data-testid="stChatInput"] textarea,
+[data-theme="light"] textarea, [data-theme="light"] input {{
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+}}
+/* Button light */
+[data-theme="light"] .stButton > button {{
+    background: #6366f1 !important;
+    color: #ffffff !important;
+    border: none !important;
+}}
+/* HR divider tegas */
+[data-theme="light"] hr {{
+    border-color: #cbd5e1 !important;
+    opacity: 1 !important;
+}}
+/* Selectbox / dropdown light */
+[data-theme="light"] [data-testid="stSelectbox"] > div,
+[data-theme="light"] [data-baseweb="select"] {{
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}}
+/* Metric light */
+[data-theme="light"] [data-testid="stMetric"] {{ background: #f1f5f9 !important; border-radius: 10px !important; }}
+[data-theme="light"] [data-testid="stMetric"] * {{ color: #0f172a !important; }}
+/* Tabs light */
+[data-theme="light"] [data-testid="stTabs"] button[role="tab"] {{
+    color: #475569 !important;
+    border-bottom: 2px solid transparent !important;
+}}
+[data-theme="light"] [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+    color: #6366f1 !important;
+    border-bottom-color: #6366f1 !important;
+    background: transparent !important;
+}}
 .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
 section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
 section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
@@ -6502,23 +6585,7 @@ def show_system_selector():
     pd.body.appendChild(sw);
   }
 
-  /* light beam */
-  if (!pd.getElementById('sigma-hub-beam')) {
-    var bm = pd.createElement('div');
-    bm.id  = 'sigma-hub-beam';
-    bm.style.cssText =
-      'position:fixed;top:-20vh;left:50%;transform:translateX(-50%);' +
-      'width:1px;height:110vh;pointer-events:none;z-index:0;' +
-      'background:linear-gradient(to bottom,transparent,rgba(99,102,241,0.18),transparent);' +
-      'animation:sigBeam 4s ease-in-out infinite;';
-    if (!pd.getElementById('sigma-beam-css')) {
-      var bc = pd.createElement('style');
-      bc.id  = 'sigma-beam-css';
-      bc.textContent = '@keyframes sigBeam{0%,100%{opacity:0.3;}50%{opacity:0.7;}}';
-      pd.head.appendChild(bc);
-    }
-    pd.body.appendChild(bm);
-  }
+  /* beam dihapus — tidak ada garis tipis di background */
 })();
 </script>""", height=0)
 
@@ -6758,37 +6825,68 @@ html,body{{background:transparent;font-family:var(--fb);color:var(--text);overfl
 </html>
 """, height=760, scrolling=False)
 
-    # ── 4. Tombol navigasi native Streamlit (reliable, no iframe block) ──
+    # ── 4. Tombol navigasi native Streamlit — menyatu dengan card ──
     st.markdown("""
     <style>
-    /* Tombol nav hub — styled sesuai card */
-    div[data-testid="stMainBlockContainer"] .element-container { margin: 0 !important; padding: 0 !important; }
-    .hub-nav-row { display: flex; gap: 16px; width: 100%; max-width: 940px; margin: 0 auto; padding: 0 20px 12px; }
-    .hub-btn-ai   button { background: rgba(59,130,246,0.12)  !important; color: #60a5fa  !important;
-        border: 1px solid rgba(59,130,246,0.35)   !important; border-radius: 10px !important; }
-    .hub-btn-term button { background: rgba(167,139,250,0.12) !important; color: #c4b5fd  !important;
-        border: 1px solid rgba(167,139,250,0.35)  !important; border-radius: 10px !important; }
-    .hub-btn-kipm button { background: rgba(16,185,129,0.07)  !important; color: rgba(16,185,129,0.55) !important;
-        border: 1px solid rgba(16,185,129,0.2)    !important; border-radius: 10px !important; opacity:0.65 !important; cursor:not-allowed !important; }
-    div[data-testid="stMainBlockContainer"] .stButton > button {
-        display: flex !important;
+    /* Reset semua gap dan padding wrapper */
+    div[data-testid="stMainBlockContainer"] > div > div { gap: 0 !important; }
+    div[data-testid="stHorizontalBlock"] {
+        position: static !important; bottom: auto !important;
+        opacity: 1 !important; height: auto !important;
+        overflow: visible !important; z-index: auto !important;
+        gap: 22px !important;
+        max-width: 940px !important;
+        margin: -28px auto 0 !important;
+        padding: 0 0 32px !important;
+    }
+    /* Tiap kolom button */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+        padding: 0 !important; flex: 1 !important;
+    }
+    /* Styling tombol AI */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton > button {
+        background: rgba(59,130,246,0.12)  !important;
+        color: #60a5fa !important;
+        border: 1px solid rgba(59,130,246,0.35) !important;
+        border-radius: 0 0 18px 18px !important;
+        border-top: none !important;
+    }
+    /* Styling tombol Terminal */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton > button {
+        background: rgba(167,139,250,0.12) !important;
+        color: #c4b5fd !important;
+        border: 1px solid rgba(167,139,250,0.35) !important;
+        border-radius: 0 0 18px 18px !important;
+        border-top: none !important;
+    }
+    /* Styling tombol KIPM disabled */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(3) .stButton > button {
+        background: rgba(16,185,129,0.06)  !important;
+        color: rgba(16,185,129,0.45) !important;
+        border: 1px solid rgba(16,185,129,0.18) !important;
+        border-radius: 0 0 18px 18px !important;
+        border-top: none !important;
+        cursor: not-allowed !important;
+    }
+    /* Base button style semua */
+    div[data-testid="stHorizontalBlock"] .stButton > button {
         width: 100% !important;
         font-family: 'Syne', 'Segoe UI', sans-serif !important;
         font-size: 0.72rem !important; font-weight: 700 !important;
         letter-spacing: 0.14em !important; text-transform: uppercase !important;
-        padding: 12px 20px !important;
+        padding: 14px 20px !important;
         transition: all 0.22s !important;
+        box-shadow: none !important;
     }
-    div[data-testid="stMainBlockContainer"] .stButton > button:hover {
-        filter: brightness(1.3) !important;
-        transform: translateY(-1px) !important;
+    div[data-testid="stHorizontalBlock"] > div:nth-child(1) .stButton > button:hover {
+        background: rgba(59,130,246,0.22) !important;
+        box-shadow: 0 8px 24px rgba(59,130,246,0.18) !important;
+    }
+    div[data-testid="stHorizontalBlock"] > div:nth-child(2) .stButton > button:hover {
+        background: rgba(167,139,250,0.22) !important;
+        box-shadow: 0 8px 24px rgba(139,92,246,0.15) !important;
     }
     </style>
-    <div class="hub-nav-row">
-      <div class="hub-btn-ai" style="flex:1;" id="wrap-btn-ai"></div>
-      <div class="hub-btn-term" style="flex:1;" id="wrap-btn-term"></div>
-      <div class="hub-btn-kipm" style="flex:1;" id="wrap-btn-kipm"></div>
-    </div>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
