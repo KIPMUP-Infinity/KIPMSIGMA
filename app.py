@@ -21,29 +21,14 @@ import re
 import time
 import random
 
-# ── SIGMA SHEETS — Google Sheets Persistent Storage ──────────────────────────
-try:
-    from sigma_sheets import (
-        sheets_available, save_broker_scan, load_broker_history,
-        save_reko, load_reko_history, save_journal_entry, load_journal,
-        update_journal_status, render_sheets_status, render_backup_button,
-        render_history_table, log_backup,
-    )
-    _SHEETS_OK = True
-except ImportError:
-    _SHEETS_OK = False
-    def sheets_available(): return False
-    def save_broker_scan(*a, **kw): return False
-    def load_broker_history(*a, **kw): return []
-    def save_reko(*a, **kw): return False
-    def load_reko_history(*a, **kw): return []
-    def save_journal_entry(*a, **kw): return False
-    def load_journal(*a, **kw): return []
-    def update_journal_status(*a, **kw): return False
-    def render_sheets_status(): pass
-    def render_backup_button(): pass
-    def render_history_table(*a, **kw): pass
-    def log_backup(*a, **kw): return False
+# ── SIGMA SHEETS — Google Sheets Persistent Storage (SELALU AKTIF) ──────────
+from sigma_sheets import (
+    sheets_available, save_broker_scan, load_broker_history,
+    save_reko, load_reko_history, save_journal_entry, load_journal,
+    update_journal_status, render_sheets_status, render_backup_button,
+    render_history_table, log_backup,
+)
+_SHEETS_OK = True   # selalu True — modul selalu tersedia
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── SIGMA HTML SANITIZER ──
@@ -85,22 +70,19 @@ def _get_available_gemini_keys(all_keys: list) -> list:
     available = [k for k in all_keys if _gemini_key_available(k)]
     return available if available else all_keys
 
-# ── SIGMA MODULES: Storage permanen + render Daily/Weekly/BrokSum/Alpha/TrackRecord ──
-try:
-    from sigma_modules import (
-        load_all as _sm_load_all,
-        save_auto_plan as _sm_save_auto_plan,
-        append_daily_plan as _sm_append_daily_plan,
-        append_daily_summary as _sm_append_daily_summary,
-        append_weekly_plan as _sm_append_weekly_plan,
-        append_weekly_summary as _sm_append_weekly_summary,
-        save_broker_screening_result as _sm_save_broker_result,
-        render_daily_plan as _sm_render_daily_plan,
-        render_weekly_plan as _sm_render_weekly_plan,
-    )
-    _SIGMA_MODULES_AVAILABLE = True
-except ImportError:
-    _SIGMA_MODULES_AVAILABLE = False
+# ── SIGMA MODULES: Storage permanen (SELALU AKTIF) ──────────────────────────
+from sigma_modules import (
+    load_all as _sm_load_all,
+    save_auto_plan as _sm_save_auto_plan,
+    append_daily_plan as _sm_append_daily_plan,
+    append_daily_summary as _sm_append_daily_summary,
+    append_weekly_plan as _sm_append_weekly_plan,
+    append_weekly_summary as _sm_append_weekly_summary,
+    save_broker_screening_result as _sm_save_broker_result,
+    render_daily_plan as _sm_render_daily_plan,
+    render_weekly_plan as _sm_render_weekly_plan,
+)
+_SIGMA_MODULES_AVAILABLE = True   # selalu True — modul selalu tersedia
 
 # ── SIGMA SCORE ENGINE (embedded) ──
 _SIGMA_SCORE_AVAILABLE = True
@@ -3912,8 +3894,7 @@ def init_session():
 init_session()
 
 # ── Load sigma_modules persistent storage ──
-if _SIGMA_MODULES_AVAILABLE:
-    _sm_load_all()
+_sm_load_all()
 
 C = get_colors(st.session_state.theme)
 
@@ -7642,12 +7623,12 @@ def show_login():
     st.markdown(f"""
     <style>
     [data-testid="stSidebar"] {{ display: none !important; }}
-    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmd.png') center/cover no-repeat fixed !important; min-height: 100vh !important; }}
+    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('./KIPM-UP.png') center/cover no-repeat fixed !important; min-height: 100vh !important; }}
     section[data-testid="stMain"]::before {{ display: none !important; }}
     [data-testid="stMainBlockContainer"] {{ max-width: 300px !important; margin: 1.5vh 74px 0 auto !important; padding: 8px 18px 16px !important; position: relative; z-index: 1; min-height: unset !important; height: fit-content !important; background: rgba(5, 8, 20, 0.60) !important; backdrop-filter: blur(20px) saturate(1.4) !important; -webkit-backdrop-filter: blur(20px) saturate(1.4) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
     @media(max-width: 768px) {{
         [data-testid="stMainBlockContainer"] {{ margin: 5vh auto 0 auto !important; max-width: 88% !important; padding: 20px 20px 28px !important; backdrop-filter: blur(20px) !important; border-radius: 20px !important; border: 1px solid rgba(255,255,255,0.12) !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
-        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/kipmm.png') center top/cover no-repeat fixed !important; }}
+        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('./KIPM-UP M.png') center top/cover no-repeat fixed !important; }}
         [data-testid="stMainBlockContainer"] {{ margin-top: 75px !important; }}
     }}
     header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
@@ -7703,49 +7684,20 @@ def show_login():
         </div>
         <style>@media(min-width: 769px) { .sigma-tagline { display: none !important; } }</style>
     ''', unsafe_allow_html=True)
-    tab1, tab2, tab3 = st.tabs(["🔑 Sign In", "📝 Sign Up", "🌐 Google"])
-
-    with tab1:
-        uname = st.text_input("Username", key="li_user", placeholder="Masukkan username")
-        pwd   = st.text_input("Password", key="li_pwd",  type="password", placeholder="Masukkan password")
-        if st.button("Masuk", key="btn_login", use_container_width=True):
-            if uname and pwd:
-                info = login_user(uname.strip(), pwd)
-                if info:
-                    token = str(uuid.uuid4()).replace("-","")
-                    _save_token(token, info)
-                    st.query_params["sigma_token"] = token
-                    st.session_state.user = info; st.session_state.current_token = token; st.session_state.data_loaded = True  # FIX: jangan reset ke False
-                    st.rerun()
-                else: st.error("Username atau password salah")
-            else: st.warning("Isi username dan password")
-
-    with tab2:
-        rname  = st.text_input("Nama Tampil", key="rg_name", placeholder="Nama lengkap kamu")
-        runame = st.text_input("Username", key="rg_user", placeholder="username (huruf/angka)")
-        rpwd   = st.text_input("Password", key="rg_pwd",  type="password", placeholder="min. 6 karakter")
-        rpwd2  = st.text_input("Ulangi Password", key="rg_pwd2", type="password", placeholder="ulangi password")
-        if st.button("Daftar Sekarang", key="btn_register", use_container_width=True):
-            if not all([rname, runame, rpwd, rpwd2]): st.warning("Lengkapi semua field")
-            elif rpwd != rpwd2: st.error("Password tidak cocok")
-            elif len(rpwd) < 6: st.error("Password minimal 6 karakter")
-            else:
-                ok, msg = register_user(runame.strip(), rpwd, rname.strip())
-                if ok: st.success(f"✅ {msg} - silakan masuk")
-                else: st.error(msg)
-
-    with tab3:
-        try:
-            auth_url = google_auth_url()
-            st.markdown(f"""
-            <div style="margin-top:8px;">
-                <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:13px;text-decoration:none;font-size:0.875rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
-                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                    Lanjutkan dengan Google
-                </a>
-            </div>
-            """, unsafe_allow_html=True)
-        except: st.info("Google login belum dikonfigurasi di Secrets")
+    try:
+        auth_url = google_auth_url()
+        st.markdown(f"""
+        <div style="margin-top:16px;">
+            <a href="{auth_url}" style="display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,0.95);color:#1a1a1a;border-radius:12px;padding:14px;text-decoration:none;font-size:0.9rem;font-weight:600;border:none;box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Lanjutkan dengan Google
+            </a>
+        </div>
+        <div style="text-align:center;margin-top:14px;color:rgba(255,255,255,0.35);font-size:0.78rem;letter-spacing:0.5px;">
+            Akses khusus anggota KIPM Universitas Pancasila
+        </div>
+        """, unsafe_allow_html=True)
+    except: st.info("Google login belum dikonfigurasi di Secrets")
 
     st.markdown(f"""<p style="text-align:center;color:rgba(255,255,255,0.25);font-size:0.72rem;margin-top:24px;line-height:1.6;">Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>Analisa bersifat <em>do your own research</em> dan disclaimer berlaku.<br> by. @MarketnMocha</p>""", unsafe_allow_html=True)
     st.stop()
@@ -7952,7 +7904,7 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 active = get_active()
 current_view = st.session_state.get("current_view", "chat")
 # =========================================================
-# PART 8: MAIN CHAT ENGINE & UI (STABLE, FIX PASTE, 7 ALPHA COMPLETE + IPO RISK)
+# PART 8: MAIN CHAT ENGINE & UI — SIGMA v4.2 (Google-only Auth, Modules Always Active)
 # =========================================================
 import requests
 import re
@@ -9184,6 +9136,55 @@ if current_view == "dashboard":
     """, unsafe_allow_html=True)
 
     is_dark = st.session_state.get("theme", "dark") == "dark"
+
+    # ══════════════════════════════════════════════════════════════════
+    # SIGMA UPDATE NOTIFICATION SYSTEM
+    # Tampil otomatis saat ada update baru, dismiss per-user via session
+    # ══════════════════════════════════════════════════════════════════
+    _SIGMA_VERSION   = "v4.2"
+    _SIGMA_UPDATED   = "01 Mei 2026"
+    _UPDATE_KEY      = f"update_seen_{_SIGMA_VERSION}"   # unique per versi
+    _CURRENT_USER_EMAIL = (st.session_state.user or {}).get("email", "")
+    _UPDATE_SEEN_KEY = f"update_seen_{_SIGMA_VERSION}_{_CURRENT_USER_EMAIL}"
+
+    # Fitur-fitur baru di versi ini
+    _UPDATE_ITEMS = [
+        "🔐 Login disederhanakan — hanya via Google, lebih cepat & aman",
+        "🖼️ Background login diperbarui ke aset KIPM-UP lokal (lebih cepat load)",
+        "📦 sigma_sheets & sigma_modules sekarang selalu aktif — history broker, reko, dan journal tersimpan otomatis",
+        "☁️ Semua data (daily plan, weekly plan, BS30) langsung tersimpan ke Google Sheets tanpa toggle",
+        "🔄 Auto-rotate API key (Finnhub, FMP, AlphaVantage, GoAPI) berjalan penuh tanpa mode opsional",
+        "📊 Reko History & Broker History tampil otomatis tanpa perlu koneksi manual",
+        "🚀 Performa startup lebih cepat — modul tidak lagi load secara kondisional",
+    ]
+
+    if not st.session_state.get(_UPDATE_SEEN_KEY):
+        _upd_col1, _upd_col2 = st.columns([10, 1])
+        with _upd_col1:
+            _items_html = "".join(
+                f"<div style='display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;'>"
+                f"<span style='font-size:0.82rem;color:#e2e8f0;line-height:1.5'>{item}</span>"
+                f"</div>"
+                for item in _UPDATE_ITEMS
+            )
+            st.markdown(f"""
+<div style="background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(59,130,246,0.10));
+border:1px solid rgba(124,58,237,0.35);border-left:4px solid #7c3aed;
+border-radius:12px;padding:14px 18px;margin-bottom:16px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <span style="font-size:1rem;">🆕</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;
+    color:#a78bfa;font-weight:700;letter-spacing:0.08em;">
+    SIGMA {_SIGMA_VERSION} — UPDATE {_SIGMA_UPDATED}</span>
+  </div>
+  {_items_html}
+</div>
+""", unsafe_allow_html=True)
+        with _upd_col2:
+            if st.button("✕", key="btn_dismiss_update", help="Tutup notifikasi update"):
+                st.session_state[_UPDATE_SEEN_KEY] = True
+                st.rerun()
+    # ══════════════════════════════════════════════════════════════════
 
     # ── SIGMA TERMINAL COLOR SYSTEM ──
     # Accent: #0328EE (blue), BG: #010725, Card: #010D50
@@ -16993,14 +16994,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     st.caption(f"Menampilkan {len(_tr_filtered)} dari {_tr_total} record total · Centang ✏️ Edit untuk update status per baris")
 
             # ── Reko History dari Sheets ──
-            if sheets_available():
-                st.divider()
-                st.markdown(
-                    "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
-                    "color:#90caf9;margin-bottom:8px;'>☁️ <b>REKO HISTORY (Google Sheets)</b>"
-                    " — Data lengkap semua plan tersimpan</div>",
-                    unsafe_allow_html=True)
-                render_history_table("reko", limit=50)
+            st.divider()
+            st.markdown(
+                "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+                "color:#90caf9;margin-bottom:8px;'>☁️ <b>REKO HISTORY (Google Sheets)</b>"
+                " — Data lengkap semua plan tersimpan</div>",
+                unsafe_allow_html=True)
+            render_history_table("reko", limit=50)
 
         with alpha_tab_insight:
 
@@ -19965,18 +19965,17 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                             }
 
             # ── Mirror ke sigma_modules: storage permanen JSON lokal ──
-            if _SIGMA_MODULES_AVAILABLE:
-                try:
-                    _sm_save_auto_plan(plan_type, slot_key, history[slot_key])
-                    _rows = _plan_rows
-                    _outlook = plan_json.get("outlook", "")
-                    if plan_type == "daily":
-                        _sm_append_daily_plan(_rows, _outlook)
-                        _sm_append_daily_summary(_rows, _outlook)
-                    elif plan_type == "weekly":
-                        _sm_append_weekly_plan(_rows, _outlook)
-                        _sm_append_weekly_summary(_rows, _outlook)
-                except Exception: pass
+            try:
+                _sm_save_auto_plan(plan_type, slot_key, history[slot_key])
+                _rows = _plan_rows
+                _outlook = plan_json.get("outlook", "")
+                if plan_type == "daily":
+                    _sm_append_daily_plan(_rows, _outlook)
+                    _sm_append_daily_summary(_rows, _outlook)
+                elif plan_type == "weekly":
+                    _sm_append_weekly_plan(_rows, _outlook)
+                    _sm_append_weekly_summary(_rows, _outlook)
+            except Exception: pass
 
         def _auto_generate_if_needed(plan_type="daily"):
             """
@@ -23216,9 +23215,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     if len(_bsh2) > 30:
                         for _dk in sorted(_bsh2.keys())[:-30]: del _bsh2[_dk]
                     st.session_state["brosum_history"] = _bsh2
-                    if _SIGMA_MODULES_AVAILABLE:
-                        try: _sm_save_broker_result(_top30)
-                        except: pass
+                    try: _sm_save_broker_result(_top30)
+                    except: pass
                     if st.session_state.get("user"):
                         try:
                             _ue_bs = st.session_state.user["email"]
@@ -23620,14 +23618,13 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             pass  # already handled above
 
         # ── Google Sheets: Broker Scan History saja (Reko History ada di tab Track Record) ──
-        if sheets_available():
-            st.divider()
-            st.markdown(
-                "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
-                "color:#90caf9;margin-bottom:8px;'>☁️ <b>BROKER SCAN HISTORY</b> "
-                "— Data tersimpan permanen, bisa dilihat semua member</div>",
-                unsafe_allow_html=True)
-            render_history_table("broker", limit=30)
+        st.divider()
+        st.markdown(
+            "<div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;"
+            "color:#90caf9;margin-bottom:8px;'>☁️ <b>BROKER SCAN HISTORY</b> "
+            "— Data tersimpan permanen, bisa dilihat semua member</div>",
+            unsafe_allow_html=True)
+        render_history_table("broker", limit=30)
         # ══════════════════════════════════════════════════════════
         # TAB 3 — NET BUY FOREIGN (AUTO dari BS30)
         # ══════════════════════════════════════════════════════════
@@ -24376,8 +24373,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             # ── Versi & tanggal panduan ──────────────────────────────────────
-            _PANDUAN_VERSION = "v3.0"
-            _PANDUAN_LAST_UPDATED = "30 Apr 2026"
+            _PANDUAN_VERSION = "v4.2"
+            _PANDUAN_LAST_UPDATED = "01 Mei 2026"
             _pan_col1, _pan_col2 = st.columns([3, 2])
             with _pan_col1:
                 st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:4px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
