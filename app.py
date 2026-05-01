@@ -5575,7 +5575,8 @@ if "code" in st.query_params and st.session_state.user is None:
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
             st.session_state.current_view = saved.get("current_view", "chat")
-            st.session_state.selected_system = saved.get("selected_system", "chat")
+            # JANGAN restore selected_system — selalu tampilkan sistem selector setelah login
+            st.session_state.selected_system = None
             if saved.get("sessions"):
                 _loaded_s = saved["sessions"]
                 for _s in _loaded_s:
@@ -5616,7 +5617,9 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
-                st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = saved.get("selected_system", "chat")
+                st.session_state.current_view = saved.get("current_view", "chat")
+                # JANGAN restore selected_system — selalu tampilkan sistem selector setelah login
+                st.session_state.selected_system = None
                 if saved.get("sessions"):
                     _loaded = saved["sessions"]
                     for _s in _loaded:
@@ -5637,7 +5640,9 @@ if st.session_state.user and not st.session_state.data_loaded:
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
         st.session_state.current_view = saved.get("current_view", "chat")
-        st.session_state.selected_system = saved.get("selected_system", "chat")
+        # JANGAN restore selected_system — selalu tampilkan sistem selector setelah login
+        if not st.session_state.get("selected_system"):
+            st.session_state.selected_system = None
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -6400,22 +6405,39 @@ def show_system_selector():
 
     st.markdown("""
     <style>
+    /* ── SIGMA SYSTEM SELECTOR: force complete dark isolation ── */
     [data-testid="stSidebar"] { display: none !important; }
     header[data-testid="stHeader"] { display: none !important; }
     #MainMenu { display: none !important; }
     footer { display: none !important; }
-    .stApp, [data-testid="stAppViewContainer"], section[data-testid="stMain"],
-    [data-testid="stMainBlockContainer"] {
+    /* Force dark background on ALL Streamlit wrapper elements */
+    html, body, .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stApp"],
+    section[data-testid="stMain"],
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stBottom"],
+    [data-testid="stToolbar"] {
         background: #080c14 !important;
+        background-color: #080c14 !important;
+        color: #e2e8f0 !important;
         max-width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
     }
+    /* Hide all Streamlit chrome that might bleed through */
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    [data-testid="manage-app-button"],
+    .viewerBadge_container__1QSob,
+    .viewerBadge_link__1S137 { display: none !important; }
     [data-testid="stVerticalBlock"] { gap: 0 !important; }
     [data-testid="stHorizontalBlock"] {
         position: fixed !important; bottom: -300px !important;
         opacity: 0 !important; height: 1px !important; width: 1px !important; overflow: hidden !important; z-index: -999 !important;
     }
+    /* Prevent any light-mode stylesheet from leaking in */
+    * { color-scheme: dark !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -6456,8 +6478,13 @@ body {{ background: #080c14; }}
     padding: 24px 20px 40px; position: relative; overflow: hidden;
 }}
 .sys-wrapper::before {{
-    content: none;
+    content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,157,255,0.06) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,157,255,0.06) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridPulse 8s ease-in-out infinite; pointer-events: none;
 }}
+@keyframes gridPulse {{ 0%,100% {{ opacity:0.4; }} 50% {{ opacity:1; }} }}
 .orb {{
     position: absolute; width: 600px; height: 600px; border-radius: 50%;
     background: radial-gradient(circle, rgba(0,100,255,0.12) 0%, transparent 70%);
@@ -6483,12 +6510,15 @@ body {{ background: #080c14; }}
 .sys-cards {{ display:flex; gap:20px; flex-wrap:wrap; justify-content:center; position:relative; z-index:2; max-width:1280px; width:100%; }}
 
 .sys-card {{
-    flex:1; min-width:280px; max-width:380px;
-    background:rgba(10,14,26,0.9); border:1px solid rgba(255,255,255,0.08);
-    border-radius:20px; padding:28px 26px 26px;
+    flex:1; min-width:280px; max-width:390px;
+    background:rgba(8,12,22,0.92); border-radius:22px; padding:28px 26px 26px;
     position:relative; overflow:hidden; cursor:pointer;
-    transition:transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.35s ease, border-color 0.3s ease;
 }}
+/* Neon border using box-shadow instead of border for stronger glow */
+.sigma-chat {{ border:1px solid rgba(0,157,255,0.45); box-shadow:0 0 20px rgba(0,157,255,0.12), inset 0 0 30px rgba(0,100,255,0.04); }}
+.sigma-terminal {{ border:1px solid rgba(139,92,246,0.45); box-shadow:0 0 20px rgba(139,92,246,0.12), inset 0 0 30px rgba(124,58,237,0.04); }}
+.kipm-academy {{ border:1px solid rgba(245,158,11,0.45); box-shadow:0 0 20px rgba(245,158,11,0.12), inset 0 0 30px rgba(217,119,6,0.04); }}
 .sys-card::before {{
     content:''; position:absolute; top:0; left:0; right:0; height:1px; border-radius:20px 20px 0 0;
 }}
@@ -6523,10 +6553,10 @@ body {{ background: #080c14; }}
 .sigma-terminal .card-glow {{ background:rgba(124,58,237,0.22); }}
 .kipm-academy .card-glow {{ background:rgba(245,158,11,0.25); }}
 .sys-card:hover .card-glow {{ opacity:1; }}
-.sys-card:hover {{ transform:translateY(-6px); }}
-.sigma-chat:hover {{ border-color:rgba(0,157,255,0.45); box-shadow:0 20px 60px rgba(0,100,255,0.18),0 0 0 1px rgba(0,157,255,0.28); }}
-.sigma-terminal:hover {{ border-color:rgba(124,58,237,0.45); box-shadow:0 20px 60px rgba(124,58,237,0.12),0 0 0 1px rgba(124,58,237,0.28); }}
-.kipm-academy:hover {{ border-color:rgba(245,158,11,0.5); box-shadow:0 20px 60px rgba(245,158,11,0.15),0 0 0 1px rgba(245,158,11,0.32); }}
+.sys-card:hover {{ transform:translateY(-8px); }}
+.sigma-chat:hover {{ border-color:rgba(0,212,255,0.7); box-shadow:0 24px 70px rgba(0,100,255,0.25),0 0 40px rgba(0,157,255,0.2),0 0 0 1px rgba(0,212,255,0.35), inset 0 0 40px rgba(0,100,255,0.06); }}
+.sigma-terminal:hover {{ border-color:rgba(167,139,250,0.7); box-shadow:0 24px 70px rgba(124,58,237,0.2),0 0 40px rgba(139,92,246,0.18),0 0 0 1px rgba(167,139,250,0.35), inset 0 0 40px rgba(124,58,237,0.06); }}
+.kipm-academy:hover {{ border-color:rgba(252,211,77,0.7); box-shadow:0 24px 70px rgba(245,158,11,0.22),0 0 40px rgba(245,158,11,0.18),0 0 0 1px rgba(252,211,77,0.35), inset 0 0 40px rgba(217,119,6,0.06); }}
 
 .card-badge {{ position:absolute; top:18px; right:20px; font-size:0.72rem; letter-spacing:2.5px; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:600; }}
 .sigma-chat .card-badge {{ background:rgba(0,157,255,0.12); color:#009dff; border:1px solid rgba(0,157,255,0.22); }}
@@ -6534,10 +6564,54 @@ body {{ background: #080c14; }}
 .kipm-academy .card-badge {{ background:rgba(245,158,11,0.12); color:#f59e0b; border:1px solid rgba(245,158,11,0.28); animation:goldPulse 2.5s ease-in-out infinite; }}
 @keyframes goldPulse {{ 0%,100% {{ opacity:0.8; }} 50% {{ opacity:1; box-shadow:0 0 8px rgba(245,158,11,0.4); }} }}
 
-.card-icon {{ width:52px; height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.25rem; margin-bottom:18px; }}
-.sigma-chat .card-icon {{ background:rgba(0,157,255,0.1); border:1px solid rgba(0,157,255,0.22); }}
-.sigma-terminal .card-icon {{ background:rgba(124,58,237,0.08); border:1px solid rgba(124,58,237,0.18); }}
-.kipm-academy .card-icon {{ background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.22); }}
+/* ── 3D HOLOGRAPHIC ICON ── */
+.card-icon-wrap {{
+    display:flex; flex-direction:column; align-items:center; margin-bottom:20px; position:relative;
+}}
+.card-icon-holo {{
+    width:80px; height:80px; border-radius:22px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:2.2rem; position:relative; z-index:2;
+    transition:transform 0.3s ease, box-shadow 0.3s ease;
+}}
+.sigma-chat .card-icon-holo {{
+    background:linear-gradient(135deg,rgba(0,157,255,0.25),rgba(0,72,255,0.15));
+    border:1px solid rgba(0,157,255,0.4);
+    box-shadow:0 0 30px rgba(0,157,255,0.35), 0 0 0 6px rgba(0,157,255,0.06), inset 0 1px 0 rgba(0,212,255,0.3);
+}}
+.sigma-terminal .card-icon-holo {{
+    background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(124,58,237,0.15));
+    border:1px solid rgba(139,92,246,0.4);
+    box-shadow:0 0 30px rgba(139,92,246,0.35), 0 0 0 6px rgba(139,92,246,0.06), inset 0 1px 0 rgba(167,139,250,0.3);
+}}
+.kipm-academy .card-icon-holo {{
+    background:linear-gradient(135deg,rgba(245,158,11,0.25),rgba(217,119,6,0.15));
+    border:1px solid rgba(245,158,11,0.4);
+    box-shadow:0 0 30px rgba(245,158,11,0.35), 0 0 0 6px rgba(245,158,11,0.06), inset 0 1px 0 rgba(252,211,77,0.3);
+}}
+.sys-card:hover .card-icon-holo {{ transform:translateY(-4px) scale(1.04); }}
+.sigma-chat:hover .card-icon-holo {{ box-shadow:0 0 50px rgba(0,157,255,0.55), 0 0 0 8px rgba(0,157,255,0.1), inset 0 1px 0 rgba(0,212,255,0.4); }}
+.sigma-terminal:hover .card-icon-holo {{ box-shadow:0 0 50px rgba(139,92,246,0.55), 0 0 0 8px rgba(139,92,246,0.1), inset 0 1px 0 rgba(167,139,250,0.4); }}
+.kipm-academy:hover .card-icon-holo {{ box-shadow:0 0 50px rgba(245,158,11,0.55), 0 0 0 8px rgba(245,158,11,0.1), inset 0 1px 0 rgba(252,211,77,0.4); }}
+
+/* Holographic ring platform below icon */
+.card-icon-ring {{
+    width:90px; height:14px; margin-top:-4px; border-radius:50%; position:relative; z-index:1; opacity:0.7;
+    transition:opacity 0.3s ease;
+}}
+.sigma-chat .card-icon-ring {{
+    background:radial-gradient(ellipse,rgba(0,157,255,0.25) 0%,transparent 70%);
+    box-shadow:0 0 18px rgba(0,157,255,0.4);
+}}
+.sigma-terminal .card-icon-ring {{
+    background:radial-gradient(ellipse,rgba(139,92,246,0.25) 0%,transparent 70%);
+    box-shadow:0 0 18px rgba(139,92,246,0.4);
+}}
+.kipm-academy .card-icon-ring {{
+    background:radial-gradient(ellipse,rgba(245,158,11,0.25) 0%,transparent 70%);
+    box-shadow:0 0 18px rgba(245,158,11,0.4);
+}}
+.sys-card:hover .card-icon-ring {{ opacity:1; }}
 
 .card-name {{ font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:5px; letter-spacing:-0.2px; }}
 .card-tagline {{ font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; margin-bottom:14px; font-weight:400; }}
@@ -6723,7 +6797,6 @@ body {{ background: #080c14; }}
 </style>
 </head>
 <body>
-<canvas id="starCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
 <div class="sys-wrapper">
     <div class="orb"></div>
     <div class="orb2"></div>
@@ -6740,7 +6813,10 @@ body {{ background: #080c14; }}
             <div class="card-glow"></div>
             <div class="corner-tl"></div>
             <div class="card-badge">&#9679; Live</div>
-            <div class="card-icon">&#9889;</div>
+            <div class="card-icon-wrap">
+                <div class="card-icon-holo">&#9889;</div>
+                <div class="card-icon-ring"></div>
+            </div>
             <div class="card-name">SIGMA AI Chat</div>
             <div class="card-tagline">AI Trading Assistant</div>
             <div class="card-desc">Asisten analisa pasar berbasis AI &#8212; teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
@@ -6770,7 +6846,10 @@ body {{ background: #080c14; }}
             <div class="card-glow"></div>
             <div class="corner-tl"></div>
             <div class="card-badge">&#9670; Beta</div>
-            <div class="card-icon">&#128187;</div>
+            <div class="card-icon-wrap">
+                <div class="card-icon-holo">&#128187;</div>
+                <div class="card-icon-ring"></div>
+            </div>
             <div class="card-name">SIGMA Terminal</div>
             <div class="card-tagline">Market Dashboard</div>
             <div class="card-desc">Dashboard pasar real-time &#8212; Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
@@ -6803,7 +6882,10 @@ body {{ background: #080c14; }}
             <div class="card-glow"></div>
             <div class="corner-tl"></div>
             <div class="card-badge">&#9733; Coming Soon</div>
-            <div class="card-icon">&#127891;</div>
+            <div class="card-icon-wrap">
+                <div class="card-icon-holo">&#127891;</div>
+                <div class="card-icon-ring"></div>
+            </div>
             <div class="card-name">KIPM Academy</div>
             <div class="card-tagline">Pasar Modal Education</div>
 
@@ -6836,101 +6918,6 @@ body {{ background: #080c14; }}
 </div>
 
 <script>
-<script>
-// ── SIGMA STARFIELD — bintang kelap-kelip di titik persilangan grid ──
-(function() {{
-    var canvas = document.getElementById('starCanvas');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    var GRID = 60;
-    var stars = [];
-    var COLORS = [
-        [0,212,255],   // cyan
-        [139,92,246],  // purple
-        [255,255,255], // white
-        [255,255,255], // white (lebih banyak)
-        [180,220,255], // biru muda
-        [200,180,255], // ungu muda
-    ];
-    function resize() {{
-        canvas.width = window.innerWidth;
-        canvas.height = Math.max(window.innerHeight, document.body.scrollHeight || window.innerHeight);
-    }}
-    function initStars() {{
-        stars = [];
-        var cols = Math.ceil(canvas.width / GRID) + 1;
-        var rows = Math.ceil(canvas.height / GRID) + 1;
-        for (var r = 0; r < rows; r++) {{
-            for (var c = 0; c < cols; c++) {{
-                if (Math.random() > 0.20) continue;
-                var col = COLORS[Math.floor(Math.random() * COLORS.length)];
-                stars.push({{
-                    x: c * GRID,
-                    y: r * GRID,
-                    r: col[0], g: col[1], b: col[2],
-                    size: Math.random() * 1.1 + 0.2,
-                    speed: Math.random() * 0.5 + 0.15,
-                    phase: Math.random() * Math.PI * 2,
-                    maxOp: Math.random() * 0.65 + 0.1,
-                    minOp: Math.random() * 0.02,
-                    isSpark: Math.random() < 0.12,
-                    t: Math.random() * Math.PI * 2,
-                }});
-            }}
-        }}
-    }}
-    function draw(s, op, sz) {{
-        ctx.save();
-        if (s.isSpark) {{
-            var arm = sz * 3.5;
-            ctx.globalAlpha = op;
-            ctx.strokeStyle = 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',' + op + ')';
-            ctx.lineWidth = sz * 0.7;
-            ctx.lineCap = 'round';
-            ctx.beginPath(); ctx.moveTo(s.x - arm, s.y); ctx.lineTo(s.x + arm, s.y); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(s.x, s.y - arm); ctx.lineTo(s.x, s.y + arm); ctx.stroke();
-            var d = arm * 0.45;
-            ctx.lineWidth = sz * 0.3;
-            ctx.globalAlpha = op * 0.45;
-            ctx.beginPath(); ctx.moveTo(s.x-d, s.y-d); ctx.lineTo(s.x+d, s.y+d); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(s.x+d, s.y-d); ctx.lineTo(s.x-d, s.y+d); ctx.stroke();
-        }} else {{
-            var grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, sz * 4);
-            grd.addColorStop(0, 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',' + Math.min(op*1.8,1) + ')');
-            grd.addColorStop(0.25, 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',' + op + ')');
-            grd.addColorStop(1, 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',0)');
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = grd;
-            ctx.beginPath(); ctx.arc(s.x, s.y, sz * 4, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = Math.min(op * 2, 1);
-            ctx.fillStyle = 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',1)';
-            ctx.beginPath(); ctx.arc(s.x, s.y, sz * 0.7, 0, Math.PI * 2); ctx.fill();
-        }}
-        ctx.restore();
-    }}
-    var last = 0;
-    function loop(ts) {{
-        var dt = Math.min((ts - last) / 1000, 0.05);
-        last = ts;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (var i = 0; i < stars.length; i++) {{
-            var s = stars[i];
-            s.t += dt * s.speed;
-            var raw = (Math.sin(s.t) + 1) / 2;
-            var eased = raw * raw * raw;
-            var op = s.minOp + eased * (s.maxOp - s.minOp);
-            var sz = s.size * (0.6 + eased * 0.7);
-            draw(s, op, sz);
-        }}
-        requestAnimationFrame(loop);
-    }}
-    resize();
-    initStars();
-    window.addEventListener('resize', function() {{ resize(); initStars(); }});
-    requestAnimationFrame(loop);
-}})();
-// ── END STARFIELD ──
-
 var TERMINAL_URL = "{_terminal_url}";
 
 function selectChat() {{
