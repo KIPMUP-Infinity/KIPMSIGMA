@@ -6629,12 +6629,14 @@ body{{
     margin-bottom:24px;margin-top:8px;position:relative;
 }}
 .icon-hex{{
-    width:90px;height:90px;
+    width:96px;height:96px;
     display:flex;align-items:center;justify-content:center;
-    position:relative;z-index:2;border-radius:20px;
+    position:relative;z-index:2;border-radius:22px;
     font-size:2.6rem;
     transition:transform 0.4s ease, box-shadow 0.4s ease;
+    overflow:hidden;
 }}
+.icon-hex svg{{width:100%;height:100%;display:block;}}
 .card-ai .icon-hex{{
     background:linear-gradient(145deg,rgba(0,157,255,0.22),rgba(0,48,200,0.18));
     border:1px solid rgba(0,212,255,0.45);
@@ -6837,7 +6839,7 @@ body{{
     .hd{{margin-bottom:28px;}}
     .hd-title{{font-size:1.8rem;}}
     .card{{padding:22px 18px 20px;}}
-    .icon-hex{{width:72px;height:72px;font-size:2rem;}}
+    .icon-hex{{width:80px;height:80px;font-size:2rem;}}
     .card-title{{font-size:1.15rem;}}
     .cta{{font-size:0.72rem;padding:12px;}}
 }}
@@ -6869,7 +6871,64 @@ body{{
             <div class="badge badge-ai"><span class="badge-dot"></span>LIVE</div>
 
             <div class="icon-wrap">
-                <div class="icon-hex">⚡</div>
+                <div class="icon-hex"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgAI" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#001a3d"/>
+      <stop offset="100%" stop-color="#000d26"/>
+    </linearGradient>
+    <linearGradient id="hexAI" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00c8f0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0044cc" stop-opacity="0.35"/>
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="40%" y2="100%">
+      <stop offset="0%" stop-color="#ffcc00"/>
+      <stop offset="50%" stop-color="#ff8800"/>
+      <stop offset="100%" stop-color="#ff5500"/>
+    </linearGradient>
+    <filter id="glowBlue" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowBolt" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="innerGlow" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#0088ff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+  </defs>
+  <!-- bg -->
+  <rect width="96" height="96" fill="url(#bgAI)" rx="22"/>
+  <!-- inner ambient -->
+  <rect width="96" height="96" fill="url(#innerGlow)" rx="22"/>
+  <!-- hexagon shape -->
+  <polygon points="48,8 82,26 82,62 48,80 14,62 14,26"
+    fill="none"
+    stroke="url(#hexAI)"
+    stroke-width="1.8"
+    filter="url(#glowBlue)"
+    opacity="0.85"/>
+  <!-- second smaller hex -->
+  <polygon points="48,15 76,30 76,58 48,73 20,58 20,30"
+    fill="rgba(0,180,255,0.06)"
+    stroke="rgba(0,200,255,0.25)"
+    stroke-width="0.8"
+    opacity="0.7"/>
+  <!-- lightning bolt SVG path -->
+  <path d="M54,18 L36,50 L47,50 L42,78 L62,44 L51,44 Z"
+    fill="url(#boltGrad)"
+    filter="url(#glowBolt)"
+    stroke="rgba(255,200,50,0.4)"
+    stroke-width="0.5"/>
+  <!-- energy ring bottom -->
+  <ellipse cx="48" cy="81" rx="22" ry="5"
+    fill="none" stroke="rgba(0,200,255,0.4)" stroke-width="1.2"
+    filter="url(#glowBlue)" opacity="0.7"/>
+  <ellipse cx="48" cy="81" rx="14" ry="3"
+    fill="none" stroke="rgba(0,200,255,0.6)" stroke-width="0.7" opacity="0.5"/>
+</svg></div>
                 <div class="icon-ring"></div>
             </div>
 
@@ -6912,7 +6971,105 @@ body{{
             <div class="badge badge-terminal"><span style="font-size:0.6rem;">◆</span> BETA</div>
 
             <div class="icon-wrap">
-                <div class="icon-hex">🖥️</div>
+                <div class="icon-hex"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgTerm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d0520"/>
+      <stop offset="100%" stop-color="#07021a"/>
+    </linearGradient>
+    <linearGradient id="monitorGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c5ce8"/>
+      <stop offset="100%" stop-color="#4a2aaa"/>
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1050"/>
+      <stop offset="100%" stop-color="#0d0830"/>
+    </linearGradient>
+    <linearGradient id="chartGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="keyboardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6030c0"/>
+      <stop offset="100%" stop-color="#3a1880"/>
+    </linearGradient>
+    <filter id="glowPurple" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="purpleAmbient" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#6030cc" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+    <filter id="screenGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <!-- bg -->
+  <rect width="96" height="96" fill="url(#bgTerm)" rx="22"/>
+  <!-- ambient -->
+  <rect width="96" height="96" fill="url(#purpleAmbient)" rx="22"/>
+  <!-- outer border glow -->
+  <rect x="3" y="3" width="90" height="90" rx="20"
+    fill="none" stroke="rgba(139,92,246,0.35)" stroke-width="1"
+    filter="url(#glowPurple)" opacity="0.6"/>
+
+  <!-- MONITOR BODY -->
+  <rect x="16" y="18" width="64" height="44" rx="5"
+    fill="url(#monitorGrad)"
+    stroke="rgba(167,139,250,0.6)" stroke-width="1.2"
+    filter="url(#glowPurple)"/>
+
+  <!-- SCREEN (inner) -->
+  <rect x="20" y="22" width="56" height="36" rx="3"
+    fill="url(#screenGrad)"
+    stroke="rgba(120,80,255,0.4)" stroke-width="0.8"/>
+
+  <!-- SCREEN GLOW overlay -->
+  <rect x="20" y="22" width="56" height="36" rx="3"
+    fill="none"
+    stroke="rgba(180,140,255,0.5)" stroke-width="0.5"
+    filter="url(#screenGlow)"/>
+
+  <!-- CHART LINES on screen -->
+  <polyline points="24,52 30,46 36,49 42,39 48,43 54,34 60,37 66,30 72,33"
+    fill="none" stroke="rgba(167,139,250,0.85)" stroke-width="1.5"
+    stroke-linecap="round" stroke-linejoin="round"
+    filter="url(#screenGlow)"/>
+  <!-- chart area fill -->
+  <polygon points="24,52 30,46 36,49 42,39 48,43 54,34 60,37 66,30 72,33 72,56 24,56"
+    fill="url(#chartGrad)" opacity="0.35"/>
+  <!-- horizontal grid lines on screen -->
+  <line x1="22" y1="46" x2="74" y2="46" stroke="rgba(120,80,200,0.15)" stroke-width="0.5"/>
+  <line x1="22" y1="38" x2="74" y2="38" stroke="rgba(120,80,200,0.15)" stroke-width="0.5"/>
+  <line x1="22" y1="30" x2="74" y2="30" stroke="rgba(120,80,200,0.15)" stroke-width="0.5"/>
+
+  <!-- MONITOR NECK -->
+  <rect x="44" y="62" width="8" height="8" rx="1"
+    fill="url(#keyboardGrad)"
+    stroke="rgba(139,92,246,0.4)" stroke-width="0.8"/>
+
+  <!-- KEYBOARD BASE -->
+  <rect x="25" y="70" width="46" height="9" rx="4"
+    fill="url(#keyboardGrad)"
+    stroke="rgba(139,92,246,0.6)" stroke-width="1"
+    filter="url(#glowPurple)"/>
+
+  <!-- keyboard keys detail -->
+  <rect x="28" y="72.5" width="6" height="4" rx="1" fill="rgba(180,140,255,0.3)"/>
+  <rect x="36" y="72.5" width="6" height="4" rx="1" fill="rgba(180,140,255,0.3)"/>
+  <rect x="44" y="72.5" width="6" height="4" rx="1" fill="rgba(180,140,255,0.3)"/>
+  <rect x="52" y="72.5" width="6" height="4" rx="1" fill="rgba(180,140,255,0.3)"/>
+  <rect x="60" y="72.5" width="6" height="4" rx="1" fill="rgba(180,140,255,0.3)"/>
+
+  <!-- bottom glow ring -->
+  <ellipse cx="48" cy="83" rx="26" ry="5"
+    fill="none" stroke="rgba(139,92,246,0.45)" stroke-width="1.2"
+    filter="url(#glowPurple)" opacity="0.8"/>
+  <ellipse cx="48" cy="83" rx="16" ry="3"
+    fill="none" stroke="rgba(167,139,250,0.5)" stroke-width="0.7" opacity="0.5"/>
+</svg></div>
                 <div class="icon-ring"></div>
             </div>
 
@@ -6954,7 +7111,88 @@ body{{
             <div class="badge badge-kipm">★ COMING SOON</div>
 
             <div class="icon-wrap">
-                <div class="icon-hex">🎓</div>
+                <div class="icon-hex"><svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgAcad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a0e00"/>
+      <stop offset="100%" stop-color="#0d0800"/>
+    </linearGradient>
+    <linearGradient id="hexGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#d97706" stop-opacity="0.35"/>
+    </linearGradient>
+    <linearGradient id="capGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="50%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="capTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="glowGold" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowCapLight" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <radialGradient id="goldAmbient" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#d97706" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </radialGradient>
+  </defs>
+  <!-- bg -->
+  <rect width="96" height="96" fill="url(#bgAcad)" rx="22"/>
+  <!-- ambient -->
+  <rect width="96" height="96" fill="url(#goldAmbient)" rx="22"/>
+  <!-- hexagon -->
+  <polygon points="48,8 82,26 82,62 48,80 14,62 14,26"
+    fill="none"
+    stroke="url(#hexGold)"
+    stroke-width="1.8"
+    filter="url(#glowGold)"
+    opacity="0.8"/>
+  <polygon points="48,15 76,30 76,58 48,73 20,58 20,30"
+    fill="rgba(245,158,11,0.04)"
+    stroke="rgba(245,158,11,0.18)"
+    stroke-width="0.8" opacity="0.6"/>
+
+  <!-- GRADUATION CAP - board (diamond/rhombus top) -->
+  <polygon points="48,20 70,32 48,44 26,32"
+    fill="url(#capTop)"
+    stroke="rgba(255,230,100,0.6)" stroke-width="0.8"
+    filter="url(#glowCapLight)"/>
+  <!-- cap highlight -->
+  <polygon points="48,21 66,31 48,41 30,31"
+    fill="none" stroke="rgba(255,240,180,0.3)" stroke-width="0.5"/>
+
+  <!-- CAP BODY (cylinder below) -->
+  <path d="M35,32 L35,48 Q35,56 48,58 Q61,56 61,48 L61,32 L48,38 Z"
+    fill="url(#capGrad)"
+    stroke="rgba(245,158,11,0.5)" stroke-width="0.8"
+    filter="url(#glowCapLight)"/>
+
+  <!-- TASSEL string -->
+  <line x1="70" y1="32" x2="70" y2="54"
+    stroke="rgba(251,191,36,0.8)" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- tassel end -->
+  <circle cx="70" cy="56" r="3"
+    fill="#f59e0b" stroke="rgba(255,210,60,0.6)" stroke-width="0.8"
+    filter="url(#glowGold)"/>
+  <!-- tassel fringe lines -->
+  <line x1="68" y1="58" x2="66" y2="64" stroke="rgba(251,191,36,0.7)" stroke-width="1" stroke-linecap="round"/>
+  <line x1="70" y1="59" x2="70" y2="65" stroke="rgba(251,191,36,0.7)" stroke-width="1" stroke-linecap="round"/>
+  <line x1="72" y1="58" x2="74" y2="64" stroke="rgba(251,191,36,0.7)" stroke-width="1" stroke-linecap="round"/>
+
+  <!-- energy ring -->
+  <ellipse cx="48" cy="80" rx="22" ry="5"
+    fill="none" stroke="rgba(245,158,11,0.45)" stroke-width="1.2"
+    filter="url(#glowGold)" opacity="0.7"/>
+  <ellipse cx="48" cy="80" rx="14" ry="3"
+    fill="none" stroke="rgba(252,211,77,0.55)" stroke-width="0.7" opacity="0.5"/>
+</svg></div>
                 <div class="icon-ring"></div>
             </div>
 
