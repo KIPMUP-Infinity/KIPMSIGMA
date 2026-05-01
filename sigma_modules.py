@@ -57,16 +57,32 @@ def _write_json(path: str, data: list):
 
 
 def load_all():
-    """Load semua data dari file JSON ke session_state (hanya jika belum ada)."""
+    """Load semua data dari file JSON ke session_state (hanya jika belum ada).
+    Prioritas: session_state (dari DB user) > disk lokal."""
     for key, path in _FILES.items():
         if key not in st.session_state:
+            # Coba load dari disk lokal (fallback)
             st.session_state[key] = _read_json(path)
+        # sigma_track_record: jika disk punya data tapi DB tidak (atau sebaliknya), merge
+        # Prioritas session_state yg sudah di-restore dari DB oleh app.py
 
 
 def save_key(key: str):
     """Simpan satu key dari session_state ke file JSON."""
     if key in _FILES:
         _write_json(_FILES[key], st.session_state.get(key, []))
+    # Untuk sigma_track_record: juga simpan ke user DB agar persist saat redeploy
+    if key == "sigma_track_record":
+        try:
+            _user = st.session_state.get("user")
+            if _user and _user.get("email"):
+                # Import save_field dari app.py context (jika tersedia di builtins)
+                import builtins
+                _sf = getattr(builtins, "_sigma_save_field", None)
+                if _sf:
+                    _sf(_user["email"], "sigma_track_record", st.session_state.get("sigma_track_record", []))
+        except Exception:
+            pass
 
 
 def save_all():
