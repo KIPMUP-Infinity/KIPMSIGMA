@@ -20676,7 +20676,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 candidates.append((tk, d, bs_data, composite, screeners_hit, sc1_score, sc2_score, sc3_score, sc4_score))
 
             candidates.sort(key=lambda x: x[3], reverse=True)
-            top_n = 7 if plan_type == "weekly" else 5
+            # Daily: ambil top 20 (akan di-press ke 10 oleh GoAPI broker rank)
+            # Weekly: top 7
+            top_n = 7 if plan_type == "weekly" else 20
             top_candidates = candidates[:top_n]
 
             # ── Avoid candidates ──
@@ -21802,130 +21804,210 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             f"font-size:0.8rem;margin-bottom:14px;line-height:1.6;'>"
                             f"💡 {_outlook}</div>", unsafe_allow_html=True)
 
-                    # ── Tabel Trade Plan ──
+                    # ═══════════════════════════════════════════════════════════════
+                    # PIPELINE 200 → 100 → 20 → 10 SAHAM
+                    # Step terakhir: press 20 saham → 10 terbaik pakai GoAPI broker score
+                    # ═══════════════════════════════════════════════════════════════
+
                     if _rows_buy:
+                        # ─────────────────────────────────────────────────────────────
+                        # SECTION A: SUMMARY TABLE — 20 saham hasil screening
+                        # (semua ditampilkan agar user bisa lihat universe penuh)
+                        # ─────────────────────────────────────────────────────────────
                         st.markdown(
                             f"<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
                             f"text-transform:uppercase;color:#a78bfa;margin:10px 0 6px;'>"
-                            f"📈 TRADE PLAN HARIAN — {_today_entry.get('date','')}</div>",
+                            f"📊 UNIVERSE 20 SAHAM — HASIL SCREENING — {_today_entry.get('date','')}</div>"
+                            f"<div style='font-size:0.7rem;color:#888;margin-bottom:8px;'>"
+                            f"Kandidat dari pipeline 200→100→20. Akan di-press ke 10 terbaik menggunakan GoAPI broker data.</div>",
                             unsafe_allow_html=True)
 
-                        _tp_cols_header = ["TICKER","PRICE","ENTRY ZONE","TP1","TP2","SL","RR","HORIZON","VOL","RATING","ALASAN","TOP ACCUM BROKER","TOP DIST BROKER"]
-                        _tp_rows = []
-                        for _r in _rows_buy:
-                            _tk_r = _r.get("ticker","")
-                            # Ambil broker data dari bs30_cache
-                            _bsdata = next((s for s in _bs30_cache if s.get("ticker") == _tk_r), {})
-                            _top_accum = ", ".join(_bsdata.get("top_accum", [])[:3]) or "—"
-                            _top_dist  = ", ".join(_bsdata.get("top_dist", [])[:3]) or "—"
-                            _price_r   = _r.get("price", 0)
-                            _entry_str = f"Rp {_r.get('entry_low',0):,} – Rp {_r.get('entry_high',0):,}"
-                            _tp_rows.append({
-                                "TICKER":    _tk_r,
-                                "PRICE":     f"Rp {_price_r:,}",
-                                "ENTRY ZONE": _entry_str,
-                                "TP1":       f"Rp {_r.get('tp1',0):,}",
-                                "TP2":       f"Rp {_r.get('tp2',0):,}" if _r.get("tp2") else "—",
-                                "SL":        f"Rp {_r.get('sl',0):,}",
-                                "RR":        f"{_r.get('rr',0)}x",
-                                "HORIZON":   _r.get("horizon","—"),
-                                "VOL":       _r.get("vol_spike","—"),
-                                "RATING":    _r.get("rating","—"),
-                                "ALASAN":    _r.get("why_buy","—"),
-                                "TOP ACCUM BROKER": _top_accum,
-                                "TOP DIST BROKER":  _top_dist,
-                            })
-                        # Build responsive HTML table - no double scroll
-                        _tp_hdr = ["TICKER","PRICE","ENTRY ZONE","TP1","TP2","SL","RR","HORIZON","VOL","RATING","ALASAN","TOP ACCUM","TOP DIST"]
-                        _tp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.67rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;border-bottom:1px solid rgba(167,139,250,0.25);text-align:left;'>{h}</th>" for h in _tp_hdr)
-                        _tp_trs = ""
-                        for _tri2, _r2 in enumerate(_tp_rows):
-                            _rat2  = _r2.get("RATING","—")
-                            _rc2   = "#089981" if _rat2=="BUY" else "#f5a623" if _rat2=="HOLD" else "#f23645"
-                            _bg2   = "rgba(167,139,250,0.04)" if _tri2%2==0 else "transparent"
-                            _tp_trs += (
-                                f"<tr style='background:{_bg2};'>"
-                                f"<td style='padding:7px 10px;font-weight:700;color:#a78bfa;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_r2.get('TICKER','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('PRICE','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_r2.get('ENTRY ZONE','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>{_r2.get('TP1','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{_r2.get('TP2','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>{_r2.get('SL','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('RR','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.78rem;'>{_r2.get('HORIZON','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_r2.get('VOL','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rc2};font-weight:700;font-size:0.8rem;'>{_rat2}</td>"
-                                f"<td style='padding:7px 10px;font-size:0.77rem;max-width:180px;'>{_r2.get('ALASAN','')}</td>"
-                                f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_r2.get('TOP ACCUM BROKER','')}</td>"
-                                f"<td style='padding:7px 10px;font-size:0.75rem;white-space:nowrap;'>{_r2.get('TOP DIST BROKER','')}</td>"
+                        # Build summary table (semua _rows_buy, maks 20)
+                        _tp_hdr20 = ["#","TICKER","SCORE","PRICE","VOL","RATING","SCREENER","AKUMULASI BROKER","DISTRIBUSI BROKER","ALASAN"]
+                        _tp_th20  = "".join(
+                            f"<th style='padding:7px 10px;white-space:nowrap;font-size:0.66rem;"
+                            f"letter-spacing:0.09em;text-transform:uppercase;color:#a78bfa;"
+                            f"border-bottom:1px solid rgba(167,139,250,0.25);text-align:left;'>{h}</th>"
+                            for h in _tp_hdr20)
+                        _tp_trs20 = ""
+                        for _tri20, _r20 in enumerate(_rows_buy[:20], 1):
+                            _tk20    = _r20.get("ticker","")
+                            _bsd20   = next((s for s in _bs30_cache if s.get("ticker")==_tk20), {})
+                            _accum20 = " · ".join(_bsd20.get("top_accum",[])[:5]) or "—"
+                            _dist20  = " · ".join(_bsd20.get("top_dist", [])[:3]) or "—"
+                            _rat20   = _r20.get("rating","—")
+                            _rc20    = "#00E5BE" if "STRONG" in _rat20 else ("#26a69a" if _rat20=="BUY" else ("#f5a623" if _rat20=="HOLD" else "#f23645"))
+                            _scr20   = _r20.get("screener_match","—")
+                            _bg20    = "rgba(167,139,250,0.04)" if _tri20%2==0 else "transparent"
+                            _tp_trs20 += (
+                                f"<tr style='background:{_bg20};'>"
+                                f"<td style='padding:6px 10px;color:#555;font-size:0.76rem;text-align:center;'>{_tri20}</td>"
+                                f"<td style='padding:6px 10px;font-weight:700;color:#a78bfa;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_tk20}</td>"
+                                f"<td style='padding:6px 10px;font-weight:700;color:#a78bfa;font-size:0.82rem;text-align:center;'>{_r20.get('combined','—')}</td>"
+                                f"<td style='padding:6px 10px;white-space:nowrap;font-size:0.79rem;'>Rp {int(_r20.get('price',0)):,}</td>"
+                                f"<td style='padding:6px 10px;white-space:nowrap;font-size:0.79rem;'>{_r20.get('vol_spike','—')}</td>"
+                                f"<td style='padding:6px 10px;white-space:nowrap;color:{_rc20};font-weight:700;font-size:0.79rem;'>{_rat20}</td>"
+                                f"<td style='padding:6px 10px;font-size:0.72rem;white-space:nowrap;color:#60a5fa;'>{_scr20}</td>"
+                                f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:#2dd4a0;'>{_accum20}</td>"
+                                f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:#ff5c5c;'>{_dist20}</td>"
+                                f"<td style='padding:6px 10px;font-size:0.73rem;max-width:160px;color:#ccc;'>{_r20.get('why_buy','—')[:80]}</td>"
                                 "</tr>"
                             )
                         st.markdown(
-                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
-                            "-webkit-overflow-scrolling:touch;"
-                            "border-radius:8px;border:1px solid rgba(167,139,250,0.2);margin-bottom:4px;'>"
-                            "<table style='border-collapse:collapse;min-width:960px;width:max-content;'>"
-                            f"<thead><tr style='background:rgba(167,139,250,0.08);'>{_tp_th}</tr></thead>"
-                            f"<tbody>{_tp_trs}</tbody>"
+                            "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                            "border-radius:8px;border:1px solid rgba(167,139,250,0.2);margin-bottom:18px;'>"
+                            "<table style='border-collapse:collapse;min-width:900px;width:max-content;'>"
+                            f"<thead><tr style='background:rgba(167,139,250,0.08);'>{_tp_th20}</tr></thead>"
+                            f"<tbody>{_tp_trs20}</tbody>"
                             "</table></div>",
                             unsafe_allow_html=True)
 
-                    # ── Summary Card Top Saham ──
-                    if _rows_buy:
+                        # ─────────────────────────────────────────────────────────────
+                        # SECTION B: PRESS 20 → 10 PAKAI GoAPI BROKER SCORE
+                        # Ranking ulang berdasarkan akumulasi broker score dari GoAPI
+                        # ─────────────────────────────────────────────────────────────
                         st.markdown(
-                            f"<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
-                            f"text-transform:uppercase;color:#a78bfa;margin:16px 0 8px;'>"
-                            f"⚡ SUMMARY TOP PICKS</div>", unsafe_allow_html=True)
-                        for _ri, _r in enumerate(_rows_buy[:10], 1):
-                            _tk_r   = _r.get("ticker","")
-                            _bsdata = next((s for s in _bs30_cache if s.get("ticker") == _tk_r), {})
-                            _verdict= _bsdata.get("verdict","")
-                            _top_accum_b = _bsdata.get("top_accum", [])[:3]
-                            _top_dist_b  = _bsdata.get("top_dist", [])[:3]
-                            _vc = "#2dd4a0" if "AKUMULASI" in _verdict else ("#ff5c5c" if "DIST" in _verdict else "#888")
-                            with st.container(border=True):
-                                _hc, _sc = st.columns([4,1])
-                                with _hc:
-                                    st.markdown(
-                                        f"**#{_ri} {_tk_r}** &nbsp;"
-                                        f"<span style='color:#888;font-size:12px'>{_r.get('name','')}</span> &nbsp;"
-                                        f"<span style='font-size:12px'>Rp {_r.get('price',0):,}</span>",
-                                        unsafe_allow_html=True)
-                                with _sc:
-                                    st.markdown(
-                                        f"<div style='text-align:right'>"
-                                        f"<span style='font-size:20px;font-weight:700;color:#a78bfa'>{_r.get('combined','—')}</span>"
-                                        f"<br><span style='font-size:9px;color:#666'>SCORE</span>"
-                                        f"<br><span style='color:#089981;font-weight:700;font-size:11px'>► {_r.get('rating','BUY')}</span>"
-                                        f"</div>", unsafe_allow_html=True)
-                                _c1,_c2,_c3,_c4,_c5,_c6 = st.columns(6)
-                                _c1.metric("TA",    _r.get("ta_score","—"))
-                                _c2.metric("FA",    _r.get("fa_score","—"))
-                                _c3.metric("Vol",   _r.get("vol_spike","—"))
-                                _c4.metric("RSI",   _r.get("rsi","—"))
-                                _c5.metric("MACD",  _r.get("macd","—"))
-                                _c6.metric("Wyckoff",_r.get("wyckoff","—"))
-                                # ── Broker Akumulasi & Distribusi ──
-                                _bc1, _bc2 = st.columns(2)
-                                with _bc1:
-                                    if _top_accum_b:
-                                        st.markdown(
-                                            f"<div style='font-size:0.72rem;padding:6px 10px;"
-                                            f"background:rgba(45,212,160,0.08);border-left:2px solid #2dd4a0;"
-                                            f"border-radius:0 4px 4px 0;'>"
-                                            f"<span style='color:#2dd4a0;font-weight:700;'>📈 AKUMULASI</span>&nbsp;"
-                                            f"<span style='color:#e0e0ef;'>{' · '.join(_top_accum_b)}</span>"
-                                            f"</div>", unsafe_allow_html=True)
-                                with _bc2:
-                                    if _top_dist_b:
-                                        st.markdown(
-                                            f"<div style='font-size:0.72rem;padding:6px 10px;"
-                                            f"background:rgba(255,92,92,0.08);border-left:2px solid #ff5c5c;"
-                                            f"border-radius:0 4px 4px 0;'>"
-                                            f"<span style='color:#ff5c5c;font-weight:700;'>📉 DISTRIBUSI</span>&nbsp;"
-                                            f"<span style='color:#e0e0ef;'>{' · '.join(_top_dist_b)}</span>"
-                                            f"</div>", unsafe_allow_html=True)
-                                st.caption(f"📌 {_r.get('why_buy','—')}")
+                            "<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
+                            "text-transform:uppercase;color:#00E5BE;margin:18px 0 4px;'>"
+                            "🔬 PRESS 20 → 10 · FINAL SELECTION VIA GoAPI BROKER ANALYSIS</div>"
+                            "<div style='font-size:0.7rem;color:#888;margin-bottom:12px;'>"
+                            "GoAPI broker summary menentukan 10 saham terbaik dari 20. Kriteria: "
+                            "akumulasi broker ≥ distribusi, BPR tinggi, goapi_confirmed, streak akumulasi.</div>",
+                            unsafe_allow_html=True)
+
+                        # Scoring ulang pakai GoAPI broker data (bukan technical score)
+                        def _broker_press_score(row, bs_cache):
+                            """Score GoAPI-based untuk press 20→10."""
+                            tk    = row.get("ticker","")
+                            bsd   = next((s for s in bs_cache if s.get("ticker")==tk), {})
+                            score = float(row.get("combined", 0))  # base: technical score
+
+                            # GoAPI confirmed akumulasi → big bonus
+                            if bsd.get("goapi_confirmed"):
+                                score += 30
+                            verdict = bsd.get("verdict","")
+                            if "AKUMULASI" in verdict:
+                                score += 25
+                            elif "DISTRIBUSI" in verdict:
+                                score -= 20
+
+                            # BPR: broker pressure ratio (% beli vs jual broker)
+                            bpr = float(bsd.get("bpr", 0) or 0)
+                            if bpr > 60:   score += 20
+                            elif bpr > 40: score += 10
+                            elif bpr < 30: score -= 15
+
+                            # Akumulasi streak & days
+                            accum_s = int(bsd.get("accum_streak", 0) or 0)
+                            accum_d = int(bsd.get("accum_days", 0) or 0)
+                            score += accum_s * 8
+                            score += accum_d * 5
+
+                            # Top accum broker: lebih banyak broker akumulasi = lebih kuat
+                            n_accum = len(bsd.get("top_accum", []))
+                            score += min(n_accum * 4, 16)
+
+                            # Top dist broker: banyak yang distribusi → kurangi score
+                            n_dist = len(bsd.get("top_dist", []))
+                            score -= n_dist * 3
+
+                            # Net flow asing (proxy dari asing_net jika ada)
+                            asing = str(bsd.get("asing_net","") or "")
+                            if asing and not asing.startswith("-") and asing != "—":
+                                score += 10
+                            elif asing.startswith("-"):
+                                score -= 8
+
+                            return round(score, 1)
+
+                        # Rank ulang 20 saham
+                        _ranked_20 = []
+                        for _rr20 in _rows_buy[:20]:
+                            _br_score = _broker_press_score(_rr20, _bs30_cache)
+                            _ranked_20.append((_br_score, _rr20))
+                        _ranked_20.sort(key=lambda x: x[0], reverse=True)
+
+                        # Top 10 final
+                        _top10_rows = []
+                        for _bsc, _rrow in _ranked_20[:10]:
+                            _rrow_copy = dict(_rrow)
+                            _rrow_copy["_broker_score"] = _bsc
+                            # Enrich dengan GoAPI broker data untuk display di card
+                            _tk_en = _rrow_copy.get("ticker","")
+                            _bsd_en = next((s for s in _bs30_cache if s.get("ticker")==_tk_en), {})
+                            _rrow_copy["bandar_pct"]   = int(min(95, max(20, _bsd_en.get("bpr", 50) or 50)))
+                            _rrow_copy["bandar_label"] = _bsd_en.get("verdict","AKUMULASI" if _bsc > 50 else "DISTRIBUSI")
+                            _rrow_copy["top_accum"]    = _bsd_en.get("top_accum",[])
+                            _rrow_copy["top_dist"]     = _bsd_en.get("top_dist",[])
+                            _rrow_copy["asing_net"]    = _bsd_en.get("asing_net","")
+                            _rrow_copy["inst_net"]     = _bsd_en.get("inst_net","")
+                            _rrow_copy["retail_net"]   = _bsd_en.get("retail_net","")
+                            _rrow_copy["goapi_ok"]     = _bsd_en.get("goapi_confirmed", False)
+                            # Rating adjustment berdasarkan broker score
+                            if _bsc >= 70 and "AKUMULASI" in _rrow_copy.get("bandar_label",""):
+                                _rrow_copy["rating"] = "STRONG BUY"
+                            elif _bsc >= 45:
+                                _rrow_copy["rating"] = "BUY"
+                            elif _bsc >= 20:
+                                _rrow_copy["rating"] = "HOLD"
+                            _top10_rows.append(_rrow_copy)
+
+                        # ── Render BSJP Cards untuk 10 saham terpilih ──
+                        st.markdown(
+                            "<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
+                            "text-transform:uppercase;color:#a78bfa;margin:8px 0 4px;'>"
+                            "⚡ DAILY TRADE PLAN · TOP 10 SAHAM PILIHAN</div>",
+                            unsafe_allow_html=True)
+
+                        if _top10_rows:
+                            render_bsjp_cards(
+                                rows         = _top10_rows,
+                                date_label   = _today_entry.get("date",""),
+                                generated_at = _today_entry.get("generated_at",""),
+                                max_cards    = 10,
+                            )
+
+                        # ── Ranking tabel sederhana sebagai referensi press 20→10 ──
+                        with st.expander("📋 Lihat ranking GoAPI press 20→10 (detail score)", expanded=False):
+                            _rank_hdr = ["RANK","TICKER","BROKER SCORE","AKUMULASI","BPR","DISTRIBUSI","STATUS","FINAL"]
+                            _rank_th  = "".join(
+                                f"<th style='padding:7px 10px;white-space:nowrap;font-size:0.66rem;"
+                                f"letter-spacing:0.09em;text-transform:uppercase;color:#00E5BE;"
+                                f"border-bottom:1px solid rgba(0,229,190,0.25);text-align:left;'>{h}</th>"
+                                for h in _rank_hdr)
+                            _rank_trs = ""
+                            for _ri_rank, (_bsc_rank, _rrow_rank) in enumerate(_ranked_20, 1):
+                                _tk_rank  = _rrow_rank.get("ticker","")
+                                _bsd_rank = next((s for s in _bs30_cache if s.get("ticker")==_tk_rank), {})
+                                _bpr_rank = f"{float(_bsd_rank.get('bpr',0) or 0):.0f}%"
+                                _accum_r  = " · ".join(_bsd_rank.get("top_accum",[])[:4]) or "—"
+                                _dist_r   = " · ".join(_bsd_rank.get("top_dist", [])[:3]) or "—"
+                                _verd_r   = _bsd_rank.get("verdict","—")
+                                _vc_r     = "#00E5BE" if "AKUMULASI" in _verd_r else ("#ff5c5c" if "DIST" in _verd_r else "#888")
+                                _is_top10 = _ri_rank <= 10
+                                _final_r  = "✅ MASUK" if _is_top10 else "❌ DROP"
+                                _fc_r     = "#00E5BE" if _is_top10 else "#666"
+                                _bg_r     = "rgba(0,229,190,0.05)" if _is_top10 else "transparent"
+                                _rank_trs += (
+                                    f"<tr style='background:{_bg_r};'>"
+                                    f"<td style='padding:6px 10px;color:#555;font-size:0.75rem;text-align:center;font-weight:700;'>{_ri_rank}</td>"
+                                    f"<td style='padding:6px 10px;font-weight:700;color:#a78bfa;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_tk_rank}</td>"
+                                    f"<td style='padding:6px 10px;font-weight:700;color:#00E5BE;font-size:0.82rem;text-align:center;'>{_bsc_rank}</td>"
+                                    f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:#2dd4a0;'>{_accum_r}</td>"
+                                    f"<td style='padding:6px 10px;font-size:0.79rem;white-space:nowrap;text-align:center;'>{_bpr_rank}</td>"
+                                    f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:#ff5c5c;'>{_dist_r}</td>"
+                                    f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:{_vc_r};font-weight:600;'>{_verd_r}</td>"
+                                    f"<td style='padding:6px 10px;font-size:0.75rem;font-weight:700;color:{_fc_r};white-space:nowrap;'>{_final_r}</td>"
+                                    "</tr>"
+                                )
+                            st.markdown(
+                                "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                                "border-radius:8px;border:1px solid rgba(0,229,190,0.2);'>"
+                                "<table style='border-collapse:collapse;min-width:700px;width:max-content;'>"
+                                f"<thead><tr style='background:rgba(0,229,190,0.06);'>{_rank_th}</tr></thead>"
+                                f"<tbody>{_rank_trs}</tbody>"
+                                "</table></div>",
+                                unsafe_allow_html=True)
 
                     # ── Saham Hindari (Daily) ──
                     if _rows_avoid:
