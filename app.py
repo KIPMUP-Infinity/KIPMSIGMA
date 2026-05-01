@@ -5557,7 +5557,9 @@ if "code" in st.query_params and st.session_state.user is None:
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
             st.session_state.current_view = saved.get("current_view", "chat")
-            _sv = (saved or {}).get("selected_system"); st.session_state.selected_system = _sv if _sv and _sv != "terminal" else None
+            # FIX v4.2: Selalu reset ke None setelah login baru agar user
+            # selalu melewati menu 3 card terlebih dahulu, bukan langsung ke chat.
+            st.session_state.selected_system = None
             if saved.get("sessions"):
                 _loaded_s = saved["sessions"]
                 for _s in _loaded_s:
@@ -5598,7 +5600,10 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
-                st.session_state.current_view = saved.get("current_view", "chat"); _sv = (saved or {}).get("selected_system"); st.session_state.selected_system = _sv if _sv and _sv != "terminal" else None
+                st.session_state.current_view = saved.get("current_view", "chat")
+                # FIX v4.2: Selalu reset ke None setelah auto-login via token agar
+                # user selalu melewati menu 3 card terlebih dahulu, bukan langsung ke chat.
+                st.session_state.selected_system = None
                 if saved.get("sessions"):
                     _loaded = saved["sessions"]
                     for _s in _loaded:
@@ -5619,10 +5624,9 @@ if st.session_state.user and not st.session_state.data_loaded:
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
         st.session_state.current_view = saved.get("current_view", "chat")
-        if not st.session_state.get("selected_system"):
-            _sv2 = saved.get("selected_system")
-            if _sv2 and _sv2 != "terminal":
-                st.session_state.selected_system = _sv2
+        # FIX v4.2: Jangan restore selected_system dari database.
+        # User harus selalu melewati menu 3 card setelah login.
+        # selected_system hanya di-set oleh user secara eksplisit via klik card.
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -7549,6 +7553,49 @@ function selectTerminal() {{
 </html>
     """, height=820, scrolling=False)
 
+    # ── UPDATE NOTIFICATION — tampil di bawah menu 3 card ──
+    # FIX v4.2: dipindah dari dashboard ke sini agar user lihat changelog
+    # segera setelah login, sebelum masuk ke sistem manapun.
+    _SIGMA_VERSION_HOME  = "v4.2"
+    _SIGMA_UPDATED_HOME  = "01 Mei 2026"
+    _CURR_EMAIL_HOME     = (st.session_state.user or {}).get("email", "")
+    _UPD_SEEN_KEY_HOME   = f"update_seen_{_SIGMA_VERSION_HOME}_{_CURR_EMAIL_HOME}"
+    _UPD_ITEMS_HOME = [
+        "🔐 Login disederhanakan — hanya via Google, lebih cepat & aman",
+        "🖼️ Background login diperbarui ke aset KIPM-UP lokal (lebih cepat load)",
+        "📦 sigma_sheets & sigma_modules sekarang selalu aktif — history broker, reko, dan journal tersimpan otomatis",
+        "☁️ Semua data (daily plan, weekly plan, BS30) langsung tersimpan ke Google Sheets tanpa toggle",
+        "🔄 Auto-rotate API key (Finnhub, FMP, AlphaVantage, GoAPI) berjalan penuh tanpa mode opsional",
+        "📊 Reko History & Broker History tampil otomatis tanpa perlu koneksi manual",
+        "🚀 Performa startup lebih cepat — modul tidak lagi load secara kondisional",
+    ]
+    if not st.session_state.get(_UPD_SEEN_KEY_HOME):
+        _upd_c1, _upd_c2 = st.columns([10, 1])
+        with _upd_c1:
+            _items_html_home = "".join(
+                f"<div style='display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;'>"
+                f"<span style='font-size:0.82rem;color:#e2e8f0;line-height:1.5'>{_itm}</span>"
+                f"</div>"
+                for _itm in _UPD_ITEMS_HOME
+            )
+            st.markdown(f"""
+<div style="background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(59,130,246,0.10));
+border:1px solid rgba(124,58,237,0.35);border-left:4px solid #7c3aed;
+border-radius:12px;padding:14px 18px;margin-bottom:16px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+    <span style="font-size:1rem;">🆕</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;
+    color:#a78bfa;font-weight:700;letter-spacing:0.08em;">
+    SIGMA {_SIGMA_VERSION_HOME} — UPDATE {_SIGMA_UPDATED_HOME}</span>
+  </div>
+  {_items_html_home}
+</div>
+""", unsafe_allow_html=True)
+        with _upd_c2:
+            if st.button("✕", key="btn_dismiss_update_home", help="Tutup notifikasi update"):
+                st.session_state[_UPD_SEEN_KEY_HOME] = True
+                st.rerun()
+
     # ── HIDDEN STREAMLIT BUTTONS (fallback for all browsers) ──
     col1, col2 = st.columns(2)
     with col1:
@@ -7647,7 +7694,7 @@ def show_login():
     [data-testid="stSidebar"] {{ display: none !important; }}
     [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_desktop} center/cover no-repeat fixed !important; min-height: 100vh !important; }}
     section[data-testid="stMain"]::before {{ display: none !important; }}
-    [data-testid="stMainBlockContainer"] {{ max-width: 300px !important; margin: 1.5vh 74px 0 auto !important; padding: 8px 18px 16px !important; position: relative; z-index: 1; min-height: unset !important; height: fit-content !important; background: rgba(5, 8, 20, 0.60) !important; backdrop-filter: blur(20px) saturate(1.4) !important; -webkit-backdrop-filter: blur(20px) saturate(1.4) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
+    [data-testid="stMainBlockContainer"] {{ max-width: 300px !important; margin: 1.5vh 452px 0 auto !important; padding: 8px 18px 16px !important; position: relative; z-index: 1; min-height: unset !important; height: fit-content !important; background: rgba(5, 8, 20, 0.60) !important; backdrop-filter: blur(20px) saturate(1.4) !important; -webkit-backdrop-filter: blur(20px) saturate(1.4) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
     @media(max-width: 768px) {{
         [data-testid="stMainBlockContainer"] {{ margin: 5vh auto 0 auto !important; max-width: 88% !important; padding: 20px 20px 28px !important; backdrop-filter: blur(20px) !important; border-radius: 20px !important; border: 1px solid rgba(255,255,255,0.12) !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
         [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_mobile} center top/cover no-repeat fixed !important; }}
