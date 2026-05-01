@@ -7694,11 +7694,38 @@ def show_login():
     [data-testid="stSidebar"] {{ display: none !important; }}
     [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_desktop} center/cover no-repeat fixed !important; min-height: 100vh !important; }}
     section[data-testid="stMain"]::before {{ display: none !important; }}
-    [data-testid="stMainBlockContainer"] {{ max-width: 300px !important; margin: 1.5vh 452px 0 auto !important; padding: 8px 18px 16px !important; position: relative; z-index: 1; min-height: unset !important; height: fit-content !important; background: rgba(5, 8, 20, 0.60) !important; backdrop-filter: blur(20px) saturate(1.4) !important; -webkit-backdrop-filter: blur(20px) saturate(1.4) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
+    /* FIX v4.2: Card login pojok kiri bawah, di bawah teks KIPM Universitas Pancasila */
+    [data-testid="stMainBlockContainer"] {{
+        max-width: 310px !important;
+        margin: 0 !important;
+        padding: 14px 20px 18px !important;
+        position: fixed !important;
+        bottom: 48px !important;
+        left: 48px !important;
+        z-index: 10 !important;
+        min-height: unset !important;
+        height: fit-content !important;
+        background: rgba(5, 8, 20, 0.65) !important;
+        backdrop-filter: blur(20px) saturate(1.4) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+        border: 1px solid rgba(255,255,255,0.10) !important;
+        border-radius: 20px !important;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
+    }}
     @media(max-width: 768px) {{
-        [data-testid="stMainBlockContainer"] {{ margin: 5vh auto 0 auto !important; max-width: 88% !important; padding: 20px 20px 28px !important; backdrop-filter: blur(20px) !important; border-radius: 20px !important; border: 1px solid rgba(255,255,255,0.12) !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
+        [data-testid="stMainBlockContainer"] {{
+            position: relative !important;
+            bottom: unset !important;
+            left: unset !important;
+            margin: 75px auto 0 auto !important;
+            max-width: 88% !important;
+            padding: 20px 20px 28px !important;
+            backdrop-filter: blur(20px) !important;
+            border-radius: 20px !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important;
+        }}
         [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_mobile} center top/cover no-repeat fixed !important; }}
-        [data-testid="stMainBlockContainer"] {{ margin-top: 75px !important; }}
     }}
     header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
     .stTabs, [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
@@ -9205,55 +9232,6 @@ if current_view == "dashboard":
     """, unsafe_allow_html=True)
 
     is_dark = st.session_state.get("theme", "dark") == "dark"
-
-    # ══════════════════════════════════════════════════════════════════
-    # SIGMA UPDATE NOTIFICATION SYSTEM
-    # Tampil otomatis saat ada update baru, dismiss per-user via session
-    # ══════════════════════════════════════════════════════════════════
-    _SIGMA_VERSION   = "v4.2"
-    _SIGMA_UPDATED   = "01 Mei 2026"
-    _UPDATE_KEY      = f"update_seen_{_SIGMA_VERSION}"   # unique per versi
-    _CURRENT_USER_EMAIL = (st.session_state.user or {}).get("email", "")
-    _UPDATE_SEEN_KEY = f"update_seen_{_SIGMA_VERSION}_{_CURRENT_USER_EMAIL}"
-
-    # Fitur-fitur baru di versi ini
-    _UPDATE_ITEMS = [
-        "🔐 Login disederhanakan — hanya via Google, lebih cepat & aman",
-        "🖼️ Background login diperbarui ke aset KIPM-UP lokal (lebih cepat load)",
-        "📦 sigma_sheets & sigma_modules sekarang selalu aktif — history broker, reko, dan journal tersimpan otomatis",
-        "☁️ Semua data (daily plan, weekly plan, BS30) langsung tersimpan ke Google Sheets tanpa toggle",
-        "🔄 Auto-rotate API key (Finnhub, FMP, AlphaVantage, GoAPI) berjalan penuh tanpa mode opsional",
-        "📊 Reko History & Broker History tampil otomatis tanpa perlu koneksi manual",
-        "🚀 Performa startup lebih cepat — modul tidak lagi load secara kondisional",
-    ]
-
-    if not st.session_state.get(_UPDATE_SEEN_KEY):
-        _upd_col1, _upd_col2 = st.columns([10, 1])
-        with _upd_col1:
-            _items_html = "".join(
-                f"<div style='display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;'>"
-                f"<span style='font-size:0.82rem;color:#e2e8f0;line-height:1.5'>{item}</span>"
-                f"</div>"
-                for item in _UPDATE_ITEMS
-            )
-            st.markdown(f"""
-<div style="background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(59,130,246,0.10));
-border:1px solid rgba(124,58,237,0.35);border-left:4px solid #7c3aed;
-border-radius:12px;padding:14px 18px;margin-bottom:16px;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-    <span style="font-size:1rem;">🆕</span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;
-    color:#a78bfa;font-weight:700;letter-spacing:0.08em;">
-    SIGMA {_SIGMA_VERSION} — UPDATE {_SIGMA_UPDATED}</span>
-  </div>
-  {_items_html}
-</div>
-""", unsafe_allow_html=True)
-        with _upd_col2:
-            if st.button("✕", key="btn_dismiss_update", help="Tutup notifikasi update"):
-                st.session_state[_UPDATE_SEEN_KEY] = True
-                st.rerun()
-    # ══════════════════════════════════════════════════════════════════
 
     # ── SIGMA TERMINAL COLOR SYSTEM ──
     # Accent: #0328EE (blue), BG: #010725, Card: #010D50
