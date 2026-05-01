@@ -3695,7 +3695,7 @@ _PERFIELD_KEYS = [
     "brosum_hist_use_date",
     "fs_results", "fs_ts", "fs_sektor",  # Fundamental Screener
     "alpha_insight_last_key", "alpha_insight_last_data", "alpha_insight_last_ticker",  # Alpha Insight
-    "sigma_track_record",  # Track record - persist antar redeploy
+    "sigma_track_record",
 ]
 # Field-field session (disimpan satu blob di sheet 'users' — boleh overwrite)
 _SESSION_KEYS = [
@@ -5638,7 +5638,6 @@ if st.session_state.user and not st.session_state.data_loaded:
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
         st.session_state.current_view = saved.get("current_view", "chat")
-        # Restore selected_system agar refresh tidak balik ke halaman pilih sistem
         if not st.session_state.get("selected_system"):
             _sv2 = saved.get("selected_system")
             if _sv2 and _sv2 != "terminal":
@@ -6501,11 +6500,11 @@ body{{
 .page{{
     position:relative;z-index:1;
     display:flex;flex-direction:column;align-items:center;
-    padding:16px 20px 24px;
+    padding:16px 20px 22px;
 }}
 
 /* ── HEADER ── */
-.hd{{text-align:center;margin-bottom:14px;}}
+.hd{{text-align:center;margin-bottom:13px;}}
 .hd-welcome{{
     font-family:'Orbitron',sans-serif;
     font-size:0.72rem;letter-spacing:6px;text-transform:uppercase;
@@ -6513,7 +6512,7 @@ body{{
 }}
 .hd-title{{
     font-family:'Orbitron',sans-serif;
-    font-size:clamp(1.5rem,3.2vw,2.2rem);font-weight:900;
+    font-size:clamp(1.5rem,3.2vw,2.1rem);font-weight:900;
     letter-spacing:4px;text-transform:uppercase;line-height:1.1;
     color:#fff;margin-bottom:7px;
 }}
@@ -6526,7 +6525,7 @@ body{{
     font-weight:300;
 }}
 .hd-line{{
-    width:60px;height:2px;margin:10px auto 0;
+    width:60px;height:2px;margin:9px auto 0;
     background:linear-gradient(90deg,transparent,#00d4ff,transparent);
     animation:lineShimmer 2.5s ease-in-out infinite;
 }}
@@ -6536,8 +6535,8 @@ body{{
 .grid{{
     display:grid;
     grid-template-columns:repeat(3,1fr);
-    gap:13px;
-    max-width:1080px;width:100%;
+    gap:12px;
+    max-width:1060px;width:100%;
 }}
 @media(max-width:1000px){{.grid{{grid-template-columns:repeat(2,1fr);}}}}
 @media(max-width:700px){{.grid{{grid-template-columns:1fr;gap:11px;}}}}
@@ -6545,7 +6544,7 @@ body{{
 /* ── CARD BASE ── */
 .card{{
     position:relative;border-radius:18px;overflow:hidden;cursor:pointer;
-    padding:16px 18px 14px;
+    padding:15px 16px 13px;
     background:rgba(8,15,35,0.85);
     backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
     transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease;
@@ -6631,13 +6630,13 @@ body{{
 /* ── 3D HOLOGRAPHIC ICON ── */
 .icon-wrap{{
     display:flex;flex-direction:column;align-items:center;
-    margin-bottom:10px;margin-top:2px;position:relative;
+    margin-bottom:9px;margin-top:2px;position:relative;
 }}
 .icon-hex{{
-    width:64px;height:64px;
+    width:62px;height:62px;
     display:flex;align-items:center;justify-content:center;
-    position:relative;z-index:2;border-radius:15px;
-    font-size:1.8rem;
+    position:relative;z-index:2;border-radius:14px;
+    font-size:1.75rem;
     transition:transform 0.4s ease, box-shadow 0.4s ease;
     overflow:hidden;
 }}
@@ -6679,7 +6678,7 @@ body{{
 
 /* holographic ring platform */
 .icon-ring{{
-    width:82px;height:11px;margin-top:-3px;border-radius:50%;position:relative;z-index:1;
+    width:80px;height:10px;margin-top:-2px;border-radius:50%;position:relative;z-index:1;
     transition:all 0.4s ease;
 }}
 .card-ai .icon-ring{{background:radial-gradient(ellipse,rgba(0,212,255,0.3) 0%,transparent 70%);box-shadow:0 0 20px rgba(0,157,255,0.45);}}
@@ -6688,18 +6687,18 @@ body{{
 .card:hover .icon-ring{{transform:scaleX(1.2);opacity:1.2;}}
 
 /* ── TITLE ── */
-.card-title{{font-family:'Orbitron',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:3px;letter-spacing:-0.3px;}}
-.card-sub{{font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:6px;}}
+.card-title{{font-family:'Orbitron',sans-serif;font-size:1.02rem;font-weight:700;color:#fff;margin-bottom:2px;letter-spacing:-0.3px;}}
+.card-sub{{font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:5px;}}
 .card-ai .card-sub{{color:rgba(0,212,255,0.7);}}
 .card-terminal .card-sub{{color:rgba(167,139,250,0.7);}}
 .card-kipm .card-sub{{color:rgba(245,158,11,0.8);}}
-.card-desc{{font-size:0.77rem;color:rgba(255,255,255,0.42);line-height:1.4;margin-bottom:9px;}}
+.card-desc{{font-size:0.75rem;color:rgba(255,255,255,0.42);line-height:1.38;margin-bottom:8px;}}
 
 /* ── CHAT PREVIEW (AI card) ── */
 .cp{{
     background:rgba(0,0,0,0.5);
     border:1px solid rgba(0,212,255,0.12);
-    border-radius:10px;overflow:hidden;margin-bottom:10px;
+    border-radius:10px;overflow:hidden;margin-bottom:9px;
 }}
 .cp-head{{
     background:rgba(0,157,255,0.07);
@@ -6726,8 +6725,8 @@ body{{
 .tp{{
     background:rgba(0,0,0,0.55);
     border:1px solid rgba(139,92,246,0.12);
-    border-radius:10px;padding:9px 11px;margin-bottom:10px;
-    font-family:'Courier New',monospace;font-size:0.68rem;line-height:1.65;
+    border-radius:10px;padding:8px 11px;margin-bottom:9px;
+    font-family:'Courier New',monospace;font-size:0.68rem;line-height:1.6;
     position:relative;overflow:hidden;
 }}
 .tp::after{{content:'';position:absolute;bottom:0;left:0;right:0;height:30%;background:linear-gradient(transparent,rgba(0,0,0,0.65));pointer-events:none;}}
@@ -6744,7 +6743,7 @@ body{{
 .mini-dash{{
     background:rgba(0,0,0,0.55);
     border:1px solid rgba(139,92,246,0.18);
-    border-radius:12px;overflow:hidden;margin-bottom:10px;
+    border-radius:12px;overflow:hidden;margin-bottom:9px;
 }}
 .md-topbar{{
     display:flex;align-items:center;gap:8px;
@@ -7563,15 +7562,7 @@ function selectTerminal() {{
         }}, 16);
     }});
 }})();
-
-(function() {
-    function sendH() {
-        var h = document.documentElement.scrollHeight || document.body.scrollHeight || 820;
-        window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:h},'*');
-    }
-    sendH(); setTimeout(sendH,200); setTimeout(sendH,800); setTimeout(sendH,1600);
-    if (window.ResizeObserver) new ResizeObserver(sendH).observe(document.body);
-})();
+(function(){{function s(){{var h=document.documentElement.scrollHeight||document.body.scrollHeight||820;window.parent.postMessage({{isStreamlitMessage:true,type:"streamlit:setFrameHeight",height:h}},"*");}}s();setTimeout(s,300);setTimeout(s,900);setTimeout(s,1800);if(window.ResizeObserver)new ResizeObserver(s).observe(document.body);}})();
 </script>
 </body>
 </html>
