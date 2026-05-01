@@ -10,7 +10,7 @@ from PIL import Image
 import io
 import streamlit.components.v1 as components
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import requests
 from urllib.parse import urlencode
 import json
@@ -8955,7 +8955,7 @@ current_view = st.session_state.get("current_view", "chat")
 # =========================================================
 import requests
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 # --- FUNGSI KOMPRESI GAMBAR UNTUK HEMAT LIMIT API ---
 def _compress_image_file(file_obj):
