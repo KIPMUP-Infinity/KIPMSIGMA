@@ -21,6 +21,921 @@ import re
 import time
 import random
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# BSJP CARDS RENDERER v3.0  —  Dark Terminal Edition (embedded)
+# Kartu rekomendasi saham: dark mode, score ring besar, candlestick 5 hari,
+# bandar flow ring, level strategy, AI insight, SIGMA score footer.
+# ═══════════════════════════════════════════════════════════════════════════════
+# ── Rating metadata ───────────────────────────────────────────────────────────
+_RATING_META = {
+    "STRONG BUY": {
+        "accent":      "#00E5BE",
+        "accent_dim":  "#00A88D",
+        "ring_color":  "#00E5BE",
+        "haka_label":  "HAKA CLOSING · BELI LASTPRICE",
+        "cls":         "sb",
+    },
+    "BUY": {
+        "accent":      "#1D9E75",
+        "accent_dim":  "#0F6E56",
+        "ring_color":  "#1D9E75",
+        "haka_label":  "HAKA CLOSING · BELI LASTPRICE",
+        "cls":         "buy",
+    },
+    "HOLD": {
+        "accent":      "#F0A500",
+        "accent_dim":  "#B87A00",
+        "ring_color":  "#F0A500",
+        "haka_label":  "TUNGGU KONFIRMASI CLOSING",
+        "cls":         "hold",
+    },
+    "WATCH": {
+        "accent":      "#F0A500",
+        "accent_dim":  "#B87A00",
+        "ring_color":  "#F0A500",
+        "haka_label":  "TUNGGU KONFIRMASI CLOSING",
+        "cls":         "hold",
+    },
+    "AVOID": {
+        "accent":      "#E24B4A",
+        "accent_dim":  "#A32D2D",
+        "ring_color":  "#E24B4A",
+        "haka_label":  "HINDARI MALAM INI",
+        "cls":         "avoid",
+    },
+}
+_DEFAULT_META = _RATING_META["BUY"]
+
+
+def _wib_now() -> datetime:
+    try:
+        import pytz
+        return datetime.now(pytz.timezone("Asia/Jakarta"))
+    except ImportError:
+        return datetime.now(timezone(timedelta(hours=7)))
+
+
+def _fmt_price(p) -> str:
+    try:
+        return f"Rp {int(p):,}".replace(",", ".")
+    except (TypeError, ValueError):
+        return str(p)
+
+
+def _normalize_rating(raw: str) -> str:
+    r = (raw or "BUY").upper().strip()
+    if "STRONG" in r:
+        return "STRONG BUY"
+    if r in ("BUY", "HOLD", "WATCH", "AVOID"):
+        return r
+    return "BUY"
+
+
+def _build_candle_labels(n: int, row: dict) -> list:
+    dates5 = row.get("dates5", [])
+    if dates5 and len(dates5) == n:
+        return dates5
+    now = _wib_now()
+    labels = []
+    d = now
+    count = 0
+    while count < n:
+        if d.weekday() < 5:
+            labels.insert(0, d.strftime("%d/%m"))
+            count += 1
+        d -= timedelta(days=1)
+    return labels
+
+
+def _single_card_html(row: dict, idx: int) -> str:
+    ticker   = row.get("ticker", "—")
+    name     = row.get("name", ticker)
+    price    = int(row.get("price", 0))
+    prev     = int(row.get("prev", price))
+    chg      = float(row.get("chg", 0))
+    chg_abs  = int(abs(price - prev))
+    chg_sign = "+" if chg >= 0 else ""
+    chg_col  = "#00E5BE" if chg >= 0 else "#E24B4A"
+
+    entry_lo = int(row.get("entry_low", price))
+    entry_hi = int(row.get("entry_high", price))
+    tp1      = int(row.get("tp1", 0)) if row.get("tp1") else None
+    tp2      = int(row.get("tp2", 0)) if row.get("tp2") else None
+    sl       = int(row.get("sl", 0))  if row.get("sl")  else None
+    rr       = float(row.get("rr", 0))
+    vol_str  = row.get("vol_spike", "—")
+    streak   = int(row.get("consec_up", 0))
+    close_pct= float(row.get("close_pct_range", 50))
+    why      = row.get("why_buy", "Setup teknikal valid")[:120]
+
+    sigma_score = int(row.get("combined", row.get("ta_score", 0)))
+    sigma_score = max(0, min(99, sigma_score))
+
+    bandar_pct   = int(row.get("bandar_pct", max(40, min(85, sigma_score))))
+    asing_net    = row.get("asing_net", "")
+    inst_net     = row.get("inst_net", "")
+    bandar_label = row.get("bandar_label", "AKUMULASI" if sigma_score >= 55 else "DISTRIBUSI")
+
+    rating = _normalize_rating(row.get("rating", "BUY"))
+    meta   = _RATING_META.get(rating, _DEFAULT_META)
+    acc    = meta["accent"]
+    ring   = meta["ring_color"]
+    haka   = meta["haka_label"]
+    cls    = meta["cls"]
+
+    # ── Score ring (r=22, circumference=138.23) ──
+    circ_score = 138.23
+    dash_score = round(circ_score * sigma_score / 100, 1)
+    gap_score  = round(circ_score - dash_score, 1)
+
+    # ── Bandar ring (r=18, circumference=113.1) ──
+    circ_band  = 113.1
+    dash_band  = round(circ_band * bandar_pct / 100, 1)
+    gap_band   = round(circ_band - dash_band, 1)
+
+    # ── Sigma bar width ──
+    bar_w = sigma_score
+
+    # ── 5-candle data ──
+    closes5 = row.get("closes5", [])
+    highs5  = row.get("highs5",  [])
+    lows5   = row.get("lows5",   [])
+    n5      = len(closes5)
+
+    opens5 = list(row.get("opens5", []))
+    if len(opens5) < n5:
+        opens5 = [closes5[max(0, i-1)] for i in range(n5)]
+        if n5 > 1:
+            opens5[0] = closes5[0]
+
+    candle_labels = _build_candle_labels(n5, row)
+
+    candle_data_js = json.dumps({
+        "c": closes5, "o": opens5,
+        "h": highs5,  "l": lows5,
+        "labels": candle_labels,
+    }, ensure_ascii=False)
+
+    # ── Helper format harga ──
+    def fp(v): return _fmt_price(v) if v else "—"
+
+    # ── TP2 block ──
+    tp2_html = f"""
+        <div class="lv-item lv-tp2">
+          <div class="lv-label">TARGET 2</div>
+          <div class="lv-entry">
+            <div class="lv-dot" style="background:#00E5BE;"></div>
+            <div class="lv-val">{fp(tp2)}</div>
+          </div>
+        </div>""" if tp2 else ""
+
+    # ── Bandar detail rows ──
+    if asing_net:
+        col_a = "#00E5BE" if not str(asing_net).startswith("-") else "#E24B4A"
+        asing_html = f'<div class="bf-item"><span class="bf-name">Asing Net Buy</span><span class="bf-val" style="color:{col_a};">{asing_net}</span></div>'
+    else:
+        asing_html = '<div class="bf-item"><span class="bf-name">Asing Net Buy</span><span class="bf-val" style="color:rgba(255,255,255,0.2);">—</span></div>'
+
+    if inst_net:
+        col_i = "#00E5BE" if not str(inst_net).startswith("-") else "#E24B4A"
+        inst_html = f'<div class="bf-item"><span class="bf-name">Institusi Net Buy</span><span class="bf-val" style="color:{col_i};">{inst_net}</span></div>'
+    else:
+        inst_html = '<div class="bf-item"><span class="bf-name">Institusi Net Buy</span><span class="bf-val" style="color:rgba(255,255,255,0.2);">—</span></div>'
+
+    retail_net = row.get("retail_net", "")
+    if retail_net:
+        col_r = "#00E5BE" if not str(retail_net).startswith("-") else "#E24B4A"
+        retail_html = f'<div class="bf-item"><span class="bf-name">Retail Net Buy</span><span class="bf-val" style="color:{col_r};">{retail_net}</span></div>'
+    else:
+        retail_html = '<div class="bf-item"><span class="bf-name">Retail Net Buy</span><span class="bf-val" style="color:rgba(255,255,255,0.2);">—</span></div>'
+
+    html = f"""
+<div class="bcard {cls}" id="bc{idx}">
+  <div class="bc-glow"></div>
+  <div class="bc-body">
+
+    <!-- TOP ROW: TICKER + SCORE RING -->
+    <div class="bc-top">
+      <div class="bc-ticker-block">
+        <div class="bc-ticker">{ticker}</div>
+        <div class="bc-name">{name[:28]}</div>
+      </div>
+      <div class="bc-ring-wrap" title="SIGMA Score {sigma_score}/100">
+        <svg viewBox="0 0 68 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="34" cy="34" r="22" stroke="rgba(255,255,255,0.07)" stroke-width="4"/>
+          <circle cx="34" cy="34" r="22" stroke="{ring}" stroke-width="4"
+            stroke-dasharray="{dash_score} {gap_score}"
+            stroke-dashoffset="34.6" stroke-linecap="round"/>
+        </svg>
+        <div class="bc-ring-inner">
+          <div class="bc-score-num {cls}">{sigma_score}</div>
+          <div class="bc-score-lbl {cls}">{rating}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICE ROW -->
+    <div class="bc-price-row">
+      <span class="bc-price">{_fmt_price(price)}</span>
+      <span class="bc-chg" style="color:{chg_col};">{chg_sign}{chg_abs} ({chg_sign}{chg:.2f}%)</span>
+    </div>
+
+    <!-- CANDLESTICK CHART -->
+    <div class="bc-candle-wrap">
+      <canvas id="cv{idx}" role="img" aria-label="Candlestick {ticker} 5 hari trading"></canvas>
+    </div>
+    <div class="bc-candle-labels" id="cl{idx}"></div>
+
+    <!-- HAKA PILL -->
+    <div class="bc-haka {cls}">
+      <div class="bc-haka-dot {cls}"></div>
+      <span class="bc-haka-text {cls}">{haka}</span>
+    </div>
+
+    <div class="bc-sep"></div>
+
+    <!-- BANDAR FLOW -->
+    <div class="bc-section-lbl">Bandar Flow</div>
+    <div class="bc-bandar-row">
+      <div class="bc-band-ring-wrap">
+        <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="28" cy="28" r="18" stroke="rgba(255,255,255,0.07)" stroke-width="3.5"/>
+          <circle cx="28" cy="28" r="18" stroke="{ring}" stroke-width="3.5"
+            stroke-dasharray="{dash_band} {gap_band}"
+            stroke-dashoffset="28.3" stroke-linecap="round"/>
+        </svg>
+        <div class="bc-band-inner">
+          <div class="bc-band-pct">{bandar_pct}%</div>
+          <div class="bc-band-lbl" style="color:{acc};">{bandar_label[:4]}</div>
+        </div>
+      </div>
+      <div class="bc-band-details">
+        <div class="bc-band-type" style="color:{acc};">{bandar_label}</div>
+        {asing_html}
+        {inst_html}
+        {retail_html}
+      </div>
+    </div>
+
+    <div class="bc-sep"></div>
+
+    <!-- LEVEL STRATEGY -->
+    <div class="bc-section-lbl">Level Strategy</div>
+    <div class="bc-levels">
+      <div class="lv-item lv-entry">
+        <div class="lv-label">ENTRY ZONE</div>
+        <div class="lv-entry">
+          <div class="lv-dot" style="background:#E24B4A;"></div>
+          <div class="lv-val">{fp(entry_lo)} – {fp(entry_hi)}</div>
+        </div>
+      </div>
+      <div class="lv-item lv-sl">
+        <div class="lv-label">STOP LOSS</div>
+        <div class="lv-entry">
+          <div class="lv-dot" style="background:#E24B4A;"></div>
+          <div class="lv-val">{fp(sl)}</div>
+        </div>
+      </div>
+      <div class="lv-item lv-tp1">
+        <div class="lv-label">TARGET 1</div>
+        <div class="lv-entry">
+          <div class="lv-dot" style="background:#F0A500;"></div>
+          <div class="lv-val">{fp(tp1)}</div>
+        </div>
+      </div>
+      {tp2_html}
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="bc-stats">
+      <div class="bc-stat"><div class="bc-stat-lbl">Risk/Reward</div><div class="bc-stat-val">{rr:.1f}x</div></div>
+      <div class="bc-stat"><div class="bc-stat-lbl">Vol Spike</div><div class="bc-stat-val">{vol_str}</div></div>
+      <div class="bc-stat"><div class="bc-stat-lbl">Streak</div><div class="bc-stat-val">{streak}d↑</div></div>
+    </div>
+
+    <!-- AI INSIGHT -->
+    <div class="bc-insight">
+      <div class="bc-insight-head">
+        <div class="bc-insight-icon">✦</div>
+        <span class="bc-insight-title">AI INSIGHT</span>
+      </div>
+      <div class="bc-insight-text">{why}</div>
+    </div>
+
+    <!-- SIGMA SCORE FOOTER -->
+    <div class="bc-sigma-lbl">SIGMA SCORE</div>
+    <div class="bc-sigma-row">
+      <span class="bc-sigma-num">{sigma_score}<span class="bc-sigma-denom">/100</span></span>
+      <span class="bc-sigma-rating" style="color:{ring};">{rating}</span>
+    </div>
+    <div class="bc-sigma-bar">
+      <div class="bc-sigma-fill" style="width:{bar_w}%;background:linear-gradient(90deg,{acc},{ring});"></div>
+    </div>
+
+  </div>
+
+  <script>
+  (function(){{
+    var D = {candle_data_js};
+    var idx = {idx};
+
+    function draw(){{
+      var cv = document.getElementById('cv'+idx);
+      if(!cv) return;
+      var dpr = window.devicePixelRatio || 1;
+      var W = cv.parentElement.offsetWidth || 280;
+      var H = 72;
+      cv.width  = W * dpr;
+      cv.height = H * dpr;
+      cv.style.width  = W + 'px';
+      cv.style.height = H + 'px';
+      var ctx = cv.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      var n = D.c.length;
+      if (n === 0) return;
+
+      var allVals = D.h.concat(D.l);
+      var minV = Math.min.apply(null, allVals);
+      var maxV = Math.max.apply(null, allVals);
+      var range = maxV - minV || 1;
+      var padT = 6, padB = 6, chartH = H - padT - padB;
+
+      function toY(v) {{ return padT + chartH - ((v - minV) / range) * chartH; }}
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      for (var g = 0; g <= 2; g++) {{
+        var gy = padT + (chartH / 2) * g;
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+      }}
+
+      var slotW = W / n;
+      var bodyW = Math.max(4, Math.floor(slotW * 0.5));
+
+      for (var i = 0; i < n; i++) {{
+        var cx = i * slotW + slotW / 2;
+        var o = D.o[i], c = D.c[i], h = D.h[i], l = D.l[i];
+        var isUp = c >= o;
+
+        // Wick
+        ctx.strokeStyle = isUp ? 'rgba(0,229,190,0.45)' : 'rgba(226,75,74,0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(cx, toY(h));
+        ctx.lineTo(cx, toY(l));
+        ctx.stroke();
+
+        // Body
+        var bTop = toY(Math.max(o, c));
+        var bBot = toY(Math.min(o, c));
+        var bH   = Math.max(2, bBot - bTop);
+
+        if (isUp) {{
+          var grad = ctx.createLinearGradient(0, bTop, 0, bTop + bH);
+          grad.addColorStop(0, 'rgba(0,229,190,0.95)');
+          grad.addColorStop(1, 'rgba(0,229,190,0.55)');
+          ctx.fillStyle = grad;
+        }} else {{
+          ctx.fillStyle = 'rgba(226,75,74,0.88)';
+        }}
+
+        ctx.beginPath();
+        if (ctx.roundRect) {{
+          ctx.roundRect(cx - bodyW/2, bTop, bodyW, bH, 1.5);
+        }} else {{
+          ctx.rect(cx - bodyW/2, bTop, bodyW, bH);
+        }}
+        ctx.fill();
+      }}
+
+      // Labels
+      var cl = document.getElementById('cl'+idx);
+      if (cl && D.labels && D.labels.length) {{
+        var lhtml = '';
+        D.labels.forEach(function(lb, i) {{
+          var isLast = (i === D.labels.length - 1);
+          var style  = isLast ? ' style="color:rgba(255,255,255,0.65);font-weight:700;"' : '';
+          lhtml += '<span class="bc-clbl"'+style+'>'+(isLast?'TODAY':lb)+'</span>';
+        }});
+        cl.innerHTML = lhtml;
+      }}
+    }}
+
+    if (document.readyState === 'complete') {{ draw(); }}
+    else {{ window.addEventListener('load', draw); }}
+    setTimeout(draw, 80);
+    setTimeout(draw, 350);
+  }})();
+  </script>
+</div>
+"""
+    return html
+
+
+# ── Global CSS (dark terminal theme) ─────────────────────────────────────────
+_CARD_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.bsjp-wrap {
+  padding: 0.5rem 0;
+  background: transparent;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+}
+
+/* ── Page header ── */
+.bsjp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.bsjp-head-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+.bsjp-head-date {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ── Grid ── */
+.bsjp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+/* ── Card ── */
+.bcard {
+  background: #0D1421;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: border-color 0.2s;
+}
+.bcard:hover { border-color: rgba(255,255,255,0.12); }
+
+.bc-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  pointer-events: none;
+}
+.bcard.sb   .bc-glow { background: linear-gradient(90deg, transparent, #00E5BE, transparent); }
+.bcard.buy  .bc-glow { background: linear-gradient(90deg, transparent, #1D9E75, transparent); }
+.bcard.hold .bc-glow { background: linear-gradient(90deg, transparent, #F0A500, transparent); }
+.bcard.avoid .bc-glow { background: linear-gradient(90deg, transparent, #E24B4A, transparent); }
+
+.bc-body { padding: 16px 16px 14px; }
+
+/* ── Top row: ticker + ring ── */
+.bc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.bc-ticker {
+  font-family: 'Space Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+.bc-name {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  letter-spacing: 0.4px;
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* Score ring */
+.bc-ring-wrap {
+  position: relative;
+  width: 68px; height: 68px;
+  flex-shrink: 0;
+}
+.bc-ring-wrap svg { width: 68px; height: 68px; transform: rotate(-90deg); }
+.bc-ring-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.bc-score-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.bc-score-num.sb   { color: #00E5BE; }
+.bc-score-num.buy  { color: #1D9E75; }
+.bc-score-num.hold { color: #F0A500; }
+.bc-score-num.avoid { color: #E24B4A; }
+.bc-score-lbl {
+  font-size: 6px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.bc-score-lbl.sb   { color: #00E5BE; }
+.bc-score-lbl.buy  { color: #1D9E75; }
+.bc-score-lbl.hold { color: #F0A500; }
+.bc-score-lbl.avoid { color: #E24B4A; }
+
+/* ── Price row ── */
+.bc-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.bc-price {
+  font-family: 'Space Mono', monospace;
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+}
+.bc-chg { font-size: 11px; }
+
+/* ── Candlestick ── */
+.bc-candle-wrap {
+  height: 72px;
+  width: 100%;
+  position: relative;
+  margin-bottom: 4px;
+}
+.bc-candle-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 72px;
+}
+.bc-candle-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.bc-clbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 0.3px;
+}
+
+/* ── HAKA pill ── */
+.bc-haka {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+.bc-haka.sb   { background: rgba(0,229,190,0.08); border: 1px solid rgba(0,229,190,0.2); }
+.bc-haka.buy  { background: rgba(29,158,117,0.08); border: 1px solid rgba(29,158,117,0.2); }
+.bc-haka.hold { background: rgba(240,165,0,0.08); border: 1px solid rgba(240,165,0,0.2); }
+.bc-haka.avoid { background: rgba(226,75,74,0.08); border: 1px solid rgba(226,75,74,0.2); }
+.bc-haka-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.bc-haka-dot.sb   { background: #00E5BE; }
+.bc-haka-dot.buy  { background: #1D9E75; }
+.bc-haka-dot.hold { background: #F0A500; }
+.bc-haka-dot.avoid { background: #E24B4A; }
+.bc-haka-text {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+}
+.bc-haka-text.sb   { color: #00E5BE; }
+.bc-haka-text.buy  { color: #1D9E75; }
+.bc-haka-text.hold { color: #F0A500; }
+.bc-haka-text.avoid { color: #E24B4A; }
+
+/* ── Separator ── */
+.bc-sep { height: 1px; background: rgba(255,255,255,0.05); margin: 10px 0 12px; }
+
+/* ── Section label ── */
+.bc-section-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  margin-bottom: 10px;
+}
+
+/* ── Bandar flow ── */
+.bc-bandar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bc-band-ring-wrap {
+  position: relative;
+  width: 56px; height: 56px;
+  flex-shrink: 0;
+}
+.bc-band-ring-wrap svg { width: 56px; height: 56px; transform: rotate(-90deg); }
+.bc-band-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.bc-band-pct {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+.bc-band-lbl {
+  font-size: 6px;
+  letter-spacing: 1px;
+  margin-top: 1px;
+}
+.bc-band-details { flex: 1; min-width: 0; }
+.bc-band-type {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.bf-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+.bf-name {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.bf-name::before {
+  content: '';
+  display: inline-block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: rgba(0,229,190,0.4);
+  flex-shrink: 0;
+}
+.bf-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ── Level strategy ── */
+.bc-levels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+  margin-bottom: 10px;
+}
+.lv-item {}
+.lv-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  color: rgba(255,255,255,0.22);
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+.lv-entry { display: flex; align-items: center; gap: 6px; }
+.lv-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.lv-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+.lv-entry .lv-val { color: #4A9EF0; }
+.lv-sl .lv-val    { color: #E24B4A; }
+.lv-tp1 .lv-val   { color: #F0A500; }
+.lv-tp2 .lv-val   { color: #00E5BE; }
+
+/* ── Stats row ── */
+.bc-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 12px;
+}
+.bc-stat { text-align: center; }
+.bc-stat-lbl {
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.22);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.bc-stat-val {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ── AI Insight ── */
+.bc-insight {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.bc-insight-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.bc-insight-icon {
+  width: 16px; height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #00E5BE, #4A9EF0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #000;
+  flex-shrink: 0;
+}
+.bc-insight-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.3);
+}
+.bc-insight-text {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.65;
+}
+
+/* ── SIGMA score footer ── */
+.bc-sigma-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  margin-bottom: 4px;
+}
+.bc-sigma-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.bc-sigma-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+.bc-sigma-denom {
+  font-size: 12px;
+  color: rgba(255,255,255,0.25);
+  font-weight: 400;
+}
+.bc-sigma-rating {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.bc-sigma-bar {
+  height: 3px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.bc-sigma-fill { height: 100%; border-radius: 2px; }
+
+/* ── Footer ── */
+.bsjp-footer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.bsjp-footer-note {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: rgba(255,255,255,0.15);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .bsjp-grid { grid-template-columns: 1fr 1fr; }
+  .bc-ticker { font-size: 18px; }
+  .bc-price  { font-size: 16px; }
+  .bc-ring-wrap { width: 56px; height: 56px; }
+  .bc-ring-wrap svg { width: 56px; height: 56px; }
+  .bc-score-num { font-size: 16px; }
+}
+@media (max-width: 340px) {
+  .bsjp-grid { grid-template-columns: 1fr; }
+}
+</style>
+"""
+
+
+def render_bsjp_cards(
+    rows:         list,
+    date_label:   str = "",
+    generated_at: str = "",
+    max_cards:    int = 10,
+) -> None:
+    """
+    Render kartu BSJP dark-terminal ke Streamlit via components.html.
+
+    Parameters
+    ----------
+    rows         : List dict dari _rule_based_plan / _rule_based_plan_v2
+    date_label   : Tanggal plan (misal "01 Mei 2026")
+    generated_at : Timestamp generate (misal "01 Mei 2026, 15:42 WIB")
+    max_cards    : Batas maksimum kartu ditampilkan (default 10)
+    """
+    now    = _wib_now()
+    hari   = ["SENIN","SELASA","RABU","KAMIS","JUMAT","SABTU","MINGGU"][now.weekday()]
+    bulan  = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGS","SEP","OKT","NOV","DES"][now.month-1]
+    today  = f"{hari} · {now.day:02d} {bulan} {now.year}"
+
+    n_all  = len(rows)
+    n_show = min(n_all, max_cards)
+
+    cards_html = ""
+    for i, row in enumerate(rows[:n_show]):
+        cards_html += _single_card_html(row, i)
+
+    footer_note = f"{n_show} dari {n_all} kandidat" if n_all > n_show else f"{n_show} rekomendasi"
+    if generated_at:
+        footer_note += f" · {generated_at}"
+
+    full_html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+{_CARD_CSS}
+</head>
+<body style="background:transparent;">
+
+<div class="bsjp-wrap">
+
+  <div class="bsjp-head">
+    <span class="bsjp-head-title">BSJP · TRADE PLAN</span>
+    <span class="bsjp-head-date">{today}{(' · ' + date_label) if date_label else ''}</span>
+  </div>
+
+  <div class="bsjp-grid">
+    {cards_html}
+  </div>
+
+  <div class="bsjp-footer">
+    <span class="bsjp-footer-note">{footer_note} · HAKA = Hajar Kanan mendekati Closing · Max 10 saham</span>
+  </div>
+
+</div>
+
+</body>
+</html>"""
+
+    # Estimasi tinggi
+    cols_est   = max(1, min(3, math.floor(720 / 295)))
+    rows_est   = math.ceil(n_show / cols_est)
+    height_est = rows_est * 780 + 80
+    components.html(full_html, height=height_est, scrolling=False)
+
 # ── SIGMA SHEETS — Google Sheets Persistent Storage (SELALU AKTIF) ──────────
 from sigma_sheets import (
     sheets_available, save_broker_scan, load_broker_history,
@@ -18791,10 +19706,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         spike_prev = vols[-2] / (sum(vols[-6:-1]) / 5) if len(vols) >= 6 and sum(vols[-6:-1]) > 0 else 1
                         # ── 5 candle mini data untuk visual ──
                         n5 = min(5, len(closes))
+                        opens  = h["Open"].tolist()
                         closes5 = [round(closes[-n5+i], 0) for i in range(n5)]
                         highs5  = [round(highs[-n5+i], 0) for i in range(n5)]
                         lows5   = [round(lows[-n5+i], 0) for i in range(n5)]
+                        opens5  = [round(opens[-n5+i], 0) for i in range(n5)]
                         vols5   = [int(vols[-n5+i]) for i in range(n5)]
+                        dates5  = [h.index[-n5+i].strftime("%d/%m") for i in range(n5)]
                         with lock:
                             result[tk] = {
                                 "price":  round(closes[-1], 0),
@@ -18820,6 +19738,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                 "closes5": closes5,
                                 "highs5":  highs5,
                                 "lows5":   lows5,
+                                "opens5":  opens5,
+                                "dates5":  dates5,
                                 "vols5":   vols5,
                             }
                 except: pass
@@ -19350,7 +20270,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 
             # ── Limit kandidat ──
             if is_bsjp:
-                top_candidates = candidates[:20]    # BSJP: maksimal 20 kandidat terbaik
+                top_candidates = candidates[:10]    # BSJP: maksimal 10 kandidat terbaik (batasi di card renderer)
             else:
                 top_n = 7 if plan_type == "weekly" else 5
                 top_candidates = candidates[:top_n]
@@ -19487,6 +20407,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "closes5": closes5,
                     "highs5":  highs5,
                     "lows5":   lows5,
+                    "opens5":  d.get("opens5", []),
+                    "dates5":  d.get("dates5", []),
                     "vols5":   vols5,
                 }
                 result_rows.append(row)
@@ -21464,48 +22386,13 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             f"font-size:0.8rem;margin-bottom:14px;line-height:1.6;'>"
                             f"💡 {_boutlook}</div>", unsafe_allow_html=True)
 
-                    # ── Trade Plan Table ──
+                    # ── Trade Plan Cards (dark terminal style) ──
                     if _brows_buy:
-                        st.markdown(
-                            f"<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
-                            f"text-transform:uppercase;color:#f5a623;margin:10px 0 6px;'>"
-                            f"📈 TRADE PLAN BSJP — {_today_b_entry.get('date','')}</div>",
-                            unsafe_allow_html=True)
-
-                        # Build mobile-friendly HTML table (no double scroll)
-                        _btp_hdr = ["TICKER","PRICE","ENTRY LOW","ENTRY HIGH","TP1","TP2","SL","RR","VOL","STREAK","CLOSE%","RATING","ALASAN"]
-                        _btp_th  = "".join(f"<th style='padding:8px 10px;white-space:nowrap;font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;border-bottom:1px solid rgba(245,166,35,0.25);text-align:left;'>{h}</th>" for h in _btp_hdr)
-                        _btp_trs = ""
-                        for _bri2, _br in enumerate(_brows_buy):
-                            _rat = _br.get("rating","—")
-                            _rat_c = "#089981" if _rat=="BUY" else "#f5a623" if _rat=="HOLD" else "#f23645"
-                            _btp_trs += (
-                                f"<tr style='background:{'rgba(245,166,35,0.04)' if _bri2%2==0 else 'transparent'};'>"
-                                f"<td style='padding:7px 10px;font-weight:700;color:#f5a623;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_br.get('ticker','')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('price',0)):,}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('entry_low',0)):,}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>Rp {int(_br.get('entry_high',0)):,}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-weight:600;font-size:0.8rem;'>Rp {int(_br.get('tp1',0)):,}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:#26a69a;font-size:0.8rem;'>{f'Rp {int(_br.get('tp2',0)):,}' if _br.get('tp2') else '—'}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:#f23645;font-weight:600;font-size:0.8rem;'>Rp {int(_br.get('sl',0)):,}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_br.get('rr',0)}x</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{_br.get('vol_spike','—')}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{f'{_br.get('consec_up',0)}d' if _br.get('consec_up') else '—'}</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;font-size:0.8rem;'>{float(_br.get('close_pct_range',50)):.0f}%</td>"
-                                f"<td style='padding:7px 10px;white-space:nowrap;color:{_rat_c};font-weight:700;font-size:0.8rem;'>{_rat}</td>"
-                                f"<td style='padding:7px 10px;font-size:0.78rem;max-width:200px;'>{_br.get('why_buy','—')}</td>"
-                                f"</tr>"
-                            )
-                        _btp_html = (
-                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;"
-                            "-webkit-overflow-scrolling:touch;"
-                            "border-radius:8px;border:1px solid rgba(245,166,35,0.2);margin-bottom:4px;'>"
-                            "<table style='border-collapse:collapse;width:100%;table-layout:auto;'>"
-                            f"<thead><tr style='background:rgba(245,166,35,0.08);'>{_btp_th}</tr></thead>"
-                            f"<tbody>{_btp_trs}</tbody>"
-                            "</table></div>"
+                        render_bsjp_cards(
+                            rows         = _brows_buy[:10],
+                            date_label   = _today_b_entry.get("date", ""),
+                            generated_at = _today_b_entry.get("generated_at", ""),
                         )
-                        st.markdown(_btp_html, unsafe_allow_html=True)
 
                     if _brows_avoid:
                         _bav_rows_html = "".join([
