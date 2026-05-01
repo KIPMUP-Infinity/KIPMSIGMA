@@ -6456,13 +6456,8 @@ body {{ background: #080c14; }}
     padding: 24px 20px 40px; position: relative; overflow: hidden;
 }}
 .sys-wrapper::before {{
-    content: ''; position: absolute; inset: 0;
-    background-image: linear-gradient(rgba(0,157,255,0.06) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(0,157,255,0.06) 1px, transparent 1px);
-    background-size: 60px 60px;
-    animation: gridPulse 8s ease-in-out infinite; pointer-events: none;
+    content: none;
 }}
-@keyframes gridPulse {{ 0%,100% {{ opacity:0.4; }} 50% {{ opacity:1; }} }}
 .orb {{
     position: absolute; width: 600px; height: 600px; border-radius: 50%;
     background: radial-gradient(circle, rgba(0,100,255,0.12) 0%, transparent 70%);
@@ -6728,6 +6723,7 @@ body {{ background: #080c14; }}
 </style>
 </head>
 <body>
+<canvas id="starCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
 <div class="sys-wrapper">
     <div class="orb"></div>
     <div class="orb2"></div>
@@ -6840,6 +6836,101 @@ body {{ background: #080c14; }}
 </div>
 
 <script>
+<script>
+// ── SIGMA STARFIELD — bintang kelap-kelip di titik persilangan grid ──
+(function() {{
+    var canvas = document.getElementById('starCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var GRID = 60;
+    var stars = [];
+    var COLORS = [
+        [0,212,255],   // cyan
+        [139,92,246],  // purple
+        [255,255,255], // white
+        [255,255,255], // white (lebih banyak)
+        [180,220,255], // biru muda
+        [200,180,255], // ungu muda
+    ];
+    function resize() {{
+        canvas.width = window.innerWidth;
+        canvas.height = Math.max(window.innerHeight, document.body.scrollHeight || window.innerHeight);
+    }}
+    function initStars() {{
+        stars = [];
+        var cols = Math.ceil(canvas.width / GRID) + 1;
+        var rows = Math.ceil(canvas.height / GRID) + 1;
+        for (var r = 0; r < rows; r++) {{
+            for (var c = 0; c < cols; c++) {{
+                if (Math.random() > 0.20) continue;
+                var col = COLORS[Math.floor(Math.random() * COLORS.length)];
+                stars.push({{
+                    x: c * GRID,
+                    y: r * GRID,
+                    r: col[0], g: col[1], b: col[2],
+                    size: Math.random() * 1.1 + 0.2,
+                    speed: Math.random() * 0.5 + 0.15,
+                    phase: Math.random() * Math.PI * 2,
+                    maxOp: Math.random() * 0.65 + 0.1,
+                    minOp: Math.random() * 0.02,
+                    isSpark: Math.random() < 0.12,
+                    t: Math.random() * Math.PI * 2,
+                }});
+            }}
+        }}
+    }}
+    function draw(s, op, sz) {{
+        ctx.save();
+        if (s.isSpark) {{
+            var arm = sz * 3.5;
+            ctx.globalAlpha = op;
+            ctx.strokeStyle = 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',' + op + ')';
+            ctx.lineWidth = sz * 0.7;
+            ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(s.x - arm, s.y); ctx.lineTo(s.x + arm, s.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(s.x, s.y - arm); ctx.lineTo(s.x, s.y + arm); ctx.stroke();
+            var d = arm * 0.45;
+            ctx.lineWidth = sz * 0.3;
+            ctx.globalAlpha = op * 0.45;
+            ctx.beginPath(); ctx.moveTo(s.x-d, s.y-d); ctx.lineTo(s.x+d, s.y+d); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(s.x+d, s.y-d); ctx.lineTo(s.x-d, s.y+d); ctx.stroke();
+        }} else {{
+            var grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, sz * 4);
+            grd.addColorStop(0, 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',' + Math.min(op*1.8,1) + ')');
+            grd.addColorStop(0.25, 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',' + op + ')');
+            grd.addColorStop(1, 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',0)');
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = grd;
+            ctx.beginPath(); ctx.arc(s.x, s.y, sz * 4, 0, Math.PI * 2); ctx.fill();
+            ctx.globalAlpha = Math.min(op * 2, 1);
+            ctx.fillStyle = 'rgba(' + s.r + ',' + s.g + ',' + s.b + ',1)';
+            ctx.beginPath(); ctx.arc(s.x, s.y, sz * 0.7, 0, Math.PI * 2); ctx.fill();
+        }}
+        ctx.restore();
+    }}
+    var last = 0;
+    function loop(ts) {{
+        var dt = Math.min((ts - last) / 1000, 0.05);
+        last = ts;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (var i = 0; i < stars.length; i++) {{
+            var s = stars[i];
+            s.t += dt * s.speed;
+            var raw = (Math.sin(s.t) + 1) / 2;
+            var eased = raw * raw * raw;
+            var op = s.minOp + eased * (s.maxOp - s.minOp);
+            var sz = s.size * (0.6 + eased * 0.7);
+            draw(s, op, sz);
+        }}
+        requestAnimationFrame(loop);
+    }}
+    resize();
+    initStars();
+    window.addEventListener('resize', function() {{ resize(); initStars(); }});
+    requestAnimationFrame(loop);
+}})();
+// ── END STARFIELD ──
+
 var TERMINAL_URL = "{_terminal_url}";
 
 function selectChat() {{
