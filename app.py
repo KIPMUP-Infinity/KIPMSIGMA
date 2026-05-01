@@ -6692,7 +6692,7 @@ body{{
 .card-ai .card-sub{{color:rgba(0,212,255,0.7);}}
 .card-terminal .card-sub{{color:rgba(167,139,250,0.7);}}
 .card-kipm .card-sub{{color:rgba(245,158,11,0.8);}}
-.card-desc{{font-size:0.82rem;color:rgba(255,255,255,0.42);line-height:1.8;margin-bottom:18px;}}
+.card-desc{{font-size:0.8rem;color:rgba(255,255,255,0.42);line-height:1.5;margin-bottom:14px;}}
 
 /* ── CHAT PREVIEW (AI card) ── */
 .cp{{
@@ -6991,7 +6991,7 @@ body{{
 
             <div class="card-title">SIGMA AI Chat</div>
             <div class="card-sub">AI Trading Assistant</div>
-            <div class="card-desc">Asisten analisa pasar berbasis AI — teknikal, fundamental, bandarmologi, dan makro dalam satu percakapan.</div>
+            <div class="card-desc">AI analyst — teknikal, fundamental, bandarmologi & makro dalam satu chat.</div>
 
             <div class="cp">
                 <div class="cp-head">
@@ -7132,7 +7132,7 @@ body{{
 
             <div class="card-title">SIGMA Terminal</div>
             <div class="card-sub">Market Dashboard</div>
-            <div class="card-desc">Dashboard pasar real-time — Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
+            <div class="card-desc">Real-time IDX dashboard — Overview, Broker, Screener & Watchlist.</div>
 
             <!-- ── SIGMA TERMINAL MINI DASHBOARD ── -->
             <div class="mini-dash">
