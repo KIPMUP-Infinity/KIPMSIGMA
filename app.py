@@ -3146,7 +3146,10 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     Auto-retry: jika 404/kosong, mundur ke T-2, T-3 dst (maks 5 hari bursa).
     """
     _goapi_resolve_base()
-    candidates = _trading_date_candidates(date_str, max_lookback=10)  # extended: GoAPI kadang delay >5 hari
+    # Jika date_str sudah spesifik (dari _goapi_resolve_latest_date), lookback=1 saja (hemat quota)
+    # Jika tidak ada date, lookback=3 (lebih konservatif dari 10 sebelumnya)
+    _max_lb = 1 if date_str else 3
+    candidates = _trading_date_candidates(date_str, max_lookback=_max_lb)
     last_err = f"Semua tanggal dicoba kosong: {candidates}"
     _debug_log = []  # collect per-date results for better error reporting
     for _try_date in candidates:
@@ -3295,6 +3298,42 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     except Exception:
         pass
     return []
+
+def _goapi_resolve_latest_date(test_ticker: str = "BBCA") -> str:
+    """
+    Temukan tanggal trading terbaru yang punya data GoAPI broker summary.
+    Gunakan 1 test request ke ticker liquid (BBCA/BBRI) — hemat quota.
+    Return: date string "YYYY-MM-DD" atau "" jika tidak ditemukan.
+    Hasil di-cache di session_state['_goapi_resolved_date'] per hari.
+    """
+    import streamlit as _st_r
+    from datetime import date as _dr, timedelta as _tdr
+    _today = _dr.today().isoformat()
+    _cache_key = f"_goapi_resolved_date_{_today}"
+    if _st_r.session_state.get(_cache_key):
+        return _st_r.session_state[_cache_key]
+    candidates = _trading_date_candidates(max_lookback=5)
+    for _cdate in candidates:
+        try:
+            r = requests.get(
+                f"{GOAPI_BASE}/{test_ticker}/broker_summary",
+                params={"date": _cdate, "investor": "ALL"},
+                headers=_goapi_headers(), timeout=15)
+            if r.status_code == 429:
+                _st_r.session_state["_goapi_last_error"] = f"HTTP 429 Rate Limit (resolve date)"
+                return ""
+            if r.status_code == 200:
+                data = r.json()
+                _inner = data.get("data", {}) if isinstance(data, dict) else {}
+                rows = (_inner.get("results") or _inner.get("broker_summary") or
+                        _inner.get("brokerSummary") or data.get("results") or []) if isinstance(_inner, dict) else _inner
+                if rows:
+                    _st_r.session_state[_cache_key] = _cdate
+                    return _cdate
+        except Exception:
+            continue
+    return ""
+
 
 def goapi_get_historical(ticker: str, date_from: str, date_to: str) -> list:
     """OHLCV historis dari GoAPI — max range 1 tahun. Endpoint: /{symbol}/historical"""
@@ -23941,25 +23980,36 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
                     _prog_bar.progress(75, text=f"⚡ STEP 4/4 — GoAPI konfirmasi {len(_top30)} saham final...")
                     _confirmed_count = 0
+
+                    # ── Pre-resolve tanggal trading valid (1 request) ──
+                    # Hemat quota: temukan tanggal dulu, baru fetch 30 ticker dgn date yg sudah pasti
+                    _resolved_date = ""
+                    if _goapi_available():
+                        _resolved_date = _goapi_resolve_latest_date(test_ticker="BBCA")
+
+                    _goapi_rate_limited = False  # flag stop jika kena 429
+
                     for _si in _top30:
                         _stk = _si["ticker"]
-                        if not _goapi_available():
+                        if not _goapi_available() or _goapi_rate_limited:
                             _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0,
                                         "screeners_hit":[],"foreign_accum_count":0})
                             continue
                         try:
-                            from datetime import date as _gd, timedelta as _gtd
-                            # Retry T, T-1, T-2, T-3 — data BEI sering baru tersedia H+1
+                            # Gunakan date yang sudah resolved (1 request per ticker, bukan 4x retry)
+                            # Jika resolve gagal (rate limit/libur), fallback ke None → fungsi cari sendiri max 2 hari
                             _grows = []
-                            _gdate_used = ""
-                            for _gday_back in range(0, 4):
-                                _gdate_try = str(_gd.today() - _gtd(days=_gday_back))
-                                _grows_try = goapi_get_broker_summary(_stk, _gdate_try)
-                                if _grows_try:
-                                    _grows = _grows_try
-                                    _gdate_used = _gdate_try
-                                    break
-                            _gdate = _gdate_used or str(_gd.today())
+                            if _resolved_date:
+                                # Langsung pakai date yang sudah terbukti ada data-nya → max_lookback=1
+                                _grows = goapi_get_broker_summary(_stk, _resolved_date)
+                            else:
+                                # Fallback: biarkan fungsi cari tapi batasi lookback ke 3 hari saja
+                                _grows = goapi_get_broker_summary(_stk, None)
+
+                            # Cek apakah kena rate limit
+                            _last_err_chk = st.session_state.get("_goapi_last_error", "")
+                            if "429" in _last_err_chk:
+                                _goapi_rate_limited = True
 
                             _net_b = 0; _top_acc = []; _top_dist_g = []
                             _total_buy_val = 0; _total_vol = 0
