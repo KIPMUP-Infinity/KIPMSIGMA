@@ -484,9 +484,9 @@ _CARD_CSS = """
   overflow: hidden;
   position: relative;
   border: 1px solid rgba(255,255,255,0.06);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
-.bcard:hover { border-color: rgba(255,255,255,0.12); }
+.bcard:hover { border-color: rgba(30,80,200,0.55); box-shadow: 0 0 18px rgba(20,60,180,0.18); background: #0e1830; }
 
 .bc-glow {
   position: absolute;
@@ -21440,8 +21440,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             _sub_c   = text_sub
             _G = "#089981"; _R = "#f23645"; _Y = "#f5a623"; _P = "#a78bfa"
 
-            # Stats
-            closed = [r for r in records if r.get("status") == "CLOSED"]
+            # Stats — "closed" mencakup TP1, TP2, SL, dan CLOSED (bukan hanya "CLOSED")
+            _closed_statuses = {"CLOSED", "TP1", "TP2", "SL"}
+            closed = [r for r in records if r.get("status") in _closed_statuses]
             open_r = [r for r in records if r.get("status") == "OPEN"]
             wins   = [r for r in closed if r.get("result") == "WIN"]
             losses = [r for r in closed if r.get("result") == "LOSS"]
