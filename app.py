@@ -6735,6 +6735,58 @@ body{{
 .tp-cursor{{display:inline-block;width:6px;height:11px;background:rgba(139,92,246,0.9);vertical-align:middle;animation:blink 1.1s step-end infinite;}}
 @keyframes blink{{0%,100%{{opacity:1;}}50%{{opacity:0;}}}}
 
+/* ── MINI DASHBOARD (Terminal card preview) ── */
+.mini-dash{{
+    background:rgba(0,0,0,0.55);
+    border:1px solid rgba(139,92,246,0.18);
+    border-radius:14px;overflow:hidden;margin-bottom:16px;
+}}
+.md-topbar{{
+    display:flex;align-items:center;gap:8px;
+    background:rgba(139,92,246,0.08);
+    border-bottom:1px solid rgba(139,92,246,0.12);
+    padding:7px 12px;
+}}
+.md-dots{{display:flex;gap:5px;}}
+.md-dots span{{width:7px;height:7px;border-radius:50%;display:inline-block;}}
+.md-dots span:nth-child(1){{background:#f87171;}}
+.md-dots span:nth-child(2){{background:#facc15;}}
+.md-dots span:nth-child(3){{background:#4ade80;}}
+.md-title{{font-family:'Courier New',monospace;font-size:0.6rem;color:rgba(167,139,250,0.6);letter-spacing:2px;text-transform:uppercase;flex:1;text-align:center;}}
+.md-live{{font-family:'Orbitron',monospace;font-size:0.55rem;color:#4ade80;letter-spacing:2px;display:flex;align-items:center;gap:4px;}}
+.live-ring{{
+    width:7px;height:7px;border-radius:50%;background:#4ade80;
+    box-shadow:0 0 6px #4ade80;
+    animation:livePulse 1.4s ease-in-out infinite;
+}}
+@keyframes livePulse{{0%,100%{{opacity:1;box-shadow:0 0 6px #4ade80;}}50%{{opacity:0.4;box-shadow:0 0 12px #4ade80;}}}}
+
+.md-tickers{{display:flex;gap:0;border-bottom:1px solid rgba(139,92,246,0.1);}}
+.md-tick{{flex:1;padding:8px 10px;text-align:center;border-right:1px solid rgba(139,92,246,0.08);}}
+.md-tick:last-child{{border-right:none;}}
+.md-tick-name{{font-family:'Courier New',monospace;font-size:0.58rem;color:rgba(255,255,255,0.35);letter-spacing:1.5px;margin-bottom:3px;}}
+.md-tick-val{{font-family:'Orbitron',sans-serif;font-size:0.82rem;font-weight:700;color:#fff;margin-bottom:2px;}}
+.md-tick-chg{{font-family:'Courier New',monospace;font-size:0.62rem;letter-spacing:0.5px;}}
+.md-tick-up .md-tick-chg{{color:#4ade80;}}
+.md-tick-dn .md-tick-chg{{color:#f87171;}}
+.md-tick-up .md-tick-val{{color:#e2ffec;}}
+.md-tick-dn .md-tick-val{{color:#fff0f0;}}
+
+.md-chart-wrap{{padding:8px 12px 2px;position:relative;}}
+.md-chart-label{{font-family:'Courier New',monospace;font-size:0.55rem;color:rgba(139,92,246,0.45);letter-spacing:1px;text-align:right;margin-bottom:6px;padding-right:2px;}}
+
+.md-sectors{{display:flex;gap:3px;padding:8px 10px;}}
+.md-sec{{
+    flex:1;border-radius:5px;padding:5px 3px;text-align:center;
+    font-family:'Courier New',monospace;font-size:0.55rem;letter-spacing:0.5px;
+    color:rgba(255,255,255,0.6);font-weight:600;line-height:1.5;
+}}
+.md-sec span{{display:block;font-size:0.62rem;font-weight:700;}}
+.md-sec.up2{{background:rgba(74,222,128,0.18);color:#86efac;}} .md-sec.up2 span{{color:#4ade80;}}
+.md-sec.up1{{background:rgba(74,222,128,0.09);color:#bbf7d0;}} .md-sec.up1 span{{color:#86efac;}}
+.md-sec.dn1{{background:rgba(248,113,113,0.09);color:#fecaca;}} .md-sec.dn1 span{{color:#fca5a5;}}
+.md-sec.dn2{{background:rgba(248,113,113,0.18);color:#fca5a5;}} .md-sec.dn2 span{{color:#f87171;}}
+
 /* pills */
 .pills{{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px;}}
 .pill{{
@@ -7077,16 +7129,54 @@ body{{
             <div class="card-sub">Market Dashboard</div>
             <div class="card-desc">Dashboard pasar real-time — Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
 
-            <div class="tp" id="tp-live">
-                <div class="tp-row"><span class="tp-prompt">$</span><span class="tp-cmd">&nbsp;sigma.fetch --market IDX --live &nbsp;<span id="tp-live-dot" style="color:#facc15;font-size:0.65rem;">◌</span></span></div>
-                <div class="tp-row" id="tp-r1"><span class="tp-lbl">IHSG&nbsp;</span><span id="tp-ihsg" style="color:rgba(255,255,255,0.3);font-style:italic;">loading…</span></div>
-                <div class="tp-row" id="tp-r2"><span class="tp-lbl">LQ45&nbsp;</span><span id="tp-lq45" style="color:rgba(255,255,255,0.3);font-style:italic;">loading…</span></div>
-                <div class="tp-row" id="tp-r3"><span class="tp-lbl">IDX30</span><span id="tp-idx30" style="color:rgba(255,255,255,0.3);font-style:italic;">loading…</span></div>
-                <div class="tp-row"><span class="tp-prompt">_&nbsp;</span><span class="tp-cursor"></span></div>
+            <!-- ── SIGMA TERMINAL MINI DASHBOARD ── -->
+            <div class="mini-dash">
+                <!-- Header bar -->
+                <div class="md-topbar">
+                    <div class="md-dots"><span></span><span></span><span></span></div>
+                    <div class="md-title">SIGMA TERMINAL · IDX</div>
+                    <div class="md-live"><span class="live-ring"></span>LIVE</div>
+                </div>
+                <!-- Ticker row -->
+                <div class="md-tickers">
+                    <div class="md-tick md-tick-up">
+                        <div class="md-tick-name">IHSG</div>
+                        <div class="md-tick-val" id="ani-ihsg">7.421</div>
+                        <div class="md-tick-chg">▲ +0.74%</div>
+                    </div>
+                    <div class="md-tick md-tick-dn">
+                        <div class="md-tick-name">LQ45</div>
+                        <div class="md-tick-val" id="ani-lq45">862.3</div>
+                        <div class="md-tick-chg">▼ −0.31%</div>
+                    </div>
+                    <div class="md-tick md-tick-up">
+                        <div class="md-tick-name">IDX30</div>
+                        <div class="md-tick-val" id="ani-idx30">487.1</div>
+                        <div class="md-tick-chg">▲ +0.52%</div>
+                    </div>
+                </div>
+                <!-- Mini chart canvas -->
+                <div class="md-chart-wrap">
+                    <canvas id="miniChart" width="320" height="80"></canvas>
+                    <div class="md-chart-label">IHSG Intraday Simulation</div>
+                </div>
+                <!-- Heatmap sectors -->
+                <div class="md-sectors">
+                    <div class="md-sec up2">BANK<br><span>+1.8%</span></div>
+                    <div class="md-sec up1">BUMN<br><span>+0.9%</span></div>
+                    <div class="md-sec dn1">TELE<br><span>−0.5%</span></div>
+                    <div class="md-sec up1">MINE<br><span>+1.2%</span></div>
+                    <div class="md-sec dn2">PROP<br><span>−1.1%</span></div>
+                    <div class="md-sec up2">AGRI<br><span>+2.1%</span></div>
+                </div>
             </div>
 
             <div class="pills" id="tp-pills">
-                <span class="pill pne" style="animation:badgePulse 2s infinite;">⟳ fetching live…</span>
+                <span class="pill pup">BBRI ▲1.4%</span>
+                <span class="pill pdn">TLKM ▼0.8%</span>
+                <span class="pill pup">ADRO ▲2.1%</span>
+                <span class="pill pne">VOL 12.4B</span>
+                <span class="pill pup">ANTM ▲0.9%</span>
             </div>
 
             <ul class="feats">
@@ -7267,163 +7357,104 @@ function selectTerminal() {{
     }}, 120);
 }}
 
-/* ── LIVE MARKET DATA FETCH ── */
-(function fetchLiveIDX() {{
-    var CACHE_KEY = 'sigma_idx_cache';
-    var CACHE_TTL = 5 * 60 * 1000; // 5 menit
+/* ── ANIMATED MINI CHART (Canvas) ── */
+(function initMiniChart() {{
+    var canvas = document.getElementById('miniChart');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
 
-    function fmt(v) {{
-        if (v == null || isNaN(v)) return '—';
-        return v.toLocaleString('id-ID', {{minimumFractionDigits:1, maximumFractionDigits:1}});
+    // Simulate a realistic intraday IHSG curve
+    var basePts = [0.0, 0.3, 0.5, 0.4, 0.7, 0.55, 0.8, 0.72, 0.9, 0.74, 0.85, 0.78, 0.88, 0.82, 0.95, 0.88, 1.0, 0.93];
+    var pts = basePts.map(function(v, i) {{ return {{ x: i/(basePts.length-1)*W, y: H - 12 - v*(H-22) }}; }});
+
+    var progress = 0; // 0..1 animate draw
+    var glowT = 0;
+
+    function drawChart(prog) {{
+        ctx.clearRect(0, 0, W, H);
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(139,92,246,0.08)';
+        ctx.lineWidth = 0.5;
+        [0.25, 0.5, 0.75].forEach(function(f) {{
+            ctx.beginPath(); ctx.moveTo(0, H*f); ctx.lineTo(W, H*f); ctx.stroke();
+        }});
+
+        // Determine how many points to draw
+        var maxI = Math.floor(prog * (pts.length - 1));
+        if (maxI < 1) return;
+
+        // Gradient fill
+        var grad = ctx.createLinearGradient(0, 0, 0, H);
+        grad.addColorStop(0, 'rgba(139,92,246,0.35)');
+        grad.addColorStop(1, 'rgba(139,92,246,0.01)');
+
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (var i = 1; i <= maxI; i++) {{ ctx.lineTo(pts[i].x, pts[i].y); }}
+        ctx.lineTo(pts[maxI].x, H);
+        ctx.lineTo(pts[0].x, H);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Line
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (var j = 1; j <= maxI; j++) {{ ctx.lineTo(pts[j].x, pts[j].y); }}
+        ctx.strokeStyle = '#a78bfa';
+        ctx.lineWidth = 1.8;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(167,139,250,0.7)';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Animated glow dot at tip
+        var tip = pts[maxI];
+        var alpha = 0.5 + 0.5 * Math.sin(glowT * 3);
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 4 + alpha*2, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(167,139,250,' + (0.3 * alpha) + ')';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(tip.x, tip.y, 3, 0, Math.PI*2);
+        ctx.fillStyle = '#c4b5fd';
+        ctx.shadowBlur = 10; ctx.shadowColor = '#a78bfa';
+        ctx.fill();
+        ctx.shadowBlur = 0;
     }}
-    function fmtPct(p) {{
-        if (p == null || isNaN(p)) return '';
-        var s = (p >= 0 ? '+' : '') + p.toFixed(2) + '%';
-        return s;
+
+    var startTime = null;
+    function animate(ts) {{
+        if (!startTime) startTime = ts;
+        var elapsed = ts - startTime;
+        progress = Math.min(elapsed / 1800, 1); // 1.8s draw-in
+        glowT = elapsed / 1000;
+        drawChart(progress);
+        if (progress < 1 || true) requestAnimationFrame(animate); // keep looping for glow
     }}
-    function setRow(elId, val, pct) {{
-        var el = document.getElementById(elId);
+    requestAnimationFrame(animate);
+
+    // Animate ticker values (count-up)
+    var targets = {{
+        'ani-ihsg': {{from: 7300, to: 7421, dec: 0}},
+        'ani-lq45': {{from: 870, to: 862.3, dec: 1}},
+        'ani-idx30': {{from: 480, to: 487.1, dec: 1}}
+    }};
+    Object.keys(targets).forEach(function(id) {{
+        var el = document.getElementById(id);
         if (!el) return;
-        var up = pct >= 0;
-        var arrow = up ? '▲' : '▼';
-        el.className = up ? 'tp-up' : 'tp-dn';
-        el.style.fontStyle = 'normal';
-        el.textContent = arrow + ' ' + fmt(val) + '  ' + fmtPct(pct);
-    }}
-    function setPills(stocks) {{
-        var pillsEl = document.getElementById('tp-pills');
-        if (!pillsEl) return;
-        if (!stocks || !stocks.length) return;
-        var html = '';
-        // Top movers from stocks list
-        stocks.slice(0,5).forEach(function(s) {{
-            var up = s.pct >= 0;
-            var cls = up ? 'pup' : 'pdn';
-            var arrow = up ? '▲' : '▼';
-            html += '<span class="pill ' + cls + '">' + s.sym + ' ' + arrow + Math.abs(s.pct).toFixed(1) + '%</span>';
-        }});
-        pillsEl.innerHTML = html;
-    }}
-    function setLiveDot() {{
-        var dot = document.getElementById('tp-live-dot');
-        if (dot) {{ dot.textContent = '●'; dot.style.color = '#4ade80'; }}
-    }}
-    function setErrorDot() {{
-        var dot = document.getElementById('tp-live-dot');
-        if (dot) {{ dot.textContent = '●'; dot.style.color = '#f87171'; }}
-    }}
-
-    function loadFromCache() {{
-        try {{
-            var c = localStorage.getItem(CACHE_KEY);
-            if (!c) return null;
-            var obj = JSON.parse(c);
-            if (Date.now() - obj.ts > CACHE_TTL) return null;
-            return obj;
-        }} catch(e) {{ return null; }}
-    }}
-    function saveToCache(data) {{
-        try {{
-            data.ts = Date.now();
-            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-        }} catch(e) {{}}
-    }}
-    function renderData(data) {{
-        setRow('tp-ihsg', data.ihsg, data.ihsg_pct);
-        setRow('tp-lq45', data.lq45, data.lq45_pct);
-        setRow('tp-idx30', data.idx30, data.idx30_pct);
-        setPills(data.stocks);
-        setLiveDot();
-    }}
-
-    // Try cache first
-    var cached = loadFromCache();
-    if (cached) {{ renderData(cached); }}
-
-    // Fetch 3 IDX indices from Yahoo Finance
-    var symbols = ['^JKSE', '^JKLQ45', '^JKIDX30'];
-    var labels = ['ihsg','lq45','idx30'];
-    var results = {{}};
-    var done = 0;
-
-    function tryFetch(sym, lbl) {{
-        var url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=1d&range=2d&corsDomain=finance.yahoo.com';
-        fetch(url, {{method:'GET', headers:{{'Accept':'application/json'}}}})
-        .then(function(r){{ return r.json(); }})
-        .then(function(d){{
-            var q = d.chart && d.chart.result && d.chart.result[0];
-            if (!q) throw new Error('no result');
-            var meta = q.meta;
-            var price = meta.regularMarketPrice;
-            var prev = meta.chartPreviousClose || meta.previousClose;
-            var pct = prev && prev > 0 ? ((price - prev)/prev*100) : 0;
-            results[lbl] = {{val: price, pct: pct}};
-        }})
-        .catch(function(){{
-            results[lbl] = null;
-        }})
-        .finally(function(){{
-            done++;
-            if (done === symbols.length) {{ buildAndRender(); }}
-        }});
-    }}
-
-    // BEI LQ45 top stocks for pills
-    var pillSyms = [['BBRI.JK','BBRI'],['TLKM.JK','TLKM'],['ADRO.JK','ADRO'],['ANTM.JK','ANTM'],['BMRI.JK','BMRI']];
-    var pillResults = [];
-    var pillDone = 0;
-    pillSyms.forEach(function(sp) {{
-        var url2 = 'https://query1.finance.yahoo.com/v8/finance/chart/' + sp[0] + '?interval=1d&range=2d';
-        fetch(url2, {{method:'GET', headers:{{'Accept':'application/json'}}}})
-        .then(function(r){{ return r.json(); }})
-        .then(function(d){{
-            var q = d.chart && d.chart.result && d.chart.result[0];
-            if (!q) throw '';
-            var m = q.meta;
-            var prc = m.regularMarketPrice;
-            var prv = m.chartPreviousClose || m.previousClose;
-            var p = prv && prv > 0 ? ((prc - prv)/prv*100) : 0;
-            pillResults.push({{sym: sp[1], pct: p}});
-        }})
-        .catch(function(){{ pillResults.push({{sym: sp[1], pct: 0}}); }})
-        .finally(function(){{
-            pillDone++;
-            if (pillDone === pillSyms.length) {{
-                pillResults.sort(function(a,b){{return Math.abs(b.pct)-Math.abs(a.pct);}});
-            }}
-        }});
+        var t = targets[id];
+        var dur = 1600, s = Date.now();
+        var iv = setInterval(function() {{
+            var p = Math.min((Date.now()-s)/dur, 1);
+            var ease = 1 - Math.pow(1-p, 3);
+            var val = t.from + (t.to - t.from) * ease;
+            el.textContent = val.toFixed(t.dec).replace('.', ',').replace(/\B(?=(\d{{3}})+(?!\d))/g, '.');
+            if (p >= 1) clearInterval(iv);
+        }}, 16);
     }});
-
-    function buildAndRender() {{
-        var data = {{
-            ihsg: results.ihsg ? results.ihsg.val : null,
-            ihsg_pct: results.ihsg ? results.ihsg.pct : 0,
-            lq45: results.lq45 ? results.lq45.val : null,
-            lq45_pct: results.lq45 ? results.lq45.pct : 0,
-            idx30: results.idx30 ? results.idx30.val : null,
-            idx30_pct: results.idx30 ? results.idx30.pct : 0,
-            stocks: pillResults.length ? pillResults : []
-        }};
-        if (data.ihsg || data.lq45 || data.idx30) {{
-            saveToCache(data);
-            renderData(data);
-        }} else {{
-            // semua fetch gagal
-            setErrorDot();
-            // jika ada cache lama, tampilkan dgn label stale
-            var old = loadFromCache();
-            if (old) {{ renderData(old); }}
-        }}
-    }}
-
-    symbols.forEach(function(sym, i){{ tryFetch(sym, labels[i]); }});
-
-    // Retry pills setelah 3 detik jika masih kosong
-    setTimeout(function(){{
-        if (pillResults.length > 0) {{
-            setPills(pillResults);
-        }}
-    }}, 3500);
 }})();
 </script>
 </body>
@@ -7474,6 +7505,24 @@ function selectTerminal() {{
 # ── Routing: jika sudah login tapi belum pilih sistem → tampilkan selector ──
 if st.session_state.user and not st.session_state.get("selected_system"):
     show_system_selector()
+
+# ── FIX: jika selected_system="terminal" (external URL), redirect kembali otomatis ──
+# Ini terjadi setelah theme toggle atau rerun — pastikan user tidak stuck di chat view
+if st.session_state.get("user") and st.session_state.get("selected_system") == "terminal":
+    _turl_redirect = st.session_state.get("_terminal_url_cache", "") or st.secrets.get("SIGMA_TERMINAL_URL", "")
+    if _turl_redirect:
+        components.html(f"""<script>
+(function(){{
+    try {{
+        var _tbase = '{_turl_redirect.split("?")[0]}';
+        var cur = window.parent.location.href;
+        if (_tbase && cur.indexOf(_tbase.replace(/\\/+$/, '')) === -1) {{
+            window.parent.location.replace('{_turl_redirect}');
+        }}
+    }} catch(e) {{}}
+}})();
+</script>""", height=0)
+        st.stop()
 
 init_chat()
 user = st.session_state.user
