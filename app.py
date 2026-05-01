@@ -7077,20 +7077,16 @@ body{{
             <div class="card-sub">Market Dashboard</div>
             <div class="card-desc">Dashboard pasar real-time — Market Overview, Broker Summary, Screener, dan Watchlist dalam satu layar.</div>
 
-            <div class="tp">
-                <div class="tp-row"><span class="tp-prompt">$</span><span class="tp-cmd">&nbsp;sigma.fetch --market IDX --live &nbsp;<span style="color:#4ade80;font-size:0.65rem;">●</span></span></div>
-                <div class="tp-row"><span class="tp-lbl">IHSG&nbsp;</span><span class="tp-up">▲ 7,421 &nbsp;+0.74%</span></div>
-                <div class="tp-row"><span class="tp-lbl">LQ45&nbsp;</span><span class="tp-dn">▼ 862.3 &nbsp;-0.31%</span></div>
-                <div class="tp-row"><span class="tp-lbl">IDX30</span><span class="tp-up">▲ 487.1 &nbsp;+0.52%</span></div>
+            <div class="tp" id="tp-live">
+                <div class="tp-row"><span class="tp-prompt">$</span><span class="tp-cmd">&nbsp;sigma.fetch --market IDX --live &nbsp;<span id="tp-live-dot" style="color:#facc15;font-size:0.65rem;">◌</span></span></div>
+                <div class="tp-row" id="tp-r1"><span class="tp-lbl">IHSG&nbsp;</span><span id="tp-ihsg" style="color:rgba(255,255,255,0.3);font-style:italic;">loading…</span></div>
+                <div class="tp-row" id="tp-r2"><span class="tp-lbl">LQ45&nbsp;</span><span id="tp-lq45" style="color:rgba(255,255,255,0.3);font-style:italic;">loading…</span></div>
+                <div class="tp-row" id="tp-r3"><span class="tp-lbl">IDX30</span><span id="tp-idx30" style="color:rgba(255,255,255,0.3);font-style:italic;">loading…</span></div>
                 <div class="tp-row"><span class="tp-prompt">_&nbsp;</span><span class="tp-cursor"></span></div>
             </div>
 
-            <div class="pills">
-                <span class="pill pup">BBRI ▲1.4%</span>
-                <span class="pill pdn">TLKM ▼0.8%</span>
-                <span class="pill pup">ADRO ▲2.1%</span>
-                <span class="pill pne">VOL 12.4B</span>
-                <span class="pill pup">ANTM ▲0.9%</span>
+            <div class="pills" id="tp-pills">
+                <span class="pill pne" style="animation:badgePulse 2s infinite;">⟳ fetching live…</span>
             </div>
 
             <ul class="feats">
@@ -7270,6 +7266,165 @@ function selectTerminal() {{
         }} catch(e) {{}}
     }}, 120);
 }}
+
+/* ── LIVE MARKET DATA FETCH ── */
+(function fetchLiveIDX() {{
+    var CACHE_KEY = 'sigma_idx_cache';
+    var CACHE_TTL = 5 * 60 * 1000; // 5 menit
+
+    function fmt(v) {{
+        if (v == null || isNaN(v)) return '—';
+        return v.toLocaleString('id-ID', {{minimumFractionDigits:1, maximumFractionDigits:1}});
+    }}
+    function fmtPct(p) {{
+        if (p == null || isNaN(p)) return '';
+        var s = (p >= 0 ? '+' : '') + p.toFixed(2) + '%';
+        return s;
+    }}
+    function setRow(elId, val, pct) {{
+        var el = document.getElementById(elId);
+        if (!el) return;
+        var up = pct >= 0;
+        var arrow = up ? '▲' : '▼';
+        el.className = up ? 'tp-up' : 'tp-dn';
+        el.style.fontStyle = 'normal';
+        el.textContent = arrow + ' ' + fmt(val) + '  ' + fmtPct(pct);
+    }}
+    function setPills(stocks) {{
+        var pillsEl = document.getElementById('tp-pills');
+        if (!pillsEl) return;
+        if (!stocks || !stocks.length) return;
+        var html = '';
+        // Top movers from stocks list
+        stocks.slice(0,5).forEach(function(s) {{
+            var up = s.pct >= 0;
+            var cls = up ? 'pup' : 'pdn';
+            var arrow = up ? '▲' : '▼';
+            html += '<span class="pill ' + cls + '">' + s.sym + ' ' + arrow + Math.abs(s.pct).toFixed(1) + '%</span>';
+        }});
+        pillsEl.innerHTML = html;
+    }}
+    function setLiveDot() {{
+        var dot = document.getElementById('tp-live-dot');
+        if (dot) {{ dot.textContent = '●'; dot.style.color = '#4ade80'; }}
+    }}
+    function setErrorDot() {{
+        var dot = document.getElementById('tp-live-dot');
+        if (dot) {{ dot.textContent = '●'; dot.style.color = '#f87171'; }}
+    }}
+
+    function loadFromCache() {{
+        try {{
+            var c = localStorage.getItem(CACHE_KEY);
+            if (!c) return null;
+            var obj = JSON.parse(c);
+            if (Date.now() - obj.ts > CACHE_TTL) return null;
+            return obj;
+        }} catch(e) {{ return null; }}
+    }}
+    function saveToCache(data) {{
+        try {{
+            data.ts = Date.now();
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        }} catch(e) {{}}
+    }}
+    function renderData(data) {{
+        setRow('tp-ihsg', data.ihsg, data.ihsg_pct);
+        setRow('tp-lq45', data.lq45, data.lq45_pct);
+        setRow('tp-idx30', data.idx30, data.idx30_pct);
+        setPills(data.stocks);
+        setLiveDot();
+    }}
+
+    // Try cache first
+    var cached = loadFromCache();
+    if (cached) {{ renderData(cached); }}
+
+    // Fetch 3 IDX indices from Yahoo Finance
+    var symbols = ['^JKSE', '^JKLQ45', '^JKIDX30'];
+    var labels = ['ihsg','lq45','idx30'];
+    var results = {{}};
+    var done = 0;
+
+    function tryFetch(sym, lbl) {{
+        var url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(sym) + '?interval=1d&range=2d&corsDomain=finance.yahoo.com';
+        fetch(url, {{method:'GET', headers:{{'Accept':'application/json'}}}})
+        .then(function(r){{ return r.json(); }})
+        .then(function(d){{
+            var q = d.chart && d.chart.result && d.chart.result[0];
+            if (!q) throw new Error('no result');
+            var meta = q.meta;
+            var price = meta.regularMarketPrice;
+            var prev = meta.chartPreviousClose || meta.previousClose;
+            var pct = prev && prev > 0 ? ((price - prev)/prev*100) : 0;
+            results[lbl] = {{val: price, pct: pct}};
+        }})
+        .catch(function(){{
+            results[lbl] = null;
+        }})
+        .finally(function(){{
+            done++;
+            if (done === symbols.length) {{ buildAndRender(); }}
+        }});
+    }}
+
+    // BEI LQ45 top stocks for pills
+    var pillSyms = [['BBRI.JK','BBRI'],['TLKM.JK','TLKM'],['ADRO.JK','ADRO'],['ANTM.JK','ANTM'],['BMRI.JK','BMRI']];
+    var pillResults = [];
+    var pillDone = 0;
+    pillSyms.forEach(function(sp) {{
+        var url2 = 'https://query1.finance.yahoo.com/v8/finance/chart/' + sp[0] + '?interval=1d&range=2d';
+        fetch(url2, {{method:'GET', headers:{{'Accept':'application/json'}}}})
+        .then(function(r){{ return r.json(); }})
+        .then(function(d){{
+            var q = d.chart && d.chart.result && d.chart.result[0];
+            if (!q) throw '';
+            var m = q.meta;
+            var prc = m.regularMarketPrice;
+            var prv = m.chartPreviousClose || m.previousClose;
+            var p = prv && prv > 0 ? ((prc - prv)/prv*100) : 0;
+            pillResults.push({{sym: sp[1], pct: p}});
+        }})
+        .catch(function(){{ pillResults.push({{sym: sp[1], pct: 0}}); }})
+        .finally(function(){{
+            pillDone++;
+            if (pillDone === pillSyms.length) {{
+                pillResults.sort(function(a,b){{return Math.abs(b.pct)-Math.abs(a.pct);}});
+            }}
+        }});
+    }});
+
+    function buildAndRender() {{
+        var data = {{
+            ihsg: results.ihsg ? results.ihsg.val : null,
+            ihsg_pct: results.ihsg ? results.ihsg.pct : 0,
+            lq45: results.lq45 ? results.lq45.val : null,
+            lq45_pct: results.lq45 ? results.lq45.pct : 0,
+            idx30: results.idx30 ? results.idx30.val : null,
+            idx30_pct: results.idx30 ? results.idx30.pct : 0,
+            stocks: pillResults.length ? pillResults : []
+        }};
+        if (data.ihsg || data.lq45 || data.idx30) {{
+            saveToCache(data);
+            renderData(data);
+        }} else {{
+            // semua fetch gagal
+            setErrorDot();
+            // jika ada cache lama, tampilkan dgn label stale
+            var old = loadFromCache();
+            if (old) {{ renderData(old); }}
+        }}
+    }}
+
+    symbols.forEach(function(sym, i){{ tryFetch(sym, labels[i]); }});
+
+    // Retry pills setelah 3 detik jika masih kosong
+    setTimeout(function(){{
+        if (pillResults.length > 0) {{
+            setPills(pillResults);
+        }}
+    }}, 3500);
+}})();
 </script>
 </body>
 </html>
@@ -7517,15 +7672,11 @@ if "do" in st.query_params:
             except: pass
         st.rerun()
     elif _do == "theme_dark":
-        _was_on_selector = not st.session_state.get("selected_system")
+        # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "dark"
-        if _was_on_selector:
-            st.session_state.selected_system = None  # FIX: stay on selector after theme change
     elif _do == "theme_light":
-        _was_on_selector = not st.session_state.get("selected_system")
+        # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "light"
-        if _was_on_selector:
-            st.session_state.selected_system = None  # FIX: stay on selector after theme change
     elif _do == "newchat":
         st.session_state.current_view = "chat"
         ns = {"id": str(uuid.uuid4())[:8], "title": "Obrolan Baru", "created": datetime.now().isoformat(), "messages": [{"role": "system", "content": SYSTEM_PROMPT["content"]}]}
@@ -8690,14 +8841,12 @@ if "do" in st.query_params:
     elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "go_home": st.session_state.current_view = "chat"; st.session_state.selected_system = None; st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_dark":
-        _was_sel2 = not st.session_state.get("selected_system")
+        # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "dark"
-        if _was_sel2: st.session_state.selected_system = None
         st.query_params.pop("do", None); st.rerun()
     elif _do == "theme_light":
-        _was_sel2 = not st.session_state.get("selected_system")
+        # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "light"
-        if _was_sel2: st.session_state.selected_system = None
         st.query_params.pop("do", None); st.rerun()
     elif _do == "newchat":
         st.session_state.current_view = "chat"
