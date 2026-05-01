@@ -7620,15 +7620,37 @@ C = get_colors(st.session_state.theme)
 
 
 def show_login():
+    # ── Load background images sebagai base64 dari file lokal (paling reliable) ──
+    # Fallback ke raw GitHub URL jika file tidak ada di lokal
+    def _img_to_css_url(filename: str) -> str:
+        """Return CSS url() value: base64 data URI jika file ada, fallback raw GitHub."""
+        import base64, os
+        local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+        if os.path.exists(local_path):
+            try:
+                with open(local_path, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode()
+                ext = filename.lower().split(".")[-1]
+                mime = "image/png" if ext == "png" else "image/jpeg"
+                return f"url('data:{mime};base64,{b64}')"
+            except Exception:
+                pass
+        # Fallback: raw GitHub URL (harus publik)
+        encoded_name = filename.replace(" ", "%20")
+        return f"url('https://raw.githubusercontent.com/KIPMUP-Infinity/KIPMSIGMA/main/{encoded_name}')"
+
+    _bg_desktop = _img_to_css_url("KIPM-UP.png")
+    _bg_mobile  = _img_to_css_url("KIPM-UP M.png")
+
     st.markdown(f"""
     <style>
     [data-testid="stSidebar"] {{ display: none !important; }}
-    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('./KIPM-UP.png') center/cover no-repeat fixed !important; min-height: 100vh !important; }}
+    [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_desktop} center/cover no-repeat fixed !important; min-height: 100vh !important; }}
     section[data-testid="stMain"]::before {{ display: none !important; }}
     [data-testid="stMainBlockContainer"] {{ max-width: 300px !important; margin: 1.5vh 74px 0 auto !important; padding: 8px 18px 16px !important; position: relative; z-index: 1; min-height: unset !important; height: fit-content !important; background: rgba(5, 8, 20, 0.60) !important; backdrop-filter: blur(20px) saturate(1.4) !important; -webkit-backdrop-filter: blur(20px) saturate(1.4) !important; border: 1px solid rgba(255,255,255,0.10) !important; border-radius: 20px !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
     @media(max-width: 768px) {{
         [data-testid="stMainBlockContainer"] {{ margin: 5vh auto 0 auto !important; max-width: 88% !important; padding: 20px 20px 28px !important; backdrop-filter: blur(20px) !important; border-radius: 20px !important; border: 1px solid rgba(255,255,255,0.12) !important; box-shadow: 0 8px 40px rgba(0,0,0,0.5) !important; }}
-        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: url('./KIPM-UP M.png') center top/cover no-repeat fixed !important; }}
+        [data-testid="stAppViewContainer"], section[data-testid="stMain"] {{ background: {_bg_mobile} center top/cover no-repeat fixed !important; }}
         [data-testid="stMainBlockContainer"] {{ margin-top: 75px !important; }}
     }}
     header[data-testid="stHeader"] {{ display: none !important; }} #MainMenu {{ display: none !important; }}
