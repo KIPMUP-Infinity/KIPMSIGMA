@@ -6500,11 +6500,11 @@ body{{
     position:relative;z-index:1;
     min-height:100vh;
     display:flex;flex-direction:column;align-items:center;
-    padding:32px 20px 60px;
+    padding:20px 20px 36px;
 }}
 
 /* ── HEADER ── */
-.hd{{text-align:center;margin-bottom:40px;}}
+.hd{{text-align:center;margin-bottom:24px;}}
 .hd-welcome{{
     font-family:'Orbitron',sans-serif;
     font-size:0.72rem;letter-spacing:6px;text-transform:uppercase;
@@ -6512,7 +6512,7 @@ body{{
 }}
 .hd-title{{
     font-family:'Orbitron',sans-serif;
-    font-size:clamp(2rem,5vw,3.2rem);font-weight:900;
+    font-size:clamp(1.7rem,4vw,2.6rem);font-weight:900;
     letter-spacing:4px;text-transform:uppercase;line-height:1.1;
     color:#fff;margin-bottom:10px;
 }}
@@ -6535,16 +6535,16 @@ body{{
 .grid{{
     display:grid;
     grid-template-columns:repeat(3,1fr);
-    gap:24px;
+    gap:16px;
     max-width:1200px;width:100%;
 }}
 @media(max-width:1000px){{.grid{{grid-template-columns:repeat(2,1fr);}}}}
-@media(max-width:640px){{.grid{{grid-template-columns:1fr;gap:16px;}}}}
+@media(max-width:640px){{.grid{{grid-template-columns:1fr;gap:12px;}}}}
 
 /* ── CARD BASE ── */
 .card{{
-    position:relative;border-radius:24px;overflow:hidden;cursor:pointer;
-    padding:32px 26px 28px;
+    position:relative;border-radius:20px;overflow:hidden;cursor:pointer;
+    padding:22px 22px 20px;
     background:rgba(8,15,35,0.85);
     backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
     transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease;
@@ -6630,13 +6630,13 @@ body{{
 /* ── 3D HOLOGRAPHIC ICON ── */
 .icon-wrap{{
     display:flex;flex-direction:column;align-items:center;
-    margin-bottom:24px;margin-top:8px;position:relative;
+    margin-bottom:16px;margin-top:4px;position:relative;
 }}
 .icon-hex{{
-    width:96px;height:96px;
+    width:80px;height:80px;
     display:flex;align-items:center;justify-content:center;
-    position:relative;z-index:2;border-radius:22px;
-    font-size:2.6rem;
+    position:relative;z-index:2;border-radius:18px;
+    font-size:2.2rem;
     transition:transform 0.4s ease, box-shadow 0.4s ease;
     overflow:hidden;
 }}
@@ -6687,8 +6687,8 @@ body{{
 .card:hover .icon-ring{{transform:scaleX(1.2);opacity:1.2;}}
 
 /* ── TITLE ── */
-.card-title{{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:700;color:#fff;margin-bottom:6px;letter-spacing:-0.3px;}}
-.card-sub{{font-size:0.68rem;letter-spacing:3.5px;text-transform:uppercase;font-weight:600;margin-bottom:14px;}}
+.card-title{{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:4px;letter-spacing:-0.3px;}}
+.card-sub{{font-size:0.62rem;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}}
 .card-ai .card-sub{{color:rgba(0,212,255,0.7);}}
 .card-terminal .card-sub{{color:rgba(167,139,250,0.7);}}
 .card-kipm .card-sub{{color:rgba(245,158,11,0.8);}}
@@ -6841,10 +6841,10 @@ body{{
 .cs-pct{{font-size:0.68rem;color:rgba(245,158,11,0.6);white-space:nowrap;}}
 
 /* ── FEATURES ── */
-.feats{{list-style:none;padding:0;margin:0 0 22px 0;}}
+.feats{{list-style:none;padding:0;margin:0 0 16px 0;}}
 .feats li{{
-    font-size:0.8rem;color:rgba(255,255,255,0.48);
-    padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);
+    font-size:0.75rem;color:rgba(255,255,255,0.48);
+    padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);
     display:flex;align-items:center;gap:9px;
 }}
 .feats li:last-child{{border-bottom:none;}}
@@ -6855,8 +6855,8 @@ body{{
 
 /* ── CTA BUTTON ── */
 .cta{{
-    width:100%;padding:14px;border-radius:14px;border:none;
-    font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;
+    width:100%;padding:11px;border-radius:12px;border:none;
+    font-family:'Orbitron',sans-serif;font-size:0.72rem;font-weight:700;
     letter-spacing:2px;text-transform:uppercase;cursor:pointer;
     transition:all 0.25s ease;
     display:flex;align-items:center;justify-content:center;gap:8px;
@@ -6885,19 +6885,19 @@ body{{
 
 /* ── FOOTER ── */
 .foot{{
-    margin-top:52px;text-align:center;
-    font-size:0.7rem;color:rgba(255,255,255,0.18);letter-spacing:2px;
+    margin-top:28px;text-align:center;
+    font-size:0.65rem;color:rgba(255,255,255,0.18);letter-spacing:2px;
     position:relative;z-index:1;
 }}
 
 @media(max-width:640px){{
-    .page{{padding:20px 14px 40px;}}
-    .hd{{margin-bottom:28px;}}
-    .hd-title{{font-size:1.8rem;}}
-    .card{{padding:22px 18px 20px;}}
-    .icon-hex{{width:80px;height:80px;font-size:2rem;}}
-    .card-title{{font-size:1.15rem;}}
-    .cta{{font-size:0.72rem;padding:12px;}}
+    .page{{padding:14px 12px 28px;}}
+    .hd{{margin-bottom:18px;}}
+    .hd-title{{font-size:1.5rem;}}
+    .card{{padding:16px 14px 16px;}}
+    .icon-hex{{width:64px;height:64px;font-size:1.7rem;}}
+    .card-title{{font-size:1rem;}}
+    .cta{{font-size:0.65rem;padding:10px;}}
 }}
 </style>
 </head>
