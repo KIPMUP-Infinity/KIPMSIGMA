@@ -3695,7 +3695,7 @@ _PERFIELD_KEYS = [
     "brosum_hist_use_date",
     "fs_results", "fs_ts", "fs_sektor",  # Fundamental Screener
     "alpha_insight_last_key", "alpha_insight_last_data", "alpha_insight_last_ticker",  # Alpha Insight
-    "sigma_track_record",  # Track record dari sigma_modules
+    "sigma_track_record",  # Track record - persist antar redeploy
 ]
 # Field-field session (disimpan satu blob di sheet 'users' — boleh overwrite)
 _SESSION_KEYS = [
@@ -3749,9 +3749,6 @@ def save_field(email: str, field: str, value):
         _db_write("users", key, existing)
         _db_cache_ts.pop("users", None)
 
-# Register save_field ke builtins agar sigma_modules bisa mengaksesnya
-import builtins as _builtins_ref
-_builtins_ref._sigma_save_field = save_field
 def load_user(email: str):
     """Load semua data user — merge dari 'users' (session) + 'user_data' (per-field kritis).
     Return dict lengkap semua field."""
@@ -5579,7 +5576,7 @@ if "code" in st.query_params and st.session_state.user is None:
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
             st.session_state.current_view = saved.get("current_view", "chat")
-            _saved_sys = (saved or {}).get("selected_system"); st.session_state.selected_system = _saved_sys if _saved_sys and _saved_sys != "terminal" else None
+            _sv = (saved or {}).get("selected_system"); st.session_state.selected_system = _sv if _sv and _sv != "terminal" else None
             if saved.get("sessions"):
                 _loaded_s = saved["sessions"]
                 for _s in _loaded_s:
@@ -5620,7 +5617,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
-                st.session_state.current_view = saved.get("current_view", "chat"); _saved_sys = (saved or {}).get("selected_system"); st.session_state.selected_system = _saved_sys if _saved_sys and _saved_sys != "terminal" else None
+                st.session_state.current_view = saved.get("current_view", "chat"); _sv = (saved or {}).get("selected_system"); st.session_state.selected_system = _sv if _sv and _sv != "terminal" else None
                 if saved.get("sessions"):
                     _loaded = saved["sessions"]
                     for _s in _loaded:
@@ -5641,14 +5638,11 @@ if st.session_state.user and not st.session_state.data_loaded:
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
         st.session_state.current_view = saved.get("current_view", "chat")
-        # RESTORE selected_system dari DB agar refresh tidak kembali ke selector
+        # Restore selected_system agar refresh tidak balik ke halaman pilih sistem
         if not st.session_state.get("selected_system"):
-            _ss = saved.get("selected_system")
-            if _ss and _ss != "terminal":
-                st.session_state.selected_system = _ss
-
-
-
+            _sv2 = saved.get("selected_system")
+            if _sv2 and _sv2 != "terminal":
+                st.session_state.selected_system = _sv2
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -6463,7 +6457,6 @@ body{{
     font-family:'Inter',system-ui,sans-serif;
     background:#020617;
     color:#e2e8f0;
-    min-height:100vh;
     overflow-x:hidden;
 }}
 
@@ -6507,13 +6500,12 @@ body{{
 /* ── WRAPPER ── */
 .page{{
     position:relative;z-index:1;
-    min-height:100vh;
     display:flex;flex-direction:column;align-items:center;
-    padding:20px 20px 36px;
+    padding:16px 20px 24px;
 }}
 
 /* ── HEADER ── */
-.hd{{text-align:center;margin-bottom:24px;}}
+.hd{{text-align:center;margin-bottom:14px;}}
 .hd-welcome{{
     font-family:'Orbitron',sans-serif;
     font-size:0.72rem;letter-spacing:6px;text-transform:uppercase;
@@ -6521,9 +6513,9 @@ body{{
 }}
 .hd-title{{
     font-family:'Orbitron',sans-serif;
-    font-size:clamp(1.7rem,4vw,2.6rem);font-weight:900;
+    font-size:clamp(1.5rem,3.2vw,2.2rem);font-weight:900;
     letter-spacing:4px;text-transform:uppercase;line-height:1.1;
-    color:#fff;margin-bottom:10px;
+    color:#fff;margin-bottom:7px;
 }}
 .hd-title .blue{{
     background:linear-gradient(135deg,#00d4ff,#8b5cf6);
@@ -6534,7 +6526,7 @@ body{{
     font-weight:300;
 }}
 .hd-line{{
-    width:60px;height:2px;margin:16px auto 0;
+    width:60px;height:2px;margin:10px auto 0;
     background:linear-gradient(90deg,transparent,#00d4ff,transparent);
     animation:lineShimmer 2.5s ease-in-out infinite;
 }}
@@ -6544,16 +6536,16 @@ body{{
 .grid{{
     display:grid;
     grid-template-columns:repeat(3,1fr);
-    gap:16px;
-    max-width:1200px;width:100%;
+    gap:13px;
+    max-width:1080px;width:100%;
 }}
 @media(max-width:1000px){{.grid{{grid-template-columns:repeat(2,1fr);}}}}
-@media(max-width:640px){{.grid{{grid-template-columns:1fr;gap:12px;}}}}
+@media(max-width:700px){{.grid{{grid-template-columns:1fr;gap:11px;}}}}
 
 /* ── CARD BASE ── */
 .card{{
-    position:relative;border-radius:20px;overflow:hidden;cursor:pointer;
-    padding:22px 22px 20px;
+    position:relative;border-radius:18px;overflow:hidden;cursor:pointer;
+    padding:16px 18px 14px;
     background:rgba(8,15,35,0.85);
     backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
     transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s ease;
@@ -6639,13 +6631,13 @@ body{{
 /* ── 3D HOLOGRAPHIC ICON ── */
 .icon-wrap{{
     display:flex;flex-direction:column;align-items:center;
-    margin-bottom:16px;margin-top:4px;position:relative;
+    margin-bottom:10px;margin-top:2px;position:relative;
 }}
 .icon-hex{{
-    width:80px;height:80px;
+    width:64px;height:64px;
     display:flex;align-items:center;justify-content:center;
-    position:relative;z-index:2;border-radius:18px;
-    font-size:2.2rem;
+    position:relative;z-index:2;border-radius:15px;
+    font-size:1.8rem;
     transition:transform 0.4s ease, box-shadow 0.4s ease;
     overflow:hidden;
 }}
@@ -6687,7 +6679,7 @@ body{{
 
 /* holographic ring platform */
 .icon-ring{{
-    width:100px;height:16px;margin-top:-4px;border-radius:50%;position:relative;z-index:1;
+    width:82px;height:11px;margin-top:-3px;border-radius:50%;position:relative;z-index:1;
     transition:all 0.4s ease;
 }}
 .card-ai .icon-ring{{background:radial-gradient(ellipse,rgba(0,212,255,0.3) 0%,transparent 70%);box-shadow:0 0 20px rgba(0,157,255,0.45);}}
@@ -6696,18 +6688,18 @@ body{{
 .card:hover .icon-ring{{transform:scaleX(1.2);opacity:1.2;}}
 
 /* ── TITLE ── */
-.card-title{{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:4px;letter-spacing:-0.3px;}}
-.card-sub{{font-size:0.62rem;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:10px;}}
+.card-title{{font-family:'Orbitron',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;margin-bottom:3px;letter-spacing:-0.3px;}}
+.card-sub{{font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin-bottom:6px;}}
 .card-ai .card-sub{{color:rgba(0,212,255,0.7);}}
 .card-terminal .card-sub{{color:rgba(167,139,250,0.7);}}
 .card-kipm .card-sub{{color:rgba(245,158,11,0.8);}}
-.card-desc{{font-size:0.8rem;color:rgba(255,255,255,0.42);line-height:1.5;margin-bottom:14px;}}
+.card-desc{{font-size:0.77rem;color:rgba(255,255,255,0.42);line-height:1.4;margin-bottom:9px;}}
 
 /* ── CHAT PREVIEW (AI card) ── */
 .cp{{
     background:rgba(0,0,0,0.5);
     border:1px solid rgba(0,212,255,0.12);
-    border-radius:12px;overflow:hidden;margin-bottom:18px;
+    border-radius:10px;overflow:hidden;margin-bottom:10px;
 }}
 .cp-head{{
     background:rgba(0,157,255,0.07);
@@ -6734,8 +6726,8 @@ body{{
 .tp{{
     background:rgba(0,0,0,0.55);
     border:1px solid rgba(139,92,246,0.12);
-    border-radius:12px;padding:12px 14px;margin-bottom:16px;
-    font-family:'Courier New',monospace;font-size:0.7rem;line-height:1.9;
+    border-radius:10px;padding:9px 11px;margin-bottom:10px;
+    font-family:'Courier New',monospace;font-size:0.68rem;line-height:1.65;
     position:relative;overflow:hidden;
 }}
 .tp::after{{content:'';position:absolute;bottom:0;left:0;right:0;height:30%;background:linear-gradient(transparent,rgba(0,0,0,0.65));pointer-events:none;}}
@@ -6752,7 +6744,7 @@ body{{
 .mini-dash{{
     background:rgba(0,0,0,0.55);
     border:1px solid rgba(139,92,246,0.18);
-    border-radius:14px;overflow:hidden;margin-bottom:16px;
+    border-radius:12px;overflow:hidden;margin-bottom:10px;
 }}
 .md-topbar{{
     display:flex;align-items:center;gap:8px;
@@ -7571,10 +7563,19 @@ function selectTerminal() {{
         }}, 16);
     }});
 }})();
+
+(function() {
+    function sendH() {
+        var h = document.documentElement.scrollHeight || document.body.scrollHeight || 820;
+        window.parent.postMessage({isStreamlitMessage:true,type:'streamlit:setFrameHeight',height:h},'*');
+    }
+    sendH(); setTimeout(sendH,200); setTimeout(sendH,800); setTimeout(sendH,1600);
+    if (window.ResizeObserver) new ResizeObserver(sendH).observe(document.body);
+})();
 </script>
 </body>
 </html>
-    """, height=900, scrolling=True)
+    """, height=820, scrolling=False)
 
     # ── HIDDEN STREAMLIT BUTTONS (fallback for all browsers) ──
     col1, col2 = st.columns(2)
@@ -9032,7 +9033,7 @@ if user:
         "reco_daily_result","reco_weekly_result","reco_bsjp_result",
         "mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp",
         "fs_results","fs_ts","fs_sektor",
-        "alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","sigma_track_record",
+        "alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker",
     ]
     # Restore kalau BELUM pernah di-restore di session ini (bukan cek per-key)
     # Ini memastikan data dari Sheets selalu di-load saat baru login/refresh
