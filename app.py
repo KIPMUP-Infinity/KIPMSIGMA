@@ -3695,6 +3695,7 @@ _PERFIELD_KEYS = [
     "brosum_hist_use_date",
     "fs_results", "fs_ts", "fs_sektor",  # Fundamental Screener
     "alpha_insight_last_key", "alpha_insight_last_data", "alpha_insight_last_ticker",  # Alpha Insight
+    "sigma_track_record",  # Track record dari sigma_modules
 ]
 # Field-field session (disimpan satu blob di sheet 'users' — boleh overwrite)
 _SESSION_KEYS = [
@@ -3748,6 +3749,9 @@ def save_field(email: str, field: str, value):
         _db_write("users", key, existing)
         _db_cache_ts.pop("users", None)
 
+# Register save_field ke builtins agar sigma_modules bisa mengaksesnya
+import builtins as _builtins_ref
+_builtins_ref._sigma_save_field = save_field
 def load_user(email: str):
     """Load semua data user — merge dari 'users' (session) + 'user_data' (per-field kritis).
     Return dict lengkap semua field."""
@@ -5575,7 +5579,7 @@ if "code" in st.query_params and st.session_state.user is None:
         if saved:
             st.session_state.theme = saved.get("theme", "dark")
             st.session_state.current_view = saved.get("current_view", "chat")
-            st.session_state.selected_system = None  # FIX: always show selector after login
+            _saved_sys = (saved or {}).get("selected_system"); st.session_state.selected_system = _saved_sys if _saved_sys and _saved_sys != "terminal" else None
             if saved.get("sessions"):
                 _loaded_s = saved["sessions"]
                 for _s in _loaded_s:
@@ -5616,7 +5620,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             saved = load_user(user_info["email"])
             if saved:
                 st.session_state.theme = saved.get("theme", "dark")
-                st.session_state.current_view = saved.get("current_view", "chat"); st.session_state.selected_system = None  # FIX: always show selector after login
+                st.session_state.current_view = saved.get("current_view", "chat"); _saved_sys = (saved or {}).get("selected_system"); st.session_state.selected_system = _saved_sys if _saved_sys and _saved_sys != "terminal" else None
                 if saved.get("sessions"):
                     _loaded = saved["sessions"]
                     for _s in _loaded:
@@ -5624,7 +5628,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
                         elif _s["messages"][0].get("role") != "system": _s["messages"].insert(0, SYSTEM_PROMPT)
                         else: _s["messages"][0] = SYSTEM_PROMPT
                     st.session_state.sessions = _loaded; st.session_state.active_id = saved.get("active_id")
-            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records","auto_plan_history_daily","auto_plan_history_weekly","auto_plan_history_bsjp","sigma_bs30_screened","sigma_bs30_ts","sigma_bs30_history","brosum_history","brosum_hist_use_key","brosum_hist_use_data","brosum_hist_use_date"]:
+            for _tab_key in ["reco_daily_result","reco_daily_ts","reco_weekly_result","reco_weekly_ts","reco_bsjp_result","reco_bsjp_ts","mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp","ec_ai_result","ec_ai_event","ec_ai_actual","ec_ai_beat_miss","ec_ai_model","ec_ai_timestamp","alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","tr_records","auto_plan_history_daily","auto_plan_history_weekly","auto_plan_history_bsjp","sigma_bs30_screened","sigma_bs30_ts","sigma_bs30_history","brosum_history","brosum_hist_use_key","brosum_hist_use_data","brosum_hist_use_date","sigma_track_record"]:
                 if saved.get(_tab_key) is not None and _tab_key not in st.session_state:
                     st.session_state[_tab_key] = saved[_tab_key]
             st.session_state.data_loaded = True
@@ -5637,9 +5641,14 @@ if st.session_state.user and not st.session_state.data_loaded:
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
         st.session_state.current_view = saved.get("current_view", "chat")
-        # FIX PERMANENT: JANGAN pernah restore selected_system dari DB
-        # Ini memastikan refresh selalu kembali ke halaman yg sama (bukan ke selector)
-        pass  # selected_system TIDAK diubah dari DB
+        # RESTORE selected_system dari DB agar refresh tidak kembali ke selector
+        if not st.session_state.get("selected_system"):
+            _ss = saved.get("selected_system")
+            if _ss and _ss != "terminal":
+                st.session_state.selected_system = _ss
+
+
+
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -7565,7 +7574,7 @@ function selectTerminal() {{
 </script>
 </body>
 </html>
-    """, height=2000, scrolling=False)
+    """, height=900, scrolling=True)
 
     # ── HIDDEN STREAMLIT BUTTONS (fallback for all browsers) ──
     col1, col2 = st.columns(2)
@@ -9023,7 +9032,7 @@ if user:
         "reco_daily_result","reco_weekly_result","reco_bsjp_result",
         "mb_daily_content","mb_daily_timestamp","mb_weekly_content","mb_weekly_timestamp",
         "fs_results","fs_ts","fs_sektor",
-        "alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker",
+        "alpha_insight_last_key","alpha_insight_last_data","alpha_insight_last_ticker","sigma_track_record",
     ]
     # Restore kalau BELUM pernah di-restore di session ini (bukan cek per-key)
     # Ini memastikan data dari Sheets selalu di-load saat baru login/refresh
