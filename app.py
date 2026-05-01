@@ -5637,9 +5637,9 @@ if st.session_state.user and not st.session_state.data_loaded:
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
         st.session_state.current_view = saved.get("current_view", "chat")
-        # FIX: never restore selected_system from DB - always show selector
-        if not st.session_state.get("selected_system"):
-            st.session_state.selected_system = None
+        # FIX PERMANENT: JANGAN pernah restore selected_system dari DB
+        # Ini memastikan refresh selalu kembali ke halaman yg sama (bukan ke selector)
+        pass  # selected_system TIDAK diubah dari DB
         if saved.get("sessions") and not st.session_state.sessions:
             _loaded2 = saved["sessions"]
             for _s in _loaded2:
@@ -7404,7 +7404,7 @@ def show_login():
                     token = str(uuid.uuid4()).replace("-","")
                     _save_token(token, info)
                     st.query_params["sigma_token"] = token
-                    st.session_state.user = info; st.session_state.current_token = token; st.session_state.data_loaded = False
+                    st.session_state.user = info; st.session_state.current_token = token; st.session_state.data_loaded = True  # FIX: jangan reset ke False
                     st.rerun()
                 else: st.error("Username atau password salah")
             else: st.warning("Isi username dan password")
@@ -8789,15 +8789,19 @@ if st.session_state.user is None:
 # PART 9: SIGMA TERMINAL (MACRO, MSCI TRACKER, HEATMAP & NEWS)
 # ─────────────────────────────────────────────
 
-# --- OBAT ANTI AMNESIA ---
+# --- OBAT ANTI AMNESIA (PATCHED) ---
+# selected_system TIDAK boleh di-restore dari DB karena akan menyebabkan
+# refresh selalu kembali ke selector / langsung masuk sistem (tergantung nilai DB).
+# current_view boleh di-restore agar posisi tab tersimpan.
 if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
     try:
         _saved_data = load_user(st.session_state.user["email"])
         if _saved_data:
             if "current_view" in _saved_data:
                 st.session_state.current_view = _saved_data["current_view"]
-            if "selected_system" in _saved_data:
-                st.session_state.selected_system = _saved_data["selected_system"]
+            # JANGAN restore selected_system — dibiarkan sesuai state saat ini
+            # if "selected_system" in _saved_data:
+            #     st.session_state.selected_system = _saved_data["selected_system"]
     except: pass
     st.session_state.amnesia_fixed = True
 
