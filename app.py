@@ -6462,15 +6462,19 @@ body{{
 .bg-wrap{{
     position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;
 }}
+/* Cosmic star canvas */
+#cosmicCanvas{{
+    position:absolute;inset:0;width:100%;height:100%;
+}}
 .bg-grid{{
     position:absolute;inset:0;
     background-image:
-        linear-gradient(rgba(0,212,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,212,255,0.04) 1px, transparent 1px);
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
     background-size:50px 50px;
     animation:gridPulse 8s ease-in-out infinite;
 }}
-@keyframes gridPulse{{0%,100%{{opacity:0.5;}}50%{{opacity:1;}}}}
+@keyframes gridPulse{{0%,100%{{opacity:0.4;}}50%{{opacity:0.85;}}}}
 .bg-orb1{{
     position:absolute;width:700px;height:700px;border-radius:50%;
     background:radial-gradient(circle,rgba(0,100,255,0.10) 0%,transparent 65%);
@@ -6899,6 +6903,7 @@ body{{
 </head>
 <body>
 <div class="bg-wrap">
+    <canvas id="cosmicCanvas"></canvas>
     <div class="bg-grid"></div>
     <div class="bg-orb1"></div>
     <div class="bg-orb2"></div>
@@ -7171,14 +7176,6 @@ body{{
                 </div>
             </div>
 
-            <div class="pills" id="tp-pills">
-                <span class="pill pup">BBRI ▲1.4%</span>
-                <span class="pill pdn">TLKM ▼0.8%</span>
-                <span class="pill pup">ADRO ▲2.1%</span>
-                <span class="pill pne">VOL 12.4B</span>
-                <span class="pill pup">ANTM ▲0.9%</span>
-            </div>
-
             <ul class="feats">
                 <li><span class="fdot"></span>News &amp; Calendar — Live Market Pulse</li>
                 <li><span class="fdot"></span>Index &amp; Sector Rotation — IDX Heatmap</li>
@@ -7316,6 +7313,115 @@ body{{
 
 <script>
 var TERMINAL_URL = "{_terminal_url}";
+
+/* ── COSMIC STARFIELD ── */
+(function initCosmic() {{
+    var canvas = document.getElementById('cosmicCanvas');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var W, H, stars = [], shooters = [];
+
+    var COLORS = ['#ffffff','#c4b5fd','#93c5fd','#6ee7b7','#fde68a'];
+    var N_STARS = 180;
+
+    function resize() {{
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+    }}
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Create stars
+    for (var i = 0; i < N_STARS; i++) {{
+        stars.push({{
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: Math.random() * 1.4 + 0.3,
+            color: COLORS[Math.floor(Math.random()*COLORS.length)],
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.4 + Math.random() * 1.2,   // twinkle speed
+            minA: 0.05 + Math.random() * 0.15,
+            maxA: 0.45 + Math.random() * 0.5,
+        }});
+    }}
+
+    function spawnShooter() {{
+        var startX = Math.random() * W * 0.7;
+        var startY = Math.random() * H * 0.4;
+        shooters.push({{
+            x: startX, y: startY,
+            vx: 3 + Math.random() * 4,
+            vy: 1.5 + Math.random() * 2.5,
+            len: 80 + Math.random() * 120,
+            alpha: 0.9,
+            fade: 0.018 + Math.random() * 0.012,
+        }});
+    }}
+
+    // Spawn shooting stars periodically
+    setInterval(spawnShooter, 3200 + Math.random()*2000);
+    setTimeout(spawnShooter, 800);
+
+    var t = 0;
+    function draw() {{
+        ctx.clearRect(0, 0, W, H);
+
+        // Draw stars with twinkle
+        stars.forEach(function(s) {{
+            var a = s.minA + (s.maxA - s.minA) * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = s.color;
+            ctx.globalAlpha = a;
+            ctx.fill();
+
+            // Occasional cross-sparkle for brighter stars
+            if (s.r > 1.2 && a > 0.5) {{
+                ctx.globalAlpha = a * 0.4;
+                ctx.strokeStyle = s.color;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(s.x - s.r*3, s.y); ctx.lineTo(s.x + s.r*3, s.y);
+                ctx.moveTo(s.x, s.y - s.r*3); ctx.lineTo(s.x, s.y + s.r*3);
+                ctx.stroke();
+            }}
+        }});
+
+        // Draw shooting stars
+        ctx.globalAlpha = 1;
+        shooters = shooters.filter(function(sh) {{
+            ctx.save();
+            ctx.globalAlpha = sh.alpha;
+            var grad = ctx.createLinearGradient(sh.x, sh.y, sh.x - sh.vx*(sh.len/5), sh.y - sh.vy*(sh.len/5));
+            grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+            grad.addColorStop(0.3, 'rgba(196,181,253,0.6)');
+            grad.addColorStop(1, 'rgba(139,92,246,0)');
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 1.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(sh.x, sh.y);
+            ctx.lineTo(sh.x - sh.vx*(sh.len/5), sh.y - sh.vy*(sh.len/5));
+            ctx.stroke();
+            // Head glow
+            ctx.beginPath();
+            ctx.arc(sh.x, sh.y, 2, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(255,255,255,0.95)';
+            ctx.fill();
+            ctx.restore();
+
+            sh.x += sh.vx;
+            sh.y += sh.vy;
+            sh.alpha -= sh.fade;
+            return sh.alpha > 0 && sh.x < W + 50 && sh.y < H + 50;
+        }});
+
+        ctx.globalAlpha = 1;
+        t += 0.016;
+        requestAnimationFrame(draw);
+    }}
+    requestAnimationFrame(draw);
+}})();
 
 function selectChat() {{
     try {{
