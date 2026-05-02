@@ -16214,37 +16214,28 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             # ── SHAREHOLDER TRACKER ─────────────────────────────────────────
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>👥 SHAREHOLDER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-            # ── Auto-update: extrapolate new months based on trend ──
+            # ── Notifikasi data hardcoded + staleness check bulanan ──
             import datetime as _dt
-            import pandas as pd
             _sh_now = _dt.datetime.now()
-            _sh_base_month = "2026-03"  # Bulan terakhir data hardcoded
-            _sh_base_dt = _dt.datetime.strptime(_sh_base_month + "-01", "%Y-%m-%d")
-
-            def _sh_auto_extend(db: dict, base_dt: _dt.datetime, now: _dt.datetime) -> dict:
-                """Otomatis extrapolasi bulan baru (tgl 7-10) berdasarkan tren 3 bulan terakhir."""
-                import calendar
-                _cur = _dt.datetime(base_dt.year + (base_dt.month // 12), (base_dt.month % 12) + 1, 1)
-                while _cur <= now:
-                    # Hanya update setelah tgl 7 (data IDX biasanya tersedia tgl 7-10)
-                    if now.day >= 7 or now > _dt.datetime(_cur.year, _cur.month, 1):
-                        _last_day = calendar.monthrange(_cur.year, _cur.month)[1]
-                        _end_date = _dt.datetime(_cur.year, _cur.month, _last_day)
-                        for ticker, rows in db.items():
-                            if not rows:
-                                continue
-                            last_val = rows[-1]["shareholders"]
-                            # Tren rata-rata 3 bulan terakhir
-                            if len(rows) >= 3:
-                                _trend = (rows[-1]["shareholders"] - rows[-3]["shareholders"]) / 2
-                            else:
-                                _trend = last_val * 0.005
-                            _new_val = max(1000, int(last_val + _trend * (1 + (hash(ticker + str(_cur)) % 20 - 10) / 200)))
-                            rows.append({"date": _end_date, "shareholders": _new_val})
-                    _next_month = _cur.month % 12 + 1
-                    _next_year  = _cur.year + (_cur.month // 12)
-                    _cur = _dt.datetime(_next_year, _next_month, 1)
-                return db
+            _sh_data_month = "2026-03"  # Update string ini saat data baru ditambahkan
+            _sh_data_dt    = _dt.datetime.strptime(_sh_data_month + "-01", "%Y-%m-%d")
+            _sh_stale_days = (_sh_now - _sh_data_dt).days
+            if _sh_stale_days > 45:
+                st.warning(
+                    f"⚠️ **Data Shareholder sudah {_sh_stale_days} hari** (terakhir: {_sh_data_month}). "
+                    "Data bulan baru belum ditambahkan ke kode. Developer: perbarui `get_manual_sh_db_full()` "
+                    "dan ubah `_sh_data_month` di atas.",
+                    icon="⚠️"
+                )
+            else:
+                st.info(
+                    "📋 **Data pemegang saham** bersumber dari laporan bulanan IDX (AKSes). "
+                    f"Data terakhir tersedia: **{_sh_data_month}**. "
+                    "Update manual diperlukan setiap awal bulan (developer perlu tambah data baru ke kode). "
+                    "Untuk data real-time, kunjungi [AKSes IDX](https://akses.idx.co.id) langsung.",
+                    icon="ℹ️"
+                )
+            import pandas as pd
 
             # ════════════════════════════════════════════════════════════════
             # DATABASE PEMEGANG SAHAM - shared helper
@@ -16514,7 +16505,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 }
 
             _sh_all_db = get_manual_sh_db_full()
-            _sh_all_db = _sh_auto_extend(_sh_all_db, _sh_base_dt, _sh_now)
 
             # ════════════════════════════════════════════════════════════════
             # DAFTAR SAHAM SUSPEND IDX - sync dengan IDX_SUSPENDED_TICKERS_GLOBAL
@@ -19787,6 +19777,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {dist_html}
             </div>""", unsafe_allow_html=True)
 
+        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
+
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
             import threading
@@ -21536,9 +21528,15 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 </body></html>"""
             components.html(_hist_html, height=_total_h, scrolling=True)
 
-        def _render_auto_track_record():
-            """Render track record yang ter-update otomatis."""
-            records = st.session_state.get("tr_records", [])
+        def _render_auto_track_record(filter_type=None):
+            """Render track record yang ter-update otomatis.
+            filter_type: None = semua (tabel terpisah per type), atau 'Daily'/'Weekly'/'BSJP'.
+            """
+            all_records = st.session_state.get("tr_records", [])
+            if filter_type:
+                records = [r for r in all_records if (r.get("type") or "").upper() == filter_type.upper()]
+            else:
+                records = all_records
             if not records:
                 st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                     <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;">🏆</div>
@@ -21569,22 +21567,103 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 
             # Sort: terbaru dulu
             sorted_records = sorted(records, key=lambda x: x.get("date", ""), reverse=True)
-            _recs_json = _jtr.dumps(sorted_records, ensure_ascii=False).replace("'", "\\'")
 
             _now_wib = _wib_now().strftime("%d %b %Y, %H:%M WIB")
 
-            _tr_html = f"""<!DOCTYPE html><html><head>
+            # ── Helper: build HTML untuk satu kelompok records ──
+            def _build_tr_html(rec_list, label=None):
+                if not rec_list:
+                    return ""
+                _closed_s2 = {"CLOSED", "TP1", "TP2", "SL"}
+                _cl2  = [r for r in rec_list if r.get("status") in _closed_s2]
+                _op2  = [r for r in rec_list if r.get("status") == "OPEN"]
+                _w2   = [r for r in _cl2 if r.get("result") == "WIN"]
+                _l2   = [r for r in _cl2 if r.get("result") == "LOSS"]
+                _wr2  = round(len(_w2)/len(_cl2)*100,1) if _cl2 else 0
+                _aw2  = round(sum(r.get("pnl_pct",0) for r in _w2)/len(_w2),2) if _w2 else 0
+                _al2  = round(sum(r.get("pnl_pct",0) for r in _l2)/len(_l2),2) if _l2 else 0
+                _tp2  = round(sum(r.get("pnl_pct",0) for r in _cl2),2)
+                _sr2  = sorted(rec_list, key=lambda x: x.get("date",""), reverse=True)
+                _rj2  = _jtr.dumps(_sr2, ensure_ascii=False).replace("'", "\\'")
+                _pfact = round(_aw2*len(_w2)/(abs(_al2)*len(_l2)+0.01),2) if _l2 else "N/A"
+                _stk2 = len([r for r in sorted(rec_list,key=lambda x:x.get("date",""),reverse=True)[:5] if r.get("result")=="WIN"])
+                _section_header = f"<div class=\'sec-hdr\'>{label}</div>" if label else ""
+                return f"""
+{_section_header}
+<div class="stats-grid">
+  <div class="stat-box"><div class="stat-lbl">Win Rate</div>
+    <div class="stat-val" style="color:{{"#089981" if _wr2>=55 else ("#f5a623" if _wr2>=45 else "#f23645")}};">{_wr2}%</div>
+    <div class="stat-sub">{len(_w2)} WIN · {len(_l2)} LOSS · {len(_cl2)} closed</div></div>
+  <div class="stat-box"><div class="stat-lbl">Total Trade</div>
+    <div class="stat-val" style="color:#a78bfa;">{len(rec_list)}</div>
+    <div class="stat-sub">{len(_op2)} OPEN · {len(_cl2)} CLOSED</div></div>
+  <div class="stat-box"><div class="stat-lbl">Total P&amp;L</div>
+    <div class="stat-val" style="color:{{"#089981" if _tp2>=0 else "#f23645"}};">{{'+' if _tp2>=0 else ''}}{_tp2}%</div>
+    <div class="stat-sub">Avg WIN: +{_aw2}% · Avg LOSS: {_al2}%</div></div>
+  <div class="stat-box"><div class="stat-lbl">Profit Factor</div>
+    <div class="stat-val" style="color:{{"#089981" if isinstance(_pfact,float) and _pfact>=1.5 else "#f5a623"}};">{_pfact}</div>
+    <div class="stat-sub">Gain / Loss ratio</div></div>
+  <div class="stat-box"><div class="stat-lbl">Streak</div>
+    <div class="stat-val" style="color:#f5a623;">{_stk2} / 5</div>
+    <div class="stat-sub">WIN dari 5 trade terakhir</div></div>
+</div>
+<div class="tbl-wrap"><div class="scroll"><table>
+<thead><tr>
+  <th>#</th><th>DATE</th><th>TICKER</th><th>TYPE</th>
+  <th>ENTRY</th><th>TP1</th><th>SL</th>
+  <th>EXIT</th><th>P&amp;L</th><th>STATUS</th><th>NOTE</th>
+</tr></thead>
+<tbody id="tr-tb-{label or 'all'}"></tbody>
+</table></div></div>
+<script>
+(function(){{
+  var REC{label or 'ALL'} = JSON.parse('{_rj2}');
+  var tb = document.getElementById('tr-tb-{label or 'all'}');
+  function fmt(n){{ return n&&n>0?'Rp'+parseInt(n).toLocaleString('id-ID'):'-'; }}
+  REC{label or 'ALL'}.forEach(function(r,i){{
+    var badgeCls = r.result==='WIN'?'badge-win':r.result==='LOSS'?'badge-loss':'badge-open';
+    var st_lbl = r.result==='WIN'?'✅ WIN':r.result==='LOSS'?'🛑 LOSS':'⏳ OPEN';
+    var pnl = r.pnl_pct||r.unrealized_pnl||0;
+    var pnlStr = pnl?'<span class="'+(pnl>=0?'win':'loss')+'">'+(pnl>=0?'+':'')+pnl+'%</span>':'-';
+    var note = r.auto_note || r.reason || '-';
+    var typeColor = r.type==='BSJP'?'#f5a623':r.type==='Weekly'?'#26a69a':'#a78bfa';
+    var rowBg = r.result==='WIN'?'rgba(8,153,129,0.04)':r.result==='LOSS'?'rgba(242,54,69,0.04)':'transparent';
+    tb.innerHTML += '<tr style="background:'+rowBg+'">' +
+      '<td style="color:#64748b;font-size:0.72rem;">'+r.id+'</td>' +
+      '<td style="color:#64748b;font-size:0.75rem;">'+(r.date||'-')+'</td>' +
+      '<td><span class="tk">'+r.ticker+'</span></td>' +
+      '<td><span style="color:'+typeColor+';font-weight:700;font-size:0.72rem;background:'+typeColor+'22;padding:2px 6px;border-radius:4px;">'+(r.type||'-')+'</span></td>' +
+      '<td>'+fmt(r.entry)+'</td>' +
+      '<td style="color:#26a69a;font-weight:600;">'+fmt(r.tp1)+'</td>' +
+      '<td style="color:#f23645;font-weight:700;">'+fmt(r.sl)+'</td>' +
+      '<td style="font-weight:700;">'+fmt(r.exit_price)+'</td>' +
+      '<td>'+pnlStr+'</td>' +
+      '<td><span class="badge '+badgeCls+'">'+st_lbl+'</span></td>' +
+      '<td class="note-cell">'+note+'</td>' +
+    '</tr>';
+  }});
+  setTimeout(function(){{
+    var h=document.body.scrollHeight;
+    window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h+20}},'*');
+  }},400);
+}})();
+</script>"""
+
+            _recs_json = _jtr.dumps(sorted_records, ensure_ascii=False).replace("'", "\\'")
+
+            # ── CSS shared untuk semua tabel track record ──
+            _tr_css = f"""<!DOCTYPE html><html><head>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
-body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};overflow:hidden;}}
 .stats-grid{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}}
 .stat-box{{background:{_tbl_bg};border:1px solid {_border};border-radius:8px;padding:12px 14px;}}
 .stat-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_sub_c};margin-bottom:4px;}}
 .stat-val{{font-size:1.4rem;font-weight:700;line-height:1.1;}}
 .stat-sub{{font-size:0.72rem;color:{_sub_c};margin-top:3px;}}
 .ts-note{{font-size:0.72rem;color:{_sub_c};margin-bottom:12px;}}
-.tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;overflow:hidden;}}
+.tbl-wrap{{background:{_tbl_bg};border:1px solid {_border};border-radius:10px;overflow:hidden;margin-bottom:28px;}}
 .scroll{{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}}
 table{{width:100%;border-collapse:collapse;min-width:820px;}}
 thead th{{background:{_hdr_bg};color:#26a69a;padding:8px 10px;
@@ -21603,71 +21682,45 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 .badge-loss{{background:rgba(242,54,69,0.12);color:{_R};border:1px solid {_R}55;}}
 .badge-open{{background:rgba(245,166,35,0.12);color:{_Y};border:1px solid {_Y}55;}}
 .note-cell{{max-width:180px;white-space:normal;font-size:0.72rem;color:{_sub_c};line-height:1.4;}}
+.sec-hdr{{font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;
+  color:#a78bfa;padding:10px 0 10px 0;margin-bottom:10px;
+  border-bottom:2px solid rgba(167,139,250,0.3);display:flex;align-items:center;gap:8px;}}
 @media(max-width:900px){{.stats-grid{{grid-template-columns:repeat(3,1fr);}}}}
 @media(max-width:640px){{.stats-grid{{grid-template-columns:1fr 1fr;}}}}
 </style></head><body>
-<div class="ts-note">🔄 Auto-update setiap hari jam 20:30 WIB &nbsp;·&nbsp; Terakhir cek: {_now_wib}</div>
-<div class="stats-grid">
-  <div class="stat-box"><div class="stat-lbl">Win Rate</div>
-    <div class="stat-val" style="color:{'#089981' if win_rate>=55 else ('#f5a623' if win_rate>=45 else '#f23645')};">{win_rate}%</div>
-    <div class="stat-sub">{len(wins)} WIN · {len(losses)} LOSS · {len(closed)} closed</div></div>
-  <div class="stat-box"><div class="stat-lbl">Total Trade</div>
-    <div class="stat-val" style="color:{_P};">{len(records)}</div>
-    <div class="stat-sub">{len(open_r)} OPEN · {len(closed)} CLOSED</div></div>
-  <div class="stat-box"><div class="stat-lbl">Total P&L</div>
-    <div class="stat-val" style="color:{'#089981' if total_pnl>=0 else '#f23645'};">{'+'if total_pnl>=0 else ''}{total_pnl}%</div>
-    <div class="stat-sub">Avg WIN: +{avg_win}% · Avg LOSS: {avg_loss}%</div></div>
-  <div class="stat-box"><div class="stat-lbl">Profit Factor</div>
-    <div class="stat-val" style="color:{'#089981' if (avg_win*len(wins))>0 and (abs(avg_loss)*len(losses))>0 and round(avg_win*len(wins)/(abs(avg_loss)*len(losses)+0.01),2)>=1.5 else '#f5a623'};">{round(avg_win*len(wins)/(abs(avg_loss)*len(losses)+0.01),2) if losses else 'N/A'}</div>
-    <div class="stat-sub">Gain / Loss ratio</div></div>
-  <div class="stat-box"><div class="stat-lbl">Streak</div>
-    <div class="stat-val" style="color:{_Y};">{len([r for r in sorted(records,key=lambda x:x.get('date',''),reverse=True)[:5] if r.get('result')=='WIN'])} / 5</div>
-    <div class="stat-sub">WIN dari 5 trade terakhir</div></div>
-</div>
-<div class="tbl-wrap"><div class="scroll"><table>
-<thead><tr>
-  <th>#</th><th>DATE</th><th>TICKER</th><th>TYPE</th>
-  <th>ENTRY</th><th>TP1</th><th>SL</th>
-  <th>EXIT</th><th>P&L</th><th>STATUS</th><th>NOTE</th>
-</tr></thead>
-<tbody id="tr-tb"></tbody>
-</table></div></div>
-<script>
-(function(){{
-  var REC = JSON.parse('{_recs_json}');
-  var tb = document.getElementById('tr-tb');
-  function fmt(n){{ return n&&n>0?'Rp'+parseInt(n).toLocaleString('id-ID'):'-'; }}
-  REC.forEach(function(r, i){{
-    var st_cls = r.result==='WIN'?'win':r.result==='LOSS'?'loss':'open';
-    var badgeCls = r.result==='WIN'?'badge-win':r.result==='LOSS'?'badge-loss':'badge-open';
-    var st_lbl = r.result==='WIN'?'✅ WIN':r.result==='LOSS'?'🛑 LOSS':'⏳ OPEN';
-    var pnl = r.pnl_pct||r.unrealized_pnl||0;
-    var pnlStr = pnl?'<span class="'+(pnl>=0?'win':'loss')+'">'+(pnl>=0?'+':'')+pnl+'%</span>':'-';
-    var note = r.auto_note || r.reason || '-';
-    var typeColor = r.type==='BSJP'?'#f5a623':r.type==='Weekly'?'#26a69a':'#a78bfa';
-    var rowBg = r.result==='WIN'?'rgba(8,153,129,0.04)':r.result==='LOSS'?'rgba(242,54,69,0.04)':'transparent';
-    tb.innerHTML += '<tr style="background:'+rowBg+'">'+
-      '<td style="color:{_sub_c};font-size:0.72rem;">'+r.id+'</td>'+
-      '<td style="color:{_sub_c};font-size:0.75rem;">'+( r.date||'-')+'</td>'+
-      '<td><span class="tk">'+r.ticker+'</span></td>'+
-      '<td><span style="color:'+typeColor+';font-weight:700;font-size:0.72rem;background:'+typeColor+'22;padding:2px 6px;border-radius:4px;">'+( r.type||'-')+'</span></td>'+
-      '<td>'+fmt(r.entry)+'</td>'+
-      '<td style="color:#26a69a;font-weight:600;">'+fmt(r.tp1)+'</td>'+
-      '<td class="loss">'+fmt(r.sl)+'</td>'+
-      '<td style="font-weight:700;">'+fmt(r.exit_price)+'</td>'+
-      '<td>'+pnlStr+'</td>'+
-      '<td><span class="badge '+badgeCls+'">'+st_lbl+'</span></td>'+
-      '<td class="note-cell">'+note+'</td>'+
-    '</tr>';
-  }});
-  setTimeout(function(){{
-    var h=document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h+20}},'*');
-  }},300);
-}})();
-</script>
-</body></html>"""
-            components.html(_tr_html, height=700, scrolling=True)
+<div class="ts-note">🔄 Auto-update setiap hari jam 20:30 WIB &nbsp;·&nbsp; Terakhir cek: {_now_wib}</div>"""
+
+            # ── Jika filter_type ada → render tabel single type ──
+            if filter_type:
+                _body_html = _build_tr_html(sorted_records, label=None)
+                _tr_html = _tr_css + _body_html + "</body></html>"
+                _n_recs = len(sorted_records)
+                _est_h  = max(700, 120 + 44 * _n_recs + 150)
+                components.html(_tr_html, height=_est_h, scrolling=True)
+            else:
+                # ── filter_type=None → render 3 tabel terpisah (Daily / Weekly / BSJP) ──
+                _daily_recs  = [r for r in all_records if (r.get("type") or "").upper() == "DAILY"]
+                _weekly_recs = [r for r in all_records if (r.get("type") or "").upper() == "WEEKLY"]
+                _bsjp_recs   = [r for r in all_records if (r.get("type") or "").upper() == "BSJP"]
+                _daily_recs  = sorted(_daily_recs,  key=lambda x: x.get("date",""), reverse=True)
+                _weekly_recs = sorted(_weekly_recs, key=lambda x: x.get("date",""), reverse=True)
+                _bsjp_recs   = sorted(_bsjp_recs,   key=lambda x: x.get("date",""), reverse=True)
+
+                _body_parts = ""
+                for _grp_label, _grp_color, _grp_recs in [
+                    ("📅 DAILY PLAN", "#a78bfa", _daily_recs),
+                    ("📆 WEEKLY PLAN", "#26a69a", _weekly_recs),
+                    ("🌙 BELI SORE JUAL PAGI (BSJP)", "#f5a623", _bsjp_recs),
+                ]:
+                    if _grp_recs:
+                        _body_parts += f"<div class=\'sec-hdr\' style=\'color:{_grp_color};border-color:{_grp_color}44;\'>{_grp_label}</div>"
+                        _body_parts += _build_tr_html(_grp_recs, label=None)
+
+                _tr_html = _tr_css + _body_parts + "</body></html>"
+                _total_n  = len(all_records)
+                _est_h    = max(900, 200 + 44 * _total_n + 250)
+                components.html(_tr_html, height=_est_h, scrolling=True)
+
 
         # ── Coba flush pending persists yang gagal sebelumnya ──
         for _ppk in list(st.session_state.keys()):
@@ -22171,10 +22224,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     st.caption(f"📌 {_hr.get('why_buy','—')}")
 
             # ════════════════════════════════════════════
-            # TAB 4 — TRACK RECORD (Daily)
+            # TAB 4 — TRACK RECORD (Daily only)
             # ════════════════════════════════════════════
             with _d_tab_trackrecord:
-                _render_auto_track_record()
+                _render_auto_track_record(filter_type='Daily')
         with reco_tab_weekly:
 
 
@@ -22477,10 +22530,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     st.caption(f"📌 {_whr.get('why_buy','—')}")
 
             # ============================================================
-            # WEEKLY TAB 4 — TRACK RECORD
+            # WEEKLY TAB 4 — TRACK RECORD (Weekly only)
             # ============================================================
             with _w_tab_trackrecord:
-                _render_auto_track_record()
+                _render_auto_track_record(filter_type='Weekly')
         with reco_tab_bsjp:
 
             _now_b = _wib_now()
@@ -22635,10 +22688,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _render_auto_history("bsjp")
 
             # ════════════════════════════════════════════
-            # BSJP TAB 3 — TRACK RECORD
+            # BSJP TAB 3 — TRACK RECORD (BSJP only)
             # ════════════════════════════════════════════
             with _b_tab_trackrecord:
-                _render_auto_track_record()
+                _render_auto_track_record(filter_type='BSJP')
         with reco_tab_fundamental:
 
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FUNDAMENTAL SCREENER - BUFFETT · GRAHAM · DAMODARAN · LYNCH</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
@@ -23627,7 +23680,27 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             else:
                 _next_bs = "Hari ini jam 20:30 WIB"
 
-
+            st.markdown(f"""<div style='background:{"rgba(245,158,11,0.07)" if is_dark else "#fffbeb"};
+            border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:14px 18px;margin-bottom:18px;'>
+            <div style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;letter-spacing:0.1em;
+                        color:#f59e0b;font-weight:700;margin-bottom:8px;'>
+                ⚡ SIGMA SCREENING ENGINE — Pipeline 200 → 100 → 30 Saham
+            </div>
+            <div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{text_sub};line-height:1.9;'>
+                <span style='color:#f59e0b;font-weight:700;'>STEP 1</span> &nbsp;Seluruh saham IHSG (900+) →
+                <b style='color:{text_main};'>200 saham Market Cap terbesar IDX (Non-Banking)</b><br>
+                <span style='color:#a78bfa;font-weight:700;'>STEP 2</span> &nbsp;200 saham →
+                <b style='color:{text_main};'>100 saham</b> dengan <b>harga ≤ Rp8.000</b> + <b>delta volume 1 bulan</b> (likuiditas aktif)<br>
+                <span style='color:#26a69a;font-weight:700;'>STEP 3</span> &nbsp;100 saham →
+                <b style='color:{text_main};'>30 saham</b> teknikal EMA + 4 screener Stockbit + GoAPI konfirmasi broker<br>
+                <span style='color:#60a5fa;font-weight:700;'>AUTO-GENERATE</span> &nbsp;Setiap hari kerja jam <b>20:30 WIB</b> — tidak perlu klik manual
+            </div>
+            <div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{"#26a69a" if _bs30_existing else "#f59e0b"};
+                        margin-top:8px;border-top:1px solid rgba(245,158,11,0.15);padding-top:6px;'>
+            {"✅ Cache aktif — " + str(len(_bs30_existing)) + " saham · Update: " + _bs30_ts
+              if _bs30_existing
+              else "⏳ Auto-generate: " + _next_bs + " · Atau klik Generate Manual di bawah"}
+            </div></div>""", unsafe_allow_html=True)
 
             # ── GoAPI status indicator + test button ──
             _goapi_key_ok = _goapi_available()
