@@ -2684,6 +2684,704 @@ def zone_detail_html(result: ZoneResult, price: float = 0, C: dict = None) -> st
     return html
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# ALPHA STOCK INSIGHT CARD — Dark Terminal v4.0
+# Full-page analysis card: header, candlestick chart, volume delta, fundamental,
+# trade plan, verdict. Dipanggil setelah ANALYZE selesai.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def render_insight_card_html(
+    ticker: str,
+    df: "pd.DataFrame",
+    ai_data: dict,
+    ai_text_verdict: str,
+    sigma_result=None,
+    zone_result=None,
+) -> str:
+    """
+    Render full analysis card HTML (dark terminal) untuk Alpha Stock Insight.
+
+    Parameter:
+        ticker          : kode saham (e.g. "BBCA")
+        df              : DataFrame dari yfinance (sudah berisi OHLCV + EMA + RSI + MACD)
+        ai_data         : dict {entry_low, entry_high, stop_loss, tp1, tp2, tp3, risk_level}
+        ai_text_verdict : teks narasi dari AI (sudah bersih dari JSON block)
+        sigma_result    : SigmaScoreResult (opsional)
+        zone_result     : ZoneResult (opsional)
+    """
+    import json as _json
+
+    # ── Harga & metadata dasar ──────────────────────────────────────────
+    try:
+        last_close  = float(df['Close'].iloc[-1])
+        last_open   = float(df['Open'].iloc[-1])
+        last_high   = float(df['High'].iloc[-1])
+        last_low    = float(df['Low'].iloc[-1])
+        last_vol    = float(df['Volume'].iloc[-1])
+        prev_close  = float(df['Close'].iloc[-2]) if len(df) >= 2 else last_close
+        last_value  = last_vol * last_close
+    except Exception:
+        last_close = last_open = last_high = last_low = prev_close = 0
+        last_vol = last_value = 0
+
+    chg_abs  = last_close - prev_close
+    chg_pct  = (chg_abs / prev_close * 100) if prev_close > 0 else 0
+    chg_sign = "+" if chg_abs >= 0 else ""
+    chg_col  = "#00e5a0" if chg_abs >= 0 else "#ff3d5a"
+
+    def fp(v):
+        try: return f"{int(v):,}".replace(",", ".")
+        except: return "—"
+
+    def fv(v):
+        """Format volume / value besar"""
+        try:
+            v = float(v)
+            if v >= 1e12: return f"{v/1e12:.2f}T"
+            if v >= 1e9:  return f"{v/1e9:.2f}B"
+            if v >= 1e6:  return f"{v/1e6:.1f}M"
+            if v >= 1e3:  return f"{v/1e3:.0f}K"
+            return f"{v:.0f}"
+        except: return "—"
+
+    # ── Sigma score & rating ────────────────────────────────────────────
+    sigma_score  = int(getattr(sigma_result, 'total_score', 50) or 50)
+    sigma_score  = max(0, min(99, sigma_score))
+    risk_level   = str((ai_data or {}).get('risk_level', 'HIGH')).upper()
+
+    # Rating & warna berdasarkan score
+    if sigma_score >= 70:
+        rating, ring_col = "BUY",     "#00e5a0"
+    elif sigma_score >= 50:
+        rating, ring_col = "WATCH",   "#f5a623"
+    else:
+        rating, ring_col = "AVOID",   "#ff3d5a"
+
+    # Override dari risk_level jika NONE → AVOID/WASPADA
+    if risk_level == "NONE":
+        rating, ring_col = "AVOID", "#ff3d5a"
+
+    # ── Gauge semi-circle params ────────────────────────────────────────
+    # Warna gradient needle: green → amber → red
+    gauge_pct = sigma_score / 100.0
+
+    # ── Volume stats ────────────────────────────────────────────────────
+    avg_vol_20 = float(df['Volume'].rolling(20).mean().iloc[-1]) if len(df) >= 20 else last_vol
+    vol_vs_avg = ((last_vol - avg_vol_20) / avg_vol_20 * 100) if avg_vol_20 > 0 else 0
+    vol_vs_str = f"{'+' if vol_vs_avg >= 0 else ''}{vol_vs_avg:.1f}%"
+    vol_vs_col = "#00e5a0" if vol_vs_avg >= 0 else "#ff3d5a"
+
+    # ── Akumulasi / Distribusi ──────────────────────────────────────────
+    # Menggunakan close vs open untuk 5 bar terakhir
+    try:
+        _last5      = df.tail(5)
+        _buy_vol5   = float((_last5['Volume'] * (_last5['Close'] - _last5['Low'])   / (_last5['High'] - _last5['Low']).replace(0, 1)).sum())
+        _sell_vol5  = float((_last5['Volume'] * (_last5['High']  - _last5['Close']) / (_last5['High'] - _last5['Low']).replace(0, 1)).sum())
+        _net_delta5 = _buy_vol5 - _sell_vol5
+        accum_label = "Distribusi" if _net_delta5 < 0 else "Akumulasi"
+        accum_col   = "#ff3d5a" if _net_delta5 < 0 else "#00e5a0"
+    except Exception:
+        accum_label, accum_col = "—", "#64748b"
+
+    try:
+        _bandar_flow_3d = float(df['Volume'].tail(3).sum() * last_close / 1e9)
+        bandar_flow_str = f"{_bandar_flow_3d:+.1f}B" if _net_delta5 >= 0 else f"-{abs(_bandar_flow_3d):.1f}B"
+        bandar_flow_col = "#00e5a0" if _net_delta5 >= 0 else "#ff3d5a"
+    except Exception:
+        bandar_flow_str, bandar_flow_col = "—", "#64748b"
+
+    # ── Candlestick data (50 bar terakhir) ─────────────────────────────
+    _df_c = df.tail(50).copy()
+    _x     = [d.strftime('%d/%m') for d in _df_c.index]
+    _opens  = [float(v) for v in _df_c['Open']]
+    _highs  = [float(v) for v in _df_c['High']]
+    _lows   = [float(v) for v in _df_c['Low']]
+    _closes = [float(v) for v in _df_c['Close']]
+    _vols   = [float(v) for v in _df_c['Volume']]
+
+    # ── Volume delta (net buy/sell per bar, konsep gambar 4) ────────────
+    _hl     = [max(h - l, 1) for h, l in zip(_highs, _lows)]
+    _buy_v  = [vol * (c - l) / hl for vol, c, l, hl in zip(_vols, _closes, _lows, _hl)]
+    _sell_v = [vol * (h - c) / hl for vol, h, c, hl in zip(_vols, _highs, _closes, _hl)]
+    _delta  = [b - s for b, s in zip(_buy_v, _sell_v)]
+
+    # ── EMA lines ───────────────────────────────────────────────────────
+    _ema13  = [float(v) for v in _df_c['EMA13']]  if 'EMA13'  in _df_c.columns else []
+    _ema21  = [float(v) for v in _df_c['EMA21']]  if 'EMA21'  in _df_c.columns else []
+    _ema100 = [float(v) for v in _df_c['EMA100']] if 'EMA100' in _df_c.columns else []
+    _ema200 = [float(v) for v in _df_c['EMA200']] if 'EMA200' in _df_c.columns else []
+    _rsi    = [float(v) for v in _df_c['RSI']]    if 'RSI'    in _df_c.columns else []
+    _macd_h = [float(v) for v in _df_c['MACD_hist']] if 'MACD_hist' in _df_c.columns else []
+
+    # ── Trade plan levels ───────────────────────────────────────────────
+    _el  = (ai_data or {}).get('entry_low')
+    _eh  = (ai_data or {}).get('entry_high')
+    _sl  = (ai_data or {}).get('stop_loss')
+    _tp1 = (ai_data or {}).get('tp1')
+    _tp2 = (ai_data or {}).get('tp2')
+    _tp3 = (ai_data or {}).get('tp3')
+
+    def _f0(v):
+        try: return f"Rp{float(v):,.0f}" if v else "—"
+        except: return "—"
+
+    trade_plan_avail = bool(_el or _tp1)
+
+    # ── AI verdict: parse sections ──────────────────────────────────────
+    import html as _html_mod
+    _verdict_escaped = _html_mod.escape(ai_text_verdict or "").replace('\n', '<br>')
+
+    # ── Resistance / Support dari AI text (simple extraction) ───────────
+    _bias_text  = "BEARISH"
+    _rating_txt = "WASPADA"
+    if ai_text_verdict:
+        _tv = ai_text_verdict.upper()
+        if "BULLISH" in _tv: _bias_text = "BULLISH"
+        elif "SIDEWAYS" in _tv or "NETRAL" in _tv: _bias_text = "SIDEWAYS/NETRAL"
+        if "BELI" in _tv and ("LAYAK" in _tv or "REKOMENDASI" in _tv): _rating_txt = "BELI"
+        elif "HINDARI" in _tv or "AVOID" in _tv: _rating_txt = "HINDARI"
+        elif "WASPADA" in _tv: _rating_txt = "WASPADA"
+
+    _bias_col = "#00e5a0" if _bias_text == "BULLISH" else ("#f5a623" if "SIDEWAYS" in _bias_text else "#ff3d5a")
+    _rt_col   = "#00e5a0" if _rating_txt == "BELI" else ("#f5a623" if _rating_txt == "WASPADA" else "#ff3d5a")
+
+    # ── Risk level badge ────────────────────────────────────────────────
+    if risk_level == "LOW":
+        _rl_bg, _rl_txt, _rl_label = "#064e3b", "#00e5a0", "🟢 LOW RISK"
+    elif risk_level == "MID":
+        _rl_bg, _rl_txt, _rl_label = "#451a03", "#f5a623", "🟡 MID RISK"
+    elif risk_level == "HIGH":
+        _rl_bg, _rl_txt, _rl_label = "#450a0a", "#ff3d5a", "🔴 HIGH RISK"
+    else:
+        _rl_bg, _rl_txt, _rl_label = "#1e293b", "#64748b", "⚫ NO TRADE"
+
+    # ── Today date WIB ──────────────────────────────────────────────────
+    try:
+        import pytz
+        _now_str = datetime.now(pytz.timezone("Asia/Jakarta")).strftime("%d %b %Y")
+    except Exception:
+        _now_str = datetime.now().strftime("%d %b %Y")
+
+    # ── JSON data untuk canvas JS ───────────────────────────────────────
+    _chart_data = _json.dumps({
+        "x": _x, "o": _opens, "h": _highs, "l": _lows, "c": _closes,
+        "vol": _vols, "delta": _delta,
+        "ema13": _ema13, "ema21": _ema21, "ema100": _ema100, "ema200": _ema200,
+        "rsi": _rsi, "macd_h": _macd_h,
+        "el": float(_el) if _el else None,
+        "eh": float(_eh) if _eh else None,
+        "sl": float(_sl) if _sl else None,
+        "tp1": float(_tp1) if _tp1 else None,
+        "tp2": float(_tp2) if _tp2 else None,
+        "tp3": float(_tp3) if _tp3 else None,
+    }, ensure_ascii=False)
+
+    # ── Zone signals ────────────────────────────────────────────────────
+    _zone_sigs_html = ""
+    if zone_result and getattr(zone_result, 'zone_signals', None):
+        for _s in zone_result.zone_signals[:4]:
+            _zone_sigs_html += f"<div style='font-size:10px;color:#94a3b8;padding:2px 0;'>{_html_mod.escape(str(_s))}</div>"
+
+    # ── Verdikt section extraction ──────────────────────────────────────
+    # Parse 5 bagian utama dari ai_text_verdict untuk card sections
+    def _extract_section(text, markers):
+        """Extract section dari AI text berdasarkan marker keywords"""
+        if not text: return ""
+        lines = text.split('\n')
+        result_lines = []
+        capturing = False
+        for line in lines:
+            stripped = line.strip()
+            is_marker = any(m.lower() in stripped.lower() for m in markers)
+            # Cek apakah ini marker section lain (untuk stop capture)
+            all_section_markers = ['📊', '🏢', '👥', '📰', '⚡', '🎯', '1.', '2.', '3.', '4.', '5.', '6.']
+            is_other_section = any(stripped.startswith(m) for m in all_section_markers) and not is_marker
+            if is_marker:
+                capturing = True
+                continue
+            if capturing and is_other_section:
+                break
+            if capturing and stripped:
+                result_lines.append(line)
+        return '\n'.join(result_lines[:15]).strip()
+
+    _tech_text  = _extract_section(ai_text_verdict, ['📊 NARASI TEKNIKAL', 'NARASI TEKNIKAL', '1.'])
+    _fund_text  = _extract_section(ai_text_verdict, ['🏢 NARASI FUNDAMENTAL', 'NARASI FUNDAMENTAL', '2.'])
+    _verdict_section = _extract_section(ai_text_verdict, ['⚡ KESIMPULAN', 'KESIMPULAN & VERDICT', '5.'])
+    _trade_section   = _extract_section(ai_text_verdict, ['🎯 TRADE PLAN', 'TRADE PLAN', '6.'])
+
+    def _esc_nl(t):
+        return _html_mod.escape(t or '').replace('\n', '<br>') if t else ''
+
+    # ── FULL HTML CARD ──────────────────────────────────────────────────
+    _uid = f"sic_{ticker}_{int(last_close)}"
+
+    html_out = f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+.sic-wrap {{
+  font-family:'IBM Plex Sans',sans-serif;
+  background:#080c14;
+  border:1px solid #1a2540;
+  border-radius:8px;
+  padding:14px;
+  margin:16px 0;
+  color:#e2e8f0;
+}}
+.sic-wrap * {{ box-sizing:border-box; margin:0; padding:0; }}
+.sic-row {{ display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap; }}
+.sic-panel {{ background:#0d1220; border:1px solid #1a2540; border-radius:5px; padding:10px; }}
+.sic-label {{ font-size:10px; color:#475569; letter-spacing:1px; text-transform:uppercase; margin-bottom:3px; }}
+.sic-val {{ font-size:11px; color:#cbd5e1; font-family:'IBM Plex Mono',monospace; }}
+.sic-section-hdr {{ font-size:10px; font-weight:700; color:#94a3b8; letter-spacing:1px; text-transform:uppercase;
+  display:flex; align-items:center; gap:6px; margin-bottom:8px; }}
+.sic-price-stat {{ display:flex; justify-content:space-between; font-size:11px;
+  padding:2px 0; border-bottom:1px solid #131b2e; }}
+.sic-price-stat span:first-child {{ color:#64748b; }}
+.sic-price-stat span:last-child {{ color:#cbd5e1; font-family:'IBM Plex Mono',monospace; }}
+.sic-tag-red {{ background:#1a0505; border:1px solid #7f1d1d; color:#ef4444;
+  font-size:10px; padding:2px 10px; border-radius:3px; font-weight:600; }}
+.sic-tag-green {{ background:#052015; border:1px solid #14532d; color:#10b981;
+  font-size:10px; padding:2px 10px; border-radius:3px; font-weight:600; }}
+.sic-tag-amber {{ background:#1a0f00; border:1px solid #78350f; color:#f59e0b;
+  font-size:10px; padding:2px 10px; border-radius:3px; font-weight:600; }}
+.sic-verdict-text {{ font-size:11px; color:#94a3b8; line-height:1.6; white-space:pre-wrap; }}
+.sic-canvas-wrap {{ width:100%; background:#070b12; border-radius:4px; border:1px solid #131b2e; overflow:hidden; }}
+</style>
+
+<div class="sic-wrap" id="{_uid}">
+
+<!-- ═══ ROW 1: HEADER ═══ -->
+<div class="sic-row" style="align-items:stretch">
+
+  <!-- Ticker + Harga -->
+  <div class="sic-panel" style="flex:1.2;min-width:180px">
+    <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;line-height:1">{ticker}</div>
+    <div style="font-size:11px;color:#64748b;margin:2px 0 8px">{"— IDX"}</div>
+    <div style="font-size:24px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace">{fp(last_close)}</div>
+    <div style="font-size:13px;color:{chg_col};font-family:'IBM Plex Mono',monospace;margin-bottom:10px">{chg_sign}{fp(chg_abs)} ({chg_sign}{chg_pct:.2f}%)</div>
+    <div class="sic-price-stat"><span>High</span><span>{fp(last_high)}</span></div>
+    <div class="sic-price-stat"><span>Low</span><span>{fp(last_low)}</span></div>
+    <div class="sic-price-stat"><span>Prev</span><span>{fp(prev_close)}</span></div>
+    <div class="sic-price-stat"><span>Volume</span><span>{fv(last_vol)}</span></div>
+    <div class="sic-price-stat" style="border:none"><span>Value</span><span>{fv(last_value)}</span></div>
+  </div>
+
+  <!-- Gauge Score -->
+  <div class="sic-panel" style="flex:0.55;min-width:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
+    <canvas id="{_uid}_gauge" width="100" height="60" style="display:block"></canvas>
+    <div style="font-size:28px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;text-align:center;line-height:1">{sigma_score}</div>
+    <div style="background:#1a0505;border:1px solid #7f1d1d;color:{ring_col};font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 12px;border-radius:2px;text-align:center">{rating}</div>
+    <div style="background:{_rl_bg};color:{_rl_txt};font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:2px;text-align:center;margin-top:2px">{_rl_label}</div>
+  </div>
+
+  <!-- Daily Plan Info -->
+  <div class="sic-panel" style="flex:1.8;min-width:200px">
+    <div class="sic-section-hdr">📅 DAILY PLAN / TRADE PLAN</div>
+    <div class="sic-price-stat"><span>Tanggal</span><span>{_now_str}</span></div>
+    <div class="sic-price-stat"><span>Timeframe</span><span>Daily</span></div>
+    <div class="sic-price-stat"><span>Skenario</span><span>Swing Trade</span></div>
+    <div class="sic-price-stat"><span>Sektor</span><span>IDX</span></div>
+    <div style="margin-top:8px">
+      <div class="sic-label" style="margin-bottom:3px">TREND STRUCTURE</div>
+      <div class="{'sic-tag-red' if _bias_text == 'BEARISH' else ('sic-tag-green' if _bias_text == 'BULLISH' else 'sic-tag-amber')}" style="margin-bottom:6px;display:inline-block">{"LL – LH (Downtrend)" if _bias_text == "BEARISH" else ("HH – HL (Uptrend)" if _bias_text == "BULLISH" else "Range / Sideways")}</div>
+      <div class="sic-label" style="margin-bottom:3px">BIAS TUNGGAL</div>
+      <div style="color:{_bias_col};font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-bottom:6px">{_bias_text}</div>
+      <div class="sic-label" style="margin-bottom:3px">RATING</div>
+      <div style="color:{_rt_col};font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace">{_rating_txt}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ ROW 2: CANDLESTICK CHART ═══ -->
+<div class="sic-panel" style="margin-bottom:12px">
+  <div class="sic-section-hdr">📊 1. ANALISIS TEKNIKAL
+    <span style="font-size:10px;color:#475569;margin-left:4px">| EMA 13 <span style="color:#0ea5e9">━</span> EMA 21 <span style="color:#f472b6">━</span> EMA 100 <span style="color:#f97316">━</span> EMA 200 <span style="color:#8b5cf6">━</span></span>
+  </div>
+  <div class="sic-canvas-wrap" style="margin-bottom:4px">
+    <canvas id="{_uid}_candle" style="display:block;width:100%;height:180px"></canvas>
+  </div>
+  <div style="font-size:9px;color:#475569;padding:1px 4px">MACD</div>
+  <div class="sic-canvas-wrap" style="margin-bottom:4px">
+    <canvas id="{_uid}_macd" style="display:block;width:100%;height:36px"></canvas>
+  </div>
+  <div style="font-size:9px;color:#475569;padding:1px 4px;margin-top:3px">RSI (14)</div>
+  <div class="sic-canvas-wrap">
+    <canvas id="{_uid}_rsi" style="display:block;width:100%;height:40px"></canvas>
+  </div>
+  {'<div style="font-size:10px;color:#94a3b8;line-height:1.6;margin-top:8px;padding:6px;background:#070b12;border-radius:3px">' + _esc_nl(_tech_text[:600]) + '</div>' if _tech_text else ''}
+</div>
+
+<!-- ═══ ROW 3: VOLUME ═══ -->
+<div class="sic-row" style="align-items:stretch">
+
+  <!-- Volume stats -->
+  <div class="sic-panel" style="flex:1;min-width:160px">
+    <div class="sic-section-hdr">📊 2. ANALISIS VOLUME</div>
+    <div class="sic-price-stat"><span>Volume Hari Ini</span><span>{fv(last_vol)}</span></div>
+    <div class="sic-price-stat"><span>Rata-rata (20H)</span><span>{fv(avg_vol_20)}</span></div>
+    <div class="sic-price-stat"><span>Volume vs Avg</span><span style="color:{vol_vs_col}">{vol_vs_str}</span></div>
+    <div class="sic-price-stat"><span>Akumulasi/Distribusi</span><span style="color:{accum_col};font-weight:700">{accum_label}</span></div>
+    <div class="sic-price-stat" style="border:none"><span>Bandar Flow (3H)</span><span style="color:{bandar_flow_col}">{bandar_flow_str}</span></div>
+  </div>
+
+  <!-- Volume bars + Delta -->
+  <div class="sic-panel" style="flex:1.5;min-width:200px">
+    <div class="sic-label" style="margin-bottom:4px">VOLUME (20 HARI)</div>
+    <div class="sic-canvas-wrap" style="margin-bottom:4px">
+      <canvas id="{_uid}_vol" style="display:block;width:100%;height:60px"></canvas>
+    </div>
+    <div class="sic-label" style="margin-bottom:2px;margin-top:4px">DELTA (NET BUY/SELL)</div>
+    <div class="sic-canvas-wrap">
+      <canvas id="{_uid}_delta" style="display:block;width:100%;height:40px"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ ROW 4: FUNDAMENTAL ═══ -->
+{'<div class="sic-panel" style="margin-bottom:12px"><div class="sic-section-hdr">🏢 2. ANALISIS FUNDAMENTAL</div><div style="font-size:11px;color:#94a3b8;line-height:1.7">' + _esc_nl(_fund_text[:800]) + '</div></div>' if _fund_text else ''}
+
+<!-- ═══ ROW 5: TRADE PLAN ═══ -->
+<div class="sic-row" style="align-items:stretch">
+  <!-- Levels -->
+  <div class="sic-panel" style="flex:1;min-width:160px">
+    <div class="sic-section-hdr">🎯 RENCANA TRADING</div>
+    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444"></span>ENTRY ZONE</span><span>{"Rp" + fp(int(_el)) + " – Rp" + fp(int(_eh)) if _el and _eh else "—"}</span></div>
+    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b"></span>STOPLOSS</span><span>{"Rp" + fp(int(_sl)) if _sl else "—"}</span></div>
+    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981"></span>TARGET 1</span><span>{"Rp" + fp(int(_tp1)) if _tp1 else "—"}</span></div>
+    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6"></span>TARGET 2</span><span>{"Rp" + fp(int(_tp2)) if _tp2 else "—"}</span></div>
+    <div class="sic-price-stat" style="border:none"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1"></span>TARGET 3</span><span>{"Rp" + fp(int(_tp3)) if _tp3 else "—"}</span></div>
+  </div>
+  <!-- Trade plan text -->
+  <div class="sic-panel" style="flex:1.5;min-width:200px">
+    {'<div style="color:#ff3d5a;font-size:11px;font-weight:700;margin-bottom:6px">⊘ TRADE PLAN TIDAK TERSEDIA</div>' if not trade_plan_avail else ''}
+    <div class="sic-verdict-text" style="font-size:10px">{_esc_nl(_trade_section[:600] if _trade_section else (ai_text_verdict or '')[-600:])}</div>
+  </div>
+</div>
+
+<!-- ═══ ROW 6: KESIMPULAN & VERDICT ═══ -->
+<div class="sic-row" style="align-items:stretch">
+  <!-- Bias -->
+  <div class="sic-panel" style="flex:0.7;min-width:120px">
+    <div class="sic-label">BIAS TUNGGAL</div>
+    <div style="font-size:20px;font-weight:700;color:{_bias_col};font-family:'IBM Plex Mono',monospace;letter-spacing:1px;line-height:1.1;margin-bottom:6px">{_bias_text}</div>
+    <div class="sic-label" style="margin-top:6px">RATING</div>
+    <div style="font-size:16px;font-weight:700;color:{_rt_col};font-family:'IBM Plex Mono',monospace;letter-spacing:2px">{_rating_txt}</div>
+  </div>
+  <!-- Verdict narasi -->
+  <div class="sic-panel" style="flex:2;min-width:200px">
+    <div class="sic-section-hdr">⚡ KESIMPULAN & VERDICT</div>
+    <div class="sic-verdict-text">{_esc_nl(_verdict_section[:800] if _verdict_section else '')}</div>
+  </div>
+  <!-- DYOR -->
+  <div class="sic-panel" style="flex:0.7;min-width:120px;display:flex;flex-direction:column;justify-content:flex-end">
+    <div style="color:#3b82f6;font-size:14px;font-weight:700;letter-spacing:2px;margin-bottom:4px">#DYOR</div>
+    <div style="font-size:10px;color:#64748b;line-height:1.5">Analisa berbasis data teknikal, volume, dan framework MnM Strategy+.</div>
+    <div style="font-size:10px;color:#f59e0b;margin-top:4px;font-weight:600">Bukan rekomendasi investasi.</div>
+  </div>
+</div>
+
+<!-- ═══ KESIMPULAN TEGAS (full width) ═══ -->
+<div style="background:#0d0820;border:1px solid #4c1d95;border-radius:4px;padding:8px 12px;margin-top:4px">
+  <div style="font-size:9px;color:#7c3aed;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">KESIMPULAN TEGAS</div>
+  <div style="font-size:11px;color:#c4b5fd;line-height:1.6">{_esc_nl((_verdict_section or ai_text_verdict or '')[-400:])}</div>
+</div>
+
+</div>
+
+<script>
+(function() {{
+  var D = {_chart_data};
+  var uid = "{_uid}";
+
+  // ── Util ────────────────────────────────────────────────────────────────────
+  function setupCanvas(id, cssH) {{
+    var cv = document.getElementById(id);
+    if (!cv) return null;
+    var dpr = window.devicePixelRatio || 1;
+    var W = cv.parentElement.offsetWidth || 600;
+    cv.width  = W * dpr;
+    cv.height = cssH * dpr;
+    cv.style.width  = W + 'px';
+    cv.style.height = cssH + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    return {{ ctx: ctx, W: W, H: cssH }};
+  }}
+
+  function scaleY(v, min, max, padT, H, padB) {{
+    var range = max - min || 1;
+    return padT + (H - padT - padB) - ((v - min) / range) * (H - padT - padB);
+  }}
+
+  function gridLines(ctx, W, H, n, color) {{
+    ctx.strokeStyle = color || 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 0.5;
+    for (var i = 0; i <= n; i++) {{
+      var y = H / n * i;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }}
+  }}
+
+  // ── GAUGE ───────────────────────────────────────────────────────────────────
+  function drawGauge() {{
+    var cv = document.getElementById(uid + '_gauge');
+    if (!cv) return;
+    var dpr = window.devicePixelRatio || 1;
+    var W = 100, H = 60;
+    cv.width = W * dpr; cv.height = H * dpr;
+    cv.style.width = W + 'px'; cv.style.height = H + 'px';
+    var ctx = cv.getContext('2d');
+    ctx.scale(dpr, dpr);
+    var cx = 50, cy = 56, r = 44;
+    // Track
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.stroke();
+    // Color gradient arc
+    var grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0,   '#10b981');
+    grad.addColorStop(0.4, '#f59e0b');
+    grad.addColorStop(1,   '#ef4444');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.stroke();
+    // Mask: fill the "empty" part based on score
+    var score = {sigma_score} / 100.0;
+    var startAngle = Math.PI + score * Math.PI;
+    ctx.strokeStyle = '#080c14';
+    ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.arc(cx, cy, r, startAngle, 0); ctx.stroke();
+    // Needle
+    var angle = Math.PI + score * Math.PI;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle) * 34, cy + Math.sin(angle) * 34);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+  }}
+
+  // ── CANDLESTICK ─────────────────────────────────────────────────────────────
+  function drawCandle() {{
+    var s = setupCanvas(uid + '_candle', 180);
+    if (!s) return;
+    var ctx = s.ctx, W = s.W, H = s.H;
+    gridLines(ctx, W, H, 4);
+    var n = D.c.length;
+    if (!n) return;
+
+    var allH = D.h, allL = D.l;
+    var minV = Math.min.apply(null, allL), maxV = Math.max.apply(null, allH);
+    // Add padding for trade plan levels
+    var levels = [D.el, D.eh, D.sl, D.tp1, D.tp2, D.tp3].filter(function(v) {{ return v; }});
+    if (levels.length) {{
+      minV = Math.min(minV, Math.min.apply(null, levels));
+      maxV = Math.max(maxV, Math.max.apply(null, levels));
+    }}
+    var pad = (maxV - minV) * 0.05;
+    minV -= pad; maxV += pad;
+    var padT = 8, padB = 8;
+
+    function toY(v) {{ return scaleY(v, minV, maxV, padT, H, padB); }}
+
+    var slotW = W / n;
+    var bodyW = Math.max(3, Math.floor(slotW * 0.6));
+
+    // EMA lines
+    var emaLines = [
+      {{ data: D.ema13,  color: '#0ea5e9', w: 1.2 }},
+      {{ data: D.ema21,  color: '#f472b6', w: 1.2 }},
+      {{ data: D.ema100, color: '#f97316', w: 1.2 }},
+      {{ data: D.ema200, color: '#8b5cf6', w: 1.6 }},
+    ];
+    emaLines.forEach(function(e) {{
+      if (!e.data || !e.data.length) return;
+      ctx.strokeStyle = e.color;
+      ctx.lineWidth = e.w;
+      ctx.beginPath();
+      e.data.forEach(function(v, i) {{
+        if (!v) return;
+        var x = i * slotW + slotW / 2;
+        var y = toY(v);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }});
+      ctx.stroke();
+    }});
+
+    // Candles
+    for (var i = 0; i < n; i++) {{
+      var x  = i * slotW + slotW / 2;
+      var o  = D.o[i], c = D.c[i], h = D.h[i], l = D.l[i];
+      var up = c >= o;
+
+      // Wick
+      ctx.strokeStyle = up ? 'rgba(0,229,160,0.6)' : 'rgba(255,61,90,0.6)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, toY(h));
+      ctx.lineTo(x, toY(l));
+      ctx.stroke();
+
+      // Body
+      var bTop = toY(Math.max(o, c));
+      var bBot = toY(Math.min(o, c));
+      var bH   = Math.max(1.5, bBot - bTop);
+      ctx.fillStyle = up ? 'rgba(0,229,160,0.88)' : 'rgba(255,61,90,0.88)';
+      ctx.fillRect(x - bodyW / 2, bTop, bodyW, bH);
+    }}
+
+    // Trade plan levels
+    function drawLevel(price, color, dash) {{
+      if (!price) return;
+      var y = toY(price);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash(dash || []);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      ctx.restore();
+    }}
+    // Buy zone fill
+    if (D.el && D.eh) {{
+      var y1 = toY(D.el), y2 = toY(D.eh);
+      ctx.fillStyle = 'rgba(8,153,129,0.18)';
+      ctx.fillRect(0, Math.min(y1,y2), W, Math.abs(y1-y2));
+      drawLevel(D.el, '#089981', []);
+      drawLevel(D.eh, '#089981', [4,3]);
+    }}
+    drawLevel(D.sl,  '#f23645', []);
+    drawLevel(D.tp1, '#8b5cf6', [4,3]);
+    drawLevel(D.tp2, '#8b5cf6', [4,3]);
+    drawLevel(D.tp3, '#8b5cf6', [4,3]);
+  }}
+
+  // ── MACD ─────────────────────────────────────────────────────────────────────
+  function drawMACD() {{
+    var s = setupCanvas(uid + '_macd', 36);
+    if (!s || !D.macd_h || !D.macd_h.length) return;
+    var ctx = s.ctx, W = s.W, H = s.H;
+    var data = D.macd_h;
+    var minV = Math.min.apply(null, data), maxV = Math.max.apply(null, data);
+    var abs = Math.max(Math.abs(minV), Math.abs(maxV), 0.001);
+    var slotW = W / data.length;
+    // Zero line
+    var zy = scaleY(0, -abs, abs, 2, H, 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(W, zy); ctx.stroke();
+    data.forEach(function(v, i) {{
+      var x   = i * slotW + slotW * 0.1;
+      var bW  = Math.max(1, slotW * 0.8);
+      var y0  = zy;
+      var y1  = scaleY(v, -abs, abs, 2, H, 2);
+      ctx.fillStyle = v >= 0 ? 'rgba(0,229,160,0.75)' : 'rgba(255,61,90,0.75)';
+      ctx.fillRect(x, Math.min(y0, y1), bW, Math.max(1.5, Math.abs(y0 - y1)));
+    }});
+  }}
+
+  // ── RSI ───────────────────────────────────────────────────────────────────────
+  function drawRSI() {{
+    var s = setupCanvas(uid + '_rsi', 40);
+    if (!s || !D.rsi || !D.rsi.length) return;
+    var ctx = s.ctx, W = s.W, H = s.H;
+    gridLines(ctx, W, H, 2);
+    // Overbought / oversold zones
+    [70, 30].forEach(function(lvl) {{
+      var y = scaleY(lvl, 0, 100, 2, H, 2);
+      ctx.strokeStyle = lvl === 70 ? 'rgba(255,61,90,0.35)' : 'rgba(0,229,160,0.35)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      ctx.setLineDash([]);
+    }});
+    ctx.strokeStyle = '#f5a623';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    D.rsi.forEach(function(v, i) {{
+      var x = i * (W / D.rsi.length) + (W / D.rsi.length) / 2;
+      var y = scaleY(v, 0, 100, 2, H, 2);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }});
+    ctx.stroke();
+  }}
+
+  // ── VOLUME BARS (20 bar terakhir) ────────────────────────────────────────────
+  function drawVol() {{
+    var s = setupCanvas(uid + '_vol', 60);
+    if (!s) return;
+    var ctx = s.ctx, W = s.W, H = s.H;
+    var data = D.vol.slice(-20);
+    var opens = D.o.slice(-20), closes = D.c.slice(-20);
+    var maxV = Math.max.apply(null, data) || 1;
+    var slotW = W / data.length;
+    data.forEach(function(v, i) {{
+      var up = closes[i] >= opens[i];
+      ctx.fillStyle = up ? 'rgba(0,229,160,0.75)' : 'rgba(255,61,90,0.75)';
+      var bH = Math.max(2, (v / maxV) * (H - 4));
+      ctx.fillRect(i * slotW + 1, H - bH, Math.max(2, slotW - 2), bH);
+    }});
+  }}
+
+  // ── VOLUME DELTA (NET BUY/SELL) — konsep gambar 4 ───────────────────────────
+  // Bar positif (buy dominan) = hijau ke atas dari zero line
+  // Bar negatif (sell dominan) = merah ke bawah dari zero line
+  function drawDelta() {{
+    var s = setupCanvas(uid + '_delta', 40);
+    if (!s) return;
+    var ctx = s.ctx, W = s.W, H = s.H;
+    var data = D.delta.slice(-50);
+    if (!data.length) return;
+    var maxAbs = Math.max.apply(null, data.map(Math.abs)) || 1;
+    var slotW  = W / data.length;
+    var zy     = H / 2;  // zero line di tengah
+
+    // Zero line
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(W, zy); ctx.stroke();
+
+    data.forEach(function(v, i) {{
+      var bH  = Math.max(1.5, (Math.abs(v) / maxAbs) * (zy - 2));
+      var x   = i * slotW + 1;
+      var bW  = Math.max(1.5, slotW - 2);
+      if (v >= 0) {{
+        // Buy dominant: tumbuh ke atas dari zero line
+        ctx.fillStyle = 'rgba(0,229,160,0.85)';
+        ctx.fillRect(x, zy - bH, bW, bH);
+      }} else {{
+        // Sell dominant: tumbuh ke bawah dari zero line
+        ctx.fillStyle = 'rgba(255,61,90,0.85)';
+        ctx.fillRect(x, zy, bW, bH);
+      }}
+    }});
+  }}
+
+  // ── Draw all ─────────────────────────────────────────────────────────────────
+  function drawAll() {{
+    drawGauge();
+    drawCandle();
+    drawMACD();
+    drawRSI();
+    drawVol();
+    drawDelta();
+  }}
+
+  if (document.readyState === 'complete') {{ drawAll(); }}
+  else {{ window.addEventListener('load', drawAll); }}
+  setTimeout(drawAll, 100);
+  setTimeout(drawAll, 500);
+}})();
+</script>
+"""
+    return html_out
+
+
 # ─────────────────────────────────────────────
 # ENRICH ROW (untuk tabel screener)
 # ─────────────────────────────────────────────
@@ -18953,87 +19651,120 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 else:
                     st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
-    # ── Executive Summary - di bawah chart, full width ───────────
-                if run_analysis and ai_text_verdict:
-                    bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f0f4ff'
-                    bd_color = tv_border if not df_chart.empty else 'transparent'
+    # ── SIGMA ANALYSIS CARD (dark terminal, full card) ───────────
+                # Render setelah plotly chart selesai — tampil saat run_analysis ATAU dari cache
+                _should_render_card = (run_analysis and ai_text_verdict) or (
+                    not run_analysis
+                    and ai_data is not None
+                    and ai_text_verdict
+                )
 
-                    # ── SIGMA SCORE BADGE ──
-                    if _sigma_result is not None:
-                        st.markdown(render_sigma_score_badge(_sigma_result, ticker_input, compact=False), unsafe_allow_html=True)
+                if _should_render_card and not df_chart.empty:
+                    try:
+                        # ── Pastikan df_chart sudah punya kolom EMA/RSI/MACD ──
+                        _df_card = df_chart.copy()
+                        if 'EMA13' not in _df_card.columns:
+                            _df_card['EMA13']  = _df_card['Close'].ewm(span=13,  adjust=False).mean()
+                            _df_card['EMA21']  = _df_card['Close'].ewm(span=21,  adjust=False).mean()
+                            _df_card['EMA100'] = _df_card['Close'].ewm(span=100, adjust=False).mean()
+                            _df_card['EMA200'] = _df_card['Close'].ewm(span=200, adjust=False).mean()
+                        if 'RSI' not in _df_card.columns:
+                            _delta_c = _df_card['Close'].diff()
+                            _g = _delta_c.clip(lower=0)
+                            _l = -_delta_c.clip(upper=0)
+                            _rs = _g.ewm(com=13, adjust=False).mean() / _l.ewm(com=13, adjust=False).mean().replace(0, 1e-9)
+                            _df_card['RSI'] = (100 - (100 / (1 + _rs))).fillna(50)
+                        if 'MACD_hist' not in _df_card.columns:
+                            _e12 = _df_card['Close'].ewm(span=12, adjust=False).mean()
+                            _e26 = _df_card['Close'].ewm(span=26, adjust=False).mean()
+                            _df_card['MACD']        = _e12 - _e26
+                            _df_card['MACD_signal'] = _df_card['MACD'].ewm(span=9, adjust=False).mean()
+                            _df_card['MACD_hist']   = _df_card['MACD'] - _df_card['MACD_signal']
 
-                    # ── MnM ZONE DETECTION CARD ──
-                    if _ZONE_ENGINE_AVAILABLE:
-                        try:
-                            _zone_res = _cached_detect_zones_multi_tf(ticker_input)
-                            _zone_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0.0
-                            st.markdown(zone_detail_html(_zone_res, _zone_price, C), unsafe_allow_html=True)
-                        except Exception as _ze:
-                            pass
+                        # ── Ambil zone result jika tersedia ──
+                        _zr_card = None
+                        if _ZONE_ENGINE_AVAILABLE:
+                            try:
+                                _zr_card = _cached_detect_zones_multi_tf(ticker_input)
+                            except Exception:
+                                pass
 
-                    # Risk level badge
-                    _rl = (ai_data or {}).get("risk_level", "NONE")
-                    if _rl == "LOW":
-                        _rl_badge = "<span style='background:#089981;color:#fff;font-size:0.72rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟢 LOW RISK</span>"
-                    elif _rl == "MID":
-                        _rl_badge = "<span style='background:#f5a623;color:#000;font-size:0.72rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟡 MID RISK</span>"
-                    elif _rl == "HIGH":
-                        _rl_badge = "<span style='background:#f23645;color:#fff;font-size:0.72rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🔴 HIGH RISK</span>"
-                    else:
-                        _rl_badge = ""
+                        # ── Render card ──
+                        _card_html = render_insight_card_html(
+                            ticker       = ticker_input,
+                            df           = _df_card,
+                            ai_data      = ai_data,
+                            ai_text_verdict = ai_text_verdict,
+                            sigma_result = _sigma_result if '_sigma_result' in dir() else None,
+                            zone_result  = _zr_card,
+                        )
+                        st.markdown(_card_html, unsafe_allow_html=True)
 
-                    # Memastikan enter dari AI tidak terlalu lebar (maksimal 2 enter)
-                    verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
+                        # ── Simpan ke cache untuk render saat tidak klik Analyze ──
+                        if run_analysis and _insight_cache_key:
+                            try:
+                                _cache_payload = st.session_state.get(_insight_cache_key, {})
+                                st.session_state[_insight_cache_key] = _cache_payload
+                            except Exception:
+                                pass
 
-                    # HTML ditulis rata kiri agar TIDAK dibaca sebagai code block oleh Streamlit
-                    html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-    <div style="font-size:0.72rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
-    📋 TRADE PLAN SIGMA {_rl_badge}
-    </div>
-    <div style="font-size:0.8rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
-    {verdict_clean}
-    </div>
-    </div>"""
+                    except Exception as _card_err:
+                        # Fallback ke teks biasa jika card gagal render
+                        st.error(f"Card render error: {_card_err}")
+                        verdict_clean = (ai_text_verdict or '').replace('\n\n\n', '\n\n')
+                        st.markdown(
+                            f"<div style='background:rgba(10,14,26,0.92);border-left:3px solid #8b5cf6;"
+                            f"border-radius:0 8px 8px 0;padding:12px 16px;margin-top:14px;"
+                            f"font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#c9d1d9;"
+                            f"white-space:pre-wrap;'>{verdict_clean}</div>",
+                            unsafe_allow_html=True,
+                        )
 
-                    st.markdown(html_str, unsafe_allow_html=True)
-                elif not run_analysis:
-                    # ── Cek apakah ada hasil analisa tersimpan dari sesi sebelumnya ──
+                elif not run_analysis and not ai_text_verdict:
+                    # ── Cek cache dari sesi sebelumnya ──
                     _persisted_data   = st.session_state.get("alpha_insight_last_data")
                     _persisted_ticker = (_persisted_data or {}).get("ticker", "")
                     if _persisted_data and _persisted_ticker and _persisted_ticker == ticker_input:
                         _pv  = _persisted_data.get("ai_text_verdict", "")
-                        _pt  = _persisted_data.get("timestamp", "")
+                        _pad = _persisted_data.get("ai_data")
                         _psr = _persisted_data.get("sigma_result", None)
-                        if _pv:
-                            bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f0f4ff'
-                            bd_color = "rgba(139,92,246,0.18)"
-                            # ── Re-render Sigma Score badge ──
-                            if _psr is not None and _SIGMA_SCORE_AVAILABLE:
-                                try:
-                                    st.markdown(render_sigma_score_badge(_psr, _persisted_ticker, compact=False), unsafe_allow_html=True)
-                                except: pass
-                            # ── Re-render Zone card ──
-                            if _ZONE_ENGINE_AVAILABLE:
-                                try:
-                                    _pzone = _cached_detect_zones_multi_tf(_persisted_ticker)
-                                    _pzone_price = float(df_chart["Close"].iloc[-1]) if not df_chart.empty else 0.0
-                                    st.markdown(zone_detail_html(_pzone, _pzone_price, C), unsafe_allow_html=True)
-                                except: pass
-                            _pv_clean = _pv.replace('\n\n\n', '\n\n')
-                            st.markdown(f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
-    <div style="font-size:0.72rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px;">
-    &#128203; TRADE PLAN SIGMA &mdash; {_persisted_ticker} &nbsp;<span style="font-weight:400;color:#666;">{_pt}</span>
-    </div>
-    <div style="font-size:0.8rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
-    {_pv_clean}
-    </div>
-    </div>""", unsafe_allow_html=True)
+                        _pt  = _persisted_data.get("timestamp", "")
+                        if _pv and not df_chart.empty:
+                            try:
+                                _df_pc = df_chart.copy()
+                                for _col, _span in [('EMA13',13),('EMA21',21),('EMA100',100),('EMA200',200)]:
+                                    if _col not in _df_pc.columns:
+                                        _df_pc[_col] = _df_pc['Close'].ewm(span=_span, adjust=False).mean()
+                                if 'RSI' not in _df_pc.columns:
+                                    _d2 = _df_pc['Close'].diff()
+                                    _g2 = _d2.clip(lower=0)
+                                    _l2 = -_d2.clip(upper=0)
+                                    _rs2 = _g2.ewm(com=13,adjust=False).mean() / _l2.ewm(com=13,adjust=False).mean().replace(0,1e-9)
+                                    _df_pc['RSI'] = (100-(100/(1+_rs2))).fillna(50)
+                                if 'MACD_hist' not in _df_pc.columns:
+                                    _e12p = _df_pc['Close'].ewm(span=12,adjust=False).mean()
+                                    _e26p = _df_pc['Close'].ewm(span=26,adjust=False).mean()
+                                    _df_pc['MACD']        = _e12p - _e26p
+                                    _df_pc['MACD_signal'] = _df_pc['MACD'].ewm(span=9,adjust=False).mean()
+                                    _df_pc['MACD_hist']   = _df_pc['MACD'] - _df_pc['MACD_signal']
+                                _zr_pc = None
+                                if _ZONE_ENGINE_AVAILABLE:
+                                    try: _zr_pc = _cached_detect_zones_multi_tf(_persisted_ticker)
+                                    except Exception: pass
+                                _ph = render_insight_card_html(
+                                    ticker=_persisted_ticker, df=_df_pc,
+                                    ai_data=_pad, ai_text_verdict=_pv,
+                                    sigma_result=_psr, zone_result=_zr_pc,
+                                )
+                                st.markdown(_ph, unsafe_allow_html=True)
+                            except Exception:
+                                pass
                     else:
                         st.markdown(f"""
                         <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
                             <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
                             <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
-                                Masukkan kode saham dan klik <span style='color:#8b5cf6;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
+                                Masukkan kode saham dan klik <span style='color:#8b5cf6;'>▶ ANALYZE</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Analysis Card otomatis.
                             </p>
                         </div>
                         """, unsafe_allow_html=True)
