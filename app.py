@@ -3145,6 +3145,7 @@ def _goapi_resolve_base(force: bool = False) -> str:
 
 def goapi_get_price(ticker: str) -> dict:
     """Harga real-time satu saham dari GoAPI. Endpoint: /stock/idx/{symbol}"""
+    _goapi_throttle()
     try:
         r = requests.get(f"{GOAPI_BASE}/{ticker}", headers=_goapi_headers(), timeout=10)
         if r.status_code != 200:
@@ -3166,6 +3167,7 @@ def goapi_get_price(ticker: str) -> dict:
 
 def goapi_get_prices(tickers: list) -> dict:
     """Harga real-time multiple ticker. Endpoint: /stock/idx/prices?symbols=A,B,C"""
+    _goapi_throttle()
     try:
         symbols = ",".join(tickers)
         r = requests.get(f"{GOAPI_BASE}/prices", params={"symbols": symbols},
@@ -3224,7 +3226,23 @@ def _trading_date_candidates(date_str: str = None, max_lookback: int = 5) -> lis
     return candidates
 
 
-def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
+
+# ── GoAPI Request Throttler ──────────────────────────────────────────────────
+# Batasi request GoAPI: min 1.2 detik antar request untuk hindari 429
+_GOAPI_MIN_INTERVAL = 1.2   # detik antar request
+_goapi_last_req_time: float = 0.0
+
+def _goapi_throttle():
+    """Tunggu sebelum request GoAPI agar tidak kena rate limit."""
+    global _goapi_last_req_time
+    elapsed = time.time() - _goapi_last_req_time
+    wait    = _GOAPI_MIN_INTERVAL - elapsed
+    if wait > 0:
+        time.sleep(wait)
+    _goapi_last_req_time = time.time()
+# ─────────────────────────────────────────────────────────────────────────────
+
+def goapi_get_broker_summary(ticker: str, date_str: str = None, _pipeline_call: bool = False) -> list:
     """
     Broker summary per saham dari GoAPI.
     Endpoint resmi: GET https://api.goapi.io/stock/idx/{symbol}/broker_summary
@@ -3232,8 +3250,23 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
     Return: list of broker rows normalized untuk SIGMA parser.
 
     Auto-retry: jika 404/kosong, mundur ke T-2, T-3 dst (maks 5 hari bursa).
+
+    ⚠️ RESTRICTED: GoAPI broker summary HANYA boleh dipanggil dari:
+       1. Pipeline BS screening otomatis 20:30 WIB (scheduler, _pipeline_call=True)
+       2. Tidak boleh dipanggil dari tab lain (Broker Summary manual, Alpha Screener, dll.)
+       Penggunaan di luar pipeline = waste quota GoAPI.
     """
+    # Guard: log warning jika dipanggil dari luar pipeline
+    # (tidak block untuk kompatibilitas, tapi dicatat)
+    if not _pipeline_call:
+        import logging as _log_gapi
+        _log_gapi.warning(
+            f"[SIGMA] goapi_get_broker_summary({ticker}) dipanggil DILUAR pipeline BS screening. "
+            f"GoAPI seharusnya hanya untuk pipeline 20:30 auto-screening."
+        )
+
     _goapi_resolve_base()
+    _goapi_throttle()   # rate-limit guard: min 1.2s antar request
     # Jika date_str sudah spesifik (dari _goapi_resolve_latest_date), lookback=1 saja (hemat quota)
     # Jika tidak ada date, lookback=3 (lebih konservatif dari 10 sebelumnya)
     _max_lb = 1 if date_str else 3
@@ -4778,6 +4811,7 @@ def _db_write(sheet_name: str, key: str, value) -> bool:
 _PERFIELD_KEYS = [
     "auto_plan_history_bsjp", "auto_plan_history_daily", "auto_plan_history_weekly",
     "tr_records", "brosum_history", "sigma_bs30_screened", "sigma_bs30_ts",
+    "sigma_bs15_screened", "sigma_bs5_daily",
     "sigma_bs30_history", "brosum_hist_use_key", "brosum_hist_use_data",
     "brosum_hist_use_date",
     "fs_results", "fs_ts", "fs_sektor",  # Fundamental Screener
@@ -6959,6 +6993,12 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
     # ══════════════════════════════════════════════════════════════
     # [2] JAM 20:30 — BROKER SUMMARY SCREENING AUTO-REFRESH
     # ══════════════════════════════════════════════════════════════
+    # PIPELINE: 200 Market Cap Terbesar → Filter Suspend/FCA/CA
+    #           → Teknikal Screening → 30 Terbaik
+    #           → GoAPI Broker Summary → 15 Kandidat
+    #           → Output 5 Daily Top
+    # GoAPI HANYA digunakan di pipeline ini (daily trade plan)
+    # ══════════════════════════════════════════════════════════════
     if _is_weekday() and _past(20, 30):
         _bs_auto_key = f"brosum_global_auto_{_today_s}"
         if not st.session_state.get(_bs_auto_key):
@@ -6969,79 +7009,323 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                 try:
                     import yfinance as _yf_bs
                     from datetime import date as _da_bs, timedelta as _tda_bs
-                    _BS30 = [
-                        "TLKM","ASII","UNVR","ICBP","INDF","KLBF","GGRM","HMSP","MYOR","CPIN",
-                        "ADRO","ITMG","PTBA","ANTM","INCO","MDKA","NCKL","MBMA","BRMS","AMMN",
-                        "SMGR","INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES",
-                        "HEAL","MIKA","SILO","KAEF","TSPC","PGAS","MEDC","AALI","LSIP","SIMP",
-                        "TBIG","TOWR","LINK","TPIA","BRPT","UNTR","BFIN","ADMF","TMAS","SMDR",
-                        "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
-                    ]
-                    _end_bs   = _da_bs.today()
-                    _start_bs = _end_bs - _tda_bs(days=30)
-                    _raw_bs   = _yf_bs.download(
-                        " ".join(f"{t}.JK" for t in _BS30),
-                        start=str(_start_bs), end=str(_end_bs),
-                        progress=False, auto_adjust=True, threads=True
-                    )
-                    _cl_bs = _raw_bs.get("Close", _raw_bs)
-                    _vl_bs = _raw_bs.get("Volume", None)
-                    _result_bs = []
-                    for _tk_bs in _BS30:
-                        try:
-                            _ck_bs = f"{_tk_bs}.JK"
-                            if _ck_bs not in _cl_bs.columns: continue
-                            _cs_bs = _cl_bs[_ck_bs].dropna()
-                            _vs_bs = _vl_bs[_ck_bs].dropna() if _vl_bs is not None and _ck_bs in _vl_bs.columns else None
-                            if len(_cs_bs) < 5: continue
-                            _pr_bs = float(_cs_bs.iloc[-1])
-                            if _pr_bs > 8000: continue
-                            _spk_bs = 1.0
-                            if _vs_bs is not None and len(_vs_bs) >= 20:
-                                _avg20_bs = float(_vs_bs.iloc[-21:-1].mean())
-                                _tvol_bs  = float(_vs_bs.iloc[-1])
-                                _spk_bs   = round(_tvol_bs / _avg20_bs, 2) if _avg20_bs > 0 else 1.0
-                            if _spk_bs < 1.5: continue
-                            _chg_bs = round((_cs_bs.iloc[-1]-_cs_bs.iloc[-2])/_cs_bs.iloc[-2]*100, 2) if len(_cs_bs)>=2 else 0
-                            _result_bs.append({
-                                "ticker": _tk_bs, "price": _pr_bs, "spike": _spk_bs, "chg1d": _chg_bs,
-                                "high_momentum": False, "momentum_days": 0, "verdict": "",
-                                "pre_accum": _spk_bs >= 1.5, "top_accum": [], "top_dist": [],
-                                "accum_days": 0, "goapi_confirmed": False
-                            })
-                        except: continue
+                    import concurrent.futures as _cf_bs
 
-                    if _result_bs:
-                        _result_bs.sort(key=lambda x: x["spike"], reverse=True)
+                    # ─────────────────────────────────────────────────
+                    # STEP 1: Universe — 200 Market Cap Terbesar IDX
+                    # Dikurasi: mega/large/mid cap aktif, exclude suspend
+                    # ─────────────────────────────────────────────────
+                    _IDX_UNIVERSE_200 = [
+                        # MEGA CAP — Top 30 market cap IDX
+                        "BBCA","BBRI","BMRI","TLKM","ASII","BBNI","BREN","AMMN","ADRO","BYAN",
+                        "TPIA","UNVR","ICBP","INDF","MDKA","BRPT","INKP","HMSP","GGRM","KLBF",
+                        "ANTM","INCO","CUAN","PGAS","PTBA","MEDC","UNTR","BSDE","CTRA","MAPI",
+                        # LARGE CAP — Rank 31-80
+                        "SMGR","INTP","AALI","TOWR","TBIG","MTEL","ARTO","BRIS","GOTO","EMTK",
+                        "HEAL","MIKA","SILO","AMRT","MIDI","ACES","RALS","SMRA","LPKR","PWON",
+                        "BFIN","ADMF","HRUM","ITMG","GEMS","ESSA","ELSA","RAJA","NCKL","MBMA",
+                        "BRMS","LSIP","SIMP","TBLA","SGRO","CPIN","JPFA","MYOR","SIDO","BBTN",
+                        "BDMN","PNBN","NISP","MEGA","BJBR","FILM","KAEF","TSPC","EXCL","ISAT",
+                        # MID CAP LIQUID — Rank 81-140
+                        "BJTM","TBIG","MNCN","SCMA","BUKA","BIRD","SMDR","TMAS","BULL","SHIP",
+                        "SOCI","LEAD","HITS","CMPP","NRCA","PTPP","ADHI","WSBP","DMAS","MKPI",
+                        "MTLA","RDTX","JRPT","APLN","DILD","MDLN","BEST","SSIA","KIJA","PGEO",
+                        "PTRO","VKTR","AUTO","IMAS","SMSM","GJTL","LPIN","INDS","HEXA","MASA",
+                        "MTDL","DMMX","EDGE","ASSA","MCAS","TELE","TSPC","DVLA","KAEF","MERK",
+                        "BMTR","ERAA","CSAP","FAST","KINO","STTP","ROTI","GOOD","ULTJ","MLBI",
+                        # MID-SMALL LIQUID — Rank 141-200
+                        "CLEO","DLTA","TINS","ZINC","DSSA","MBAP","INDY","MYOH","FIRE","GTBO",
+                        "SMDR","NELY","BULL","SUPR","BPTR","BBRM","MBSS","RIGS","TPMA","WEHA",
+                        "BFIN","MFIN","CFIN","PNLF","WOMF","VRNA","BBSI","BANK","AGRO","MCOR",
+                        "SDRA","MAYA","NOBU","BNGA","BTPN","BJBR","BJTM","ARNA","TOTO","MARK",
+                        "KRAS","AGII","TKIM","TBMS","NIKL","DKFT","PSAB","ANJT","PALM","TAPG",
+                    ]
+                    _IDX_UNIVERSE_200 = list(dict.fromkeys(_IDX_UNIVERSE_200))[:200]
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 2: Filter Suspend / FCA / Corporate Action
+                    # ─────────────────────────────────────────────────
+                    _SUSPENDED_BS = set(IDX_SUSPENDED_TICKERS_GLOBAL.keys())
+                    # Saham bermasalah umum yang sering suspend / FCA berulang
+                    _FCA_BLACKLIST = {
+                        "BUMI","ENRG","WIKA","WSKT","PPRO","ACST","SRIL","IATA","BLTA",
+                        "MIRA","SAFE","KARW","BCIP","BPII","LAPD","DERA","BSML","PKPK",
+                        "POLY","RAAM","TAXI","SUGI","SULI","GIAA","DEWA","MCOL","SMRU",
+                    }
+                    _universe_clean = [
+                        tk for tk in _IDX_UNIVERSE_200
+                        if tk not in _SUSPENDED_BS and tk not in _FCA_BLACKLIST
+                    ]
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 3: Fetch OHLCV 30 hari via yfinance (batch)
+                    # ─────────────────────────────────────────────────
+                    _end_bs   = _da_bs.today()
+                    _start_bs = _end_bs - _tda_bs(days=35)
+                    _tickers_jk = [f"{t}.JK" for t in _universe_clean]
+                    try:
+                        _raw_bs = _yf_bs.download(
+                            " ".join(_tickers_jk),
+                            start=str(_start_bs), end=str(_end_bs),
+                            progress=False, auto_adjust=True, threads=True
+                        )
+                    except Exception:
+                        _raw_bs = None
+
+                    _cl_bs = _raw_bs.get("Close",  _raw_bs) if _raw_bs is not None else None
+                    _vl_bs = _raw_bs.get("Volume", None)    if _raw_bs is not None else None
+                    _hi_bs = _raw_bs.get("High",   None)    if _raw_bs is not None else None
+                    _lo_bs = _raw_bs.get("Low",    None)    if _raw_bs is not None else None
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 4: Screening Teknikal + Volume Akumulasi
+                    # Kriteria:
+                    #   • Volume spike ≥ 1.5x avg20
+                    #   • Harga > Rp50 (bukan penny/suspend artefak)
+                    #   • Minimal 10 hari data
+                    #   • Tidak dalam tren distribusi berat (harga turun + vol spike = distribusi)
+                    #   • Validate corporate action: harga konsisten (tidak anomali post-split)
+                    #   • Likuiditas: avg daily volume > 500 juta rupiah
+                    # ─────────────────────────────────────────────────
+                    _screened_200 = []
+                    if _cl_bs is not None:
+                        for _tk_bs in _universe_clean:
+                            try:
+                                _ck_bs = f"{_tk_bs}.JK"
+                                if _ck_bs not in _cl_bs.columns: continue
+                                _cs_bs = _cl_bs[_ck_bs].dropna()
+                                _vs_bs = _vl_bs[_ck_bs].dropna() if _vl_bs is not None and _ck_bs in _vl_bs.columns else None
+                                _hs_bs = _hi_bs[_ck_bs].dropna() if _hi_bs is not None and _ck_bs in _hi_bs.columns else None
+                                _ls_bs = _lo_bs[_ck_bs].dropna() if _lo_bs is not None and _ck_bs in _lo_bs.columns else None
+                                if len(_cs_bs) < 10: continue
+
+                                _pr_bs   = float(_cs_bs.iloc[-1])
+                                _pr_prev = float(_cs_bs.iloc[-2]) if len(_cs_bs) >= 2 else _pr_bs
+                                _chg1d   = round((_pr_bs - _pr_prev) / _pr_prev * 100, 2) if _pr_prev > 0 else 0
+
+                                # Filter penny / harga tidak wajar
+                                if _pr_bs < 50: continue
+
+                                # Corporate action check: deteksi anomali harga ekstrem
+                                # (harga hari ini vs 5 hari lalu drop/naik >80% = kemungkinan belum adjust)
+                                _pr_5ago = float(_cs_bs.iloc[-6]) if len(_cs_bs) >= 6 else _pr_bs
+                                if _pr_5ago > 0:
+                                    _ca_ratio = _pr_bs / _pr_5ago
+                                    if _ca_ratio < 0.2 or _ca_ratio > 5.0:
+                                        # Anomali CA — skip, data belum di-adjust atau reverse split
+                                        continue
+
+                                # Volume spike vs avg20
+                                _spk_bs  = 1.0
+                                _avg_val  = 0.0  # avg daily value (rupiah)
+                                if _vs_bs is not None and len(_vs_bs) >= 20:
+                                    _avg20_vol = float(_vs_bs.iloc[-21:-1].mean())
+                                    _tvol_bs   = float(_vs_bs.iloc[-1])
+                                    _spk_bs    = round(_tvol_bs / _avg20_vol, 2) if _avg20_vol > 0 else 1.0
+                                    # Avg daily value rupiah (proxy likuiditas)
+                                    _avg_val   = _avg20_vol * _pr_bs
+
+                                # Filter volume spike minimum
+                                if _spk_bs < 1.5: continue
+
+                                # Filter likuiditas: avg daily value > 500 juta rupiah
+                                if _avg_val < 500_000_000: continue
+
+                                # EMA teknikal sederhana (EMA13, EMA21)
+                                _ema13, _ema21 = _pr_bs, _pr_bs
+                                try:
+                                    import pandas as _pd_ema
+                                    _s_ema = _cs_bs.tail(30)
+                                    _ema13 = float(_s_ema.ewm(span=13, adjust=False).mean().iloc[-1])
+                                    _ema21 = float(_s_ema.ewm(span=21, adjust=False).mean().iloc[-1])
+                                except Exception: pass
+
+                                # RSI 14 sederhana
+                                _rsi14 = 50.0
+                                try:
+                                    _delta_r = _cs_bs.diff().tail(15)
+                                    _gain_r  = _delta_r.clip(lower=0).mean()
+                                    _loss_r  = (-_delta_r.clip(upper=0)).mean()
+                                    if _loss_r > 0:
+                                        _rs_r = _gain_r / _loss_r
+                                        _rsi14 = round(100 - (100 / (1 + _rs_r)), 1)
+                                except Exception: pass
+
+                                # Pola akumulasi: bandar biasanya akumulasi saat harga flat/sideways + volume naik
+                                # Distribusi: harga naik signifikan + volume sangat tinggi = kemungkinan distribusi
+                                _is_accum = _spk_bs >= 1.5 and _chg1d <= 3.0  # volume naik tapi harga tidak melonjak drastis
+                                _is_dist  = _spk_bs >= 3.0 and _chg1d >= 5.0  # volume spike besar + harga naik banyak = distribusi
+                                if _is_dist: continue  # skip distribusi
+
+                                # Teknikal: price di atas EMA13 & EMA21 = uptrend
+                                _trend_ok = _pr_bs >= _ema13 * 0.98  # toleransi 2%
+
+                                _screened_200.append({
+                                    "ticker":       _tk_bs,
+                                    "price":        _pr_bs,
+                                    "spike":        _spk_bs,
+                                    "chg1d":        _chg1d,
+                                    "rsi":          _rsi14,
+                                    "ema13":        round(_ema13, 0),
+                                    "ema21":        round(_ema21, 0),
+                                    "avg_val_m":    round(_avg_val / 1e6, 1),  # juta rupiah
+                                    "high_momentum":_spk_bs >= 2.5,
+                                    "momentum_days":0,
+                                    "verdict":      "",
+                                    "pre_accum":    _is_accum,
+                                    "trend_ok":     _trend_ok,
+                                    "top_accum":    [],
+                                    "top_dist":     [],
+                                    "accum_days":   0,
+                                    "goapi_confirmed": False,
+                                })
+                            except Exception:
+                                continue
+
+                    # Sort by volume spike × likuiditas
+                    _screened_200.sort(key=lambda x: (x["spike"] * min(x["avg_val_m"], 5000)), reverse=True)
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 5: Ambil Top 30 untuk GoAPI Broker Summary
+                    # ─────────────────────────────────────────────────
+                    _top30_candidates = _screened_200[:30]
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 6: GoAPI Broker Summary — HANYA untuk pipeline ini
+                    # Analisa akumulasi/distribusi per saham
+                    # Bandarmologi rule IDX:
+                    #   Buyer banyak + Seller sedikit  = DISTRIBUSI (smart money jual ke retail)
+                    #   Buyer sedikit + Seller banyak  = AKUMULASI  (smart money beli dari retail)
+                    # ─────────────────────────────────────────────────
+                    _goapi_ok = _goapi_available()
+                    _bs_date  = None
+                    if _goapi_ok:
+                        try:
+                            _bs_date = _goapi_resolve_latest_date("BBCA")
+                        except Exception:
+                            _bs_date = None
+
+                    _result_bs = []
+                    for _s30 in _top30_candidates:
+                        _tk30 = _s30["ticker"]
+                        try:
+                            # GoAPI broker summary — restricted ke pipeline ini saja
+                            if _goapi_ok:
+                                _brok_rows = goapi_get_broker_summary(_tk30, date_str=_bs_date, _pipeline_call=True)
+                                if _brok_rows:
+                                    # Hitung net buy/sell per broker
+                                    _buy_brokers  = [r for r in _brok_rows if (r.get("buy_lot",0) or 0) > (r.get("sell_lot",0) or 0)]
+                                    _sell_brokers = [r for r in _brok_rows if (r.get("sell_lot",0) or 0) > (r.get("buy_lot",0) or 0)]
+                                    _n_buy_br  = len(_buy_brokers)
+                                    _n_sell_br = len(_sell_brokers)
+                                    # Bandarmologi IDX (counter-intuitive):
+                                    # Buyer brokers SEDIKIT + Seller brokers BANYAK = AKUMULASI smart money
+                                    # Buyer brokers BANYAK  + Seller brokers SEDIKIT = DISTRIBUSI smart money
+                                    _is_accum_goapi = _n_buy_br <= _n_sell_br * 0.6  # buyer broker < 60% seller broker
+                                    _is_dist_goapi  = _n_buy_br >= _n_sell_br * 1.5  # buyer broker > 150% seller broker
+                                    # Top broker akumulasi (seller broker = smart money jual ke retail = dist, skip)
+                                    _top_accum = sorted(
+                                        [r.get("broker_id","") for r in _sell_brokers[:5] if r.get("broker_id","")],
+                                        key=lambda b: b
+                                    )[:3]
+                                    _top_dist  = sorted(
+                                        [r.get("broker_id","") for r in _buy_brokers[:5] if r.get("broker_id","")],
+                                        key=lambda b: b
+                                    )[:3]
+
+                                    if _is_dist_goapi:
+                                        # Distribusi — skip dari list final
+                                        continue
+
+                                    _s30.update({
+                                        "goapi_confirmed": True,
+                                        "pre_accum":       _is_accum_goapi,
+                                        "top_accum":       _top_accum,
+                                        "top_dist":        _top_dist,
+                                        "n_buy_brokers":   _n_buy_br,
+                                        "n_sell_brokers":  _n_sell_br,
+                                        "verdict":         "AKUMULASI" if _is_accum_goapi else "NETRAL",
+                                    })
+                                else:
+                                    # Tidak ada data GoAPI — tetap masukkan tapi tidak confirmed
+                                    _s30["verdict"] = "NO_DATA_GOAPI"
+                            _result_bs.append(_s30)
+                        except Exception:
+                            _result_bs.append(_s30)
+                            continue
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 7: Urutkan ulang — prioritaskan GoAPI confirmed akumulasi
+                    # ─────────────────────────────────────────────────
+                    _result_bs.sort(key=lambda x: (
+                        -int(x.get("goapi_confirmed", False)),  # GoAPI confirmed dulu
+                        -int(x.get("pre_accum", False)),         # akumulasi dulu
+                        -x.get("spike", 1.0),                    # volume spike tinggi
+                        -x.get("avg_val_m", 0),                  # likuiditas tinggi
+                    ))
+
+                    # Top 30 → simpan semua 30 ke history (bank data weekly)
+                    _bs30_final = _result_bs[:30]
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 8: Seleksi 15 kandidat terbaik
+                    # Kriteria tambahan: RSI tidak overbought (< 75), trend ok
+                    # ─────────────────────────────────────────────────
+                    _bs15_final = [
+                        s for s in _bs30_final
+                        if s.get("rsi", 50) < 75
+                        and s.get("trend_ok", True)
+                    ][:15]
+
+                    # ─────────────────────────────────────────────────
+                    # STEP 9: Output 5 Daily Top
+                    # Saham terbaik: GoAPI confirmed akumulasi + spike tertinggi + liquid
+                    # ─────────────────────────────────────────────────
+                    _bs5_daily = _bs15_final[:5]
+
+                    if _bs30_final:
                         _ts_new = _now_sch.strftime("%d %b %Y, %H:%M WIB (Auto 20:30)")
-                        st.session_state["sigma_bs30_screened"] = _result_bs[:30]
-                        st.session_state["sigma_bs30_ts"]       = _ts_new
-                        # Simpan ke history
+
+                        # Session state — simpan semua layer
+                        st.session_state["sigma_bs30_screened"]   = _bs30_final       # 30 untuk history/weekly
+                        st.session_state["sigma_bs15_screened"]   = _bs15_final       # 15 kandidat
+                        st.session_state["sigma_bs5_daily"]       = _bs5_daily        # 5 output daily
+                        st.session_state["sigma_bs30_ts"]         = _ts_new
+
+                        # Simpan ke history (bank data untuk weekly plan)
                         _bsh_sch = st.session_state.get("brosum_history", {})
                         _bsh_sch[_today_s] = {
-                            "date": _now_sch.strftime("%d %b %Y"),
+                            "date":         _now_sch.strftime("%d %b %Y"),
                             "generated_at": _ts_new,
-                            "screened": _result_bs[:30],
+                            "screened":     _bs30_final,   # 30 lengkap dengan broker data
+                            "top15":        _bs15_final,
+                            "top5_daily":   _bs5_daily,
+                            "universe_cnt": len(_universe_clean),
+                            "goapi_used":   _goapi_ok,
                         }
+                        # Batasi history 30 hari
                         if len(_bsh_sch) > 30:
                             for _dk_sch in sorted(_bsh_sch.keys())[:-30]:
                                 del _bsh_sch[_dk_sch]
                         st.session_state["brosum_history"] = _bsh_sch
-                        # Simpan ke Sheets — per-field, tidak bisa overwrite field lain
+
+                        # Persist ke Google Sheets
                         try:
                             _ue = st.session_state.user["email"]
-                            save_field(_ue, "sigma_bs30_screened", _result_bs[:30])
+                            save_field(_ue, "sigma_bs30_screened", _bs30_final)
                             save_field(_ue, "sigma_bs30_ts",       _ts_new)
                             save_field(_ue, "brosum_history",      _bsh_sch)
-                        except: pass
+                        except Exception:
+                            pass
                     else:
                         del st.session_state[_bs_auto_key]
-                except:
+                except Exception:
                     if _bs_auto_key in st.session_state:
                         del st.session_state[_bs_auto_key]
 
     # ══════════════════════════════════════════════════════════════
     # [3] JAM 21:00 — DAILY PLAN AUTO-GENERATE
+    # Source: sigma_bs5_daily (output pipeline 20:30) — max 5 saham
     # ══════════════════════════════════════════════════════════════
     if _is_weekday() and _past(21):
         _dp_auto_key = f"daily_plan_global_{_today_s}"
@@ -7051,68 +7335,101 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
             if _slot_dp not in _dph:
                 st.session_state[_dp_auto_key] = True
                 try:
-                    # Pastikan ada bs30 cache (pakai data apapun yg ada)
-                    _bs30_dp = st.session_state.get("sigma_bs30_screened", [])
-                    if not _bs30_dp:
-                        # Coba ambil dari history
-                        _bsh_dp = st.session_state.get("brosum_history", {})
-                        if _bsh_dp:
-                            _last_dp = sorted(_bsh_dp.keys())[-1]
-                            _bs30_dp = _bsh_dp[_last_dp].get("screened", [])
-                    if _bs30_dp:
-                        import sys as _sys_dp
-                        # Ambil _WATCHLIST_RECO dari session atau fallback ke ticker dari bs30
-                        _tickers_dp = tuple(s["ticker"] for s in _bs30_dp if s.get("ticker"))
-                        # Fetch prices secara global (tidak butuh dalam context tab)
+                    # Prioritas: ambil dari sigma_bs5_daily (hasil pipeline 20:30)
+                    _bs5_dp = st.session_state.get("sigma_bs5_daily", [])
+                    if not _bs5_dp:
+                        # Fallback: ambil 5 teratas dari bs30
+                        _bs30_fb_dp = st.session_state.get("sigma_bs30_screened", [])
+                        if not _bs30_fb_dp:
+                            _bsh_dp = st.session_state.get("brosum_history", {})
+                            if _bsh_dp:
+                                _last_dp = sorted(_bsh_dp.keys())[-1]
+                                _bsh_day = _bsh_dp[_last_dp]
+                                _bs5_dp  = _bsh_day.get("top5_daily", _bsh_day.get("screened", []))[:5]
+                        else:
+                            _bs5_dp = _bs30_fb_dp[:5]
+
+                    if _bs5_dp:
                         import yfinance as _yf_dp
                         _pm_dp = {}
-                        for _tk_dp in _tickers_dp[:30]:
+                        for _tk_dp in [s["ticker"] for s in _bs5_dp if s.get("ticker")]:
                             try:
                                 _h_dp = _yf_dp.Ticker(f"{_tk_dp}.JK").history(period="5d")
                                 if not _h_dp.empty:
                                     _pm_dp[_tk_dp] = {
-                                        "close": float(_h_dp["Close"].iloc[-1]),
-                                        "high":  float(_h_dp["High"].iloc[-1]),
-                                        "low":   float(_h_dp["Low"].iloc[-1]),
-                                        "volume":float(_h_dp["Volume"].iloc[-1]) if "Volume" in _h_dp else 0,
+                                        "close":      float(_h_dp["Close"].iloc[-1]),
+                                        "high":       float(_h_dp["High"].iloc[-1]),
+                                        "low":        float(_h_dp["Low"].iloc[-1]),
+                                        "volume":     float(_h_dp["Volume"].iloc[-1]) if "Volume" in _h_dp else 0,
                                         "prev_close": float(_h_dp["Close"].iloc[-2]) if len(_h_dp)>1 else float(_h_dp["Close"].iloc[-1]),
                                     }
-                            except: pass
+                            except Exception:
+                                pass
+
                         if _pm_dp:
-                            # Gunakan fungsi scoring sederhana dari bs30 data
-                            _plan_dp = {"daily": [], "avoid": [], "outlook": "Auto-generated jam 21:00 WIB"}
-                            for _s_dp in _bs30_dp[:20]:
+                            _plan_dp = {
+                                "daily": [],
+                                "avoid": [],
+                                "outlook": (
+                                    f"Auto-generated jam 21:00 WIB — Daily Trade Plan\n"
+                                    f"Pipeline: 200 Market Cap → Filter → Teknikal → 30 → GoAPI BS → 15 → Top 5"
+                                )
+                            }
+                            for _s_dp in _bs5_dp:
                                 _tk2 = _s_dp.get("ticker","")
                                 if _tk2 not in _pm_dp: continue
-                                _pd2 = _pm_dp[_tk2]
-                                _cl2 = _pd2["close"]
-                                _spk = _s_dp.get("spike",1.0)
-                                if _spk >= 2.0:
-                                    _plan_dp["daily"].append({
-                                        "ticker": _tk2, "price": int(_cl2),
-                                        "entry_low": int(_cl2*0.99), "entry_high": int(_cl2*1.01),
-                                        "tp1": int(_cl2*1.04), "tp2": int(_cl2*1.07),
-                                        "sl": int(_cl2*0.97), "rr": "1:1.5",
-                                        "horizon": "1-3 hari", "rating": "BUY",
-                                        "vol_spike": f"{_spk:.1f}x",
-                                        "why_buy": f"Volume spike {_spk:.1f}x avg20 · Auto-screened 20:30",
-                                    })
+                                _pd2  = _pm_dp[_tk2]
+                                _cl2  = _pd2["close"]
+                                _spk  = _s_dp.get("spike", 1.0)
+                                _rsi  = _s_dp.get("rsi", 50.0)
+                                _verdict = _s_dp.get("verdict","")
+                                _accum   = _s_dp.get("pre_accum", False)
+                                _goapi_c = _s_dp.get("goapi_confirmed", False)
+
+                                _rating_dp = "STRONG BUY" if (_goapi_c and _accum and _spk >= 2.0) else "BUY"
+
+                                _plan_dp["daily"].append({
+                                    "ticker":      _tk2,
+                                    "price":       int(_cl2),
+                                    "entry_low":   int(_cl2 * 0.985),
+                                    "entry_high":  int(_cl2 * 1.005),
+                                    "tp1":         int(_cl2 * 1.04),
+                                    "tp2":         int(_cl2 * 1.07),
+                                    "tp3":         int(_cl2 * 1.10),
+                                    "sl":          int(_cl2 * 0.965),
+                                    "rr":          "1:2",
+                                    "horizon":     "1-2 hari",
+                                    "rating":      _rating_dp,
+                                    "vol_spike":   f"{_spk:.1f}x",
+                                    "rsi":         _rsi,
+                                    "verdict":     _verdict,
+                                    "goapi_confirmed": _goapi_c,
+                                    "why_buy": (
+                                        f"Volume spike {_spk:.1f}x avg20 · RSI {_rsi} · "
+                                        f"{'GoAPI AKUMULASI · ' if _goapi_c and _accum else ''}"
+                                        f"Pipeline: 200→30→15→5 Auto 20:30"
+                                    ),
+                                })
+                                # MAX 5 saham daily (WAJIB)
+                                if len(_plan_dp["daily"]) >= 5:
+                                    break
+
                             if _plan_dp["daily"]:
-                                # Simpan ke history
                                 _dph_cur = st.session_state.get("auto_plan_history_daily", {})
                                 _gen_at  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
                                 _dph_cur[_slot_dp] = {
-                                    "date": _now_sch.strftime("%d %b %Y"),
-                                    "slot": "Sesi Malam (21:00)",
-                                    "plan": _plan_dp,
+                                    "date":         _now_sch.strftime("%d %b %Y"),
+                                    "slot":         "Sesi Malam (21:00)",
+                                    "plan":         _plan_dp,
                                     "generated_at": _gen_at,
+                                    "pipeline":     "200→30→GoAPI→15→5",
                                 }
                                 st.session_state["auto_plan_history_daily"] = _dph_cur
-                                # Persist
                                 try:
                                     save_field(st.session_state.user["email"], "auto_plan_history_daily", _dph_cur)
-                                except: pass
-                except:
+                                except Exception:
+                                    pass
+                except Exception:
                     if _dp_auto_key in st.session_state:
                         del st.session_state[_dp_auto_key]
 
@@ -7334,6 +7651,10 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
     # ══════════════════════════════════════════════════════════════
     # [5] SABTU JAM 12:00 — WEEKLY PLAN AUTO-GENERATE
     # ══════════════════════════════════════════════════════════════
+    # Source data: brosum_history 7 hari terakhir (bank data harian)
+    # Output: max 10 saham terbaik untuk swing weekly
+    # Analisa: konsistensi akumulasi sepanjang minggu + teknikal + news
+    # ══════════════════════════════════════════════════════════════
     if _wd_sch == 5 and _past(12):  # Sabtu
         _week_iso = _now_sch.strftime("%G-W%V")
         _wp_auto_key = f"weekly_plan_global_{_week_iso}"
@@ -7343,61 +7664,162 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
             if _slot_wp not in _wph:
                 st.session_state[_wp_auto_key] = True
                 try:
-                    _bs30_wp = st.session_state.get("sigma_bs30_screened", [])
-                    if not _bs30_wp:
-                        _bsh_wp = st.session_state.get("brosum_history", {})
-                        if _bsh_wp:
-                            _last_wp = sorted(_bsh_wp.keys())[-1]
-                            _bs30_wp = _bsh_wp[_last_wp].get("screened", [])
+                    # ── Kumpulkan data dari brosum_history 7 hari terakhir ──
+                    _bsh_wp_all  = st.session_state.get("brosum_history", {})
+                    _7days_ago   = (_now_sch - timedelta(days=7)).strftime("%Y-%m-%d")
 
+                    # Hitung frekuensi muncul tiap saham dalam 7 hari terakhir
+                    _freq_map_wp = {}   # ticker → {count, spike_sum, accum_count, avg_val_sum}
+                    for _dk_wp, _dv_wp in _bsh_wp_all.items():
+                        if _dk_wp < _7days_ago: continue
+                        for _s_wp_h in _dv_wp.get("screened", []):
+                            _tk_h = _s_wp_h.get("ticker","")
+                            if not _tk_h: continue
+                            if _tk_h not in _freq_map_wp:
+                                _freq_map_wp[_tk_h] = {
+                                    "count":      0,
+                                    "spike_sum":  0.0,
+                                    "accum_cnt":  0,
+                                    "avg_val_sum":0.0,
+                                    "rsi_last":   50.0,
+                                    "price_last": 0.0,
+                                    "goapi_cnt":  0,
+                                }
+                            _fm = _freq_map_wp[_tk_h]
+                            _fm["count"]       += 1
+                            _fm["spike_sum"]   += _s_wp_h.get("spike", 1.0)
+                            _fm["avg_val_sum"] += _s_wp_h.get("avg_val_m", 0.0)
+                            if _s_wp_h.get("pre_accum"):   _fm["accum_cnt"] += 1
+                            if _s_wp_h.get("goapi_confirmed"): _fm["goapi_cnt"] += 1
+                            _fm["rsi_last"]   = _s_wp_h.get("rsi", 50.0)
+                            _fm["price_last"] = _s_wp_h.get("price", 0.0)
+
+                    # Tidak ada data history → fallback ke sigma_bs30_screened
+                    if not _freq_map_wp:
+                        _bs30_fb = st.session_state.get("sigma_bs30_screened", [])
+                        for _s_fb in _bs30_fb:
+                            _tk_fb = _s_fb.get("ticker","")
+                            if _tk_fb:
+                                _freq_map_wp[_tk_fb] = {
+                                    "count": 1, "spike_sum": _s_fb.get("spike",1.0),
+                                    "accum_cnt": int(_s_fb.get("pre_accum",0)),
+                                    "avg_val_sum": _s_fb.get("avg_val_m",0.0),
+                                    "rsi_last": _s_fb.get("rsi",50.0),
+                                    "price_last": _s_fb.get("price",0.0),
+                                    "goapi_cnt": int(_s_fb.get("goapi_confirmed",0)),
+                                }
+
+                    # ── Scoring saham untuk weekly ──
+                    # Score = (count_muncul × 2) + accum_count + goapi_count + spike_avg
+                    _weekly_scored = []
+                    for _tk_sc, _fm_sc in _freq_map_wp.items():
+                        _cnt  = _fm_sc["count"]
+                        _spk_avg = _fm_sc["spike_sum"] / _cnt if _cnt > 0 else 1.0
+                        _score_wp = (
+                            _cnt * 2.0                              # konsistensi muncul
+                            + _fm_sc["accum_cnt"] * 1.5             # sinyal akumulasi
+                            + _fm_sc["goapi_cnt"] * 2.0             # GoAPI confirmed
+                            + _spk_avg                              # avg volume spike
+                        )
+                        # Filter: RSI tidak overbought untuk weekly swing
+                        _rsi_wp = _fm_sc["rsi_last"]
+                        if _rsi_wp > 78: continue  # skip overbought
+                        _weekly_scored.append({
+                            "ticker":       _tk_sc,
+                            "score":        round(_score_wp, 2),
+                            "appear_days":  _cnt,
+                            "spike_avg":    round(_spk_avg, 2),
+                            "accum_ratio":  round(_fm_sc["accum_cnt"] / max(_cnt, 1) * 100, 0),
+                            "goapi_days":   _fm_sc["goapi_cnt"],
+                            "rsi":          _rsi_wp,
+                            "price":        _fm_sc["price_last"],
+                            "avg_val_m":    round(_fm_sc["avg_val_sum"] / max(_cnt, 1), 1),
+                        })
+
+                    _weekly_scored.sort(key=lambda x: -x["score"])
+
+                    # ── Fetch price terkini untuk 10 teratas ──
                     import yfinance as _yf_wp
+                    _top_wp_tickers = [s["ticker"] for s in _weekly_scored[:20]]
                     _pm_wp = {}
-                    for _tk_wp in [s["ticker"] for s in _bs30_wp if s.get("ticker")][:30]:
+                    for _tk_wp in _top_wp_tickers:
                         try:
                             _h_wp = _yf_wp.Ticker(f"{_tk_wp}.JK").history(period="10d")
                             if not _h_wp.empty:
+                                _vol_wp = float(_h_wp["Volume"].iloc[-1]) if "Volume" in _h_wp else 0
                                 _pm_wp[_tk_wp] = {
-                                    "close": float(_h_wp["Close"].iloc[-1]),
-                                    "high":  float(_h_wp["High"].max()),
-                                    "low":   float(_h_wp["Low"].min()),
-                                    "volume":float(_h_wp["Volume"].iloc[-1]) if "Volume" in _h_wp else 0,
+                                    "close":      float(_h_wp["Close"].iloc[-1]),
+                                    "high":       float(_h_wp["High"].max()),
+                                    "low":        float(_h_wp["Low"].min()),
+                                    "volume":     _vol_wp,
                                     "prev_close": float(_h_wp["Close"].iloc[-2]) if len(_h_wp)>1 else float(_h_wp["Close"].iloc[-1]),
                                 }
-                        except: pass
+                        except Exception:
+                            pass
 
-                    if _pm_wp:
-                        _plan_wp = {"weekly": [], "avoid": [], "outlook": "Auto-generated Sabtu 12:00 WIB — weekly swing plan"}
-                        for _s_wp in _bs30_wp[:20]:
-                            _tk_w2 = _s_wp.get("ticker","")
+                    if _weekly_scored and _pm_wp:
+                        _plan_wp = {
+                            "weekly":  [],
+                            "avoid":   [],
+                            "outlook": (
+                                f"Auto-generated Sabtu 12:00 WIB — Weekly Swing Plan\n"
+                                f"Berdasarkan analisa brosum_history {len(_bsh_wp_all)} hari tersimpan, "
+                                f"{len(_weekly_scored)} kandidat, output top 10."
+                            )
+                        }
+
+                        for _s_wp_sc in _weekly_scored:
+                            _tk_w2 = _s_wp_sc["ticker"]
                             if _tk_w2 not in _pm_wp: continue
                             _pd_w2 = _pm_wp[_tk_w2]
                             _cl_w2 = _pd_w2["close"]
-                            _spk_w = _s_wp.get("spike",1.0)
-                            if _spk_w >= 1.6:
-                                _plan_wp["weekly"].append({
-                                    "ticker": _tk_w2, "price": int(_cl_w2),
-                                    "entry_low": int(_cl_w2*0.99), "entry_high": int(_cl_w2*1.01),
-                                    "tp1": int(_cl_w2*1.07), "tp2": int(_cl_w2*1.12),
-                                    "sl": int(_cl_w2*0.96), "rr": "1:2",
-                                    "horizon": "3-5 hari",
-                                    "rating": "BUY",
-                                    "vol_spike": f"{_spk_w:.1f}x",
-                                    "why_buy": f"Swing kandidat · spike {_spk_w:.1f}x · weekly trend",
-                                })
+                            _spk_w = _s_wp_sc["spike_avg"]
+
+                            _plan_wp["weekly"].append({
+                                "ticker":       _tk_w2,
+                                "price":        int(_cl_w2),
+                                "entry_low":    int(_cl_w2 * 0.985),
+                                "entry_high":   int(_cl_w2 * 1.005),
+                                "tp1":          int(_cl_w2 * 1.07),
+                                "tp2":          int(_cl_w2 * 1.12),
+                                "tp3":          int(_cl_w2 * 1.18),
+                                "sl":           int(_cl_w2 * 0.955),
+                                "rr":           "1:2.5",
+                                "horizon":      "3-5 hari",
+                                "rating":       "BUY" if _s_wp_sc.get("accum_ratio", 0) >= 50 else "WATCH",
+                                "vol_spike":    f"{_spk_w:.1f}x",
+                                "appear_days":  _s_wp_sc.get("appear_days", 1),
+                                "accum_ratio":  _s_wp_sc.get("accum_ratio", 0),
+                                "score":        _s_wp_sc.get("score", 0),
+                                "why_buy": (
+                                    f"Muncul {_s_wp_sc['appear_days']}x dalam 7 hari · "
+                                    f"Akumulasi {int(_s_wp_sc.get('accum_ratio',0))}% hari · "
+                                    f"Avg spike {_spk_w:.1f}x · "
+                                    f"GoAPI confirmed {_s_wp_sc.get('goapi_days',0)}x"
+                                ),
+                            })
+
+                            # Batasi output 10 saham (WAJIB)
+                            if len(_plan_wp["weekly"]) >= 10:
+                                break
+
                         if _plan_wp["weekly"]:
                             _wph_cur = st.session_state.get("auto_plan_history_weekly", {})
                             _gen_wp  = _now_sch.strftime("%d %b %Y, %H:%M WIB")
                             _wph_cur[_slot_wp] = {
-                                "date": _now_sch.strftime("%d %b %Y"),
-                                "slot": "Sabtu Siang (12:00)",
-                                "plan": _plan_wp,
+                                "date":         _now_sch.strftime("%d %b %Y"),
+                                "slot":         "Sabtu Siang (12:00)",
+                                "plan":         _plan_wp,
                                 "generated_at": _gen_wp,
+                                "source_days":  len([k for k in _bsh_wp_all if k >= _7days_ago]),
+                                "candidates":   len(_weekly_scored),
                             }
                             st.session_state["auto_plan_history_weekly"] = _wph_cur
                             try:
                                 save_field(st.session_state.user["email"], "auto_plan_history_weekly", _wph_cur)
-                            except: pass
-                except:
+                            except Exception:
+                                pass
+                except Exception:
                     if _wp_auto_key in st.session_state:
                         del st.session_state[_wp_auto_key]
 
