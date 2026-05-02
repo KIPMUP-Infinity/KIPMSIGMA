@@ -25003,3240 +25003,3240 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 # ─────────────────────────────────────────────
 # PART 12: CALCULATOR
 # ─────────────────────────────────────────────
-        with tab_kalkulator:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🧮 CALCULATOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+    with tab_kalkulator:
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🧮 CALCULATOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-            _kc_bg      = met_bg
-            _kc_border  = met_border
-            _kc_gold    = "#a78bfa"
-            _kc_purple  = "#a78bfa"
-            _kc_blue    = "#60a5fa"
-            _kc_green   = "#26a69a"
-            _kc_red     = "#f23645"
-            _kc_text    = text_main
-            _kc_sub     = text_sub
+        _kc_bg      = met_bg
+        _kc_border  = met_border
+        _kc_gold    = "#a78bfa"
+        _kc_purple  = "#a78bfa"
+        _kc_blue    = "#60a5fa"
+        _kc_green   = "#26a69a"
+        _kc_red     = "#f23645"
+        _kc_text    = text_main
+        _kc_sub     = text_sub
 
-            # ── Live Price Fetch Widget ──────────────────────────────────────
-            st.markdown(
-                f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};"
-                f"border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:16px;'>"
-                f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{_kc_gold};font-weight:700;"
-                f"letter-spacing:0.08em;'>⚡ AMBIL HARGA LIVE</span>"
-                f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{_kc_sub};margin-left:8px;'>"
-                f"Ketik ticker IDX → klik Ambil → harga otomatis terisi di kalkulator</span></div>",
+        # ── Live Price Fetch Widget ──────────────────────────────────────
+        st.markdown(
+            f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};"
+            f"border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:16px;'>"
+            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{_kc_gold};font-weight:700;"
+            f"letter-spacing:0.08em;'>⚡ AMBIL HARGA LIVE</span>"
+            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{_kc_sub};margin-left:8px;'>"
+            f"Ketik ticker IDX → klik Ambil → harga otomatis terisi di kalkulator</span></div>",
+            unsafe_allow_html=True
+        )
+        _kc_fetch_col1, _kc_fetch_col2, _kc_fetch_col3 = st.columns([2, 1, 2])
+        with _kc_fetch_col1:
+            _kc_ticker_input = st.text_input(
+                "Ticker IDX", placeholder="contoh: BBCA, TLKM, GOTO",
+                key="kc_ticker_input", label_visibility="collapsed"
+            ).strip().upper().replace(".JK", "")
+        with _kc_fetch_col2:
+            _kc_fetch_btn = st.button("⚡ Ambil Harga", use_container_width=True, key="kc_fetch_price_btn")
+        with _kc_fetch_col3:
+            _kc_price_display = st.empty()
+
+        if _kc_fetch_btn and _kc_ticker_input:
+            with st.spinner(f"Mengambil harga {_kc_ticker_input}..."):
+                try:
+                    import yfinance as _yf_kc
+                    _kc_hist = _yf_kc.Ticker(f"{_kc_ticker_input}.JK").history(period="2d")
+                    if not _kc_hist.empty:
+                        _kc_price_live = float(_kc_hist["Close"].iloc[-1])
+                        _kc_chg = float(_kc_hist["Close"].iloc[-1] - _kc_hist["Close"].iloc[-2]) / float(_kc_hist["Close"].iloc[-2]) * 100 if len(_kc_hist) >= 2 else 0
+                        _kc_chg_clr = _kc_green if _kc_chg >= 0 else _kc_red
+                        st.session_state["kc_fetched_price"] = int(_kc_price_live)
+                        st.session_state["kc_fetched_ticker"] = _kc_ticker_input
+                        _kc_price_display.markdown(
+                            f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
+                            f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
+                            f"<span style='color:{_kc_gold};font-weight:700;font-size:1rem;'>Rp {int(_kc_price_live):,}</span> "
+                            f"<span style='color:{_kc_chg_clr};font-size:0.8rem;'>{_kc_chg:+.2f}%</span> "
+                            f"<span style='color:{_kc_sub};font-size:0.72rem;'>· {_kc_ticker_input}</span></div>",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.warning(f"Ticker {_kc_ticker_input} tidak ditemukan di yfinance.")
+                except Exception as _kc_err:
+                    st.warning(f"Gagal ambil harga: {_kc_err}")
+        elif st.session_state.get("kc_fetched_price"):
+            _kc_price_display.markdown(
+                f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
+                f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
+                f"<span style='color:{_kc_sub};font-size:0.72rem;'>Harga terakhir ({st.session_state.get('kc_fetched_ticker','')}):</span> "
+                f"<span style='color:{_kc_gold};font-weight:700;'>Rp {st.session_state['kc_fetched_price']:,}</span></div>",
                 unsafe_allow_html=True
             )
-            _kc_fetch_col1, _kc_fetch_col2, _kc_fetch_col3 = st.columns([2, 1, 2])
-            with _kc_fetch_col1:
-                _kc_ticker_input = st.text_input(
-                    "Ticker IDX", placeholder="contoh: BBCA, TLKM, GOTO",
-                    key="kc_ticker_input", label_visibility="collapsed"
-                ).strip().upper().replace(".JK", "")
-            with _kc_fetch_col2:
-                _kc_fetch_btn = st.button("⚡ Ambil Harga", use_container_width=True, key="kc_fetch_price_btn")
-            with _kc_fetch_col3:
-                _kc_price_display = st.empty()
 
-            if _kc_fetch_btn and _kc_ticker_input:
-                with st.spinner(f"Mengambil harga {_kc_ticker_input}..."):
-                    try:
-                        import yfinance as _yf_kc
-                        _kc_hist = _yf_kc.Ticker(f"{_kc_ticker_input}.JK").history(period="2d")
-                        if not _kc_hist.empty:
-                            _kc_price_live = float(_kc_hist["Close"].iloc[-1])
-                            _kc_chg = float(_kc_hist["Close"].iloc[-1] - _kc_hist["Close"].iloc[-2]) / float(_kc_hist["Close"].iloc[-2]) * 100 if len(_kc_hist) >= 2 else 0
-                            _kc_chg_clr = _kc_green if _kc_chg >= 0 else _kc_red
-                            st.session_state["kc_fetched_price"] = int(_kc_price_live)
-                            st.session_state["kc_fetched_ticker"] = _kc_ticker_input
-                            _kc_price_display.markdown(
-                                f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
-                                f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
-                                f"<span style='color:{_kc_gold};font-weight:700;font-size:1rem;'>Rp {int(_kc_price_live):,}</span> "
-                                f"<span style='color:{_kc_chg_clr};font-size:0.8rem;'>{_kc_chg:+.2f}%</span> "
-                                f"<span style='color:{_kc_sub};font-size:0.72rem;'>· {_kc_ticker_input}</span></div>",
-                                unsafe_allow_html=True
-                            )
-                        else:
-                            st.warning(f"Ticker {_kc_ticker_input} tidak ditemukan di yfinance.")
-                    except Exception as _kc_err:
-                        st.warning(f"Gagal ambil harga: {_kc_err}")
-            elif st.session_state.get("kc_fetched_price"):
-                _kc_price_display.markdown(
-                    f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
-                    f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
-                    f"<span style='color:{_kc_sub};font-size:0.72rem;'>Harga terakhir ({st.session_state.get('kc_fetched_ticker','')}):</span> "
-                    f"<span style='color:{_kc_gold};font-weight:700;'>Rp {st.session_state['kc_fetched_price']:,}</span></div>",
-                    unsafe_allow_html=True
-                )
+        st.divider()
 
-            st.divider()
+        # ── Sub-tabs
+        ktab_ara, ktab_avg = st.tabs([
+            "  📈 ARA / ARB Calculator  ",
+            "  📉 Average Down Calculator  ",
+        ])
 
-            # ── Sub-tabs
-            ktab_ara, ktab_avg = st.tabs([
-                "  📈 ARA / ARB Calculator  ",
-                "  📉 Average Down Calculator  ",
-            ])
-
-            # ══════════════════════════════════════════════
-            # SUB-TAB 1 - ARA / ARB CALCULATOR
-            # ══════════════════════════════════════════════
-            with ktab_ara:
-                st.markdown(f"""
-                <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};
-                border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
-                font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{_kc_sub};line-height:1.85;'>
-                <span style='color:{_kc_gold};font-weight:700;letter-spacing:0.1em;font-size:0.8rem;'>i TENTANG ARA / ARB</span><br>
-                <b style='color:{_kc_green};'>ARA (Auto Rejection Atas)</b> - batas maksimum kenaikan harga saham dalam 1 hari.<br>
-                <b style='color:{_kc_red};'>ARB (Auto Rejection Bawah)</b> - batas maksimum penurunan harga saham dalam 1 hari.<br><br>
-                <b>Reguler:</b> Harga &lt; Rp 200 = &plusmn;35% &middot; Harga Rp 200&ndash;Rp 5.000 = &plusmn;25% &middot; Harga &gt; Rp 5.000 = &plusmn;20%<br>
-                <b>Akselerasi &amp; FCA:</b> Sesi 1 = &plusmn;10% &middot; Sesi 2 = &plusmn;10% (compounding per sesi)
-                </div>
-                """, unsafe_allow_html=True)
-
-                _ara_html = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
-
-    /* -- Form -- */
-    .form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
-    .form-title{{font-size:1.25rem;font-weight:700;color:{_kc_gold};letter-spacing:0.06em;margin-bottom:18px;text-align:center;}}
-    .form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.08em;margin-top:-14px;margin-bottom:18px;}}
-    .toggle-row{{display:flex;gap:0;margin-bottom:18px;border:1px solid {_kc_border};border-radius:8px;overflow:hidden;}}
-    .toggle-btn{{flex:1;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;font-weight:600;
-      letter-spacing:0.06em;border:none;cursor:pointer;transition:all 0.18s;}}
-    .toggle-btn.active{{background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(124,58,237,0.15));color:{_kc_gold};border-bottom:2px solid {_kc_gold};}}
-    .toggle-btn.inactive{{background:transparent;color:{_kc_sub};border-bottom:2px solid transparent;}}
-    .field-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;}}
-    .inp{{width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
-      border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;
-      color:{_kc_text};outline:none;transition:border-color 0.18s;}}
-    .inp:focus{{border-color:{_kc_gold};box-shadow:0 0 0 2px rgba(124,58,237,0.08);}}
-    .row2{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}}
-    .slider-row{{margin-bottom:18px;}}
-    .slider-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};
-      margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}}
-    .slider-val{{font-size:1.1rem;font-weight:700;color:{_kc_gold};}}
-    input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;}}
-    .calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(124,58,237,0.22),rgba(124,58,237,0.18));
-      border:1px solid rgba(124,58,237,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
-      font-size:0.875rem;font-weight:700;letter-spacing:0.1em;color:{_kc_gold};cursor:pointer;
-      transition:all 0.18s;text-transform:uppercase;}}
-    .calc-btn:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.32),rgba(124,58,237,0.25));
-      box-shadow:0 0 18px rgba(124,58,237,0.18);}}
-
-    /* -- Results -- */
-    .result-wrap{{display:none;}}
-    .result-wrap.show{{display:block;}}
-    .result-header{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
-      color:{_kc_sub};margin:20px 0 12px;display:flex;align-items:center;gap:8px;}}
-    .result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
-
-    /* -- ARA/ARB section headers -- */
-    .section-label{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;
-      color:{_kc_sub};margin:16px 0 8px;padding-left:4px;}}
-
-    /* -- Card list style (like image 2) -- */
-    .cards-list{{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}}
-    .step-card{{border:1px solid {_kc_border};border-radius:10px;padding:13px 16px;
-      background:rgba(14,22,40,0.9);display:flex;align-items:center;gap:12px;
-      transition:border-color 0.15s;}}
-    .step-card.ara{{border-left:4px solid {_kc_green};}}
-    .step-card.arb{{border-left:4px solid {_kc_red};}}
-    .step-card:hover{{border-color:rgba(124,58,237,0.35);}}
-    .step-card-left{{flex:1;min-width:0;}}
-    .step-price-row{{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;}}
-    .step-price{{font-size:1.25rem;font-weight:700;line-height:1.1;}}
-    .step-rp{{font-size:0.8rem;font-weight:400;color:{_kc_sub};}}
-    .step-delta{{font-size:0.8rem;font-weight:600;}}
-    .step-delta.up{{color:{_kc_green};}}
-    .step-delta.dn{{color:{_kc_red};}}
-    .step-card-right{{text-align:right;flex-shrink:0;}}
-    .step-tag{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
-      font-weight:700;margin-bottom:4px;display:block;}}
-    .step-tag.ara{{color:{_kc_green};}}
-    .step-tag.arb{{color:{_kc_red};}}
-    .step-total-pct{{font-size:1.1rem;font-weight:700;}}
-    .step-total-pct.up{{color:{_kc_green};}}
-    .step-total-pct.dn{{color:{_kc_red};}}
-
-    /* Visualisasi bar */
-    .viz-wrap{{margin-top:20px;background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:18px 20px;}}
-    .viz-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:14px;text-align:center;}}
-    .viz-bar-row{{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:0.8rem;}}
-    .viz-lbl{{width:60px;text-align:right;color:{_kc_sub};flex-shrink:0;}}
-    .viz-bar-bg{{flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:20px;overflow:hidden;position:relative;}}
-    .viz-bar-fill{{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;
-      font-size:0.72rem;font-weight:700;transition:width 0.5s ease;white-space:nowrap;}}
-    .viz-end{{width:80px;text-align:left;flex-shrink:0;}}
-
-    @media(max-width:640px){{
-      .step-price{{font-size:1.25rem;}}
-      .step-total-pct{{font-size:1.1rem;}}
-      .row2{{grid-template-columns:1fr;}}
-      .form-wrap{{padding:16px 14px;}}
-      .step-card{{padding:11px 13px;gap:10px;}}
-    }}
-    </style></head><body>
-
-    <div class="form-wrap">
-      <div class="form-title">Auto Rejection</div>
-      <div class="form-sub">ARA ARB Calculator</div>
-
-      <label class="field-lbl">Jenis Saham</label>
-      <div class="toggle-row" style="margin-bottom:18px;">
-        <button class="toggle-btn active" id="btn-reg" onclick="setType('reguler')">Reguler</button>
-        <button class="toggle-btn inactive" id="btn-fca" onclick="setType('fca')">Akselerasi &amp; FCA</button>
-      </div>
-
-      <label class="field-lbl">Harga Saham (Rp)</label>
-      <input class="inp" id="inp-harga" type="number" placeholder="Masukkan harga saham" min="1" style="margin-bottom:14px;" oninput="onHargaChange()">
-
-      <div class="row2">
-        <div>
-          <label class="field-lbl">Lot</label>
-          <input class="inp" id="inp-lot" type="number" placeholder="1" min="1" value="1">
-        </div>
-        <div>
-          <label class="field-lbl">Modal (Rp) <span style="color:{_kc_sub};font-size:0.72rem;">- opsional</span></label>
-          <input class="inp" id="inp-modal" type="number" placeholder="Otomatis" min="0">
-        </div>
-      </div>
-
-      <div class="slider-row" style="margin-top:14px;">
-        <div class="slider-lbl">
-          <span>Jumlah Skenario (ARA/ARB)</span>
-          <span class="slider-val" id="slider-val">5</span>
-        </div>
-        <input type="range" id="inp-steps" min="1" max="50" value="5" oninput="document.getElementById('slider-val').textContent=this.value">
-      </div>
-
-      <button class="calc-btn" onclick="calculate()">&#9654; Hitung ARA &amp; ARB</button>
-    </div>
-
-    <div class="result-wrap" id="result-wrap">
-      <div class="result-header">Hasil Simulasi</div>
-      <div class="section-label" id="ara-label" style="display:none;">&#9650; ARA - Auto Rejection Atas</div>
-      <div class="cards-list" id="ara-container"></div>
-      <div style="border-top:1px dashed rgba(124,58,237,0.2);margin:4px 0 12px;"></div>
-      <div class="section-label" id="arb-label" style="display:none;">&#9660; ARB - Auto Rejection Bawah</div>
-      <div class="cards-list" id="arb-container"></div>
-      <div class="viz-wrap" id="viz-wrap">
-        <div class="viz-title">Visualisasi Pergerakan Harga</div>
-        <div class="viz-sub" style="font-size:0.72rem;color:{_kc_sub};text-align:center;margin-top:-10px;margin-bottom:14px;">
-          Visualisasi pergerakan harga untuk setiap ARA dan ARB di setiap langkah
-        </div>
-        <div id="viz-container"></div>
-      </div>
-    </div>
-
-    <script>
-    var sahamType = 'reguler';
-
-    function setType(t) {{
-      sahamType = t;
-      document.getElementById('btn-reg').className = 'toggle-btn ' + (t==='reguler'?'active':'inactive');
-      document.getElementById('btn-fca').className = 'toggle-btn ' + (t==='fca'?'active':'inactive');
-    }}
-
-    function onHargaChange() {{
-      var h = parseFloat(document.getElementById('inp-harga').value)||0;
-      var lot = parseInt(document.getElementById('inp-lot').value)||1;
-      document.getElementById('inp-modal').placeholder = h>0 ? 'Rp '+fmt(h*lot*100) : 'Otomatis';
-    }}
-
-    function getARARate(price, type) {{
-      if (type === 'fca') return 0.10; // Sesi 1 & 2 masing-masing 10%
-      if (price < 200)   return 0.35;
-      if (price <= 5000) return 0.25;
-      return 0.20;
-    }}
-
-    function getARBRate(price, type) {{
-      if (type === 'fca') return 0.10;
-      if (price < 200)   return 0.35;
-      if (price <= 5000) return 0.25;
-      return 0.20;
-    }}
-
-    function roundTick(p) {{
-      if (p < 200)   return Math.round(p);
-      if (p < 500)   return Math.round(p/2)*2;
-      if (p < 2000)  return Math.round(p/5)*5;
-      if (p < 5000)  return Math.round(p/10)*10;
-      return Math.round(p/25)*25;
-    }}
-
-    function fmt(n) {{
-      if (!n && n!==0) return '-';
-      return new Intl.NumberFormat('id-ID').format(Math.round(n));
-    }}
-
-    function fmtPct(p) {{
-      return (p>=0?'&uarr;':' ') + p.toFixed(2) + '%';
-    }}
-
-    function calculate() {{
-      var harga  = parseFloat(document.getElementById('inp-harga').value);
-      var lot    = parseInt(document.getElementById('inp-lot').value)||1;
-      var steps  = parseInt(document.getElementById('inp-steps').value)||5;
-      var modal  = parseFloat(document.getElementById('inp-modal').value)||0;
-      if (!harga || harga <= 0) {{ alert('Masukkan harga saham terlebih dahulu.'); return; }}
-
-      var modalEff = modal > 0 ? modal : harga * lot * 100;
-
-      var araSteps = [], arbSteps = [];
-      var curARA = harga, curARB = harga;
-
-      for (var i=1; i<=steps; i++) {{
-        var araRate = getARARate(curARA, sahamType);
-        curARA = roundTick(curARA * (1 + araRate));
-        var naik = ((curARA-harga) / harga * 100);
-        araSteps.push({{ step:i, price:curARA, naik:araRate*100, total:naik }});
-
-        var arbRate = getARBRate(curARB, sahamType);
-        var nextARB = roundTick(curARB * (1-arbRate));
-        var turun = ((nextARB-harga) / harga * 100);
-        // Hard floor: harga minimum IDX = Rp 50
-        if (nextARB < 50) nextARB = 50;
-        curARB = nextARB;
-        arbSteps.push({{ step:i, price:curARB, turun:arbRate*100, total:turun }});
-      }}
-
-      var araHtml = '';
-      var arbHtml = '';
-      for (var i=0; i<araSteps.length; i++) {{
-        var a = araSteps[i], b = arbSteps[i];
-        araHtml += '<div class="step-card ara">' +
-          '<div class="step-card-left">' +
-            '<div class="step-price-row">' +
-              '<span class="step-price" style="color:#26a69a;">Rp ' + fmt(a.price) + '</span>' +
-              '<span class="step-delta up">&uarr; +' + a.naik.toFixed(2) + '%</span>' +
-            '</div>' +
-            '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
-          '</div>' +
-          '<div class="step-card-right">' +
-            '<span class="step-tag ara">ARA #' + a.step + '</span>' +
-            '<div class="step-total-pct up">&#8599; ' + a.total.toFixed(2) + '%</div>' +
-          '</div>' +
-        '</div>';
-        arbHtml += '<div class="step-card arb">' +
-          '<div class="step-card-left">' +
-            '<div class="step-price-row">' +
-              '<span class="step-price" style="color:#f23645;">Rp ' + fmt(b.price) + '</span>' +
-              '<span class="step-delta dn">&darr; -' + b.turun.toFixed(2) + '%</span>' +
-            '</div>' +
-            '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
-          '</div>' +
-          '<div class="step-card-right">' +
-            '<span class="step-tag arb">ARB #' + b.step + '</span>' +
-            '<div class="step-total-pct dn">&#8600; ' + b.total.toFixed(2) + '%</div>' +
-          '</div>' +
-        '</div>';
-      }}
-      document.getElementById('ara-container').innerHTML = araHtml;
-      document.getElementById('arb-container').innerHTML = arbHtml;
-      document.getElementById('ara-label').style.display = 'block';
-      document.getElementById('arb-label').style.display = 'block';
-
-      // Visualisasi
-      var maxPrice = araSteps[araSteps.length-1].price;
-      var vizHtml = '';
-      // ARA bars
-      for (var i=0; i<araSteps.length; i++) {{
-        var a = araSteps[i];
-        var pct = Math.max(2, (a.price / maxPrice * 75));
-        vizHtml += '<div class="viz-bar-row">' +
-          '<div class="viz-lbl" style="color:#26a69a;">ARA #'+a.step+'</div>' +
-          '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,rgba(38,166,154,0.7),rgba(38,166,154,0.4));color:#fff;">' +
-          'Rp '+fmt(a.price)+'</div></div>' +
-          '<div class="viz-end" style="color:#26a69a;font-size:0.72rem;">+'+a.total.toFixed(1)+'%</div></div>';
-      }}
-      // Separator
-      vizHtml += '<div style="border-top:1px dashed rgba(124,58,237,0.15);margin:10px 0 10px;"></div>';
-      // ARB bars
-      var minPrice = arbSteps[arbSteps.length-1].price;
-      for (var i=0; i<arbSteps.length; i++) {{
-        var b = arbSteps[i];
-        var pct2 = Math.max(2, (b.price / harga * 75));
-        vizHtml += '<div class="viz-bar-row">' +
-          '<div class="viz-lbl" style="color:#f23645;">ARB #'+b.step+'</div>' +
-          '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct2+'%;background:linear-gradient(90deg,rgba(242,54,69,0.7),rgba(242,54,69,0.35));color:#fff;">' +
-          'Rp '+fmt(b.price)+'</div></div>' +
-          '<div class="viz-end" style="color:#f23645;font-size:0.72rem;">'+b.total.toFixed(1)+'%</div></div>';
-      }}
-      document.getElementById('viz-container').innerHTML = vizHtml;
-      document.getElementById('result-wrap').className = 'result-wrap show';
-    }}
-    </script>
-    </body></html>"""
-
-                components.html(_ara_html, height=1600, scrolling=True)
-
-            # ══════════════════════════════════════════════
-            # SUB-TAB 2 - KALKULATOR AVERAGE DOWN
-            # ══════════════════════════════════════════════
-            with ktab_avg:
-                st.markdown(f"""
-                <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_purple};
-                border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
-                font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{_kc_sub};line-height:1.85;'>
-                <span style='color:{_kc_purple};font-weight:700;letter-spacing:0.1em;font-size:0.8rem;'>i TENTANG AVERAGE DOWN</span><br>
-                <b>Average Down</b> adalah strategi membeli lebih banyak saham saat harga turun untuk menurunkan harga rata-rata kepemilikan.<br>
-                Kalkulator ini mendukung <b>hingga 5 transaksi pembelian</b> sekaligus untuk menghitung harga rata-rata, total lot, dan total modal yang dibutuhkan.
-                </div>
-                """, unsafe_allow_html=True)
-
-                _avg_html = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
-    .form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
-    .form-title{{font-size:1.25rem;font-weight:700;color:{_kc_purple};letter-spacing:0.06em;margin-bottom:4px;text-align:center;}}
-    .form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.06em;margin-bottom:20px;}}
-    .field-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;font-weight:600;}}
-    .inp{{width:100%;padding:10px 13px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
-      border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;font-weight:600;
-      color:{_kc_text};outline:none;transition:border-color 0.18s;}}
-    .inp:focus{{border-color:{_kc_purple};box-shadow:0 0 0 2px rgba(167,139,250,0.08);}}
-    .trx-block{{background:rgba(124,58,237,0.05);border:1px solid rgba(124,58,237,0.18);
-      border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
-    .trx-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_purple};
-      font-weight:700;margin-bottom:12px;}}
-    .row3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}}
-    .row2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;}}
-    .add-btn{{width:100%;padding:10px;background:rgba(124,58,237,0.1);border:1px dashed rgba(124,58,237,0.35);
-      border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:600;
-      letter-spacing:0.08em;color:{_kc_purple};cursor:pointer;margin-bottom:14px;transition:all 0.18s;}}
-    .add-btn:hover{{background:rgba(124,58,237,0.18);border-color:rgba(124,58,237,0.6);}}
-    .del-btn{{float:right;padding:2px 8px;background:rgba(242,54,69,0.1);border:1px solid rgba(242,54,69,0.3);
-      border-radius:4px;font-size:0.72rem;color:{_kc_red};cursor:pointer;font-family:'IBM Plex Mono',monospace;margin-top:-2px;}}
-    .del-btn:hover{{background:rgba(242,54,69,0.22);}}
-    .harga-inp{{margin-bottom:18px;}}
-
-    /* Current Price section */
-    .cur-price-row{{display:flex;gap:12px;align-items:flex-end;margin-bottom:18px;}}
-    .cur-price-row > div:first-child{{flex:1;}}
-
-    .calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(167,139,250,0.22),rgba(96,165,250,0.18));
-      border:1px solid rgba(167,139,250,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
-      font-size:0.875rem;font-weight:700;letter-spacing:0.1em;color:{_kc_purple};cursor:pointer;
-      transition:all 0.18s;text-transform:uppercase;margin-top:6px;}}
-    .calc-btn:hover{{background:linear-gradient(135deg,rgba(167,139,250,0.32),rgba(96,165,250,0.25));
-      box-shadow:0 0 18px rgba(167,139,250,0.18);}}
-
-    /* Results */
-    .result-wrap{{display:none;}}
-    .result-wrap.show{{display:block;}}
-    .result-header{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
-      color:{_kc_sub};margin:20px 0 14px;display:flex;align-items:center;gap:8px;}}
-    .result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
-
-    .summary-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}}
-    .sum-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:14px 16px;text-align:center;}}
-    .sum-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:6px;}}
-    .sum-val{{font-size:1.25rem;font-weight:700;}}
-    .sum-val.purple{{color:{_kc_purple};}}
-    .sum-val.blue{{color:{_kc_blue};}}
-    .sum-val.gold{{color:{_kc_gold};}}
-    .sum-val.green{{color:{_kc_green};}}
-    .sum-val.red{{color:{_kc_red};}}
-
-    /* Breakdown table */
-    .bk-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
-    .bk-tbl{{width:100%;border-collapse:collapse;}}
-    .bk-tbl thead th{{background:rgba(124,58,237,0.08);color:{_kc_purple};padding:9px 12px;
-      font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;text-align:left;border-bottom:1px solid {_kc_border};}}
-    .bk-tbl tbody td{{padding:9px 12px;font-size:0.875rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}}
-    .bk-tbl tbody tr:last-child td{{border-bottom:none;font-weight:700;color:{_kc_purple};background:rgba(124,58,237,0.05);}}
-    .bk-tbl tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.03);}}
-    .bk-tbl tbody tr:nth-child(even) td{{background:rgba(96,165,250,0.03);}}
-
-    /* PnL insight */
-    .pnl-box{{border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:0.875rem;line-height:1.75;}}
-    .pnl-box.profit{{background:rgba(38,166,154,0.08);border:1px solid rgba(38,166,154,0.25);border-left:3px solid {_kc_green};}}
-    .pnl-box.loss{{background:rgba(242,54,69,0.07);border:1px solid rgba(242,54,69,0.22);border-left:3px solid {_kc_red};}}
-    .pnl-box.neutral{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-left:3px solid {_kc_gold};}}
-
-    @media(max-width:640px){{
-      .row3{{grid-template-columns:1fr;}}
-      .summary-grid{{grid-template-columns:1fr 1fr;}}
-      .form-wrap{{padding:16px 14px;}}
-    }}
-    </style></head><body>
-
-    <div class="form-wrap">
-      <div class="form-title"> Average Down</div>
-      <div class="form-sub">Average Price Calculator</div>
-
-      <div id="trx-container">
-        <!-- Pembelian Awal -->
-        <div class="trx-block" id="trx-0">
-          <div class="trx-title"> PEMBELIAN AWAL</div>
-          <div class="row3">
-            <div>
-              <label class="field-lbl">Kode Saham <span style="color:{_kc_sub};font-weight:400;">(opsional)</span></label>
-              <input class="inp" id="kode-0" type="text" placeholder="cth: BBCA" maxlength="6" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        # ══════════════════════════════════════════════
+        # SUB-TAB 1 - ARA / ARB CALCULATOR
+        # ══════════════════════════════════════════════
+        with ktab_ara:
+            st.markdown(f"""
+            <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};
+            border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
+            font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_gold};font-weight:700;letter-spacing:0.1em;font-size:0.8rem;'>i TENTANG ARA / ARB</span><br>
+            <b style='color:{_kc_green};'>ARA (Auto Rejection Atas)</b> - batas maksimum kenaikan harga saham dalam 1 hari.<br>
+            <b style='color:{_kc_red};'>ARB (Auto Rejection Bawah)</b> - batas maksimum penurunan harga saham dalam 1 hari.<br><br>
+            <b>Reguler:</b> Harga &lt; Rp 200 = &plusmn;35% &middot; Harga Rp 200&ndash;Rp 5.000 = &plusmn;25% &middot; Harga &gt; Rp 5.000 = &plusmn;20%<br>
+            <b>Akselerasi &amp; FCA:</b> Sesi 1 = &plusmn;10% &middot; Sesi 2 = &plusmn;10% (compounding per sesi)
             </div>
-            <div>
-              <label class="field-lbl">Harga Beli (Rp) <span style="color:{_kc_red};">*</span></label>
-              <input class="inp" id="harga-0" type="number" placeholder="Contoh: 16800" min="1" oninput="livePreview()">
+            """, unsafe_allow_html=True)
+
+            _ara_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
+
+/* -- Form -- */
+.form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
+.form-title{{font-size:1.25rem;font-weight:700;color:{_kc_gold};letter-spacing:0.06em;margin-bottom:18px;text-align:center;}}
+.form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.08em;margin-top:-14px;margin-bottom:18px;}}
+.toggle-row{{display:flex;gap:0;margin-bottom:18px;border:1px solid {_kc_border};border-radius:8px;overflow:hidden;}}
+.toggle-btn{{flex:1;padding:10px 0;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;font-weight:600;
+  letter-spacing:0.06em;border:none;cursor:pointer;transition:all 0.18s;}}
+.toggle-btn.active{{background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(124,58,237,0.15));color:{_kc_gold};border-bottom:2px solid {_kc_gold};}}
+.toggle-btn.inactive{{background:transparent;color:{_kc_sub};border-bottom:2px solid transparent;}}
+.field-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;}}
+.inp{{width:100%;padding:11px 14px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
+  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:1.1rem;font-weight:600;
+  color:{_kc_text};outline:none;transition:border-color 0.18s;}}
+.inp:focus{{border-color:{_kc_gold};box-shadow:0 0 0 2px rgba(124,58,237,0.08);}}
+.row2{{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}}
+.slider-row{{margin-bottom:18px;}}
+.slider-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};
+  margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}}
+.slider-val{{font-size:1.1rem;font-weight:700;color:{_kc_gold};}}
+input[type=range]{{width:100%;accent-color:{_kc_gold};cursor:pointer;height:6px;}}
+.calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(124,58,237,0.22),rgba(124,58,237,0.18));
+  border:1px solid rgba(124,58,237,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
+  font-size:0.875rem;font-weight:700;letter-spacing:0.1em;color:{_kc_gold};cursor:pointer;
+  transition:all 0.18s;text-transform:uppercase;}}
+.calc-btn:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.32),rgba(124,58,237,0.25));
+  box-shadow:0 0 18px rgba(124,58,237,0.18);}}
+
+/* -- Results -- */
+.result-wrap{{display:none;}}
+.result-wrap.show{{display:block;}}
+.result-header{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:{_kc_sub};margin:20px 0 12px;display:flex;align-items:center;gap:8px;}}
+.result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
+
+/* -- ARA/ARB section headers -- */
+.section-label{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;
+  color:{_kc_sub};margin:16px 0 8px;padding-left:4px;}}
+
+/* -- Card list style (like image 2) -- */
+.cards-list{{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}}
+.step-card{{border:1px solid {_kc_border};border-radius:10px;padding:13px 16px;
+  background:rgba(14,22,40,0.9);display:flex;align-items:center;gap:12px;
+  transition:border-color 0.15s;}}
+.step-card.ara{{border-left:4px solid {_kc_green};}}
+.step-card.arb{{border-left:4px solid {_kc_red};}}
+.step-card:hover{{border-color:rgba(124,58,237,0.35);}}
+.step-card-left{{flex:1;min-width:0;}}
+.step-price-row{{display:flex;align-items:baseline;gap:8px;margin-bottom:2px;}}
+.step-price{{font-size:1.25rem;font-weight:700;line-height:1.1;}}
+.step-rp{{font-size:0.8rem;font-weight:400;color:{_kc_sub};}}
+.step-delta{{font-size:0.8rem;font-weight:600;}}
+.step-delta.up{{color:{_kc_green};}}
+.step-delta.dn{{color:{_kc_red};}}
+.step-card-right{{text-align:right;flex-shrink:0;}}
+.step-tag{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
+  font-weight:700;margin-bottom:4px;display:block;}}
+.step-tag.ara{{color:{_kc_green};}}
+.step-tag.arb{{color:{_kc_red};}}
+.step-total-pct{{font-size:1.1rem;font-weight:700;}}
+.step-total-pct.up{{color:{_kc_green};}}
+.step-total-pct.dn{{color:{_kc_red};}}
+
+/* Visualisasi bar */
+.viz-wrap{{margin-top:20px;background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:18px 20px;}}
+.viz-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:14px;text-align:center;}}
+.viz-bar-row{{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:0.8rem;}}
+.viz-lbl{{width:60px;text-align:right;color:{_kc_sub};flex-shrink:0;}}
+.viz-bar-bg{{flex:1;background:rgba(255,255,255,0.05);border-radius:4px;height:20px;overflow:hidden;position:relative;}}
+.viz-bar-fill{{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;
+  font-size:0.72rem;font-weight:700;transition:width 0.5s ease;white-space:nowrap;}}
+.viz-end{{width:80px;text-align:left;flex-shrink:0;}}
+
+@media(max-width:640px){{
+  .step-price{{font-size:1.25rem;}}
+  .step-total-pct{{font-size:1.1rem;}}
+  .row2{{grid-template-columns:1fr;}}
+  .form-wrap{{padding:16px 14px;}}
+  .step-card{{padding:11px 13px;gap:10px;}}
+}}
+</style></head><body>
+
+<div class="form-wrap">
+  <div class="form-title">Auto Rejection</div>
+  <div class="form-sub">ARA ARB Calculator</div>
+
+  <label class="field-lbl">Jenis Saham</label>
+  <div class="toggle-row" style="margin-bottom:18px;">
+    <button class="toggle-btn active" id="btn-reg" onclick="setType('reguler')">Reguler</button>
+    <button class="toggle-btn inactive" id="btn-fca" onclick="setType('fca')">Akselerasi &amp; FCA</button>
+  </div>
+
+  <label class="field-lbl">Harga Saham (Rp)</label>
+  <input class="inp" id="inp-harga" type="number" placeholder="Masukkan harga saham" min="1" style="margin-bottom:14px;" oninput="onHargaChange()">
+
+  <div class="row2">
+    <div>
+      <label class="field-lbl">Lot</label>
+      <input class="inp" id="inp-lot" type="number" placeholder="1" min="1" value="1">
+    </div>
+    <div>
+      <label class="field-lbl">Modal (Rp) <span style="color:{_kc_sub};font-size:0.72rem;">- opsional</span></label>
+      <input class="inp" id="inp-modal" type="number" placeholder="Otomatis" min="0">
+    </div>
+  </div>
+
+  <div class="slider-row" style="margin-top:14px;">
+    <div class="slider-lbl">
+      <span>Jumlah Skenario (ARA/ARB)</span>
+      <span class="slider-val" id="slider-val">5</span>
+    </div>
+    <input type="range" id="inp-steps" min="1" max="50" value="5" oninput="document.getElementById('slider-val').textContent=this.value">
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">&#9654; Hitung ARA &amp; ARB</button>
+</div>
+
+<div class="result-wrap" id="result-wrap">
+  <div class="result-header">Hasil Simulasi</div>
+  <div class="section-label" id="ara-label" style="display:none;">&#9650; ARA - Auto Rejection Atas</div>
+  <div class="cards-list" id="ara-container"></div>
+  <div style="border-top:1px dashed rgba(124,58,237,0.2);margin:4px 0 12px;"></div>
+  <div class="section-label" id="arb-label" style="display:none;">&#9660; ARB - Auto Rejection Bawah</div>
+  <div class="cards-list" id="arb-container"></div>
+  <div class="viz-wrap" id="viz-wrap">
+    <div class="viz-title">Visualisasi Pergerakan Harga</div>
+    <div class="viz-sub" style="font-size:0.72rem;color:{_kc_sub};text-align:center;margin-top:-10px;margin-bottom:14px;">
+      Visualisasi pergerakan harga untuk setiap ARA dan ARB di setiap langkah
+    </div>
+    <div id="viz-container"></div>
+  </div>
+</div>
+
+<script>
+var sahamType = 'reguler';
+
+function setType(t) {{
+  sahamType = t;
+  document.getElementById('btn-reg').className = 'toggle-btn ' + (t==='reguler'?'active':'inactive');
+  document.getElementById('btn-fca').className = 'toggle-btn ' + (t==='fca'?'active':'inactive');
+}}
+
+function onHargaChange() {{
+  var h = parseFloat(document.getElementById('inp-harga').value)||0;
+  var lot = parseInt(document.getElementById('inp-lot').value)||1;
+  document.getElementById('inp-modal').placeholder = h>0 ? 'Rp '+fmt(h*lot*100) : 'Otomatis';
+}}
+
+function getARARate(price, type) {{
+  if (type === 'fca') return 0.10; // Sesi 1 & 2 masing-masing 10%
+  if (price < 200)   return 0.35;
+  if (price <= 5000) return 0.25;
+  return 0.20;
+}}
+
+function getARBRate(price, type) {{
+  if (type === 'fca') return 0.10;
+  if (price < 200)   return 0.35;
+  if (price <= 5000) return 0.25;
+  return 0.20;
+}}
+
+function roundTick(p) {{
+  if (p < 200)   return Math.round(p);
+  if (p < 500)   return Math.round(p/2)*2;
+  if (p < 2000)  return Math.round(p/5)*5;
+  if (p < 5000)  return Math.round(p/10)*10;
+  return Math.round(p/25)*25;
+}}
+
+function fmt(n) {{
+  if (!n && n!==0) return '-';
+  return new Intl.NumberFormat('id-ID').format(Math.round(n));
+}}
+
+function fmtPct(p) {{
+  return (p>=0?'&uarr;':' ') + p.toFixed(2) + '%';
+}}
+
+function calculate() {{
+  var harga  = parseFloat(document.getElementById('inp-harga').value);
+  var lot    = parseInt(document.getElementById('inp-lot').value)||1;
+  var steps  = parseInt(document.getElementById('inp-steps').value)||5;
+  var modal  = parseFloat(document.getElementById('inp-modal').value)||0;
+  if (!harga || harga <= 0) {{ alert('Masukkan harga saham terlebih dahulu.'); return; }}
+
+  var modalEff = modal > 0 ? modal : harga * lot * 100;
+
+  var araSteps = [], arbSteps = [];
+  var curARA = harga, curARB = harga;
+
+  for (var i=1; i<=steps; i++) {{
+    var araRate = getARARate(curARA, sahamType);
+    curARA = roundTick(curARA * (1 + araRate));
+    var naik = ((curARA-harga) / harga * 100);
+    araSteps.push({{ step:i, price:curARA, naik:araRate*100, total:naik }});
+
+    var arbRate = getARBRate(curARB, sahamType);
+    var nextARB = roundTick(curARB * (1-arbRate));
+    var turun = ((nextARB-harga) / harga * 100);
+    // Hard floor: harga minimum IDX = Rp 50
+    if (nextARB < 50) nextARB = 50;
+    curARB = nextARB;
+    arbSteps.push({{ step:i, price:curARB, turun:arbRate*100, total:turun }});
+  }}
+
+  var araHtml = '';
+  var arbHtml = '';
+  for (var i=0; i<araSteps.length; i++) {{
+    var a = araSteps[i], b = arbSteps[i];
+    araHtml += '<div class="step-card ara">' +
+      '<div class="step-card-left">' +
+        '<div class="step-price-row">' +
+          '<span class="step-price" style="color:#26a69a;">Rp ' + fmt(a.price) + '</span>' +
+          '<span class="step-delta up">&uarr; +' + a.naik.toFixed(2) + '%</span>' +
+        '</div>' +
+        '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
+      '</div>' +
+      '<div class="step-card-right">' +
+        '<span class="step-tag ara">ARA #' + a.step + '</span>' +
+        '<div class="step-total-pct up">&#8599; ' + a.total.toFixed(2) + '%</div>' +
+      '</div>' +
+    '</div>';
+    arbHtml += '<div class="step-card arb">' +
+      '<div class="step-card-left">' +
+        '<div class="step-price-row">' +
+          '<span class="step-price" style="color:#f23645;">Rp ' + fmt(b.price) + '</span>' +
+          '<span class="step-delta dn">&darr; -' + b.turun.toFixed(2) + '%</span>' +
+        '</div>' +
+        '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
+      '</div>' +
+      '<div class="step-card-right">' +
+        '<span class="step-tag arb">ARB #' + b.step + '</span>' +
+        '<div class="step-total-pct dn">&#8600; ' + b.total.toFixed(2) + '%</div>' +
+      '</div>' +
+    '</div>';
+  }}
+  document.getElementById('ara-container').innerHTML = araHtml;
+  document.getElementById('arb-container').innerHTML = arbHtml;
+  document.getElementById('ara-label').style.display = 'block';
+  document.getElementById('arb-label').style.display = 'block';
+
+  // Visualisasi
+  var maxPrice = araSteps[araSteps.length-1].price;
+  var vizHtml = '';
+  // ARA bars
+  for (var i=0; i<araSteps.length; i++) {{
+    var a = araSteps[i];
+    var pct = Math.max(2, (a.price / maxPrice * 75));
+    vizHtml += '<div class="viz-bar-row">' +
+      '<div class="viz-lbl" style="color:#26a69a;">ARA #'+a.step+'</div>' +
+      '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,rgba(38,166,154,0.7),rgba(38,166,154,0.4));color:#fff;">' +
+      'Rp '+fmt(a.price)+'</div></div>' +
+      '<div class="viz-end" style="color:#26a69a;font-size:0.72rem;">+'+a.total.toFixed(1)+'%</div></div>';
+  }}
+  // Separator
+  vizHtml += '<div style="border-top:1px dashed rgba(124,58,237,0.15);margin:10px 0 10px;"></div>';
+  // ARB bars
+  var minPrice = arbSteps[arbSteps.length-1].price;
+  for (var i=0; i<arbSteps.length; i++) {{
+    var b = arbSteps[i];
+    var pct2 = Math.max(2, (b.price / harga * 75));
+    vizHtml += '<div class="viz-bar-row">' +
+      '<div class="viz-lbl" style="color:#f23645;">ARB #'+b.step+'</div>' +
+      '<div class="viz-bar-bg"><div class="viz-bar-fill" style="width:'+pct2+'%;background:linear-gradient(90deg,rgba(242,54,69,0.7),rgba(242,54,69,0.35));color:#fff;">' +
+      'Rp '+fmt(b.price)+'</div></div>' +
+      '<div class="viz-end" style="color:#f23645;font-size:0.72rem;">'+b.total.toFixed(1)+'%</div></div>';
+  }}
+  document.getElementById('viz-container').innerHTML = vizHtml;
+  document.getElementById('result-wrap').className = 'result-wrap show';
+}}
+</script>
+</body></html>"""
+
+            components.html(_ara_html, height=1600, scrolling=True)
+
+        # ══════════════════════════════════════════════
+        # SUB-TAB 2 - KALKULATOR AVERAGE DOWN
+        # ══════════════════════════════════════════════
+        with ktab_avg:
+            st.markdown(f"""
+            <div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_purple};
+            border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;
+            font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:{_kc_sub};line-height:1.85;'>
+            <span style='color:{_kc_purple};font-weight:700;letter-spacing:0.1em;font-size:0.8rem;'>i TENTANG AVERAGE DOWN</span><br>
+            <b>Average Down</b> adalah strategi membeli lebih banyak saham saat harga turun untuk menurunkan harga rata-rata kepemilikan.<br>
+            Kalkulator ini mendukung <b>hingga 5 transaksi pembelian</b> sekaligus untuk menghitung harga rata-rata, total lot, dan total modal yang dibutuhkan.
             </div>
-            <div>
-              <label class="field-lbl">Lot <span style="color:{_kc_red};">*</span></label>
-              <input class="inp" id="lot-0" type="number" placeholder="Contoh: 10" min="1" oninput="livePreview()">
-            </div>
-          </div>
-        </div>
-      </div>
+            """, unsafe_allow_html=True)
 
-      <button class="add-btn" onclick="addTrx()" id="add-btn">+ Tambah Pembelian Berikutnya</button>
+            _avg_html = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
+.form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
+.form-title{{font-size:1.25rem;font-weight:700;color:{_kc_purple};letter-spacing:0.06em;margin-bottom:4px;text-align:center;}}
+.form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.06em;margin-bottom:20px;}}
+.field-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:5px;display:block;font-weight:600;}}
+.inp{{width:100%;padding:10px 13px;background:rgba(255,255,255,0.04);border:1px solid {_kc_border};
+  border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:0.875rem;font-weight:600;
+  color:{_kc_text};outline:none;transition:border-color 0.18s;}}
+.inp:focus{{border-color:{_kc_purple};box-shadow:0 0 0 2px rgba(167,139,250,0.08);}}
+.trx-block{{background:rgba(124,58,237,0.05);border:1px solid rgba(124,58,237,0.18);
+  border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+.trx-title{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_purple};
+  font-weight:700;margin-bottom:12px;}}
+.row3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}}
+.row2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;}}
+.add-btn{{width:100%;padding:10px;background:rgba(124,58,237,0.1);border:1px dashed rgba(124,58,237,0.35);
+  border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;font-weight:600;
+  letter-spacing:0.08em;color:{_kc_purple};cursor:pointer;margin-bottom:14px;transition:all 0.18s;}}
+.add-btn:hover{{background:rgba(124,58,237,0.18);border-color:rgba(124,58,237,0.6);}}
+.del-btn{{float:right;padding:2px 8px;background:rgba(242,54,69,0.1);border:1px solid rgba(242,54,69,0.3);
+  border-radius:4px;font-size:0.72rem;color:{_kc_red};cursor:pointer;font-family:'IBM Plex Mono',monospace;margin-top:-2px;}}
+.del-btn:hover{{background:rgba(242,54,69,0.22);}}
+.harga-inp{{margin-bottom:18px;}}
 
-      <div>
-        <label class="field-lbl">Harga Pasar Saat Ini (Rp) <span style="color:{_kc_sub};font-weight:400;">- untuk hitung PnL</span></label>
-        <input class="inp harga-inp" id="cur-price" type="number" placeholder="Opsional - isi untuk lihat profit/loss saat ini" min="1" oninput="livePreview()">
-      </div>
+/* Current Price section */
+.cur-price-row{{display:flex;gap:12px;align-items:flex-end;margin-bottom:18px;}}
+.cur-price-row > div:first-child{{flex:1;}}
 
-      <button class="calc-btn" onclick="calculate()"> Hitung Average</button>
-    </div>
+.calc-btn{{width:100%;padding:13px;background:linear-gradient(135deg,rgba(167,139,250,0.22),rgba(96,165,250,0.18));
+  border:1px solid rgba(167,139,250,0.4);border-radius:8px;font-family:'IBM Plex Mono',monospace;
+  font-size:0.875rem;font-weight:700;letter-spacing:0.1em;color:{_kc_purple};cursor:pointer;
+  transition:all 0.18s;text-transform:uppercase;margin-top:6px;}}
+.calc-btn:hover{{background:linear-gradient(135deg,rgba(167,139,250,0.32),rgba(96,165,250,0.25));
+  box-shadow:0 0 18px rgba(167,139,250,0.18);}}
 
-    <div class="result-wrap" id="result-wrap">
-      <div class="result-header">Hasil Perhitungan</div>
-      <div class="summary-grid" id="summary-grid"></div>
-      <div class="bk-wrap"><table class="bk-tbl">
-        <thead><tr>
-          <th>#</th><th>Harga Beli</th><th>Lot</th><th>Lembar</th>
-          <th>Total Modal</th><th>Bobot</th>
-        </tr></thead>
-        <tbody id="bk-tbody"></tbody>
-      </table></div>
-      <div id="pnl-box"></div>
-      <div id="live-avg" style="display:none;margin-top:-10px;margin-bottom:14px;font-size:0.8rem;color:{_kc_sub};
-        font-family:'IBM Plex Mono',monospace;text-align:center;letter-spacing:0.06em;"></div>
-    </div>
+/* Results */
+.result-wrap{{display:none;}}
+.result-wrap.show{{display:block;}}
+.result-header{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:{_kc_sub};margin:20px 0 14px;display:flex;align-items:center;gap:8px;}}
+.result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
 
-    <script>
-    var trxCount = 1;
+.summary-grid{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}}
+.sum-card{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;padding:14px 16px;text-align:center;}}
+.sum-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_kc_sub};margin-bottom:6px;}}
+.sum-val{{font-size:1.25rem;font-weight:700;}}
+.sum-val.purple{{color:{_kc_purple};}}
+.sum-val.blue{{color:{_kc_blue};}}
+.sum-val.gold{{color:{_kc_gold};}}
+.sum-val.green{{color:{_kc_green};}}
+.sum-val.red{{color:{_kc_red};}}
 
-    function fmt(n) {{
-      if (n === null || n === undefined || isNaN(n)) return '-';
-      return new Intl.NumberFormat('id-ID').format(Math.round(n));
-    }}
+/* Breakdown table */
+.bk-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:10px;overflow:hidden;margin-bottom:14px;}}
+.bk-tbl{{width:100%;border-collapse:collapse;}}
+.bk-tbl thead th{{background:rgba(124,58,237,0.08);color:{_kc_purple};padding:9px 12px;
+  font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;text-align:left;border-bottom:1px solid {_kc_border};}}
+.bk-tbl tbody td{{padding:9px 12px;font-size:0.875rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}}
+.bk-tbl tbody tr:last-child td{{border-bottom:none;font-weight:700;color:{_kc_purple};background:rgba(124,58,237,0.05);}}
+.bk-tbl tbody tr:nth-child(odd) td{{background:rgba(124,58,237,0.03);}}
+.bk-tbl tbody tr:nth-child(even) td{{background:rgba(96,165,250,0.03);}}
 
-    function fmtK(n) {{
-      if (!n) return '-';
-      if (n >= 1e12) return (n/1e12).toFixed(2) + ' T';
-      if (n >= 1e9)  return (n/1e9).toFixed(1) + ' M';
-      if (n >= 1e6)  return (n/1e6).toFixed(1) + ' Jt';
-      return fmt(n);
-    }}
+/* PnL insight */
+.pnl-box{{border-radius:10px;padding:14px 18px;margin-bottom:14px;font-size:0.875rem;line-height:1.75;}}
+.pnl-box.profit{{background:rgba(38,166,154,0.08);border:1px solid rgba(38,166,154,0.25);border-left:3px solid {_kc_green};}}
+.pnl-box.loss{{background:rgba(242,54,69,0.07);border:1px solid rgba(242,54,69,0.22);border-left:3px solid {_kc_red};}}
+.pnl-box.neutral{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-left:3px solid {_kc_gold};}}
 
-    function addTrx() {{
-      if (trxCount >= 5) {{ document.getElementById('add-btn').style.display='none'; return; }}
-      var idx = trxCount;
-      var label = idx===0 ? 'PEMBELIAN AWAL' : 'PEMBELIAN #'+(idx+1);
-      var div = document.createElement('div');
-      div.className = 'trx-block'; div.id = 'trx-'+idx;
-      div.innerHTML = '<div class="trx-title"> ' + label +
-        (idx>0?'<button class="del-btn" onclick="delTrx('+idx+')">x Hapus</button>':'') + '</div>' +
-        '<div class="row3">' +
-        '<div><label class="field-lbl">Harga Beli (Rp) <span style="color:{_kc_red};">*</span></label>' +
-        '<input class="inp" id="harga-'+idx+'" type="number" placeholder="Harga beli" min="1" oninput="livePreview()"></div>' +
-        '<div><label class="field-lbl">Lot <span style="color:{_kc_red};">*</span></label>' +
-        '<input class="inp" id="lot-'+idx+'" type="number" placeholder="Jumlah lot" min="1" oninput="livePreview()"></div>' +
-        '<div><label class="field-lbl">Biaya (Rp) <span style="color:{_kc_sub};font-weight:400;">opsional</span></label>' +
-        '<input class="inp" id="fee-'+idx+'" type="number" placeholder="Biaya broker" min="0" oninput="livePreview()"></div>' +
-        '</div>';
-      document.getElementById('trx-container').appendChild(div);
-      trxCount++;
-      if (trxCount >= 5) document.getElementById('add-btn').style.display='none';
-    }}
+@media(max-width:640px){{
+  .row3{{grid-template-columns:1fr;}}
+  .summary-grid{{grid-template-columns:1fr 1fr;}}
+  .form-wrap{{padding:16px 14px;}}
+}}
+</style></head><body>
 
-    function delTrx(idx) {{
-      var el = document.getElementById('trx-'+idx);
-      if (el) el.remove();
-      if (trxCount >= 5) {{ trxCount--; document.getElementById('add-btn').style.display='block'; }}
-      livePreview();
-    }}
+<div class="form-wrap">
+  <div class="form-title"> Average Down</div>
+  <div class="form-sub">Average Price Calculator</div>
 
-    function collectData() {{
-      var rows = [];
-      for (var i=0; i<5; i++) {{
-        var hEl = document.getElementById('harga-'+i);
-        var lEl = document.getElementById('lot-'+i);
-        if (!hEl || !lEl) continue;
-        var h = parseFloat(hEl.value)||0;
-        var l = parseInt(lEl.value)||0;
-        var fee = parseFloat((document.getElementById('fee-'+i)||{{}}).value)||0;
-        if (h>0 && l>0) rows.push({{h:h, l:l, fee:fee}});
-      }}
-      return rows;
-    }}
-
-    function livePreview() {{
-      var rows = collectData();
-      if (rows.length < 1) return;
-      var totalModal=0, totalLembar=0;
-      rows.forEach(function(r){{totalModal+=r.h*r.l*100+r.fee; totalLembar+=r.l*100;}});
-      var avg = totalModal/totalLembar;
-      var liveEl = document.getElementById('live-avg');
-      if (liveEl) {{
-        liveEl.style.display='block';
-        liveEl.textContent = ' Preview: Avg Rp '+fmt(avg)+' &middot; '+rows.reduce(function(s,r){{return s+r.l;}},0)+' Lot &middot; Modal Rp '+fmtK(totalModal);
-      }}
-    }}
-
-    function calculate() {{
-      var rows = collectData();
-      if (rows.length < 1) {{ alert('Masukkan minimal 1 data pembelian.'); return; }}
-
-      var totalModal=0, totalLembar=0;
-      rows.forEach(function(r){{totalModal+=r.h*r.l*100+r.fee; totalLembar+=r.l*100;}});
-      var avgHarga = totalModal / totalLembar;
-      var totalLot = totalLembar / 100;
-      var curPrice = parseFloat(document.getElementById('cur-price').value)||0;
-
-      // Summary cards
-      var pnlHtml='', pnlClass='neutral';
-      var sumExtra = '';
-      if (curPrice > 0) {{
-        var pnl = (curPrice-avgHarga) * totalLembar;
-        var pnlPct = (curPrice-avgHarga) / avgHarga * 100;
-        var isPro = pnl >= 0;
-        pnlClass = isPro?'profit':'loss';
-        var pnlIcon = isPro?'':'';
-        pnlHtml = '<div class="pnl-box '+pnlClass+'">' +
-          pnlIcon + ' <b>PnL Saat Ini:</b> ' +
-          '<span style="color:'+(isPro?'#26a69a':'#f23645')+';font-weight:700;font-size:1.1rem;">' +
-          (isPro?'+':'-')+'Rp '+fmt(Math.abs(pnl)) + '</span>' +
-          ' &nbsp;|&nbsp; <b>'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</b>' +
-          '<br><span style="font-size:0.8rem;color:{_kc_sub};">Harga pasar: <b>Rp '+fmt(curPrice)+'</b> vs Average: <b>Rp '+fmt(avgHarga)+'</b>' +
-          ' - Perlu kenaikan <b>' + (avgHarga>curPrice?((avgHarga-curPrice)/curPrice*100).toFixed(2)+'%':'-') + '</b> untuk BEP</span>' +
-          '</div>';
-        sumExtra = '<div class="sum-card"><div class="sum-lbl">PnL Saat Ini</div><div class="sum-val '+(isPro?'green':'red')+'">'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</div></div>';
-      }}
-
-      var sumHtml =
-        '<div class="sum-card"><div class="sum-lbl">Average Harga</div><div class="sum-val purple">Rp '+fmt(avgHarga)+'</div></div>'+
-        '<div class="sum-card"><div class="sum-lbl">Total Lot</div><div class="sum-val blue">'+totalLot+' Lot</div></div>'+
-        '<div class="sum-card"><div class="sum-lbl">Total Modal</div><div class="sum-val gold">Rp '+fmtK(totalModal)+'</div></div>'+
-        sumExtra;
-      document.getElementById('summary-grid').innerHTML = sumHtml;
-
-      // Breakdown table
-      var tbody = '';
-      var cumModal=0, cumLembar=0;
-      rows.forEach(function(r,i){{
-        var rowModal = r.h*r.l*100+r.fee;
-        cumModal+=rowModal; cumLembar+=r.l*100;
-        var bobot = (rowModal/totalModal*100).toFixed(1);
-        var label = i===0?'Pembelian Awal':'Pembelian #'+(i+1);
-        tbody+='<tr>'+
-          '<td style="color:{_kc_sub};">'+label+'</td>'+
-          '<td style="color:{_kc_purple};font-weight:600;">Rp '+fmt(r.h)+'</td>'+
-          '<td>'+r.l+' lot</td>'+
-          '<td style="color:{_kc_sub};">'+fmt(r.l*100)+' lbr</td>'+
-          '<td>Rp '+fmtK(rowModal)+'</td>'+
-          '<td style="color:{_kc_gold};">'+bobot+'%</td>'+
-          '</tr>';
-      }});
-      tbody+='<tr>'+
-        '<td>OK Total / Average</td>'+
-        '<td>Rp '+fmt(avgHarga)+'</td>'+
-        '<td>'+totalLot+' lot</td>'+
-        '<td>'+fmt(totalLembar)+' lbr</td>'+
-        '<td>Rp '+fmtK(totalModal)+'</td>'+
-        '<td>100%</td>'+
-        '</tr>';
-      document.getElementById('bk-tbody').innerHTML = tbody;
-      document.getElementById('pnl-box').innerHTML = pnlHtml;
-      document.getElementById('result-wrap').className = 'result-wrap show';
-      document.getElementById('live-avg').style.display='none';
-    }}
-    </script>
-    </body></html>"""
-
-                components.html(_avg_html, height=1400, scrolling=True)
-
-
-        with tab_panduan:
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-            # ── Versi & tanggal panduan ──────────────────────────────────────
-            _PANDUAN_VERSION = "v4.2"
-            _PANDUAN_LAST_UPDATED = "01 Mei 2026"
-            _pan_col1, _pan_col2 = st.columns([3, 2])
-            with _pan_col1:
-                st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:4px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
-            with _pan_col2:
-                st.markdown(
-                    f"<div style='text-align:right;font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:#64748b;margin-bottom:4px;'>"
-                    f"📋 Versi Panduan: <b style='color:#a78bfa;'>{_PANDUAN_VERSION}</b> · "
-                    f"Diperbarui: <b>{_PANDUAN_LAST_UPDATED}</b></div>",
-                    unsafe_allow_html=True
-                )
-            st.caption("⚠️ Panduan ini diperbarui manual setiap ada perubahan fitur besar. Jika ada fitur baru yang belum terdokumentasi, lihat changelog di header aplikasi.")
-
-            _P   = "#a78bfa"   # purple accent
-            _B   = "#60a5fa"   # blue accent
-            _G   = "#26a69a"   # green
-            _R   = "#f23645"   # red
-            _Y   = "#fbbf24"   # yellow warning
-            _FEAT_BG = "rgba(8,12,22,0.85)" if is_dark else "rgba(248,246,255,0.95)"
-            _FEAT_BD = "rgba(124,58,237,0.2)" if is_dark else "rgba(124,58,237,0.18)"
-            _TXT = text_main
-            _SUB = text_sub
-            _BG  = met_bg
-            _BD  = met_border
-
-            # ── CSS for panduan ─────────────────────────────────────────────
-            st.markdown(f"""<style>
-    .pgd-wrap {{font-family:'IBM Plex Mono',monospace;}}
-    .pgd-section {{
-      background:{_BG};border:1px solid {_BD};border-left:4px solid {_P};
-      border-radius:0 12px 12px 0;padding:22px 24px;margin-bottom:18px;
-    }}
-    .pgd-section-title {{
-      font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.08em;
-      margin-bottom:6px;display:flex;align-items:center;gap:10px;
-    }}
-    .pgd-section-sub {{
-      font-size:0.875rem;color:{_SUB};margin-bottom:16px;line-height:1.7;
-    }}
-    .pgd-feature {{
-      background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);
-      border-radius:8px;padding:14px 18px;margin-bottom:12px;
-    }}
-    .pgd-feature-title {{
-      font-size:1.1rem;font-weight:700;color:{_B};margin-bottom:8px;
-      display:flex;align-items:center;gap:8px;
-    }}
-    .pgd-feature-body {{
-      font-size:0.875rem;color:{_TXT};line-height:1.85;
-    }}
-    .pgd-step {{
-      display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;
-    }}
-    .pgd-step-num {{
-      min-width:26px;height:26px;border-radius:50%;
-      background:linear-gradient(135deg,{_P},{_B});
-      color:#fff;font-size:0.8rem;font-weight:700;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;
-    }}
-    .pgd-step-text {{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .pgd-tip {{
-      background:rgba(96,165,250,0.08);border-left:3px solid {_B};
-      border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;
-      font-size:0.875rem;color:{_TXT};line-height:1.7;
-    }}
-    .pgd-warn {{
-      background:rgba(251,191,36,0.08);border-left:3px solid {_Y};
-      border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;
-      font-size:0.875rem;color:{_TXT};line-height:1.7;
-    }}
-    .pgd-grid {{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}}
-    .pgd-badge {{
-      display:inline-block;padding:2px 9px;border-radius:12px;
-      font-size:0.8rem;font-weight:700;letter-spacing:0.06em;margin-right:6px;
-      vertical-align:middle;
-    }}
-    .pgd-badge-p {{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
-    .pgd-badge-b {{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
-    .pgd-badge-g {{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
-    .pgd-badge-r {{background:rgba(242,54,69,0.12);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
-    .pgd-badge-y {{background:rgba(251,191,36,0.12);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
-    @media(max-width:640px){{
-      .pgd-grid{{grid-template-columns:1fr;}}
-      .pgd-section{{padding:16px 14px;}}
-      .pgd-feature{{padding:12px 14px;}}
-    }}
-    </style>""", unsafe_allow_html=True)
-
-            # ── Sub-tabs Panduan ─────────────────────────────────────────────
-            pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8, pg_tab9 = st.tabs([
-                "  🌐 MARKET MAP  ",
-                "  🌍 Global Macro & News  ",
-                "  🔄 Index & Rebalancing  ",
-                "  👥 Shareholder  ",
-                "  ⚡ Alpha Screener  ",
-                "  📋 Analisa IPO  ",
-                "  🏆 Track Record  ",
-                "  🧮 Kalkulator  ",
-                "  📊 Broker Summary  ",
-                "  🔬 Cara Kerja Screener  ",
-            ])
-
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 0 - MARKET MAP
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab0:
-                _guide_html_0 = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0 32px;}}
-    .hero{{background:linear-gradient(135deg,rgba(139,92,246,0.13),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.3);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
-    .hero-badge{{display:inline-block;font-size:0.68rem;font-weight:800;letter-spacing:0.15em;padding:3px 10px;border-radius:20px;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.5);color:#a78bfa;margin-bottom:10px;}}
-    .hero-title{{font-size:1.35rem;font-weight:800;color:#a78bfa;letter-spacing:0.05em;margin-bottom:8px;}}
-    .hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(139,92,246,0.2);}}
-    .sec-icon{{font-size:1.4rem;}}
-    .sec-title{{font-size:1.05rem;font-weight:700;color:#a78bfa;letter-spacing:0.06em;}}
-    .card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
-    .card.p{{border-left:3px solid #a78bfa;}}
-    .card.b{{border-left:3px solid #60a5fa;}}
-    .card.g{{border-left:3px solid #26a69a;}}
-    .card.y{{border-left:3px solid #fbbf24;}}
-    .card.r{{border-left:3px solid #f23645;}}
-    .card-title{{font-size:0.875rem;font-weight:700;color:#60a5fa;margin-bottom:8px;}}
-    .card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
-    .card-body b{{color:#a78bfa;}}
-    .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:#a78bfa;}}
-    .stext .ok{{color:#26a69a;font-weight:700;}}
-    .stext .dn{{color:#f23645;font-weight:700;}}
-    .stext .yl{{color:#fbbf24;font-weight:700;}}
-    .tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
-    .warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
-    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    .heatmap-demo{{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:14px 0;}}
-    .hm-cell{{border-radius:6px;padding:10px 6px;text-align:center;font-size:0.72rem;font-weight:700;}}
-    .hm-strong-up{{background:rgba(8,153,129,0.35);color:#4ade80;border:1px solid rgba(8,153,129,0.5);}}
-    .hm-up{{background:rgba(8,153,129,0.18);color:#26a69a;border:1px solid rgba(8,153,129,0.3);}}
-    .hm-flat{{background:rgba(178,181,190,0.1);color:#7c86a2;border:1px solid rgba(178,181,190,0.2);}}
-    .hm-dn{{background:rgba(242,54,69,0.18);color:#f23645;border:1px solid rgba(242,54,69,0.3);}}
-    .hm-strong-dn{{background:rgba(242,54,69,0.35);color:#f87171;border:1px solid rgba(242,54,69,0.5);}}
-    .ticker-row{{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;margin-bottom:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}}
-    .ticker-name{{font-size:0.8rem;font-weight:700;color:#a78bfa;min-width:90px;}}
-    .ticker-val{{font-size:0.875rem;color:{_TXT};flex:1;}}
-    .ticker-up{{color:#26a69a;font-weight:700;}}
-    .ticker-dn{{color:#f23645;font-weight:700;}}
-    @media(max-width:600px){{.grid2{{grid-template-columns:1fr;}}.heatmap-demo{{grid-template-columns:repeat(3,1fr);}}}}
-    </style></head><body><div class="wrap">
-
-    <div class="hero">
-      <div class="hero-badge"> MARKET MAP</div>
-      <div class="hero-title">Pusat Pantau Pasar &mdash; Live Market + Globe Heatmap</div>
-      <div class="hero-sub">
-        Tab pertama SIGMA Terminal. Berisi dua bagian utama: <b>Live Market</b> (harga aset global real-time: indeks, komoditas, forex) 
-        dan <b>Market Map Globe</b> (heatmap 3D interaktif seluruh saham IDX dikelompokkan per sektor).
-      </div>
-    </div>
-
-    <!-- == BAGIAN 1: LIVE MARKET == -->
-    <div class="sec-head"><span class="sec-icon"></span>
-    <div><div class="sec-title">BAGIAN 1 &mdash; LIVE MARKET</div>
-    <div style="font-size:0.8rem;color:{_SUB};margin-top:2px;">Ticker harga real-time: Indeks Global &middot; Komoditas &middot; Forex &middot; Kripto</div>
-    </div></div>
-
-    <div class="card p">
-    <div class="card-title">Apa yang ditampilkan Live Market?</div>
-    <div class="card-body">
-      Live Market adalah <b>ticker berjalan + tabel harga</b> yang menampilkan kondisi pasar global sebelum dan sesama sesi IDX berlangsung.
-      Data diambil dari Yahoo Finance dan diperbarui setiap kali halaman di-reload.
-    </div>
-    </div>
-
-    <div class="card b">
-    <div class="card-title">Instrumen yang Dipantau</div>
-    <div class="card-body">
-      <b style="color:#a78bfa;">Indeks Global:</b><br>
-      <div class="ticker-row"><span class="ticker-name">IHSG</span><span class="ticker-val">Benchmark IDX &mdash; acuan utama pasar saham Indonesia</span></div>
-      <div class="ticker-row"><span class="ticker-name">S&amp;P500</span><span class="ticker-val">Indeks 500 saham terbesar AS &mdash; pemimpin sentimen global</span></div>
-      <div class="ticker-row"><span class="ticker-name">Nasdaq</span><span class="ticker-val">Indeks teknologi AS &mdash; sensitif terhadap suku bunga Fed</span></div>
-      <div class="ticker-row"><span class="ticker-name">Nikkei</span><span class="ticker-val">Bursa Jepang &mdash; bellwether Asia, berkorelasi dengan USD/JPY</span></div>
-      <div class="ticker-row"><span class="ticker-name">Hang Seng</span><span class="ticker-val">Bursa Hong Kong &mdash; proxy sentimen Tiongkok</span></div>
-      <br><b style="color:#a78bfa;">Komoditas (relevan untuk IDX):</b><br>
-      <div class="ticker-row"><span class="ticker-name">Gold / Emas</span><span class="ticker-val">Safe haven &mdash; naik saat ketidakpastian tinggi. Relevan: ANTM, MDKA</span></div>
-      <div class="ticker-row"><span class="ticker-name">WTI / Brent</span><span class="ticker-val">Minyak mentah &mdash; naik positif untuk ELSA, MEDC, PGAS</span></div>
-      <div class="ticker-row"><span class="ticker-name">Coal</span><span class="ticker-val">Batu bara &mdash; penggerak utama ADRO, BYAN, ITMG, PTBA</span></div>
-      <div class="ticker-row"><span class="ticker-name">CPO</span><span class="ticker-val">Crude Palm Oil &mdash; relevan untuk AALI, LSIP, SIMP, SSMS</span></div>
-      <div class="ticker-row"><span class="ticker-name">Nickel</span><span class="ticker-val">Nikel &mdash; relevan untuk INCO, NCKL, MBMA</span></div>
-      <br><b style="color:#a78bfa;">Forex:</b><br>
-      <div class="ticker-row"><span class="ticker-name">DXY</span><span class="ticker-val">Dollar Index &mdash; DXY naik = Rupiah melemah = IHSG tertekan</span></div>
-      <div class="ticker-row"><span class="ticker-name">USD/IDR</span><span class="ticker-val">Nilai tukar &mdash; indikator langsung tekanan capital flow</span></div>
-      <div class="ticker-row"><span class="ticker-name">VIX</span><span class="ticker-val">Fear Index &mdash; VIX &gt;25 = pasar cemas (risk-off), &lt;15 = tenang (risk-on)</span></div>
-    </div>
-    </div>
-
-    <div class="card g">
-    <div class="card-title"> Cara Membaca Live Market untuk Trading IDX</div>
-    <div class="card-body">
-    <div class="step"><div class="snum">1</div><div class="stext">Cek S&amp;P500 dan Nasdaq semalam (sesi AS). Jika keduanya turun &gt;1%, waspadai <b>tekanan di opening IHSG</b> hari ini.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Lihat <b>DXY</b>: jika naik, Rupiah cenderung melemah &rarr; capital outflow dari IDX. Jika turun &rarr; risk-on, positif untuk IHSG.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Pantau komoditas relevan dengan emiten yang kamu pegang. <span class="ok">Coal naik</span> = ADRO/BYAN bullish. <span class="ok">Gold naik</span> = ANTM/MDKA bullish.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext"><b>VIX &gt; 25</b>: pertimbangkan kurangi posisi atau tahan entry baru. <b>VIX &lt; 15</b>: kondisi relatif aman untuk ekspansi.</div></div>
-    </div>
-    </div>
-    <div class="tip"> <b>Best Time:</b> Buka Live Market pukul 08:45&ndash;09:00 WIB sebelum sesi IDX buka. Ini memberi konteks apakah IHSG akan gap up, gap down, atau flat di pembukaan.</div>
-
-    <!-- == BAGIAN 2: MARKET MAP GLOBE == -->
-    <div class="sec-head" style="margin-top:24px;"><span class="sec-icon"></span>
-    <div><div class="sec-title">BAGIAN 2 &mdash; MARKET MAP GLOBE (Heatmap 3D)</div>
-    <div style="font-size:0.8rem;color:{_SUB};margin-top:2px;">Visualisasi 3D interaktif seluruh saham IDX dikelompokkan per sektor, diwarnai performa harian</div>
-    </div></div>
-
-    <div class="card b">
-    <div class="card-title">Cara Membaca Warna Heatmap</div>
-    <div class="heatmap-demo">
-      <div class="hm-cell hm-strong-up">BBCA<br>+3.2%</div>
-      <div class="hm-cell hm-up">TLKM<br>+1.1%</div>
-      <div class="hm-cell hm-flat">ASII<br>0.0%</div>
-      <div class="hm-cell hm-dn">UNVR<br>-1.4%</div>
-      <div class="hm-cell hm-strong-dn">GOTO<br>-3.8%</div>
-    </div>
-    <div class="card-body">
-      <span class="ok"># Hijau Terang</span> = naik kuat (&gt;+2%) &nbsp;|&nbsp;
-      <span class="ok"># Hijau</span> = naik (+0.5%&ndash;2%)<br>
-      <span style="color:#7c86a2;"># Abu-abu</span> = flat (-0.5%&ndash;+0.5%) &nbsp;|&nbsp;
-      <span class="dn"># Merah</span> = turun (-0.5% &ndash; -2%)<br>
-      <span class="dn"># Merah Tua</span> = turun kuat (&lt;-2%) &nbsp;|&nbsp;
-      <b>Ukuran kotak</b> = proporsi market cap emiten
-    </div>
-    </div>
-
-    <div class="card p">
-    <div class="card-title">Cara Pakai Market Map Globe</div>
-    <div class="card-body">
-    <div class="step"><div class="snum">1</div><div class="stext"><b>Lihat sekilas</b> &mdash; warna dominan apa? Hijau merata = market breadth positif. Merah merata = tekanan luas. Campur = rotasi sektoral.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext"><b>Identifikasi sektor</b> &mdash; sektor mana yang paling banyak hijau? Itu sinyal dana mengalir ke sana hari ini.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext"><b>Hover / Klik</b> kotak saham untuk melihat ticker, harga, dan persentase perubahan secara detail.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Kombinasikan dengan tab <b>INDEX & SECTOR ROTATION</b> untuk konfirmasi apakah rotasi sektor ini sudah berlangsung lama (momentum kuat) atau baru mulai.</div></div>
-    </div>
-    </div>
-
-    <div class="warn">(!) <b>Catatan:</b> Market Map Globe memuat data semua saham IDX &mdash; proses loading awal bisa memakan 5&ndash;10 detik tergantung koneksi. Klik tombol <b>" Refresh Globe"</b> jika data terlihat stale.</div>
-
-    </div></body></html>"""
-                components.html(_guide_html_0, height=1800, scrolling=True)
-
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 1 - GLOBAL MACRO & NEWS
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab1:
-                _guide_html_1 = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-
-    /* Layout */
-    .wrap{{max-width:100%;padding:4px 0;}}
-
-    /* Section header */
-    .sec-head{{
-      display:flex;align-items:center;gap:12px;
-      margin:28px 0 14px;
-      padding-bottom:10px;
-      border-bottom:1px solid rgba(124,58,237,0.25);
-    }}
-    .sec-icon{{font-size:1.6rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-
-    /* Feature cards */
-    .feat{{
-      background:{_FEAT_BG};
-      border:1px solid {_FEAT_BD};
-      border-left:4px solid {_P};
-      border-radius:0 10px 10px 0;
-      padding:18px 20px;
-      margin-bottom:14px;
-    }}
-    .feat.blue{{border-left-color:{_B};}}
-    .feat.green{{border-left-color:{_G};}}
-    .feat.yellow{{border-left-color:{_Y};}}
-
-    .feat-title{{
-      font-size:1.1rem;font-weight:700;color:{_B};
-      margin-bottom:10px;display:flex;align-items:center;gap:8px;
-    }}
-    .feat.blue .feat-title{{color:{_B};}}
-    .feat.green .feat-title{{color:{_G};}}
-    .feat.yellow .feat-title{{color:{_Y};}}
-
-    /* Steps */
-    .steps{{margin:10px 0 6px;}}
-    .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{
-      min-width:24px;height:24px;border-radius:50%;
-      background:linear-gradient(135deg,{_P},{_B});
-      color:#fff;font-size:0.72rem;font-weight:700;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
-    }}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:{_B};}}
-    .stext .hi{{color:{_P};font-weight:700;}}
-    .stext .ok{{color:{_G};font-weight:700;}}
-    .stext .dn{{color:{_R};font-weight:700;}}
-    .stext .yl{{color:{_Y};font-weight:700;}}
-
-    /* Tip/Warn boxes */
-    .tip{{
-      background:rgba(96,165,250,0.07);border-left:3px solid {_B};
-      border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
-      font-size:0.875rem;color:{_TXT};line-height:1.72;
-    }}
-    .warn{{
-      background:rgba(251,191,36,0.07);border-left:3px solid {_Y};
-      border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
-      font-size:0.875rem;color:{_TXT};line-height:1.72;
-    }}
-
-    /* Grid */
-    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
-    .gcard{{
-      background:rgba(124,58,237,0.06);
-      border:1px solid rgba(124,58,237,0.2);
-      border-radius:8px;padding:12px 14px;
-    }}
-    .gcard-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
-    .gcard-val{{font-size:0.875rem;font-weight:700;color:{_P};}}
-    .gcard-sub{{font-size:0.8rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
-
-    /* Badge */
-    .bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;}}
-    .bdg-p{{background:rgba(124,58,237,0.18);color:{_P};}}
-    .bdg-b{{background:rgba(96,165,250,0.15);color:{_B};}}
-    .bdg-g{{background:rgba(38,166,154,0.15);color:{_G};}}
-    .bdg-r{{background:rgba(242,54,69,0.12);color:{_R};}}
-    .bdg-y{{background:rgba(251,191,36,0.12);color:{_Y};}}
-
-    /* Divider */
-    .div{{height:1px;background:rgba(124,58,237,0.15);margin:24px 0;}}
-
-    @media(max-width:600px){{
-      .grid2,.grid3{{grid-template-columns:1fr;}}
-      .feat{{padding:14px 13px;}}
-    }}
-    </style></head><body><div class="wrap">
-
-    <!-- == OVERVIEW == -->
-    <div class="sec-head">
-      <span class="sec-icon"></span>
-      <div>
-        <div class="sec-title">GLOBAL MACRO &amp; NEWS</div>
-        <div class="sec-desc">Pantau kondisi makro dunia, harga aset global, dan berita pasar yang mempengaruhi IDX secara real-time</div>
-      </div>
-    </div>
-
-    <div class="grid3">
-      <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">6 Sub-Fitur</div><div class="gcard-sub">Market, Macro, News, Komoditas, FOMC, Kalender</div></div>
-      <div class="gcard"><div class="gcard-lbl">Update</div><div class="gcard-val">Real-time</div><div class="gcard-sub">Data live dari Yahoo Finance, FMP, Alpha Vantage</div></div>
-      <div class="gcard"><div class="gcard-lbl">Relevansi IDX</div><div class="gcard-val">Sangat Tinggi</div><div class="gcard-sub">Komoditas & DXY langsung mempengaruhi IHSG</div></div>
-    </div>
-
-    <!-- == 1. LIVE MARKET == -->
-    <div class="div"></div>
-    <div class="feat">
-      <div class="feat-title"> 1 &middot; LIVE MARKET - Harga Aset Real-Time</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>Lihat harga terkini</b> IHSG, S&amp;P500, Dow Jones, Nasdaq, Nikkei, Hang Seng, Shanghai - semua dalam satu layar.
-          Angka hijau (<span class="ok">^</span>) = naik dari penutupan sebelumnya, merah (<span class="dn">v</span>) = turun.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cek DXY (Dollar Index)</b> dan <b>USD/IDR</b> - DXY naik berarti Rupiah cenderung melemah, capital outflow dari EM termasuk IDX.
-          DXY turun = Rupiah menguat = positif untuk IHSG.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Pantau Komoditas:</b> Gold (emas), WTI &amp; Brent (minyak), CPO, Coal, Nickel.
-          Harga komoditas naik = positif untuk emiten eksportir (ADRO, ANTM, INCO, AALI).
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>VIX (Volatility Index):</b> <span class="yl">VIX &gt; 25</span> = pasar global sedang cemas, waspada risk-off. 
-          <span class="ok">VIX &lt; 15</span> = kondisi pasar tenang, aman untuk ekspansi posisi.
-        </div></div>
-      </div>
-      <div class="tip"> <b>Tip:</b> Lihat Live Market setiap pagi sebelum sesi pembukaan BEI (08:45 WIB). Jika S&P500 dan Nasdaq turun &gt;1% semalam, waspadai tekanan di opening IHSG hari ini.</div>
-    </div>
-
-    <!-- == 2. MACRO INDICATORS == -->
-    <div class="feat blue">
-      <div class="feat-title"> 2 &middot; MACRO INDICATORS - Data Ekonomi Kunci</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>BI Rate (Bank Indonesia):</b> Suku bunga acuan Indonesia. BI Rate turun = positif untuk properti (BSDE, CTRA), perbankan (NIM melebar), dan obligasi. BI Rate naik = perbankan lebih selektif, properti tertekan.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Fed Funds Rate (Amerika):</b> Suku bunga AS. Fed hike = DXY naik &rarr; Rupiah melemah &rarr; IHSG tertekan. Fed cut = sebaliknya. Pantau jadwal FOMC di sub-fitur FedWatch.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Inflasi CPI Indonesia:</b> CPI &gt; 5% = tekanan daya beli, BI cenderung hawkish. CPI rendah = ruang BI untuk cut rate lebih lebar.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Current Account &amp; Neraca Perdagangan:</b> Surplus = positif untuk Rupiah. Defisit &gt; 3% PDB = waspada pelemahan Rupiah.
-        </div></div>
-      </div>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="gcard"><div class="gcard-lbl">Dampak DXY Naik</div><div class="gcard-val" style="color:{_R};">(!) Risk-Off</div><div class="gcard-sub">Rupiah melemah &middot; Capital outflow &middot; IHSG tertekan &middot; Emiten importir rugi</div></div>
-        <div class="gcard"><div class="gcard-lbl">Dampak DXY Turun</div><div class="gcard-val" style="color:{_G};">OK Risk-On</div><div class="gcard-sub">Rupiah menguat &middot; Capital inflow &middot; IHSG naik &middot; Emiten eksportir tertekan</div></div>
-      </div>
-    </div>
-
-    <!-- == 3. MARKET BRIEF == -->
-    <div class="feat green">
-      <div class="feat-title"> 3 &middot; MARKET BRIEF - Ringkasan Harian</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          Market Brief hadir setiap pagi dengan ringkasan kondisi pasar: sentimen global, arah IHSG hari ini, sektor yang perlu diperhatikan, dan event ekonomi penting hari ini.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cara baca:</b> Perhatikan <span class="hi">bias utama</span> (Bullish/Bearish/Sideways), kemudian cek <span class="hi">faktor risiko</span> (downside risk). Jika keduanya searah = sinyal lebih kuat.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          Market Brief juga mencantumkan <b>jadwal rilis data ekonomi</b> (CPI, PDB, neraca dagang) yang berpotensi mempengaruhi volatilitas harian.
-        </div></div>
-      </div>
-      <div class="tip"> <b>Cara Pakai:</b> Baca Market Brief &rarr; cek Live Market &rarr; baru buka ALPHA STOCK INSIGHT untuk analisa emiten spesifik. Urutan ini memastikan kamu paham konteks makro sebelum masuk ke level mikro saham.</div>
-    </div>
-
-    <!-- == 4. NEWS FEED == -->
-    <div class="feat">
-      <div class="feat-title"> 4 &middot; NEWS FEED - Berita Pasar Terkini</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>IDX News:</b> Berita langsung dari TradingView - meliputi aksi korporasi (dividen, rights issue, buyback), laporan keuangan, dan berita emiten BEI.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Global News:</b> Feed dari Reuters, Bloomberg, CNBC Global - berita tentang perang dagang, keputusan Fed, data ekonomi AS, dan sentimen global.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Filter relevansi:</b> Fokus pada berita yang menyebut kata kunci komoditas (oil, coal, nickel, CPO), geopolitik (tarif, sanksi, perang), atau makro (Fed, inflation, GDP).
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          Setelah membaca berita, kamu bisa langsung ketik di <b>SIGMA AI Chat</b>: <span class="hi">"Kesimpulan dampak [topik berita]"</span> untuk mendapat analisa dampaknya ke IHSG dan emiten terkait.
-        </div></div>
-      </div>
-      <div class="warn">(!) <b>Perhatian:</b> Berita bisa memicu pergerakan harga jangka pendek yang tidak mencerminkan fundamental. Selalu kombinasikan dengan analisa teknikal dan fundamental sebelum eksekusi.</div>
-    </div>
-
-    <!-- == 5. ECONOMIC CALENDAR == -->
-    <div class="feat blue">
-      <div class="feat-title"> 5 &middot; ECONOMIC CALENDAR - Jadwal Rilis Data</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          Kalender Ekonomi menampilkan jadwal rilis data penting: <b>NFP (Non-Farm Payroll), CPI AS, PDB Indonesia, FOMC Meeting, BI Rate Decision</b>, dan lainnya.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cara baca Importance Badge:</b> 
-          <span class="bdg bdg-r">HIGH</span> = bisa sebabkan volatilitas besar (NFP, CPI, FOMC) &middot; 
-          <span class="bdg bdg-y">MED</span> = berpengaruh tapi lebih terbatas &middot; 
-          <span class="bdg bdg-b">LOW</span> = biasanya tidak menggerakkan pasar signifikan.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          Perhatikan kolom <b>Forecast vs Previous:</b> Jika hasil rilis jauh di atas/bawah forecast = pasar bereaksi kuat. Jika sesuai ekspektasi = reaksi minimal (buy the rumor, sell the news).
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Strategi sebelum data penting:</b> Kurangi posisi besar 1&ndash;2 hari sebelum rilis HIGH impact data. Masuk kembali setelah volatilitas awal mereda.
-        </div></div>
-      </div>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="gcard"><div class="gcard-lbl">Data HIGH Impact (IDX)</div><div class="gcard-val" style="color:{_R};">Waspadai</div><div class="gcard-sub">FOMC &middot; NFP &middot; CPI AS &middot; BI Rate &middot; GDP Indonesia &middot; PDB</div></div>
-        <div class="gcard"><div class="gcard-lbl">Data MED Impact (IDX)</div><div class="gcard-val" style="color:{_Y};">Monitor</div><div class="gcard-sub">PMI &middot; Trade Balance &middot; Industrial Production &middot; Retail Sales</div></div>
-      </div>
-    </div>
-
-    <!-- == 6. FOMC FEDWATCH == -->
-    <div class="feat yellow">
-      <div class="feat-title"> 6 &middot; FOMC FEDWATCH - Probabilitas Suku Bunga Fed</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          FedWatch menampilkan <b>probabilitas pasar</b> untuk keputusan Fed di setiap FOMC meeting berikutnya - data dari CME FedWatch Tool yang dipakai profesional Wall Street.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Cara baca:</b> Angka % di setiap skenario (HOLD/CUT/HIKE) = probabilitas pasar futures. Jika "HOLD 95%" artinya pasar hampir pasti Fed tidak akan mengubah suku bunga.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Dampak ke IDX:</b> 
-          <span class="ok">Fed CUT</span> = DXY turun &rarr; Rupiah menguat &rarr; capital inflow ke EM &rarr; IHSG cenderung naik, terutama sektor Properti dan Perbankan.
-          <span class="dn">Fed HIKE</span> = DXY naik &rarr; Rupiah melemah &rarr; capital outflow &rarr; IHSG tertekan.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Countdown Timer</b> di FedWatch menunjukkan sisa waktu menuju keputusan FOMC berikutnya - sehingga kamu tahu kapan volatilitas besar berpotensi terjadi.
-        </div></div>
-        <div class="step"><div class="snum">5</div><div class="stext">
-          <b>Probability shift:</b> Jika probabilitas HOLD turun dari 80% menjadi 60% dalam sepekan = pasar mulai repricing &rarr; bisa sebabkan volatilitas pada DXY dan EM assets.
-        </div></div>
-      </div>
-      <div class="tip"> <b>Cara Pakai Pro:</b> Cek FedWatch tiap Senin pagi. Jika probabilitas CUT di meeting berikutnya &gt; 60% &rarr; posisikan diri di sektor Rate-Sensitive: Properti (BSDE, CTRA), Perbankan (BBCA, BMRI), dan Obligasi.</div>
-      <div class="warn">(!) <b>Ingat:</b> Probabilitas FedWatch adalah ekspektasi pasar, BUKAN keputusan resmi Fed. Fed bisa mengejutkan pasar kapan saja - selalu gunakan stop loss.</div>
-    </div>
-
-    <!-- == QUICK REFERENCE == -->
-    <div class="div"></div>
-    <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
-      <div style="font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:12px;"> QUICK REFERENCE - Dampak Makro ke IDX</div>
-      <div class="grid2">
+  <div id="trx-container">
+    <!-- Pembelian Awal -->
+    <div class="trx-block" id="trx-0">
+      <div class="trx-title"> PEMBELIAN AWAL</div>
+      <div class="row3">
         <div>
-          <div style="font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-ON OK (IHSG Cenderung Naik)</div>
-          <div style="font-size:0.875rem;color:{_TXT};line-height:1.85;">
-            &bull; DXY melemah &amp; Rupiah menguat<br>
-            &bull; VIX &lt; 20 (pasar tenang)<br>
-            &bull; Fed dovish / probabilitas CUT naik<br>
-            &bull; Komoditas ekspor naik (coal, CPO, nickel)<br>
-            &bull; Capital inflow ke EM meningkat<br>
-            &bull; Data ekonomi AS solid tapi tidak terlalu panas
-          </div>
+          <label class="field-lbl">Kode Saham <span style="color:{_kc_sub};font-weight:400;">(opsional)</span></label>
+          <input class="inp" id="kode-0" type="text" placeholder="cth: BBCA" maxlength="6" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
         </div>
         <div>
-          <div style="font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-OFF (!) (IHSG Cenderung Turun)</div>
-          <div style="font-size:0.875rem;color:{_TXT};line-height:1.85;">
-            &bull; DXY menguat &amp; Rupiah melemah<br>
-            &bull; VIX &gt; 25 (pasar cemas)<br>
-            &bull; Fed hawkish / probabilitas HIKE naik<br>
-            &bull; Ketegangan geopolitik meningkat<br>
-            &bull; Capital outflow dari EM<br>
-            &bull; CPI AS melebihi ekspektasi (inflasi tinggi)
-          </div>
+          <label class="field-lbl">Harga Beli (Rp) <span style="color:{_kc_red};">*</span></label>
+          <input class="inp" id="harga-0" type="number" placeholder="Contoh: 16800" min="1" oninput="livePreview()">
+        </div>
+        <div>
+          <label class="field-lbl">Lot <span style="color:{_kc_red};">*</span></label>
+          <input class="inp" id="lot-0" type="number" placeholder="Contoh: 10" min="1" oninput="livePreview()">
         </div>
       </div>
     </div>
+  </div>
 
-    </div></body></html>"""
+  <button class="add-btn" onclick="addTrx()" id="add-btn">+ Tambah Pembelian Berikutnya</button>
 
-                components.html(_guide_html_1, height=2800, scrolling=True)
+  <div>
+    <label class="field-lbl">Harga Pasar Saat Ini (Rp) <span style="color:{_kc_sub};font-weight:400;">- untuk hitung PnL</span></label>
+    <input class="inp harga-inp" id="cur-price" type="number" placeholder="Opsional - isi untuk lihat profit/loss saat ini" min="1" oninput="livePreview()">
+  </div>
 
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 2 - INDEX & SECTOR ROTATION
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab2:
-                _guide_html_2 = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(124,58,237,0.25);}}
-    .sec-icon{{font-size:1.6rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-    .feat{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
-    .feat.blue{{border-left-color:{_B};}}
-    .feat.green{{border-left-color:{_G};}}
-    .feat.yellow{{border-left-color:{_Y};}}
-    .feat.red{{border-left-color:{_R};}}
-    .feat-title{{font-size:1.1rem;font-weight:700;color:{_B};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
-    .feat.blue .feat-title{{color:{_B};}}
-    .feat.green .feat-title{{color:{_G};}}
-    .feat.yellow .feat-title{{color:{_Y};}}
-    .feat.red .feat-title{{color:{_R};}}
-    .steps{{margin:10px 0 6px;}}
-    .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:{_B};}}
-    .stext .hi{{color:{_P};font-weight:700;}}
-    .stext .ok{{color:{_G};font-weight:700;}}
-    .stext .dn{{color:{_R};font-weight:700;}}
-    .stext .yl{{color:{_Y};font-weight:700;}}
-    .tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
-    .grid4{{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin:10px 0;}}
-    .gcard{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:12px 14px;}}
-    .gcard.green{{border-color:rgba(38,166,154,0.3);background:rgba(38,166,154,0.06);}}
-    .gcard.blue{{border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.06);}}
-    .gcard.red{{border-color:rgba(242,54,69,0.25);background:rgba(242,54,69,0.06);}}
-    .gcard.yellow{{border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.06);}}
-    .gcard-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
-    .gcard-val{{font-size:0.875rem;font-weight:700;}}
-    .gcard-sub{{font-size:0.8rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
-    .bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;}}
-    .bdg-p{{background:rgba(124,58,237,0.18);color:{_P};}}
-    .bdg-b{{background:rgba(96,165,250,0.15);color:{_B};}}
-    .bdg-g{{background:rgba(38,166,154,0.15);color:{_G};}}
-    .bdg-r{{background:rgba(242,54,69,0.12);color:{_R};}}
-    .bdg-y{{background:rgba(251,191,36,0.12);color:{_Y};}}
-    .div{{height:1px;background:rgba(124,58,237,0.15);margin:24px 0;}}
-    .rrg-diagram{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:12px;padding:20px;margin:14px 0;position:relative;}}
-    .rrg-title{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB};text-align:center;margin-bottom:14px;}}
-    .rrg-grid{{display:grid;grid-template-columns:1fr 1fr;gap:3px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;}}
-    .rrg-q{{padding:14px 12px;text-align:center;}}
-    .rrg-q-leading{{background:rgba(38,166,154,0.12);}}
-    .rrg-q-improving{{background:rgba(124,58,237,0.1);}}
-    .rrg-q-weakening{{background:rgba(242,54,69,0.1);}}
-    .rrg-q-lagging{{background:rgba(66,133,244,0.1);}}
-    .rrg-q-name{{font-size:0.875rem;font-weight:700;margin-bottom:4px;}}
-    .rrg-q-axis{{font-size:0.72rem;color:{_SUB};margin-bottom:4px;}}
-    .rrg-q-action{{font-size:0.8rem;}}
-    .rrg-q-desc{{font-size:0.8rem;color:{_SUB};margin-top:4px;line-height:1.5;}}
-    .rrg-arrow{{font-size:0.72rem;text-align:center;color:{_SUB};margin:8px 0;}}
-    .cycle-flow{{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;justify-content:center;}}
-    .cycle-item{{padding:8px 14px;border-radius:8px;font-size:0.8rem;font-weight:700;text-align:center;}}
-    .cycle-arrow{{font-size:1.1rem;color:{_SUB};}}
-    @media(max-width:600px){{
-      .grid2,.grid3,.grid4{{grid-template-columns:1fr;}}
-      .feat{{padding:14px 13px;}}
-      .rrg-grid{{grid-template-columns:1fr;}}
-      .cycle-flow{{flex-direction:column;align-items:flex-start;}}
-    }}
-    </style></head><body><div class="wrap">
+  <button class="calc-btn" onclick="calculate()"> Hitung Average</button>
+</div>
 
-    <!-- == OVERVIEW == -->
-    <div class="sec-head">
-      <span class="sec-icon"></span>
-      <div>
-        <div class="sec-title">INDEX &amp; SECTOR ROTATION</div>
-        <div class="sec-desc">Pahami perputaran dana antar sektor, posisi relatif setiap sektor di IDX, dan pelacak indeks global MSCI &amp; FTSE</div>
+<div class="result-wrap" id="result-wrap">
+  <div class="result-header">Hasil Perhitungan</div>
+  <div class="summary-grid" id="summary-grid"></div>
+  <div class="bk-wrap"><table class="bk-tbl">
+    <thead><tr>
+      <th>#</th><th>Harga Beli</th><th>Lot</th><th>Lembar</th>
+      <th>Total Modal</th><th>Bobot</th>
+    </tr></thead>
+    <tbody id="bk-tbody"></tbody>
+  </table></div>
+  <div id="pnl-box"></div>
+  <div id="live-avg" style="display:none;margin-top:-10px;margin-bottom:14px;font-size:0.8rem;color:{_kc_sub};
+    font-family:'IBM Plex Mono',monospace;text-align:center;letter-spacing:0.06em;"></div>
+</div>
+
+<script>
+var trxCount = 1;
+
+function fmt(n) {{
+  if (n === null || n === undefined || isNaN(n)) return '-';
+  return new Intl.NumberFormat('id-ID').format(Math.round(n));
+}}
+
+function fmtK(n) {{
+  if (!n) return '-';
+  if (n >= 1e12) return (n/1e12).toFixed(2) + ' T';
+  if (n >= 1e9)  return (n/1e9).toFixed(1) + ' M';
+  if (n >= 1e6)  return (n/1e6).toFixed(1) + ' Jt';
+  return fmt(n);
+}}
+
+function addTrx() {{
+  if (trxCount >= 5) {{ document.getElementById('add-btn').style.display='none'; return; }}
+  var idx = trxCount;
+  var label = idx===0 ? 'PEMBELIAN AWAL' : 'PEMBELIAN #'+(idx+1);
+  var div = document.createElement('div');
+  div.className = 'trx-block'; div.id = 'trx-'+idx;
+  div.innerHTML = '<div class="trx-title"> ' + label +
+    (idx>0?'<button class="del-btn" onclick="delTrx('+idx+')">x Hapus</button>':'') + '</div>' +
+    '<div class="row3">' +
+    '<div><label class="field-lbl">Harga Beli (Rp) <span style="color:{_kc_red};">*</span></label>' +
+    '<input class="inp" id="harga-'+idx+'" type="number" placeholder="Harga beli" min="1" oninput="livePreview()"></div>' +
+    '<div><label class="field-lbl">Lot <span style="color:{_kc_red};">*</span></label>' +
+    '<input class="inp" id="lot-'+idx+'" type="number" placeholder="Jumlah lot" min="1" oninput="livePreview()"></div>' +
+    '<div><label class="field-lbl">Biaya (Rp) <span style="color:{_kc_sub};font-weight:400;">opsional</span></label>' +
+    '<input class="inp" id="fee-'+idx+'" type="number" placeholder="Biaya broker" min="0" oninput="livePreview()"></div>' +
+    '</div>';
+  document.getElementById('trx-container').appendChild(div);
+  trxCount++;
+  if (trxCount >= 5) document.getElementById('add-btn').style.display='none';
+}}
+
+function delTrx(idx) {{
+  var el = document.getElementById('trx-'+idx);
+  if (el) el.remove();
+  if (trxCount >= 5) {{ trxCount--; document.getElementById('add-btn').style.display='block'; }}
+  livePreview();
+}}
+
+function collectData() {{
+  var rows = [];
+  for (var i=0; i<5; i++) {{
+    var hEl = document.getElementById('harga-'+i);
+    var lEl = document.getElementById('lot-'+i);
+    if (!hEl || !lEl) continue;
+    var h = parseFloat(hEl.value)||0;
+    var l = parseInt(lEl.value)||0;
+    var fee = parseFloat((document.getElementById('fee-'+i)||{{}}).value)||0;
+    if (h>0 && l>0) rows.push({{h:h, l:l, fee:fee}});
+  }}
+  return rows;
+}}
+
+function livePreview() {{
+  var rows = collectData();
+  if (rows.length < 1) return;
+  var totalModal=0, totalLembar=0;
+  rows.forEach(function(r){{totalModal+=r.h*r.l*100+r.fee; totalLembar+=r.l*100;}});
+  var avg = totalModal/totalLembar;
+  var liveEl = document.getElementById('live-avg');
+  if (liveEl) {{
+    liveEl.style.display='block';
+    liveEl.textContent = ' Preview: Avg Rp '+fmt(avg)+' &middot; '+rows.reduce(function(s,r){{return s+r.l;}},0)+' Lot &middot; Modal Rp '+fmtK(totalModal);
+  }}
+}}
+
+function calculate() {{
+  var rows = collectData();
+  if (rows.length < 1) {{ alert('Masukkan minimal 1 data pembelian.'); return; }}
+
+  var totalModal=0, totalLembar=0;
+  rows.forEach(function(r){{totalModal+=r.h*r.l*100+r.fee; totalLembar+=r.l*100;}});
+  var avgHarga = totalModal / totalLembar;
+  var totalLot = totalLembar / 100;
+  var curPrice = parseFloat(document.getElementById('cur-price').value)||0;
+
+  // Summary cards
+  var pnlHtml='', pnlClass='neutral';
+  var sumExtra = '';
+  if (curPrice > 0) {{
+    var pnl = (curPrice-avgHarga) * totalLembar;
+    var pnlPct = (curPrice-avgHarga) / avgHarga * 100;
+    var isPro = pnl >= 0;
+    pnlClass = isPro?'profit':'loss';
+    var pnlIcon = isPro?'':'';
+    pnlHtml = '<div class="pnl-box '+pnlClass+'">' +
+      pnlIcon + ' <b>PnL Saat Ini:</b> ' +
+      '<span style="color:'+(isPro?'#26a69a':'#f23645')+';font-weight:700;font-size:1.1rem;">' +
+      (isPro?'+':'-')+'Rp '+fmt(Math.abs(pnl)) + '</span>' +
+      ' &nbsp;|&nbsp; <b>'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</b>' +
+      '<br><span style="font-size:0.8rem;color:{_kc_sub};">Harga pasar: <b>Rp '+fmt(curPrice)+'</b> vs Average: <b>Rp '+fmt(avgHarga)+'</b>' +
+      ' - Perlu kenaikan <b>' + (avgHarga>curPrice?((avgHarga-curPrice)/curPrice*100).toFixed(2)+'%':'-') + '</b> untuk BEP</span>' +
+      '</div>';
+    sumExtra = '<div class="sum-card"><div class="sum-lbl">PnL Saat Ini</div><div class="sum-val '+(isPro?'green':'red')+'">'+(isPro?'+':'')+pnlPct.toFixed(2)+'%</div></div>';
+  }}
+
+  var sumHtml =
+    '<div class="sum-card"><div class="sum-lbl">Average Harga</div><div class="sum-val purple">Rp '+fmt(avgHarga)+'</div></div>'+
+    '<div class="sum-card"><div class="sum-lbl">Total Lot</div><div class="sum-val blue">'+totalLot+' Lot</div></div>'+
+    '<div class="sum-card"><div class="sum-lbl">Total Modal</div><div class="sum-val gold">Rp '+fmtK(totalModal)+'</div></div>'+
+    sumExtra;
+  document.getElementById('summary-grid').innerHTML = sumHtml;
+
+  // Breakdown table
+  var tbody = '';
+  var cumModal=0, cumLembar=0;
+  rows.forEach(function(r,i){{
+    var rowModal = r.h*r.l*100+r.fee;
+    cumModal+=rowModal; cumLembar+=r.l*100;
+    var bobot = (rowModal/totalModal*100).toFixed(1);
+    var label = i===0?'Pembelian Awal':'Pembelian #'+(i+1);
+    tbody+='<tr>'+
+      '<td style="color:{_kc_sub};">'+label+'</td>'+
+      '<td style="color:{_kc_purple};font-weight:600;">Rp '+fmt(r.h)+'</td>'+
+      '<td>'+r.l+' lot</td>'+
+      '<td style="color:{_kc_sub};">'+fmt(r.l*100)+' lbr</td>'+
+      '<td>Rp '+fmtK(rowModal)+'</td>'+
+      '<td style="color:{_kc_gold};">'+bobot+'%</td>'+
+      '</tr>';
+  }});
+  tbody+='<tr>'+
+    '<td>OK Total / Average</td>'+
+    '<td>Rp '+fmt(avgHarga)+'</td>'+
+    '<td>'+totalLot+' lot</td>'+
+    '<td>'+fmt(totalLembar)+' lbr</td>'+
+    '<td>Rp '+fmtK(totalModal)+'</td>'+
+    '<td>100%</td>'+
+    '</tr>';
+  document.getElementById('bk-tbody').innerHTML = tbody;
+  document.getElementById('pnl-box').innerHTML = pnlHtml;
+  document.getElementById('result-wrap').className = 'result-wrap show';
+  document.getElementById('live-avg').style.display='none';
+}}
+</script>
+</body></html>"""
+
+            components.html(_avg_html, height=1400, scrolling=True)
+
+
+    with tab_panduan:
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📖 PANDUAN SIGMA TERMINAL</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        # ── Versi & tanggal panduan ──────────────────────────────────────
+        _PANDUAN_VERSION = "v4.2"
+        _PANDUAN_LAST_UPDATED = "01 Mei 2026"
+        _pan_col1, _pan_col2 = st.columns([3, 2])
+        with _pan_col1:
+            st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;color:{text_sub};margin-bottom:4px;'>Panduan lengkap penggunaan semua fitur SIGMA Terminal. Pilih kategori di bawah untuk membaca penjelasan detail.</p>", unsafe_allow_html=True)
+        with _pan_col2:
+            st.markdown(
+                f"<div style='text-align:right;font-family:IBM Plex Mono,monospace;font-size:0.7rem;color:#64748b;margin-bottom:4px;'>"
+                f"📋 Versi Panduan: <b style='color:#a78bfa;'>{_PANDUAN_VERSION}</b> · "
+                f"Diperbarui: <b>{_PANDUAN_LAST_UPDATED}</b></div>",
+                unsafe_allow_html=True
+            )
+        st.caption("⚠️ Panduan ini diperbarui manual setiap ada perubahan fitur besar. Jika ada fitur baru yang belum terdokumentasi, lihat changelog di header aplikasi.")
+
+        _P   = "#a78bfa"   # purple accent
+        _B   = "#60a5fa"   # blue accent
+        _G   = "#26a69a"   # green
+        _R   = "#f23645"   # red
+        _Y   = "#fbbf24"   # yellow warning
+        _FEAT_BG = "rgba(8,12,22,0.85)" if is_dark else "rgba(248,246,255,0.95)"
+        _FEAT_BD = "rgba(124,58,237,0.2)" if is_dark else "rgba(124,58,237,0.18)"
+        _TXT = text_main
+        _SUB = text_sub
+        _BG  = met_bg
+        _BD  = met_border
+
+        # ── CSS for panduan ─────────────────────────────────────────────
+        st.markdown(f"""<style>
+.pgd-wrap {{font-family:'IBM Plex Mono',monospace;}}
+.pgd-section {{
+  background:{_BG};border:1px solid {_BD};border-left:4px solid {_P};
+  border-radius:0 12px 12px 0;padding:22px 24px;margin-bottom:18px;
+}}
+.pgd-section-title {{
+  font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.08em;
+  margin-bottom:6px;display:flex;align-items:center;gap:10px;
+}}
+.pgd-section-sub {{
+  font-size:0.875rem;color:{_SUB};margin-bottom:16px;line-height:1.7;
+}}
+.pgd-feature {{
+  background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);
+  border-radius:8px;padding:14px 18px;margin-bottom:12px;
+}}
+.pgd-feature-title {{
+  font-size:1.1rem;font-weight:700;color:{_B};margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}}
+.pgd-feature-body {{
+  font-size:0.875rem;color:{_TXT};line-height:1.85;
+}}
+.pgd-step {{
+  display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;
+}}
+.pgd-step-num {{
+  min-width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,{_P},{_B});
+  color:#fff;font-size:0.8rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}}
+.pgd-step-text {{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.pgd-tip {{
+  background:rgba(96,165,250,0.08);border-left:3px solid {_B};
+  border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;
+  font-size:0.875rem;color:{_TXT};line-height:1.7;
+}}
+.pgd-warn {{
+  background:rgba(251,191,36,0.08);border-left:3px solid {_Y};
+  border-radius:0 8px 8px 0;padding:10px 14px;margin-top:10px;
+  font-size:0.875rem;color:{_TXT};line-height:1.7;
+}}
+.pgd-grid {{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}}
+.pgd-badge {{
+  display:inline-block;padding:2px 9px;border-radius:12px;
+  font-size:0.8rem;font-weight:700;letter-spacing:0.06em;margin-right:6px;
+  vertical-align:middle;
+}}
+.pgd-badge-p {{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
+.pgd-badge-b {{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
+.pgd-badge-g {{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
+.pgd-badge-r {{background:rgba(242,54,69,0.12);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
+.pgd-badge-y {{background:rgba(251,191,36,0.12);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
+@media(max-width:640px){{
+  .pgd-grid{{grid-template-columns:1fr;}}
+  .pgd-section{{padding:16px 14px;}}
+  .pgd-feature{{padding:12px 14px;}}
+}}
+</style>""", unsafe_allow_html=True)
+
+        # ── Sub-tabs Panduan ─────────────────────────────────────────────
+        pg_tab0, pg_tab1, pg_tab2, pg_tab3, pg_tab4, pg_tab5, pg_tab6, pg_tab7, pg_tab8, pg_tab9 = st.tabs([
+            "  🌐 MARKET MAP  ",
+            "  🌍 Global Macro & News  ",
+            "  🔄 Index & Rebalancing  ",
+            "  👥 Shareholder  ",
+            "  ⚡ Alpha Screener  ",
+            "  📋 Analisa IPO  ",
+            "  🏆 Track Record  ",
+            "  🧮 Kalkulator  ",
+            "  📊 Broker Summary  ",
+            "  🔬 Cara Kerja Screener  ",
+        ])
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 0 - MARKET MAP
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab0:
+            _guide_html_0 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0 32px;}}
+.hero{{background:linear-gradient(135deg,rgba(139,92,246,0.13),rgba(59,130,246,0.08));border:1px solid rgba(139,92,246,0.3);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
+.hero-badge{{display:inline-block;font-size:0.68rem;font-weight:800;letter-spacing:0.15em;padding:3px 10px;border-radius:20px;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.5);color:#a78bfa;margin-bottom:10px;}}
+.hero-title{{font-size:1.35rem;font-weight:800;color:#a78bfa;letter-spacing:0.05em;margin-bottom:8px;}}
+.hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(139,92,246,0.2);}}
+.sec-icon{{font-size:1.4rem;}}
+.sec-title{{font-size:1.05rem;font-weight:700;color:#a78bfa;letter-spacing:0.06em;}}
+.card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+.card.p{{border-left:3px solid #a78bfa;}}
+.card.b{{border-left:3px solid #60a5fa;}}
+.card.g{{border-left:3px solid #26a69a;}}
+.card.y{{border-left:3px solid #fbbf24;}}
+.card.r{{border-left:3px solid #f23645;}}
+.card-title{{font-size:0.875rem;font-weight:700;color:#60a5fa;margin-bottom:8px;}}
+.card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
+.card-body b{{color:#a78bfa;}}
+.step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:#a78bfa;}}
+.stext .ok{{color:#26a69a;font-weight:700;}}
+.stext .dn{{color:#f23645;font-weight:700;}}
+.stext .yl{{color:#fbbf24;font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+.warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.heatmap-demo{{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:14px 0;}}
+.hm-cell{{border-radius:6px;padding:10px 6px;text-align:center;font-size:0.72rem;font-weight:700;}}
+.hm-strong-up{{background:rgba(8,153,129,0.35);color:#4ade80;border:1px solid rgba(8,153,129,0.5);}}
+.hm-up{{background:rgba(8,153,129,0.18);color:#26a69a;border:1px solid rgba(8,153,129,0.3);}}
+.hm-flat{{background:rgba(178,181,190,0.1);color:#7c86a2;border:1px solid rgba(178,181,190,0.2);}}
+.hm-dn{{background:rgba(242,54,69,0.18);color:#f23645;border:1px solid rgba(242,54,69,0.3);}}
+.hm-strong-dn{{background:rgba(242,54,69,0.35);color:#f87171;border:1px solid rgba(242,54,69,0.5);}}
+.ticker-row{{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:6px;margin-bottom:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}}
+.ticker-name{{font-size:0.8rem;font-weight:700;color:#a78bfa;min-width:90px;}}
+.ticker-val{{font-size:0.875rem;color:{_TXT};flex:1;}}
+.ticker-up{{color:#26a69a;font-weight:700;}}
+.ticker-dn{{color:#f23645;font-weight:700;}}
+@media(max-width:600px){{.grid2{{grid-template-columns:1fr;}}.heatmap-demo{{grid-template-columns:repeat(3,1fr);}}}}
+</style></head><body><div class="wrap">
+
+<div class="hero">
+  <div class="hero-badge"> MARKET MAP</div>
+  <div class="hero-title">Pusat Pantau Pasar &mdash; Live Market + Globe Heatmap</div>
+  <div class="hero-sub">
+    Tab pertama SIGMA Terminal. Berisi dua bagian utama: <b>Live Market</b> (harga aset global real-time: indeks, komoditas, forex) 
+    dan <b>Market Map Globe</b> (heatmap 3D interaktif seluruh saham IDX dikelompokkan per sektor).
+  </div>
+</div>
+
+<!-- == BAGIAN 1: LIVE MARKET == -->
+<div class="sec-head"><span class="sec-icon"></span>
+<div><div class="sec-title">BAGIAN 1 &mdash; LIVE MARKET</div>
+<div style="font-size:0.8rem;color:{_SUB};margin-top:2px;">Ticker harga real-time: Indeks Global &middot; Komoditas &middot; Forex &middot; Kripto</div>
+</div></div>
+
+<div class="card p">
+<div class="card-title">Apa yang ditampilkan Live Market?</div>
+<div class="card-body">
+  Live Market adalah <b>ticker berjalan + tabel harga</b> yang menampilkan kondisi pasar global sebelum dan sesama sesi IDX berlangsung.
+  Data diambil dari Yahoo Finance dan diperbarui setiap kali halaman di-reload.
+</div>
+</div>
+
+<div class="card b">
+<div class="card-title">Instrumen yang Dipantau</div>
+<div class="card-body">
+  <b style="color:#a78bfa;">Indeks Global:</b><br>
+  <div class="ticker-row"><span class="ticker-name">IHSG</span><span class="ticker-val">Benchmark IDX &mdash; acuan utama pasar saham Indonesia</span></div>
+  <div class="ticker-row"><span class="ticker-name">S&amp;P500</span><span class="ticker-val">Indeks 500 saham terbesar AS &mdash; pemimpin sentimen global</span></div>
+  <div class="ticker-row"><span class="ticker-name">Nasdaq</span><span class="ticker-val">Indeks teknologi AS &mdash; sensitif terhadap suku bunga Fed</span></div>
+  <div class="ticker-row"><span class="ticker-name">Nikkei</span><span class="ticker-val">Bursa Jepang &mdash; bellwether Asia, berkorelasi dengan USD/JPY</span></div>
+  <div class="ticker-row"><span class="ticker-name">Hang Seng</span><span class="ticker-val">Bursa Hong Kong &mdash; proxy sentimen Tiongkok</span></div>
+  <br><b style="color:#a78bfa;">Komoditas (relevan untuk IDX):</b><br>
+  <div class="ticker-row"><span class="ticker-name">Gold / Emas</span><span class="ticker-val">Safe haven &mdash; naik saat ketidakpastian tinggi. Relevan: ANTM, MDKA</span></div>
+  <div class="ticker-row"><span class="ticker-name">WTI / Brent</span><span class="ticker-val">Minyak mentah &mdash; naik positif untuk ELSA, MEDC, PGAS</span></div>
+  <div class="ticker-row"><span class="ticker-name">Coal</span><span class="ticker-val">Batu bara &mdash; penggerak utama ADRO, BYAN, ITMG, PTBA</span></div>
+  <div class="ticker-row"><span class="ticker-name">CPO</span><span class="ticker-val">Crude Palm Oil &mdash; relevan untuk AALI, LSIP, SIMP, SSMS</span></div>
+  <div class="ticker-row"><span class="ticker-name">Nickel</span><span class="ticker-val">Nikel &mdash; relevan untuk INCO, NCKL, MBMA</span></div>
+  <br><b style="color:#a78bfa;">Forex:</b><br>
+  <div class="ticker-row"><span class="ticker-name">DXY</span><span class="ticker-val">Dollar Index &mdash; DXY naik = Rupiah melemah = IHSG tertekan</span></div>
+  <div class="ticker-row"><span class="ticker-name">USD/IDR</span><span class="ticker-val">Nilai tukar &mdash; indikator langsung tekanan capital flow</span></div>
+  <div class="ticker-row"><span class="ticker-name">VIX</span><span class="ticker-val">Fear Index &mdash; VIX &gt;25 = pasar cemas (risk-off), &lt;15 = tenang (risk-on)</span></div>
+</div>
+</div>
+
+<div class="card g">
+<div class="card-title"> Cara Membaca Live Market untuk Trading IDX</div>
+<div class="card-body">
+<div class="step"><div class="snum">1</div><div class="stext">Cek S&amp;P500 dan Nasdaq semalam (sesi AS). Jika keduanya turun &gt;1%, waspadai <b>tekanan di opening IHSG</b> hari ini.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Lihat <b>DXY</b>: jika naik, Rupiah cenderung melemah &rarr; capital outflow dari IDX. Jika turun &rarr; risk-on, positif untuk IHSG.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Pantau komoditas relevan dengan emiten yang kamu pegang. <span class="ok">Coal naik</span> = ADRO/BYAN bullish. <span class="ok">Gold naik</span> = ANTM/MDKA bullish.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext"><b>VIX &gt; 25</b>: pertimbangkan kurangi posisi atau tahan entry baru. <b>VIX &lt; 15</b>: kondisi relatif aman untuk ekspansi.</div></div>
+</div>
+</div>
+<div class="tip"> <b>Best Time:</b> Buka Live Market pukul 08:45&ndash;09:00 WIB sebelum sesi IDX buka. Ini memberi konteks apakah IHSG akan gap up, gap down, atau flat di pembukaan.</div>
+
+<!-- == BAGIAN 2: MARKET MAP GLOBE == -->
+<div class="sec-head" style="margin-top:24px;"><span class="sec-icon"></span>
+<div><div class="sec-title">BAGIAN 2 &mdash; MARKET MAP GLOBE (Heatmap 3D)</div>
+<div style="font-size:0.8rem;color:{_SUB};margin-top:2px;">Visualisasi 3D interaktif seluruh saham IDX dikelompokkan per sektor, diwarnai performa harian</div>
+</div></div>
+
+<div class="card b">
+<div class="card-title">Cara Membaca Warna Heatmap</div>
+<div class="heatmap-demo">
+  <div class="hm-cell hm-strong-up">BBCA<br>+3.2%</div>
+  <div class="hm-cell hm-up">TLKM<br>+1.1%</div>
+  <div class="hm-cell hm-flat">ASII<br>0.0%</div>
+  <div class="hm-cell hm-dn">UNVR<br>-1.4%</div>
+  <div class="hm-cell hm-strong-dn">GOTO<br>-3.8%</div>
+</div>
+<div class="card-body">
+  <span class="ok"># Hijau Terang</span> = naik kuat (&gt;+2%) &nbsp;|&nbsp;
+  <span class="ok"># Hijau</span> = naik (+0.5%&ndash;2%)<br>
+  <span style="color:#7c86a2;"># Abu-abu</span> = flat (-0.5%&ndash;+0.5%) &nbsp;|&nbsp;
+  <span class="dn"># Merah</span> = turun (-0.5% &ndash; -2%)<br>
+  <span class="dn"># Merah Tua</span> = turun kuat (&lt;-2%) &nbsp;|&nbsp;
+  <b>Ukuran kotak</b> = proporsi market cap emiten
+</div>
+</div>
+
+<div class="card p">
+<div class="card-title">Cara Pakai Market Map Globe</div>
+<div class="card-body">
+<div class="step"><div class="snum">1</div><div class="stext"><b>Lihat sekilas</b> &mdash; warna dominan apa? Hijau merata = market breadth positif. Merah merata = tekanan luas. Campur = rotasi sektoral.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext"><b>Identifikasi sektor</b> &mdash; sektor mana yang paling banyak hijau? Itu sinyal dana mengalir ke sana hari ini.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext"><b>Hover / Klik</b> kotak saham untuk melihat ticker, harga, dan persentase perubahan secara detail.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Kombinasikan dengan tab <b>INDEX & SECTOR ROTATION</b> untuk konfirmasi apakah rotasi sektor ini sudah berlangsung lama (momentum kuat) atau baru mulai.</div></div>
+</div>
+</div>
+
+<div class="warn">(!) <b>Catatan:</b> Market Map Globe memuat data semua saham IDX &mdash; proses loading awal bisa memakan 5&ndash;10 detik tergantung koneksi. Klik tombol <b>" Refresh Globe"</b> jika data terlihat stale.</div>
+
+</div></body></html>"""
+            components.html(_guide_html_0, height=1800, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 1 - GLOBAL MACRO & NEWS
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab1:
+            _guide_html_1 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+
+/* Layout */
+.wrap{{max-width:100%;padding:4px 0;}}
+
+/* Section header */
+.sec-head{{
+  display:flex;align-items:center;gap:12px;
+  margin:28px 0 14px;
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(124,58,237,0.25);
+}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
+
+/* Feature cards */
+.feat{{
+  background:{_FEAT_BG};
+  border:1px solid {_FEAT_BD};
+  border-left:4px solid {_P};
+  border-radius:0 10px 10px 0;
+  padding:18px 20px;
+  margin-bottom:14px;
+}}
+.feat.blue{{border-left-color:{_B};}}
+.feat.green{{border-left-color:{_G};}}
+.feat.yellow{{border-left-color:{_Y};}}
+
+.feat-title{{
+  font-size:1.1rem;font-weight:700;color:{_B};
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+
+/* Steps */
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{
+  min-width:24px;height:24px;border-radius:50%;
+  background:linear-gradient(135deg,{_P},{_B});
+  color:#fff;font-size:0.72rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
+}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+
+/* Tip/Warn boxes */
+.tip{{
+  background:rgba(96,165,250,0.07);border-left:3px solid {_B};
+  border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
+  font-size:0.875rem;color:{_TXT};line-height:1.72;
+}}
+.warn{{
+  background:rgba(251,191,36,0.07);border-left:3px solid {_Y};
+  border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;
+  font-size:0.875rem;color:{_TXT};line-height:1.72;
+}}
+
+/* Grid */
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
+.gcard{{
+  background:rgba(124,58,237,0.06);
+  border:1px solid rgba(124,58,237,0.2);
+  border-radius:8px;padding:12px 14px;
+}}
+.gcard-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
+.gcard-val{{font-size:0.875rem;font-weight:700;color:{_P};}}
+.gcard-sub{{font-size:0.8rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
+
+/* Badge */
+.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;}}
+.bdg-p{{background:rgba(124,58,237,0.18);color:{_P};}}
+.bdg-b{{background:rgba(96,165,250,0.15);color:{_B};}}
+.bdg-g{{background:rgba(38,166,154,0.15);color:{_G};}}
+.bdg-r{{background:rgba(242,54,69,0.12);color:{_R};}}
+.bdg-y{{background:rgba(251,191,36,0.12);color:{_Y};}}
+
+/* Divider */
+.div{{height:1px;background:rgba(124,58,237,0.15);margin:24px 0;}}
+
+@media(max-width:600px){{
+  .grid2,.grid3{{grid-template-columns:1fr;}}
+  .feat{{padding:14px 13px;}}
+}}
+</style></head><body><div class="wrap">
+
+<!-- == OVERVIEW == -->
+<div class="sec-head">
+  <span class="sec-icon"></span>
+  <div>
+    <div class="sec-title">GLOBAL MACRO &amp; NEWS</div>
+    <div class="sec-desc">Pantau kondisi makro dunia, harga aset global, dan berita pasar yang mempengaruhi IDX secara real-time</div>
+  </div>
+</div>
+
+<div class="grid3">
+  <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">6 Sub-Fitur</div><div class="gcard-sub">Market, Macro, News, Komoditas, FOMC, Kalender</div></div>
+  <div class="gcard"><div class="gcard-lbl">Update</div><div class="gcard-val">Real-time</div><div class="gcard-sub">Data live dari Yahoo Finance, FMP, Alpha Vantage</div></div>
+  <div class="gcard"><div class="gcard-lbl">Relevansi IDX</div><div class="gcard-val">Sangat Tinggi</div><div class="gcard-sub">Komoditas & DXY langsung mempengaruhi IHSG</div></div>
+</div>
+
+<!-- == 1. LIVE MARKET == -->
+<div class="div"></div>
+<div class="feat">
+  <div class="feat-title"> 1 &middot; LIVE MARKET - Harga Aset Real-Time</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>Lihat harga terkini</b> IHSG, S&amp;P500, Dow Jones, Nasdaq, Nikkei, Hang Seng, Shanghai - semua dalam satu layar.
+      Angka hijau (<span class="ok">^</span>) = naik dari penutupan sebelumnya, merah (<span class="dn">v</span>) = turun.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Cek DXY (Dollar Index)</b> dan <b>USD/IDR</b> - DXY naik berarti Rupiah cenderung melemah, capital outflow dari EM termasuk IDX.
+      DXY turun = Rupiah menguat = positif untuk IHSG.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Pantau Komoditas:</b> Gold (emas), WTI &amp; Brent (minyak), CPO, Coal, Nickel.
+      Harga komoditas naik = positif untuk emiten eksportir (ADRO, ANTM, INCO, AALI).
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>VIX (Volatility Index):</b> <span class="yl">VIX &gt; 25</span> = pasar global sedang cemas, waspada risk-off. 
+      <span class="ok">VIX &lt; 15</span> = kondisi pasar tenang, aman untuk ekspansi posisi.
+    </div></div>
+  </div>
+  <div class="tip"> <b>Tip:</b> Lihat Live Market setiap pagi sebelum sesi pembukaan BEI (08:45 WIB). Jika S&P500 dan Nasdaq turun &gt;1% semalam, waspadai tekanan di opening IHSG hari ini.</div>
+</div>
+
+<!-- == 2. MACRO INDICATORS == -->
+<div class="feat blue">
+  <div class="feat-title"> 2 &middot; MACRO INDICATORS - Data Ekonomi Kunci</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>BI Rate (Bank Indonesia):</b> Suku bunga acuan Indonesia. BI Rate turun = positif untuk properti (BSDE, CTRA), perbankan (NIM melebar), dan obligasi. BI Rate naik = perbankan lebih selektif, properti tertekan.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Fed Funds Rate (Amerika):</b> Suku bunga AS. Fed hike = DXY naik &rarr; Rupiah melemah &rarr; IHSG tertekan. Fed cut = sebaliknya. Pantau jadwal FOMC di sub-fitur FedWatch.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Inflasi CPI Indonesia:</b> CPI &gt; 5% = tekanan daya beli, BI cenderung hawkish. CPI rendah = ruang BI untuk cut rate lebih lebar.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>Current Account &amp; Neraca Perdagangan:</b> Surplus = positif untuk Rupiah. Defisit &gt; 3% PDB = waspada pelemahan Rupiah.
+    </div></div>
+  </div>
+  <div class="grid2" style="margin-top:12px;">
+    <div class="gcard"><div class="gcard-lbl">Dampak DXY Naik</div><div class="gcard-val" style="color:{_R};">(!) Risk-Off</div><div class="gcard-sub">Rupiah melemah &middot; Capital outflow &middot; IHSG tertekan &middot; Emiten importir rugi</div></div>
+    <div class="gcard"><div class="gcard-lbl">Dampak DXY Turun</div><div class="gcard-val" style="color:{_G};">OK Risk-On</div><div class="gcard-sub">Rupiah menguat &middot; Capital inflow &middot; IHSG naik &middot; Emiten eksportir tertekan</div></div>
+  </div>
+</div>
+
+<!-- == 3. MARKET BRIEF == -->
+<div class="feat green">
+  <div class="feat-title"> 3 &middot; MARKET BRIEF - Ringkasan Harian</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      Market Brief hadir setiap pagi dengan ringkasan kondisi pasar: sentimen global, arah IHSG hari ini, sektor yang perlu diperhatikan, dan event ekonomi penting hari ini.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Cara baca:</b> Perhatikan <span class="hi">bias utama</span> (Bullish/Bearish/Sideways), kemudian cek <span class="hi">faktor risiko</span> (downside risk). Jika keduanya searah = sinyal lebih kuat.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      Market Brief juga mencantumkan <b>jadwal rilis data ekonomi</b> (CPI, PDB, neraca dagang) yang berpotensi mempengaruhi volatilitas harian.
+    </div></div>
+  </div>
+  <div class="tip"> <b>Cara Pakai:</b> Baca Market Brief &rarr; cek Live Market &rarr; baru buka ALPHA STOCK INSIGHT untuk analisa emiten spesifik. Urutan ini memastikan kamu paham konteks makro sebelum masuk ke level mikro saham.</div>
+</div>
+
+<!-- == 4. NEWS FEED == -->
+<div class="feat">
+  <div class="feat-title"> 4 &middot; NEWS FEED - Berita Pasar Terkini</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>IDX News:</b> Berita langsung dari TradingView - meliputi aksi korporasi (dividen, rights issue, buyback), laporan keuangan, dan berita emiten BEI.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Global News:</b> Feed dari Reuters, Bloomberg, CNBC Global - berita tentang perang dagang, keputusan Fed, data ekonomi AS, dan sentimen global.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Filter relevansi:</b> Fokus pada berita yang menyebut kata kunci komoditas (oil, coal, nickel, CPO), geopolitik (tarif, sanksi, perang), atau makro (Fed, inflation, GDP).
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      Setelah membaca berita, kamu bisa langsung ketik di <b>SIGMA AI Chat</b>: <span class="hi">"Kesimpulan dampak [topik berita]"</span> untuk mendapat analisa dampaknya ke IHSG dan emiten terkait.
+    </div></div>
+  </div>
+  <div class="warn">(!) <b>Perhatian:</b> Berita bisa memicu pergerakan harga jangka pendek yang tidak mencerminkan fundamental. Selalu kombinasikan dengan analisa teknikal dan fundamental sebelum eksekusi.</div>
+</div>
+
+<!-- == 5. ECONOMIC CALENDAR == -->
+<div class="feat blue">
+  <div class="feat-title"> 5 &middot; ECONOMIC CALENDAR - Jadwal Rilis Data</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      Kalender Ekonomi menampilkan jadwal rilis data penting: <b>NFP (Non-Farm Payroll), CPI AS, PDB Indonesia, FOMC Meeting, BI Rate Decision</b>, dan lainnya.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Cara baca Importance Badge:</b> 
+      <span class="bdg bdg-r">HIGH</span> = bisa sebabkan volatilitas besar (NFP, CPI, FOMC) &middot; 
+      <span class="bdg bdg-y">MED</span> = berpengaruh tapi lebih terbatas &middot; 
+      <span class="bdg bdg-b">LOW</span> = biasanya tidak menggerakkan pasar signifikan.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      Perhatikan kolom <b>Forecast vs Previous:</b> Jika hasil rilis jauh di atas/bawah forecast = pasar bereaksi kuat. Jika sesuai ekspektasi = reaksi minimal (buy the rumor, sell the news).
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>Strategi sebelum data penting:</b> Kurangi posisi besar 1&ndash;2 hari sebelum rilis HIGH impact data. Masuk kembali setelah volatilitas awal mereda.
+    </div></div>
+  </div>
+  <div class="grid2" style="margin-top:12px;">
+    <div class="gcard"><div class="gcard-lbl">Data HIGH Impact (IDX)</div><div class="gcard-val" style="color:{_R};">Waspadai</div><div class="gcard-sub">FOMC &middot; NFP &middot; CPI AS &middot; BI Rate &middot; GDP Indonesia &middot; PDB</div></div>
+    <div class="gcard"><div class="gcard-lbl">Data MED Impact (IDX)</div><div class="gcard-val" style="color:{_Y};">Monitor</div><div class="gcard-sub">PMI &middot; Trade Balance &middot; Industrial Production &middot; Retail Sales</div></div>
+  </div>
+</div>
+
+<!-- == 6. FOMC FEDWATCH == -->
+<div class="feat yellow">
+  <div class="feat-title"> 6 &middot; FOMC FEDWATCH - Probabilitas Suku Bunga Fed</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      FedWatch menampilkan <b>probabilitas pasar</b> untuk keputusan Fed di setiap FOMC meeting berikutnya - data dari CME FedWatch Tool yang dipakai profesional Wall Street.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Cara baca:</b> Angka % di setiap skenario (HOLD/CUT/HIKE) = probabilitas pasar futures. Jika "HOLD 95%" artinya pasar hampir pasti Fed tidak akan mengubah suku bunga.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Dampak ke IDX:</b> 
+      <span class="ok">Fed CUT</span> = DXY turun &rarr; Rupiah menguat &rarr; capital inflow ke EM &rarr; IHSG cenderung naik, terutama sektor Properti dan Perbankan.
+      <span class="dn">Fed HIKE</span> = DXY naik &rarr; Rupiah melemah &rarr; capital outflow &rarr; IHSG tertekan.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>Countdown Timer</b> di FedWatch menunjukkan sisa waktu menuju keputusan FOMC berikutnya - sehingga kamu tahu kapan volatilitas besar berpotensi terjadi.
+    </div></div>
+    <div class="step"><div class="snum">5</div><div class="stext">
+      <b>Probability shift:</b> Jika probabilitas HOLD turun dari 80% menjadi 60% dalam sepekan = pasar mulai repricing &rarr; bisa sebabkan volatilitas pada DXY dan EM assets.
+    </div></div>
+  </div>
+  <div class="tip"> <b>Cara Pakai Pro:</b> Cek FedWatch tiap Senin pagi. Jika probabilitas CUT di meeting berikutnya &gt; 60% &rarr; posisikan diri di sektor Rate-Sensitive: Properti (BSDE, CTRA), Perbankan (BBCA, BMRI), dan Obligasi.</div>
+  <div class="warn">(!) <b>Ingat:</b> Probabilitas FedWatch adalah ekspektasi pasar, BUKAN keputusan resmi Fed. Fed bisa mengejutkan pasar kapan saja - selalu gunakan stop loss.</div>
+</div>
+
+<!-- == QUICK REFERENCE == -->
+<div class="div"></div>
+<div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
+  <div style="font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:12px;"> QUICK REFERENCE - Dampak Makro ke IDX</div>
+  <div class="grid2">
+    <div>
+      <div style="font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-ON OK (IHSG Cenderung Naik)</div>
+      <div style="font-size:0.875rem;color:{_TXT};line-height:1.85;">
+        &bull; DXY melemah &amp; Rupiah menguat<br>
+        &bull; VIX &lt; 20 (pasar tenang)<br>
+        &bull; Fed dovish / probabilitas CUT naik<br>
+        &bull; Komoditas ekspor naik (coal, CPO, nickel)<br>
+        &bull; Capital inflow ke EM meningkat<br>
+        &bull; Data ekonomi AS solid tapi tidak terlalu panas
       </div>
     </div>
-
-    <div class="grid3">
-      <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">4 Sub-Fitur</div><div class="gcard-sub">RRG Chart &middot; Saham per Sektor &middot; MSCI Tracker &middot; FTSE Tracker</div></div>
-      <div class="gcard"><div class="gcard-lbl">Saham Terscreening</div><div class="gcard-val">500 IDX</div><div class="gcard-sub">Top 30/sektor by market cap &middot; Exclude suspended &gt;1 bulan</div></div>
-      <div class="gcard"><div class="gcard-lbl">Update RRG</div><div class="gcard-val">2&times; Sehari</div><div class="gcard-sub">Update otomatis jam 13:00 &amp; 21:00 WIB</div></div>
-    </div>
-
-    <!-- == 1. RRG CHART == -->
-    <div class="div"></div>
-    <div class="feat">
-      <div class="feat-title"> 1 &middot; RRG CHART - Relative Rotation Graph</div>
-      <p style="font-size:0.875rem;color:{_TXT};margin-bottom:14px;line-height:1.8;">
-        RRG (Relative Rotation Graph) adalah tools analisa yang menggambarkan <b>kekuatan relatif</b> dan <b>momentum</b> setiap sektor dibandingkan benchmark IHSG. 
-        Setiap bubble mewakili satu sektor dan bergerak searah jarum jam di sepanjang siklus rotasi.
-      </p>
-
-      <!-- Diagram RRG Visual -->
-      <div class="rrg-diagram">
-        <div class="rrg-title">DIAGRAM KUADRAN RRG - CARA BACA POSISI SEKTOR</div>
-        <div class="rrg-grid">
-          <div class="rrg-q rrg-q-improving">
-            <div class="rrg-q-name" style="color:{_P};">&#8598; IMPROVING</div>
-            <div class="rrg-q-axis">RS &lt; 100 &middot; Mom &gt; 100</div>
-            <div class="rrg-q-action" style="color:{_P};"> Mulai Akumulasi</div>
-            <div class="rrg-q-desc">Sektor belum sekuat IHSG tapi momentumnya sedang naik. Fase akumulasi awal yang ideal untuk entry bertahap.</div>
-          </div>
-          <div class="rrg-q rrg-q-leading">
-            <div class="rrg-q-name" style="color:{_G};">&#8599; LEADING</div>
-            <div class="rrg-q-axis">RS &gt; 100 &middot; Mom &gt; 100</div>
-            <div class="rrg-q-action" style="color:{_G};"> Hold / Profit Run</div>
-            <div class="rrg-q-desc">Sektor outperform IHSG dan momentumnya masih naik. Posisi terkuat - hold posisi dan biarkan profit berjalan.</div>
-          </div>
-          <div class="rrg-q rrg-q-lagging">
-            <div class="rrg-q-name" style="color:#4285F4;">&#8601; LAGGING</div>
-            <div class="rrg-q-axis">RS &lt; 100 &middot; Mom &lt; 100</div>
-            <div class="rrg-q-action" style="color:#4285F4;">(!) Avoid / Monitor</div>
-            <div class="rrg-q-desc">Sektor underperform IHSG dan momentumnya turun. Hindari atau tunggu tanda reversal sebelum masuk.</div>
-          </div>
-          <div class="rrg-q rrg-q-weakening">
-            <div class="rrg-q-name" style="color:{_R};">&#8600; WEAKENING</div>
-            <div class="rrg-q-axis">RS &gt; 100 &middot; Mom &lt; 100</div>
-            <div class="rrg-q-action" style="color:{_R};">(!) Distribusi / Tunggu</div>
-            <div class="rrg-q-desc">Sektor masih di atas IHSG tapi momentumnya mulai melemah. Mulai kurangi posisi atau pindah ke sektor Improving.</div>
-          </div>
-        </div>
-        <div class="rrg-arrow" style="margin-top:10px;"> Arah rotasi normal: IMPROVING &rarr; LEADING &rarr; WEAKENING &rarr; LAGGING &rarr; IMPROVING (searah jarum jam)</div>
+    <div>
+      <div style="font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:8px;">KONDISI RISK-OFF (!) (IHSG Cenderung Turun)</div>
+      <div style="font-size:0.875rem;color:{_TXT};line-height:1.85;">
+        &bull; DXY menguat &amp; Rupiah melemah<br>
+        &bull; VIX &gt; 25 (pasar cemas)<br>
+        &bull; Fed hawkish / probabilitas HIKE naik<br>
+        &bull; Ketegangan geopolitik meningkat<br>
+        &bull; Capital outflow dari EM<br>
+        &bull; CPI AS melebihi ekspektasi (inflasi tinggi)
       </div>
+    </div>
+  </div>
+</div>
 
+</div></body></html>"""
+
+            components.html(_guide_html_1, height=2800, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 2 - INDEX & SECTOR ROTATION
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab2:
+            _guide_html_2 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:1px solid rgba(124,58,237,0.25);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};}}
+.feat.green{{border-left-color:{_G};}}
+.feat.yellow{{border-left-color:{_Y};}}
+.feat.red{{border-left-color:{_R};}}
+.feat-title{{font-size:1.1rem;font-weight:700;color:{_B};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
+.grid4{{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.3);background:rgba(38,166,154,0.06);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.3);background:rgba(96,165,250,0.06);}}
+.gcard.red{{border-color:rgba(242,54,69,0.25);background:rgba(242,54,69,0.06);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.06);}}
+.gcard-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:4px;}}
+.gcard-val{{font-size:0.875rem;font-weight:700;}}
+.gcard-sub{{font-size:0.8rem;color:{_SUB};margin-top:3px;line-height:1.5;}}
+.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;}}
+.bdg-p{{background:rgba(124,58,237,0.18);color:{_P};}}
+.bdg-b{{background:rgba(96,165,250,0.15);color:{_B};}}
+.bdg-g{{background:rgba(38,166,154,0.15);color:{_G};}}
+.bdg-r{{background:rgba(242,54,69,0.12);color:{_R};}}
+.bdg-y{{background:rgba(251,191,36,0.12);color:{_Y};}}
+.div{{height:1px;background:rgba(124,58,237,0.15);margin:24px 0;}}
+.rrg-diagram{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:12px;padding:20px;margin:14px 0;position:relative;}}
+.rrg-title{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB};text-align:center;margin-bottom:14px;}}
+.rrg-grid{{display:grid;grid-template-columns:1fr 1fr;gap:3px;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;}}
+.rrg-q{{padding:14px 12px;text-align:center;}}
+.rrg-q-leading{{background:rgba(38,166,154,0.12);}}
+.rrg-q-improving{{background:rgba(124,58,237,0.1);}}
+.rrg-q-weakening{{background:rgba(242,54,69,0.1);}}
+.rrg-q-lagging{{background:rgba(66,133,244,0.1);}}
+.rrg-q-name{{font-size:0.875rem;font-weight:700;margin-bottom:4px;}}
+.rrg-q-axis{{font-size:0.72rem;color:{_SUB};margin-bottom:4px;}}
+.rrg-q-action{{font-size:0.8rem;}}
+.rrg-q-desc{{font-size:0.8rem;color:{_SUB};margin-top:4px;line-height:1.5;}}
+.rrg-arrow{{font-size:0.72rem;text-align:center;color:{_SUB};margin:8px 0;}}
+.cycle-flow{{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;justify-content:center;}}
+.cycle-item{{padding:8px 14px;border-radius:8px;font-size:0.8rem;font-weight:700;text-align:center;}}
+.cycle-arrow{{font-size:1.1rem;color:{_SUB};}}
+@media(max-width:600px){{
+  .grid2,.grid3,.grid4{{grid-template-columns:1fr;}}
+  .feat{{padding:14px 13px;}}
+  .rrg-grid{{grid-template-columns:1fr;}}
+  .cycle-flow{{flex-direction:column;align-items:flex-start;}}
+}}
+</style></head><body><div class="wrap">
+
+<!-- == OVERVIEW == -->
+<div class="sec-head">
+  <span class="sec-icon"></span>
+  <div>
+    <div class="sec-title">INDEX &amp; SECTOR ROTATION</div>
+    <div class="sec-desc">Pahami perputaran dana antar sektor, posisi relatif setiap sektor di IDX, dan pelacak indeks global MSCI &amp; FTSE</div>
+  </div>
+</div>
+
+<div class="grid3">
+  <div class="gcard"><div class="gcard-lbl">Fitur Utama</div><div class="gcard-val">4 Sub-Fitur</div><div class="gcard-sub">RRG Chart &middot; Saham per Sektor &middot; MSCI Tracker &middot; FTSE Tracker</div></div>
+  <div class="gcard"><div class="gcard-lbl">Saham Terscreening</div><div class="gcard-val">500 IDX</div><div class="gcard-sub">Top 30/sektor by market cap &middot; Exclude suspended &gt;1 bulan</div></div>
+  <div class="gcard"><div class="gcard-lbl">Update RRG</div><div class="gcard-val">2&times; Sehari</div><div class="gcard-sub">Update otomatis jam 13:00 &amp; 21:00 WIB</div></div>
+</div>
+
+<!-- == 1. RRG CHART == -->
+<div class="div"></div>
+<div class="feat">
+  <div class="feat-title"> 1 &middot; RRG CHART - Relative Rotation Graph</div>
+  <p style="font-size:0.875rem;color:{_TXT};margin-bottom:14px;line-height:1.8;">
+    RRG (Relative Rotation Graph) adalah tools analisa yang menggambarkan <b>kekuatan relatif</b> dan <b>momentum</b> setiap sektor dibandingkan benchmark IHSG. 
+    Setiap bubble mewakili satu sektor dan bergerak searah jarum jam di sepanjang siklus rotasi.
+  </p>
+
+  <!-- Diagram RRG Visual -->
+  <div class="rrg-diagram">
+    <div class="rrg-title">DIAGRAM KUADRAN RRG - CARA BACA POSISI SEKTOR</div>
+    <div class="rrg-grid">
+      <div class="rrg-q rrg-q-improving">
+        <div class="rrg-q-name" style="color:{_P};">&#8598; IMPROVING</div>
+        <div class="rrg-q-axis">RS &lt; 100 &middot; Mom &gt; 100</div>
+        <div class="rrg-q-action" style="color:{_P};"> Mulai Akumulasi</div>
+        <div class="rrg-q-desc">Sektor belum sekuat IHSG tapi momentumnya sedang naik. Fase akumulasi awal yang ideal untuk entry bertahap.</div>
+      </div>
+      <div class="rrg-q rrg-q-leading">
+        <div class="rrg-q-name" style="color:{_G};">&#8599; LEADING</div>
+        <div class="rrg-q-axis">RS &gt; 100 &middot; Mom &gt; 100</div>
+        <div class="rrg-q-action" style="color:{_G};"> Hold / Profit Run</div>
+        <div class="rrg-q-desc">Sektor outperform IHSG dan momentumnya masih naik. Posisi terkuat - hold posisi dan biarkan profit berjalan.</div>
+      </div>
+      <div class="rrg-q rrg-q-lagging">
+        <div class="rrg-q-name" style="color:#4285F4;">&#8601; LAGGING</div>
+        <div class="rrg-q-axis">RS &lt; 100 &middot; Mom &lt; 100</div>
+        <div class="rrg-q-action" style="color:#4285F4;">(!) Avoid / Monitor</div>
+        <div class="rrg-q-desc">Sektor underperform IHSG dan momentumnya turun. Hindari atau tunggu tanda reversal sebelum masuk.</div>
+      </div>
+      <div class="rrg-q rrg-q-weakening">
+        <div class="rrg-q-name" style="color:{_R};">&#8600; WEAKENING</div>
+        <div class="rrg-q-axis">RS &gt; 100 &middot; Mom &lt; 100</div>
+        <div class="rrg-q-action" style="color:{_R};">(!) Distribusi / Tunggu</div>
+        <div class="rrg-q-desc">Sektor masih di atas IHSG tapi momentumnya mulai melemah. Mulai kurangi posisi atau pindah ke sektor Improving.</div>
+      </div>
+    </div>
+    <div class="rrg-arrow" style="margin-top:10px;"> Arah rotasi normal: IMPROVING &rarr; LEADING &rarr; WEAKENING &rarr; LAGGING &rarr; IMPROVING (searah jarum jam)</div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>Cara pakai RRG:</b> Lihat posisi bubble setiap sektor. Sektor di kuadran <span class="ok">LEADING</span> (kanan-atas) adalah sektor terkuat saat ini. Sektor di <span class="hi">IMPROVING</span> (kiri-atas) adalah kandidat terbaik untuk entry baru.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Trail / Jejak Pergerakan:</b> Garis putus-putus di belakang bubble menunjukkan arah pergerakan 4 minggu terakhir. Trail mengarah ke LEADING = sektor sedang menguat. Trail mengarah ke LAGGING = sedang melemah.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Klik bubble</b> atau <b>klik nama sektor</b> di bawah chart untuk membuka detail: mini-RRG saham individual, daftar top 30 emiten terscreening, dan posisi masing-masing saham di kuadran.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>RS Ratio</b> = kekuatan relatif sektor vs IHSG (100 = setara, &gt;100 = outperform).
+      <b>Momentum</b> = arah RS - apakah kekuatan relatif sedang meningkat atau menurun.
+    </div></div>
+    <div class="step"><div class="snum">5</div><div class="stext">
+      <b>Update otomatis</b> jam 13:00 dan 21:00 WIB menggunakan data live harga saham vs IHSG. Badge "Slot aktif" di atas chart menunjukkan data dari slot mana yang sedang aktif.
+    </div></div>
+  </div>
+  <div class="tip"> <b>Strategi RRG Terbaik:</b> Fokuskan modal di sektor IMPROVING (entry) dan LEADING (hold). Kurangi eksposur di sektor WEAKENING dan hindari LAGGING. Ini adalah cara Big Money memindahkan dana antar sektor.</div>
+</div>
+
+<!-- == 2. SCREENING SAHAM == -->
+<div class="feat blue">
+  <div class="feat-title"> 2 &middot; SCREENING SAHAM - Top 30 per Sektor by Market Cap</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>Sumber data:</b> SIGMA secara otomatis mengambil data dari <b>500 saham IDX aktif</b> yang memiliki market cap terbesar dan dapat ditransaksikan (ada harga + volume).
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Kriteria masuk:</b> (1) Market cap &gt; 0, (2) Ada harga pasar aktif, (3) Volume perdagangan tidak nol - artinya saham tidak sedang suspend atau tidak likuid.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Top 30 per sektor:</b> Dari hasil screening, dipilih 30 saham dengan market cap terbesar di setiap sektor. Ini memastikan yang tampil di RRG adalah emiten-emiten yang benar-benar diperdagangkan oleh institusi besar.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>Cara baca tabel saham:</b> Kolom <span class="hi">MKT CAP</span> menunjukkan kapitalisasi pasar dalam Triliunan (T) atau Miliar (B). Kolom <b>FASE</b> menunjukkan posisi saham di kuadran RRG berdasarkan RS dan momentum-nya relatif terhadap centroid sektornya.
+    </div></div>
+    <div class="step"><div class="snum">5</div><div class="stext">
+      <b>Bar RS visual</b> di kolom RS memudahkan perbandingan cepat antar saham dalam satu sektor. Semakin panjang bar = semakin kuat kekuatan relatifnya.
+    </div></div>
+  </div>
+  <div class="grid2" style="margin-top:12px;">
+    <div class="gcard green"><div class="gcard-lbl">Saham Prioritas</div><div class="gcard-val" style="color:{_G};">LEADING + IMPROVING</div><div class="gcard-sub">RS kuat atau momentum naik &middot; Cocok untuk akumulasi dan hold</div></div>
+    <div class="gcard red"><div class="gcard-lbl">Saham Hindari</div><div class="gcard-val" style="color:{_R};">LAGGING</div><div class="gcard-sub">RS lemah dan momentum turun &middot; Tunggu tanda reversal sebelum entry</div></div>
+  </div>
+  <div class="warn">(!) <b>Catatan Teknis:</b> Screening membutuhkan waktu 15&ndash;20 detik karena mengambil data 500 saham secara parallel. Data di-cache selama 24 jam untuk kecepatan loading berikutnya.</div>
+</div>
+
+<!-- == 3. SIKLUS ROTASI == -->
+<div class="feat green">
+  <div class="feat-title"> 3 &middot; MEMAHAMI SIKLUS ROTASI SEKTOR</div>
+  <p style="font-size:0.875rem;color:{_TXT};margin-bottom:12px;line-height:1.8;">
+    Setiap sektor bergerak dalam siklus yang dapat diprediksi berdasarkan kondisi makro. Memahami siklus ini membantu menentukan <b>kapan masuk dan keluar</b> dari setiap sektor.
+  </p>
+
+  <!-- Cycle flow visual -->
+  <div class="cycle-flow">
+    <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};"> IMPROVING<br><span style="font-size:0.72rem;font-weight:400;">Mulai entry</span></div>
+    <div class="cycle-arrow">&rarr;</div>
+    <div class="cycle-item" style="background:rgba(38,166,154,0.15);color:{_G};"> LEADING<br><span style="font-size:0.72rem;font-weight:400;">Hold &amp; profit run</span></div>
+    <div class="cycle-arrow">&rarr;</div>
+    <div class="cycle-item" style="background:rgba(242,54,69,0.15);color:{_R};">(!) WEAKENING<br><span style="font-size:0.72rem;font-weight:400;">Mulai kurangi</span></div>
+    <div class="cycle-arrow">&rarr;</div>
+    <div class="cycle-item" style="background:rgba(66,133,244,0.15);color:#4285F4;">(!) LAGGING<br><span style="font-size:0.72rem;font-weight:400;">Hindari / monitor</span></div>
+    <div class="cycle-arrow">&rarr;</div>
+    <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};"> IMPROVING<br><span style="font-size:0.72rem;font-weight:400;">Siklus baru</span></div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>IMPROVING &rarr; LEADING:</b> Sektor mulai outperform IHSG. Ini adalah <span class="ok">momen terbaik untuk akumulasi</span> karena early entry sebelum majority sadar.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>LEADING:</b> Sektor sudah kuat dan momentum masih naik. <span class="ok">Hold posisi, trailing stop</span>, biarkan profit berjalan. Jangan exit terlalu cepat.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>WEAKENING &rarr; Mulai distribusi:</b> Sektor masih kuat tapi momentum mulai melemah. <span class="yl">Mulai kurangi posisi bertahap</span> 20&ndash;30% saat masuk Weakening.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>LAGGING:</b> Sektor underperform dan momentum negatif. <span class="dn">Hindari atau cut loss</span> jika masih pegang. Alihkan modal ke sektor Improving.
+    </div></div>
+  </div>
+  <div class="tip"> <b>Pro Tip:</b> Rotation terbaik: Pindahkan dana dari sektor WEAKENING ke sektor IMPROVING. Ini adalah cara fund manager institusi melakukan portfolio rebalancing.</div>
+</div>
+
+<!-- == 4. MSCI TRACKER == -->
+<div class="feat yellow">
+  <div class="feat-title"> 4 &middot; MSCI INDONESIA INDEX TRACKER</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>Apa itu MSCI?</b> MSCI (Morgan Stanley Capital International) adalah penyedia indeks global yang diikuti oleh ratusan fund manager dan ETF di seluruh dunia. Saham yang masuk MSCI akan mendapat aliran dana dari passive fund secara otomatis.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Standard Index</b> = saham blue chip Indonesia yang masuk MSCI. Fund manager internasional <b>wajib</b> membeli saham ini saat entry dan menjualnya saat exit - ini yang menciptakan aliran dana besar.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Cara baca STATUS:</b>
+      <span class="bdg bdg-g">Existing</span> = sudah ada di indeks (stabil) &middot;
+      <span class="bdg bdg-b">NEW ENTRY</span> = baru masuk &rarr; ekspektasi pembelian besar oleh passive fund &middot;
+      <span class="bdg bdg-r">OUT</span> = dikeluarkan &rarr; ekspektasi penjualan besar oleh passive fund.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>Jadwal Review MSCI:</b> 2&times; setahun (Februari &amp; Agustus pengumuman, efektif 2 minggu setelah pengumuman). Pantau tanggal pengumuman - biasanya terjadi pergerakan besar di saham yang masuk/keluar.
+    </div></div>
+    <div class="step"><div class="snum">5</div><div class="stext">
+      <b>Strategi MSCI Rebalancing:</b> Beli saham kandidat NEW ENTRY 1&ndash;2 minggu sebelum tanggal efektif. Jual pada/setelah tanggal efektif saat passive fund sudah selesai membeli (sell the news).
+    </div></div>
+  </div>
+  <div class="grid2" style="margin-top:12px;">
+    <div class="gcard blue"><div class="gcard-lbl">NEW ENTRY Strategy</div><div class="gcard-val" style="color:{_B};">Buy Rumor</div><div class="gcard-sub">Beli 2 minggu sebelum efektif &middot; Sell pada tanggal efektif atau 1-2 hari setelah</div></div>
+    <div class="gcard red"><div class="gcard-lbl">OUT Strategy</div><div class="gcard-val" style="color:{_R};">Reduce Exposure</div><div class="gcard-sub">Kurangi posisi 2 minggu sebelum efektif &middot; Passive fund akan menjual besar</div></div>
+  </div>
+</div>
+
+<!-- == 5. FTSE TRACKER == -->
+<div class="feat blue">
+  <div class="feat-title"> 5 &middot; FTSE GLOBAL EQUITY INDEX - INDONESIA</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>Apa itu FTSE Russell?</b> FTSE Russell (Financial Times Stock Exchange) adalah penyedia indeks global kedua terbesar setelah MSCI. ETF dan fund yang tracking FTSE juga wajib rebalancing saat ada perubahan komposisi.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Jadwal Review FTSE:</b> 4&times; setahun (Maret, Juni, September, Desember - lebih sering dari MSCI). Artinya peluang trading FTSE rebalancing muncul lebih sering.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Perbedaan MSCI vs FTSE:</b> MSCI lebih besar AUM-nya (aset yang dikelola), sehingga dampak rebalancing MSCI umumnya lebih besar. FTSE memiliki frekuensi review lebih tinggi - lebih sering ada saham masuk/keluar.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      Perhatikan saham yang ada di <b>kedua indeks</b> (MSCI + FTSE) - saham ini mendapat double demand dari passive fund. Biasanya ini adalah blue chip terbesar seperti BBCA, BBRI, BMRI, TLKM.
+    </div></div>
+  </div>
+  <div class="tip"> <b>Insight:</b> Saham yang masuk MSCI atau FTSE tidak langsung naik drastis - pasar biasanya sudah "pricing in" jauh sebelum tanggal efektif. Yang lebih penting adalah <b>perubahan bobot</b> (weight increase) yang memaksa passive fund menambah pembelian.</div>
+</div>
+
+<!-- == KOMBINASI ANALISA == -->
+<div class="div"></div>
+<div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
+  <div style="font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:12px;"> CARA PAKAI YANG OPTIMAL - Kombinasi Fitur</div>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div class="stext">
+      <b>Mulai dari RRG:</b> Identifikasi sektor di posisi IMPROVING atau LEADING. Ini adalah universum saham prioritasmu.
+    </div></div>
+    <div class="step"><div class="snum">2</div><div class="stext">
+      <b>Buka detail sektor:</b> Klik bubble atau tombol sektor &rarr; lihat 30 saham terscreening dengan market cap terbesar. Fokus pada saham di kuadran LEADING dan IMPROVING.
+    </div></div>
+    <div class="step"><div class="snum">3</div><div class="stext">
+      <b>Cek MSCI/FTSE:</b> Apakah saham yang kamu incar termasuk dalam MSCI Standard atau FTSE? Jika ya, ada lapisan demand tambahan dari passive fund.
+    </div></div>
+    <div class="step"><div class="snum">4</div><div class="stext">
+      <b>Validasi dengan Macro:</b> Kembali ke tab Global Macro - apakah kondisi risk-on mendukung sektor tersebut? Misalnya: sektor Energi + Komoditas naik = konfluensi kuat.
+    </div></div>
+    <div class="step"><div class="snum">5</div><div class="stext">
+      <b>Analisa emiten spesifik:</b> Setelah sektor dan saham terpilih, gunakan <b> Alpha Screener &rarr; AI Stock Insight</b> atau ketik di <b>SIGMA AI Chat</b> untuk analisa fundamental dan teknikal mendalam.
+    </div></div>
+  </div>
+</div>
+
+</div></body></html>"""
+
+            components.html(_guide_html_2, height=3400, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 3 - SHAREHOLDER
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab3:
+            _guide_html_3 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
+.feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
+.badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
+.badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
+.badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
+.badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
+.badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
+@media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">SHAREHOLDER - Panduan Lengkap</div>
+<div class="sec-desc">Lacak komposisi pemegang saham & deteksi perubahan kepemilikan institusional secara real-time.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title"> Apa itu Tab Shareholder?</div>
+<div class="stext">Tab Shareholder terdiri dari dua bagian utama: <span class="hi">Shareholder Tracker</span> (grafik perubahan jumlah pemegang saham) dan <span class="hi">Shareholder Screening</span> (tabel komposisi top holder 60+ emiten IDX). Ini adalah alat bantu untuk mendeteksi sinyal akumulasi atau distribusi oleh smart money.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">SECTION 1 - Shareholder Tracker</div>
+<div class="sec-desc">Grafik dual-axis: perubahan jumlah pemegang saham vs pergerakan harga saham.</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title"> Cara Menggunakan Shareholder Tracker</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>SHAREHOLDER TRACKER</b> di dalam tab Shareholder.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>kode emiten IDX</b> (contoh: <span class="hi">BBCA</span>, <span class="hi">GOTO</span>, <span class="hi">BRMS</span>) di kolom input yang tersedia.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Klik tombol <b>"Tampilkan Tracker"</b> - sistem akan mengambil data historis pemegang saham dan harga secara otomatis.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Baca grafik: <span class="hi">Sumbu kiri</span> = jumlah pemegang saham | <span class="ok">Sumbu kanan</span> = harga saham (Rp).</div></div>
+<div class="step"><div class="snum">5</div><div class="stext">Identifikasi pola: apakah jumlah holder naik saat harga turun? Ini sinyal <b class="ok">DISTRIBUSI ke retail</b>. Atau holder turun saat harga naik? Ini sinyal <b class="hi">AKUMULASI oleh institusi</b>.</div></div>
+</div>
+<div class="tip"> <b>Interpretasi Cepat:</b> Holder &uarr; + Harga &darr; = Smart money jual ke retail (distribusi). Holder &darr; + Harga &uarr; = Institusi konsolidasi posisi (akumulasi diam-diam).</div>
+</div>
+
+<div class="feat green">
+<div class="feat-title"> Membaca Sinyal dari Grafik</div>
+<div class="grid2">
+<div class="gcard green">
+<div class="gcard-title">OK Sinyal Akumulasi</div>
+<div class="gcard-val">Jumlah holder <b>turun</b> + Harga <b>sideways / naik pelan</b> &rarr; Institusi beli, retail jual (takut). Smart money mengumpulkan di bawah.</div>
+</div>
+<div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
+<div class="gcard-title" style="color:{_R};">(!) Sinyal Distribusi</div>
+<div class="gcard-val">Jumlah holder <b>naik tajam</b> + Harga <b>turun atau stagnan</b> &rarr; Smart money jual, retail beli FOMO. Waspada breakdown.</div>
+</div>
+</div>
+<div class="tip"> Gunakan bersama data <b>Broker Summary</b> di SIGMA AI Chat untuk konfirmasi bandarmologi sebelum entry.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">SECTION 2 - Shareholder Screening</div>
+<div class="sec-desc">Tabel komposisi kepemilikan 60+ emiten: Publik, Institusi Asing, dan Promotor/Pemerintah.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title"> Cara Membaca Tabel Screening</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Tabel menampilkan kolom: <b>Emiten</b>, <b>% Publik</b>, <b>% Institusi Asing</b>, <b>% Promotor / Pemerintah</b>, dan informasi tambahan lainnya.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Scroll horizontal di mobile untuk melihat semua kolom - tabel sudah mobile-responsive dengan sticky header.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Perhatikan <b>% Institusi Asing</b>: saham dengan porsi asing tinggi lebih sensitif terhadap sentimen global dan pergerakan MSCI/FTSE rebalancing.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Bandingkan <b>% Publik</b>: float rendah (publik kecil) = saham lebih mudah digerakkan oleh bandar dengan modal lebih kecil.</div></div>
+</div>
+<div class="warn">(!) <b>Penting:</b> Data shareholder bersumber dari laporan publik IDX dan diperbarui secara berkala. Data real-time bisa berbeda dengan kondisi pasar hari ini.</div>
+</div>
+
+<div class="feat yellow">
+<div class="feat-title"> Strategi Penggunaan Optimal</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext"><b>Screening awal:</b> Filter saham dengan float publik rendah (&lt;30%) dan kepemilikan asing tinggi (&gt;30%) - ini kandidat saham yang rawan digerakkan.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext"><b>Tracker confirmation:</b> Setelah dapat kandidat, masukkan ke Tracker untuk lihat tren jumlah holder 3-6 bulan terakhir.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext"><b>Korelasi teknikal:</b> Crossing holder turun + harga di support kuat = area entry potensial. Kirim ke <b> Alpha Screener &rarr; AI Stock Insight</b> untuk konfirmasi teknikal lengkap.</div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_3, height=1800, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 4 - ALPHA STOCK INSIGHT
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab4:
+            _guide_html_4 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.28);}}
+.feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard.red{{border-color:rgba(242,54,69,0.35);background:rgba(242,54,69,0.06);}}
+.gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard.red .gcard-title{{color:{_R};}}
+.gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
+.badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
+.badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
+.badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
+.badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
+.badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
+.badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
+/* Chart Illustration SVG wrapper */
+.chart-illus{{width:100%;background:{_FEAT_BG};border:1.5px solid {_FEAT_BD};border-radius:10px;padding:10px 6px 6px;margin:14px 0;overflow:hidden;}}
+.chart-illus svg{{width:100%;display:block;}}
+/* Risk level badges */
+.rl-row{{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;}}
+.rl-badge{{flex:1;min-width:120px;border-radius:8px;padding:12px 14px;text-align:center;}}
+.rl-badge.low{{background:rgba(8,153,129,0.14);border:2px solid rgba(8,153,129,0.45);}}
+.rl-badge.mid{{background:rgba(245,166,35,0.12);border:2px solid rgba(245,166,35,0.45);}}
+.rl-badge.high{{background:rgba(242,54,69,0.11);border:2px solid rgba(242,54,69,0.4);}}
+.rl-badge .rl-label{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;}}
+.rl-badge.low .rl-label{{color:#089981;}}
+.rl-badge.mid .rl-label{{color:#f5a623;}}
+.rl-badge.high .rl-label{{color:#f23645;}}
+.rl-badge .rl-cond{{font-size:0.8rem;color:{_SUB};line-height:1.5;margin-top:4px;}}
+.ind-row{{display:flex;align-items:center;gap:10px;margin:7px 0;}}
+.ind-line{{width:32px;height:4px;border-radius:2px;flex-shrink:0;}}
+.ind-dot{{width:14px;height:14px;border-radius:3px;flex-shrink:0;}}
+.ind-desc{{font-size:0.875rem;color:{_TXT};line-height:1.55;}}
+.ind-desc b{{font-weight:700;}}
+@media(max-width:640px){{.grid2,.grid3{{grid-template-columns:1fr;}}.rl-row{{flex-direction:column;}}}}
+</style></head><body><div class="wrap">
+
+<!-- HEADER -->
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">ALPHA SCREENER - Panduan Visual Lengkap</div>
+<div class="sec-desc">Hub analisa IDX terpadu: AI Stock Insight, Daily/Weekly Plan, BSJP, Fundamental Screener, Broker Summary, Shareholder, Analisa IPO, dan Track Record &mdash; semuanya dalam satu tab.</div>
+</div></div>
+
+<!-- SUB-TAB OVERVIEW -->
+<div class="feat">
+<div class="feat-title"> 9 Sub-Tab Alpha Screener</div>
+<div class="stext" style="line-height:2;">
+  <span class="hi"> AI Stock Insight</span> &mdash; Analisa AI per saham dengan chart 5-panel + trade plan<br>
+  <span class="hi"> Daily Plan</span> &mdash; Rekomendasi harian berdasarkan kondisi pasar hari ini<br>
+  <span class="hi"> Weekly Plan</span> &mdash; Watchlist swing trading 1&ndash;2 minggu ke depan<br>
+  <span class="hi"> Beli Sore Jual Pagi (BSJP)</span> &mdash; Strategi overnight trading berbasis momentum EOD<br>
+  <span class="hi"> Fundamental Screener</span> &mdash; Filter saham berdasarkan metrik fundamental IDX<br>
+  <span class="hi"> Broker Summary</span> &mdash; Analisa bandarmologi dari data broker net buy/sell<br>
+  <span class="hi"> Shareholder</span> &mdash; Tracker jumlah pemegang saham (akumulasi/distribusi)<br>
+  <span class="hi"> Analisa IPO</span> &mdash; Bedah prospektus IPO otomatis dari PDF e-IPO<br>
+  <span class="hi"> Track Record</span> &mdash; Rekam jejak performa semua plan yang di-generate
+</div>
+</div>
+
+<!-- ======================================================= -->
+<div class="sec-head" style="margin-top:22px;"><div class="sec-icon"></div>
+<div><div class="sec-title">STRUKTUR CHART - 5 Panel Interaktif</div>
+<div class="sec-desc">Setiap panel punya fungsi berbeda. Baca dari atas ke bawah untuk membaca sinyal secara sistematis.</div>
+</div></div>
+
+<!-- CHART ILLUSTRATION SVG -->
+<div class="chart-illus">
+<svg viewBox="0 0 700 480" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono,monospace">
+  <!-- BG panels -->
+  <rect width="700" height="480" fill="#131722"/>
+  <!-- Panel dividers -->
+  <line x1="0" y1="220" x2="700" y2="220" stroke="#2a2e39" stroke-width="1"/>
+  <line x1="0" y1="283" x2="700" y2="283" stroke="#2a2e39" stroke-width="1"/>
+  <line x1="0" y1="346" x2="700" y2="346" stroke="#2a2e39" stroke-width="1"/>
+  <line x1="0" y1="413" x2="700" y2="413" stroke="#2a2e39" stroke-width="1"/>
+
+  <!-- PANEL LABELS -->
+  <text x="10" y="18" font-size="9" fill="#7c3aed" letter-spacing="1" font-weight="700">1. CANDLESTICK + EMA</text>
+  <text x="10" y="232" font-size="9" fill="#60a5fa" letter-spacing="1" font-weight="700">2. VOLUME NORMAL</text>
+  <text x="10" y="295" font-size="9" fill="#26a69a" letter-spacing="1" font-weight="700">3. VOLUME DELTA (BUY/SELL POWER)</text>
+  <text x="10" y="358" font-size="9" fill="#a78bfa" letter-spacing="1" font-weight="700">4. RSI</text>
+  <text x="10" y="425" font-size="9" fill="#2196f3" letter-spacing="1" font-weight="700">5. MACD</text>
+
+  <!-- == PANEL 1: CANDLESTICK == -->
+  <!-- Fake candles -->
+  <rect x="38" y="120" width="10" height="55" fill="#f23645" rx="1"/>
+  <line x1="43" y1="108" x2="43" y2="180" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="60" y="100" width="10" height="50" fill="#089981" rx="1"/>
+  <line x1="65" y1="90" x2="65" y2="157" stroke="#089981" stroke-width="1.5"/>
+  <rect x="82" y="85" width="10" height="60" fill="#f23645" rx="1"/>
+  <line x1="87" y1="75" x2="87" y2="152" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="104" y="75" width="10" height="40" fill="#089981" rx="1"/>
+  <line x1="109" y1="65" x2="109" y2="120" stroke="#089981" stroke-width="1.5"/>
+  <rect x="126" y="62" width="10" height="45" fill="#089981" rx="1"/>
+  <line x1="131" y1="52" x2="131" y2="114" stroke="#089981" stroke-width="1.5"/>
+  <rect x="148" y="70" width="10" height="55" fill="#f23645" rx="1"/>
+  <line x1="153" y1="60" x2="153" y2="135" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="170" y="78" width="10" height="42" fill="#089981" rx="1"/>
+  <line x1="175" y1="68" x2="175" y2="125" stroke="#089981" stroke-width="1.5"/>
+  <rect x="192" y="55" width="10" height="38" fill="#089981" rx="1"/>
+  <line x1="197" y1="45" x2="197" y2="98" stroke="#089981" stroke-width="1.5"/>
+  <rect x="214" y="48" width="10" height="32" fill="#089981" rx="1"/>
+  <line x1="219" y1="38" x2="219" y2="85" stroke="#089981" stroke-width="1.5"/>
+  <rect x="236" y="60" width="10" height="44" fill="#f23645" rx="1"/>
+  <line x1="241" y1="50" x2="241" y2="110" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="258" y="52" width="10" height="36" fill="#089981" rx="1"/>
+  <line x1="263" y1="42" x2="263" y2="93" stroke="#089981" stroke-width="1.5"/>
+  <rect x="280" y="40" width="10" height="30" fill="#089981" rx="1"/>
+  <line x1="285" y1="32" x2="285" y2="75" stroke="#089981" stroke-width="1.5"/>
+  <rect x="302" y="55" width="10" height="50" fill="#f23645" rx="1"/>
+  <line x1="307" y1="45" x2="307" y2="112" stroke="#f23645" stroke-width="1.5"/>
+  <rect x="324" y="62" width="10" height="42" fill="#089981" rx="1"/>
+  <line x1="329" y1="52" x2="329" y2="110" stroke="#089981" stroke-width="1.5"/>
+  <rect x="346" y="50" width="10" height="38" fill="#089981" rx="1"/>
+  <line x1="351" y1="40" x2="351" y2="92" stroke="#089981" stroke-width="1.5"/>
+
+  <!-- EMAs overlaid -->
+  <polyline points="38,155 65,140 87,128 109,115 131,102 153,110 175,105 197,88 219,78 241,88 263,75 285,62 307,75 329,80 351,70" fill="none" stroke="#009dff" stroke-width="1.5"/>
+  <polyline points="38,162 65,148 87,136 109,124 131,112 153,120 175,115 197,100 219,91 241,99 263,87 285,75 307,85 329,90 351,80" fill="none" stroke="#ff0000" stroke-width="1.5"/>
+  <polyline points="38,175 65,168 87,160 109,152 131,145 153,148 175,144 197,134 219,128 241,133 263,124 285,115 307,122 329,126 351,118" fill="none" stroke="#cc00ff" stroke-width="1.5"/>
+  <polyline points="38,188 65,183 87,178 109,172 131,167 153,169 175,166 197,158 219,154 241,158 263,151 285,144 307,149 329,152 351,146" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+
+  <!-- BUY ZONE highlight -->
+  <rect x="30" y="60" width="340" height="30" fill="rgba(8,153,129,0.15)" rx="0"/>
+  <line x1="30" y1="60" x2="370" y2="60" stroke="#089981" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="30" y1="90" x2="370" y2="90" stroke="#089981" stroke-width="1.2"/>
+
+  <!-- TP / SL lines -->
+  <line x1="30" y1="35" x2="580" y2="35" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="30" y1="20" x2="580" y2="20" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="30" y1="200" x2="580" y2="200" stroke="#f23645" stroke-width="1.5"/>
+
+  <!-- Labels kanan -->
+  <rect x="582" y="26" width="62" height="16" fill="#a78bfa" rx="3"/>
+  <text x="613" y="38" font-size="8" fill="#000" text-anchor="middle" font-weight="700">TP2 5.250</text>
+  <rect x="582" y="11" width="62" height="16" fill="#a78bfa" rx="3"/>
+  <text x="613" y="23" font-size="8" fill="#000" text-anchor="middle" font-weight="700">TP1 4.980</text>
+  <rect x="582" y="55" width="76" height="16" fill="#089981" rx="3"/>
+  <text x="620" y="67" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">BUY 4.600-4.750</text>
+  <rect x="582" y="194" width="62" height="16" fill="#f23645" rx="3"/>
+  <text x="613" y="206" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">SL  4.250</text>
+
+  <!-- EMA Legend mini -->
+  <line x1="400" y1="180" x2="420" y2="180" stroke="#009dff" stroke-width="2"/>
+  <text x="424" y="184" font-size="8" fill="#009dff">EMA 13</text>
+  <line x1="400" y1="193" x2="420" y2="193" stroke="#ff0000" stroke-width="2"/>
+  <text x="424" y="197" font-size="8" fill="#ff0000">EMA 21</text>
+  <line x1="470" y1="180" x2="490" y2="180" stroke="#cc00ff" stroke-width="2"/>
+  <text x="494" y="184" font-size="8" fill="#cc00ff">EMA 100</text>
+  <line x1="470" y1="193" x2="490" y2="193" stroke="#a78bfa" stroke-width="2"/>
+  <text x="494" y="197" font-size="8" fill="#a78bfa">EMA 200</text>
+
+  <!-- == PANEL 2: VOLUME NORMAL == -->
+  <!-- Volume bars hijau/merah -->
+  <rect x="38" y="260" width="10" height="14" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="60" y="253" width="10" height="21" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="82" y="256" width="10" height="18" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="104" y="248" width="10" height="26" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="126" y="243" width="10" height="31" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="148" y="251" width="10" height="23" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="170" y="246" width="10" height="28" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="192" y="234" width="10" height="40" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="214" y="228" width="10" height="46" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="236" y="239" width="10" height="35" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="258" y="244" width="10" height="30" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="280" y="236" width="10" height="38" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="302" y="255" width="10" height="19" fill="rgba(242,54,69,0.65)" rx="1"/>
+  <rect x="324" y="247" width="10" height="27" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <rect x="346" y="241" width="10" height="33" fill="rgba(8,153,129,0.65)" rx="1"/>
+  <!-- Vol MA20 line (orange dotted) -->
+  <polyline points="38,256 65,254 87,253 109,252 131,251 153,252 175,251 197,249 219,247 241,249 263,248 285,246 307,250 329,249 351,247" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="358" y="248" font-size="7.5" fill="#f5a623">Vol MA20</text>
+
+  <!-- == PANEL 3: VOLUME DELTA == -->
+  <!-- Stacked buy (hijau atas) + sell (merah bawah) -->
+  <rect x="38" y="325" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="38" y="315" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="60" y="320" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="60" y="306" width="10" height="14" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="82" y="322" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="82" y="312" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="104" y="316" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="104" y="298" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="126" y="310" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="126" y="292" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="148" y="318" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="148" y="308" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="170" y="313" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="170" y="295" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="192" y="305" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="192" y="284" width="10" height="21" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="214" y="300" width="10" height="7" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="214" y="280" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="236" y="312" width="10" height="14" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="236" y="300" width="10" height="12" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="258" y="308" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="258" y="290" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="280" y="304" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="280" y="284" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="302" y="316" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="302" y="306" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="324" y="310" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="324" y="292" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <rect x="346" y="305" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <rect x="346" y="285" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <!-- Legend -->
+  <rect x="400" y="296" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
+  <text x="415" y="306" font-size="8" fill="#089981">Buy Power</text>
+  <rect x="400" y="312" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
+  <text x="415" y="322" font-size="8" fill="#f23645">Sell Power</text>
+
+  <!-- == PANEL 4: RSI == -->
+  <!-- RSI line -->
+  <polyline points="38,395 65,390 87,385 109,378 131,370 153,375 175,372 197,362 219,355 241,363 263,356 285,348 307,358 329,362 351,352" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
+  <!-- Level 70 -->
+  <line x1="30" y1="358" x2="580" y2="358" stroke="rgba(242,54,69,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="586" y="362" font-size="7.5" fill="rgba(242,54,69,0.8)">70</text>
+  <!-- Level 30 -->
+  <line x1="30" y1="400" x2="580" y2="400" stroke="rgba(8,153,129,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="586" y="404" font-size="7.5" fill="rgba(8,153,129,0.8)">30</text>
+
+  <!-- == PANEL 5: MACD == -->
+  <!-- Histogram bars -->
+  <rect x="38" y="430" width="10" height="8" fill="#089981" rx="1"/>
+  <rect x="60" y="428" width="10" height="10" fill="#089981" rx="1"/>
+  <rect x="82" y="432" width="10" height="7" fill="#f23645" rx="1"/>
+  <rect x="104" y="427" width="10" height="11" fill="#089981" rx="1"/>
+  <rect x="126" y="424" width="10" height="14" fill="#089981" rx="1"/>
+  <rect x="148" y="429" width="10" height="9" fill="#f23645" rx="1"/>
+  <rect x="170" y="426" width="10" height="12" fill="#089981" rx="1"/>
+  <rect x="192" y="422" width="10" height="16" fill="#089981" rx="1"/>
+  <rect x="214" y="420" width="10" height="18" fill="#089981" rx="1"/>
+  <rect x="236" y="425" width="10" height="12" fill="#f23645" rx="1"/>
+  <rect x="258" y="421" width="10" height="17" fill="#089981" rx="1"/>
+  <rect x="280" y="418" width="10" height="20" fill="#089981" rx="1"/>
+  <rect x="302" y="426" width="10" height="12" fill="#f23645" rx="1"/>
+  <rect x="324" y="422" width="10" height="16" fill="#089981" rx="1"/>
+  <rect x="346" y="419" width="10" height="19" fill="#089981" rx="1"/>
+  <!-- MACD line -->
+  <polyline points="38,432 65,430 87,433 109,429 131,426 153,430 175,428 197,424 219,422 241,427 263,423 285,420 307,427 329,424 351,421" fill="none" stroke="#2196f3" stroke-width="1.5"/>
+  <!-- Signal line -->
+  <polyline points="38,434 65,432 87,434 109,431 131,428 153,432 175,430 197,427 219,425 241,429 263,426 285,423 307,429 329,427 351,424" fill="none" stroke="#ff5252" stroke-width="1.5"/>
+  <!-- Zero line -->
+  <line x1="30" y1="438" x2="580" y2="438" stroke="#2a2e39" stroke-width="1"/>
+</svg>
+</div>
+<div class="tip"> <b>Cara baca chart dari atas ke bawah:</b> Panel 1. lihat tren + area trade plan &rarr; Panel 2. cek apakah volume hari ini di atas/bawah rata-rata (garis oranye) &rarr; Panel 3. cek dominasi buy atau sell power &rarr; Panel 4. RSI overbought/oversold &rarr; Panel 5. MACD konfirmasi momentum.</div>
+
+<!-- ======================================================= -->
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">INDIKATOR - Fungsi & Cara Baca</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title"> Panel 1. - Candlestick + EMA (Harga & Tren)</div>
+<div class="ind-row"><div class="ind-line" style="background:#009dff;"></div><div class="ind-desc"><b style="color:#009dff">EMA 13</b> - Moving average cepat. Harga di atas = momentum naik jangka pendek.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#ff0000;"></div><div class="ind-desc"><b style="color:#ff0000">EMA 21</b> - Konfirmasi sinyal. Crossover EMA13/EMA21 = sinyal entry awal.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#cc00ff;"></div><div class="ind-desc"><b style="color:#cc00ff">EMA 100</b> - Tren menengah (1&ndash;3 bulan). Support dinamis penting.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#a78bfa;"></div><div class="ind-desc"><b style="color:#a78bfa">EMA 200</b> - Tren jangka panjang. Harga di atas EMA200 = Bull Market. Di bawah = Bear Market.</div></div>
+<div class="tip"> Setup terkuat: Harga di atas EMA200, EMA13 baru cross EMA21 ke atas, volume konfirmasi.</div>
+</div>
+
+<div class="feat green">
+<div class="feat-title"> Panel 2. - Volume Normal (Total Transaksi per Hari)</div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.65);"></div><div class="ind-desc"><b style="color:#089981">Bar Hijau</b> - Candle tutup naik (Close > Open). Volume tinggi = banyak yang beli.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.65);"></div><div class="ind-desc"><b style="color:#f23645">Bar Merah</b> - Candle tutup turun (Close &lt; Open). Volume tinggi = banyak yang jual.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#f5a623;"></div><div class="ind-desc"><b style="color:#f5a623">Garis Oranye (Vol MA20)</b> - Rata-rata volume 20 hari. Bar di atas garis ini = volume lebih dari biasanya = aktivitas tinggi.</div></div>
+<div class="tip"> Volume naik + harga naik = konfirmasi bullish kuat. Volume tinggi + harga turun = distribusi/jual besar.</div>
+</div>
+
+<div class="feat">
+<div class="feat-title"> Panel 3. - Volume Delta (Buy vs Sell Power)</div>
+<div class="stext" style="margin-bottom:10px;">Memisahkan volume menjadi dua komponen: tekanan beli dan tekanan jual dalam satu bar hari.</div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.85);"></div><div class="ind-desc"><b style="color:#089981">Buy Power (Hijau)</b> - Porsi volume yang terjadi di sisi beli: dihitung dari (Close-Low)/(High-Low) &times; Volume. Makin tinggi = makin banyak beli.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.75);"></div><div class="ind-desc"><b style="color:#f23645">Sell Power (Merah)</b> - Porsi volume di sisi jual: (High-Close)/(High-Low) &times; Volume. Makin tinggi = makin banyak jual.</div></div>
+<div class="tip"> Buy Power >> Sell Power secara konsisten = akumulasi. Sell Power mendadak melonjak = distribusi atau panic sell.</div>
+</div>
+
+<div class="feat">
+<div class="feat-title" style="color:#a78bfa;">- Panel 4. - RSI (Relative Strength Index)</div>
+<div class="stext" style="margin-bottom:10px;">Mengukur kekuatan/kelemahan relatif harga dalam rentang 0&ndash;100.</div>
+<div class="grid3">
+<div class="gcard red"><div class="gcard-title">RSI &gt; 70</div><div class="gcard-val">Overbought - harga sudah naik terlalu cepat. Potensi koreksi atau reversal.</div></div>
+<div class="gcard green"><div class="gcard-title">RSI &lt; 30</div><div class="gcard-val">Oversold - harga sudah turun terlalu dalam. Potensi pantulan atau reversal naik.</div></div>
+<div class="gcard blue"><div class="gcard-title">RSI 40&ndash;60</div><div class="gcard-val">Zona netral / sideways. Tunggu konfirmasi arah sebelum entry.</div></div>
+</div>
+<div class="tip"> Divergence RSI: harga buat higher high tapi RSI lower high = bearish divergence (sinyal lemah/reversal). Sebaliknya = bullish divergence.</div>
+</div>
+
+<div class="feat blue">
+<div class="feat-title"> Panel 5. - MACD (Moving Average Convergence Divergence)</div>
+<div class="stext" style="margin-bottom:10px;">Konfirmasi momentum tren dengan dua moving average dan histogram.</div>
+<div class="ind-row"><div class="ind-line" style="background:#2196f3;"></div><div class="ind-desc"><b style="color:#2196f3">MACD Line (Biru)</b> - EMA12 minus EMA26. Refleksi momentum jangka pendek vs menengah.</div></div>
+<div class="ind-row"><div class="ind-line" style="background:#ff5252;"></div><div class="ind-desc"><b style="color:#ff5252">Signal Line (Merah)</b> - EMA9 dari MACD Line. Crossover = sinyal beli/jual.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:#089981;"></div><div class="ind-desc"><b style="color:#089981">Histogram Hijau</b> - MACD > Signal. Momentum bullish. Makin tinggi = makin kuat.</div></div>
+<div class="ind-row"><div class="ind-dot" style="background:#f23645;"></div><div class="ind-desc"><b style="color:#f23645">Histogram Merah</b> - MACD < Signal. Momentum bearish atau melemah.</div></div>
+<div class="tip"> Sinyal terkuat: MACD cross Signal dari bawah + histogram baru jadi hijau + RSI di bawah 50 &rarr; awal rally baru.</div>
+</div>
+
+<!-- ======================================================= -->
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">TRADE PLAN - Visualisasi & Risk Level</div>
+<div class="sec-desc">AI otomatis gambar trade plan di chart dan tentukan risk level berdasarkan kondisi pasar.</div>
+</div></div>
+
+<div class="feat green">
+<div class="feat-title"> Elemen Trade Plan di Chart</div>
+<div class="grid2">
+<div class="gcard green">
+<div class="gcard-title">OK BUY ZONE (Area Hijau)</div>
+<div class="gcard-val">Zona entry ideal. Ditentukan dari support teknikal: FVG, IFVG, Order Block, Demand Zone, atau area MA penting.</div>
+</div>
+<div class="gcard red">
+<div class="gcard-title">STOP STOP LOSS (Garis Merah)</div>
+<div class="gcard-val">Batas kerugian maksimal - di bawah BUY ZONE. Minimal 1.5&times; ATR dari entry bawah. WAJIB dihormati.</div>
+</div>
+<div class="gcard" style="border-color:rgba(167,139,250,0.35);background:rgba(167,139,250,0.07);">
+<div class="gcard-title" style="color:#a78bfa;"> TP1 / TP2 / TP3 (Titik-Titik Ungu)</div>
+<div class="gcard-val">Target profit bertingkat. TP1 = resistance terdekat. TP2 = resistance mayor. TP3 = extended target fibonacci.</div>
+</div>
+<div class="gcard yellow">
+<div class="gcard-title"> Risk-Reward Ratio</div>
+<div class="gcard-val">Dihitung otomatis AI. Minimal R:R 1:2 sebelum entry. R:R 1:3 ke atas = setup ideal.</div>
+</div>
+</div>
+</div>
+
+<div class="feat yellow">
+<div class="feat-title"> Risk Level - Syarat & Arti</div>
+<div class="stext" style="margin-bottom:12px;">AI menentukan risk level otomatis berdasarkan berapa "pilar" yang konfirmasi setup. Semakin banyak pilar, semakin rendah risiko.</div>
+<div class="rl-row">
+<div class="rl-badge high">
+<div class="rl-label"> HIGH RISK</div>
+<div style="font-size:0.875rem;font-weight:700;color:#f23645;margin:4px 0;">Teknikal OK</div>
+<div class="rl-cond">Setup teknikal ada (EMA, support, pattern) tapi volume belum konfirmasi atau fundamental lemah/tidak tersedia. Risiko tertinggi - position sizing kecil, wajib ketat di SL.</div>
+</div>
+<div class="rl-badge mid">
+<div class="rl-label"> MID RISK</div>
+<div style="font-size:0.875rem;font-weight:700;color:#f5a623;margin:4px 0;">Teknikal OK + Volume OK</div>
+<div class="rl-cond">Teknikal bullish PLUS volume konfirmasi: volume di atas MA20, buy power dominan, tidak ada distribusi besar. Fundamental netral atau kurang data.</div>
+</div>
+<div class="rl-badge low">
+<div class="rl-label"> LOW RISK</div>
+<div style="font-size:0.875rem;font-weight:700;color:#089981;margin:4px 0;">Teknikal OK + Volume OK + Fundamental OK</div>
+<div class="rl-cond">Triple konfirmasi lengkap: teknikal bullish + volume mendukung + fundamental sehat (ROE positif, PBV wajar, EPS tumbuh). Setup paling aman untuk full position.</div>
+</div>
+</div>
+<div class="warn">(!) Jika kondisi saham BEARISH KUAT / HINDARI, Trade Plan TIDAK ditampilkan - AI akan menjelaskan alasan dan kondisi yang harus terpenuhi dulu sebelum bisa entry.</div>
+</div>
+
+<!-- ======================================================= -->
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">FITUR LAIN - Fundamental Screener & Chat</div>
+</div></div>
+
+<div class="feat yellow">
+<div class="feat-title"> Fundamental Screener (Buffett Criteria)</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab  Alpha Screener &rarr; sub-tab AI Stock Insight.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Pilih <b>filter sektor</b> (All / Banking / Property / Energy / Consumer) untuk mempersempit pencarian.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> - sistem evaluasi ratusan saham IDX berdasarkan: <span class="hi">ROE &ge;15%</span>, <span class="ok">DER &le;1.5&times;</span>, <span class="yl">Net Margin &ge;10%</span>, Current Ratio &ge;1.5, <span class="hi">PBV &le;3&times;</span>, EPS positif.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Urutkan hasil dengan <b>"Sort By"</b>: ROE Tertinggi / DER Terendah / Net Margin / PBV.</div></div>
+<div class="step"><div class="snum">5</div><div class="stext">Pilih saham &rarr; klik <b>"Analisa AI"</b> untuk ringkasan fundamental lengkap dari AI.</div></div>
+</div>
+<div class="warn">(!) Screener berbasis fundamental historis. Kombinasikan dengan analisa teknikal sebelum keputusan entry.</div>
+</div>
+
+<div class="feat blue">
+<div class="feat-title"> Chat Lanjutan setelah Analisa</div>
+<div class="stext">Setelah analisa di-generate, ketik pertanyaan lanjutan. Contoh efektif:</div>
+<div class="steps" style="margin-top:10px;">
+<div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="hi">"Apakah ROE BBRI wajar dibanding sektor perbankan?"</span></div></div>
+<div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="ok">"Apa risiko utama jika entry di area BUY ZONE ini?"</span></div></div>
+<div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="yl">"Ubah menjadi trade plan konservatif dengan SL lebih ketat."</span></div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_4, height=4200, scrolling=True)
+
+            # ── AI REKOMENDASI panduan (merged from Lainnya) ──
+            _guide_html_4b = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
+.feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.alert{{background:rgba(242,54,69,0.09);border:1px solid rgba(242,54,69,0.25);border-left:3px solid {_R};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
+@media(max-width:640px){{.grid3{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">AI REKOMENDASI - Panduan Lengkap</div>
+<div class="sec-desc">Rekomendasi saham harian, mingguan, dan watchlist Buy-Sell-JP berbasis AI dengan konteks fundamental + teknikal + makro.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title">  Alpha Screener - Daily Plan</div>
+<div class="stext">Tab  Alpha Screener adalah pusat analisa dan kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam mode <span class="hi">Daily Plan</span> dengan tracking performa di tab <span class="ok">History Plan</span>.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">DAILY PLAN - Rekomendasi Harian</div>
+<div class="sec-desc">Watchlist saham untuk trading dalam 1-3 hari ke depan berdasarkan sentimen pasar hari ini.</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title"> Cara Menggunakan Daily Plan</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Buka tab <b> Alpha Screener</b> dari navigasi atas SIGMA Terminal.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Klik tombol <b>" Generate Rekomendasi Harian"</b> - AI akan memproses kondisi makro hari ini + sinyal teknikal intraday.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Output berisi: <span class="ok">daftar saham</span> + <span class="hi">alasan singkat</span> + <span class="yl">level entry estimasi</span> + <span class="dn">catatan risiko</span>.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Hasil otomatis masuk ke <b> Track Record &rarr; History Plan</b> sebagai OPEN untuk tracking performa.</div></div>
+</div>
+<div class="tip"> Best practice: Generate di pagi hari sebelum market buka (08.30&ndash;09.00 WIB) untuk mendapat konteks pre-market yang relevan.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">TRACK RECORD - History Plan & Statistik</div>
+<div class="sec-desc">Rekam jejak performa semua plan yang sudah di-generate. Auto-linked dari setiap Daily Plan yang dibuat.</div>
+</div></div>
+
+<div class="feat green">
+<div class="feat-title"> Cara Membaca Track Record</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Buka tab <b> Track Record</b> di dalam Alpha Screener - semua plan yang di-generate otomatis masuk sebagai OPEN.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Tab <b>Overview Semua</b> menampilkan win rate, total trade, P&L, dan tabel semua posisi (OPEN + CLOSED).</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Tab <b>History Plan</b> menampilkan detail tracking per saham - update status TP/SL untuk menutup posisi.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Tab <b>Statistik</b> menampilkan analisa mendalam: win rate, expectancy, avg win/loss, dan verdict SIGMA.</div></div>
+</div>
+<div class="tip"> Update hasil trade di History Plan secara rutin untuk mendapatkan statistik yang akurat dan meaningful.</div>
+</div>
+
+<div class="feat red">
+<div class="feat-title">(!) Disclaimer Penting - Wajib Dibaca</div>
+<div class="stext">Semua output Alpha Screener adalah <b>bahan riset dan referensi analisa</b>, BUKAN sinyal trading resmi atau financial advice. SIGMA tidak menjamin akurasi prediksi. Keputusan trading sepenuhnya tanggung jawab trader masing-masing. <span class="dn">Selalu DYOR (Do Your Own Research)</span> dan konfirmasi dengan analisa mandiri sebelum eksekusi.</div>
+<div class="alert"> IDX = <b>Long Only Market</b>. Profit hanya dari kenaikan harga. Tidak ada short selling konvensional untuk retail. Pastikan entry hanya saat tren mendukung - jangan fight the trend.</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_4b, height=2000, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 5 - ANALISA IPO
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab5:
+            _guide_html_ipo = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0 32px;}}
+.hero{{background:linear-gradient(135deg,rgba(167,139,250,0.13),rgba(96,165,250,0.08));border:1px solid rgba(167,139,250,0.3);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
+.hero-badge{{display:inline-block;font-size:0.68rem;font-weight:800;letter-spacing:0.15em;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.18);border:1px solid rgba(167,139,250,0.5);color:#a78bfa;margin-bottom:10px;}}
+.hero-title{{font-size:1.35rem;font-weight:800;color:#a78bfa;letter-spacing:0.05em;margin-bottom:8px;}}
+.hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(167,139,250,0.25);}}
+.sec-icon{{font-size:1.4rem;}}
+.sec-title{{font-size:1.05rem;font-weight:700;color:#a78bfa;letter-spacing:0.06em;}}
+.card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+.card.p{{border-left:3px solid #a78bfa;}}
+.card.b{{border-left:3px solid #60a5fa;}}
+.card.g{{border-left:3px solid #26a69a;}}
+.card.y{{border-left:3px solid #fbbf24;}}
+.card.r{{border-left:3px solid #f23645;}}
+.card-title{{font-size:0.875rem;font-weight:700;color:#60a5fa;margin-bottom:8px;}}
+.card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
+.card-body b{{color:#a78bfa;}}
+.step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+.warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+.danger{{background:rgba(242,54,69,0.08);border-left:3px solid #f23645;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.ratio-row{{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;border-radius:8px;}}
+.ratio-label{{font-weight:700;font-size:0.8rem;min-width:80px;}}
+.ratio-bar{{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.08);position:relative;}}
+.ratio-fill{{height:100%;border-radius:4px;}}
+@media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="hero">
+  <div class="hero-badge"> ANALISA IPO</div>
+  <div class="hero-title">Bedah Prospektus IPO Otomatis</div>
+  <div class="hero-sub">
+    SIGMA membaca ratusan halaman prospektus IPO dan menghasilkan analisa komprehensif: valuasi harga vs nominal, 
+    tujuan dana, track record underwriter, risiko lot, dan jadwal lengkap &mdash; semua dalam hitungan detik.
+  </div>
+</div>
+
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">CARA MENGGUNAKAN ANALISA IPO</div></div></div>
+
+<div class="card p">
+<div class="card-title">Step-by-Step: Upload & Analisa</div>
+<div class="card-body">
+<div class="step"><div class="snum">1</div><div class="stext">Buka tab <b> Alpha Screener</b> dari navigasi atas, lalu klik sub-tab <b> ANALISA IPO</b>.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Isi <b>Nama / Kode Emiten</b> di field yang tersedia. Bisa nama perusahaan atau kode saham (belum resmi pun OK).</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Download PDF Prospektus dari <b>e-IPO.co.id</b> atau <b>idx.co.id/prospektus</b>, lalu upload di area drag-drop. Max 200MB.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Klik tombol <b>" ANALISA PROSPEKTUS"</b> &mdash; SIGMA membaca dan membedah seluruh dokumen, lalu menghasilkan laporan lengkap.</div></div>
+<div class="tip"> Proses baca ratusan halaman memerlukan 15-30 detik. Jangan klik ulang selama spinner berjalan.</div>
+</div>
+</div>
+
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">APA YANG DIBEDAH SIGMA?</div></div></div>
+
+<div class="grid2">
+<div class="card g">
+<div class="card-title"> Valuasi & Harga</div>
+<div class="card-body">
+  <b>Rasio Harga/Nominal:</b> Dihitung otomatis.<br>
+  &le;3x = murah &middot; 3&ndash;7x = wajar<br>
+  >7x = mahal / hati-hati<br><br>
+  <b>PBV, PER estimasi</b> dibandingkan sektor.<br>
+  <b>EPS proyeksi</b> dari target pendapatan di prospektus.
+</div>
+</div>
+<div class="card b">
+<div class="card-title"> Tujuan Dana IPO</div>
+<div class="card-body">
+  SIGMA membedah untuk apa dana IPO digunakan:<br>
+  <b>Ekspansi bisnis</b> &rarr; sinyal positif<br>
+  <b>Bayar utang</b> &rarr; hati-hati<br>
+  <b>Modal kerja</b> &rarr; netral<br>
+  <b>Akuisisi</b> &rarr; perlu cek detail
+</div>
+</div>
+<div class="card y">
+<div class="card-title"> Track Record Underwriter</div>
+<div class="card-body">
+  Penjamin emisi berpengaruh besar pada performa IPO.<br>
+  SIGMA mengevaluasi reputasi dan track record penjamin (BRI Danareksa, Mandiri Sekuritas, dll) dari data di prospektus.
+</div>
+</div>
+<div class="card p">
+<div class="card-title"> Jadwal & Struktur Penawaran</div>
+<div class="card-body">
+  Tanggal masa penawaran, allotment, listing.<br>
+  Jumlah saham dilepas ke publik.<br>
+  Harga penawaran & kisaran lot minimum.<br>
+  Lock-up period pemegang saham lama.
+</div>
+</div>
+</div>
+
+<div class="sec-head"><div class="sec-icon">(!)</div>
+<div><div class="sec-title">RASIO HARGA / NOMINAL &mdash; PANDUAN INTERPRETASI</div></div></div>
+
+<div class="card r">
+<div class="card-title"> Cara Hitung & Baca Rasio</div>
+<div class="card-body">
+  <b>Formula:</b> Harga IPO &divide; Nilai Nominal Saham<br><br>
+  <div class="ratio-row" style="background:rgba(38,166,154,0.1);">
+    <span class="ratio-label" style="color:#26a69a;">&le; 3x</span>
+    <span class="stext">OK <b>MURAH</b> &mdash; valuasi konservatif, potensi ARA tinggi di hari listing</span>
+  </div>
+  <div class="ratio-row" style="background:rgba(251,191,36,0.1);">
+    <span class="ratio-label" style="color:#fbbf24;">3x &ndash; 7x</span>
+    <span class="stext">(!) <b>WAJAR</b> &mdash; sesuai standar pasar, perlu cek fundamental & underwriter</span>
+  </div>
+  <div class="ratio-row" style="background:rgba(242,54,69,0.1);">
+    <span class="ratio-label" style="color:#f23645;">> 7x</span>
+    <span class="stext"> <b>HATI-HATI TINGGI</b> &mdash; sangat mahal vs nominal, risiko koreksi besar pasca listing</span>
+  </div>
+</div>
+</div>
+
+<div class="danger"> <b>Penting:</b> Analisa IPO SIGMA adalah referensi dan bahan riset, bukan rekomendasi beli/jual. Selalu DYOR dan pahami bahwa IPO mengandung risiko tinggi &mdash; harga bisa turun di bawah harga penawaran setelah listing.</div>
+
+</div></body></html>"""
+            components.html(_guide_html_ipo, height=2200, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 6 - TRACK RECORD
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab6:
+            _guide_html_tr = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0 32px;}}
+.hero{{background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(38,166,154,0.08));border:1px solid rgba(251,191,36,0.25);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
+.hero-title{{font-size:1.35rem;font-weight:800;color:#fbbf24;letter-spacing:0.05em;margin-bottom:8px;}}
+.hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(251,191,36,0.2);}}
+.sec-icon{{font-size:1.4rem;}}
+.sec-title{{font-size:1.05rem;font-weight:700;color:#fbbf24;letter-spacing:0.06em;}}
+.card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
+.card.y{{border-left:3px solid #fbbf24;}}
+.card.g{{border-left:3px solid #26a69a;}}
+.card.b{{border-left:3px solid #60a5fa;}}
+.card.r{{border-left:3px solid #f23645;}}
+.card.p{{border-left:3px solid #a78bfa;}}
+.card-title{{font-size:0.875rem;font-weight:700;color:#fbbf24;margin-bottom:8px;}}
+.card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
+.card-body b{{color:#a78bfa;}}
+.step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#26a69a);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+.warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
+.grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0;}}
+.stat-card{{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:14px;text-align:center;}}
+.stat-label{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:6px;}}
+.stat-val{{font-size:1.2rem;font-weight:800;color:#a78bfa;}}
+.stat-sub{{font-size:0.72rem;color:{_SUB};margin-top:4px;}}
+@media(max-width:640px){{.grid3{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="hero">
+  <div class="hero-title"> TRACK RECORD &mdash; Rekam Jejak Performa</div>
+  <div class="hero-sub">
+    Sistem pencatatan dan evaluasi performa semua plan yang di-generate SIGMA. 
+    Tersedia di dalam tab <b>Alpha Screener &rarr;  Track Record</b>. 
+    Setiap Daily Plan / Weekly Plan yang di-generate otomatis masuk sebagai posisi OPEN untuk ditracking.
+  </div>
+</div>
+
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">CARA MENGGUNAKAN TRACK RECORD</div></div></div>
+
+<div class="card y">
+<div class="card-title">Step-by-Step: Dari Generate sampai Evaluasi</div>
+<div class="card-body">
+<div class="step"><div class="snum">1</div><div class="stext">Setiap kali kamu <b>Generate Daily/Weekly Plan</b>, saham-saham yang masuk otomatis tercatat sebagai posisi <b style="color:#fbbf24;">OPEN</b> di Track Record.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Buka tab <b> Track Record</b> &rarr; sub-tab <b>History Plan</b> untuk melihat semua posisi yang sedang open.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Setelah trade selesai (hit TP atau SL), <b>update status</b> posisi: klik tombol update dan pilih hasil aktual (TP1/TP2/SL/Manual).</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Sub-tab <b>Overview Semua</b> menampilkan agregat seluruh performa: win rate, total trade, P&amp;L kumulatif, dan tabel lengkap.</div></div>
+<div class="step"><div class="snum">5</div><div class="stext">Sub-tab <b>Statistik</b> menampilkan analisa mendalam: expectancy per trade, average win/loss, streak terbaik/terburuk, dan <b>verdict SIGMA</b>.</div></div>
+<div class="tip"> Update status trade secara rutin setelah eksekusi agar statistik akurat. Sistem tidak bisa update otomatis karena tidak terhubung ke akun broker.</div>
+</div>
+</div>
+
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">METRIK YANG DILACAK</div></div></div>
+
+<div class="grid3">
+<div class="stat-card">
+  <div class="stat-label">Win Rate</div>
+  <div class="stat-val" style="color:#26a69a;">%</div>
+  <div class="stat-sub">Persentase trade yang profit. Target: &gt;50% untuk strategi RR 1:2+</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Expectancy</div>
+  <div class="stat-val" style="color:#60a5fa;">R</div>
+  <div class="stat-sub">Rata-rata profit per trade dalam satuan R (risk unit). Positif = sistem profitable</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Total Trade</div>
+  <div class="stat-val" style="color:#fbbf24;">#</div>
+  <div class="stat-sub">Jumlah trade tercatat. Minimal 20 trade untuk statistik signifikan secara statistik</div>
+</div>
+</div>
+
+<div class="card g">
+<div class="card-title"> Cara Membaca Verdict SIGMA</div>
+<div class="card-body">
+  Setelah minimal 10 trade tercatat, SIGMA mengeluarkan <b>Verdict</b> berdasarkan win rate + expectancy gabungan:<br><br>
+  OK <b style="color:#26a69a;">SISTEM BAGUS</b> &mdash; Win rate &gt;55% + Expectancy positif<br>
+  (!) <b style="color:#fbbf24;">PERLU EVALUASI</b> &mdash; Win rate 40&ndash;55% atau expectancy tipis<br>
+   <b style="color:#f23645;">SISTEM BERMASALAH</b> &mdash; Win rate &lt;40% atau expectancy negatif<br><br>
+  Verdict ini bukan penilaian SIGMA sebagai tool, tapi cerminan <b>eksekusi dan disiplin trader</b>.
+</div>
+</div>
+
+<div class="warn">(!) <b>Catatan Penting:</b> Track Record SIGMA tersimpan per-sesi login. Jika browser dibersihkan atau logout, data mungkin tidak tersimpan permanen. Untuk backup, gunakan fitur Export jika tersedia, atau catat manual di spreadsheet pribadi.</div>
+
+</div></body></html>"""
+            components.html(_guide_html_tr, height=2000, scrolling=True)
+
+        with pg_tab7:
+            _guide_html_6 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
+.grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
+.gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
+.gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
+.gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
+.gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
+.gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
+.gcard.green .gcard-title{{color:{_G};}}
+.gcard.blue .gcard-title{{color:{_B};}}
+.gcard.yellow .gcard-title{{color:{_Y};}}
+.gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
+.formula{{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:10px 16px;margin:8px 0;font-size:0.875rem;color:{_P};font-weight:700;letter-spacing:0.03em;}}
+@media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head"><div class="sec-icon"></div>
+<div><div class="sec-title">KALKULATOR - Panduan Lengkap</div>
+<div class="sec-desc">Alat kalkulasi trading IDX: Profit/Loss, Position Sizing, Modal Lot, Brokerage Fee, dan Break Even Point.</div>
+</div></div>
+
+<div class="feat">
+<div class="feat-title"> Apa itu Tab Kalkulator?</div>
+<div class="stext">Tab Kalkulator adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual - masukkan angka, hasilnya otomatis.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">KALKULATOR 1 - Profit / Loss (P&L)</div>
+</div></div>
+
+<div class="feat blue">
+<div class="feat-title"> Cara Menghitung Profit/Loss</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Harga Beli</b> per lembar (contoh: 1.500)</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>Harga Jual</b> per lembar (contoh: 1.750)</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Jumlah Lot</b> yang dibeli (contoh: 10 lot = 1.000 lembar)</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Sistem otomatis menghitung: P&L kotor, biaya beli, biaya jual + pajak, dan <span class="ok">Net P&L bersih</span> yang kamu benar-benar terima.</div></div>
+</div>
+<div class="formula">Net P&L = (Harga Jual - Harga Beli) &times; Lot &times; 100 - Total Biaya Broker</div>
+<div class="tip"> <b>Konvensi IDX:</b> Selalu kalikan jumlah lot dengan 100 untuk mendapat jumlah lembar. P&L di trading journal Google Sheets MnM juga menggunakan formula yang sama.</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">KALKULATOR 2 - Position Sizing & Modal</div>
+</div></div>
+
+<div class="feat green">
+<div class="feat-title"> Cara Menghitung Position Size</div>
+<div class="steps">
+<div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Total Modal</b> yang tersedia (contoh: Rp 10.000.000)</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>% Risiko per Trade</b> - standar konservatif: 1-2% per posisi (contoh: 2% = Rp 200.000 maksimal rugi)</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Harga Entry</b> dan <b>Harga Stop Loss</b> - jarak inilah yang menentukan berapa lot yang aman dibeli.</div></div>
+<div class="step"><div class="snum">4</div><div class="stext">Kalkulator menampilkan: <span class="ok">jumlah lot optimal</span>, <span class="hi">modal yang dipakai</span>, dan <span class="yl">% dari total portofolio</span>.</div></div>
+</div>
+<div class="formula">Jumlah Lot = (Modal &times; % Risiko) &divide; ((Entry - SL) &times; 100)</div>
+<div class="grid2" style="margin-top:12px;">
+<div class="gcard green">
+<div class="gcard-title">OK Risiko Konservatif</div>
+<div class="gcard-val">1-2% modal per posisi. Cocok untuk pemula atau kondisi market volatile. Max drawdown terkontrol.</div>
+</div>
+<div class="gcard yellow">
+<div class="gcard-title"> Risiko Agresif</div>
+<div class="gcard-val">3-5% modal per posisi. Hanya untuk trader berpengalaman dengan conviction tinggi dan setup sangat jelas.</div>
+</div>
+</div>
+</div>
+
+<div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
+<div><div class="sec-title">KALKULATOR 3 - Biaya Broker & Break Even</div>
+</div></div>
+
+<div class="feat yellow">
+<div class="feat-title"> Memahami Struktur Biaya IDX</div>
+<div class="stext" style="margin-bottom:12px;">Setiap transaksi di IDX dikenai biaya broker dan pajak yang mempengaruhi Break Even Point (BEP) kamu.</div>
+<div class="grid2">
+<div class="gcard blue">
+<div class="gcard-title"> Biaya Beli</div>
+<div class="gcard-val">Umumnya 0.15%-0.19% dari nilai transaksi (tergantung broker). Beberapa broker offer 0% fee beli untuk saham tertentu.</div>
+</div>
+<div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
+<div class="gcard-title" style="color:{_R};"> Biaya Jual</div>
+<div class="gcard-val">Fee jual ~0.25% + Pajak penjualan 0.1% = total ~0.35% dari nilai transaksi jual.</div>
+</div>
+</div>
+<div class="formula">BEP = Harga Beli &times; (1 + Fee Beli) &times; (1 + Fee Jual + Pajak)</div>
+<div class="steps" style="margin-top:12px;">
+<div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Harga Beli</b> dan <b>% Fee Broker</b> yang kamu gunakan.</div></div>
+<div class="step"><div class="snum">2</div><div class="stext">Kalkulator menampilkan <span class="hi">harga BEP</span> - harga minimum jual agar tidak rugi setelah dipotong semua biaya.</div></div>
+<div class="step"><div class="snum">3</div><div class="stext">Gunakan BEP sebagai patokan - jangan jual di bawah BEP kecuali memang sudah keputusan cut loss terencana.</div></div>
+</div>
+<div class="warn">(!) Fee broker berbeda-beda tiap platform. Pastikan kamu tahu fee broker yang kamu pakai dan masukkan angka yang akurat agar BEP terhitung tepat.</div>
+</div>
+
+<div class="feat">
+<div class="feat-title"> Tips Penggunaan Kalkulator Optimal</div>
+<div class="steps">
+<div class="step"><div class="snum">&rarr;</div><div class="stext">Selalu hitung <span class="hi">position size</span> <b>sebelum</b> entry - bukan setelah. Emosi saat market buka sering membuat trader over-leverage.</div></div>
+<div class="step"><div class="snum">&rarr;</div><div class="stext">Gunakan <span class="ok">P&L Calculator</span> untuk simulasi skenario: "jika harga naik ke TP1, berapa yang aku dapat? Jika kena SL, berapa yang hilang?"</div></div>
+<div class="step"><div class="snum">&rarr;</div><div class="stext">Catat semua trade di <span class="yl">Trading Journal Google Sheets MnM</span> - kombinasikan dengan kalkulator untuk evaluasi performa bulanan.</div></div>
+<div class="step"><div class="snum">&rarr;</div><div class="stext">R:R (Risk-Reward) minimum yang disarankan MnM Strategy+ adalah <span class="hi">1:2</span> - artinya untuk setiap 1 risiko, target minimal 2 profit.</div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_6, height=2200, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN - BROKER SUMMARY (pg_tab8)
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab8:
+            _guide_html_brosum = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0;}}
+.sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
+.sec-icon{{font-size:1.6rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
+.feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
+.feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
+.feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
+.feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
+.feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
+.feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
+.feat.blue .feat-title{{color:{_B};}}
+.feat.green .feat-title{{color:{_G};}}
+.feat.yellow .feat-title{{color:{_Y};}}
+.feat.red .feat-title{{color:{_R};}}
+.steps{{margin:10px 0 6px;}}
+.step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
+.snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
+.stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
+.stext b{{color:{_B};}}
+.stext .hi{{color:{_P};font-weight:700;}}
+.stext .ok{{color:{_G};font-weight:700;}}
+.stext .yl{{color:{_Y};font-weight:700;}}
+.stext .dn{{color:{_R};font-weight:700;}}
+.tag{{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.8rem;font-weight:700;margin:2px;}}
+.tag.buy{{background:rgba(38,166,154,0.18);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
+.tag.sell{{background:rgba(242,54,69,0.15);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
+.tag.foreign{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
+.tag.bumn{{background:rgba(38,166,154,0.14);color:{_G};border:1px solid rgba(38,166,154,0.35);}}
+.tag.local{{background:rgba(139,92,246,0.15);color:{_P};border:1px solid rgba(139,92,246,0.4);}}
+
+.table-wrap{{overflow-x:auto;margin:12px 0;}}
+table{{width:100%;border-collapse:collapse;font-size:0.875rem;}}
+th{{background:rgba(124,58,237,0.15);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
+td{{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:{_TXT};}}
+tr:hover td{{background:rgba(124,58,237,0.07);}}
+.alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.875rem;color:{_Y};}}
+.info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.875rem;color:{_B};}}
+.broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
+.broker-card{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:8px;padding:12px 14px;}}
+.broker-card.foreign{{border-left:3px solid rgba(242,54,69,0.6);}}
+.broker-card.bumn{{border-left:3px solid rgba(38,166,154,0.7);}}
+.broker-card.local{{border-left:3px solid rgba(139,92,246,0.6);}}
+.broker-code{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.08em;}}
+.broker-name{{font-size:0.8rem;color:{_SUB};margin-top:2px;line-height:1.3;}}
+.broker-vol{{font-size:0.72rem;color:{_SUB};opacity:0.55;margin-top:1px;}}
+.broker-note{{font-size:0.72rem;color:{_Y};margin-top:3px;font-style:italic;}}
+.broker-type{{font-size:0.72rem;margin-top:5px;}}
+@media(max-width:600px){{
+  .broker-grid{{grid-template-columns:1fr 1fr;}}
+  .sec-title{{font-size:1rem;}}
+  .feat{{padding:13px 14px;}}
+}}
+</style></head><body><div class="wrap">
+
+<div class="sec-head">
+  <div class="sec-icon"></div>
+  <div>
+    <div class="sec-title">BROKER SUMMARY - Panduan Lengkap</div>
+    <div class="sec-desc">Membaca jejak transaksi broker untuk analisa bandarmologi & akumulasi/distribusi</div>
+  </div>
+</div>
+
+<div class="feat">
+<div class="feat-title"> Apa itu Broker Summary (Brosum)?</div>
+<div class="stext">Broker Summary adalah ringkasan aktivitas transaksi <b>per kode broker</b> dalam satu saham pada periode tertentu (harian/mingguan/bulanan). Data ini menampilkan total <span class="hi">volume beli</span>, <span class="dn">volume jual</span>, dan <b>net buy/sell</b> setiap broker - sehingga kamu bisa melihat siapa yang sedang akumulasi dan siapa yang distribusi.</div>
+<div class="steps" style="margin-top:12px;">
+  <div class="step"><div class="snum">1</div><div class="stext">Broker Summary tersedia di platform seperti <b>RTI Business</b>, <b>ChartNexus</b>, <b>Stockbit</b>, <b>IPOT</b>, dan aplikasi broker masing-masing.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext">Data umumnya menampilkan: <span class="hi">Kode Broker</span> | <span class="ok">Buy Volume (lot/nilai)</span> | <span class="dn">Sell Volume (lot/nilai)</span> | <b>Net Buy/Sell</b>.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Untuk analisa bandarmologi di SIGMA, screenshot Broker Summary lalu lampirkan bersama perintah <span class="hi">"3. Bandarmologi [kode saham]"</span>.</div></div>
+</div>
+</div>
+
+<div class="feat blue">
+<div class="feat-title"> Kolom-Kolom Penting dalam Broker Summary</div>
+<div class="table-wrap">
+<table>
+  <tr><th>Kolom</th><th>Keterangan</th></tr>
+  <tr><td><b>Kode Broker</b></td><td>Kode 2 huruf broker (mis: YP, AK, RX, ZP, BQ)</td></tr>
+  <tr><td><b>Buy Vol / Lot</b></td><td>Total volume beli dalam lot (1 lot = 100 lembar)</td></tr>
+  <tr><td><b>Sell Vol / Lot</b></td><td>Total volume jual dalam lot</td></tr>
+  <tr><td><b>Net Buy</b></td><td>Buy Vol - Sell Vol. Positif = akumulasi, Negatif = distribusi</td></tr>
+  <tr><td><b>Buy Value</b></td><td>Total nilai transaksi beli (Rp)</td></tr>
+  <tr><td><b>Sell Value</b></td><td>Total nilai transaksi jual (Rp)</td></tr>
+  <tr><td><b>Avg Buy Price</b></td><td>Rata-rata harga beli broker tersebut</td></tr>
+  <tr><td><b>Avg Sell Price</b></td><td>Rata-rata harga jual broker tersebut</td></tr>
+  <tr><td><b>Frekuensi</b></td><td>Jumlah order/transaksi - frekuensi tinggi = aktivitas intens</td></tr>
+</table>
+</div>
+</div>
+
+<div class="feat green">
+<div class="feat-title"> Cara Membaca Sinyal Akumulasi & Distribusi</div>
+<div class="steps">
+  <div class="step"><div class="snum">&uarr;</div><div class="stext"><span class="ok">Akumulasi (Bullish Signal):</span> Broker tertentu konsisten <b>Net Buy besar</b> selama beberapa hari berturut-turut, terutama jika harga belum bergerak jauh. Ini tanda "bandar" sedang kumpulkan saham.</div></div>
+  <div class="step"><div class="snum">&darr;</div><div class="stext"><span class="dn">Distribusi (Bearish Signal):</span> Broker yang sebelumnya Net Buy kini berbalik jadi <b>Net Sell dominan</b>. Terutama berbahaya jika harga masih tinggi - ini tanda mulai lepas saham ke publik.</div></div>
+  <div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="yl">Crossing:</span> Broker A beli banyak DARI broker B yang jual banyak, pada <b>harga yang sama/mirip</b>. Ini pola crossing klasik - perpindahan kepemilikan dari satu pihak ke pihak lain secara terkoordinasi.</div></div>
+  <div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="hi">Foreign Flow:</span> Perhatikan broker asing: <b>AK,YU,ZP,BK,KZ,RX,KK</b> = sinyal institusi global murni. <b>YP (Mirae) & CP (KB Valbury)</b> = resmi asing tapi nasabahnya mayoritas lokal, jadi pergerakannya campuran - jangan langsung dikategorikan sebagai "sinyal asing". Net buy asing murni (AK,KZ,BK dll) = konfirmasi kuat.</div></div>
+</div>
+</div>
+
+<div class="feat yellow">
+<div class="feat-title"> Kode Broker Penting di IDX</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 14px;align-items:center;">
+  <span style="font-size:0.72rem;color:{_SUB};letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">LEGENDA:</span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></span><span style="color:{_P};">Lokal</span></span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;"><span style="width:10px;height:10px;border-radius:50%;background:#26a69a;display:inline-block;"></span><span style="color:{_G};">BUMN</span></span>
+  <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;"><span style="width:10px;height:10px;border-radius:50%;background:#f23645;display:inline-block;"></span><span style="color:{_R};">Asing / Foreign</span></span>
+  <span style="font-size:0.72rem;color:{_Y};font-style:italic;">(!) YP & CP = entitas asing, tapi nasabah mayoritas lokal</span>
+</div>
+<div class="broker-grid">
+  <div class="broker-card foreign"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas Indonesia</div><div class="broker-vol">3.4T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">YU</div><div class="broker-name">CGS International Sekuritas</div><div class="broker-vol">1.8T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">YP</div><div class="broker-name">Mirae Asset Sekuritas</div><div class="broker-vol">1.8T</div><div class="broker-type"><span class="tag foreign">Asing*</span></div><div class="broker-note">(!) Mayoritas nasabah lokal</div></div>
+  <div class="broker-card foreign"><div class="broker-code">ZP</div><div class="broker-name">Maybank Sekuritas Indonesia</div><div class="broker-vol">1.7T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">CP</div><div class="broker-name">KB Valbury Sekuritas</div><div class="broker-vol">1.0T</div><div class="broker-type"><span class="tag foreign">Asing*</span></div><div class="broker-note">(!) Mayoritas nasabah lokal</div></div>
+  <div class="broker-card foreign"><div class="broker-code">BK</div><div class="broker-name">J.P. Morgan Sekuritas</div><div class="broker-vol">734.7B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">KZ</div><div class="broker-name">CLSA Sekuritas Indonesia</div><div class="broker-vol">643.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">RX</div><div class="broker-name">Macquarie Sekuritas Indonesia</div><div class="broker-vol">623.4B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">KK</div><div class="broker-name">Phillip Sekuritas Indonesia</div><div class="broker-vol">412.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">AI</div><div class="broker-name">Kay Hian Sekuritas</div><div class="broker-vol">335.5B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">AG</div><div class="broker-name">Kiwoom Sekuritas Indonesia</div><div class="broker-vol">288.3B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">DR</div><div class="broker-name">RHB Sekuritas Indonesia</div><div class="broker-vol">278.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">BQ</div><div class="broker-name">Korea Investment Sekuritas</div><div class="broker-vol">270.1B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">XA</div><div class="broker-name">NH Korindo Sekuritas Indonesia</div><div class="broker-vol">237.7B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">TP</div><div class="broker-name">OCBC Sekuritas Indonesia</div><div class="broker-vol">208.5B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">HD</div><div class="broker-name">KGI Sekuritas Indonesia</div><div class="broker-vol">174.3B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">RB</div><div class="broker-name">Ina Sekuritas Indonesia</div><div class="broker-vol">66.2B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">DP</div><div class="broker-name">DBS Vickers Sekuritas</div><div class="broker-vol">61.4B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">LS</div><div class="broker-name">Reliance Sekuritas Indonesia</div><div class="broker-vol">38.2B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">FS</div><div class="broker-name">Yuanta Sekuritas Indonesia</div><div class="broker-vol">23.1B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">DU</div><div class="broker-name">KAF Sekuritas Indonesia</div><div class="broker-vol">9.6B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">GI</div><div class="broker-name">Webull Sekuritas Indonesia</div><div class="broker-vol">9.0B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">AH</div><div class="broker-name">Shinhan Sekuritas Indonesia</div><div class="broker-vol">266.1M</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
+  <div class="broker-card foreign"><div class="broker-code">CS</div><div class="broker-name">Credit Suisse Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">CG</div><div class="broker-name">Citigroup Sekuritas Indonesia</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">GW</div><div class="broker-name">HSBC Sekuritas Indonesia</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">LH</div><div class="broker-name">Royal Investium Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card foreign"><div class="broker-code">MS</div><div class="broker-name">Morgan Stanley Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card bumn"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-vol">2.8T</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card bumn"><div class="broker-code">NI</div><div class="broker-name">BNI Sekuritas</div><div class="broker-vol">590.8B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card bumn"><div class="broker-code">OD</div><div class="broker-name">BRI Danareksa Sekuritas</div><div class="broker-vol">403.3B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card bumn"><div class="broker-code">DX</div><div class="broker-name">Bahana Sekuritas</div><div class="broker-vol">69.4B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
+  <div class="broker-card local"><div class="broker-code">XL</div><div class="broker-name">Stockbit Sekuritas Digital</div><div class="broker-vol">4.4T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">MG</div><div class="broker-name">Semesta Indovest Sekuritas</div><div class="broker-vol">1.3T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PD</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-vol">1.0T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">XC</div><div class="broker-name">Ajaib Sekuritas Asia</div><div class="broker-vol">978.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">DH</div><div class="broker-name">Sinarmas Sekuritas</div><div class="broker-vol">796.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AZ</div><div class="broker-name">Sucor Sekuritas</div><div class="broker-vol">715.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SQ</div><div class="broker-name">BCA Sekuritas</div><div class="broker-vol">705.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">LG</div><div class="broker-name">Trimegah Sekuritas Indonesia</div><div class="broker-vol">384.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IC</div><div class="broker-name">Integrity Capital Sekuritas</div><div class="broker-vol">366.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IF</div><div class="broker-name">Samuel Sekuritas Indonesia</div><div class="broker-vol">354.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">GR</div><div class="broker-name">Panin Sekuritas Tbk.</div><div class="broker-vol">310.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">KI</div><div class="broker-name">Ciptadana Sekuritas Asia</div><div class="broker-vol">278.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BB</div><div class="broker-name">Verdhana Sekuritas Indonesia</div><div class="broker-vol">255.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">YB</div><div class="broker-name">Yakin Bertumbuh Sekuritas</div><div class="broker-vol">246.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">EP</div><div class="broker-name">MNC Sekuritas</div><div class="broker-vol">203.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SS</div><div class="broker-name">Supra Sekuritas Indonesia</div><div class="broker-vol">181.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AO</div><div class="broker-name">Erdhika Elit Sekuritas</div><div class="broker-vol">123.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">YJ</div><div class="broker-name">Lotus Andalan Sekuritas</div><div class="broker-vol">115.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BR</div><div class="broker-name">Trust Sekuritas</div><div class="broker-vol">97.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">HP</div><div class="broker-name">Henan Putihrai Sekuritas</div><div class="broker-vol">82.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SF</div><div class="broker-name">Surya Fajar Sekuritas</div><div class="broker-vol">76.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AT</div><div class="broker-name">Phintraco Sekuritas</div><div class="broker-vol">73.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IN</div><div class="broker-name">Investindo Nusantara Sekuritas</div><div class="broker-vol">63.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RF</div><div class="broker-name">Buana Capital Sekuritas</div><div class="broker-vol">60.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">FZ</div><div class="broker-name">Waterfront Sekuritas Indonesia</div><div class="broker-vol">43.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SH</div><div class="broker-name">Artha Sekuritas Indonesia</div><div class="broker-vol">41.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PC</div><div class="broker-name">FAC Sekuritas Indonesia</div><div class="broker-vol">39.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">SA</div><div class="broker-name">Elit Sukses Sekuritas</div><div class="broker-vol">38.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PO</div><div class="broker-name">Pilarmas Investindo Sekuritas</div><div class="broker-vol">38.0B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">TS</div><div class="broker-name">Dwidana Sakti Sekuritas</div><div class="broker-vol">37.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">II</div><div class="broker-name">Danatama Makmur Sekuritas</div><div class="broker-vol">36.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">MU</div><div class="broker-name">Minna Padi Investama Sekuritas</div><div class="broker-vol">35.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IH</div><div class="broker-name">Indo Harvest Sekuritas</div><div class="broker-vol">32.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IU</div><div class="broker-name">Indo Capital Sekuritas</div><div class="broker-vol">29.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">CD</div><div class="broker-name">Mega Capital Sekuritas</div><div class="broker-vol">29.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">EL</div><div class="broker-name">Evergreen Sekuritas Indonesia</div><div class="broker-vol">23.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">MI</div><div class="broker-name">Victoria Sekuritas Indonesia</div><div class="broker-vol">23.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AP</div><div class="broker-name">Pacific Sekuritas Indonesia</div><div class="broker-vol">20.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PG</div><div class="broker-name">Panca Global Sekuritas</div><div class="broker-vol">16.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RO</div><div class="broker-name">Pluang Maju Sekuritas</div><div class="broker-vol">15.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AR</div><div class="broker-name">Binaartha Sekuritas</div><div class="broker-vol">14.9B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PF</div><div class="broker-name">Danasakti Sekuritas Indonesia</div><div class="broker-vol">13.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">ID</div><div class="broker-name">Anugerah Sekuritas Indonesia</div><div class="broker-vol">13.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">ES</div><div class="broker-name">Ekokapital Sekuritas</div><div class="broker-vol">12.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">ZR</div><div class="broker-name">Bumiputera Sekuritas</div><div class="broker-vol">11.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">QA</div><div class="broker-name">Tuntun Sekuritas Indonesia</div><div class="broker-vol">10.9B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RG</div><div class="broker-name">Profindo Sekuritas Indonesia</div><div class="broker-vol">9.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">GA</div><div class="broker-name">BNC Sekuritas Indonesia</div><div class="broker-vol">9.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PI</div><div class="broker-name">Magenta Kapital Sekuritas</div><div class="broker-vol">9.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">OK</div><div class="broker-name">Net Sekuritas</div><div class="broker-vol">6.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AF</div><div class="broker-name">Harita Kencana Sekuritas</div><div class="broker-vol">6.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BS</div><div class="broker-name">Equity Sekuritas Indonesia</div><div class="broker-vol">5.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">TF</div><div class="broker-name">Universal Broker Indonesia</div><div class="broker-vol">5.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">RS</div><div class="broker-name">Yulie Sekuritas Indonesia</div><div class="broker-vol">5.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">AD</div><div class="broker-name">OSO Sekuritas Indonesia</div><div class="broker-vol">4.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">JB</div><div class="broker-name">BJB Sekuritas</div><div class="broker-vol">2.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">BF</div><div class="broker-name">Inti Fikasa Sekuritas</div><div class="broker-vol">2.0B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">YO</div><div class="broker-name">Amantara Sekuritas Indonesia</div><div class="broker-vol">1.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">IT</div><div class="broker-name">Inti Teladan Sekuritas</div><div class="broker-vol">803.6M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">PP</div><div class="broker-name">Aldiracita Sekuritas Indonesia</div><div class="broker-vol">543.0M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">DD</div><div class="broker-name">Makindo Sekuritas</div><div class="broker-vol">125.3M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">FO</div><div class="broker-name">Forte Global Sekuritas</div><div class="broker-vol">3.8M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
+  <div class="broker-card local"><div class="broker-code">KS</div><div class="broker-name">Kresna Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">AN</div><div class="broker-name">Wanteg Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">DM</div><div class="broker-name">Masindo Artha Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">IP</div><div class="broker-name">Yugen Bertumbuh Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">BZ</div><div class="broker-name">Batavia Prosperindo Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">MK</div><div class="broker-name">Ekuator Swarna Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">PS</div><div class="broker-name">Paramitra Alfa Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">SC</div><div class="broker-name">IMG Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+  <div class="broker-card local"><div class="broker-code">TX</div><div class="broker-name">Dhanawibawa Sekuritas Indonesia</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
+</div>
+</div>
+
+<div class="feat">
+<div class="feat-title"> Cara Menggunakan Broker Summary di SIGMA</div>
+<div class="steps">
+  <div class="step"><div class="snum">1</div><div class="stext">Buka platform data saham (RTI, Stockbit, IPOT, dll.) &rarr; cari saham yang ingin dianalisa &rarr; buka menu <b>Broker Summary</b>.</div></div>
+  <div class="step"><div class="snum">2</div><div class="stext">Pilih periode: <span class="yl">Harian</span> untuk sinyal jangka pendek, <span class="ok">Mingguan/Bulanan</span> untuk melihat tren akumulasi besar.</div></div>
+  <div class="step"><div class="snum">3</div><div class="stext">Screenshot tampilan Broker Summary - pastikan terlihat jelas kolom Net Buy/Sell dan kode broker teratas.</div></div>
+  <div class="step"><div class="snum">4</div><div class="stext">Di SIGMA, ketik: <span class="hi">"3. Bandarmologi BBRI"</span> (ganti dengan kode saham) sambil <b>lampirkan screenshot Brosum, Price Table, dan Volume</b>.</div></div>
+  <div class="step"><div class="snum">5</div><div class="stext">SIGMA AI akan membedah pola akumulasi/distribusi, crossing antar broker, dan memberikan interpretasi terhadap momentum harga.</div></div>
+</div>
+<div class="info-box"> <b>Pro Tip:</b> Untuk analisa Quad Confluence (perintah 6), lampirkan sekaligus: SS Chart Teknikal + SS Broker Summary. SIGMA akan menggabungkan sinyal teknikal, bandarmologi, fundamental, dan makro dalam satu analisa terpadu.</div>
+</div>
+
+<div class="feat red">
+<div class="feat-title">(!) Hal-Hal yang Perlu Diperhatikan</div>
+<div class="steps">
+  <div class="step"><div class="snum">!</div><div class="stext"><span class="dn">Jangan terpaku hanya pada 1 hari data</span> - pola akumulasi bandar biasanya terlihat setelah 3&ndash;10 hari observasi berturut-turut.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext">Broker besar tidak selalu = bandar. <span class="yl">Konfirmasi dengan price action</span>: jika akumulasi tapi harga sideways/turun, waspadai distribusi terselubung.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext">Data Broker Summary adalah <b>lagging indicator</b> - ia menunjukkan apa yang SUDAH terjadi, bukan apa yang AKAN terjadi. Gunakan bersama analisa teknikal.</div></div>
+  <div class="step"><div class="snum">!</div><div class="stext">Semua analisa bandarmologi adalah <b>referensi riset</b>, bukan sinyal trading resmi. Selalu DYOR dan kelola risiko dengan disiplin.</div></div>
+</div>
+</div>
+
+</div></body></html>"""
+            components.html(_guide_html_brosum, height=2400, scrolling=True)
+
+        # ══════════════════════════════════════════════════════════════
+        # PANDUAN 9 - CARA KERJA SCREENER (HOW IT WORKS)
+        # ══════════════════════════════════════════════════════════════
+        with pg_tab9:
+            _P7 = "#a78bfa"
+            _B7 = "#60a5fa"
+            _G7 = "#26a69a"
+            _R7 = "#f23645"
+            _Y7 = "#fbbf24"
+            _TXT7 = text_main
+            _SUB7 = text_sub
+            _BG7  = met_bg
+            _BD7  = met_border
+
+            _guide_html_7 = f"""<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7};font-size:0.875rem;line-height:1.8;}}
+.wrap{{max-width:100%;padding:4px 0 32px;}}
+
+/* -- Hero -- */
+.hero{{
+  background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(96,165,250,0.08));
+  border:1px solid rgba(124,58,237,0.25);border-radius:12px;
+  padding:22px 24px;margin-bottom:22px;
+}}
+.hero-title{{font-size:1.25rem;font-weight:700;color:{_P7};letter-spacing:0.06em;margin-bottom:6px;}}
+.hero-sub{{font-size:0.875rem;color:{_SUB7};line-height:1.7;}}
+
+/* -- Nav tabs -- */
+.nav{{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}}
+.nav-btn{{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
+  border:1px solid rgba(124,58,237,0.3);background:rgba(124,58,237,0.07);
+  color:{_P7};border-radius:6px;padding:6px 13px;cursor:pointer;
+  transition:all 0.15s;
+}}
+.nav-btn:hover,.nav-btn.active{{background:rgba(124,58,237,0.18);border-color:{_P7};}}
+
+/* -- Panels -- */
+.panel{{display:none;}}
+.panel.active{{display:block;}}
+
+/* -- Section header -- */
+.sec-head{{
+  display:flex;align-items:center;gap:12px;
+  margin:0 0 16px;padding-bottom:10px;
+  border-bottom:1px solid rgba(124,58,237,0.2);
+}}
+.sec-icon{{font-size:1.5rem;}}
+.sec-title{{font-size:1.1rem;font-weight:700;color:{_P7};letter-spacing:0.06em;}}
+.sec-desc{{font-size:0.8rem;color:{_SUB7};margin-top:2px;}}
+
+/* -- Cards -- */
+.card{{
+  background:{_BG7};border:1px solid {_BD7};
+  border-radius:10px;padding:16px 18px;margin-bottom:12px;
+}}
+.card.accent-p{{border-left:3px solid {_P7};}}
+.card.accent-b{{border-left:3px solid {_B7};}}
+.card.accent-g{{border-left:3px solid {_G7};}}
+.card.accent-y{{border-left:3px solid {_Y7};}}
+.card.accent-r{{border-left:3px solid {_R7};}}
+.card-title{{font-size:0.875rem;font-weight:700;color:{_B7};margin-bottom:8px;}}
+.card-body{{font-size:0.875rem;color:{_TXT7};line-height:1.8;}}
+.card-body b{{color:{_P7};}}
+
+/* -- Flow pipeline -- */
+.pipeline{{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 0;}}
+.pipe-step{{
+  font-size:0.72rem;font-weight:700;letter-spacing:0.07em;padding:5px 11px;
+  border-radius:6px;white-space:nowrap;
+}}
+.pipe-arrow{{font-size:0.875rem;color:{_SUB7};}}
+
+/* -- Steps numbered -- */
+.steps{{margin:6px 0;}}
+.step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
+.snum{{
+  min-width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(135deg,{_P7},{_B7});
+  color:#fff;font-size:0.72rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
+}}
+.stext{{font-size:0.875rem;color:{_TXT7};line-height:1.75;}}
+.stext b{{color:{_B7};}}
+.hi{{color:{_P7};font-weight:700;}}
+.ok{{color:{_G7};font-weight:700;}}
+.dn{{color:{_R7};font-weight:700;}}
+.yl{{color:{_Y7};font-weight:700;}}
+
+/* -- Metric grid -- */
+.mgrid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}}
+.mcard{{
+  background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);
+  border-radius:8px;padding:11px 13px;
+}}
+.mlbl{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB7};margin-bottom:4px;}}
+.mval{{font-size:1.1rem;font-weight:700;color:{_P7};}}
+.msub{{font-size:0.8rem;color:{_SUB7};margin-top:3px;line-height:1.5;}}
+
+/* -- Badges -- */
+.bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;vertical-align:middle;}}
+.bp{{background:rgba(167,139,250,0.15);color:{_P7};border:1px solid rgba(167,139,250,0.35);}}
+.bb{{background:rgba(96,165,250,0.14);color:{_B7};border:1px solid rgba(96,165,250,0.35);}}
+.bg{{background:rgba(38,166,154,0.14);color:{_G7};border:1px solid rgba(38,166,154,0.35);}}
+.br{{background:rgba(242,54,69,0.12);color:{_R7};border:1px solid rgba(242,54,69,0.35);}}
+.by{{background:rgba(251,191,36,0.12);color:{_Y7};border:1px solid rgba(251,191,36,0.35);}}
+
+/* -- Info / Warn boxes -- */
+.tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
+.honesty{{background:rgba(38,166,154,0.07);border-left:3px solid {_G7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
+.warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
+.danger{{background:rgba(242,54,69,0.07);border-left:3px solid {_R7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
+
+/* -- Source chips -- */
+.chip{{display:inline-block;font-size:0.72rem;padding:1px 7px;border-radius:4px;margin:0 2px;background:rgba(167,139,250,0.1);color:{_P7};border:1px solid rgba(167,139,250,0.2);}}
+
+/* -- Divider -- */
+.div{{height:1px;background:rgba(124,58,237,0.15);margin:18px 0;}}
+
+@media(max-width:600px){{
+  .mgrid{{grid-template-columns:1fr;}}
+  .pipeline{{gap:4px;}}
+  .pipe-step{{font-size:0.72rem;padding:4px 8px;}}
+  .card{{padding:12px 13px;}}
+}}
+</style></head><body><div class="wrap">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-title"> BAGAIMANA SIGMA MEMILIH SAHAM?</div>
+  <div class="hero-sub">
+    Penjelasan lengkap arsitektur, logika, dan mekanisme di balik setiap modul screening SIGMA - 
+    dari sumber data, filter bertingkat, sampai cara AI menghasilkan trade plan.<br><br>
+    Pilih modul di bawah untuk membaca detail cara kerjanya.
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav" id="guide-nav">
+  <button class="nav-btn active" onclick="showGuide('overview',this)">Arsitektur Sistem</button>
+  <button class="nav-btn" onclick="showGuide('insight',this)">AI Stock Insight</button>
+  <button class="nav-btn" onclick="showGuide('daily',this)">Daily Screener</button>
+  <button class="nav-btn" onclick="showGuide('weekly',this)">Weekly Screener</button>
+  <button class="nav-btn" onclick="showGuide('bsjp',this)">BSJP</button>
+  <button class="nav-btn" onclick="showGuide('fundamental',this)">Fundamental</button>
+  <button class="nav-btn" onclick="showGuide('accuracy',this)">Akurasi &amp; Batas</button>
+</div>
+
+<!-- ============ PANEL: OVERVIEW ============ -->
+<div class="panel active" id="g-overview">
+  <div class="sec-head">
+    <span class="sec-icon"></span>
+    <div>
+      <div class="sec-title">ARSITEKTUR MULTI-LAYER SIGMA</div>
+      <div class="sec-desc">Setiap rekomendasi melewati minimal 3 lapisan validasi sebelum ditampilkan</div>
+    </div>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipe-step" style="background:rgba(96,165,250,0.12);color:{_B7};border:1px solid rgba(96,165,250,0.3);"> Data Live IDX</div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step" style="background:rgba(167,139,250,0.12);color:{_P7};border:1px solid rgba(167,139,250,0.3);"> Filter Teknikal</div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step" style="background:rgba(38,166,154,0.12);color:{_G7};border:1px solid rgba(38,166,154,0.3);"> Analisa Volume</div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step" style="background:rgba(251,191,36,0.12);color:{_Y7};border:1px solid rgba(251,191,36,0.3);"> AI Analisa</div>
+    <div class="pipe-arrow">&rarr;</div>
+    <div class="pipe-step" style="background:rgba(242,54,69,0.12);color:{_R7};border:1px solid rgba(242,54,69,0.3);"> Trade Plan</div>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="card accent-b">
+    <div class="card-title">5 Sumber Data Real-Time (Multi-Source Fallback)</div>
+    <div class="card-body">
+      <b>Harga & Volume:</b><br>
+      <span class="chip">IDX API</span><span class="chip">Yahoo Finance</span><span class="chip">Finnhub</span><span class="chip">FMP</span><span class="chip">stooq</span><br>
+      Diambil secara paralel. <b>Prioritas: IDX API</b> (sumber resmi bursa). Jika gagal, otomatis fallback ke layer berikutnya.<br><br>
+      <b>Fundamental:</b><br>
+      <span class="chip">Finnhub</span><span class="chip">Alpha Vantage</span><span class="chip">FMP</span><span class="chip">yfinance</span><br>
+      Setiap API punya key cadangan (KEY1&ndash;KEY6). Jika rate limit, sistem auto-rotate ke key berikutnya tanpa gangguan.<br><br>
+      <b>Berita:</b><br>
+      <span class="chip">Google News RSS</span><span class="chip">CNBC Indonesia</span><span class="chip">Kontan</span><span class="chip">Bisnis.com</span><br>
+      Difilter berdasarkan keyword relevan (nama emiten, IHSG, makro, komoditas).
+    </div>
+  </div>
+
+  <div class="card accent-p">
+    <div class="card-title">Validasi Corporate Action - Otomatis</div>
+    <div class="card-body">
+      SIGMA menyimpan database internal riwayat <b>stock split & reverse split</b> dari semua emiten besar IDX (BBCA, BBRI, BMRI, TLKM, GOTO, dll).<br><br>
+      Sebelum data harga dikirim ke AI untuk dianalisa, sistem otomatis memvalidasi:<br>
+      <span class="ok">OK Harga masuk rentang post-split</span> &rarr; aman digunakan<br>
+      <span class="dn">(!) Harga terdeteksi pre-split</span> &rarr; AI diperingatkan, wajib memberitahu user<br>
+      <span class="dn">(!) Saham berstatus SUSPEND</span> &rarr; analisa dihentikan, dilarang buat trade plan
+    </div>
+  </div>
+
+  <div class="card accent-g">
+    <div class="card-title">Database Pemegang Saham IDX</div>
+    <div class="card-body">
+      SIGMA menyimpan data bulanan jumlah pemegang saham dari <b>200+ emiten BEI</b> (Apr 2025 &ndash; Mar 2026).<br><br>
+      <span class="ok">Pemegang naik konsisten 3 bulan</span> &rarr; sinyal akumulasi retail kuat - institusi sudah masuk lebih dulu<br>
+      <span class="dn">Pemegang turun konsisten 3 bulan</span> &rarr; sinyal distribusi - pemegang lama mulai keluar<br><br>
+      Data ini dikombinasikan dengan analisa volume dan teknikal untuk memperkuat atau menyanggah sinyal.
+    </div>
+  </div>
+</div>
+
+<!-- ============ PANEL: ALPHA STOCK INSIGHT ============ -->
+<div class="panel" id="g-insight">
+  <div class="sec-head">
+    <span class="sec-icon"></span>
+    <div>
+      <div class="sec-title">ALPHA STOCK INSIGHT</div>
+      <div class="sec-desc">Analisa mendalam per ticker - teknikal + fundamental + pemegang saham dalam 1 klik</div>
+    </div>
+  </div>
+
+  <div class="card accent-p">
+    <div class="card-title">Apa yang terjadi saat kamu ketik ticker & klik Analyze?</div>
+    <div class="card-body">
       <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>Cara pakai RRG:</b> Lihat posisi bubble setiap sektor. Sektor di kuadran <span class="ok">LEADING</span> (kanan-atas) adalah sektor terkuat saat ini. Sektor di <span class="hi">IMPROVING</span> (kiri-atas) adalah kandidat terbaik untuk entry baru.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Trail / Jejak Pergerakan:</b> Garis putus-putus di belakang bubble menunjukkan arah pergerakan 4 minggu terakhir. Trail mengarah ke LEADING = sektor sedang menguat. Trail mengarah ke LAGGING = sedang melemah.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Klik bubble</b> atau <b>klik nama sektor</b> di bawah chart untuk membuka detail: mini-RRG saham individual, daftar top 30 emiten terscreening, dan posisi masing-masing saham di kuadran.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>RS Ratio</b> = kekuatan relatif sektor vs IHSG (100 = setara, &gt;100 = outperform).
-          <b>Momentum</b> = arah RS - apakah kekuatan relatif sedang meningkat atau menurun.
-        </div></div>
-        <div class="step"><div class="snum">5</div><div class="stext">
-          <b>Update otomatis</b> jam 13:00 dan 21:00 WIB menggunakan data live harga saham vs IHSG. Badge "Slot aktif" di atas chart menunjukkan data dari slot mana yang sedang aktif.
-        </div></div>
-      </div>
-      <div class="tip"> <b>Strategi RRG Terbaik:</b> Fokuskan modal di sektor IMPROVING (entry) dan LEADING (hold). Kurangi eksposur di sektor WEAKENING dan hindari LAGGING. Ini adalah cara Big Money memindahkan dana antar sektor.</div>
-    </div>
-
-    <!-- == 2. SCREENING SAHAM == -->
-    <div class="feat blue">
-      <div class="feat-title"> 2 &middot; SCREENING SAHAM - Top 30 per Sektor by Market Cap</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>Sumber data:</b> SIGMA secara otomatis mengambil data dari <b>500 saham IDX aktif</b> yang memiliki market cap terbesar dan dapat ditransaksikan (ada harga + volume).
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Kriteria masuk:</b> (1) Market cap &gt; 0, (2) Ada harga pasar aktif, (3) Volume perdagangan tidak nol - artinya saham tidak sedang suspend atau tidak likuid.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Top 30 per sektor:</b> Dari hasil screening, dipilih 30 saham dengan market cap terbesar di setiap sektor. Ini memastikan yang tampil di RRG adalah emiten-emiten yang benar-benar diperdagangkan oleh institusi besar.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Cara baca tabel saham:</b> Kolom <span class="hi">MKT CAP</span> menunjukkan kapitalisasi pasar dalam Triliunan (T) atau Miliar (B). Kolom <b>FASE</b> menunjukkan posisi saham di kuadran RRG berdasarkan RS dan momentum-nya relatif terhadap centroid sektornya.
-        </div></div>
-        <div class="step"><div class="snum">5</div><div class="stext">
-          <b>Bar RS visual</b> di kolom RS memudahkan perbandingan cepat antar saham dalam satu sektor. Semakin panjang bar = semakin kuat kekuatan relatifnya.
-        </div></div>
-      </div>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="gcard green"><div class="gcard-lbl">Saham Prioritas</div><div class="gcard-val" style="color:{_G};">LEADING + IMPROVING</div><div class="gcard-sub">RS kuat atau momentum naik &middot; Cocok untuk akumulasi dan hold</div></div>
-        <div class="gcard red"><div class="gcard-lbl">Saham Hindari</div><div class="gcard-val" style="color:{_R};">LAGGING</div><div class="gcard-sub">RS lemah dan momentum turun &middot; Tunggu tanda reversal sebelum entry</div></div>
-      </div>
-      <div class="warn">(!) <b>Catatan Teknis:</b> Screening membutuhkan waktu 15&ndash;20 detik karena mengambil data 500 saham secara parallel. Data di-cache selama 24 jam untuk kecepatan loading berikutnya.</div>
-    </div>
-
-    <!-- == 3. SIKLUS ROTASI == -->
-    <div class="feat green">
-      <div class="feat-title"> 3 &middot; MEMAHAMI SIKLUS ROTASI SEKTOR</div>
-      <p style="font-size:0.875rem;color:{_TXT};margin-bottom:12px;line-height:1.8;">
-        Setiap sektor bergerak dalam siklus yang dapat diprediksi berdasarkan kondisi makro. Memahami siklus ini membantu menentukan <b>kapan masuk dan keluar</b> dari setiap sektor.
-      </p>
-
-      <!-- Cycle flow visual -->
-      <div class="cycle-flow">
-        <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};"> IMPROVING<br><span style="font-size:0.72rem;font-weight:400;">Mulai entry</span></div>
-        <div class="cycle-arrow">&rarr;</div>
-        <div class="cycle-item" style="background:rgba(38,166,154,0.15);color:{_G};"> LEADING<br><span style="font-size:0.72rem;font-weight:400;">Hold &amp; profit run</span></div>
-        <div class="cycle-arrow">&rarr;</div>
-        <div class="cycle-item" style="background:rgba(242,54,69,0.15);color:{_R};">(!) WEAKENING<br><span style="font-size:0.72rem;font-weight:400;">Mulai kurangi</span></div>
-        <div class="cycle-arrow">&rarr;</div>
-        <div class="cycle-item" style="background:rgba(66,133,244,0.15);color:#4285F4;">(!) LAGGING<br><span style="font-size:0.72rem;font-weight:400;">Hindari / monitor</span></div>
-        <div class="cycle-arrow">&rarr;</div>
-        <div class="cycle-item" style="background:rgba(124,58,237,0.15);color:{_P};"> IMPROVING<br><span style="font-size:0.72rem;font-weight:400;">Siklus baru</span></div>
-      </div>
-
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>IMPROVING &rarr; LEADING:</b> Sektor mulai outperform IHSG. Ini adalah <span class="ok">momen terbaik untuk akumulasi</span> karena early entry sebelum majority sadar.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>LEADING:</b> Sektor sudah kuat dan momentum masih naik. <span class="ok">Hold posisi, trailing stop</span>, biarkan profit berjalan. Jangan exit terlalu cepat.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>WEAKENING &rarr; Mulai distribusi:</b> Sektor masih kuat tapi momentum mulai melemah. <span class="yl">Mulai kurangi posisi bertahap</span> 20&ndash;30% saat masuk Weakening.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>LAGGING:</b> Sektor underperform dan momentum negatif. <span class="dn">Hindari atau cut loss</span> jika masih pegang. Alihkan modal ke sektor Improving.
-        </div></div>
-      </div>
-      <div class="tip"> <b>Pro Tip:</b> Rotation terbaik: Pindahkan dana dari sektor WEAKENING ke sektor IMPROVING. Ini adalah cara fund manager institusi melakukan portfolio rebalancing.</div>
-    </div>
-
-    <!-- == 4. MSCI TRACKER == -->
-    <div class="feat yellow">
-      <div class="feat-title"> 4 &middot; MSCI INDONESIA INDEX TRACKER</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>Apa itu MSCI?</b> MSCI (Morgan Stanley Capital International) adalah penyedia indeks global yang diikuti oleh ratusan fund manager dan ETF di seluruh dunia. Saham yang masuk MSCI akan mendapat aliran dana dari passive fund secara otomatis.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Standard Index</b> = saham blue chip Indonesia yang masuk MSCI. Fund manager internasional <b>wajib</b> membeli saham ini saat entry dan menjualnya saat exit - ini yang menciptakan aliran dana besar.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Cara baca STATUS:</b>
-          <span class="bdg bdg-g">Existing</span> = sudah ada di indeks (stabil) &middot;
-          <span class="bdg bdg-b">NEW ENTRY</span> = baru masuk &rarr; ekspektasi pembelian besar oleh passive fund &middot;
-          <span class="bdg bdg-r">OUT</span> = dikeluarkan &rarr; ekspektasi penjualan besar oleh passive fund.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Jadwal Review MSCI:</b> 2&times; setahun (Februari &amp; Agustus pengumuman, efektif 2 minggu setelah pengumuman). Pantau tanggal pengumuman - biasanya terjadi pergerakan besar di saham yang masuk/keluar.
-        </div></div>
-        <div class="step"><div class="snum">5</div><div class="stext">
-          <b>Strategi MSCI Rebalancing:</b> Beli saham kandidat NEW ENTRY 1&ndash;2 minggu sebelum tanggal efektif. Jual pada/setelah tanggal efektif saat passive fund sudah selesai membeli (sell the news).
-        </div></div>
-      </div>
-      <div class="grid2" style="margin-top:12px;">
-        <div class="gcard blue"><div class="gcard-lbl">NEW ENTRY Strategy</div><div class="gcard-val" style="color:{_B};">Buy Rumor</div><div class="gcard-sub">Beli 2 minggu sebelum efektif &middot; Sell pada tanggal efektif atau 1-2 hari setelah</div></div>
-        <div class="gcard red"><div class="gcard-lbl">OUT Strategy</div><div class="gcard-val" style="color:{_R};">Reduce Exposure</div><div class="gcard-sub">Kurangi posisi 2 minggu sebelum efektif &middot; Passive fund akan menjual besar</div></div>
+        <div class="step"><div class="snum">1</div><div class="stext"><b>Ambil chart 6 bulan</b> - OHLCV dari yfinance. Weekend & data kosong otomatis dibersihkan agar chart rapi.</div></div>
+        <div class="step"><div class="snum">2</div><div class="stext"><b>Hitung indikator teknikal</b> - EMA 13/21/100/200, RSI, MACD, Bollinger Bands, ATR, Pivot Points, support/resistance otomatis dari price action.</div></div>
+        <div class="step"><div class="snum">3</div><div class="stext"><b>Analisa volume</b> - spike ratio (volume hari ini vs MA-20), deteksi divergensi harga-volume, dry-up signal.</div></div>
+        <div class="step"><div class="snum">4</div><div class="stext"><b>Fetch fundamental multi-source</b> - ROE, ROA, PER, PBV, EPS, DER, Dividend Yield, NIM, NPL (khusus bank). Validasi corporate action dilakukan di sini.</div></div>
+        <div class="step"><div class="snum">5</div><div class="stext"><b>Cek tren pemegang saham</b> - database SIGMA 12 bulan terakhir. Naik atau turun? Berapa persen perubahannya?</div></div>
+        <div class="step"><div class="snum">6</div><div class="stext"><b>AI generate analisa</b> - semua data dikirim ke model AI. AI <span class="hi">wajib menilai</span> kondisi saham (LAYAK / WASPADA / HINDARI) sebelum menulis analisa. Trade plan hanya muncul jika kondisi layak.</div></div>
+        <div class="step"><div class="snum">7</div><div class="stext"><b>Gambar chart + trade plan</b> - Entry zone, TP1, TP2, SL di-overlay di atas candlestick chart. Koordinat divalidasi agar masuk akal vs harga live.</div></div>
       </div>
     </div>
+  </div>
 
-    <!-- == 5. FTSE TRACKER == -->
-    <div class="feat blue">
-      <div class="feat-title"> 5 &middot; FTSE GLOBAL EQUITY INDEX - INDONESIA</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>Apa itu FTSE Russell?</b> FTSE Russell (Financial Times Stock Exchange) adalah penyedia indeks global kedua terbesar setelah MSCI. ETF dan fund yang tracking FTSE juga wajib rebalancing saat ada perubahan komposisi.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Jadwal Review FTSE:</b> 4&times; setahun (Maret, Juni, September, Desember - lebih sering dari MSCI). Artinya peluang trading FTSE rebalancing muncul lebih sering.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Perbedaan MSCI vs FTSE:</b> MSCI lebih besar AUM-nya (aset yang dikelola), sehingga dampak rebalancing MSCI umumnya lebih besar. FTSE memiliki frekuensi review lebih tinggi - lebih sering ada saham masuk/keluar.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          Perhatikan saham yang ada di <b>kedua indeks</b> (MSCI + FTSE) - saham ini mendapat double demand dari passive fund. Biasanya ini adalah blue chip terbesar seperti BBCA, BBRI, BMRI, TLKM.
-        </div></div>
-      </div>
-      <div class="tip"> <b>Insight:</b> Saham yang masuk MSCI atau FTSE tidak langsung naik drastis - pasar biasanya sudah "pricing in" jauh sebelum tanggal efektif. Yang lebih penting adalah <b>perubahan bobot</b> (weight increase) yang memaksa passive fund menambah pembelian.</div>
+  <div class="mgrid">
+    <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_R7};">HIGH</div><div class="msub">Hanya teknikal oke, volume & fundamental belum konfirmasi</div></div>
+    <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_Y7};">MID</div><div class="msub">Teknikal + volume sama-sama mendukung. Buy power dominan.</div></div>
+    <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_G7};">LOW</div><div class="msub">Trio lengkap: teknikal + volume + fundamental semua oke</div></div>
+    <div class="mcard"><div class="mlbl">Jika Bearish</div><div class="mval" style="color:{_SUB7};">NO PLAN</div><div class="msub">Trade plan tidak ditampilkan. AI wajib jelaskan kenapa dengan tegas.</div></div>
+  </div>
+
+  <div class="honesty">
+    OK <b>Prinsip Kejujuran:</b> AI di-brief bahwa kejujuran adalah prioritas utama. Saham yang sedang downtrend, distribusi aktif, atau fundamental buruk akan dinilai HINDARI - bukan dibuat trade plan asal-asalan untuk menyenangkan trader.
+  </div>
+</div>
+
+<!-- ============ PANEL: DAILY ============ -->
+<div class="panel" id="g-daily">
+  <div class="sec-head">
+    <span class="sec-icon"></span>
+    <div>
+      <div class="sec-title">DAILY SCREENER</div>
+      <div class="sec-desc">Scan 500+ saham IDX setiap hari - top pick berbasis volume intelligence & block trade detection</div>
     </div>
+  </div>
 
-    <!-- == KOMBINASI ANALISA == -->
-    <div class="div"></div>
-    <div style="background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:10px;padding:18px 20px;margin-bottom:14px;">
-      <div style="font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:12px;"> CARA PAKAI YANG OPTIMAL - Kombinasi Fitur</div>
-      <div class="steps">
-        <div class="step"><div class="snum">1</div><div class="stext">
-          <b>Mulai dari RRG:</b> Identifikasi sektor di posisi IMPROVING atau LEADING. Ini adalah universum saham prioritasmu.
-        </div></div>
-        <div class="step"><div class="snum">2</div><div class="stext">
-          <b>Buka detail sektor:</b> Klik bubble atau tombol sektor &rarr; lihat 30 saham terscreening dengan market cap terbesar. Fokus pada saham di kuadran LEADING dan IMPROVING.
-        </div></div>
-        <div class="step"><div class="snum">3</div><div class="stext">
-          <b>Cek MSCI/FTSE:</b> Apakah saham yang kamu incar termasuk dalam MSCI Standard atau FTSE? Jika ya, ada lapisan demand tambahan dari passive fund.
-        </div></div>
-        <div class="step"><div class="snum">4</div><div class="stext">
-          <b>Validasi dengan Macro:</b> Kembali ke tab Global Macro - apakah kondisi risk-on mendukung sektor tersebut? Misalnya: sektor Energi + Komoditas naik = konfluensi kuat.
-        </div></div>
-        <div class="step"><div class="snum">5</div><div class="stext">
-          <b>Analisa emiten spesifik:</b> Setelah sektor dan saham terpilih, gunakan <b> Alpha Screener &rarr; AI Stock Insight</b> atau ketik di <b>SIGMA AI Chat</b> untuk analisa fundamental dan teknikal mendalam.
-        </div></div>
-      </div>
-    </div>
-
-    </div></body></html>"""
-
-                components.html(_guide_html_2, height=3400, scrolling=True)
-
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 3 - SHAREHOLDER
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab3:
-                _guide_html_3 = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
-    .sec-icon{{font-size:1.6rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-    .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
-    .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
-    .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
-    .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
-    .feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
-    .feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
-    .feat.blue .feat-title{{color:{_B};}}
-    .feat.green .feat-title{{color:{_G};}}
-    .feat.yellow .feat-title{{color:{_Y};}}
-    .feat.red .feat-title{{color:{_R};}}
-    .steps{{margin:10px 0 6px;}}
-    .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:{_B};}}
-    .stext .hi{{color:{_P};font-weight:700;}}
-    .stext .ok{{color:{_G};font-weight:700;}}
-    .stext .dn{{color:{_R};font-weight:700;}}
-    .stext .yl{{color:{_Y};font-weight:700;}}
-    .tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
-    .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
-    .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
-    .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-    .gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
-    .gcard.green .gcard-title{{color:{_G};}}
-    .gcard.blue .gcard-title{{color:{_B};}}
-    .gcard.yellow .gcard-title{{color:{_Y};}}
-    .gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
-    .badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
-    .badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
-    .badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
-    .badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
-    .badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
-    .badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
-    @media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
-    </style></head><body><div class="wrap">
-
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">SHAREHOLDER - Panduan Lengkap</div>
-    <div class="sec-desc">Lacak komposisi pemegang saham & deteksi perubahan kepemilikan institusional secara real-time.</div>
-    </div></div>
-
-    <div class="feat">
-    <div class="feat-title"> Apa itu Tab Shareholder?</div>
-    <div class="stext">Tab Shareholder terdiri dari dua bagian utama: <span class="hi">Shareholder Tracker</span> (grafik perubahan jumlah pemegang saham) dan <span class="hi">Shareholder Screening</span> (tabel komposisi top holder 60+ emiten IDX). Ini adalah alat bantu untuk mendeteksi sinyal akumulasi atau distribusi oleh smart money.</div>
-    </div>
-
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">SECTION 1 - Shareholder Tracker</div>
-    <div class="sec-desc">Grafik dual-axis: perubahan jumlah pemegang saham vs pergerakan harga saham.</div>
-    </div></div>
-
-    <div class="feat blue">
-    <div class="feat-title"> Cara Menggunakan Shareholder Tracker</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>SHAREHOLDER TRACKER</b> di dalam tab Shareholder.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>kode emiten IDX</b> (contoh: <span class="hi">BBCA</span>, <span class="hi">GOTO</span>, <span class="hi">BRMS</span>) di kolom input yang tersedia.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Klik tombol <b>"Tampilkan Tracker"</b> - sistem akan mengambil data historis pemegang saham dan harga secara otomatis.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Baca grafik: <span class="hi">Sumbu kiri</span> = jumlah pemegang saham | <span class="ok">Sumbu kanan</span> = harga saham (Rp).</div></div>
-    <div class="step"><div class="snum">5</div><div class="stext">Identifikasi pola: apakah jumlah holder naik saat harga turun? Ini sinyal <b class="ok">DISTRIBUSI ke retail</b>. Atau holder turun saat harga naik? Ini sinyal <b class="hi">AKUMULASI oleh institusi</b>.</div></div>
-    </div>
-    <div class="tip"> <b>Interpretasi Cepat:</b> Holder &uarr; + Harga &darr; = Smart money jual ke retail (distribusi). Holder &darr; + Harga &uarr; = Institusi konsolidasi posisi (akumulasi diam-diam).</div>
-    </div>
-
-    <div class="feat green">
-    <div class="feat-title"> Membaca Sinyal dari Grafik</div>
-    <div class="grid2">
-    <div class="gcard green">
-    <div class="gcard-title">OK Sinyal Akumulasi</div>
-    <div class="gcard-val">Jumlah holder <b>turun</b> + Harga <b>sideways / naik pelan</b> &rarr; Institusi beli, retail jual (takut). Smart money mengumpulkan di bawah.</div>
-    </div>
-    <div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
-    <div class="gcard-title" style="color:{_R};">(!) Sinyal Distribusi</div>
-    <div class="gcard-val">Jumlah holder <b>naik tajam</b> + Harga <b>turun atau stagnan</b> &rarr; Smart money jual, retail beli FOMO. Waspada breakdown.</div>
-    </div>
-    </div>
-    <div class="tip"> Gunakan bersama data <b>Broker Summary</b> di SIGMA AI Chat untuk konfirmasi bandarmologi sebelum entry.</div>
-    </div>
-
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">SECTION 2 - Shareholder Screening</div>
-    <div class="sec-desc">Tabel komposisi kepemilikan 60+ emiten: Publik, Institusi Asing, dan Promotor/Pemerintah.</div>
-    </div></div>
-
-    <div class="feat">
-    <div class="feat-title"> Cara Membaca Tabel Screening</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Tabel menampilkan kolom: <b>Emiten</b>, <b>% Publik</b>, <b>% Institusi Asing</b>, <b>% Promotor / Pemerintah</b>, dan informasi tambahan lainnya.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Scroll horizontal di mobile untuk melihat semua kolom - tabel sudah mobile-responsive dengan sticky header.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Perhatikan <b>% Institusi Asing</b>: saham dengan porsi asing tinggi lebih sensitif terhadap sentimen global dan pergerakan MSCI/FTSE rebalancing.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Bandingkan <b>% Publik</b>: float rendah (publik kecil) = saham lebih mudah digerakkan oleh bandar dengan modal lebih kecil.</div></div>
-    </div>
-    <div class="warn">(!) <b>Penting:</b> Data shareholder bersumber dari laporan publik IDX dan diperbarui secara berkala. Data real-time bisa berbeda dengan kondisi pasar hari ini.</div>
-    </div>
-
-    <div class="feat yellow">
-    <div class="feat-title"> Strategi Penggunaan Optimal</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext"><b>Screening awal:</b> Filter saham dengan float publik rendah (&lt;30%) dan kepemilikan asing tinggi (&gt;30%) - ini kandidat saham yang rawan digerakkan.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext"><b>Tracker confirmation:</b> Setelah dapat kandidat, masukkan ke Tracker untuk lihat tren jumlah holder 3-6 bulan terakhir.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext"><b>Korelasi teknikal:</b> Crossing holder turun + harga di support kuat = area entry potensial. Kirim ke <b> Alpha Screener &rarr; AI Stock Insight</b> untuk konfirmasi teknikal lengkap.</div></div>
-    </div>
-    </div>
-
-    </div></body></html>"""
-                components.html(_guide_html_3, height=1800, scrolling=True)
-
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 4 - ALPHA STOCK INSIGHT
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab4:
-                _guide_html_4 = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
-    .sec-icon{{font-size:1.6rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-    .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:16px 18px;margin-bottom:14px;}}
-    .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
-    .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
-    .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
-    .feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.28);}}
-    .feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
-    .feat.blue .feat-title{{color:{_B};}}
-    .feat.green .feat-title{{color:{_G};}}
-    .feat.yellow .feat-title{{color:{_Y};}}
-    .feat.red .feat-title{{color:{_R};}}
-    .steps{{margin:10px 0 6px;}}
-    .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:{_B};}}
-    .stext .hi{{color:{_P};font-weight:700;}}
-    .stext .ok{{color:{_G};font-weight:700;}}
-    .stext .dn{{color:{_R};font-weight:700;}}
-    .stext .yl{{color:{_Y};font-weight:700;}}
-    .tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:10px 0;}}
-    .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
-    .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
-    .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
-    .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-    .gcard.red{{border-color:rgba(242,54,69,0.35);background:rgba(242,54,69,0.06);}}
-    .gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
-    .gcard.green .gcard-title{{color:{_G};}}
-    .gcard.blue .gcard-title{{color:{_B};}}
-    .gcard.yellow .gcard-title{{color:{_Y};}}
-    .gcard.red .gcard-title{{color:{_R};}}
-    .gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
-    .badge{{display:inline-block;padding:2px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.05em;margin-right:5px;vertical-align:middle;}}
-    .badge-p{{background:rgba(124,58,237,0.18);color:{_P};border:1px solid rgba(124,58,237,0.4);}}
-    .badge-b{{background:rgba(96,165,250,0.15);color:{_B};border:1px solid rgba(96,165,250,0.4);}}
-    .badge-g{{background:rgba(38,166,154,0.15);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
-    .badge-r{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.4);}}
-    .badge-y{{background:rgba(251,191,36,0.13);color:{_Y};border:1px solid rgba(251,191,36,0.4);}}
-    /* Chart Illustration SVG wrapper */
-    .chart-illus{{width:100%;background:{_FEAT_BG};border:1.5px solid {_FEAT_BD};border-radius:10px;padding:10px 6px 6px;margin:14px 0;overflow:hidden;}}
-    .chart-illus svg{{width:100%;display:block;}}
-    /* Risk level badges */
-    .rl-row{{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;}}
-    .rl-badge{{flex:1;min-width:120px;border-radius:8px;padding:12px 14px;text-align:center;}}
-    .rl-badge.low{{background:rgba(8,153,129,0.14);border:2px solid rgba(8,153,129,0.45);}}
-    .rl-badge.mid{{background:rgba(245,166,35,0.12);border:2px solid rgba(245,166,35,0.45);}}
-    .rl-badge.high{{background:rgba(242,54,69,0.11);border:2px solid rgba(242,54,69,0.4);}}
-    .rl-badge .rl-label{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;margin-bottom:4px;}}
-    .rl-badge.low .rl-label{{color:#089981;}}
-    .rl-badge.mid .rl-label{{color:#f5a623;}}
-    .rl-badge.high .rl-label{{color:#f23645;}}
-    .rl-badge .rl-cond{{font-size:0.8rem;color:{_SUB};line-height:1.5;margin-top:4px;}}
-    .ind-row{{display:flex;align-items:center;gap:10px;margin:7px 0;}}
-    .ind-line{{width:32px;height:4px;border-radius:2px;flex-shrink:0;}}
-    .ind-dot{{width:14px;height:14px;border-radius:3px;flex-shrink:0;}}
-    .ind-desc{{font-size:0.875rem;color:{_TXT};line-height:1.55;}}
-    .ind-desc b{{font-weight:700;}}
-    @media(max-width:640px){{.grid2,.grid3{{grid-template-columns:1fr;}}.rl-row{{flex-direction:column;}}}}
-    </style></head><body><div class="wrap">
-
-    <!-- HEADER -->
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">ALPHA SCREENER - Panduan Visual Lengkap</div>
-    <div class="sec-desc">Hub analisa IDX terpadu: AI Stock Insight, Daily/Weekly Plan, BSJP, Fundamental Screener, Broker Summary, Shareholder, Analisa IPO, dan Track Record &mdash; semuanya dalam satu tab.</div>
-    </div></div>
-
-    <!-- SUB-TAB OVERVIEW -->
-    <div class="feat">
-    <div class="feat-title"> 9 Sub-Tab Alpha Screener</div>
-    <div class="stext" style="line-height:2;">
-      <span class="hi"> AI Stock Insight</span> &mdash; Analisa AI per saham dengan chart 5-panel + trade plan<br>
-      <span class="hi"> Daily Plan</span> &mdash; Rekomendasi harian berdasarkan kondisi pasar hari ini<br>
-      <span class="hi"> Weekly Plan</span> &mdash; Watchlist swing trading 1&ndash;2 minggu ke depan<br>
-      <span class="hi"> Beli Sore Jual Pagi (BSJP)</span> &mdash; Strategi overnight trading berbasis momentum EOD<br>
-      <span class="hi"> Fundamental Screener</span> &mdash; Filter saham berdasarkan metrik fundamental IDX<br>
-      <span class="hi"> Broker Summary</span> &mdash; Analisa bandarmologi dari data broker net buy/sell<br>
-      <span class="hi"> Shareholder</span> &mdash; Tracker jumlah pemegang saham (akumulasi/distribusi)<br>
-      <span class="hi"> Analisa IPO</span> &mdash; Bedah prospektus IPO otomatis dari PDF e-IPO<br>
-      <span class="hi"> Track Record</span> &mdash; Rekam jejak performa semua plan yang di-generate
-    </div>
-    </div>
-
-    <!-- ======================================================= -->
-    <div class="sec-head" style="margin-top:22px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">STRUKTUR CHART - 5 Panel Interaktif</div>
-    <div class="sec-desc">Setiap panel punya fungsi berbeda. Baca dari atas ke bawah untuk membaca sinyal secara sistematis.</div>
-    </div></div>
-
-    <!-- CHART ILLUSTRATION SVG -->
-    <div class="chart-illus">
-    <svg viewBox="0 0 700 480" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono,monospace">
-      <!-- BG panels -->
-      <rect width="700" height="480" fill="#131722"/>
-      <!-- Panel dividers -->
-      <line x1="0" y1="220" x2="700" y2="220" stroke="#2a2e39" stroke-width="1"/>
-      <line x1="0" y1="283" x2="700" y2="283" stroke="#2a2e39" stroke-width="1"/>
-      <line x1="0" y1="346" x2="700" y2="346" stroke="#2a2e39" stroke-width="1"/>
-      <line x1="0" y1="413" x2="700" y2="413" stroke="#2a2e39" stroke-width="1"/>
-
-      <!-- PANEL LABELS -->
-      <text x="10" y="18" font-size="9" fill="#7c3aed" letter-spacing="1" font-weight="700">1. CANDLESTICK + EMA</text>
-      <text x="10" y="232" font-size="9" fill="#60a5fa" letter-spacing="1" font-weight="700">2. VOLUME NORMAL</text>
-      <text x="10" y="295" font-size="9" fill="#26a69a" letter-spacing="1" font-weight="700">3. VOLUME DELTA (BUY/SELL POWER)</text>
-      <text x="10" y="358" font-size="9" fill="#a78bfa" letter-spacing="1" font-weight="700">4. RSI</text>
-      <text x="10" y="425" font-size="9" fill="#2196f3" letter-spacing="1" font-weight="700">5. MACD</text>
-
-      <!-- == PANEL 1: CANDLESTICK == -->
-      <!-- Fake candles -->
-      <rect x="38" y="120" width="10" height="55" fill="#f23645" rx="1"/>
-      <line x1="43" y1="108" x2="43" y2="180" stroke="#f23645" stroke-width="1.5"/>
-      <rect x="60" y="100" width="10" height="50" fill="#089981" rx="1"/>
-      <line x1="65" y1="90" x2="65" y2="157" stroke="#089981" stroke-width="1.5"/>
-      <rect x="82" y="85" width="10" height="60" fill="#f23645" rx="1"/>
-      <line x1="87" y1="75" x2="87" y2="152" stroke="#f23645" stroke-width="1.5"/>
-      <rect x="104" y="75" width="10" height="40" fill="#089981" rx="1"/>
-      <line x1="109" y1="65" x2="109" y2="120" stroke="#089981" stroke-width="1.5"/>
-      <rect x="126" y="62" width="10" height="45" fill="#089981" rx="1"/>
-      <line x1="131" y1="52" x2="131" y2="114" stroke="#089981" stroke-width="1.5"/>
-      <rect x="148" y="70" width="10" height="55" fill="#f23645" rx="1"/>
-      <line x1="153" y1="60" x2="153" y2="135" stroke="#f23645" stroke-width="1.5"/>
-      <rect x="170" y="78" width="10" height="42" fill="#089981" rx="1"/>
-      <line x1="175" y1="68" x2="175" y2="125" stroke="#089981" stroke-width="1.5"/>
-      <rect x="192" y="55" width="10" height="38" fill="#089981" rx="1"/>
-      <line x1="197" y1="45" x2="197" y2="98" stroke="#089981" stroke-width="1.5"/>
-      <rect x="214" y="48" width="10" height="32" fill="#089981" rx="1"/>
-      <line x1="219" y1="38" x2="219" y2="85" stroke="#089981" stroke-width="1.5"/>
-      <rect x="236" y="60" width="10" height="44" fill="#f23645" rx="1"/>
-      <line x1="241" y1="50" x2="241" y2="110" stroke="#f23645" stroke-width="1.5"/>
-      <rect x="258" y="52" width="10" height="36" fill="#089981" rx="1"/>
-      <line x1="263" y1="42" x2="263" y2="93" stroke="#089981" stroke-width="1.5"/>
-      <rect x="280" y="40" width="10" height="30" fill="#089981" rx="1"/>
-      <line x1="285" y1="32" x2="285" y2="75" stroke="#089981" stroke-width="1.5"/>
-      <rect x="302" y="55" width="10" height="50" fill="#f23645" rx="1"/>
-      <line x1="307" y1="45" x2="307" y2="112" stroke="#f23645" stroke-width="1.5"/>
-      <rect x="324" y="62" width="10" height="42" fill="#089981" rx="1"/>
-      <line x1="329" y1="52" x2="329" y2="110" stroke="#089981" stroke-width="1.5"/>
-      <rect x="346" y="50" width="10" height="38" fill="#089981" rx="1"/>
-      <line x1="351" y1="40" x2="351" y2="92" stroke="#089981" stroke-width="1.5"/>
-
-      <!-- EMAs overlaid -->
-      <polyline points="38,155 65,140 87,128 109,115 131,102 153,110 175,105 197,88 219,78 241,88 263,75 285,62 307,75 329,80 351,70" fill="none" stroke="#009dff" stroke-width="1.5"/>
-      <polyline points="38,162 65,148 87,136 109,124 131,112 153,120 175,115 197,100 219,91 241,99 263,87 285,75 307,85 329,90 351,80" fill="none" stroke="#ff0000" stroke-width="1.5"/>
-      <polyline points="38,175 65,168 87,160 109,152 131,145 153,148 175,144 197,134 219,128 241,133 263,124 285,115 307,122 329,126 351,118" fill="none" stroke="#cc00ff" stroke-width="1.5"/>
-      <polyline points="38,188 65,183 87,178 109,172 131,167 153,169 175,166 197,158 219,154 241,158 263,151 285,144 307,149 329,152 351,146" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
-
-      <!-- BUY ZONE highlight -->
-      <rect x="30" y="60" width="340" height="30" fill="rgba(8,153,129,0.15)" rx="0"/>
-      <line x1="30" y1="60" x2="370" y2="60" stroke="#089981" stroke-width="1" stroke-dasharray="4,3"/>
-      <line x1="30" y1="90" x2="370" y2="90" stroke="#089981" stroke-width="1.2"/>
-
-      <!-- TP / SL lines -->
-      <line x1="30" y1="35" x2="580" y2="35" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,3"/>
-      <line x1="30" y1="20" x2="580" y2="20" stroke="#a78bfa" stroke-width="1" stroke-dasharray="3,3"/>
-      <line x1="30" y1="200" x2="580" y2="200" stroke="#f23645" stroke-width="1.5"/>
-
-      <!-- Labels kanan -->
-      <rect x="582" y="26" width="62" height="16" fill="#a78bfa" rx="3"/>
-      <text x="613" y="38" font-size="8" fill="#000" text-anchor="middle" font-weight="700">TP2 5.250</text>
-      <rect x="582" y="11" width="62" height="16" fill="#a78bfa" rx="3"/>
-      <text x="613" y="23" font-size="8" fill="#000" text-anchor="middle" font-weight="700">TP1 4.980</text>
-      <rect x="582" y="55" width="76" height="16" fill="#089981" rx="3"/>
-      <text x="620" y="67" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">BUY 4.600-4.750</text>
-      <rect x="582" y="194" width="62" height="16" fill="#f23645" rx="3"/>
-      <text x="613" y="206" font-size="8" fill="#fff" text-anchor="middle" font-weight="700">SL  4.250</text>
-
-      <!-- EMA Legend mini -->
-      <line x1="400" y1="180" x2="420" y2="180" stroke="#009dff" stroke-width="2"/>
-      <text x="424" y="184" font-size="8" fill="#009dff">EMA 13</text>
-      <line x1="400" y1="193" x2="420" y2="193" stroke="#ff0000" stroke-width="2"/>
-      <text x="424" y="197" font-size="8" fill="#ff0000">EMA 21</text>
-      <line x1="470" y1="180" x2="490" y2="180" stroke="#cc00ff" stroke-width="2"/>
-      <text x="494" y="184" font-size="8" fill="#cc00ff">EMA 100</text>
-      <line x1="470" y1="193" x2="490" y2="193" stroke="#a78bfa" stroke-width="2"/>
-      <text x="494" y="197" font-size="8" fill="#a78bfa">EMA 200</text>
-
-      <!-- == PANEL 2: VOLUME NORMAL == -->
-      <!-- Volume bars hijau/merah -->
-      <rect x="38" y="260" width="10" height="14" fill="rgba(242,54,69,0.65)" rx="1"/>
-      <rect x="60" y="253" width="10" height="21" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="82" y="256" width="10" height="18" fill="rgba(242,54,69,0.65)" rx="1"/>
-      <rect x="104" y="248" width="10" height="26" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="126" y="243" width="10" height="31" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="148" y="251" width="10" height="23" fill="rgba(242,54,69,0.65)" rx="1"/>
-      <rect x="170" y="246" width="10" height="28" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="192" y="234" width="10" height="40" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="214" y="228" width="10" height="46" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="236" y="239" width="10" height="35" fill="rgba(242,54,69,0.65)" rx="1"/>
-      <rect x="258" y="244" width="10" height="30" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="280" y="236" width="10" height="38" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="302" y="255" width="10" height="19" fill="rgba(242,54,69,0.65)" rx="1"/>
-      <rect x="324" y="247" width="10" height="27" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <rect x="346" y="241" width="10" height="33" fill="rgba(8,153,129,0.65)" rx="1"/>
-      <!-- Vol MA20 line (orange dotted) -->
-      <polyline points="38,256 65,254 87,253 109,252 131,251 153,252 175,251 197,249 219,247 241,249 263,248 285,246 307,250 329,249 351,247" fill="none" stroke="#f5a623" stroke-width="1.5" stroke-dasharray="4,2"/>
-      <text x="358" y="248" font-size="7.5" fill="#f5a623">Vol MA20</text>
-
-      <!-- == PANEL 3: VOLUME DELTA == -->
-      <!-- Stacked buy (hijau atas) + sell (merah bawah) -->
-      <rect x="38" y="325" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="38" y="315" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="60" y="320" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="60" y="306" width="10" height="14" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="82" y="322" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="82" y="312" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="104" y="316" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="104" y="298" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="126" y="310" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="126" y="292" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="148" y="318" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="148" y="308" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="170" y="313" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="170" y="295" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="192" y="305" width="10" height="8" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="192" y="284" width="10" height="21" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="214" y="300" width="10" height="7" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="214" y="280" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="236" y="312" width="10" height="14" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="236" y="300" width="10" height="12" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="258" y="308" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="258" y="290" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="280" y="304" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="280" y="284" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="302" y="316" width="10" height="12" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="302" y="306" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="324" y="310" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="324" y="292" width="10" height="18" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <rect x="346" y="305" width="10" height="9" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <rect x="346" y="285" width="10" height="20" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <!-- Legend -->
-      <rect x="400" y="296" width="10" height="10" fill="rgba(8,153,129,0.85)" rx="1"/>
-      <text x="415" y="306" font-size="8" fill="#089981">Buy Power</text>
-      <rect x="400" y="312" width="10" height="10" fill="rgba(242,54,69,0.75)" rx="1"/>
-      <text x="415" y="322" font-size="8" fill="#f23645">Sell Power</text>
-
-      <!-- == PANEL 4: RSI == -->
-      <!-- RSI line -->
-      <polyline points="38,395 65,390 87,385 109,378 131,370 153,375 175,372 197,362 219,355 241,363 263,356 285,348 307,358 329,362 351,352" fill="none" stroke="#a78bfa" stroke-width="1.5"/>
-      <!-- Level 70 -->
-      <line x1="30" y1="358" x2="580" y2="358" stroke="rgba(242,54,69,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
-      <text x="586" y="362" font-size="7.5" fill="rgba(242,54,69,0.8)">70</text>
-      <!-- Level 30 -->
-      <line x1="30" y1="400" x2="580" y2="400" stroke="rgba(8,153,129,0.55)" stroke-width="1" stroke-dasharray="3,3"/>
-      <text x="586" y="404" font-size="7.5" fill="rgba(8,153,129,0.8)">30</text>
-
-      <!-- == PANEL 5: MACD == -->
-      <!-- Histogram bars -->
-      <rect x="38" y="430" width="10" height="8" fill="#089981" rx="1"/>
-      <rect x="60" y="428" width="10" height="10" fill="#089981" rx="1"/>
-      <rect x="82" y="432" width="10" height="7" fill="#f23645" rx="1"/>
-      <rect x="104" y="427" width="10" height="11" fill="#089981" rx="1"/>
-      <rect x="126" y="424" width="10" height="14" fill="#089981" rx="1"/>
-      <rect x="148" y="429" width="10" height="9" fill="#f23645" rx="1"/>
-      <rect x="170" y="426" width="10" height="12" fill="#089981" rx="1"/>
-      <rect x="192" y="422" width="10" height="16" fill="#089981" rx="1"/>
-      <rect x="214" y="420" width="10" height="18" fill="#089981" rx="1"/>
-      <rect x="236" y="425" width="10" height="12" fill="#f23645" rx="1"/>
-      <rect x="258" y="421" width="10" height="17" fill="#089981" rx="1"/>
-      <rect x="280" y="418" width="10" height="20" fill="#089981" rx="1"/>
-      <rect x="302" y="426" width="10" height="12" fill="#f23645" rx="1"/>
-      <rect x="324" y="422" width="10" height="16" fill="#089981" rx="1"/>
-      <rect x="346" y="419" width="10" height="19" fill="#089981" rx="1"/>
-      <!-- MACD line -->
-      <polyline points="38,432 65,430 87,433 109,429 131,426 153,430 175,428 197,424 219,422 241,427 263,423 285,420 307,427 329,424 351,421" fill="none" stroke="#2196f3" stroke-width="1.5"/>
-      <!-- Signal line -->
-      <polyline points="38,434 65,432 87,434 109,431 131,428 153,432 175,430 197,427 219,425 241,429 263,426 285,423 307,429 329,427 351,424" fill="none" stroke="#ff5252" stroke-width="1.5"/>
-      <!-- Zero line -->
-      <line x1="30" y1="438" x2="580" y2="438" stroke="#2a2e39" stroke-width="1"/>
-    </svg>
-    </div>
-    <div class="tip"> <b>Cara baca chart dari atas ke bawah:</b> Panel 1. lihat tren + area trade plan &rarr; Panel 2. cek apakah volume hari ini di atas/bawah rata-rata (garis oranye) &rarr; Panel 3. cek dominasi buy atau sell power &rarr; Panel 4. RSI overbought/oversold &rarr; Panel 5. MACD konfirmasi momentum.</div>
-
-    <!-- ======================================================= -->
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">INDIKATOR - Fungsi & Cara Baca</div>
-    </div></div>
-
-    <div class="feat blue">
-    <div class="feat-title"> Panel 1. - Candlestick + EMA (Harga & Tren)</div>
-    <div class="ind-row"><div class="ind-line" style="background:#009dff;"></div><div class="ind-desc"><b style="color:#009dff">EMA 13</b> - Moving average cepat. Harga di atas = momentum naik jangka pendek.</div></div>
-    <div class="ind-row"><div class="ind-line" style="background:#ff0000;"></div><div class="ind-desc"><b style="color:#ff0000">EMA 21</b> - Konfirmasi sinyal. Crossover EMA13/EMA21 = sinyal entry awal.</div></div>
-    <div class="ind-row"><div class="ind-line" style="background:#cc00ff;"></div><div class="ind-desc"><b style="color:#cc00ff">EMA 100</b> - Tren menengah (1&ndash;3 bulan). Support dinamis penting.</div></div>
-    <div class="ind-row"><div class="ind-line" style="background:#a78bfa;"></div><div class="ind-desc"><b style="color:#a78bfa">EMA 200</b> - Tren jangka panjang. Harga di atas EMA200 = Bull Market. Di bawah = Bear Market.</div></div>
-    <div class="tip"> Setup terkuat: Harga di atas EMA200, EMA13 baru cross EMA21 ke atas, volume konfirmasi.</div>
-    </div>
-
-    <div class="feat green">
-    <div class="feat-title"> Panel 2. - Volume Normal (Total Transaksi per Hari)</div>
-    <div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.65);"></div><div class="ind-desc"><b style="color:#089981">Bar Hijau</b> - Candle tutup naik (Close > Open). Volume tinggi = banyak yang beli.</div></div>
-    <div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.65);"></div><div class="ind-desc"><b style="color:#f23645">Bar Merah</b> - Candle tutup turun (Close &lt; Open). Volume tinggi = banyak yang jual.</div></div>
-    <div class="ind-row"><div class="ind-line" style="background:#f5a623;"></div><div class="ind-desc"><b style="color:#f5a623">Garis Oranye (Vol MA20)</b> - Rata-rata volume 20 hari. Bar di atas garis ini = volume lebih dari biasanya = aktivitas tinggi.</div></div>
-    <div class="tip"> Volume naik + harga naik = konfirmasi bullish kuat. Volume tinggi + harga turun = distribusi/jual besar.</div>
-    </div>
-
-    <div class="feat">
-    <div class="feat-title"> Panel 3. - Volume Delta (Buy vs Sell Power)</div>
-    <div class="stext" style="margin-bottom:10px;">Memisahkan volume menjadi dua komponen: tekanan beli dan tekanan jual dalam satu bar hari.</div>
-    <div class="ind-row"><div class="ind-dot" style="background:rgba(8,153,129,0.85);"></div><div class="ind-desc"><b style="color:#089981">Buy Power (Hijau)</b> - Porsi volume yang terjadi di sisi beli: dihitung dari (Close-Low)/(High-Low) &times; Volume. Makin tinggi = makin banyak beli.</div></div>
-    <div class="ind-row"><div class="ind-dot" style="background:rgba(242,54,69,0.75);"></div><div class="ind-desc"><b style="color:#f23645">Sell Power (Merah)</b> - Porsi volume di sisi jual: (High-Close)/(High-Low) &times; Volume. Makin tinggi = makin banyak jual.</div></div>
-    <div class="tip"> Buy Power >> Sell Power secara konsisten = akumulasi. Sell Power mendadak melonjak = distribusi atau panic sell.</div>
-    </div>
-
-    <div class="feat">
-    <div class="feat-title" style="color:#a78bfa;">- Panel 4. - RSI (Relative Strength Index)</div>
-    <div class="stext" style="margin-bottom:10px;">Mengukur kekuatan/kelemahan relatif harga dalam rentang 0&ndash;100.</div>
-    <div class="grid3">
-    <div class="gcard red"><div class="gcard-title">RSI &gt; 70</div><div class="gcard-val">Overbought - harga sudah naik terlalu cepat. Potensi koreksi atau reversal.</div></div>
-    <div class="gcard green"><div class="gcard-title">RSI &lt; 30</div><div class="gcard-val">Oversold - harga sudah turun terlalu dalam. Potensi pantulan atau reversal naik.</div></div>
-    <div class="gcard blue"><div class="gcard-title">RSI 40&ndash;60</div><div class="gcard-val">Zona netral / sideways. Tunggu konfirmasi arah sebelum entry.</div></div>
-    </div>
-    <div class="tip"> Divergence RSI: harga buat higher high tapi RSI lower high = bearish divergence (sinyal lemah/reversal). Sebaliknya = bullish divergence.</div>
-    </div>
-
-    <div class="feat blue">
-    <div class="feat-title"> Panel 5. - MACD (Moving Average Convergence Divergence)</div>
-    <div class="stext" style="margin-bottom:10px;">Konfirmasi momentum tren dengan dua moving average dan histogram.</div>
-    <div class="ind-row"><div class="ind-line" style="background:#2196f3;"></div><div class="ind-desc"><b style="color:#2196f3">MACD Line (Biru)</b> - EMA12 minus EMA26. Refleksi momentum jangka pendek vs menengah.</div></div>
-    <div class="ind-row"><div class="ind-line" style="background:#ff5252;"></div><div class="ind-desc"><b style="color:#ff5252">Signal Line (Merah)</b> - EMA9 dari MACD Line. Crossover = sinyal beli/jual.</div></div>
-    <div class="ind-row"><div class="ind-dot" style="background:#089981;"></div><div class="ind-desc"><b style="color:#089981">Histogram Hijau</b> - MACD > Signal. Momentum bullish. Makin tinggi = makin kuat.</div></div>
-    <div class="ind-row"><div class="ind-dot" style="background:#f23645;"></div><div class="ind-desc"><b style="color:#f23645">Histogram Merah</b> - MACD < Signal. Momentum bearish atau melemah.</div></div>
-    <div class="tip"> Sinyal terkuat: MACD cross Signal dari bawah + histogram baru jadi hijau + RSI di bawah 50 &rarr; awal rally baru.</div>
-    </div>
-
-    <!-- ======================================================= -->
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">TRADE PLAN - Visualisasi & Risk Level</div>
-    <div class="sec-desc">AI otomatis gambar trade plan di chart dan tentukan risk level berdasarkan kondisi pasar.</div>
-    </div></div>
-
-    <div class="feat green">
-    <div class="feat-title"> Elemen Trade Plan di Chart</div>
-    <div class="grid2">
-    <div class="gcard green">
-    <div class="gcard-title">OK BUY ZONE (Area Hijau)</div>
-    <div class="gcard-val">Zona entry ideal. Ditentukan dari support teknikal: FVG, IFVG, Order Block, Demand Zone, atau area MA penting.</div>
-    </div>
-    <div class="gcard red">
-    <div class="gcard-title">STOP STOP LOSS (Garis Merah)</div>
-    <div class="gcard-val">Batas kerugian maksimal - di bawah BUY ZONE. Minimal 1.5&times; ATR dari entry bawah. WAJIB dihormati.</div>
-    </div>
-    <div class="gcard" style="border-color:rgba(167,139,250,0.35);background:rgba(167,139,250,0.07);">
-    <div class="gcard-title" style="color:#a78bfa;"> TP1 / TP2 / TP3 (Titik-Titik Ungu)</div>
-    <div class="gcard-val">Target profit bertingkat. TP1 = resistance terdekat. TP2 = resistance mayor. TP3 = extended target fibonacci.</div>
-    </div>
-    <div class="gcard yellow">
-    <div class="gcard-title"> Risk-Reward Ratio</div>
-    <div class="gcard-val">Dihitung otomatis AI. Minimal R:R 1:2 sebelum entry. R:R 1:3 ke atas = setup ideal.</div>
-    </div>
-    </div>
-    </div>
-
-    <div class="feat yellow">
-    <div class="feat-title"> Risk Level - Syarat & Arti</div>
-    <div class="stext" style="margin-bottom:12px;">AI menentukan risk level otomatis berdasarkan berapa "pilar" yang konfirmasi setup. Semakin banyak pilar, semakin rendah risiko.</div>
-    <div class="rl-row">
-    <div class="rl-badge high">
-    <div class="rl-label"> HIGH RISK</div>
-    <div style="font-size:0.875rem;font-weight:700;color:#f23645;margin:4px 0;">Teknikal OK</div>
-    <div class="rl-cond">Setup teknikal ada (EMA, support, pattern) tapi volume belum konfirmasi atau fundamental lemah/tidak tersedia. Risiko tertinggi - position sizing kecil, wajib ketat di SL.</div>
-    </div>
-    <div class="rl-badge mid">
-    <div class="rl-label"> MID RISK</div>
-    <div style="font-size:0.875rem;font-weight:700;color:#f5a623;margin:4px 0;">Teknikal OK + Volume OK</div>
-    <div class="rl-cond">Teknikal bullish PLUS volume konfirmasi: volume di atas MA20, buy power dominan, tidak ada distribusi besar. Fundamental netral atau kurang data.</div>
-    </div>
-    <div class="rl-badge low">
-    <div class="rl-label"> LOW RISK</div>
-    <div style="font-size:0.875rem;font-weight:700;color:#089981;margin:4px 0;">Teknikal OK + Volume OK + Fundamental OK</div>
-    <div class="rl-cond">Triple konfirmasi lengkap: teknikal bullish + volume mendukung + fundamental sehat (ROE positif, PBV wajar, EPS tumbuh). Setup paling aman untuk full position.</div>
-    </div>
-    </div>
-    <div class="warn">(!) Jika kondisi saham BEARISH KUAT / HINDARI, Trade Plan TIDAK ditampilkan - AI akan menjelaskan alasan dan kondisi yang harus terpenuhi dulu sebelum bisa entry.</div>
-    </div>
-
-    <!-- ======================================================= -->
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">FITUR LAIN - Fundamental Screener & Chat</div>
-    </div></div>
-
-    <div class="feat yellow">
-    <div class="feat-title"> Fundamental Screener (Buffett Criteria)</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Scroll ke bagian <b>Fundamental Screener</b> di dalam tab  Alpha Screener &rarr; sub-tab AI Stock Insight.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Pilih <b>filter sektor</b> (All / Banking / Property / Energy / Consumer) untuk mempersempit pencarian.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Klik <b>"Jalankan Screener"</b> - sistem evaluasi ratusan saham IDX berdasarkan: <span class="hi">ROE &ge;15%</span>, <span class="ok">DER &le;1.5&times;</span>, <span class="yl">Net Margin &ge;10%</span>, Current Ratio &ge;1.5, <span class="hi">PBV &le;3&times;</span>, EPS positif.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Urutkan hasil dengan <b>"Sort By"</b>: ROE Tertinggi / DER Terendah / Net Margin / PBV.</div></div>
-    <div class="step"><div class="snum">5</div><div class="stext">Pilih saham &rarr; klik <b>"Analisa AI"</b> untuk ringkasan fundamental lengkap dari AI.</div></div>
-    </div>
-    <div class="warn">(!) Screener berbasis fundamental historis. Kombinasikan dengan analisa teknikal sebelum keputusan entry.</div>
-    </div>
-
-    <div class="feat blue">
-    <div class="feat-title"> Chat Lanjutan setelah Analisa</div>
-    <div class="stext">Setelah analisa di-generate, ketik pertanyaan lanjutan. Contoh efektif:</div>
-    <div class="steps" style="margin-top:10px;">
-    <div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="hi">"Apakah ROE BBRI wajar dibanding sektor perbankan?"</span></div></div>
-    <div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="ok">"Apa risiko utama jika entry di area BUY ZONE ini?"</span></div></div>
-    <div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="yl">"Ubah menjadi trade plan konservatif dengan SL lebih ketat."</span></div></div>
-    </div>
-    </div>
-
-    </div></body></html>"""
-                components.html(_guide_html_4, height=4200, scrolling=True)
-
-                # ── AI REKOMENDASI panduan (merged from Lainnya) ──
-                _guide_html_4b = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
-    .sec-icon{{font-size:1.6rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-    .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
-    .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
-    .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
-    .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
-    .feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
-    .feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
-    .feat.blue .feat-title{{color:{_B};}}
-    .feat.green .feat-title{{color:{_G};}}
-    .feat.yellow .feat-title{{color:{_Y};}}
-    .feat.red .feat-title{{color:{_R};}}
-    .steps{{margin:10px 0 6px;}}
-    .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:{_B};}}
-    .stext .hi{{color:{_P};font-weight:700;}}
-    .stext .ok{{color:{_G};font-weight:700;}}
-    .stext .dn{{color:{_R};font-weight:700;}}
-    .stext .yl{{color:{_Y};font-weight:700;}}
-    .tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .alert{{background:rgba(242,54,69,0.09);border:1px solid rgba(242,54,69,0.25);border-left:3px solid {_R};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0;}}
-    .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
-    .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
-    .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
-    .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-    .gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
-    .gcard.green .gcard-title{{color:{_G};}}
-    .gcard.blue .gcard-title{{color:{_B};}}
-    .gcard.yellow .gcard-title{{color:{_Y};}}
-    .gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
-    @media(max-width:640px){{.grid3{{grid-template-columns:1fr;}}}}
-    </style></head><body><div class="wrap">
-
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">AI REKOMENDASI - Panduan Lengkap</div>
-    <div class="sec-desc">Rekomendasi saham harian, mingguan, dan watchlist Buy-Sell-JP berbasis AI dengan konteks fundamental + teknikal + makro.</div>
-    </div></div>
-
-    <div class="feat">
-    <div class="feat-title">  Alpha Screener - Daily Plan</div>
-    <div class="stext">Tab  Alpha Screener adalah pusat analisa dan kurasi saham otomatis SIGMA. AI memindai pasar IDX berdasarkan kondisi makro terkini, rotasi sektor, data fundamental, dan sinyal teknikal untuk menghasilkan shortlist saham yang layak diperhatikan. Tersedia dalam mode <span class="hi">Daily Plan</span> dengan tracking performa di tab <span class="ok">History Plan</span>.</div>
-    </div>
-
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">DAILY PLAN - Rekomendasi Harian</div>
-    <div class="sec-desc">Watchlist saham untuk trading dalam 1-3 hari ke depan berdasarkan sentimen pasar hari ini.</div>
-    </div></div>
-
-    <div class="feat blue">
-    <div class="feat-title"> Cara Menggunakan Daily Plan</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b> Alpha Screener</b> dari navigasi atas SIGMA Terminal.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Klik tombol <b>" Generate Rekomendasi Harian"</b> - AI akan memproses kondisi makro hari ini + sinyal teknikal intraday.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Output berisi: <span class="ok">daftar saham</span> + <span class="hi">alasan singkat</span> + <span class="yl">level entry estimasi</span> + <span class="dn">catatan risiko</span>.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Hasil otomatis masuk ke <b> Track Record &rarr; History Plan</b> sebagai OPEN untuk tracking performa.</div></div>
-    </div>
-    <div class="tip"> Best practice: Generate di pagi hari sebelum market buka (08.30&ndash;09.00 WIB) untuk mendapat konteks pre-market yang relevan.</div>
-    </div>
-
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">TRACK RECORD - History Plan & Statistik</div>
-    <div class="sec-desc">Rekam jejak performa semua plan yang sudah di-generate. Auto-linked dari setiap Daily Plan yang dibuat.</div>
-    </div></div>
-
-    <div class="feat green">
-    <div class="feat-title"> Cara Membaca Track Record</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b> Track Record</b> di dalam Alpha Screener - semua plan yang di-generate otomatis masuk sebagai OPEN.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Tab <b>Overview Semua</b> menampilkan win rate, total trade, P&L, dan tabel semua posisi (OPEN + CLOSED).</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Tab <b>History Plan</b> menampilkan detail tracking per saham - update status TP/SL untuk menutup posisi.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Tab <b>Statistik</b> menampilkan analisa mendalam: win rate, expectancy, avg win/loss, dan verdict SIGMA.</div></div>
-    </div>
-    <div class="tip"> Update hasil trade di History Plan secara rutin untuk mendapatkan statistik yang akurat dan meaningful.</div>
-    </div>
-
-    <div class="feat red">
-    <div class="feat-title">(!) Disclaimer Penting - Wajib Dibaca</div>
-    <div class="stext">Semua output Alpha Screener adalah <b>bahan riset dan referensi analisa</b>, BUKAN sinyal trading resmi atau financial advice. SIGMA tidak menjamin akurasi prediksi. Keputusan trading sepenuhnya tanggung jawab trader masing-masing. <span class="dn">Selalu DYOR (Do Your Own Research)</span> dan konfirmasi dengan analisa mandiri sebelum eksekusi.</div>
-    <div class="alert"> IDX = <b>Long Only Market</b>. Profit hanya dari kenaikan harga. Tidak ada short selling konvensional untuk retail. Pastikan entry hanya saat tren mendukung - jangan fight the trend.</div>
-    </div>
-
-    </div></body></html>"""
-                components.html(_guide_html_4b, height=2000, scrolling=True)
-
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 5 - ANALISA IPO
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab5:
-                _guide_html_ipo = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0 32px;}}
-    .hero{{background:linear-gradient(135deg,rgba(167,139,250,0.13),rgba(96,165,250,0.08));border:1px solid rgba(167,139,250,0.3);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
-    .hero-badge{{display:inline-block;font-size:0.68rem;font-weight:800;letter-spacing:0.15em;padding:3px 10px;border-radius:20px;background:rgba(167,139,250,0.18);border:1px solid rgba(167,139,250,0.5);color:#a78bfa;margin-bottom:10px;}}
-    .hero-title{{font-size:1.35rem;font-weight:800;color:#a78bfa;letter-spacing:0.05em;margin-bottom:8px;}}
-    .hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(167,139,250,0.25);}}
-    .sec-icon{{font-size:1.4rem;}}
-    .sec-title{{font-size:1.05rem;font-weight:700;color:#a78bfa;letter-spacing:0.06em;}}
-    .card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
-    .card.p{{border-left:3px solid #a78bfa;}}
-    .card.b{{border-left:3px solid #60a5fa;}}
-    .card.g{{border-left:3px solid #26a69a;}}
-    .card.y{{border-left:3px solid #fbbf24;}}
-    .card.r{{border-left:3px solid #f23645;}}
-    .card-title{{font-size:0.875rem;font-weight:700;color:#60a5fa;margin-bottom:8px;}}
-    .card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
-    .card-body b{{color:#a78bfa;}}
-    .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#a78bfa,#60a5fa);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
-    .warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
-    .danger{{background:rgba(242,54,69,0.08);border-left:3px solid #f23645;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
-    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    .ratio-row{{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;border-radius:8px;}}
-    .ratio-label{{font-weight:700;font-size:0.8rem;min-width:80px;}}
-    .ratio-bar{{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.08);position:relative;}}
-    .ratio-fill{{height:100%;border-radius:4px;}}
-    @media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
-    </style></head><body><div class="wrap">
-
-    <div class="hero">
-      <div class="hero-badge"> ANALISA IPO</div>
-      <div class="hero-title">Bedah Prospektus IPO Otomatis</div>
-      <div class="hero-sub">
-        SIGMA membaca ratusan halaman prospektus IPO dan menghasilkan analisa komprehensif: valuasi harga vs nominal, 
-        tujuan dana, track record underwriter, risiko lot, dan jadwal lengkap &mdash; semua dalam hitungan detik.
-      </div>
-    </div>
-
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">CARA MENGGUNAKAN ANALISA IPO</div></div></div>
-
-    <div class="card p">
-    <div class="card-title">Step-by-Step: Upload & Analisa</div>
+  <div class="card accent-b">
+    <div class="card-title">Universe & Pre-filter</div>
     <div class="card-body">
-    <div class="step"><div class="snum">1</div><div class="stext">Buka tab <b> Alpha Screener</b> dari navigasi atas, lalu klik sub-tab <b> ANALISA IPO</b>.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Isi <b>Nama / Kode Emiten</b> di field yang tersedia. Bisa nama perusahaan atau kode saham (belum resmi pun OK).</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Download PDF Prospektus dari <b>e-IPO.co.id</b> atau <b>idx.co.id/prospektus</b>, lalu upload di area drag-drop. Max 200MB.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Klik tombol <b>" ANALISA PROSPEKTUS"</b> &mdash; SIGMA membaca dan membedah seluruh dokumen, lalu menghasilkan laporan lengkap.</div></div>
-    <div class="tip"> Proses baca ratusan halaman memerlukan 15-30 detik. Jangan klik ulang selama spinner berjalan.</div>
+      Universe: <b>500+ saham IDX aktif</b> (sudah dikurasi - hapus saham suspend, micro-cap speculative). Data OHLCV 10 hari terakhir diambil secara paralel untuk semua ticker.<br><br>
+      Hanya saham dengan <b>Bullish Score &ge; 3 dari 4</b> yang masuk ke tahap AI:
+      <br><br>
+      <span class="bg">+1</span> Harga naik hari ini (chg &gt; 0%)<br>
+      <span class="bg">+1</span> Harga naik 5 hari terakhir (chg5d &gt; 0%)<br>
+      <span class="bg">+1</span> Volume hari ini &gt; rata-rata volume 5 hari<br>
+      <span class="bg">+1</span> Harga di atas EMA 5
     </div>
-    </div>
+  </div>
 
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">APA YANG DIBEDAH SIGMA?</div></div></div>
-
-    <div class="grid2">
-    <div class="card g">
-    <div class="card-title"> Valuasi & Harga</div>
+  <div class="card accent-p">
+    <div class="card-title">Volume Intelligence - Inti Perbedaannya</div>
     <div class="card-body">
-      <b>Rasio Harga/Nominal:</b> Dihitung otomatis.<br>
-      &le;3x = murah &middot; 3&ndash;7x = wajar<br>
-      >7x = mahal / hati-hati<br><br>
-      <b>PBV, PER estimasi</b> dibandingkan sektor.<br>
-      <b>EPS proyeksi</b> dari target pendapatan di prospektus.
+      AI Daily di-brief khusus untuk membedakan tipe volume:<br><br>
+      <span class="bp">Block Trade</span> Nilai besar + Lot besar + Frekuensi <b>KECIL</b> &rarr; institusi masuk diam-diam &rarr; <span class="ok">SINYAL KUAT</span><br><br>
+      <span class="br">Noise</span> Nilai kecil + Lot kecil + Frekuensi <b>BESAR</b> &rarr; ritel biasa &rarr; <span class="dn">Diabaikan</span><br><br>
+      <span class="by">Bias/HFT</span> Nilai besar + Frekuensi <b>BESAR</b> &rarr; Algo/HFT &rarr; <span class="yl">Perlu konfirmasi hari berikutnya</span><br><br>
+      AI diminta <b>memprioritaskan</b> saham dengan volume spike tinggi TAPI frekuensi rendah (block trade) di atas saham yang hanya ramai ritel.
     </div>
-    </div>
-    <div class="card b">
-    <div class="card-title"> Tujuan Dana IPO</div>
+  </div>
+
+  <div class="card accent-g">
+    <div class="card-title">Output Tabel Daily</div>
     <div class="card-body">
-      SIGMA membedah untuk apa dana IPO digunakan:<br>
-      <b>Ekspansi bisnis</b> &rarr; sinyal positif<br>
-      <b>Bayar utang</b> &rarr; hati-hati<br>
-      <b>Modal kerja</b> &rarr; netral<br>
-      <b>Akuisisi</b> &rarr; perlu cek detail
+      <b>4&ndash;6 saham BUY</b> + <b>3 saham HINDARI</b>, masing-masing dengan:<br><br>
+      TA Score (0&ndash;100) &middot; FA Score (0&ndash;100) &middot; Vol Spike ratio &middot; Vol Type (Block/Ritel/Mixed) &middot; RSI &middot; MACD &middot; Wyckoff Phase &middot; Entry Zone &middot; TP1 &middot; TP2 &middot; SL &middot; Horizon (Intraday/1&ndash;3 hari/3&ndash;5 hari) &middot; Alasan singkat kenapa layak
     </div>
+  </div>
+
+  <div class="tip"> <b>Horizon Daily:</b> Intraday = beli pagi jual sore hari yang sama. 1&ndash;3 hari = swing pendek. 3&ndash;5 hari = swing mingguan ringan. Pilih sesuai gaya trading kamu.</div>
+</div>
+
+<!-- ============ PANEL: WEEKLY ============ -->
+<div class="panel" id="g-weekly">
+  <div class="sec-head">
+    <span class="sec-icon"></span>
+    <div>
+      <div class="sec-title">WEEKLY SCREENER</div>
+      <div class="sec-desc">Swing trade 1&ndash;2 minggu - kombinasi tren mingguan, katalis fundamental, dan tren pemegang saham</div>
     </div>
-    <div class="card y">
-    <div class="card-title"> Track Record Underwriter</div>
+  </div>
+
+  <div class="card accent-b">
+    <div class="card-title">Perbedaan Utama dari Daily</div>
     <div class="card-body">
-      Penjamin emisi berpengaruh besar pada performa IPO.<br>
-      SIGMA mengevaluasi reputasi dan track record penjamin (BRI Danareksa, Mandiri Sekuritas, dll) dari data di prospektus.
+      <b>Timeframe lebih panjang:</b> Data 20 hari digunakan (bukan 10 hari). EMA yang diperhatikan adalah EMA 21 dan EMA 50 - bukan EMA 5.<br><br>
+      <b>Fundamental lebih dominan:</b> Di Daily, FA Score hanya 40% bobot. Di Weekly, fundamental mendapat perhatian lebih karena horizon 1&ndash;2 minggu memberikan waktu bagi katalis fundamental bekerja.<br><br>
+      <b>Horizon:</b> 1&ndash;2 minggu. Bukan untuk daytrader - untuk swing trader yang bisa menahan posisi.
     </div>
-    </div>
-    <div class="card p">
-    <div class="card-title"> Jadwal & Struktur Penawaran</div>
+  </div>
+
+  <div class="card accent-p">
+    <div class="card-title">Faktor Tambahan di Weekly</div>
     <div class="card-body">
-      Tanggal masa penawaran, allotment, listing.<br>
-      Jumlah saham dilepas ke publik.<br>
-      Harga penawaran & kisaran lot minimum.<br>
-      Lock-up period pemegang saham lama.
+      <span class="bp">Tren Pemegang Saham</span> Data IDX bulanan - apakah jumlah pemegang naik (akumulasi) atau turun (distribusi)? Naik 3 bulan berturut = sinyal kuat.<br><br>
+      <span class="bb">Katalis Fundamental</span> AI diminta menimbang katalis ke depan: jadwal dividen, rilis laporan keuangan, kebijakan makro yang relevan untuk sektor saham tersebut.<br><br>
+      <span class="bg">Sector Outlook</span> Kondisi sektor dan makro dipertimbangkan - suku bunga BI, kurs IDR, harga komoditas terkait, dan rotasi sektor dari data Sector Rotation.
     </div>
-    </div>
-    </div>
+  </div>
 
-    <div class="sec-head"><div class="sec-icon">(!)</div>
-    <div><div class="sec-title">RASIO HARGA / NOMINAL &mdash; PANDUAN INTERPRETASI</div></div></div>
-
-    <div class="card r">
-    <div class="card-title"> Cara Hitung & Baca Rasio</div>
+  <div class="card accent-g">
+    <div class="card-title">Output Tabel Weekly</div>
     <div class="card-body">
-      <b>Formula:</b> Harga IPO &divide; Nilai Nominal Saham<br><br>
-      <div class="ratio-row" style="background:rgba(38,166,154,0.1);">
-        <span class="ratio-label" style="color:#26a69a;">&le; 3x</span>
-        <span class="stext">OK <b>MURAH</b> &mdash; valuasi konservatif, potensi ARA tinggi di hari listing</span>
-      </div>
-      <div class="ratio-row" style="background:rgba(251,191,36,0.1);">
-        <span class="ratio-label" style="color:#fbbf24;">3x &ndash; 7x</span>
-        <span class="stext">(!) <b>WAJAR</b> &mdash; sesuai standar pasar, perlu cek fundamental & underwriter</span>
-      </div>
-      <div class="ratio-row" style="background:rgba(242,54,69,0.1);">
-        <span class="ratio-label" style="color:#f23645;">> 7x</span>
-        <span class="stext"> <b>HATI-HATI TINGGI</b> &mdash; sangat mahal vs nominal, risiko koreksi besar pasca listing</span>
-      </div>
+      <b>3&ndash;5 saham BUY mingguan</b> dengan detail: TA Score &middot; FA Score &middot; Vol Spike &middot; Vol Type &middot; Entry Zone &middot; TP1 &middot; TP2 &middot; SL &middot; Kolom "Why Buy" (1 kalimat alasan, fokus katalis + volume)
     </div>
+  </div>
+
+  <div class="warn">(!) Weekly bukan untuk intraday. Jika kamu tidak bisa menahan posisi selama 5&ndash;10 hari, gunakan Daily Screener sebagai gantinya.</div>
+</div>
+
+<!-- ============ PANEL: BSJP ============ -->
+<div class="panel" id="g-bsjp">
+  <div class="sec-head">
+    <span class="sec-icon"></span>
+    <div>
+      <div class="sec-title">BELI SORE JUAL PAGI (BSJP)</div>
+      <div class="sec-desc">Strategi overnight - beli 15:00&ndash;15:50 WIB, jual pre-opening atau sesi 1 keesokan hari</div>
     </div>
+  </div>
 
-    <div class="danger"> <b>Penting:</b> Analisa IPO SIGMA adalah referensi dan bahan riset, bukan rekomendasi beli/jual. Selalu DYOR dan pahami bahwa IPO mengandung risiko tinggi &mdash; harga bisa turun di bawah harga penawaran setelah listing.</div>
-
-    </div></body></html>"""
-                components.html(_guide_html_ipo, height=2200, scrolling=True)
-
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 6 - TRACK RECORD
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab6:
-                _guide_html_tr = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0 32px;}}
-    .hero{{background:linear-gradient(135deg,rgba(251,191,36,0.1),rgba(38,166,154,0.08));border:1px solid rgba(251,191,36,0.25);border-radius:14px;padding:24px 26px;margin-bottom:24px;}}
-    .hero-title{{font-size:1.35rem;font-weight:800;color:#fbbf24;letter-spacing:0.05em;margin-bottom:8px;}}
-    .hero-sub{{font-size:0.875rem;color:{_SUB};line-height:1.7;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:24px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(251,191,36,0.2);}}
-    .sec-icon{{font-size:1.4rem;}}
-    .sec-title{{font-size:1.05rem;font-weight:700;color:#fbbf24;letter-spacing:0.06em;}}
-    .card{{background:{_BG};border:1px solid {_BD};border-radius:10px;padding:16px 18px;margin-bottom:12px;}}
-    .card.y{{border-left:3px solid #fbbf24;}}
-    .card.g{{border-left:3px solid #26a69a;}}
-    .card.b{{border-left:3px solid #60a5fa;}}
-    .card.r{{border-left:3px solid #f23645;}}
-    .card.p{{border-left:3px solid #a78bfa;}}
-    .card-title{{font-size:0.875rem;font-weight:700;color:#fbbf24;margin-bottom:8px;}}
-    .card-body{{font-size:0.875rem;color:{_TXT};line-height:1.8;}}
-    .card-body b{{color:#a78bfa;}}
-    .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#26a69a);color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .tip{{background:rgba(96,165,250,0.08);border-left:3px solid #60a5fa;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
-    .warn{{background:rgba(251,191,36,0.08);border-left:3px solid #fbbf24;border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0;font-size:0.875rem;color:{_TXT};line-height:1.7;}}
-    .grid3{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:10px 0;}}
-    .stat-card{{background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.2);border-radius:8px;padding:14px;text-align:center;}}
-    .stat-label{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_SUB};margin-bottom:6px;}}
-    .stat-val{{font-size:1.2rem;font-weight:800;color:#a78bfa;}}
-    .stat-sub{{font-size:0.72rem;color:{_SUB};margin-top:4px;}}
-    @media(max-width:640px){{.grid3{{grid-template-columns:1fr;}}}}
-    </style></head><body><div class="wrap">
-
-    <div class="hero">
-      <div class="hero-title"> TRACK RECORD &mdash; Rekam Jejak Performa</div>
-      <div class="hero-sub">
-        Sistem pencatatan dan evaluasi performa semua plan yang di-generate SIGMA. 
-        Tersedia di dalam tab <b>Alpha Screener &rarr;  Track Record</b>. 
-        Setiap Daily Plan / Weekly Plan yang di-generate otomatis masuk sebagai posisi OPEN untuk ditracking.
-      </div>
-    </div>
-
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">CARA MENGGUNAKAN TRACK RECORD</div></div></div>
-
-    <div class="card y">
-    <div class="card-title">Step-by-Step: Dari Generate sampai Evaluasi</div>
+  <div class="card accent-p">
+    <div class="card-title">Logika Strategi</div>
     <div class="card-body">
-    <div class="step"><div class="snum">1</div><div class="stext">Setiap kali kamu <b>Generate Daily/Weekly Plan</b>, saham-saham yang masuk otomatis tercatat sebagai posisi <b style="color:#fbbf24;">OPEN</b> di Track Record.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Buka tab <b> Track Record</b> &rarr; sub-tab <b>History Plan</b> untuk melihat semua posisi yang sedang open.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Setelah trade selesai (hit TP atau SL), <b>update status</b> posisi: klik tombol update dan pilih hasil aktual (TP1/TP2/SL/Manual).</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Sub-tab <b>Overview Semua</b> menampilkan agregat seluruh performa: win rate, total trade, P&amp;L kumulatif, dan tabel lengkap.</div></div>
-    <div class="step"><div class="snum">5</div><div class="stext">Sub-tab <b>Statistik</b> menampilkan analisa mendalam: expectancy per trade, average win/loss, streak terbaik/terburuk, dan <b>verdict SIGMA</b>.</div></div>
-    <div class="tip"> Update status trade secara rutin setelah eksekusi agar statistik akurat. Sistem tidak bisa update otomatis karena tidak terhubung ke akun broker.</div>
+      BSJP memanfaatkan dua fenomena pasar IDX:<br><br>
+      <b>1. Gap-up pembukaan:</b> Saham yang diakumulasi institusi menjelang closing sering gap-up keesokan pagi karena order pembelian berlanjut di pre-opening dan sesi 1.<br><br>
+      <b>2. Momentum pembukaan:</b> Retail yang melihat saham naik kemarin cenderung ikut beli di pagi hari, mendorong harga lebih tinggi sebelum SIGMA bisa jual.
     </div>
-    </div>
+  </div>
 
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">METRIK YANG DILACAK</div></div></div>
-
-    <div class="grid3">
-    <div class="stat-card">
-      <div class="stat-label">Win Rate</div>
-      <div class="stat-val" style="color:#26a69a;">%</div>
-      <div class="stat-sub">Persentase trade yang profit. Target: &gt;50% untuk strategi RR 1:2+</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Expectancy</div>
-      <div class="stat-val" style="color:#60a5fa;">R</div>
-      <div class="stat-sub">Rata-rata profit per trade dalam satuan R (risk unit). Positif = sistem profitable</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total Trade</div>
-      <div class="stat-val" style="color:#fbbf24;">#</div>
-      <div class="stat-sub">Jumlah trade tercatat. Minimal 20 trade untuk statistik signifikan secara statistik</div>
-    </div>
-    </div>
-
-    <div class="card g">
-    <div class="card-title"> Cara Membaca Verdict SIGMA</div>
+  <div class="card accent-b">
+    <div class="card-title">Sinyal yang Dicari BSJP</div>
     <div class="card-body">
-      Setelah minimal 10 trade tercatat, SIGMA mengeluarkan <b>Verdict</b> berdasarkan win rate + expectancy gabungan:<br><br>
-      OK <b style="color:#26a69a;">SISTEM BAGUS</b> &mdash; Win rate &gt;55% + Expectancy positif<br>
-      (!) <b style="color:#fbbf24;">PERLU EVALUASI</b> &mdash; Win rate 40&ndash;55% atau expectancy tipis<br>
-       <b style="color:#f23645;">SISTEM BERMASALAH</b> &mdash; Win rate &lt;40% atau expectancy negatif<br><br>
-      Verdict ini bukan penilaian SIGMA sebagai tool, tapi cerminan <b>eksekusi dan disiplin trader</b>.
+      <span class="bp">Volume Spike Closing</span> Volume melonjak signifikan di 30&ndash;60 menit terakhir sebelum penutupan. Pertanda ada yang mengakumulasi saat retail sudah mau pulang.<br><br>
+      <span class="bb">Frekuensi Rendah</span> Volume spike dari <b>block trade</b> (institusi), bukan dari ritel kecil-kecil. Ini yang membedakan BSJP sinyal valid vs noise.<br><br>
+      <span class="bg">Harga Stabil atau Naik Pelan</span> Tidak ada distribusi massal sebelum closing - artinya yang beli lebih kuat dari yang jual.<br><br>
+      <span class="br">HINDARI</span> Saham dengan berita negatif besar semalam (risiko gap-down pagi). Cek news feed sebelum tidur.
     </div>
+  </div>
+
+  <div class="card accent-y">
+    <div class="card-title">Risk Management BSJP</div>
+    <div class="card-body">
+      <b>Sizing maksimal: 5&ndash;10% portofolio per posisi</b><br><br>
+      Risiko utama: berita negatif overnight atau sentimen global buruk &rarr; gap-down pagi hari. Ini tidak bisa dikontrol.<br><br>
+      Strategi ini <b>hanya cocok</b> jika tidak ada event risiko besar di malam hari: FOMC meeting, rilis data CPI AS, eskalasi geopolitik, atau berita emiten negatif yang sudah beredar.
     </div>
+  </div>
 
-    <div class="warn">(!) <b>Catatan Penting:</b> Track Record SIGMA tersimpan per-sesi login. Jika browser dibersihkan atau logout, data mungkin tidak tersimpan permanen. Untuk backup, gunakan fitur Export jika tersedia, atau catat manual di spreadsheet pribadi.</div>
+  <div class="danger">(!) <b>Penting:</b> BSJP adalah strategi berisiko tinggi. Selalu pasang mental stop-loss sebelum tidur: jika keesokan pagi harga gap-down &gt; [SL kamu], langsung eksekusi jual di opening tanpa tunggu recovery.</div>
+</div>
 
-    </div></body></html>"""
-                components.html(_guide_html_tr, height=2000, scrolling=True)
-
-            with pg_tab7:
-                _guide_html_6 = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
-    .sec-icon{{font-size:1.6rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-    .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
-    .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
-    .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
-    .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
-    .feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
-    .feat.blue .feat-title{{color:{_B};}}
-    .feat.green .feat-title{{color:{_G};}}
-    .feat.yellow .feat-title{{color:{_Y};}}
-    .steps{{margin:10px 0 6px;}}
-    .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:{_B};}}
-    .stext .hi{{color:{_P};font-weight:700;}}
-    .stext .ok{{color:{_G};font-weight:700;}}
-    .stext .dn{{color:{_R};font-weight:700;}}
-    .stext .yl{{color:{_Y};font-weight:700;}}
-    .tip{{background:rgba(96,165,250,0.09);border:1px solid rgba(96,165,250,0.25);border-left:3px solid {_B};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .warn{{background:rgba(251,191,36,0.09);border:1px solid rgba(251,191,36,0.25);border-left:3px solid {_Y};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT};line-height:1.72;}}
-    .grid2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0;}}
-    .gcard{{background:rgba(124,58,237,0.07);border:2px solid rgba(124,58,237,0.25);border-radius:8px;padding:12px 14px;}}
-    .gcard.green{{border-color:rgba(38,166,154,0.35);background:rgba(38,166,154,0.07);}}
-    .gcard.blue{{border-color:rgba(96,165,250,0.35);background:rgba(96,165,250,0.07);}}
-    .gcard.yellow{{border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.07);}}
-    .gcard-title{{font-size:0.8rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;color:{_P};}}
-    .gcard.green .gcard-title{{color:{_G};}}
-    .gcard.blue .gcard-title{{color:{_B};}}
-    .gcard.yellow .gcard-title{{color:{_Y};}}
-    .gcard-val{{font-size:0.875rem;color:{_TXT};line-height:1.6;}}
-    .formula{{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:10px 16px;margin:8px 0;font-size:0.875rem;color:{_P};font-weight:700;letter-spacing:0.03em;}}
-    @media(max-width:640px){{.grid2{{grid-template-columns:1fr;}}}}
-    </style></head><body><div class="wrap">
-
-    <div class="sec-head"><div class="sec-icon"></div>
-    <div><div class="sec-title">KALKULATOR - Panduan Lengkap</div>
-    <div class="sec-desc">Alat kalkulasi trading IDX: Profit/Loss, Position Sizing, Modal Lot, Brokerage Fee, dan Break Even Point.</div>
-    </div></div>
-
-    <div class="feat">
-    <div class="feat-title"> Apa itu Tab Kalkulator?</div>
-    <div class="stext">Tab Kalkulator adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual - masukkan angka, hasilnya otomatis.</div>
+<!-- ============ PANEL: FUNDAMENTAL ============ -->
+<div class="panel" id="g-fundamental">
+  <div class="sec-head">
+    <span class="sec-icon"></span>
+    <div>
+      <div class="sec-title">FUNDAMENTAL SCREENER</div>
+      <div class="sec-desc">Screening berbasis kesehatan bisnis - untuk investor, bukan trader harian</div>
     </div>
+  </div>
 
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">KALKULATOR 1 - Profit / Loss (P&L)</div>
-    </div></div>
-
-    <div class="feat blue">
-    <div class="feat-title"> Cara Menghitung Profit/Loss</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Harga Beli</b> per lembar (contoh: 1.500)</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>Harga Jual</b> per lembar (contoh: 1.750)</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Jumlah Lot</b> yang dibeli (contoh: 10 lot = 1.000 lembar)</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Sistem otomatis menghitung: P&L kotor, biaya beli, biaya jual + pajak, dan <span class="ok">Net P&L bersih</span> yang kamu benar-benar terima.</div></div>
+  <div class="card accent-b">
+    <div class="card-title">Metrik yang Diukur</div>
+    <div class="card-body">
+      <b>Valuasi:</b> PER (Price-to-Earnings) dan PBV (Price-to-Book Value). AI menilai murah/wajar/mahal berdasarkan perbandingan vs peers sektor - bukan angka absolut.<br><br>
+      <b>Profitabilitas:</b> ROE (Return on Equity), ROA (Return on Assets), Net Profit Margin. Mengukur kemampuan manajemen menghasilkan laba dari modal yang ada.<br><br>
+      <b>Kualitas Earnings:</b> EPS (Earnings Per Share) dan tren pertumbuhannya YoY/CAGR. EPS yang tumbuh konsisten = kualitas bisnis yang sehat.<br><br>
+      <b>Kesehatan Neraca:</b> DER (Debt-to-Equity Ratio) dan Current Ratio. Mengukur beban utang vs kemampuan membayar kewajiban jangka pendek.
     </div>
-    <div class="formula">Net P&L = (Harga Jual - Harga Beli) &times; Lot &times; 100 - Total Biaya Broker</div>
-    <div class="tip"> <b>Konvensi IDX:</b> Selalu kalikan jumlah lot dengan 100 untuk mendapat jumlah lembar. P&L di trading journal Google Sheets MnM juga menggunakan formula yang sama.</div>
+  </div>
+
+  <div class="card accent-p">
+    <div class="card-title">Mode Khusus Perbankan</div>
+    <div class="card-body">
+      Sistem otomatis mendeteksi apakah ticker adalah emiten perbankan. Jika ya, metrik berubah ke <b>rasio spesifik perbankan</b>:<br><br>
+      <span class="bp">NIM</span> Net Interest Margin - spread bunga bank. Makin tinggi makin baik.<br>
+      <span class="bp">NPL Gross & Net</span> Non-Performing Loan - kredit macet. &lt; 5% = sehat.<br>
+      <span class="bp">LDR</span> Loan-to-Deposit Ratio - agresivitas penyaluran kredit. 78&ndash;92% = ideal.<br>
+      <span class="bp">CAR</span> Capital Adequacy Ratio - ketebalan modal. &gt; 14% = sangat aman.<br>
+      <span class="bp">BOPO</span> Rasio efisiensi operasional. &lt; 80% = efisien.<br><br>
+      DER dan Current Ratio <b>tidak relevan untuk bank</b> - sistem tidak menggunakannya jika emiten terdeteksi sebagai bank.
     </div>
+  </div>
 
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">KALKULATOR 2 - Position Sizing & Modal</div>
-    </div></div>
-
-    <div class="feat green">
-    <div class="feat-title"> Cara Menghitung Position Size</div>
-    <div class="steps">
-    <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Total Modal</b> yang tersedia (contoh: Rp 10.000.000)</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Masukkan <b>% Risiko per Trade</b> - standar konservatif: 1-2% per posisi (contoh: 2% = Rp 200.000 maksimal rugi)</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Masukkan <b>Harga Entry</b> dan <b>Harga Stop Loss</b> - jarak inilah yang menentukan berapa lot yang aman dibeli.</div></div>
-    <div class="step"><div class="snum">4</div><div class="stext">Kalkulator menampilkan: <span class="ok">jumlah lot optimal</span>, <span class="hi">modal yang dipakai</span>, dan <span class="yl">% dari total portofolio</span>.</div></div>
+  <div class="card accent-g">
+    <div class="card-title">Prioritas Data - TTM 2026</div>
+    <div class="card-body">
+      Sistem selalu mengambil data <b>TTM (Trailing Twelve Months)</b> terbaru sebagai data utama. Data 2024&ndash;2025 digunakan hanya sebagai pembanding tren (YoY / CAGR), bukan sebagai angka primer.<br><br>
+      Jika AI menampilkan EPS atau ROE, angka tersebut adalah TTM terbaru yang tersedia dari multi-source API - bukan angka tahun lalu.
     </div>
-    <div class="formula">Jumlah Lot = (Modal &times; % Risiko) &divide; ((Entry - SL) &times; 100)</div>
-    <div class="grid2" style="margin-top:12px;">
-    <div class="gcard green">
-    <div class="gcard-title">OK Risiko Konservatif</div>
-    <div class="gcard-val">1-2% modal per posisi. Cocok untuk pemula atau kondisi market volatile. Max drawdown terkontrol.</div>
+  </div>
+
+  <div class="tip"> Fundamental Screener bukan untuk timing entry harian. Gunakan bersama Daily atau AI Stock Insight: Fundamental Screener sebagai filter kualitas bisnis, Daily/Insight sebagai timing entry teknikal.</div>
+</div>
+
+<!-- ============ PANEL: ACCURACY ============ -->
+<div class="panel" id="g-accuracy">
+  <div class="sec-head">
+    <span class="sec-icon"></span>
+    <div>
+      <div class="sec-title">AKURASI & BATAS SISTEM</div>
+      <div class="sec-desc">Transparansi penuh - apa yang SIGMA kerjakan dengan baik, dan di mana batasannya</div>
     </div>
-    <div class="gcard yellow">
-    <div class="gcard-title"> Risiko Agresif</div>
-    <div class="gcard-val">3-5% modal per posisi. Hanya untuk trader berpengalaman dengan conviction tinggi dan setup sangat jelas.</div>
+  </div>
+
+  <div class="card accent-g">
+    <div class="card-title">Yang Dikerjakan Sistem dengan Baik</div>
+    <div class="card-body">
+      <span class="bg">OK Kuat</span> Deteksi volume anomali - spike ratio dan tipe (block vs ritel) berbasis data harga nyata dari bursa.<br><br>
+      <span class="bg">OK Kuat</span> Pengecekan corporate action - sistem tidak akan salah analisa karena harga pre-split.<br><br>
+      <span class="bg">OK Kuat</span> Multi-source fallback - jika 1 sumber data mati, sistem tetap jalan dengan sumber lain tanpa gangguan.<br><br>
+      <span class="bg">OK Kuat</span> Transparansi risk level - AI diwajibkan menyebut HIGH/MID/LOW risk dengan alasan konkret, bukan label kosong.<br><br>
+      <span class="bg">OK Kuat</span> Deteksi sektor perbankan - metrik otomatis berganti ke NIM/NPL/CAR/BOPO untuk emiten bank.
     </div>
+  </div>
+
+  <div class="card accent-y">
+    <div class="card-title">Batasan yang Harus Dipahami</div>
+    <div class="card-body">
+      <span class="by">(!) Fundamental delay:</span> Data dari API eksternal kadang terlambat 1&ndash;3 bulan dari laporan keuangan terbaru. Untuk laporan quarterly terbaru, selalu cek langsung di IDX.co.id.<br><br>
+      <span class="by">(!) Tidak ada data bandarmologi:</span> SIGMA tidak punya akses ke data broker (siapa yang beli/jual). Yang tersedia hanya volume aggregate dari bursa.<br><br>
+      <span class="by">(!) Black swan:</span> Saat crash global, FOMC hawkish ekstrem, atau geopolitik memburuk tiba-tiba, semua sinyal teknikal bisa gagal sekaligus. Tidak ada sistem yang imun.<br><br>
+      <span class="by">(!) AI bukan oracle:</span> AI menganalisa berdasarkan data yang tersedia saat itu. Berita material yang belum masuk ke harga (insider information) tidak bisa dideteksi sistem mana pun.
     </div>
+  </div>
+
+  <div class="honesty">
+    OK <b>Komitmen Kejujuran SIGMA:</b> AI di-brief bahwa jika kondisi saham bearish kuat, trade plan tidak ditampilkan dan AI wajib menjelaskan kenapa dengan tegas - bukan memberikan false hope. SIGMA bukan robot yang selalu bilang "beli". Kadang jawaban yang paling berharga adalah "jangan beli sekarang".
+  </div>
+
+  <div class="div"></div>
+
+  <div class="card accent-r">
+    <div class="card-title">(!) DYOR - Do Your Own Research</div>
+    <div class="card-body">
+      SIGMA adalah <b>alat bantu analisa</b>, bukan robot trading otomatis dan bukan rekomendasi investasi.<br><br>
+      Output SIGMA sebaiknya dikombinasikan dengan:<br>
+      &middot; Berita fundamental terkini (laporan keuangan, aksi korporasi, kebijakan sektoral)<br>
+      &middot; Kondisi makro global hari itu (sentimen AS, DXY, VIX)<br>
+      &middot; Manajemen risiko dan position sizing yang disiplin<br>
+      &middot; Stop-loss yang selalu dieksekusi tanpa pengecualian<br><br>
+      <b>Tidak ada sistem yang 100% akurat di pasar modal.</b> Keputusan akhir selalu ada di tanganmu.
     </div>
-
-    <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
-    <div><div class="sec-title">KALKULATOR 3 - Biaya Broker & Break Even</div>
-    </div></div>
-
-    <div class="feat yellow">
-    <div class="feat-title"> Memahami Struktur Biaya IDX</div>
-    <div class="stext" style="margin-bottom:12px;">Setiap transaksi di IDX dikenai biaya broker dan pajak yang mempengaruhi Break Even Point (BEP) kamu.</div>
-    <div class="grid2">
-    <div class="gcard blue">
-    <div class="gcard-title"> Biaya Beli</div>
-    <div class="gcard-val">Umumnya 0.15%-0.19% dari nilai transaksi (tergantung broker). Beberapa broker offer 0% fee beli untuk saham tertentu.</div>
-    </div>
-    <div class="gcard" style="border-color:rgba(242,54,69,0.3);background:rgba(242,54,69,0.06);">
-    <div class="gcard-title" style="color:{_R};"> Biaya Jual</div>
-    <div class="gcard-val">Fee jual ~0.25% + Pajak penjualan 0.1% = total ~0.35% dari nilai transaksi jual.</div>
-    </div>
-    </div>
-    <div class="formula">BEP = Harga Beli &times; (1 + Fee Beli) &times; (1 + Fee Jual + Pajak)</div>
-    <div class="steps" style="margin-top:12px;">
-    <div class="step"><div class="snum">1</div><div class="stext">Masukkan <b>Harga Beli</b> dan <b>% Fee Broker</b> yang kamu gunakan.</div></div>
-    <div class="step"><div class="snum">2</div><div class="stext">Kalkulator menampilkan <span class="hi">harga BEP</span> - harga minimum jual agar tidak rugi setelah dipotong semua biaya.</div></div>
-    <div class="step"><div class="snum">3</div><div class="stext">Gunakan BEP sebagai patokan - jangan jual di bawah BEP kecuali memang sudah keputusan cut loss terencana.</div></div>
-    </div>
-    <div class="warn">(!) Fee broker berbeda-beda tiap platform. Pastikan kamu tahu fee broker yang kamu pakai dan masukkan angka yang akurat agar BEP terhitung tepat.</div>
-    </div>
-
-    <div class="feat">
-    <div class="feat-title"> Tips Penggunaan Kalkulator Optimal</div>
-    <div class="steps">
-    <div class="step"><div class="snum">&rarr;</div><div class="stext">Selalu hitung <span class="hi">position size</span> <b>sebelum</b> entry - bukan setelah. Emosi saat market buka sering membuat trader over-leverage.</div></div>
-    <div class="step"><div class="snum">&rarr;</div><div class="stext">Gunakan <span class="ok">P&L Calculator</span> untuk simulasi skenario: "jika harga naik ke TP1, berapa yang aku dapat? Jika kena SL, berapa yang hilang?"</div></div>
-    <div class="step"><div class="snum">&rarr;</div><div class="stext">Catat semua trade di <span class="yl">Trading Journal Google Sheets MnM</span> - kombinasikan dengan kalkulator untuk evaluasi performa bulanan.</div></div>
-    <div class="step"><div class="snum">&rarr;</div><div class="stext">R:R (Risk-Reward) minimum yang disarankan MnM Strategy+ adalah <span class="hi">1:2</span> - artinya untuk setiap 1 risiko, target minimal 2 profit.</div></div>
-    </div>
-    </div>
-
-    </div></body></html>"""
-                components.html(_guide_html_6, height=2200, scrolling=True)
-
-            # ══════════════════════════════════════════════════════════════
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN - BROKER SUMMARY (pg_tab8)
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab8:
-                _guide_html_brosum = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0;}}
-    .sec-head{{display:flex;align-items:center;gap:12px;margin:28px 0 14px;padding-bottom:10px;border-bottom:2px solid rgba(124,58,237,0.35);}}
-    .sec-icon{{font-size:1.6rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.875rem;color:{_SUB};margin-top:3px;}}
-    .feat{{background:{_FEAT_BG};border:2px solid {_FEAT_BD};border-left:4px solid {_P};border-radius:0 10px 10px 0;padding:18px 20px;margin-bottom:14px;}}
-    .feat.blue{{border-left-color:{_B};border-color:rgba(96,165,250,0.28);}}
-    .feat.green{{border-left-color:{_G};border-color:rgba(38,166,154,0.28);}}
-    .feat.yellow{{border-left-color:{_Y};border-color:rgba(251,191,36,0.28);}}
-    .feat.red{{border-left-color:{_R};border-color:rgba(242,54,69,0.25);}}
-    .feat-title{{font-size:1.1rem;font-weight:700;color:{_P};margin-bottom:10px;display:flex;align-items:center;gap:8px;}}
-    .feat.blue .feat-title{{color:{_B};}}
-    .feat.green .feat-title{{color:{_G};}}
-    .feat.yellow .feat-title{{color:{_Y};}}
-    .feat.red .feat-title{{color:{_R};}}
-    .steps{{margin:10px 0 6px;}}
-    .step{{display:flex;gap:11px;align-items:flex-start;margin-bottom:9px;}}
-    .snum{{min-width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,{_P},{_B});color:#fff;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}}
-    .stext{{font-size:0.875rem;color:{_TXT};line-height:1.75;}}
-    .stext b{{color:{_B};}}
-    .stext .hi{{color:{_P};font-weight:700;}}
-    .stext .ok{{color:{_G};font-weight:700;}}
-    .stext .yl{{color:{_Y};font-weight:700;}}
-    .stext .dn{{color:{_R};font-weight:700;}}
-    .tag{{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.8rem;font-weight:700;margin:2px;}}
-    .tag.buy{{background:rgba(38,166,154,0.18);color:{_G};border:1px solid rgba(38,166,154,0.4);}}
-    .tag.sell{{background:rgba(242,54,69,0.15);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
-    .tag.foreign{{background:rgba(242,54,69,0.13);color:{_R};border:1px solid rgba(242,54,69,0.35);}}
-    .tag.bumn{{background:rgba(38,166,154,0.14);color:{_G};border:1px solid rgba(38,166,154,0.35);}}
-    .tag.local{{background:rgba(139,92,246,0.15);color:{_P};border:1px solid rgba(139,92,246,0.4);}}
-
-    .table-wrap{{overflow-x:auto;margin:12px 0;}}
-    table{{width:100%;border-collapse:collapse;font-size:0.875rem;}}
-    th{{background:rgba(124,58,237,0.15);color:{_P};font-weight:700;padding:8px 12px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.35);}}
-    td{{padding:7px 12px;border-bottom:1px solid rgba(255,255,255,0.06);color:{_TXT};}}
-    tr:hover td{{background:rgba(124,58,237,0.07);}}
-    .alert{{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.875rem;color:{_Y};}}
-    .info-box{{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.3);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:0.875rem;color:{_B};}}
-    .broker-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0;}}
-    .broker-card{{background:{_FEAT_BG};border:1px solid {_FEAT_BD};border-radius:8px;padding:12px 14px;}}
-    .broker-card.foreign{{border-left:3px solid rgba(242,54,69,0.6);}}
-    .broker-card.bumn{{border-left:3px solid rgba(38,166,154,0.7);}}
-    .broker-card.local{{border-left:3px solid rgba(139,92,246,0.6);}}
-    .broker-code{{font-size:1.1rem;font-weight:700;color:{_P};letter-spacing:0.08em;}}
-    .broker-name{{font-size:0.8rem;color:{_SUB};margin-top:2px;line-height:1.3;}}
-    .broker-vol{{font-size:0.72rem;color:{_SUB};opacity:0.55;margin-top:1px;}}
-    .broker-note{{font-size:0.72rem;color:{_Y};margin-top:3px;font-style:italic;}}
-    .broker-type{{font-size:0.72rem;margin-top:5px;}}
-    @media(max-width:600px){{
-      .broker-grid{{grid-template-columns:1fr 1fr;}}
-      .sec-title{{font-size:1rem;}}
-      .feat{{padding:13px 14px;}}
-    }}
-    </style></head><body><div class="wrap">
-
-    <div class="sec-head">
-      <div class="sec-icon"></div>
-      <div>
-        <div class="sec-title">BROKER SUMMARY - Panduan Lengkap</div>
-        <div class="sec-desc">Membaca jejak transaksi broker untuk analisa bandarmologi & akumulasi/distribusi</div>
-      </div>
-    </div>
-
-    <div class="feat">
-    <div class="feat-title"> Apa itu Broker Summary (Brosum)?</div>
-    <div class="stext">Broker Summary adalah ringkasan aktivitas transaksi <b>per kode broker</b> dalam satu saham pada periode tertentu (harian/mingguan/bulanan). Data ini menampilkan total <span class="hi">volume beli</span>, <span class="dn">volume jual</span>, dan <b>net buy/sell</b> setiap broker - sehingga kamu bisa melihat siapa yang sedang akumulasi dan siapa yang distribusi.</div>
-    <div class="steps" style="margin-top:12px;">
-      <div class="step"><div class="snum">1</div><div class="stext">Broker Summary tersedia di platform seperti <b>RTI Business</b>, <b>ChartNexus</b>, <b>Stockbit</b>, <b>IPOT</b>, dan aplikasi broker masing-masing.</div></div>
-      <div class="step"><div class="snum">2</div><div class="stext">Data umumnya menampilkan: <span class="hi">Kode Broker</span> | <span class="ok">Buy Volume (lot/nilai)</span> | <span class="dn">Sell Volume (lot/nilai)</span> | <b>Net Buy/Sell</b>.</div></div>
-      <div class="step"><div class="snum">3</div><div class="stext">Untuk analisa bandarmologi di SIGMA, screenshot Broker Summary lalu lampirkan bersama perintah <span class="hi">"3. Bandarmologi [kode saham]"</span>.</div></div>
-    </div>
-    </div>
-
-    <div class="feat blue">
-    <div class="feat-title"> Kolom-Kolom Penting dalam Broker Summary</div>
-    <div class="table-wrap">
-    <table>
-      <tr><th>Kolom</th><th>Keterangan</th></tr>
-      <tr><td><b>Kode Broker</b></td><td>Kode 2 huruf broker (mis: YP, AK, RX, ZP, BQ)</td></tr>
-      <tr><td><b>Buy Vol / Lot</b></td><td>Total volume beli dalam lot (1 lot = 100 lembar)</td></tr>
-      <tr><td><b>Sell Vol / Lot</b></td><td>Total volume jual dalam lot</td></tr>
-      <tr><td><b>Net Buy</b></td><td>Buy Vol - Sell Vol. Positif = akumulasi, Negatif = distribusi</td></tr>
-      <tr><td><b>Buy Value</b></td><td>Total nilai transaksi beli (Rp)</td></tr>
-      <tr><td><b>Sell Value</b></td><td>Total nilai transaksi jual (Rp)</td></tr>
-      <tr><td><b>Avg Buy Price</b></td><td>Rata-rata harga beli broker tersebut</td></tr>
-      <tr><td><b>Avg Sell Price</b></td><td>Rata-rata harga jual broker tersebut</td></tr>
-      <tr><td><b>Frekuensi</b></td><td>Jumlah order/transaksi - frekuensi tinggi = aktivitas intens</td></tr>
-    </table>
-    </div>
-    </div>
-
-    <div class="feat green">
-    <div class="feat-title"> Cara Membaca Sinyal Akumulasi & Distribusi</div>
-    <div class="steps">
-      <div class="step"><div class="snum">&uarr;</div><div class="stext"><span class="ok">Akumulasi (Bullish Signal):</span> Broker tertentu konsisten <b>Net Buy besar</b> selama beberapa hari berturut-turut, terutama jika harga belum bergerak jauh. Ini tanda "bandar" sedang kumpulkan saham.</div></div>
-      <div class="step"><div class="snum">&darr;</div><div class="stext"><span class="dn">Distribusi (Bearish Signal):</span> Broker yang sebelumnya Net Buy kini berbalik jadi <b>Net Sell dominan</b>. Terutama berbahaya jika harga masih tinggi - ini tanda mulai lepas saham ke publik.</div></div>
-      <div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="yl">Crossing:</span> Broker A beli banyak DARI broker B yang jual banyak, pada <b>harga yang sama/mirip</b>. Ini pola crossing klasik - perpindahan kepemilikan dari satu pihak ke pihak lain secara terkoordinasi.</div></div>
-      <div class="step"><div class="snum">&rarr;</div><div class="stext"><span class="hi">Foreign Flow:</span> Perhatikan broker asing: <b>AK,YU,ZP,BK,KZ,RX,KK</b> = sinyal institusi global murni. <b>YP (Mirae) & CP (KB Valbury)</b> = resmi asing tapi nasabahnya mayoritas lokal, jadi pergerakannya campuran - jangan langsung dikategorikan sebagai "sinyal asing". Net buy asing murni (AK,KZ,BK dll) = konfirmasi kuat.</div></div>
-    </div>
-    </div>
-
-    <div class="feat yellow">
-    <div class="feat-title"> Kode Broker Penting di IDX</div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 14px;align-items:center;">
-      <span style="font-size:0.72rem;color:{_SUB};letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">LEGENDA:</span>
-      <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;"><span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;display:inline-block;"></span><span style="color:{_P};">Lokal</span></span>
-      <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;"><span style="width:10px;height:10px;border-radius:50%;background:#26a69a;display:inline-block;"></span><span style="color:{_G};">BUMN</span></span>
-      <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;"><span style="width:10px;height:10px;border-radius:50%;background:#f23645;display:inline-block;"></span><span style="color:{_R};">Asing / Foreign</span></span>
-      <span style="font-size:0.72rem;color:{_Y};font-style:italic;">(!) YP & CP = entitas asing, tapi nasabah mayoritas lokal</span>
-    </div>
-    <div class="broker-grid">
-      <div class="broker-card foreign"><div class="broker-code">AK</div><div class="broker-name">UBS Sekuritas Indonesia</div><div class="broker-vol">3.4T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">YU</div><div class="broker-name">CGS International Sekuritas</div><div class="broker-vol">1.8T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">YP</div><div class="broker-name">Mirae Asset Sekuritas</div><div class="broker-vol">1.8T</div><div class="broker-type"><span class="tag foreign">Asing*</span></div><div class="broker-note">(!) Mayoritas nasabah lokal</div></div>
-      <div class="broker-card foreign"><div class="broker-code">ZP</div><div class="broker-name">Maybank Sekuritas Indonesia</div><div class="broker-vol">1.7T</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">CP</div><div class="broker-name">KB Valbury Sekuritas</div><div class="broker-vol">1.0T</div><div class="broker-type"><span class="tag foreign">Asing*</span></div><div class="broker-note">(!) Mayoritas nasabah lokal</div></div>
-      <div class="broker-card foreign"><div class="broker-code">BK</div><div class="broker-name">J.P. Morgan Sekuritas</div><div class="broker-vol">734.7B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">KZ</div><div class="broker-name">CLSA Sekuritas Indonesia</div><div class="broker-vol">643.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">RX</div><div class="broker-name">Macquarie Sekuritas Indonesia</div><div class="broker-vol">623.4B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">KK</div><div class="broker-name">Phillip Sekuritas Indonesia</div><div class="broker-vol">412.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">AI</div><div class="broker-name">Kay Hian Sekuritas</div><div class="broker-vol">335.5B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">AG</div><div class="broker-name">Kiwoom Sekuritas Indonesia</div><div class="broker-vol">288.3B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">DR</div><div class="broker-name">RHB Sekuritas Indonesia</div><div class="broker-vol">278.8B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">BQ</div><div class="broker-name">Korea Investment Sekuritas</div><div class="broker-vol">270.1B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">XA</div><div class="broker-name">NH Korindo Sekuritas Indonesia</div><div class="broker-vol">237.7B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">TP</div><div class="broker-name">OCBC Sekuritas Indonesia</div><div class="broker-vol">208.5B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">HD</div><div class="broker-name">KGI Sekuritas Indonesia</div><div class="broker-vol">174.3B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">RB</div><div class="broker-name">Ina Sekuritas Indonesia</div><div class="broker-vol">66.2B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">DP</div><div class="broker-name">DBS Vickers Sekuritas</div><div class="broker-vol">61.4B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">LS</div><div class="broker-name">Reliance Sekuritas Indonesia</div><div class="broker-vol">38.2B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">FS</div><div class="broker-name">Yuanta Sekuritas Indonesia</div><div class="broker-vol">23.1B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">DU</div><div class="broker-name">KAF Sekuritas Indonesia</div><div class="broker-vol">9.6B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">GI</div><div class="broker-name">Webull Sekuritas Indonesia</div><div class="broker-vol">9.0B</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">AH</div><div class="broker-name">Shinhan Sekuritas Indonesia</div><div class="broker-vol">266.1M</div><div class="broker-type"><span class="tag foreign">Asing</span></div></div>
-      <div class="broker-card foreign"><div class="broker-code">CS</div><div class="broker-name">Credit Suisse Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card foreign"><div class="broker-code">CG</div><div class="broker-name">Citigroup Sekuritas Indonesia</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card foreign"><div class="broker-code">GW</div><div class="broker-name">HSBC Sekuritas Indonesia</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card foreign"><div class="broker-code">LH</div><div class="broker-name">Royal Investium Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card foreign"><div class="broker-code">MS</div><div class="broker-name">Morgan Stanley Sekuritas</div><div class="broker-type"><span class="tag foreign">Asing</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card bumn"><div class="broker-code">CC</div><div class="broker-name">Mandiri Sekuritas</div><div class="broker-vol">2.8T</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
-      <div class="broker-card bumn"><div class="broker-code">NI</div><div class="broker-name">BNI Sekuritas</div><div class="broker-vol">590.8B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
-      <div class="broker-card bumn"><div class="broker-code">OD</div><div class="broker-name">BRI Danareksa Sekuritas</div><div class="broker-vol">403.3B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
-      <div class="broker-card bumn"><div class="broker-code">DX</div><div class="broker-name">Bahana Sekuritas</div><div class="broker-vol">69.4B</div><div class="broker-type"><span class="tag bumn">BUMN</span></div></div>
-      <div class="broker-card local"><div class="broker-code">XL</div><div class="broker-name">Stockbit Sekuritas Digital</div><div class="broker-vol">4.4T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">MG</div><div class="broker-name">Semesta Indovest Sekuritas</div><div class="broker-vol">1.3T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">PD</div><div class="broker-name">Indo Premier Sekuritas</div><div class="broker-vol">1.0T</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">XC</div><div class="broker-name">Ajaib Sekuritas Asia</div><div class="broker-vol">978.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">DH</div><div class="broker-name">Sinarmas Sekuritas</div><div class="broker-vol">796.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">AZ</div><div class="broker-name">Sucor Sekuritas</div><div class="broker-vol">715.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">SQ</div><div class="broker-name">BCA Sekuritas</div><div class="broker-vol">705.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">LG</div><div class="broker-name">Trimegah Sekuritas Indonesia</div><div class="broker-vol">384.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">IC</div><div class="broker-name">Integrity Capital Sekuritas</div><div class="broker-vol">366.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">IF</div><div class="broker-name">Samuel Sekuritas Indonesia</div><div class="broker-vol">354.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">GR</div><div class="broker-name">Panin Sekuritas Tbk.</div><div class="broker-vol">310.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">KI</div><div class="broker-name">Ciptadana Sekuritas Asia</div><div class="broker-vol">278.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">BB</div><div class="broker-name">Verdhana Sekuritas Indonesia</div><div class="broker-vol">255.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">YB</div><div class="broker-name">Yakin Bertumbuh Sekuritas</div><div class="broker-vol">246.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">EP</div><div class="broker-name">MNC Sekuritas</div><div class="broker-vol">203.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">SS</div><div class="broker-name">Supra Sekuritas Indonesia</div><div class="broker-vol">181.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">AO</div><div class="broker-name">Erdhika Elit Sekuritas</div><div class="broker-vol">123.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">YJ</div><div class="broker-name">Lotus Andalan Sekuritas</div><div class="broker-vol">115.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">BR</div><div class="broker-name">Trust Sekuritas</div><div class="broker-vol">97.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">HP</div><div class="broker-name">Henan Putihrai Sekuritas</div><div class="broker-vol">82.8B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">SF</div><div class="broker-name">Surya Fajar Sekuritas</div><div class="broker-vol">76.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">AT</div><div class="broker-name">Phintraco Sekuritas</div><div class="broker-vol">73.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">IN</div><div class="broker-name">Investindo Nusantara Sekuritas</div><div class="broker-vol">63.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">RF</div><div class="broker-name">Buana Capital Sekuritas</div><div class="broker-vol">60.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">FZ</div><div class="broker-name">Waterfront Sekuritas Indonesia</div><div class="broker-vol">43.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">SH</div><div class="broker-name">Artha Sekuritas Indonesia</div><div class="broker-vol">41.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">PC</div><div class="broker-name">FAC Sekuritas Indonesia</div><div class="broker-vol">39.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">SA</div><div class="broker-name">Elit Sukses Sekuritas</div><div class="broker-vol">38.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">PO</div><div class="broker-name">Pilarmas Investindo Sekuritas</div><div class="broker-vol">38.0B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">TS</div><div class="broker-name">Dwidana Sakti Sekuritas</div><div class="broker-vol">37.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">II</div><div class="broker-name">Danatama Makmur Sekuritas</div><div class="broker-vol">36.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">MU</div><div class="broker-name">Minna Padi Investama Sekuritas</div><div class="broker-vol">35.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">IH</div><div class="broker-name">Indo Harvest Sekuritas</div><div class="broker-vol">32.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">IU</div><div class="broker-name">Indo Capital Sekuritas</div><div class="broker-vol">29.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">CD</div><div class="broker-name">Mega Capital Sekuritas</div><div class="broker-vol">29.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">EL</div><div class="broker-name">Evergreen Sekuritas Indonesia</div><div class="broker-vol">23.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">MI</div><div class="broker-name">Victoria Sekuritas Indonesia</div><div class="broker-vol">23.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">AP</div><div class="broker-name">Pacific Sekuritas Indonesia</div><div class="broker-vol">20.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">PG</div><div class="broker-name">Panca Global Sekuritas</div><div class="broker-vol">16.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">RO</div><div class="broker-name">Pluang Maju Sekuritas</div><div class="broker-vol">15.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">AR</div><div class="broker-name">Binaartha Sekuritas</div><div class="broker-vol">14.9B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">PF</div><div class="broker-name">Danasakti Sekuritas Indonesia</div><div class="broker-vol">13.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">ID</div><div class="broker-name">Anugerah Sekuritas Indonesia</div><div class="broker-vol">13.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">ES</div><div class="broker-name">Ekokapital Sekuritas</div><div class="broker-vol">12.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">ZR</div><div class="broker-name">Bumiputera Sekuritas</div><div class="broker-vol">11.3B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">QA</div><div class="broker-name">Tuntun Sekuritas Indonesia</div><div class="broker-vol">10.9B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">RG</div><div class="broker-name">Profindo Sekuritas Indonesia</div><div class="broker-vol">9.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">GA</div><div class="broker-name">BNC Sekuritas Indonesia</div><div class="broker-vol">9.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">PI</div><div class="broker-name">Magenta Kapital Sekuritas</div><div class="broker-vol">9.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">OK</div><div class="broker-name">Net Sekuritas</div><div class="broker-vol">6.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">AF</div><div class="broker-name">Harita Kencana Sekuritas</div><div class="broker-vol">6.2B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">BS</div><div class="broker-name">Equity Sekuritas Indonesia</div><div class="broker-vol">5.7B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">TF</div><div class="broker-name">Universal Broker Indonesia</div><div class="broker-vol">5.6B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">RS</div><div class="broker-name">Yulie Sekuritas Indonesia</div><div class="broker-vol">5.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">AD</div><div class="broker-name">OSO Sekuritas Indonesia</div><div class="broker-vol">4.4B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">JB</div><div class="broker-name">BJB Sekuritas</div><div class="broker-vol">2.1B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">BF</div><div class="broker-name">Inti Fikasa Sekuritas</div><div class="broker-vol">2.0B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">YO</div><div class="broker-name">Amantara Sekuritas Indonesia</div><div class="broker-vol">1.5B</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">IT</div><div class="broker-name">Inti Teladan Sekuritas</div><div class="broker-vol">803.6M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">PP</div><div class="broker-name">Aldiracita Sekuritas Indonesia</div><div class="broker-vol">543.0M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">DD</div><div class="broker-name">Makindo Sekuritas</div><div class="broker-vol">125.3M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">FO</div><div class="broker-name">Forte Global Sekuritas</div><div class="broker-vol">3.8M</div><div class="broker-type"><span class="tag local">Lokal</span></div></div>
-      <div class="broker-card local"><div class="broker-code">KS</div><div class="broker-name">Kresna Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">AN</div><div class="broker-name">Wanteg Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">DM</div><div class="broker-name">Masindo Artha Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">IP</div><div class="broker-name">Yugen Bertumbuh Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">BZ</div><div class="broker-name">Batavia Prosperindo Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">MK</div><div class="broker-name">Ekuator Swarna Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">PS</div><div class="broker-name">Paramitra Alfa Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">SC</div><div class="broker-name">IMG Sekuritas</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-      <div class="broker-card local"><div class="broker-code">TX</div><div class="broker-name">Dhanawibawa Sekuritas Indonesia</div><div class="broker-type"><span class="tag local">Lokal</span></div><div class="broker-note">Tidak aktif</div></div>
-    </div>
-    </div>
-
-    <div class="feat">
-    <div class="feat-title"> Cara Menggunakan Broker Summary di SIGMA</div>
-    <div class="steps">
-      <div class="step"><div class="snum">1</div><div class="stext">Buka platform data saham (RTI, Stockbit, IPOT, dll.) &rarr; cari saham yang ingin dianalisa &rarr; buka menu <b>Broker Summary</b>.</div></div>
-      <div class="step"><div class="snum">2</div><div class="stext">Pilih periode: <span class="yl">Harian</span> untuk sinyal jangka pendek, <span class="ok">Mingguan/Bulanan</span> untuk melihat tren akumulasi besar.</div></div>
-      <div class="step"><div class="snum">3</div><div class="stext">Screenshot tampilan Broker Summary - pastikan terlihat jelas kolom Net Buy/Sell dan kode broker teratas.</div></div>
-      <div class="step"><div class="snum">4</div><div class="stext">Di SIGMA, ketik: <span class="hi">"3. Bandarmologi BBRI"</span> (ganti dengan kode saham) sambil <b>lampirkan screenshot Brosum, Price Table, dan Volume</b>.</div></div>
-      <div class="step"><div class="snum">5</div><div class="stext">SIGMA AI akan membedah pola akumulasi/distribusi, crossing antar broker, dan memberikan interpretasi terhadap momentum harga.</div></div>
-    </div>
-    <div class="info-box"> <b>Pro Tip:</b> Untuk analisa Quad Confluence (perintah 6), lampirkan sekaligus: SS Chart Teknikal + SS Broker Summary. SIGMA akan menggabungkan sinyal teknikal, bandarmologi, fundamental, dan makro dalam satu analisa terpadu.</div>
-    </div>
-
-    <div class="feat red">
-    <div class="feat-title">(!) Hal-Hal yang Perlu Diperhatikan</div>
-    <div class="steps">
-      <div class="step"><div class="snum">!</div><div class="stext"><span class="dn">Jangan terpaku hanya pada 1 hari data</span> - pola akumulasi bandar biasanya terlihat setelah 3&ndash;10 hari observasi berturut-turut.</div></div>
-      <div class="step"><div class="snum">!</div><div class="stext">Broker besar tidak selalu = bandar. <span class="yl">Konfirmasi dengan price action</span>: jika akumulasi tapi harga sideways/turun, waspadai distribusi terselubung.</div></div>
-      <div class="step"><div class="snum">!</div><div class="stext">Data Broker Summary adalah <b>lagging indicator</b> - ia menunjukkan apa yang SUDAH terjadi, bukan apa yang AKAN terjadi. Gunakan bersama analisa teknikal.</div></div>
-      <div class="step"><div class="snum">!</div><div class="stext">Semua analisa bandarmologi adalah <b>referensi riset</b>, bukan sinyal trading resmi. Selalu DYOR dan kelola risiko dengan disiplin.</div></div>
-    </div>
-    </div>
-
-    </div></body></html>"""
-                components.html(_guide_html_brosum, height=2400, scrolling=True)
-
-            # ══════════════════════════════════════════════════════════════
-            # PANDUAN 9 - CARA KERJA SCREENER (HOW IT WORKS)
-            # ══════════════════════════════════════════════════════════════
-            with pg_tab9:
-                _P7 = "#a78bfa"
-                _B7 = "#60a5fa"
-                _G7 = "#26a69a"
-                _R7 = "#f23645"
-                _Y7 = "#fbbf24"
-                _TXT7 = text_main
-                _SUB7 = text_sub
-                _BG7  = met_bg
-                _BD7  = met_border
-
-                _guide_html_7 = f"""<!DOCTYPE html><html><head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-    *{{box-sizing:border-box;margin:0;padding:0;}}
-    body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT7};font-size:0.875rem;line-height:1.8;}}
-    .wrap{{max-width:100%;padding:4px 0 32px;}}
-
-    /* -- Hero -- */
-    .hero{{
-      background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(96,165,250,0.08));
-      border:1px solid rgba(124,58,237,0.25);border-radius:12px;
-      padding:22px 24px;margin-bottom:22px;
-    }}
-    .hero-title{{font-size:1.25rem;font-weight:700;color:{_P7};letter-spacing:0.06em;margin-bottom:6px;}}
-    .hero-sub{{font-size:0.875rem;color:{_SUB7};line-height:1.7;}}
-
-    /* -- Nav tabs -- */
-    .nav{{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px;}}
-    .nav-btn{{
-      font-family:'IBM Plex Mono',monospace;
-      font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;
-      border:1px solid rgba(124,58,237,0.3);background:rgba(124,58,237,0.07);
-      color:{_P7};border-radius:6px;padding:6px 13px;cursor:pointer;
-      transition:all 0.15s;
-    }}
-    .nav-btn:hover,.nav-btn.active{{background:rgba(124,58,237,0.18);border-color:{_P7};}}
-
-    /* -- Panels -- */
-    .panel{{display:none;}}
-    .panel.active{{display:block;}}
-
-    /* -- Section header -- */
-    .sec-head{{
-      display:flex;align-items:center;gap:12px;
-      margin:0 0 16px;padding-bottom:10px;
-      border-bottom:1px solid rgba(124,58,237,0.2);
-    }}
-    .sec-icon{{font-size:1.5rem;}}
-    .sec-title{{font-size:1.1rem;font-weight:700;color:{_P7};letter-spacing:0.06em;}}
-    .sec-desc{{font-size:0.8rem;color:{_SUB7};margin-top:2px;}}
-
-    /* -- Cards -- */
-    .card{{
-      background:{_BG7};border:1px solid {_BD7};
-      border-radius:10px;padding:16px 18px;margin-bottom:12px;
-    }}
-    .card.accent-p{{border-left:3px solid {_P7};}}
-    .card.accent-b{{border-left:3px solid {_B7};}}
-    .card.accent-g{{border-left:3px solid {_G7};}}
-    .card.accent-y{{border-left:3px solid {_Y7};}}
-    .card.accent-r{{border-left:3px solid {_R7};}}
-    .card-title{{font-size:0.875rem;font-weight:700;color:{_B7};margin-bottom:8px;}}
-    .card-body{{font-size:0.875rem;color:{_TXT7};line-height:1.8;}}
-    .card-body b{{color:{_P7};}}
-
-    /* -- Flow pipeline -- */
-    .pipeline{{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 0;}}
-    .pipe-step{{
-      font-size:0.72rem;font-weight:700;letter-spacing:0.07em;padding:5px 11px;
-      border-radius:6px;white-space:nowrap;
-    }}
-    .pipe-arrow{{font-size:0.875rem;color:{_SUB7};}}
-
-    /* -- Steps numbered -- */
-    .steps{{margin:6px 0;}}
-    .step{{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}}
-    .snum{{
-      min-width:22px;height:22px;border-radius:50%;
-      background:linear-gradient(135deg,{_P7},{_B7});
-      color:#fff;font-size:0.72rem;font-weight:700;
-      display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
-    }}
-    .stext{{font-size:0.875rem;color:{_TXT7};line-height:1.75;}}
-    .stext b{{color:{_B7};}}
-    .hi{{color:{_P7};font-weight:700;}}
-    .ok{{color:{_G7};font-weight:700;}}
-    .dn{{color:{_R7};font-weight:700;}}
-    .yl{{color:{_Y7};font-weight:700;}}
-
-    /* -- Metric grid -- */
-    .mgrid{{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}}
-    .mcard{{
-      background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);
-      border-radius:8px;padding:11px 13px;
-    }}
-    .mlbl{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{_SUB7};margin-bottom:4px;}}
-    .mval{{font-size:1.1rem;font-weight:700;color:{_P7};}}
-    .msub{{font-size:0.8rem;color:{_SUB7};margin-top:3px;line-height:1.5;}}
-
-    /* -- Badges -- */
-    .bdg{{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:700;margin:0 3px;vertical-align:middle;}}
-    .bp{{background:rgba(167,139,250,0.15);color:{_P7};border:1px solid rgba(167,139,250,0.35);}}
-    .bb{{background:rgba(96,165,250,0.14);color:{_B7};border:1px solid rgba(96,165,250,0.35);}}
-    .bg{{background:rgba(38,166,154,0.14);color:{_G7};border:1px solid rgba(38,166,154,0.35);}}
-    .br{{background:rgba(242,54,69,0.12);color:{_R7};border:1px solid rgba(242,54,69,0.35);}}
-    .by{{background:rgba(251,191,36,0.12);color:{_Y7};border:1px solid rgba(251,191,36,0.35);}}
-
-    /* -- Info / Warn boxes -- */
-    .tip{{background:rgba(96,165,250,0.07);border-left:3px solid {_B7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
-    .honesty{{background:rgba(38,166,154,0.07);border-left:3px solid {_G7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
-    .warn{{background:rgba(251,191,36,0.07);border-left:3px solid {_Y7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
-    .danger{{background:rgba(242,54,69,0.07);border-left:3px solid {_R7};border-radius:0 8px 8px 0;padding:10px 14px;margin:10px 0 4px;font-size:0.875rem;color:{_TXT7};line-height:1.72;}}
-
-    /* -- Source chips -- */
-    .chip{{display:inline-block;font-size:0.72rem;padding:1px 7px;border-radius:4px;margin:0 2px;background:rgba(167,139,250,0.1);color:{_P7};border:1px solid rgba(167,139,250,0.2);}}
-
-    /* -- Divider -- */
-    .div{{height:1px;background:rgba(124,58,237,0.15);margin:18px 0;}}
-
-    @media(max-width:600px){{
-      .mgrid{{grid-template-columns:1fr;}}
-      .pipeline{{gap:4px;}}
-      .pipe-step{{font-size:0.72rem;padding:4px 8px;}}
-      .card{{padding:12px 13px;}}
-    }}
-    </style></head><body><div class="wrap">
-
-    <!-- HERO -->
-    <div class="hero">
-      <div class="hero-title"> BAGAIMANA SIGMA MEMILIH SAHAM?</div>
-      <div class="hero-sub">
-        Penjelasan lengkap arsitektur, logika, dan mekanisme di balik setiap modul screening SIGMA - 
-        dari sumber data, filter bertingkat, sampai cara AI menghasilkan trade plan.<br><br>
-        Pilih modul di bawah untuk membaca detail cara kerjanya.
-      </div>
-    </div>
-
-    <!-- NAV -->
-    <div class="nav" id="guide-nav">
-      <button class="nav-btn active" onclick="showGuide('overview',this)">Arsitektur Sistem</button>
-      <button class="nav-btn" onclick="showGuide('insight',this)">AI Stock Insight</button>
-      <button class="nav-btn" onclick="showGuide('daily',this)">Daily Screener</button>
-      <button class="nav-btn" onclick="showGuide('weekly',this)">Weekly Screener</button>
-      <button class="nav-btn" onclick="showGuide('bsjp',this)">BSJP</button>
-      <button class="nav-btn" onclick="showGuide('fundamental',this)">Fundamental</button>
-      <button class="nav-btn" onclick="showGuide('accuracy',this)">Akurasi &amp; Batas</button>
-    </div>
-
-    <!-- ============ PANEL: OVERVIEW ============ -->
-    <div class="panel active" id="g-overview">
-      <div class="sec-head">
-        <span class="sec-icon"></span>
-        <div>
-          <div class="sec-title">ARSITEKTUR MULTI-LAYER SIGMA</div>
-          <div class="sec-desc">Setiap rekomendasi melewati minimal 3 lapisan validasi sebelum ditampilkan</div>
-        </div>
-      </div>
-
-      <div class="pipeline">
-        <div class="pipe-step" style="background:rgba(96,165,250,0.12);color:{_B7};border:1px solid rgba(96,165,250,0.3);"> Data Live IDX</div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-step" style="background:rgba(167,139,250,0.12);color:{_P7};border:1px solid rgba(167,139,250,0.3);"> Filter Teknikal</div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-step" style="background:rgba(38,166,154,0.12);color:{_G7};border:1px solid rgba(38,166,154,0.3);"> Analisa Volume</div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-step" style="background:rgba(251,191,36,0.12);color:{_Y7};border:1px solid rgba(251,191,36,0.3);"> AI Analisa</div>
-        <div class="pipe-arrow">&rarr;</div>
-        <div class="pipe-step" style="background:rgba(242,54,69,0.12);color:{_R7};border:1px solid rgba(242,54,69,0.3);"> Trade Plan</div>
-      </div>
-
-      <div class="div"></div>
-
-      <div class="card accent-b">
-        <div class="card-title">5 Sumber Data Real-Time (Multi-Source Fallback)</div>
-        <div class="card-body">
-          <b>Harga & Volume:</b><br>
-          <span class="chip">IDX API</span><span class="chip">Yahoo Finance</span><span class="chip">Finnhub</span><span class="chip">FMP</span><span class="chip">stooq</span><br>
-          Diambil secara paralel. <b>Prioritas: IDX API</b> (sumber resmi bursa). Jika gagal, otomatis fallback ke layer berikutnya.<br><br>
-          <b>Fundamental:</b><br>
-          <span class="chip">Finnhub</span><span class="chip">Alpha Vantage</span><span class="chip">FMP</span><span class="chip">yfinance</span><br>
-          Setiap API punya key cadangan (KEY1&ndash;KEY6). Jika rate limit, sistem auto-rotate ke key berikutnya tanpa gangguan.<br><br>
-          <b>Berita:</b><br>
-          <span class="chip">Google News RSS</span><span class="chip">CNBC Indonesia</span><span class="chip">Kontan</span><span class="chip">Bisnis.com</span><br>
-          Difilter berdasarkan keyword relevan (nama emiten, IHSG, makro, komoditas).
-        </div>
-      </div>
-
-      <div class="card accent-p">
-        <div class="card-title">Validasi Corporate Action - Otomatis</div>
-        <div class="card-body">
-          SIGMA menyimpan database internal riwayat <b>stock split & reverse split</b> dari semua emiten besar IDX (BBCA, BBRI, BMRI, TLKM, GOTO, dll).<br><br>
-          Sebelum data harga dikirim ke AI untuk dianalisa, sistem otomatis memvalidasi:<br>
-          <span class="ok">OK Harga masuk rentang post-split</span> &rarr; aman digunakan<br>
-          <span class="dn">(!) Harga terdeteksi pre-split</span> &rarr; AI diperingatkan, wajib memberitahu user<br>
-          <span class="dn">(!) Saham berstatus SUSPEND</span> &rarr; analisa dihentikan, dilarang buat trade plan
-        </div>
-      </div>
-
-      <div class="card accent-g">
-        <div class="card-title">Database Pemegang Saham IDX</div>
-        <div class="card-body">
-          SIGMA menyimpan data bulanan jumlah pemegang saham dari <b>200+ emiten BEI</b> (Apr 2025 &ndash; Mar 2026).<br><br>
-          <span class="ok">Pemegang naik konsisten 3 bulan</span> &rarr; sinyal akumulasi retail kuat - institusi sudah masuk lebih dulu<br>
-          <span class="dn">Pemegang turun konsisten 3 bulan</span> &rarr; sinyal distribusi - pemegang lama mulai keluar<br><br>
-          Data ini dikombinasikan dengan analisa volume dan teknikal untuk memperkuat atau menyanggah sinyal.
-        </div>
-      </div>
-    </div>
-
-    <!-- ============ PANEL: ALPHA STOCK INSIGHT ============ -->
-    <div class="panel" id="g-insight">
-      <div class="sec-head">
-        <span class="sec-icon"></span>
-        <div>
-          <div class="sec-title">ALPHA STOCK INSIGHT</div>
-          <div class="sec-desc">Analisa mendalam per ticker - teknikal + fundamental + pemegang saham dalam 1 klik</div>
-        </div>
-      </div>
-
-      <div class="card accent-p">
-        <div class="card-title">Apa yang terjadi saat kamu ketik ticker & klik Analyze?</div>
-        <div class="card-body">
-          <div class="steps">
-            <div class="step"><div class="snum">1</div><div class="stext"><b>Ambil chart 6 bulan</b> - OHLCV dari yfinance. Weekend & data kosong otomatis dibersihkan agar chart rapi.</div></div>
-            <div class="step"><div class="snum">2</div><div class="stext"><b>Hitung indikator teknikal</b> - EMA 13/21/100/200, RSI, MACD, Bollinger Bands, ATR, Pivot Points, support/resistance otomatis dari price action.</div></div>
-            <div class="step"><div class="snum">3</div><div class="stext"><b>Analisa volume</b> - spike ratio (volume hari ini vs MA-20), deteksi divergensi harga-volume, dry-up signal.</div></div>
-            <div class="step"><div class="snum">4</div><div class="stext"><b>Fetch fundamental multi-source</b> - ROE, ROA, PER, PBV, EPS, DER, Dividend Yield, NIM, NPL (khusus bank). Validasi corporate action dilakukan di sini.</div></div>
-            <div class="step"><div class="snum">5</div><div class="stext"><b>Cek tren pemegang saham</b> - database SIGMA 12 bulan terakhir. Naik atau turun? Berapa persen perubahannya?</div></div>
-            <div class="step"><div class="snum">6</div><div class="stext"><b>AI generate analisa</b> - semua data dikirim ke model AI. AI <span class="hi">wajib menilai</span> kondisi saham (LAYAK / WASPADA / HINDARI) sebelum menulis analisa. Trade plan hanya muncul jika kondisi layak.</div></div>
-            <div class="step"><div class="snum">7</div><div class="stext"><b>Gambar chart + trade plan</b> - Entry zone, TP1, TP2, SL di-overlay di atas candlestick chart. Koordinat divalidasi agar masuk akal vs harga live.</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="mgrid">
-        <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_R7};">HIGH</div><div class="msub">Hanya teknikal oke, volume & fundamental belum konfirmasi</div></div>
-        <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_Y7};">MID</div><div class="msub">Teknikal + volume sama-sama mendukung. Buy power dominan.</div></div>
-        <div class="mcard"><div class="mlbl">Risk Level</div><div class="mval" style="color:{_G7};">LOW</div><div class="msub">Trio lengkap: teknikal + volume + fundamental semua oke</div></div>
-        <div class="mcard"><div class="mlbl">Jika Bearish</div><div class="mval" style="color:{_SUB7};">NO PLAN</div><div class="msub">Trade plan tidak ditampilkan. AI wajib jelaskan kenapa dengan tegas.</div></div>
-      </div>
-
-      <div class="honesty">
-        OK <b>Prinsip Kejujuran:</b> AI di-brief bahwa kejujuran adalah prioritas utama. Saham yang sedang downtrend, distribusi aktif, atau fundamental buruk akan dinilai HINDARI - bukan dibuat trade plan asal-asalan untuk menyenangkan trader.
-      </div>
-    </div>
-
-    <!-- ============ PANEL: DAILY ============ -->
-    <div class="panel" id="g-daily">
-      <div class="sec-head">
-        <span class="sec-icon"></span>
-        <div>
-          <div class="sec-title">DAILY SCREENER</div>
-          <div class="sec-desc">Scan 500+ saham IDX setiap hari - top pick berbasis volume intelligence & block trade detection</div>
-        </div>
-      </div>
-
-      <div class="card accent-b">
-        <div class="card-title">Universe & Pre-filter</div>
-        <div class="card-body">
-          Universe: <b>500+ saham IDX aktif</b> (sudah dikurasi - hapus saham suspend, micro-cap speculative). Data OHLCV 10 hari terakhir diambil secara paralel untuk semua ticker.<br><br>
-          Hanya saham dengan <b>Bullish Score &ge; 3 dari 4</b> yang masuk ke tahap AI:
-          <br><br>
-          <span class="bg">+1</span> Harga naik hari ini (chg &gt; 0%)<br>
-          <span class="bg">+1</span> Harga naik 5 hari terakhir (chg5d &gt; 0%)<br>
-          <span class="bg">+1</span> Volume hari ini &gt; rata-rata volume 5 hari<br>
-          <span class="bg">+1</span> Harga di atas EMA 5
-        </div>
-      </div>
-
-      <div class="card accent-p">
-        <div class="card-title">Volume Intelligence - Inti Perbedaannya</div>
-        <div class="card-body">
-          AI Daily di-brief khusus untuk membedakan tipe volume:<br><br>
-          <span class="bp">Block Trade</span> Nilai besar + Lot besar + Frekuensi <b>KECIL</b> &rarr; institusi masuk diam-diam &rarr; <span class="ok">SINYAL KUAT</span><br><br>
-          <span class="br">Noise</span> Nilai kecil + Lot kecil + Frekuensi <b>BESAR</b> &rarr; ritel biasa &rarr; <span class="dn">Diabaikan</span><br><br>
-          <span class="by">Bias/HFT</span> Nilai besar + Frekuensi <b>BESAR</b> &rarr; Algo/HFT &rarr; <span class="yl">Perlu konfirmasi hari berikutnya</span><br><br>
-          AI diminta <b>memprioritaskan</b> saham dengan volume spike tinggi TAPI frekuensi rendah (block trade) di atas saham yang hanya ramai ritel.
-        </div>
-      </div>
-
-      <div class="card accent-g">
-        <div class="card-title">Output Tabel Daily</div>
-        <div class="card-body">
-          <b>4&ndash;6 saham BUY</b> + <b>3 saham HINDARI</b>, masing-masing dengan:<br><br>
-          TA Score (0&ndash;100) &middot; FA Score (0&ndash;100) &middot; Vol Spike ratio &middot; Vol Type (Block/Ritel/Mixed) &middot; RSI &middot; MACD &middot; Wyckoff Phase &middot; Entry Zone &middot; TP1 &middot; TP2 &middot; SL &middot; Horizon (Intraday/1&ndash;3 hari/3&ndash;5 hari) &middot; Alasan singkat kenapa layak
-        </div>
-      </div>
-
-      <div class="tip"> <b>Horizon Daily:</b> Intraday = beli pagi jual sore hari yang sama. 1&ndash;3 hari = swing pendek. 3&ndash;5 hari = swing mingguan ringan. Pilih sesuai gaya trading kamu.</div>
-    </div>
-
-    <!-- ============ PANEL: WEEKLY ============ -->
-    <div class="panel" id="g-weekly">
-      <div class="sec-head">
-        <span class="sec-icon"></span>
-        <div>
-          <div class="sec-title">WEEKLY SCREENER</div>
-          <div class="sec-desc">Swing trade 1&ndash;2 minggu - kombinasi tren mingguan, katalis fundamental, dan tren pemegang saham</div>
-        </div>
-      </div>
-
-      <div class="card accent-b">
-        <div class="card-title">Perbedaan Utama dari Daily</div>
-        <div class="card-body">
-          <b>Timeframe lebih panjang:</b> Data 20 hari digunakan (bukan 10 hari). EMA yang diperhatikan adalah EMA 21 dan EMA 50 - bukan EMA 5.<br><br>
-          <b>Fundamental lebih dominan:</b> Di Daily, FA Score hanya 40% bobot. Di Weekly, fundamental mendapat perhatian lebih karena horizon 1&ndash;2 minggu memberikan waktu bagi katalis fundamental bekerja.<br><br>
-          <b>Horizon:</b> 1&ndash;2 minggu. Bukan untuk daytrader - untuk swing trader yang bisa menahan posisi.
-        </div>
-      </div>
-
-      <div class="card accent-p">
-        <div class="card-title">Faktor Tambahan di Weekly</div>
-        <div class="card-body">
-          <span class="bp">Tren Pemegang Saham</span> Data IDX bulanan - apakah jumlah pemegang naik (akumulasi) atau turun (distribusi)? Naik 3 bulan berturut = sinyal kuat.<br><br>
-          <span class="bb">Katalis Fundamental</span> AI diminta menimbang katalis ke depan: jadwal dividen, rilis laporan keuangan, kebijakan makro yang relevan untuk sektor saham tersebut.<br><br>
-          <span class="bg">Sector Outlook</span> Kondisi sektor dan makro dipertimbangkan - suku bunga BI, kurs IDR, harga komoditas terkait, dan rotasi sektor dari data Sector Rotation.
-        </div>
-      </div>
-
-      <div class="card accent-g">
-        <div class="card-title">Output Tabel Weekly</div>
-        <div class="card-body">
-          <b>3&ndash;5 saham BUY mingguan</b> dengan detail: TA Score &middot; FA Score &middot; Vol Spike &middot; Vol Type &middot; Entry Zone &middot; TP1 &middot; TP2 &middot; SL &middot; Kolom "Why Buy" (1 kalimat alasan, fokus katalis + volume)
-        </div>
-      </div>
-
-      <div class="warn">(!) Weekly bukan untuk intraday. Jika kamu tidak bisa menahan posisi selama 5&ndash;10 hari, gunakan Daily Screener sebagai gantinya.</div>
-    </div>
-
-    <!-- ============ PANEL: BSJP ============ -->
-    <div class="panel" id="g-bsjp">
-      <div class="sec-head">
-        <span class="sec-icon"></span>
-        <div>
-          <div class="sec-title">BELI SORE JUAL PAGI (BSJP)</div>
-          <div class="sec-desc">Strategi overnight - beli 15:00&ndash;15:50 WIB, jual pre-opening atau sesi 1 keesokan hari</div>
-        </div>
-      </div>
-
-      <div class="card accent-p">
-        <div class="card-title">Logika Strategi</div>
-        <div class="card-body">
-          BSJP memanfaatkan dua fenomena pasar IDX:<br><br>
-          <b>1. Gap-up pembukaan:</b> Saham yang diakumulasi institusi menjelang closing sering gap-up keesokan pagi karena order pembelian berlanjut di pre-opening dan sesi 1.<br><br>
-          <b>2. Momentum pembukaan:</b> Retail yang melihat saham naik kemarin cenderung ikut beli di pagi hari, mendorong harga lebih tinggi sebelum SIGMA bisa jual.
-        </div>
-      </div>
-
-      <div class="card accent-b">
-        <div class="card-title">Sinyal yang Dicari BSJP</div>
-        <div class="card-body">
-          <span class="bp">Volume Spike Closing</span> Volume melonjak signifikan di 30&ndash;60 menit terakhir sebelum penutupan. Pertanda ada yang mengakumulasi saat retail sudah mau pulang.<br><br>
-          <span class="bb">Frekuensi Rendah</span> Volume spike dari <b>block trade</b> (institusi), bukan dari ritel kecil-kecil. Ini yang membedakan BSJP sinyal valid vs noise.<br><br>
-          <span class="bg">Harga Stabil atau Naik Pelan</span> Tidak ada distribusi massal sebelum closing - artinya yang beli lebih kuat dari yang jual.<br><br>
-          <span class="br">HINDARI</span> Saham dengan berita negatif besar semalam (risiko gap-down pagi). Cek news feed sebelum tidur.
-        </div>
-      </div>
-
-      <div class="card accent-y">
-        <div class="card-title">Risk Management BSJP</div>
-        <div class="card-body">
-          <b>Sizing maksimal: 5&ndash;10% portofolio per posisi</b><br><br>
-          Risiko utama: berita negatif overnight atau sentimen global buruk &rarr; gap-down pagi hari. Ini tidak bisa dikontrol.<br><br>
-          Strategi ini <b>hanya cocok</b> jika tidak ada event risiko besar di malam hari: FOMC meeting, rilis data CPI AS, eskalasi geopolitik, atau berita emiten negatif yang sudah beredar.
-        </div>
-      </div>
-
-      <div class="danger">(!) <b>Penting:</b> BSJP adalah strategi berisiko tinggi. Selalu pasang mental stop-loss sebelum tidur: jika keesokan pagi harga gap-down &gt; [SL kamu], langsung eksekusi jual di opening tanpa tunggu recovery.</div>
-    </div>
-
-    <!-- ============ PANEL: FUNDAMENTAL ============ -->
-    <div class="panel" id="g-fundamental">
-      <div class="sec-head">
-        <span class="sec-icon"></span>
-        <div>
-          <div class="sec-title">FUNDAMENTAL SCREENER</div>
-          <div class="sec-desc">Screening berbasis kesehatan bisnis - untuk investor, bukan trader harian</div>
-        </div>
-      </div>
-
-      <div class="card accent-b">
-        <div class="card-title">Metrik yang Diukur</div>
-        <div class="card-body">
-          <b>Valuasi:</b> PER (Price-to-Earnings) dan PBV (Price-to-Book Value). AI menilai murah/wajar/mahal berdasarkan perbandingan vs peers sektor - bukan angka absolut.<br><br>
-          <b>Profitabilitas:</b> ROE (Return on Equity), ROA (Return on Assets), Net Profit Margin. Mengukur kemampuan manajemen menghasilkan laba dari modal yang ada.<br><br>
-          <b>Kualitas Earnings:</b> EPS (Earnings Per Share) dan tren pertumbuhannya YoY/CAGR. EPS yang tumbuh konsisten = kualitas bisnis yang sehat.<br><br>
-          <b>Kesehatan Neraca:</b> DER (Debt-to-Equity Ratio) dan Current Ratio. Mengukur beban utang vs kemampuan membayar kewajiban jangka pendek.
-        </div>
-      </div>
-
-      <div class="card accent-p">
-        <div class="card-title">Mode Khusus Perbankan</div>
-        <div class="card-body">
-          Sistem otomatis mendeteksi apakah ticker adalah emiten perbankan. Jika ya, metrik berubah ke <b>rasio spesifik perbankan</b>:<br><br>
-          <span class="bp">NIM</span> Net Interest Margin - spread bunga bank. Makin tinggi makin baik.<br>
-          <span class="bp">NPL Gross & Net</span> Non-Performing Loan - kredit macet. &lt; 5% = sehat.<br>
-          <span class="bp">LDR</span> Loan-to-Deposit Ratio - agresivitas penyaluran kredit. 78&ndash;92% = ideal.<br>
-          <span class="bp">CAR</span> Capital Adequacy Ratio - ketebalan modal. &gt; 14% = sangat aman.<br>
-          <span class="bp">BOPO</span> Rasio efisiensi operasional. &lt; 80% = efisien.<br><br>
-          DER dan Current Ratio <b>tidak relevan untuk bank</b> - sistem tidak menggunakannya jika emiten terdeteksi sebagai bank.
-        </div>
-      </div>
-
-      <div class="card accent-g">
-        <div class="card-title">Prioritas Data - TTM 2026</div>
-        <div class="card-body">
-          Sistem selalu mengambil data <b>TTM (Trailing Twelve Months)</b> terbaru sebagai data utama. Data 2024&ndash;2025 digunakan hanya sebagai pembanding tren (YoY / CAGR), bukan sebagai angka primer.<br><br>
-          Jika AI menampilkan EPS atau ROE, angka tersebut adalah TTM terbaru yang tersedia dari multi-source API - bukan angka tahun lalu.
-        </div>
-      </div>
-
-      <div class="tip"> Fundamental Screener bukan untuk timing entry harian. Gunakan bersama Daily atau AI Stock Insight: Fundamental Screener sebagai filter kualitas bisnis, Daily/Insight sebagai timing entry teknikal.</div>
-    </div>
-
-    <!-- ============ PANEL: ACCURACY ============ -->
-    <div class="panel" id="g-accuracy">
-      <div class="sec-head">
-        <span class="sec-icon"></span>
-        <div>
-          <div class="sec-title">AKURASI & BATAS SISTEM</div>
-          <div class="sec-desc">Transparansi penuh - apa yang SIGMA kerjakan dengan baik, dan di mana batasannya</div>
-        </div>
-      </div>
-
-      <div class="card accent-g">
-        <div class="card-title">Yang Dikerjakan Sistem dengan Baik</div>
-        <div class="card-body">
-          <span class="bg">OK Kuat</span> Deteksi volume anomali - spike ratio dan tipe (block vs ritel) berbasis data harga nyata dari bursa.<br><br>
-          <span class="bg">OK Kuat</span> Pengecekan corporate action - sistem tidak akan salah analisa karena harga pre-split.<br><br>
-          <span class="bg">OK Kuat</span> Multi-source fallback - jika 1 sumber data mati, sistem tetap jalan dengan sumber lain tanpa gangguan.<br><br>
-          <span class="bg">OK Kuat</span> Transparansi risk level - AI diwajibkan menyebut HIGH/MID/LOW risk dengan alasan konkret, bukan label kosong.<br><br>
-          <span class="bg">OK Kuat</span> Deteksi sektor perbankan - metrik otomatis berganti ke NIM/NPL/CAR/BOPO untuk emiten bank.
-        </div>
-      </div>
-
-      <div class="card accent-y">
-        <div class="card-title">Batasan yang Harus Dipahami</div>
-        <div class="card-body">
-          <span class="by">(!) Fundamental delay:</span> Data dari API eksternal kadang terlambat 1&ndash;3 bulan dari laporan keuangan terbaru. Untuk laporan quarterly terbaru, selalu cek langsung di IDX.co.id.<br><br>
-          <span class="by">(!) Tidak ada data bandarmologi:</span> SIGMA tidak punya akses ke data broker (siapa yang beli/jual). Yang tersedia hanya volume aggregate dari bursa.<br><br>
-          <span class="by">(!) Black swan:</span> Saat crash global, FOMC hawkish ekstrem, atau geopolitik memburuk tiba-tiba, semua sinyal teknikal bisa gagal sekaligus. Tidak ada sistem yang imun.<br><br>
-          <span class="by">(!) AI bukan oracle:</span> AI menganalisa berdasarkan data yang tersedia saat itu. Berita material yang belum masuk ke harga (insider information) tidak bisa dideteksi sistem mana pun.
-        </div>
-      </div>
-
-      <div class="honesty">
-        OK <b>Komitmen Kejujuran SIGMA:</b> AI di-brief bahwa jika kondisi saham bearish kuat, trade plan tidak ditampilkan dan AI wajib menjelaskan kenapa dengan tegas - bukan memberikan false hope. SIGMA bukan robot yang selalu bilang "beli". Kadang jawaban yang paling berharga adalah "jangan beli sekarang".
-      </div>
-
-      <div class="div"></div>
-
-      <div class="card accent-r">
-        <div class="card-title">(!) DYOR - Do Your Own Research</div>
-        <div class="card-body">
-          SIGMA adalah <b>alat bantu analisa</b>, bukan robot trading otomatis dan bukan rekomendasi investasi.<br><br>
-          Output SIGMA sebaiknya dikombinasikan dengan:<br>
-          &middot; Berita fundamental terkini (laporan keuangan, aksi korporasi, kebijakan sektoral)<br>
-          &middot; Kondisi makro global hari itu (sentimen AS, DXY, VIX)<br>
-          &middot; Manajemen risiko dan position sizing yang disiplin<br>
-          &middot; Stop-loss yang selalu dieksekusi tanpa pengecualian<br><br>
-          <b>Tidak ada sistem yang 100% akurat di pasar modal.</b> Keputusan akhir selalu ada di tanganmu.
-        </div>
-      </div>
-    </div>
-
-    <script>
-    function showGuide(id, btn) {{
-      document.querySelectorAll('.panel').forEach(function(p){{ p.classList.remove('active'); }});
-      document.querySelectorAll('.nav-btn').forEach(function(b){{ b.classList.remove('active'); }});
-      var el = document.getElementById('g-' + id);
-      if(el) el.classList.add('active');
-      if(btn) btn.classList.add('active');
-    }}
-    </script>
-
-    </div></body></html>"""
-                components.html(_guide_html_7, height=1800, scrolling=True)
-
-    # ─────────────────────────────────────────────
+  </div>
+</div>
+
+<script>
+function showGuide(id, btn) {{
+  document.querySelectorAll('.panel').forEach(function(p){{ p.classList.remove('active'); }});
+  document.querySelectorAll('.nav-btn').forEach(function(b){{ b.classList.remove('active'); }});
+  var el = document.getElementById('g-' + id);
+  if(el) el.classList.add('active');
+  if(btn) btn.classList.add('active');
+}}
+</script>
+
+</div></body></html>"""
+            components.html(_guide_html_7, height=1800, scrolling=True)
+
+# ─────────────────────────────────────────────
 else:
     if not active["messages"][1:]:
         uname = user.get("name", "").split()[0] if user.get("name") else "Trader"
@@ -28475,37 +28475,37 @@ else:
                 tahun_sekarang = datetime.now().year
                 full_prompt = f"""Kamu adalah SIGMA AI - analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit. Lakukan analisa fundamental mendalam terhadap saham {emiten_target}.
 
-[DATA LIVE {emiten_target}]:
-{fund_text}
+    [DATA LIVE {emiten_target}]:
+    {fund_text}
 
-Instruksi Eksekusi (WAJIB diikuti semua poin):
+    Instruksi Eksekusi (WAJIB diikuti semua poin):
 
-1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-  -Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
-  -Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
-  -Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
+    1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
+      -Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
+      -Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
+      -Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
 
-2. KUALITAS LABA & UJI FORENSIK (Schilit):
-  -Bandingkan tren laba bersih vs arus kas operasi - apakah laba diback up cash?
-  -Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
-  -Red flag atau tanda manipulasi akuntansi?
+    2. KUALITAS LABA & UJI FORENSIK (Schilit):
+      -Bandingkan tren laba bersih vs arus kas operasi - apakah laba diback up cash?
+      -Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
+      -Red flag atau tanda manipulasi akuntansi?
 
-3. KATEGORISASI PROFIL & KATALIS (Lynch):
-  -Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-  -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
+    3. KATEGORISASI PROFIL & KATALIS (Lynch):
+      -Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+      -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
 
-4. MARGIN OF SAFETY (Graham):
-  -Bandingkan harga saat ini dengan estimasi nilai intrinsik - berapa % Margin of Safety tersedia?
-  -Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
+    4. MARGIN OF SAFETY (Graham):
+      -Bandingkan harga saat ini dengan estimasi nilai intrinsik - berapa % Margin of Safety tersedia?
+      -Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
 
-5. SINTESIS - RISK/REWARD:
-  -Beri kesimpulan akhir berupa rasio Risk/Reward
-  -Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
-  -Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
+    5. SINTESIS - RISK/REWARD:
+      -Beri kesimpulan akhir berupa rasio Risk/Reward
+      -Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
+      -Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
 
-Pertanyaan user: {prompt}
+    Pertanyaan user: {prompt}
 
-Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di akhir."""
+    Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di akhir."""
 
         elif is_fundamental and emiten_match:
             emiten_target = emiten_match.group(0).upper()
@@ -28726,25 +28726,25 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
 m.innerHTML=`
-    <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
-    <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
-    <div class="smsp"></div><div class="smhd">NAVIGASI</div>
-    <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
-    <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-    <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {'v' if st.session_state.theme=='dark' else ''}</a>
-    <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {'v' if st.session_state.theme=='light' else ''}</a>
-    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
+<a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
+<button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
+<div class="smsp"></div><div class="smhd">NAVIGASI</div>
+<a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
+<div class="smsp"></div><div class="smhd">PENAMPILAN</div>
+<a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {'v' if st.session_state.theme=='dark' else ''}</a>
+<a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {'v' if st.session_state.theme=='light' else ''}</a>
+<div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 {_hist_items} pd.body.appendChild(h);
 btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; h.style.display = 'none'; }};
 (function(){{
-    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
-    u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
-    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
+u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
 }})();
 pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
 }})();
@@ -28754,64 +28754,64 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 components.html("""
 <script>
 (function() {
-    var _boundTextarea = null;
+var _boundTextarea = null;
 
-    function pasteHandler(e) {
-        var doc = window.parent.document;
-        // Re-fetch fileInput fresh on every paste - Streamlit replaces DOM nodes after rerun
-        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-        if (!fileInput) return;
+function pasteHandler(e) {
+    var doc = window.parent.document;
+    // Re-fetch fileInput fresh on every paste - Streamlit replaces DOM nodes after rerun
+    var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+    if (!fileInput) return;
 
-        if (e.clipboardData && e.clipboardData.items) {
-            var items = e.clipboardData.items;
-            var dt = new DataTransfer();
-            var hasNewImage = false;
+    if (e.clipboardData && e.clipboardData.items) {
+        var items = e.clipboardData.items;
+        var dt = new DataTransfer();
+        var hasNewImage = false;
 
-            for (var i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    var file = items[i].getAsFile();
-                    var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
-                    dt.items.add(newFile);
-                    hasNewImage = true;
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                var file = items[i].getAsFile();
+                var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
+                dt.items.add(newFile);
+                hasNewImage = true;
+            }
+        }
+
+        if (hasNewImage) {
+            e.preventDefault();
+            // Reset first so Streamlit always sees a fresh change event
+            var emptyDt = new DataTransfer();
+            fileInput.files = emptyDt.files;
+            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            // Short delay then assign actual image
+            setTimeout(function() {
+                var fi2 = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+                if (fi2) {
+                    fi2.files = dt.files;
+                    fi2.dispatchEvent(new Event('change', { bubbles: true }));
                 }
-            }
-
-            if (hasNewImage) {
-                e.preventDefault();
-                // Reset first so Streamlit always sees a fresh change event
-                var emptyDt = new DataTransfer();
-                fileInput.files = emptyDt.files;
-                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                // Short delay then assign actual image
-                setTimeout(function() {
-                    var fi2 = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-                    if (fi2) {
-                        fi2.files = dt.files;
-                        fi2.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                }, 60);
-            }
+            }, 60);
         }
     }
+}
 
-    function injectPastePolyfill() {
-        var doc = window.parent.document;
-        var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-        if (!textarea) return;
+function injectPastePolyfill() {
+    var doc = window.parent.document;
+    var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
+    if (!textarea) return;
 
-        // Streamlit replaces the textarea DOM node on every rerun.
-        // Detect node change and rebind - do NOT rely on dataset flag.
-        if (textarea !== _boundTextarea) {
-            if (_boundTextarea) {
-                _boundTextarea.removeEventListener('paste', pasteHandler);
-            }
-            textarea.addEventListener('paste', pasteHandler);
-            _boundTextarea = textarea;
+    // Streamlit replaces the textarea DOM node on every rerun.
+    // Detect node change and rebind - do NOT rely on dataset flag.
+    if (textarea !== _boundTextarea) {
+        if (_boundTextarea) {
+            _boundTextarea.removeEventListener('paste', pasteHandler);
         }
+        textarea.addEventListener('paste', pasteHandler);
+        _boundTextarea = textarea;
     }
+}
 
-    // Poll at 300ms to catch Streamlit reruns quickly
-    setInterval(injectPastePolyfill, 300);
+// Poll at 300ms to catch Streamlit reruns quickly
+setInterval(injectPastePolyfill, 300);
 })();
 </script>
 """, height=0)
@@ -28820,97 +28820,97 @@ components.html("""
 # ── USER BUBBLE JS INJECTOR ──
 _bubble_css = """
 .sigma-user-msg {
-    display: flex !important;
-    justify-content: flex-end !important;
+display: flex !important;
+justify-content: flex-end !important;
 }
 .sigma-user-msg [data-testid="stChatMessageContent"] {
-    display: flex !important;
-    justify-content: flex-end !important;
-    width: 100% !important;
+display: flex !important;
+justify-content: flex-end !important;
+width: 100% !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] {
-    background: """ + C['bubble'] + """ !important;
-    color: """ + C['bubble_text'] + """ !important;
-    border-radius: 20px 20px 4px 20px !important;
-    padding: 10px 16px !important;
-    max-width: 75% !important;
-    width: fit-content !important;
-    min-width: 0 !important;
-    margin-left: auto !important;
-    margin-right: 0 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
-    font-size: 0.9rem !important;
-    text-align: left !important;
-    display: inline-block !important;
+background: """ + C['bubble'] + """ !important;
+color: """ + C['bubble_text'] + """ !important;
+border-radius: 20px 20px 4px 20px !important;
+padding: 10px 16px !important;
+max-width: 75% !important;
+width: fit-content !important;
+min-width: 0 !important;
+margin-left: auto !important;
+margin-right: 0 !important;
+box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+font-size: 0.9rem !important;
+text-align: left !important;
+display: inline-block !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] p,
 .sigma-user-msg [data-testid="stMarkdownContainer"] span,
 .sigma-user-msg [data-testid="stMarkdownContainer"] li,
 .sigma-user-msg [data-testid="stMarkdownContainer"] strong {
-    color: """ + C['bubble_text'] + """ !important;
-    font-size: 0.9rem !important;
-    text-align: left !important;
+color: """ + C['bubble_text'] + """ !important;
+font-size: 0.9rem !important;
+text-align: left !important;
 }
 @media (max-width: 768px) {
-    .sigma-user-msg [data-testid="stMarkdownContainer"] {
-        max-width: 88% !important;
-        padding: 9px 13px !important;
-        border-radius: 16px 16px 3px 16px !important;
-    }
+.sigma-user-msg [data-testid="stMarkdownContainer"] {
+    max-width: 88% !important;
+    padding: 9px 13px !important;
+    border-radius: 16px 16px 3px 16px !important;
+}
 }
 """
 components.html(f"""
 <script>
 (function() {{
-    var pd = window.parent.document;
+var pd = window.parent.document;
 
-    // Inject bubble CSS once
-    if (!pd.getElementById('sigma-bubble-css')) {{
-        var st = pd.createElement('style');
-        st.id = 'sigma-bubble-css';
-        st.textContent = `{_bubble_css}`;
-        pd.head.appendChild(st);
-    }}
+// Inject bubble CSS once
+if (!pd.getElementById('sigma-bubble-css')) {{
+    var st = pd.createElement('style');
+    st.id = 'sigma-bubble-css';
+    st.textContent = `{_bubble_css}`;
+    pd.head.appendChild(st);
+}}
 
-    function markUserBubbles() {{
-        var msgs = pd.querySelectorAll('[data-testid="stChatMessage"]');
-        msgs.forEach(function(el) {{
-            if (el.dataset.bubbleChecked === '1') return;
-            var isUser = false;
-            // Method 1: check data-testid avatar user (most reliable)
-            if (el.querySelector('[data-testid="stChatMessageAvatarUser"]')) {{
-                isUser = true;
-            }}
-            // Method 2: check aria-label contains "user"
-            else if ((el.getAttribute('aria-label') || '').toLowerCase().indexOf('user') >= 0) {{
-                isUser = true;
-            }}
-            // Method 3: Streamlit adds role info to avatar img alt text
-            else {{
-                var imgs = el.querySelectorAll('img');
-                for (var i = 0; i < imgs.length; i++) {{
-                    if ((imgs[i].getAttribute('alt') || '').toLowerCase().indexOf('user') >= 0) {{
-                        isUser = true; break;
-                    }}
+function markUserBubbles() {{
+    var msgs = pd.querySelectorAll('[data-testid="stChatMessage"]');
+    msgs.forEach(function(el) {{
+        if (el.dataset.bubbleChecked === '1') return;
+        var isUser = false;
+        // Method 1: check data-testid avatar user (most reliable)
+        if (el.querySelector('[data-testid="stChatMessageAvatarUser"]')) {{
+            isUser = true;
+        }}
+        // Method 2: check aria-label contains "user"
+        else if ((el.getAttribute('aria-label') || '').toLowerCase().indexOf('user') >= 0) {{
+            isUser = true;
+        }}
+        // Method 3: Streamlit adds role info to avatar img alt text
+        else {{
+            var imgs = el.querySelectorAll('img');
+            for (var i = 0; i < imgs.length; i++) {{
+                if ((imgs[i].getAttribute('alt') || '').toLowerCase().indexOf('user') >= 0) {{
+                    isUser = true; break;
                 }}
             }}
-            // Method 4: innerHTML string check-stChatMessageAvatarUser in DOM
-            if (!isUser) {{
-                var html = el.innerHTML || '';
-                if (html.indexOf('AvatarUser') >= 0) isUser = true;
-                // If neither avatar found yet, can't determine-retry later
-                else if (html.indexOf('AvatarAssistant') < 0 && html.indexOf('AvatarUser') < 0) {{
-                    return; // retry on next interval
-                }}
+        }}
+        // Method 4: innerHTML string check-stChatMessageAvatarUser in DOM
+        if (!isUser) {{
+            var html = el.innerHTML || '';
+            if (html.indexOf('AvatarUser') >= 0) isUser = true;
+            // If neither avatar found yet, can't determine-retry later
+            else if (html.indexOf('AvatarAssistant') < 0 && html.indexOf('AvatarUser') < 0) {{
+                return; // retry on next interval
             }}
-            if (isUser) el.classList.add('sigma-user-msg');
-            el.dataset.bubbleChecked = '1';
-        }});
-    }}
+        }}
+        if (isUser) el.classList.add('sigma-user-msg');
+        el.dataset.bubbleChecked = '1';
+    }});
+}}
 
-    // Run immediately and on interval
-    markUserBubbles();
-    setInterval(markUserBubbles, 500);
+// Run immediately and on interval
+markUserBubbles();
+setInterval(markUserBubbles, 500);
 }})();
 </script>
 """, height=0)
@@ -28919,20 +28919,20 @@ sig_color = C.get("text", "#ffffff")
 js_code = """
 <script>
 (function() {
-    var pd = window.parent.document;
-    if (pd.getElementById('sigma-desktop-brand')) return;
+var pd = window.parent.document;
+if (pd.getElementById('sigma-desktop-brand')) return;
 
-    var brand = pd.createElement('div');
-    brand.id = 'sigma-desktop-brand';
+var brand = pd.createElement('div');
+brand.id = 'sigma-desktop-brand';
 
-    brand.innerHTML = 'SIGMA';
-    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
+brand.innerHTML = 'SIGMA';
+brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
 
-    var style = pd.createElement('style');
-    style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
-    pd.head.appendChild(style);
+var style = pd.createElement('style');
+style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
+pd.head.appendChild(style);
 
-    pd.body.appendChild(brand);
+pd.body.appendChild(brand);
 })();
 </script>
 """
