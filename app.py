@@ -21571,7 +21571,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
             _now_wib = _wib_now().strftime("%d %b %Y, %H:%M WIB")
 
             # ── Helper: build HTML untuk satu kelompok records ──
-            def _build_tr_html(rec_list, label=None):
+            def _build_tr_html(rec_list, label=None, _lbl_color="#a78bfa"):
+                """Build HTML stats + table untuk satu kelompok records. No f-string nesting."""
                 if not rec_list:
                     return ""
                 _closed_s2 = {"CLOSED", "TP1", "TP2", "SL"}
@@ -21586,69 +21587,91 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                 _sr2  = sorted(rec_list, key=lambda x: x.get("date",""), reverse=True)
                 _rj2  = _jtr.dumps(_sr2, ensure_ascii=False).replace("'", "\\'")
                 _pfact = round(_aw2*len(_w2)/(abs(_al2)*len(_l2)+0.01),2) if _l2 else "N/A"
-                _stk2 = len([r for r in sorted(rec_list,key=lambda x:x.get("date",""),reverse=True)[:5] if r.get("result")=="WIN"])
-                _section_header = f"<div class=\'sec-hdr\'>{label}</div>" if label else ""
-                return f"""
-{_section_header}
-<div class="stats-grid">
-  <div class="stat-box"><div class="stat-lbl">Win Rate</div>
-    <div class="stat-val" style="color:{{"#089981" if _wr2>=55 else ("#f5a623" if _wr2>=45 else "#f23645")}};">{_wr2}%</div>
-    <div class="stat-sub">{len(_w2)} WIN · {len(_l2)} LOSS · {len(_cl2)} closed</div></div>
-  <div class="stat-box"><div class="stat-lbl">Total Trade</div>
-    <div class="stat-val" style="color:#a78bfa;">{len(rec_list)}</div>
-    <div class="stat-sub">{len(_op2)} OPEN · {len(_cl2)} CLOSED</div></div>
-  <div class="stat-box"><div class="stat-lbl">Total P&amp;L</div>
-    <div class="stat-val" style="color:{{"#089981" if _tp2>=0 else "#f23645"}};">{{'+' if _tp2>=0 else ''}}{_tp2}%</div>
-    <div class="stat-sub">Avg WIN: +{_aw2}% · Avg LOSS: {_al2}%</div></div>
-  <div class="stat-box"><div class="stat-lbl">Profit Factor</div>
-    <div class="stat-val" style="color:{{"#089981" if isinstance(_pfact,float) and _pfact>=1.5 else "#f5a623"}};">{_pfact}</div>
-    <div class="stat-sub">Gain / Loss ratio</div></div>
-  <div class="stat-box"><div class="stat-lbl">Streak</div>
-    <div class="stat-val" style="color:#f5a623;">{_stk2} / 5</div>
-    <div class="stat-sub">WIN dari 5 trade terakhir</div></div>
-</div>
-<div class="tbl-wrap"><div class="scroll"><table>
-<thead><tr>
-  <th>#</th><th>DATE</th><th>TICKER</th><th>TYPE</th>
-  <th>ENTRY</th><th>TP1</th><th>SL</th>
-  <th>EXIT</th><th>P&amp;L</th><th>STATUS</th><th>NOTE</th>
-</tr></thead>
-<tbody id="tr-tb-{label or 'all'}"></tbody>
-</table></div></div>
-<script>
-(function(){{
-  var REC{label or 'ALL'} = JSON.parse('{_rj2}');
-  var tb = document.getElementById('tr-tb-{label or 'all'}');
-  function fmt(n){{ return n&&n>0?'Rp'+parseInt(n).toLocaleString('id-ID'):'-'; }}
-  REC{label or 'ALL'}.forEach(function(r,i){{
-    var badgeCls = r.result==='WIN'?'badge-win':r.result==='LOSS'?'badge-loss':'badge-open';
-    var st_lbl = r.result==='WIN'?'✅ WIN':r.result==='LOSS'?'🛑 LOSS':'⏳ OPEN';
-    var pnl = r.pnl_pct||r.unrealized_pnl||0;
-    var pnlStr = pnl?'<span class="'+(pnl>=0?'win':'loss')+'">'+(pnl>=0?'+':'')+pnl+'%</span>':'-';
-    var note = r.auto_note || r.reason || '-';
-    var typeColor = r.type==='BSJP'?'#f5a623':r.type==='Weekly'?'#26a69a':'#a78bfa';
-    var rowBg = r.result==='WIN'?'rgba(8,153,129,0.04)':r.result==='LOSS'?'rgba(242,54,69,0.04)':'transparent';
-    tb.innerHTML += '<tr style="background:'+rowBg+'">' +
-      '<td style="color:#64748b;font-size:0.72rem;">'+r.id+'</td>' +
-      '<td style="color:#64748b;font-size:0.75rem;">'+(r.date||'-')+'</td>' +
-      '<td><span class="tk">'+r.ticker+'</span></td>' +
-      '<td><span style="color:'+typeColor+';font-weight:700;font-size:0.72rem;background:'+typeColor+'22;padding:2px 6px;border-radius:4px;">'+(r.type||'-')+'</span></td>' +
-      '<td>'+fmt(r.entry)+'</td>' +
-      '<td style="color:#26a69a;font-weight:600;">'+fmt(r.tp1)+'</td>' +
-      '<td style="color:#f23645;font-weight:700;">'+fmt(r.sl)+'</td>' +
-      '<td style="font-weight:700;">'+fmt(r.exit_price)+'</td>' +
-      '<td>'+pnlStr+'</td>' +
-      '<td><span class="badge '+badgeCls+'">'+st_lbl+'</span></td>' +
-      '<td class="note-cell">'+note+'</td>' +
-    '</tr>';
-  }});
-  setTimeout(function(){{
-    var h=document.body.scrollHeight;
-    window.parent.postMessage({{type:'streamlit:setFrameHeight',height:h+20}},'*');
-  }},400);
-}})();
-</script>"""
 
+                # Compute colors as Python strings (no nested f-string)
+                _wr_color  = "#089981" if _wr2 >= 55 else ("#f5a623" if _wr2 >= 45 else "#f23645")
+                _pnl_color = "#089981" if _tp2 >= 0 else "#f23645"
+                _pnl_sign  = "+" if _tp2 >= 0 else ""
+                _pf_color  = "#089981" if isinstance(_pfact, float) and _pfact >= 1.5 else "#f5a623"
+
+                # Safe element ID (no spaces/quotes)
+                _safe_id = (label or "all").replace(" ", "_").replace("(", "").replace(")", "")
+
+                _sec_hdr = ""
+                if label:
+                    _sec_hdr = (
+                        "<div class=\"sec-hdr\" style=\"color:" + _lbl_color + ";"
+                        "border-color:" + _lbl_color + "44;\">" + label + "</div>"
+                    )
+
+                # Stats grid — 4 boxes (Streak dihapus)
+                _stats = (
+                    "<div class=\"stats-grid\">"
+                    "<div class=\"stat-box\"><div class=\"stat-lbl\">Win Rate</div>"
+                    "<div class=\"stat-val\" style=\"color:" + _wr_color + ";\">"+str(_wr2)+"%</div>"
+                    "<div class=\"stat-sub\">"+str(len(_w2))+" WIN · "+str(len(_l2))+" LOSS · "+str(len(_cl2))+" closed</div></div>"
+
+                    "<div class=\"stat-box\"><div class=\"stat-lbl\">Total Trade</div>"
+                    "<div class=\"stat-val\" style=\"color:#a78bfa;\">"+str(len(rec_list))+"</div>"
+                    "<div class=\"stat-sub\">"+str(len(_op2))+" OPEN · "+str(len(_cl2))+" CLOSED</div></div>"
+
+                    "<div class=\"stat-box\"><div class=\"stat-lbl\">Total P&amp;L</div>"
+                    "<div class=\"stat-val\" style=\"color:" + _pnl_color + ";\">"+ _pnl_sign +str(_tp2)+"%</div>"
+                    "<div class=\"stat-sub\">Avg WIN: +"+str(_aw2)+"% · Avg LOSS: "+str(_al2)+"%</div></div>"
+
+                    "<div class=\"stat-box\"><div class=\"stat-lbl\">Profit Factor</div>"
+                    "<div class=\"stat-val\" style=\"color:" + _pf_color + ";\">"+str(_pfact)+"</div>"
+                    "<div class=\"stat-sub\">Gain / Loss ratio</div></div>"
+                    "</div>"
+                )
+
+                # Table
+                _tbl = (
+                    "<div class=\"tbl-wrap\"><div class=\"scroll\"><table>"
+                    "<thead><tr>"
+                    "<th>#</th><th>DATE</th><th>TICKER</th><th>TYPE</th>"
+                    "<th>ENTRY</th><th>TP1</th><th>SL</th>"
+                    "<th>EXIT</th><th>P&amp;L</th><th>STATUS</th><th>NOTE</th>"
+                    "</tr></thead>"
+                    "<tbody id=\"tr-tb-" + _safe_id + "\"></tbody>"
+                    "</table></div></div>"
+                )
+
+                _js = (
+                    "<script>(function(){"
+                    "var REC=JSON.parse('" + _rj2 + "');"
+                    "var tb=document.getElementById('tr-tb-" + _safe_id + "');"
+                    "function fmt(n){return n&&n>0?'Rp'+parseInt(n).toLocaleString('id-ID'):'-';}"
+                    "REC.forEach(function(r,i){"
+                    "var badgeCls=r.result==='WIN'?'badge-win':r.result==='LOSS'?'badge-loss':'badge-open';"
+                    "var st_lbl=r.result==='WIN'?'\u2705 WIN':r.result==='LOSS'?'\uD83D\uDED1 LOSS':'\u23F3 OPEN';"
+                    "var pnl=r.pnl_pct||r.unrealized_pnl||0;"
+                    "var pnlStr=pnl?'<span class=\"'+(pnl>=0?'win':'loss')+'\">'+(pnl>=0?'+':'')+pnl+'%</span>':'-';"
+                    "var note=r.auto_note||r.reason||'-';"
+                    "var typeColor=r.type==='BSJP'?'#f5a623':r.type==='Weekly'?'#26a69a':'#a78bfa';"
+                    "var rowBg=r.result==='WIN'?'rgba(8,153,129,0.04)':r.result==='LOSS'?'rgba(242,54,69,0.04)':'transparent';"
+                    "tb.innerHTML+='<tr style=\"background:'+rowBg+'\">'"
+                    "+'<td style=\"color:#64748b;font-size:0.72rem;\">'+r.id+'</td>'"
+                    "+'<td style=\"color:#64748b;font-size:0.75rem;\">'+(r.date||'-')+'</td>'"
+                    "+'<td><span class=\"tk\">'+r.ticker+'</span></td>'"
+                    "+'<td><span style=\"color:'+typeColor+';font-weight:700;font-size:0.72rem;background:'+typeColor+'22;padding:2px 6px;border-radius:4px;\">'+(r.type||'-')+'</span></td>'"
+                    "+'<td>'+fmt(r.entry)+'</td>'"
+                    "+'<td style=\"color:#26a69a;font-weight:600;\">'+fmt(r.tp1)+'</td>'"
+                    "+'<td style=\"color:#f23645;font-weight:700;\">'+fmt(r.sl)+'</td>'"
+                    "+'<td style=\"font-weight:700;\">'+fmt(r.exit_price)+'</td>'"
+                    "+'<td>'+pnlStr+'</td>'"
+                    "+'<td><span class=\"badge '+badgeCls+'\">'+st_lbl+'</span></td>'"
+                    "+'<td class=\"note-cell\">'+note+'</td>'"
+                    "+'</tr>';"
+                    "});"
+                    "setTimeout(function(){"
+                    "var h=document.body.scrollHeight;"
+                    "window.parent.postMessage({type:'streamlit:setFrameHeight',height:h+20},'*');"
+                    "},400);"
+                    "})();</script>"
+                )
+
+                return _sec_hdr + _stats + _tbl + _js
             _recs_json = _jtr.dumps(sorted_records, ensure_ascii=False).replace("'", "\\'")
 
             # ── CSS shared untuk semua tabel track record ──
@@ -21657,7 +21680,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};overflow:hidden;}}
-.stats-grid{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px;}}
+.stats-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}}
 .stat-box{{background:{_tbl_bg};border:1px solid {_border};border-radius:8px;padding:12px 14px;}}
 .stat-lbl{{font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:{_sub_c};margin-bottom:4px;}}
 .stat-val{{font-size:1.4rem;font-weight:700;line-height:1.1;}}
@@ -21713,8 +21736,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                     ("🌙 BELI SORE JUAL PAGI (BSJP)", "#f5a623", _bsjp_recs),
                 ]:
                     if _grp_recs:
-                        _body_parts += f"<div class=\'sec-hdr\' style=\'color:{_grp_color};border-color:{_grp_color}44;\'>{_grp_label}</div>"
-                        _body_parts += _build_tr_html(_grp_recs, label=None)
+                        _body_parts += _build_tr_html(_grp_recs, label=_grp_label, _lbl_color=_grp_color)
 
                 _tr_html = _tr_css + _body_parts + "</body></html>"
                 _total_n  = len(all_records)
