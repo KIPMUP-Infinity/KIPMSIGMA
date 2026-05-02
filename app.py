@@ -2927,6 +2927,7 @@ def render_insight_card_html(
   padding:14px;
   margin:16px 0;
   color:#e2e8f0;
+  max-width:560px;
 }}
 .sic-wrap * {{ box-sizing:border-box; margin:0; padding:0; }}
 .sic-row {{ display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap; }}
@@ -2944,440 +2945,67 @@ def render_insight_card_html(
 .sic-tag-green {{ background:#052015; border:1px solid #14532d; color:#10b981;
   font-size:10px; padding:2px 10px; border-radius:3px; font-weight:600; }}
 .sic-tag-amber {{ background:#1a0f00; border:1px solid #78350f; color:#f59e0b;
-  font-size:10px; padding:2px 10px; border-radius:3px; font-weight:600; }}
-.sic-verdict-text {{ font-size:11px; color:#94a3b8; line-height:1.6; white-space:pre-wrap; }}
-.sic-canvas-wrap {{ width:100%; background:#070b12; border-radius:4px; border:1px solid #131b2e; overflow:hidden; }}
+.sic-panel {{ background:#0d1220; border:1px solid #1a2540; border-radius:5px; padding:12px 14px; }}
+.sic-section-hdr {{
+  font-size:11px; font-weight:700; color:#94a3b8; letter-spacing:1px;
+  text-transform:uppercase; display:flex; align-items:center; gap:6px; margin-bottom:10px;
+}}
+.sic-tp-row {{
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:12px; padding:5px 0; border-bottom:1px solid #131b2e;
+}}
+.sic-tp-row:last-child {{ border-bottom:none; }}
+.sic-tp-label {{ color:#64748b; display:flex; align-items:center; gap:7px; }}
+.sic-tp-val {{ color:#cbd5e1; font-family:'IBM Plex Mono',monospace; font-size:12px; }}
+.sic-dot {{ display:inline-block; width:9px; height:9px; border-radius:50%; flex-shrink:0; }}
 </style>
 
 <div class="sic-wrap" id="{_uid}">
-
-<!-- ═══ ROW 1: HEADER ═══ -->
-<div class="sic-row" style="align-items:stretch">
-
-  <!-- Ticker + Harga -->
-  <div class="sic-panel" style="flex:1.2;min-width:180px">
-    <div style="font-size:26px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;letter-spacing:1px;line-height:1">{ticker}</div>
-    <div style="font-size:11px;color:#64748b;margin:2px 0 8px">{"— IDX"}</div>
-    <div style="font-size:24px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace">{fp(last_close)}</div>
-    <div style="font-size:13px;color:{chg_col};font-family:'IBM Plex Mono',monospace;margin-bottom:10px">{chg_sign}{fp(chg_abs)} ({chg_sign}{chg_pct:.2f}%)</div>
-    <div class="sic-price-stat"><span>High</span><span>{fp(last_high)}</span></div>
-    <div class="sic-price-stat"><span>Low</span><span>{fp(last_low)}</span></div>
-    <div class="sic-price-stat"><span>Prev</span><span>{fp(prev_close)}</span></div>
-    <div class="sic-price-stat"><span>Volume</span><span>{fv(last_vol)}</span></div>
-    <div class="sic-price-stat" style="border:none"><span>Value</span><span>{fv(last_value)}</span></div>
-  </div>
-
-  <!-- Gauge Score -->
-  <div class="sic-panel" style="flex:0.55;min-width:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px">
-    <canvas id="{_uid}_gauge" width="100" height="60" style="display:block"></canvas>
-    <div style="font-size:28px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace;text-align:center;line-height:1">{sigma_score}</div>
-    <div style="background:#1a0505;border:1px solid #7f1d1d;color:{ring_col};font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 12px;border-radius:2px;text-align:center">{rating}</div>
-    <div style="background:{_rl_bg};color:{_rl_txt};font-size:9px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:2px;text-align:center;margin-top:2px">{_rl_label}</div>
-  </div>
-
-  <!-- Daily Plan Info -->
-  <div class="sic-panel" style="flex:1.8;min-width:200px">
-    <div class="sic-section-hdr">📅 DAILY PLAN / TRADE PLAN</div>
-    <div class="sic-price-stat"><span>Tanggal</span><span>{_now_str}</span></div>
-    <div class="sic-price-stat"><span>Timeframe</span><span>Daily</span></div>
-    <div class="sic-price-stat"><span>Skenario</span><span>Swing Trade</span></div>
-    <div class="sic-price-stat"><span>Sektor</span><span>IDX</span></div>
-    <div style="margin-top:8px">
-      <div class="sic-label" style="margin-bottom:3px">TREND STRUCTURE</div>
-      <div class="{'sic-tag-red' if _bias_text == 'BEARISH' else ('sic-tag-green' if _bias_text == 'BULLISH' else 'sic-tag-amber')}" style="margin-bottom:6px;display:inline-block">{"LL – LH (Downtrend)" if _bias_text == "BEARISH" else ("HH – HL (Uptrend)" if _bias_text == "BULLISH" else "Range / Sideways")}</div>
-      <div class="sic-label" style="margin-bottom:3px">BIAS TUNGGAL</div>
-      <div style="color:{_bias_col};font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-bottom:6px">{_bias_text}</div>
-      <div class="sic-label" style="margin-bottom:3px">RATING</div>
-      <div style="color:{_rt_col};font-size:14px;font-weight:700;font-family:'IBM Plex Mono',monospace">{_rating_txt}</div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ═══ ROW 2: CANDLESTICK CHART ═══ -->
-<div class="sic-panel" style="margin-bottom:12px">
-  <div class="sic-section-hdr">📊 1. ANALISIS TEKNIKAL
-    <span style="font-size:10px;color:#475569;margin-left:4px">| EMA 13 <span style="color:#0ea5e9">━</span> EMA 21 <span style="color:#f472b6">━</span> EMA 100 <span style="color:#f97316">━</span> EMA 200 <span style="color:#8b5cf6">━</span></span>
-  </div>
-  <div class="sic-canvas-wrap" style="margin-bottom:4px">
-    <canvas id="{_uid}_candle" style="display:block;width:100%;height:180px"></canvas>
-  </div>
-  <div style="font-size:9px;color:#475569;padding:1px 4px">MACD</div>
-  <div class="sic-canvas-wrap" style="margin-bottom:4px">
-    <canvas id="{_uid}_macd" style="display:block;width:100%;height:36px"></canvas>
-  </div>
-  <div style="font-size:9px;color:#475569;padding:1px 4px;margin-top:3px">RSI (14)</div>
-  <div class="sic-canvas-wrap">
-    <canvas id="{_uid}_rsi" style="display:block;width:100%;height:40px"></canvas>
-  </div>
-  {'<div style="font-size:10px;color:#94a3b8;line-height:1.6;margin-top:8px;padding:6px;background:#070b12;border-radius:3px">' + _esc_nl(_tech_text[:600]) + '</div>' if _tech_text else ''}
-</div>
-
-<!-- ═══ ROW 3: VOLUME ═══ -->
-<div class="sic-row" style="align-items:stretch">
-
-  <!-- Volume stats -->
-  <div class="sic-panel" style="flex:1;min-width:160px">
-    <div class="sic-section-hdr">📊 2. ANALISIS VOLUME</div>
-    <div class="sic-price-stat"><span>Volume Hari Ini</span><span>{fv(last_vol)}</span></div>
-    <div class="sic-price-stat"><span>Rata-rata (20H)</span><span>{fv(avg_vol_20)}</span></div>
-    <div class="sic-price-stat"><span>Volume vs Avg</span><span style="color:{vol_vs_col}">{vol_vs_str}</span></div>
-    <div class="sic-price-stat"><span>Akumulasi/Distribusi</span><span style="color:{accum_col};font-weight:700">{accum_label}</span></div>
-    <div class="sic-price-stat" style="border:none"><span>Bandar Flow (3H)</span><span style="color:{bandar_flow_col}">{bandar_flow_str}</span></div>
-  </div>
-
-  <!-- Volume bars + Delta -->
-  <div class="sic-panel" style="flex:1.5;min-width:200px">
-    <div class="sic-label" style="margin-bottom:4px">VOLUME (20 HARI)</div>
-    <div class="sic-canvas-wrap" style="margin-bottom:4px">
-      <canvas id="{_uid}_vol" style="display:block;width:100%;height:60px"></canvas>
-    </div>
-    <div class="sic-label" style="margin-bottom:2px;margin-top:4px">DELTA (NET BUY/SELL)</div>
-    <div class="sic-canvas-wrap">
-      <canvas id="{_uid}_delta" style="display:block;width:100%;height:40px"></canvas>
-    </div>
-  </div>
-
-</div>
-
-<!-- ═══ ROW 4: FUNDAMENTAL ═══ -->
-{'<div class="sic-panel" style="margin-bottom:12px"><div class="sic-section-hdr">🏢 2. ANALISIS FUNDAMENTAL</div><div style="font-size:11px;color:#94a3b8;line-height:1.7">' + _esc_nl(_fund_text[:800]) + '</div></div>' if _fund_text else ''}
-
-<!-- ═══ ROW 5: TRADE PLAN ═══ -->
-<div class="sic-row" style="align-items:stretch">
-  <!-- Levels -->
-  <div class="sic-panel" style="flex:1;min-width:160px">
+  <div class="sic-panel">
     <div class="sic-section-hdr">🎯 RENCANA TRADING</div>
-    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444"></span>ENTRY ZONE</span><span>{"Rp" + fp(int(_el)) + " – Rp" + fp(int(_eh)) if _el and _eh else "—"}</span></div>
-    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b"></span>STOPLOSS</span><span>{"Rp" + fp(int(_sl)) if _sl else "—"}</span></div>
-    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981"></span>TARGET 1</span><span>{"Rp" + fp(int(_tp1)) if _tp1 else "—"}</span></div>
-    <div class="sic-price-stat"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#3b82f6"></span>TARGET 2</span><span>{"Rp" + fp(int(_tp2)) if _tp2 else "—"}</span></div>
-    <div class="sic-price-stat" style="border:none"><span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1"></span>TARGET 3</span><span>{"Rp" + fp(int(_tp3)) if _tp3 else "—"}</span></div>
-  </div>
-  <!-- Trade plan text -->
-  <div class="sic-panel" style="flex:1.5;min-width:200px">
-    {'<div style="color:#ff3d5a;font-size:11px;font-weight:700;margin-bottom:6px">⊘ TRADE PLAN TIDAK TERSEDIA</div>' if not trade_plan_avail else ''}
-    <div class="sic-verdict-text" style="font-size:10px">{_esc_nl(_trade_section[:600] if _trade_section else (ai_text_verdict or '')[-600:])}</div>
+
+    <div class="sic-tp-row">
+      <span class="sic-tp-label">
+        <span class="sic-dot" style="background:#ef4444"></span>
+        ENTRY ZONE
+      </span>
+      <span class="sic-tp-val">{"Rp" + fp(int(_el)) + " – Rp" + fp(int(_eh)) if _el and _eh else "—"}</span>
+    </div>
+
+    <div class="sic-tp-row">
+      <span class="sic-tp-label">
+        <span class="sic-dot" style="background:#f59e0b"></span>
+        STOPLOSS
+      </span>
+      <span class="sic-tp-val">{"Rp" + fp(int(_sl)) if _sl else "—"}</span>
+    </div>
+
+    <div class="sic-tp-row">
+      <span class="sic-tp-label">
+        <span class="sic-dot" style="background:#10b981"></span>
+        TARGET 1
+      </span>
+      <span class="sic-tp-val">{"Rp" + fp(int(_tp1)) if _tp1 else "—"}</span>
+    </div>
+
+    <div class="sic-tp-row">
+      <span class="sic-tp-label">
+        <span class="sic-dot" style="background:#3b82f6"></span>
+        TARGET 2
+      </span>
+      <span class="sic-tp-val">{"Rp" + fp(int(_tp2)) if _tp2 else "—"}</span>
+    </div>
+
+    <div class="sic-tp-row">
+      <span class="sic-tp-label">
+        <span class="sic-dot" style="background:#6366f1"></span>
+        TARGET 3
+      </span>
+      <span class="sic-tp-val">{"Rp" + fp(int(_tp3)) if _tp3 else "—"}</span>
+    </div>
+
   </div>
 </div>
-
-<!-- ═══ ROW 6: KESIMPULAN & VERDICT ═══ -->
-<div class="sic-row" style="align-items:stretch">
-  <!-- Bias -->
-  <div class="sic-panel" style="flex:0.7;min-width:120px">
-    <div class="sic-label">BIAS TUNGGAL</div>
-    <div style="font-size:20px;font-weight:700;color:{_bias_col};font-family:'IBM Plex Mono',monospace;letter-spacing:1px;line-height:1.1;margin-bottom:6px">{_bias_text}</div>
-    <div class="sic-label" style="margin-top:6px">RATING</div>
-    <div style="font-size:16px;font-weight:700;color:{_rt_col};font-family:'IBM Plex Mono',monospace;letter-spacing:2px">{_rating_txt}</div>
-  </div>
-  <!-- Verdict narasi -->
-  <div class="sic-panel" style="flex:2;min-width:200px">
-    <div class="sic-section-hdr">⚡ KESIMPULAN & VERDICT</div>
-    <div class="sic-verdict-text">{_esc_nl(_verdict_section[:800] if _verdict_section else '')}</div>
-  </div>
-  <!-- DYOR -->
-  <div class="sic-panel" style="flex:0.7;min-width:120px;display:flex;flex-direction:column;justify-content:flex-end">
-    <div style="color:#3b82f6;font-size:14px;font-weight:700;letter-spacing:2px;margin-bottom:4px">#DYOR</div>
-    <div style="font-size:10px;color:#64748b;line-height:1.5">Analisa berbasis data teknikal, volume, dan framework MnM Strategy+.</div>
-    <div style="font-size:10px;color:#f59e0b;margin-top:4px;font-weight:600">Bukan rekomendasi investasi.</div>
-  </div>
-</div>
-
-<!-- ═══ KESIMPULAN TEGAS (full width) ═══ -->
-<div style="background:#0d0820;border:1px solid #4c1d95;border-radius:4px;padding:8px 12px;margin-top:4px">
-  <div style="font-size:9px;color:#7c3aed;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-weight:700">KESIMPULAN TEGAS</div>
-  <div style="font-size:11px;color:#c4b5fd;line-height:1.6">{_esc_nl((_verdict_section or ai_text_verdict or '')[-400:])}</div>
-</div>
-
-</div>
-
-<script>
-(function() {{
-  var D = {_chart_data};
-  var uid = "{_uid}";
-
-  // ── Util ────────────────────────────────────────────────────────────────────
-  function setupCanvas(id, cssH) {{
-    var cv = document.getElementById(id);
-    if (!cv) return null;
-    var dpr = window.devicePixelRatio || 1;
-    var W = cv.parentElement.offsetWidth || 600;
-    cv.width  = W * dpr;
-    cv.height = cssH * dpr;
-    cv.style.width  = W + 'px';
-    cv.style.height = cssH + 'px';
-    var ctx = cv.getContext('2d');
-    ctx.scale(dpr, dpr);
-    return {{ ctx: ctx, W: W, H: cssH }};
-  }}
-
-  function scaleY(v, min, max, padT, H, padB) {{
-    var range = max - min || 1;
-    return padT + (H - padT - padB) - ((v - min) / range) * (H - padT - padB);
-  }}
-
-  function gridLines(ctx, W, H, n, color) {{
-    ctx.strokeStyle = color || 'rgba(255,255,255,0.04)';
-    ctx.lineWidth = 0.5;
-    for (var i = 0; i <= n; i++) {{
-      var y = H / n * i;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }}
-  }}
-
-  // ── GAUGE ───────────────────────────────────────────────────────────────────
-  function drawGauge() {{
-    var cv = document.getElementById(uid + '_gauge');
-    if (!cv) return;
-    var dpr = window.devicePixelRatio || 1;
-    var W = 100, H = 60;
-    cv.width = W * dpr; cv.height = H * dpr;
-    cv.style.width = W + 'px'; cv.style.height = H + 'px';
-    var ctx = cv.getContext('2d');
-    ctx.scale(dpr, dpr);
-    var cx = 50, cy = 56, r = 44;
-    // Track
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth = 7;
-    ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.stroke();
-    // Color gradient arc
-    var grad = ctx.createLinearGradient(0, 0, W, 0);
-    grad.addColorStop(0,   '#10b981');
-    grad.addColorStop(0.4, '#f59e0b');
-    grad.addColorStop(1,   '#ef4444');
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 7;
-    ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0); ctx.stroke();
-    // Mask: fill the "empty" part based on score
-    var score = {sigma_score} / 100.0;
-    var startAngle = Math.PI + score * Math.PI;
-    ctx.strokeStyle = '#080c14';
-    ctx.lineWidth = 9;
-    ctx.beginPath(); ctx.arc(cx, cy, r, startAngle, 0); ctx.stroke();
-    // Needle
-    var angle = Math.PI + score * Math.PI;
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(angle) * 34, cy + Math.sin(angle) * 34);
-    ctx.stroke();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
-  }}
-
-  // ── CANDLESTICK ─────────────────────────────────────────────────────────────
-  function drawCandle() {{
-    var s = setupCanvas(uid + '_candle', 180);
-    if (!s) return;
-    var ctx = s.ctx, W = s.W, H = s.H;
-    gridLines(ctx, W, H, 4);
-    var n = D.c.length;
-    if (!n) return;
-
-    var allH = D.h, allL = D.l;
-    var minV = Math.min.apply(null, allL), maxV = Math.max.apply(null, allH);
-    // Add padding for trade plan levels
-    var levels = [D.el, D.eh, D.sl, D.tp1, D.tp2, D.tp3].filter(function(v) {{ return v; }});
-    if (levels.length) {{
-      minV = Math.min(minV, Math.min.apply(null, levels));
-      maxV = Math.max(maxV, Math.max.apply(null, levels));
-    }}
-    var pad = (maxV - minV) * 0.05;
-    minV -= pad; maxV += pad;
-    var padT = 8, padB = 8;
-
-    function toY(v) {{ return scaleY(v, minV, maxV, padT, H, padB); }}
-
-    var slotW = W / n;
-    var bodyW = Math.max(3, Math.floor(slotW * 0.6));
-
-    // EMA lines
-    var emaLines = [
-      {{ data: D.ema13,  color: '#0ea5e9', w: 1.2 }},
-      {{ data: D.ema21,  color: '#f472b6', w: 1.2 }},
-      {{ data: D.ema100, color: '#f97316', w: 1.2 }},
-      {{ data: D.ema200, color: '#8b5cf6', w: 1.6 }},
-    ];
-    emaLines.forEach(function(e) {{
-      if (!e.data || !e.data.length) return;
-      ctx.strokeStyle = e.color;
-      ctx.lineWidth = e.w;
-      ctx.beginPath();
-      e.data.forEach(function(v, i) {{
-        if (!v) return;
-        var x = i * slotW + slotW / 2;
-        var y = toY(v);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }});
-      ctx.stroke();
-    }});
-
-    // Candles
-    for (var i = 0; i < n; i++) {{
-      var x  = i * slotW + slotW / 2;
-      var o  = D.o[i], c = D.c[i], h = D.h[i], l = D.l[i];
-      var up = c >= o;
-
-      // Wick
-      ctx.strokeStyle = up ? 'rgba(0,229,160,0.6)' : 'rgba(255,61,90,0.6)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(x, toY(h));
-      ctx.lineTo(x, toY(l));
-      ctx.stroke();
-
-      // Body
-      var bTop = toY(Math.max(o, c));
-      var bBot = toY(Math.min(o, c));
-      var bH   = Math.max(1.5, bBot - bTop);
-      ctx.fillStyle = up ? 'rgba(0,229,160,0.88)' : 'rgba(255,61,90,0.88)';
-      ctx.fillRect(x - bodyW / 2, bTop, bodyW, bH);
-    }}
-
-    // Trade plan levels
-    function drawLevel(price, color, dash) {{
-      if (!price) return;
-      var y = toY(price);
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.2;
-      ctx.setLineDash(dash || []);
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      ctx.restore();
-    }}
-    // Buy zone fill
-    if (D.el && D.eh) {{
-      var y1 = toY(D.el), y2 = toY(D.eh);
-      ctx.fillStyle = 'rgba(8,153,129,0.18)';
-      ctx.fillRect(0, Math.min(y1,y2), W, Math.abs(y1-y2));
-      drawLevel(D.el, '#089981', []);
-      drawLevel(D.eh, '#089981', [4,3]);
-    }}
-    drawLevel(D.sl,  '#f23645', []);
-    drawLevel(D.tp1, '#8b5cf6', [4,3]);
-    drawLevel(D.tp2, '#8b5cf6', [4,3]);
-    drawLevel(D.tp3, '#8b5cf6', [4,3]);
-  }}
-
-  // ── MACD ─────────────────────────────────────────────────────────────────────
-  function drawMACD() {{
-    var s = setupCanvas(uid + '_macd', 36);
-    if (!s || !D.macd_h || !D.macd_h.length) return;
-    var ctx = s.ctx, W = s.W, H = s.H;
-    var data = D.macd_h;
-    var minV = Math.min.apply(null, data), maxV = Math.max.apply(null, data);
-    var abs = Math.max(Math.abs(minV), Math.abs(maxV), 0.001);
-    var slotW = W / data.length;
-    // Zero line
-    var zy = scaleY(0, -abs, abs, 2, H, 2);
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(W, zy); ctx.stroke();
-    data.forEach(function(v, i) {{
-      var x   = i * slotW + slotW * 0.1;
-      var bW  = Math.max(1, slotW * 0.8);
-      var y0  = zy;
-      var y1  = scaleY(v, -abs, abs, 2, H, 2);
-      ctx.fillStyle = v >= 0 ? 'rgba(0,229,160,0.75)' : 'rgba(255,61,90,0.75)';
-      ctx.fillRect(x, Math.min(y0, y1), bW, Math.max(1.5, Math.abs(y0 - y1)));
-    }});
-  }}
-
-  // ── RSI ───────────────────────────────────────────────────────────────────────
-  function drawRSI() {{
-    var s = setupCanvas(uid + '_rsi', 40);
-    if (!s || !D.rsi || !D.rsi.length) return;
-    var ctx = s.ctx, W = s.W, H = s.H;
-    gridLines(ctx, W, H, 2);
-    // Overbought / oversold zones
-    [70, 30].forEach(function(lvl) {{
-      var y = scaleY(lvl, 0, 100, 2, H, 2);
-      ctx.strokeStyle = lvl === 70 ? 'rgba(255,61,90,0.35)' : 'rgba(0,229,160,0.35)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      ctx.setLineDash([]);
-    }});
-    ctx.strokeStyle = '#f5a623';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    D.rsi.forEach(function(v, i) {{
-      var x = i * (W / D.rsi.length) + (W / D.rsi.length) / 2;
-      var y = scaleY(v, 0, 100, 2, H, 2);
-      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }});
-    ctx.stroke();
-  }}
-
-  // ── VOLUME BARS (20 bar terakhir) ────────────────────────────────────────────
-  function drawVol() {{
-    var s = setupCanvas(uid + '_vol', 60);
-    if (!s) return;
-    var ctx = s.ctx, W = s.W, H = s.H;
-    var data = D.vol.slice(-20);
-    var opens = D.o.slice(-20), closes = D.c.slice(-20);
-    var maxV = Math.max.apply(null, data) || 1;
-    var slotW = W / data.length;
-    data.forEach(function(v, i) {{
-      var up = closes[i] >= opens[i];
-      ctx.fillStyle = up ? 'rgba(0,229,160,0.75)' : 'rgba(255,61,90,0.75)';
-      var bH = Math.max(2, (v / maxV) * (H - 4));
-      ctx.fillRect(i * slotW + 1, H - bH, Math.max(2, slotW - 2), bH);
-    }});
-  }}
-
-  // ── VOLUME DELTA (NET BUY/SELL) — konsep gambar 4 ───────────────────────────
-  // Bar positif (buy dominan) = hijau ke atas dari zero line
-  // Bar negatif (sell dominan) = merah ke bawah dari zero line
-  function drawDelta() {{
-    var s = setupCanvas(uid + '_delta', 40);
-    if (!s) return;
-    var ctx = s.ctx, W = s.W, H = s.H;
-    var data = D.delta.slice(-50);
-    if (!data.length) return;
-    var maxAbs = Math.max.apply(null, data.map(Math.abs)) || 1;
-    var slotW  = W / data.length;
-    var zy     = H / 2;  // zero line di tengah
-
-    // Zero line
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath(); ctx.moveTo(0, zy); ctx.lineTo(W, zy); ctx.stroke();
-
-    data.forEach(function(v, i) {{
-      var bH  = Math.max(1.5, (Math.abs(v) / maxAbs) * (zy - 2));
-      var x   = i * slotW + 1;
-      var bW  = Math.max(1.5, slotW - 2);
-      if (v >= 0) {{
-        // Buy dominant: tumbuh ke atas dari zero line
-        ctx.fillStyle = 'rgba(0,229,160,0.85)';
-        ctx.fillRect(x, zy - bH, bW, bH);
-      }} else {{
-        // Sell dominant: tumbuh ke bawah dari zero line
-        ctx.fillStyle = 'rgba(255,61,90,0.85)';
-        ctx.fillRect(x, zy, bW, bH);
-      }}
-    }});
-  }}
-
-  // ── Draw all ─────────────────────────────────────────────────────────────────
-  function drawAll() {{
-    drawGauge();
-    drawCandle();
-    drawMACD();
-    drawRSI();
-    drawVol();
-    drawDelta();
-  }}
-
-  if (document.readyState === 'complete') {{ drawAll(); }}
-  else {{ window.addEventListener('load', drawAll); }}
-  setTimeout(drawAll, 100);
-  setTimeout(drawAll, 500);
-}})();
-</script>
 """
     return html_out
 
@@ -3385,6 +3013,7 @@ def render_insight_card_html(
 # ─────────────────────────────────────────────
 # ENRICH ROW (untuk tabel screener)
 # ─────────────────────────────────────────────
+
 def enrich_reco_row_with_zones(row: dict, zone_result: ZoneResult, C: dict) -> dict:
     """Tambah data zona ke dict baris tabel screener."""
     price = float(row.get("price", 0) or 0)
@@ -19559,63 +19188,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         )
 
                         st.plotly_chart(fig, use_container_width=True)
-
-                        # ── Trade Plan Info Box (Buy Area / Target / TP / SL) ─
-                        if ai_data:
-                            _ib_el  = ai_data.get('entry_low')
-                            _ib_eh  = ai_data.get('entry_high')
-                            _ib_sl  = ai_data.get('stop_loss')
-                            _ib_tp1 = ai_data.get('tp1')
-                            _ib_tp2 = ai_data.get('tp2')
-                            _ib_tp3 = ai_data.get('tp3')
-                            _plan_boxes = ""
-                            if _ib_el and _ib_eh:
-                                try:
-                                    _plan_boxes += (
-                                        f"<div style='background:rgba(8,153,129,0.13);border:1px solid #089981;"
-                                        f"border-radius:8px;padding:10px 14px;min-width:160px;'>"
-                                        f"<div style='font-size:0.72rem;color:#089981;letter-spacing:0.1em;"
-                                        f"font-weight:700;margin-bottom:4px;'>🟩 BUY AREA</div>"
-                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
-                                        f"color:#e8eaf0;'>Rp{float(_ib_el):,.0f} &ndash; Rp{float(_ib_eh):,.0f}</div>"
-                                        f"</div>"
-                                    )
-                                except: pass
-                            if _ib_tp1:
-                                try:
-                                    _tp_str = f"TP1: Rp{float(_ib_tp1):,.0f}"
-                                    if _ib_tp2:
-                                        _tp_str += f"&nbsp;&nbsp;|&nbsp;&nbsp;TP2: Rp{float(_ib_tp2):,.0f}"
-                                    if _ib_tp3:
-                                        _tp_str += f"&nbsp;&nbsp;|&nbsp;&nbsp;TP3: Rp{float(_ib_tp3):,.0f}"
-                                    _plan_boxes += (
-                                        f"<div style='background:rgba(139,92,246,0.13);border:1px solid #8b5cf6;"
-                                        f"border-radius:8px;padding:10px 14px;min-width:160px;'>"
-                                        f"<div style='font-size:0.72rem;color:#8b5cf6;letter-spacing:0.1em;"
-                                        f"font-weight:700;margin-bottom:4px;'>🎯 TARGET &amp; TAKE PROFIT</div>"
-                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
-                                        f"color:#e8eaf0;'>{_tp_str}</div>"
-                                        f"</div>"
-                                    )
-                                except: pass
-                            if _ib_sl:
-                                try:
-                                    _plan_boxes += (
-                                        f"<div style='background:rgba(242,54,69,0.10);border:1px solid #f23645;"
-                                        f"border-radius:8px;padding:10px 14px;min-width:120px;'>"
-                                        f"<div style='font-size:0.72rem;color:#f23645;letter-spacing:0.1em;"
-                                        f"font-weight:700;margin-bottom:4px;'>🛑 STOP LOSS</div>"
-                                        f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.875rem;"
-                                        f"color:#e8eaf0;'>Rp{float(_ib_sl):,.0f}</div>"
-                                        f"</div>"
-                                    )
-                                except: pass
-                            if _plan_boxes:
-                                st.markdown(
-                                    f"<div style='display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;"
-                                    f"margin-bottom:6px;'>{_plan_boxes}</div>",
-                                    unsafe_allow_html=True
-                                )
 
                         # ── EMA Legend ────────────────────────────────────────
                         ema_items = [
