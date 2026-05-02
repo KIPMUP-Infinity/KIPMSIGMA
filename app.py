@@ -19651,8 +19651,89 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 else:
                     st.warning("Data grafik tidak ditemukan. Pastikan ticker valid di BEI dan jaringan internet stabil.")
 
-    # ── SIGMA ANALYSIS CARD (dark terminal, full card) ───────────
-                # Render setelah plotly chart selesai — tampil saat run_analysis ATAU dari cache
+    # ── Executive Summary (LAMA) - di bawah chart, full width ───────────
+                if run_analysis and ai_text_verdict:
+                    bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f0f4ff'
+                    bd_color = tv_border if not df_chart.empty else 'transparent'
+
+                    # ── SIGMA SCORE BADGE ──
+                    if _sigma_result is not None:
+                        st.markdown(render_sigma_score_badge(_sigma_result, ticker_input, compact=False), unsafe_allow_html=True)
+
+                    # ── MnM ZONE DETECTION CARD ──
+                    if _ZONE_ENGINE_AVAILABLE:
+                        try:
+                            _zone_res = _cached_detect_zones_multi_tf(ticker_input)
+                            _zone_price = float(df_chart['Close'].iloc[-1]) if not df_chart.empty else 0.0
+                            st.markdown(zone_detail_html(_zone_res, _zone_price, C), unsafe_allow_html=True)
+                        except Exception as _ze:
+                            pass
+
+                    # Risk level badge
+                    _rl = (ai_data or {}).get("risk_level", "NONE")
+                    if _rl == "LOW":
+                        _rl_badge = "<span style='background:#089981;color:#fff;font-size:0.72rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟢 LOW RISK</span>"
+                    elif _rl == "MID":
+                        _rl_badge = "<span style='background:#f5a623;color:#000;font-size:0.72rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🟡 MID RISK</span>"
+                    elif _rl == "HIGH":
+                        _rl_badge = "<span style='background:#f23645;color:#fff;font-size:0.72rem;padding:2px 10px;border-radius:4px;letter-spacing:0.1em;font-weight:700;'>🔴 HIGH RISK</span>"
+                    else:
+                        _rl_badge = ""
+
+                    verdict_clean = ai_text_verdict.replace('\n\n\n', '\n\n')
+
+                    html_str = f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
+    <div style="font-size:0.72rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px; display:flex;align-items:center;gap:10px;">
+    📋 TRADE PLAN SIGMA {_rl_badge}
+    </div>
+    <div style="font-size:0.8rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
+    {verdict_clean}
+    </div>
+    </div>"""
+
+                    st.markdown(html_str, unsafe_allow_html=True)
+
+                elif not run_analysis:
+                    _persisted_data   = st.session_state.get("alpha_insight_last_data")
+                    _persisted_ticker = (_persisted_data or {}).get("ticker", "")
+                    if _persisted_data and _persisted_ticker and _persisted_ticker == ticker_input:
+                        _pv  = _persisted_data.get("ai_text_verdict", "")
+                        _pt  = _persisted_data.get("timestamp", "")
+                        _psr = _persisted_data.get("sigma_result", None)
+                        if _pv:
+                            bg_card  = 'rgba(10,14,26,0.92)' if is_dark else '#f0f4ff'
+                            bd_color = "rgba(139,92,246,0.18)"
+                            if _psr is not None and _SIGMA_SCORE_AVAILABLE:
+                                try:
+                                    st.markdown(render_sigma_score_badge(_psr, _persisted_ticker, compact=False), unsafe_allow_html=True)
+                                except: pass
+                            if _ZONE_ENGINE_AVAILABLE:
+                                try:
+                                    _pzone = _cached_detect_zones_multi_tf(_persisted_ticker)
+                                    _pzone_price = float(df_chart["Close"].iloc[-1]) if not df_chart.empty else 0.0
+                                    st.markdown(zone_detail_html(_pzone, _pzone_price, C), unsafe_allow_html=True)
+                                except: pass
+                            _pv_clean = _pv.replace('\n\n\n', '\n\n')
+                            st.markdown(f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
+    <div style="font-size:0.72rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px;">
+    &#128203; TRADE PLAN SIGMA &mdash; {_persisted_ticker} &nbsp;<span style="font-weight:400;color:#666;">{_pt}</span>
+    </div>
+    <div style="font-size:0.8rem;color:{'#c9d1d9' if is_dark else '#374151'}; white-space:pre-wrap;word-break:break-word;overflow-wrap:break-word;max-width:100%;">
+    {_pv_clean}
+    </div>
+    </div>""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div class="trm-card" style="text-align:center; padding:40px 20px; margin-top:20px;">
+                            <div style="font-family:'IBM Plex Mono',monospace;font-size:2rem;margin-bottom:12px;opacity:0.4;">&#9672;</div>
+                            <p style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:{text_sub};margin:0;">
+                                Masukkan kode saham dan klik <span style='color:#8b5cf6;'>Analyze with SIGMA</span> untuk memproses data teknikal, fundamental, dan volume &mdash; lalu menggambar Trade Plan otomatis di Chart.
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+    # ── SIGMA ANALYSIS CARD (dark terminal) — TAMBAHAN di bawah output lama ──
+                # Render card baru ini setelah executive summary lama selesai
                 _should_render_card = (run_analysis and ai_text_verdict) or (
                     not run_analysis
                     and ai_data is not None
