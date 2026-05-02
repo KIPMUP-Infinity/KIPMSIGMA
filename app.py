@@ -3046,6 +3046,17 @@ def _goapi_resolve_base(force: bool = False) -> str:
                 GOAPI_BASE = base
                 try:
                     st.session_state["_goapi_base_resolved"] = base
+                    st.session_state.pop("_goapi_server_down", None)
+                except Exception:
+                    pass
+                return base
+            # 5xx Cloudflare/server down — URL benar tapi server tidak bisa dijangkau
+            # Tetap set sebagai base yang valid agar error message jelas
+            if r.status_code in (523, 522, 521, 520, 502, 503, 504):
+                GOAPI_BASE = base
+                try:
+                    st.session_state["_goapi_base_resolved"] = base
+                    st.session_state["_goapi_server_down"] = True
                 except Exception:
                     pass
                 return base
@@ -3164,6 +3175,21 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
                 try:
                     import streamlit as _st_g
                     _st_g.session_state["_goapi_last_error"] = last_err
+                except Exception:
+                    pass
+                return []
+            if r.status_code in (523, 522, 521, 520, 502, 503, 504):
+                # Cloudflare/origin unreachable — server GoAPI sedang down
+                # Tidak ada gunanya retry tanggal lain, langsung stop
+                last_err = (
+                    f"GoAPI server unreachable (HTTP {r.status_code}) — "
+                    f"Cloudflare tidak bisa menjangkau origin GoAPI. "
+                    f"Coba lagi dalam beberapa menit."
+                )
+                try:
+                    import streamlit as _st_g
+                    _st_g.session_state["_goapi_last_error"] = last_err
+                    _st_g.session_state["_goapi_server_down"] = True
                 except Exception:
                     pass
                 return []
@@ -8560,6 +8586,9 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
     if btn_chat:
         st.session_state.selected_system = "chat"
         st.session_state.current_view = "chat"
+        # Persist ke query param agar survive refresh
+        try: st.query_params["nav"] = "chat"
+        except Exception: pass
         st.rerun()
 
     if btn_terminal:
@@ -8569,6 +8598,8 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
         else:
             st.session_state.selected_system = "terminal_local"
             st.session_state.current_view = "dashboard"
+        try: st.query_params["nav"] = "terminal_local"
+        except Exception: pass
         st.rerun()
 
     if "action" in st.query_params:
@@ -8578,22 +8609,34 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
         if _action == "open_chat":
             st.session_state.selected_system = "chat"
             st.session_state.current_view = "chat"
+            try: st.query_params["nav"] = "chat"
+            except Exception: pass
             st.rerun()
         elif _action == "open_terminal":
-            _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
-            if _turl:
+            _turl2 = st.secrets.get("SIGMA_TERMINAL_URL", "")
+            if _turl2:
                 st.session_state.selected_system = "terminal"
             else:
                 st.session_state.selected_system = "terminal_local"
                 st.session_state.current_view = "dashboard"
+            try: st.query_params["nav"] = "terminal_local"
+            except Exception: pass
             st.rerun()
 
     st.stop()
 
 
-# ── Routing: jika sudah login tapi belum pilih sistem → tampilkan selector ──
+# ── Routing: jika sudah login tapi belum pilih sistem → cek query_params dulu ──
 if st.session_state.user and not st.session_state.get("selected_system"):
-    show_system_selector()
+    _nav_qp = st.query_params.get("nav", "")
+    if _nav_qp == "chat":
+        st.session_state.selected_system = "chat"
+        st.session_state.current_view = "chat"
+    elif _nav_qp in ("terminal", "terminal_local"):
+        st.session_state.selected_system = "terminal_local"
+        st.session_state.current_view = "dashboard"
+    else:
+        show_system_selector()
 
 # ── FIX: jika selected_system="terminal" (external URL), redirect kembali otomatis ──
 # Ini terjadi setelah theme toggle atau rerun — pastikan user tidak stuck di chat view
@@ -23577,13 +23620,17 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             # ── GoAPI status indicator + test button ──
             _goapi_key_ok = _goapi_available()
             _goapi_last_err = st.session_state.get("_goapi_last_error", "")
+            _goapi_srv_down = st.session_state.get("_goapi_server_down", False)
             _goapi_status_c = "#26a69a" if _goapi_key_ok else "#f23645"
             _goapi_status_lbl = "✅ Key Aktif" if _goapi_key_ok else "❌ Key Tidak Ada"
+            if _goapi_srv_down:
+                _goapi_status_c   = "#f59e0b"
+                _goapi_status_lbl = "⚠️ Server GoAPI Down (523/5xx) — coba lagi nanti"
             _gapi_col1, _gapi_col2, _gapi_col3 = st.columns([2, 1, 1])
             with _gapi_col1:
                 _goapi_err_html = (
                     f"&nbsp;&nbsp;&middot;&nbsp;&nbsp;<span style='color:#f59e0b;'>{_goapi_last_err[:60]}...</span>"
-                    if _goapi_last_err else ""
+                    if _goapi_last_err and not _goapi_srv_down else ""
                 )
                 st.markdown(
                     f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;"
