@@ -21609,15 +21609,15 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "<div class=\"stats-grid\">"
                     "<div class=\"stat-box\"><div class=\"stat-lbl\">Win Rate</div>"
                     "<div class=\"stat-val\" style=\"color:" + _wr_color + ";\">"+str(_wr2)+"%</div>"
-                    "<div class=\"stat-sub\">"+str(len(_w2))+" WIN · "+str(len(_l2))+" LOSS · "+str(len(_cl2))+" closed</div></div>"
+                    "<div class=\"stat-sub\">"+str(len(_w2))+" WIN &middot; "+str(len(_l2))+" LOSS &middot; "+str(len(_cl2))+" closed</div></div>"
 
                     "<div class=\"stat-box\"><div class=\"stat-lbl\">Total Trade</div>"
                     "<div class=\"stat-val\" style=\"color:#a78bfa;\">"+str(len(rec_list))+"</div>"
-                    "<div class=\"stat-sub\">"+str(len(_op2))+" OPEN · "+str(len(_cl2))+" CLOSED</div></div>"
+                    "<div class=\"stat-sub\">"+str(len(_op2))+" OPEN &middot; "+str(len(_cl2))+" CLOSED</div></div>"
 
                     "<div class=\"stat-box\"><div class=\"stat-lbl\">Total P&amp;L</div>"
                     "<div class=\"stat-val\" style=\"color:" + _pnl_color + ";\">"+ _pnl_sign +str(_tp2)+"%</div>"
-                    "<div class=\"stat-sub\">Avg WIN: +"+str(_aw2)+"% · Avg LOSS: "+str(_al2)+"%</div></div>"
+                    "<div class=\"stat-sub\">Avg WIN: +"+str(_aw2)+"% &middot; Avg LOSS: "+str(_al2)+"%</div></div>"
 
                     "<div class=\"stat-box\"><div class=\"stat-lbl\">Profit Factor</div>"
                     "<div class=\"stat-val\" style=\"color:" + _pf_color + ";\">"+str(_pfact)+"</div>"
@@ -21644,7 +21644,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "function fmt(n){return n&&n>0?'Rp'+parseInt(n).toLocaleString('id-ID'):'-';}"
                     "REC.forEach(function(r,i){"
                     "var badgeCls=r.result==='WIN'?'badge-win':r.result==='LOSS'?'badge-loss':'badge-open';"
-                    "var st_lbl=r.result==='WIN'?'\u2705 WIN':r.result==='LOSS'?'\uD83D\uDED1 LOSS':'\u23F3 OPEN';"
+                    "var st_lbl=r.result==='WIN'?'WIN':r.result==='LOSS'?'LOSS':'OPEN';"
                     "var pnl=r.pnl_pct||r.unrealized_pnl||0;"
                     "var pnlStr=pnl?'<span class=\"'+(pnl>=0?'win':'loss')+'\">'+(pnl>=0?'+':'')+pnl+'%</span>':'-';"
                     "var note=r.auto_note||r.reason||'-';"
@@ -21660,7 +21660,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
                     "+'<td style=\"color:#f23645;font-weight:700;\">'+fmt(r.sl)+'</td>'"
                     "+'<td style=\"font-weight:700;\">'+fmt(r.exit_price)+'</td>'"
                     "+'<td>'+pnlStr+'</td>'"
-                    "+'<td><span class=\"badge '+badgeCls+'\">'+st_lbl+'</span></td>'"
+                    "+'<td><span class=\"badge '+badgeCls+'\" style=\"letter-spacing:0.05em;\">'+st_lbl+'</span></td>'"
                     "+'<td class=\"note-cell\">'+note+'</td>'"
                     "+'</tr>';"
                     "});"
@@ -21711,7 +21711,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 @media(max-width:900px){{.stats-grid{{grid-template-columns:repeat(3,1fr);}}}}
 @media(max-width:640px){{.stats-grid{{grid-template-columns:1fr 1fr;}}}}
 </style></head><body>
-<div class="ts-note">🔄 Auto-update setiap hari jam 20:30 WIB &nbsp;·&nbsp; Terakhir cek: {_now_wib}</div>"""
+<div class="ts-note">Auto-update setiap hari jam 20:30 WIB &nbsp;&middot;&nbsp; Terakhir cek: {_now_wib}</div>"""
 
             # ── Jika filter_type ada → render tabel single type ──
             if filter_type:
