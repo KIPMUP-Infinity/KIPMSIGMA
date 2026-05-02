@@ -23834,13 +23834,38 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
                                 # Probe semua kandidat base URL x tanggal terbaru
                                 for _base_url in _GOAPI_BASE_CANDIDATES:
-                                    for _td_try in _test_dates[:5]:  # coba 5 tanggal per URL
+                                    for _idx_td, _td_try in enumerate(_test_dates[:5]):  # coba 5 tanggal per URL
+                                        if _idx_td > 0:
+                                            time.sleep(2.0)  # jeda antar request agar tidak throttle
                                         try:
                                             _tr = requests.get(
                                                 f"{_base_url}/TLKM/broker_summary",
                                                 params={"date": _td_try, "investor": "ALL"},
                                                 headers=_goapi_headers(), timeout=8)
                                             _tc = _tr.status_code
+                                            if _tc == 429:
+                                                # Throttled — tunggu lalu retry sekali (bukan langsung break)
+                                                _url_results.append((_base_url, _td_try, _tc, "throttled — retry setelah 15 detik"))
+                                                time.sleep(15)
+                                                try:
+                                                    _tr2 = requests.get(
+                                                        f"{_base_url}/TLKM/broker_summary",
+                                                        params={"date": _td_try, "investor": "ALL"},
+                                                        headers=_goapi_headers(), timeout=8)
+                                                    if _tr2.status_code == 200:
+                                                        _tr = _tr2
+                                                        _tc = 200
+                                                        _url_results.pop()  # hapus entry throttled tadi
+                                                    elif _tr2.status_code == 429:
+                                                        # Masih throttle setelah retry → catat dan break
+                                                        _found_url = _base_url
+                                                        break
+                                                    else:
+                                                        _tc = _tr2.status_code
+                                                        _url_results.pop()
+                                                except Exception:
+                                                    _found_url = _base_url
+                                                    break
                                             if _tc == 404:
                                                 _url_results.append((_base_url, _td_try, _tc, "path tidak ditemukan"))
                                             if _tc == 401:
@@ -23849,10 +23874,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                                 break
                                             if _tc == 403:
                                                 _url_results.append((_base_url, _td_try, _tc, "URL OK tapi key tidak punya akses"))
-                                                _found_url = _base_url
-                                                break
-                                            if _tc == 429:
-                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi throttled — bukan quota habis, coba lagi"))
                                                 _found_url = _base_url
                                                 break
                                             if _tc == 200:
@@ -23908,12 +23929,22 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                     _url_note = next((n for u, d, c, n in _url_results if u == _found_url), "")
                                     _url_code = next((c for u, d, c, n in _url_results if u == _found_url), 0)
                                     if _url_code == 429:
+                                        _from_wib = datetime.now(timezone(timedelta(hours=7)))
+                                        _is_weekend = _from_wib.weekday() >= 5
+                                        _weekend_note = (
+                                            "\n\n⚠️ Hari ini **akhir pekan** — data broker summary memang tidak publish hari Sabtu/Minggu. "
+                                            "Tapi data **Jumat kemarin tetap bisa diambil** — klik Test GoAPI lagi setelah 30 detik."
+                                            if _is_weekend else
+                                            "\n\nData hari bursa terakhir (Jumat/kemarin) **tetap bisa diambil** — GoAPI hanya butuh jeda antar request. "
+                                            "Tunggu 30 detik lalu klik Test GoAPI lagi."
+                                        )
                                         st.warning(
-                                            f"⚠️ URL OK · Key Aktif · Terkena throttle (429)\n\n"
+                                            f"⚠️ URL OK · Key Aktif · Sementara throttled (429)\n\n"
                                             f"**URL:** `{_found_url}`\n"
-                                            f"**Status:** Throttled sementara — **bukan berarti quota habis**\n\n"
-                                            f"GoAPI membatasi frekuensi request. Tunggu 10-30 detik lalu coba lagi. "
-                                            f"Jika hari ini Sabtu/Minggu/libur, data broker summary memang tidak tersedia."
+                                            f"**Status:** Throttled — sudah di-retry sekali, masih 429\n\n"
+                                            f"Ini **bukan berarti quota habis** dan **bukan berarti data tidak ada**. "
+                                            f"GoAPI membatasi kecepatan request — cukup tunggu 30 detik lalu klik Test GoAPI lagi."
+                                            f"{_weekend_note}"
                                         )
                                     else:
                                         st.warning(
