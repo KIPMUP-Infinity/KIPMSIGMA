@@ -3279,9 +3279,10 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
                     _st_g.session_state["_goapi_last_error"] = last_err
                 except Exception:
                     pass
-                # ── Retry dengan exponential backoff (max 3x) ──
-                _retry_wait = 2
-                for _retry in range(3):
+                # ── Retry dengan exponential backoff (max 2x, mulai 5 detik) ──
+                # Start 5 detik bukan 2 detik — GoAPI perlu jeda cukup setelah throttle
+                _retry_wait = 5
+                for _retry in range(2):
                     time.sleep(_retry_wait + random.uniform(0.5, 1.5))
                     try:
                         r2 = requests.get(
@@ -24338,10 +24339,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         _resolved_date = _goapi_resolve_latest_date(test_ticker="BBCA")
 
                     _goapi_rate_limited = False  # flag ini tidak dipakai lagi — retry per-ticker di goapi_get_broker_summary
+                    _consec_429 = 0  # hitung 429 berturut-turut — kalau >3 berarti GoAPI benar-benar throttle berat
 
-                    for _si in _top30:
+                    for _si_idx, _si in enumerate(_top30):
                         _stk = _si["ticker"]
+                        _prog_bar.progress(
+                            75 + int((_si_idx / max(len(_top30), 1)) * 20),
+                            text=f"⚡ STEP 4/4 — GoAPI [{_si_idx+1}/{len(_top30)}] {_stk}..."
+                        )
                         if not _goapi_available():
+                            _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0,
+                                        "screeners_hit":[],"foreign_accum_count":0})
+                            continue
+                        # Kalau 429 berturut-turut >3, berhenti fetch GoAPI — skip sisanya
+                        if _consec_429 >= 3:
                             _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0,
                                         "screeners_hit":[],"foreign_accum_count":0})
                             continue
@@ -24356,11 +24367,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 # Fallback: biarkan fungsi cari tapi batasi lookback ke 3 hari saja
                                 _grows = goapi_get_broker_summary(_stk, None)
 
-                            # Cek apakah kena rate limit — TIDAK lagi block semua ticker, cukup log saja
+                            # Cek apakah kena rate limit — track consecutive 429
                             _last_err_chk = st.session_state.get("_goapi_last_error", "")
                             if "429" in _last_err_chk:
+                                _consec_429 += 1
                                 # Reset error setelah dicatat — retry sudah dilakukan di goapi_get_broker_summary
                                 st.session_state["_goapi_last_error"] = ""
+                            else:
+                                _consec_429 = 0  # reset counter kalau sukses
 
                             _net_b = 0; _top_acc = []; _top_dist_g = []
                             _total_buy_val = 0; _total_vol = 0
