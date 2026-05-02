@@ -19788,7 +19788,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {dist_html}
             </div>""", unsafe_allow_html=True)
 
-        st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Rekomendasi AI otomatis &middot; Scanning {len(_WATCHLIST_RECO)}+ saham BEI &middot; Daily &middot; Weekly &middot; Beli Sore Jual Pagi &middot; Berbasis data live IDX</p>", unsafe_allow_html=True)
 
         @st.cache_data(ttl=1800, show_spinner=False)
         def _reco_fetch_prices(tickers):
@@ -21369,7 +21368,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
 <style>
 *{{box-sizing:border-box;margin:0;padding:0;}}
 body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};}}
-/* ── Accordion ── */
+/* -- Accordion -- */
 .acc-item{{border:1px solid {_border};border-radius:8px;margin-bottom:8px;overflow:hidden;}}
 .acc-header{{display:flex;align-items:center;justify-content:space-between;
   padding:10px 16px;cursor:pointer;background:rgba(124,58,237,0.06);
@@ -21385,7 +21384,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_txt};
 .acc-arrow.open{{transform:rotate(180deg);}}
 .acc-body{{display:none;padding:12px 14px;}}
 .acc-body.open{{display:block;}}
-/* ── Content ── */
+/* -- Content -- */
 .outlook-box{{background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.18);
   border-left:3px solid {accent};border-radius:0 8px 8px 0;
   padding:10px 14px;font-size:0.8rem;color:{_txt};margin-bottom:12px;line-height:1.65;}}
@@ -21420,20 +21419,20 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
   function fmt(n){{ return n ? 'Rp '+parseInt(n).toLocaleString('id-ID') : '-'; }}
   function ratingBadge(r){{
     if(!r) return '';
-    if(r==='BUY') return '<span class="buy">▶ BUY</span>';
-    if(r==='HOLD') return '<span class="hold">◉ HOLD</span>';
-    return '<span class="avoid-lbl">✕ AVOID</span>';
+    if(r==='BUY') return '<span class="buy">&#9654; BUY</span>';
+    if(r==='HOLD') return '<span class="hold">&#9673; HOLD</span>';
+    return '<span class="avoid-lbl">x AVOID</span>';
   }}
 
   function buildContent(d){{
     var rows = d.rows || [];
     var avoid = d.avoid || [];
     var html = '';
-    if(d.generated_at) html += '<div class="gen-ts">🕐 Generated: ' + d.generated_at + '</div>';
-    if(d.outlook) html += '<div class="outlook-box">💡 ' + d.outlook + '</div>';
+    if(d.generated_at) html += '<div class="gen-ts"> Generated: ' + d.generated_at + '</div>';
+    if(d.outlook) html += '<div class="outlook-box"> ' + d.outlook + '</div>';
 
     if(rows.length > 0){{
-      html += '<span class="sec-hd">📈 TRADE PLAN — ' + d.label + '</span>';
+      html += '<span class="sec-hd"> TRADE PLAN &mdash; ' + d.label + '</span>';
       html += '<div class="tbl-wrap"><div class="scroll"><table>';
       html += '<thead><tr><th>TICKER</th><th>PRICE</th><th>ENTRY LOW</th><th>ENTRY HIGH</th><th>TP1</th><th>TP2</th><th>SL</th><th>RR</th><th>HORIZON</th><th>VOL</th><th>RATING</th><th>ALASAN</th></tr></thead><tbody>';
       rows.forEach(function(r){{
@@ -21456,7 +21455,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
     }}
 
     if(avoid.length > 0){{
-      html += '<span class="sec-hd">⛔ HINDARI</span>';
+      html += '<span class="sec-hd">(!) HINDARI</span>';
       html += '<div class="tbl-wrap"><div class="scroll"><table>';
       html += '<thead><tr><th>TICKER</th><th>PRICE</th><th>ALASAN</th><th>RATING</th></tr></thead><tbody>';
       avoid.forEach(function(r){{
@@ -21483,18 +21482,18 @@ tbody tr:hover td{{background:rgba(124,58,237,0.07);}}
 
     var nrows = (d.rows||[]).length;
     var navoid = (d.avoid||[]).length;
-    var countTxt = nrows + ' saham' + (navoid?' · '+navoid+' hindari':'');
+    var countTxt = nrows + ' saham' + (navoid?' &middot; '+navoid+' hindari':'');
 
     var header = document.createElement('div');
     header.className = 'acc-header' + (i===0?' open':'');
     header.innerHTML =
       '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">' +
-        '<span class="acc-label">📅 ' + d.label + '</span>' +
-        (d.generated_at ? '<span class="acc-meta">· ' + d.generated_at + '</span>' : '') +
+        '<span class="acc-label"> ' + d.label + '</span>' +
+        (d.generated_at ? '<span class="acc-meta">&middot; ' + d.generated_at + '</span>' : '') +
       '</div>' +
       '<div class="acc-right">' +
         '<span class="acc-count">' + countTxt + '</span>' +
-        '<span class="acc-arrow' + (i===0?' open':'') + '">▼</span>' +
+        '<span class="acc-arrow' + (i===0?' open':'') + '">&#9660;</span>' +
       '</div>';
 
     var body = document.createElement('div');
@@ -23444,8 +23443,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 @media(max-width:640px){{.section-row{{grid-template-columns:1fr;}}.sum-grid{{grid-template-columns:1fr 1fr;}}}}
 </style></head><body>
 
-<div class="title">Broker Distribution — {ticker}</div>
-<div class="sub">Broker Summary · GoAPI IDX · Hari Ini</div>
+<div class="title">Broker Distribution &mdash; {ticker}</div>
+<div class="sub">Broker Summary &middot; GoAPI IDX &middot; Hari Ini</div>
 
 <div style="font-size:0.68rem;color:{_sub};margin-bottom:4px;">Broker Action</div>
 <div class="ba-wrap">
@@ -23456,15 +23455,15 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
 
 <div class="sum-grid">
   <div class="sum-card">
-    <div class="sum-lbl">🌐 Net Foreign (Lot)</div>
+    <div class="sum-lbl"> Net Foreign (Lot)</div>
     <div class="sum-val" style="color:{(_G if _tf_net>=0 else _R)}">{("+" if _tf_net>=0 else "")}{int(_tf_net):,}</div>
   </div>
   <div class="sum-card">
-    <div class="sum-lbl">🏛️ Net BUMN (Lot)</div>
+    <div class="sum-lbl"> Net BUMN (Lot)</div>
     <div class="sum-val" style="color:{(_G if _tb_net>=0 else _R)}">{("+" if _tb_net>=0 else "")}{int(_tb_net):,}</div>
   </div>
   <div class="sum-card">
-    <div class="sum-lbl">🏠 Net Lokal (Lot)</div>
+    <div class="sum-lbl"> Net Lokal (Lot)</div>
     <div class="sum-val" style="color:{(_G if _tl_net>=0 else _R)}">{("+" if _tl_net>=0 else "")}{int(_tl_net):,}</div>
   </div>
 </div>
@@ -23484,7 +23483,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
   </div>
 </div>
 
-<span class="sec-lbl">📋 Tabel Lengkap — Top Akumulasi & Distribusi</span>
+<span class="sec-lbl"> Tabel Lengkap &mdash; Top Akumulasi & Distribusi</span>
 <div class="full-wrap"><div class="scroll"><table>
 <thead><tr>
   <th>BROKER</th><th>NAMA</th><th>TYPE</th>
@@ -25016,7 +25015,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     *{{box-sizing:border-box;margin:0;padding:0;}}
     body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_kc_text};}}
 
-    /* ── Form ── */
+    /* -- Form -- */
     .form-wrap{{background:{_kc_bg};border:1px solid {_kc_border};border-radius:12px;padding:22px 24px 18px;margin-bottom:20px;}}
     .form-title{{font-size:1.25rem;font-weight:700;color:{_kc_gold};letter-spacing:0.06em;margin-bottom:18px;text-align:center;}}
     .form-sub{{font-size:0.72rem;color:{_kc_sub};text-align:center;letter-spacing:0.08em;margin-top:-14px;margin-bottom:18px;}}
@@ -25043,18 +25042,18 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     .calc-btn:hover{{background:linear-gradient(135deg,rgba(124,58,237,0.32),rgba(124,58,237,0.25));
       box-shadow:0 0 18px rgba(124,58,237,0.18);}}
 
-    /* ── Results ── */
+    /* -- Results -- */
     .result-wrap{{display:none;}}
     .result-wrap.show{{display:block;}}
     .result-header{{font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
       color:{_kc_sub};margin:20px 0 12px;display:flex;align-items:center;gap:8px;}}
     .result-header::before,.result-header::after{{content:'';flex:1;height:1px;background:{_kc_border};}}
 
-    /* ── ARA/ARB section headers ── */
+    /* -- ARA/ARB section headers -- */
     .section-label{{font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;
       color:{_kc_sub};margin:16px 0 8px;padding-left:4px;}}
 
-    /* ── Card list style (like image 2) ── */
+    /* -- Card list style (like image 2) -- */
     .cards-list{{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}}
     .step-card{{border:1px solid {_kc_border};border-radius:10px;padding:13px 16px;
       background:rgba(14,22,40,0.9);display:flex;align-items:center;gap:12px;
@@ -25129,7 +25128,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         <input type="range" id="inp-steps" min="1" max="50" value="5" oninput="document.getElementById('slider-val').textContent=this.value">
       </div>
 
-      <button class="calc-btn" onclick="calculate()">▶ Hitung ARA &amp; ARB</button>
+      <button class="calc-btn" onclick="calculate()">&#9654; Hitung ARA &amp; ARB</button>
     </div>
 
     <div class="result-wrap" id="result-wrap">
@@ -25191,7 +25190,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     }}
 
     function fmtPct(p) {{
-      return (p>=0?'↑':' ') + p.toFixed(2) + '%';
+      return (p>=0?'&uarr;':' ') + p.toFixed(2) + '%';
     }}
 
     function calculate() {{
@@ -25229,26 +25228,26 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
           '<div class="step-card-left">' +
             '<div class="step-price-row">' +
               '<span class="step-price" style="color:#26a69a;">Rp ' + fmt(a.price) + '</span>' +
-              '<span class="step-delta up">↑ +' + a.naik.toFixed(2) + '%</span>' +
+              '<span class="step-delta up">&uarr; +' + a.naik.toFixed(2) + '%</span>' +
             '</div>' +
             '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
           '</div>' +
           '<div class="step-card-right">' +
             '<span class="step-tag ara">ARA #' + a.step + '</span>' +
-            '<div class="step-total-pct up">↗ ' + a.total.toFixed(2) + '%</div>' +
+            '<div class="step-total-pct up">&#8599; ' + a.total.toFixed(2) + '%</div>' +
           '</div>' +
         '</div>';
         arbHtml += '<div class="step-card arb">' +
           '<div class="step-card-left">' +
             '<div class="step-price-row">' +
               '<span class="step-price" style="color:#f23645;">Rp ' + fmt(b.price) + '</span>' +
-              '<span class="step-delta dn">↓ -' + b.turun.toFixed(2) + '%</span>' +
+              '<span class="step-delta dn">&darr; -' + b.turun.toFixed(2) + '%</span>' +
             '</div>' +
             '<div style="font-size:0.72rem;color:' + '{_kc_sub}' + ';">Total dari harga awal</div>' +
           '</div>' +
           '<div class="step-card-right">' +
             '<span class="step-tag arb">ARB #' + b.step + '</span>' +
-            '<div class="step-total-pct dn">↘ ' + b.total.toFixed(2) + '%</div>' +
+            '<div class="step-total-pct dn">&#8600; ' + b.total.toFixed(2) + '%</div>' +
           '</div>' +
         '</div>';
       }}
@@ -25385,13 +25384,13 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
     </style></head><body>
 
     <div class="form-wrap">
-      <div class="form-title">📉 Average Down</div>
+      <div class="form-title"> Average Down</div>
       <div class="form-sub">Average Price Calculator</div>
 
       <div id="trx-container">
         <!-- Pembelian Awal -->
         <div class="trx-block" id="trx-0">
-          <div class="trx-title">🛒 PEMBELIAN AWAL</div>
+          <div class="trx-title"> PEMBELIAN AWAL</div>
           <div class="row3">
             <div>
               <label class="field-lbl">Kode Saham <span style="color:{_kc_sub};font-weight:400;">(opsional)</span></label>
@@ -25416,7 +25415,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         <input class="inp harga-inp" id="cur-price" type="number" placeholder="Opsional - isi untuk lihat profit/loss saat ini" min="1" oninput="livePreview()">
       </div>
 
-      <button class="calc-btn" onclick="calculate()">🧮 Hitung Average</button>
+      <button class="calc-btn" onclick="calculate()"> Hitung Average</button>
     </div>
 
     <div class="result-wrap" id="result-wrap">
@@ -25456,8 +25455,8 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
       var label = idx===0 ? 'PEMBELIAN AWAL' : 'PEMBELIAN #'+(idx+1);
       var div = document.createElement('div');
       div.className = 'trx-block'; div.id = 'trx-'+idx;
-      div.innerHTML = '<div class="trx-title">🛒 ' + label +
-        (idx>0?'<button class="del-btn" onclick="delTrx('+idx+')">✕ Hapus</button>':'') + '</div>' +
+      div.innerHTML = '<div class="trx-title"> ' + label +
+        (idx>0?'<button class="del-btn" onclick="delTrx('+idx+')">x Hapus</button>':'') + '</div>' +
         '<div class="row3">' +
         '<div><label class="field-lbl">Harga Beli (Rp) <span style="color:{_kc_red};">*</span></label>' +
         '<input class="inp" id="harga-'+idx+'" type="number" placeholder="Harga beli" min="1" oninput="livePreview()"></div>' +
@@ -25501,7 +25500,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
       var liveEl = document.getElementById('live-avg');
       if (liveEl) {{
         liveEl.style.display='block';
-        liveEl.textContent = '🔄 Preview: Avg Rp '+fmt(avg)+' · '+rows.reduce(function(s,r){{return s+r.l;}},0)+' Lot · Modal Rp '+fmtK(totalModal);
+        liveEl.textContent = ' Preview: Avg Rp '+fmt(avg)+' &middot; '+rows.reduce(function(s,r){{return s+r.l;}},0)+' Lot &middot; Modal Rp '+fmtK(totalModal);
       }}
     }}
 
@@ -25523,7 +25522,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         var pnlPct = (curPrice-avgHarga) / avgHarga * 100;
         var isPro = pnl >= 0;
         pnlClass = isPro?'profit':'loss';
-        var pnlIcon = isPro?'📈':'📉';
+        var pnlIcon = isPro?'':'';
         pnlHtml = '<div class="pnl-box '+pnlClass+'">' +
           pnlIcon + ' <b>PnL Saat Ini:</b> ' +
           '<span style="color:'+(isPro?'#26a69a':'#f23645')+';font-weight:700;font-size:1.1rem;">' +
@@ -25560,7 +25559,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
           '</tr>';
       }});
       tbody+='<tr>'+
-        '<td>✅ Total / Average</td>'+
+        '<td>OK Total / Average</td>'+
         '<td>Rp '+fmt(avgHarga)+'</td>'+
         '<td>'+totalLot+' lot</td>'+
         '<td>'+fmt(totalLembar)+' lbr</td>'+
