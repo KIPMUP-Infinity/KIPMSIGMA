@@ -3227,19 +3227,25 @@ def _trading_date_candidates(date_str: str = None, max_lookback: int = 5) -> lis
 
 
 
-# ── GoAPI Request Throttler ──────────────────────────────────────────────────
-# Batasi request GoAPI: min 1.2 detik antar request untuk hindari 429
-_GOAPI_MIN_INTERVAL = 1.2   # detik antar request
+# ── GoAPI Request Throttler (Thread-Safe) ────────────────────────────────────
+# Batasi request GoAPI: min 1.5 detik antar request untuk hindari 429
+# Thread-safe: gunakan Lock agar multi-thread tidak bypass throttler
+import threading as _threading_goapi
+_GOAPI_MIN_INTERVAL = 1.5   # detik antar request (naik dari 1.2 → lebih aman)
 _goapi_last_req_time: float = 0.0
+_goapi_throttle_lock = _threading_goapi.Lock()
 
 def _goapi_throttle():
-    """Tunggu sebelum request GoAPI agar tidak kena rate limit."""
+    """Tunggu sebelum request GoAPI agar tidak kena rate limit.
+    Thread-safe: satu request keluar tiap min 1.5 detik meski dari banyak thread.
+    """
     global _goapi_last_req_time
-    elapsed = time.time() - _goapi_last_req_time
-    wait    = _GOAPI_MIN_INTERVAL - elapsed
-    if wait > 0:
-        time.sleep(wait)
-    _goapi_last_req_time = time.time()
+    with _goapi_throttle_lock:
+        elapsed = time.time() - _goapi_last_req_time
+        wait    = _GOAPI_MIN_INTERVAL - elapsed
+        if wait > 0:
+            time.sleep(wait)
+        _goapi_last_req_time = time.time()
 # ─────────────────────────────────────────────────────────────────────────────
 
 def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
@@ -3491,7 +3497,19 @@ def _goapi_resolve_latest_date(test_ticker: str = "BBCA") -> str:
                 headers=_goapi_headers(), timeout=15)
             if r.status_code == 429:
                 _st_r.session_state["_goapi_last_error"] = f"HTTP 429 throttled — bukan quota habis, tunggu sebentar"
-                return ""
+                # Tunggu lalu retry sekali sebelum menyerah
+                time.sleep(15 + random.uniform(1, 5))
+                try:
+                    r2 = requests.get(
+                        f"{GOAPI_BASE}/{test_ticker}/broker_summary",
+                        params={"date": _cdate, "investor": "ALL"},
+                        headers=_goapi_headers(), timeout=15)
+                    if r2.status_code == 200:
+                        r = r2
+                    else:
+                        return ""
+                except Exception:
+                    return ""
             if r.status_code == 200:
                 data = r.json()
                 _inner = data.get("data", {}) if isinstance(data, dict) else {}
@@ -19544,12 +19562,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         })
                 except: pass
 
-            # Parallel fetch — tapi batasi concurrency agar GoAPI tidak rate limit
-            for i in range(0, len(universe), 10):
-                batch = universe[i:i+10]
-                threads = [threading.Thread(target=_fetch_score, args=(tk,), daemon=True) for tk in batch]
-                for t in threads: t.start()
-                for t in threads: t.join(timeout=20)
+            # Sequential fetch dengan throttle — GoAPI tidak tahan parallel request
+            # 10 thread sekaligus = 10 request nyaris bersamaan → pasti 429
+            for tk in universe:
+                _fetch_score(tk)
 
             # Sort: STRONG_ACCUM/BREAKOUT dulu, lalu by score
             verdict_order = {"BREAKOUT": 0, "STRONG_ACCUM": 1, "ACCUM": 2, "NEUTRAL": 5, "DIST": 7, "STRONG_DIST": 8}
@@ -24290,11 +24306,11 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     if _goapi_available():
                         _resolved_date = _goapi_resolve_latest_date(test_ticker="BBCA")
 
-                    _goapi_rate_limited = False  # flag stop jika kena 429
+                    _goapi_rate_limited = False  # flag ini tidak dipakai lagi — retry per-ticker di goapi_get_broker_summary
 
                     for _si in _top30:
                         _stk = _si["ticker"]
-                        if not _goapi_available() or _goapi_rate_limited:
+                        if not _goapi_available():
                             _si.update({"verdict":"","top_accum":[],"top_dist":[],"goapi_confirmed":False,"bpr":0,
                                         "screeners_hit":[],"foreign_accum_count":0})
                             continue
@@ -24309,10 +24325,11 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 # Fallback: biarkan fungsi cari tapi batasi lookback ke 3 hari saja
                                 _grows = goapi_get_broker_summary(_stk, None)
 
-                            # Cek apakah kena rate limit
+                            # Cek apakah kena rate limit — TIDAK lagi block semua ticker, cukup log saja
                             _last_err_chk = st.session_state.get("_goapi_last_error", "")
                             if "429" in _last_err_chk:
-                                _goapi_rate_limited = True
+                                # Reset error setelah dicatat — retry sudah dilakukan di goapi_get_broker_summary
+                                st.session_state["_goapi_last_error"] = ""
 
                             _net_b = 0; _top_acc = []; _top_dist_g = []
                             _total_buy_val = 0; _total_vol = 0
