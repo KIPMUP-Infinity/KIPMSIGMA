@@ -3267,7 +3267,7 @@ def goapi_get_broker_summary(ticker: str, date_str: str = None) -> list:
                 params={"date": _try_date, "investor": "ALL"},
                 headers=_goapi_headers(), timeout=20)
             if r.status_code == 429:
-                last_err = f"HTTP 429 Rate Limit untuk {ticker} ({_try_date})"
+                last_err = f"HTTP 429 untuk {ticker} ({_try_date}) — throttled (bukan quota habis, coba lagi sebentar)"
                 try:
                     import streamlit as _st_g
                     _st_g.session_state["_goapi_last_error"] = last_err
@@ -3490,7 +3490,7 @@ def _goapi_resolve_latest_date(test_ticker: str = "BBCA") -> str:
                 params={"date": _cdate, "investor": "ALL"},
                 headers=_goapi_headers(), timeout=15)
             if r.status_code == 429:
-                _st_r.session_state["_goapi_last_error"] = f"HTTP 429 Rate Limit (resolve date)"
+                _st_r.session_state["_goapi_last_error"] = f"HTTP 429 throttled — bukan quota habis, tunggu sebentar"
                 return ""
             if r.status_code == 200:
                 data = r.json()
@@ -11233,26 +11233,13 @@ if current_view == "dashboard":
                 result[tk] = {"price": meta["price"], "chg": meta["chg"], "vol": meta["vol"], "cap": meta["cap"]}
         return result
 
-    try:
-        _globe_live = _fetch_globe_live_data()
-    except Exception:
-        _globe_live = None
-    if not _globe_live:
-        try: _fetch_globe_live_data.clear()
-        except Exception: pass
-        try:
-            _globe_live = _fetch_globe_live_data()
-        except Exception:
-            _globe_live = None
+    _globe_live = _fetch_globe_live_data()
     # ── Globe: background auto-refresh tiap jam (slot berubah = cache dibust) ──
     _globe_hour_slot = datetime.now().strftime("%Y%m%d_%H")
     if st.session_state.get("_globe_prev_slot", "") != _globe_hour_slot:
         try: _fetch_globe_live_data.clear()
         except Exception: pass
-        try:
-            _globe_live = _fetch_globe_live_data()
-        except Exception:
-            _globe_live = None
+        _globe_live = _fetch_globe_live_data()
         st.session_state["_globe_prev_slot"] = _globe_hour_slot
     # ─────────────────────────────────────────────────────────────────────
 
@@ -11263,11 +11250,7 @@ if current_view == "dashboard":
         # ════════════════════════════════════════════════════════
 
         import json as _globe_json
-        _globe_static_meta_js_fallback = '{"BBCA":{"name":"Bank Central Asia Tbk.","cap":1289,"owner":"Djarum Group","sector":"Financials","msci":true,"price":9325.0,"chg":1.08,"vol":"18.2 M"},"BELI":{"name":"Bukalapak.com Tbk.","cap":380,"owner":"Djarum Group","sector":"Technology","msci":false,"price":212.0,"chg":-1.4,"vol":"88.0 M"},"DNET":{"name":"Indoritel Makmur Intl.","cap":290,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":1540.0,"chg":0.65,"vol":"5.2 M"},"FAST":{"name":"Fast Food Indonesia Tbk.","cap":180,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":1580.0,"chg":-0.63,"vol":"4.8 M"},"MAPA":{"name":"Map Aktif Adiperkasa Tbk.","cap":155,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":720.0,"chg":1.12,"vol":"7.3 M"},"DCII":{"name":"DCI Indonesia Tbk.","cap":230,"owner":"Djarum Group","sector":"Technology","msci":false,"price":38500.0,"chg":2.14,"vol":"0.3 M"},"DMAS":{"name":"Puradelta Lestari Tbk.","cap":95,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":196.0,"chg":0.51,"vol":"22.0 M"},"KOPI":{"name":"Kopi Kenangan Digital Tbk.","cap":140,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":880.0,"chg":3.41,"vol":"11.5 M"},"GOLF":{"name":"Sarasa Golf Resort Tbk.","cap":78,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":560.0,"chg":-0.36,"vol":"3.2 M"},"DAYA":{"name":"Daya Dimensi Indonesia","cap":65,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":440.0,"chg":0.91,"vol":"6.8 M"},"NUSA":{"name":"Nusantara Digital Tbk.","cap":55,"owner":"Djarum Group","sector":"Technology","msci":false,"price":318.0,"chg":-1.22,"vol":"14.1 M"},"HOKI":{"name":"Buyung Poetra Sembada Tbk.","cap":42,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":510.0,"chg":0.39,"vol":"8.6 M"},"BBKP":{"name":"Bank KB Bukopin Tbk.","cap":68,"owner":"Djarum Group","sector":"Financials","msci":false,"price":420.0,"chg":-0.47,"vol":"12.4 M"},"PNBN":{"name":"Bank Pan Indonesia Tbk.","cap":110,"owner":"Djarum Group","sector":"Financials","msci":false,"price":1240.0,"chg":0.81,"vol":"8.6 M"},"WTON":{"name":"Wijaya Karya Beton Tbk.","cap":62,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":182.0,"chg":-1.09,"vol":"18.2 M"},"MSKY":{"name":"MNC Sky Vision Tbk.","cap":48,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":190.0,"chg":1.06,"vol":"9.8 M"},"BBRI":{"name":"Bank Rakyat Indonesia Tbk.","cap":856,"owner":"Government","sector":"Financials","msci":true,"price":4350.0,"chg":-0.23,"vol":"92.1 M"},"BMRI":{"name":"Bank Mandiri Tbk.","cap":652,"owner":"Government","sector":"Financials","msci":true,"price":6800.0,"chg":0.74,"vol":"31.5 M"},"TLKM":{"name":"Telkom Indonesia Tbk.","cap":566,"owner":"Government","sector":"Infrastructure","msci":true,"price":3920.0,"chg":-0.51,"vol":"44.8 M"},"BBNI":{"name":"Bank Negara Indonesia Tbk.","cap":389,"owner":"Government","sector":"Financials","msci":true,"price":4740.0,"chg":0.85,"vol":"28.9 M"},"PTBA":{"name":"Bukit Asam Tbk.","cap":160,"owner":"Government","sector":"Energy","msci":true,"price":2940.0,"chg":0.34,"vol":"19.4 M"},"SMGR":{"name":"Semen Indonesia Tbk.","cap":120,"owner":"Government","sector":"Industrials","msci":true,"price":5450.0,"chg":-0.91,"vol":"10.2 M"},"PGAS":{"name":"Perusahaan Gas Negara Tbk.","cap":188,"owner":"Government","sector":"Energy","msci":true,"price":1440.0,"chg":0.7,"vol":"31.8 M"},"ANTM":{"name":"Aneka Tambang Tbk.","cap":155,"owner":"Government","sector":"Basic Materials","msci":true,"price":1620.0,"chg":1.57,"vol":"25.0 M"},"WIKA":{"name":"Wijaya Karya Tbk.","cap":82,"owner":"Government","sector":"Industrials","msci":false,"price":1020.0,"chg":-1.92,"vol":"20.1 M"},"WSKT":{"name":"Waskita Karya Tbk.","cap":68,"owner":"Government","sector":"Industrials","msci":false,"price":164.0,"chg":-2.4,"vol":"38.5 M"},"PTPP":{"name":"PP Persero Tbk.","cap":75,"owner":"Government","sector":"Industrials","msci":false,"price":620.0,"chg":-1.27,"vol":"14.2 M"},"JSMR":{"name":"Jasa Marga Tbk.","cap":210,"owner":"Government","sector":"Infrastructure","msci":true,"price":4200.0,"chg":0.48,"vol":"9.7 M"},"ADHI":{"name":"Adhi Karya Tbk.","cap":55,"owner":"Government","sector":"Industrials","msci":false,"price":440.0,"chg":-0.91,"vol":"18.3 M"},"BBTN":{"name":"Bank Tabungan Negara Tbk.","cap":130,"owner":"Government","sector":"Financials","msci":true,"price":1420.0,"chg":0.28,"vol":"35.6 M"},"GIAA":{"name":"Garuda Indonesia Tbk.","cap":48,"owner":"Government","sector":"Infrastructure","msci":false,"price":56.0,"chg":-1.75,"vol":"42.0 M"},"KAEF":{"name":"Kimia Farma Tbk.","cap":38,"owner":"Government","sector":"Healthcare","msci":false,"price":650.0,"chg":0.93,"vol":"11.5 M"},"KRAS":{"name":"Krakatau Steel Tbk.","cap":45,"owner":"Government","sector":"Basic Materials","msci":false,"price":220.0,"chg":-1.34,"vol":"22.6 M"},"PGEO":{"name":"Pertamina Geothermal Energy","cap":185,"owner":"Government","sector":"Energy","msci":true,"price":1240.0,"chg":1.21,"vol":"8.4 M"},"AKRA":{"name":"AKR Corporindo Tbk.","cap":168,"owner":"Government","sector":"Energy","msci":true,"price":1620.0,"chg":0.62,"vol":"14.8 M"},"ITMG":{"name":"Indo Tambangraya Megah Tbk.","cap":140,"owner":"Government","sector":"Energy","msci":true,"price":24500.0,"chg":1.84,"vol":"2.1 M"},"ASII":{"name":"Astra International Tbk.","cap":432,"owner":"Astra Group","sector":"Consumer Cyclical","msci":true,"price":4900.0,"chg":0.41,"vol":"22.3 M"},"UNTR":{"name":"United Tractors Tbk.","cap":320,"owner":"Astra Group","sector":"Industrials","msci":true,"price":24500.0,"chg":1.02,"vol":"5.6 M"},"CPIN":{"name":"Charoen Pokphand Indonesia","cap":195,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":4800.0,"chg":-0.62,"vol":"7.1 M"},"AUTO":{"name":"Astra Otoparts Tbk.","cap":145,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":2550.0,"chg":0.79,"vol":"6.8 M"},"AALI":{"name":"Astra Agro Lestari Tbk.","cap":220,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":7400.0,"chg":-0.27,"vol":"3.9 M"},"ACST":{"name":"Astra Infra Solutions Tbk.","cap":85,"owner":"Astra Group","sector":"Industrials","msci":false,"price":1280.0,"chg":0.47,"vol":"8.1 M"},"IMAS":{"name":"Indomobil Sukses Intl.","cap":115,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":1320.0,"chg":0.76,"vol":"11.2 M"},"GJTL":{"name":"Gajah Tunggal Tbk.","cap":78,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":820.0,"chg":-1.08,"vol":"14.6 M"},"ASGR":{"name":"Astra Graphia Tbk.","cap":52,"owner":"Astra Group","sector":"Technology","msci":false,"price":1480.0,"chg":0.54,"vol":"4.2 M"},"SUGI":{"name":"Sugih Energy Tbk.","cap":38,"owner":"Astra Group","sector":"Energy","msci":false,"price":124.0,"chg":-0.8,"vol":"16.4 M"},"PNLF":{"name":"Panin Financial Tbk.","cap":72,"owner":"Astra Group","sector":"Financials","msci":false,"price":168.0,"chg":1.2,"vol":"9.8 M"},"ADMF":{"name":"Adira Dinamika Multi Finance","cap":158,"owner":"Astra Group","sector":"Financials","msci":false,"price":8400.0,"chg":0.48,"vol":"0.9 M"},"ABMM":{"name":"ABM Investama Tbk.","cap":88,"owner":"Astra Group","sector":"Energy","msci":false,"price":2880.0,"chg":1.04,"vol":"3.6 M"},"SRTG":{"name":"Saratoga Investama Sedaya","cap":118,"owner":"Astra Group","sector":"Financials","msci":false,"price":1640.0,"chg":0.61,"vol":"5.4 M"},"ICBP":{"name":"Indofood CBP Sukses Makmur","cap":302,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":9375.0,"chg":0.27,"vol":"6.2 M"},"INDF":{"name":"Indofood Sukses Makmur Tbk.","cap":230,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":6700.0,"chg":0.15,"vol":"8.8 M"},"MNCN":{"name":"Media Nusantara Citra Tbk.","cap":150,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":940.0,"chg":-0.53,"vol":"22.3 M"},"SIMP":{"name":"Salim Ivomas Pratama Tbk.","cap":88,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":466.0,"chg":0.65,"vol":"12.4 M"},"LPPF":{"name":"Matahari Department Store Tbk.","cap":172,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":2760.0,"chg":-1.08,"vol":"7.0 M"},"MLBI":{"name":"Multi Bintang Indonesia Tbk.","cap":130,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":9800.0,"chg":0.51,"vol":"1.4 M"},"INTP":{"name":"Indocement Tunggal Perkasa","cap":168,"owner":"Salim Group","sector":"Industrials","msci":true,"price":5500.0,"chg":-0.36,"vol":"5.8 M"},"WIFI":{"name":"Solusi Net Integrasi Tbk.","cap":65,"owner":"Salim Group","sector":"Technology","msci":false,"price":760.0,"chg":2.3,"vol":"8.9 M"},"BMTR":{"name":"Global Mediacom Tbk.","cap":92,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":480.0,"chg":-0.21,"vol":"16.4 M"},"HERO":{"name":"Hero Supermarket Tbk.","cap":48,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":620.0,"chg":1.14,"vol":"4.1 M"},"ISAT":{"name":"Indosat Tbk.","cap":320,"owner":"Salim Group","sector":"Infrastructure","msci":true,"price":2200.0,"chg":0.91,"vol":"18.4 M"},"MPMX":{"name":"Mitra Pinasthika Mustika","cap":58,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":840.0,"chg":0.48,"vol":"5.6 M"},"MYOR":{"name":"Mayora Indah Tbk.","cap":245,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":2150.0,"chg":0.23,"vol":"7.8 M"},"MBSS":{"name":"Mitrabahtera Segara Sejati","cap":48,"owner":"Salim Group","sector":"Infrastructure","msci":false,"price":740.0,"chg":-0.54,"vol":"4.2 M"},"UNVR":{"name":"Unilever Indonesia Tbk.","cap":352,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":true,"price":2600.0,"chg":-1.14,"vol":"15.6 M"},"BSDE":{"name":"Bumi Serpong Damai Tbk.","cap":275,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":true,"price":890.0,"chg":0.45,"vol":"28.2 M"},"SMRA":{"name":"Summarecon Agung Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":820.0,"chg":-0.24,"vol":"14.4 M"},"DILD":{"name":"Intiland Development Tbk.","cap":165,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":214.0,"chg":0.94,"vol":"18.8 M"},"ACES":{"name":"Ace Hardware Indonesia Tbk.","cap":195,"owner":"Sinar Mas Group","sector":"Consumer Cyclical","msci":false,"price":785.0,"chg":0.64,"vol":"16.2 M"},"INKP":{"name":"Indah Kiat Pulp & Paper","cap":310,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.32,"vol":"6.3 M"},"TKIM":{"name":"Pabrik Kertas Tjiwi Kimia","cap":145,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":false,"price":5400.0,"chg":0.74,"vol":"2.8 M"},"SMAS":{"name":"Sinar Mas Agro Resources","cap":88,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":3200.0,"chg":-0.62,"vol":"4.1 M"},"SMAR":{"name":"Smart Tbk.","cap":72,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":2900.0,"chg":0.34,"vol":"3.6 M"},"DUTI":{"name":"Duta Pertiwi Tbk.","cap":60,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":4200.0,"chg":-0.48,"vol":"2.2 M"},"SMCB":{"name":"Solusi Bangun Indonesia Tbk.","cap":95,"owner":"Sinar Mas Group","sector":"Industrials","msci":false,"price":2600.0,"chg":0.38,"vol":"5.8 M"},"LPKR":{"name":"Lippo Karawaci Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":134.0,"chg":-0.74,"vol":"62.8 M"},"KIJA":{"name":"Kawasan Industri Jababeka","cap":78,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":246.0,"chg":0.82,"vol":"22.4 M"},"APLN":{"name":"Agung Podomoro Land Tbk.","cap":55,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":144.0,"chg":-0.69,"vol":"18.6 M"},"TPIA":{"name":"Chandra Asri Tbk.","cap":414,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.24,"vol":"8.7 M"},"BRPT":{"name":"Barito Pacific Tbk.","cap":280,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":1240.0,"chg":2.05,"vol":"31.4 M"},"AGRO":{"name":"Bank Raya Indonesia Tbk.","cap":95,"owner":"Chandra Group","sector":"Financials","msci":false,"price":368.0,"chg":-0.81,"vol":"9.7 M"},"CBPE":{"name":"Chandra Barito Energi Tbk.","cap":178,"owner":"Chandra Group","sector":"Energy","msci":false,"price":2100.0,"chg":1.43,"vol":"6.1 M"},"CHEM":{"name":"Chandra Kimia Nusantara","cap":122,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":1680.0,"chg":0.6,"vol":"7.4 M"},"POLY":{"name":"Asia Pacific Fibers Tbk.","cap":68,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":228.0,"chg":-1.3,"vol":"18.2 M"},"FPNI":{"name":"Lotte Chemical Titan Tbk.","cap":54,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":182.0,"chg":0.55,"vol":"12.0 M"},"CTRA":{"name":"Ciputra Development Tbk.","cap":148,"owner":"Chandra Group","sector":"Properties & Real Estate","msci":true,"price":1320.0,"chg":0.91,"vol":"15.8 M"},"MIKA":{"name":"Mitra Keluarga Karyasehat Tbk.","cap":198,"owner":"Chandra Group","sector":"Healthcare","msci":true,"price":2580.0,"chg":0.39,"vol":"5.2 M"},"BYAN":{"name":"Bayan Resources Tbk.","cap":380,"owner":"Chandra Group","sector":"Energy","msci":true,"price":18600.0,"chg":2.37,"vol":"1.4 M"},"PTRO":{"name":"Petrosea Tbk.","cap":72,"owner":"Chandra Group","sector":"Energy","msci":false,"price":3280.0,"chg":0.92,"vol":"2.8 M"},"PICO":{"name":"Pelangi Indah Canindo Tbk.","cap":42,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":290.0,"chg":-0.34,"vol":"6.4 M"},"EXCL":{"name":"XL Axiata Tbk.","cap":310,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":1850.0,"chg":0.54,"vol":"18.7 M"},"BUMI":{"name":"Bumi Resources Tbk.","cap":185,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":124.0,"chg":-1.59,"vol":"420.0 M"},"VIVA":{"name":"Visi Media Asia Tbk.","cap":110,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":2.44,"vol":"55.2 M"},"ENRG":{"name":"Energi Mega Persada Tbk.","cap":178,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":50.0,"chg":-2.0,"vol":"88.0 M"},"ANTV":{"name":"Cakrawala Andalas TV Tbk.","cap":88,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":112.0,"chg":1.79,"vol":"32.4 M"},"BNBR":{"name":"Bakrie & Brothers Tbk.","cap":65,"owner":"Bakrie Group","sector":"Industrials","msci":false,"price":56.0,"chg":-0.89,"vol":"48.0 M"},"UNSP":{"name":"Bakrie Sumatra Plantations","cap":48,"owner":"Bakrie Group","sector":"Consumer Non-Cyclical","msci":false,"price":84.0,"chg":1.2,"vol":"28.6 M"},"BTEL":{"name":"Bakrie Telecom Tbk.","cap":38,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":50.0,"chg":-1.96,"vol":"42.0 M"},"ELTY":{"name":"Bakrieland Development Tbk.","cap":55,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":66.0,"chg":3.12,"vol":"55.8 M"},"BBRM":{"name":"Pelayaran Nasional Bina Buana Raya","cap":42,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":148.0,"chg":0.68,"vol":"8.6 M"},"BKSL":{"name":"Sentul City Tbk.","cap":38,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":58.0,"chg":-1.69,"vol":"24.8 M"},"TOWR":{"name":"Sarana Menara Nusantara","cap":188,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":820.0,"chg":0.24,"vol":"15.4 M"},"MPPA":{"name":"Matahari Putra Prima Tbk.","cap":155,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":660.0,"chg":1.08,"vol":"14.6 M"},"JPFA":{"name":"Japfa Comfeed Indonesia Tbk.","cap":220,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1480.0,"chg":-0.34,"vol":"11.2 M"},"SILO":{"name":"Siloam International Hospitals","cap":190,"owner":"Lippo Group","sector":"Healthcare","msci":true,"price":2620.0,"chg":0.77,"vol":"4.9 M"},"MFIN":{"name":"Mandala Multifinance Tbk.","cap":55,"owner":"Lippo Group","sector":"Financials","msci":false,"price":1880.0,"chg":0.54,"vol":"3.2 M"},"CARE":{"name":"Metro Healthcare Indonesia","cap":88,"owner":"Lippo Group","sector":"Healthcare","msci":false,"price":1120.0,"chg":-0.89,"vol":"7.8 M"},"LPGI":{"name":"Lippo General Insurance Tbk.","cap":48,"owner":"Lippo Group","sector":"Financials","msci":false,"price":4800.0,"chg":0.21,"vol":"0.8 M"},"LMPI":{"name":"Langgeng Makmur Industri","cap":38,"owner":"Lippo Group","sector":"Industrials","msci":false,"price":280.0,"chg":-0.36,"vol":"5.4 M"},"LPPS":{"name":"Lippo Cikarang Tbk.","cap":95,"owner":"Lippo Group","sector":"Properties & Real Estate","msci":false,"price":1080.0,"chg":0.93,"vol":"6.2 M"},"MTDL":{"name":"Metrodata Electronics Tbk.","cap":72,"owner":"Lippo Group","sector":"Technology","msci":false,"price":590.0,"chg":1.55,"vol":"9.8 M"},"LSIP":{"name":"PP London Sumatra Indonesia","cap":160,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1340.0,"chg":0.75,"vol":"9.2 M"},"FMII":{"name":"First Media Tbk.","cap":42,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":-0.59,"vol":"12.4 M"},"TBIG":{"name":"Tower Bersama Infrastr.","cap":165,"owner":"Lippo Group","sector":"Infrastructure","msci":true,"price":2100.0,"chg":-0.48,"vol":"8.8 M"},"BCAP":{"name":"MNC Kapital Indonesia Tbk.","cap":52,"owner":"Lippo Group","sector":"Financials","msci":false,"price":312.0,"chg":0.32,"vol":"7.2 M"},"AMMN":{"name":"Amman Mineral Internasional","cap":294,"owner":"Others","sector":"Basic Materials","msci":true,"price":7800.0,"chg":2.11,"vol":"5.1 M"},"GOTO":{"name":"GoTo Gojek Tokopedia Tbk.","cap":180,"owner":"Others","sector":"Technology","msci":true,"price":62.0,"chg":-3.12,"vol":"312.0 M"},"KLBF":{"name":"Kalbe Farma Tbk.","cap":245,"owner":"Others","sector":"Healthcare","msci":true,"price":1565.0,"chg":-0.32,"vol":"24.1 M"},"ADRO":{"name":"Adaro Energy Indonesia Tbk.","cap":282,"owner":"Others","sector":"Energy","msci":true,"price":2200.0,"chg":1.38,"vol":"14.6 M"},"MDKA":{"name":"Merdeka Copper Gold Tbk.","cap":270,"owner":"Others","sector":"Basic Materials","msci":true,"price":2460.0,"chg":2.07,"vol":"12.3 M"},"INCO":{"name":"Vale Indonesia Tbk.","cap":230,"owner":"Others","sector":"Basic Materials","msci":true,"price":3100.0,"chg":0.97,"vol":"9.5 M"},"MAPI":{"name":"Mitra Adiperkasa Tbk.","cap":245,"owner":"Others","sector":"Consumer Cyclical","msci":true,"price":1680.0,"chg":0.6,"vol":"8.7 M"},"PWON":{"name":"Pakuwon Jati Tbk.","cap":218,"owner":"Others","sector":"Properties & Real Estate","msci":true,"price":438.0,"chg":0.46,"vol":"35.6 M"},"HRUM":{"name":"Harum Energy Tbk.","cap":198,"owner":"Others","sector":"Energy","msci":false,"price":1200.0,"chg":0.84,"vol":"5.6 M"},"BUKA":{"name":"Bukalapak.com Tbk.","cap":145,"owner":"Others","sector":"Technology","msci":false,"price":68.0,"chg":-2.94,"vol":"148.0 M"},"HEAL":{"name":"Medikaloka Hermina Tbk.","cap":132,"owner":"Others","sector":"Healthcare","msci":false,"price":1560.0,"chg":1.29,"vol":"6.3 M"},"COAL":{"name":"Indika Energy Tbk.","cap":118,"owner":"Others","sector":"Energy","msci":false,"price":1820.0,"chg":0.55,"vol":"8.2 M"},"CUAN":{"name":"Petrindo Jaya Kreasi Tbk.","cap":310,"owner":"Others","sector":"Energy","msci":false,"price":12400.0,"chg":4.2,"vol":"2.1 M"},"RAJA":{"name":"Rukun Raharja Tbk.","cap":95,"owner":"Others","sector":"Energy","msci":false,"price":3880.0,"chg":1.8,"vol":"4.4 M"},"FILM":{"name":"MD Pictures Tbk.","cap":78,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":1240.0,"chg":-0.81,"vol":"5.5 M"},"ESSA":{"name":"Surya Esa Perkasa Tbk.","cap":110,"owner":"Others","sector":"Energy","msci":false,"price":1620.0,"chg":1.23,"vol":"6.8 M"},"SMIL":{"name":"Sumber Mas Indah Plywood","cap":45,"owner":"Others","sector":"Basic Materials","msci":false,"price":380.0,"chg":0.53,"vol":"5.2 M"},"ERAA":{"name":"Erajaya Swasembada Tbk.","cap":88,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":540.0,"chg":-0.74,"vol":"12.4 M"},"GOOD":{"name":"Garudafood Putra Putri Jaya","cap":72,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":430.0,"chg":0.47,"vol":"9.6 M"},"SIDO":{"name":"Industri Jamu Sido Muncul","cap":138,"owner":"Others","sector":"Healthcare","msci":true,"price":580.0,"chg":0.35,"vol":"10.2 M"},"MIDI":{"name":"Midi Utama Indonesia Tbk.","cap":88,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":600.0,"chg":0.84,"vol":"4.4 M"},"CMRY":{"name":"Cisarua Mountain Dairy Tbk.","cap":115,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":4020.0,"chg":1.01,"vol":"2.8 M"},"ARTO":{"name":"Bank Jago Tbk.","cap":175,"owner":"Others","sector":"Financials","msci":false,"price":2540.0,"chg":-1.55,"vol":"7.6 M"},"BREN":{"name":"Barito Renewables Energy Tbk.","cap":420,"owner":"Others","sector":"Energy","msci":true,"price":8400.0,"chg":3.24,"vol":"4.2 M"},"TAPG":{"name":"Triputra Agro Persada Tbk.","cap":95,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":1140.0,"chg":0.88,"vol":"5.8 M"},"NICL":{"name":"Nickel Industries Ltd.","cap":142,"owner":"Others","sector":"Basic Materials","msci":false,"price":362.0,"chg":1.66,"vol":"9.4 M"},"CBDK":{"name":"Cahaya Bintang Medan Tbk.","cap":68,"owner":"Others","sector":"Properties & Real Estate","msci":false,"price":2640.0,"chg":2.34,"vol":"3.6 M"},"MSCI":{"name":"[MSCI-flagged] Diversified IDX","cap":55,"owner":"Others","sector":"Financials","msci":false,"price":1200.0,"chg":0.22,"vol":"4.2 M"}}'
-        # ── Fallback: jika _globe_live None (fetch gagal), pakai data statis ──
-        if not _globe_live:
-            _globe_live = _globe_json.loads(_globe_static_meta_js_fallback)
-        _globe_static_meta_js = _globe_static_meta_js_fallback
+        _globe_static_meta_js = '{"BBCA":{"name":"Bank Central Asia Tbk.","cap":1289,"owner":"Djarum Group","sector":"Financials","msci":true,"price":9325.0,"chg":1.08,"vol":"18.2 M"},"BELI":{"name":"Bukalapak.com Tbk.","cap":380,"owner":"Djarum Group","sector":"Technology","msci":false,"price":212.0,"chg":-1.4,"vol":"88.0 M"},"DNET":{"name":"Indoritel Makmur Intl.","cap":290,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":1540.0,"chg":0.65,"vol":"5.2 M"},"FAST":{"name":"Fast Food Indonesia Tbk.","cap":180,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":1580.0,"chg":-0.63,"vol":"4.8 M"},"MAPA":{"name":"Map Aktif Adiperkasa Tbk.","cap":155,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":720.0,"chg":1.12,"vol":"7.3 M"},"DCII":{"name":"DCI Indonesia Tbk.","cap":230,"owner":"Djarum Group","sector":"Technology","msci":false,"price":38500.0,"chg":2.14,"vol":"0.3 M"},"DMAS":{"name":"Puradelta Lestari Tbk.","cap":95,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":196.0,"chg":0.51,"vol":"22.0 M"},"KOPI":{"name":"Kopi Kenangan Digital Tbk.","cap":140,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":880.0,"chg":3.41,"vol":"11.5 M"},"GOLF":{"name":"Sarasa Golf Resort Tbk.","cap":78,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":560.0,"chg":-0.36,"vol":"3.2 M"},"DAYA":{"name":"Daya Dimensi Indonesia","cap":65,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":440.0,"chg":0.91,"vol":"6.8 M"},"NUSA":{"name":"Nusantara Digital Tbk.","cap":55,"owner":"Djarum Group","sector":"Technology","msci":false,"price":318.0,"chg":-1.22,"vol":"14.1 M"},"HOKI":{"name":"Buyung Poetra Sembada Tbk.","cap":42,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":510.0,"chg":0.39,"vol":"8.6 M"},"BBKP":{"name":"Bank KB Bukopin Tbk.","cap":68,"owner":"Djarum Group","sector":"Financials","msci":false,"price":420.0,"chg":-0.47,"vol":"12.4 M"},"PNBN":{"name":"Bank Pan Indonesia Tbk.","cap":110,"owner":"Djarum Group","sector":"Financials","msci":false,"price":1240.0,"chg":0.81,"vol":"8.6 M"},"WTON":{"name":"Wijaya Karya Beton Tbk.","cap":62,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":182.0,"chg":-1.09,"vol":"18.2 M"},"MSKY":{"name":"MNC Sky Vision Tbk.","cap":48,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":190.0,"chg":1.06,"vol":"9.8 M"},"BBRI":{"name":"Bank Rakyat Indonesia Tbk.","cap":856,"owner":"Government","sector":"Financials","msci":true,"price":4350.0,"chg":-0.23,"vol":"92.1 M"},"BMRI":{"name":"Bank Mandiri Tbk.","cap":652,"owner":"Government","sector":"Financials","msci":true,"price":6800.0,"chg":0.74,"vol":"31.5 M"},"TLKM":{"name":"Telkom Indonesia Tbk.","cap":566,"owner":"Government","sector":"Infrastructure","msci":true,"price":3920.0,"chg":-0.51,"vol":"44.8 M"},"BBNI":{"name":"Bank Negara Indonesia Tbk.","cap":389,"owner":"Government","sector":"Financials","msci":true,"price":4740.0,"chg":0.85,"vol":"28.9 M"},"PTBA":{"name":"Bukit Asam Tbk.","cap":160,"owner":"Government","sector":"Energy","msci":true,"price":2940.0,"chg":0.34,"vol":"19.4 M"},"SMGR":{"name":"Semen Indonesia Tbk.","cap":120,"owner":"Government","sector":"Industrials","msci":true,"price":5450.0,"chg":-0.91,"vol":"10.2 M"},"PGAS":{"name":"Perusahaan Gas Negara Tbk.","cap":188,"owner":"Government","sector":"Energy","msci":true,"price":1440.0,"chg":0.7,"vol":"31.8 M"},"ANTM":{"name":"Aneka Tambang Tbk.","cap":155,"owner":"Government","sector":"Basic Materials","msci":true,"price":1620.0,"chg":1.57,"vol":"25.0 M"},"WIKA":{"name":"Wijaya Karya Tbk.","cap":82,"owner":"Government","sector":"Industrials","msci":false,"price":1020.0,"chg":-1.92,"vol":"20.1 M"},"WSKT":{"name":"Waskita Karya Tbk.","cap":68,"owner":"Government","sector":"Industrials","msci":false,"price":164.0,"chg":-2.4,"vol":"38.5 M"},"PTPP":{"name":"PP Persero Tbk.","cap":75,"owner":"Government","sector":"Industrials","msci":false,"price":620.0,"chg":-1.27,"vol":"14.2 M"},"JSMR":{"name":"Jasa Marga Tbk.","cap":210,"owner":"Government","sector":"Infrastructure","msci":true,"price":4200.0,"chg":0.48,"vol":"9.7 M"},"ADHI":{"name":"Adhi Karya Tbk.","cap":55,"owner":"Government","sector":"Industrials","msci":false,"price":440.0,"chg":-0.91,"vol":"18.3 M"},"BBTN":{"name":"Bank Tabungan Negara Tbk.","cap":130,"owner":"Government","sector":"Financials","msci":true,"price":1420.0,"chg":0.28,"vol":"35.6 M"},"GIAA":{"name":"Garuda Indonesia Tbk.","cap":48,"owner":"Government","sector":"Infrastructure","msci":false,"price":56.0,"chg":-1.75,"vol":"42.0 M"},"KAEF":{"name":"Kimia Farma Tbk.","cap":38,"owner":"Government","sector":"Healthcare","msci":false,"price":650.0,"chg":0.93,"vol":"11.5 M"},"KRAS":{"name":"Krakatau Steel Tbk.","cap":45,"owner":"Government","sector":"Basic Materials","msci":false,"price":220.0,"chg":-1.34,"vol":"22.6 M"},"PGEO":{"name":"Pertamina Geothermal Energy","cap":185,"owner":"Government","sector":"Energy","msci":true,"price":1240.0,"chg":1.21,"vol":"8.4 M"},"AKRA":{"name":"AKR Corporindo Tbk.","cap":168,"owner":"Government","sector":"Energy","msci":true,"price":1620.0,"chg":0.62,"vol":"14.8 M"},"ITMG":{"name":"Indo Tambangraya Megah Tbk.","cap":140,"owner":"Government","sector":"Energy","msci":true,"price":24500.0,"chg":1.84,"vol":"2.1 M"},"ASII":{"name":"Astra International Tbk.","cap":432,"owner":"Astra Group","sector":"Consumer Cyclical","msci":true,"price":4900.0,"chg":0.41,"vol":"22.3 M"},"UNTR":{"name":"United Tractors Tbk.","cap":320,"owner":"Astra Group","sector":"Industrials","msci":true,"price":24500.0,"chg":1.02,"vol":"5.6 M"},"CPIN":{"name":"Charoen Pokphand Indonesia","cap":195,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":4800.0,"chg":-0.62,"vol":"7.1 M"},"AUTO":{"name":"Astra Otoparts Tbk.","cap":145,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":2550.0,"chg":0.79,"vol":"6.8 M"},"AALI":{"name":"Astra Agro Lestari Tbk.","cap":220,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":7400.0,"chg":-0.27,"vol":"3.9 M"},"ACST":{"name":"Astra Infra Solutions Tbk.","cap":85,"owner":"Astra Group","sector":"Industrials","msci":false,"price":1280.0,"chg":0.47,"vol":"8.1 M"},"IMAS":{"name":"Indomobil Sukses Intl.","cap":115,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":1320.0,"chg":0.76,"vol":"11.2 M"},"GJTL":{"name":"Gajah Tunggal Tbk.","cap":78,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":820.0,"chg":-1.08,"vol":"14.6 M"},"ASGR":{"name":"Astra Graphia Tbk.","cap":52,"owner":"Astra Group","sector":"Technology","msci":false,"price":1480.0,"chg":0.54,"vol":"4.2 M"},"SUGI":{"name":"Sugih Energy Tbk.","cap":38,"owner":"Astra Group","sector":"Energy","msci":false,"price":124.0,"chg":-0.8,"vol":"16.4 M"},"PNLF":{"name":"Panin Financial Tbk.","cap":72,"owner":"Astra Group","sector":"Financials","msci":false,"price":168.0,"chg":1.2,"vol":"9.8 M"},"ADMF":{"name":"Adira Dinamika Multi Finance","cap":158,"owner":"Astra Group","sector":"Financials","msci":false,"price":8400.0,"chg":0.48,"vol":"0.9 M"},"ABMM":{"name":"ABM Investama Tbk.","cap":88,"owner":"Astra Group","sector":"Energy","msci":false,"price":2880.0,"chg":1.04,"vol":"3.6 M"},"SRTG":{"name":"Saratoga Investama Sedaya","cap":118,"owner":"Astra Group","sector":"Financials","msci":false,"price":1640.0,"chg":0.61,"vol":"5.4 M"},"ICBP":{"name":"Indofood CBP Sukses Makmur","cap":302,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":9375.0,"chg":0.27,"vol":"6.2 M"},"INDF":{"name":"Indofood Sukses Makmur Tbk.","cap":230,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":6700.0,"chg":0.15,"vol":"8.8 M"},"MNCN":{"name":"Media Nusantara Citra Tbk.","cap":150,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":940.0,"chg":-0.53,"vol":"22.3 M"},"SIMP":{"name":"Salim Ivomas Pratama Tbk.","cap":88,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":466.0,"chg":0.65,"vol":"12.4 M"},"LPPF":{"name":"Matahari Department Store Tbk.","cap":172,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":2760.0,"chg":-1.08,"vol":"7.0 M"},"MLBI":{"name":"Multi Bintang Indonesia Tbk.","cap":130,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":9800.0,"chg":0.51,"vol":"1.4 M"},"INTP":{"name":"Indocement Tunggal Perkasa","cap":168,"owner":"Salim Group","sector":"Industrials","msci":true,"price":5500.0,"chg":-0.36,"vol":"5.8 M"},"WIFI":{"name":"Solusi Net Integrasi Tbk.","cap":65,"owner":"Salim Group","sector":"Technology","msci":false,"price":760.0,"chg":2.3,"vol":"8.9 M"},"BMTR":{"name":"Global Mediacom Tbk.","cap":92,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":480.0,"chg":-0.21,"vol":"16.4 M"},"HERO":{"name":"Hero Supermarket Tbk.","cap":48,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":620.0,"chg":1.14,"vol":"4.1 M"},"ISAT":{"name":"Indosat Tbk.","cap":320,"owner":"Salim Group","sector":"Infrastructure","msci":true,"price":2200.0,"chg":0.91,"vol":"18.4 M"},"MPMX":{"name":"Mitra Pinasthika Mustika","cap":58,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":840.0,"chg":0.48,"vol":"5.6 M"},"MYOR":{"name":"Mayora Indah Tbk.","cap":245,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":2150.0,"chg":0.23,"vol":"7.8 M"},"MBSS":{"name":"Mitrabahtera Segara Sejati","cap":48,"owner":"Salim Group","sector":"Infrastructure","msci":false,"price":740.0,"chg":-0.54,"vol":"4.2 M"},"UNVR":{"name":"Unilever Indonesia Tbk.","cap":352,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":true,"price":2600.0,"chg":-1.14,"vol":"15.6 M"},"BSDE":{"name":"Bumi Serpong Damai Tbk.","cap":275,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":true,"price":890.0,"chg":0.45,"vol":"28.2 M"},"SMRA":{"name":"Summarecon Agung Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":820.0,"chg":-0.24,"vol":"14.4 M"},"DILD":{"name":"Intiland Development Tbk.","cap":165,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":214.0,"chg":0.94,"vol":"18.8 M"},"ACES":{"name":"Ace Hardware Indonesia Tbk.","cap":195,"owner":"Sinar Mas Group","sector":"Consumer Cyclical","msci":false,"price":785.0,"chg":0.64,"vol":"16.2 M"},"INKP":{"name":"Indah Kiat Pulp & Paper","cap":310,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.32,"vol":"6.3 M"},"TKIM":{"name":"Pabrik Kertas Tjiwi Kimia","cap":145,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":false,"price":5400.0,"chg":0.74,"vol":"2.8 M"},"SMAS":{"name":"Sinar Mas Agro Resources","cap":88,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":3200.0,"chg":-0.62,"vol":"4.1 M"},"SMAR":{"name":"Smart Tbk.","cap":72,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":2900.0,"chg":0.34,"vol":"3.6 M"},"DUTI":{"name":"Duta Pertiwi Tbk.","cap":60,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":4200.0,"chg":-0.48,"vol":"2.2 M"},"SMCB":{"name":"Solusi Bangun Indonesia Tbk.","cap":95,"owner":"Sinar Mas Group","sector":"Industrials","msci":false,"price":2600.0,"chg":0.38,"vol":"5.8 M"},"LPKR":{"name":"Lippo Karawaci Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":134.0,"chg":-0.74,"vol":"62.8 M"},"KIJA":{"name":"Kawasan Industri Jababeka","cap":78,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":246.0,"chg":0.82,"vol":"22.4 M"},"APLN":{"name":"Agung Podomoro Land Tbk.","cap":55,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":144.0,"chg":-0.69,"vol":"18.6 M"},"TPIA":{"name":"Chandra Asri Tbk.","cap":414,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.24,"vol":"8.7 M"},"BRPT":{"name":"Barito Pacific Tbk.","cap":280,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":1240.0,"chg":2.05,"vol":"31.4 M"},"AGRO":{"name":"Bank Raya Indonesia Tbk.","cap":95,"owner":"Chandra Group","sector":"Financials","msci":false,"price":368.0,"chg":-0.81,"vol":"9.7 M"},"CBPE":{"name":"Chandra Barito Energi Tbk.","cap":178,"owner":"Chandra Group","sector":"Energy","msci":false,"price":2100.0,"chg":1.43,"vol":"6.1 M"},"CHEM":{"name":"Chandra Kimia Nusantara","cap":122,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":1680.0,"chg":0.6,"vol":"7.4 M"},"POLY":{"name":"Asia Pacific Fibers Tbk.","cap":68,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":228.0,"chg":-1.3,"vol":"18.2 M"},"FPNI":{"name":"Lotte Chemical Titan Tbk.","cap":54,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":182.0,"chg":0.55,"vol":"12.0 M"},"CTRA":{"name":"Ciputra Development Tbk.","cap":148,"owner":"Chandra Group","sector":"Properties & Real Estate","msci":true,"price":1320.0,"chg":0.91,"vol":"15.8 M"},"MIKA":{"name":"Mitra Keluarga Karyasehat Tbk.","cap":198,"owner":"Chandra Group","sector":"Healthcare","msci":true,"price":2580.0,"chg":0.39,"vol":"5.2 M"},"BYAN":{"name":"Bayan Resources Tbk.","cap":380,"owner":"Chandra Group","sector":"Energy","msci":true,"price":18600.0,"chg":2.37,"vol":"1.4 M"},"PTRO":{"name":"Petrosea Tbk.","cap":72,"owner":"Chandra Group","sector":"Energy","msci":false,"price":3280.0,"chg":0.92,"vol":"2.8 M"},"PICO":{"name":"Pelangi Indah Canindo Tbk.","cap":42,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":290.0,"chg":-0.34,"vol":"6.4 M"},"EXCL":{"name":"XL Axiata Tbk.","cap":310,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":1850.0,"chg":0.54,"vol":"18.7 M"},"BUMI":{"name":"Bumi Resources Tbk.","cap":185,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":124.0,"chg":-1.59,"vol":"420.0 M"},"VIVA":{"name":"Visi Media Asia Tbk.","cap":110,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":2.44,"vol":"55.2 M"},"ENRG":{"name":"Energi Mega Persada Tbk.","cap":178,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":50.0,"chg":-2.0,"vol":"88.0 M"},"ANTV":{"name":"Cakrawala Andalas TV Tbk.","cap":88,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":112.0,"chg":1.79,"vol":"32.4 M"},"BNBR":{"name":"Bakrie & Brothers Tbk.","cap":65,"owner":"Bakrie Group","sector":"Industrials","msci":false,"price":56.0,"chg":-0.89,"vol":"48.0 M"},"UNSP":{"name":"Bakrie Sumatra Plantations","cap":48,"owner":"Bakrie Group","sector":"Consumer Non-Cyclical","msci":false,"price":84.0,"chg":1.2,"vol":"28.6 M"},"BTEL":{"name":"Bakrie Telecom Tbk.","cap":38,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":50.0,"chg":-1.96,"vol":"42.0 M"},"ELTY":{"name":"Bakrieland Development Tbk.","cap":55,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":66.0,"chg":3.12,"vol":"55.8 M"},"BBRM":{"name":"Pelayaran Nasional Bina Buana Raya","cap":42,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":148.0,"chg":0.68,"vol":"8.6 M"},"BKSL":{"name":"Sentul City Tbk.","cap":38,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":58.0,"chg":-1.69,"vol":"24.8 M"},"TOWR":{"name":"Sarana Menara Nusantara","cap":188,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":820.0,"chg":0.24,"vol":"15.4 M"},"MPPA":{"name":"Matahari Putra Prima Tbk.","cap":155,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":660.0,"chg":1.08,"vol":"14.6 M"},"JPFA":{"name":"Japfa Comfeed Indonesia Tbk.","cap":220,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1480.0,"chg":-0.34,"vol":"11.2 M"},"SILO":{"name":"Siloam International Hospitals","cap":190,"owner":"Lippo Group","sector":"Healthcare","msci":true,"price":2620.0,"chg":0.77,"vol":"4.9 M"},"MFIN":{"name":"Mandala Multifinance Tbk.","cap":55,"owner":"Lippo Group","sector":"Financials","msci":false,"price":1880.0,"chg":0.54,"vol":"3.2 M"},"CARE":{"name":"Metro Healthcare Indonesia","cap":88,"owner":"Lippo Group","sector":"Healthcare","msci":false,"price":1120.0,"chg":-0.89,"vol":"7.8 M"},"LPGI":{"name":"Lippo General Insurance Tbk.","cap":48,"owner":"Lippo Group","sector":"Financials","msci":false,"price":4800.0,"chg":0.21,"vol":"0.8 M"},"LMPI":{"name":"Langgeng Makmur Industri","cap":38,"owner":"Lippo Group","sector":"Industrials","msci":false,"price":280.0,"chg":-0.36,"vol":"5.4 M"},"LPPS":{"name":"Lippo Cikarang Tbk.","cap":95,"owner":"Lippo Group","sector":"Properties & Real Estate","msci":false,"price":1080.0,"chg":0.93,"vol":"6.2 M"},"MTDL":{"name":"Metrodata Electronics Tbk.","cap":72,"owner":"Lippo Group","sector":"Technology","msci":false,"price":590.0,"chg":1.55,"vol":"9.8 M"},"LSIP":{"name":"PP London Sumatra Indonesia","cap":160,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1340.0,"chg":0.75,"vol":"9.2 M"},"FMII":{"name":"First Media Tbk.","cap":42,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":-0.59,"vol":"12.4 M"},"TBIG":{"name":"Tower Bersama Infrastr.","cap":165,"owner":"Lippo Group","sector":"Infrastructure","msci":true,"price":2100.0,"chg":-0.48,"vol":"8.8 M"},"BCAP":{"name":"MNC Kapital Indonesia Tbk.","cap":52,"owner":"Lippo Group","sector":"Financials","msci":false,"price":312.0,"chg":0.32,"vol":"7.2 M"},"AMMN":{"name":"Amman Mineral Internasional","cap":294,"owner":"Others","sector":"Basic Materials","msci":true,"price":7800.0,"chg":2.11,"vol":"5.1 M"},"GOTO":{"name":"GoTo Gojek Tokopedia Tbk.","cap":180,"owner":"Others","sector":"Technology","msci":true,"price":62.0,"chg":-3.12,"vol":"312.0 M"},"KLBF":{"name":"Kalbe Farma Tbk.","cap":245,"owner":"Others","sector":"Healthcare","msci":true,"price":1565.0,"chg":-0.32,"vol":"24.1 M"},"ADRO":{"name":"Adaro Energy Indonesia Tbk.","cap":282,"owner":"Others","sector":"Energy","msci":true,"price":2200.0,"chg":1.38,"vol":"14.6 M"},"MDKA":{"name":"Merdeka Copper Gold Tbk.","cap":270,"owner":"Others","sector":"Basic Materials","msci":true,"price":2460.0,"chg":2.07,"vol":"12.3 M"},"INCO":{"name":"Vale Indonesia Tbk.","cap":230,"owner":"Others","sector":"Basic Materials","msci":true,"price":3100.0,"chg":0.97,"vol":"9.5 M"},"MAPI":{"name":"Mitra Adiperkasa Tbk.","cap":245,"owner":"Others","sector":"Consumer Cyclical","msci":true,"price":1680.0,"chg":0.6,"vol":"8.7 M"},"PWON":{"name":"Pakuwon Jati Tbk.","cap":218,"owner":"Others","sector":"Properties & Real Estate","msci":true,"price":438.0,"chg":0.46,"vol":"35.6 M"},"HRUM":{"name":"Harum Energy Tbk.","cap":198,"owner":"Others","sector":"Energy","msci":false,"price":1200.0,"chg":0.84,"vol":"5.6 M"},"BUKA":{"name":"Bukalapak.com Tbk.","cap":145,"owner":"Others","sector":"Technology","msci":false,"price":68.0,"chg":-2.94,"vol":"148.0 M"},"HEAL":{"name":"Medikaloka Hermina Tbk.","cap":132,"owner":"Others","sector":"Healthcare","msci":false,"price":1560.0,"chg":1.29,"vol":"6.3 M"},"COAL":{"name":"Indika Energy Tbk.","cap":118,"owner":"Others","sector":"Energy","msci":false,"price":1820.0,"chg":0.55,"vol":"8.2 M"},"CUAN":{"name":"Petrindo Jaya Kreasi Tbk.","cap":310,"owner":"Others","sector":"Energy","msci":false,"price":12400.0,"chg":4.2,"vol":"2.1 M"},"RAJA":{"name":"Rukun Raharja Tbk.","cap":95,"owner":"Others","sector":"Energy","msci":false,"price":3880.0,"chg":1.8,"vol":"4.4 M"},"FILM":{"name":"MD Pictures Tbk.","cap":78,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":1240.0,"chg":-0.81,"vol":"5.5 M"},"ESSA":{"name":"Surya Esa Perkasa Tbk.","cap":110,"owner":"Others","sector":"Energy","msci":false,"price":1620.0,"chg":1.23,"vol":"6.8 M"},"SMIL":{"name":"Sumber Mas Indah Plywood","cap":45,"owner":"Others","sector":"Basic Materials","msci":false,"price":380.0,"chg":0.53,"vol":"5.2 M"},"ERAA":{"name":"Erajaya Swasembada Tbk.","cap":88,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":540.0,"chg":-0.74,"vol":"12.4 M"},"GOOD":{"name":"Garudafood Putra Putri Jaya","cap":72,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":430.0,"chg":0.47,"vol":"9.6 M"},"SIDO":{"name":"Industri Jamu Sido Muncul","cap":138,"owner":"Others","sector":"Healthcare","msci":true,"price":580.0,"chg":0.35,"vol":"10.2 M"},"MIDI":{"name":"Midi Utama Indonesia Tbk.","cap":88,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":600.0,"chg":0.84,"vol":"4.4 M"},"CMRY":{"name":"Cisarua Mountain Dairy Tbk.","cap":115,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":4020.0,"chg":1.01,"vol":"2.8 M"},"ARTO":{"name":"Bank Jago Tbk.","cap":175,"owner":"Others","sector":"Financials","msci":false,"price":2540.0,"chg":-1.55,"vol":"7.6 M"},"BREN":{"name":"Barito Renewables Energy Tbk.","cap":420,"owner":"Others","sector":"Energy","msci":true,"price":8400.0,"chg":3.24,"vol":"4.2 M"},"TAPG":{"name":"Triputra Agro Persada Tbk.","cap":95,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":1140.0,"chg":0.88,"vol":"5.8 M"},"NICL":{"name":"Nickel Industries Ltd.","cap":142,"owner":"Others","sector":"Basic Materials","msci":false,"price":362.0,"chg":1.66,"vol":"9.4 M"},"CBDK":{"name":"Cahaya Bintang Medan Tbk.","cap":68,"owner":"Others","sector":"Properties & Real Estate","msci":false,"price":2640.0,"chg":2.34,"vol":"3.6 M"},"MSCI":{"name":"[MSCI-flagged] Diversified IDX","cap":55,"owner":"Others","sector":"Financials","msci":false,"price":1200.0,"chg":0.22,"vol":"4.2 M"}}'
         _globe_live_js = _globe_json.dumps(_globe_live, separators=(',', ':'))
         _idx_globe_html = """<!DOCTYPE html>
 <html lang="en">
@@ -23286,10 +23269,9 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
 
         st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Screening aktivitas broker &middot; Akumulasi &amp; Distribusi &middot; Net Buy Foreign &middot; Deteksi Smart Money</p>", unsafe_allow_html=True)
 
-        bs_tab_screening, bs_tab_history, bs_tab_foreign = st.tabs([
+        bs_tab_screening, bs_tab_history = st.tabs([
             "  🔍 BROKER SCREENING  ",
             "  🗂️ HISTORY BROKSUM  ",
-            "  🌐 NET BUY FOREIGN  ",
         ])
 
         # ── BROKER CODES - LENGKAP (sumber: Daftar Kode Broker IDX) ──
@@ -23854,7 +23836,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                                 _found_url = _base_url
                                                 break
                                             if _tc == 429:
-                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi rate limit"))
+                                                _url_results.append((_base_url, _td_try, _tc, "URL OK tapi throttled — bukan quota habis, coba lagi"))
                                                 _found_url = _base_url
                                                 break
                                             if _tc == 200:
@@ -23908,11 +23890,22 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                 elif _found_url:
                                     st.session_state["_goapi_base_resolved"] = _found_url
                                     _url_note = next((n for u, d, c, n in _url_results if u == _found_url), "")
-                                    st.warning(
-                                        f"⚠️ URL ditemukan tapi ada masalah auth/data:\n\n"
-                                        f"**URL:** `{_found_url}`\n"
-                                        f"**Status:** {_url_note}\n\n"
-                                        f"Cek GoAPI_KEY di Streamlit secrets.")
+                                    _url_code = next((c for u, d, c, n in _url_results if u == _found_url), 0)
+                                    if _url_code == 429:
+                                        st.warning(
+                                            f"⚠️ URL OK · Key Aktif · Terkena throttle (429)\n\n"
+                                            f"**URL:** `{_found_url}`\n"
+                                            f"**Status:** Throttled sementara — **bukan berarti quota habis**\n\n"
+                                            f"GoAPI membatasi frekuensi request. Tunggu 10-30 detik lalu coba lagi. "
+                                            f"Jika hari ini Sabtu/Minggu/libur, data broker summary memang tidak tersedia."
+                                        )
+                                    else:
+                                        st.warning(
+                                            f"⚠️ URL ditemukan tapi ada masalah auth:\n\n"
+                                            f"**URL:** `{_found_url}`\n"
+                                            f"**Status:** {_url_note}\n\n"
+                                            f"Cek GoAPI_KEY di Streamlit secrets."
+                                        )
                                 else:
                                     # Tampilkan semua hasil probe untuk diagnosis
                                     _summary_lines = "\n".join(
@@ -24918,91 +24911,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
             unsafe_allow_html=True)
         render_history_table("broker", limit=30)
         # ══════════════════════════════════════════════════════════
-        # TAB 3 — NET BUY FOREIGN (AUTO dari BS30)
-        # ══════════════════════════════════════════════════════════
-        with bs_tab_foreign:
-            st.markdown(
-                f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.78rem;color:{text_sub};margin-bottom:12px;'>"
-                "🌐 <b>AUTO NET FOREIGN FLOW</b> · Data dari 30 saham hasil Broker Screening · "
-                "Diperbarui otomatis saat Broker Screening dijalankan</p>",
-                unsafe_allow_html=True)
-
-            _fbs30      = st.session_state.get("sigma_bs30_screened", [])
-            _fbs30_ts   = st.session_state.get("sigma_bs30_ts", "")
-
-            if not _fbs30:
-                st.info("📭 Belum ada data. Jalankan Broker Screening terlebih dahulu untuk mengisi data 30 saham.")
-            else:
-                st.caption(f"📅 Data dari screening: {_fbs30_ts}  ·  {len(_fbs30)} saham")
-                _ftickers_auto = [s.get("ticker","") for s in _fbs30 if s.get("ticker")][:30]
-
-                with st.spinner(f"Mengambil foreign flow {len(_ftickers_auto)} saham dari BS30..."):
-                    _fresults = []
-                    for _ftk in _ftickers_auto:
-                        try:
-                            _fdata = _fetch_idx_broker_summary(_ftk, "daily")
-                            _f_net=0; _l_net=0; _f_buy=0; _f_sell=0
-                            for row in _fdata:
-                                broker   = str(row.get("BrokerID", row.get("Code","?")))
-                                buy_lot  = float(row.get("BuyVolume",0) or 0)
-                                sell_lot = float(row.get("SellVolume",0) or 0)
-                                net      = buy_lot - sell_lot
-                                binfo    = _ALL_BROKERS.get(broker)
-                                is_f     = binfo[1]=="FOREIGN" if binfo else False
-                                if is_f: _f_net+=net; _f_buy+=buy_lot; _f_sell+=sell_lot
-                                else:    _l_net+=net
-                            _fresults.append({"ticker":_ftk,"f_net":_f_net,"l_net":_l_net,"f_buy":_f_buy,"f_sell":_f_sell})
-                        except: pass
-                    _fresults.sort(key=lambda x: x["f_net"], reverse=True)
-
-                if _fresults:
-                    _G2="#26a69a"; _R2="#f23645"; _P2="#a78bfa"
-                    _rows_ff = ""
-                    for _i_ff, _r_ff in enumerate(_fresults):
-                        _sig = "✅ AKUMULASI" if _r_ff["f_net"]>500 else "⚠️ DISTRIBUSI" if _r_ff["f_net"]<-500 else "— NETRAL"
-                        _sc  = _G2 if _r_ff["f_net"]>500 else _R2 if _r_ff["f_net"]<-500 else text_sub
-                        _fn_disp = ("+" if _r_ff["f_net"]>=0 else "") + f"{int(_r_ff['f_net']):,}"
-                        _ln_disp = ("+" if _r_ff["l_net"]>=0 else "") + f"{int(_r_ff['l_net']):,}"
-                        _bg_row  = ("rgba(38,166,154,0.06)" if _r_ff["f_net"]>500
-                                    else "rgba(242,54,69,0.05)" if _r_ff["f_net"]<-500
-                                    else ("rgba(255,255,255,0.02)" if _i_ff%2==0 else "transparent"))
-                        _rows_ff += (
-                            f"<tr style='background:{_bg_row};'>"
-                            f"<td style='padding:8px 12px;font-weight:700;color:{_P2};font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_r_ff['ticker']}</td>"
-                            f"<td style='padding:8px 12px;color:{'#26a69a' if _r_ff['f_net']>=0 else '#f23645'};font-weight:700;white-space:nowrap;font-size:0.82rem;'>{_fn_disp}</td>"
-                            f"<td style='padding:8px 12px;white-space:nowrap;font-size:0.8rem;'>{int(_r_ff['f_buy']):,}</td>"
-                            f"<td style='padding:8px 12px;white-space:nowrap;font-size:0.8rem;'>{int(_r_ff['f_sell']):,}</td>"
-                            f"<td style='padding:8px 12px;color:{'#26a69a' if _r_ff['l_net']>=0 else '#f23645'};white-space:nowrap;font-size:0.82rem;'>{_ln_disp}</td>"
-                            f"<td style='padding:8px 12px;color:{_sc};font-weight:700;white-space:nowrap;font-size:0.8rem;'>{_sig}</td>"
-                            f"</tr>"
-                        )
-                    _ff_html = (
-                        "<div style='width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;"
-                        "border-radius:10px;border:1px solid rgba(124,58,237,0.2);'>"
-                        "<table style='border-collapse:collapse;min-width:560px;width:max-content;'>"
-                        "<thead><tr style='background:rgba(124,58,237,0.1);'>"
-                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>TICKER</th>"
-                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>🌐 FOREIGN NET (LOT)</th>"
-                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>F.BUY</th>"
-                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>F.SELL</th>"
-                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>🏠 LOKAL NET</th>"
-                        f"<th style='padding:9px 12px;text-align:left;font-size:0.68rem;letter-spacing:0.1em;color:{_P2};border-bottom:1px solid rgba(124,58,237,0.2);white-space:nowrap;'>SINYAL</th>"
-                        "</tr></thead>"
-                        f"<tbody>{_rows_ff}</tbody>"
-                        "</table></div>"
-                    )
-                    st.markdown(_ff_html, unsafe_allow_html=True)
-                else:
-                    st.warning("Tidak ada data foreign flow yang berhasil diambil.")
-
-
-
-# ─────────────────────────────────────────────
-
-
-# ─────────────────────────────────────────────
-# PART 12: CALCULATOR
-# ─────────────────────────────────────────────
     with tab_kalkulator:
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🧮 CALCULATOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
@@ -28475,37 +28383,37 @@ else:
                 tahun_sekarang = datetime.now().year
                 full_prompt = f"""Kamu adalah SIGMA AI - analis ekuitas institusional yang menguasai teori valuasi dari Aswath Damodaran, filosofi investasi Benjamin Graham & Peter Lynch, serta teknik akuntansi forensik Howard Schilit. Lakukan analisa fundamental mendalam terhadap saham {emiten_target}.
 
-    [DATA LIVE {emiten_target}]:
-    {fund_text}
+[DATA LIVE {emiten_target}]:
+{fund_text}
 
-    Instruksi Eksekusi (WAJIB diikuti semua poin):
+Instruksi Eksekusi (WAJIB diikuti semua poin):
 
-    1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
-      -Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
-      -Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
-      -Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
+1. VALUASI KUANTITATIF & EKSPEKTASI (Damodaran & Mauboussin):
+  -Berdasarkan profil risiko dan struktur modal, tentukan asumsi Discount Rate (WACC) yang masuk akal
+  -Hitung estimasi nilai intrinsik menggunakan pendekatan Earnings Power / DCF sederhana
+  -Reverse DCF: pada harga pasar Rp[X] saat ini, berapa tingkat pertumbuhan yang sedang dipriced-in? Realistis?
 
-    2. KUALITAS LABA & UJI FORENSIK (Schilit):
-      -Bandingkan tren laba bersih vs arus kas operasi - apakah laba diback up cash?
-      -Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
-      -Red flag atau tanda manipulasi akuntansi?
+2. KUALITAS LABA & UJI FORENSIK (Schilit):
+  -Bandingkan tren laba bersih vs arus kas operasi - apakah laba diback up cash?
+  -Periksa neraca: ada penumpukan piutang/persediaan yang tumbuh jauh di atas pendapatan?
+  -Red flag atau tanda manipulasi akuntansi?
 
-    3. KATEGORISASI PROFIL & KATALIS (Lynch):
-      -Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
-      -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
+3. KATEGORISASI PROFIL & KATALIS (Lynch):
+  -Klasifikasikan: Fast Grower / Stalwart / Slow Grower / Cyclical / Asset Play / Turnaround
+  -Berdasarkan kategori itu, metrik operasional apa yang paling krusial dipantau kuartal depan?
 
-    4. MARGIN OF SAFETY (Graham):
-      -Bandingkan harga saat ini dengan estimasi nilai intrinsik - berapa % Margin of Safety tersedia?
-      -Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
+4. MARGIN OF SAFETY (Graham):
+  -Bandingkan harga saat ini dengan estimasi nilai intrinsik - berapa % Margin of Safety tersedia?
+  -Apakah neraca cukup kuat (DER, Current Ratio) untuk bertahan di tekanan makro?
 
-    5. SINTESIS - RISK/REWARD:
-      -Beri kesimpulan akhir berupa rasio Risk/Reward
-      -Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
-      -Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
+5. SINTESIS - RISK/REWARD:
+  -Beri kesimpulan akhir berupa rasio Risk/Reward
+  -Apakah saham ini menawarkan asimetri yang menguntungkan investor pada valuasi saat ini?
+  -Verdict: Accumulate / Hold / Reduce / Avoid + alasan konkret
 
-    Pertanyaan user: {prompt}
+Pertanyaan user: {prompt}
 
-    Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di akhir."""
+Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di akhir."""
 
         elif is_fundamental and emiten_match:
             emiten_target = emiten_match.group(0).upper()
@@ -28726,25 +28634,25 @@ s.textContent=`
 var btn=pd.createElement('button'); btn.id='spbtn'; btn.innerHTML='<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="19" r="2.5"/></svg>'; pd.body.appendChild(btn);
 var m=pd.createElement('div');m.id='spmenu';
 m.innerHTML=`
-<a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
-<button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
-<div class="smsp"></div><div class="smhd">NAVIGASI</div>
-<a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
-<div class="smsp"></div><div class="smhd">PENAMPILAN</div>
-<a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {'v' if st.session_state.theme=='dark' else ''}</a>
-<a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {'v' if st.session_state.theme=='light' else ''}</a>
-<div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
+    <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
+    <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
+    <div class="smsp"></div><div class="smhd">NAVIGASI</div>
+    <a class="smi" id="smi-home"><span class="smico">&#127968;</span>Kembali ke Home</a>
+    <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
+    <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {'v' if st.session_state.theme=='dark' else ''}</a>
+    <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {'v' if st.session_state.theme=='light' else ''}</a>
+    <div class="smsp"></div><a class="smi smred" id="smi-out"><span class="smico">&#128682;</span>Sign Out</a>
 `; pd.body.appendChild(m);
 var h=pd.createElement('div');h.id='sphist'; h.innerHTML='<div class="smhd">RIWAYAT OBROLAN</div>';
 {_hist_items} pd.body.appendChild(h);
 btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.display = (m.style.display === 'block') ? 'none' : 'block'; h.style.display = 'none'; }};
 (function(){{
-var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
-pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
-u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
-u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
-u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
-u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
+    var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
+    pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
+    u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
 }})();
 pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.contains(e.target)) m.style.display='none'; if(!btn.contains(e.target) && !h.contains(e.target) && !m.contains(e.target)) h.style.display='none'; }});
 }})();
@@ -28754,64 +28662,64 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 components.html("""
 <script>
 (function() {
-var _boundTextarea = null;
+    var _boundTextarea = null;
 
-function pasteHandler(e) {
-    var doc = window.parent.document;
-    // Re-fetch fileInput fresh on every paste - Streamlit replaces DOM nodes after rerun
-    var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-    if (!fileInput) return;
+    function pasteHandler(e) {
+        var doc = window.parent.document;
+        // Re-fetch fileInput fresh on every paste - Streamlit replaces DOM nodes after rerun
+        var fileInput = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+        if (!fileInput) return;
 
-    if (e.clipboardData && e.clipboardData.items) {
-        var items = e.clipboardData.items;
-        var dt = new DataTransfer();
-        var hasNewImage = false;
+        if (e.clipboardData && e.clipboardData.items) {
+            var items = e.clipboardData.items;
+            var dt = new DataTransfer();
+            var hasNewImage = false;
 
-        for (var i = 0; i < items.length; i++) {
-            if (items[i].type.indexOf('image') !== -1) {
-                var file = items[i].getAsFile();
-                var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
-                dt.items.add(newFile);
-                hasNewImage = true;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    var file = items[i].getAsFile();
+                    var newFile = new File([file], "image_paste_" + Date.now() + ".png", {type: "image/png"});
+                    dt.items.add(newFile);
+                    hasNewImage = true;
+                }
+            }
+
+            if (hasNewImage) {
+                e.preventDefault();
+                // Reset first so Streamlit always sees a fresh change event
+                var emptyDt = new DataTransfer();
+                fileInput.files = emptyDt.files;
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                // Short delay then assign actual image
+                setTimeout(function() {
+                    var fi2 = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
+                    if (fi2) {
+                        fi2.files = dt.files;
+                        fi2.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }, 60);
             }
         }
+    }
 
-        if (hasNewImage) {
-            e.preventDefault();
-            // Reset first so Streamlit always sees a fresh change event
-            var emptyDt = new DataTransfer();
-            fileInput.files = emptyDt.files;
-            fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-            // Short delay then assign actual image
-            setTimeout(function() {
-                var fi2 = doc.querySelector('[data-testid="stChatInput"] input[type="file"]');
-                if (fi2) {
-                    fi2.files = dt.files;
-                    fi2.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-            }, 60);
+    function injectPastePolyfill() {
+        var doc = window.parent.document;
+        var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
+        if (!textarea) return;
+
+        // Streamlit replaces the textarea DOM node on every rerun.
+        // Detect node change and rebind - do NOT rely on dataset flag.
+        if (textarea !== _boundTextarea) {
+            if (_boundTextarea) {
+                _boundTextarea.removeEventListener('paste', pasteHandler);
+            }
+            textarea.addEventListener('paste', pasteHandler);
+            _boundTextarea = textarea;
         }
     }
-}
 
-function injectPastePolyfill() {
-    var doc = window.parent.document;
-    var textarea = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-    if (!textarea) return;
-
-    // Streamlit replaces the textarea DOM node on every rerun.
-    // Detect node change and rebind - do NOT rely on dataset flag.
-    if (textarea !== _boundTextarea) {
-        if (_boundTextarea) {
-            _boundTextarea.removeEventListener('paste', pasteHandler);
-        }
-        textarea.addEventListener('paste', pasteHandler);
-        _boundTextarea = textarea;
-    }
-}
-
-// Poll at 300ms to catch Streamlit reruns quickly
-setInterval(injectPastePolyfill, 300);
+    // Poll at 300ms to catch Streamlit reruns quickly
+    setInterval(injectPastePolyfill, 300);
 })();
 </script>
 """, height=0)
@@ -28820,97 +28728,97 @@ setInterval(injectPastePolyfill, 300);
 # ── USER BUBBLE JS INJECTOR ──
 _bubble_css = """
 .sigma-user-msg {
-display: flex !important;
-justify-content: flex-end !important;
+    display: flex !important;
+    justify-content: flex-end !important;
 }
 .sigma-user-msg [data-testid="stChatMessageContent"] {
-display: flex !important;
-justify-content: flex-end !important;
-width: 100% !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    width: 100% !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] {
-background: """ + C['bubble'] + """ !important;
-color: """ + C['bubble_text'] + """ !important;
-border-radius: 20px 20px 4px 20px !important;
-padding: 10px 16px !important;
-max-width: 75% !important;
-width: fit-content !important;
-min-width: 0 !important;
-margin-left: auto !important;
-margin-right: 0 !important;
-box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
-font-size: 0.9rem !important;
-text-align: left !important;
-display: inline-block !important;
+    background: """ + C['bubble'] + """ !important;
+    color: """ + C['bubble_text'] + """ !important;
+    border-radius: 20px 20px 4px 20px !important;
+    padding: 10px 16px !important;
+    max-width: 75% !important;
+    width: fit-content !important;
+    min-width: 0 !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    font-size: 0.9rem !important;
+    text-align: left !important;
+    display: inline-block !important;
 }
 .sigma-user-msg [data-testid="stMarkdownContainer"] p,
 .sigma-user-msg [data-testid="stMarkdownContainer"] span,
 .sigma-user-msg [data-testid="stMarkdownContainer"] li,
 .sigma-user-msg [data-testid="stMarkdownContainer"] strong {
-color: """ + C['bubble_text'] + """ !important;
-font-size: 0.9rem !important;
-text-align: left !important;
+    color: """ + C['bubble_text'] + """ !important;
+    font-size: 0.9rem !important;
+    text-align: left !important;
 }
 @media (max-width: 768px) {
-.sigma-user-msg [data-testid="stMarkdownContainer"] {
-    max-width: 88% !important;
-    padding: 9px 13px !important;
-    border-radius: 16px 16px 3px 16px !important;
-}
+    .sigma-user-msg [data-testid="stMarkdownContainer"] {
+        max-width: 88% !important;
+        padding: 9px 13px !important;
+        border-radius: 16px 16px 3px 16px !important;
+    }
 }
 """
 components.html(f"""
 <script>
 (function() {{
-var pd = window.parent.document;
+    var pd = window.parent.document;
 
-// Inject bubble CSS once
-if (!pd.getElementById('sigma-bubble-css')) {{
-    var st = pd.createElement('style');
-    st.id = 'sigma-bubble-css';
-    st.textContent = `{_bubble_css}`;
-    pd.head.appendChild(st);
-}}
+    // Inject bubble CSS once
+    if (!pd.getElementById('sigma-bubble-css')) {{
+        var st = pd.createElement('style');
+        st.id = 'sigma-bubble-css';
+        st.textContent = `{_bubble_css}`;
+        pd.head.appendChild(st);
+    }}
 
-function markUserBubbles() {{
-    var msgs = pd.querySelectorAll('[data-testid="stChatMessage"]');
-    msgs.forEach(function(el) {{
-        if (el.dataset.bubbleChecked === '1') return;
-        var isUser = false;
-        // Method 1: check data-testid avatar user (most reliable)
-        if (el.querySelector('[data-testid="stChatMessageAvatarUser"]')) {{
-            isUser = true;
-        }}
-        // Method 2: check aria-label contains "user"
-        else if ((el.getAttribute('aria-label') || '').toLowerCase().indexOf('user') >= 0) {{
-            isUser = true;
-        }}
-        // Method 3: Streamlit adds role info to avatar img alt text
-        else {{
-            var imgs = el.querySelectorAll('img');
-            for (var i = 0; i < imgs.length; i++) {{
-                if ((imgs[i].getAttribute('alt') || '').toLowerCase().indexOf('user') >= 0) {{
-                    isUser = true; break;
+    function markUserBubbles() {{
+        var msgs = pd.querySelectorAll('[data-testid="stChatMessage"]');
+        msgs.forEach(function(el) {{
+            if (el.dataset.bubbleChecked === '1') return;
+            var isUser = false;
+            // Method 1: check data-testid avatar user (most reliable)
+            if (el.querySelector('[data-testid="stChatMessageAvatarUser"]')) {{
+                isUser = true;
+            }}
+            // Method 2: check aria-label contains "user"
+            else if ((el.getAttribute('aria-label') || '').toLowerCase().indexOf('user') >= 0) {{
+                isUser = true;
+            }}
+            // Method 3: Streamlit adds role info to avatar img alt text
+            else {{
+                var imgs = el.querySelectorAll('img');
+                for (var i = 0; i < imgs.length; i++) {{
+                    if ((imgs[i].getAttribute('alt') || '').toLowerCase().indexOf('user') >= 0) {{
+                        isUser = true; break;
+                    }}
                 }}
             }}
-        }}
-        // Method 4: innerHTML string check-stChatMessageAvatarUser in DOM
-        if (!isUser) {{
-            var html = el.innerHTML || '';
-            if (html.indexOf('AvatarUser') >= 0) isUser = true;
-            // If neither avatar found yet, can't determine-retry later
-            else if (html.indexOf('AvatarAssistant') < 0 && html.indexOf('AvatarUser') < 0) {{
-                return; // retry on next interval
+            // Method 4: innerHTML string check-stChatMessageAvatarUser in DOM
+            if (!isUser) {{
+                var html = el.innerHTML || '';
+                if (html.indexOf('AvatarUser') >= 0) isUser = true;
+                // If neither avatar found yet, can't determine-retry later
+                else if (html.indexOf('AvatarAssistant') < 0 && html.indexOf('AvatarUser') < 0) {{
+                    return; // retry on next interval
+                }}
             }}
-        }}
-        if (isUser) el.classList.add('sigma-user-msg');
-        el.dataset.bubbleChecked = '1';
-    }});
-}}
+            if (isUser) el.classList.add('sigma-user-msg');
+            el.dataset.bubbleChecked = '1';
+        }});
+    }}
 
-// Run immediately and on interval
-markUserBubbles();
-setInterval(markUserBubbles, 500);
+    // Run immediately and on interval
+    markUserBubbles();
+    setInterval(markUserBubbles, 500);
 }})();
 </script>
 """, height=0)
@@ -28919,20 +28827,20 @@ sig_color = C.get("text", "#ffffff")
 js_code = """
 <script>
 (function() {
-var pd = window.parent.document;
-if (pd.getElementById('sigma-desktop-brand')) return;
+    var pd = window.parent.document;
+    if (pd.getElementById('sigma-desktop-brand')) return;
 
-var brand = pd.createElement('div');
-brand.id = 'sigma-desktop-brand';
+    var brand = pd.createElement('div');
+    brand.id = 'sigma-desktop-brand';
 
-brand.innerHTML = 'SIGMA';
-brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
+    brand.innerHTML = 'SIGMA';
+    brand.style.cssText = 'position:fixed; top:24px; left:28px; z-index:999999; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 1.25rem; color: """ + sig_color + """; letter-spacing: 0.2px; user-select: none; cursor: default;';
 
-var style = pd.createElement('style');
-style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
-pd.head.appendChild(style);
+    var style = pd.createElement('style');
+    style.innerHTML = '@media (max-width: 768px) { #sigma-desktop-brand { top: 16px !important; left: 20px !important; font-size: 1.15rem !important; } }';
+    pd.head.appendChild(style);
 
-pd.body.appendChild(brand);
+    pd.body.appendChild(brand);
 })();
 </script>
 """
