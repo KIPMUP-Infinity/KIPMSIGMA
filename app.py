@@ -24670,152 +24670,178 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                 if "bs30_selected_ticker" not in st.session_state:
                     st.session_state["bs30_selected_ticker"] = None
 
-                _s30_cols = st.columns(5)
-                for _si, _sitem in enumerate(_bs30_existing):
-                    _stk     = _sitem.get("ticker","")
-                    _hm      = _sitem.get("high_momentum", False)
-                    _spk     = _sitem.get("spike", 0)
-                    _chg     = _sitem.get("chg1d", 0)
-                    _md      = _sitem.get("momentum_days", 0)
-                    _verdict = _sitem.get("verdict","")
-                    _bpr     = _sitem.get("bpr", 0)
-                    _top_b   = _sitem.get("top_accum",[])
-                    _goconf  = _sitem.get("goapi_confirmed", False)
-                    _pre_acc = _sitem.get("pre_accum", False)
-                    _astreak = _sitem.get("accum_streak", 0)
-                    _adays   = _sitem.get("accum_days", 0)
-                    _sc_hits = _sitem.get("screeners_hit", _sitem.get("screeners_hit_s3", []))
-                    _n_sc    = max(len(_sc_hits), _sitem.get("n_screeners_s3", 0))
-                    _is_sel  = st.session_state.get("bs30_selected_ticker") == _stk
-
-                    _n_sc_disp  = _sitem.get("n_screeners_s3", _sitem.get("n_screeners", 0))
-                    _sc_hits_s3 = _sitem.get("screeners_hit_s3", _sitem.get("screeners_hit", []))
-                    _liq_sc     = _sitem.get("liquid_score", 0)
-                    _ta_sc_disp = _sitem.get("ta_score_s3", 0)
-
-                    # Build screener badge HTML
-                    _sc_badge_map = {
-                        "BigAccum":     ("#26a69a", "💰BA"),
-                        "BandarUptrend":("#a78bfa", "📈BU"),
-                        "ForeignFlow":  ("#60a5fa", "🌐FF"),
-                        "1M_Foreign":   ("#f59e0b", "📅1M"),
+                # CSS: paksa semua kolom screening punya tinggi sama (equal height grid)
+                st.markdown("""<style>
+                    div[data-testid="column"] > div[data-testid="stVerticalBlock"] {
+                        height: 100%;
                     }
-                    _sc_badges_html = "".join(
-                        f"<span style='background:{_sc_badge_map.get(_sc,('#888',_sc))[0]}22;"
-                        f"color:{_sc_badge_map.get(_sc,('#888',_sc))[0]};border:1px solid "
-                        f"{_sc_badge_map.get(_sc,('#888',_sc))[0]}55;border-radius:3px;"
-                        f"font-size:0.55rem;padding:1px 4px;margin:0 1px;white-space:nowrap;'>"
-                        f"{_sc_badge_map.get(_sc,('#888',_sc))[1]}</span>"
-                        for _sc in (_sc_hits_s3 or _sc_hits)[:4]
-                    )
-                    _liq_val_card = _sitem.get("avg_daily_val", 0)
-                    if _liq_val_card >= 20_000_000_000:
-                        _liq_badge = "<span style='background:#26a69a22;color:#26a69a;border:1px solid #26a69a44;border-radius:3px;font-size:0.52rem;padding:1px 3px;'>LIQ★★</span>"
-                    elif _liq_val_card >= 5_000_000_000:
-                        _liq_badge = "<span style='background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:3px;font-size:0.52rem;padding:1px 3px;'>LIQ★</span>"
-                    else:
-                        _liq_badge = ""
-
-                    if _verdict == "AKUMULASI":
-                        _border_c = "rgba(38,166,154,0.6)"; _bg_c = "rgba(38,166,154,0.10)"; _label_c = "#26a69a"
-                    elif _verdict == "AKUMULASI LEMAH":
-                        _border_c = "rgba(38,166,154,0.3)"; _bg_c = "rgba(38,166,154,0.06)"; _label_c = "#80cbc4"
-                    elif _verdict == "DISTRIBUSI":
-                        _border_c = "rgba(242,54,69,0.45)"; _bg_c = "rgba(242,54,69,0.08)"; _label_c = "#f23645"
-                    elif _pre_acc:
-                        _border_c = "rgba(167,139,250,0.4)"; _bg_c = "rgba(167,139,250,0.08)"; _label_c = "#a78bfa"
-                    elif _hm:
-                        _border_c = "rgba(245,158,11,0.35)"; _bg_c = "rgba(245,158,11,0.10)"; _label_c = "#f59e0b"
-                    else:
-                        _border_c = "rgba(255,255,255,0.08)"; _bg_c = "rgba(255,255,255,0.03)"; _label_c = text_sub
-
-                    if _is_sel:
-                        _border_c = "rgba(96,165,250,0.8)"; _bg_c = "rgba(96,165,250,0.15)"
-
-                    _brokers_str  = " ".join(_top_b) if _top_b else ""
-                    _verdict_line = ""
-                    if _verdict:
-                        _verdict_line = f"<br><span style='color:{_label_c};font-weight:700;'>{_verdict}</span>"
-                    elif _pre_acc:
-                        _verdict_line = f"<br><span style='color:{_label_c};'>~Accum {_adays}/3d</span>"
-                    _streak_line = ""
-                    if _astreak >= 2:
-                        _sc2 = "#26a69a" if _astreak >= 3 else "#80cbc4"
-                        _streak_line = f"<br><span style='color:{_sc2};font-size:0.62rem;'>▲ {_astreak}d vol+press</span>"
-                    _hm_line     = f"<br><span style='color:#f59e0b;'>★ {_md}d berturut</span>" if _hm else ""
-                    _broker_line = f"<br><span style='color:#64748b;font-size:0.60rem;'>{_brokers_str}</span>" if _brokers_str else ""
-                    _sel_line    = f"<br><span style='color:#60a5fa;font-size:0.62rem;'>▶ DIPILIH</span>" if _is_sel else ""
-
-                    # ── Screener badges (gabungan GoAPI + STEP 3 data) ──
-                    _BADGE_MAP = {
-                        "BigAccum":      ("#f97316", "BA"),
-                        "BandarUptrend": ("#a78bfa", "BU"),
-                        "ForeignFlow":   ("#38bdf8", "FF"),
-                        "1M-Foreign":    ("#34d399", "1M"),
-                        "1M_Foreign":    ("#34d399", "1M"),  # alias underscore
+                    div[data-testid="column"] > div[data-testid="stVerticalBlock"] > div {
+                        flex: 1;
                     }
-                    # Gabungan screener dari GoAPI dan STEP 3
-                    _all_sc = list(dict.fromkeys(list(_sc_hits) + list(_sc_hits_s3)))
-                    _badges_html = ""
-                    if _all_sc:
-                        _badge_parts = []
-                        for _badge_key in ["BigAccum", "BandarUptrend", "ForeignFlow", "1M-Foreign", "1M_Foreign"]:
-                            if _badge_key in _all_sc and _badge_key != "1M_Foreign":
-                                _bc, _bl = _BADGE_MAP[_badge_key]
-                                _badge_parts.append(
-                                    f"<span style='background:{_bc}22;color:{_bc};border:1px solid {_bc}55;"
-                                    f"border-radius:3px;padding:0 3px;font-size:0.57rem;font-weight:700;'>{_bl}</span>"
-                                )
-                            elif _badge_key == "1M_Foreign" and "1M-Foreign" not in _all_sc and "1M_Foreign" in _all_sc:
-                                _bc, _bl = _BADGE_MAP["1M_Foreign"]
-                                _badge_parts.append(
-                                    f"<span style='background:{_bc}22;color:{_bc};border:1px solid {_bc}55;"
-                                    f"border-radius:3px;padding:0 3px;font-size:0.57rem;font-weight:700;'>{_bl}</span>"
-                                )
-                        # Tambahkan liquid badge
-                        if _liq_badge:
-                            _badge_parts.insert(0, _liq_badge)
-                        _badges_html = "<br>" + " ".join(_badge_parts) if _badge_parts else ""
-                    elif _liq_badge:
-                        _badges_html = "<br>" + _liq_badge
-                    # TA score line jika cukup tinggi
-                    _ta_line = ""
-                    if _ta_sc_disp >= 50:
-                        _ta_c = "#26a69a" if _ta_sc_disp >= 70 else "#f59e0b"
-                        _ta_line = f"<br><span style='color:{_ta_c};font-size:0.59rem;'>TA:{_ta_sc_disp}</span>"
-                    # Confluence label
-                    _confluence_line = ""
-                    if _n_sc >= 3:
-                        _confluence_line = f"<br><span style='color:#c084fc;font-size:0.62rem;font-weight:700;'>🎯 CONFLUENCE ×{_n_sc}</span>"
-                    elif _n_sc == 2:
-                        _confluence_line = f"<br><span style='color:#c084fc;font-size:0.60rem;'>⚡ 2-screener</span>"
+                    /* Equal height rows untuk broker screening cards */
+                    .bs30-row {
+                        display: grid;
+                        grid-template-columns: repeat(5, 1fr);
+                        gap: 8px;
+                        margin-bottom: 8px;
+                    }
+                    .bs30-card {
+                        min-height: 170px;
+                        box-sizing: border-box;
+                    }
+                </style>""", unsafe_allow_html=True)
 
-                    with _s30_cols[_si % 5]:
-                        _ticker_color  = "#f59e0b" if _hm else text_main
-                        _spk_color     = "#26a69a" if _spk >= 3 else ("#f59e0b" if _spk >= 2 else text_main)
-                        _chg_color     = "#26a69a" if _chg > 0 else "#f23645"
-                        _price_str     = f"{int(_sitem.get('price',0)):,}".replace(",",".")
-                        _card_html = (
-                            f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
-                            f"padding:7px 9px;margin-bottom:6px;"
-                            f"background:{_bg_c};border:1px solid {_border_c};border-radius:8px;cursor:pointer;'>"
-                            f"<div style='font-weight:700;color:{_ticker_color};font-size:0.82rem;'>{'⭐ ' if _hm else ''}{_stk}</div>"
-                            f"<div style='color:{text_sub};font-size:0.62rem;margin-top:1px;'>Rp{_price_str}</div>"
-                            f"<div style='color:{text_sub};font-size:0.67rem;margin-top:3px;line-height:1.65;'>"
-                            f"<span style='color:{_spk_color};'>{_spk:.1f}x</span>"
-                            f" <span style='color:{_chg_color};'>{_chg:+.1f}%</span>"
-                            f"{_streak_line}{_hm_line}{_verdict_line}{_broker_line}"
-                            f"{_badges_html}{_ta_line}{_confluence_line}{_sel_line}"
-                            f"</div></div>"
+                # Render cards per-baris (5 per baris) agar tiap baris punya tinggi seragam
+                _items_per_row = 5
+                for _row_start in range(0, len(_bs30_existing), _items_per_row):
+                    _row_items = _bs30_existing[_row_start:_row_start + _items_per_row]
+                    _row_cols  = st.columns(_items_per_row)
+                    for _si_r, _sitem in enumerate(_row_items):
+                        _si = _row_start + _si_r
+                        _stk     = _sitem.get("ticker","")
+                        _hm      = _sitem.get("high_momentum", False)
+                        _spk     = _sitem.get("spike", 0)
+                        _chg     = _sitem.get("chg1d", 0)
+                        _md      = _sitem.get("momentum_days", 0)
+                        _verdict = _sitem.get("verdict","")
+                        _bpr     = _sitem.get("bpr", 0)
+                        _top_b   = _sitem.get("top_accum",[])
+                        _goconf  = _sitem.get("goapi_confirmed", False)
+                        _pre_acc = _sitem.get("pre_accum", False)
+                        _astreak = _sitem.get("accum_streak", 0)
+                        _adays   = _sitem.get("accum_days", 0)
+                        _sc_hits = _sitem.get("screeners_hit", _sitem.get("screeners_hit_s3", []))
+                        _n_sc    = max(len(_sc_hits), _sitem.get("n_screeners_s3", 0))
+                        _is_sel  = st.session_state.get("bs30_selected_ticker") == _stk
+
+                        _n_sc_disp  = _sitem.get("n_screeners_s3", _sitem.get("n_screeners", 0))
+                        _sc_hits_s3 = _sitem.get("screeners_hit_s3", _sitem.get("screeners_hit", []))
+                        _liq_sc     = _sitem.get("liquid_score", 0)
+                        _ta_sc_disp = _sitem.get("ta_score_s3", 0)
+
+                        # Build screener badge HTML
+                        _sc_badge_map = {
+                            "BigAccum":     ("#26a69a", "💰BA"),
+                            "BandarUptrend":("#a78bfa", "📈BU"),
+                            "ForeignFlow":  ("#60a5fa", "🌐FF"),
+                            "1M_Foreign":   ("#f59e0b", "📅1M"),
+                        }
+                        _sc_badges_html = "".join(
+                            f"<span style='background:{_sc_badge_map.get(_sc,('#888',_sc))[0]}22;"
+                            f"color:{_sc_badge_map.get(_sc,('#888',_sc))[0]};border:1px solid "
+                            f"{_sc_badge_map.get(_sc,('#888',_sc))[0]}55;border-radius:3px;"
+                            f"font-size:0.55rem;padding:1px 4px;margin:0 1px;white-space:nowrap;'>"
+                            f"{_sc_badge_map.get(_sc,('#888',_sc))[1]}</span>"
+                            for _sc in (_sc_hits_s3 or _sc_hits)[:4]
                         )
-                        st.markdown(_card_html, unsafe_allow_html=True)
-                        if st.button("📊", key=f"bsdist_{_stk}", help=f"Lihat Broker Distribution {_stk}",
-                                     use_container_width=True):
-                            if st.session_state.get("bs30_selected_ticker") == _stk:
-                                st.session_state["bs30_selected_ticker"] = None
-                            else:
-                                st.session_state["bs30_selected_ticker"] = _stk
-                            st.rerun()
+                        _liq_val_card = _sitem.get("avg_daily_val", 0)
+                        if _liq_val_card >= 20_000_000_000:
+                            _liq_badge = "<span style='background:#26a69a22;color:#26a69a;border:1px solid #26a69a44;border-radius:3px;font-size:0.52rem;padding:1px 3px;'>LIQ★★</span>"
+                        elif _liq_val_card >= 5_000_000_000:
+                            _liq_badge = "<span style='background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44;border-radius:3px;font-size:0.52rem;padding:1px 3px;'>LIQ★</span>"
+                        else:
+                            _liq_badge = ""
+
+                        if _verdict == "AKUMULASI":
+                            _border_c = "rgba(38,166,154,0.6)"; _bg_c = "rgba(38,166,154,0.10)"; _label_c = "#26a69a"
+                        elif _verdict == "AKUMULASI LEMAH":
+                            _border_c = "rgba(38,166,154,0.3)"; _bg_c = "rgba(38,166,154,0.06)"; _label_c = "#80cbc4"
+                        elif _verdict == "DISTRIBUSI":
+                            _border_c = "rgba(242,54,69,0.45)"; _bg_c = "rgba(242,54,69,0.08)"; _label_c = "#f23645"
+                        elif _pre_acc:
+                            _border_c = "rgba(167,139,250,0.4)"; _bg_c = "rgba(167,139,250,0.08)"; _label_c = "#a78bfa"
+                        elif _hm:
+                            _border_c = "rgba(245,158,11,0.35)"; _bg_c = "rgba(245,158,11,0.10)"; _label_c = "#f59e0b"
+                        else:
+                            _border_c = "rgba(255,255,255,0.08)"; _bg_c = "rgba(255,255,255,0.03)"; _label_c = text_sub
+
+                        if _is_sel:
+                            _border_c = "rgba(96,165,250,0.8)"; _bg_c = "rgba(96,165,250,0.15)"
+
+                        _brokers_str  = " ".join(_top_b) if _top_b else ""
+                        _verdict_line = ""
+                        if _verdict:
+                            _verdict_line = f"<br><span style='color:{_label_c};font-weight:700;'>{_verdict}</span>"
+                        elif _pre_acc:
+                            _verdict_line = f"<br><span style='color:{_label_c};'>~Accum {_adays}/3d</span>"
+                        _streak_line = ""
+                        if _astreak >= 2:
+                            _sc2 = "#26a69a" if _astreak >= 3 else "#80cbc4"
+                            _streak_line = f"<br><span style='color:{_sc2};font-size:0.62rem;'>▲ {_astreak}d vol+press</span>"
+                        _hm_line     = f"<br><span style='color:#f59e0b;'>★ {_md}d berturut</span>" if _hm else ""
+                        _broker_line = f"<br><span style='color:#64748b;font-size:0.60rem;'>{_brokers_str}</span>" if _brokers_str else ""
+                        _sel_line    = f"<br><span style='color:#60a5fa;font-size:0.62rem;'>▶ DIPILIH</span>" if _is_sel else ""
+
+                        # ── Screener badges (gabungan GoAPI + STEP 3 data) ──
+                        _BADGE_MAP = {
+                            "BigAccum":      ("#f97316", "BA"),
+                            "BandarUptrend": ("#a78bfa", "BU"),
+                            "ForeignFlow":   ("#38bdf8", "FF"),
+                            "1M-Foreign":    ("#34d399", "1M"),
+                            "1M_Foreign":    ("#34d399", "1M"),  # alias underscore
+                        }
+                        # Gabungan screener dari GoAPI dan STEP 3
+                        _all_sc = list(dict.fromkeys(list(_sc_hits) + list(_sc_hits_s3)))
+                        _badges_html = ""
+                        if _all_sc:
+                            _badge_parts = []
+                            for _badge_key in ["BigAccum", "BandarUptrend", "ForeignFlow", "1M-Foreign", "1M_Foreign"]:
+                                if _badge_key in _all_sc and _badge_key != "1M_Foreign":
+                                    _bc, _bl = _BADGE_MAP[_badge_key]
+                                    _badge_parts.append(
+                                        f"<span style='background:{_bc}22;color:{_bc};border:1px solid {_bc}55;"
+                                        f"border-radius:3px;padding:0 3px;font-size:0.57rem;font-weight:700;'>{_bl}</span>"
+                                    )
+                                elif _badge_key == "1M_Foreign" and "1M-Foreign" not in _all_sc and "1M_Foreign" in _all_sc:
+                                    _bc, _bl = _BADGE_MAP["1M_Foreign"]
+                                    _badge_parts.append(
+                                        f"<span style='background:{_bc}22;color:{_bc};border:1px solid {_bc}55;"
+                                        f"border-radius:3px;padding:0 3px;font-size:0.57rem;font-weight:700;'>{_bl}</span>"
+                                    )
+                            # Tambahkan liquid badge
+                            if _liq_badge:
+                                _badge_parts.insert(0, _liq_badge)
+                            _badges_html = "<br>" + " ".join(_badge_parts) if _badge_parts else ""
+                        elif _liq_badge:
+                            _badges_html = "<br>" + _liq_badge
+                        # TA score line jika cukup tinggi
+                        _ta_line = ""
+                        if _ta_sc_disp >= 50:
+                            _ta_c = "#26a69a" if _ta_sc_disp >= 70 else "#f59e0b"
+                            _ta_line = f"<br><span style='color:{_ta_c};font-size:0.59rem;'>TA:{_ta_sc_disp}</span>"
+                        # Confluence label
+                        _confluence_line = ""
+                        if _n_sc >= 3:
+                            _confluence_line = f"<br><span style='color:#c084fc;font-size:0.62rem;font-weight:700;'>🎯 CONFLUENCE ×{_n_sc}</span>"
+                        elif _n_sc == 2:
+                            _confluence_line = f"<br><span style='color:#c084fc;font-size:0.60rem;'>⚡ 2-screener</span>"
+
+                        with _row_cols[_si_r]:
+                            _ticker_color  = "#f59e0b" if _hm else text_main
+                            _spk_color     = "#26a69a" if _spk >= 3 else ("#f59e0b" if _spk >= 2 else text_main)
+                            _chg_color     = "#26a69a" if _chg > 0 else "#f23645"
+                            _price_str     = f"{int(_sitem.get('price',0)):,}".replace(",",".")
+                            _card_html = (
+                                f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;"
+                                f"padding:7px 9px;margin-bottom:6px;min-height:175px;"
+                                f"background:{_bg_c};border:1px solid {_border_c};border-radius:8px;cursor:pointer;'>"
+                                f"<div style='font-weight:700;color:{_ticker_color};font-size:0.82rem;'>{'⭐ ' if _hm else ''}{_stk}</div>"
+                                f"<div style='color:{text_sub};font-size:0.62rem;margin-top:1px;'>Rp{_price_str}</div>"
+                                f"<div style='color:{text_sub};font-size:0.67rem;margin-top:3px;line-height:1.65;'>"
+                                f"<span style='color:{_spk_color};'>{_spk:.1f}x</span>"
+                                f" <span style='color:{_chg_color};'>{_chg:+.1f}%</span>"
+                                f"{_streak_line}{_hm_line}{_verdict_line}{_broker_line}"
+                                f"{_badges_html}{_ta_line}{_confluence_line}{_sel_line}"
+                                f"</div></div>"
+                            )
+                            st.markdown(_card_html, unsafe_allow_html=True)
+                            if st.button("📊", key=f"bsdist_{_stk}", help=f"Lihat Broker Distribution {_stk}",
+                                         use_container_width=True):
+                                if st.session_state.get("bs30_selected_ticker") == _stk:
+                                    st.session_state["bs30_selected_ticker"] = None
+                                else:
+                                    st.session_state["bs30_selected_ticker"] = _stk
+                                st.rerun()
 
                 # ══════════════════════════════════════════════════════
                 # BROKER DISTRIBUTION PANEL — tampil ketika saham diklik
