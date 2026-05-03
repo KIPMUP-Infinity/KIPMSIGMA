@@ -11045,7 +11045,7 @@ if current_view == "dashboard":
 
     tab_idxmap, tab_macro, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  🌐 MARKET MAP  ",
-        "  📰 NEWS & CALENDAR  ",
+        "  📊 MARKET DATA  ",
         "  📊 INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🧮 CALCULATOR  ",
@@ -11303,7 +11303,7 @@ if current_view == "dashboard":
             "<span class='trm-section-label'>📊 ECONOMIC DATA</span>"
             "<div class='trm-section-line'></div></div>",
             unsafe_allow_html=True)
-        st.info("🚧 **Coming Soon** — Fitur ini sedang dirancang.\n\nWill include: **Bond Yield** (SBN, US Treasury), **Dividend Yield** saham IDX, **BI Rate vs Inflation**, Fixed Income comparison, dan analisis spread yield.")
+        st.caption("Data makroekonomi: FED Rate Monitor, Bond Yield, Dividend, BI Rate. Data Yield & Dividend — Coming Soon.")
 
     with _mm_subtab_cal:
         st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
@@ -12343,7 +12343,7 @@ table{{margin-bottom:0!important;}}
         components.html(_idx_globe_html, height=1100, scrolling=False)
 
     with tab_macro:
-        st.info("📌 News & Kalender sekarang ada di dalam tab **🌐 MARKET MAP** → sub-tab **📰 News** dan **📅 Kalender**")
+        st.info("📌 News & Kalender sekarang ada di dalam tab **🌐 MARKET MAP** → sub-tab **📰 News** dan **📅 Kalender**. Economic Data (FED Monitor, Yield, dll) ada di sub-tab **📊 Economic Data**.")
 
     with _mm_subtab_news:
         # ─────────────────────────────────────────────────────────
@@ -13775,8 +13775,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
-    # FED RATE MONITOR & ECONOMIC CALENDAR kembali ke tab_macro (News sub-tab)
-    with tab_macro:
+    # FED RATE MONITOR → masuk Economic Data sub-tab
+    with _mm_subtab_eco:
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ─────────────────────────────────────────────────────────
