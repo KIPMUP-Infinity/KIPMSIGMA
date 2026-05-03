@@ -11043,10 +11043,8 @@ if current_view == "dashboard":
 
         return result
 
-    tab_idxmap, tab_macro, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_idxmap, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  🌐 MARKET MAP  ",
-        "  NEWS & CALENDAR  ",
-        "  INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🧮 CALCULATOR  ",
         "  📖 PANDUAN  ",
@@ -11287,6 +11285,33 @@ if current_view == "dashboard":
     # ─────────────────────────────────────────────────────────────────────
 
     with tab_idxmap:
+        # ── Sub-tab Market Map ──────────────────────────────────────────────
+        _mm_subtab_globe, _mm_subtab_news, _mm_subtab_cal, _mm_subtab_eco = st.tabs([
+            "  🌐 Index, Komoditas & Forex  ",
+            "  📰 News  ",
+            "  📅 Kalender  ",
+            "  📊 Economic Data  ",
+        ])
+
+    # Alias sub-tabs ke variabel lama agar seluruh kode di bawah tidak perlu diubah
+    tab_macro    = _mm_subtab_news   # NEWS & CALENDAR → sub-tab News
+    tab_rotation = _mm_subtab_globe  # INDEX & SECTOR ROTATION → sub-tab Globe
+
+    # ── Economic Data sub-tab (placeholder) ────────────────────────────────
+    with _mm_subtab_eco:
+        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='trm-section'><div class='trm-section-line'></div>"
+            "<span class='trm-section-label'>📊 ECONOMIC DATA</span>"
+            "<div class='trm-section-line'></div></div>",
+            unsafe_allow_html=True)
+        st.info("🚧 **Coming Soon** — Fitur ini sedang dirancang.\n\nWill include: **Bond Yield** (SBN, US Treasury), **Dividend Yield** saham IDX, **BI Rate vs Inflation**, Fixed Income comparison, dan analisis spread yield.")
+
+    with _mm_subtab_cal:
+        st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+        # ← Kalender Economic akan dirender di sini via tab_macro redirect ke bawah
+
+    with _mm_subtab_globe:
         # ════════════════════════════════════════════════════════
         # 1. MARKET MAP GLOBE — didefinisikan dulu (variabel),
         #    di-render SETELAH heatmap (di bawah)
@@ -14199,6 +14224,10 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
+        # ─────────────────────────────────────────────────────────
+        # ECONOMIC CALENDAR → dipindah ke sub-tab Kalender
+        # ─────────────────────────────────────────────────────────
+    with _mm_subtab_cal:
         # ─────────────────────────────────────────────────────────
         # ECONOMIC CALENDAR — ID · US  (REALTIME ACTUAL + AI ANALYST)
         # ─────────────────────────────────────────────────────────
