@@ -16043,444 +16043,510 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 "  🏦 SAHAM BUMN  ",
             ])
 
+            # ══════════════════════════════════════════════════════
+            # TAB 1: MSCI
+            # ══════════════════════════════════════════════════════
             with _idx_tab_msci:
-                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
                     background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
                  <b style='color:#8b5cf6;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
                 <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 2&times; setahun - Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
-                </div>""", unsafe_allow_html=True)
-                msci_data = {
-                    "Ticker": [
-                        "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", 
-                        "ICBP", "INDF", "INKP", "INTP", "ISAT", "KLBF", "MDKA", "TPIA", "TLKM", "TOWR", 
-                        "UNTR", "UNVR",
-                        "ADRO", "BRMS", "BSDE", "CTRA", "MBMA", "MYOR", "PTRO", "RAJA", "ACES", "CLEO"
-                    ],
-                    "Kategori": [
-                        "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
-                        "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
-                        "Standard", "Standard",
-                        "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Excluded", "Excluded"
-                    ],
-                    "Status": [
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing",
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                        "Existing", "Existing",
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "NEW ENTRY", "Existing", "OUT", "OUT"
-                    ],
-                    "Sektor": [
-                        "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology",
-                        "Consumer", "Consumer", "Materials", "Materials", "Infrastructures", "Healthcare", "Materials", "Materials", "Infrastructures", "Infrastructures",
-                        "Industrials", "Consumer",
-                        "Energy", "Materials", "Properties", "Properties", "Materials", "Consumer", "Infrastructures", "Energy", "Retail", "Consumer"
-                    ]
-                }
-                df_msci = pd.DataFrame(msci_data)
-        
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
-
-            with _idx_tab_ftse:
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-
-                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
-                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#8b5cf6;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 4&times; setahun - Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
-                </div>""", unsafe_allow_html=True)
-        
-                ftse_data = {
-                    "Ticker": [
-                        "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", "ICBP", "INDF", "KLBF", "MDKA", "TLKM", "UNTR",
-                        "ADRO", "AKRA", "BRIS", "INKP", "PGAS",
-                        "PTRO", "CUAN", "VKTR", "RAJA"
-                    ],
-                    "Kategori": [
-                        "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap",
-                        "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap",
-                        "Small Cap", "Small Cap", "Small Cap", "Small Cap"
-                    ],
-                    "Status": [
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                        "Existing", "Existing", "Existing", "Existing", "Existing",
-                        "NEW ENTRY", "NEW ENTRY", "Existing", "Existing"
-                    ],
-                    "Sektor": [
-                        "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology", "Consumer", "Consumer", "Healthcare", "Materials", "Infrastructures", "Industrials",
-                        "Energy", "Energy", "Finance", "Materials", "Energy",
-                        "Infrastructures", "Energy", "Industrials", "Energy"
-                    ]
-                }
-                df_ftse = pd.DataFrame(ftse_data)
-
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-
-
-            with _idx_tab_lq45:
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-
-                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
-                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb&ndash;Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026&ndash;Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Jadwal: 2&times; setahun - Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
-                </div>""", unsafe_allow_html=True)
-        
-                lq45_data = {
-                    "Ticker": [
-                        "ACES", "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI", 
-                        "BBRI", "BBTN", "BFIN", "BMRI", "BRIS", "BRPT", "BUKA", "CPIN", "CTRA", "ESSA", 
-                        "EXCL", "GOTO", "HRUM", "ICBP", "INCO", "INDF", "INKP", "INTP", "ISAT", "ITMG", 
-                        "KLBF", "MAPI", "MBMA", "MDKA", "MEDC", "MTEL", "PGAS", "PGEO", "PTBA", "PTPP", 
-                        "SIDO", "SMGR", "TLKM", "TOWR", "UNTR",
-                        "EMTK", "SCMA", "SRTG"
-                    ],
-                    "Kategori": [
-                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                        "Active", "Active", "Active", "Active", "Active",
-                        "Excluded", "Excluded", "Excluded"
-                    ],
-                    "Status": [
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                        "Existing", "Existing", "Existing", "Existing", "Existing",
-                        "OUT", "OUT", "OUT"
-                    ],
-                    "Sektor": [
-                        "Cyclical", "Energy", "Energy", "Materials", "Consumer", "Materials", "Finance", "Industrials", "Finance", "Finance",
-                        "Finance", "Finance", "Finance", "Finance", "Finance", "Materials", "Technology", "Consumer", "Properties", "Materials",
-                        "Infrastructures", "Technology", "Energy", "Consumer", "Materials", "Consumer", "Materials", "Materials", "Infrastructures", "Energy",
-                        "Healthcare", "Cyclical", "Materials", "Materials", "Energy", "Infrastructures", "Energy", "Energy", "Energy", "Infrastructures",
-                        "Healthcare", "Materials", "Infrastructures", "Infrastructures", "Industrials",
-                        "Technology", "Consumer", "Financials"
-                    ]
-                }
-                df_lq45 = pd.DataFrame(lq45_data)
-
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-
-            with _idx_tab_idx30:
-
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-
-                # ─── IDX30 INDEX ─────────────────────────────────────────────────
-                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
-                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb&ndash;Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Subset 30 saham paling likuid dari LQ45. Sumber: <b>idx.co.id</b></span>
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun (Feb &amp; Agu). Review interim Mei &amp; Nov. Sumber: <b>msci.com</b></span>
                 </div>""", unsafe_allow_html=True)
 
-                idx30_data = {
-                    "Ticker": [
-                        "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI",
-                        "BBRI", "BBTN", "BMRI", "BRIS", "BRPT", "CPIN", "ESSA", "EXCL", "GOTO",
-                        "ICBP", "INCO", "INDF", "ISAT", "ITMG", "KLBF", "MBMA", "MDKA", "MEDC",
-                        "PGAS", "PTBA", "TLKM",
-                        "EMTK", "SCMA",
-                    ],
-                    "Kategori": [
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active",
-                        "Excluded","Excluded",
-                    ],
-                    "Status": [
-                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing",
-                        "OUT","OUT",
-                    ],
-                    "Sektor": [
-                        "Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
-                        "Finance","Finance","Finance","Finance","Materials","Consumer","Materials","Infra","Technology",
-                        "Consumer","Materials","Consumer","Infra","Energy","Healthcare","Materials","Materials","Energy",
-                        "Energy","Energy","Infra",
-                        "Technology","Consumer",
-                    ],
-                }
-                df_idx30 = pd.DataFrame(idx30_data)
-
-            with _idx_tab_idx80:
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX80 INDEX &mdash; 80 SAHAM LIKUID</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""<div style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;color:{text_sub};
-                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 4 Mei 2026 (Evaluasi April 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#8b5cf6;'>Periode:</b> 4 Mei 2026 s.d. Juli/Oktober 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Evaluasi: 4&times; setahun - Jan/Apr/Jul/Okt. Sumber: <b>idx.co.id</b></span>
-                </div>""", unsafe_allow_html=True)
-
-                idx80_data = {
-                    "Ticker": [
-                        "AADI","ACES","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI",
-                        "BBRI","BBTN","BFIN","BIKA","BJBR","BKSL","BMRI","BREN","BRIS","BRPT",
-                        "BRMS","BUKA","CBAN","CBDK","CPIN","CTRA","CUAN","DEWA","DSNG","EMTK",
-                        "ESSA","EXCL","GGRM","GOTO","HEAL","HRUM","HRTA","ICBP","INCO","INDF",
-                        "INKP","INTP","ISAT","ITMG","JPFA","KLBF","MAPI","MBMA","MDKA","MEDC",
-                        "MIDI","MIKA","MKNT","MTEL","NCKL","PGAS","PGEO","PTBA","PTPP","RALS",
-                        "SIDO","SMGR","SMRA","TAPG","TBIG","TKIM","TLKM","TMAS","TOWR","TPIA",
-                        "UNTR","UNVR","VKTR","WIFI","WSKT","ADRO","BUMI","CLEA","SRTG","INDY",
-                        # Keluar per 4 Mei 2026
-                        "BREN","BTPS","DSSA","MTEL","NCKL"
-                    ],
-                    "Kategori": [
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                        "Excluded","Excluded","Excluded","Excluded","Excluded"
-                    ],
-                    "Status": [
-                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","NEW ENTRY","Existing","Existing",
-                        "Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY",
-                        "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing",
-                        "OUT","OUT","OUT","OUT","OUT"
-                    ],
-                    "Sektor": [
-                        "Finance","Consumer","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
-                        "Finance","Finance","Finance","Property","Finance","Property","Finance","Energy","Finance","Materials",
-                        "Materials","Technology","Finance","Property","Consumer","Property","Materials","Energy","Agri","Technology",
-                        "Materials","Infra","Consumer","Technology","Healthcare","Energy","Finance","Consumer","Materials","Consumer",
-                        "Materials","Materials","Infra","Energy","Consumer","Healthcare","Consumer","Materials","Materials","Energy",
-                        "Consumer","Healthcare","Infra","Infra","Materials","Energy","Energy","Energy","Infra","Consumer",
-                        "Healthcare","Materials","Property","Agri","Infra","Materials","Infra","Infra","Infra","Materials",
-                        "Industrials","Consumer","Technology","Technology","Materials","Energy","Energy","Healthcare","Finance","Energy",
-                        "Energy","Finance","Finance","Finance","Materials"
-                    ]
-                }
                 import pandas as pd
-                df_idx80 = pd.DataFrame(idx80_data)
-                # Trim to equal length
-                min_len = min(len(df_idx80["Ticker"]), len(df_idx80["Kategori"]), len(df_idx80["Status"]), len(df_idx80["Sektor"]))
-                df_idx80 = df_idx80.iloc[:min_len]
+                msci_standard = {
+                    "Ticker": ["AMMN","ASII","BBCA","BBNI","BBRI","BMRI","BREN","BRPT","CPIN","GOTO",
+                                "ICBP","INDF","INKP","INTP","ISAT","KLBF","MDKA","TPIA","TLKM","TOWR","UNTR","UNVR"],
+                    "Nama":   ["Amman Mineral","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Renewables","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia",
+                                "Indofood CBP","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Kalbe Farma","Merdeka Copper Gold","Chandra Asri","Telkom Indonesia","Sarana Menara Nusantara","United Tractors","Unilever Indonesia"],
+                    "Sektor": ["Materials","Industrials","Finance","Finance","Finance","Finance","Energy","Materials","Consumer","Technology",
+                                "Consumer","Consumer","Materials","Materials","Infrastructures","Healthcare","Materials","Materials","Infrastructures","Infrastructures","Industrials","Consumer"],
+                    "Status": ["Existing"]*22,
+                }
+                msci_smallcap = {
+                    "Ticker": ["ADRO","BRMS","BSDE","CTRA","MBMA","MYOR","PTRO","RAJA"],
+                    "Nama":   ["Adaro Energy","Bumi Resources Minerals","Bumi Serpong Damai","Ciputra Development","Merdeka Battery Materials","Mayora Indah","Petrosea","Rukun Raharja"],
+                    "Sektor": ["Energy","Materials","Properties","Properties","Materials","Consumer","Infrastructures","Energy"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing"],
+                }
+                msci_excluded = {
+                    "Ticker": ["ACES","CLEO"],
+                    "Nama":   ["Ace Hardware Indonesia","Sariguna Primatirta"],
+                    "Sektor": ["Retail","Consumer"],
+                    "Status": ["OUT","OUT"],
+                }
+                df_msci_std  = pd.DataFrame(msci_standard)
+                df_msci_sm   = pd.DataFrame(msci_smallcap)
+                df_msci_excl = pd.DataFrame(msci_excluded)
 
-                st.markdown("<p style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 80 Saham Aktif (Efektif 4 Mei 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx80[df_idx80["Kategori"]=="Active"].drop(columns=["Kategori"]).style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
-                st.markdown("<p style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX80 (per 4 Mei 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx80[df_idx80["Kategori"]=="Excluded"].drop(columns=["Kategori"]).style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · MSCI STANDARD INDEX — {len(df_msci_std)} SAHAM (THE GIANTS)</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_msci_std.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
 
-            with _idx_tab_kompas:
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KOMPAS100 INDEX &mdash; 100 SAHAM PILIHAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""<div style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;color:{text_sub};
-                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 3 Februari 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#8b5cf6;'>Status Mei 2026:</b> Tidak ada perubahan konstituen (evaluasi minor)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Evaluasi: 2&times; setahun - Februari &amp; Agustus. Penyelenggara: BEI + Kompas Gramedia. Sumber: <b>idx.co.id</b></span>
-                </div>""", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>02 · MSCI SMALL CAP INDEX — {len(df_msci_sm)} SAHAM</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_msci_sm.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
 
-                kompas100_tickers = [
-                    "AADI","ACES","ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA",
-                    "BBNI","BBRI","BBTN","BFIN","BJBR","BKSL","BMRI","BREN","BRIS","BRMS",
-                    "BRPT","BUKA","CBDK","CLEO","CPIN","CTRA","CUAN","DEWA","DSNG","DSSA",
-                    "EMTK","ESSA","EXCL","GGRM","GOTO","HEAL","HMSP","HRUM","HRTA","ICBP",
-                    "INCO","INDF","INKP","INTP","ISAT","ITMG","JPFA","KLBF","LSIP","MAPI",
-                    "MBMA","MDKA","MEDC","MIDI","MIKA","MTEL","NCKL","PGAS","PGEO","PTBA",
-                    "PTPP","RAJA","RALS","SIDO","SIMP","SMGR","SMRA","SRTG","TBIG","TKIM",
-                    "TLKM","TMAS","TOWR","TPIA","UNTR","UNVR","VKTR","WIFI","WIKA","WSKT",
-                    "BUMI","ADRO","MEDC","TAPG","PNBN","NIKL","CLEO","ELSA","BNGA","DNET",
-                    "AVIA","MCAS","BBHI","PGEO","PWON","DMAS","SMCB","INDY","AALI","BULL"
-                ]
-                import pandas as pd
-                df_k100 = pd.DataFrame({
-                    "Ticker": kompas100_tickers,
-                    "Status": ["Existing"] * len(kompas100_tickers)
-                })
-                st.markdown("<p style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>100 Konstituen Aktif (Periode Feb–Agu 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(df_k100, use_container_width=True, hide_index=True, on_select="ignore")
-                st.markdown(f"""<div class='trm-card' style='margin-top:14px;'>
-                <div class='trm-card-title'>ℹ TENTANG KOMPAS100</div>
-                <p style='color:{text_main};font-size:1rem;line-height:1.7;margin:0;'>
-                KOMPAS100 mencakup 100 saham dengan likuiditas dan kapitalisasi terbesar di BEI, diseleksi bersama oleh BEI dan Kompas Gramedia Group.
-                Indeks ini lebih luas dari LQ45/IDX30 namun lebih ketat dari IHSG penuh — cocok sebagai benchmark portofolio menengah.
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>03 · KELUAR DARI MSCI — {len(df_msci_excl)} SAHAM</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_msci_excl.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
+                <div class='trm-card-title'>📌 STRATEGI MSCI REBALANCING</div>
+                <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
+                Saham yang masuk MSCI mendapat aliran dana otomatis dari <b>passive fund & ETF global</b> yang wajib replikasi indeks.
+                <br><b style='color:#8b5cf6;'>Strategi:</b> Beli kandidat NEW ENTRY 1–2 minggu sebelum tanggal efektif.
+                Jual pada/setelah tanggal efektif saat passive fund selesai membeli (<i>sell the news</i>).
+                <br><b style='color:#f23645;'>Hati-hati:</b> Saham OUT dari MSCI rentan tekanan jual dari passive fund yang wajib reduce.
                 </p></div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
+            # ══════════════════════════════════════════════════════
+            # TAB 2: FTSE
+            # ══════════════════════════════════════════════════════
+            with _idx_tab_ftse:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX — INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(0,200,83,0.07);border-left:3px solid #00c853;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#00c853;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#00c853;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Jadwal: 4&times; setahun — Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
+                </div>""", unsafe_allow_html=True)
 
+                import pandas as pd
+                ftse_large = {
+                    "Ticker": ["AMMN","ASII","BBCA","BBNI","BBRI","BMRI","BREN","BRPT","CPIN","GOTO","ICBP","INDF","KLBF","MDKA","TLKM","UNTR"],
+                    "Nama":   ["Amman Mineral","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Mandiri","Barito Renewables","Barito Pacific","Charoen Pokphand","GoTo Gojek Tokopedia","Indofood CBP","Indofood SM","Kalbe Farma","Merdeka Copper Gold","Telkom Indonesia","United Tractors"],
+                    "Sektor": ["Materials","Industrials","Finance","Finance","Finance","Finance","Energy","Materials","Consumer","Technology","Consumer","Consumer","Healthcare","Materials","Infrastructures","Industrials"],
+                    "Tier":   ["Large Cap"]*16,
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","DOWNGRADED","Existing","Existing","Existing","Existing","Existing","Existing"],
+                }
+                ftse_mid = {
+                    "Ticker": ["ADRO","AKRA","BRIS","INKP","PGAS"],
+                    "Nama":   ["Adaro Energy","AKR Corporindo","Bank Syariah Indonesia","Indah Kiat Pulp","Perusahaan Gas Negara"],
+                    "Sektor": ["Energy","Energy","Finance","Materials","Energy"],
+                    "Tier":   ["Mid Cap"]*5,
+                    "Status": ["Existing","Existing","Existing","Existing","Existing"],
+                }
+                ftse_small = {
+                    "Ticker": ["PTRO","CUAN","VKTR","RAJA"],
+                    "Nama":   ["Petrosea","Petrindo Jaya Kreasi","VKTR Teknologi Mobilitas","Rukun Raharja"],
+                    "Sektor": ["Infrastructures","Energy","Industrials","Energy"],
+                    "Tier":   ["Small Cap"]*4,
+                    "Status": ["NEW ENTRY","NEW ENTRY","Existing","Existing"],
+                }
+                df_ftse_l  = pd.DataFrame(ftse_large)
+                df_ftse_m  = pd.DataFrame(ftse_mid)
+                df_ftse_s  = pd.DataFrame(ftse_small)
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:14px 0 8px;font-weight:700;'>01 · LARGE CAP — {len(df_ftse_l)} SAHAM</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_ftse_l.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:18px 0 8px;font-weight:700;'>02 · MID CAP — {len(df_ftse_m)} SAHAM</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_ftse_m.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>03 · SMALL CAP — {len(df_ftse_s)} SAHAM</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_ftse_s.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
+                <div class='trm-card-title'>📌 MSCI vs FTSE — PERBEDAAN KUNCI</div>
+                <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
+                <b style='color:#00c853;'>FTSE</b>: Review <b>4×/tahun</b> (lebih sering). Peluang trading rebalancing muncul setiap kuartal.<br>
+                <b style='color:#8b5cf6;'>MSCI</b>: AUM lebih besar (~$700B), dampak rebalancing <b>lebih besar</b> ke volume & harga.<br>
+                <b style='color:#f5a623;'>Double demand:</b> Saham di kedua indeks (BBCA, BBRI, BMRI, TLKM) mendapat tekanan beli dari 2 sumber passive fund secara bersamaan.
+                </p></div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ══════════════════════════════════════════════════════
+            # TAB 3: LQ45
+            # ══════════════════════════════════════════════════════
+            with _idx_tab_lq45:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX — 45 SAHAM PALING LIKUID</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(245,166,35,0.07);border-left:3px solid #f5a623;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#f5a623;'>Efektif sejak:</b> 3 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#f5a623;'>Rebalance berikutnya:</b> 3 Agustus 2026 (Periode Agu 2026–Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun — Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                import pandas as pd
+                lq45_active_data = {
+                    "Ticker": ["ACES","ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI",
+                                "BBRI","BBTN","BFIN","BMRI","BRIS","BRPT","BUKA","CPIN","CTRA","ESSA",
+                                "EXCL","GOTO","HRUM","ICBP","INCO","INDF","INKP","INTP","ISAT","ITMG",
+                                "KLBF","MAPI","MBMA","MDKA","MEDC","MTEL","PGAS","PGEO","PTBA","PTPP",
+                                "SIDO","SMGR","TLKM","TOWR","UNTR"],
+                    "Nama":   ["Ace Hardware","Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia",
+                                "Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bank Mandiri","Bank Syariah Indonesia","Barito Pacific","Bukalapak","Charoen Pokphand","Ciputra Dev","ESSA Industries",
+                                "XL Axiata","GoTo Gojek Tokopedia","Harum Energy","Indofood CBP","Vale Indonesia","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Indo Tambangraya",
+                                "Kalbe Farma","Mitra Adiperkasa","Merdeka Battery","Merdeka Copper Gold","Medco Energi","Mitratel","Perusahaan Gas Negara","Pertamina Geothermal","Bukit Asam","PP Persero",
+                                "Sido Muncul","Semen Indonesia","Telkom Indonesia","Sarana Menara Nusantara","United Tractors"],
+                    "Sektor": ["Cyclical","Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
+                                "Finance","Finance","Finance","Finance","Finance","Materials","Technology","Consumer","Properties","Materials",
+                                "Infrastructures","Technology","Energy","Consumer","Materials","Consumer","Materials","Materials","Infrastructures","Energy",
+                                "Healthcare","Cyclical","Materials","Materials","Energy","Infrastructures","Energy","Energy","Energy","Infrastructures",
+                                "Healthcare","Materials","Infrastructures","Infrastructures","Industrials"],
+                    "Status": ["Existing"]*45,
+                }
+                lq45_out_data = {
+                    "Ticker": ["EMTK","SCMA","SRTG"],
+                    "Nama":   ["Elang Mahkota Teknologi","Surya Citra Media","Saratoga Investama"],
+                    "Sektor": ["Technology","Consumer","Financials"],
+                    "Status": ["OUT","OUT","OUT"],
+                }
+                df_lq45_active = pd.DataFrame(lq45_active_data)
+                df_lq45_out    = pd.DataFrame(lq45_out_data)
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;margin:14px 0 8px;font-weight:700;'>01 · 45 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI LQ45</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_lq45_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
+                <div class='trm-card-title'>ℹ️ TENTANG LQ45</div>
+                <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
+                LQ45 adalah 45 saham dengan <b>likuiditas & kapitalisasi tertinggi</b> di BEI. Digunakan sebagai benchmark portofolio dan dijadikan underlying produk ETF LQ45.
+                Saham masuk LQ45 → akumulasi besar dari reksa dana indeks & ETF lokal. Pengumuman biasanya ~2 minggu sebelum tanggal efektif.
+                </p></div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ══════════════════════════════════════════════════════
+            # TAB 4: IDX30
+            # ══════════════════════════════════════════════════════
+            with _idx_tab_idx30:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX — 30 SAHAM BLUE CHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(242,54,69,0.07);border-left:3px solid #f23645;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#f23645;'>Efektif sejak:</b> 3 Februari 2026 (Periode Feb–Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#f23645;'>Rebalance berikutnya:</b> 3 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Subset 30 saham paling likuid dari LQ45. Dipakai produk ETF IDX30. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                import pandas as pd
+                idx30_active_data = {
+                    "Ticker": ["ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI","BBRI",
+                                "BBTN","BMRI","BRIS","BRPT","CPIN","ESSA","EXCL","GOTO","ICBP","INCO",
+                                "INDF","ISAT","ITMG","KLBF","MBMA","MDKA","MEDC","PGAS","PTBA","TLKM"],
+                    "Nama":   ["Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia","Bank Rakyat Indonesia",
+                                "Bank Tabungan Negara","Bank Mandiri","Bank Syariah Indonesia","Barito Pacific","Charoen Pokphand","ESSA Industries","XL Axiata","GoTo Gojek Tokopedia","Indofood CBP","Vale Indonesia",
+                                "Indofood SM","Indosat","Indo Tambangraya","Kalbe Farma","Merdeka Battery","Merdeka Copper Gold","Medco Energi","Perusahaan Gas Negara","Bukit Asam","Telkom Indonesia"],
+                    "Sektor": ["Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance","Finance",
+                                "Finance","Finance","Finance","Materials","Consumer","Materials","Infra","Technology","Consumer","Materials",
+                                "Consumer","Infra","Energy","Healthcare","Materials","Materials","Energy","Energy","Energy","Infra"],
+                    "Status": ["Existing"]*30,
+                }
+                idx30_out_data = {
+                    "Ticker": ["EMTK","SCMA"],
+                    "Nama":   ["Elang Mahkota Teknologi","Surya Citra Media"],
+                    "Sektor": ["Technology","Consumer"],
+                    "Status": ["OUT","OUT"],
+                }
+                df_idx30_active = pd.DataFrame(idx30_active_data)
+                df_idx30_out    = pd.DataFrame(idx30_out_data)
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:14px 0 8px;font-weight:700;'>01 · 30 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX30</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx30_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
+                <div class='trm-card-title'>ℹ️ TENTANG IDX30</div>
+                <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
+                IDX30 adalah subset <b>30 saham terlikuid</b> dari LQ45. Digunakan sebagai underlying ETF IDX30 dan futures kontrak di BEI.
+                Semua saham IDX30 pasti ada di LQ45, tapi tidak sebaliknya. Merupakan representasi <b>bluechip sejati</b> IDX.
+                </p></div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ══════════════════════════════════════════════════════
+            # TAB 5: IDX80
+            # ══════════════════════════════════════════════════════
+            with _idx_tab_idx80:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX80 INDEX — 80 SAHAM LIKUID</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 4 Mei 2026 (Evaluasi April 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Periode:</b> 4 Mei 2026 s.d. Juli 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Evaluasi: 4&times; setahun — Jan/Apr/Jul/Okt. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                import pandas as pd
+                idx80_active_data = {
+                    "Ticker": ["AADI","ACES","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI",
+                                "BBRI","BBTN","BFIN","BIKA","BJBR","BKSL","BMRI","BREN","BRIS","BRMS",
+                                "BRPT","BUKA","CBAN","CBDK","CPIN","CTRA","CUAN","DEWA","DSNG","EMTK",
+                                "ESSA","EXCL","GGRM","GOTO","HEAL","HRUM","HRTA","ICBP","INCO","INDF",
+                                "INKP","INTP","ISAT","ITMG","JPFA","KLBF","MAPI","MBMA","MDKA","MEDC",
+                                "MIDI","MIKA","MKNT","MTEL","NCKL","PGAS","PGEO","PTBA","PTPP","RALS",
+                                "SIDO","SMGR","SMRA","TAPG","TBIG","TKIM","TLKM","TMAS","TOWR","TPIA",
+                                "UNTR","UNVR","VKTR","WIFI","WSKT","ADRO","BUMI","INDY","SRTG"],
+                    "Nama":   ["Adaro Andalan Indonesia","Ace Hardware","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia","Bank Negara Indonesia",
+                                "Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bika Solusi Perdana","Bank BJB","Sentul City","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Bumi Resources Minerals",
+                                "Barito Pacific","Bukalapak","Century Bancorp","Cahaya Bintang Medan","Charoen Pokphand","Ciputra Dev","Petrindo Jaya Kreasi","Darma Henwa","Dharma Satya Nusantara","Elang Mahkota",
+                                "ESSA Industries","XL Axiata","Gudang Garam","GoTo Gojek Tokopedia","Medikaloka Hermina","Harum Energy","Hartadinata Abadi","Indofood CBP","Vale Indonesia","Indofood SM",
+                                "Indah Kiat Pulp","Indocement","Indosat","Indo Tambangraya","Japfa Comfeed","Kalbe Farma","Mitra Adiperkasa","Merdeka Battery","Merdeka Copper Gold","Medco Energi",
+                                "Midi Utama","Mitra Keluarga","Mitra Komunikasi Nusantara","Mitratel","Trimegah Bangun Persada","Perusahaan Gas Negara","Pertamina Geothermal","Bukit Asam","PP Persero","Ramayana Lestari",
+                                "Sido Muncul","Semen Indonesia","Summarecon Agung","Triputra Agro Persada","Tower Bersama","Tjiwi Kimia","Telkom Indonesia","Temas","Sarana Menara Nusantara","Chandra Asri",
+                                "United Tractors","Unilever Indonesia","VKTR Teknologi","Solusi Net Integrasi","Waskita Karya","Adaro Energy","Bumi Resources","Indika Energy","Saratoga Investama"],
+                    "Sektor": ["Finance","Consumer","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
+                                "Finance","Finance","Finance","Property","Finance","Property","Finance","Energy","Finance","Materials",
+                                "Materials","Technology","Finance","Property","Consumer","Property","Materials","Energy","Agri","Technology",
+                                "Materials","Infra","Consumer","Technology","Healthcare","Energy","Finance","Consumer","Materials","Consumer",
+                                "Materials","Materials","Infra","Energy","Consumer","Healthcare","Consumer","Materials","Materials","Energy",
+                                "Consumer","Healthcare","Infra","Infra","Materials","Energy","Energy","Energy","Infra","Consumer",
+                                "Healthcare","Materials","Property","Agri","Infra","Materials","Infra","Infra","Infra","Materials",
+                                "Industrials","Consumer","Technology","Technology","Infra","Energy","Energy","Energy","Finance"],
+                    "Status": ["Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","NEW ENTRY","Existing","Existing",
+                                "Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY",
+                                "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing"],
+                }
+                idx80_out_data = {
+                    "Ticker": ["BTPS","DSSA","MTEL","NCKL","BREN"],
+                    "Nama":   ["Bank BTPN Syariah","Dian Swastatika Sentosa","Mitratel (periode lalu)","Trimegah Bangun Persada (lama)","Barito Renewables (lama)"],
+                    "Sektor": ["Finance","Energy","Infra","Materials","Energy"],
+                    "Status": ["OUT","OUT","OUT","OUT","OUT"],
+                }
+                df_idx80_active = pd.DataFrame(idx80_active_data)
+                df_idx80_out    = pd.DataFrame(idx80_out_data)
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · {len(df_idx80_active)} KONSTITUEN AKTIF (Efektif 4 Mei 2026)</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX80 (per 4 Mei 2026)</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx80_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
+                <div class='trm-card-title'>ℹ️ TENTANG IDX80</div>
+                <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
+                IDX80 mencakup 80 saham dengan likuiditas dan kapitalisasi terbesar. Lebih luas dari LQ45/IDX30, sering dijadikan universe screening oleh manajer investasi lokal.
+                Evaluasi <b>4× setahun</b> sehingga komposisi berubah lebih sering — perhatikan saham <b>NEW ENTRY</b> untuk peluang akumulasi awal.
+                </p></div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ══════════════════════════════════════════════════════
+            # TAB 6: KOMPAS100
+            # ══════════════════════════════════════════════════════
+            with _idx_tab_kompas:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KOMPAS100 INDEX — 100 SAHAM PILIHAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(239,68,68,0.07);border-left:3px solid #ef4444;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#ef4444;'>Efektif sejak:</b> 3 Februari 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#ef4444;'>Status Mei 2026:</b> Tidak ada perubahan konstituen (evaluasi minor)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Evaluasi: 2&times; setahun — Februari &amp; Agustus. Penyelenggara: BEI + Kompas Gramedia. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                import pandas as pd
+                kompas100_data = {
+                    "Ticker": ["AADI","ACES","ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA",
+                                "BBNI","BBRI","BBTN","BFIN","BJBR","BKSL","BMRI","BREN","BRIS","BRMS",
+                                "BRPT","BUKA","CBDK","CLEO","CPIN","CTRA","CUAN","DEWA","DSNG","DSSA",
+                                "EMTK","ESSA","EXCL","GGRM","GOTO","HEAL","HMSP","HRUM","HRTA","ICBP",
+                                "INCO","INDF","INKP","INTP","ISAT","ITMG","JPFA","KLBF","LSIP","MAPI",
+                                "MBMA","MDKA","MEDC","MIDI","MIKA","MTEL","NCKL","PGAS","PGEO","PTBA",
+                                "PTPP","RAJA","RALS","SIDO","SIMP","SMGR","SMRA","SRTG","TBIG","TKIM",
+                                "TLKM","TMAS","TOWR","TPIA","UNTR","UNVR","VKTR","WIFI","WIKA","WSKT",
+                                "BUMI","TAPG","PNBN","ELSA","BNGA","DNET","AVIA","MCAS","PWON","DMAS",
+                                "SMCB","INDY","AALI","BULL","BBHI","NIKL","CBAN","HRTA","BFIN","ADHI"],
+                    "Nama":   ["Adaro Andalan","Ace Hardware","Adaro Energy","AKR Corporindo","Amman Mineral","Alfamart","Aneka Tambang","Bank Jago","Astra International","Bank Central Asia",
+                                "Bank Negara Indonesia","Bank Rakyat Indonesia","Bank Tabungan Negara","BFI Finance","Bank BJB","Sentul City","Bank Mandiri","Barito Renewables","Bank Syariah Indonesia","Bumi Resources Minerals",
+                                "Barito Pacific","Bukalapak","Cahaya Bintang Medan","Sariguna Primatirta","Charoen Pokphand","Ciputra Dev","Petrindo Jaya Kreasi","Darma Henwa","Dharma Satya Nusantara","Dian Swastatika",
+                                "Elang Mahkota","ESSA Industries","XL Axiata","Gudang Garam","GoTo Gojek Tokopedia","Medikaloka Hermina","HM Sampoerna","Harum Energy","Hartadinata Abadi","Indofood CBP",
+                                "Vale Indonesia","Indofood SM","Indah Kiat Pulp","Indocement","Indosat","Indo Tambangraya","Japfa Comfeed","Kalbe Farma","London Sumatra","Mitra Adiperkasa",
+                                "Merdeka Battery","Merdeka Copper Gold","Medco Energi","Midi Utama","Mitra Keluarga","Mitratel","Trimegah Bangun Persada","Perusahaan Gas Negara","Pertamina Geothermal","Bukit Asam",
+                                "PP Persero","Rukun Raharja","Ramayana Lestari","Sido Muncul","Salim Ivomas Pratama","Semen Indonesia","Summarecon Agung","Saratoga Investama","Tower Bersama","Tjiwi Kimia",
+                                "Telkom Indonesia","Temas","Sarana Menara Nusantara","Chandra Asri","United Tractors","Unilever Indonesia","VKTR Teknologi","Solusi Net Integrasi","Wijaya Karya","Waskita Karya",
+                                "Bumi Resources","Triputra Agro Persada","Bank Pan Indonesia","Elnusa","Bank CIMB Niaga","Indoritel Makmur","Avia Avian","Metrocom Global","Pakuwon Jati","Puradelta Lestari",
+                                "Solusi Bangun Indonesia","Indika Energy","Astra Agro Lestari","Buana Lintas Lautan","Allo Bank","Harita Nickel","Century Bancorp","Hartadinata Abadi","BFI Finance","Adhi Karya"],
+                    "Sektor": ["Finance","Consumer","Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance",
+                                "Finance","Finance","Finance","Finance","Finance","Property","Finance","Energy","Finance","Materials",
+                                "Materials","Technology","Property","Consumer","Consumer","Property","Materials","Energy","Agri","Energy",
+                                "Technology","Materials","Infra","Consumer","Technology","Healthcare","Consumer","Energy","Finance","Consumer",
+                                "Materials","Consumer","Materials","Materials","Infra","Energy","Consumer","Healthcare","Agri","Consumer",
+                                "Materials","Materials","Energy","Consumer","Healthcare","Infra","Materials","Energy","Energy","Energy",
+                                "Infra","Energy","Consumer","Healthcare","Agri","Materials","Property","Finance","Infra","Materials",
+                                "Infra","Infra","Infra","Materials","Industrials","Consumer","Technology","Technology","Infra","Infra",
+                                "Energy","Agri","Finance","Energy","Finance","Consumer","Consumer","Infra","Property","Property",
+                                "Materials","Energy","Agri","Infra","Finance","Materials","Finance","Finance","Finance","Infra"],
+                    "Status": ["Existing"]*100,
+                }
+                df_k100 = pd.DataFrame(kompas100_data)
+
+                # filter
+                _k100_sektors = ["Semua Sektor"] + sorted(df_k100["Sektor"].unique().tolist())
+                _k100_sel = st.selectbox("Filter Sektor:", _k100_sektors, key="k100_sektor_sel")
+                _df_k100_show = df_k100 if _k100_sel == "Semua Sektor" else df_k100[df_k100["Sektor"] == _k100_sel]
+
+                st.markdown(f"<p style='font-size:0.8rem;color:#ef4444;margin-bottom:8px;'>{len(_df_k100_show)} saham ditampilkan</p>", unsafe_allow_html=True)
+                st.dataframe(_df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=min(60 + len(_df_k100_show)*36, 600))
+
+                st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
+                <div class='trm-card-title'>ℹ️ TENTANG KOMPAS100</div>
+                <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
+                KOMPAS100 mencakup 100 saham dengan <b>likuiditas dan kapitalisasi terbesar</b> di BEI, diseleksi bersama BEI dan Kompas Gramedia Group.
+                Lebih luas dari LQ45/IDX30 namun lebih ketat dari IHSG penuh — cocok sebagai <b>benchmark portofolio menengah</b>.
+                Evaluasi 2× setahun bersamaan dengan LQ45.
+                </p></div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            # ══════════════════════════════════════════════════════
+            # TAB 7: SAHAM KONGLO
+            # ══════════════════════════════════════════════════════
             with _idx_tab_konglo:
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-
                 st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
-        
+                st.markdown(f"<p style='font-family:\"DM Sans\",sans-serif;font-size:0.875rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>Database emiten terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
+
+                import pandas as pd
                 conglo_data = [
-                    {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
-                    {"Grup": "Barito (Prajogo P.)", "Ticker": "TPIA", "Nama": "Chandra Asri Pacific", "Fokus Bisnis": "Petrokimia"},
-                    {"Grup": "Barito (Prajogo P.)", "Ticker": "BREN", "Nama": "Barito Renewables", "Fokus Bisnis": "Panas Bumi (Geothermal)"},
-                    {"Grup": "Barito (Prajogo P.)", "Ticker": "CUAN", "Nama": "Petrindo Jaya Kreasi", "Fokus Bisnis": "Tambang Mineral"},
-                    {"Grup": "Barito (Prajogo P.)", "Ticker": "PTRO", "Nama": "Petrosea", "Fokus Bisnis": "Kontraktor Tambang"},
-                    {"Grup": "Barito (Prajogo P.)", "Ticker": "CDIA", "Nama": "Chandra Daya Investasi", "Fokus Bisnis": "Infrastruktur & Utilitas"},
-            
-                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BBCA", "Nama": "Bank Central Asia", "Fokus Bisnis": "Perbankan"},
-                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "TOWR", "Nama": "Sarana Menara Nusantara", "Fokus Bisnis": "Menara Telekomunikasi"},
-                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "SUPR", "Nama": "Solusi Tunas Pratama", "Fokus Bisnis": "Menara Telekomunikasi"},
-                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BELI", "Nama": "Global Digital Niaga", "Fokus Bisnis": "E-Commerce (Blibli)"},
-            
-                    {"Grup": "Salim (Anthoni S.)", "Ticker": "INDF", "Nama": "Indofood Sukses Makmur", "Fokus Bisnis": "Consumer Goods"},
-                    {"Grup": "Salim (Anthoni S.)", "Ticker": "ICBP", "Nama": "Indofood CBP", "Fokus Bisnis": "Consumer Goods"},
-                    {"Grup": "Salim (Anthoni S.)", "Ticker": "LSIP", "Nama": "PP London Sumatra", "Fokus Bisnis": "Perkebunan"},
-                    {"Grup": "Salim (Anthoni S.)", "Ticker": "SIMP", "Nama": "Salim Ivomas Pratama", "Fokus Bisnis": "Perkebunan"},
-                    {"Grup": "Salim (Anthoni S.)", "Ticker": "AMMN", "Nama": "Amman Mineral", "Fokus Bisnis": "Tambang Emas & Tembaga"},
-                    {"Grup": "Salim (Anthoni S.)", "Ticker": "DNET", "Nama": "Indoritel Makmur", "Fokus Bisnis": "Ritel (Indomaret)"},
-            
-                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "ASII", "Nama": "Astra International", "Fokus Bisnis": "Holding Otomotif"},
-                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "UNTR", "Nama": "United Tractors", "Fokus Bisnis": "Alat Berat & Tambang"},
-                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "AALI", "Nama": "Astra Agro Lestari", "Fokus Bisnis": "Kelapa Sawit"},
-                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "AUTO", "Nama": "Astra Otoparts", "Fokus Bisnis": "Komponen Otomotif"},
-            
-                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "INKP", "Nama": "Indah Kiat Pulp & Paper", "Fokus Bisnis": "Pulp & Paper"},
-                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "TKIM", "Nama": "Tjiwi Kimia", "Fokus Bisnis": "Pulp & Paper"},
-                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "BSDE", "Nama": "Bumi Serpong Damai", "Fokus Bisnis": "Properti"},
-                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "SMAR", "Nama": "Sinar Mas Agro", "Fokus Bisnis": "Agribisnis"},
-                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "DSSA", "Nama": "Dian Swastatika", "Fokus Bisnis": "Energi"},
-            
-                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BUMI", "Nama": "Bumi Resources", "Fokus Bisnis": "Batu Bara"},
-                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BRMS", "Nama": "Bumi Resources Minerals", "Fokus Bisnis": "Tambang Emas"},
-                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "ENRG", "Nama": "Energi Mega Persada", "Fokus Bisnis": "Migas"},
-                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "VKTR", "Nama": "VKTR Teknologi", "Fokus Bisnis": "Kendaraan Listrik"},
-            
-                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADRO", "Nama": "Adaro Energy", "Fokus Bisnis": "Batu Bara"},
-                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADMR", "Nama": "Adaro Minerals", "Fokus Bisnis": "Batu Bara Metalurgi"},
-                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "MBMA", "Nama": "Merdeka Battery", "Fokus Bisnis": "Nikel & Baterai"},
-                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "ESSA", "Nama": "ESSA Industries", "Fokus Bisnis": "Amonia & LPG"},
-            
-                    {"Grup": "MNC (Hary Tanoe)", "Ticker": "BHIT", "Nama": "MNC Asia Holding", "Fokus Bisnis": "Holding"},
-                    {"Grup": "MNC (Hary Tanoe)", "Ticker": "MNCN", "Nama": "Media Nusantara Citra", "Fokus Bisnis": "Media Televisi"},
-                    {"Grup": "MNC (Hary Tanoe)", "Ticker": "KPIG", "Nama": "MNC Land", "Fokus Bisnis": "Properti"},
-            
-                    {"Grup": "Lippo (Mochtar Riady)", "Ticker": "LPKR", "Nama": "Lippo Karawaci", "Fokus Bisnis": "Properti"},
-                    {"Grup": "Lippo (Mochtar Riady)", "Ticker": "SILO", "Nama": "Siloam Hospitals", "Fokus Bisnis": "Kesehatan"},
-                    {"Grup": "Lippo (Mochtar Riady)", "Ticker": "MPPA", "Nama": "Matahari Putra Prima", "Fokus Bisnis": "Ritel"},
-            
-                    {"Grup": "CT Corp (Chairul T.)", "Ticker": "MEGA", "Nama": "Bank Mega", "Fokus Bisnis": "Perbankan"},
-                    {"Grup": "CT Corp (Chairul T.)", "Ticker": "BBHI", "Nama": "Allo Bank", "Fokus Bisnis": "Bank Digital"}
+                    # ── Barito Group ──
+                    {"Grup": "Barito (Prajogo P.)",        "Ticker": "BRPT",  "Nama": "Barito Pacific",          "Fokus Bisnis": "Holding Energi & Kimia",        "Indeks": "LQ45·MSCI·FTSE"},
+                    {"Grup": "Barito (Prajogo P.)",        "Ticker": "TPIA",  "Nama": "Chandra Asri Pacific",    "Fokus Bisnis": "Petrokimia",                    "Indeks": "IDX80·MSCI"},
+                    {"Grup": "Barito (Prajogo P.)",        "Ticker": "BREN",  "Nama": "Barito Renewables",       "Fokus Bisnis": "Panas Bumi (Geothermal)",       "Indeks": "IDX80·MSCI"},
+                    {"Grup": "Barito (Prajogo P.)",        "Ticker": "CUAN",  "Nama": "Petrindo Jaya Kreasi",    "Fokus Bisnis": "Tambang Batubara Metalurgi",    "Indeks": "IDX80·FTSE"},
+                    {"Grup": "Barito (Prajogo P.)",        "Ticker": "PTRO",  "Nama": "Petrosea",                "Fokus Bisnis": "Kontraktor Tambang & EPC",      "Indeks": "MSCI Small Cap"},
+                    {"Grup": "Barito (Prajogo P.)",        "Ticker": "CDIA",  "Nama": "Chandra Daya Investasi",  "Fokus Bisnis": "Infrastruktur & Utilitas",      "Indeks": "—"},
+                    # ── Djarum Group ──
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BBCA",  "Nama": "Bank Central Asia",       "Fokus Bisnis": "Perbankan — Flagship",          "Indeks": "LQ45·IDX30·MSCI·FTSE"},
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "TOWR",  "Nama": "Sarana Menara Nusantara", "Fokus Bisnis": "Menara Telekomunikasi",         "Indeks": "LQ45·MSCI"},
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "SUPR",  "Nama": "Solusi Tunas Pratama",    "Fokus Bisnis": "Menara Telekomunikasi",         "Indeks": "—"},
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BELI",  "Nama": "Global Digital Niaga",    "Fokus Bisnis": "E-Commerce (Blibli)",           "Indeks": "IDX80"},
+                    # ── Salim Group ──
+                    {"Grup": "Salim (Anthoni S.)",         "Ticker": "INDF",  "Nama": "Indofood Sukses Makmur",  "Fokus Bisnis": "Consumer Goods — Holding",     "Indeks": "LQ45·IDX30·MSCI·FTSE"},
+                    {"Grup": "Salim (Anthoni S.)",         "Ticker": "ICBP",  "Nama": "Indofood CBP Sukses",     "Fokus Bisnis": "Consumer Goods — Mie & Snack", "Indeks": "LQ45·IDX30·MSCI·FTSE"},
+                    {"Grup": "Salim (Anthoni S.)",         "Ticker": "AMMN",  "Nama": "Amman Mineral",           "Fokus Bisnis": "Tambang Emas & Tembaga",        "Indeks": "LQ45·IDX30·MSCI·FTSE"},
+                    {"Grup": "Salim (Anthoni S.)",         "Ticker": "LSIP",  "Nama": "PP London Sumatra",       "Fokus Bisnis": "Perkebunan Kelapa Sawit",       "Indeks": "KOMPAS100"},
+                    {"Grup": "Salim (Anthoni S.)",         "Ticker": "SIMP",  "Nama": "Salim Ivomas Pratama",    "Fokus Bisnis": "Perkebunan & Agribisnis",       "Indeks": "KOMPAS100"},
+                    {"Grup": "Salim (Anthoni S.)",         "Ticker": "DNET",  "Nama": "Indoritel Makmur",        "Fokus Bisnis": "Ritel (Indomaret) & Digital",   "Indeks": "KOMPAS100"},
+                    # ── Astra Group ──
+                    {"Grup": "Astra (Jardine Matheson)",   "Ticker": "ASII",  "Nama": "Astra International",     "Fokus Bisnis": "Holding — Otomotif & Infra",   "Indeks": "LQ45·IDX30·MSCI·FTSE"},
+                    {"Grup": "Astra (Jardine Matheson)",   "Ticker": "UNTR",  "Nama": "United Tractors",         "Fokus Bisnis": "Alat Berat & Tambang",          "Indeks": "LQ45·IDX30·MSCI·FTSE"},
+                    {"Grup": "Astra (Jardine Matheson)",   "Ticker": "AALI",  "Nama": "Astra Agro Lestari",      "Fokus Bisnis": "Kelapa Sawit",                  "Indeks": "KOMPAS100"},
+                    {"Grup": "Astra (Jardine Matheson)",   "Ticker": "AUTO",  "Nama": "Astra Otoparts",          "Fokus Bisnis": "Komponen Otomotif",             "Indeks": "IDX80"},
+                    # ── Sinar Mas Group ──
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)",  "Ticker": "INKP",  "Nama": "Indah Kiat Pulp & Paper", "Fokus Bisnis": "Pulp & Paper",                  "Indeks": "LQ45·MSCI·FTSE"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)",  "Ticker": "TKIM",  "Nama": "Tjiwi Kimia",             "Fokus Bisnis": "Pulp & Paper",                  "Indeks": "IDX80·KOMPAS100"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)",  "Ticker": "BSDE",  "Nama": "Bumi Serpong Damai",      "Fokus Bisnis": "Properti",                      "Indeks": "MSCI Small Cap"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)",  "Ticker": "SMAR",  "Nama": "Sinar Mas Agro",          "Fokus Bisnis": "Agribisnis Kelapa Sawit",       "Indeks": "—"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)",  "Ticker": "DSSA",  "Nama": "Dian Swastatika",         "Fokus Bisnis": "Energi Batubara",               "Indeks": "KOMPAS100"},
+                    # ── Bakrie Group ──
+                    {"Grup": "Bakrie (Aburizal B.)",       "Ticker": "BUMI",  "Nama": "Bumi Resources",          "Fokus Bisnis": "Batu Bara",                     "Indeks": "IDX80·KOMPAS100"},
+                    {"Grup": "Bakrie (Aburizal B.)",       "Ticker": "BRMS",  "Nama": "Bumi Resources Minerals", "Fokus Bisnis": "Tambang Emas",                  "Indeks": "IDX80·MSCI Small"},
+                    {"Grup": "Bakrie (Aburizal B.)",       "Ticker": "ENRG",  "Nama": "Energi Mega Persada",     "Fokus Bisnis": "Migas",                         "Indeks": "—"},
+                    {"Grup": "Bakrie (Aburizal B.)",       "Ticker": "VKTR",  "Nama": "VKTR Teknologi",          "Fokus Bisnis": "Kendaraan Listrik",             "Indeks": "IDX80·FTSE Small"},
+                    # ── Adaro Group ──
+                    {"Grup": "Adaro (Boy Thohir)",         "Ticker": "ADRO",  "Nama": "Adaro Energy Indonesia",  "Fokus Bisnis": "Batu Bara — Holding",           "Indeks": "LQ45·IDX30·MSCI·FTSE"},
+                    {"Grup": "Adaro (Boy Thohir)",         "Ticker": "ADMR",  "Nama": "Adaro Minerals Indonesia","Fokus Bisnis": "Batu Bara Metalurgi",            "Indeks": "—"},
+                    {"Grup": "Adaro (Boy Thohir)",         "Ticker": "MBMA",  "Nama": "Merdeka Battery",         "Fokus Bisnis": "Nikel & Baterai EV",            "Indeks": "LQ45·IDX30·MSCI Small"},
+                    {"Grup": "Adaro (Boy Thohir)",         "Ticker": "ESSA",  "Nama": "ESSA Industries",         "Fokus Bisnis": "Amonia & LPG",                  "Indeks": "LQ45·IDX30"},
+                    # ── MNC Group ──
+                    {"Grup": "MNC (Hary Tanoe)",           "Ticker": "BHIT",  "Nama": "MNC Asia Holding",        "Fokus Bisnis": "Holding Media & Finance",       "Indeks": "—"},
+                    {"Grup": "MNC (Hary Tanoe)",           "Ticker": "MNCN",  "Nama": "Media Nusantara Citra",   "Fokus Bisnis": "Media Televisi",                "Indeks": "—"},
+                    {"Grup": "MNC (Hary Tanoe)",           "Ticker": "KPIG",  "Nama": "MNC Land",                "Fokus Bisnis": "Properti",                      "Indeks": "—"},
+                    # ── Lippo Group ──
+                    {"Grup": "Lippo (Mochtar Riady)",      "Ticker": "LPKR",  "Nama": "Lippo Karawaci",          "Fokus Bisnis": "Properti",                      "Indeks": "—"},
+                    {"Grup": "Lippo (Mochtar Riady)",      "Ticker": "SILO",  "Nama": "Siloam International Hosp","Fokus Bisnis": "Kesehatan RS",                 "Indeks": "IDX80"},
+                    {"Grup": "Lippo (Mochtar Riady)",      "Ticker": "MPPA",  "Nama": "Matahari Putra Prima",    "Fokus Bisnis": "Ritel (Hypermart)",             "Indeks": "—"},
+                    # ── CT Corp ──
+                    {"Grup": "CT Corp (Chairul T.)",       "Ticker": "MEGA",  "Nama": "Bank Mega",               "Fokus Bisnis": "Perbankan",                     "Indeks": "IDX80"},
+                    {"Grup": "CT Corp (Chairul T.)",       "Ticker": "BBHI",  "Nama": "Allo Bank Indonesia",     "Fokus Bisnis": "Bank Digital",                  "Indeks": "IDX80·KOMPAS100"},
                 ]
                 df_conglo = pd.DataFrame(conglo_data)
-        
-                grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
-                selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list, key="conglo_grup_sel")
-        
-                if selected_grup != "Semua Grup":
-                    df_display = df_conglo[df_conglo["Grup"] == selected_grup]
-                else:
-                    df_display = df_conglo
-            
-                st.dataframe(df_display, use_container_width=True, hide_index=True, on_select="ignore")
-        
+
+                _c1, _c2 = st.columns([2, 1])
+                with _c1:
+                    grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
+                    selected_grup = st.selectbox("Filter Grup Konglomerasi:", grup_list, key="conglo_grup_sel")
+                with _c2:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size:0.8rem;color:#8b5cf6;padding-top:6px;'>{len(df_conglo[df_conglo['Grup']==selected_grup] if selected_grup!='Semua Grup' else df_conglo)} emiten</p>", unsafe_allow_html=True)
+
+                df_display = df_conglo[df_conglo["Grup"] == selected_grup] if selected_grup != "Semua Grup" else df_conglo
+                st.dataframe(df_display[["Grup","Ticker","Nama","Fokus Bisnis","Indeks"]], use_container_width=True, hide_index=True, on_select="ignore",
+                             height=min(60 + len(df_display)*36, 620))
+
                 st.markdown(f"""
-                <div class="trm-card" style="margin-top: 16px;">
-                    <div class="trm-card-title">SIGMA INSIGHT &mdash; The Power of Conglomerates</div>
-                    <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
-                    Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
-                    </p>
-                    <p style='color:{text_sub}; font-size: 1.05rem; line-height: 1.7; margin:10px 0 0;'>
-                    <span style='color:#8b5cf6;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
+                <div class="trm-card" style="margin-top:16px;">
+                    <div class="trm-card-title">💡 SIGMA INSIGHT — THE POWER OF CONGLOMERATES</div>
+                    <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
+                    Di IHSG, sentimen pada <i>holding company</i> sering menjalar ke anak usahanya.
+                    <br><b style='color:#8b5cf6;'>Tips Trading:</b> Pantau <i>Leader</i> masing-masing grup.
+                    Jika Leader <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup yang sama bisa jadi peluang entry profitabel.
+                    <br><b style='color:#f5a623;'>Contoh:</b> BRPT breakout → cek TPIA, BREN, CUAN. INDF rally → cek ICBP, SIMP.
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
-        
                 st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
+            # ══════════════════════════════════════════════════════
+            # TAB 8: SAHAM BUMN
+            # ══════════════════════════════════════════════════════
             with _idx_tab_bumn:
-                import pandas as _pd_bumn
                 st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SAHAM BUMN — BADAN USAHA MILIK NEGARA TERCATAT DI BEI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
                 st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
                     background:rgba(38,166,154,0.07);border-left:3px solid #26a69a;
-                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.8;'>
-                 <b style='color:#26a69a;'>Cakupan:</b> Saham BUMN &amp; BUMN Karya yang tercatat di BEI&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#26a69a;'>Klasifikasi:</b> Perbankan · Energi · Infrastruktur · Konstruksi · Industri · Asuransi&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Broker BUMN: CC=Mandiri | NI=BNI | OD=BRI Danareksa | DX=Bahana</span>
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+                 <b style='color:#26a69a;'>Cakupan:</b> BUMN &amp; anak usaha BUMN tercatat di BEI&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#26a69a;'>Klasifikasi:</b> Perbankan · Energi · Infrastruktur · Konstruksi · Industri · Keuangan&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Broker BUMN: <b>CC</b>=Mandiri | <b>NI</b>=BNI | <b>OD</b>=BRI Danareksa | <b>DX</b>=Bahana</span>
                 </div>""", unsafe_allow_html=True)
 
+                import pandas as pd
                 _bumn_data = [
                     # ── PERBANKAN ──
-                    {"Sektor": "Perbankan", "Ticker": "BBRI",  "Nama": "Bank Rakyat Indonesia Tbk.",      "Keterangan": "Bank terbesar IDX by market cap. Fokus UMKM & mikro.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
-                    {"Sektor": "Perbankan", "Ticker": "BMRI",  "Nama": "Bank Mandiri (Persero) Tbk.",      "Keterangan": "Bank komersial BUMN terbesar, korporasi & ritel.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
-                    {"Sektor": "Perbankan", "Ticker": "BBNI",  "Nama": "Bank Negara Indonesia Tbk.",       "Keterangan": "Fokus korporasi, ekspor-impor & internasional.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
-                    {"Sektor": "Perbankan", "Ticker": "BBTN",  "Nama": "Bank Tabungan Negara Tbk.",        "Keterangan": "Spesialis KPR subsidi & rumah rakyat.", "Indeks": "LQ45 · MSCI"},
-                    {"Sektor": "Perbankan", "Ticker": "BRIS",  "Nama": "Bank Syariah Indonesia Tbk.",      "Keterangan": "Bank syariah terbesar di Indonesia, merger 3 bank syariah BUMN.", "Indeks": "LQ45 · IDX80"},
-                    {"Sektor": "Perbankan", "Ticker": "BJBR",  "Nama": "Bank Pembangunan Daerah Jabar Banten", "Keterangan": "BPD Jawa Barat — BUMD/afiliasi BUMN.", "Indeks": "IDX80"},
-                    {"Sektor": "Perbankan", "Ticker": "BJTM",  "Nama": "Bank Pembangunan Daerah Jatim",    "Keterangan": "BPD Jawa Timur — BUMD/afiliasi BUMN.", "Indeks": "IDX80"},
+                    {"Sektor":"Perbankan","Ticker":"BBRI","Nama":"Bank Rakyat Indonesia Tbk.","Indeks":"LQ45·IDX30·MSCI·FTSE","Keterangan":"Bank terbesar IDX by market cap. Fokus UMKM & mikro."},
+                    {"Sektor":"Perbankan","Ticker":"BMRI","Nama":"Bank Mandiri (Persero) Tbk.","Indeks":"LQ45·IDX30·MSCI·FTSE","Keterangan":"Bank komersial BUMN terbesar, korporasi & ritel."},
+                    {"Sektor":"Perbankan","Ticker":"BBNI","Nama":"Bank Negara Indonesia Tbk.","Indeks":"LQ45·IDX30·MSCI·FTSE","Keterangan":"Fokus korporasi, ekspor-impor & internasional."},
+                    {"Sektor":"Perbankan","Ticker":"BBTN","Nama":"Bank Tabungan Negara Tbk.","Indeks":"LQ45·MSCI","Keterangan":"Spesialis KPR subsidi & pembiayaan rumah rakyat."},
+                    {"Sektor":"Perbankan","Ticker":"BRIS","Nama":"Bank Syariah Indonesia Tbk.","Indeks":"LQ45·IDX30·IDX80","Keterangan":"Bank syariah terbesar RI, hasil merger 3 bank syariah BUMN."},
+                    {"Sektor":"Perbankan","Ticker":"BJBR","Nama":"Bank Pembangunan Daerah Jabar Banten","Indeks":"IDX80·KOMPAS100","Keterangan":"BPD Jawa Barat — BUMD afiliasi BUMN."},
+                    {"Sektor":"Perbankan","Ticker":"BJTM","Nama":"Bank Pembangunan Daerah Jatim","Indeks":"IDX80","Keterangan":"BPD Jawa Timur — BUMD afiliasi BUMN."},
+                    {"Sektor":"Perbankan","Ticker":"AGRO","Nama":"Bank Raya Indonesia Tbk.","Indeks":"IDX80","Keterangan":"Bank digital anak usaha BRI. Fokus segmen digital & UMKM."},
                     # ── ENERGI & PERTAMBANGAN ──
-                    {"Sektor": "Energi & Pertambangan", "Ticker": "PTBA",  "Nama": "Bukit Asam Tbk.",           "Keterangan": "Produsen batu bara terbesar BUMN. Anak Holding MIND ID.", "Indeks": "LQ45 · MSCI"},
-                    {"Sektor": "Energi & Pertambangan", "Ticker": "PGAS",  "Nama": "Perusahaan Gas Negara Tbk.", "Keterangan": "Distribusi gas bumi, anak usaha Pertamina.", "Indeks": "LQ45 · MSCI"},
-                    {"Sektor": "Energi & Pertambangan", "Ticker": "ANTM",  "Nama": "Aneka Tambang Tbk.",         "Keterangan": "Tambang emas, nikel, bauksit. Anak Holding MIND ID.", "Indeks": "LQ45 · MSCI"},
-                    {"Sektor": "Energi & Pertambangan", "Ticker": "PGEO",  "Nama": "Pertamina Geothermal Energy","Keterangan": "Energi panas bumi BUMN, kapasitas terbesar di dunia.", "Indeks": "IDX80 · MSCI"},
-                    {"Sektor": "Energi & Pertambangan", "Ticker": "MEDC",  "Nama": "Medco Energi Internasional", "Keterangan": "Migas swasta-BUMN (afiliasi). Eksplorasi & produksi migas.", "Indeks": "IDX80"},
-                    {"Sektor": "Energi & Pertambangan", "Ticker": "ELSA",  "Nama": "Elnusa Tbk.",                "Keterangan": "Jasa migas anak usaha Pertamina.", "Indeks": "IDX80"},
-                    {"Sektor": "Energi & Pertambangan", "Ticker": "KRAS",  "Nama": "Krakatau Steel Tbk.",        "Keterangan": "Produsen baja BUMN. Restrukturisasi aktif.", "Indeks": "—"},
+                    {"Sektor":"Energi & Pertambangan","Ticker":"PTBA","Nama":"Bukit Asam Tbk.","Indeks":"LQ45·IDX30·MSCI","Keterangan":"Produsen batu bara BUMN terbesar. Anak Holding MIND ID."},
+                    {"Sektor":"Energi & Pertambangan","Ticker":"PGAS","Nama":"Perusahaan Gas Negara Tbk.","Indeks":"LQ45·IDX30·MSCI·FTSE","Keterangan":"Distribusi & transmisi gas bumi, anak usaha Pertamina."},
+                    {"Sektor":"Energi & Pertambangan","Ticker":"ANTM","Nama":"Aneka Tambang Tbk.","Indeks":"LQ45·IDX30·MSCI","Keterangan":"Tambang emas, nikel, bauksit. Anak Holding MIND ID."},
+                    {"Sektor":"Energi & Pertambangan","Ticker":"PGEO","Nama":"Pertamina Geothermal Energy","Indeks":"LQ45·IDX80·MSCI","Keterangan":"Energi panas bumi BUMN, kapasitas terbesar di dunia."},
+                    {"Sektor":"Energi & Pertambangan","Ticker":"ELSA","Nama":"Elnusa Tbk.","Indeks":"IDX80·KOMPAS100","Keterangan":"Jasa hulu migas (survei, pengeboran) anak usaha Pertamina."},
+                    {"Sektor":"Energi & Pertambangan","Ticker":"KRAS","Nama":"Krakatau Steel Tbk.","Indeks":"—","Keterangan":"Produsen baja BUMN. Dalam proses restrukturisasi aktif."},
                     # ── TELEKOMUNIKASI & INFRASTRUKTUR ──
-                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "TLKM",  "Nama": "Telkom Indonesia Tbk.",     "Keterangan": "BUMN telekomunikasi terbesar. Induk Telkomsel.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
-                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "JSMR",  "Nama": "Jasa Marga Tbk.",          "Keterangan": "Operator jalan tol BUMN terbesar di Indonesia.", "Indeks": "LQ45 · MSCI"},
-                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "MTEL",  "Nama": "Mitratel (Dayamitra Telekomunikasi)","Keterangan": "Menara telekomunikasi anak usaha Telkom.", "Indeks": "IDX80"},
-                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "GIAA",  "Nama": "Garuda Indonesia Tbk.",     "Keterangan": "Maskapai penerbangan nasional BUMN. Restrukturisasi.", "Indeks": "—"},
-                    # ── KONSTRUKSI & PROPERTI (BUMN KARYA) ──
-                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "PTPP",  "Nama": "PP (Pembangunan Perumahan) Tbk.","Keterangan": "BUMN Karya konstruksi & properti.", "Indeks": "IDX80"},
-                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "WIKA",  "Nama": "Wijaya Karya Tbk.",              "Keterangan": "BUMN Karya EPC & infrastruktur. ⚠️ SUSPEND (PKPU).", "Indeks": "—"},
-                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "WSKT",  "Nama": "Waskita Karya Tbk.",             "Keterangan": "BUMN Karya tol & konstruksi. ⚠️ SUSPEND (restrukturisasi).", "Indeks": "—"},
-                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "ADHI",  "Nama": "Adhi Karya Tbk.",               "Keterangan": "BUMN Karya konstruksi & LRT.", "Indeks": "IDX80"},
-                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "PPRO",  "Nama": "PP Properti Tbk.",               "Keterangan": "Anak usaha PTPP properti. ⚠️ SUSPEND (restrukturisasi).", "Indeks": "—"},
-                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "WTON",  "Nama": "Wijaya Karya Beton Tbk.",        "Keterangan": "Anak usaha WIKA, produsen beton pracetak.", "Indeks": "IDX80"},
+                    {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"TLKM","Nama":"Telkom Indonesia Tbk.","Indeks":"LQ45·IDX30·MSCI·FTSE","Keterangan":"BUMN telekomunikasi terbesar. Induk Telkomsel & IndiHome."},
+                    {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"JSMR","Nama":"Jasa Marga (Persero) Tbk.","Indeks":"LQ45·MSCI","Keterangan":"Operator jalan tol BUMN terbesar, 60%+ jaringan tol nasional."},
+                    {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"MTEL","Nama":"Mitratel (Dayamitra Telekomunikasi)","Indeks":"LQ45·IDX80","Keterangan":"Menara telekomunikasi terbesar BUMN, anak usaha Telkom."},
+                    {"Sektor":"Telekomunikasi & Infrastruktur","Ticker":"GIAA","Nama":"Garuda Indonesia Tbk.","Indeks":"—","Keterangan":"Maskapai penerbangan nasional BUMN. Dalam restrukturisasi."},
+                    # ── KONSTRUKSI — BUMN KARYA ──
+                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"PTPP","Nama":"PP (Pembangunan Perumahan) Tbk.","Indeks":"LQ45·IDX80","Keterangan":"BUMN Karya konstruksi, properti & infrastruktur."},
+                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"ADHI","Nama":"Adhi Karya (Persero) Tbk.","Indeks":"IDX80·KOMPAS100","Keterangan":"BUMN Karya konstruksi & pengembang LRT Jabodebek."},
+                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"WTON","Nama":"Wijaya Karya Beton Tbk.","Indeks":"IDX80","Keterangan":"Anak usaha WIKA, produsen beton pracetak terbesar BUMN."},
+                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"WIKA","Nama":"Wijaya Karya Tbk.","Indeks":"—","Keterangan":"BUMN Karya EPC & infrastruktur. ⚠️ SUSPEND — PKPU aktif."},
+                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"WSKT","Nama":"Waskita Karya Tbk.","Indeks":"—","Keterangan":"BUMN Karya tol & konstruksi. ⚠️ SUSPEND — restrukturisasi utang."},
+                    {"Sektor":"Konstruksi (BUMN Karya)","Ticker":"PPRO","Nama":"PP Properti Tbk.","Indeks":"—","Keterangan":"Anak usaha PTPP (properti). ⚠️ SUSPEND — restrukturisasi."},
                     # ── INDUSTRI & MANUFAKTUR ──
-                    {"Sektor": "Industri & Manufaktur", "Ticker": "SMGR",  "Nama": "Semen Indonesia Tbk.",      "Keterangan": "Produsen semen BUMN terbesar, induk Holcim Indonesia.", "Indeks": "LQ45 · MSCI"},
-                    {"Sektor": "Industri & Manufaktur", "Ticker": "KAEF",  "Nama": "Kimia Farma Tbk.",          "Keterangan": "Produsen farmasi & apotek BUMN.", "Indeks": "IDX80"},
-                    {"Sektor": "Industri & Manufaktur", "Ticker": "INAF",  "Nama": "Indofarma Tbk.",            "Keterangan": "Produsen farmasi BUMN. ⚠️ SUSPEND (masalah keuangan).", "Indeks": "—"},
-                    {"Sektor": "Industri & Manufaktur", "Ticker": "KRAS",  "Nama": "Krakatau Steel Tbk.",       "Keterangan": "Produsen baja BUMN. Restrukturisasi aktif.", "Indeks": "—"},
-                    # ── KEUANGAN NON-BANK ──
-                    {"Sektor": "Keuangan Non-Bank", "Ticker": "PNBS",  "Nama": "Bank Panin Dubai Syariah",    "Keterangan": "Bank syariah afiliasi BUMN (afiliasi BNI).", "Indeks": "—"},
-                    {"Sektor": "Keuangan Non-Bank", "Ticker": "ASRM",  "Nama": "Asuransi Ramayana Tbk.",      "Keterangan": "Asuransi umum afiliasi BUMN.", "Indeks": "—"},
-                    {"Sektor": "Keuangan Non-Bank", "Ticker": "AGRO",  "Nama": "Bank Raya Indonesia Tbk.",    "Keterangan": "Bank digital anak usaha BRI.", "Indeks": "IDX80"},
-                    {"Sektor": "Keuangan Non-Bank", "Ticker": "BBHI",  "Nama": "Allo Bank Indonesia Tbk.",    "Keterangan": "Bank digital CT Corp/Salim — bukan murni BUMN.", "Indeks": "—"},
+                    {"Sektor":"Industri & Manufaktur","Ticker":"SMGR","Nama":"Semen Indonesia (Persero) Tbk.","Indeks":"LQ45·IDX30·MSCI","Keterangan":"Produsen semen BUMN terbesar, induk SBI (ex-Holcim)."},
+                    {"Sektor":"Industri & Manufaktur","Ticker":"KAEF","Nama":"Kimia Farma Tbk.","Indeks":"IDX80·KOMPAS100","Keterangan":"Produsen farmasi & jaringan apotek BUMN."},
+                    {"Sektor":"Industri & Manufaktur","Ticker":"INAF","Nama":"Indofarma Tbk.","Indeks":"—","Keterangan":"Produsen farmasi BUMN. ⚠️ SUSPEND — masalah keuangan berat."},
                     # ── PERKEBUNAN & PANGAN ──
-                    {"Sektor": "Perkebunan & Pangan", "Ticker": "LSIP",  "Nama": "PP London Sumatra Indonesia","Keterangan": "Perkebunan kelapa sawit, anak usaha Salim/BUMN afiliasi.", "Indeks": "LQ45 · MSCI"},
-                    {"Sektor": "Perkebunan & Pangan", "Ticker": "BWPT",  "Nama": "Eagle High Plantations",    "Keterangan": "Perkebunan sawit afiliasi BUMN (Rajawali Group).", "Indeks": "—"},
-                    {"Sektor": "Perkebunan & Pangan", "Ticker": "PTPN",  "Nama": "PTPN (Perkebunan Nusantara)","Keterangan": "Holding perkebunan BUMN — gula, sawit, karet.", "Indeks": "—"},
+                    {"Sektor":"Perkebunan & Pangan","Ticker":"LSIP","Nama":"PP London Sumatra Indonesia","Indeks":"KOMPAS100","Keterangan":"Perkebunan kelapa sawit & karet afiliasi BUMN/Salim."},
+                    {"Sektor":"Perkebunan & Pangan","Ticker":"BWPT","Nama":"Eagle High Plantations","Indeks":"—","Keterangan":"Perkebunan sawit afiliasi BUMN (Rajawali Group)."},
                 ]
-                df_bumn = _pd_bumn.DataFrame(_bumn_data)
+                df_bumn = pd.DataFrame(_bumn_data)
 
-                _bumn_sektor_list = ["Semua Sektor"] + sorted(df_bumn["Sektor"].unique().tolist())
-                _bumn_sektor_sel = st.selectbox("Filter Sektor BUMN:", _bumn_sektor_list, key="bumn_sektor_sel")
-                _bumn_suspend_hide = st.checkbox("Sembunyikan saham SUSPEND", value=True, key="bumn_suspend_hide")
+                _bc1, _bc2 = st.columns([2, 1])
+                with _bc1:
+                    _bumn_sektor_list = ["Semua Sektor"] + sorted(df_bumn["Sektor"].unique().tolist())
+                    _bumn_sektor_sel = st.selectbox("Filter Sektor BUMN:", _bumn_sektor_list, key="bumn_sektor_sel")
+                with _bc2:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    _bumn_suspend_hide = st.checkbox("Sembunyikan SUSPEND", value=True, key="bumn_suspend_hide")
 
                 _df_bumn_show = df_bumn.copy()
                 if _bumn_sektor_sel != "Semua Sektor":
@@ -16491,25 +16557,23 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.markdown(f"<p style='font-size:0.8rem;color:#26a69a;margin-bottom:8px;'>{len(_df_bumn_show)} emiten BUMN ditampilkan</p>", unsafe_allow_html=True)
                 st.dataframe(
                     _df_bumn_show[["Sektor","Ticker","Nama","Indeks","Keterangan"]],
-                    use_container_width=True,
-                    hide_index=True,
-                    on_select="ignore",
+                    use_container_width=True, hide_index=True, on_select="ignore",
                     height=min(60 + len(_df_bumn_show)*38, 680),
                 )
 
                 st.markdown(f"""
                 <div class="trm-card" style="margin-top:16px;">
                     <div class="trm-card-title">🟢 BROKER BUMN — INDIKATOR AKUMULASI NEGARA</div>
-                    <p style='color:{text_sub};font-size:0.9rem;line-height:1.75;margin:0;'>
+                    <p style='color:{text_sub};font-size:0.875rem;line-height:1.75;margin:0;'>
                     Pantau net buy broker BUMN di Bandarmologi sebagai proxy <b>stabilisasi pemerintah</b>.
-                    Bila BUMN beli saat asing jual = stabilisasi, bukan akumulasi murni.
-                    Bila BUMN beli bersamaan asing = sinyal akumulasi kuat.
+                    <br>· Bila BUMN beli saat asing jual = <b style='color:#f5a623;'>stabilisasi sementara</b>, bukan akumulasi murni.
+                    <br>· Bila BUMN beli bersamaan asing = <b style='color:#26a69a;'>sinyal akumulasi kuat</b>.
                     </p>
-                    <div style='display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;'>
-                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>CC · Mandiri Sekuritas · 2.8T vol</div>
-                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>NI · BNI Sekuritas · 590B vol</div>
-                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>OD · BRI Danareksa · 403B vol</div>
-                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>DX · Bahana Sekuritas · 69B vol</div>
+                    <div style='display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;'>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'><b>CC</b> · Mandiri Sekuritas · 2.8T vol</div>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'><b>NI</b> · BNI Sekuritas · 590B vol</div>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'><b>OD</b> · BRI Danareksa · 403B vol</div>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'><b>DX</b> · Bahana Sekuritas · 69B vol</div>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
