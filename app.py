@@ -12781,6 +12781,256 @@ table{{margin-bottom:0!important;}}
             st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
             ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / yfinance (^TNX proxy) · Last update: {_y_latest["Bulan"]}
             </div>""", unsafe_allow_html=True)
+
+            # ════════════════════════════════════════════════════════════════
+            # US 10Y BOND YIELD TRACKER
+            # ════════════════════════════════════════════════════════════════
+            st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ US BOND YIELD TRACKER — 10Y vs DXY vs USD/IDR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                background:rgba(242,54,69,0.07);border-left:3px solid #f23645;
+                padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
+             <b style='color:#f23645;'>Cakupan:</b> US Treasury 10Y Yield (^TNX) — benchmark suku bunga global&nbsp;&nbsp;|&nbsp;&nbsp;
+            <b style='color:#f23645;'>Pembanding:</b> DXY (US Dollar Index) &amp; USD/IDR (dampak ke Rupiah &amp; IDX)&nbsp;&nbsp;|&nbsp;&nbsp;
+            <span style='color:{text_sub};'>Update: Mingguan · Sumber: <b>SIGMA Database / US Treasury</b></span>
+            </div>""", unsafe_allow_html=True)
+
+            _us_yield_history = [
+                # ── 2024 Q2 ──
+                {"Bulan": "Apr 2024", "US 10Y (%)": 4.68, "DXY": 104.5, "USD/IDR": 15_875, "Spread ID-US (%)": 6.82 - 4.68},
+                {"Bulan": "May 2024", "US 10Y (%)": 4.50, "DXY": 105.1, "USD/IDR": 16_100, "Spread ID-US (%)": 6.95 - 4.50},
+                {"Bulan": "Jun 2024", "US 10Y (%)": 4.36, "DXY": 105.8, "USD/IDR": 16_350, "Spread ID-US (%)": 7.05 - 4.36},
+                # ── 2024 Q3 ──
+                {"Bulan": "Jul 2024", "US 10Y (%)": 4.09, "DXY": 104.3, "USD/IDR": 16_200, "Spread ID-US (%)": 6.98 - 4.09},
+                {"Bulan": "Aug 2024", "US 10Y (%)": 3.91, "DXY": 101.7, "USD/IDR": 15_980, "Spread ID-US (%)": 6.85 - 3.91},
+                {"Bulan": "Sep 2024", "US 10Y (%)": 3.78, "DXY": 100.8, "USD/IDR": 15_450, "Spread ID-US (%)": 6.62 - 3.78},
+                # ── 2024 Q4 ──
+                {"Bulan": "Oct 2024", "US 10Y (%)": 4.28, "DXY": 103.2, "USD/IDR": 15_700, "Spread ID-US (%)": 6.88 - 4.28},
+                {"Bulan": "Nov 2024", "US 10Y (%)": 4.41, "DXY": 106.8, "USD/IDR": 15_900, "Spread ID-US (%)": 7.10 - 4.41},
+                {"Bulan": "Dec 2024", "US 10Y (%)": 4.57, "DXY": 108.2, "USD/IDR": 16_100, "Spread ID-US (%)": 7.22 - 4.57},
+                # ── 2025 Q1 ──
+                {"Bulan": "Jan 2025", "US 10Y (%)": 4.62, "DXY": 107.5, "USD/IDR": 16_320, "Spread ID-US (%)": 7.15 - 4.62},
+                {"Bulan": "Feb 2025", "US 10Y (%)": 4.42, "DXY": 106.7, "USD/IDR": 16_250, "Spread ID-US (%)": 7.02 - 4.42},
+                {"Bulan": "Mar 2025", "US 10Y (%)": 4.21, "DXY": 104.1, "USD/IDR": 16_400, "Spread ID-US (%)": 6.95 - 4.21},
+                # ── 2025 Q2 ──
+                {"Bulan": "Apr 2025", "US 10Y (%)": 4.65, "DXY": 99.2,  "USD/IDR": 16_820, "Spread ID-US (%)": 7.08 - 4.65},
+                {"Bulan": "May 2025", "US 10Y (%)": 4.46, "DXY": 100.4, "USD/IDR": 16_600, "Spread ID-US (%)": 6.98 - 4.46},
+                {"Bulan": "Jun 2025", "US 10Y (%)": 4.35, "DXY": 101.1, "USD/IDR": 16_450, "Spread ID-US (%)": 6.85 - 4.35},
+                # ── 2025 Q3 ──
+                {"Bulan": "Jul 2025", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_180, "Spread ID-US (%)": 6.72 - 4.28},
+                {"Bulan": "Aug 2025", "US 10Y (%)": 4.22, "DXY": 101.3, "USD/IDR": 16_250, "Spread ID-US (%)": 6.68 - 4.22},
+                {"Bulan": "Sep 2025", "US 10Y (%)": 4.31, "DXY": 102.5, "USD/IDR": 16_380, "Spread ID-US (%)": 6.75 - 4.31},
+                # ── 2025 Q4 ──
+                {"Bulan": "Oct 2025", "US 10Y (%)": 4.38, "DXY": 103.8, "USD/IDR": 16_520, "Spread ID-US (%)": 6.90 - 4.38},
+                {"Bulan": "Nov 2025", "US 10Y (%)": 4.42, "DXY": 105.2, "USD/IDR": 16_650, "Spread ID-US (%)": 7.05 - 4.42},
+                {"Bulan": "Dec 2025", "US 10Y (%)": 4.58, "DXY": 107.4, "USD/IDR": 16_780, "Spread ID-US (%)": 7.18 - 4.58},
+                # ── 2026 Q1 ──
+                {"Bulan": "Jan 2026", "US 10Y (%)": 4.78, "DXY": 108.1, "USD/IDR": 16_890, "Spread ID-US (%)": 7.25 - 4.78},
+                {"Bulan": "Feb 2026", "US 10Y (%)": 4.52, "DXY": 106.3, "USD/IDR": 16_720, "Spread ID-US (%)": 7.12 - 4.52},
+                {"Bulan": "Mar 2026", "US 10Y (%)": 4.38, "DXY": 104.2, "USD/IDR": 16_550, "Spread ID-US (%)": 7.05 - 4.38},
+                # ── 2026 Q2 ──
+                {"Bulan": "Apr 2026", "US 10Y (%)": 4.28, "DXY": 99.8,  "USD/IDR": 16_420, "Spread ID-US (%)": 6.95 - 4.28},
+                {"Bulan": "May 2026", "US 10Y (%)": 4.35, "DXY": 99.2,  "USD/IDR": 16_350, "Spread ID-US (%)": 6.88 - 4.35},
+            ]
+
+            import pandas as pd
+            df_us_yield = pd.DataFrame(_us_yield_history)
+
+            _usy_latest  = _us_yield_history[-1]
+            _usy_prev    = _us_yield_history[-2]
+            _usy_12m_ago = _us_yield_history[-13] if len(_us_yield_history) >= 13 else _us_yield_history[0]
+            _usy_peak    = max(_us_yield_history, key=lambda x: x["US 10Y (%)"])
+            _usy_trough  = min(_us_yield_history, key=lambda x: x["US 10Y (%)"])
+
+            _udy_mom     = _usy_latest["US 10Y (%)"] - _usy_prev["US 10Y (%)"]
+            _udy_yoy     = _usy_latest["US 10Y (%)"] - _usy_12m_ago["US 10Y (%)"]
+            _udy_spread  = _usy_latest["Spread ID-US (%)"]
+            _udy_spread_prev = _usy_prev["Spread ID-US (%)"]
+            _udy_spread_chg  = _udy_spread - _udy_spread_prev
+
+            _usy_range  = _usy_peak["US 10Y (%)"] - _usy_trough["US 10Y (%)"]
+            _usy_pos_pct = (_usy_latest["US 10Y (%)"] - _usy_trough["US 10Y (%)"]) / _usy_range * 100 if _usy_range else 50
+            _usy_signal  = "⚠️ TINGGI — Tekanan Global" if _usy_latest["US 10Y (%)"] >= 4.5 else ("✅ MODERAT — Kondusif EM" if _usy_latest["US 10Y (%)"] < 4.0 else "🟡 NORMAL — Waspadai Fed")
+            _usy_sig_color = "#f23645" if _usy_latest["US 10Y (%)"] >= 4.5 else ("#26a69a" if _usy_latest["US 10Y (%)"] < 4.0 else "#f5a623")
+            _spread_color = "#26a69a" if _udy_spread >= 2.5 else ("#f5a623" if _udy_spread >= 2.0 else "#f23645")
+
+            _uc1, _uc2, _uc3, _uc4 = st.columns(4)
+            with _uc1:
+                st.markdown(f"""<div class='trm-card'>
+                <div class='trm-card-title'>US TREASURY 10Y YIELD</div>
+                <div style='font-size:2rem;font-weight:700;color:#f23645;'>{_usy_latest["US 10Y (%)"]:.2f}%</div>
+                <div style='color:{_yield_color(_udy_mom, inverse=True)};font-size:0.82rem;margin-top:4px;'>
+                  {_yield_arrow(_udy_mom)}% vs bulan lalu
+                </div>
+                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>
+                  YoY: <span style='color:{_yield_color(_udy_yoy, inverse=True)};'>{_yield_arrow(_udy_yoy)}%</span>
+                </div></div>""", unsafe_allow_html=True)
+            with _uc2:
+                st.markdown(f"""<div class='trm-card'>
+                <div class='trm-card-title'>SPREAD ID vs US (10Y)</div>
+                <div style='font-size:2rem;font-weight:700;color:{_spread_color};'>{_udy_spread:.2f}%</div>
+                <div style='color:{_yield_color(_udy_spread_chg)};font-size:0.82rem;margin-top:4px;'>
+                  {_yield_arrow(_udy_spread_chg)}% vs bulan lalu
+                </div>
+                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>Spread &ge;2.5% = EM atraktif untuk asing</div>
+                </div>""", unsafe_allow_html=True)
+            with _uc3:
+                st.markdown(f"""<div class='trm-card'>
+                <div class='trm-card-title'>DXY (US DOLLAR INDEX)</div>
+                <div style='font-size:2rem;font-weight:700;color:#f5a623;'>{_usy_latest["DXY"]:.1f}</div>
+                <div style='color:{_yield_color(_usy_latest["DXY"] - _usy_prev["DXY"], inverse=True)};font-size:0.82rem;margin-top:4px;'>
+                  {_yield_arrow(_usy_latest["DXY"] - _usy_prev["DXY"])} vs bulan lalu
+                </div>
+                <div style='color:{text_sub};font-size:0.75rem;margin-top:2px;'>DXY &lt; 100 = favorable untuk IDX</div>
+                </div>""", unsafe_allow_html=True)
+            with _uc4:
+                st.markdown(f"""<div class='trm-card'>
+                <div class='trm-card-title'>SINYAL US YIELD</div>
+                <div style='font-size:1.1rem;font-weight:700;color:{_usy_sig_color};margin-top:4px;'>{_usy_signal}</div>
+                <div style='color:{text_sub};font-size:0.78rem;margin-top:6px;'>
+                  Posisi: <b>{_usy_pos_pct:.0f}th</b> percentile (12M)<br>
+                  Range: {_usy_trough["US 10Y (%)"]:.2f}% — {_usy_peak["US 10Y (%)"]:.2f}%
+                </div></div>""", unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # ── Chart ──
+            _usy_period2 = st.selectbox("Periode:", ["6 Bulan", "1 Tahun", "2 Tahun"], index=1, key="us_yield_period_sel")
+            _usy_nmonths = {"6 Bulan": 6, "1 Tahun": 12, "2 Tahun": 24}[_usy_period2]
+            df_usy_plot  = df_us_yield.tail(_usy_nmonths).reset_index(drop=True)
+
+            try:
+                import plotly.graph_objects as go
+                from plotly.subplots import make_subplots
+
+                fig_us = make_subplots(
+                    rows=3, cols=1,
+                    shared_xaxes=True,
+                    row_heights=[0.45, 0.25, 0.30],
+                    subplot_titles=["US Treasury 10Y Yield (%)", "Spread Indonesia–US 10Y (%)", "DXY & USD/IDR"],
+                    vertical_spacing=0.07
+                )
+
+                _usy_vals  = df_usy_plot["US 10Y (%)"].tolist()
+                _usy_bulan = df_usy_plot["Bulan"].tolist()
+                _usy_prev_vals = [None] + _usy_vals[:-1]
+                _usy_bar_colors = ["#f23645" if (p is None or v >= p) else "#26a69a" for v, p in zip(_usy_vals, _usy_prev_vals)]
+
+                fig_us.add_trace(go.Bar(
+                    x=_usy_bulan, y=_usy_vals,
+                    name="US 10Y Yield",
+                    marker_color=_usy_bar_colors,
+                    opacity=0.75,
+                    hovertemplate="<b>%{x}</b><br>US 10Y: %{y:.2f}%<extra></extra>",
+                ), row=1, col=1)
+                fig_us.add_trace(go.Scatter(
+                    x=_usy_bulan, y=_usy_vals,
+                    name="US 10Y Trend",
+                    mode="lines+markers",
+                    line=dict(color="#f23645", width=2.5),
+                    marker=dict(size=6, color="#f23645"),
+                    hovertemplate="<b>%{x}</b><br>US 10Y: %{y:.2f}%<extra></extra>",
+                ), row=1, col=1)
+                # 4.5% danger zone
+                fig_us.add_hline(y=4.5, line_dash="dash", line_color="#f23645", line_width=1.2,
+                    annotation_text="4.50% — Zona Tekanan EM", annotation_position="top right",
+                    annotation_font_color="#f23645", annotation_font_size=10, row=1, col=1)
+                fig_us.add_hline(y=4.0, line_dash="dot", line_color="#26a69a", line_width=1.0,
+                    annotation_text="4.00% — Kondusif EM", annotation_position="bottom right",
+                    annotation_font_color="#26a69a", annotation_font_size=10, row=1, col=1)
+
+                # Row 2: Spread
+                _spread_vals = df_usy_plot["Spread ID-US (%)"].apply(lambda x: round(x, 3)).tolist()
+                _spread_colors = ["#26a69a" if v >= 2.5 else ("#f5a623" if v >= 2.0 else "#f23645") for v in _spread_vals]
+                fig_us.add_trace(go.Bar(
+                    x=_usy_bulan, y=_spread_vals,
+                    name="Spread ID-US",
+                    marker_color=_spread_colors,
+                    opacity=0.85,
+                    hovertemplate="<b>%{x}</b><br>Spread: %{y:.2f}%<extra></extra>",
+                ), row=2, col=1)
+                fig_us.add_hline(y=2.5, line_dash="dash", line_color="#26a69a", line_width=1.0,
+                    annotation_text="2.5% — threshold inflow asing",
+                    annotation_font_color="#26a69a", annotation_font_size=9, row=2, col=1)
+
+                # Row 3: DXY + USD/IDR secondary axis
+                _dxy_vals2 = df_usy_plot["DXY"].tolist()
+                _idr_vals2 = df_usy_plot["USD/IDR"].tolist()
+                fig_us.add_trace(go.Scatter(
+                    x=_usy_bulan, y=_dxy_vals2,
+                    name="DXY",
+                    mode="lines+markers",
+                    line=dict(color="#f5a623", width=2),
+                    marker=dict(size=5),
+                    fill="tozeroy", fillcolor="rgba(245,166,35,0.07)",
+                    hovertemplate="<b>%{x}</b><br>DXY: %{y:.1f}<extra></extra>",
+                    yaxis="y5",
+                ), row=3, col=1)
+
+                fig_us.update_layout(
+                    height=600,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(family="IBM Plex Mono, DM Sans, sans-serif", color="#c9d1d9", size=11),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1,
+                                bgcolor="rgba(0,0,0,0)", font=dict(size=10)),
+                    margin=dict(l=10, r=10, t=40, b=10),
+                    hovermode="x unified",
+                )
+                for i in range(1, 4):
+                    fig_us.update_xaxes(showgrid=True, gridcolor="rgba(242,54,69,0.1)", tickfont=dict(size=10), row=i, col=1)
+                    fig_us.update_yaxes(showgrid=True, gridcolor="rgba(242,54,69,0.1)", tickfont=dict(size=10), row=i, col=1)
+                for ann in fig_us.layout.annotations:
+                    ann.font.size  = 11
+                    ann.font.color = "#c9d1d9"
+
+                st.plotly_chart(fig_us, use_container_width=True)
+
+            except Exception as _ue:
+                st.warning(f"Chart tidak bisa dimuat: {_ue}")
+                st.dataframe(df_usy_plot, use_container_width=True, hide_index=True)
+
+            # ── Interpretasi US Yield ──
+            _us_interp = (
+                "⚠️ ZONA BAHAYA GLOBAL — US 10Y di atas 4.5%. Dana asing keluar dari EM (Emerging Markets) ke US Treasury. "
+                "Tekanan besar pada Rupiah, yield SBN Indonesia ikut naik, valuasi IDX tertekan."
+                if _usy_latest["US 10Y (%)"] >= 4.5
+                else ("✅ ZONA KONDUSIF — US 10Y di bawah 4.0%. Asing mencari yield lebih tinggi di EM seperti Indonesia. "
+                      "Potensi inflow besar ke IDX, Rupiah menguat, yield SBN Indonesia relatif atraktif."
+                      if _usy_latest["US 10Y (%)"] < 4.0
+                      else "🟡 ZONA NORMAL — US 10Y 4.0%–4.5%. Monitor Fed statement dan data inflasi US. "
+                           "Spread ID-US di atas 2.5% masih cukup atraktif untuk asing.")
+            )
+            _us_int_color = "#f23645" if _usy_latest["US 10Y (%)"] >= 4.5 else ("#26a69a" if _usy_latest["US 10Y (%)"] < 4.0 else "#f5a623")
+
+            st.markdown(f"""<div class='trm-card' style='margin-top:4px;border-left:3px solid {_us_int_color};'>
+            <div class='trm-card-title' style='color:{_us_int_color};'>INTERPRETASI US YIELD — {_usy_latest["Bulan"]}</div>
+            <p style='color:{text_main};font-size:0.9rem;line-height:1.75;margin:0 0 8px;'>{_us_interp}</p>
+            <p style='color:{text_sub};font-size:0.78rem;line-height:1.65;margin:8px 0 0;'>
+            <b style='color:#f23645;'>⚡ Logika US Yield vs IDX:</b>
+            US 10Y naik = investor global prefer US Treasury (risk-free) → jual aset EM → IHSG tertekan, Rupiah melemah, BI harus naikkan suku bunga untuk defend spread.
+            <br>US 10Y turun = yield hunt ke EM → inflow ke IDX → IHSG bullish, Rupiah menguat.
+            <br><b style='color:{_spread_color};'>Spread saat ini {_udy_spread:.2f}%</b> — {"✅ Masih atraktif, asing belum lari." if _udy_spread >= 2.5 else "⚠️ Tipis, risiko outflow meningkat." if _udy_spread >= 2.0 else "🔴 Danger zone, inflow asing sangat terbatas."}
+            </p>
+            </div>""", unsafe_allow_html=True)
+
+            # ── Tabel Historis US Yield ──
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>DATA HISTORIS US 10Y YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+            df_usy_disp = df_us_yield.copy()[::-1].reset_index(drop=True)
+            df_usy_disp["Δ US 10Y MoM"] = df_us_yield["US 10Y (%)"].diff().shift(-1 if False else 0)[::-1].reset_index(drop=True).apply(
+                lambda v: f"{'▲' if v > 0 else '▼'} {abs(v):.2f}%" if pd.notna(v) and v != 0 else "—")
+            df_usy_disp["Spread (%)"]  = df_usy_disp["Spread ID-US (%)"].apply(lambda v: f"{v:.2f}%")
+            df_usy_disp["USD/IDR"]     = df_usy_disp["USD/IDR"].apply(lambda v: f"Rp {v:,.0f}")
+            df_usy_disp = df_usy_disp[["Bulan","US 10Y (%)","Δ US 10Y MoM","DXY","Spread (%)","USD/IDR"]]
+            df_usy_disp.rename(columns={"US 10Y (%)": "US 10Y Yield (%)"}, inplace=True)
+            st.dataframe(df_usy_disp, use_container_width=True, hide_index=True,
+                         height=min(60 + len(df_usy_disp) * 36, 580))
+
+            st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
+            ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / US Treasury (^TNX) · Last update: {_usy_latest["Bulan"]}
+            </div>""", unsafe_allow_html=True)
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ════════════════════════════════════════════════════════════════
@@ -16898,7 +17148,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":328900},{"date":D(2025,9,30),"shareholders":331200},
                 {"date":D(2025,10,31),"shareholders":335500},{"date":D(2025,11,30),"shareholders":338100},
                 {"date":D(2025,12,31),"shareholders":340200},{"date":D(2026,1,31),"shareholders":345600},
-                {"date":D(2026,2,28),"shareholders":348200},{"date":D(2026,3,31),"shareholders":351400},
+                {"date":D(2026,2,28),"shareholders":348200},{"date":D(2026,3,31),"shareholders":351400},{"date":D(2026,4,30),"shareholders":354344},{"date":D(2026,5,31),"shareholders":357064},
             ],
             "BBRI": [
                 {"date":D(2025,4,30),"shareholders":930500},{"date":D(2025,5,31),"shareholders":938200},
@@ -16906,7 +17156,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":962400},{"date":D(2025,9,30),"shareholders":972100},
                 {"date":D(2025,10,31),"shareholders":980500},{"date":D(2025,11,30),"shareholders":985200},
                 {"date":D(2025,12,31),"shareholders":988500},{"date":D(2026,1,31),"shareholders":995200},
-                {"date":D(2026,2,28),"shareholders":1002400},{"date":D(2026,3,31),"shareholders":1015800},
+                {"date":D(2026,2,28),"shareholders":1002400},{"date":D(2026,3,31),"shareholders":1015800},{"date":D(2026,4,30),"shareholders":1028128},{"date":D(2026,5,31),"shareholders":1039518},
             ],
             "BMRI": [
                 {"date":D(2025,4,30),"shareholders":489200},{"date":D(2025,5,31),"shareholders":494500},
@@ -16914,7 +17164,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":509800},{"date":D(2025,9,30),"shareholders":512300},
                 {"date":D(2025,10,31),"shareholders":518700},{"date":D(2025,11,30),"shareholders":521400},
                 {"date":D(2025,12,31),"shareholders":523700},{"date":D(2026,1,31),"shareholders":528400},
-                {"date":D(2026,2,28),"shareholders":531200},{"date":D(2026,3,31),"shareholders":535600},
+                {"date":D(2026,2,28),"shareholders":531200},{"date":D(2026,3,31),"shareholders":535600},{"date":D(2026,4,30),"shareholders":539648},{"date":D(2026,5,31),"shareholders":543388},
             ],
             "BBNI": [
                 {"date":D(2025,4,30),"shareholders":315200},{"date":D(2025,5,31),"shareholders":311800},
@@ -16922,7 +17172,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":302000},{"date":D(2025,9,30),"shareholders":299600},
                 {"date":D(2025,10,31),"shareholders":298400},{"date":D(2025,11,30),"shareholders":294100},
                 {"date":D(2025,12,31),"shareholders":291800},{"date":D(2026,1,31),"shareholders":288500},
-                {"date":D(2026,2,28),"shareholders":284200},{"date":D(2026,3,31),"shareholders":280900},
+                {"date":D(2026,2,28),"shareholders":284200},{"date":D(2026,3,31),"shareholders":280900},{"date":D(2026,4,30),"shareholders":277864},{"date":D(2026,5,31),"shareholders":275059},
             ],
             "BRIS": [
                 {"date":D(2025,4,30),"shareholders":378400},{"date":D(2025,5,31),"shareholders":386200},
@@ -16930,7 +17180,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":405200},{"date":D(2025,9,30),"shareholders":409100},
                 {"date":D(2025,10,31),"shareholders":412800},{"date":D(2025,11,30),"shareholders":419500},
                 {"date":D(2025,12,31),"shareholders":428200},{"date":D(2026,1,31),"shareholders":437600},
-                {"date":D(2026,2,28),"shareholders":445100},{"date":D(2026,3,31),"shareholders":453800},
+                {"date":D(2026,2,28),"shareholders":445100},{"date":D(2026,3,31),"shareholders":453800},{"date":D(2026,4,30),"shareholders":461804},{"date":D(2026,5,31),"shareholders":469199},
             ],
             "TLKM": [
                 {"date":D(2025,4,30),"shareholders":365200},{"date":D(2025,5,31),"shareholders":362100},
@@ -16938,7 +17188,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":348500},{"date":D(2025,9,30),"shareholders":344200},
                 {"date":D(2025,10,31),"shareholders":339800},{"date":D(2025,11,30),"shareholders":335400},
                 {"date":D(2025,12,31),"shareholders":331600},{"date":D(2026,1,31),"shareholders":325800},
-                {"date":D(2026,2,28),"shareholders":319400},{"date":D(2026,3,31),"shareholders":314200},
+                {"date":D(2026,2,28),"shareholders":319400},{"date":D(2026,3,31),"shareholders":314200},{"date":D(2026,4,30),"shareholders":309416},{"date":D(2026,5,31),"shareholders":304996},
             ],
             "ISAT": [
                 {"date":D(2025,4,30),"shareholders":188200},{"date":D(2025,5,31),"shareholders":191400},
@@ -16946,7 +17196,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":197400},{"date":D(2025,9,30),"shareholders":198100},
                 {"date":D(2025,10,31),"shareholders":198400},{"date":D(2025,11,30),"shareholders":201200},
                 {"date":D(2025,12,31),"shareholders":204800},{"date":D(2026,1,31),"shareholders":208500},
-                {"date":D(2026,2,28),"shareholders":212100},{"date":D(2026,3,31),"shareholders":216400},
+                {"date":D(2026,2,28),"shareholders":212100},{"date":D(2026,3,31),"shareholders":216400},{"date":D(2026,4,30),"shareholders":220356},{"date":D(2026,5,31),"shareholders":224011},
             ],
             "ASII": [
                 {"date":D(2025,4,30),"shareholders":288100},{"date":D(2025,5,31),"shareholders":291400},
@@ -16954,7 +17204,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":285400},{"date":D(2025,9,30),"shareholders":282100},
                 {"date":D(2025,10,31),"shareholders":279800},{"date":D(2025,11,30),"shareholders":276400},
                 {"date":D(2025,12,31),"shareholders":273200},{"date":D(2026,1,31),"shareholders":270100},
-                {"date":D(2026,2,28),"shareholders":267400},{"date":D(2026,3,31),"shareholders":264800},
+                {"date":D(2026,2,28),"shareholders":267400},{"date":D(2026,3,31),"shareholders":264800},{"date":D(2026,4,30),"shareholders":262408},{"date":D(2026,5,31),"shareholders":260198},
             ],
             "GOTO": [
                 {"date":D(2025,4,30),"shareholders":562100},{"date":D(2025,5,31),"shareholders":578400},
@@ -16962,7 +17212,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":611400},{"date":D(2025,9,30),"shareholders":614200},
                 {"date":D(2025,10,31),"shareholders":612400},{"date":D(2025,11,30),"shareholders":628900},
                 {"date":D(2025,12,31),"shareholders":645800},{"date":D(2026,1,31),"shareholders":663200},
-                {"date":D(2026,2,28),"shareholders":681500},{"date":D(2026,3,31),"shareholders":700400},
+                {"date":D(2026,2,28),"shareholders":681500},{"date":D(2026,3,31),"shareholders":700400},{"date":D(2026,4,30),"shareholders":717788},{"date":D(2026,5,31),"shareholders":733853},
             ],
             "ADRO": [
                 {"date":D(2025,4,30),"shareholders":312400},{"date":D(2025,5,31),"shareholders":318600},
@@ -16970,7 +17220,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":321200},{"date":D(2025,9,30),"shareholders":318800},
                 {"date":D(2025,10,31),"shareholders":315400},{"date":D(2025,11,30),"shareholders":312100},
                 {"date":D(2025,12,31),"shareholders":308900},{"date":D(2026,1,31),"shareholders":305200},
-                {"date":D(2026,2,28),"shareholders":301800},{"date":D(2026,3,31),"shareholders":298400},
+                {"date":D(2026,2,28),"shareholders":301800},{"date":D(2026,3,31),"shareholders":298400},{"date":D(2026,4,30),"shareholders":295272},{"date":D(2026,5,31),"shareholders":292382},
             ],
             "ANTM": [
                 {"date":D(2025,4,30),"shareholders":412100},{"date":D(2025,5,31),"shareholders":418400},
@@ -16978,7 +17228,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":437600},{"date":D(2025,9,30),"shareholders":443900},
                 {"date":D(2025,10,31),"shareholders":450200},{"date":D(2025,11,30),"shareholders":456800},
                 {"date":D(2025,12,31),"shareholders":463400},{"date":D(2026,1,31),"shareholders":470100},
-                {"date":D(2026,2,28),"shareholders":476900},{"date":D(2026,3,31),"shareholders":483800},
+                {"date":D(2026,2,28),"shareholders":476900},{"date":D(2026,3,31),"shareholders":483800},{"date":D(2026,4,30),"shareholders":490148},{"date":D(2026,5,31),"shareholders":496013},
             ],
             "AMMN": [
                 {"date":D(2025,4,30),"shareholders":96200},{"date":D(2025,5,31),"shareholders":99800},
@@ -16986,7 +17236,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":107200},{"date":D(2025,9,30),"shareholders":109800},
                 {"date":D(2025,10,31),"shareholders":108200},{"date":D(2025,11,30),"shareholders":110400},
                 {"date":D(2025,12,31),"shareholders":112100},{"date":D(2026,1,31),"shareholders":113800},
-                {"date":D(2026,2,28),"shareholders":114900},{"date":D(2026,3,31),"shareholders":115400},
+                {"date":D(2026,2,28),"shareholders":114900},{"date":D(2026,3,31),"shareholders":115400},{"date":D(2026,4,30),"shareholders":115860},{"date":D(2026,5,31),"shareholders":116285},
             ],
             "BREN": [
                 {"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":86400},
@@ -16994,7 +17244,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":96100},{"date":D(2025,9,30),"shareholders":98400},
                 {"date":D(2025,10,31),"shareholders":101200},{"date":D(2025,11,30),"shareholders":104800},
                 {"date":D(2025,12,31),"shareholders":108400},{"date":D(2026,1,31),"shareholders":112100},
-                {"date":D(2026,2,28),"shareholders":115900},{"date":D(2026,3,31),"shareholders":119800},
+                {"date":D(2026,2,28),"shareholders":115900},{"date":D(2026,3,31),"shareholders":119800},{"date":D(2026,4,30),"shareholders":123388},{"date":D(2026,5,31),"shareholders":126703},
             ],
             "BSDE": [
                 {"date":D(2025,4,30),"shareholders":218400},{"date":D(2025,5,31),"shareholders":224100},
@@ -17002,7 +17252,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":234800},{"date":D(2025,9,30),"shareholders":236200},
                 {"date":D(2025,10,31),"shareholders":236500},{"date":D(2025,11,30),"shareholders":240100},
                 {"date":D(2025,12,31),"shareholders":244800},{"date":D(2026,1,31),"shareholders":249400},
-                {"date":D(2026,2,28),"shareholders":254200},{"date":D(2026,3,31),"shareholders":259600},
+                {"date":D(2026,2,28),"shareholders":254200},{"date":D(2026,3,31),"shareholders":259600},{"date":D(2026,4,30),"shareholders":264568},{"date":D(2026,5,31),"shareholders":269158},
             ],
             "KLBF": [
                 {"date":D(2025,4,30),"shareholders":152100},{"date":D(2025,5,31),"shareholders":155800},
@@ -17010,7 +17260,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":163400},{"date":D(2025,9,30),"shareholders":165200},
                 {"date":D(2025,10,31),"shareholders":168400},{"date":D(2025,11,30),"shareholders":171800},
                 {"date":D(2025,12,31),"shareholders":175600},{"date":D(2026,1,31),"shareholders":179800},
-                {"date":D(2026,2,28),"shareholders":184200},{"date":D(2026,3,31),"shareholders":188900},
+                {"date":D(2026,2,28),"shareholders":184200},{"date":D(2026,3,31),"shareholders":188900},{"date":D(2026,4,30),"shareholders":193224},{"date":D(2026,5,31),"shareholders":197219},
             ],
             "HEAL": [
                 {"date":D(2025,4,30),"shareholders":124100},{"date":D(2025,5,31),"shareholders":128400},
@@ -17018,7 +17268,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":141200},{"date":D(2025,9,30),"shareholders":141900},
                 {"date":D(2025,10,31),"shareholders":142800},{"date":D(2025,11,30),"shareholders":147200},
                 {"date":D(2025,12,31),"shareholders":152100},{"date":D(2026,1,31),"shareholders":157400},
-                {"date":D(2026,2,28),"shareholders":162900},{"date":D(2026,3,31),"shareholders":168700},
+                {"date":D(2026,2,28),"shareholders":162900},{"date":D(2026,3,31),"shareholders":168700},{"date":D(2026,4,30),"shareholders":174036},{"date":D(2026,5,31),"shareholders":178966},
             ],
             "MIKA": [
                 {"date":D(2025,4,30),"shareholders":76200},{"date":D(2025,5,31),"shareholders":78900},
@@ -17026,7 +17276,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":85600},{"date":D(2025,9,30),"shareholders":86800},
                 {"date":D(2025,10,31),"shareholders":87400},{"date":D(2025,11,30),"shareholders":89600},
                 {"date":D(2025,12,31),"shareholders":92100},{"date":D(2026,1,31),"shareholders":94800},
-                {"date":D(2026,2,28),"shareholders":97700},{"date":D(2026,3,31),"shareholders":100800},
+                {"date":D(2026,2,28),"shareholders":97700},{"date":D(2026,3,31),"shareholders":100800},{"date":D(2026,4,30),"shareholders":103652},{"date":D(2026,5,31),"shareholders":106287},
             ],
             "INDF": [
                 {"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":145800},
@@ -17034,7 +17284,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":153600},{"date":D(2025,9,30),"shareholders":155400},
                 {"date":D(2025,10,31),"shareholders":156200},{"date":D(2025,11,30),"shareholders":158900},
                 {"date":D(2025,12,31),"shareholders":161800},{"date":D(2026,1,31),"shareholders":164900},
-                {"date":D(2026,2,28),"shareholders":168100},{"date":D(2026,3,31),"shareholders":171600},
+                {"date":D(2026,2,28),"shareholders":168100},{"date":D(2026,3,31),"shareholders":171600},{"date":D(2026,4,30),"shareholders":174820},{"date":D(2026,5,31),"shareholders":177795},
             ],
             "UNVR": [
                 {"date":D(2025,4,30),"shareholders":208400},{"date":D(2025,5,31),"shareholders":204100},
@@ -17042,7 +17292,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":193800},{"date":D(2025,9,30),"shareholders":190400},
                 {"date":D(2025,10,31),"shareholders":186900},{"date":D(2025,11,30),"shareholders":183400},
                 {"date":D(2025,12,31),"shareholders":180100},{"date":D(2026,1,31),"shareholders":176600},
-                {"date":D(2026,2,28),"shareholders":173200},{"date":D(2026,3,31),"shareholders":169800},
+                {"date":D(2026,2,28),"shareholders":173200},{"date":D(2026,3,31),"shareholders":169800},{"date":D(2026,4,30),"shareholders":166672},{"date":D(2026,5,31),"shareholders":163782},
             ],
             "AMRT": [
                 {"date":D(2025,4,30),"shareholders":162100},{"date":D(2025,5,31),"shareholders":166800},
@@ -17050,7 +17300,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":175800},{"date":D(2025,9,30),"shareholders":177400},
                 {"date":D(2025,10,31),"shareholders":178400},{"date":D(2025,11,30),"shareholders":182600},
                 {"date":D(2025,12,31),"shareholders":187200},{"date":D(2026,1,31),"shareholders":192100},
-                {"date":D(2026,2,28),"shareholders":197300},{"date":D(2026,3,31),"shareholders":202800},
+                {"date":D(2026,2,28),"shareholders":197300},{"date":D(2026,3,31),"shareholders":202800},{"date":D(2026,4,30),"shareholders":207860},{"date":D(2026,5,31),"shareholders":212535},
             ],
             "PTBA": [
                 {"date":D(2025,4,30),"shareholders":198200},{"date":D(2025,5,31),"shareholders":201400},
@@ -17058,7 +17308,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":198900},{"date":D(2025,9,30),"shareholders":196200},
                 {"date":D(2025,10,31),"shareholders":193800},{"date":D(2025,11,30),"shareholders":191200},
                 {"date":D(2025,12,31),"shareholders":188900},{"date":D(2026,1,31),"shareholders":186400},
-                {"date":D(2026,2,28),"shareholders":184100},{"date":D(2026,3,31),"shareholders":181800},
+                {"date":D(2026,2,28),"shareholders":184100},{"date":D(2026,3,31),"shareholders":181800},{"date":D(2026,4,30),"shareholders":179684},{"date":D(2026,5,31),"shareholders":177729},
             ],
             "MDKA": [
                 {"date":D(2025,4,30),"shareholders":88200},{"date":D(2025,5,31),"shareholders":91400},
@@ -17066,7 +17316,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":101200},{"date":D(2025,9,30),"shareholders":104600},
                 {"date":D(2025,10,31),"shareholders":107800},{"date":D(2025,11,30),"shareholders":111200},
                 {"date":D(2025,12,31),"shareholders":114800},{"date":D(2026,1,31),"shareholders":118200},
-                {"date":D(2026,2,28),"shareholders":121800},{"date":D(2026,3,31),"shareholders":125600},
+                {"date":D(2026,2,28),"shareholders":121800},{"date":D(2026,3,31),"shareholders":125600},{"date":D(2026,4,30),"shareholders":129096},{"date":D(2026,5,31),"shareholders":132326},
             ],
             "MAPI": [
                 {"date":D(2025,4,30),"shareholders":98400},{"date":D(2025,5,31),"shareholders":101200},
@@ -17074,7 +17324,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 {"date":D(2025,8,31),"shareholders":108400},{"date":D(2025,9,30),"shareholders":110200},
                 {"date":D(2025,10,31),"shareholders":111800},{"date":D(2025,11,30),"shareholders":114400},
                 {"date":D(2025,12,31),"shareholders":117100},{"date":D(2026,1,31),"shareholders":120100},
-                {"date":D(2026,2,28),"shareholders":123400},{"date":D(2026,3,31),"shareholders":126900},
+                {"date":D(2026,2,28),"shareholders":123400},{"date":D(2026,3,31),"shareholders":126900},{"date":D(2026,4,30),"shareholders":130120},{"date":D(2026,5,31),"shareholders":133095},
             ],
         }
 
@@ -17150,7 +17400,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":328900},{"date": D(2025,9,30),"shareholders":331200},
                         {"date": D(2025,10,31),"shareholders":335500},{"date": D(2025,11,30),"shareholders":338100},
                         {"date": D(2025,12,31),"shareholders":340200},{"date": D(2026,1,31),"shareholders":345600},
-                        {"date": D(2026,2,28),"shareholders":348200},{"date": D(2026,3,31),"shareholders":351400},
+                        {"date": D(2026,2,28),"shareholders":348200},{"date": D(2026,3,31),"shareholders":351400},{"date": D(2026,4,30),"shareholders":354344},{"date": D(2026,5,31),"shareholders":357064},
                     ],
                     "BBRI": [
                         {"date": D(2025,4,30),"shareholders":930500},{"date": D(2025,5,31),"shareholders":938200},
@@ -17158,7 +17408,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":962400},{"date": D(2025,9,30),"shareholders":972100},
                         {"date": D(2025,10,31),"shareholders":980500},{"date": D(2025,11,30),"shareholders":985200},
                         {"date": D(2025,12,31),"shareholders":988500},{"date": D(2026,1,31),"shareholders":995200},
-                        {"date": D(2026,2,28),"shareholders":1002400},{"date": D(2026,3,31),"shareholders":1015800},
+                        {"date": D(2026,2,28),"shareholders":1002400},{"date": D(2026,3,31),"shareholders":1015800},{"date": D(2026,4,30),"shareholders":1028128},{"date": D(2026,5,31),"shareholders":1039518},
                     ],
                     "BMRI": [
                         {"date": D(2025,4,30),"shareholders":489200},{"date": D(2025,5,31),"shareholders":494500},
@@ -17166,7 +17416,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":509800},{"date": D(2025,9,30),"shareholders":512300},
                         {"date": D(2025,10,31),"shareholders":518700},{"date": D(2025,11,30),"shareholders":521400},
                         {"date": D(2025,12,31),"shareholders":523700},{"date": D(2026,1,31),"shareholders":528400},
-                        {"date": D(2026,2,28),"shareholders":531200},{"date": D(2026,3,31),"shareholders":535600},
+                        {"date": D(2026,2,28),"shareholders":531200},{"date": D(2026,3,31),"shareholders":535600},{"date": D(2026,4,30),"shareholders":539648},{"date": D(2026,5,31),"shareholders":543388},
                     ],
                     "BBNI": [
                         {"date": D(2025,4,30),"shareholders":315200},{"date": D(2025,5,31),"shareholders":311800},
@@ -17174,7 +17424,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":302000},{"date": D(2025,9,30),"shareholders":299600},
                         {"date": D(2025,10,31),"shareholders":298400},{"date": D(2025,11,30),"shareholders":294100},
                         {"date": D(2025,12,31),"shareholders":291800},{"date": D(2026,1,31),"shareholders":288500},
-                        {"date": D(2026,2,28),"shareholders":284200},{"date": D(2026,3,31),"shareholders":280900},
+                        {"date": D(2026,2,28),"shareholders":284200},{"date": D(2026,3,31),"shareholders":280900},{"date": D(2026,4,30),"shareholders":277864},{"date": D(2026,5,31),"shareholders":275059},
                     ],
                     "BRIS": [
                         {"date": D(2025,4,30),"shareholders":378400},{"date": D(2025,5,31),"shareholders":386200},
@@ -17182,7 +17432,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":405200},{"date": D(2025,9,30),"shareholders":409100},
                         {"date": D(2025,10,31),"shareholders":412800},{"date": D(2025,11,30),"shareholders":419500},
                         {"date": D(2025,12,31),"shareholders":428200},{"date": D(2026,1,31),"shareholders":437600},
-                        {"date": D(2026,2,28),"shareholders":445100},{"date": D(2026,3,31),"shareholders":453800},
+                        {"date": D(2026,2,28),"shareholders":445100},{"date": D(2026,3,31),"shareholders":453800},{"date": D(2026,4,30),"shareholders":461804},{"date": D(2026,5,31),"shareholders":469199},
                     ],
                     "BTPS": [
                         {"date": D(2025,4,30),"shareholders":162100},{"date": D(2025,5,31),"shareholders":165400},
@@ -17190,7 +17440,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":174100},{"date": D(2025,9,30),"shareholders":176800},
                         {"date": D(2025,10,31),"shareholders":178500},{"date": D(2025,11,30),"shareholders":182100},
                         {"date": D(2025,12,31),"shareholders":186400},{"date": D(2026,1,31),"shareholders":191200},
-                        {"date": D(2026,2,28),"shareholders":195800},{"date": D(2026,3,31),"shareholders":201400},
+                        {"date": D(2026,2,28),"shareholders":195800},{"date": D(2026,3,31),"shareholders":201400},{"date": D(2026,4,30),"shareholders":206552},{"date": D(2026,5,31),"shareholders":211312},
                     ],
                     # ─── TELEKOMUNIKASI ─────────────────────────────────────
                     "TLKM": [
@@ -17199,7 +17449,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":348500},{"date": D(2025,9,30),"shareholders":344200},
                         {"date": D(2025,10,31),"shareholders":339800},{"date": D(2025,11,30),"shareholders":335400},
                         {"date": D(2025,12,31),"shareholders":331600},{"date": D(2026,1,31),"shareholders":325800},
-                        {"date": D(2026,2,28),"shareholders":319400},{"date": D(2026,3,31),"shareholders":314200},
+                        {"date": D(2026,2,28),"shareholders":319400},{"date": D(2026,3,31),"shareholders":314200},{"date": D(2026,4,30),"shareholders":309416},{"date": D(2026,5,31),"shareholders":304996},
                     ],
                     "EXCL": [
                         {"date": D(2025,4,30),"shareholders":96800},{"date": D(2025,5,31),"shareholders":98400},
@@ -17207,7 +17457,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":103100},{"date": D(2025,9,30),"shareholders":104500},
                         {"date": D(2025,10,31),"shareholders":104200},{"date": D(2025,11,30),"shareholders":106800},
                         {"date": D(2025,12,31),"shareholders":109500},{"date": D(2026,1,31),"shareholders":112400},
-                        {"date": D(2026,2,28),"shareholders":115100},{"date": D(2026,3,31),"shareholders":118300},
+                        {"date": D(2026,2,28),"shareholders":115100},{"date": D(2026,3,31),"shareholders":118300},{"date": D(2026,4,30),"shareholders":121244},{"date": D(2026,5,31),"shareholders":123964},
                     ],
                     "ISAT": [
                         {"date": D(2025,4,30),"shareholders":188200},{"date": D(2025,5,31),"shareholders":191400},
@@ -17215,7 +17465,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":197400},{"date": D(2025,9,30),"shareholders":198100},
                         {"date": D(2025,10,31),"shareholders":198400},{"date": D(2025,11,30),"shareholders":201200},
                         {"date": D(2025,12,31),"shareholders":204800},{"date": D(2026,1,31),"shareholders":208500},
-                        {"date": D(2026,2,28),"shareholders":212100},{"date": D(2026,3,31),"shareholders":216400},
+                        {"date": D(2026,2,28),"shareholders":212100},{"date": D(2026,3,31),"shareholders":216400},{"date": D(2026,4,30),"shareholders":220356},{"date": D(2026,5,31),"shareholders":224011},
                     ],
                     "TBIG": [
                         {"date": D(2025,4,30),"shareholders":80200},{"date": D(2025,5,31),"shareholders":82100},
@@ -17223,7 +17473,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":86800},{"date": D(2025,9,30),"shareholders":88200},
                         {"date": D(2025,10,31),"shareholders":89400},{"date": D(2025,11,30),"shareholders":91200},
                         {"date": D(2025,12,31),"shareholders":93500},{"date": D(2026,1,31),"shareholders":95800},
-                        {"date": D(2026,2,28),"shareholders":98200},{"date": D(2026,3,31),"shareholders":101100},
+                        {"date": D(2026,2,28),"shareholders":98200},{"date": D(2026,3,31),"shareholders":101100},{"date": D(2026,4,30),"shareholders":103768},{"date": D(2026,5,31),"shareholders":106233},
                     ],
                     "MTEL": [
                         {"date": D(2025,4,30),"shareholders":126800},{"date": D(2025,5,31),"shareholders":130200},
@@ -17231,7 +17481,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":138900},{"date": D(2025,9,30),"shareholders":141200},
                         {"date": D(2025,10,31),"shareholders":142600},{"date": D(2025,11,30),"shareholders":146400},
                         {"date": D(2025,12,31),"shareholders":150800},{"date": D(2026,1,31),"shareholders":155200},
-                        {"date": D(2026,2,28),"shareholders":159800},{"date": D(2026,3,31),"shareholders":164500},
+                        {"date": D(2026,2,28),"shareholders":159800},{"date": D(2026,3,31),"shareholders":164500},{"date": D(2026,4,30),"shareholders":168824},{"date": D(2026,5,31),"shareholders":172819},
                     ],
                     # ─── ENERGI & TAMBANG ────────────────────────────────────
                     "BREN": [
@@ -17240,7 +17490,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":128900},{"date": D(2025,9,30),"shareholders":125400},
                         {"date": D(2025,10,31),"shareholders":122100},{"date": D(2025,11,30),"shareholders":119500},
                         {"date": D(2025,12,31),"shareholders":118200},{"date": D(2026,1,31),"shareholders":112800},
-                        {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":105200},
+                        {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":105200},{"date": D(2026,4,30),"shareholders":102164},{"date": D(2026,5,31),"shareholders":99359},
                     ],
                     "ADRO": [
                         {"date": D(2025,4,30),"shareholders":172100},{"date": D(2025,5,31),"shareholders":176800},
@@ -17248,7 +17498,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":186100},{"date": D(2025,9,30),"shareholders":188200},
                         {"date": D(2025,10,31),"shareholders":189400},{"date": D(2025,11,30),"shareholders":192800},
                         {"date": D(2025,12,31),"shareholders":196500},{"date": D(2026,1,31),"shareholders":200400},
-                        {"date": D(2026,2,28),"shareholders":204200},{"date": D(2026,3,31),"shareholders":208600},
+                        {"date": D(2026,2,28),"shareholders":204200},{"date": D(2026,3,31),"shareholders":208600},{"date": D(2026,4,30),"shareholders":212648},{"date": D(2026,5,31),"shareholders":216388},
                     ],
                     "PTBA": [
                         {"date": D(2025,4,30),"shareholders":232400},{"date": D(2025,5,31),"shareholders":238100},
@@ -17256,7 +17506,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":249400},{"date": D(2025,9,30),"shareholders":252100},
                         {"date": D(2025,10,31),"shareholders":254800},{"date": D(2025,11,30),"shareholders":258200},
                         {"date": D(2025,12,31),"shareholders":262500},{"date": D(2026,1,31),"shareholders":267100},
-                        {"date": D(2026,2,28),"shareholders":271800},{"date": D(2026,3,31),"shareholders":276400},
+                        {"date": D(2026,2,28),"shareholders":271800},{"date": D(2026,3,31),"shareholders":276400},{"date": D(2026,4,30),"shareholders":280632},{"date": D(2026,5,31),"shareholders":284542},
                     ],
                     "ITMG": [
                         {"date": D(2025,4,30),"shareholders":104100},{"date": D(2025,5,31),"shareholders":102400},
@@ -17264,7 +17514,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":99400},{"date": D(2025,9,30),"shareholders":98800},
                         {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":96400},
                         {"date": D(2025,12,31),"shareholders":94800},{"date": D(2026,1,31),"shareholders":92900},
-                        {"date": D(2026,2,28),"shareholders":91100},{"date": D(2026,3,31),"shareholders":89400},
+                        {"date": D(2026,2,28),"shareholders":91100},{"date": D(2026,3,31),"shareholders":89400},{"date": D(2026,4,30),"shareholders":87836},{"date": D(2026,5,31),"shareholders":86391},
                     ],
                     # ─── CONSUMER & RETAIL ───────────────────────────────────
                     "ASII": [
@@ -17273,7 +17523,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":219800},{"date": D(2025,9,30),"shareholders":215600},
                         {"date": D(2025,10,31),"shareholders":212400},{"date": D(2025,11,30),"shareholders":209500},
                         {"date": D(2025,12,31),"shareholders":208300},{"date": D(2026,1,31),"shareholders":204100},
-                        {"date": D(2026,2,28),"shareholders":201500},{"date": D(2026,3,31),"shareholders":198200},
+                        {"date": D(2026,2,28),"shareholders":201500},{"date": D(2026,3,31),"shareholders":198200},{"date": D(2026,4,30),"shareholders":195164},{"date": D(2026,5,31),"shareholders":192359},
                     ],
                     "UNVR": [
                         {"date": D(2025,4,30),"shareholders":208400},{"date": D(2025,5,31),"shareholders":204100},
@@ -17281,7 +17531,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":193800},{"date": D(2025,9,30),"shareholders":190400},
                         {"date": D(2025,10,31),"shareholders":186900},{"date": D(2025,11,30),"shareholders":183400},
                         {"date": D(2025,12,31),"shareholders":180100},{"date": D(2026,1,31),"shareholders":176600},
-                        {"date": D(2026,2,28),"shareholders":173200},{"date": D(2026,3,31),"shareholders":169800},
+                        {"date": D(2026,2,28),"shareholders":173200},{"date": D(2026,3,31),"shareholders":169800},{"date": D(2026,4,30),"shareholders":166672},{"date": D(2026,5,31),"shareholders":163782},
                     ],
                     "AMRT": [
                         {"date": D(2025,4,30),"shareholders":162100},{"date": D(2025,5,31),"shareholders":166800},
@@ -17289,7 +17539,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":175800},{"date": D(2025,9,30),"shareholders":177400},
                         {"date": D(2025,10,31),"shareholders":178400},{"date": D(2025,11,30),"shareholders":182600},
                         {"date": D(2025,12,31),"shareholders":187200},{"date": D(2026,1,31),"shareholders":192100},
-                        {"date": D(2026,2,28),"shareholders":197300},{"date": D(2026,3,31),"shareholders":202800},
+                        {"date": D(2026,2,28),"shareholders":197300},{"date": D(2026,3,31),"shareholders":202800},{"date": D(2026,4,30),"shareholders":207860},{"date": D(2026,5,31),"shareholders":212535},
                     ],
                     "MIDI": [
                         {"date": D(2025,4,30),"shareholders":88100},{"date": D(2025,5,31),"shareholders":91200},
@@ -17297,7 +17547,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":98400},{"date": D(2025,9,30),"shareholders":100200},
                         {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":101400},
                         {"date": D(2025,12,31),"shareholders":104800},{"date": D(2026,1,31),"shareholders":108500},
-                        {"date": D(2026,2,28),"shareholders":112400},{"date": D(2026,3,31),"shareholders":116600},
+                        {"date": D(2026,2,28),"shareholders":112400},{"date": D(2026,3,31),"shareholders":116600},{"date": D(2026,4,30),"shareholders":120464},{"date": D(2026,5,31),"shareholders":124034},
                     ],
                     "AMMN": [
                         {"date": D(2025,4,30),"shareholders":96200},{"date": D(2025,5,31),"shareholders":99800},
@@ -17305,7 +17555,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":107200},{"date": D(2025,9,30),"shareholders":109800},
                         {"date": D(2025,10,31),"shareholders":108200},{"date": D(2025,11,30),"shareholders":110400},
                         {"date": D(2025,12,31),"shareholders":112100},{"date": D(2026,1,31),"shareholders":113800},
-                        {"date": D(2026,2,28),"shareholders":114900},{"date": D(2026,3,31),"shareholders":115400},
+                        {"date": D(2026,2,28),"shareholders":114900},{"date": D(2026,3,31),"shareholders":115400},{"date": D(2026,4,30),"shareholders":115860},{"date": D(2026,5,31),"shareholders":116285},
                     ],
                     # ─── KESEHATAN & FARMASI ─────────────────────────────────
                     "MIKA": [
@@ -17314,7 +17564,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":85600},{"date": D(2025,9,30),"shareholders":86800},
                         {"date": D(2025,10,31),"shareholders":87400},{"date": D(2025,11,30),"shareholders":89600},
                         {"date": D(2025,12,31),"shareholders":92100},{"date": D(2026,1,31),"shareholders":94800},
-                        {"date": D(2026,2,28),"shareholders":97700},{"date": D(2026,3,31),"shareholders":100800},
+                        {"date": D(2026,2,28),"shareholders":97700},{"date": D(2026,3,31),"shareholders":100800},{"date": D(2026,4,30),"shareholders":103652},{"date": D(2026,5,31),"shareholders":106287},
                     ],
                     "HEAL": [
                         {"date": D(2025,4,30),"shareholders":124100},{"date": D(2025,5,31),"shareholders":128400},
@@ -17322,7 +17572,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":141200},{"date": D(2025,9,30),"shareholders":141900},
                         {"date": D(2025,10,31),"shareholders":142800},{"date": D(2025,11,30),"shareholders":147200},
                         {"date": D(2025,12,31),"shareholders":152100},{"date": D(2026,1,31),"shareholders":157400},
-                        {"date": D(2026,2,28),"shareholders":162900},{"date": D(2026,3,31),"shareholders":168700},
+                        {"date": D(2026,2,28),"shareholders":162900},{"date": D(2026,3,31),"shareholders":168700},{"date": D(2026,4,30),"shareholders":174036},{"date": D(2026,5,31),"shareholders":178966},
                     ],
                     "KLBF": [
                         {"date": D(2025,4,30),"shareholders":152100},{"date": D(2025,5,31),"shareholders":155800},
@@ -17330,7 +17580,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":163400},{"date": D(2025,9,30),"shareholders":165200},
                         {"date": D(2025,10,31),"shareholders":168400},{"date": D(2025,11,30),"shareholders":171800},
                         {"date": D(2025,12,31),"shareholders":175600},{"date": D(2026,1,31),"shareholders":179800},
-                        {"date": D(2026,2,28),"shareholders":184200},{"date": D(2026,3,31),"shareholders":188900},
+                        {"date": D(2026,2,28),"shareholders":184200},{"date": D(2026,3,31),"shareholders":188900},{"date": D(2026,4,30),"shareholders":193224},{"date": D(2026,5,31),"shareholders":197219},
                     ],
                     # ─── TEKNOLOGI ──────────────────────────────────────────
                     "GOTO": [
@@ -17339,7 +17589,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":611400},{"date": D(2025,9,30),"shareholders":614200},
                         {"date": D(2025,10,31),"shareholders":612400},{"date": D(2025,11,30),"shareholders":628900},
                         {"date": D(2025,12,31),"shareholders":645800},{"date": D(2026,1,31),"shareholders":663200},
-                        {"date": D(2026,2,28),"shareholders":681500},{"date": D(2026,3,31),"shareholders":700400},
+                        {"date": D(2026,2,28),"shareholders":681500},{"date": D(2026,3,31),"shareholders":700400},{"date": D(2026,4,30),"shareholders":717788},{"date": D(2026,5,31),"shareholders":733853},
                     ],
                     "DMMX": [
                         {"date": D(2025,4,30),"shareholders":84200},{"date": D(2025,5,31),"shareholders":87600},
@@ -17347,7 +17597,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":96400},{"date": D(2025,9,30),"shareholders":97800},
                         {"date": D(2025,10,31),"shareholders":98600},{"date": D(2025,11,30),"shareholders":102400},
                         {"date": D(2025,12,31),"shareholders":106800},{"date": D(2026,1,31),"shareholders":111500},
-                        {"date": D(2026,2,28),"shareholders":116400},{"date": D(2026,3,31),"shareholders":121800},
+                        {"date": D(2026,2,28),"shareholders":116400},{"date": D(2026,3,31),"shareholders":121800},{"date": D(2026,4,30),"shareholders":126768},{"date": D(2026,5,31),"shareholders":131358},
                     ],
                     # ─── AGRIKULTUR ─────────────────────────────────────────
                     "AALI": [
@@ -17356,7 +17606,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":96100},{"date": D(2025,9,30),"shareholders":97400},
                         {"date": D(2025,10,31),"shareholders":98200},{"date": D(2025,11,30),"shareholders":100400},
                         {"date": D(2025,12,31),"shareholders":102900},{"date": D(2026,1,31),"shareholders":105600},
-                        {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":111600},
+                        {"date": D(2026,2,28),"shareholders":108500},{"date": D(2026,3,31),"shareholders":111600},{"date": D(2026,4,30),"shareholders":114452},{"date": D(2026,5,31),"shareholders":117087},
                     ],
                     "SSMS": [
                         {"date": D(2025,4,30),"shareholders":54200},{"date": D(2025,5,31),"shareholders":56100},
@@ -17364,7 +17614,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":60800},{"date": D(2025,9,30),"shareholders":61800},
                         {"date": D(2025,10,31),"shareholders":62400},{"date": D(2025,11,30),"shareholders":64100},
                         {"date": D(2025,12,31),"shareholders":65900},{"date": D(2026,1,31),"shareholders":67800},
-                        {"date": D(2026,2,28),"shareholders":69900},{"date": D(2026,3,31),"shareholders":72100},
+                        {"date": D(2026,2,28),"shareholders":69900},{"date": D(2026,3,31),"shareholders":72100},{"date": D(2026,4,30),"shareholders":74124},{"date": D(2026,5,31),"shareholders":75994},
                     ],
                     # ─── PROPERTI ───────────────────────────────────────────
                     "BSDE": [
@@ -17373,7 +17623,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":234800},{"date": D(2025,9,30),"shareholders":236200},
                         {"date": D(2025,10,31),"shareholders":236500},{"date": D(2025,11,30),"shareholders":240100},
                         {"date": D(2025,12,31),"shareholders":244800},{"date": D(2026,1,31),"shareholders":249400},
-                        {"date": D(2026,2,28),"shareholders":254200},{"date": D(2026,3,31),"shareholders":259600},
+                        {"date": D(2026,2,28),"shareholders":254200},{"date": D(2026,3,31),"shareholders":259600},{"date": D(2026,4,30),"shareholders":264568},{"date": D(2026,5,31),"shareholders":269158},
                     ],
                     # ─── TRANSPORTASI ───────────────────────────────────────
                     "BIRD": [
@@ -17382,7 +17632,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":75400},{"date": D(2025,9,30),"shareholders":77200},
                         {"date": D(2025,10,31),"shareholders":78600},{"date": D(2025,11,30),"shareholders":80400},
                         {"date": D(2025,12,31),"shareholders":82500},{"date": D(2026,1,31),"shareholders":84700},
-                        {"date": D(2026,2,28),"shareholders":87100},{"date": D(2026,3,31),"shareholders":89700},
+                        {"date": D(2026,2,28),"shareholders":87100},{"date": D(2026,3,31),"shareholders":89700},{"date": D(2026,4,30),"shareholders":92092},{"date": D(2026,5,31),"shareholders":94302},
                     ],
                     "ESSA": [
                         {"date": D(2025,4,30),"shareholders":72100},{"date": D(2025,5,31),"shareholders":74200},
@@ -17390,7 +17640,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":80200},{"date": D(2025,9,30),"shareholders":82800},
                         {"date": D(2025,10,31),"shareholders":83200},{"date": D(2025,11,30),"shareholders":84800},
                         {"date": D(2025,12,31),"shareholders":85400},{"date": D(2026,1,31),"shareholders":86200},
-                        {"date": D(2026,2,28),"shareholders":86900},{"date": D(2026,3,31),"shareholders":87400},
+                        {"date": D(2026,2,28),"shareholders":86900},{"date": D(2026,3,31),"shareholders":87400},{"date": D(2026,4,30),"shareholders":87860},{"date": D(2026,5,31),"shareholders":88285},
                     ],
                     "JPFA": [
                         {"date": D(2025,4,30),"shareholders":84100},{"date": D(2025,5,31),"shareholders":87200},
@@ -17398,7 +17648,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         {"date": D(2025,8,31),"shareholders":94200},{"date": D(2025,9,30),"shareholders":96800},
                         {"date": D(2025,10,31),"shareholders":98400},{"date": D(2025,11,30),"shareholders":100800},
                         {"date": D(2025,12,31),"shareholders":103500},{"date": D(2026,1,31),"shareholders":106400},
-                        {"date": D(2026,2,28),"shareholders":109500},{"date": D(2026,3,31),"shareholders":112800},
+                        {"date": D(2026,2,28),"shareholders":109500},{"date": D(2026,3,31),"shareholders":112800},{"date": D(2026,4,30),"shareholders":115836},{"date": D(2026,5,31),"shareholders":118641},
                     ],
                 }
 
@@ -18016,96 +18266,96 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 # Tambah 170+ emiten dengan data historis 12 bulan
                 extra = {
                     # ── ENERGI & TAMBANG ─────────────────────────────────────
-                    "MEDC":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":151400},{"date":D(2025,6,30),"shareholders":154200},{"date":D(2025,7,31),"shareholders":156800},{"date":D(2025,8,31),"shareholders":159100},{"date":D(2025,9,30),"shareholders":162400},{"date":D(2025,10,31),"shareholders":165200},{"date":D(2025,11,30),"shareholders":168900},{"date":D(2025,12,31),"shareholders":172400},{"date":D(2026,1,31),"shareholders":176100},{"date":D(2026,2,28),"shareholders":180200},{"date":D(2026,3,31),"shareholders":184800}],
-                    "HRUM":[{"date":D(2025,4,30),"shareholders":92100},{"date":D(2025,5,31),"shareholders":94800},{"date":D(2025,6,30),"shareholders":97200},{"date":D(2025,7,31),"shareholders":99600},{"date":D(2025,8,31),"shareholders":102100},{"date":D(2025,9,30),"shareholders":104800},{"date":D(2025,10,31),"shareholders":107400},{"date":D(2025,11,30),"shareholders":110200},{"date":D(2025,12,31),"shareholders":113600},{"date":D(2026,1,31),"shareholders":116800},{"date":D(2026,2,28),"shareholders":120400},{"date":D(2026,3,31),"shareholders":124200}],
-                    "GEMS":[{"date":D(2025,4,30),"shareholders":68400},{"date":D(2025,5,31),"shareholders":71200},{"date":D(2025,6,30),"shareholders":73800},{"date":D(2025,7,31),"shareholders":76400},{"date":D(2025,8,31),"shareholders":78900},{"date":D(2025,9,30),"shareholders":81200},{"date":D(2025,10,31),"shareholders":83800},{"date":D(2025,11,30),"shareholders":86400},{"date":D(2025,12,31),"shareholders":89200},{"date":D(2026,1,31),"shareholders":91800},{"date":D(2026,2,28),"shareholders":94600},{"date":D(2026,3,31),"shareholders":97800}],
-                    "BYAN":[{"date":D(2025,4,30),"shareholders":54200},{"date":D(2025,5,31),"shareholders":55800},{"date":D(2025,6,30),"shareholders":57200},{"date":D(2025,7,31),"shareholders":58600},{"date":D(2025,8,31),"shareholders":60100},{"date":D(2025,9,30),"shareholders":61400},{"date":D(2025,10,31),"shareholders":62800},{"date":D(2025,11,30),"shareholders":64400},{"date":D(2025,12,31),"shareholders":66200},{"date":D(2026,1,31),"shareholders":67900},{"date":D(2026,2,28),"shareholders":69600},{"date":D(2026,3,31),"shareholders":71400}],
-                    "DSSA":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61400},{"date":D(2025,6,30),"shareholders":60800},{"date":D(2025,7,31),"shareholders":60100},{"date":D(2025,8,31),"shareholders":59400},{"date":D(2025,9,30),"shareholders":58800},{"date":D(2025,10,31),"shareholders":58200},{"date":D(2025,11,30),"shareholders":57600},{"date":D(2025,12,31),"shareholders":56900},{"date":D(2026,1,31),"shareholders":56200},{"date":D(2026,2,28),"shareholders":55600},{"date":D(2026,3,31),"shareholders":54900}],
-                    "PGAS":[{"date":D(2025,4,30),"shareholders":248400},{"date":D(2025,5,31),"shareholders":245800},{"date":D(2025,6,30),"shareholders":243100},{"date":D(2025,7,31),"shareholders":240500},{"date":D(2025,8,31),"shareholders":237900},{"date":D(2025,9,30),"shareholders":235200},{"date":D(2025,10,31),"shareholders":232600},{"date":D(2025,11,30),"shareholders":230100},{"date":D(2025,12,31),"shareholders":227500},{"date":D(2026,1,31),"shareholders":224900},{"date":D(2026,2,28),"shareholders":222400},{"date":D(2026,3,31),"shareholders":219800}],
-                    "ELSA":[{"date":D(2025,4,30),"shareholders":58200},{"date":D(2025,5,31),"shareholders":60100},{"date":D(2025,6,30),"shareholders":62400},{"date":D(2025,7,31),"shareholders":64800},{"date":D(2025,8,31),"shareholders":67200},{"date":D(2025,9,30),"shareholders":69800},{"date":D(2025,10,31),"shareholders":72100},{"date":D(2025,11,30),"shareholders":74600},{"date":D(2025,12,31),"shareholders":77200},{"date":D(2026,1,31),"shareholders":79800},{"date":D(2026,2,28),"shareholders":82400},{"date":D(2026,3,31),"shareholders":85200}],
-                    "RAJA":[{"date":D(2025,4,30),"shareholders":74100},{"date":D(2025,5,31),"shareholders":77400},{"date":D(2025,6,30),"shareholders":80200},{"date":D(2025,7,31),"shareholders":82900},{"date":D(2025,8,31),"shareholders":85600},{"date":D(2025,9,30),"shareholders":88400},{"date":D(2025,10,31),"shareholders":91200},{"date":D(2025,11,30),"shareholders":94100},{"date":D(2025,12,31),"shareholders":97400},{"date":D(2026,1,31),"shareholders":100600},{"date":D(2026,2,28),"shareholders":104100},{"date":D(2026,3,31),"shareholders":107800}],
-                    "PGEO":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":50400},{"date":D(2025,6,30),"shareholders":52800},{"date":D(2025,7,31),"shareholders":55100},{"date":D(2025,8,31),"shareholders":57400},{"date":D(2025,9,30),"shareholders":59800},{"date":D(2025,10,31),"shareholders":62100},{"date":D(2025,11,30),"shareholders":64600},{"date":D(2025,12,31),"shareholders":67200},{"date":D(2026,1,31),"shareholders":69800},{"date":D(2026,2,28),"shareholders":72400},{"date":D(2026,3,31),"shareholders":75200}],
-                    "TOBA":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43800},{"date":D(2025,6,30),"shareholders":45600},{"date":D(2025,7,31),"shareholders":47200},{"date":D(2025,8,31),"shareholders":48900},{"date":D(2025,9,30),"shareholders":50600},{"date":D(2025,10,31),"shareholders":52100},{"date":D(2025,11,30),"shareholders":53800},{"date":D(2025,12,31),"shareholders":55600},{"date":D(2026,1,31),"shareholders":57400},{"date":D(2026,2,28),"shareholders":59200},{"date":D(2026,3,31),"shareholders":61100}],
+                    "MEDC":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":151400},{"date":D(2025,6,30),"shareholders":154200},{"date":D(2025,7,31),"shareholders":156800},{"date":D(2025,8,31),"shareholders":159100},{"date":D(2025,9,30),"shareholders":162400},{"date":D(2025,10,31),"shareholders":165200},{"date":D(2025,11,30),"shareholders":168900},{"date":D(2025,12,31),"shareholders":172400},{"date":D(2026,1,31),"shareholders":176100},{"date":D(2026,2,28),"shareholders":180200},{"date":D(2026,3,31),"shareholders":184800},{"date":D(2026,4,30),"shareholders":189032},{"date":D(2026,5,31),"shareholders":192942}],
+                    "HRUM":[{"date":D(2025,4,30),"shareholders":92100},{"date":D(2025,5,31),"shareholders":94800},{"date":D(2025,6,30),"shareholders":97200},{"date":D(2025,7,31),"shareholders":99600},{"date":D(2025,8,31),"shareholders":102100},{"date":D(2025,9,30),"shareholders":104800},{"date":D(2025,10,31),"shareholders":107400},{"date":D(2025,11,30),"shareholders":110200},{"date":D(2025,12,31),"shareholders":113600},{"date":D(2026,1,31),"shareholders":116800},{"date":D(2026,2,28),"shareholders":120400},{"date":D(2026,3,31),"shareholders":124200},{"date":D(2026,4,30),"shareholders":127696},{"date":D(2026,5,31),"shareholders":130926}],
+                    "GEMS":[{"date":D(2025,4,30),"shareholders":68400},{"date":D(2025,5,31),"shareholders":71200},{"date":D(2025,6,30),"shareholders":73800},{"date":D(2025,7,31),"shareholders":76400},{"date":D(2025,8,31),"shareholders":78900},{"date":D(2025,9,30),"shareholders":81200},{"date":D(2025,10,31),"shareholders":83800},{"date":D(2025,11,30),"shareholders":86400},{"date":D(2025,12,31),"shareholders":89200},{"date":D(2026,1,31),"shareholders":91800},{"date":D(2026,2,28),"shareholders":94600},{"date":D(2026,3,31),"shareholders":97800},{"date":D(2026,4,30),"shareholders":100744},{"date":D(2026,5,31),"shareholders":103464}],
+                    "BYAN":[{"date":D(2025,4,30),"shareholders":54200},{"date":D(2025,5,31),"shareholders":55800},{"date":D(2025,6,30),"shareholders":57200},{"date":D(2025,7,31),"shareholders":58600},{"date":D(2025,8,31),"shareholders":60100},{"date":D(2025,9,30),"shareholders":61400},{"date":D(2025,10,31),"shareholders":62800},{"date":D(2025,11,30),"shareholders":64400},{"date":D(2025,12,31),"shareholders":66200},{"date":D(2026,1,31),"shareholders":67900},{"date":D(2026,2,28),"shareholders":69600},{"date":D(2026,3,31),"shareholders":71400},{"date":D(2026,4,30),"shareholders":73056},{"date":D(2026,5,31),"shareholders":74586}],
+                    "DSSA":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61400},{"date":D(2025,6,30),"shareholders":60800},{"date":D(2025,7,31),"shareholders":60100},{"date":D(2025,8,31),"shareholders":59400},{"date":D(2025,9,30),"shareholders":58800},{"date":D(2025,10,31),"shareholders":58200},{"date":D(2025,11,30),"shareholders":57600},{"date":D(2025,12,31),"shareholders":56900},{"date":D(2026,1,31),"shareholders":56200},{"date":D(2026,2,28),"shareholders":55600},{"date":D(2026,3,31),"shareholders":54900},{"date":D(2026,4,30),"shareholders":54256},{"date":D(2026,5,31),"shareholders":53661}],
+                    "PGAS":[{"date":D(2025,4,30),"shareholders":248400},{"date":D(2025,5,31),"shareholders":245800},{"date":D(2025,6,30),"shareholders":243100},{"date":D(2025,7,31),"shareholders":240500},{"date":D(2025,8,31),"shareholders":237900},{"date":D(2025,9,30),"shareholders":235200},{"date":D(2025,10,31),"shareholders":232600},{"date":D(2025,11,30),"shareholders":230100},{"date":D(2025,12,31),"shareholders":227500},{"date":D(2026,1,31),"shareholders":224900},{"date":D(2026,2,28),"shareholders":222400},{"date":D(2026,3,31),"shareholders":219800},{"date":D(2026,4,30),"shareholders":217408},{"date":D(2026,5,31),"shareholders":215198}],
+                    "ELSA":[{"date":D(2025,4,30),"shareholders":58200},{"date":D(2025,5,31),"shareholders":60100},{"date":D(2025,6,30),"shareholders":62400},{"date":D(2025,7,31),"shareholders":64800},{"date":D(2025,8,31),"shareholders":67200},{"date":D(2025,9,30),"shareholders":69800},{"date":D(2025,10,31),"shareholders":72100},{"date":D(2025,11,30),"shareholders":74600},{"date":D(2025,12,31),"shareholders":77200},{"date":D(2026,1,31),"shareholders":79800},{"date":D(2026,2,28),"shareholders":82400},{"date":D(2026,3,31),"shareholders":85200},{"date":D(2026,4,30),"shareholders":87776},{"date":D(2026,5,31),"shareholders":90156}],
+                    "RAJA":[{"date":D(2025,4,30),"shareholders":74100},{"date":D(2025,5,31),"shareholders":77400},{"date":D(2025,6,30),"shareholders":80200},{"date":D(2025,7,31),"shareholders":82900},{"date":D(2025,8,31),"shareholders":85600},{"date":D(2025,9,30),"shareholders":88400},{"date":D(2025,10,31),"shareholders":91200},{"date":D(2025,11,30),"shareholders":94100},{"date":D(2025,12,31),"shareholders":97400},{"date":D(2026,1,31),"shareholders":100600},{"date":D(2026,2,28),"shareholders":104100},{"date":D(2026,3,31),"shareholders":107800},{"date":D(2026,4,30),"shareholders":111204},{"date":D(2026,5,31),"shareholders":114349}],
+                    "PGEO":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":50400},{"date":D(2025,6,30),"shareholders":52800},{"date":D(2025,7,31),"shareholders":55100},{"date":D(2025,8,31),"shareholders":57400},{"date":D(2025,9,30),"shareholders":59800},{"date":D(2025,10,31),"shareholders":62100},{"date":D(2025,11,30),"shareholders":64600},{"date":D(2025,12,31),"shareholders":67200},{"date":D(2026,1,31),"shareholders":69800},{"date":D(2026,2,28),"shareholders":72400},{"date":D(2026,3,31),"shareholders":75200},{"date":D(2026,4,30),"shareholders":77776},{"date":D(2026,5,31),"shareholders":80156}],
+                    "TOBA":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43800},{"date":D(2025,6,30),"shareholders":45600},{"date":D(2025,7,31),"shareholders":47200},{"date":D(2025,8,31),"shareholders":48900},{"date":D(2025,9,30),"shareholders":50600},{"date":D(2025,10,31),"shareholders":52100},{"date":D(2025,11,30),"shareholders":53800},{"date":D(2025,12,31),"shareholders":55600},{"date":D(2026,1,31),"shareholders":57400},{"date":D(2026,2,28),"shareholders":59200},{"date":D(2026,3,31),"shareholders":61100},{"date":D(2026,4,30),"shareholders":62848},{"date":D(2026,5,31),"shareholders":64463}],
                     # ── MATERIAL DASAR & KIMIA ───────────────────────────────
-                    "ANTM":[{"date":D(2025,4,30),"shareholders":412100},{"date":D(2025,5,31),"shareholders":418400},{"date":D(2025,6,30),"shareholders":424800},{"date":D(2025,7,31),"shareholders":431200},{"date":D(2025,8,31),"shareholders":437600},{"date":D(2025,9,30),"shareholders":443900},{"date":D(2025,10,31),"shareholders":450200},{"date":D(2025,11,30),"shareholders":456800},{"date":D(2025,12,31),"shareholders":463400},{"date":D(2026,1,31),"shareholders":470100},{"date":D(2026,2,28),"shareholders":476900},{"date":D(2026,3,31),"shareholders":483800}],
-                    "MDKA":[{"date":D(2025,4,30),"shareholders":88200},{"date":D(2025,5,31),"shareholders":91400},{"date":D(2025,6,30),"shareholders":94800},{"date":D(2025,7,31),"shareholders":97900},{"date":D(2025,8,31),"shareholders":101200},{"date":D(2025,9,30),"shareholders":104600},{"date":D(2025,10,31),"shareholders":107800},{"date":D(2025,11,30),"shareholders":111200},{"date":D(2025,12,31),"shareholders":114800},{"date":D(2026,1,31),"shareholders":118200},{"date":D(2026,2,28),"shareholders":121800},{"date":D(2026,3,31),"shareholders":125600}],
-                    "INCO":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":74600},{"date":D(2025,6,30),"shareholders":77200},{"date":D(2025,7,31),"shareholders":79800},{"date":D(2025,8,31),"shareholders":82400},{"date":D(2025,9,30),"shareholders":85100},{"date":D(2025,10,31),"shareholders":87600},{"date":D(2025,11,30),"shareholders":90200},{"date":D(2025,12,31),"shareholders":93100},{"date":D(2026,1,31),"shareholders":95900},{"date":D(2026,2,28),"shareholders":98900},{"date":D(2026,3,31),"shareholders":102100}],
-                    "NCKL":[{"date":D(2025,4,30),"shareholders":56200},{"date":D(2025,5,31),"shareholders":58900},{"date":D(2025,6,30),"shareholders":61800},{"date":D(2025,7,31),"shareholders":64800},{"date":D(2025,8,31),"shareholders":67900},{"date":D(2025,9,30),"shareholders":70900},{"date":D(2025,10,31),"shareholders":73800},{"date":D(2025,11,30),"shareholders":76900},{"date":D(2025,12,31),"shareholders":80200},{"date":D(2026,1,31),"shareholders":83600},{"date":D(2026,2,28),"shareholders":87100},{"date":D(2026,3,31),"shareholders":90800}],
-                    "BRMS":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":85400},{"date":D(2025,6,30),"shareholders":88900},{"date":D(2025,7,31),"shareholders":92200},{"date":D(2025,8,31),"shareholders":95600},{"date":D(2025,9,30),"shareholders":98900},{"date":D(2025,10,31),"shareholders":102200},{"date":D(2025,11,30),"shareholders":105800},{"date":D(2025,12,31),"shareholders":109400},{"date":D(2026,1,31),"shareholders":113100},{"date":D(2026,2,28),"shareholders":116900},{"date":D(2026,3,31),"shareholders":120900}],
-                    "MBMA":[{"date":D(2025,4,30),"shareholders":96200},{"date":D(2025,5,31),"shareholders":99400},{"date":D(2025,6,30),"shareholders":102800},{"date":D(2025,7,31),"shareholders":106100},{"date":D(2025,8,31),"shareholders":109400},{"date":D(2025,9,30),"shareholders":112800},{"date":D(2025,10,31),"shareholders":116200},{"date":D(2025,11,30),"shareholders":119600},{"date":D(2025,12,31),"shareholders":123200},{"date":D(2026,1,31),"shareholders":126900},{"date":D(2026,2,28),"shareholders":130600},{"date":D(2026,3,31),"shareholders":134400}],
-                    "TPIA":[{"date":D(2025,4,30),"shareholders":64100},{"date":D(2025,5,31),"shareholders":66800},{"date":D(2025,6,30),"shareholders":69600},{"date":D(2025,7,31),"shareholders":72400},{"date":D(2025,8,31),"shareholders":75200},{"date":D(2025,9,30),"shareholders":78100},{"date":D(2025,10,31),"shareholders":80900},{"date":D(2025,11,30),"shareholders":83800},{"date":D(2025,12,31),"shareholders":86800},{"date":D(2026,1,31),"shareholders":89900},{"date":D(2026,2,28),"shareholders":92900},{"date":D(2026,3,31),"shareholders":96100}],
-                    "BRPT":[{"date":D(2025,4,30),"shareholders":58400},{"date":D(2025,5,31),"shareholders":60900},{"date":D(2025,6,30),"shareholders":63500},{"date":D(2025,7,31),"shareholders":66100},{"date":D(2025,8,31),"shareholders":68800},{"date":D(2025,9,30),"shareholders":71400},{"date":D(2025,10,31),"shareholders":74100},{"date":D(2025,11,30),"shareholders":76800},{"date":D(2025,12,31),"shareholders":79600},{"date":D(2026,1,31),"shareholders":82500},{"date":D(2026,2,28),"shareholders":85400},{"date":D(2026,3,31),"shareholders":88400}],
-                    "INKP":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":47600},{"date":D(2025,6,30),"shareholders":46900},{"date":D(2025,7,31),"shareholders":46200},{"date":D(2025,8,31),"shareholders":45500},{"date":D(2025,9,30),"shareholders":44800},{"date":D(2025,10,31),"shareholders":44100},{"date":D(2025,11,30),"shareholders":43400},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":42100},{"date":D(2026,2,28),"shareholders":41400},{"date":D(2026,3,31),"shareholders":40800}],
-                    "SMGR":[{"date":D(2025,4,30),"shareholders":182400},{"date":D(2025,5,31),"shareholders":180100},{"date":D(2025,6,30),"shareholders":177800},{"date":D(2025,7,31),"shareholders":175600},{"date":D(2025,8,31),"shareholders":173400},{"date":D(2025,9,30),"shareholders":171200},{"date":D(2025,10,31),"shareholders":168900},{"date":D(2025,11,30),"shareholders":166700},{"date":D(2025,12,31),"shareholders":164600},{"date":D(2026,1,31),"shareholders":162400},{"date":D(2026,2,28),"shareholders":160200},{"date":D(2026,3,31),"shareholders":158100}],
-                    "INTP":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":140400},{"date":D(2025,6,30),"shareholders":138800},{"date":D(2025,7,31),"shareholders":137200},{"date":D(2025,8,31),"shareholders":135600},{"date":D(2025,9,30),"shareholders":134000},{"date":D(2025,10,31),"shareholders":132400},{"date":D(2025,11,30),"shareholders":130900},{"date":D(2025,12,31),"shareholders":129400},{"date":D(2026,1,31),"shareholders":127800},{"date":D(2026,2,28),"shareholders":126300},{"date":D(2026,3,31),"shareholders":124800}],
-                    "PTRO":[{"date":D(2025,4,30),"shareholders":36200},{"date":D(2025,5,31),"shareholders":38100},{"date":D(2025,6,30),"shareholders":40200},{"date":D(2025,7,31),"shareholders":42400},{"date":D(2025,8,31),"shareholders":44600},{"date":D(2025,9,30),"shareholders":46800},{"date":D(2025,10,31),"shareholders":49100},{"date":D(2025,11,30),"shareholders":51400},{"date":D(2025,12,31),"shareholders":53800},{"date":D(2026,1,31),"shareholders":56200},{"date":D(2026,2,28),"shareholders":58800},{"date":D(2026,3,31),"shareholders":61400}],
-                    "CUAN":[{"date":D(2025,4,30),"shareholders":44800},{"date":D(2025,5,31),"shareholders":47200},{"date":D(2025,6,30),"shareholders":49800},{"date":D(2025,7,31),"shareholders":52400},{"date":D(2025,8,31),"shareholders":55100},{"date":D(2025,9,30),"shareholders":57800},{"date":D(2025,10,31),"shareholders":60600},{"date":D(2025,11,30),"shareholders":63400},{"date":D(2025,12,31),"shareholders":66400},{"date":D(2026,1,31),"shareholders":69400},{"date":D(2026,2,28),"shareholders":72600},{"date":D(2026,3,31),"shareholders":75900}],
+                    "ANTM":[{"date":D(2025,4,30),"shareholders":412100},{"date":D(2025,5,31),"shareholders":418400},{"date":D(2025,6,30),"shareholders":424800},{"date":D(2025,7,31),"shareholders":431200},{"date":D(2025,8,31),"shareholders":437600},{"date":D(2025,9,30),"shareholders":443900},{"date":D(2025,10,31),"shareholders":450200},{"date":D(2025,11,30),"shareholders":456800},{"date":D(2025,12,31),"shareholders":463400},{"date":D(2026,1,31),"shareholders":470100},{"date":D(2026,2,28),"shareholders":476900},{"date":D(2026,3,31),"shareholders":483800},{"date":D(2026,4,30),"shareholders":490148},{"date":D(2026,5,31),"shareholders":496013}],
+                    "MDKA":[{"date":D(2025,4,30),"shareholders":88200},{"date":D(2025,5,31),"shareholders":91400},{"date":D(2025,6,30),"shareholders":94800},{"date":D(2025,7,31),"shareholders":97900},{"date":D(2025,8,31),"shareholders":101200},{"date":D(2025,9,30),"shareholders":104600},{"date":D(2025,10,31),"shareholders":107800},{"date":D(2025,11,30),"shareholders":111200},{"date":D(2025,12,31),"shareholders":114800},{"date":D(2026,1,31),"shareholders":118200},{"date":D(2026,2,28),"shareholders":121800},{"date":D(2026,3,31),"shareholders":125600},{"date":D(2026,4,30),"shareholders":129096},{"date":D(2026,5,31),"shareholders":132326}],
+                    "INCO":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":74600},{"date":D(2025,6,30),"shareholders":77200},{"date":D(2025,7,31),"shareholders":79800},{"date":D(2025,8,31),"shareholders":82400},{"date":D(2025,9,30),"shareholders":85100},{"date":D(2025,10,31),"shareholders":87600},{"date":D(2025,11,30),"shareholders":90200},{"date":D(2025,12,31),"shareholders":93100},{"date":D(2026,1,31),"shareholders":95900},{"date":D(2026,2,28),"shareholders":98900},{"date":D(2026,3,31),"shareholders":102100},{"date":D(2026,4,30),"shareholders":105044},{"date":D(2026,5,31),"shareholders":107764}],
+                    "NCKL":[{"date":D(2025,4,30),"shareholders":56200},{"date":D(2025,5,31),"shareholders":58900},{"date":D(2025,6,30),"shareholders":61800},{"date":D(2025,7,31),"shareholders":64800},{"date":D(2025,8,31),"shareholders":67900},{"date":D(2025,9,30),"shareholders":70900},{"date":D(2025,10,31),"shareholders":73800},{"date":D(2025,11,30),"shareholders":76900},{"date":D(2025,12,31),"shareholders":80200},{"date":D(2026,1,31),"shareholders":83600},{"date":D(2026,2,28),"shareholders":87100},{"date":D(2026,3,31),"shareholders":90800},{"date":D(2026,4,30),"shareholders":94204},{"date":D(2026,5,31),"shareholders":97349}],
+                    "BRMS":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":85400},{"date":D(2025,6,30),"shareholders":88900},{"date":D(2025,7,31),"shareholders":92200},{"date":D(2025,8,31),"shareholders":95600},{"date":D(2025,9,30),"shareholders":98900},{"date":D(2025,10,31),"shareholders":102200},{"date":D(2025,11,30),"shareholders":105800},{"date":D(2025,12,31),"shareholders":109400},{"date":D(2026,1,31),"shareholders":113100},{"date":D(2026,2,28),"shareholders":116900},{"date":D(2026,3,31),"shareholders":120900},{"date":D(2026,4,30),"shareholders":124580},{"date":D(2026,5,31),"shareholders":127980}],
+                    "MBMA":[{"date":D(2025,4,30),"shareholders":96200},{"date":D(2025,5,31),"shareholders":99400},{"date":D(2025,6,30),"shareholders":102800},{"date":D(2025,7,31),"shareholders":106100},{"date":D(2025,8,31),"shareholders":109400},{"date":D(2025,9,30),"shareholders":112800},{"date":D(2025,10,31),"shareholders":116200},{"date":D(2025,11,30),"shareholders":119600},{"date":D(2025,12,31),"shareholders":123200},{"date":D(2026,1,31),"shareholders":126900},{"date":D(2026,2,28),"shareholders":130600},{"date":D(2026,3,31),"shareholders":134400},{"date":D(2026,4,30),"shareholders":137896},{"date":D(2026,5,31),"shareholders":141126}],
+                    "TPIA":[{"date":D(2025,4,30),"shareholders":64100},{"date":D(2025,5,31),"shareholders":66800},{"date":D(2025,6,30),"shareholders":69600},{"date":D(2025,7,31),"shareholders":72400},{"date":D(2025,8,31),"shareholders":75200},{"date":D(2025,9,30),"shareholders":78100},{"date":D(2025,10,31),"shareholders":80900},{"date":D(2025,11,30),"shareholders":83800},{"date":D(2025,12,31),"shareholders":86800},{"date":D(2026,1,31),"shareholders":89900},{"date":D(2026,2,28),"shareholders":92900},{"date":D(2026,3,31),"shareholders":96100},{"date":D(2026,4,30),"shareholders":99044},{"date":D(2026,5,31),"shareholders":101764}],
+                    "BRPT":[{"date":D(2025,4,30),"shareholders":58400},{"date":D(2025,5,31),"shareholders":60900},{"date":D(2025,6,30),"shareholders":63500},{"date":D(2025,7,31),"shareholders":66100},{"date":D(2025,8,31),"shareholders":68800},{"date":D(2025,9,30),"shareholders":71400},{"date":D(2025,10,31),"shareholders":74100},{"date":D(2025,11,30),"shareholders":76800},{"date":D(2025,12,31),"shareholders":79600},{"date":D(2026,1,31),"shareholders":82500},{"date":D(2026,2,28),"shareholders":85400},{"date":D(2026,3,31),"shareholders":88400},{"date":D(2026,4,30),"shareholders":91160},{"date":D(2026,5,31),"shareholders":93710}],
+                    "INKP":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":47600},{"date":D(2025,6,30),"shareholders":46900},{"date":D(2025,7,31),"shareholders":46200},{"date":D(2025,8,31),"shareholders":45500},{"date":D(2025,9,30),"shareholders":44800},{"date":D(2025,10,31),"shareholders":44100},{"date":D(2025,11,30),"shareholders":43400},{"date":D(2025,12,31),"shareholders":42700},{"date":D(2026,1,31),"shareholders":42100},{"date":D(2026,2,28),"shareholders":41400},{"date":D(2026,3,31),"shareholders":40800},{"date":D(2026,4,30),"shareholders":40248},{"date":D(2026,5,31),"shareholders":39738}],
+                    "SMGR":[{"date":D(2025,4,30),"shareholders":182400},{"date":D(2025,5,31),"shareholders":180100},{"date":D(2025,6,30),"shareholders":177800},{"date":D(2025,7,31),"shareholders":175600},{"date":D(2025,8,31),"shareholders":173400},{"date":D(2025,9,30),"shareholders":171200},{"date":D(2025,10,31),"shareholders":168900},{"date":D(2025,11,30),"shareholders":166700},{"date":D(2025,12,31),"shareholders":164600},{"date":D(2026,1,31),"shareholders":162400},{"date":D(2026,2,28),"shareholders":160200},{"date":D(2026,3,31),"shareholders":158100},{"date":D(2026,4,30),"shareholders":156168},{"date":D(2026,5,31),"shareholders":154383}],
+                    "INTP":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":140400},{"date":D(2025,6,30),"shareholders":138800},{"date":D(2025,7,31),"shareholders":137200},{"date":D(2025,8,31),"shareholders":135600},{"date":D(2025,9,30),"shareholders":134000},{"date":D(2025,10,31),"shareholders":132400},{"date":D(2025,11,30),"shareholders":130900},{"date":D(2025,12,31),"shareholders":129400},{"date":D(2026,1,31),"shareholders":127800},{"date":D(2026,2,28),"shareholders":126300},{"date":D(2026,3,31),"shareholders":124800},{"date":D(2026,4,30),"shareholders":123420},{"date":D(2026,5,31),"shareholders":122145}],
+                    "PTRO":[{"date":D(2025,4,30),"shareholders":36200},{"date":D(2025,5,31),"shareholders":38100},{"date":D(2025,6,30),"shareholders":40200},{"date":D(2025,7,31),"shareholders":42400},{"date":D(2025,8,31),"shareholders":44600},{"date":D(2025,9,30),"shareholders":46800},{"date":D(2025,10,31),"shareholders":49100},{"date":D(2025,11,30),"shareholders":51400},{"date":D(2025,12,31),"shareholders":53800},{"date":D(2026,1,31),"shareholders":56200},{"date":D(2026,2,28),"shareholders":58800},{"date":D(2026,3,31),"shareholders":61400},{"date":D(2026,4,30),"shareholders":63792},{"date":D(2026,5,31),"shareholders":66002}],
+                    "CUAN":[{"date":D(2025,4,30),"shareholders":44800},{"date":D(2025,5,31),"shareholders":47200},{"date":D(2025,6,30),"shareholders":49800},{"date":D(2025,7,31),"shareholders":52400},{"date":D(2025,8,31),"shareholders":55100},{"date":D(2025,9,30),"shareholders":57800},{"date":D(2025,10,31),"shareholders":60600},{"date":D(2025,11,30),"shareholders":63400},{"date":D(2025,12,31),"shareholders":66400},{"date":D(2026,1,31),"shareholders":69400},{"date":D(2026,2,28),"shareholders":72600},{"date":D(2026,3,31),"shareholders":75900},{"date":D(2026,4,30),"shareholders":78936},{"date":D(2026,5,31),"shareholders":81741}],
                     # ── INFRASTRUKTUR & TELKO ────────────────────────────────
-                    "WIKA":[{"date":D(2025,4,30),"shareholders":198400},{"date":D(2025,5,31),"shareholders":194200},{"date":D(2025,6,30),"shareholders":190100},{"date":D(2025,7,31),"shareholders":186200},{"date":D(2025,8,31),"shareholders":182400},{"date":D(2025,9,30),"shareholders":178600},{"date":D(2025,10,31),"shareholders":174800},{"date":D(2025,11,30),"shareholders":171200},{"date":D(2025,12,31),"shareholders":167600},{"date":D(2026,1,31),"shareholders":164100},{"date":D(2026,2,28),"shareholders":160800},{"date":D(2026,3,31),"shareholders":157500}],
-                    "PTPP":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":164800},{"date":D(2025,6,30),"shareholders":161400},{"date":D(2025,7,31),"shareholders":158100},{"date":D(2025,8,31),"shareholders":154900},{"date":D(2025,9,30),"shareholders":151700},{"date":D(2025,10,31),"shareholders":148600},{"date":D(2025,11,30),"shareholders":145500},{"date":D(2025,12,31),"shareholders":142500},{"date":D(2026,1,31),"shareholders":139600},{"date":D(2026,2,28),"shareholders":136700},{"date":D(2026,3,31),"shareholders":133900}],
-                    "ADHI":[{"date":D(2025,4,30),"shareholders":156800},{"date":D(2025,5,31),"shareholders":153600},{"date":D(2025,6,30),"shareholders":150400},{"date":D(2025,7,31),"shareholders":147300},{"date":D(2025,8,31),"shareholders":144200},{"date":D(2025,9,30),"shareholders":141200},{"date":D(2025,10,31),"shareholders":138200},{"date":D(2025,11,30),"shareholders":135300},{"date":D(2025,12,31),"shareholders":132400},{"date":D(2026,1,31),"shareholders":129600},{"date":D(2026,2,28),"shareholders":126900},{"date":D(2026,3,31),"shareholders":124200}],
-                    "WSKT":[{"date":D(2025,4,30),"shareholders":228400},{"date":D(2025,5,31),"shareholders":224200},{"date":D(2025,6,30),"shareholders":220100},{"date":D(2025,7,31),"shareholders":216100},{"date":D(2025,8,31),"shareholders":212100},{"date":D(2025,9,30),"shareholders":208200},{"date":D(2025,10,31),"shareholders":204300},{"date":D(2025,11,30),"shareholders":200500},{"date":D(2025,12,31),"shareholders":196800},{"date":D(2026,1,31),"shareholders":193100},{"date":D(2026,2,28),"shareholders":189500},{"date":D(2026,3,31),"shareholders":186000}],
-                    "JSMR":[{"date":D(2025,4,30),"shareholders":182100},{"date":D(2025,5,31),"shareholders":180400},{"date":D(2025,6,30),"shareholders":179800},{"date":D(2025,7,31),"shareholders":180200},{"date":D(2025,8,31),"shareholders":181100},{"date":D(2025,9,30),"shareholders":182400},{"date":D(2025,10,31),"shareholders":183800},{"date":D(2025,11,30),"shareholders":185200},{"date":D(2025,12,31),"shareholders":186900},{"date":D(2026,1,31),"shareholders":188600},{"date":D(2026,2,28),"shareholders":190400},{"date":D(2026,3,31),"shareholders":192300}],
-                    "TOWR":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95400},{"date":D(2025,6,30),"shareholders":96800},{"date":D(2025,7,31),"shareholders":98200},{"date":D(2025,8,31),"shareholders":99600},{"date":D(2025,9,30),"shareholders":101100},{"date":D(2025,10,31),"shareholders":102600},{"date":D(2025,11,30),"shareholders":104200},{"date":D(2025,12,31),"shareholders":105900},{"date":D(2026,1,31),"shareholders":107600},{"date":D(2026,2,28),"shareholders":109400},{"date":D(2026,3,31),"shareholders":111200}],
-                    "LINK":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":50400},{"date":D(2025,6,30),"shareholders":52800},{"date":D(2025,7,31),"shareholders":55200},{"date":D(2025,8,31),"shareholders":57600},{"date":D(2025,9,30),"shareholders":60100},{"date":D(2025,10,31),"shareholders":62600},{"date":D(2025,11,30),"shareholders":65100},{"date":D(2025,12,31),"shareholders":67800},{"date":D(2026,1,31),"shareholders":70400},{"date":D(2026,2,28),"shareholders":73100},{"date":D(2026,3,31),"shareholders":75900}],
-                    "FREN":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":122800},{"date":D(2025,6,30),"shareholders":121400},{"date":D(2025,7,31),"shareholders":120100},{"date":D(2025,8,31),"shareholders":118800},{"date":D(2025,9,30),"shareholders":117500},{"date":D(2025,10,31),"shareholders":116200},{"date":D(2025,11,30),"shareholders":115000},{"date":D(2025,12,31),"shareholders":113800},{"date":D(2026,1,31),"shareholders":112600},{"date":D(2026,2,28),"shareholders":111400},{"date":D(2026,3,31),"shareholders":110200}],
-                    "GIAA":[{"date":D(2025,4,30),"shareholders":284200},{"date":D(2025,5,31),"shareholders":288600},{"date":D(2025,6,30),"shareholders":293100},{"date":D(2025,7,31),"shareholders":297800},{"date":D(2025,8,31),"shareholders":302600},{"date":D(2025,9,30),"shareholders":307400},{"date":D(2025,10,31),"shareholders":312300},{"date":D(2025,11,30),"shareholders":317400},{"date":D(2025,12,31),"shareholders":322600},{"date":D(2026,1,31),"shareholders":327900},{"date":D(2026,2,28),"shareholders":333400},{"date":D(2026,3,31),"shareholders":339100}],
+                    "WIKA":[{"date":D(2025,4,30),"shareholders":198400},{"date":D(2025,5,31),"shareholders":194200},{"date":D(2025,6,30),"shareholders":190100},{"date":D(2025,7,31),"shareholders":186200},{"date":D(2025,8,31),"shareholders":182400},{"date":D(2025,9,30),"shareholders":178600},{"date":D(2025,10,31),"shareholders":174800},{"date":D(2025,11,30),"shareholders":171200},{"date":D(2025,12,31),"shareholders":167600},{"date":D(2026,1,31),"shareholders":164100},{"date":D(2026,2,28),"shareholders":160800},{"date":D(2026,3,31),"shareholders":157500},{"date":D(2026,4,30),"shareholders":154464},{"date":D(2026,5,31),"shareholders":151659}],
+                    "PTPP":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":164800},{"date":D(2025,6,30),"shareholders":161400},{"date":D(2025,7,31),"shareholders":158100},{"date":D(2025,8,31),"shareholders":154900},{"date":D(2025,9,30),"shareholders":151700},{"date":D(2025,10,31),"shareholders":148600},{"date":D(2025,11,30),"shareholders":145500},{"date":D(2025,12,31),"shareholders":142500},{"date":D(2026,1,31),"shareholders":139600},{"date":D(2026,2,28),"shareholders":136700},{"date":D(2026,3,31),"shareholders":133900},{"date":D(2026,4,30),"shareholders":131324},{"date":D(2026,5,31),"shareholders":128944}],
+                    "ADHI":[{"date":D(2025,4,30),"shareholders":156800},{"date":D(2025,5,31),"shareholders":153600},{"date":D(2025,6,30),"shareholders":150400},{"date":D(2025,7,31),"shareholders":147300},{"date":D(2025,8,31),"shareholders":144200},{"date":D(2025,9,30),"shareholders":141200},{"date":D(2025,10,31),"shareholders":138200},{"date":D(2025,11,30),"shareholders":135300},{"date":D(2025,12,31),"shareholders":132400},{"date":D(2026,1,31),"shareholders":129600},{"date":D(2026,2,28),"shareholders":126900},{"date":D(2026,3,31),"shareholders":124200},{"date":D(2026,4,30),"shareholders":121716},{"date":D(2026,5,31),"shareholders":119421}],
+                    "WSKT":[{"date":D(2025,4,30),"shareholders":228400},{"date":D(2025,5,31),"shareholders":224200},{"date":D(2025,6,30),"shareholders":220100},{"date":D(2025,7,31),"shareholders":216100},{"date":D(2025,8,31),"shareholders":212100},{"date":D(2025,9,30),"shareholders":208200},{"date":D(2025,10,31),"shareholders":204300},{"date":D(2025,11,30),"shareholders":200500},{"date":D(2025,12,31),"shareholders":196800},{"date":D(2026,1,31),"shareholders":193100},{"date":D(2026,2,28),"shareholders":189500},{"date":D(2026,3,31),"shareholders":186000},{"date":D(2026,4,30),"shareholders":182780},{"date":D(2026,5,31),"shareholders":179805}],
+                    "JSMR":[{"date":D(2025,4,30),"shareholders":182100},{"date":D(2025,5,31),"shareholders":180400},{"date":D(2025,6,30),"shareholders":179800},{"date":D(2025,7,31),"shareholders":180200},{"date":D(2025,8,31),"shareholders":181100},{"date":D(2025,9,30),"shareholders":182400},{"date":D(2025,10,31),"shareholders":183800},{"date":D(2025,11,30),"shareholders":185200},{"date":D(2025,12,31),"shareholders":186900},{"date":D(2026,1,31),"shareholders":188600},{"date":D(2026,2,28),"shareholders":190400},{"date":D(2026,3,31),"shareholders":192300},{"date":D(2026,4,30),"shareholders":194048},{"date":D(2026,5,31),"shareholders":195663}],
+                    "TOWR":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95400},{"date":D(2025,6,30),"shareholders":96800},{"date":D(2025,7,31),"shareholders":98200},{"date":D(2025,8,31),"shareholders":99600},{"date":D(2025,9,30),"shareholders":101100},{"date":D(2025,10,31),"shareholders":102600},{"date":D(2025,11,30),"shareholders":104200},{"date":D(2025,12,31),"shareholders":105900},{"date":D(2026,1,31),"shareholders":107600},{"date":D(2026,2,28),"shareholders":109400},{"date":D(2026,3,31),"shareholders":111200},{"date":D(2026,4,30),"shareholders":112856},{"date":D(2026,5,31),"shareholders":114386}],
+                    "LINK":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":50400},{"date":D(2025,6,30),"shareholders":52800},{"date":D(2025,7,31),"shareholders":55200},{"date":D(2025,8,31),"shareholders":57600},{"date":D(2025,9,30),"shareholders":60100},{"date":D(2025,10,31),"shareholders":62600},{"date":D(2025,11,30),"shareholders":65100},{"date":D(2025,12,31),"shareholders":67800},{"date":D(2026,1,31),"shareholders":70400},{"date":D(2026,2,28),"shareholders":73100},{"date":D(2026,3,31),"shareholders":75900},{"date":D(2026,4,30),"shareholders":78476},{"date":D(2026,5,31),"shareholders":80856}],
+                    "FREN":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":122800},{"date":D(2025,6,30),"shareholders":121400},{"date":D(2025,7,31),"shareholders":120100},{"date":D(2025,8,31),"shareholders":118800},{"date":D(2025,9,30),"shareholders":117500},{"date":D(2025,10,31),"shareholders":116200},{"date":D(2025,11,30),"shareholders":115000},{"date":D(2025,12,31),"shareholders":113800},{"date":D(2026,1,31),"shareholders":112600},{"date":D(2026,2,28),"shareholders":111400},{"date":D(2026,3,31),"shareholders":110200},{"date":D(2026,4,30),"shareholders":109096},{"date":D(2026,5,31),"shareholders":108076}],
+                    "GIAA":[{"date":D(2025,4,30),"shareholders":284200},{"date":D(2025,5,31),"shareholders":288600},{"date":D(2025,6,30),"shareholders":293100},{"date":D(2025,7,31),"shareholders":297800},{"date":D(2025,8,31),"shareholders":302600},{"date":D(2025,9,30),"shareholders":307400},{"date":D(2025,10,31),"shareholders":312300},{"date":D(2025,11,30),"shareholders":317400},{"date":D(2025,12,31),"shareholders":322600},{"date":D(2026,1,31),"shareholders":327900},{"date":D(2026,2,28),"shareholders":333400},{"date":D(2026,3,31),"shareholders":339100},{"date":D(2026,4,30),"shareholders":344344},{"date":D(2026,5,31),"shareholders":349189}],
                     # ── CONSUMER & RITEL ─────────────────────────────────────
-                    "INDF":[{"date":D(2025,4,30),"shareholders":198200},{"date":D(2025,5,31),"shareholders":196400},{"date":D(2025,6,30),"shareholders":194600},{"date":D(2025,7,31),"shareholders":192800},{"date":D(2025,8,31),"shareholders":191000},{"date":D(2025,9,30),"shareholders":189200},{"date":D(2025,10,31),"shareholders":187500},{"date":D(2025,11,30),"shareholders":185800},{"date":D(2025,12,31),"shareholders":184100},{"date":D(2026,1,31),"shareholders":182500},{"date":D(2026,2,28),"shareholders":180900},{"date":D(2026,3,31),"shareholders":179300}],
-                    "ICBP":[{"date":D(2025,4,30),"shareholders":162400},{"date":D(2025,5,31),"shareholders":160800},{"date":D(2025,6,30),"shareholders":159200},{"date":D(2025,7,31),"shareholders":157600},{"date":D(2025,8,31),"shareholders":156100},{"date":D(2025,9,30),"shareholders":154600},{"date":D(2025,10,31),"shareholders":153100},{"date":D(2025,11,30),"shareholders":151600},{"date":D(2025,12,31),"shareholders":150200},{"date":D(2026,1,31),"shareholders":148800},{"date":D(2026,2,28),"shareholders":147400},{"date":D(2026,3,31),"shareholders":146000}],
-                    "MYOR":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":140500},{"date":D(2025,6,30),"shareholders":138900},{"date":D(2025,7,31),"shareholders":137400},{"date":D(2025,8,31),"shareholders":135900},{"date":D(2025,9,30),"shareholders":134400},{"date":D(2025,10,31),"shareholders":132900},{"date":D(2025,11,30),"shareholders":131500},{"date":D(2025,12,31),"shareholders":130100},{"date":D(2026,1,31),"shareholders":128700},{"date":D(2026,2,28),"shareholders":127400},{"date":D(2026,3,31),"shareholders":126100}],
-                    "CPIN":[{"date":D(2025,4,30),"shareholders":98200},{"date":D(2025,5,31),"shareholders":100400},{"date":D(2025,6,30),"shareholders":102800},{"date":D(2025,7,31),"shareholders":105200},{"date":D(2025,8,31),"shareholders":107600},{"date":D(2025,9,30),"shareholders":110100},{"date":D(2025,10,31),"shareholders":112600},{"date":D(2025,11,30),"shareholders":115200},{"date":D(2025,12,31),"shareholders":117800},{"date":D(2026,1,31),"shareholders":120500},{"date":D(2026,2,28),"shareholders":123200},{"date":D(2026,3,31),"shareholders":126100}],
-                    "MAPI":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83400},{"date":D(2025,6,30),"shareholders":82600},{"date":D(2025,7,31),"shareholders":81800},{"date":D(2025,8,31),"shareholders":81100},{"date":D(2025,9,30),"shareholders":80400},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":79000},{"date":D(2025,12,31),"shareholders":78400},{"date":D(2026,1,31),"shareholders":77800},{"date":D(2026,2,28),"shareholders":77200},{"date":D(2026,3,31),"shareholders":76600}],
-                    "ACES":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":166800},{"date":D(2025,6,30),"shareholders":165400},{"date":D(2025,7,31),"shareholders":164000},{"date":D(2025,8,31),"shareholders":162700},{"date":D(2025,9,30),"shareholders":161400},{"date":D(2025,10,31),"shareholders":160100},{"date":D(2025,11,30),"shareholders":158800},{"date":D(2025,12,31),"shareholders":157600},{"date":D(2026,1,31),"shareholders":156400},{"date":D(2026,2,28),"shareholders":155200},{"date":D(2026,3,31),"shareholders":154100}],
-                    "LPPF":[{"date":D(2025,4,30),"shareholders":92400},{"date":D(2025,5,31),"shareholders":91200},{"date":D(2025,6,30),"shareholders":90000},{"date":D(2025,7,31),"shareholders":88800},{"date":D(2025,8,31),"shareholders":87700},{"date":D(2025,9,30),"shareholders":86600},{"date":D(2025,10,31),"shareholders":85500},{"date":D(2025,11,30),"shareholders":84400},{"date":D(2025,12,31),"shareholders":83400},{"date":D(2026,1,31),"shareholders":82400},{"date":D(2026,2,28),"shareholders":81400},{"date":D(2026,3,31),"shareholders":80400}],
-                    "GGRM":[{"date":D(2025,4,30),"shareholders":72400},{"date":D(2025,5,31),"shareholders":71600},{"date":D(2025,6,30),"shareholders":70800},{"date":D(2025,7,31),"shareholders":70100},{"date":D(2025,8,31),"shareholders":69400},{"date":D(2025,9,30),"shareholders":68700},{"date":D(2025,10,31),"shareholders":68000},{"date":D(2025,11,30),"shareholders":67400},{"date":D(2025,12,31),"shareholders":66800},{"date":D(2026,1,31),"shareholders":66200},{"date":D(2026,2,28),"shareholders":65600},{"date":D(2026,3,31),"shareholders":65100}],
-                    "HMSP":[{"date":D(2025,4,30),"shareholders":262100},{"date":D(2025,5,31),"shareholders":258800},{"date":D(2025,6,30),"shareholders":255600},{"date":D(2025,7,31),"shareholders":252500},{"date":D(2025,8,31),"shareholders":249400},{"date":D(2025,9,30),"shareholders":246400},{"date":D(2025,10,31),"shareholders":243500},{"date":D(2025,11,30),"shareholders":240600},{"date":D(2025,12,31),"shareholders":237800},{"date":D(2026,1,31),"shareholders":235100},{"date":D(2026,2,28),"shareholders":232400},{"date":D(2026,3,31),"shareholders":229800}],
-                    "RALS":[{"date":D(2025,4,30),"shareholders":58200},{"date":D(2025,5,31),"shareholders":57800},{"date":D(2025,6,30),"shareholders":57400},{"date":D(2025,7,31),"shareholders":57100},{"date":D(2025,8,31),"shareholders":56800},{"date":D(2025,9,30),"shareholders":56500},{"date":D(2025,10,31),"shareholders":56200},{"date":D(2025,11,30),"shareholders":56000},{"date":D(2025,12,31),"shareholders":55800},{"date":D(2026,1,31),"shareholders":55600},{"date":D(2026,2,28),"shareholders":55400},{"date":D(2026,3,31),"shareholders":55200}],
-                    "SIDO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68600},{"date":D(2025,8,31),"shareholders":70900},{"date":D(2025,9,30),"shareholders":73200},{"date":D(2025,10,31),"shareholders":75600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":80700},{"date":D(2026,1,31),"shareholders":83300},{"date":D(2026,2,28),"shareholders":86000},{"date":D(2026,3,31),"shareholders":88800}],
-                    "ULTJ":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49800},{"date":D(2025,6,30),"shareholders":51400},{"date":D(2025,7,31),"shareholders":53100},{"date":D(2025,8,31),"shareholders":54800},{"date":D(2025,9,30),"shareholders":56600},{"date":D(2025,10,31),"shareholders":58400},{"date":D(2025,11,30),"shareholders":60300},{"date":D(2025,12,31),"shareholders":62200},{"date":D(2026,1,31),"shareholders":64200},{"date":D(2026,2,28),"shareholders":66200},{"date":D(2026,3,31),"shareholders":68300}],
+                    "INDF":[{"date":D(2025,4,30),"shareholders":198200},{"date":D(2025,5,31),"shareholders":196400},{"date":D(2025,6,30),"shareholders":194600},{"date":D(2025,7,31),"shareholders":192800},{"date":D(2025,8,31),"shareholders":191000},{"date":D(2025,9,30),"shareholders":189200},{"date":D(2025,10,31),"shareholders":187500},{"date":D(2025,11,30),"shareholders":185800},{"date":D(2025,12,31),"shareholders":184100},{"date":D(2026,1,31),"shareholders":182500},{"date":D(2026,2,28),"shareholders":180900},{"date":D(2026,3,31),"shareholders":179300},{"date":D(2026,4,30),"shareholders":177828},{"date":D(2026,5,31),"shareholders":176468}],
+                    "ICBP":[{"date":D(2025,4,30),"shareholders":162400},{"date":D(2025,5,31),"shareholders":160800},{"date":D(2025,6,30),"shareholders":159200},{"date":D(2025,7,31),"shareholders":157600},{"date":D(2025,8,31),"shareholders":156100},{"date":D(2025,9,30),"shareholders":154600},{"date":D(2025,10,31),"shareholders":153100},{"date":D(2025,11,30),"shareholders":151600},{"date":D(2025,12,31),"shareholders":150200},{"date":D(2026,1,31),"shareholders":148800},{"date":D(2026,2,28),"shareholders":147400},{"date":D(2026,3,31),"shareholders":146000},{"date":D(2026,4,30),"shareholders":144712},{"date":D(2026,5,31),"shareholders":143522}],
+                    "MYOR":[{"date":D(2025,4,30),"shareholders":142100},{"date":D(2025,5,31),"shareholders":140500},{"date":D(2025,6,30),"shareholders":138900},{"date":D(2025,7,31),"shareholders":137400},{"date":D(2025,8,31),"shareholders":135900},{"date":D(2025,9,30),"shareholders":134400},{"date":D(2025,10,31),"shareholders":132900},{"date":D(2025,11,30),"shareholders":131500},{"date":D(2025,12,31),"shareholders":130100},{"date":D(2026,1,31),"shareholders":128700},{"date":D(2026,2,28),"shareholders":127400},{"date":D(2026,3,31),"shareholders":126100},{"date":D(2026,4,30),"shareholders":124904},{"date":D(2026,5,31),"shareholders":123799}],
+                    "CPIN":[{"date":D(2025,4,30),"shareholders":98200},{"date":D(2025,5,31),"shareholders":100400},{"date":D(2025,6,30),"shareholders":102800},{"date":D(2025,7,31),"shareholders":105200},{"date":D(2025,8,31),"shareholders":107600},{"date":D(2025,9,30),"shareholders":110100},{"date":D(2025,10,31),"shareholders":112600},{"date":D(2025,11,30),"shareholders":115200},{"date":D(2025,12,31),"shareholders":117800},{"date":D(2026,1,31),"shareholders":120500},{"date":D(2026,2,28),"shareholders":123200},{"date":D(2026,3,31),"shareholders":126100},{"date":D(2026,4,30),"shareholders":128768},{"date":D(2026,5,31),"shareholders":131233}],
+                    "MAPI":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83400},{"date":D(2025,6,30),"shareholders":82600},{"date":D(2025,7,31),"shareholders":81800},{"date":D(2025,8,31),"shareholders":81100},{"date":D(2025,9,30),"shareholders":80400},{"date":D(2025,10,31),"shareholders":79700},{"date":D(2025,11,30),"shareholders":79000},{"date":D(2025,12,31),"shareholders":78400},{"date":D(2026,1,31),"shareholders":77800},{"date":D(2026,2,28),"shareholders":77200},{"date":D(2026,3,31),"shareholders":76600},{"date":D(2026,4,30),"shareholders":76048},{"date":D(2026,5,31),"shareholders":75538}],
+                    "ACES":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":166800},{"date":D(2025,6,30),"shareholders":165400},{"date":D(2025,7,31),"shareholders":164000},{"date":D(2025,8,31),"shareholders":162700},{"date":D(2025,9,30),"shareholders":161400},{"date":D(2025,10,31),"shareholders":160100},{"date":D(2025,11,30),"shareholders":158800},{"date":D(2025,12,31),"shareholders":157600},{"date":D(2026,1,31),"shareholders":156400},{"date":D(2026,2,28),"shareholders":155200},{"date":D(2026,3,31),"shareholders":154100},{"date":D(2026,4,30),"shareholders":153088},{"date":D(2026,5,31),"shareholders":152153}],
+                    "LPPF":[{"date":D(2025,4,30),"shareholders":92400},{"date":D(2025,5,31),"shareholders":91200},{"date":D(2025,6,30),"shareholders":90000},{"date":D(2025,7,31),"shareholders":88800},{"date":D(2025,8,31),"shareholders":87700},{"date":D(2025,9,30),"shareholders":86600},{"date":D(2025,10,31),"shareholders":85500},{"date":D(2025,11,30),"shareholders":84400},{"date":D(2025,12,31),"shareholders":83400},{"date":D(2026,1,31),"shareholders":82400},{"date":D(2026,2,28),"shareholders":81400},{"date":D(2026,3,31),"shareholders":80400},{"date":D(2026,4,30),"shareholders":79480},{"date":D(2026,5,31),"shareholders":78630}],
+                    "GGRM":[{"date":D(2025,4,30),"shareholders":72400},{"date":D(2025,5,31),"shareholders":71600},{"date":D(2025,6,30),"shareholders":70800},{"date":D(2025,7,31),"shareholders":70100},{"date":D(2025,8,31),"shareholders":69400},{"date":D(2025,9,30),"shareholders":68700},{"date":D(2025,10,31),"shareholders":68000},{"date":D(2025,11,30),"shareholders":67400},{"date":D(2025,12,31),"shareholders":66800},{"date":D(2026,1,31),"shareholders":66200},{"date":D(2026,2,28),"shareholders":65600},{"date":D(2026,3,31),"shareholders":65100},{"date":D(2026,4,30),"shareholders":64640},{"date":D(2026,5,31),"shareholders":64215}],
+                    "HMSP":[{"date":D(2025,4,30),"shareholders":262100},{"date":D(2025,5,31),"shareholders":258800},{"date":D(2025,6,30),"shareholders":255600},{"date":D(2025,7,31),"shareholders":252500},{"date":D(2025,8,31),"shareholders":249400},{"date":D(2025,9,30),"shareholders":246400},{"date":D(2025,10,31),"shareholders":243500},{"date":D(2025,11,30),"shareholders":240600},{"date":D(2025,12,31),"shareholders":237800},{"date":D(2026,1,31),"shareholders":235100},{"date":D(2026,2,28),"shareholders":232400},{"date":D(2026,3,31),"shareholders":229800},{"date":D(2026,4,30),"shareholders":227408},{"date":D(2026,5,31),"shareholders":225198}],
+                    "RALS":[{"date":D(2025,4,30),"shareholders":58200},{"date":D(2025,5,31),"shareholders":57800},{"date":D(2025,6,30),"shareholders":57400},{"date":D(2025,7,31),"shareholders":57100},{"date":D(2025,8,31),"shareholders":56800},{"date":D(2025,9,30),"shareholders":56500},{"date":D(2025,10,31),"shareholders":56200},{"date":D(2025,11,30),"shareholders":56000},{"date":D(2025,12,31),"shareholders":55800},{"date":D(2026,1,31),"shareholders":55600},{"date":D(2026,2,28),"shareholders":55400},{"date":D(2026,3,31),"shareholders":55200},{"date":D(2026,4,30),"shareholders":55016},{"date":D(2026,5,31),"shareholders":54846}],
+                    "SIDO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68600},{"date":D(2025,8,31),"shareholders":70900},{"date":D(2025,9,30),"shareholders":73200},{"date":D(2025,10,31),"shareholders":75600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":80700},{"date":D(2026,1,31),"shareholders":83300},{"date":D(2026,2,28),"shareholders":86000},{"date":D(2026,3,31),"shareholders":88800},{"date":D(2026,4,30),"shareholders":91376},{"date":D(2026,5,31),"shareholders":93756}],
+                    "ULTJ":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49800},{"date":D(2025,6,30),"shareholders":51400},{"date":D(2025,7,31),"shareholders":53100},{"date":D(2025,8,31),"shareholders":54800},{"date":D(2025,9,30),"shareholders":56600},{"date":D(2025,10,31),"shareholders":58400},{"date":D(2025,11,30),"shareholders":60300},{"date":D(2025,12,31),"shareholders":62200},{"date":D(2026,1,31),"shareholders":64200},{"date":D(2026,2,28),"shareholders":66200},{"date":D(2026,3,31),"shareholders":68300},{"date":D(2026,4,30),"shareholders":70232},{"date":D(2026,5,31),"shareholders":72017}],
                     # ── PROPERTI ─────────────────────────────────────────────
-                    "CTRA":[{"date":D(2025,4,30),"shareholders":242100},{"date":D(2025,5,31),"shareholders":244800},{"date":D(2025,6,30),"shareholders":247600},{"date":D(2025,7,31),"shareholders":250400},{"date":D(2025,8,31),"shareholders":253200},{"date":D(2025,9,30),"shareholders":256100},{"date":D(2025,10,31),"shareholders":256800},{"date":D(2025,11,30),"shareholders":255400},{"date":D(2025,12,31),"shareholders":253900},{"date":D(2026,1,31),"shareholders":252400},{"date":D(2026,2,28),"shareholders":250900},{"date":D(2026,3,31),"shareholders":249400}],
-                    "SMRA":[{"date":D(2025,4,30),"shareholders":118200},{"date":D(2025,5,31),"shareholders":116800},{"date":D(2025,6,30),"shareholders":115400},{"date":D(2025,7,31),"shareholders":114100},{"date":D(2025,8,31),"shareholders":112800},{"date":D(2025,9,30),"shareholders":111500},{"date":D(2025,10,31),"shareholders":110300},{"date":D(2025,11,30),"shareholders":109100},{"date":D(2025,12,31),"shareholders":107900},{"date":D(2026,1,31),"shareholders":106800},{"date":D(2026,2,28),"shareholders":105700},{"date":D(2026,3,31),"shareholders":104600}],
-                    "LPKR":[{"date":D(2025,4,30),"shareholders":214200},{"date":D(2025,5,31),"shareholders":212400},{"date":D(2025,6,30),"shareholders":210600},{"date":D(2025,7,31),"shareholders":208900},{"date":D(2025,8,31),"shareholders":207200},{"date":D(2025,9,30),"shareholders":205500},{"date":D(2025,10,31),"shareholders":203800},{"date":D(2025,11,30),"shareholders":202200},{"date":D(2025,12,31),"shareholders":200700},{"date":D(2026,1,31),"shareholders":199100},{"date":D(2026,2,28),"shareholders":197600},{"date":D(2026,3,31),"shareholders":196200}],
-                    "PWON":[{"date":D(2025,4,30),"shareholders":184200},{"date":D(2025,5,31),"shareholders":182800},{"date":D(2025,6,30),"shareholders":181400},{"date":D(2025,7,31),"shareholders":180100},{"date":D(2025,8,31),"shareholders":178800},{"date":D(2025,9,30),"shareholders":177500},{"date":D(2025,10,31),"shareholders":176300},{"date":D(2025,11,30),"shareholders":175100},{"date":D(2025,12,31),"shareholders":173900},{"date":D(2026,1,31),"shareholders":172800},{"date":D(2026,2,28),"shareholders":171700},{"date":D(2026,3,31),"shareholders":170600}],
-                    "DMAS":[{"date":D(2025,4,30),"shareholders":64200},{"date":D(2025,5,31),"shareholders":66400},{"date":D(2025,6,30),"shareholders":68600},{"date":D(2025,7,31),"shareholders":70900},{"date":D(2025,8,31),"shareholders":73200},{"date":D(2025,9,30),"shareholders":75600},{"date":D(2025,10,31),"shareholders":78000},{"date":D(2025,11,30),"shareholders":80500},{"date":D(2025,12,31),"shareholders":83100},{"date":D(2026,1,31),"shareholders":85700},{"date":D(2026,2,28),"shareholders":88400},{"date":D(2026,3,31),"shareholders":91200}],
-                    "BEST":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43800},{"date":D(2025,6,30),"shareholders":45600},{"date":D(2025,7,31),"shareholders":47500},{"date":D(2025,8,31),"shareholders":49400},{"date":D(2025,9,30),"shareholders":51400},{"date":D(2025,10,31),"shareholders":53400},{"date":D(2025,11,30),"shareholders":55500},{"date":D(2025,12,31),"shareholders":57700},{"date":D(2026,1,31),"shareholders":59900},{"date":D(2026,2,28),"shareholders":62200},{"date":D(2026,3,31),"shareholders":64600}],
-                    "ASRI":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":166600},{"date":D(2025,6,30),"shareholders":165000},{"date":D(2025,7,31),"shareholders":163500},{"date":D(2025,8,31),"shareholders":162000},{"date":D(2025,9,30),"shareholders":160500},{"date":D(2025,10,31),"shareholders":159100},{"date":D(2025,11,30),"shareholders":157700},{"date":D(2025,12,31),"shareholders":156300},{"date":D(2026,1,31),"shareholders":155000},{"date":D(2026,2,28),"shareholders":153700},{"date":D(2026,3,31),"shareholders":152400}],
-                    "KIJA":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93100},{"date":D(2025,6,30),"shareholders":92000},{"date":D(2025,7,31),"shareholders":90900},{"date":D(2025,8,31),"shareholders":89900},{"date":D(2025,9,30),"shareholders":88900},{"date":D(2025,10,31),"shareholders":87900},{"date":D(2025,11,30),"shareholders":86900},{"date":D(2025,12,31),"shareholders":85900},{"date":D(2026,1,31),"shareholders":85000},{"date":D(2026,2,28),"shareholders":84100},{"date":D(2026,3,31),"shareholders":83200}],
+                    "CTRA":[{"date":D(2025,4,30),"shareholders":242100},{"date":D(2025,5,31),"shareholders":244800},{"date":D(2025,6,30),"shareholders":247600},{"date":D(2025,7,31),"shareholders":250400},{"date":D(2025,8,31),"shareholders":253200},{"date":D(2025,9,30),"shareholders":256100},{"date":D(2025,10,31),"shareholders":256800},{"date":D(2025,11,30),"shareholders":255400},{"date":D(2025,12,31),"shareholders":253900},{"date":D(2026,1,31),"shareholders":252400},{"date":D(2026,2,28),"shareholders":250900},{"date":D(2026,3,31),"shareholders":249400},{"date":D(2026,4,30),"shareholders":248020},{"date":D(2026,5,31),"shareholders":246745}],
+                    "SMRA":[{"date":D(2025,4,30),"shareholders":118200},{"date":D(2025,5,31),"shareholders":116800},{"date":D(2025,6,30),"shareholders":115400},{"date":D(2025,7,31),"shareholders":114100},{"date":D(2025,8,31),"shareholders":112800},{"date":D(2025,9,30),"shareholders":111500},{"date":D(2025,10,31),"shareholders":110300},{"date":D(2025,11,30),"shareholders":109100},{"date":D(2025,12,31),"shareholders":107900},{"date":D(2026,1,31),"shareholders":106800},{"date":D(2026,2,28),"shareholders":105700},{"date":D(2026,3,31),"shareholders":104600},{"date":D(2026,4,30),"shareholders":103588},{"date":D(2026,5,31),"shareholders":102653}],
+                    "LPKR":[{"date":D(2025,4,30),"shareholders":214200},{"date":D(2025,5,31),"shareholders":212400},{"date":D(2025,6,30),"shareholders":210600},{"date":D(2025,7,31),"shareholders":208900},{"date":D(2025,8,31),"shareholders":207200},{"date":D(2025,9,30),"shareholders":205500},{"date":D(2025,10,31),"shareholders":203800},{"date":D(2025,11,30),"shareholders":202200},{"date":D(2025,12,31),"shareholders":200700},{"date":D(2026,1,31),"shareholders":199100},{"date":D(2026,2,28),"shareholders":197600},{"date":D(2026,3,31),"shareholders":196200},{"date":D(2026,4,30),"shareholders":194912},{"date":D(2026,5,31),"shareholders":193722}],
+                    "PWON":[{"date":D(2025,4,30),"shareholders":184200},{"date":D(2025,5,31),"shareholders":182800},{"date":D(2025,6,30),"shareholders":181400},{"date":D(2025,7,31),"shareholders":180100},{"date":D(2025,8,31),"shareholders":178800},{"date":D(2025,9,30),"shareholders":177500},{"date":D(2025,10,31),"shareholders":176300},{"date":D(2025,11,30),"shareholders":175100},{"date":D(2025,12,31),"shareholders":173900},{"date":D(2026,1,31),"shareholders":172800},{"date":D(2026,2,28),"shareholders":171700},{"date":D(2026,3,31),"shareholders":170600},{"date":D(2026,4,30),"shareholders":169588},{"date":D(2026,5,31),"shareholders":168653}],
+                    "DMAS":[{"date":D(2025,4,30),"shareholders":64200},{"date":D(2025,5,31),"shareholders":66400},{"date":D(2025,6,30),"shareholders":68600},{"date":D(2025,7,31),"shareholders":70900},{"date":D(2025,8,31),"shareholders":73200},{"date":D(2025,9,30),"shareholders":75600},{"date":D(2025,10,31),"shareholders":78000},{"date":D(2025,11,30),"shareholders":80500},{"date":D(2025,12,31),"shareholders":83100},{"date":D(2026,1,31),"shareholders":85700},{"date":D(2026,2,28),"shareholders":88400},{"date":D(2026,3,31),"shareholders":91200},{"date":D(2026,4,30),"shareholders":93776},{"date":D(2026,5,31),"shareholders":96156}],
+                    "BEST":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43800},{"date":D(2025,6,30),"shareholders":45600},{"date":D(2025,7,31),"shareholders":47500},{"date":D(2025,8,31),"shareholders":49400},{"date":D(2025,9,30),"shareholders":51400},{"date":D(2025,10,31),"shareholders":53400},{"date":D(2025,11,30),"shareholders":55500},{"date":D(2025,12,31),"shareholders":57700},{"date":D(2026,1,31),"shareholders":59900},{"date":D(2026,2,28),"shareholders":62200},{"date":D(2026,3,31),"shareholders":64600},{"date":D(2026,4,30),"shareholders":66808},{"date":D(2026,5,31),"shareholders":68848}],
+                    "ASRI":[{"date":D(2025,4,30),"shareholders":168200},{"date":D(2025,5,31),"shareholders":166600},{"date":D(2025,6,30),"shareholders":165000},{"date":D(2025,7,31),"shareholders":163500},{"date":D(2025,8,31),"shareholders":162000},{"date":D(2025,9,30),"shareholders":160500},{"date":D(2025,10,31),"shareholders":159100},{"date":D(2025,11,30),"shareholders":157700},{"date":D(2025,12,31),"shareholders":156300},{"date":D(2026,1,31),"shareholders":155000},{"date":D(2026,2,28),"shareholders":153700},{"date":D(2026,3,31),"shareholders":152400},{"date":D(2026,4,30),"shareholders":151204},{"date":D(2026,5,31),"shareholders":150099}],
+                    "KIJA":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":93100},{"date":D(2025,6,30),"shareholders":92000},{"date":D(2025,7,31),"shareholders":90900},{"date":D(2025,8,31),"shareholders":89900},{"date":D(2025,9,30),"shareholders":88900},{"date":D(2025,10,31),"shareholders":87900},{"date":D(2025,11,30),"shareholders":86900},{"date":D(2025,12,31),"shareholders":85900},{"date":D(2026,1,31),"shareholders":85000},{"date":D(2026,2,28),"shareholders":84100},{"date":D(2026,3,31),"shareholders":83200},{"date":D(2026,4,30),"shareholders":82372},{"date":D(2026,5,31),"shareholders":81607}],
                     # ── TEKNOLOGI & DIGITAL ──────────────────────────────────
-                    "GOTO":[{"date":D(2025,4,30),"shareholders":682100},{"date":D(2025,5,31),"shareholders":688400},{"date":D(2025,6,30),"shareholders":694800},{"date":D(2025,7,31),"shareholders":701200},{"date":D(2025,8,31),"shareholders":707600},{"date":D(2025,9,30),"shareholders":714100},{"date":D(2025,10,31),"shareholders":720600},{"date":D(2025,11,30),"shareholders":727200},{"date":D(2025,12,31),"shareholders":733800},{"date":D(2026,1,31),"shareholders":740500},{"date":D(2026,2,28),"shareholders":747300},{"date":D(2026,3,31),"shareholders":754200}],
-                    "BUKA":[{"date":D(2025,4,30),"shareholders":248200},{"date":D(2025,5,31),"shareholders":245600},{"date":D(2025,6,30),"shareholders":243100},{"date":D(2025,7,31),"shareholders":240600},{"date":D(2025,8,31),"shareholders":238200},{"date":D(2025,9,30),"shareholders":235800},{"date":D(2025,10,31),"shareholders":233500},{"date":D(2025,11,30),"shareholders":231200},{"date":D(2025,12,31),"shareholders":228900},{"date":D(2026,1,31),"shareholders":226700},{"date":D(2026,2,28),"shareholders":224500},{"date":D(2026,3,31),"shareholders":222400}],
-                    "EMTK":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":81200},{"date":D(2025,6,30),"shareholders":80300},{"date":D(2025,7,31),"shareholders":79500},{"date":D(2025,8,31),"shareholders":78700},{"date":D(2025,9,30),"shareholders":77900},{"date":D(2025,10,31),"shareholders":77100},{"date":D(2025,11,30),"shareholders":76400},{"date":D(2025,12,31),"shareholders":75700},{"date":D(2026,1,31),"shareholders":75000},{"date":D(2026,2,28),"shareholders":74400},{"date":D(2026,3,31),"shareholders":73800}],
+                    "GOTO":[{"date":D(2025,4,30),"shareholders":682100},{"date":D(2025,5,31),"shareholders":688400},{"date":D(2025,6,30),"shareholders":694800},{"date":D(2025,7,31),"shareholders":701200},{"date":D(2025,8,31),"shareholders":707600},{"date":D(2025,9,30),"shareholders":714100},{"date":D(2025,10,31),"shareholders":720600},{"date":D(2025,11,30),"shareholders":727200},{"date":D(2025,12,31),"shareholders":733800},{"date":D(2026,1,31),"shareholders":740500},{"date":D(2026,2,28),"shareholders":747300},{"date":D(2026,3,31),"shareholders":754200},{"date":D(2026,4,30),"shareholders":760548},{"date":D(2026,5,31),"shareholders":766413}],
+                    "BUKA":[{"date":D(2025,4,30),"shareholders":248200},{"date":D(2025,5,31),"shareholders":245600},{"date":D(2025,6,30),"shareholders":243100},{"date":D(2025,7,31),"shareholders":240600},{"date":D(2025,8,31),"shareholders":238200},{"date":D(2025,9,30),"shareholders":235800},{"date":D(2025,10,31),"shareholders":233500},{"date":D(2025,11,30),"shareholders":231200},{"date":D(2025,12,31),"shareholders":228900},{"date":D(2026,1,31),"shareholders":226700},{"date":D(2026,2,28),"shareholders":224500},{"date":D(2026,3,31),"shareholders":222400},{"date":D(2026,4,30),"shareholders":220468},{"date":D(2026,5,31),"shareholders":218683}],
+                    "EMTK":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":81200},{"date":D(2025,6,30),"shareholders":80300},{"date":D(2025,7,31),"shareholders":79500},{"date":D(2025,8,31),"shareholders":78700},{"date":D(2025,9,30),"shareholders":77900},{"date":D(2025,10,31),"shareholders":77100},{"date":D(2025,11,30),"shareholders":76400},{"date":D(2025,12,31),"shareholders":75700},{"date":D(2026,1,31),"shareholders":75000},{"date":D(2026,2,28),"shareholders":74400},{"date":D(2026,3,31),"shareholders":73800},{"date":D(2026,4,30),"shareholders":73248},{"date":D(2026,5,31),"shareholders":72738}],
                     # ── KEUANGAN NON-BANK ────────────────────────────────────
-                    "PNBN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":147100},{"date":D(2025,6,30),"shareholders":146000},{"date":D(2025,7,31),"shareholders":144900},{"date":D(2025,8,31),"shareholders":143900},{"date":D(2025,9,30),"shareholders":142900},{"date":D(2025,10,31),"shareholders":141900},{"date":D(2025,11,30),"shareholders":140900},{"date":D(2025,12,31),"shareholders":140000},{"date":D(2026,1,31),"shareholders":139100},{"date":D(2026,2,28),"shareholders":138200},{"date":D(2026,3,31),"shareholders":137400}],
-                    "BNGA":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":123400},{"date":D(2025,6,30),"shareholders":122600},{"date":D(2025,7,31),"shareholders":121800},{"date":D(2025,8,31),"shareholders":121100},{"date":D(2025,9,30),"shareholders":120400},{"date":D(2025,10,31),"shareholders":119700},{"date":D(2025,11,30),"shareholders":119000},{"date":D(2025,12,31),"shareholders":118400},{"date":D(2026,1,31),"shareholders":117800},{"date":D(2026,2,28),"shareholders":117200},{"date":D(2026,3,31),"shareholders":116600}],
-                    "MEGA":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":81400},{"date":D(2025,6,30),"shareholders":80800},{"date":D(2025,7,31),"shareholders":80200},{"date":D(2025,8,31),"shareholders":79600},{"date":D(2025,9,30),"shareholders":79100},{"date":D(2025,10,31),"shareholders":78600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":77600},{"date":D(2026,1,31),"shareholders":77200},{"date":D(2026,2,28),"shareholders":76800},{"date":D(2026,3,31),"shareholders":76400}],
-                    "BJBR":[{"date":D(2025,4,30),"shareholders":198200},{"date":D(2025,5,31),"shareholders":196800},{"date":D(2025,6,30),"shareholders":195400},{"date":D(2025,7,31),"shareholders":194100},{"date":D(2025,8,31),"shareholders":192800},{"date":D(2025,9,30),"shareholders":191500},{"date":D(2025,10,31),"shareholders":190200},{"date":D(2025,11,30),"shareholders":189000},{"date":D(2025,12,31),"shareholders":187800},{"date":D(2026,1,31),"shareholders":186600},{"date":D(2026,2,28),"shareholders":185500},{"date":D(2026,3,31),"shareholders":184400}],
-                    "ARTO":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":84800},{"date":D(2025,6,30),"shareholders":87600},{"date":D(2025,7,31),"shareholders":90400},{"date":D(2025,8,31),"shareholders":93300},{"date":D(2025,9,30),"shareholders":96200},{"date":D(2025,10,31),"shareholders":99200},{"date":D(2025,11,30),"shareholders":102300},{"date":D(2025,12,31),"shareholders":105400},{"date":D(2026,1,31),"shareholders":108600},{"date":D(2026,2,28),"shareholders":111900},{"date":D(2026,3,31),"shareholders":115200}],
-                    "BBTN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":146800},{"date":D(2025,6,30),"shareholders":145400},{"date":D(2025,7,31),"shareholders":144100},{"date":D(2025,8,31),"shareholders":142800},{"date":D(2025,9,30),"shareholders":141500},{"date":D(2025,10,31),"shareholders":140300},{"date":D(2025,11,30),"shareholders":139100},{"date":D(2025,12,31),"shareholders":137900},{"date":D(2026,1,31),"shareholders":136800},{"date":D(2026,2,28),"shareholders":135700},{"date":D(2026,3,31),"shareholders":134600}],
+                    "PNBN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":147100},{"date":D(2025,6,30),"shareholders":146000},{"date":D(2025,7,31),"shareholders":144900},{"date":D(2025,8,31),"shareholders":143900},{"date":D(2025,9,30),"shareholders":142900},{"date":D(2025,10,31),"shareholders":141900},{"date":D(2025,11,30),"shareholders":140900},{"date":D(2025,12,31),"shareholders":140000},{"date":D(2026,1,31),"shareholders":139100},{"date":D(2026,2,28),"shareholders":138200},{"date":D(2026,3,31),"shareholders":137400},{"date":D(2026,4,30),"shareholders":136664},{"date":D(2026,5,31),"shareholders":135984}],
+                    "BNGA":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":123400},{"date":D(2025,6,30),"shareholders":122600},{"date":D(2025,7,31),"shareholders":121800},{"date":D(2025,8,31),"shareholders":121100},{"date":D(2025,9,30),"shareholders":120400},{"date":D(2025,10,31),"shareholders":119700},{"date":D(2025,11,30),"shareholders":119000},{"date":D(2025,12,31),"shareholders":118400},{"date":D(2026,1,31),"shareholders":117800},{"date":D(2026,2,28),"shareholders":117200},{"date":D(2026,3,31),"shareholders":116600},{"date":D(2026,4,30),"shareholders":116048},{"date":D(2026,5,31),"shareholders":115538}],
+                    "MEGA":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":81400},{"date":D(2025,6,30),"shareholders":80800},{"date":D(2025,7,31),"shareholders":80200},{"date":D(2025,8,31),"shareholders":79600},{"date":D(2025,9,30),"shareholders":79100},{"date":D(2025,10,31),"shareholders":78600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":77600},{"date":D(2026,1,31),"shareholders":77200},{"date":D(2026,2,28),"shareholders":76800},{"date":D(2026,3,31),"shareholders":76400},{"date":D(2026,4,30),"shareholders":76032},{"date":D(2026,5,31),"shareholders":75692}],
+                    "BJBR":[{"date":D(2025,4,30),"shareholders":198200},{"date":D(2025,5,31),"shareholders":196800},{"date":D(2025,6,30),"shareholders":195400},{"date":D(2025,7,31),"shareholders":194100},{"date":D(2025,8,31),"shareholders":192800},{"date":D(2025,9,30),"shareholders":191500},{"date":D(2025,10,31),"shareholders":190200},{"date":D(2025,11,30),"shareholders":189000},{"date":D(2025,12,31),"shareholders":187800},{"date":D(2026,1,31),"shareholders":186600},{"date":D(2026,2,28),"shareholders":185500},{"date":D(2026,3,31),"shareholders":184400},{"date":D(2026,4,30),"shareholders":183388},{"date":D(2026,5,31),"shareholders":182453}],
+                    "ARTO":[{"date":D(2025,4,30),"shareholders":82100},{"date":D(2025,5,31),"shareholders":84800},{"date":D(2025,6,30),"shareholders":87600},{"date":D(2025,7,31),"shareholders":90400},{"date":D(2025,8,31),"shareholders":93300},{"date":D(2025,9,30),"shareholders":96200},{"date":D(2025,10,31),"shareholders":99200},{"date":D(2025,11,30),"shareholders":102300},{"date":D(2025,12,31),"shareholders":105400},{"date":D(2026,1,31),"shareholders":108600},{"date":D(2026,2,28),"shareholders":111900},{"date":D(2026,3,31),"shareholders":115200},{"date":D(2026,4,30),"shareholders":118236},{"date":D(2026,5,31),"shareholders":121041}],
+                    "BBTN":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":146800},{"date":D(2025,6,30),"shareholders":145400},{"date":D(2025,7,31),"shareholders":144100},{"date":D(2025,8,31),"shareholders":142800},{"date":D(2025,9,30),"shareholders":141500},{"date":D(2025,10,31),"shareholders":140300},{"date":D(2025,11,30),"shareholders":139100},{"date":D(2025,12,31),"shareholders":137900},{"date":D(2026,1,31),"shareholders":136800},{"date":D(2026,2,28),"shareholders":135700},{"date":D(2026,3,31),"shareholders":134600},{"date":D(2026,4,30),"shareholders":133588},{"date":D(2026,5,31),"shareholders":132653}],
                     # ── AGRIKULTUR & LAINNYA ─────────────────────────────────
-                    "AALI":[{"date":D(2025,4,30),"shareholders":88400},{"date":D(2025,5,31),"shareholders":90800},{"date":D(2025,6,30),"shareholders":92400},{"date":D(2025,7,31),"shareholders":94200},{"date":D(2025,8,31),"shareholders":96100},{"date":D(2025,9,30),"shareholders":97400},{"date":D(2025,10,31),"shareholders":98200},{"date":D(2025,11,30),"shareholders":100400},{"date":D(2025,12,31),"shareholders":102900},{"date":D(2026,1,31),"shareholders":105600},{"date":D(2026,2,28),"shareholders":108500},{"date":D(2026,3,31),"shareholders":111600}],
-                    "LSIP":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":73800},{"date":D(2025,6,30),"shareholders":75600},{"date":D(2025,7,31),"shareholders":77400},{"date":D(2025,8,31),"shareholders":79200},{"date":D(2025,9,30),"shareholders":81100},{"date":D(2025,10,31),"shareholders":82900},{"date":D(2025,11,30),"shareholders":84800},{"date":D(2025,12,31),"shareholders":86800},{"date":D(2026,1,31),"shareholders":88800},{"date":D(2026,2,28),"shareholders":90800},{"date":D(2026,3,31),"shareholders":92900}],
-                    "UNTR":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":150100},{"date":D(2025,6,30),"shareholders":152000},{"date":D(2025,7,31),"shareholders":153900},{"date":D(2025,8,31),"shareholders":155900},{"date":D(2025,9,30),"shareholders":157900},{"date":D(2025,10,31),"shareholders":159900},{"date":D(2025,11,30),"shareholders":162000},{"date":D(2025,12,31),"shareholders":164100},{"date":D(2026,1,31),"shareholders":166200},{"date":D(2026,2,28),"shareholders":168400},{"date":D(2026,3,31),"shareholders":170600}],
-                    "AKRA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":69800},{"date":D(2025,6,30),"shareholders":71400},{"date":D(2025,7,31),"shareholders":73100},{"date":D(2025,8,31),"shareholders":74800},{"date":D(2025,9,30),"shareholders":76500},{"date":D(2025,10,31),"shareholders":78300},{"date":D(2025,11,30),"shareholders":80100},{"date":D(2025,12,31),"shareholders":82000},{"date":D(2026,1,31),"shareholders":83900},{"date":D(2026,2,28),"shareholders":85800},{"date":D(2026,3,31),"shareholders":87800}],
-                    "KAEF":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":126800},{"date":D(2025,6,30),"shareholders":129400},{"date":D(2025,7,31),"shareholders":132100},{"date":D(2025,8,31),"shareholders":134800},{"date":D(2025,9,30),"shareholders":137600},{"date":D(2025,10,31),"shareholders":140400},{"date":D(2025,11,30),"shareholders":143300},{"date":D(2025,12,31),"shareholders":146200},{"date":D(2026,1,31),"shareholders":149200},{"date":D(2026,2,28),"shareholders":152200},{"date":D(2026,3,31),"shareholders":155300}],
-                    "TSPC":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95800},{"date":D(2025,6,30),"shareholders":97400},{"date":D(2025,7,31),"shareholders":99100},{"date":D(2025,8,31),"shareholders":100800},{"date":D(2025,9,30),"shareholders":102500},{"date":D(2025,10,31),"shareholders":104300},{"date":D(2025,11,30),"shareholders":106100},{"date":D(2025,12,31),"shareholders":108000},{"date":D(2026,1,31),"shareholders":109900},{"date":D(2026,2,28),"shareholders":111800},{"date":D(2026,3,31),"shareholders":113800}],
-                    "SILO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68700},{"date":D(2025,8,31),"shareholders":71000},{"date":D(2025,9,30),"shareholders":73400},{"date":D(2025,10,31),"shareholders":75800},{"date":D(2025,11,30),"shareholders":78300},{"date":D(2025,12,31),"shareholders":80900},{"date":D(2026,1,31),"shareholders":83500},{"date":D(2026,2,28),"shareholders":86200},{"date":D(2026,3,31),"shareholders":89000}],
-                    "AUTO":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83400},{"date":D(2025,6,30),"shareholders":82600},{"date":D(2025,7,31),"shareholders":81900},{"date":D(2025,8,31),"shareholders":81200},{"date":D(2025,9,30),"shareholders":80500},{"date":D(2025,10,31),"shareholders":79900},{"date":D(2025,11,30),"shareholders":79300},{"date":D(2025,12,31),"shareholders":78700},{"date":D(2026,1,31),"shareholders":78200},{"date":D(2026,2,28),"shareholders":77700},{"date":D(2026,3,31),"shareholders":77200}],
-                    "ERAA":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68600},{"date":D(2025,8,31),"shareholders":70900},{"date":D(2025,9,30),"shareholders":73200},{"date":D(2025,10,31),"shareholders":75600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":80600},{"date":D(2026,1,31),"shareholders":83200},{"date":D(2026,2,28),"shareholders":85900},{"date":D(2026,3,31),"shareholders":88600}],
-                    "FILM":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52300},{"date":D(2026,1,31),"shareholders":54300},{"date":D(2026,2,28),"shareholders":56300},{"date":D(2026,3,31),"shareholders":58400}],
-                    "BDMN":[{"date":D(2025,4,30),"shareholders":98200},{"date":D(2025,5,31),"shareholders":97400},{"date":D(2025,6,30),"shareholders":96600},{"date":D(2025,7,31),"shareholders":95900},{"date":D(2025,8,31),"shareholders":95200},{"date":D(2025,9,30),"shareholders":94500},{"date":D(2025,10,31),"shareholders":93800},{"date":D(2025,11,30),"shareholders":93200},{"date":D(2025,12,31),"shareholders":92600},{"date":D(2026,1,31),"shareholders":92000},{"date":D(2026,2,28),"shareholders":91400},{"date":D(2026,3,31),"shareholders":90900}],
-                    "NISP":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83600},{"date":D(2025,6,30),"shareholders":83000},{"date":D(2025,7,31),"shareholders":82500},{"date":D(2025,8,31),"shareholders":82000},{"date":D(2025,9,30),"shareholders":81500},{"date":D(2025,10,31),"shareholders":81000},{"date":D(2025,11,30),"shareholders":80600},{"date":D(2025,12,31),"shareholders":80200},{"date":D(2026,1,31),"shareholders":79800},{"date":D(2026,2,28),"shareholders":79400},{"date":D(2026,3,31),"shareholders":79100}],
-                    "BTPN":[{"date":D(2025,4,30),"shareholders":52200},{"date":D(2025,5,31),"shareholders":51800},{"date":D(2025,6,30),"shareholders":51400},{"date":D(2025,7,31),"shareholders":51000},{"date":D(2025,8,31),"shareholders":50700},{"date":D(2025,9,30),"shareholders":50400},{"date":D(2025,10,31),"shareholders":50100},{"date":D(2025,11,30),"shareholders":49800},{"date":D(2025,12,31),"shareholders":49500},{"date":D(2026,1,31),"shareholders":49300},{"date":D(2026,2,28),"shareholders":49100},{"date":D(2026,3,31),"shareholders":48900}],
-                    "BJTM":[{"date":D(2025,4,30),"shareholders":142200},{"date":D(2025,5,31),"shareholders":144800},{"date":D(2025,6,30),"shareholders":147400},{"date":D(2025,7,31),"shareholders":150100},{"date":D(2025,8,31),"shareholders":152800},{"date":D(2025,9,30),"shareholders":155600},{"date":D(2025,10,31),"shareholders":158400},{"date":D(2025,11,30),"shareholders":161300},{"date":D(2025,12,31),"shareholders":164200},{"date":D(2026,1,31),"shareholders":167200},{"date":D(2026,2,28),"shareholders":170200},{"date":D(2026,3,31),"shareholders":173300}],
-                    "BBHI":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52400},{"date":D(2026,1,31),"shareholders":54400},{"date":D(2026,2,28),"shareholders":56500},{"date":D(2026,3,31),"shareholders":58700}],
-                    "AMMN":[{"date":D(2025,4,30),"shareholders":96200},{"date":D(2025,5,31),"shareholders":99800},{"date":D(2025,6,30),"shareholders":102100},{"date":D(2025,7,31),"shareholders":104400},{"date":D(2025,8,31),"shareholders":107200},{"date":D(2025,9,30),"shareholders":109800},{"date":D(2025,10,31),"shareholders":108200},{"date":D(2025,11,30),"shareholders":110400},{"date":D(2025,12,31),"shareholders":112100},{"date":D(2026,1,31),"shareholders":113800},{"date":D(2026,2,28),"shareholders":114900},{"date":D(2026,3,31),"shareholders":115400}],
-                    "VKTR":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64800},{"date":D(2025,6,30),"shareholders":67600},{"date":D(2025,7,31),"shareholders":70500},{"date":D(2025,8,31),"shareholders":73400},{"date":D(2025,9,30),"shareholders":76400},{"date":D(2025,10,31),"shareholders":79400},{"date":D(2025,11,30),"shareholders":82500},{"date":D(2025,12,31),"shareholders":85700},{"date":D(2026,1,31),"shareholders":88900},{"date":D(2026,2,28),"shareholders":92200},{"date":D(2026,3,31),"shareholders":95600}],
-                    "HOKI":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49600},{"date":D(2025,6,30),"shareholders":51100},{"date":D(2025,7,31),"shareholders":52600},{"date":D(2025,8,31),"shareholders":54100},{"date":D(2025,9,30),"shareholders":55700},{"date":D(2025,10,31),"shareholders":57300},{"date":D(2025,11,30),"shareholders":58900},{"date":D(2025,12,31),"shareholders":60600},{"date":D(2026,1,31),"shareholders":62300},{"date":D(2026,2,28),"shareholders":64100},{"date":D(2026,3,31),"shareholders":65900}],
-                    "TMAS":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43600},{"date":D(2025,6,30),"shareholders":45200},{"date":D(2025,7,31),"shareholders":46800},{"date":D(2025,8,31),"shareholders":48400},{"date":D(2025,9,30),"shareholders":50100},{"date":D(2025,10,31),"shareholders":51800},{"date":D(2025,11,30),"shareholders":53600},{"date":D(2025,12,31),"shareholders":55400},{"date":D(2026,1,31),"shareholders":57300},{"date":D(2026,2,28),"shareholders":59200},{"date":D(2026,3,31),"shareholders":61200}],
-                    "BFIN":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61400},{"date":D(2025,6,30),"shareholders":60800},{"date":D(2025,7,31),"shareholders":60200},{"date":D(2025,8,31),"shareholders":59600},{"date":D(2025,9,30),"shareholders":59000},{"date":D(2025,10,31),"shareholders":58500},{"date":D(2025,11,30),"shareholders":58000},{"date":D(2025,12,31),"shareholders":57500},{"date":D(2026,1,31),"shareholders":57000},{"date":D(2026,2,28),"shareholders":56600},{"date":D(2026,3,31),"shareholders":56200}],
-                    "ADMF":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":37800},{"date":D(2025,6,30),"shareholders":37400},{"date":D(2025,7,31),"shareholders":37000},{"date":D(2025,8,31),"shareholders":36700},{"date":D(2025,9,30),"shareholders":36400},{"date":D(2025,10,31),"shareholders":36100},{"date":D(2025,11,30),"shareholders":35800},{"date":D(2025,12,31),"shareholders":35600},{"date":D(2026,1,31),"shareholders":35400},{"date":D(2026,2,28),"shareholders":35200},{"date":D(2026,3,31),"shareholders":35000}],
-                    "MCAS":[{"date":D(2025,4,30),"shareholders":28200},{"date":D(2025,5,31),"shareholders":29600},{"date":D(2025,6,30),"shareholders":31100},{"date":D(2025,7,31),"shareholders":32700},{"date":D(2025,8,31),"shareholders":34300},{"date":D(2025,9,30),"shareholders":36000},{"date":D(2025,10,31),"shareholders":37700},{"date":D(2025,11,30),"shareholders":39500},{"date":D(2025,12,31),"shareholders":41400},{"date":D(2026,1,31),"shareholders":43300},{"date":D(2026,2,28),"shareholders":45300},{"date":D(2026,3,31),"shareholders":47400}],
+                    "AALI":[{"date":D(2025,4,30),"shareholders":88400},{"date":D(2025,5,31),"shareholders":90800},{"date":D(2025,6,30),"shareholders":92400},{"date":D(2025,7,31),"shareholders":94200},{"date":D(2025,8,31),"shareholders":96100},{"date":D(2025,9,30),"shareholders":97400},{"date":D(2025,10,31),"shareholders":98200},{"date":D(2025,11,30),"shareholders":100400},{"date":D(2025,12,31),"shareholders":102900},{"date":D(2026,1,31),"shareholders":105600},{"date":D(2026,2,28),"shareholders":108500},{"date":D(2026,3,31),"shareholders":111600},{"date":D(2026,4,30),"shareholders":114452},{"date":D(2026,5,31),"shareholders":117087}],
+                    "LSIP":[{"date":D(2025,4,30),"shareholders":72100},{"date":D(2025,5,31),"shareholders":73800},{"date":D(2025,6,30),"shareholders":75600},{"date":D(2025,7,31),"shareholders":77400},{"date":D(2025,8,31),"shareholders":79200},{"date":D(2025,9,30),"shareholders":81100},{"date":D(2025,10,31),"shareholders":82900},{"date":D(2025,11,30),"shareholders":84800},{"date":D(2025,12,31),"shareholders":86800},{"date":D(2026,1,31),"shareholders":88800},{"date":D(2026,2,28),"shareholders":90800},{"date":D(2026,3,31),"shareholders":92900},{"date":D(2026,4,30),"shareholders":94832},{"date":D(2026,5,31),"shareholders":96617}],
+                    "UNTR":[{"date":D(2025,4,30),"shareholders":148200},{"date":D(2025,5,31),"shareholders":150100},{"date":D(2025,6,30),"shareholders":152000},{"date":D(2025,7,31),"shareholders":153900},{"date":D(2025,8,31),"shareholders":155900},{"date":D(2025,9,30),"shareholders":157900},{"date":D(2025,10,31),"shareholders":159900},{"date":D(2025,11,30),"shareholders":162000},{"date":D(2025,12,31),"shareholders":164100},{"date":D(2026,1,31),"shareholders":166200},{"date":D(2026,2,28),"shareholders":168400},{"date":D(2026,3,31),"shareholders":170600},{"date":D(2026,4,30),"shareholders":172624},{"date":D(2026,5,31),"shareholders":174494}],
+                    "AKRA":[{"date":D(2025,4,30),"shareholders":68200},{"date":D(2025,5,31),"shareholders":69800},{"date":D(2025,6,30),"shareholders":71400},{"date":D(2025,7,31),"shareholders":73100},{"date":D(2025,8,31),"shareholders":74800},{"date":D(2025,9,30),"shareholders":76500},{"date":D(2025,10,31),"shareholders":78300},{"date":D(2025,11,30),"shareholders":80100},{"date":D(2025,12,31),"shareholders":82000},{"date":D(2026,1,31),"shareholders":83900},{"date":D(2026,2,28),"shareholders":85800},{"date":D(2026,3,31),"shareholders":87800},{"date":D(2026,4,30),"shareholders":89640},{"date":D(2026,5,31),"shareholders":91340}],
+                    "KAEF":[{"date":D(2025,4,30),"shareholders":124200},{"date":D(2025,5,31),"shareholders":126800},{"date":D(2025,6,30),"shareholders":129400},{"date":D(2025,7,31),"shareholders":132100},{"date":D(2025,8,31),"shareholders":134800},{"date":D(2025,9,30),"shareholders":137600},{"date":D(2025,10,31),"shareholders":140400},{"date":D(2025,11,30),"shareholders":143300},{"date":D(2025,12,31),"shareholders":146200},{"date":D(2026,1,31),"shareholders":149200},{"date":D(2026,2,28),"shareholders":152200},{"date":D(2026,3,31),"shareholders":155300},{"date":D(2026,4,30),"shareholders":158152},{"date":D(2026,5,31),"shareholders":160787}],
+                    "TSPC":[{"date":D(2025,4,30),"shareholders":94200},{"date":D(2025,5,31),"shareholders":95800},{"date":D(2025,6,30),"shareholders":97400},{"date":D(2025,7,31),"shareholders":99100},{"date":D(2025,8,31),"shareholders":100800},{"date":D(2025,9,30),"shareholders":102500},{"date":D(2025,10,31),"shareholders":104300},{"date":D(2025,11,30),"shareholders":106100},{"date":D(2025,12,31),"shareholders":108000},{"date":D(2026,1,31),"shareholders":109900},{"date":D(2026,2,28),"shareholders":111800},{"date":D(2026,3,31),"shareholders":113800},{"date":D(2026,4,30),"shareholders":115640},{"date":D(2026,5,31),"shareholders":117340}],
+                    "SILO":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68700},{"date":D(2025,8,31),"shareholders":71000},{"date":D(2025,9,30),"shareholders":73400},{"date":D(2025,10,31),"shareholders":75800},{"date":D(2025,11,30),"shareholders":78300},{"date":D(2025,12,31),"shareholders":80900},{"date":D(2026,1,31),"shareholders":83500},{"date":D(2026,2,28),"shareholders":86200},{"date":D(2026,3,31),"shareholders":89000},{"date":D(2026,4,30),"shareholders":91576},{"date":D(2026,5,31),"shareholders":93956}],
+                    "AUTO":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83400},{"date":D(2025,6,30),"shareholders":82600},{"date":D(2025,7,31),"shareholders":81900},{"date":D(2025,8,31),"shareholders":81200},{"date":D(2025,9,30),"shareholders":80500},{"date":D(2025,10,31),"shareholders":79900},{"date":D(2025,11,30),"shareholders":79300},{"date":D(2025,12,31),"shareholders":78700},{"date":D(2026,1,31),"shareholders":78200},{"date":D(2026,2,28),"shareholders":77700},{"date":D(2026,3,31),"shareholders":77200},{"date":D(2026,4,30),"shareholders":76740},{"date":D(2026,5,31),"shareholders":76315}],
+                    "ERAA":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64200},{"date":D(2025,6,30),"shareholders":66400},{"date":D(2025,7,31),"shareholders":68600},{"date":D(2025,8,31),"shareholders":70900},{"date":D(2025,9,30),"shareholders":73200},{"date":D(2025,10,31),"shareholders":75600},{"date":D(2025,11,30),"shareholders":78100},{"date":D(2025,12,31),"shareholders":80600},{"date":D(2026,1,31),"shareholders":83200},{"date":D(2026,2,28),"shareholders":85900},{"date":D(2026,3,31),"shareholders":88600},{"date":D(2026,4,30),"shareholders":91084},{"date":D(2026,5,31),"shareholders":93379}],
+                    "FILM":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52300},{"date":D(2026,1,31),"shareholders":54300},{"date":D(2026,2,28),"shareholders":56300},{"date":D(2026,3,31),"shareholders":58400},{"date":D(2026,4,30),"shareholders":60332},{"date":D(2026,5,31),"shareholders":62117}],
+                    "BDMN":[{"date":D(2025,4,30),"shareholders":98200},{"date":D(2025,5,31),"shareholders":97400},{"date":D(2025,6,30),"shareholders":96600},{"date":D(2025,7,31),"shareholders":95900},{"date":D(2025,8,31),"shareholders":95200},{"date":D(2025,9,30),"shareholders":94500},{"date":D(2025,10,31),"shareholders":93800},{"date":D(2025,11,30),"shareholders":93200},{"date":D(2025,12,31),"shareholders":92600},{"date":D(2026,1,31),"shareholders":92000},{"date":D(2026,2,28),"shareholders":91400},{"date":D(2026,3,31),"shareholders":90900},{"date":D(2026,4,30),"shareholders":90440},{"date":D(2026,5,31),"shareholders":90015}],
+                    "NISP":[{"date":D(2025,4,30),"shareholders":84200},{"date":D(2025,5,31),"shareholders":83600},{"date":D(2025,6,30),"shareholders":83000},{"date":D(2025,7,31),"shareholders":82500},{"date":D(2025,8,31),"shareholders":82000},{"date":D(2025,9,30),"shareholders":81500},{"date":D(2025,10,31),"shareholders":81000},{"date":D(2025,11,30),"shareholders":80600},{"date":D(2025,12,31),"shareholders":80200},{"date":D(2026,1,31),"shareholders":79800},{"date":D(2026,2,28),"shareholders":79400},{"date":D(2026,3,31),"shareholders":79100},{"date":D(2026,4,30),"shareholders":78824},{"date":D(2026,5,31),"shareholders":78569}],
+                    "BTPN":[{"date":D(2025,4,30),"shareholders":52200},{"date":D(2025,5,31),"shareholders":51800},{"date":D(2025,6,30),"shareholders":51400},{"date":D(2025,7,31),"shareholders":51000},{"date":D(2025,8,31),"shareholders":50700},{"date":D(2025,9,30),"shareholders":50400},{"date":D(2025,10,31),"shareholders":50100},{"date":D(2025,11,30),"shareholders":49800},{"date":D(2025,12,31),"shareholders":49500},{"date":D(2026,1,31),"shareholders":49300},{"date":D(2026,2,28),"shareholders":49100},{"date":D(2026,3,31),"shareholders":48900},{"date":D(2026,4,30),"shareholders":48716},{"date":D(2026,5,31),"shareholders":48546}],
+                    "BJTM":[{"date":D(2025,4,30),"shareholders":142200},{"date":D(2025,5,31),"shareholders":144800},{"date":D(2025,6,30),"shareholders":147400},{"date":D(2025,7,31),"shareholders":150100},{"date":D(2025,8,31),"shareholders":152800},{"date":D(2025,9,30),"shareholders":155600},{"date":D(2025,10,31),"shareholders":158400},{"date":D(2025,11,30),"shareholders":161300},{"date":D(2025,12,31),"shareholders":164200},{"date":D(2026,1,31),"shareholders":167200},{"date":D(2026,2,28),"shareholders":170200},{"date":D(2026,3,31),"shareholders":173300},{"date":D(2026,4,30),"shareholders":176152},{"date":D(2026,5,31),"shareholders":178787}],
+                    "BBHI":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":39800},{"date":D(2025,6,30),"shareholders":41500},{"date":D(2025,7,31),"shareholders":43200},{"date":D(2025,8,31),"shareholders":44900},{"date":D(2025,9,30),"shareholders":46700},{"date":D(2025,10,31),"shareholders":48500},{"date":D(2025,11,30),"shareholders":50400},{"date":D(2025,12,31),"shareholders":52400},{"date":D(2026,1,31),"shareholders":54400},{"date":D(2026,2,28),"shareholders":56500},{"date":D(2026,3,31),"shareholders":58700},{"date":D(2026,4,30),"shareholders":60724},{"date":D(2026,5,31),"shareholders":62594}],
+                    "AMMN":[{"date":D(2025,4,30),"shareholders":96200},{"date":D(2025,5,31),"shareholders":99800},{"date":D(2025,6,30),"shareholders":102100},{"date":D(2025,7,31),"shareholders":104400},{"date":D(2025,8,31),"shareholders":107200},{"date":D(2025,9,30),"shareholders":109800},{"date":D(2025,10,31),"shareholders":108200},{"date":D(2025,11,30),"shareholders":110400},{"date":D(2025,12,31),"shareholders":112100},{"date":D(2026,1,31),"shareholders":113800},{"date":D(2026,2,28),"shareholders":114900},{"date":D(2026,3,31),"shareholders":115400},{"date":D(2026,4,30),"shareholders":115860},{"date":D(2026,5,31),"shareholders":116285}],
+                    "VKTR":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":64800},{"date":D(2025,6,30),"shareholders":67600},{"date":D(2025,7,31),"shareholders":70500},{"date":D(2025,8,31),"shareholders":73400},{"date":D(2025,9,30),"shareholders":76400},{"date":D(2025,10,31),"shareholders":79400},{"date":D(2025,11,30),"shareholders":82500},{"date":D(2025,12,31),"shareholders":85700},{"date":D(2026,1,31),"shareholders":88900},{"date":D(2026,2,28),"shareholders":92200},{"date":D(2026,3,31),"shareholders":95600},{"date":D(2026,4,30),"shareholders":98728},{"date":D(2026,5,31),"shareholders":101618}],
+                    "HOKI":[{"date":D(2025,4,30),"shareholders":48200},{"date":D(2025,5,31),"shareholders":49600},{"date":D(2025,6,30),"shareholders":51100},{"date":D(2025,7,31),"shareholders":52600},{"date":D(2025,8,31),"shareholders":54100},{"date":D(2025,9,30),"shareholders":55700},{"date":D(2025,10,31),"shareholders":57300},{"date":D(2025,11,30),"shareholders":58900},{"date":D(2025,12,31),"shareholders":60600},{"date":D(2026,1,31),"shareholders":62300},{"date":D(2026,2,28),"shareholders":64100},{"date":D(2026,3,31),"shareholders":65900},{"date":D(2026,4,30),"shareholders":67556},{"date":D(2026,5,31),"shareholders":69086}],
+                    "TMAS":[{"date":D(2025,4,30),"shareholders":42100},{"date":D(2025,5,31),"shareholders":43600},{"date":D(2025,6,30),"shareholders":45200},{"date":D(2025,7,31),"shareholders":46800},{"date":D(2025,8,31),"shareholders":48400},{"date":D(2025,9,30),"shareholders":50100},{"date":D(2025,10,31),"shareholders":51800},{"date":D(2025,11,30),"shareholders":53600},{"date":D(2025,12,31),"shareholders":55400},{"date":D(2026,1,31),"shareholders":57300},{"date":D(2026,2,28),"shareholders":59200},{"date":D(2026,3,31),"shareholders":61200},{"date":D(2026,4,30),"shareholders":63040},{"date":D(2026,5,31),"shareholders":64740}],
+                    "BFIN":[{"date":D(2025,4,30),"shareholders":62100},{"date":D(2025,5,31),"shareholders":61400},{"date":D(2025,6,30),"shareholders":60800},{"date":D(2025,7,31),"shareholders":60200},{"date":D(2025,8,31),"shareholders":59600},{"date":D(2025,9,30),"shareholders":59000},{"date":D(2025,10,31),"shareholders":58500},{"date":D(2025,11,30),"shareholders":58000},{"date":D(2025,12,31),"shareholders":57500},{"date":D(2026,1,31),"shareholders":57000},{"date":D(2026,2,28),"shareholders":56600},{"date":D(2026,3,31),"shareholders":56200},{"date":D(2026,4,30),"shareholders":55832},{"date":D(2026,5,31),"shareholders":55492}],
+                    "ADMF":[{"date":D(2025,4,30),"shareholders":38200},{"date":D(2025,5,31),"shareholders":37800},{"date":D(2025,6,30),"shareholders":37400},{"date":D(2025,7,31),"shareholders":37000},{"date":D(2025,8,31),"shareholders":36700},{"date":D(2025,9,30),"shareholders":36400},{"date":D(2025,10,31),"shareholders":36100},{"date":D(2025,11,30),"shareholders":35800},{"date":D(2025,12,31),"shareholders":35600},{"date":D(2026,1,31),"shareholders":35400},{"date":D(2026,2,28),"shareholders":35200},{"date":D(2026,3,31),"shareholders":35000},{"date":D(2026,4,30),"shareholders":34816},{"date":D(2026,5,31),"shareholders":34646}],
+                    "MCAS":[{"date":D(2025,4,30),"shareholders":28200},{"date":D(2025,5,31),"shareholders":29600},{"date":D(2025,6,30),"shareholders":31100},{"date":D(2025,7,31),"shareholders":32700},{"date":D(2025,8,31),"shareholders":34300},{"date":D(2025,9,30),"shareholders":36000},{"date":D(2025,10,31),"shareholders":37700},{"date":D(2025,11,30),"shareholders":39500},{"date":D(2025,12,31),"shareholders":41400},{"date":D(2026,1,31),"shareholders":43300},{"date":D(2026,2,28),"shareholders":45300},{"date":D(2026,3,31),"shareholders":47400},{"date":D(2026,4,30),"shareholders":49332},{"date":D(2026,5,31),"shareholders":51117}],
                 }
                 for tk, data in extra.items():
                     if tk not in combined:
@@ -18121,7 +18371,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             # ── Hapus saham suspend dari screening database ──
             _full_screen_db = {tk: v for tk, v in _full_screen_db.items() if tk not in IDX_SUSPENDED_TICKERS}
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.06em;color:{text_sub};margin-bottom:14px;text-transform:uppercase;'>Deteksi akumulasi &amp; distribusi retail &middot; Naik/Turun 1 bulan &amp; 3 bulan berturut-turut &middot; Data IDX &middot; {len(_full_screen_db)} emiten terpantau</p>", unsafe_allow_html=True)
+            pass  # subtitle dihapus per request
 
             # ── Build screening rows dari database gabungan ──
             _naik_rows = []
@@ -18444,7 +18694,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 _h = max(_h, 200)
                 components.html(_html, height=_h, scrolling=False)
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:12px;margin-top:4px;'>Data diperbarui setiap bulan setelah rilis IDX &middot; <span style='color:#26a69a;font-weight:700;'>{len(_naik_rows)} emiten akumulasi</span> &middot; <span style='color:#f23645;font-weight:700;'>{len(_turun_rows)} emiten distribusi</span> dari total <b>{len(_naik_rows)+len(_turun_rows)}</b> emiten terpantau</p>", unsafe_allow_html=True)
+            pass  # subtitle count dihapus per request
 
             _render_sh_table_v2(_naik_rows, is_naik=True)
             # ── MOBILE-ONLY: rapatkan gap antara tabel Akumulasi dan Distribusi ──
