@@ -11043,15 +11043,15 @@ if current_view == "dashboard":
 
         return result
 
-    tab_idxmap, tab_marketdata, tab_macro, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_idxmap, tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  🌐 MARKET MAP  ",
         "  📈 MARKET DATA  ",
-        "  📡 RATE MONITOR  ",
         "  📊 INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🔧 TOOLS  ",
         "  📖 PANDUAN  ",
     ])
+    tab_macro = tab_marketdata  # alias — Rate Monitor sekarang ada di Market Data sub-tab
 
 
     # ── GLOBE LIVE DATA FETCH (hourly TTL) ────────────────────────────────
@@ -16372,9 +16372,6 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         alpha_tab_shareholder = _md_subtab_shareholder
 
         with alpha_tab_shareholder:
-
-            # ── SHAREHOLDER TRACKER ─────────────────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>👥 SHAREHOLDER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
             # ── Auto-extend: extrapolasi bulan baru otomatis tgl 7-10 tiap bulan ──
             import datetime as _dt
@@ -22851,13 +22848,16 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 _fs_sektor_idx = _fs_sektor_options.index(_fs_sektor_default) if _fs_sektor_default in _fs_sektor_options else 0
                 _fs_sektor = st.selectbox("Filter Sektor:", _fs_sektor_options, index=_fs_sektor_idx, key="fs_sektor_widget")
             with _fsc2:
-                _fs_sort = st.selectbox("Urutkan:", [
+                _fs_sort_options = [
                     "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
                     "DER (Terendah)","Current Ratio (Tertinggi)",
                     "Buffett Score (Tertinggi)","Graham Number (Margin of Safety)",
                     "EPS Growth (Tertinggi)","Dividend Yield (Tertinggi)",
                     "PEG Ratio (Terendah)"
-                ], key="fs_sort")
+                ]
+                _fs_sort_default = st.session_state.get("fs_sort_key", "ROE (Tertinggi)")
+                _fs_sort_idx = _fs_sort_options.index(_fs_sort_default) if _fs_sort_default in _fs_sort_options else 0
+                _fs_sort = st.selectbox("Urutkan:", _fs_sort_options, index=_fs_sort_idx, key="fs_sort_widget")
             with _fsc3:
                 st.markdown("<br>", unsafe_allow_html=True)
                 _fs_run = st.button("🔍 SCREEN", use_container_width=True, key="btn_fs_screen")
@@ -24992,7 +24992,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         render_history_table("broker", limit=30)
         # ══════════════════════════════════════════════════════════
     with tab_kalkulator:
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🔧 TOOLS</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         _kc_bg      = met_bg
         _kc_border  = met_border
@@ -25003,8 +25002,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         _kc_red     = "#f23645"
         _kc_text    = text_main
         _kc_sub     = text_sub
-
-        st.divider()
 
         # ── Sub-tabs
         ktab_ara, ktab_avg = st.tabs([
