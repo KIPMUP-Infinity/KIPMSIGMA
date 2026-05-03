@@ -8306,9 +8306,9 @@ body{{
 
             <ul class="feats">
                 <li><span class="fdot"></span>News &amp; Calendar &mdash; Live Market Pulse</li>
-                <li><span class="fdot"></span>Market Data &mdash; Rate Monitor, Bond Yield, Dividend &amp; Shareholder</li>
+                <li><span class="fdot"></span>Market Data &mdash; Rate Monitor, Bond Yield, Dividend, Shareholder &amp; Fundamental Screener</li>
                 <li><span class="fdot"></span>Index &amp; Sector Rotation &mdash; IDX Heatmap</li>
-                <li><span class="fdot"></span> Alpha Screener &mdash; AI Stock Insight, Daily, Weekly, BSJP &amp; Fundamental Screener</li>
+                <li><span class="fdot"></span> Alpha Screener &mdash; AI Stock Insight, Daily, Weekly &amp; BSJP</li>
             </ul>
 
             <button class="cta cta-terminal" onclick="event.stopPropagation();selectTerminal()">MASUK KE TERMINAL &rarr;</button>
@@ -11043,9 +11043,10 @@ if current_view == "dashboard":
 
         return result
 
-    tab_idxmap, tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_idxmap, tab_marketdata, tab_macro, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  🌐 MARKET MAP  ",
         "  📈 MARKET DATA  ",
+        "  📡 RATE MONITOR  ",
         "  📊 INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🔧 TOOLS  ",
@@ -12333,27 +12334,27 @@ table{{margin-bottom:0!important;}}
 
     with tab_marketdata:
         # ════════════════════════════════════════════════════════════════
-        # MARKET DATA — Rate Monitor · Bond Yield · Dividend · Shareholder
+        # MARKET DATA — Rate Monitor · Bond Yield · Dividend · Shareholder · Fundamental Screener
         # ════════════════════════════════════════════════════════════════
-        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_shareholder = st.tabs([
+        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_shareholder, _md_subtab_fundamental = st.tabs([
             "  📡 RATE MONITOR  ",
             "  📈 Yield & Dividend  ",
             "  👥 SHAREHOLDER  ",
+            "  📊 FUNDAMENTAL SCREENER  ",
         ])
 
         with _md_subtab_yield:
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📈 BOND YIELD & DIVIDEND</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-
-            # ── BOND YIELD ─────────────────────────────────────────────
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ BOND YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.info("🚧 **Bond Yield Monitor** — Data yield obligasi pemerintah IDX (SBN/SUN/ORI) dan US Treasury (2Y/5Y/10Y/30Y) akan hadir di sini. *Coming Soon.*")
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-            # ── DIVIDEND ───────────────────────────────────────────────
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>💰 DIVIDEND DATA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.info("🚧 **Dividend Tracker** — Data dividen emiten IDX: cum date, ex-date, yield dividen, dan riwayat pembagian dividen per saham akan hadir di sini. *Coming Soon.*")
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+    with tab_macro:
+        st.info("📌 Tab MARKET DATA telah diperbarui. Rate Monitor, Fundamental Screener, Shareholder, Bond Yield & Dividend sekarang ada di tab **📈 MARKET DATA**.")
 
     with _mm_subtab_news:
         # ─────────────────────────────────────────────────────────
@@ -14239,7 +14240,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # ── BI RATE MONITOR — Coming Soon ─────────────────────────
+        # ── BI RATE MONITOR — Coming Soon ──────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.info("🚧 **BI Rate Monitor** — Data suku bunga Bank Indonesia & jadwal RDG BI akan hadir di sini. *Coming Soon.*")
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -16356,18 +16357,18 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
             "  📅 DAILY PLAN  ",
             "  📆 WEEKLY PLAN  ",
             "  🌙 BELI SORE JUAL PAGI  ",
-            "  📊 FUNDAMENTAL SCREENER  ",
             "  🏦 BROKER SUMMARY  ",
             "  📋 ANALISA IPO  ",
             "  🏆 TRACK RECORD  ",
         ])
 
-        # Shareholder dipindah ke tab MARKET DATA → _md_subtab_shareholder
+        # Fundamental Screener & Shareholder dipindah ke tab MARKET DATA
+        alpha_tab_fundamental = _md_subtab_fundamental
         alpha_tab_shareholder = _md_subtab_shareholder
 
         with alpha_tab_shareholder:
@@ -22845,7 +22846,10 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
             _fsc1, _fsc2, _fsc3 = st.columns([2, 2, 1])
             with _fsc1:
-                _fs_sektor = st.selectbox("Filter Sektor:", ["Semua Sektor"] + list(_sektor_map.keys()), key="fs_sektor")
+                _fs_sektor_options = ["Semua Sektor"] + list(_sektor_map.keys())
+                _fs_sektor_default = st.session_state.get("fs_sektor", "Semua Sektor")
+                _fs_sektor_idx = _fs_sektor_options.index(_fs_sektor_default) if _fs_sektor_default in _fs_sektor_options else 0
+                _fs_sektor = st.selectbox("Filter Sektor:", _fs_sektor_options, index=_fs_sektor_idx, key="fs_sektor_widget")
             with _fsc2:
                 _fs_sort = st.selectbox("Urutkan:", [
                     "ROE (Tertinggi)","PBV (Terendah)","Net Margin (Tertinggi)",
@@ -24999,59 +25003,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
         _kc_red     = "#f23645"
         _kc_text    = text_main
         _kc_sub     = text_sub
-
-        # ── Live Price Fetch Widget ──────────────────────────────────────
-        st.markdown(
-            f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-left:3px solid {_kc_gold};"
-            f"border-radius:0 10px 10px 0;padding:12px 16px;margin-bottom:16px;'>"
-            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.75rem;color:{_kc_gold};font-weight:700;"
-            f"letter-spacing:0.08em;'>⚡ AMBIL HARGA LIVE</span>"
-            f"<span style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:{_kc_sub};margin-left:8px;'>"
-            f"Ketik ticker IDX → klik Ambil → harga otomatis terisi di kalkulator</span></div>",
-            unsafe_allow_html=True
-        )
-        _kc_fetch_col1, _kc_fetch_col2, _kc_fetch_col3 = st.columns([2, 1, 2])
-        with _kc_fetch_col1:
-            _kc_ticker_input = st.text_input(
-                "Ticker IDX", placeholder="contoh: BBCA, TLKM, GOTO",
-                key="kc_ticker_input", label_visibility="collapsed"
-            ).strip().upper().replace(".JK", "")
-        with _kc_fetch_col2:
-            _kc_fetch_btn = st.button("⚡ Ambil Harga", use_container_width=True, key="kc_fetch_price_btn")
-        with _kc_fetch_col3:
-            _kc_price_display = st.empty()
-
-        if _kc_fetch_btn and _kc_ticker_input:
-            with st.spinner(f"Mengambil harga {_kc_ticker_input}..."):
-                try:
-                    import yfinance as _yf_kc
-                    _kc_hist = _yf_kc.Ticker(f"{_kc_ticker_input}.JK").history(period="2d")
-                    if not _kc_hist.empty:
-                        _kc_price_live = float(_kc_hist["Close"].iloc[-1])
-                        _kc_chg = float(_kc_hist["Close"].iloc[-1] - _kc_hist["Close"].iloc[-2]) / float(_kc_hist["Close"].iloc[-2]) * 100 if len(_kc_hist) >= 2 else 0
-                        _kc_chg_clr = _kc_green if _kc_chg >= 0 else _kc_red
-                        st.session_state["kc_fetched_price"] = int(_kc_price_live)
-                        st.session_state["kc_fetched_ticker"] = _kc_ticker_input
-                        _kc_price_display.markdown(
-                            f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
-                            f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
-                            f"<span style='color:{_kc_gold};font-weight:700;font-size:1rem;'>Rp {int(_kc_price_live):,}</span> "
-                            f"<span style='color:{_kc_chg_clr};font-size:0.8rem;'>{_kc_chg:+.2f}%</span> "
-                            f"<span style='color:{_kc_sub};font-size:0.72rem;'>· {_kc_ticker_input}</span></div>",
-                            unsafe_allow_html=True
-                        )
-                    else:
-                        st.warning(f"Ticker {_kc_ticker_input} tidak ditemukan di yfinance.")
-                except Exception as _kc_err:
-                    st.warning(f"Gagal ambil harga: {_kc_err}")
-        elif st.session_state.get("kc_fetched_price"):
-            _kc_price_display.markdown(
-                f"<div style='background:{_kc_bg};border:1px solid {_kc_border};border-radius:8px;"
-                f"padding:8px 14px;font-family:IBM Plex Mono,monospace;'>"
-                f"<span style='color:{_kc_sub};font-size:0.72rem;'>Harga terakhir ({st.session_state.get('kc_fetched_ticker','')}):</span> "
-                f"<span style='color:{_kc_gold};font-weight:700;'>Rp {st.session_state['kc_fetched_price']:,}</span></div>",
-                unsafe_allow_html=True
-            )
 
         st.divider()
 
@@ -27397,12 +27348,12 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 </style></head><body><div class="wrap">
 
 <div class="sec-head"><div class="sec-icon"></div>
-<div><div class="sec-title">TOOLS - Panduan Lengkap</div>
+<div><div class="sec-title">KALKULATOR - Panduan Lengkap</div>
 <div class="sec-desc">Alat kalkulasi trading IDX: Profit/Loss, Position Sizing, Modal Lot, Brokerage Fee, dan Break Even Point.</div>
 </div></div>
 
 <div class="feat">
-<div class="feat-title"> Apa itu Tab Tools?</div>
+<div class="feat-title"> Apa itu Tab Kalkulator?</div>
 <div class="stext">Tab Kalkulator adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual - masukkan angka, hasilnya otomatis.</div>
 </div>
 
