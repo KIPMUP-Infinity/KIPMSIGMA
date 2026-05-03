@@ -16032,7 +16032,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
         with _rot_tab_index:
             # ── SUB-SUB-TABS INDEX ──────────────────────────────────────────────
-            _idx_tab_msci, _idx_tab_ftse, _idx_tab_lq45, _idx_tab_idx30, _idx_tab_idx80, _idx_tab_kompas, _idx_tab_konglo, _idx_tab_jdall = st.tabs([
+            _idx_tab_msci, _idx_tab_ftse, _idx_tab_lq45, _idx_tab_idx30, _idx_tab_idx80, _idx_tab_kompas, _idx_tab_konglo, _idx_tab_bumn = st.tabs([
                 "  🌍 MSCI  ",
                 "  🌐 FTSE  ",
                 "  ⭐ LQ45  ",
@@ -16040,7 +16040,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 "  📋 IDX80  ",
                 "  📰 KOMPAS100  ",
                 "  🏢 SAHAM KONGLO  ",
-                "  🗃️ JD.ALL  ",
+                "  🏦 SAHAM BUMN  ",
             ])
 
             with _idx_tab_msci:
@@ -16421,91 +16421,99 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         
                 st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-            with _idx_tab_jdall:
-                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>JD.ALL — SEMUA SAHAM IDX (DATABASE LENGKAP)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-                st.markdown(f"""<div style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;color:{text_sub};
-                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+            with _idx_tab_bumn:
+                import pandas as _pd_bumn
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SAHAM BUMN — BADAN USAHA MILIK NEGARA TERCATAT DI BEI</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(38,166,154,0.07);border-left:3px solid #26a69a;
                     padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.8;'>
-                 <b style='color:#8b5cf6;'>Cakupan:</b> Seluruh saham tercatat di BEI (&pm;900 emiten)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <b style='color:#8b5cf6;'>Filter:</b> Kode, nama, sektor, papan (Utama/Pengembangan/Akselerasi)&nbsp;&nbsp;|&nbsp;&nbsp;
-                <span style='color:{text_sub};'>Data refresh: harian. Source: <b>IDX / yfinance</b></span>
+                 <b style='color:#26a69a;'>Cakupan:</b> Saham BUMN &amp; BUMN Karya yang tercatat di BEI&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#26a69a;'>Klasifikasi:</b> Perbankan · Energi · Infrastruktur · Konstruksi · Industri · Asuransi&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Broker BUMN: CC=Mandiri | NI=BNI | OD=BRI Danareksa | DX=Bahana</span>
                 </div>""", unsafe_allow_html=True)
 
-                _jd_sector_filter = st.selectbox("Filter Sektor IDX-IC:", [
-                    "Semua Sektor",
-                    "Energy — Energi",
-                    "Basic Materials — Material Dasar",
-                    "Industrials — Industri",
-                    "Consumer Non-Cyclicals — Konsumer Primer",
-                    "Consumer Cyclicals — Konsumer Sekunder",
-                    "Healthcare — Kesehatan",
-                    "Financials — Keuangan",
-                    "Properties & Real Estate",
-                    "Technology — Teknologi",
-                    "Infrastructures — Infrastruktur",
-                    "Transportation & Logistics",
-                ], key="jdall_sector_sel")
+                _bumn_data = [
+                    # ── PERBANKAN ──
+                    {"Sektor": "Perbankan", "Ticker": "BBRI",  "Nama": "Bank Rakyat Indonesia Tbk.",      "Keterangan": "Bank terbesar IDX by market cap. Fokus UMKM & mikro.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
+                    {"Sektor": "Perbankan", "Ticker": "BMRI",  "Nama": "Bank Mandiri (Persero) Tbk.",      "Keterangan": "Bank komersial BUMN terbesar, korporasi & ritel.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
+                    {"Sektor": "Perbankan", "Ticker": "BBNI",  "Nama": "Bank Negara Indonesia Tbk.",       "Keterangan": "Fokus korporasi, ekspor-impor & internasional.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
+                    {"Sektor": "Perbankan", "Ticker": "BBTN",  "Nama": "Bank Tabungan Negara Tbk.",        "Keterangan": "Spesialis KPR subsidi & rumah rakyat.", "Indeks": "LQ45 · MSCI"},
+                    {"Sektor": "Perbankan", "Ticker": "BRIS",  "Nama": "Bank Syariah Indonesia Tbk.",      "Keterangan": "Bank syariah terbesar di Indonesia, merger 3 bank syariah BUMN.", "Indeks": "LQ45 · IDX80"},
+                    {"Sektor": "Perbankan", "Ticker": "BJBR",  "Nama": "Bank Pembangunan Daerah Jabar Banten", "Keterangan": "BPD Jawa Barat — BUMD/afiliasi BUMN.", "Indeks": "IDX80"},
+                    {"Sektor": "Perbankan", "Ticker": "BJTM",  "Nama": "Bank Pembangunan Daerah Jatim",    "Keterangan": "BPD Jawa Timur — BUMD/afiliasi BUMN.", "Indeks": "IDX80"},
+                    # ── ENERGI & PERTAMBANGAN ──
+                    {"Sektor": "Energi & Pertambangan", "Ticker": "PTBA",  "Nama": "Bukit Asam Tbk.",           "Keterangan": "Produsen batu bara terbesar BUMN. Anak Holding MIND ID.", "Indeks": "LQ45 · MSCI"},
+                    {"Sektor": "Energi & Pertambangan", "Ticker": "PGAS",  "Nama": "Perusahaan Gas Negara Tbk.", "Keterangan": "Distribusi gas bumi, anak usaha Pertamina.", "Indeks": "LQ45 · MSCI"},
+                    {"Sektor": "Energi & Pertambangan", "Ticker": "ANTM",  "Nama": "Aneka Tambang Tbk.",         "Keterangan": "Tambang emas, nikel, bauksit. Anak Holding MIND ID.", "Indeks": "LQ45 · MSCI"},
+                    {"Sektor": "Energi & Pertambangan", "Ticker": "PGEO",  "Nama": "Pertamina Geothermal Energy","Keterangan": "Energi panas bumi BUMN, kapasitas terbesar di dunia.", "Indeks": "IDX80 · MSCI"},
+                    {"Sektor": "Energi & Pertambangan", "Ticker": "MEDC",  "Nama": "Medco Energi Internasional", "Keterangan": "Migas swasta-BUMN (afiliasi). Eksplorasi & produksi migas.", "Indeks": "IDX80"},
+                    {"Sektor": "Energi & Pertambangan", "Ticker": "ELSA",  "Nama": "Elnusa Tbk.",                "Keterangan": "Jasa migas anak usaha Pertamina.", "Indeks": "IDX80"},
+                    {"Sektor": "Energi & Pertambangan", "Ticker": "KRAS",  "Nama": "Krakatau Steel Tbk.",        "Keterangan": "Produsen baja BUMN. Restrukturisasi aktif.", "Indeks": "—"},
+                    # ── TELEKOMUNIKASI & INFRASTRUKTUR ──
+                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "TLKM",  "Nama": "Telkom Indonesia Tbk.",     "Keterangan": "BUMN telekomunikasi terbesar. Induk Telkomsel.", "Indeks": "LQ45 · IDX30 · MSCI · FTSE"},
+                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "JSMR",  "Nama": "Jasa Marga Tbk.",          "Keterangan": "Operator jalan tol BUMN terbesar di Indonesia.", "Indeks": "LQ45 · MSCI"},
+                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "MTEL",  "Nama": "Mitratel (Dayamitra Telekomunikasi)","Keterangan": "Menara telekomunikasi anak usaha Telkom.", "Indeks": "IDX80"},
+                    {"Sektor": "Telekomunikasi & Infrastruktur", "Ticker": "GIAA",  "Nama": "Garuda Indonesia Tbk.",     "Keterangan": "Maskapai penerbangan nasional BUMN. Restrukturisasi.", "Indeks": "—"},
+                    # ── KONSTRUKSI & PROPERTI (BUMN KARYA) ──
+                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "PTPP",  "Nama": "PP (Pembangunan Perumahan) Tbk.","Keterangan": "BUMN Karya konstruksi & properti.", "Indeks": "IDX80"},
+                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "WIKA",  "Nama": "Wijaya Karya Tbk.",              "Keterangan": "BUMN Karya EPC & infrastruktur. ⚠️ SUSPEND (PKPU).", "Indeks": "—"},
+                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "WSKT",  "Nama": "Waskita Karya Tbk.",             "Keterangan": "BUMN Karya tol & konstruksi. ⚠️ SUSPEND (restrukturisasi).", "Indeks": "—"},
+                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "ADHI",  "Nama": "Adhi Karya Tbk.",               "Keterangan": "BUMN Karya konstruksi & LRT.", "Indeks": "IDX80"},
+                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "PPRO",  "Nama": "PP Properti Tbk.",               "Keterangan": "Anak usaha PTPP properti. ⚠️ SUSPEND (restrukturisasi).", "Indeks": "—"},
+                    {"Sektor": "Konstruksi (BUMN Karya)", "Ticker": "WTON",  "Nama": "Wijaya Karya Beton Tbk.",        "Keterangan": "Anak usaha WIKA, produsen beton pracetak.", "Indeks": "IDX80"},
+                    # ── INDUSTRI & MANUFAKTUR ──
+                    {"Sektor": "Industri & Manufaktur", "Ticker": "SMGR",  "Nama": "Semen Indonesia Tbk.",      "Keterangan": "Produsen semen BUMN terbesar, induk Holcim Indonesia.", "Indeks": "LQ45 · MSCI"},
+                    {"Sektor": "Industri & Manufaktur", "Ticker": "KAEF",  "Nama": "Kimia Farma Tbk.",          "Keterangan": "Produsen farmasi & apotek BUMN.", "Indeks": "IDX80"},
+                    {"Sektor": "Industri & Manufaktur", "Ticker": "INAF",  "Nama": "Indofarma Tbk.",            "Keterangan": "Produsen farmasi BUMN. ⚠️ SUSPEND (masalah keuangan).", "Indeks": "—"},
+                    {"Sektor": "Industri & Manufaktur", "Ticker": "KRAS",  "Nama": "Krakatau Steel Tbk.",       "Keterangan": "Produsen baja BUMN. Restrukturisasi aktif.", "Indeks": "—"},
+                    # ── KEUANGAN NON-BANK ──
+                    {"Sektor": "Keuangan Non-Bank", "Ticker": "PNBS",  "Nama": "Bank Panin Dubai Syariah",    "Keterangan": "Bank syariah afiliasi BUMN (afiliasi BNI).", "Indeks": "—"},
+                    {"Sektor": "Keuangan Non-Bank", "Ticker": "ASRM",  "Nama": "Asuransi Ramayana Tbk.",      "Keterangan": "Asuransi umum afiliasi BUMN.", "Indeks": "—"},
+                    {"Sektor": "Keuangan Non-Bank", "Ticker": "AGRO",  "Nama": "Bank Raya Indonesia Tbk.",    "Keterangan": "Bank digital anak usaha BRI.", "Indeks": "IDX80"},
+                    {"Sektor": "Keuangan Non-Bank", "Ticker": "BBHI",  "Nama": "Allo Bank Indonesia Tbk.",    "Keterangan": "Bank digital CT Corp/Salim — bukan murni BUMN.", "Indeks": "—"},
+                    # ── PERKEBUNAN & PANGAN ──
+                    {"Sektor": "Perkebunan & Pangan", "Ticker": "LSIP",  "Nama": "PP London Sumatra Indonesia","Keterangan": "Perkebunan kelapa sawit, anak usaha Salim/BUMN afiliasi.", "Indeks": "LQ45 · MSCI"},
+                    {"Sektor": "Perkebunan & Pangan", "Ticker": "BWPT",  "Nama": "Eagle High Plantations",    "Keterangan": "Perkebunan sawit afiliasi BUMN (Rajawali Group).", "Indeks": "—"},
+                    {"Sektor": "Perkebunan & Pangan", "Ticker": "PTPN",  "Nama": "PTPN (Perkebunan Nusantara)","Keterangan": "Holding perkebunan BUMN — gula, sawit, karet.", "Indeks": "—"},
+                ]
+                df_bumn = _pd_bumn.DataFrame(_bumn_data)
 
-                _jd_papan_filter = st.selectbox("Filter Papan:", ["Semua", "Utama", "Pengembangan", "Akselerasi"], key="jdall_papan_sel")
+                _bumn_sektor_list = ["Semua Sektor"] + sorted(df_bumn["Sektor"].unique().tolist())
+                _bumn_sektor_sel = st.selectbox("Filter Sektor BUMN:", _bumn_sektor_list, key="bumn_sektor_sel")
+                _bumn_suspend_hide = st.checkbox("Sembunyikan saham SUSPEND", value=True, key="bumn_suspend_hide")
 
-                _jd_run = st.button("🔍 LOAD SEMUA SAHAM IDX", key="jdall_run", use_container_width=False)
+                _df_bumn_show = df_bumn.copy()
+                if _bumn_sektor_sel != "Semua Sektor":
+                    _df_bumn_show = _df_bumn_show[_df_bumn_show["Sektor"] == _bumn_sektor_sel]
+                if _bumn_suspend_hide:
+                    _df_bumn_show = _df_bumn_show[~_df_bumn_show["Keterangan"].str.contains("SUSPEND", na=False)]
 
-                if _jd_run or st.session_state.get("jdall_loaded"):
-                    with st.spinner("Mengambil data seluruh saham IDX dari yfinance..."):
-                        @st.cache_data(ttl=86400, show_spinner=False)
-                        def _fetch_all_idx_tickers():
-                            """Fetch semua saham IDX via yfinance screener atau daftar hardcoded lapis yfinance."""
-                            import yfinance as _yf
-                            # List representatif ~200 ticker IDX paling aktif sebagai seed
-                            _seed = [
-                                "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
-                                "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
-                                "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
-                                "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
-                                "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
-                                "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
-                                "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
-                                "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
-                                "EXCL","ISAT","FREN","WIFI","MTDL","MLPL","KPIG","LPKR","SILO","MNCN",
-                                "INKP","TKIM","DSSA","SMAR","AUTO","AALI","BUMI","ENRG","VKTR","DNET",
-                                "ARTO","BBHI","BBYB","BANK","BNBA","BGTG","BUKA","BELI","ACST","NCKL",
-                                "CBDK","CLEO","ESSA","DEWA","HRTA","BKSL","GGRM","TAPG","SRTG","INDY",
-                                "ADRO","ADMR","ESSA","HRUM","ITMG","PTBA","GEMS","BOSS","ELSA","APEX",
-                                "MTEL","TBIG","TOWR","ISAT","EXCL","BOLT","MTDL","HEAL","MIKA","DVLA",
-                                "KAEF","TSPC","KLBF","PYFA","SIDO","INAF","HMSP","GGRM","WIIM","BWPT",
-                            ]
-                            results = []
-                            import threading as _thr
-                            lock = _thr.Lock()
-                            def _fetch_one(tk):
-                                try:
-                                    t = _yf.Ticker(f"{tk}.JK")
-                                    inf = t.info
-                                    name = (inf.get("shortName") or inf.get("longName") or tk)[:30]
-                                    sector = inf.get("sector") or inf.get("industryKey") or "-"
-                                    mkcap = inf.get("marketCap") or 0
-                                    price = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
-                                    with lock:
-                                        results.append({"Ticker": tk, "Nama": name, "Sektor": sector,
-                                                        "Harga": int(price) if price else "-",
-                                                        "Mkt Cap (M)": f"Rp {mkcap/1e9:.1f}T" if mkcap > 1e9 else "-"})
-                                except: pass
-                            ths = [_thr.Thread(target=_fetch_one, args=(tk,), daemon=True) for tk in _seed]
-                            for t in ths: t.start()
-                            for t in ths: t.join(timeout=20)
-                            return sorted(results, key=lambda x: x["Ticker"])
+                st.markdown(f"<p style='font-size:0.8rem;color:#26a69a;margin-bottom:8px;'>{len(_df_bumn_show)} emiten BUMN ditampilkan</p>", unsafe_allow_html=True)
+                st.dataframe(
+                    _df_bumn_show[["Sektor","Ticker","Nama","Indeks","Keterangan"]],
+                    use_container_width=True,
+                    hide_index=True,
+                    on_select="ignore",
+                    height=min(60 + len(_df_bumn_show)*38, 680),
+                )
 
-                        _jdall_data = _fetch_all_idx_tickers()
-                        st.session_state["jdall_loaded"] = True
-                        import pandas as pd
-                        df_jdall = pd.DataFrame(_jdall_data)
-                        if _jd_sector_filter != "Semua Sektor":
-                            _sec_kw = _jd_sector_filter.split("—")[0].strip().lower()
-                            df_jdall = df_jdall[df_jdall["Sektor"].str.lower().str.contains(_sec_kw, na=False)]
-                        st.markdown(f"<p style='font-size:0.8rem;color:#8b5cf6;margin-bottom:8px;'>{len(df_jdall)} saham ditemukan</p>", unsafe_allow_html=True)
-                        st.dataframe(df_jdall, use_container_width=True, hide_index=True, on_select="ignore", height=500)
-                else:
-                    st.info("Klik **LOAD SEMUA SAHAM IDX** untuk menampilkan database lengkap (~150 saham IDX aktif via yfinance). Data dicache 24 jam.")
+                st.markdown(f"""
+                <div class="trm-card" style="margin-top:16px;">
+                    <div class="trm-card-title">🟢 BROKER BUMN — INDIKATOR AKUMULASI NEGARA</div>
+                    <p style='color:{text_sub};font-size:0.9rem;line-height:1.75;margin:0;'>
+                    Pantau net buy broker BUMN di Bandarmologi sebagai proxy <b>stabilisasi pemerintah</b>.
+                    Bila BUMN beli saat asing jual = stabilisasi, bukan akumulasi murni.
+                    Bila BUMN beli bersamaan asing = sinyal akumulasi kuat.
+                    </p>
+                    <div style='display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;'>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>CC · Mandiri Sekuritas · 2.8T vol</div>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>NI · BNI Sekuritas · 590B vol</div>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>OD · BRI Danareksa · 403B vol</div>
+                      <div style='background:rgba(38,166,154,0.12);border:1px solid rgba(38,166,154,0.3);border-radius:6px;padding:6px 14px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;color:#26a69a;'>DX · Bahana Sekuritas · 69B vol</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
 
 
@@ -23220,32 +23228,57 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
 
             if _fs_run or st.session_state.get("fs_results"):
                 if _fs_run:
-                    with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX..."):
+                    # ── Cek status API sebelum fetch ──
+                    _fs_api_status = {}
+                    try:
+                        _fh_test_keys = _get_all_finnhub_keys() or [st.secrets.get("FINNHUB_KEY","")]
+                        _fs_api_status["Finnhub"] = "✅" if any(k and len(k)>10 for k in _fh_test_keys) else "❌"
+                    except: _fs_api_status["Finnhub"] = "❌"
+                    try:
+                        _fmp_test_keys = _get_all_fmp_keys() or [st.secrets.get("FMP_KEY","")]
+                        _fs_api_status["FMP"] = "✅" if any(k and len(k)>10 for k in _fmp_test_keys) else "❌"
+                    except: _fs_api_status["FMP"] = "❌"
+                    try:
+                        _av_test_keys = _get_all_av_keys() if callable(getattr(st, "_" , None)) else []
+                        _fs_api_status["AlphaVantage"] = "✅" if any(k and len(k)>10 for k in (_av_test_keys or [])) else "❌"
+                    except: _fs_api_status["AlphaVantage"] = "❌"
+                    _fs_api_status["yfinance"] = "✅ (fallback utama)"
+                    _api_stat_html = "  ·  ".join([f"<b>{src}</b> {stat_}" for src,stat_ in _fs_api_status.items()])
+                    st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
+
+                    with st.spinner(f"Mengambil data fundamental {len(_fs_tickers)} saham IDX via yfinance..."):
                         @st.cache_data(ttl=3600, show_spinner=False)
                         def _fetch_fundamental_batch(tickers_tuple):
-                            import yfinance as _yf2, threading as _thr
+                            import yfinance as _yf2, threading as _thr, time as _tsl
                             results = {}
                             lock = _thr.Lock()
                             def _one(tk):
+                                inf = {}
+                                for _att in range(2):
+                                    try:
+                                        inf = _yf2.Ticker(f"{tk}.JK").info or {}
+                                        if inf.get("regularMarketPrice") or inf.get("currentPrice"):
+                                            break
+                                    except Exception:
+                                        if _att == 0: _tsl.sleep(0.5)
                                 try:
-                                    t   = _yf2.Ticker(f"{tk}.JK")
-                                    inf = t.info
-                                    price     = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
-                                    roe       = (inf.get("returnOnEquity") or 0) * 100
-                                    roa       = (inf.get("returnOnAssets") or 0) * 100
-                                    npm       = (inf.get("profitMargins") or 0) * 100
-                                    der       = inf.get("debtToEquity") or 0
-                                    cr        = inf.get("currentRatio") or 0
-                                    pbv       = inf.get("priceToBook") or 0
-                                    pe        = inf.get("trailingPE") or 0
-                                    eps       = inf.get("trailingEps") or 0
-                                    div       = (inf.get("dividendYield") or 0) * 100
-                                    mkcap     = inf.get("marketCap") or 0
-                                    w52h      = inf.get("fiftyTwoWeekHigh") or 0
-                                    w52l      = inf.get("fiftyTwoWeekLow") or 0
-                                    rpos      = ((price-w52l)/(w52h-w52l)*100) if w52h > w52l else 0
-                                    eps_fwd   = inf.get("forwardEps") or 0
-                                    eps_g     = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
+                                    price = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
+                                    if not price: return
+                                    roe   = (inf.get("returnOnEquity") or 0) * 100
+                                    roa   = (inf.get("returnOnAssets") or 0) * 100
+                                    npm   = (inf.get("profitMargins") or 0) * 100
+                                    der   = inf.get("debtToEquity") or 0
+                                    cr    = inf.get("currentRatio") or 0
+                                    pbv   = inf.get("priceToBook") or 0
+                                    pe    = inf.get("trailingPE") or 0
+                                    eps   = inf.get("trailingEps") or 0
+                                    div   = (inf.get("dividendYield") or 0) * 100
+                                    mkcap = inf.get("marketCap") or 0
+                                    w52h  = inf.get("fiftyTwoWeekHigh") or 0
+                                    w52l  = inf.get("fiftyTwoWeekLow") or 0
+                                    rpos  = ((price-w52l)/(w52h-w52l)*100) if w52h > w52l else 0
+                                    eps_fwd = inf.get("forwardEps") or 0
+                                    eps_g   = ((eps_fwd-eps)/abs(eps)*100) if eps else 0
                                     score = sum([roe>=15, der<=1.0 and der>0, npm>=10, cr>=1.5, 0.5<=pbv<=3.0 and pbv>0, eps>0])
                                     with lock:
                                         results[tk] = {
@@ -23256,18 +23289,25 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                             "rpos":rpos,"score":score,
                                         }
                                 except: pass
-                            ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in tickers_tuple]
-                            for t in ths: t.start()
-                            for t in ths: t.join(timeout=18)
+                            # Batch per 10 ticker untuk hindari rate limit
+                            _bsz = 10
+                            for _bi in range(0, len(tickers_tuple), _bsz):
+                                _batch = tickers_tuple[_bi:_bi+_bsz]
+                                ths = [_thr.Thread(target=_one, args=(tk,), daemon=True) for tk in _batch]
+                                for t in ths: t.start()
+                                for t in ths: t.join(timeout=20)
+                                _tsl.sleep(0.3)
                             return results
 
                         _fs_data = _fetch_fundamental_batch(tuple(_fs_tickers))
+                        if not _fs_data:
+                            st.warning("⚠️ Tidak ada data yang berhasil diambil. yfinance kemungkinan rate-limited. Coba lagi dalam beberapa menit.")
                         _fs_ts_now = datetime.now().strftime("%d %b %Y, %H:%M WIB")
                         st.session_state["fs_results"]  = _fs_data
                         st.session_state["fs_ts"]       = _fs_ts_now
                         st.session_state["fs_sort_key"] = _fs_sort
                         st.session_state["fs_sektor"]   = _fs_sektor
-                        # Persist ke Sheets — cache 7 hari per field
+                        # Persist ke Sheets
                         if st.session_state.get("user"):
                             try:
                                 _ue_fs = st.session_state.user["email"]
