@@ -4252,30 +4252,172 @@ IDX_CORPORATE_ACTIONS = {
 }
 
 IDX_SUSPENDED_TICKERS_GLOBAL = {
-    "WIKA": "SUSPEND - Wijaya Karya, PKPU sejak 2024",
-    "WSKT": "SUSPEND - Waskita Karya, restrukturisasi hutang",
-    "PPRO": "SUSPEND - PP Properti",
+    # ─── UPDATE: 3 MEI 2026 ─────────────────────────────────────────────────────
+    # Sumber: BEI Peng-00003/BEI.PLP/12-2025 (70 emiten per 30 Des 2025)
+    #         + suspend terbaru April–Mei 2026 dari pengumuman BEI
+    # ─── SUSPEND LAMA >24 BULAN (kandidat forced delisting) ──────────────────────
+    "ARMY": "SUSPEND - Armidian Karyatama, suspensi Des 2019 (>6 thn)",
+    "BTEL": "SUSPEND - Bakrie Telecom, suspensi Mei 2019 (>6 thn), PKPU",
+    "CBMF": "SUSPEND - Cahaya Bintang Medan, suspensi Feb 2023",
+    "COWL": "SUSPEND - Cowell Development, suspensi Jul 2020",
+    "DUCK": "SUSPEND - Jaya Bersama Indo, suspensi Agt 2021",
+    "ENVY": "SUSPEND - Envy Technologies, suspensi Des 2020",
+    "GOLL": "SUSPEND - Golden Plantation, suspensi Jan 2019 (>7 thn)",
+    "HOME": "SUSPEND - Hotel Mandarine Regency, suspensi Feb 2020",
+    "HOTL": "SUSPEND - Saraswati Griya Lestari, suspensi Agt 2022",
+    "IIKP": "SUSPEND - Inti Agri Resources, suspensi Feb 2024",
+    "JSKY": "SUSPEND - Sky Energy Indonesia, suspensi Agt 2022",
+    "KBRI": "SUSPEND - Kertas Basuki Rachmat, suspensi Apr 2019 (>6 thn)",
+    "LCGP": "SUSPEND - Eureka Prima Jakarta, suspensi Mei 2019 (>6 thn)",
+    "LMAS": "SUSPEND - Limas Indonesia Makmur, suspensi Agt 2022",
+    "MABA": "SUSPEND - Marga Abhinaya Abadi, suspensi Feb 2020",
+    "MAGP": "SUSPEND - Multi Agro Gemilang Plantation, suspensi Jul 2022",
+    "MTRA": "SUSPEND - Mitra Pemuda, suspensi Agt 2020",
+    "NUSA": "SUSPEND - Sinergi Megah Internusa, suspensi Agt 2020",
+    "PLAS": "SUSPEND - Polaris Investama, suspensi Des 2018 (>7 thn)",
+    "POOL": "SUSPEND - Pool Advista Indonesia, suspensi Jun 2020",
+    "POSA": "SUSPEND - Bliss Properti Indonesia, suspensi Nov 2020",
+    "PURE": "SUSPEND - Trinitan Metals and Minerals, suspensi Agt 2022",
+    "RIMO": "SUSPEND - Rimo International Lestari, suspensi Feb 2020",
+    "SIMA": "SUSPEND - Siwani Makmur, suspensi Feb 2020",
+    "SKYB": "SUSPEND - Northcliff Citranusa, suspensi Feb 2020",
+    "SMRU": "SUSPEND - SMR Utama, suspensi Jan 2020",
+    "SRIL": "SUSPEND - Sri Rejeki Isman (Sritex), suspensi Mei 2021, PKPU/Pailit",
+    "SUGI": "SUSPEND - Sugih Energy, suspensi Jul 2019 (>6 thn)",
+    "TDPM": "SUSPEND - Tianrong Chemicals Industry, suspensi Apr 2021",
+    "TRAM": "SUSPEND - Trada Alam Minera, suspensi Jan 2020",
+    "TRIL": "SUSPEND - Triwira Insanlestari, suspensi Mei 2019 (>6 thn)",
+    "TRIO": "SUSPEND - Trikomsel Oke, suspensi Jul 2019 (>6 thn)",
+    "UNIT": "SUSPEND - Nusantara Inti Corpora, suspensi Mar 2021",
+    # ─── SUSPEND MENENGAH 6–24 BULAN ──────────────────────────────────────────────
+    "ALMI": "SUSPEND - Alumindo Light Metal Industry, suspensi Okt 2024",
+    "ARTI": "SUSPEND - Ratu Prabu Energi, suspensi Jul 2024",
+    "BEBS": "SUSPEND - Berkah Beton Sadaya, suspensi Feb 2025",
+    "BIKA": "SUSPEND - Binakarya Jaya Abadi, suspensi Jul 2024",
+    "BOSS": "SUSPEND - Borneo Olah Sarana Sukses, suspensi Feb 2024",
+    "CPRI": "SUSPEND - Capri Nusa Satu Properti, suspensi Jul 2023",
+    "DEAL": "SUSPEND - Dewata Freightinternational, suspensi Feb 2024",
+    "ETWA": "SUSPEND - Eterindo Wahanatama, suspensi Feb 2024",
+    "FASW": "SUSPEND - Fajar Surya Wisesa, suspensi Jan 2025",
+    "GAMA": "SUSPEND - Aksara Global Development, suspensi Jul 2023",
+    "HKMU": "SUSPEND - HK Metals Utama, suspensi Jul 2023",
+    "INAF": "SUSPEND - Indofarma (BUMN), suspensi Jul 2024, masalah keuangan",
+    "IPPE": "SUSPEND - Indo Pureco Pratama, suspensi Sep 2024",
+    "KAYU": "SUSPEND - Darmi Bersaudara, suspensi Apr 2024",
+    "LMSH": "SUSPEND - Lionmesh Prima, suspensi Jan 2025",
+    "MFMI": "SUSPEND - Multifiling Mitra Indonesia, suspensi Jan 2025",
+    "MKNT": "SUSPEND - Mitra Komunikasi Nusantara, suspensi Jul 2024",
+    "MTSM": "SUSPEND - Metro Realty, suspensi Jan 2025",
+    "MYTX": "SUSPEND - Asia Pacific Investama, suspensi Jan 2025",
+    "PLIN": "SUSPEND - Plaza Indonesia Realty, suspensi Jan 2025",
+    "POLL": "SUSPEND - Pollux Properties Indonesia, suspensi Jul 2024",
+    "PPRO": "SUSPEND - PP Properti (BUMN), suspensi Okt 2024, restrukturisasi",
+    "PTMR": "SUSPEND - Master Print, suspensi Jun 2025",
+    "RSGK": "SUSPEND - Kedoya Adyaraya, suspensi Jan 2025",
+    "SBAT": "SUSPEND - Sejahtera Bintang Abadi Textile, suspensi Jul 2024",
+    "SMCB": "SUSPEND - Solusi Bangun Indonesia, suspensi Jan 2025",
+    "SUPR": "SUSPEND - Solusi Tunas Pratama, suspensi Apr 2025",
+    "TECH": "SUSPEND - Indosterling Technomedia, suspensi Agt 2023",
+    "TELE": "SUSPEND - Omni Inovasi Indonesia, suspensi Des 2024",
+    "TGRA": "SUSPEND - Terregra Asia Energy, suspensi Jun 2025",
+    "TGUK": "SUSPEND - Platinum Wahab Nusantara, suspensi Mei 2025",
+    "TOPS": "SUSPEND - Totalindo Eka Persada, suspensi Jul 2024",
+    "TOYS": "SUSPEND - Sunindo Adipersada, suspensi Jul 2024",
+    "WICO": "SUSPEND - Wicaksana Overseas International, suspensi Jan 2025",
+    "WIKA": "SUSPEND - Wijaya Karya (BUMN), suspensi Feb 2025, PKPU",
+    "WMPP": "SUSPEND - Widodo Makmur Perkasa, suspensi Mei 2024",
+    "WSKT": "SUSPEND - Waskita Karya (BUMN), suspensi Mei 2023, restrukturisasi",
+    # ─── SUSPEND TERBARU APRIL–MEI 2026 ──────────────────────────────────────────
+    "CTTH": "SUSPEND - Citatah Tbk, suspensi 27 Apr 2026, lonjakan harga +123% (UMA/cooling down)",
+    "WBSA": "SUSPEND - BSA Logistics Indonesia, suspensi 20 Apr 2026 + 24 Apr 2026 (kedua kali), IPO 10 Apr 2026, meroket +691%",
+    # ─── SUSPEND LAMA (dari daftar sebelumnya yg masih aktif) ─────────────────────
     "ACST": "SUSPEND - Acset Indonusa",
     "IATA": "SUSPEND - My Indo Airlines",
-    "SRIL": "SUSPEND - Sri Rejeki Isman, PKPU",
     "BLTA": "SUSPEND - Berlian Laju Tanker",
     "TAXI": "SUSPEND - Express Transindo",
     "MIRA": "SUSPEND - Mira International",
     "SAFE": "SUSPEND - Steady Safe",
     "KARW": "SUSPEND - Karya Bersama Anugerah",
-    "SUGI": "SUSPEND - Sugih Energy",
     "SULI": "SUSPEND - Sumalindo Lestari",
     "CNKO": "SUSPEND - Exploitasi Energi",
-    "PKPK": "SUSPEND - Perdana Karya",
+    "PKPK": "SUSPEND - Perdana Karya Perkasa",
     "POLY": "SUSPEND - Asia Pacific Fibers",
     "RAAM": "SUSPEND - Rama Agung",
-    "BCIP": "SUSPEND - Bumi Citra",
+    "BCIP": "SUSPEND - Bumi Citra Permai",
     "BPII": "SUSPEND - Batavia Prosperindo",
     "LAPD": "SUSPEND - Leyand International",
-    "DERA": "SUSPEND - Derajat Prima",
-    "BSML": "SUSPEND - Bintang Sarana",
+    "BSML": "SUSPEND - Bintang Samudera Mandiri Lines",
     "APOL": "SUSPEND - Arpeni Pratama",
+    "LUCY": "SUSPEND - Lima Dua Lima Tiga, suspensi Des 2025 (cooling down harga liar)",
+    "TRUE": "SUSPEND - Triniti Dinamik, suspensi Des 2025 (cooling down harga liar)",
+    "AYAM": "SUSPEND - Janu Putra Sejahtera, suspensi Des 2025 (cooling down harga liar)",
 }
+
+# ── AUTO-SYNC: Merge live suspend data dari IDX ke dict global ─────────────────
+# Fungsi ini di-call sekali saat startup (cache 6 jam) untuk menangkap
+# suspend/unsuspend terbaru tanpa harus edit kode secara manual.
+import functools as _functools
+
+@st.cache_data(ttl=21600, show_spinner=False)  # cache 6 jam
+def _fetch_live_suspended_tickers() -> dict:
+    """
+    Coba ambil daftar suspend terkini dari IDX RDIS API.
+    Return dict {ticker: keterangan} atau {} kalau gagal.
+    Tidak pernah raise — fallback ke dict kosong jika error.
+    """
+    live = {}
+    try:
+        import requests as _req
+        # IDX RDIS — endpoint JSON suspend aktif
+        _headers = {"User-Agent": "Mozilla/5.0 (compatible; SIGMA/2.0)"}
+        _url = "https://www.idx.co.id/primary/TradingHalt/GetListHalt?start=0&length=200&column=&dir=&type=1"
+        _r = _req.get(_url, headers=_headers, timeout=8)
+        if _r.status_code == 200:
+            _data = _r.json()
+            for _item in _data.get("data", []):
+                _code = (_item.get("StockCode") or "").strip().upper()
+                _name = _item.get("StockName") or _item.get("Efek") or _code
+                _date = _item.get("HaltDate") or _item.get("SuspendDate") or ""
+                if _code:
+                    live[_code] = f"SUSPEND (IDX Live) - {_name}, sejak {_date}"
+    except Exception:
+        pass
+    # Fallback 2: coba endpoint alternatif
+    if not live:
+        try:
+            import requests as _req
+            _url2 = "https://www.idx.co.id/primary/TradingHalt/GetListHalt?start=0&length=200&column=&dir=&type=2"
+            _r2 = _req.get(_url2, headers={"User-Agent": "Mozilla/5.0"}, timeout=8)
+            if _r2.status_code == 200:
+                for _item in _r2.json().get("data", []):
+                    _code = (_item.get("StockCode") or "").strip().upper()
+                    _name = _item.get("StockName") or _code
+                    _date = _item.get("HaltDate") or ""
+                    if _code:
+                        live[_code] = f"SUSPEND (IDX Live) - {_name}, sejak {_date}"
+        except Exception:
+            pass
+    return live
+
+def _get_merged_suspended_tickers() -> dict:
+    """
+    Gabungkan hardcoded list + live IDX data.
+    Live data menang kalau ada ticker baru.
+    Hardcoded menang kalau live kosong (fallback aman).
+    """
+    merged = dict(IDX_SUSPENDED_TICKERS_GLOBAL)
+    try:
+        live = _fetch_live_suspended_tickers()
+        if live:
+            merged.update(live)  # live ticker override / tambah ke list
+    except Exception:
+        pass
+    return merged
+
+# Gunakan versi merged di seluruh app
+_SUSPENDED_MERGED = _get_merged_suspended_tickers
+
+
 
 def _validate_price_corporate_action(ticker, price):
     """
@@ -4289,10 +4431,11 @@ def _validate_price_corporate_action(ticker, price):
 
     ticker = ticker.upper()
 
-    # Cek suspend
-    if ticker in IDX_SUSPENDED_TICKERS_GLOBAL:
+    # Cek suspend — gunakan merged (hardcoded + live IDX)
+    _susp_db = _SUSPENDED_MERGED()
+    if ticker in _susp_db:
         return False, (
-            f"⛔ PERHATIAN KRITIS: {ticker} berstatus {IDX_SUSPENDED_TICKERS_GLOBAL[ticker]}. "
+            f"⛔ PERHATIAN KRITIS: {ticker} berstatus {_susp_db[ticker]}. "
             f"Saham ini TIDAK DAPAT diperdagangkan. DILARANG membuat trade plan atau rekomendasi beli."
         )
 
@@ -4348,7 +4491,7 @@ def build_fundamental_from_text(prompt):
             # ── VALIDASI CORPORATE ACTION ──
             _ca_valid, _ca_warning = _validate_price_corporate_action(ticker, price_live)
             _ca_info = IDX_CORPORATE_ACTIONS.get(ticker.upper(), {})
-            _suspend_warning = IDX_SUSPENDED_TICKERS_GLOBAL.get(ticker.upper(), "")
+            _suspend_warning = _SUSPENDED_MERGED().get(ticker.upper(), "")
 
             is_bank = is_bank_sector(ticker)
             sektor = "Perbankan" if is_bank else "Non-Perbankan"
@@ -16677,8 +16820,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             _sh_all_db = _sh_auto_extend(_sh_all_db, _sh_base_dt, _sh_now)
 
             # ════════════════════════════════════════════════════════════════
-            # DAFTAR SAHAM SUSPEND IDX - sync dengan IDX_SUSPENDED_TICKERS_GLOBAL
-            IDX_SUSPENDED_TICKERS = set(IDX_SUSPENDED_TICKERS_GLOBAL.keys())
+            # DAFTAR SAHAM SUSPEND IDX - auto-merge hardcoded + live IDX (cache 6 jam)
+            IDX_SUSPENDED_TICKERS = set(_SUSPENDED_MERGED().keys())
 
             # ════════════════════════════════════════════════════════════════
             # LIVE FETCH PEMEGANG SAHAM - MULTI-SOURCE UNTUK SEMUA SAHAM BEI
