@@ -11054,7 +11054,7 @@ if current_view == "dashboard":
 
 
     # ── GLOBE LIVE DATA FETCH (hourly TTL) ────────────────────────────────
-    @st.cache_data(ttl=3600, show_spinner=False)
+    @st.cache_data(ttl=1800, show_spinner=False)  # 30 menit — lebih sering refresh
     def _fetch_globe_live_data():
         """Fetch live price, chg%, volume, market cap untuk semua saham globe.
         Cache 24 jam (auto-refresh tiap hari). Fallback ke data statis jika gagal."""
@@ -11062,8 +11062,9 @@ if current_view == "dashboard":
         import math
 
         # Static metadata: ticker → (name, cap_static, owner, sector, msci)
+        # Harga fallback diupdate: 2 Mei 2026 (dari Yahoo Finance)
         _STATIC = {
-            "BBCA": {"name":"Bank Central Asia Tbk.","cap":1289,"owner":"Djarum Group","sector":"Financials","msci":True,"price":9325,"chg":1.08,"vol":"18.2 M"},
+            "BBCA": {"name":"Bank Central Asia Tbk.","cap":1289,"owner":"Djarum Group","sector":"Financials","msci":True,"price":9200,"chg":0.42,"vol":"18.2 M"},
             "BELI": {"name":"Bukalapak.com Tbk.","cap":380,"owner":"Djarum Group","sector":"Technology","msci":False,"price":212,"chg":-1.40,"vol":"88.0 M"},
             "DNET": {"name":"Indoritel Makmur Intl.","cap":290,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":False,"price":1540,"chg":0.65,"vol":"5.2 M"},
             "FAST": {"name":"Fast Food Indonesia Tbk.","cap":180,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":False,"price":1580,"chg":-0.63,"vol":"4.8 M"},
@@ -11079,10 +11080,10 @@ if current_view == "dashboard":
             "PNBN": {"name":"Bank Pan Indonesia Tbk.","cap":110,"owner":"Djarum Group","sector":"Financials","msci":False,"price":1240,"chg":0.81,"vol":"8.6 M"},
             "WTON": {"name":"Wijaya Karya Beton Tbk.","cap":62,"owner":"Djarum Group","sector":"Industrials","msci":False,"price":182,"chg":-1.09,"vol":"18.2 M"},
             "MSKY": {"name":"MNC Sky Vision Tbk.","cap":48,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":False,"price":190,"chg":1.06,"vol":"9.8 M"},
-            "BBRI": {"name":"Bank Rakyat Indonesia Tbk.","cap":856,"owner":"Government","sector":"Financials","msci":True,"price":4350,"chg":-0.23,"vol":"92.1 M"},
-            "BMRI": {"name":"Bank Mandiri Tbk.","cap":652,"owner":"Government","sector":"Financials","msci":True,"price":6800,"chg":0.74,"vol":"31.5 M"},
-            "TLKM": {"name":"Telkom Indonesia Tbk.","cap":566,"owner":"Government","sector":"Infrastructure","msci":True,"price":3920,"chg":-0.51,"vol":"44.8 M"},
-            "BBNI": {"name":"Bank Negara Indonesia Tbk.","cap":389,"owner":"Government","sector":"Financials","msci":True,"price":4740,"chg":0.85,"vol":"28.9 M"},
+            "BBRI": {"name":"Bank Rakyat Indonesia Tbk.","cap":856,"owner":"Government","sector":"Financials","msci":True,"price":3920,"chg":-2.61,"vol":"92.1 M"},
+            "BMRI": {"name":"Bank Mandiri Tbk.","cap":652,"owner":"Government","sector":"Financials","msci":True,"price":4390,"chg":-0.90,"vol":"31.5 M"},
+            "TLKM": {"name":"Telkom Indonesia Tbk.","cap":566,"owner":"Government","sector":"Infrastructure","msci":True,"price":2810,"chg":-2.09,"vol":"44.8 M"},
+            "BBNI": {"name":"Bank Negara Indonesia Tbk.","cap":389,"owner":"Government","sector":"Financials","msci":True,"price":3720,"chg":-2.11,"vol":"28.9 M"},
             "PTBA": {"name":"Bukit Asam Tbk.","cap":160,"owner":"Government","sector":"Energy","msci":True,"price":2940,"chg":0.34,"vol":"19.4 M"},
             "SMGR": {"name":"Semen Indonesia Tbk.","cap":120,"owner":"Government","sector":"Industrials","msci":True,"price":5450,"chg":-0.91,"vol":"10.2 M"},
             "PGAS": {"name":"Perusahaan Gas Negara Tbk.","cap":188,"owner":"Government","sector":"Energy","msci":True,"price":1440,"chg":0.70,"vol":"31.8 M"},
@@ -11092,14 +11093,14 @@ if current_view == "dashboard":
             "PTPP": {"name":"PP Persero Tbk.","cap":75,"owner":"Government","sector":"Industrials","msci":False,"price":620,"chg":-1.27,"vol":"14.2 M"},
             "JSMR": {"name":"Jasa Marga Tbk.","cap":210,"owner":"Government","sector":"Infrastructure","msci":True,"price":4200,"chg":0.48,"vol":"9.7 M"},
             "ADHI": {"name":"Adhi Karya Tbk.","cap":55,"owner":"Government","sector":"Industrials","msci":False,"price":440,"chg":-0.91,"vol":"18.3 M"},
-            "BBTN": {"name":"Bank Tabungan Negara Tbk.","cap":130,"owner":"Government","sector":"Financials","msci":True,"price":1420,"chg":0.28,"vol":"35.6 M"},
+            "BBTN": {"name":"Bank Tabungan Negara Tbk.","cap":130,"owner":"Government","sector":"Financials","msci":True,"price":1395,"chg":1.09,"vol":"35.6 M"},
             "GIAA": {"name":"Garuda Indonesia Tbk.","cap":48,"owner":"Government","sector":"Infrastructure","msci":False,"price":56,"chg":-1.75,"vol":"42.0 M"},
             "KAEF": {"name":"Kimia Farma Tbk.","cap":38,"owner":"Government","sector":"Healthcare","msci":False,"price":650,"chg":0.93,"vol":"11.5 M"},
             "KRAS": {"name":"Krakatau Steel Tbk.","cap":45,"owner":"Government","sector":"Basic Materials","msci":False,"price":220,"chg":-1.34,"vol":"22.6 M"},
             "PGEO": {"name":"Pertamina Geothermal Energy","cap":185,"owner":"Government","sector":"Energy","msci":True,"price":1240,"chg":1.21,"vol":"8.4 M"},
             "AKRA": {"name":"AKR Corporindo Tbk.","cap":168,"owner":"Government","sector":"Energy","msci":True,"price":1620,"chg":0.62,"vol":"14.8 M"},
             "ITMG": {"name":"Indo Tambangraya Megah Tbk.","cap":140,"owner":"Government","sector":"Energy","msci":True,"price":24500,"chg":1.84,"vol":"2.1 M"},
-            "ASII": {"name":"Astra International Tbk.","cap":432,"owner":"Astra Group","sector":"Consumer Cyclical","msci":True,"price":4900,"chg":0.41,"vol":"22.3 M"},
+            "ASII": {"name":"Astra International Tbk.","cap":432,"owner":"Astra Group","sector":"Consumer Cyclical","msci":True,"price":5975,"chg":-1.24,"vol":"22.3 M"},
             "UNTR": {"name":"United Tractors Tbk.","cap":320,"owner":"Astra Group","sector":"Industrials","msci":True,"price":24500,"chg":1.02,"vol":"5.6 M"},
             "CPIN": {"name":"Charoen Pokphand Indonesia","cap":195,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":True,"price":4800,"chg":-0.62,"vol":"7.1 M"},
             "AUTO": {"name":"Astra Otoparts Tbk.","cap":145,"owner":"Astra Group","sector":"Consumer Cyclical","msci":False,"price":2550,"chg":0.79,"vol":"6.8 M"},
@@ -11250,16 +11251,39 @@ if current_view == "dashboard":
         except Exception:
             for tk, meta in _STATIC.items():
                 result[tk] = {"price": meta["price"], "chg": meta["chg"], "vol": meta["vol"], "cap": meta["cap"]}
+
+        # ── Enrich market cap dari fast_info (paralel, best-effort) ──────────
+        # Market cap dari yfinance lebih akurat dari data statis
+        def _fetch_cap(tk):
+            try:
+                fi = yf.Ticker(tk + ".JK").fast_info
+                mc = getattr(fi, "market_cap", None)
+                if mc and float(mc) > 0:
+                    # Konversi dari IDR ke Triliun IDR
+                    return tk, int(round(float(mc) / 1e12))
+            except Exception:
+                pass
+            return tk, None
+
+        from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
+        with ThreadPoolExecutor(max_workers=15) as _ex:
+            _cap_futs = {_ex.submit(_fetch_cap, tk): tk for tk in _STATIC.keys()}
+            for _fut in _as_completed(_cap_futs):
+                _tk, _cap_val = _fut.result()
+                if _cap_val and _cap_val > 0 and _tk in result:
+                    result[_tk]["cap"] = _cap_val
+
         return result
 
     _globe_live = _fetch_globe_live_data()
-    # ── Globe: background auto-refresh tiap jam (slot berubah = cache dibust) ──
-    _globe_hour_slot = datetime.now().strftime("%Y%m%d_%H")
-    if st.session_state.get("_globe_prev_slot", "") != _globe_hour_slot:
+    # ── Globe: background auto-refresh tiap 30 menit ──────────────────────────
+    _now_wib = datetime.now(timezone(timedelta(hours=7)))
+    _globe_slot = _now_wib.strftime("%Y%m%d_%H") + ("_30" if _now_wib.minute >= 30 else "_00")
+    if st.session_state.get("_globe_prev_slot", "") != _globe_slot:
         try: _fetch_globe_live_data.clear()
         except Exception: pass
         _globe_live = _fetch_globe_live_data()
-        st.session_state["_globe_prev_slot"] = _globe_hour_slot
+        st.session_state["_globe_prev_slot"] = _globe_slot
     # ─────────────────────────────────────────────────────────────────────
 
     with tab_idxmap:
@@ -22253,36 +22277,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 "</table></div>",
                                 unsafe_allow_html=True)
 
-                    # ── Saham Hindari (Daily) ──
-                    if _rows_avoid:
-                        _av_html_rows = "".join(
-                            f"<tr style='background:rgba(242,54,69,0.10);'>"
-                            f"<td style='padding:8px 12px;font-weight:700;color:#ff4d4d;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;letter-spacing:0.05em;'>{a.get('ticker','')}</td>"
-                            f"<td style='padding:8px 12px;white-space:nowrap;color:#ff6b6b;font-size:0.8rem;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
-                            f"<td style='padding:8px 12px;color:#ffb3b3;font-size:0.78rem;'>{a.get('reason','—')}</td>"
-                            f"<td style='padding:8px 12px;color:#ff4d4d;font-weight:700;white-space:nowrap;font-size:0.78rem;'>{a.get('vol_signal','—')}</td>"
-                            "</tr>"
-                            for a in _rows_avoid
-                        )
-                        st.markdown(
-                            "<div style='margin-top:16px;'>"
-                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
-                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI HARI INI</span>"
-                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_rows_avoid)}</span>"
-                            "</div>"
-                            "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
-                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);width:100%;'>"
-                            "<table style='width:100%;border-collapse:collapse;min-width:300px;'>"
-                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>TICKER</th>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>PRICE</th>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>ALASAN</th>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>VOL</th>"
-                            "</tr></thead>"
-                            f"<tbody>{_av_html_rows}</tbody>"
-                            "</table></div></div>",
-                            unsafe_allow_html=True)
-
             # ════════════════════════════════════════════
             # TAB 2 — HISTORY TRADE PLAN
             # ════════════════════════════════════════════
@@ -22560,34 +22554,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                             f"</div>", unsafe_allow_html=True)
                                 st.caption(f"📌 {_wr.get('why_buy','—')}")
 
-                    if _wavoid:
-                        _wav_html = "".join(
-                            f"<tr style='background:rgba(242,54,69,0.10);'>"
-                            f"<td style='padding:8px 12px;font-weight:700;color:#ff4d4d;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;letter-spacing:0.05em;'>{a.get('ticker','')}</td>"
-                            f"<td style='padding:8px 12px;white-space:nowrap;color:#ff6b6b;font-size:0.8rem;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
-                            f"<td style='padding:8px 12px;color:#ffb3b3;font-size:0.78rem;'>{a.get('reason','—')}</td>"
-                            f"<td style='padding:8px 12px;color:#ff4d4d;font-weight:700;white-space:nowrap;font-size:0.78rem;'>{a.get('vol_signal','—')}</td>"
-                            "</tr>"
-                            for a in _wavoid
-                        )
-                        st.markdown(
-                            "<div style='margin-top:16px;'>"
-                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
-                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI MINGGU INI</span>"
-                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_wavoid)}</span>"
-                            "</div>"
-                            "<div style='width:100%;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;"
-                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
-                            "<table style='border-collapse:collapse;min-width:300px;width:max-content;'>"
-                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>TICKER</th>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>PRICE</th>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>ALASAN</th>"
-                            "<th style='padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;color:#f23645;border-bottom:1px solid rgba(242,54,69,0.35);font-family:IBM Plex Mono,monospace;'>VOL</th>"
-                            "</tr></thead>"
-                            f"<tbody>{_wav_html}</tbody>"
-                            "</table></div></div>",
-                            unsafe_allow_html=True)
 
             # ============================================================
             # WEEKLY TAB 2 — HISTORY TRADE PLAN
@@ -22760,35 +22726,6 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             generated_at = _today_b_entry.get("generated_at", ""),
                         )
 
-                    if _brows_avoid:
-                        _bav_rows_html = "".join([
-                            f"<tr style='background:rgba(242,54,69,0.10);'>"
-                            f"<td style='color:#ff4d4d;font-weight:700;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-family:IBM Plex Mono,monospace;font-size:0.82rem;letter-spacing:0.05em;white-space:nowrap;'>{a.get('ticker','')}</td>"
-                            f"<td style='color:#ff6b6b;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.82rem;white-space:nowrap;font-weight:600;'>Rp {int(a.get('price',0)):,}</td>"
-                            f"<td style='color:#ffb3b3;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.8rem;'>{a.get('reason','—')}</td>"
-                            f"<td style='color:#ff4d4d;padding:8px 12px;border-bottom:1px solid rgba(242,54,69,0.18);font-size:0.8rem;font-weight:700;white-space:nowrap;'>{a.get('vol_signal','—')}</td>"
-                            f"</tr>"
-                            for a in _brows_avoid
-                        ])
-                        _bav_html = (
-                            "<div style='margin-top:16px;'>"
-                            "<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px;'>"
-                            "<span style='font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#f23645;font-family:IBM Plex Mono,monospace;'>⛔ SAHAM HINDARI MALAM INI</span>"
-                            f"<span style='background:#f23645;color:#fff;font-size:0.62rem;font-weight:700;padding:1px 7px;border-radius:20px;font-family:IBM Plex Mono,monospace;'>{len(_brows_avoid)}</span>"
-                            "</div>"
-                            "<div style='overflow-x:auto;-webkit-overflow-scrolling:touch;"
-                            "border-radius:8px;border:1px solid rgba(242,54,69,0.4);background:rgba(242,54,69,0.04);'>"
-                            "<table style='width:100%;border-collapse:collapse;table-layout:auto;'>"
-                            "<thead><tr style='background:rgba(242,54,69,0.2);'>"
-                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>TICKER</th>"
-                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>PRICE</th>"
-                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>ALASAN</th>"
-                            "<th style='color:#f23645;padding:8px 12px;text-align:left;font-size:0.66rem;letter-spacing:0.12em;font-family:IBM Plex Mono,monospace;border-bottom:1px solid rgba(242,54,69,0.35);'>VOL</th>"
-                            "</tr></thead>"
-                            f"<tbody>{_bav_rows_html}</tbody>"
-                            "</table></div></div>"
-                        )
-                        st.markdown(_bav_html, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""<div class="trm-card" style="text-align:center;padding:32px 20px;">
                         <div style="font-size:2rem;opacity:0.3;margin-bottom:10px;"></div>
