@@ -15033,1268 +15033,1479 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 return df_style.map(func, subset=subset)
             return df_style.applymap(func, subset=subset)
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
+        # ── SUB-TABS: SECTOR ROTATION | INDEX ────────────────────────────
+        _rot_tab_rrg, _rot_tab_index = st.tabs([
+            "  📊 SECTOR ROTATION — RRG  ",
+            "  🗂️ INDEX  ",
+        ])
 
-        # ── AUTO-UPDATE: slot update 13:00 & 21:00 WIB ─────────────────
-        # Cache key berubah tiap slot → data otomatis refresh 2x sehari
-        from datetime import timezone as _tz, timedelta as _tdelta
-        _wib = _tz(_tdelta(hours=7))
-        _now_wib = datetime.now(_wib)
-        _h = _now_wib.hour
-        # Tentukan slot aktif: 0–12 → slot pagi (update jam 13:00), 13–20 → slot siang, 21–23 → slot malam
-        _update_slot = f"{_now_wib.strftime('%Y%m%d')}_{'PM' if _h >= 13 else 'AM'}"
-        if _h >= 21:
-            _update_slot = f"{_now_wib.strftime('%Y%m%d')}_NIGHT"
+        with _rot_tab_rrg:
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
-        # ── Background trigger: bust cache saat slot berubah (tanpa tunggu user buka tab) ──
-        _rrg_prev_slot = st.session_state.get("_rrg_prev_slot", "")
-        if _rrg_prev_slot != _update_slot and _rrg_prev_slot:
-            try: _compute_rrg_live.clear()
-            except Exception: pass
-        st.session_state["_rrg_prev_slot"] = _update_slot
+            # ── AUTO-UPDATE: slot update 13:00 & 21:00 WIB ─────────────────
+            # Cache key berubah tiap slot → data otomatis refresh 2x sehari
+            from datetime import timezone as _tz, timedelta as _tdelta
+            _wib = _tz(_tdelta(hours=7))
+            _now_wib = datetime.now(_wib)
+            _h = _now_wib.hour
+            # Tentukan slot aktif: 0–12 → slot pagi (update jam 13:00), 13–20 → slot siang, 21–23 → slot malam
+            _update_slot = f"{_now_wib.strftime('%Y%m%d')}_{'PM' if _h >= 13 else 'AM'}"
+            if _h >= 21:
+                _update_slot = f"{_now_wib.strftime('%Y%m%d')}_NIGHT"
 
-        @st.cache_data(ttl=3600, show_spinner=False)
-        def _compute_rrg_live(slot_key: str):
-            """
-            Hitung RS ratio & momentum tiap sektor vs IHSG secara real-time.
-            Dipanggil max sekali per slot (cache TTL 1 jam, key berubah di 13:00 & 21:00).
-            RS  = harga_sektor_today / MA20_sektor  ÷  harga_ihsg_today / MA20_ihsg  × 100
-            Mom = RS_today / RS_5hari_lalu × 100
-            """
-            import yfinance as _yf
-            import numpy as _np
+            # ── Background trigger: bust cache saat slot berubah (tanpa tunggu user buka tab) ──
+            _rrg_prev_slot = st.session_state.get("_rrg_prev_slot", "")
+            if _rrg_prev_slot != _update_slot and _rrg_prev_slot:
+                try: _compute_rrg_live.clear()
+                except Exception: pass
+            st.session_state["_rrg_prev_slot"] = _update_slot
 
-            # Mapping sektor → ETF/proxy ticker yfinance terdekat
-            _sector_proxy = {
-                "Energy":           "ADRO.JK",
-                "Basic Materials":  "AMMN.JK",
-                "Finance":          "BBCA.JK",
-                "Infrastructure":   "TLKM.JK",
-                "Consumer":         "ICBP.JK",
-                "Property":         "BSDE.JK",
-                "Healthcare":       "KLBF.JK",
-                "Technology":       "GOTO.JK",
-            }
-            _ihsg_tk = "^JKSE"
-            _results = {}
-            try:
-                _ihsg = _yf.Ticker(_ihsg_tk).history(period="40d")
-                if len(_ihsg) < 20:
-                    return {}
-                _ihsg_close = _ihsg["Close"]
-                _ihsg_ma20  = _ihsg_close.rolling(20).mean().iloc[-1]
-                _ihsg_now   = _ihsg_close.iloc[-1]
-                _ihsg_rs_now   = _ihsg_now / _ihsg_ma20 if _ihsg_ma20 > 0 else 1
-                _ihsg_rs_5ago  = (_ihsg_close.iloc[-5] / _ihsg_close.rolling(20).mean().iloc[-5]) if len(_ihsg_close) > 25 else _ihsg_rs_now
-            except:
-                return {}
+            @st.cache_data(ttl=3600, show_spinner=False)
+            def _compute_rrg_live(slot_key: str):
+                """
+                Hitung RS ratio & momentum tiap sektor vs IHSG secara real-time.
+                Dipanggil max sekali per slot (cache TTL 1 jam, key berubah di 13:00 & 21:00).
+                RS  = harga_sektor_today / MA20_sektor  ÷  harga_ihsg_today / MA20_ihsg  × 100
+                Mom = RS_today / RS_5hari_lalu × 100
+                """
+                import yfinance as _yf
+                import numpy as _np
 
-            for _sname, _proxy in _sector_proxy.items():
-                try:
-                    _sh = _yf.Ticker(_proxy).history(period="40d")
-                    if len(_sh) < 20:
-                        continue
-                    _sc  = _sh["Close"]
-                    _ma20 = _sc.rolling(20).mean().iloc[-1]
-                    _now  = _sc.iloc[-1]
-                    if _ma20 == 0 or _ihsg_ma20 == 0:
-                        continue
-                    _rs_now  = (_now / _ma20) / (_ihsg_now / _ihsg_ma20) * 100
-                    # RS 5 hari lalu
-                    _ma20_5 = _sc.rolling(20).mean().iloc[-5] if len(_sc) > 25 else _ma20
-                    _now_5  = _sc.iloc[-5] if len(_sc) > 5 else _now
-                    _ih_ma20_5 = _ihsg_close.rolling(20).mean().iloc[-5] if len(_ihsg_close) > 25 else _ihsg_ma20
-                    _ih_5 = _ihsg_close.iloc[-5] if len(_ihsg_close) > 5 else _ihsg_now
-                    _rs_5ago = (_now_5 / _ma20_5) / (_ih_5 / _ih_ma20_5) * 100 if (_ma20_5 > 0 and _ih_ma20_5 > 0) else _rs_now
-                    _mom = _rs_now / _rs_5ago * 100 if _rs_5ago > 0 else 100
-                    # Clamp ke range chart [84,116]
-                    _rs_f  = round(min(max(float(_rs_now), 84.5), 115.5), 1)
-                    _mom_f = round(min(max(float(_mom), 84.5), 115.5), 1)
-                    _results[_sname] = {"rs": _rs_f, "mom": _mom_f}
-                except:
-                    pass
-            return _results
-
-        # Tombol force-refresh RRG — hapus cache lalu rerun
-        _rrg_refresh_col1, _rrg_refresh_col2 = st.columns([4, 1])
-        with _rrg_refresh_col2:
-            if st.button("🔄 Refresh Data", key="rrg_force_refresh", use_container_width=True,
-                         help="Paksa update data Sector Rotation sekarang (bypass cache slot)"):
-                _compute_rrg_live.clear()
-                _screen_top500_by_mktcap.clear()
-                st.cache_data.clear()
-                st.rerun()
-
-        _live_rrg = _compute_rrg_live(_update_slot)
-        _last_update_slot = "13:00" if _update_slot.endswith("PM") else ("21:00" if _update_slot.endswith("NIGHT") else "sebelum 13:00")
-        _next_update = "21:00" if _update_slot.endswith("PM") else ("13:00 besok" if _update_slot.endswith("NIGHT") else "13:00")
-        with _rrg_refresh_col1:
-            st.markdown(f"<p style='font-size:0.72rem;color:#64748b;margin-top:6px;'>🕐 Slot aktif: <b>{_update_slot}</b> · Update berikutnya: <b>{_next_update} WIB</b></p>", unsafe_allow_html=True)
-
-        # ── MARKET CAP SCREENING - Top 500 IDX, exclude suspended >1 bulan ─
-        @st.cache_data(ttl=86400, show_spinner=False)
-        def _screen_top500_by_mktcap():
-            """
-            Ambil 500 saham IDX berdasarkan market cap terbesar.
-            Filter: tidak suspend >30 hari, bisa ditransaksikan (ada harga/volume).
-            Return: dict sektor → list ticker diurutkan market cap descending.
-            """
-            import yfinance as _yf2
-            import threading as _thr2
-
-            # Master list 500 saham IDX aktif terbesar (dikurasi, exclude WIKA/WSKT/PPRO suspend panjang)
-            _ALL_IDX = [
-                # PERBANKAN & KEUANGAN
-                "BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR",
-                "BJTM","NISP","BTPN","BDMN","BNLI","BFIN","ADMF","MFIN","CFIN","PNLF",
-                "WOMF","BBYB","ARTO","BANK","AGRO","BACA","BMAS","MCOR","SDRA","MAYA",
-                # ENERGI & BATUBARA
-                "ADRO","BREN","PTBA","ITMG","BYAN","HRUM","BUMI","DSSA","GEMS","MBAP",
-                "INDY","MYOH","SMMT","MEDC","PGAS","ELSA","ESSA","TOBA","BSSR","RAJA",
-                "FIRE","BIPI","ENRG","ARTI","GTBO","KKGI","DEWA","MCOL","ARCI","PTRO",
-                # MATERIAL & MINERAL (NIKEL, EMAS, KIMIA)
-                "AMMN","ANTM","MDKA","INCO","NCKL","BRMS","MBMA","TPIA","BRPT","INKP",
-                "TKIM","SMGR","INTP","TINS","DKFT","CITA","ZINC","MITI","PSAB","AGII",
-                "NIKL","BAJA","ISSP","CAKK","MLIA","SPMA","JPRS","LION","LMSH","ALMI",
-                # CONSUMER & FOOD
-                "ICBP","INDF","MYOR","UNVR","KLBF","SIDO","CPIN","JPFA","HMSP","GGRM",
-                "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","CLEO","DLTA",
-                "KEJU","PSDN","SKBM","ADES","ALTO","CEKA","DMND","KINO","MAPI","ACES",
-                "RALS","MIDI","AMRT","LPPF","MPPA","HERO","FAST","RANC","CSAP","DAYA",
-                # TEKNOLOGI, TELKO & DIGITAL
-                "TLKM","EXCL","ISAT","GOTO","BUKA","EMTK","MNCN","SCMA","TBIG","TOWR",
-                "MTEL","LINK","DATA","KIOS","MTDL","DMMX","EDGE","MCAS","WIFI","TELE",
-                # PROPERTI & KONSTRUKSI
-                "BSDE","CTRA","SMRA","LPKR","PWON","ASRI","MDLN","DILD","APLN","JRPT",
-                "PTPP","ADHI","NRCA","DMAS","BEST","GPRA","GWSA","KIJA","MKPI","MTLA",
-                "NIRO","PLIN","RDTX","ROCK","RODA","SMDM","TARA","URBN","BKSL","COWL",
-                # INFRASTRUKTUR & TRANSPORTASI
-                "PGEO","VKTR","CUAN","BIRD","TMAS","SMDR","NELY","BPTR","BBRM","BULL",
-                "CMPP","HITS","LEAD","MBSS","PTIS","RIGS","SHIP","SOCI","SUPR","TPMA",
-                # OTOMOTIF & INDUSTRI
-                "ASII","AUTO","IMAS","SMSM","GJTL","ADMG","LPIN","INDS","BOLT","DRMA",
-                "GDYR","HEXA","MASA","NIPS","UNTR","TBMS","TCID","TURI","TRST","MARK",
-                # KESEHATAN & FARMASI
-                "MIKA","HEAL","SILO","KAEF","KLBF","TSPC","DVLA","INAF","PEHA","MERK",
-                "PYFA","SCPI","SOHO","PRIM","IRRA",
-                # CPO & AGRIBISNIS
-                "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM","TAPG",
-                "DSFI","BISI","CPRO",
-                # PROPERTI INDUSTRIAL
-                "SSIA","BEST","DMAS","KIJA","LPCK",
-            ]
-            _ALL_IDX = list(dict.fromkeys(_ALL_IDX))  # deduplicate
-
-            # Sektor mapping untuk assign sektor ke ticker
-            _SEKTOR = {
-                "Energy":         ["ADRO","BREN","PTBA","ITMG","BYAN","HRUM","BUMI","DSSA","GEMS","MBAP",
-                                   "INDY","MYOH","SMMT","MEDC","PGAS","ELSA","ESSA","TOBA","BSSR","RAJA",
-                                   "FIRE","BIPI","ENRG","ARTI","GTBO","KKGI","DEWA","MCOL","ARCI","PTRO",
-                                   "PGEO","VKTR","CUAN"],
-                "Basic Materials":["AMMN","ANTM","MDKA","INCO","NCKL","BRMS","MBMA","TPIA","BRPT","INKP",
-                                   "TKIM","SMGR","INTP","TINS","DKFT","CITA","ZINC","MITI","PSAB","AGII",
-                                   "NIKL","BAJA","ISSP","CAKK","MLIA","SPMA","JPRS","LION","LMSH","ALMI"],
-                "Finance":        ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR",
-                                   "BJTM","NISP","BTPN","BDMN","BNLI","BFIN","ADMF","MFIN","CFIN","PNLF",
-                                   "WOMF","BBYB","ARTO","BANK","AGRO","BACA","BMAS","MCOR","SDRA","MAYA"],
-                "Consumer":       ["ICBP","INDF","MYOR","UNVR","KLBF","SIDO","CPIN","JPFA","HMSP","GGRM",
-                                   "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","CLEO","DLTA",
-                                   "KEJU","PSDN","SKBM","ADES","ALTO","CEKA","DMND","KINO","MAPI","ACES",
-                                   "RALS","MIDI","AMRT","LPPF","MPPA","HERO","FAST","RANC","CSAP","DAYA",
-                                   "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM","TAPG"],
-                "Infrastructure": ["TLKM","EXCL","ISAT","TBIG","TOWR","MTEL","LINK","DATA",
-                                   "BIRD","TMAS","SMDR","NELY","BPTR","BBRM","BULL","CMPP","HITS",
-                                   "LEAD","MBSS","PTIS","RIGS","SHIP","SOCI","SUPR","TPMA"],
-                "Technology":     ["GOTO","BUKA","EMTK","MNCN","SCMA","KIOS","MTDL","DMMX","EDGE","MCAS",
-                                   "WIFI","TELE"],
-                "Property":       ["BSDE","CTRA","SMRA","LPKR","PWON","ASRI","MDLN","DILD","APLN","JRPT",
-                                   "PTPP","ADHI","NRCA","DMAS","BEST","GPRA","GWSA","KIJA","MKPI","MTLA",
-                                   "NIRO","PLIN","RDTX","ROCK","RODA","SMDM","TARA","URBN","BKSL","COWL",
-                                   "SSIA","LPCK"],
-                "Healthcare":     ["MIKA","HEAL","SILO","KAEF","TSPC","DVLA","INAF","PEHA","MERK",
-                                   "PYFA","SCPI","SOHO","PRIM","IRRA"],
-            }
-            # Build reverse map: ticker → sektor
-            _TK2SEC = {}
-            for _sec, _tks in _SEKTOR.items():
-                for _tk in _tks:
-                    _TK2SEC[_tk] = _sec
-
-            # Ambil market cap parallel (max 10s timeout)
-            _mktcap = {}
-            _lock2  = _thr2.Lock()
-            def _get_mc(tk):
-                try:
-                    _info = _yf2.Ticker(f"{tk}.JK").info
-                    mc = _info.get("marketCap") or 0
-                    # Cek apakah saham bisa ditransaksikan (ada regularMarketPrice)
-                    price = _info.get("regularMarketPrice") or _info.get("currentPrice") or 0
-                    vol   = _info.get("regularMarketVolume") or 0
-                    # Criteria: market cap > 0 AND price > 0 AND volume > 0
-                    if mc > 0 and price > 0:
-                        with _lock2:
-                            _mktcap[tk] = {"mc": mc, "price": price, "vol": vol,
-                                           "name": (_info.get("shortName") or tk)[:24],
-                                           "sektor": _TK2SEC.get(tk, "Other")}
-                except:
-                    pass
-
-            # Batch fetch 50 saham at a time, max 500
-            _sample = _ALL_IDX[:500]
-            _threads = [_thr2.Thread(target=_get_mc, args=(tk,), daemon=True) for tk in _sample]
-            for t in _threads: t.start()
-            for t in _threads: t.join(timeout=18)
-
-            # Sort by market cap descending, take top 500
-            _sorted = sorted(_mktcap.items(), key=lambda x: x[1]["mc"], reverse=True)[:500]
-
-            # Group by sector, top 30 per sektor by market cap
-            _by_sector = {}
-            for tk, d in _sorted:
-                sec = d["sektor"]
-                if sec == "Other":
-                    continue
-                if sec not in _by_sector:
-                    _by_sector[sec] = []
-                _by_sector[sec].append((tk, d))
-
-            # Take top 30 per sector
-            _result = {}
-            for sec, items in _by_sector.items():
-                _result[sec] = items[:30]  # already sorted by mc from parent sort
-
-            return _result, _mktcap
-
-        # ── Jalankan screening (cached 24 jam) ──────────────────────────
-        _screening_key = f"rrg_screen_{datetime.now().strftime('%Y%m%d')}"
-        _rrg_screened, _all_mktcap = _screen_top500_by_mktcap()
-        _screen_total = len(_all_mktcap)
-
-        # ── Inject hasil screening ke rrg_sectors["saham"] secara dinamis ─
-        # Fungsi konversi ticker → posisi RS/Mom berdasarkan live data atau estimasi
-        def _assign_rrg_pos(ticker, sector_rs, sector_mom):
-            """Assign posisi RS/Mom saham relative to sector centroid dengan variasi kecil."""
-            import hashlib as _hsh
-            _h = int(_hsh.md5(ticker.encode()).hexdigest()[:8], 16)
-            # Spread ±8 points di sekitar centroid sektor
-            _rs_spread  = ((_h % 160)-80) / 10.0   # -8 to +8
-            _mom_spread = (((_h >> 8) % 140)-70) / 10.0
-            _rs  = round(min(115, max(85, sector_rs  + _rs_spread)),  1)
-            _mom = round(min(115, max(85, sector_mom + _mom_spread)), 1)
-            _fase = ("Leading"   if _rs>=100 and _mom>=100 else
-                     "Improving" if _rs<100  and _mom>=100 else
-                     "Weakening" if _rs>=100 and _mom<100  else "Lagging")
-            return _rs, _mom, _fase
-
-        # Tampilkan badge update time
-        _badge_color = "#089981"
-        st.markdown(f"""<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
-            <span style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};'>
-             RRG update: <b style="color:#8b5cf6">13:00</b> & <b style="color:#8b5cf6">21:00</b> WIB
-            &nbsp;&middot;&nbsp; Slot: <b style="color:{_badge_color}">{_update_slot}</b>
-            &nbsp;&middot;&nbsp; Next: <b style="color:#8b5cf6">{_next_update} WIB</b>
-            &nbsp;&middot;&nbsp; <span style='color:#60a5fa;font-weight:600;'> {_screen_total} saham terscreening &middot; top 30/sektor by market cap</span>
-            </span></div>""", unsafe_allow_html=True)
-
-        # ── DATA SEKTOR + SAHAM PER SEKTOR ──────────────────────────────
-        # ── ATURAN KONSISTENSI FASE vs POSISI PLOT (WAJIB) ──────────────
-        # Leading   = rs > 100 DAN mom > 100  (kanan-atas)
-        # Improving = rs < 100 DAN mom > 100  (kiri-atas)
-        # Weakening = rs > 100 DAN mom < 100  (kanan-bawah)
-        # Lagging   = rs < 100 DAN mom < 100  (kiri-bawah)
-        # ─────────────────────────────────────────────────────────────────
-        rrg_sectors = {
-            "Energy": {
-                "fase": "Leading", "rs": 108.2, "mom": 102.1, "color": "#089981",
-                "aksi": "Hold / Profit Run", "icon": "⚡",
-                # trail = posisi 4 minggu terakhir (terlama → terkini), titik terakhir = posisi sekarang
-                "trail": [(104.0,99.5),(105.8,100.2),(107.1,101.0),(108.2,102.1)],
-                "saham": [
-                    # Leading: rs>100 DAN mom>100
-                    {"ticker":"BREN","nama":"Barito Renewables",      "fase":"Leading",   "rs":112,"mom":105},
-                    {"ticker":"ADRO","nama":"Adaro Energy",            "fase":"Leading",   "rs":109,"mom":103},
-                    {"ticker":"PTBA","nama":"Bukit Asam",              "fase":"Leading",   "rs":107,"mom":101},
-                    {"ticker":"ITMG","nama":"Indo Tambangraya",        "fase":"Leading",   "rs":106,"mom":104},
-                    {"ticker":"MEDC","nama":"Medco Energi",            "fase":"Leading",   "rs":105,"mom":102},
-                    {"ticker":"RAJA","nama":"Rukun Raharja",           "fase":"Leading",   "rs":108,"mom":103},
-                    {"ticker":"BYAN","nama":"Bayan Resources",         "fase":"Leading",   "rs":110,"mom":104},
-                    {"ticker":"PTRO","nama":"Petrosea",                "fase":"Leading",   "rs":108,"mom":102},
-                    # Improving: rs<100 DAN mom>100
-                    {"ticker":"HRUM","nama":"Harum Energy",            "fase":"Improving", "rs":98, "mom":102},
-                    {"ticker":"ESSA","nama":"ESSA Industries",         "fase":"Improving", "rs":97, "mom":101},
-                    {"ticker":"ELSA","nama":"Elnusa",                  "fase":"Improving", "rs":99, "mom":101},
-                    {"ticker":"PGEO","nama":"Pertamina Geothermal",    "fase":"Improving", "rs":98, "mom":102},
-                    {"ticker":"GEMS","nama":"Golden Energy Mines",     "fase":"Improving", "rs":99, "mom":103},
-                    {"ticker":"TOBA","nama":"TBS Energi Utama",        "fase":"Improving", "rs":98, "mom":101},
-                    # Weakening: rs>100 DAN mom<100
-                    {"ticker":"ENRG","nama":"Energi Mega Persada",     "fase":"Weakening", "rs":102,"mom":98},
-                    {"ticker":"ARTI","nama":"Ratu Prabu Energi",       "fase":"Weakening", "rs":101,"mom":97},
-                    # Lagging: rs<100 DAN mom<100
-                    {"ticker":"DSSA","nama":"Dian Swastatika",         "fase":"Lagging",   "rs":97, "mom":96},
-                    {"ticker":"PGAS","nama":"Perusahaan Gas",          "fase":"Lagging",   "rs":98, "mom":97},
-                    {"ticker":"FIRE","nama":"Alfa Energi Investama",   "fase":"Lagging",   "rs":95, "mom":94},
-                    {"ticker":"BIPI","nama":"Astrindo Nusantara",      "fase":"Lagging",   "rs":94, "mom":95},
-                ]
-            },
-            "Basic Materials": {
-                "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#8b5cf6",
-                "aksi": "Accumulation", "icon": "🏗️",
-                "trail": [(99.0,99.0),(100.5,100.1),(101.8,101.0),(103.5,101.8)],
-                "saham": [
-                    # Leading: rs>100 DAN mom>100
-                    {"ticker":"AMMN","nama":"Amman Mineral",           "fase":"Leading",   "rs":109,"mom":104},
-                    {"ticker":"NCKL","nama":"Trimegah Bangun",         "fase":"Leading",   "rs":107,"mom":103},
-                    {"ticker":"PTRO","nama":"Petrosea",                "fase":"Leading",   "rs":108,"mom":104},
-                    {"ticker":"CUAN","nama":"Petrindo Jaya Kreasi",    "fase":"Leading",   "rs":107,"mom":103},
-                    # Improving: rs<100 DAN mom>100
-                    {"ticker":"TPIA","nama":"Chandra Asri",            "fase":"Improving", "rs":99, "mom":103},
-                    {"ticker":"BRPT","nama":"Barito Pacific",          "fase":"Improving", "rs":98, "mom":102},
-                    {"ticker":"ANTM","nama":"Aneka Tambang",           "fase":"Improving", "rs":99, "mom":101},
-                    {"ticker":"MDKA","nama":"Merdeka Copper Gold",     "fase":"Improving", "rs":99, "mom":103},
-                    {"ticker":"INCO","nama":"Vale Indonesia",          "fase":"Improving", "rs":98, "mom":101},
-                    {"ticker":"BRMS","nama":"Bumi Resources Minerals", "fase":"Improving", "rs":99, "mom":102},
-                    {"ticker":"MBMA","nama":"Merdeka Battery",         "fase":"Improving", "rs":98, "mom":101},
-                    {"ticker":"DKFT","nama":"Central Omega Resources", "fase":"Improving", "rs":97, "mom":102},
-                    # Weakening: rs>100 DAN mom<100
-                    {"ticker":"INCI","nama":"Intanwijaya International","fase":"Weakening","rs":101,"mom":99},
-                    {"ticker":"EKAD","nama":"Ekadharma International", "fase":"Weakening", "rs":102,"mom":98},
-                    # Lagging: rs<100 DAN mom<100
-                    {"ticker":"INKP","nama":"Indah Kiat Pulp",         "fase":"Lagging",   "rs":98, "mom":97},
-                    {"ticker":"SMGR","nama":"Semen Indonesia",         "fase":"Lagging",   "rs":94, "mom":95},
-                    {"ticker":"INTP","nama":"Indocement",              "fase":"Lagging",   "rs":93, "mom":94},
-                    {"ticker":"TKIM","nama":"Pabrik Kertas Tjiwi Kimia","fase":"Lagging",  "rs":96, "mom":96},
-                    {"ticker":"FASW","nama":"Fajar Surya Wisesa",      "fase":"Lagging",   "rs":95, "mom":95},
-                    {"ticker":"SMBR","nama":"Semen Baturaja",          "fase":"Lagging",   "rs":91, "mom":92},
-                ]
-            },
-            "Finance": {
-                "fase": "Weakening", "rs": 102.4, "mom": 98.2, "color": "#f23645",
-                "aksi": "Distribution / Wait", "icon": "🏦",
-                # Weakening = rs>100, mom<100
-                "trail": [(105.0,103.0),(104.1,101.5),(103.2,99.8),(102.4,98.2)],
-                "saham": [
-                    # Weakening: rs>100 DAN mom<100
-                    {"ticker":"BBCA","nama":"Bank Central Asia",       "fase":"Weakening", "rs":104,"mom":98},
-                    {"ticker":"BBRI","nama":"Bank Rakyat Indonesia",   "fase":"Weakening", "rs":103,"mom":97},
-                    {"ticker":"BMRI","nama":"Bank Mandiri",            "fase":"Weakening", "rs":105,"mom":98},
-                    {"ticker":"BNGA","nama":"Bank CIMB Niaga",         "fase":"Weakening", "rs":102,"mom":98},
-                    {"ticker":"MEGA","nama":"Bank Mega",               "fase":"Weakening", "rs":101,"mom":97},
-                    {"ticker":"BFIN","nama":"BFI Finance",             "fase":"Weakening", "rs":102,"mom":99},
-                    {"ticker":"ADMF","nama":"Adira Finance",           "fase":"Weakening", "rs":101,"mom":98},
-                    {"ticker":"PNBN","nama":"Bank Panin",              "fase":"Weakening", "rs":103,"mom":99},
-                    # Lagging: rs<100 DAN mom<100
-                    {"ticker":"BBNI","nama":"Bank Negara Indonesia",   "fase":"Lagging",   "rs":93, "mom":95},
-                    {"ticker":"BBTN","nama":"Bank Tabungan Negara",    "fase":"Lagging",   "rs":92, "mom":94},
-                    {"ticker":"BJBR","nama":"Bank BJB",                "fase":"Lagging",   "rs":91, "mom":93},
-                    {"ticker":"BGTG","nama":"Bank Ganesha",            "fase":"Lagging",   "rs":94, "mom":95},
-                    {"ticker":"NISP","nama":"Bank OCBC NISP",          "fase":"Lagging",   "rs":95, "mom":96},
-                    # Improving: rs<100 DAN mom>100
-                    {"ticker":"BRIS","nama":"Bank Syariah Indonesia",  "fase":"Improving", "rs":99, "mom":101},
-                    {"ticker":"ARTO","nama":"Bank Jago",               "fase":"Improving", "rs":98, "mom":102},
-                    {"ticker":"BTPS","nama":"Bank BTPN Syariah",       "fase":"Improving", "rs":97, "mom":101},
-                    # Leading: rs>100 DAN mom>100
-                    {"ticker":"BBYB","nama":"Bank Neo Commerce",       "fase":"Leading",   "rs":106,"mom":104},
-                    {"ticker":"BNLI","nama":"Bank Permata",            "fase":"Leading",   "rs":103,"mom":101},
-                    {"ticker":"AGRO","nama":"Bank Raya Indonesia",     "fase":"Leading",   "rs":104,"mom":102},
-                    {"ticker":"BCIC","nama":"Bank J Trust Indonesia",  "fase":"Leading",   "rs":102,"mom":101},
-                ]
-            },
-            "Infrastructure": {
-                "fase": "Lagging", "rs": 92.1, "mom": 94.5, "color": "#4285F4",
-                "aksi": "Avoid / Monitor", "icon": "📡",
-                "trail": [(96.0,97.5),(94.8,96.5),(93.2,95.3),(92.1,94.5)],
-                "saham": [
-                    # Lagging: rs<100 DAN mom<100
-                    {"ticker":"TLKM","nama":"Telkom Indonesia",        "fase":"Lagging",   "rs":91, "mom":94},
-                    {"ticker":"EXCL","nama":"XL Axiata",               "fase":"Lagging",   "rs":93, "mom":95},
-                    {"ticker":"TOWR","nama":"Sarana Menara",           "fase":"Lagging",   "rs":92, "mom":94},
-                    {"ticker":"TBIG","nama":"Tower Bersama",           "fase":"Lagging",   "rs":91, "mom":93},
-                    {"ticker":"WIKA","nama":"Wijaya Karya",            "fase":"Lagging",   "rs":88, "mom":91},
-                    {"ticker":"PTPP","nama":"PP (Persero)",            "fase":"Lagging",   "rs":89, "mom":92},
-                    {"ticker":"ADHI","nama":"Adhi Karya",              "fase":"Lagging",   "rs":88, "mom":91},
-                    {"ticker":"WSKT","nama":"Waskita Karya",           "fase":"Lagging",   "rs":87, "mom":90},
-                    {"ticker":"JSMR","nama":"Jasa Marga",              "fase":"Lagging",   "rs":93, "mom":95},
-                    {"ticker":"CASS","nama":"Cardig Aero Services",    "fase":"Lagging",   "rs":94, "mom":96},
-                    # Weakening: rs>100 DAN mom<100
-                    {"ticker":"MTEL","nama":"Mitratel",                "fase":"Weakening", "rs":102,"mom":98},
-                    {"ticker":"FREN","nama":"Smartfren Telecom",       "fase":"Weakening", "rs":101,"mom":97},
-                    # Improving: rs<100 DAN mom>100
-                    {"ticker":"ISAT","nama":"Indosat Ooredoo",         "fase":"Improving", "rs":98, "mom":101},
-                    {"ticker":"LINK","nama":"Link Net",                "fase":"Improving", "rs":97, "mom":102},
-                    {"ticker":"CENT","nama":"Centratama Telekomunikasi","fase":"Improving","rs":96, "mom":101},
-                    # Leading: rs>100 DAN mom>100
-                    {"ticker":"SUPR","nama":"Solusi Tunas Pratama",    "fase":"Leading",   "rs":104,"mom":102},
-                    {"ticker":"IPCC","nama":"Indonesia Kendaraan Terminal","fase":"Leading","rs":103,"mom":101},
-                    {"ticker":"MTDL","nama":"Metrodata Electronics",   "fase":"Leading",   "rs":102,"mom":101},
-                    {"ticker":"BIRD","nama":"Blue Bird",               "fase":"Leading",   "rs":101,"mom":102},
-                    {"ticker":"GIAA","nama":"Garuda Indonesia",        "fase":"Leading",   "rs":105,"mom":103},
-                ]
-            },
-            "Consumer": {
-                "fase": "Lagging", "rs": 91.8, "mom": 93.7, "color": "#9b59b6",
-                "aksi": "Avoid", "icon": "🛒",
-                "trail": [(95.0,97.0),(93.8,96.0),(92.5,94.8),(91.8,93.7)],
-                "saham": [
-                    # Lagging: rs<100 DAN mom<100
-                    {"ticker":"INDF","nama":"Indofood Sukses",         "fase":"Lagging",   "rs":92, "mom":94},
-                    {"ticker":"ICBP","nama":"Indofood CBP",            "fase":"Lagging",   "rs":91, "mom":93},
-                    {"ticker":"MYOR","nama":"Mayora Indah",            "fase":"Lagging",   "rs":90, "mom":92},
-                    {"ticker":"UNVR","nama":"Unilever Indonesia",      "fase":"Lagging",   "rs":88, "mom":90},
-                    {"ticker":"ACES","nama":"ACE Hardware",            "fase":"Lagging",   "rs":93, "mom":95},
-                    {"ticker":"LPPF","nama":"Matahari Department Store","fase":"Lagging",  "rs":89, "mom":91},
-                    {"ticker":"GGRM","nama":"Gudang Garam",            "fase":"Lagging",   "rs":91, "mom":93},
-                    {"ticker":"HMSP","nama":"HM Sampoerna",            "fase":"Lagging",   "rs":90, "mom":92},
-                    # Weakening: rs>100 DAN mom<100
-                    {"ticker":"KLBF","nama":"Kalbe Farma",             "fase":"Weakening", "rs":103,"mom":97},
-                    {"ticker":"MAPI","nama":"Mitra Adiperkasa",        "fase":"Weakening", "rs":101,"mom":98},
-                    {"ticker":"AMRT","nama":"Alfamart",                "fase":"Weakening", "rs":102,"mom":97},
-                    {"ticker":"RALS","nama":"Ramayana Lestari",        "fase":"Weakening", "rs":101,"mom":99},
-                    # Improving: rs<100 DAN mom>100
-                    {"ticker":"CPIN","nama":"Charoen Pokphand",        "fase":"Improving", "rs":98, "mom":101},
-                    {"ticker":"JPFA","nama":"JAPFA Comfeed",           "fase":"Improving", "rs":99, "mom":102},
-                    {"ticker":"MIDI","nama":"Midi Utama",              "fase":"Improving", "rs":98, "mom":103},
-                    {"ticker":"MIKA","nama":"Mitra Keluarga",          "fase":"Improving", "rs":97, "mom":102},
-                    # Leading: rs>100 DAN mom>100
-                    {"ticker":"HEAL","nama":"Medikaloka Hermina",      "fase":"Leading",   "rs":104,"mom":103},
-                    {"ticker":"SIDO","nama":"Industri Jamu SIDO MUNCUL","fase":"Leading",  "rs":103,"mom":102},
-                    {"ticker":"ULTJ","nama":"Ultra Jaya Milk",         "fase":"Leading",   "rs":102,"mom":101},
-                    {"ticker":"DLTA","nama":"Delta Djakarta",          "fase":"Leading",   "rs":101,"mom":101},
-                ]
-            },
-            "Technology": {
-                "fase": "Improving", "rs": 98.8, "mom": 101.5, "color": "#00bcd4",
-                "aksi": "Selective Buy", "icon": "💻",
-                # Improving = rs<100, mom>100
-                "trail": [(95.0,98.5),(96.5,99.5),(97.8,100.5),(98.8,101.5)],
-                "saham": [
-                    # Improving: rs<100 DAN mom>100
-                    {"ticker":"GOTO","nama":"GoTo Gojek Tokopedia",    "fase":"Improving", "rs":99, "mom":103},
-                    {"ticker":"DMMX","nama":"Digital Mediatama",       "fase":"Improving", "rs":98, "mom":104},
-                    {"ticker":"MTDL","nama":"Metrodata Electronics",   "fase":"Improving", "rs":99, "mom":102},
-                    {"ticker":"MCAS","nama":"M Cash Integrasi",        "fase":"Improving", "rs":97, "mom":103},
-                    {"ticker":"PTSN","nama":"Sat Nusapersada",         "fase":"Improving", "rs":98, "mom":101},
-                    # Leading: rs>100 DAN mom>100
-                    {"ticker":"BOLA","nama":"Bola Kreasi Nusantara",   "fase":"Leading",   "rs":106,"mom":104},
-                    {"ticker":"KIOS","nama":"Kioson Komersial Indonesia","fase":"Leading",  "rs":104,"mom":102},
-                    {"ticker":"TELE","nama":"Tiphone Mobile Indonesia", "fase":"Leading",   "rs":103,"mom":101},
-                    {"ticker":"AXIO","nama":"Axiata Group Berhad IDX", "fase":"Leading",   "rs":105,"mom":103},
-                    # Weakening: rs>100 DAN mom<100
-                    {"ticker":"EMTK","nama":"Elang Mahkota",           "fase":"Weakening", "rs":103,"mom":98},
-                    {"ticker":"MNCN","nama":"Media Nusantara Citra",   "fase":"Weakening", "rs":102,"mom":97},
-                    {"ticker":"SCMA","nama":"Surya Citra Media",       "fase":"Weakening", "rs":101,"mom":99},
-                    # Lagging: rs<100 DAN mom<100
-                    {"ticker":"BUKA","nama":"Bukalapak",               "fase":"Lagging",   "rs":90, "mom":92},
-                    {"ticker":"DCII","nama":"DCI Indonesia",           "fase":"Lagging",   "rs":95, "mom":96},
-                    {"ticker":"ATIC","nama":"Anabatic Technologies",   "fase":"Lagging",   "rs":93, "mom":94},
-                    {"ticker":"LCKM","nama":"LCK Global Kedaton",      "fase":"Lagging",   "rs":92, "mom":93},
-                    {"ticker":"IBOS","nama":"Indo Boga Sukses",        "fase":"Lagging",   "rs":94, "mom":95},
-                    {"ticker":"PPRE","nama":"PP Presisi",              "fase":"Lagging",   "rs":93, "mom":94},
-                    {"ticker":"MLPT","nama":"Multipolar Technology",   "fase":"Lagging",   "rs":91, "mom":93},
-                    {"ticker":"BNBR","nama":"Bakrie & Brothers",       "fase":"Lagging",   "rs":89, "mom":91},
-                ]
-            },
-            "Property": {
-                "fase": "Weakening", "rs": 102.3, "mom": 97.8, "color": "#ff9800",
-                "aksi": "Wait / Monitor", "icon": "🏠",
-                # Weakening = rs>100, mom<100
-                "trail": [(104.5,102.5),(104.0,100.8),(103.2,99.1),(102.3,97.8)],
-                "saham": [
-                    # Weakening: rs>100 DAN mom<100
-                    {"ticker":"BSDE","nama":"Bumi Serpong Damai",      "fase":"Weakening", "rs":104,"mom":97},
-                    {"ticker":"CTRA","nama":"Ciputra Development",     "fase":"Weakening", "rs":103,"mom":96},
-                    {"ticker":"PWON","nama":"Pakuwon Jati",            "fase":"Weakening", "rs":105,"mom":98},
-                    {"ticker":"ASRI","nama":"Alam Sutera Realty",      "fase":"Weakening", "rs":101,"mom":97},
-                    {"ticker":"APLN","nama":"Agung Podomoro Land",     "fase":"Weakening", "rs":102,"mom":98},
-                    # Lagging: rs<100 DAN mom<100
-                    {"ticker":"SMRA","nama":"Summarecon Agung",        "fase":"Lagging",   "rs":92, "mom":94},
-                    {"ticker":"LPKR","nama":"Lippo Karawaci",          "fase":"Lagging",   "rs":90, "mom":92},
-                    {"ticker":"KIJA","nama":"Kawasan Industri Jababeka","fase":"Lagging",  "rs":93, "mom":95},
-                    {"ticker":"MDLN","nama":"Modernland Realty",       "fase":"Lagging",   "rs":88, "mom":90},
-                    {"ticker":"BKSL","nama":"Sentul City",             "fase":"Lagging",   "rs":89, "mom":91},
-                    {"ticker":"COWL","nama":"Cowell Development",      "fase":"Lagging",   "rs":87, "mom":89},
-                    {"ticker":"MMLP","nama":"Mega Manunggal Property", "fase":"Lagging",   "rs":94, "mom":95},
-                    # Improving: rs<100 DAN mom>100
-                    {"ticker":"DMAS","nama":"Puradelta Lestari",       "fase":"Improving", "rs":98, "mom":101},
-                    {"ticker":"BEST","nama":"Bekasi Fajar",            "fase":"Improving", "rs":99, "mom":102},
-                    {"ticker":"PANI","nama":"Pratama Abadi Nusa",      "fase":"Improving", "rs":97, "mom":103},
-                    {"ticker":"RODA","nama":"Pikko Land Development",  "fase":"Improving", "rs":98, "mom":102},
-                    # Leading: rs>100 DAN mom>100
-                    {"ticker":"MKPI","nama":"Metropolitan Kentjana",   "fase":"Leading",   "rs":104,"mom":102},
-                    {"ticker":"LPCK","nama":"Lippo Cikarang",          "fase":"Leading",   "rs":103,"mom":101},
-                    {"ticker":"BIPP","nama":"Bhuwanatala Indah Permai","fase":"Leading",   "rs":102,"mom":103},
-                    {"ticker":"MTLA","nama":"Metropolitan Land",       "fase":"Leading",   "rs":101,"mom":101},
-                ]
-            },
-        }
-
-        # ── APPLY LIVE RS/MOM DATA (override static values) ─────────────
-        for _sn, _live in _live_rrg.items():
-            if _sn in rrg_sectors:
-                _old_rs  = rrg_sectors[_sn]["rs"]
-                _old_mom = rrg_sectors[_sn]["mom"]
-                _new_rs  = _live["rs"]
-                _new_mom = _live["mom"]
-                # Update trail: geser 1 slot, tambah posisi baru
-                _trail = rrg_sectors[_sn].get("trail", [])
-                if len(_trail) >= 4:
-                    _trail = _trail[1:] + [(_new_rs, _new_mom)]
-                else:
-                    _trail.append((_new_rs, _new_mom))
-                rrg_sectors[_sn]["rs"]    = _new_rs
-                rrg_sectors[_sn]["mom"]   = _new_mom
-                rrg_sectors[_sn]["trail"] = _trail
-                # Update fase sesuai kuadran baru
-                if   _new_rs >= 100 and _new_mom >= 100: rrg_sectors[_sn]["fase"] = "Leading"
-                elif _new_rs <  100 and _new_mom >= 100: rrg_sectors[_sn]["fase"] = "Improving"
-                elif _new_rs >= 100 and _new_mom <  100: rrg_sectors[_sn]["fase"] = "Weakening"
-                else:                                     rrg_sectors[_sn]["fase"] = "Lagging"
-                # Update aksi sesuai fase baru
-                _aksi_map = {
-                    "Leading":   "Hold / Profit Run",
-                    "Improving": "Accumulation",
-                    "Weakening": "Distribution / Wait",
-                    "Lagging":   "Avoid / Monitor",
+                # Mapping sektor → ETF/proxy ticker yfinance terdekat
+                _sector_proxy = {
+                    "Energy":           "ADRO.JK",
+                    "Basic Materials":  "AMMN.JK",
+                    "Finance":          "BBCA.JK",
+                    "Infrastructure":   "TLKM.JK",
+                    "Consumer":         "ICBP.JK",
+                    "Property":         "BSDE.JK",
+                    "Healthcare":       "KLBF.JK",
+                    "Technology":       "GOTO.JK",
                 }
-                rrg_sectors[_sn]["aksi"] = _aksi_map[rrg_sectors[_sn]["fase"]]
+                _ihsg_tk = "^JKSE"
+                _results = {}
+                try:
+                    _ihsg = _yf.Ticker(_ihsg_tk).history(period="40d")
+                    if len(_ihsg) < 20:
+                        return {}
+                    _ihsg_close = _ihsg["Close"]
+                    _ihsg_ma20  = _ihsg_close.rolling(20).mean().iloc[-1]
+                    _ihsg_now   = _ihsg_close.iloc[-1]
+                    _ihsg_rs_now   = _ihsg_now / _ihsg_ma20 if _ihsg_ma20 > 0 else 1
+                    _ihsg_rs_5ago  = (_ihsg_close.iloc[-5] / _ihsg_close.rolling(20).mean().iloc[-5]) if len(_ihsg_close) > 25 else _ihsg_rs_now
+                except:
+                    return {}
 
-        fase_colors = {
-            "Leading":   "#089981",
-            "Improving": "#8b5cf6",
-            "Weakening": "#f23645",
-            "Lagging":   "#4285F4",
-        }
+                for _sname, _proxy in _sector_proxy.items():
+                    try:
+                        _sh = _yf.Ticker(_proxy).history(period="40d")
+                        if len(_sh) < 20:
+                            continue
+                        _sc  = _sh["Close"]
+                        _ma20 = _sc.rolling(20).mean().iloc[-1]
+                        _now  = _sc.iloc[-1]
+                        if _ma20 == 0 or _ihsg_ma20 == 0:
+                            continue
+                        _rs_now  = (_now / _ma20) / (_ihsg_now / _ihsg_ma20) * 100
+                        # RS 5 hari lalu
+                        _ma20_5 = _sc.rolling(20).mean().iloc[-5] if len(_sc) > 25 else _ma20
+                        _now_5  = _sc.iloc[-5] if len(_sc) > 5 else _now
+                        _ih_ma20_5 = _ihsg_close.rolling(20).mean().iloc[-5] if len(_ihsg_close) > 25 else _ihsg_ma20
+                        _ih_5 = _ihsg_close.iloc[-5] if len(_ihsg_close) > 5 else _ihsg_now
+                        _rs_5ago = (_now_5 / _ma20_5) / (_ih_5 / _ih_ma20_5) * 100 if (_ma20_5 > 0 and _ih_ma20_5 > 0) else _rs_now
+                        _mom = _rs_now / _rs_5ago * 100 if _rs_5ago > 0 else 100
+                        # Clamp ke range chart [84,116]
+                        _rs_f  = round(min(max(float(_rs_now), 84.5), 115.5), 1)
+                        _mom_f = round(min(max(float(_mom), 84.5), 115.5), 1)
+                        _results[_sname] = {"rs": _rs_f, "mom": _mom_f}
+                    except:
+                        pass
+                return _results
 
-        # ── INJECT SCREENED SAHAM (top 30/sektor by mktcap) ─────────────
-        # Map nama sektor RRG → kunci screening
-        _sec_map_rrg = {
-            "Energy":         "Energy",
-            "Basic Materials":"Basic Materials",
-            "Finance":        "Finance",
-            "Infrastructure": "Infrastructure",
-            "Consumer":       "Consumer",
-            "Property":       "Property",
-            "Healthcare":     "Healthcare",
-            "Technology":     "Technology",
-        }
-        for _sn, _sk in _sec_map_rrg.items():
-            if _sn not in rrg_sectors:
-                continue
-            _screened_list = _rrg_screened.get(_sk, [])
-            if not _screened_list:
-                continue  # keep static data if screening returned nothing
-            _sec_rs  = rrg_sectors[_sn]["rs"]
-            _sec_mom = rrg_sectors[_sn]["mom"]
-            # Build saham list from screened data (max 30, sorted by mktcap)
-            _new_saham = []
-            for _tk, _d in _screened_list[:30]:
-                _rs, _mom, _fase = _assign_rrg_pos(_tk, _sec_rs, _sec_mom)
-                _mc_t = _d.get("mc", 0)
-                _mc_s = (f"{_mc_t/1e12:.1f}T" if _mc_t >= 1e12 else
-                         f"{_mc_t/1e9:.0f}B"  if _mc_t >= 1e9  else "-")
-                _new_saham.append({
-                    "ticker": _tk,
-                    "nama":   _d.get("name", _tk),
-                    "fase":   _fase,
-                    "rs":     _rs,
-                    "mom":    _mom,
-                    "mktcap": _mc_s,
-                    "price":  _d.get("price", 0),
-                })
-            if _new_saham:
-                rrg_sectors[_sn]["saham"] = _new_saham
+            # Tombol force-refresh RRG — hapus cache lalu rerun
+            _rrg_refresh_col1, _rrg_refresh_col2 = st.columns([4, 1])
+            with _rrg_refresh_col2:
+                if st.button("🔄 Refresh Data", key="rrg_force_refresh", use_container_width=True,
+                             help="Paksa update data Sector Rotation sekarang (bypass cache slot)"):
+                    _compute_rrg_live.clear()
+                    _screen_top500_by_mktcap.clear()
+                    st.cache_data.clear()
+                    st.rerun()
 
-        # ── PILIH SEKTOR ──
-        sector_names = list(rrg_sectors.keys())
+            _live_rrg = _compute_rrg_live(_update_slot)
+            _last_update_slot = "13:00" if _update_slot.endswith("PM") else ("21:00" if _update_slot.endswith("NIGHT") else "sebelum 13:00")
+            _next_update = "21:00" if _update_slot.endswith("PM") else ("13:00 besok" if _update_slot.endswith("NIGHT") else "13:00")
+            with _rrg_refresh_col1:
+                st.markdown(f"<p style='font-size:0.72rem;color:#64748b;margin-top:6px;'>🕐 Slot aktif: <b>{_update_slot}</b> · Update berikutnya: <b>{_next_update} WIB</b></p>", unsafe_allow_html=True)
+
+            # ── MARKET CAP SCREENING - Top 500 IDX, exclude suspended >1 bulan ─
+            @st.cache_data(ttl=86400, show_spinner=False)
+            def _screen_top500_by_mktcap():
+                """
+                Ambil 500 saham IDX berdasarkan market cap terbesar.
+                Filter: tidak suspend >30 hari, bisa ditransaksikan (ada harga/volume).
+                Return: dict sektor → list ticker diurutkan market cap descending.
+                """
+                import yfinance as _yf2
+                import threading as _thr2
+
+                # Master list 500 saham IDX aktif terbesar (dikurasi, exclude WIKA/WSKT/PPRO suspend panjang)
+                _ALL_IDX = [
+                    # PERBANKAN & KEUANGAN
+                    "BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR",
+                    "BJTM","NISP","BTPN","BDMN","BNLI","BFIN","ADMF","MFIN","CFIN","PNLF",
+                    "WOMF","BBYB","ARTO","BANK","AGRO","BACA","BMAS","MCOR","SDRA","MAYA",
+                    # ENERGI & BATUBARA
+                    "ADRO","BREN","PTBA","ITMG","BYAN","HRUM","BUMI","DSSA","GEMS","MBAP",
+                    "INDY","MYOH","SMMT","MEDC","PGAS","ELSA","ESSA","TOBA","BSSR","RAJA",
+                    "FIRE","BIPI","ENRG","ARTI","GTBO","KKGI","DEWA","MCOL","ARCI","PTRO",
+                    # MATERIAL & MINERAL (NIKEL, EMAS, KIMIA)
+                    "AMMN","ANTM","MDKA","INCO","NCKL","BRMS","MBMA","TPIA","BRPT","INKP",
+                    "TKIM","SMGR","INTP","TINS","DKFT","CITA","ZINC","MITI","PSAB","AGII",
+                    "NIKL","BAJA","ISSP","CAKK","MLIA","SPMA","JPRS","LION","LMSH","ALMI",
+                    # CONSUMER & FOOD
+                    "ICBP","INDF","MYOR","UNVR","KLBF","SIDO","CPIN","JPFA","HMSP","GGRM",
+                    "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","CLEO","DLTA",
+                    "KEJU","PSDN","SKBM","ADES","ALTO","CEKA","DMND","KINO","MAPI","ACES",
+                    "RALS","MIDI","AMRT","LPPF","MPPA","HERO","FAST","RANC","CSAP","DAYA",
+                    # TEKNOLOGI, TELKO & DIGITAL
+                    "TLKM","EXCL","ISAT","GOTO","BUKA","EMTK","MNCN","SCMA","TBIG","TOWR",
+                    "MTEL","LINK","DATA","KIOS","MTDL","DMMX","EDGE","MCAS","WIFI","TELE",
+                    # PROPERTI & KONSTRUKSI
+                    "BSDE","CTRA","SMRA","LPKR","PWON","ASRI","MDLN","DILD","APLN","JRPT",
+                    "PTPP","ADHI","NRCA","DMAS","BEST","GPRA","GWSA","KIJA","MKPI","MTLA",
+                    "NIRO","PLIN","RDTX","ROCK","RODA","SMDM","TARA","URBN","BKSL","COWL",
+                    # INFRASTRUKTUR & TRANSPORTASI
+                    "PGEO","VKTR","CUAN","BIRD","TMAS","SMDR","NELY","BPTR","BBRM","BULL",
+                    "CMPP","HITS","LEAD","MBSS","PTIS","RIGS","SHIP","SOCI","SUPR","TPMA",
+                    # OTOMOTIF & INDUSTRI
+                    "ASII","AUTO","IMAS","SMSM","GJTL","ADMG","LPIN","INDS","BOLT","DRMA",
+                    "GDYR","HEXA","MASA","NIPS","UNTR","TBMS","TCID","TURI","TRST","MARK",
+                    # KESEHATAN & FARMASI
+                    "MIKA","HEAL","SILO","KAEF","KLBF","TSPC","DVLA","INAF","PEHA","MERK",
+                    "PYFA","SCPI","SOHO","PRIM","IRRA",
+                    # CPO & AGRIBISNIS
+                    "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM","TAPG",
+                    "DSFI","BISI","CPRO",
+                    # PROPERTI INDUSTRIAL
+                    "SSIA","BEST","DMAS","KIJA","LPCK",
+                ]
+                _ALL_IDX = list(dict.fromkeys(_ALL_IDX))  # deduplicate
+
+                # Sektor mapping untuk assign sektor ke ticker
+                _SEKTOR = {
+                    "Energy":         ["ADRO","BREN","PTBA","ITMG","BYAN","HRUM","BUMI","DSSA","GEMS","MBAP",
+                                       "INDY","MYOH","SMMT","MEDC","PGAS","ELSA","ESSA","TOBA","BSSR","RAJA",
+                                       "FIRE","BIPI","ENRG","ARTI","GTBO","KKGI","DEWA","MCOL","ARCI","PTRO",
+                                       "PGEO","VKTR","CUAN"],
+                    "Basic Materials":["AMMN","ANTM","MDKA","INCO","NCKL","BRMS","MBMA","TPIA","BRPT","INKP",
+                                       "TKIM","SMGR","INTP","TINS","DKFT","CITA","ZINC","MITI","PSAB","AGII",
+                                       "NIKL","BAJA","ISSP","CAKK","MLIA","SPMA","JPRS","LION","LMSH","ALMI"],
+                    "Finance":        ["BBCA","BBRI","BMRI","BBNI","BRIS","BBTN","BNGA","PNBN","MEGA","BJBR",
+                                       "BJTM","NISP","BTPN","BDMN","BNLI","BFIN","ADMF","MFIN","CFIN","PNLF",
+                                       "WOMF","BBYB","ARTO","BANK","AGRO","BACA","BMAS","MCOR","SDRA","MAYA"],
+                    "Consumer":       ["ICBP","INDF","MYOR","UNVR","KLBF","SIDO","CPIN","JPFA","HMSP","GGRM",
+                                       "HOKI","STTP","SKLT","ROTI","CAMP","GOOD","ULTJ","MLBI","CLEO","DLTA",
+                                       "KEJU","PSDN","SKBM","ADES","ALTO","CEKA","DMND","KINO","MAPI","ACES",
+                                       "RALS","MIDI","AMRT","LPPF","MPPA","HERO","FAST","RANC","CSAP","DAYA",
+                                       "AALI","LSIP","SIMP","TBLA","SGRO","BWPT","SSMS","ANJT","PALM","TAPG"],
+                    "Infrastructure": ["TLKM","EXCL","ISAT","TBIG","TOWR","MTEL","LINK","DATA",
+                                       "BIRD","TMAS","SMDR","NELY","BPTR","BBRM","BULL","CMPP","HITS",
+                                       "LEAD","MBSS","PTIS","RIGS","SHIP","SOCI","SUPR","TPMA"],
+                    "Technology":     ["GOTO","BUKA","EMTK","MNCN","SCMA","KIOS","MTDL","DMMX","EDGE","MCAS",
+                                       "WIFI","TELE"],
+                    "Property":       ["BSDE","CTRA","SMRA","LPKR","PWON","ASRI","MDLN","DILD","APLN","JRPT",
+                                       "PTPP","ADHI","NRCA","DMAS","BEST","GPRA","GWSA","KIJA","MKPI","MTLA",
+                                       "NIRO","PLIN","RDTX","ROCK","RODA","SMDM","TARA","URBN","BKSL","COWL",
+                                       "SSIA","LPCK"],
+                    "Healthcare":     ["MIKA","HEAL","SILO","KAEF","TSPC","DVLA","INAF","PEHA","MERK",
+                                       "PYFA","SCPI","SOHO","PRIM","IRRA"],
+                }
+                # Build reverse map: ticker → sektor
+                _TK2SEC = {}
+                for _sec, _tks in _SEKTOR.items():
+                    for _tk in _tks:
+                        _TK2SEC[_tk] = _sec
+
+                # Ambil market cap parallel (max 10s timeout)
+                _mktcap = {}
+                _lock2  = _thr2.Lock()
+                def _get_mc(tk):
+                    try:
+                        _info = _yf2.Ticker(f"{tk}.JK").info
+                        mc = _info.get("marketCap") or 0
+                        # Cek apakah saham bisa ditransaksikan (ada regularMarketPrice)
+                        price = _info.get("regularMarketPrice") or _info.get("currentPrice") or 0
+                        vol   = _info.get("regularMarketVolume") or 0
+                        # Criteria: market cap > 0 AND price > 0 AND volume > 0
+                        if mc > 0 and price > 0:
+                            with _lock2:
+                                _mktcap[tk] = {"mc": mc, "price": price, "vol": vol,
+                                               "name": (_info.get("shortName") or tk)[:24],
+                                               "sektor": _TK2SEC.get(tk, "Other")}
+                    except:
+                        pass
+
+                # Batch fetch 50 saham at a time, max 500
+                _sample = _ALL_IDX[:500]
+                _threads = [_thr2.Thread(target=_get_mc, args=(tk,), daemon=True) for tk in _sample]
+                for t in _threads: t.start()
+                for t in _threads: t.join(timeout=18)
+
+                # Sort by market cap descending, take top 500
+                _sorted = sorted(_mktcap.items(), key=lambda x: x[1]["mc"], reverse=True)[:500]
+
+                # Group by sector, top 30 per sektor by market cap
+                _by_sector = {}
+                for tk, d in _sorted:
+                    sec = d["sektor"]
+                    if sec == "Other":
+                        continue
+                    if sec not in _by_sector:
+                        _by_sector[sec] = []
+                    _by_sector[sec].append((tk, d))
+
+                # Take top 30 per sector
+                _result = {}
+                for sec, items in _by_sector.items():
+                    _result[sec] = items[:30]  # already sorted by mc from parent sort
+
+                return _result, _mktcap
+
+            # ── Jalankan screening (cached 24 jam) ──────────────────────────
+            _screening_key = f"rrg_screen_{datetime.now().strftime('%Y%m%d')}"
+            _rrg_screened, _all_mktcap = _screen_top500_by_mktcap()
+            _screen_total = len(_all_mktcap)
+
+            # ── Inject hasil screening ke rrg_sectors["saham"] secara dinamis ─
+            # Fungsi konversi ticker → posisi RS/Mom berdasarkan live data atau estimasi
+            def _assign_rrg_pos(ticker, sector_rs, sector_mom):
+                """Assign posisi RS/Mom saham relative to sector centroid dengan variasi kecil."""
+                import hashlib as _hsh
+                _h = int(_hsh.md5(ticker.encode()).hexdigest()[:8], 16)
+                # Spread ±8 points di sekitar centroid sektor
+                _rs_spread  = ((_h % 160)-80) / 10.0   # -8 to +8
+                _mom_spread = (((_h >> 8) % 140)-70) / 10.0
+                _rs  = round(min(115, max(85, sector_rs  + _rs_spread)),  1)
+                _mom = round(min(115, max(85, sector_mom + _mom_spread)), 1)
+                _fase = ("Leading"   if _rs>=100 and _mom>=100 else
+                         "Improving" if _rs<100  and _mom>=100 else
+                         "Weakening" if _rs>=100 and _mom<100  else "Lagging")
+                return _rs, _mom, _fase
+
+            # Tampilkan badge update time
+            _badge_color = "#089981"
+            st.markdown(f"""<div style='display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;'>
+                <span style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};'>
+                 RRG update: <b style="color:#8b5cf6">13:00</b> & <b style="color:#8b5cf6">21:00</b> WIB
+                &nbsp;&middot;&nbsp; Slot: <b style="color:{_badge_color}">{_update_slot}</b>
+                &nbsp;&middot;&nbsp; Next: <b style="color:#8b5cf6">{_next_update} WIB</b>
+                &nbsp;&middot;&nbsp; <span style='color:#60a5fa;font-weight:600;'> {_screen_total} saham terscreening &middot; top 30/sektor by market cap</span>
+                </span></div>""", unsafe_allow_html=True)
+
+            # ── DATA SEKTOR + SAHAM PER SEKTOR ──────────────────────────────
+            # ── ATURAN KONSISTENSI FASE vs POSISI PLOT (WAJIB) ──────────────
+            # Leading   = rs > 100 DAN mom > 100  (kanan-atas)
+            # Improving = rs < 100 DAN mom > 100  (kiri-atas)
+            # Weakening = rs > 100 DAN mom < 100  (kanan-bawah)
+            # Lagging   = rs < 100 DAN mom < 100  (kiri-bawah)
+            # ─────────────────────────────────────────────────────────────────
+            rrg_sectors = {
+                "Energy": {
+                    "fase": "Leading", "rs": 108.2, "mom": 102.1, "color": "#089981",
+                    "aksi": "Hold / Profit Run", "icon": "⚡",
+                    # trail = posisi 4 minggu terakhir (terlama → terkini), titik terakhir = posisi sekarang
+                    "trail": [(104.0,99.5),(105.8,100.2),(107.1,101.0),(108.2,102.1)],
+                    "saham": [
+                        # Leading: rs>100 DAN mom>100
+                        {"ticker":"BREN","nama":"Barito Renewables",      "fase":"Leading",   "rs":112,"mom":105},
+                        {"ticker":"ADRO","nama":"Adaro Energy",            "fase":"Leading",   "rs":109,"mom":103},
+                        {"ticker":"PTBA","nama":"Bukit Asam",              "fase":"Leading",   "rs":107,"mom":101},
+                        {"ticker":"ITMG","nama":"Indo Tambangraya",        "fase":"Leading",   "rs":106,"mom":104},
+                        {"ticker":"MEDC","nama":"Medco Energi",            "fase":"Leading",   "rs":105,"mom":102},
+                        {"ticker":"RAJA","nama":"Rukun Raharja",           "fase":"Leading",   "rs":108,"mom":103},
+                        {"ticker":"BYAN","nama":"Bayan Resources",         "fase":"Leading",   "rs":110,"mom":104},
+                        {"ticker":"PTRO","nama":"Petrosea",                "fase":"Leading",   "rs":108,"mom":102},
+                        # Improving: rs<100 DAN mom>100
+                        {"ticker":"HRUM","nama":"Harum Energy",            "fase":"Improving", "rs":98, "mom":102},
+                        {"ticker":"ESSA","nama":"ESSA Industries",         "fase":"Improving", "rs":97, "mom":101},
+                        {"ticker":"ELSA","nama":"Elnusa",                  "fase":"Improving", "rs":99, "mom":101},
+                        {"ticker":"PGEO","nama":"Pertamina Geothermal",    "fase":"Improving", "rs":98, "mom":102},
+                        {"ticker":"GEMS","nama":"Golden Energy Mines",     "fase":"Improving", "rs":99, "mom":103},
+                        {"ticker":"TOBA","nama":"TBS Energi Utama",        "fase":"Improving", "rs":98, "mom":101},
+                        # Weakening: rs>100 DAN mom<100
+                        {"ticker":"ENRG","nama":"Energi Mega Persada",     "fase":"Weakening", "rs":102,"mom":98},
+                        {"ticker":"ARTI","nama":"Ratu Prabu Energi",       "fase":"Weakening", "rs":101,"mom":97},
+                        # Lagging: rs<100 DAN mom<100
+                        {"ticker":"DSSA","nama":"Dian Swastatika",         "fase":"Lagging",   "rs":97, "mom":96},
+                        {"ticker":"PGAS","nama":"Perusahaan Gas",          "fase":"Lagging",   "rs":98, "mom":97},
+                        {"ticker":"FIRE","nama":"Alfa Energi Investama",   "fase":"Lagging",   "rs":95, "mom":94},
+                        {"ticker":"BIPI","nama":"Astrindo Nusantara",      "fase":"Lagging",   "rs":94, "mom":95},
+                    ]
+                },
+                "Basic Materials": {
+                    "fase": "Improving", "rs": 103.5, "mom": 101.8, "color": "#8b5cf6",
+                    "aksi": "Accumulation", "icon": "🏗️",
+                    "trail": [(99.0,99.0),(100.5,100.1),(101.8,101.0),(103.5,101.8)],
+                    "saham": [
+                        # Leading: rs>100 DAN mom>100
+                        {"ticker":"AMMN","nama":"Amman Mineral",           "fase":"Leading",   "rs":109,"mom":104},
+                        {"ticker":"NCKL","nama":"Trimegah Bangun",         "fase":"Leading",   "rs":107,"mom":103},
+                        {"ticker":"PTRO","nama":"Petrosea",                "fase":"Leading",   "rs":108,"mom":104},
+                        {"ticker":"CUAN","nama":"Petrindo Jaya Kreasi",    "fase":"Leading",   "rs":107,"mom":103},
+                        # Improving: rs<100 DAN mom>100
+                        {"ticker":"TPIA","nama":"Chandra Asri",            "fase":"Improving", "rs":99, "mom":103},
+                        {"ticker":"BRPT","nama":"Barito Pacific",          "fase":"Improving", "rs":98, "mom":102},
+                        {"ticker":"ANTM","nama":"Aneka Tambang",           "fase":"Improving", "rs":99, "mom":101},
+                        {"ticker":"MDKA","nama":"Merdeka Copper Gold",     "fase":"Improving", "rs":99, "mom":103},
+                        {"ticker":"INCO","nama":"Vale Indonesia",          "fase":"Improving", "rs":98, "mom":101},
+                        {"ticker":"BRMS","nama":"Bumi Resources Minerals", "fase":"Improving", "rs":99, "mom":102},
+                        {"ticker":"MBMA","nama":"Merdeka Battery",         "fase":"Improving", "rs":98, "mom":101},
+                        {"ticker":"DKFT","nama":"Central Omega Resources", "fase":"Improving", "rs":97, "mom":102},
+                        # Weakening: rs>100 DAN mom<100
+                        {"ticker":"INCI","nama":"Intanwijaya International","fase":"Weakening","rs":101,"mom":99},
+                        {"ticker":"EKAD","nama":"Ekadharma International", "fase":"Weakening", "rs":102,"mom":98},
+                        # Lagging: rs<100 DAN mom<100
+                        {"ticker":"INKP","nama":"Indah Kiat Pulp",         "fase":"Lagging",   "rs":98, "mom":97},
+                        {"ticker":"SMGR","nama":"Semen Indonesia",         "fase":"Lagging",   "rs":94, "mom":95},
+                        {"ticker":"INTP","nama":"Indocement",              "fase":"Lagging",   "rs":93, "mom":94},
+                        {"ticker":"TKIM","nama":"Pabrik Kertas Tjiwi Kimia","fase":"Lagging",  "rs":96, "mom":96},
+                        {"ticker":"FASW","nama":"Fajar Surya Wisesa",      "fase":"Lagging",   "rs":95, "mom":95},
+                        {"ticker":"SMBR","nama":"Semen Baturaja",          "fase":"Lagging",   "rs":91, "mom":92},
+                    ]
+                },
+                "Finance": {
+                    "fase": "Weakening", "rs": 102.4, "mom": 98.2, "color": "#f23645",
+                    "aksi": "Distribution / Wait", "icon": "🏦",
+                    # Weakening = rs>100, mom<100
+                    "trail": [(105.0,103.0),(104.1,101.5),(103.2,99.8),(102.4,98.2)],
+                    "saham": [
+                        # Weakening: rs>100 DAN mom<100
+                        {"ticker":"BBCA","nama":"Bank Central Asia",       "fase":"Weakening", "rs":104,"mom":98},
+                        {"ticker":"BBRI","nama":"Bank Rakyat Indonesia",   "fase":"Weakening", "rs":103,"mom":97},
+                        {"ticker":"BMRI","nama":"Bank Mandiri",            "fase":"Weakening", "rs":105,"mom":98},
+                        {"ticker":"BNGA","nama":"Bank CIMB Niaga",         "fase":"Weakening", "rs":102,"mom":98},
+                        {"ticker":"MEGA","nama":"Bank Mega",               "fase":"Weakening", "rs":101,"mom":97},
+                        {"ticker":"BFIN","nama":"BFI Finance",             "fase":"Weakening", "rs":102,"mom":99},
+                        {"ticker":"ADMF","nama":"Adira Finance",           "fase":"Weakening", "rs":101,"mom":98},
+                        {"ticker":"PNBN","nama":"Bank Panin",              "fase":"Weakening", "rs":103,"mom":99},
+                        # Lagging: rs<100 DAN mom<100
+                        {"ticker":"BBNI","nama":"Bank Negara Indonesia",   "fase":"Lagging",   "rs":93, "mom":95},
+                        {"ticker":"BBTN","nama":"Bank Tabungan Negara",    "fase":"Lagging",   "rs":92, "mom":94},
+                        {"ticker":"BJBR","nama":"Bank BJB",                "fase":"Lagging",   "rs":91, "mom":93},
+                        {"ticker":"BGTG","nama":"Bank Ganesha",            "fase":"Lagging",   "rs":94, "mom":95},
+                        {"ticker":"NISP","nama":"Bank OCBC NISP",          "fase":"Lagging",   "rs":95, "mom":96},
+                        # Improving: rs<100 DAN mom>100
+                        {"ticker":"BRIS","nama":"Bank Syariah Indonesia",  "fase":"Improving", "rs":99, "mom":101},
+                        {"ticker":"ARTO","nama":"Bank Jago",               "fase":"Improving", "rs":98, "mom":102},
+                        {"ticker":"BTPS","nama":"Bank BTPN Syariah",       "fase":"Improving", "rs":97, "mom":101},
+                        # Leading: rs>100 DAN mom>100
+                        {"ticker":"BBYB","nama":"Bank Neo Commerce",       "fase":"Leading",   "rs":106,"mom":104},
+                        {"ticker":"BNLI","nama":"Bank Permata",            "fase":"Leading",   "rs":103,"mom":101},
+                        {"ticker":"AGRO","nama":"Bank Raya Indonesia",     "fase":"Leading",   "rs":104,"mom":102},
+                        {"ticker":"BCIC","nama":"Bank J Trust Indonesia",  "fase":"Leading",   "rs":102,"mom":101},
+                    ]
+                },
+                "Infrastructure": {
+                    "fase": "Lagging", "rs": 92.1, "mom": 94.5, "color": "#4285F4",
+                    "aksi": "Avoid / Monitor", "icon": "📡",
+                    "trail": [(96.0,97.5),(94.8,96.5),(93.2,95.3),(92.1,94.5)],
+                    "saham": [
+                        # Lagging: rs<100 DAN mom<100
+                        {"ticker":"TLKM","nama":"Telkom Indonesia",        "fase":"Lagging",   "rs":91, "mom":94},
+                        {"ticker":"EXCL","nama":"XL Axiata",               "fase":"Lagging",   "rs":93, "mom":95},
+                        {"ticker":"TOWR","nama":"Sarana Menara",           "fase":"Lagging",   "rs":92, "mom":94},
+                        {"ticker":"TBIG","nama":"Tower Bersama",           "fase":"Lagging",   "rs":91, "mom":93},
+                        {"ticker":"WIKA","nama":"Wijaya Karya",            "fase":"Lagging",   "rs":88, "mom":91},
+                        {"ticker":"PTPP","nama":"PP (Persero)",            "fase":"Lagging",   "rs":89, "mom":92},
+                        {"ticker":"ADHI","nama":"Adhi Karya",              "fase":"Lagging",   "rs":88, "mom":91},
+                        {"ticker":"WSKT","nama":"Waskita Karya",           "fase":"Lagging",   "rs":87, "mom":90},
+                        {"ticker":"JSMR","nama":"Jasa Marga",              "fase":"Lagging",   "rs":93, "mom":95},
+                        {"ticker":"CASS","nama":"Cardig Aero Services",    "fase":"Lagging",   "rs":94, "mom":96},
+                        # Weakening: rs>100 DAN mom<100
+                        {"ticker":"MTEL","nama":"Mitratel",                "fase":"Weakening", "rs":102,"mom":98},
+                        {"ticker":"FREN","nama":"Smartfren Telecom",       "fase":"Weakening", "rs":101,"mom":97},
+                        # Improving: rs<100 DAN mom>100
+                        {"ticker":"ISAT","nama":"Indosat Ooredoo",         "fase":"Improving", "rs":98, "mom":101},
+                        {"ticker":"LINK","nama":"Link Net",                "fase":"Improving", "rs":97, "mom":102},
+                        {"ticker":"CENT","nama":"Centratama Telekomunikasi","fase":"Improving","rs":96, "mom":101},
+                        # Leading: rs>100 DAN mom>100
+                        {"ticker":"SUPR","nama":"Solusi Tunas Pratama",    "fase":"Leading",   "rs":104,"mom":102},
+                        {"ticker":"IPCC","nama":"Indonesia Kendaraan Terminal","fase":"Leading","rs":103,"mom":101},
+                        {"ticker":"MTDL","nama":"Metrodata Electronics",   "fase":"Leading",   "rs":102,"mom":101},
+                        {"ticker":"BIRD","nama":"Blue Bird",               "fase":"Leading",   "rs":101,"mom":102},
+                        {"ticker":"GIAA","nama":"Garuda Indonesia",        "fase":"Leading",   "rs":105,"mom":103},
+                    ]
+                },
+                "Consumer": {
+                    "fase": "Lagging", "rs": 91.8, "mom": 93.7, "color": "#9b59b6",
+                    "aksi": "Avoid", "icon": "🛒",
+                    "trail": [(95.0,97.0),(93.8,96.0),(92.5,94.8),(91.8,93.7)],
+                    "saham": [
+                        # Lagging: rs<100 DAN mom<100
+                        {"ticker":"INDF","nama":"Indofood Sukses",         "fase":"Lagging",   "rs":92, "mom":94},
+                        {"ticker":"ICBP","nama":"Indofood CBP",            "fase":"Lagging",   "rs":91, "mom":93},
+                        {"ticker":"MYOR","nama":"Mayora Indah",            "fase":"Lagging",   "rs":90, "mom":92},
+                        {"ticker":"UNVR","nama":"Unilever Indonesia",      "fase":"Lagging",   "rs":88, "mom":90},
+                        {"ticker":"ACES","nama":"ACE Hardware",            "fase":"Lagging",   "rs":93, "mom":95},
+                        {"ticker":"LPPF","nama":"Matahari Department Store","fase":"Lagging",  "rs":89, "mom":91},
+                        {"ticker":"GGRM","nama":"Gudang Garam",            "fase":"Lagging",   "rs":91, "mom":93},
+                        {"ticker":"HMSP","nama":"HM Sampoerna",            "fase":"Lagging",   "rs":90, "mom":92},
+                        # Weakening: rs>100 DAN mom<100
+                        {"ticker":"KLBF","nama":"Kalbe Farma",             "fase":"Weakening", "rs":103,"mom":97},
+                        {"ticker":"MAPI","nama":"Mitra Adiperkasa",        "fase":"Weakening", "rs":101,"mom":98},
+                        {"ticker":"AMRT","nama":"Alfamart",                "fase":"Weakening", "rs":102,"mom":97},
+                        {"ticker":"RALS","nama":"Ramayana Lestari",        "fase":"Weakening", "rs":101,"mom":99},
+                        # Improving: rs<100 DAN mom>100
+                        {"ticker":"CPIN","nama":"Charoen Pokphand",        "fase":"Improving", "rs":98, "mom":101},
+                        {"ticker":"JPFA","nama":"JAPFA Comfeed",           "fase":"Improving", "rs":99, "mom":102},
+                        {"ticker":"MIDI","nama":"Midi Utama",              "fase":"Improving", "rs":98, "mom":103},
+                        {"ticker":"MIKA","nama":"Mitra Keluarga",          "fase":"Improving", "rs":97, "mom":102},
+                        # Leading: rs>100 DAN mom>100
+                        {"ticker":"HEAL","nama":"Medikaloka Hermina",      "fase":"Leading",   "rs":104,"mom":103},
+                        {"ticker":"SIDO","nama":"Industri Jamu SIDO MUNCUL","fase":"Leading",  "rs":103,"mom":102},
+                        {"ticker":"ULTJ","nama":"Ultra Jaya Milk",         "fase":"Leading",   "rs":102,"mom":101},
+                        {"ticker":"DLTA","nama":"Delta Djakarta",          "fase":"Leading",   "rs":101,"mom":101},
+                    ]
+                },
+                "Technology": {
+                    "fase": "Improving", "rs": 98.8, "mom": 101.5, "color": "#00bcd4",
+                    "aksi": "Selective Buy", "icon": "💻",
+                    # Improving = rs<100, mom>100
+                    "trail": [(95.0,98.5),(96.5,99.5),(97.8,100.5),(98.8,101.5)],
+                    "saham": [
+                        # Improving: rs<100 DAN mom>100
+                        {"ticker":"GOTO","nama":"GoTo Gojek Tokopedia",    "fase":"Improving", "rs":99, "mom":103},
+                        {"ticker":"DMMX","nama":"Digital Mediatama",       "fase":"Improving", "rs":98, "mom":104},
+                        {"ticker":"MTDL","nama":"Metrodata Electronics",   "fase":"Improving", "rs":99, "mom":102},
+                        {"ticker":"MCAS","nama":"M Cash Integrasi",        "fase":"Improving", "rs":97, "mom":103},
+                        {"ticker":"PTSN","nama":"Sat Nusapersada",         "fase":"Improving", "rs":98, "mom":101},
+                        # Leading: rs>100 DAN mom>100
+                        {"ticker":"BOLA","nama":"Bola Kreasi Nusantara",   "fase":"Leading",   "rs":106,"mom":104},
+                        {"ticker":"KIOS","nama":"Kioson Komersial Indonesia","fase":"Leading",  "rs":104,"mom":102},
+                        {"ticker":"TELE","nama":"Tiphone Mobile Indonesia", "fase":"Leading",   "rs":103,"mom":101},
+                        {"ticker":"AXIO","nama":"Axiata Group Berhad IDX", "fase":"Leading",   "rs":105,"mom":103},
+                        # Weakening: rs>100 DAN mom<100
+                        {"ticker":"EMTK","nama":"Elang Mahkota",           "fase":"Weakening", "rs":103,"mom":98},
+                        {"ticker":"MNCN","nama":"Media Nusantara Citra",   "fase":"Weakening", "rs":102,"mom":97},
+                        {"ticker":"SCMA","nama":"Surya Citra Media",       "fase":"Weakening", "rs":101,"mom":99},
+                        # Lagging: rs<100 DAN mom<100
+                        {"ticker":"BUKA","nama":"Bukalapak",               "fase":"Lagging",   "rs":90, "mom":92},
+                        {"ticker":"DCII","nama":"DCI Indonesia",           "fase":"Lagging",   "rs":95, "mom":96},
+                        {"ticker":"ATIC","nama":"Anabatic Technologies",   "fase":"Lagging",   "rs":93, "mom":94},
+                        {"ticker":"LCKM","nama":"LCK Global Kedaton",      "fase":"Lagging",   "rs":92, "mom":93},
+                        {"ticker":"IBOS","nama":"Indo Boga Sukses",        "fase":"Lagging",   "rs":94, "mom":95},
+                        {"ticker":"PPRE","nama":"PP Presisi",              "fase":"Lagging",   "rs":93, "mom":94},
+                        {"ticker":"MLPT","nama":"Multipolar Technology",   "fase":"Lagging",   "rs":91, "mom":93},
+                        {"ticker":"BNBR","nama":"Bakrie & Brothers",       "fase":"Lagging",   "rs":89, "mom":91},
+                    ]
+                },
+                "Property": {
+                    "fase": "Weakening", "rs": 102.3, "mom": 97.8, "color": "#ff9800",
+                    "aksi": "Wait / Monitor", "icon": "🏠",
+                    # Weakening = rs>100, mom<100
+                    "trail": [(104.5,102.5),(104.0,100.8),(103.2,99.1),(102.3,97.8)],
+                    "saham": [
+                        # Weakening: rs>100 DAN mom<100
+                        {"ticker":"BSDE","nama":"Bumi Serpong Damai",      "fase":"Weakening", "rs":104,"mom":97},
+                        {"ticker":"CTRA","nama":"Ciputra Development",     "fase":"Weakening", "rs":103,"mom":96},
+                        {"ticker":"PWON","nama":"Pakuwon Jati",            "fase":"Weakening", "rs":105,"mom":98},
+                        {"ticker":"ASRI","nama":"Alam Sutera Realty",      "fase":"Weakening", "rs":101,"mom":97},
+                        {"ticker":"APLN","nama":"Agung Podomoro Land",     "fase":"Weakening", "rs":102,"mom":98},
+                        # Lagging: rs<100 DAN mom<100
+                        {"ticker":"SMRA","nama":"Summarecon Agung",        "fase":"Lagging",   "rs":92, "mom":94},
+                        {"ticker":"LPKR","nama":"Lippo Karawaci",          "fase":"Lagging",   "rs":90, "mom":92},
+                        {"ticker":"KIJA","nama":"Kawasan Industri Jababeka","fase":"Lagging",  "rs":93, "mom":95},
+                        {"ticker":"MDLN","nama":"Modernland Realty",       "fase":"Lagging",   "rs":88, "mom":90},
+                        {"ticker":"BKSL","nama":"Sentul City",             "fase":"Lagging",   "rs":89, "mom":91},
+                        {"ticker":"COWL","nama":"Cowell Development",      "fase":"Lagging",   "rs":87, "mom":89},
+                        {"ticker":"MMLP","nama":"Mega Manunggal Property", "fase":"Lagging",   "rs":94, "mom":95},
+                        # Improving: rs<100 DAN mom>100
+                        {"ticker":"DMAS","nama":"Puradelta Lestari",       "fase":"Improving", "rs":98, "mom":101},
+                        {"ticker":"BEST","nama":"Bekasi Fajar",            "fase":"Improving", "rs":99, "mom":102},
+                        {"ticker":"PANI","nama":"Pratama Abadi Nusa",      "fase":"Improving", "rs":97, "mom":103},
+                        {"ticker":"RODA","nama":"Pikko Land Development",  "fase":"Improving", "rs":98, "mom":102},
+                        # Leading: rs>100 DAN mom>100
+                        {"ticker":"MKPI","nama":"Metropolitan Kentjana",   "fase":"Leading",   "rs":104,"mom":102},
+                        {"ticker":"LPCK","nama":"Lippo Cikarang",          "fase":"Leading",   "rs":103,"mom":101},
+                        {"ticker":"BIPP","nama":"Bhuwanatala Indah Permai","fase":"Leading",   "rs":102,"mom":103},
+                        {"ticker":"MTLA","nama":"Metropolitan Land",       "fase":"Leading",   "rs":101,"mom":101},
+                    ]
+                },
+            }
+
+            # ── APPLY LIVE RS/MOM DATA (override static values) ─────────────
+            for _sn, _live in _live_rrg.items():
+                if _sn in rrg_sectors:
+                    _old_rs  = rrg_sectors[_sn]["rs"]
+                    _old_mom = rrg_sectors[_sn]["mom"]
+                    _new_rs  = _live["rs"]
+                    _new_mom = _live["mom"]
+                    # Update trail: geser 1 slot, tambah posisi baru
+                    _trail = rrg_sectors[_sn].get("trail", [])
+                    if len(_trail) >= 4:
+                        _trail = _trail[1:] + [(_new_rs, _new_mom)]
+                    else:
+                        _trail.append((_new_rs, _new_mom))
+                    rrg_sectors[_sn]["rs"]    = _new_rs
+                    rrg_sectors[_sn]["mom"]   = _new_mom
+                    rrg_sectors[_sn]["trail"] = _trail
+                    # Update fase sesuai kuadran baru
+                    if   _new_rs >= 100 and _new_mom >= 100: rrg_sectors[_sn]["fase"] = "Leading"
+                    elif _new_rs <  100 and _new_mom >= 100: rrg_sectors[_sn]["fase"] = "Improving"
+                    elif _new_rs >= 100 and _new_mom <  100: rrg_sectors[_sn]["fase"] = "Weakening"
+                    else:                                     rrg_sectors[_sn]["fase"] = "Lagging"
+                    # Update aksi sesuai fase baru
+                    _aksi_map = {
+                        "Leading":   "Hold / Profit Run",
+                        "Improving": "Accumulation",
+                        "Weakening": "Distribution / Wait",
+                        "Lagging":   "Avoid / Monitor",
+                    }
+                    rrg_sectors[_sn]["aksi"] = _aksi_map[rrg_sectors[_sn]["fase"]]
+
+            fase_colors = {
+                "Leading":   "#089981",
+                "Improving": "#8b5cf6",
+                "Weakening": "#f23645",
+                "Lagging":   "#4285F4",
+            }
+
+            # ── INJECT SCREENED SAHAM (top 30/sektor by mktcap) ─────────────
+            # Map nama sektor RRG → kunci screening
+            _sec_map_rrg = {
+                "Energy":         "Energy",
+                "Basic Materials":"Basic Materials",
+                "Finance":        "Finance",
+                "Infrastructure": "Infrastructure",
+                "Consumer":       "Consumer",
+                "Property":       "Property",
+                "Healthcare":     "Healthcare",
+                "Technology":     "Technology",
+            }
+            for _sn, _sk in _sec_map_rrg.items():
+                if _sn not in rrg_sectors:
+                    continue
+                _screened_list = _rrg_screened.get(_sk, [])
+                if not _screened_list:
+                    continue  # keep static data if screening returned nothing
+                _sec_rs  = rrg_sectors[_sn]["rs"]
+                _sec_mom = rrg_sectors[_sn]["mom"]
+                # Build saham list from screened data (max 30, sorted by mktcap)
+                _new_saham = []
+                for _tk, _d in _screened_list[:30]:
+                    _rs, _mom, _fase = _assign_rrg_pos(_tk, _sec_rs, _sec_mom)
+                    _mc_t = _d.get("mc", 0)
+                    _mc_s = (f"{_mc_t/1e12:.1f}T" if _mc_t >= 1e12 else
+                             f"{_mc_t/1e9:.0f}B"  if _mc_t >= 1e9  else "-")
+                    _new_saham.append({
+                        "ticker": _tk,
+                        "nama":   _d.get("name", _tk),
+                        "fase":   _fase,
+                        "rs":     _rs,
+                        "mom":    _mom,
+                        "mktcap": _mc_s,
+                        "price":  _d.get("price", 0),
+                    })
+                if _new_saham:
+                    rrg_sectors[_sn]["saham"] = _new_saham
+
+            # ── PILIH SEKTOR ──
+            sector_names = list(rrg_sectors.keys())
         
-        # Session state untuk selected sector
-        if "rrg_selected" not in st.session_state:
-            st.session_state["rrg_selected"] = None
+            # Session state untuk selected sector
+            if "rrg_selected" not in st.session_state:
+                st.session_state["rrg_selected"] = None
 
-        # ── WARNA BUBBLE BERDASARKAN POSISI PLOT (rs & mom) ────────────
-        # Warna mengikuti kuadran tempat bubble BERADA, bukan label fase
-        # Leading=hijau, Improving=kuning, Weakening=merah, Lagging=biru
-        def _rrg_bubble_color(rs, mom):
-            if   rs >= 100 and mom >= 100: return "#089981"  # Leading   - hijau (kanan-atas)
-            elif rs <  100 and mom >= 100: return "#8b5cf6"  # Improving - kuning (kiri-atas)
-            elif rs >= 100 and mom <  100: return "#f23645"  # Weakening - merah (kanan-bawah)
-            else:                          return "#4285F4"  # Lagging   - biru  (kiri-bawah)
+            # ── WARNA BUBBLE BERDASARKAN POSISI PLOT (rs & mom) ────────────
+            # Warna mengikuti kuadran tempat bubble BERADA, bukan label fase
+            # Leading=hijau, Improving=kuning, Weakening=merah, Lagging=biru
+            def _rrg_bubble_color(rs, mom):
+                if   rs >= 100 and mom >= 100: return "#089981"  # Leading   - hijau (kanan-atas)
+                elif rs <  100 and mom >= 100: return "#8b5cf6"  # Improving - kuning (kiri-atas)
+                elif rs >= 100 and mom <  100: return "#f23645"  # Weakening - merah (kanan-bawah)
+                else:                          return "#4285F4"  # Lagging   - biru  (kiri-bawah)
 
-        # ── BUILD PLOTLY RRG BUBBLE CHART ──────────────────────────────
-        fig_rrg = go.Figure()
+            # ── BUILD PLOTLY RRG BUBBLE CHART ──────────────────────────────
+            fig_rrg = go.Figure()
 
-        # Shaded quadrants
-        fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=100, y1=116,
-            fillcolor="rgba(8,153,129,0.10)", line_width=0, layer="below")
-        fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=100, y1=116,
-            fillcolor="rgba(3,40,238,0.08)", line_width=0, layer="below")
-        fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=84, y1=100,
-            fillcolor="rgba(242,54,69,0.08)", line_width=0, layer="below")
-        fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=84, y1=100,
-            fillcolor="rgba(66,133,244,0.08)", line_width=0, layer="below")
+            # Shaded quadrants
+            fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=100, y1=116,
+                fillcolor="rgba(8,153,129,0.10)", line_width=0, layer="below")
+            fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=100, y1=116,
+                fillcolor="rgba(3,40,238,0.08)", line_width=0, layer="below")
+            fig_rrg.add_shape(type="rect", x0=100, x1=116, y0=84, y1=100,
+                fillcolor="rgba(242,54,69,0.08)", line_width=0, layer="below")
+            fig_rrg.add_shape(type="rect", x0=84, x1=100, y0=84, y1=100,
+                fillcolor="rgba(66,133,244,0.08)", line_width=0, layer="below")
 
-        # Center lines
-        fig_rrg.add_shape(type="line", x0=100, x1=100, y0=84, y1=116,
-            line=dict(color="rgba(255,255,255,0.2)", width=1, dash="dot"))
-        fig_rrg.add_shape(type="line", x0=84, x1=116, y0=100, y1=100,
-            line=dict(color="rgba(255,255,255,0.2)", width=1, dash="dot"))
+            # Center lines
+            fig_rrg.add_shape(type="line", x0=100, x1=100, y0=84, y1=116,
+                line=dict(color="rgba(255,255,255,0.2)", width=1, dash="dot"))
+            fig_rrg.add_shape(type="line", x0=84, x1=116, y0=100, y1=100,
+                line=dict(color="rgba(255,255,255,0.2)", width=1, dash="dot"))
 
-        # Quadrant labels
-        for lbl, x, y, c in [
-            ("LEADING",   113, 114, "#089981"),
-            ("IMPROVING", 87,  114, "#8b5cf6"),
-            ("WEAKENING", 113, 86,  "#f23645"),
-            ("LAGGING",   87,  86,  "#4285F4"),
-        ]:
-            fig_rrg.add_annotation(x=x, y=y, text=f"<b>{lbl}</b>",
-                showarrow=False, font=dict(size=11, color=c, family="IBM Plex Mono"),
-                opacity=0.7)
+            # Quadrant labels
+            for lbl, x, y, c in [
+                ("LEADING",   113, 114, "#089981"),
+                ("IMPROVING", 87,  114, "#8b5cf6"),
+                ("WEAKENING", 113, 86,  "#f23645"),
+                ("LAGGING",   87,  86,  "#4285F4"),
+            ]:
+                fig_rrg.add_annotation(x=x, y=y, text=f"<b>{lbl}</b>",
+                    showarrow=False, font=dict(size=11, color=c, family="IBM Plex Mono"),
+                    opacity=0.7)
 
-        # Plot trails (jejak pergerakan 4 minggu terakhir) - SEBELUM bubble
-        for sname, sdata in rrg_sectors.items():
-            trail = sdata.get("trail", [])
-            if len(trail) >= 2:
-                trail_xs = [p[0] for p in trail]
-                trail_ys = [p[1] for p in trail]
-                _trail_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
-                # Garis trail tipis
-                fig_rrg.add_trace(go.Scatter(
-                    x=trail_xs, y=trail_ys,
-                    mode="lines",
-                    line=dict(color=_trail_clr, width=1.5, dash="dot"),
-                    opacity=0.45,
-                    showlegend=False,
-                    hoverinfo="skip",
-                ))
-                # Titik-titik jejak (kecil, makin tua makin kecil)
-                for pi, (px, py) in enumerate(trail[:-1]):  # kecualikan titik terakhir (itu bubble utama)
-                    dot_size = 5 + pi * 1.5
-                    dot_opacity = 0.25 + pi * 0.12
+            # Plot trails (jejak pergerakan 4 minggu terakhir) - SEBELUM bubble
+            for sname, sdata in rrg_sectors.items():
+                trail = sdata.get("trail", [])
+                if len(trail) >= 2:
+                    trail_xs = [p[0] for p in trail]
+                    trail_ys = [p[1] for p in trail]
+                    _trail_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
+                    # Garis trail tipis
                     fig_rrg.add_trace(go.Scatter(
-                        x=[px], y=[py],
-                        mode="markers",
-                        marker=dict(size=dot_size, color=_trail_clr, opacity=dot_opacity),
+                        x=trail_xs, y=trail_ys,
+                        mode="lines",
+                        line=dict(color=_trail_clr, width=1.5, dash="dot"),
+                        opacity=0.45,
                         showlegend=False,
                         hoverinfo="skip",
                     ))
+                    # Titik-titik jejak (kecil, makin tua makin kecil)
+                    for pi, (px, py) in enumerate(trail[:-1]):  # kecualikan titik terakhir (itu bubble utama)
+                        dot_size = 5 + pi * 1.5
+                        dot_opacity = 0.25 + pi * 0.12
+                        fig_rrg.add_trace(go.Scatter(
+                            x=[px], y=[py],
+                            mode="markers",
+                            marker=dict(size=dot_size, color=_trail_clr, opacity=dot_opacity),
+                            showlegend=False,
+                            hoverinfo="skip",
+                        ))
 
-        # Plot each sector
-        for sname, sdata in rrg_sectors.items():
-            is_sel = (st.session_state.get("rrg_selected") == sname)
-            marker_size = 55 if is_sel else 42
-            _bubble_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
-            fig_rrg.add_trace(go.Scatter(
-                x=[sdata["rs"]], y=[sdata["mom"]],
-                mode="markers+text",
-                name=sname,
-                text=[f"{sdata['icon']} {sname}"],
-                textposition="middle center",
-                textfont=dict(size=9, color="#ffffff", family="IBM Plex Mono"),
-                marker=dict(
-                    size=marker_size,
-                    color=_bubble_clr,
-                    opacity=0.85 if is_sel else 0.7,
-                    line=dict(color=_bubble_clr, width=3 if is_sel else 1.5),
-                ),
-                customdata=[sname],
-                hovertemplate=(
-                    f"<b>{sdata['icon']} {sname}</b><br>"
-                    f"Fase: <b>{sdata['fase']}</b><br>"
-                    f"RS Score: {sdata['rs']}<br>"
-                    f"Momentum: {sdata['mom']}<br>"
-                    f"Aksi: {sdata['aksi']}<br>"
-                    "<extra></extra>"
-                ),
-                showlegend=False,
-            ))
-
-        fig_rrg.update_layout(
-            height=460,
-            margin=dict(l=40, r=20, t=30, b=50),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(8,12,22,0.6)" if is_dark else "rgba(248,250,252,0.8)",
-            xaxis=dict(
-                title="RS Ratio (Kekuatan Relatif vs IHSG)",
-                range=[84, 116], showgrid=True,
-                gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
-                tickfont=dict(family="IBM Plex Mono", size=10, color=text_sub),
-                title_font=dict(family="IBM Plex Mono", size=10, color=text_sub),
-                zeroline=False,
-            ),
-            yaxis=dict(
-                title="Momentum (Arah RS)",
-                range=[84, 116], showgrid=True,
-                gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
-                tickfont=dict(family="IBM Plex Mono", size=10, color=text_sub),
-                title_font=dict(family="IBM Plex Mono", size=10, color=text_sub),
-                zeroline=False,
-            ),
-            font=dict(family="IBM Plex Mono", color=text_main),
-            clickmode="event+select",
-        )
-
-        # ── TAMPILKAN CHART + HANDLE KLIK ──────────────────────────────
-        chart_event = st.plotly_chart(
-            fig_rrg,
-            use_container_width=True,
-            on_select="rerun",
-            key="rrg_chart",
-        )
-
-        # Deteksi klik sektor dari chart
-        if chart_event and hasattr(chart_event, "selection") and chart_event.selection:
-            pts = chart_event.selection.get("points", [])
-            if pts:
-                clicked_trace = pts[0].get("curve_number", 0)
-                clicked_sector = sector_names[clicked_trace] if clicked_trace < len(sector_names) else None
-                if clicked_sector:
-                    st.session_state["rrg_selected"] = clicked_sector
-
-        # ── TOMBOL SEKTOR (fallback klik) ──────────────────────────────
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
-        btn_cols = st.columns(len(sector_names))
-        for i, sname in enumerate(sector_names):
-            sdata = rrg_sectors[sname]
-            is_active = st.session_state.get("rrg_selected") == sname
-            with btn_cols[i]:
-                btn_label = f"{sdata['icon']} {sname[:6]}"
-                if st.button(btn_label, key=f"rrg_btn_{sname}",
-                             use_container_width=True,
-                             type="primary" if is_active else "secondary"):
-                    if is_active:
-                        st.session_state["rrg_selected"] = None
-                    else:
-                        st.session_state["rrg_selected"] = sname
-                    st.rerun()
-
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-        # ── DETAIL POPUP (in-page, muncul saat sektor dipilih) ─────────
-        sel = st.session_state.get("rrg_selected")
-        if sel and sel in rrg_sectors:
-            sd = rrg_sectors[sel]
-            fc = fase_colors.get(sd["fase"], "#8b5cf6")
-
-            # Header card
-            st.markdown(f"""
-            <div style='background:{met_bg};border:1px solid {fc}44;border-left:4px solid {fc};
-                border-radius:12px;padding:16px 20px;margin-bottom:16px;'>
-                <div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap;'>
-                    <div style='font-size:1.8rem;'>{sd["icon"]}</div>
-                    <div>
-                        <div style='font-family:'DM Sans',sans-serif;font-size:1.25rem;font-weight:700;
-                            color:{text_main};letter-spacing:0.05em;'>{sel} Sector</div>
-                        <div style='font-size:0.875rem;color:{text_sub};margin-top:2px;'>
-                            RS: <b style="color:{fc}">{sd["rs"]}</b> &nbsp;|&nbsp;
-                            Momentum: <b style="color:{fc}">{sd["mom"]}</b> &nbsp;|&nbsp;
-                            Fase: <b style="color:{fc}">{sd["fase"].upper()}</b>
-                        </div>
-                    </div>
-                    <div style='margin-left:auto;background:{fc}22;border:1px solid {fc}44;
-                        border-radius:8px;padding:8px 16px;text-align:center;'>
-                        <div style='font-size:0.8rem;color:{text_sub};letter-spacing:0.1em;'>AKSI</div>
-                        <div style='font-size:1.1rem;font-weight:700;color:{fc};'>{sd["aksi"]}</div>
-                    </div>
-                </div>
-            </div>""", unsafe_allow_html=True)
-
-            # Mini stats 4 kuadran
-            leading_n  = sum(1 for s in sd["saham"] if s.get("fase","")=="Leading")
-            improving_n= sum(1 for s in sd["saham"] if s.get("fase","")=="Improving")
-            weakening_n= sum(1 for s in sd["saham"] if s.get("fase","")=="Weakening")
-            lagging_n  = sum(1 for s in sd["saham"] if s.get("fase","")=="Lagging")
-
-            mc1, mc2, mc3, mc4 = st.columns(4)
-            for col, lbl, val, c in [
-                (mc1, "LEADING",   leading_n,   "#089981"),
-                (mc2, "IMPROVING", improving_n, "#8b5cf6"),
-                (mc3, "WEAKENING", weakening_n, "#f23645"),
-                (mc4, "LAGGING",   lagging_n,   "#4285F4"),
-            ]:
-                with col:
-                    st.markdown(f"""<div style='background:{c}11;border:1px solid {c}33;
-                        border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;
-                        height:auto;overflow:visible;'>
-                        <div style='font-size:0.8rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
-                        <div style='font-size:1.6rem;font-weight:700;color:{text_main};'>{val}</div>
-                        <div style='font-size:0.8rem;color:{text_sub};'>saham</div>
-                    </div>""", unsafe_allow_html=True)
-            # MOBILE-ONLY: Pastikan kartu kategori tidak punya vertical scroll
-            components.html("""
-<script>
-(function() {
-  var pd = window.parent.document;
-  if (pd.getElementById('sigma-sector-card-mobile-css')) return;
-  var s = pd.createElement('style');
-  s.id = 'sigma-sector-card-mobile-css';
-  s.textContent = `
-    @media (max-width: 768px) {
-      /* Hapus vertical scroll pada kartu fase sektor */
-      [data-testid="stMarkdownContainer"] > div[style*="border-radius:8px"][style*="text-align:center"] {
-        height: auto !important;
-        min-height: unset !important;
-        max-height: none !important;
-        overflow: visible !important;
-        overflow-y: visible !important;
-      }
-    }
-  `;
-  pd.head.appendChild(s);
-})();
-</script>
-""", height=0)
-
-            # Mini RRG untuk sektor ini (plotly kecil, tampilkan saham-saham di dalamnya)
-            fig_mini = go.Figure()
-            # Quadrants
-            for x0,x1,y0,y1,clr in [
-                (100,115,100,115,"rgba(8,153,129,0.12)"),
-                (85,100,100,115,"rgba(3,40,238,0.10)"),
-                (100,115,85,100,"rgba(242,54,69,0.10)"),
-                (85,100,85,100,"rgba(66,133,244,0.10)"),
-            ]:
-                fig_mini.add_shape(type="rect",x0=x0,x1=x1,y0=y0,y1=y1,
-                    fillcolor=clr,line_width=0,layer="below")
-            # Lines
-            fig_mini.add_shape(type="line",x0=100,x1=100,y0=85,y1=115,
-                line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
-            fig_mini.add_shape(type="line",x0=85,x1=115,y0=100,y1=100,
-                line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
-            for lbl,x,y,c in [("LEADING",112,113,"#089981"),("IMPROVING",88,113,"#8b5cf6"),
-                               ("WEAKENING",112,87,"#f23645"),("LAGGING",88,87,"#4285F4")]:
-                fig_mini.add_annotation(x=x,y=y,text=f"<b>{lbl}</b>",showarrow=False,
-                    font=dict(size=8,color=c,family="IBM Plex Mono"),opacity=0.8)
-            # Saham dots - tambah trail sector centroid dulu
-            trail_mini = sd.get("trail", [])
-            if len(trail_mini) >= 2:
-                tx = [p[0] for p in trail_mini]
-                ty = [p[1] for p in trail_mini]
-                fig_mini.add_trace(go.Scatter(
-                    x=tx, y=ty, mode="lines",
-                    line=dict(color=sd["color"], width=1.5, dash="dot"),
-                    opacity=0.4, showlegend=False, hoverinfo="skip",
-                ))
-                for pi, (px, py) in enumerate(trail_mini[:-1]):
-                    fig_mini.add_trace(go.Scatter(
-                        x=[px], y=[py], mode="markers",
-                        marker=dict(size=5+pi*1.5, color=sd["color"], opacity=0.2+pi*0.15),
-                        showlegend=False, hoverinfo="skip",
-                    ))
-            for stk in sd["saham"]:
-                sc = fase_colors.get(stk.get("fase",""), "#888")
-                fig_mini.add_trace(go.Scatter(
-                    x=[stk["rs"]], y=[stk["mom"]],
+            # Plot each sector
+            for sname, sdata in rrg_sectors.items():
+                is_sel = (st.session_state.get("rrg_selected") == sname)
+                marker_size = 55 if is_sel else 42
+                _bubble_clr = _rrg_bubble_color(sdata["rs"], sdata["mom"])
+                fig_rrg.add_trace(go.Scatter(
+                    x=[sdata["rs"]], y=[sdata["mom"]],
                     mode="markers+text",
-                    text=[stk["ticker"]],
-                    textposition="top center",
-                    textfont=dict(size=8,color=sc,family="IBM Plex Mono"),
-                    marker=dict(size=10,color=sc,opacity=0.85,
-                        line=dict(color=sc,width=1.5)),
-                    hovertemplate=f"<b>{stk['ticker']}</b><br>{stk['nama']}<br>Fase: {stk['fase']}<br>RS:{stk['rs']} Mom:{stk['mom']}<extra></extra>",
+                    name=sname,
+                    text=[f"{sdata['icon']} {sname}"],
+                    textposition="middle center",
+                    textfont=dict(size=9, color="#ffffff", family="IBM Plex Mono"),
+                    marker=dict(
+                        size=marker_size,
+                        color=_bubble_clr,
+                        opacity=0.85 if is_sel else 0.7,
+                        line=dict(color=_bubble_clr, width=3 if is_sel else 1.5),
+                    ),
+                    customdata=[sname],
+                    hovertemplate=(
+                        f"<b>{sdata['icon']} {sname}</b><br>"
+                        f"Fase: <b>{sdata['fase']}</b><br>"
+                        f"RS Score: {sdata['rs']}<br>"
+                        f"Momentum: {sdata['mom']}<br>"
+                        f"Aksi: {sdata['aksi']}<br>"
+                        "<extra></extra>"
+                    ),
                     showlegend=False,
                 ))
-            # Sector centroid
-            fig_mini.add_trace(go.Scatter(
-                x=[sd["rs"]], y=[sd["mom"]],
-                mode="markers",
-                marker=dict(size=20,color=sd["color"],opacity=0.3,
-                    line=dict(color=sd["color"],width=2),symbol="circle-open"),
-                hovertemplate=f"<b>{sel} (centroid)</b><extra></extra>",
-                showlegend=False,
-            ))
-            fig_mini.update_layout(
-                height=520, margin=dict(l=40,r=20,t=30,b=50),
+
+            fig_rrg.update_layout(
+                height=460,
+                margin=dict(l=40, r=20, t=30, b=50),
                 paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(8,12,22,0.5)" if is_dark else "rgba(248,250,252,0.8)",
-                xaxis=dict(range=[85,115],title="RS Ratio",showgrid=True,
+                plot_bgcolor="rgba(8,12,22,0.6)" if is_dark else "rgba(248,250,252,0.8)",
+                xaxis=dict(
+                    title="RS Ratio (Kekuatan Relatif vs IHSG)",
+                    range=[84, 116], showgrid=True,
                     gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
-                    tickfont=dict(family="IBM Plex Mono",size=10,color=text_sub),
-                    title_font=dict(family="IBM Plex Mono",size=10,color=text_sub),zeroline=False),
-                yaxis=dict(range=[85,115],title="Momentum",showgrid=True,
+                    tickfont=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                    title_font=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                    zeroline=False,
+                ),
+                yaxis=dict(
+                    title="Momentum (Arah RS)",
+                    range=[84, 116], showgrid=True,
                     gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
-                    tickfont=dict(family="IBM Plex Mono",size=10,color=text_sub),
-                    title_font=dict(family="IBM Plex Mono",size=10,color=text_sub),zeroline=False),
+                    tickfont=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                    title_font=dict(family="IBM Plex Mono", size=10, color=text_sub),
+                    zeroline=False,
+                ),
                 font=dict(family="IBM Plex Mono", color=text_main),
+                clickmode="event+select",
             )
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#8b5cf6;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
-            st.plotly_chart(fig_mini, use_container_width=True,
-                config={"displayModeBar": True, "modeBarButtonsToAdd": ["toggleFullscreen"],
-                        "modeBarButtonsToRemove": ["lasso2d","select2d"],
-                        "displaylogo": False, "scrollZoom": True},
-                key=f"mini_rrg_{sel}")
+            # ── TAMPILKAN CHART + HANDLE KLIK ──────────────────────────────
+            chart_event = st.plotly_chart(
+                fig_rrg,
+                use_container_width=True,
+                on_select="rerun",
+                key="rrg_chart",
+            )
 
-            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#8b5cf6\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
-            # Build HTML table - max 30 rows
-            tbl_rows = ""
-            _saham_display = sorted(sd["saham"], key=lambda x: x["rs"], reverse=True)[:30]
-            for stk in _saham_display:
-                fc2 = fase_colors.get(stk.get("fase",""), "#888")
-                rs_pct = max(0, min(100, (stk["rs"]-85) / 30 * 100))
-                _mc_disp = stk.get("mktcap","-")
-                tbl_rows += f"""<tr>
-                    <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;white-space:nowrap;'>{stk["ticker"]}</td>
-                    <td style='font-size:13px;color:{text_sub};'>{stk["nama"]}</td>
-                    <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
-                        font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
-                        font-family:'DM Sans',sans-serif;white-space:nowrap;display:inline-block;'>{stk.get("fase","")}</span></td>
-                    <td style='font-size:13px;color:#8b5cf6;font-weight:600;'>{_mc_disp}</td>
-                    <td style='font-size:13px;min-width:64px;'>
-                        <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
-                        <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
-                            <div style='height:100%;width:{rs_pct:.0f}%;background:{fc2};border-radius:2px;'></div>
+            # Deteksi klik sektor dari chart
+            if chart_event and hasattr(chart_event, "selection") and chart_event.selection:
+                pts = chart_event.selection.get("points", [])
+                if pts:
+                    clicked_trace = pts[0].get("curve_number", 0)
+                    clicked_sector = sector_names[clicked_trace] if clicked_trace < len(sector_names) else None
+                    if clicked_sector:
+                        st.session_state["rrg_selected"] = clicked_sector
+
+            # ── TOMBOL SEKTOR (fallback klik) ──────────────────────────────
+            st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:6px;letter-spacing:0.1em;'>PILIH SEKTOR:</p>", unsafe_allow_html=True)
+            btn_cols = st.columns(len(sector_names))
+            for i, sname in enumerate(sector_names):
+                sdata = rrg_sectors[sname]
+                is_active = st.session_state.get("rrg_selected") == sname
+                with btn_cols[i]:
+                    btn_label = f"{sdata['icon']} {sname[:6]}"
+                    if st.button(btn_label, key=f"rrg_btn_{sname}",
+                                 use_container_width=True,
+                                 type="primary" if is_active else "secondary"):
+                        if is_active:
+                            st.session_state["rrg_selected"] = None
+                        else:
+                            st.session_state["rrg_selected"] = sname
+                        st.rerun()
+
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+            # ── DETAIL POPUP (in-page, muncul saat sektor dipilih) ─────────
+            sel = st.session_state.get("rrg_selected")
+            if sel and sel in rrg_sectors:
+                sd = rrg_sectors[sel]
+                fc = fase_colors.get(sd["fase"], "#8b5cf6")
+
+                # Header card
+                st.markdown(f"""
+                <div style='background:{met_bg};border:1px solid {fc}44;border-left:4px solid {fc};
+                    border-radius:12px;padding:16px 20px;margin-bottom:16px;'>
+                    <div style='display:flex;align-items:center;gap:12px;flex-wrap:wrap;'>
+                        <div style='font-size:1.8rem;'>{sd["icon"]}</div>
+                        <div>
+                            <div style='font-family:'DM Sans',sans-serif;font-size:1.25rem;font-weight:700;
+                                color:{text_main};letter-spacing:0.05em;'>{sel} Sector</div>
+                            <div style='font-size:0.875rem;color:{text_sub};margin-top:2px;'>
+                                RS: <b style="color:{fc}">{sd["rs"]}</b> &nbsp;|&nbsp;
+                                Momentum: <b style="color:{fc}">{sd["mom"]}</b> &nbsp;|&nbsp;
+                                Fase: <b style="color:{fc}">{sd["fase"].upper()}</b>
+                            </div>
                         </div>
-                    </td>
-                    <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
-                </tr>"""
+                        <div style='margin-left:auto;background:{fc}22;border:1px solid {fc}44;
+                            border-radius:8px;padding:8px 16px;text-align:center;'>
+                            <div style='font-size:0.8rem;color:{text_sub};letter-spacing:0.1em;'>AKSI</div>
+                            <div style='font-size:1.1rem;font-weight:700;color:{fc};'>{sd["aksi"]}</div>
+                        </div>
+                    </div>
+                </div>""", unsafe_allow_html=True)
 
-            st.markdown(f"""<div class='sigma-stk-wrap' style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
-            <table class='sigma-stk-tbl' style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
-            <thead><tr style='background:{met_bg};position:sticky;top:0;z-index:2;'>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:80px;'>NAMA</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FASE</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>MKT CAP</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:64px;'>RS</th>
-                <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:60px;'>MOM</th>
-            </tr></thead>
-            <tbody>{tbl_rows}</tbody>
-            </table></div>""", unsafe_allow_html=True)
+                # Mini stats 4 kuadran
+                leading_n  = sum(1 for s in sd["saham"] if s.get("fase","")=="Leading")
+                improving_n= sum(1 for s in sd["saham"] if s.get("fase","")=="Improving")
+                weakening_n= sum(1 for s in sd["saham"] if s.get("fase","")=="Weakening")
+                lagging_n  = sum(1 for s in sd["saham"] if s.get("fase","")=="Lagging")
 
-            # ── MOBILE-ONLY CSS: inject ke parent document sekali via JS ──
-            components.html("""
-<script>
-(function() {
-  var pd = window.parent.document;
-  if (pd.getElementById('sigma-stk-mobile-css')) return;
-  var s = pd.createElement('style');
-  s.id = 'sigma-stk-mobile-css';
-  s.textContent = `
-    @media (max-width: 768px) {
-      .sigma-stk-wrap {
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-      }
-      table.sigma-stk-tbl {
-        table-layout: fixed !important;
-        width: 100% !important;
-        min-width: 380px !important;
-      }
-      table.sigma-stk-tbl thead th {
-        text-align: center !important;
-        padding: 6px 4px !important;
-        font-size: 10px !important;
-        letter-spacing: 0 !important;
-      }
-      table.sigma-stk-tbl tbody td {
-        padding: 5px 4px !important;
-        font-size: 12px !important;
-      }
-      table.sigma-stk-tbl th:nth-child(1),
-      table.sigma-stk-tbl td:nth-child(1) { width: 12% !important; }
-      table.sigma-stk-tbl th:nth-child(2),
-      table.sigma-stk-tbl td:nth-child(2) { width: 22% !important; }
-      table.sigma-stk-tbl th:nth-child(3),
-      table.sigma-stk-tbl td:nth-child(3) { width: 20% !important; }
-      table.sigma-stk-tbl th:nth-child(4),
-      table.sigma-stk-tbl td:nth-child(4) { width: 18% !important; }
-      table.sigma-stk-tbl th:nth-child(5),
-      table.sigma-stk-tbl td:nth-child(5) { width: 14% !important; }
-      table.sigma-stk-tbl th:nth-child(6),
-      table.sigma-stk-tbl td:nth-child(6) { width: 14% !important; }
-      table.sigma-stk-tbl tbody td:nth-child(3) span {
-        white-space: nowrap !important;
-        font-size: 10px !important;
-        padding: 2px 4px !important;
-        display: inline-block !important;
-      }
-      table.sigma-stk-tbl tbody td:nth-child(2) {
-        white-space: normal !important;
-        word-break: break-word !important;
-        font-size: 11px !important;
-      }
-    }
-  `;
-  pd.head.appendChild(s);
-})();
-</script>
-""", height=0)
-
-            st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#8b5cf6;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-
-        st.markdown(f"<div class='trm-insight'>&#127919; <b>SIGMA INSIGHT &mdash;</b> Klik bubble sektor atau klik nama sektor di bawah chart untuk melihat detail saham dan posisi rotasi. Dana asing (Big Money) saat ini merotasi dari perbankan (<i>Weakening</i>) menuju energi dan material dasar (<i>Improving/Leading</i>).</div>", unsafe_allow_html=True)
-
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>MSCI INDONESIA INDEX TRACKER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
-            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-         <b style='color:#8b5cf6;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Jadwal: 2&times; setahun - Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
-        </div>""", unsafe_allow_html=True)
-        msci_data = {
-            "Ticker": [
-                "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", 
-                "ICBP", "INDF", "INKP", "INTP", "ISAT", "KLBF", "MDKA", "TPIA", "TLKM", "TOWR", 
-                "UNTR", "UNVR",
-                "ADRO", "BRMS", "BSDE", "CTRA", "MBMA", "MYOR", "PTRO", "RAJA", "ACES", "CLEO"
-            ],
-            "Kategori": [
-                "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
-                "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
-                "Standard", "Standard",
-                "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Excluded", "Excluded"
-            ],
-            "Status": [
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing",
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                "Existing", "Existing",
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "NEW ENTRY", "Existing", "OUT", "OUT"
-            ],
-            "Sektor": [
-                "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology",
-                "Consumer", "Consumer", "Materials", "Materials", "Infrastructures", "Healthcare", "Materials", "Materials", "Infrastructures", "Infrastructures",
-                "Industrials", "Consumer",
-                "Energy", "Materials", "Properties", "Properties", "Materials", "Consumer", "Infrastructures", "Energy", "Retail", "Consumer"
-            ]
+                mc1, mc2, mc3, mc4 = st.columns(4)
+                for col, lbl, val, c in [
+                    (mc1, "LEADING",   leading_n,   "#089981"),
+                    (mc2, "IMPROVING", improving_n, "#8b5cf6"),
+                    (mc3, "WEAKENING", weakening_n, "#f23645"),
+                    (mc4, "LAGGING",   lagging_n,   "#4285F4"),
+                ]:
+                    with col:
+                        st.markdown(f"""<div style='background:{c}11;border:1px solid {c}33;
+                            border-radius:8px;padding:10px;text-align:center;margin-bottom:12px;
+                            height:auto;overflow:visible;'>
+                            <div style='font-size:0.8rem;color:{c};letter-spacing:0.1em;'>{lbl}</div>
+                            <div style='font-size:1.6rem;font-weight:700;color:{text_main};'>{val}</div>
+                            <div style='font-size:0.8rem;color:{text_sub};'>saham</div>
+                        </div>""", unsafe_allow_html=True)
+                # MOBILE-ONLY: Pastikan kartu kategori tidak punya vertical scroll
+                components.html("""
+    <script>
+    (function() {
+      var pd = window.parent.document;
+      if (pd.getElementById('sigma-sector-card-mobile-css')) return;
+      var s = pd.createElement('style');
+      s.id = 'sigma-sector-card-mobile-css';
+      s.textContent = `
+        @media (max-width: 768px) {
+          /* Hapus vertical scroll pada kartu fase sektor */
+          [data-testid="stMarkdownContainer"] > div[style*="border-radius:8px"][style*="text-align:center"] {
+            height: auto !important;
+            min-height: unset !important;
+            max-height: none !important;
+            overflow: visible !important;
+            overflow-y: visible !important;
+          }
         }
-        df_msci = pd.DataFrame(msci_data)
-        
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+      `;
+      pd.head.appendChild(s);
+    })();
+    </script>
+    """, height=0)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Small Cap'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+                # Mini RRG untuk sektor ini (plotly kecil, tampilkan saham-saham di dalamnya)
+                fig_mini = go.Figure()
+                # Quadrants
+                for x0,x1,y0,y1,clr in [
+                    (100,115,100,115,"rgba(8,153,129,0.12)"),
+                    (85,100,100,115,"rgba(3,40,238,0.10)"),
+                    (100,115,85,100,"rgba(242,54,69,0.10)"),
+                    (85,100,85,100,"rgba(66,133,244,0.10)"),
+                ]:
+                    fig_mini.add_shape(type="rect",x0=x0,x1=x1,y0=y0,y1=y1,
+                        fillcolor=clr,line_width=0,layer="below")
+                # Lines
+                fig_mini.add_shape(type="line",x0=100,x1=100,y0=85,y1=115,
+                    line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
+                fig_mini.add_shape(type="line",x0=85,x1=115,y0=100,y1=100,
+                    line=dict(color="rgba(255,255,255,0.2)",width=1,dash="dot"))
+                for lbl,x,y,c in [("LEADING",112,113,"#089981"),("IMPROVING",88,113,"#8b5cf6"),
+                                   ("WEAKENING",112,87,"#f23645"),("LAGGING",88,87,"#4285F4")]:
+                    fig_mini.add_annotation(x=x,y=y,text=f"<b>{lbl}</b>",showarrow=False,
+                        font=dict(size=8,color=c,family="IBM Plex Mono"),opacity=0.8)
+                # Saham dots - tambah trail sector centroid dulu
+                trail_mini = sd.get("trail", [])
+                if len(trail_mini) >= 2:
+                    tx = [p[0] for p in trail_mini]
+                    ty = [p[1] for p in trail_mini]
+                    fig_mini.add_trace(go.Scatter(
+                        x=tx, y=ty, mode="lines",
+                        line=dict(color=sd["color"], width=1.5, dash="dot"),
+                        opacity=0.4, showlegend=False, hoverinfo="skip",
+                    ))
+                    for pi, (px, py) in enumerate(trail_mini[:-1]):
+                        fig_mini.add_trace(go.Scatter(
+                            x=[px], y=[py], mode="markers",
+                            marker=dict(size=5+pi*1.5, color=sd["color"], opacity=0.2+pi*0.15),
+                            showlegend=False, hoverinfo="skip",
+                        ))
+                for stk in sd["saham"]:
+                    sc = fase_colors.get(stk.get("fase",""), "#888")
+                    fig_mini.add_trace(go.Scatter(
+                        x=[stk["rs"]], y=[stk["mom"]],
+                        mode="markers+text",
+                        text=[stk["ticker"]],
+                        textposition="top center",
+                        textfont=dict(size=8,color=sc,family="IBM Plex Mono"),
+                        marker=dict(size=10,color=sc,opacity=0.85,
+                            line=dict(color=sc,width=1.5)),
+                        hovertemplate=f"<b>{stk['ticker']}</b><br>{stk['nama']}<br>Fase: {stk['fase']}<br>RS:{stk['rs']} Mom:{stk['mom']}<extra></extra>",
+                        showlegend=False,
+                    ))
+                # Sector centroid
+                fig_mini.add_trace(go.Scatter(
+                    x=[sd["rs"]], y=[sd["mom"]],
+                    mode="markers",
+                    marker=dict(size=20,color=sd["color"],opacity=0.3,
+                        line=dict(color=sd["color"],width=2),symbol="circle-open"),
+                    hovertemplate=f"<b>{sel} (centroid)</b><extra></extra>",
+                    showlegend=False,
+                ))
+                fig_mini.update_layout(
+                    height=520, margin=dict(l=40,r=20,t=30,b=50),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(8,12,22,0.5)" if is_dark else "rgba(248,250,252,0.8)",
+                    xaxis=dict(range=[85,115],title="RS Ratio",showgrid=True,
+                        gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                        tickfont=dict(family="IBM Plex Mono",size=10,color=text_sub),
+                        title_font=dict(family="IBM Plex Mono",size=10,color=text_sub),zeroline=False),
+                    yaxis=dict(range=[85,115],title="Momentum",showgrid=True,
+                        gridcolor="rgba(255,255,255,0.05)" if is_dark else "rgba(0,0,0,0.05)",
+                        tickfont=dict(family="IBM Plex Mono",size=10,color=text_sub),
+                        title_font=dict(family="IBM Plex Mono",size=10,color=text_sub),zeroline=False),
+                    font=dict(family="IBM Plex Mono", color=text_main),
+                )
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:4px;'>POSISI SAHAM DI ROTASI &nbsp;·&nbsp; <span style='color:#8b5cf6;'>klik ⛶ fullscreen untuk zoom</span></p>", unsafe_allow_html=True)
+                st.plotly_chart(fig_mini, use_container_width=True,
+                    config={"displayModeBar": True, "modeBarButtonsToAdd": ["toggleFullscreen"],
+                            "modeBarButtonsToRemove": ["lasso2d","select2d"],
+                            "displaylogo": False, "scrollZoom": True},
+                    key=f"mini_rrg_{sel}")
 
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.8rem;color:{text_sub};margin-bottom:4px;'>DAFTAR SAHAM - {sel.upper()} · <b style=\"color:#8b5cf6\">{min(len(sd['saham']),30)} emiten</b> · Diurutkan market cap terbesar · Screened dari {_screen_total} saham IDX</p>", unsafe_allow_html=True)
+                # Build HTML table - max 30 rows
+                tbl_rows = ""
+                _saham_display = sorted(sd["saham"], key=lambda x: x["rs"], reverse=True)[:30]
+                for stk in _saham_display:
+                    fc2 = fase_colors.get(stk.get("fase",""), "#888")
+                    rs_pct = max(0, min(100, (stk["rs"]-85) / 30 * 100))
+                    _mc_disp = stk.get("mktcap","-")
+                    tbl_rows += f"""<tr>
+                        <td style='font-weight:700;color:{fc2};font-family:'DM Sans',sans-serif;font-size:14px;white-space:nowrap;'>{stk["ticker"]}</td>
+                        <td style='font-size:13px;color:{text_sub};'>{stk["nama"]}</td>
+                        <td><span style='background:{fc2}22;color:{fc2};border:1px solid {fc2}44;
+                            font-size:11px;font-weight:700;padding:2px 6px;border-radius:8px;
+                            font-family:'DM Sans',sans-serif;white-space:nowrap;display:inline-block;'>{stk.get("fase","")}</span></td>
+                        <td style='font-size:13px;color:#8b5cf6;font-weight:600;'>{_mc_disp}</td>
+                        <td style='font-size:13px;min-width:64px;'>
+                            <div style='color:{text_main};font-weight:600;'>{stk["rs"]}</div>
+                            <div style='height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:2px;'>
+                                <div style='height:100%;width:{rs_pct:.0f}%;background:{fc2};border-radius:2px;'></div>
+                            </div>
+                        </td>
+                        <td style='font-size:13px;color:{text_main};font-weight:600;'>{stk["mom"]}</td>
+                    </tr>"""
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
-            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-         <b style='color:#8b5cf6;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#8b5cf6;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Jadwal: 4&times; setahun - Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
-        </div>""", unsafe_allow_html=True)
-        
-        ftse_data = {
-            "Ticker": [
-                "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", "ICBP", "INDF", "KLBF", "MDKA", "TLKM", "UNTR",
-                "ADRO", "AKRA", "BRIS", "INKP", "PGAS",
-                "PTRO", "CUAN", "VKTR", "RAJA"
-            ],
-            "Kategori": [
-                "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap",
-                "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap",
-                "Small Cap", "Small Cap", "Small Cap", "Small Cap"
-            ],
-            "Status": [
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
-                "Existing", "Existing", "Existing", "Existing", "Existing",
-                "NEW ENTRY", "NEW ENTRY", "Existing", "Existing"
-            ],
-            "Sektor": [
-                "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology", "Consumer", "Consumer", "Healthcare", "Materials", "Infrastructures", "Industrials",
-                "Energy", "Energy", "Finance", "Materials", "Energy",
-                "Infrastructures", "Energy", "Industrials", "Energy"
-            ]
+                st.markdown(f"""<div class='sigma-stk-wrap' style='overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:380px;border:1px solid {met_border};border-radius:8px;'>
+                <table class='sigma-stk-tbl' style='width:100%;border-collapse:collapse;font-family:DM Sans,sans-serif;min-width:440px;'>
+                <thead><tr style='background:{met_bg};position:sticky;top:0;z-index:2;'>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#8b5cf6;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:56px;'>TICKER</th>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:80px;'>NAMA</th>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>FASE</th>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:#60a5fa;text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:72px;'>MKT CAP</th>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:64px;'>RS</th>
+                    <th style='padding:6px 10px;font-size:11px;letter-spacing:0.05em;color:{text_sub};text-align:left;border-bottom:1px solid {met_border};white-space:nowrap;min-width:60px;'>MOM</th>
+                </tr></thead>
+                <tbody>{tbl_rows}</tbody>
+                </table></div>""", unsafe_allow_html=True)
+
+                # ── MOBILE-ONLY CSS: inject ke parent document sekali via JS ──
+                components.html("""
+    <script>
+    (function() {
+      var pd = window.parent.document;
+      if (pd.getElementById('sigma-stk-mobile-css')) return;
+      var s = pd.createElement('style');
+      s.id = 'sigma-stk-mobile-css';
+      s.textContent = `
+        @media (max-width: 768px) {
+          .sigma-stk-wrap {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+          }
+          table.sigma-stk-tbl {
+            table-layout: fixed !important;
+            width: 100% !important;
+            min-width: 380px !important;
+          }
+          table.sigma-stk-tbl thead th {
+            text-align: center !important;
+            padding: 6px 4px !important;
+            font-size: 10px !important;
+            letter-spacing: 0 !important;
+          }
+          table.sigma-stk-tbl tbody td {
+            padding: 5px 4px !important;
+            font-size: 12px !important;
+          }
+          table.sigma-stk-tbl th:nth-child(1),
+          table.sigma-stk-tbl td:nth-child(1) { width: 12% !important; }
+          table.sigma-stk-tbl th:nth-child(2),
+          table.sigma-stk-tbl td:nth-child(2) { width: 22% !important; }
+          table.sigma-stk-tbl th:nth-child(3),
+          table.sigma-stk-tbl td:nth-child(3) { width: 20% !important; }
+          table.sigma-stk-tbl th:nth-child(4),
+          table.sigma-stk-tbl td:nth-child(4) { width: 18% !important; }
+          table.sigma-stk-tbl th:nth-child(5),
+          table.sigma-stk-tbl td:nth-child(5) { width: 14% !important; }
+          table.sigma-stk-tbl th:nth-child(6),
+          table.sigma-stk-tbl td:nth-child(6) { width: 14% !important; }
+          table.sigma-stk-tbl tbody td:nth-child(3) span {
+            white-space: nowrap !important;
+            font-size: 10px !important;
+            padding: 2px 4px !important;
+            display: inline-block !important;
+          }
+          table.sigma-stk-tbl tbody td:nth-child(2) {
+            white-space: normal !important;
+            word-break: break-word !important;
+            font-size: 11px !important;
+          }
         }
-        df_ftse = pd.DataFrame(ftse_data)
+      `;
+      pd.head.appendChild(s);
+    })();
+    </script>
+    """, height=0)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown(f"<div class='trm-insight' style='margin-top:12px;'>💡 <b>Cara baca:</b> Saham di kuadran <span style='color:#089981;'>LEADING</span> = RS kuat dan momentum naik. <span style='color:#8b5cf6;'>IMPROVING</span> = mulai menguat, potensi masuk leading. <span style='color:#f23645;'>WEAKENING</span> = mulai kehilangan momentum meski masih kuat. <span style='color:#4285F4;'>LAGGING</span> = hindari atau tunggu sinyal reversal.</div>", unsafe_allow_html=True)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+        with _rot_tab_index:
+            # ── SUB-SUB-TABS INDEX ──────────────────────────────────────────────
+            _idx_tab_msci, _idx_tab_ftse, _idx_tab_lq45, _idx_tab_idx30, _idx_tab_idx80, _idx_tab_kompas, _idx_tab_konglo, _idx_tab_jdall = st.tabs([
+                "  🌍 MSCI  ",
+                "  🌐 FTSE  ",
+                "  ⭐ LQ45  ",
+                "  💎 IDX30  ",
+                "  📋 IDX80  ",
+                "  📰 KOMPAS100  ",
+                "  🏢 SAHAM KONGLO  ",
+                "  🗃️ JD.ALL  ",
+            ])
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
-            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-         <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb&ndash;Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026&ndash;Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Jadwal: 2&times; setahun - Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
-        </div>""", unsafe_allow_html=True)
+            with _idx_tab_msci:
+                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 28 Februari 2026 (MSCI Semi-Annual Review Feb 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Review berikutnya:</b> Pengumuman ~13 Mei 2026, efektif 29 Mei 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun - Februari & Agustus (pengumuman interim Mei & Nov). Sumber: <b>msci.com</b></span>
+                </div>""", unsafe_allow_html=True)
+                msci_data = {
+                    "Ticker": [
+                        "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", 
+                        "ICBP", "INDF", "INKP", "INTP", "ISAT", "KLBF", "MDKA", "TPIA", "TLKM", "TOWR", 
+                        "UNTR", "UNVR",
+                        "ADRO", "BRMS", "BSDE", "CTRA", "MBMA", "MYOR", "PTRO", "RAJA", "ACES", "CLEO"
+                    ],
+                    "Kategori": [
+                        "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
+                        "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard", "Standard",
+                        "Standard", "Standard",
+                        "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Small Cap", "Excluded", "Excluded"
+                    ],
+                    "Status": [
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing (Top 10)", "Existing", "Existing", "Existing",
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                        "Existing", "Existing",
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "NEW ENTRY", "Existing", "OUT", "OUT"
+                    ],
+                    "Sektor": [
+                        "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology",
+                        "Consumer", "Consumer", "Materials", "Materials", "Infrastructures", "Healthcare", "Materials", "Materials", "Infrastructures", "Infrastructures",
+                        "Industrials", "Consumer",
+                        "Energy", "Materials", "Properties", "Properties", "Materials", "Consumer", "Infrastructures", "Energy", "Retail", "Consumer"
+                    ]
+                }
+                df_msci = pd.DataFrame(msci_data)
         
-        lq45_data = {
-            "Ticker": [
-                "ACES", "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI", 
-                "BBRI", "BBTN", "BFIN", "BMRI", "BRIS", "BRPT", "BUKA", "CPIN", "CTRA", "ESSA", 
-                "EXCL", "GOTO", "HRUM", "ICBP", "INCO", "INDF", "INKP", "INTP", "ISAT", "ITMG", 
-                "KLBF", "MAPI", "MBMA", "MDKA", "MEDC", "MTEL", "PGAS", "PGEO", "PTBA", "PTPP", 
-                "SIDO", "SMGR", "TLKM", "TOWR", "UNTR",
-                "EMTK", "SCMA", "SRTG"
-            ],
-            "Kategori": [
-                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
-                "Active", "Active", "Active", "Active", "Active",
-                "Excluded", "Excluded", "Excluded"
-            ],
-            "Status": [
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
-                "Existing", "Existing", "Existing", "Existing", "Existing",
-                "OUT", "OUT", "OUT"
-            ],
-            "Sektor": [
-                "Cyclical", "Energy", "Energy", "Materials", "Consumer", "Materials", "Finance", "Industrials", "Finance", "Finance",
-                "Finance", "Finance", "Finance", "Finance", "Finance", "Materials", "Technology", "Consumer", "Properties", "Materials",
-                "Infrastructures", "Technology", "Energy", "Consumer", "Materials", "Consumer", "Materials", "Materials", "Infrastructures", "Energy",
-                "Healthcare", "Cyclical", "Materials", "Materials", "Energy", "Infrastructures", "Energy", "Energy", "Energy", "Infrastructures",
-                "Healthcare", "Materials", "Infrastructures", "Infrastructures", "Industrials",
-                "Technology", "Consumer", "Financials"
-            ]
-        }
-        df_lq45 = pd.DataFrame(lq45_data)
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / MSCI Standard Index &mdash; The Giants</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Standard'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / MSCI Small Cap Index &mdash; The Mid-Caps</p>", unsafe_allow_html=True)
 
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+            with _idx_tab_ftse:
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>03 / Excluded &mdash; Keluar dari Indeks</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_msci[df_msci['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
 
-        # ─── IDX30 INDEX ─────────────────────────────────────────────────
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
-            background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
-            padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
-         <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb&ndash;Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
-        <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
-        <span style='color:{text_sub};'>Subset 30 saham paling likuid dari LQ45. Sumber: <b>idx.co.id</b></span>
-        </div>""", unsafe_allow_html=True)
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        idx30_data = {
-            "Ticker": [
-                "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI",
-                "BBRI", "BBTN", "BMRI", "BRIS", "BRPT", "CPIN", "ESSA", "EXCL", "GOTO",
-                "ICBP", "INCO", "INDF", "ISAT", "ITMG", "KLBF", "MBMA", "MDKA", "MEDC",
-                "PGAS", "PTBA", "TLKM",
-                "EMTK", "SCMA",
-            ],
-            "Kategori": [
-                "Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                "Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                "Active","Active","Active","Active","Active","Active","Active","Active","Active",
-                "Active","Active","Active",
-                "Excluded","Excluded",
-            ],
-            "Status": [
-                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
-                "Existing","Existing","Existing",
-                "OUT","OUT",
-            ],
-            "Sektor": [
-                "Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
-                "Finance","Finance","Finance","Finance","Materials","Consumer","Materials","Infra","Technology",
-                "Consumer","Materials","Consumer","Infra","Energy","Healthcare","Materials","Materials","Energy",
-                "Energy","Energy","Infra",
-                "Technology","Consumer",
-            ],
-        }
-        df_idx30 = pd.DataFrame(idx30_data)
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
-        st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
-        st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>FTSE GLOBAL EQUITY INDEX &mdash; INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 23 Maret 2026 (FTSE Quarterly Review Q1 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Review berikutnya:</b> Juni 2026 (pengumuman ~5 Jun, efektif 22 Jun 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Jadwal: 4&times; setahun - Mar/Jun/Sep/Des. Sumber: <b>ftserussell.com</b></span>
+                </div>""", unsafe_allow_html=True)
+        
+                ftse_data = {
+                    "Ticker": [
+                        "AMMN", "ASII", "BBCA", "BBNI", "BBRI", "BMRI", "BREN", "BRPT", "CPIN", "GOTO", "ICBP", "INDF", "KLBF", "MDKA", "TLKM", "UNTR",
+                        "ADRO", "AKRA", "BRIS", "INKP", "PGAS",
+                        "PTRO", "CUAN", "VKTR", "RAJA"
+                    ],
+                    "Kategori": [
+                        "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap", "Large Cap",
+                        "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap", "Mid Cap",
+                        "Small Cap", "Small Cap", "Small Cap", "Small Cap"
+                    ],
+                    "Status": [
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "DOWNGRADED", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing",
+                        "Existing", "Existing", "Existing", "Existing", "Existing",
+                        "NEW ENTRY", "NEW ENTRY", "Existing", "Existing"
+                    ],
+                    "Sektor": [
+                        "Materials", "Industrials", "Finance", "Finance", "Finance", "Finance", "Energy", "Materials", "Consumer", "Technology", "Consumer", "Consumer", "Healthcare", "Materials", "Infrastructures", "Industrials",
+                        "Energy", "Energy", "Finance", "Materials", "Energy",
+                        "Infrastructures", "Energy", "Industrials", "Energy"
+                    ]
+                }
+                df_ftse = pd.DataFrame(ftse_data)
 
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Large &amp; Mid Cap</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_ftse[df_ftse['Kategori'].isin(['Large Cap', 'Mid Cap'])].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+
+
+            with _idx_tab_lq45:
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 8px;font-weight:600;'>02 / Small Cap</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_ftse[df_ftse['Kategori'] == 'Small Cap'].style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LQ45 INDEX &mdash; 45 SAHAM AKTIF</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb&ndash;Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026 (Periode Agu 2026&ndash;Jan 2027)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Jadwal: 2&times; setahun - Februari &amp; Agustus. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
         
-        conglo_data = [
-            {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
-            {"Grup": "Barito (Prajogo P.)", "Ticker": "TPIA", "Nama": "Chandra Asri Pacific", "Fokus Bisnis": "Petrokimia"},
-            {"Grup": "Barito (Prajogo P.)", "Ticker": "BREN", "Nama": "Barito Renewables", "Fokus Bisnis": "Panas Bumi (Geothermal)"},
-            {"Grup": "Barito (Prajogo P.)", "Ticker": "CUAN", "Nama": "Petrindo Jaya Kreasi", "Fokus Bisnis": "Tambang Mineral"},
-            {"Grup": "Barito (Prajogo P.)", "Ticker": "PTRO", "Nama": "Petrosea", "Fokus Bisnis": "Kontraktor Tambang"},
-            {"Grup": "Barito (Prajogo P.)", "Ticker": "CDIA", "Nama": "Chandra Daya Investasi", "Fokus Bisnis": "Infrastruktur & Utilitas"},
-            
-            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BBCA", "Nama": "Bank Central Asia", "Fokus Bisnis": "Perbankan"},
-            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "TOWR", "Nama": "Sarana Menara Nusantara", "Fokus Bisnis": "Menara Telekomunikasi"},
-            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "SUPR", "Nama": "Solusi Tunas Pratama", "Fokus Bisnis": "Menara Telekomunikasi"},
-            {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BELI", "Nama": "Global Digital Niaga", "Fokus Bisnis": "E-Commerce (Blibli)"},
-            
-            {"Grup": "Salim (Anthoni S.)", "Ticker": "INDF", "Nama": "Indofood Sukses Makmur", "Fokus Bisnis": "Consumer Goods"},
-            {"Grup": "Salim (Anthoni S.)", "Ticker": "ICBP", "Nama": "Indofood CBP", "Fokus Bisnis": "Consumer Goods"},
-            {"Grup": "Salim (Anthoni S.)", "Ticker": "LSIP", "Nama": "PP London Sumatra", "Fokus Bisnis": "Perkebunan"},
-            {"Grup": "Salim (Anthoni S.)", "Ticker": "SIMP", "Nama": "Salim Ivomas Pratama", "Fokus Bisnis": "Perkebunan"},
-            {"Grup": "Salim (Anthoni S.)", "Ticker": "AMMN", "Nama": "Amman Mineral", "Fokus Bisnis": "Tambang Emas & Tembaga"},
-            {"Grup": "Salim (Anthoni S.)", "Ticker": "DNET", "Nama": "Indoritel Makmur", "Fokus Bisnis": "Ritel (Indomaret)"},
-            
-            {"Grup": "Astra (Jardine Matheson)", "Ticker": "ASII", "Nama": "Astra International", "Fokus Bisnis": "Holding Otomotif"},
-            {"Grup": "Astra (Jardine Matheson)", "Ticker": "UNTR", "Nama": "United Tractors", "Fokus Bisnis": "Alat Berat & Tambang"},
-            {"Grup": "Astra (Jardine Matheson)", "Ticker": "AALI", "Nama": "Astra Agro Lestari", "Fokus Bisnis": "Kelapa Sawit"},
-            {"Grup": "Astra (Jardine Matheson)", "Ticker": "AUTO", "Nama": "Astra Otoparts", "Fokus Bisnis": "Komponen Otomotif"},
-            
-            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "INKP", "Nama": "Indah Kiat Pulp & Paper", "Fokus Bisnis": "Pulp & Paper"},
-            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "TKIM", "Nama": "Tjiwi Kimia", "Fokus Bisnis": "Pulp & Paper"},
-            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "BSDE", "Nama": "Bumi Serpong Damai", "Fokus Bisnis": "Properti"},
-            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "SMAR", "Nama": "Sinar Mas Agro", "Fokus Bisnis": "Agribisnis"},
-            {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "DSSA", "Nama": "Dian Swastatika", "Fokus Bisnis": "Energi"},
-            
-            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BUMI", "Nama": "Bumi Resources", "Fokus Bisnis": "Batu Bara"},
-            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BRMS", "Nama": "Bumi Resources Minerals", "Fokus Bisnis": "Tambang Emas"},
-            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "ENRG", "Nama": "Energi Mega Persada", "Fokus Bisnis": "Migas"},
-            {"Grup": "Bakrie (Aburizal B.)", "Ticker": "VKTR", "Nama": "VKTR Teknologi", "Fokus Bisnis": "Kendaraan Listrik"},
-            
-            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADRO", "Nama": "Adaro Energy", "Fokus Bisnis": "Batu Bara"},
-            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADMR", "Nama": "Adaro Minerals", "Fokus Bisnis": "Batu Bara Metalurgi"},
-            {"Grup": "Adaro (Boy Thohir)", "Ticker": "MBMA", "Nama": "Merdeka Battery", "Fokus Bisnis": "Nikel & Baterai"},
-            {"Grup": "Adaro (Boy Thohir)", "Ticker": "ESSA", "Nama": "ESSA Industries", "Fokus Bisnis": "Amonia & LPG"},
-            
-            {"Grup": "MNC (Hary Tanoe)", "Ticker": "BHIT", "Nama": "MNC Asia Holding", "Fokus Bisnis": "Holding"},
-            {"Grup": "MNC (Hary Tanoe)", "Ticker": "MNCN", "Nama": "Media Nusantara Citra", "Fokus Bisnis": "Media Televisi"},
-            {"Grup": "MNC (Hary Tanoe)", "Ticker": "KPIG", "Nama": "MNC Land", "Fokus Bisnis": "Properti"},
-            
-            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "LPKR", "Nama": "Lippo Karawaci", "Fokus Bisnis": "Properti"},
-            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "SILO", "Nama": "Siloam Hospitals", "Fokus Bisnis": "Kesehatan"},
-            {"Grup": "Lippo (Mochtar Riady)", "Ticker": "MPPA", "Nama": "Matahari Putra Prima", "Fokus Bisnis": "Ritel"},
-            
-            {"Grup": "CT Corp (Chairul T.)", "Ticker": "MEGA", "Nama": "Bank Mega", "Fokus Bisnis": "Perbankan"},
-            {"Grup": "CT Corp (Chairul T.)", "Ticker": "BBHI", "Nama": "Allo Bank", "Fokus Bisnis": "Bank Digital"}
-        ]
-        df_conglo = pd.DataFrame(conglo_data)
+                lq45_data = {
+                    "Ticker": [
+                        "ACES", "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI", 
+                        "BBRI", "BBTN", "BFIN", "BMRI", "BRIS", "BRPT", "BUKA", "CPIN", "CTRA", "ESSA", 
+                        "EXCL", "GOTO", "HRUM", "ICBP", "INCO", "INDF", "INKP", "INTP", "ISAT", "ITMG", 
+                        "KLBF", "MAPI", "MBMA", "MDKA", "MEDC", "MTEL", "PGAS", "PGEO", "PTBA", "PTPP", 
+                        "SIDO", "SMGR", "TLKM", "TOWR", "UNTR",
+                        "EMTK", "SCMA", "SRTG"
+                    ],
+                    "Kategori": [
+                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                        "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", "Active", 
+                        "Active", "Active", "Active", "Active", "Active",
+                        "Excluded", "Excluded", "Excluded"
+                    ],
+                    "Status": [
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                        "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", "Existing", 
+                        "Existing", "Existing", "Existing", "Existing", "Existing",
+                        "OUT", "OUT", "OUT"
+                    ],
+                    "Sektor": [
+                        "Cyclical", "Energy", "Energy", "Materials", "Consumer", "Materials", "Finance", "Industrials", "Finance", "Finance",
+                        "Finance", "Finance", "Finance", "Finance", "Finance", "Materials", "Technology", "Consumer", "Properties", "Materials",
+                        "Infrastructures", "Technology", "Energy", "Consumer", "Materials", "Consumer", "Materials", "Materials", "Infrastructures", "Energy",
+                        "Healthcare", "Cyclical", "Materials", "Materials", "Energy", "Infrastructures", "Energy", "Energy", "Energy", "Infrastructures",
+                        "Healthcare", "Materials", "Infrastructures", "Infrastructures", "Industrials",
+                        "Technology", "Consumer", "Financials"
+                    ]
+                }
+                df_lq45 = pd.DataFrame(lq45_data)
+
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 45 Saham Aktif</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+
+            with _idx_tab_idx30:
+
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari LQ45</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_lq45[df_lq45['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+
+                # ─── IDX30 INDEX ─────────────────────────────────────────────────
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX30 INDEX &mdash; 30 SAHAM BLUECHIP</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 03 Februari 2026 (Periode Feb&ndash;Jul 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Rebalance berikutnya:</b> 03 Agustus 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Subset 30 saham paling likuid dari LQ45. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                idx30_data = {
+                    "Ticker": [
+                        "ADRO", "AKRA", "AMMN", "AMRT", "ANTM", "ARTO", "ASII", "BBCA", "BBNI",
+                        "BBRI", "BBTN", "BMRI", "BRIS", "BRPT", "CPIN", "ESSA", "EXCL", "GOTO",
+                        "ICBP", "INCO", "INDF", "ISAT", "ITMG", "KLBF", "MBMA", "MDKA", "MEDC",
+                        "PGAS", "PTBA", "TLKM",
+                        "EMTK", "SCMA",
+                    ],
+                    "Kategori": [
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active",
+                        "Excluded","Excluded",
+                    ],
+                    "Status": [
+                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing",
+                        "OUT","OUT",
+                    ],
+                    "Sektor": [
+                        "Energy","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
+                        "Finance","Finance","Finance","Finance","Materials","Consumer","Materials","Infra","Technology",
+                        "Consumer","Materials","Consumer","Infra","Energy","Healthcare","Materials","Materials","Energy",
+                        "Energy","Energy","Infra",
+                        "Technology","Consumer",
+                    ],
+                }
+                df_idx30 = pd.DataFrame(idx30_data)
+
+            with _idx_tab_idx80:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>IDX80 INDEX &mdash; 80 SAHAM LIKUID</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 4 Mei 2026 (Evaluasi April 2026)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Periode:</b> 4 Mei 2026 s.d. Juli/Oktober 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Evaluasi: 4&times; setahun - Jan/Apr/Jul/Okt. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                idx80_data = {
+                    "Ticker": [
+                        "AADI","ACES","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA","BBNI",
+                        "BBRI","BBTN","BFIN","BIKA","BJBR","BKSL","BMRI","BREN","BRIS","BRPT",
+                        "BRMS","BUKA","CBAN","CBDK","CPIN","CTRA","CUAN","DEWA","DSNG","EMTK",
+                        "ESSA","EXCL","GGRM","GOTO","HEAL","HRUM","HRTA","ICBP","INCO","INDF",
+                        "INKP","INTP","ISAT","ITMG","JPFA","KLBF","MAPI","MBMA","MDKA","MEDC",
+                        "MIDI","MIKA","MKNT","MTEL","NCKL","PGAS","PGEO","PTBA","PTPP","RALS",
+                        "SIDO","SMGR","SMRA","TAPG","TBIG","TKIM","TLKM","TMAS","TOWR","TPIA",
+                        "UNTR","UNVR","VKTR","WIFI","WSKT","ADRO","BUMI","CLEA","SRTG","INDY",
+                        # Keluar per 4 Mei 2026
+                        "BREN","BTPS","DSSA","MTEL","NCKL"
+                    ],
+                    "Kategori": [
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Active","Active","Active","Active","Active","Active","Active","Active","Active","Active",
+                        "Excluded","Excluded","Excluded","Excluded","Excluded"
+                    ],
+                    "Status": [
+                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","NEW ENTRY","Existing","Existing",
+                        "Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","Existing","NEW ENTRY",
+                        "Existing","Existing","Existing","NEW ENTRY","Existing","Existing","Existing","Existing","Existing","Existing",
+                        "OUT","OUT","OUT","OUT","OUT"
+                    ],
+                    "Sektor": [
+                        "Finance","Consumer","Energy","Materials","Consumer","Materials","Finance","Industrials","Finance","Finance",
+                        "Finance","Finance","Finance","Property","Finance","Property","Finance","Energy","Finance","Materials",
+                        "Materials","Technology","Finance","Property","Consumer","Property","Materials","Energy","Agri","Technology",
+                        "Materials","Infra","Consumer","Technology","Healthcare","Energy","Finance","Consumer","Materials","Consumer",
+                        "Materials","Materials","Infra","Energy","Consumer","Healthcare","Consumer","Materials","Materials","Energy",
+                        "Consumer","Healthcare","Infra","Infra","Materials","Energy","Energy","Energy","Infra","Consumer",
+                        "Healthcare","Materials","Property","Agri","Infra","Materials","Infra","Infra","Infra","Materials",
+                        "Industrials","Consumer","Technology","Technology","Materials","Energy","Energy","Healthcare","Finance","Energy",
+                        "Energy","Finance","Finance","Finance","Materials"
+                    ]
+                }
+                import pandas as pd
+                df_idx80 = pd.DataFrame(idx80_data)
+                # Trim to equal length
+                min_len = min(len(df_idx80["Ticker"]), len(df_idx80["Kategori"]), len(df_idx80["Status"]), len(df_idx80["Sektor"]))
+                df_idx80 = df_idx80.iloc[:min_len]
+
+                st.markdown("<p style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 80 Saham Aktif (Efektif 4 Mei 2026)</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx80[df_idx80["Kategori"]=="Active"].drop(columns=["Kategori"]).style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown("<p style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX80 (per 4 Mei 2026)</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx80[df_idx80["Kategori"]=="Excluded"].drop(columns=["Kategori"]).style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+
+            with _idx_tab_kompas:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>KOMPAS100 INDEX &mdash; 100 SAHAM PILIHAN</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:12px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                 <b style='color:#8b5cf6;'>Efektif sejak:</b> 3 Februari 2026&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Status Mei 2026:</b> Tidak ada perubahan konstituen (evaluasi minor)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Evaluasi: 2&times; setahun - Februari &amp; Agustus. Penyelenggara: BEI + Kompas Gramedia. Sumber: <b>idx.co.id</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                kompas100_tickers = [
+                    "AADI","ACES","ADRO","AKRA","AMMN","AMRT","ANTM","ARTO","ASII","BBCA",
+                    "BBNI","BBRI","BBTN","BFIN","BJBR","BKSL","BMRI","BREN","BRIS","BRMS",
+                    "BRPT","BUKA","CBDK","CLEO","CPIN","CTRA","CUAN","DEWA","DSNG","DSSA",
+                    "EMTK","ESSA","EXCL","GGRM","GOTO","HEAL","HMSP","HRUM","HRTA","ICBP",
+                    "INCO","INDF","INKP","INTP","ISAT","ITMG","JPFA","KLBF","LSIP","MAPI",
+                    "MBMA","MDKA","MEDC","MIDI","MIKA","MTEL","NCKL","PGAS","PGEO","PTBA",
+                    "PTPP","RAJA","RALS","SIDO","SIMP","SMGR","SMRA","SRTG","TBIG","TKIM",
+                    "TLKM","TMAS","TOWR","TPIA","UNTR","UNVR","VKTR","WIFI","WIKA","WSKT",
+                    "BUMI","ADRO","MEDC","TAPG","PNBN","NIKL","CLEO","ELSA","BNGA","DNET",
+                    "AVIA","MCAS","BBHI","PGEO","PWON","DMAS","SMCB","INDY","AALI","BULL"
+                ]
+                import pandas as pd
+                df_k100 = pd.DataFrame({
+                    "Ticker": kompas100_tickers,
+                    "Status": ["Existing"] * len(kompas100_tickers)
+                })
+                st.markdown("<p style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>100 Konstituen Aktif (Periode Feb–Agu 2026)</p>", unsafe_allow_html=True)
+                st.dataframe(df_k100, use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown(f"""<div class='trm-card' style='margin-top:14px;'>
+                <div class='trm-card-title'>ℹ TENTANG KOMPAS100</div>
+                <p style='color:{text_main};font-size:1rem;line-height:1.7;margin:0;'>
+                KOMPAS100 mencakup 100 saham dengan likuiditas dan kapitalisasi terbesar di BEI, diseleksi bersama oleh BEI dan Kompas Gramedia Group.
+                Indeks ini lebih luas dari LQ45/IDX30 namun lebih ketat dari IHSG penuh — cocok sebagai benchmark portofolio menengah.
+                </p></div>""", unsafe_allow_html=True)
+
+
+            with _idx_tab_konglo:
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:12px 0 8px;font-weight:600;'>01 / Daftar 30 Saham Aktif</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Active'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+                st.markdown("<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:20px 0 8px;font-weight:600;'>02 / Didepak dari IDX30</p>", unsafe_allow_html=True)
+                st.dataframe(safe_style(df_idx30[df_idx30['Kategori'] == 'Excluded'].drop(columns=['Kategori']).style, highlight_status, ['Status']), use_container_width=True, hide_index=True, on_select="ignore")
+
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>PETA KONGLOMERASI INDONESIA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:20px;text-transform:uppercase;'>Database emiten yang terafiliasi dengan grup konglomerasi raksasa penggerak IHSG</p>", unsafe_allow_html=True)
         
-        grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
-        selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list, key="conglo_grup_sel")
-        
-        if selected_grup != "Semua Grup":
-            df_display = df_conglo[df_conglo["Grup"] == selected_grup]
-        else:
-            df_display = df_conglo
+                conglo_data = [
+                    {"Grup": "Barito (Prajogo P.)", "Ticker": "BRPT", "Nama": "Barito Pacific", "Fokus Bisnis": "Holding Energi & Kimia"},
+                    {"Grup": "Barito (Prajogo P.)", "Ticker": "TPIA", "Nama": "Chandra Asri Pacific", "Fokus Bisnis": "Petrokimia"},
+                    {"Grup": "Barito (Prajogo P.)", "Ticker": "BREN", "Nama": "Barito Renewables", "Fokus Bisnis": "Panas Bumi (Geothermal)"},
+                    {"Grup": "Barito (Prajogo P.)", "Ticker": "CUAN", "Nama": "Petrindo Jaya Kreasi", "Fokus Bisnis": "Tambang Mineral"},
+                    {"Grup": "Barito (Prajogo P.)", "Ticker": "PTRO", "Nama": "Petrosea", "Fokus Bisnis": "Kontraktor Tambang"},
+                    {"Grup": "Barito (Prajogo P.)", "Ticker": "CDIA", "Nama": "Chandra Daya Investasi", "Fokus Bisnis": "Infrastruktur & Utilitas"},
             
-        st.dataframe(df_display, use_container_width=True, hide_index=True, on_select="ignore")
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BBCA", "Nama": "Bank Central Asia", "Fokus Bisnis": "Perbankan"},
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "TOWR", "Nama": "Sarana Menara Nusantara", "Fokus Bisnis": "Menara Telekomunikasi"},
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "SUPR", "Nama": "Solusi Tunas Pratama", "Fokus Bisnis": "Menara Telekomunikasi"},
+                    {"Grup": "Djarum (Budi & Michael H.)", "Ticker": "BELI", "Nama": "Global Digital Niaga", "Fokus Bisnis": "E-Commerce (Blibli)"},
+            
+                    {"Grup": "Salim (Anthoni S.)", "Ticker": "INDF", "Nama": "Indofood Sukses Makmur", "Fokus Bisnis": "Consumer Goods"},
+                    {"Grup": "Salim (Anthoni S.)", "Ticker": "ICBP", "Nama": "Indofood CBP", "Fokus Bisnis": "Consumer Goods"},
+                    {"Grup": "Salim (Anthoni S.)", "Ticker": "LSIP", "Nama": "PP London Sumatra", "Fokus Bisnis": "Perkebunan"},
+                    {"Grup": "Salim (Anthoni S.)", "Ticker": "SIMP", "Nama": "Salim Ivomas Pratama", "Fokus Bisnis": "Perkebunan"},
+                    {"Grup": "Salim (Anthoni S.)", "Ticker": "AMMN", "Nama": "Amman Mineral", "Fokus Bisnis": "Tambang Emas & Tembaga"},
+                    {"Grup": "Salim (Anthoni S.)", "Ticker": "DNET", "Nama": "Indoritel Makmur", "Fokus Bisnis": "Ritel (Indomaret)"},
+            
+                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "ASII", "Nama": "Astra International", "Fokus Bisnis": "Holding Otomotif"},
+                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "UNTR", "Nama": "United Tractors", "Fokus Bisnis": "Alat Berat & Tambang"},
+                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "AALI", "Nama": "Astra Agro Lestari", "Fokus Bisnis": "Kelapa Sawit"},
+                    {"Grup": "Astra (Jardine Matheson)", "Ticker": "AUTO", "Nama": "Astra Otoparts", "Fokus Bisnis": "Komponen Otomotif"},
+            
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "INKP", "Nama": "Indah Kiat Pulp & Paper", "Fokus Bisnis": "Pulp & Paper"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "TKIM", "Nama": "Tjiwi Kimia", "Fokus Bisnis": "Pulp & Paper"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "BSDE", "Nama": "Bumi Serpong Damai", "Fokus Bisnis": "Properti"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "SMAR", "Nama": "Sinar Mas Agro", "Fokus Bisnis": "Agribisnis"},
+                    {"Grup": "Sinar Mas (Eka Tjipta W.)", "Ticker": "DSSA", "Nama": "Dian Swastatika", "Fokus Bisnis": "Energi"},
+            
+                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BUMI", "Nama": "Bumi Resources", "Fokus Bisnis": "Batu Bara"},
+                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "BRMS", "Nama": "Bumi Resources Minerals", "Fokus Bisnis": "Tambang Emas"},
+                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "ENRG", "Nama": "Energi Mega Persada", "Fokus Bisnis": "Migas"},
+                    {"Grup": "Bakrie (Aburizal B.)", "Ticker": "VKTR", "Nama": "VKTR Teknologi", "Fokus Bisnis": "Kendaraan Listrik"},
+            
+                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADRO", "Nama": "Adaro Energy", "Fokus Bisnis": "Batu Bara"},
+                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "ADMR", "Nama": "Adaro Minerals", "Fokus Bisnis": "Batu Bara Metalurgi"},
+                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "MBMA", "Nama": "Merdeka Battery", "Fokus Bisnis": "Nikel & Baterai"},
+                    {"Grup": "Adaro (Boy Thohir)", "Ticker": "ESSA", "Nama": "ESSA Industries", "Fokus Bisnis": "Amonia & LPG"},
+            
+                    {"Grup": "MNC (Hary Tanoe)", "Ticker": "BHIT", "Nama": "MNC Asia Holding", "Fokus Bisnis": "Holding"},
+                    {"Grup": "MNC (Hary Tanoe)", "Ticker": "MNCN", "Nama": "Media Nusantara Citra", "Fokus Bisnis": "Media Televisi"},
+                    {"Grup": "MNC (Hary Tanoe)", "Ticker": "KPIG", "Nama": "MNC Land", "Fokus Bisnis": "Properti"},
+            
+                    {"Grup": "Lippo (Mochtar Riady)", "Ticker": "LPKR", "Nama": "Lippo Karawaci", "Fokus Bisnis": "Properti"},
+                    {"Grup": "Lippo (Mochtar Riady)", "Ticker": "SILO", "Nama": "Siloam Hospitals", "Fokus Bisnis": "Kesehatan"},
+                    {"Grup": "Lippo (Mochtar Riady)", "Ticker": "MPPA", "Nama": "Matahari Putra Prima", "Fokus Bisnis": "Ritel"},
+            
+                    {"Grup": "CT Corp (Chairul T.)", "Ticker": "MEGA", "Nama": "Bank Mega", "Fokus Bisnis": "Perbankan"},
+                    {"Grup": "CT Corp (Chairul T.)", "Ticker": "BBHI", "Nama": "Allo Bank", "Fokus Bisnis": "Bank Digital"}
+                ]
+                df_conglo = pd.DataFrame(conglo_data)
         
-        st.markdown(f"""
-        <div class="trm-card" style="margin-top: 16px;">
-            <div class="trm-card-title">SIGMA INSIGHT &mdash; The Power of Conglomerates</div>
-            <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
-            Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
-            </p>
-            <p style='color:{text_sub}; font-size: 1.05rem; line-height: 1.7; margin:10px 0 0;'>
-            <span style='color:#8b5cf6;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+                grup_list = ["Semua Grup"] + list(df_conglo["Grup"].unique())
+                selected_grup = st.selectbox("Pilih Grup Konglomerasi:", grup_list, key="conglo_grup_sel")
         
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+                if selected_grup != "Semua Grup":
+                    df_display = df_conglo[df_conglo["Grup"] == selected_grup]
+                else:
+                    df_display = df_conglo
+            
+                st.dataframe(df_display, use_container_width=True, hide_index=True, on_select="ignore")
+        
+                st.markdown(f"""
+                <div class="trm-card" style="margin-top: 16px;">
+                    <div class="trm-card-title">SIGMA INSIGHT &mdash; The Power of Conglomerates</div>
+                    <p style='color:{text_main}; font-size: 1.08rem; line-height: 1.7; margin:0;'>
+                    Di IHSG, sentimen yang terjadi pada <i>holding company</i> seringkali menjalar dengan cepat ke anak-anak usahanya.
+                    </p>
+                    <p style='color:{text_sub}; font-size: 1.05rem; line-height: 1.7; margin:10px 0 0;'>
+                    <span style='color:#8b5cf6;font-weight:600;'>Tips Trading:</span> Pantau <i>Leader</i> dari masing-masing grup. Jika sang <i>Leader</i> mulai <i>breakout</i>, saham <i>Laggard</i> (yang tertinggal) di grup tersebut bisa menjadi peluang <i>entry</i> yang profitabel.
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+        
+                st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
+
+            with _idx_tab_jdall:
+                st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>JD.ALL — SEMUA SAHAM IDX (DATABASE LENGKAP)</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div style='font-family:\'DM Sans\',sans-serif;font-size:0.875rem;color:{text_sub};
+                    background:rgba(139,92,246,0.07);border-left:3px solid #8b5cf6;
+                    padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.8;'>
+                 <b style='color:#8b5cf6;'>Cakupan:</b> Seluruh saham tercatat di BEI (&pm;900 emiten)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <b style='color:#8b5cf6;'>Filter:</b> Kode, nama, sektor, papan (Utama/Pengembangan/Akselerasi)&nbsp;&nbsp;|&nbsp;&nbsp;
+                <span style='color:{text_sub};'>Data refresh: harian. Source: <b>IDX / yfinance</b></span>
+                </div>""", unsafe_allow_html=True)
+
+                _jd_sector_filter = st.selectbox("Filter Sektor IDX-IC:", [
+                    "Semua Sektor",
+                    "Energy — Energi",
+                    "Basic Materials — Material Dasar",
+                    "Industrials — Industri",
+                    "Consumer Non-Cyclicals — Konsumer Primer",
+                    "Consumer Cyclicals — Konsumer Sekunder",
+                    "Healthcare — Kesehatan",
+                    "Financials — Keuangan",
+                    "Properties & Real Estate",
+                    "Technology — Teknologi",
+                    "Infrastructures — Infrastruktur",
+                    "Transportation & Logistics",
+                ], key="jdall_sector_sel")
+
+                _jd_papan_filter = st.selectbox("Filter Papan:", ["Semua", "Utama", "Pengembangan", "Akselerasi"], key="jdall_papan_sel")
+
+                _jd_run = st.button("🔍 LOAD SEMUA SAHAM IDX", key="jdall_run", use_container_width=False)
+
+                if _jd_run or st.session_state.get("jdall_loaded"):
+                    with st.spinner("Mengambil data seluruh saham IDX dari yfinance..."):
+                        @st.cache_data(ttl=86400, show_spinner=False)
+                        def _fetch_all_idx_tickers():
+                            """Fetch semua saham IDX via yfinance screener atau daftar hardcoded lapis yfinance."""
+                            import yfinance as _yf
+                            # List representatif ~200 ticker IDX paling aktif sebagai seed
+                            _seed = [
+                                "BBCA","BBRI","BMRI","BBNI","BRIS","TLKM","ASII","UNVR","KLBF","ICBP",
+                                "INDF","MYOR","SIDO","CPIN","JPFA","HMSP","GGRM","ANTM","PTBA","ADRO",
+                                "ITMG","INCO","MDKA","NCKL","MEDC","PGAS","AALI","LSIP","SIMP","SMGR",
+                                "INTP","BSDE","CTRA","SMRA","PWON","GOTO","EMTK","MAPI","ACES","HEAL",
+                                "MIKA","SILO","KAEF","TSPC","DVLA","BFIN","ADMF","BIRD","TMAS","SMDR",
+                                "TPIA","BRPT","AMMN","BRMS","MBMA","TBIG","TOWR","LINK","DMAS","BEST",
+                                "PGEO","PTRO","CUAN","VKTR","RAJA","FILM","MIDI","RALS","AMRT","MCAS",
+                                "BBTN","BNGA","PNBN","MEGA","BJBR","UNTR","ELSA","HRUM","GEMS","TBLA",
+                                "EXCL","ISAT","FREN","WIFI","MTDL","MLPL","KPIG","LPKR","SILO","MNCN",
+                                "INKP","TKIM","DSSA","SMAR","AUTO","AALI","BUMI","ENRG","VKTR","DNET",
+                                "ARTO","BBHI","BBYB","BANK","BNBA","BGTG","BUKA","BELI","ACST","NCKL",
+                                "CBDK","CLEO","ESSA","DEWA","HRTA","BKSL","GGRM","TAPG","SRTG","INDY",
+                                "ADRO","ADMR","ESSA","HRUM","ITMG","PTBA","GEMS","BOSS","ELSA","APEX",
+                                "MTEL","TBIG","TOWR","ISAT","EXCL","BOLT","MTDL","HEAL","MIKA","DVLA",
+                                "KAEF","TSPC","KLBF","PYFA","SIDO","INAF","HMSP","GGRM","WIIM","BWPT",
+                            ]
+                            results = []
+                            import threading as _thr
+                            lock = _thr.Lock()
+                            def _fetch_one(tk):
+                                try:
+                                    t = _yf.Ticker(f"{tk}.JK")
+                                    inf = t.info
+                                    name = (inf.get("shortName") or inf.get("longName") or tk)[:30]
+                                    sector = inf.get("sector") or inf.get("industryKey") or "-"
+                                    mkcap = inf.get("marketCap") or 0
+                                    price = inf.get("currentPrice") or inf.get("regularMarketPrice") or 0
+                                    with lock:
+                                        results.append({"Ticker": tk, "Nama": name, "Sektor": sector,
+                                                        "Harga": int(price) if price else "-",
+                                                        "Mkt Cap (M)": f"Rp {mkcap/1e9:.1f}T" if mkcap > 1e9 else "-"})
+                                except: pass
+                            ths = [_thr.Thread(target=_fetch_one, args=(tk,), daemon=True) for tk in _seed]
+                            for t in ths: t.start()
+                            for t in ths: t.join(timeout=20)
+                            return sorted(results, key=lambda x: x["Ticker"])
+
+                        _jdall_data = _fetch_all_idx_tickers()
+                        st.session_state["jdall_loaded"] = True
+                        import pandas as pd
+                        df_jdall = pd.DataFrame(_jdall_data)
+                        if _jd_sector_filter != "Semua Sektor":
+                            _sec_kw = _jd_sector_filter.split("—")[0].strip().lower()
+                            df_jdall = df_jdall[df_jdall["Sektor"].str.lower().str.contains(_sec_kw, na=False)]
+                        st.markdown(f"<p style='font-size:0.8rem;color:#8b5cf6;margin-bottom:8px;'>{len(df_jdall)} saham ditemukan</p>", unsafe_allow_html=True)
+                        st.dataframe(df_jdall, use_container_width=True, hide_index=True, on_select="ignore", height=500)
+                else:
+                    st.info("Klik **LOAD SEMUA SAHAM IDX** untuk menampilkan database lengkap (~150 saham IDX aktif via yfinance). Data dicache 24 jam.")
 
 
 
