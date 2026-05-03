@@ -11043,8 +11043,10 @@ if current_view == "dashboard":
 
         return result
 
-    tab_idxmap, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_idxmap, tab_macro, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  🌐 MARKET MAP  ",
+        "  📰 NEWS & CALENDAR  ",
+        "  📊 INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🧮 CALCULATOR  ",
         "  📖 PANDUAN  ",
@@ -11292,10 +11294,6 @@ if current_view == "dashboard":
             "  📅 Kalender  ",
             "  📊 Economic Data  ",
         ])
-
-    # Alias sub-tabs ke variabel lama agar seluruh kode di bawah tidak perlu diubah
-    tab_macro    = _mm_subtab_news   # NEWS & CALENDAR → sub-tab News
-    tab_rotation = _mm_subtab_globe  # INDEX & SECTOR ROTATION → sub-tab Globe
 
     # ── Economic Data sub-tab (placeholder) ────────────────────────────────
     with _mm_subtab_eco:
@@ -12345,6 +12343,9 @@ table{{margin-bottom:0!important;}}
         components.html(_idx_globe_html, height=1100, scrolling=False)
 
     with tab_macro:
+        st.info("📌 News & Kalender sekarang ada di dalam tab **🌐 MARKET MAP** → sub-tab **📰 News** dan **📅 Kalender**")
+
+    with _mm_subtab_news:
         # ─────────────────────────────────────────────────────────
         # NEWS AND CALENDAR TAB — Market Brief, News, Calendar
         # ─────────────────────────────────────────────────────────
@@ -12987,6 +12988,8 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
             </div>
             """, unsafe_allow_html=True)
 
+        # INDEX REBALANCING & CORPORATE ACTION → pindah ke sub-tab Kalender
+    with _mm_subtab_cal:
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
         # Tanggal > 1 bulan lalu dihilangkan secara otomatis
         # ─────────────────────────────────────────────────────────
@@ -13772,6 +13775,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
+    # FED RATE MONITOR & ECONOMIC CALENDAR kembali ke tab_macro (News sub-tab)
+    with tab_macro:
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ─────────────────────────────────────────────────────────
