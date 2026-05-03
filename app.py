@@ -8306,8 +8306,7 @@ body{{
 
             <ul class="feats">
                 <li><span class="fdot"></span>News &amp; Calendar &mdash; Live Market Pulse</li>
-                <li><span class="fdot"></span>Market Data &mdash; Bond Yield, Dividend &amp; Shareholder</li>
-                <li><span class="fdot"></span>Rate Monitor &mdash; FED Rate Monitor &amp; BI Rate</li>
+                <li><span class="fdot"></span>Market Data &mdash; Rate Monitor, Bond Yield, Dividend &amp; Shareholder</li>
                 <li><span class="fdot"></span>Index &amp; Sector Rotation &mdash; IDX Heatmap</li>
                 <li><span class="fdot"></span> Alpha Screener &mdash; AI Stock Insight, Daily, Weekly, BSJP &amp; Fundamental Screener</li>
             </ul>
@@ -11044,10 +11043,9 @@ if current_view == "dashboard":
 
         return result
 
-    tab_idxmap, tab_marketdata, tab_macro, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
+    tab_idxmap, tab_marketdata, tab_rotation, tab_alpha_screener, tab_kalkulator, tab_panduan = st.tabs([
         "  🌐 MARKET MAP  ",
         "  📈 MARKET DATA  ",
-        "  📡 RATE MONITOR  ",
         "  📊 INDEX & SECTOR ROTATION  ",
         "  ⚡ ALPHA SCREENER  ",
         "  🔧 TOOLS  ",
@@ -11290,22 +11288,11 @@ if current_view == "dashboard":
 
     with tab_idxmap:
         # ── Sub-tab Market Map ──────────────────────────────────────────────
-        _mm_subtab_globe, _mm_subtab_news, _mm_subtab_cal, _mm_subtab_eco = st.tabs([
+        _mm_subtab_globe, _mm_subtab_news, _mm_subtab_cal = st.tabs([
             "  🌐 Index, Komoditas & Forex  ",
             "  📰 News  ",
             "  📅 Kalender  ",
-            "  📡 RATE MONITOR  ",
         ])
-
-    # ── Rate Monitor sub-tab (placeholder) ────────────────────────────────
-    with _mm_subtab_eco:
-        st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-        st.markdown(
-            "<div class='trm-section'><div class='trm-section-line'></div>"
-            "<span class='trm-section-label'>📡 RATE MONITOR</span>"
-            "<div class='trm-section-line'></div></div>",
-            unsafe_allow_html=True)
-        st.caption("Data suku bunga & kebijakan moneter: FED Rate Monitor, BI Rate. Data BI Rate — Coming Soon.")
 
     with _mm_subtab_cal:
         st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
@@ -12346,9 +12333,10 @@ table{{margin-bottom:0!important;}}
 
     with tab_marketdata:
         # ════════════════════════════════════════════════════════════════
-        # MARKET DATA — Bond Yield, Dividend & Shareholder
+        # MARKET DATA — Rate Monitor · Bond Yield · Dividend · Shareholder
         # ════════════════════════════════════════════════════════════════
-        _md_subtab_yield, _md_subtab_shareholder = st.tabs([
+        _md_subtab_ratemon, _md_subtab_yield, _md_subtab_shareholder = st.tabs([
+            "  📡 RATE MONITOR  ",
             "  📈 Yield & Dividend  ",
             "  👥 SHAREHOLDER  ",
         ])
@@ -12357,27 +12345,15 @@ table{{margin-bottom:0!important;}}
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>📈 BOND YIELD & DIVIDEND</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
-            # ── BOND YIELD ───────────────────────────────────────────────
+            # ── BOND YIELD ─────────────────────────────────────────────
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏛️ BOND YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.info("🚧 **Bond Yield Monitor** — Data yield obligasi pemerintah IDX (SBN/SUN/ORI) dan US Treasury (2Y/5Y/10Y/30Y) akan hadir di sini. *Coming Soon.*")
-
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-            # ── DIVIDEND ─────────────────────────────────────────────────
+            # ── DIVIDEND ───────────────────────────────────────────────
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>💰 DIVIDEND DATA</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.info("🚧 **Dividend Tracker** — Data dividen emiten IDX: cum date, ex-date, yield dividen, dan riwayat pembagian dividen per saham akan hadir di sini. *Coming Soon.*")
-
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
-
-        with _md_subtab_shareholder:
-
-            # ── SHAREHOLDER TRACKER ─────────────────────────────────────────
-            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>👥 SHAREHOLDER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            # ── Reuse shareholder content dari alpha_tab_shareholder ──
-            st.info("📌 Shareholder Tracker & Screening tersedia di tab **⚡ ALPHA SCREENER** → sub-tab **👥 SHAREHOLDER**. Fitur ini akan dimigrasikan ke MARKET DATA secara penuh dalam update berikutnya.")
-
-    with tab_macro:
-        st.info("📌 News & Kalender sekarang ada di dalam tab **🌐 MARKET MAP** → sub-tab **📰 News** dan **📅 Kalender**. Rate Monitor (FED Monitor, BI Rate) ada di sub-tab **📡 RATE MONITOR**.")
 
     with _mm_subtab_news:
         # ─────────────────────────────────────────────────────────
@@ -13809,8 +13785,8 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
-    # FED RATE MONITOR + BI RATE → masuk Rate Monitor sub-tab
-    with _mm_subtab_eco:
+    # FED RATE MONITOR + BI RATE → masuk Rate Monitor sub-tab di Market Data
+    with _md_subtab_ratemon:
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ─────────────────────────────────────────────────────────
@@ -14263,12 +14239,9 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # ─────────────────────────────────────────────────────────
-        # BI RATE MONITOR — Coming Soon
-        # ─────────────────────────────────────────────────────────
+        # ── BI RATE MONITOR — Coming Soon ─────────────────────────
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.info("🚧 **BI Rate Monitor** — Data suku bunga Bank Indonesia & jadwal RDG BI akan hadir di sini. *Coming Soon.*")
-
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ─────────────────────────────────────────────────────────
@@ -16383,17 +16356,19 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_shareholder, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_fundamental, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
             "  📅 DAILY PLAN  ",
             "  📆 WEEKLY PLAN  ",
             "  🌙 BELI SORE JUAL PAGI  ",
             "  📊 FUNDAMENTAL SCREENER  ",
             "  🏦 BROKER SUMMARY  ",
-            "  👥 SHAREHOLDER  ",
             "  📋 ANALISA IPO  ",
             "  🏆 TRACK RECORD  ",
         ])
+
+        # Shareholder dipindah ke tab MARKET DATA → _md_subtab_shareholder
+        alpha_tab_shareholder = _md_subtab_shareholder
 
         with alpha_tab_shareholder:
 
@@ -27428,7 +27403,7 @@ body{{background:transparent;font-family:'IBM Plex Mono',monospace;color:{_TXT};
 
 <div class="feat">
 <div class="feat-title"> Apa itu Tab Tools?</div>
-<div class="stext">Tab Tools adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual - masukkan angka, hasilnya otomatis.</div>
+<div class="stext">Tab Kalkulator adalah toolkit finansial untuk trader IDX. Semua kalkulasi sudah memperhitungkan <span class="hi">konvensi IDX: 1 lot = 100 lembar saham</span>, biaya broker (beli + jual), dan pajak penjualan. Tidak perlu hitung manual - masukkan angka, hasilnya otomatis.</div>
 </div>
 
 <div class="sec-head" style="margin-top:24px;"><div class="sec-icon"></div>
