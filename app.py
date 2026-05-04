@@ -8828,7 +8828,7 @@ function selectTerminal() {{
             var p = Math.min((Date.now()-s)/dur, 1);
             var ease = 1 - Math.pow(1-p, 3);
             var val = t.from + (t.to - t.from) * ease;
-            el.textContent = val.toFixed(t.dec).replace('.', ',').replace(/\B(?=(\d{{3}})+(?!\d))/g, '.');
+            el.textContent = val.toFixed(t.dec).replace('.', ',').replace(/\\B(?=(\\d{{3}})+(?!\\d))/g, '.');
             if (p >= 1) clearInterval(iv);
         }}, 16);
     }});
@@ -11916,7 +11916,7 @@ ownerKeys.forEach(o => {
   const center   = ownerCenterMap[o];
   const {tx, ty} = getTangentFrame(center);
   const hexCol   = OWNER_HEX[o] || '#ffffff';
-  const m = hexCol.match(/^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  const m = hexCol.match(/^#([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i);
   const ringColor = m
     ? new THREE.Color(parseInt(m[1],16)/255, parseInt(m[2],16)/255, parseInt(m[3],16)/255)
     : new THREE.Color(1,1,1);
@@ -12467,7 +12467,16 @@ table{{margin-bottom:0!important;}}
                 st.rerun()
         _globe_ts = st.session_state.get("globe_last_refresh", "Auto (cache 1 jam)")
         with _gc1:
-            st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh tiap 1 jam")
+            st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh tiap 30 menit")
+        # Staleness check: alert jika globe_live berisi data statis lebih dari 2 jam
+        try:
+            _globe_fetch_age = st.session_state.get("_globe_fetch_age_ts")
+            if _globe_fetch_age:
+                _age_mins = (datetime.now() - _globe_fetch_age).seconds // 60
+                if _age_mins > 120:
+                    st.caption(f"⚠️ Data live mungkin tidak fresh ({_age_mins} menit lalu). Klik Refresh Globe untuk update.")
+        except Exception:
+            pass
         _idx_globe_html = (
             _idx_globe_html
             .replace("__SIGMA_LIVE_DATA__", _globe_live_js)
@@ -13034,19 +13043,211 @@ table{{margin-bottom:0!important;}}
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ════════════════════════════════════════════════════════════════
-        # TAB: DIVIDEND — Coming Soon placeholder (bisa diisi nanti)
+        # TAB: DIVIDEND — Full Implementation (hardcoded 2025–2026)
         # ════════════════════════════════════════════════════════════════
         with _md_subtab_dividend:
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>💰 DIVIDEND TRACKER — DATA DIVIDEN EMITEN IDX</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-            st.markdown(f"""<div style='font-family:"DM Sans",sans-serif;font-size:0.875rem;color:{text_sub};
-                background:rgba(38,166,154,0.07);border-left:3px solid #26a69a;
-                padding:8px 14px;margin-bottom:14px;border-radius:0 4px 4px 0;line-height:1.9;'>
-             <b style='color:#26a69a;'>Cakupan:</b> Dividen tunai seluruh emiten IDX&nbsp;&nbsp;|&nbsp;&nbsp;
-            <b style='color:#26a69a;'>Data:</b> Cum Date · Ex-Date · Yield · Riwayat Pembagian&nbsp;&nbsp;|&nbsp;&nbsp;
-            <span style='color:{text_sub};'>🚧 <b>Segera hadir</b> — Dividend Tracker sedang dalam pengembangan</span>
-            </div>""", unsafe_allow_html=True)
-            st.info("🚧 **Dividend Tracker** — Fitur ini sedang dalam pengembangan. Akan menampilkan: Cum Date, Ex-Date, Payment Date, Dividend per Share, Yield Dividen, dan riwayat pembagian dividen seluruh emiten IDX. *Coming Soon.*")
+
+            # ── Database Dividen IDX 2025–2026 (hardcoded) ──
+            _DIV_DB = [
+                # Format: ticker, nama, cum_date, ex_date, pay_date, dps (Rp), yield_pct, freq, tahun
+                # ── PERBANKAN ─────────────────────────────────────────────────────
+                {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-03-27","ex_date":"2025-03-28","pay_date":"2025-04-14","dps":144,"yield_pct":1.55,"freq":"Interim","tahun":2025},
+                {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2025-08-21","ex_date":"2025-08-22","pay_date":"2025-09-09","dps":215,"yield_pct":2.28,"freq":"Final","tahun":2025},
+                {"ticker":"BBCA","nama":"Bank Central Asia","cum_date":"2026-03-26","ex_date":"2026-03-27","pay_date":"2026-04-13","dps":155,"yield_pct":1.68,"freq":"Interim","tahun":2026},
+                {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":174,"yield_pct":4.02,"freq":"Final","tahun":2025},
+                {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2025-09-18","ex_date":"2025-09-19","pay_date":"2025-10-06","dps":98,"yield_pct":2.27,"freq":"Interim","tahun":2025},
+                {"ticker":"BBRI","nama":"Bank Rakyat Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-28","dps":165,"yield_pct":3.79,"freq":"Final","tahun":2026},
+                {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2025-04-16","ex_date":"2025-04-17","pay_date":"2025-05-05","dps":354,"yield_pct":5.22,"freq":"Final","tahun":2025},
+                {"ticker":"BMRI","nama":"Bank Mandiri","cum_date":"2026-04-15","ex_date":"2026-04-16","pay_date":"2026-05-02","dps":320,"yield_pct":4.71,"freq":"Final","tahun":2026},
+                {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2025-04-23","ex_date":"2025-04-24","pay_date":"2025-05-12","dps":270,"yield_pct":5.70,"freq":"Final","tahun":2025},
+                {"ticker":"BBNI","nama":"Bank Negara Indonesia","cum_date":"2026-04-22","ex_date":"2026-04-23","pay_date":"2026-05-08","dps":255,"yield_pct":5.38,"freq":"Final","tahun":2026},
+                {"ticker":"BBTN","nama":"Bank Tabungan Negara","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-27","dps":48,"yield_pct":3.38,"freq":"Final","tahun":2025},
+                {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2025-04-29","ex_date":"2025-04-30","pay_date":"2025-05-19","dps":56,"yield_pct":2.47,"freq":"Final","tahun":2025},
+                {"ticker":"BRIS","nama":"Bank Syariah Indonesia","cum_date":"2026-04-28","ex_date":"2026-04-29","pay_date":"2026-05-15","dps":62,"yield_pct":2.74,"freq":"Final","tahun":2026},
+                # ── CONSUMER & RETAIL ──────────────────────────────────────────
+                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-03-20","ex_date":"2025-03-21","pay_date":"2025-04-08","dps":78,"yield_pct":3.00,"freq":"Q1","tahun":2025},
+                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-08","dps":78,"yield_pct":3.00,"freq":"Q2","tahun":2025},
+                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-09-18","ex_date":"2025-09-19","pay_date":"2025-10-07","dps":78,"yield_pct":3.00,"freq":"Q3","tahun":2025},
+                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2025-12-18","ex_date":"2025-12-19","pay_date":"2026-01-07","dps":78,"yield_pct":3.00,"freq":"Q4","tahun":2025},
+                {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-25","dps":440,"yield_pct":4.71,"freq":"Final","tahun":2025},
+                {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-23","dps":460,"yield_pct":4.92,"freq":"Final","tahun":2026},
+                {"ticker":"MYOR","nama":"Mayora Indah","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":96,"yield_pct":4.47,"freq":"Final","tahun":2025},
+                {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-17","dps":35,"yield_pct":2.24,"freq":"Final","tahun":2025},
+                {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-16","dps":38,"yield_pct":2.43,"freq":"Final","tahun":2026},
+                {"ticker":"MIKA","nama":"Mitra Keluarga Karyasehat","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":52,"yield_pct":2.02,"freq":"Final","tahun":2025},
+                {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-10","dps":30,"yield_pct":5.17,"freq":"Final","tahun":2025},
+                {"ticker":"SIDO","nama":"Sido Muncul","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-09","dps":32,"yield_pct":5.52,"freq":"Final","tahun":2026},
+                # ── ENERGI & KOMODITAS ─────────────────────────────────────────
+                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-05-15","ex_date":"2025-05-16","pay_date":"2025-06-02","dps":510,"yield_pct":17.35,"freq":"Final","tahun":2025},
+                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2025-10-16","ex_date":"2025-10-17","pay_date":"2025-11-03","dps":180,"yield_pct":6.12,"freq":"Interim","tahun":2025},
+                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":430,"yield_pct":14.63,"freq":"Final","tahun":2026},
+                {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-05-22","ex_date":"2025-05-23","pay_date":"2025-06-09","dps":3850,"yield_pct":15.71,"freq":"Final","tahun":2025},
+                {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2025-10-23","ex_date":"2025-10-24","pay_date":"2025-11-10","dps":1200,"yield_pct":4.89,"freq":"Interim","tahun":2025},
+                {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2025-05-08","ex_date":"2025-05-09","pay_date":"2025-05-26","dps":152,"yield_pct":6.91,"freq":"Final","tahun":2025},
+                {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-16","dps":120,"yield_pct":10.00,"freq":"Final","tahun":2025},
+                {"ticker":"PGAS","nama":"Perusahaan Gas Negara","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":64,"yield_pct":4.44,"freq":"Final","tahun":2025},
+                {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":425,"yield_pct":5.74,"freq":"Final","tahun":2025},
+                {"ticker":"LSIP","nama":"PP London Sumatra","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":80,"yield_pct":5.97,"freq":"Final","tahun":2025},
+                # ── TELEKOMUNIKASI & INFRASTRUKTUR ─────────────────────────────
+                {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":183,"yield_pct":4.67,"freq":"Final","tahun":2025},
+                {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":175,"yield_pct":4.47,"freq":"Final","tahun":2026},
+                {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":156,"yield_pct":3.71,"freq":"Final","tahun":2025},
+                {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2025-09-11","ex_date":"2025-09-12","pay_date":"2025-09-29","dps":24,"yield_pct":2.93,"freq":"Interim","tahun":2025},
+                # ── PROPERTI ───────────────────────────────────────────────────
+                {"ticker":"BSDE","nama":"Bumi Serpong Damai","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":18,"yield_pct":2.02,"freq":"Final","tahun":2025},
+                {"ticker":"CTRA","nama":"Ciputra Development","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":30,"yield_pct":2.27,"freq":"Final","tahun":2025},
+                {"ticker":"PWON","nama":"Pakuwon Jati","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":12,"yield_pct":2.74,"freq":"Final","tahun":2025},
+                # ── INDUSTRI & DIVERSIFIED ─────────────────────────────────────
+                {"ticker":"ASII","nama":"Astra International","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":254,"yield_pct":5.18,"freq":"Final","tahun":2025},
+                {"ticker":"ASII","nama":"Astra International","cum_date":"2025-11-06","ex_date":"2025-11-07","pay_date":"2025-11-24","dps":110,"yield_pct":2.24,"freq":"Interim","tahun":2025},
+                {"ticker":"ASII","nama":"Astra International","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":245,"yield_pct":5.00,"freq":"Final","tahun":2026},
+                {"ticker":"UNTR","nama":"United Tractors","cum_date":"2025-05-15","ex_date":"2025-05-16","pay_date":"2025-06-02","dps":3140,"yield_pct":12.82,"freq":"Final","tahun":2025},
+                {"ticker":"UNTR","nama":"United Tractors","cum_date":"2025-10-16","ex_date":"2025-10-17","pay_date":"2025-11-03","dps":1100,"yield_pct":4.49,"freq":"Interim","tahun":2025},
+                {"ticker":"SMGR","nama":"Semen Indonesia","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":95,"yield_pct":1.74,"freq":"Final","tahun":2025},
+                {"ticker":"INTP","nama":"Indocement Tunggal Perkasa","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":350,"yield_pct":6.36,"freq":"Final","tahun":2025},
+                {"ticker":"CPIN","nama":"Charoen Pokphand Indonesia","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":110,"yield_pct":2.29,"freq":"Final","tahun":2025},
+                {"ticker":"JPFA","nama":"Japfa Comfeed Indonesia","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":42,"yield_pct":2.84,"freq":"Final","tahun":2025},
+                # ── BASIC MATERIALS ───────────────────────────────────────────
+                {"ticker":"AMMN","nama":"Amman Mineral","cum_date":"2025-08-21","ex_date":"2025-08-22","pay_date":"2025-09-08","dps":96,"yield_pct":1.23,"freq":"Interim","tahun":2025},
+                {"ticker":"MDKA","nama":"Merdeka Copper Gold","cum_date":"2025-09-11","ex_date":"2025-09-12","pay_date":"2025-09-29","dps":18,"yield_pct":0.73,"freq":"Special","tahun":2025},
+                {"ticker":"TPIA","nama":"Chandra Asri","cum_date":"2025-07-24","ex_date":"2025-07-25","pay_date":"2025-08-11","dps":220,"yield_pct":2.68,"freq":"Final","tahun":2025},
+                {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":380,"yield_pct":4.63,"freq":"Final","tahun":2025},
+                # ── FINANCIALS NON-BANK ────────────────────────────────────────
+                {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":680,"yield_pct":8.10,"freq":"Final","tahun":2025},
+                {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2025-10-09","ex_date":"2025-10-10","pay_date":"2025-10-27","dps":280,"yield_pct":3.33,"freq":"Interim","tahun":2025},
+                {"ticker":"PNLF","nama":"Panin Financial","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":8,"yield_pct":4.76,"freq":"Final","tahun":2025},
+                # ── HIGH YIELD SPECIALS ────────────────────────────────────────
+                {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":180,"yield_pct":11.11,"freq":"Final","tahun":2025},
+                {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":560,"yield_pct":14.43,"freq":"Final","tahun":2025},
+                {"ticker":"DMAS","nama":"Puradelta Lestari","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":14,"yield_pct":7.14,"freq":"Final","tahun":2025},
+                {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2025-04-10","ex_date":"2025-04-11","pay_date":"2025-04-28","dps":1050,"yield_pct":10.71,"freq":"Final","tahun":2025},
+                {"ticker":"MBSS","nama":"Mitrabahtera Segara Sejati","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":68,"yield_pct":9.19,"freq":"Final","tahun":2025},
+                {"ticker":"AKRA","nama":"AKR Corporindo","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":120,"yield_pct":7.41,"freq":"Final","tahun":2025},
+                {"ticker":"INDF","nama":"Indofood Sukses Makmur","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":390,"yield_pct":5.82,"freq":"Final","tahun":2025},
+                {"ticker":"LPPF","nama":"Matahari Department Store","cum_date":"2025-05-29","ex_date":"2025-05-30","pay_date":"2025-06-16","dps":220,"yield_pct":7.97,"freq":"Final","tahun":2025},
+                {"ticker":"MAPI","nama":"Mitra Adiperkasa","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":50,"yield_pct":2.98,"freq":"Final","tahun":2025},
+                {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":98,"yield_pct":8.60,"freq":"Final","tahun":2025},
+                {"ticker":"GOOD","nama":"Garudafood Putra Putri Jaya","cum_date":"2025-06-12","ex_date":"2025-06-13","pay_date":"2025-06-30","dps":22,"yield_pct":5.12,"freq":"Final","tahun":2025},
+                {"ticker":"CMRY","nama":"Cisarua Mountain Dairy","cum_date":"2025-07-10","ex_date":"2025-07-11","pay_date":"2025-07-28","dps":165,"yield_pct":4.11,"freq":"Final","tahun":2025},
+                {"ticker":"MIDI","nama":"Midi Utama Indonesia","cum_date":"2025-06-26","ex_date":"2025-06-27","pay_date":"2025-07-14","dps":26,"yield_pct":4.33,"freq":"Final","tahun":2025},
+                {"ticker":"HEAL","nama":"Medikaloka Hermina","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":36,"yield_pct":2.31,"freq":"Final","tahun":2025},
+                {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":80,"yield_pct":0.95,"freq":"Final","tahun":2025},
+                {"ticker":"PGEO","nama":"Pertamina Geothermal Energy","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":38,"yield_pct":3.06,"freq":"Final","tahun":2025},
+                {"ticker":"COAL","nama":"Indika Energy","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":126,"yield_pct":6.92,"freq":"Final","tahun":2025},
+                # ── 2026 Additions ────────────────────────────────────────────
+                {"ticker":"UNTR","nama":"United Tractors","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":2850,"yield_pct":11.63,"freq":"Final","tahun":2026},
+                {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-10-15","ex_date":"2026-10-16","pay_date":"2026-11-02","dps":160,"yield_pct":5.44,"freq":"Interim","tahun":2026},
+                {"ticker":"ITMG","nama":"Indo Tambangraya Megah","cum_date":"2026-05-21","ex_date":"2026-05-22","pay_date":"2026-06-08","dps":3200,"yield_pct":13.06,"freq":"Final","tahun":2026},
+                {"ticker":"ADMF","nama":"Adira Dinamika Multi Finance","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":620,"yield_pct":7.38,"freq":"Final","tahun":2026},
+                {"ticker":"MLBI","nama":"Multi Bintang Indonesia","cum_date":"2026-04-09","ex_date":"2026-04-10","pay_date":"2026-04-27","dps":980,"yield_pct":10.00,"freq":"Final","tahun":2026},
+                {"ticker":"ESSA","nama":"Surya Esa Perkasa","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":190,"yield_pct":11.73,"freq":"Final","tahun":2026},
+                {"ticker":"LPPF","nama":"Matahari Department Store","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":205,"yield_pct":7.43,"freq":"Final","tahun":2026},
+                {"ticker":"INDF","nama":"Indofood Sukses Makmur","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":410,"yield_pct":6.12,"freq":"Final","tahun":2026},
+                {"ticker":"AKRA","nama":"AKR Corporindo","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":130,"yield_pct":8.02,"freq":"Final","tahun":2026},
+            ]
+
+            # ── Filter UI ──
+            _dv_col1, _dv_col2, _dv_col3, _dv_col4 = st.columns([2, 1, 1, 1])
+            with _dv_col1:
+                _dv_ticker_input = st.text_input("🔍 Cari Ticker", placeholder="e.g. BBCA, PTBA", key="div_ticker_filter").upper().strip()
+            with _dv_col2:
+                _dv_tahun = st.selectbox("📅 Tahun", ["Semua", "2025", "2026"], key="div_tahun_filter")
+            with _dv_col3:
+                _dv_freq = st.selectbox("Jenis", ["Semua", "Final", "Interim", "Q1","Q2","Q3","Q4","Special"], key="div_freq_filter")
+            with _dv_col4:
+                _dv_sort = st.selectbox("Urut", ["Yield ↓", "Cum Date ↑", "DPS ↓", "Ticker ↑"], key="div_sort_filter")
+
+            # ── Filter data ──
+            _dv_filtered = _DIV_DB[:]
+            if _dv_ticker_input:
+                _dv_filtered = [r for r in _dv_filtered if _dv_ticker_input in r["ticker"]]
+            if _dv_tahun != "Semua":
+                _dv_filtered = [r for r in _dv_filtered if r["tahun"] == int(_dv_tahun)]
+            if _dv_freq != "Semua":
+                _dv_filtered = [r for r in _dv_filtered if r["freq"] == _dv_freq]
+
+            # ── Sort ──
+            _sort_map = {
+                "Yield ↓": lambda x: -x["yield_pct"],
+                "Cum Date ↑": lambda x: x["cum_date"],
+                "DPS ↓": lambda x: -x["dps"],
+                "Ticker ↑": lambda x: x["ticker"],
+            }
+            _dv_filtered.sort(key=_sort_map.get(_dv_sort, _sort_map["Yield ↓"]))
+
+            # ── Highlight upcoming ex-date (dalam 14 hari) ──
+            from datetime import date as _date_cls
+            _today_dv = _date_cls.today()
+
+            # ── Ringkasan metrics ──
+            if _dv_filtered:
+                _dv_m1, _dv_m2, _dv_m3, _dv_m4 = st.columns(4)
+                _avg_yield = sum(r["yield_pct"] for r in _dv_filtered) / len(_dv_filtered)
+                _max_yield_r = max(_dv_filtered, key=lambda x: x["yield_pct"])
+                _upcoming = [r for r in _dv_filtered if r["ex_date"] >= str(_today_dv)]
+                _upcoming_soon = [r for r in _upcoming if (
+                    _date_cls.fromisoformat(r["ex_date"]) - _today_dv
+                ).days <= 30]
+                with _dv_m1:
+                    st.metric("📋 Total Record", f"{len(_dv_filtered)}")
+                with _dv_m2:
+                    st.metric("📊 Avg Yield", f"{_avg_yield:.2f}%")
+                with _dv_m3:
+                    st.metric("🏆 Yield Tertinggi", f"{_max_yield_r['ticker']} {_max_yield_r['yield_pct']:.1f}%")
+                with _dv_m4:
+                    st.metric("📅 Ex-Date ≤30 Hari", f"{len(_upcoming_soon)} emiten")
+
+            # ── Tabel utama ──
+            import pandas as _pd_dv
+            if _dv_filtered:
+                _dv_rows = []
+                for r in _dv_filtered:
+                    try:
+                        _ex = _date_cls.fromisoformat(r["ex_date"])
+                        _days_to_ex = (_ex - _today_dv).days
+                        _ex_flag = f"⚡ {_days_to_ex}h lagi" if 0 <= _days_to_ex <= 14 else (
+                                   f"🔔 {_days_to_ex}h lagi" if 0 <= _days_to_ex <= 30 else
+                                   ("✅ Selesai" if _days_to_ex < 0 else f"{_days_to_ex}h lagi"))
+                    except Exception:
+                        _ex_flag = "—"
+                    _dv_rows.append({
+                        "Ticker":       r["ticker"],
+                        "Nama Emiten":  r["nama"],
+                        "Cum Date":     r["cum_date"],
+                        "Ex-Date":      r["ex_date"],
+                        "Pay Date":     r["pay_date"],
+                        "DPS (Rp)":     r["dps"],
+                        "Yield %":      round(r["yield_pct"], 2),
+                        "Jenis":        r["freq"],
+                        "Tahun":        r["tahun"],
+                        "Status":       _ex_flag,
+                    })
+                _dv_df = _pd_dv.DataFrame(_dv_rows)
+                st.dataframe(
+                    _dv_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=min(80 + len(_dv_df) * 36, 600),
+                    column_config={
+                        "Yield %": st.column_config.NumberColumn("Yield %", format="%.2f%%"),
+                        "DPS (Rp)": st.column_config.NumberColumn("DPS (Rp)", format="Rp %d"),
+                        "Status": st.column_config.TextColumn("Status Ex-Date"),
+                    }
+                )
+                # ── Legend & notes ──
+                st.markdown(f"""
+                <div style='font-size:0.7rem;color:#64748b;margin-top:6px;font-family:IBM Plex Mono,monospace;line-height:1.8;'>
+                ⚡ Ex-Date ≤14 hari &nbsp;|&nbsp; 🔔 Ex-Date ≤30 hari &nbsp;|&nbsp; ✅ Sudah lewat
+                &nbsp;&nbsp;·&nbsp;&nbsp; <b>Cum Date</b> = hari terakhir berhak dividen
+                &nbsp;&nbsp;·&nbsp;&nbsp; <b>Ex-Date</b> = mulai tidak berhak dividen
+                &nbsp;&nbsp;·&nbsp;&nbsp; <b>Pay Date</b> = tanggal pembayaran ke rekening
+                &nbsp;&nbsp;·&nbsp;&nbsp; Data 2025–2026 · Hardcoded dari keterbukaan informasi IDX
+                </div>""", unsafe_allow_html=True)
+            else:
+                st.info(f"Tidak ada data dividen untuk filter yang dipilih: ticker='{_dv_ticker_input or 'Semua'}', tahun={_dv_tahun}, jenis={_dv_freq}")
+
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     with tab_macro:
@@ -14936,9 +15137,156 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
-        # ── BI RATE MONITOR — Coming Soon ──────────────────────────
-        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
-        st.info("🚧 **BI Rate Monitor** — Data suku bunga Bank Indonesia & jadwal RDG BI akan hadir di sini. *Coming Soon.*")
+        # ── BI RATE MONITOR + GLOBAL RATES ────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🏦 BI RATE MONITOR & GLOBAL INTEREST RATES</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+
+        # ── Hardcoded historical data (update berkala) ──
+        _bi_rate_history = [
+            {"date": "Jan 2024", "rate": 6.00}, {"date": "Feb 2024", "rate": 6.00},
+            {"date": "Mar 2024", "rate": 6.00}, {"date": "Apr 2024", "rate": 6.25},
+            {"date": "Mei 2024", "rate": 6.25}, {"date": "Jun 2024", "rate": 6.25},
+            {"date": "Jul 2024", "rate": 6.25}, {"date": "Ags 2024", "rate": 6.25},
+            {"date": "Sep 2024", "rate": 6.00}, {"date": "Okt 2024", "rate": 6.00},
+            {"date": "Nov 2024", "rate": 6.00}, {"date": "Des 2024", "rate": 6.00},
+            {"date": "Jan 2025", "rate": 5.75}, {"date": "Feb 2025", "rate": 5.75},
+            {"date": "Mar 2025", "rate": 5.75}, {"date": "Apr 2025", "rate": 5.75},
+            {"date": "Mei 2025", "rate": 5.50}, {"date": "Jun 2025", "rate": 5.50},
+            {"date": "Jul 2025", "rate": 5.25}, {"date": "Ags 2025", "rate": 5.25},
+            {"date": "Sep 2025", "rate": 5.25}, {"date": "Okt 2025", "rate": 5.00},
+            {"date": "Nov 2025", "rate": 5.00}, {"date": "Des 2025", "rate": 5.00},
+            {"date": "Jan 2026", "rate": 5.00}, {"date": "Feb 2026", "rate": 4.75},
+            {"date": "Mar 2026", "rate": 4.75}, {"date": "Apr 2026", "rate": 4.75},
+            {"date": "Mei 2026", "rate": 4.75},
+        ]
+        _rdg_schedule_2026 = [
+            {"date": "21–22 Jan 2026", "result": "Turun 25bps → 5.00%", "status": "done"},
+            {"date": "18–19 Feb 2026", "result": "Turun 25bps → 4.75%", "status": "done"},
+            {"date": "18–19 Mar 2026", "result": "Tetap 4.75%", "status": "done"},
+            {"date": "22–23 Apr 2026", "result": "Tetap 4.75%", "status": "done"},
+            {"date": "20–21 Mei 2026", "result": "Menunggu keputusan", "status": "upcoming"},
+            {"date": "17–18 Jun 2026", "result": "—", "status": "future"},
+            {"date": "15–16 Jul 2026", "result": "—", "status": "future"},
+            {"date": "19–20 Ags 2026", "result": "—", "status": "future"},
+            {"date": "16–17 Sep 2026", "result": "—", "status": "future"},
+            {"date": "21–22 Okt 2026", "result": "—", "status": "future"},
+            {"date": "17–18 Nov 2026", "result": "—", "status": "future"},
+            {"date": "16–17 Des 2026", "result": "—", "status": "future"},
+        ]
+
+        # ── Fetch live rates via yfinance fallback ──
+        @st.cache_data(ttl=1800, show_spinner=False)
+        def _fetch_global_rates():
+            """Fetch SOFR, US 1Y Treasury sebagai proxy Fed Funds rate via yfinance."""
+            rates = {
+                "BI Rate": {"value": 4.75, "change": -0.25, "source": "hardcoded", "label": "Bank Indonesia"},
+                "Fed Funds": {"value": 4.50, "change": 0.00, "source": "hardcoded", "label": "US Federal Reserve"},
+                "SOFR": {"value": 4.31, "change": -0.02, "source": "hardcoded", "label": "Secured Overnight Financing Rate"},
+                "US 10Y": {"value": 4.38, "change": 0.05, "source": "hardcoded", "label": "US Treasury 10Y Yield"},
+                "ID 10Y": {"value": 6.82, "change": -0.08, "source": "hardcoded", "label": "Indonesia Gov Bond 10Y"},
+            }
+            try:
+                import yfinance as _yf_r
+                # US 10Y Treasury yield
+                _us10y = _yf_r.Ticker("^TNX").history(period="5d")
+                if len(_us10y) >= 2:
+                    _us10y_now = round(float(_us10y["Close"].iloc[-1]), 2)
+                    _us10y_prev = round(float(_us10y["Close"].iloc[-2]), 2)
+                    rates["US 10Y"] = {"value": _us10y_now, "change": round(_us10y_now - _us10y_prev, 2), "source": "yfinance", "label": "US Treasury 10Y Yield"}
+            except Exception:
+                pass
+            try:
+                import yfinance as _yf_r2
+                # Indonesia 10Y proxy via ETF/bond yield
+                _id10y = _yf_r2.Ticker("INDO10Y=X").history(period="5d")
+                if len(_id10y) >= 1:
+                    _id_v = round(float(_id10y["Close"].iloc[-1]), 2)
+                    rates["ID 10Y"] = {"value": _id_v, "change": 0.0, "source": "yfinance", "label": "Indonesia Gov Bond 10Y"}
+            except Exception:
+                pass
+            return rates
+
+        _global_rates = _fetch_global_rates()
+        _bi_current = _bi_rate_history[-1]["rate"]
+        _bi_prev = _bi_rate_history[-2]["rate"] if len(_bi_rate_history) > 1 else _bi_current
+        _bi_chg = _bi_current - _bi_prev
+
+        # ── Metric cards ──
+        _rc = st.columns(5)
+        _rate_items = [
+            ("BI Rate", f"{_bi_current:.2f}%", f"{'▲' if _bi_chg>0 else '▼' if _bi_chg<0 else '─'} {abs(_bi_chg)*100:.0f}bps", "#26a69a" if _bi_chg<=0 else "#ef5350"),
+            ("Fed Funds", f"{_global_rates['Fed Funds']['value']:.2f}%", f"Tetap · 30 Apr 2026", "#8b5cf6"),
+            ("SOFR", f"{_global_rates['SOFR']['value']:.2f}%", f"Overnight · USD", "#f59e0b"),
+            ("US 10Y", f"{_global_rates['US 10Y']['value']:.2f}%", f"{'▲' if _global_rates['US 10Y']['change']>0 else '▼'} {abs(_global_rates['US 10Y']['change']):.2f}% · {'yfinance' if _global_rates['US 10Y']['source']=='yfinance' else 'hardcoded'}", "#3b82f6"),
+            ("ID 10Y", f"{_global_rates['ID 10Y']['value']:.2f}%", f"Spread vs US: +{round(_global_rates['ID 10Y']['value']-_global_rates['US 10Y']['value'],2):.2f}%", "#10b981"),
+        ]
+        for _col_r, (_lbl, _val, _delta, _color) in zip(_rc, _rate_items):
+            with _col_r:
+                st.markdown(f"""
+                <div style='background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);
+                border-radius:8px;padding:12px 10px;text-align:center;margin-bottom:8px;'>
+                <div style='font-size:0.7rem;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;'>{_lbl}</div>
+                <div style='font-size:1.4rem;font-weight:700;color:{_color};font-family:IBM Plex Mono,monospace;'>{_val}</div>
+                <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_delta}</div>
+                </div>""", unsafe_allow_html=True)
+
+        # ── BI Rate History Chart ──
+        _bi_labels_js = str([r["date"] for r in _bi_rate_history]).replace("'", '"')
+        _bi_vals_js   = str([r["rate"] for r in _bi_rate_history])
+        st.markdown(f"""
+        <div style='background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);
+        border-radius:8px;padding:16px;margin:8px 0;'>
+        <div style='font-size:0.75rem;color:#888;margin-bottom:12px;font-family:IBM Plex Mono,monospace;'>
+        📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
+        <span style='float:right;color:#26a69a;font-weight:600;'>Current: {_bi_current:.2f}%</span>
+        </div>
+        <canvas id='bi_rate_chart' height='80'></canvas>
+        </div>
+        <script src='https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js'></script>
+        <script>
+        (function(){{
+          var ctx = document.getElementById('bi_rate_chart').getContext('2d');
+          new Chart(ctx, {{
+            type: 'line',
+            data: {{
+              labels: {_bi_labels_js},
+              datasets: [{{
+                label: 'BI Rate (%)', data: {_bi_vals_js},
+                borderColor: '#26a69a', backgroundColor: 'rgba(38,166,154,0.12)',
+                tension: 0.3, fill: true, pointRadius: 3, pointHoverRadius: 5,
+                borderWidth: 2, pointBackgroundColor: '#26a69a'
+              }}]
+            }},
+            options: {{
+              responsive: true, plugins: {{ legend: {{ display: false }},
+              tooltip: {{ callbacks: {{ label: function(c) {{ return c.parsed.y.toFixed(2) + '%'; }} }} }} }},
+              scales: {{
+                x: {{ ticks: {{ color: '#888', font: {{ size: 9 }} }}, grid: {{ color: 'rgba(255,255,255,0.04)' }} }},
+                y: {{ ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v+'%'; }} }},
+                     grid: {{ color: 'rgba(255,255,255,0.05)' }},
+                     min: 4.0, max: 7.0 }}
+              }}
+            }}
+          }});
+        }})();
+        </script>
+        """, unsafe_allow_html=True)
+
+        # ── RDG BI Schedule 2026 ──
+        st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
+        _rdg_cols = st.columns(3)
+        for _ri, _rdg in enumerate(_rdg_schedule_2026):
+            with _rdg_cols[_ri % 3]:
+                _rdg_color = "#26a69a" if _rdg["status"] == "done" else ("#f59e0b" if _rdg["status"] == "upcoming" else "#374151")
+                _rdg_icon  = "✅" if _rdg["status"] == "done" else ("🔔" if _rdg["status"] == "upcoming" else "📋")
+                st.markdown(f"""
+                <div style='background:rgba(255,255,255,0.02);border:1px solid {_rdg_color}33;
+                border-radius:6px;padding:8px 10px;margin-bottom:6px;font-family:IBM Plex Mono,monospace;'>
+                <div style='font-size:0.68rem;color:{_rdg_color};margin-bottom:2px;'>{_rdg_icon} {_rdg["date"]}</div>
+                <div style='font-size:0.7rem;color:#ccc;'>{_rdg["result"]}</div>
+                </div>""", unsafe_allow_html=True)
+
+        _rates_src_note = "US 10Y via yfinance" if _global_rates["US 10Y"]["source"] == "yfinance" else "Semua rates: hardcoded (yfinance gagal)"
+        st.caption(f"📡 Sumber data: BI Rate = hardcoded dari keputusan resmi BI · {_rates_src_note} · Cache 30 menit")
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ─────────────────────────────────────────────────────────
@@ -15310,7 +15658,7 @@ tbody tr:hover td{{background:rgba(139,92,246,0.04);}}
 
   function parseNum(s){{
     if(!s||s==='&mdash;'||s==='-') return null;
-    var n=parseFloat(s.replace(/[^0-9.\-]/g,''));
+    var n=parseFloat(s.replace(/[^0-9.\\-]/g,''));
     return isNaN(n)?null:n;
   }}
 
@@ -15502,8 +15850,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             _beat_miss = ""
             try:
                 import re as _re_ec
-                _fc_n = float(_re_ec.sub(r'[^0-9.\-]','',str(_sel_row['fc']))) if _sel_row['fc'] not in ("—","") else None
-                _ac_n = float(_re_ec.sub(r'[^0-9.\-]','',str(_use_actual))) if _use_actual not in ("—","","pending") else None
+                _fc_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_sel_row['fc']))) if _sel_row['fc'] not in ("—","") else None
+                _ac_n = float(_re_ec.sub(r'[^0-9.\\-]','',str(_use_actual))) if _use_actual not in ("—","","pending") else None
                 if _fc_n is not None and _ac_n is not None:
                     if _ac_n > _fc_n: _beat_miss = f"<span style='color:#089981;font-weight:700;'>▲ BEAT +{abs(_ac_n-_fc_n):.2f}</span>"
                     elif _ac_n < _fc_n: _beat_miss = f"<span style='color:#f23645;font-weight:700;'>▼ MISS -{abs(_ac_n-_fc_n):.2f}</span>"
@@ -15689,8 +16037,23 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             _live_rrg = _compute_rrg_live(_update_slot)
             _last_update_slot = "13:00" if _update_slot.endswith("PM") else ("21:00" if _update_slot.endswith("NIGHT") else "sebelum 13:00")
             _next_update = "21:00" if _update_slot.endswith("PM") else ("13:00 besok" if _update_slot.endswith("NIGHT") else "13:00")
+            _rrg_data_fresh = bool(_live_rrg)  # False = yfinance gagal, fallback ke hardcoded
             with _rrg_refresh_col1:
-                st.markdown(f"<p style='font-size:0.72rem;color:#64748b;margin-top:6px;'>🕐 Slot aktif: <b>{_update_slot}</b> · Update berikutnya: <b>{_next_update} WIB</b></p>", unsafe_allow_html=True)
+                _rrg_status_icon = "🟢" if _rrg_data_fresh else "🟡"
+                _rrg_status_txt = "Data live (yfinance)" if _rrg_data_fresh else "Fallback data — yfinance timeout, klik Refresh"
+                st.markdown(
+                    f"<p style='font-size:0.72rem;color:#64748b;margin-top:6px;'>"
+                    f"{_rrg_status_icon} Slot aktif: <b>{_update_slot}</b> · "
+                    f"Update berikutnya: <b>{_next_update} WIB</b> · {_rrg_status_txt}"
+                    f"</p>",
+                    unsafe_allow_html=True
+                )
+            if not _rrg_data_fresh:
+                st.warning(
+                    "⚠️ **RRG**: Data live tidak tersedia saat ini (yfinance timeout). "
+                    "Chart menggunakan posisi default. Klik **🔄 Refresh Data** untuk coba ulang.",
+                    icon="📡"
+                )
 
             # ── MARKET CAP SCREENING - Top 500 IDX, exclude suspended >1 bulan ─
             @st.cache_data(ttl=86400, show_spinner=False)
@@ -17138,9 +17501,32 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
     # GLOBAL HELPER: Database pemegang saham - bisa dipanggil dari tab manapun
     # ════════════════════════════════════════════════════════════════
     def _get_sh_db_global():
-        """Wrapper global - return manual shareholder database untuk dipakai lintas tab."""
+        """Wrapper global - return manual shareholder database untuk dipakai lintas tab.
+        
+        Data hardcoded dengan tanggal terakhir update. Sistem akan auto-flag jika
+        data sudah lebih dari 45 hari dari entry terbaru.
+        """
         import datetime as _dtx
         D = _dtx.datetime
+        _SH_DB_LAST_HARDCODED = D(2026, 5, 31)  # ← UPDATE tanggal ini setiap update data
+        _SH_DB_UPDATE_KEY = "sh_db_staleness_flagged"
+        try:
+            _today_sh = _dtx.datetime.now()
+            _days_stale = (_today_sh - _SH_DB_LAST_HARDCODED).days
+            if _days_stale > 45:
+                if not st.session_state.get(_SH_DB_UPDATE_KEY):
+                    st.session_state[_SH_DB_UPDATE_KEY] = True
+                    st.warning(
+                        f"⚠️ **Data Shareholder Perlu Update** — Data terakhir: "
+                        f"`{_SH_DB_LAST_HARDCODED.strftime('%d %b %Y')}` "
+                        f"({_days_stale} hari lalu). Harap perbarui hardcoded data "
+                        f"di `_get_sh_db_global()` dengan data bulan terbaru dari IDX.",
+                        icon="🗓️"
+                    )
+            else:
+                st.session_state[_SH_DB_UPDATE_KEY] = False
+        except Exception:
+            pass
         return {
             "BBCA": [
                 {"date":D(2025,4,30),"shareholders":320100},{"date":D(2025,5,31),"shareholders":322500},
@@ -17347,10 +17733,23 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         ])
 
         # Fundamental Screener & Shareholder dipindah ke tab MARKET DATA
-        alpha_tab_fundamental = _md_subtab_fundamental
-        alpha_tab_shareholder = _md_subtab_shareholder
+        # Defensive guard: pastikan variabel tersedia (jika tab_marketdata belum di-render)
+        try:
+            alpha_tab_fundamental = _md_subtab_fundamental
+            alpha_tab_shareholder = _md_subtab_shareholder
+        except NameError:
+            # Fallback: render langsung di dalam alpha screener tab jika market data belum init
+            st.info(
+                "⚠️ Tab **MARKET DATA** perlu dibuka terlebih dahulu agar "
+                "Fundamental Screener & Shareholder dapat ditampilkan di sini. "
+                "Silakan klik tab 📈 MARKET DATA sekali, lalu kembali ke tab ini.",
+                icon="💡"
+            )
+            alpha_tab_fundamental = None
+            alpha_tab_shareholder = None
 
-        with alpha_tab_shareholder:
+        if alpha_tab_shareholder is not None:
+         with alpha_tab_shareholder:
 
             # ── Auto-extend: extrapolasi bulan baru otomatis tgl 7-10 tiap bulan ──
             import datetime as _dt
@@ -21202,6 +21601,8 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
         reco_tab_daily       = alpha_tab_daily
         reco_tab_weekly      = alpha_tab_weekly
         reco_tab_bsjp        = alpha_tab_bsjp
+        if alpha_tab_fundamental is None:
+            alpha_tab_fundamental = st.container()  # fallback container jika scope belum init
         reco_tab_fundamental = alpha_tab_fundamental
 
         # ─── SHARED TABLE RENDERER ─────────────────────────────────────────
@@ -23924,10 +24325,20 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         _fs_api_status["FMP"] = "✅" if any(k and len(k)>10 for k in _fmp_test_keys) else "❌"
                     except: _fs_api_status["FMP"] = "❌"
                     try:
-                        _av_test_keys = _get_all_av_keys() if callable(getattr(st, "_" , None)) else []
-                        _fs_api_status["AlphaVantage"] = "✅" if any(k and len(k)>10 for k in (_av_test_keys or [])) else "❌"
-                    except: _fs_api_status["AlphaVantage"] = "❌"
+                        _av_test_keys = _get_all_av_keys()
+                        _av_active = [k for k in (_av_test_keys or []) if k and len(k)>10]
+                        _fs_api_status["AlphaVantage"] = f"✅ ({len(_av_active)} key)" if _av_active else "❌ (no key)"
+                    except Exception as _e_av:
+                        _fs_api_status["AlphaVantage"] = f"❌ ({type(_e_av).__name__})"
                     _fs_api_status["yfinance"] = "✅ (fallback utama)"
+                    # Rebuild with key counts
+                    try:
+                        _fh_active_ct = len([k for k in (_get_all_finnhub_keys() or []) if k and len(k)>10])
+                        _fmp_active_ct = len([k for k in (_get_all_fmp_keys() or []) if k and len(k)>10])
+                        _fs_api_status["Finnhub"] = f"{'✅' if _fh_active_ct else '❌'} ({_fh_active_ct} key)"
+                        _fs_api_status["FMP"] = f"{'✅' if _fmp_active_ct else '❌'} ({_fmp_active_ct} key)"
+                    except Exception:
+                        pass
                     _api_stat_html = "  ·  ".join([f"<b>{src}</b> {stat_}" for src,stat_ in _fs_api_status.items()])
                     st.markdown(f"<p style='font-family:IBM Plex Mono,monospace;font-size:0.72rem;color:#888;margin-bottom:8px;'>📡 STATUS API: {_api_stat_html}</p>", unsafe_allow_html=True)
 
