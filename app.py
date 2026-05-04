@@ -108,31 +108,42 @@ def _build_candle_labels(n: int, row: dict) -> list:
 
 
 def _single_card_html(row: dict, idx: int) -> str:
+    # ── Safe cast helpers ──────────────────────────────────────────
+    def _si(v, default=0):
+        """Safe int — tolerate None, '—', '', non-numeric strings."""
+        try:    return int(float(v)) if v not in (None, "", "—", "-") else default
+        except: return default
+    def _sf(v, default=0.0):
+        """Safe float."""
+        try:    return float(v) if v not in (None, "", "—", "-") else default
+        except: return default
+    # ───────────────────────────────────────────────────────────────
+
     ticker   = row.get("ticker", "—")
     name     = row.get("name", ticker)
-    price    = int(row.get("price", 0))
-    prev     = int(row.get("prev", price))
-    chg      = float(row.get("chg", 0))
+    price    = _si(row.get("price", 0))
+    prev     = _si(row.get("prev", price), price)
+    chg      = _sf(row.get("chg", 0))
     chg_abs  = int(abs(price - prev))
     chg_sign = "+" if chg >= 0 else ""
     chg_col  = "#00E5BE" if chg >= 0 else "#E24B4A"
 
-    entry_lo = int(row.get("entry_low", price))
-    entry_hi = int(row.get("entry_high", price))
-    tp1      = int(row.get("tp1", 0)) if row.get("tp1") else None
-    tp2      = int(row.get("tp2", 0)) if row.get("tp2") else None
-    sl       = int(row.get("sl", 0))  if row.get("sl")  else None
-    rr       = float(row.get("rr", 0))
+    entry_lo = _si(row.get("entry_low", price), price)
+    entry_hi = _si(row.get("entry_high", price), price)
+    _tp1_raw = row.get("tp1"); tp1 = _si(_tp1_raw) if _tp1_raw not in (None, "", "—", 0) else None
+    _tp2_raw = row.get("tp2"); tp2 = _si(_tp2_raw) if _tp2_raw not in (None, "", "—", 0) else None
+    _sl_raw  = row.get("sl");  sl  = _si(_sl_raw)  if _sl_raw  not in (None, "", "—", 0) else None
+    rr       = _sf(row.get("rr", 0))
     vol_str  = row.get("vol_spike", "—")
-    streak   = int(row.get("consec_up", 0))
-    close_pct= float(row.get("close_pct_range", 50))
+    streak   = _si(row.get("consec_up", 0))
+    close_pct= _sf(row.get("close_pct_range", 50), 50.0)
     why      = row.get("why_buy", "Setup teknikal valid")[:120]
 
-    sigma_score = int(row.get("combined", row.get("ta_score", 0)))
+    sigma_score = _si(row.get("combined", row.get("ta_score", 0)))
     sigma_score = max(0, min(99, sigma_score))
 
     # ── Indikator Teknikal Tambahan (RSI · MACD · BB · Vol Ratio) ──
-    rsi_val        = row.get("rsi", None)
+    rsi_val        = _sf(row.get("rsi", None), None) if row.get("rsi") not in (None, "", "—", "-") else None
     rsi_label      = row.get("rsi_label", "—")
     rsi_color      = row.get("rsi_color", "rgba(255,255,255,0.4)")
     macd_label     = row.get("macd_label", "—")
@@ -144,7 +155,7 @@ def _single_card_html(row: dict, idx: int) -> str:
     vol_ratio_color= row.get("vol_ratio_color", "rgba(255,255,255,0.4)")
     rsi_display    = f"{rsi_val:.0f}" if rsi_val is not None else "—"
 
-    bandar_pct   = int(row.get("bandar_pct", max(40, min(85, sigma_score))))
+    bandar_pct   = _si(row.get("bandar_pct", max(40, min(85, sigma_score))), max(40, min(85, sigma_score)))
     asing_net    = row.get("asing_net", "")
     inst_net     = row.get("inst_net", "")
     bandar_label = row.get("bandar_label", "AKUMULASI" if sigma_score >= 55 else "DISTRIBUSI")
