@@ -13460,7 +13460,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas.""
                 border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
                 line-height:1.75;color:#e0e0e0;'>
                 <div style='font-size:0.68rem;color:#8b5cf6;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
-                🤖 SIGMA AI · Bond Yield Analysis · Model: {_by_mdl}</div>
+                🤖 SIGMA AI · Bond Yield Analysis</div>
                 {_by_txt.replace(chr(10), "<br>")}
                 </div>""", unsafe_allow_html=True)
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -13718,7 +13718,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
                 border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
                 line-height:1.75;color:#e0e0e0;'>
                 <div style='font-size:0.68rem;color:#10b981;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
-                🤖 SIGMA AI · Dividend Analysis · Model: {_dv_mdl}</div>
+                🤖 SIGMA AI · Dividend Analysis</div>
                 {_dv_txt.replace(chr(10), "<br>")}
                 </div>""", unsafe_allow_html=True)
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -15860,7 +15860,7 @@ Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Juj
             border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
             line-height:1.75;color:#e0e0e0;'>
             <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
-            🤖 SIGMA AI · Rate Monitor Analysis · Model: {_rm_mdl}</div>
+            🤖 SIGMA AI · Rate Monitor Analysis</div>
             {_rm_txt.replace(chr(10), "<br>")}
             </div>""", unsafe_allow_html=True)
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -24668,59 +24668,43 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             "</table></div>",
                             unsafe_allow_html=True)
 
-                    # ── Summary Cards Weekly ──
+                    # ── BSJP Cards Weekly ──
                     if _wrows:
                         st.markdown(
                             "<div style='font-size:0.71rem;font-weight:700;letter-spacing:0.14em;"
                             "text-transform:uppercase;color:#26a69a;margin:16px 0 8px;'>"
-                            "⚡ SUMMARY TOP WEEKLY PICKS</div>", unsafe_allow_html=True)
-                        for _wri, _wr in enumerate(_wrows[:7], 1):
+                            "⚡ WEEKLY TRADE PLAN — BSJP CARDS</div>", unsafe_allow_html=True)
+                        # Enrich setiap row dengan data broker agar BSJP card lengkap
+                        _wrows_enriched = []
+                        for _wr in _wrows[:10]:
                             _wtk = _wr.get("ticker","")
                             _wbs = next((s for s in _bs30_cache_w if s.get("ticker") == _wtk), {})
-                            _wta = _wbs.get("top_accum", [])[:3]
-                            _wtd = _wbs.get("top_dist",  [])[:3]
-                            with st.container(border=True):
-                                _wch, _wcs = st.columns([4,1])
-                                with _wch:
-                                    st.markdown(
-                                        f"**#{_wri} {_wtk}** &nbsp;"
-                                        f"<span style='color:#888;font-size:12px'>{_wr.get('name','')}</span> &nbsp;"
-                                        f"<span style='font-size:12px'>Rp {_wr.get('price',0):,}</span>",
-                                        unsafe_allow_html=True)
-                                with _wcs:
-                                    st.markdown(
-                                        f"<div style='text-align:right'>"
-                                        f"<span style='font-size:20px;font-weight:700;color:#26a69a'>{_wr.get('combined','—')}</span>"
-                                        f"<br><span style='font-size:9px;color:#666'>SCORE</span>"
-                                        f"<br><span style='color:#089981;font-weight:700;font-size:11px'>► {_wr.get('rating','BUY')}</span>"
-                                        f"</div>", unsafe_allow_html=True)
-                                _wc1,_wc2,_wc3,_wc4,_wc5,_wc6 = st.columns(6)
-                                _wc1.metric("TA",       _wr.get("ta_score","—"))
-                                _wc2.metric("FA",       _wr.get("fa_score","—"))
-                                _wc3.metric("Acc Days", _wbs.get("accum_days","—"))
-                                _wc4.metric("RSI",      _wr.get("rsi","—"))
-                                _wc5.metric("MACD",     _wr.get("macd","—"))
-                                _wc6.metric("Horizon",  _wr.get("horizon","Swing"))
-                                _wbc1, _wbc2 = st.columns(2)
-                                with _wbc1:
-                                    if _wta:
-                                        st.markdown(
-                                            f"<div style='font-size:0.72rem;padding:6px 10px;"
-                                            f"background:rgba(45,212,160,0.08);border-left:2px solid #2dd4a0;"
-                                            f"border-radius:0 4px 4px 0;'>"
-                                            f"<span style='color:#2dd4a0;font-weight:700;'>📈 AKUMULASI</span>&nbsp;"
-                                            f"<span style='color:#e0e0ef;'>{' · '.join(_wta)}</span>"
-                                            f"</div>", unsafe_allow_html=True)
-                                with _wbc2:
-                                    if _wtd:
-                                        st.markdown(
-                                            f"<div style='font-size:0.72rem;padding:6px 10px;"
-                                            f"background:rgba(255,92,92,0.08);border-left:2px solid #ff5c5c;"
-                                            f"border-radius:0 4px 4px 0;'>"
-                                            f"<span style='color:#ff5c5c;font-weight:700;'>📉 DISTRIBUSI</span>&nbsp;"
-                                            f"<span style='color:#e0e0ef;'>{' · '.join(_wtd)}</span>"
-                                            f"</div>", unsafe_allow_html=True)
-                                st.caption(f"📌 {_wr.get('why_buy','—')}")
+                            _wr_rich = dict(_wr)
+                            # Broker flow label untuk bandar ring
+                            _acc_days = _wbs.get("accum_days", 0)
+                            _top_acc  = _wbs.get("top_accum", [])
+                            _top_dist = _wbs.get("top_dist", [])
+                            _wr_rich.setdefault("bandar_label", "AKUMULASI" if _acc_days and int(str(_acc_days).split("/")[0] if "/" in str(_acc_days) else _acc_days) >= 3 else "DISTRIBUSI")
+                            _wr_rich.setdefault("asing_net",   ", ".join(_top_acc[:2]) if _top_acc else "—")
+                            _wr_rich.setdefault("inst_net",    ", ".join(_top_dist[:2]) if _top_dist else "—")
+                            _wr_rich.setdefault("horizon",     _wr.get("horizon","Swing"))
+                            # RSI / MACD label jika belum ada
+                            _rsi = _wr.get("rsi", None)
+                            if _rsi is not None:
+                                _wr_rich.setdefault("rsi_label",  f"RSI {_rsi:.0f}" if _rsi > 70 else (f"RSI {_rsi:.0f} OS" if _rsi < 30 else f"RSI {_rsi:.0f}"))
+                                _wr_rich.setdefault("rsi_color",  "#ef5350" if _rsi > 70 else ("#26a69a" if _rsi < 30 else "rgba(255,255,255,0.5)"))
+                            _macd = _wr.get("macd","—")
+                            _wr_rich.setdefault("macd_label", f"MACD {_macd}" if _macd and _macd != "—" else "MACD —")
+                            _wr_rich.setdefault("macd_color", "#26a69a" if str(_macd).startswith("+") or _macd == "Golden" else "rgba(255,255,255,0.4)")
+                            _wr_rich.setdefault("bb_label",   "—")
+                            _wr_rich.setdefault("vol_ratio_label", _wr.get("vol_spike","—"))
+                            _wrows_enriched.append(_wr_rich)
+                        render_bsjp_cards(
+                            _wrows_enriched,
+                            date_label   = _week_entry.get("date", ""),
+                            generated_at = _week_entry.get("generated_at", ""),
+                            max_cards    = 10,
+                        )
 
 
             # ============================================================
