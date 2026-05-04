@@ -13400,6 +13400,69 @@ table{{margin-bottom:0!important;}}
             st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
             ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / US Treasury (^TNX) · Last update: {_usy_latest["Bulan"]}
             </div>""", unsafe_allow_html=True)
+
+            # ── AI ANALYST: Bond Yield ──────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — BOND YIELD</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            if "ai_bond_yield_result" not in st.session_state:
+                st.session_state["ai_bond_yield_result"] = None
+            _col_ai_by, _ = st.columns([1, 3])
+            with _col_ai_by:
+                _btn_analyze_yield = st.button("🔍 Analyze Bond Yield", key="btn_ai_bond_yield", use_container_width=True)
+            if _btn_analyze_yield:
+                # Ambil data terkini dari df yang sudah ada
+                try:
+                    _by_latest_id = df_id_yield.iloc[-1] if len(df_id_yield) > 0 else None
+                    _by_prev_id   = df_id_yield.iloc[-2] if len(df_id_yield) > 1 else None
+                    _by_latest_us = df_us_yield.iloc[-1] if len(df_us_yield) > 0 else None
+                    _id10y_now  = float(_by_latest_id["Indonesia 10Y (%)"]) if _by_latest_id is not None else 6.82
+                    _id10y_prev = float(_by_prev_id["Indonesia 10Y (%)"]) if _by_prev_id is not None else _id10y_now
+                    _us10y_now  = float(_by_latest_us["US 10Y (%)"]) if _by_latest_us is not None else 4.38
+                    _dxy_now    = float(_by_latest_us["DXY"]) if _by_latest_us is not None else 99.5
+                    _idr_now    = float(_by_latest_us["USD/IDR"]) if _by_latest_us is not None else 16400
+                    _spread_now = round(_id10y_now - _us10y_now, 2)
+                    _id_chg_txt = f"{'naik' if _id10y_now > _id10y_prev else 'turun'} {abs(_id10y_now - _id10y_prev):.2f}% dari bulan lalu"
+                except Exception:
+                    _id10y_now, _us10y_now, _dxy_now, _idr_now, _spread_now = 6.82, 4.38, 99.5, 16400, 2.44
+                    _id_chg_txt = "data terbatas"
+                _by_prompt = f"""Kamu adalah SIGMA AI, analis fixed income dan pasar modal IDX.
+
+Analisa kondisi bond yield Indonesia dan implikasinya berdasarkan data berikut:
+
+📌 DATA BOND YIELD:
+- Indonesia Gov Bond 10Y: {_id10y_now:.2f}% ({_id_chg_txt})
+- US Treasury 10Y Yield: {_us10y_now:.2f}%
+- Spread ID-US: +{_spread_now:.2f}%
+- DXY (US Dollar Index): {_dxy_now:.1f}
+- USD/IDR: Rp {_idr_now:,.0f}
+
+📌 KONTEKS:
+- Spread >2.5% = zona atraktif untuk asing masuk ke SUN Indonesia
+- DXY tinggi = dollar kuat = tekanan Rupiah = asing cenderung keluar EM
+- Yield ID naik = harga obligasi turun = SUN jual off
+
+Buatlah analisa naratif yang mencakup:
+1. **Kondisi Bond Market ID** — Yield Indonesia saat ini berada di level apa? Tren naik/turun?
+2. **Spread Analysis** — Spread {_spread_now:.2f}% itu cukup untuk menarik asing? Komparasi historis?
+3. **Pengaruh DXY & Rupiah** — DXY {_dxy_now:.1f} dan Rupiah {_idr_now:,.0f} mengindikasikan apa untuk inflow/outflow obligasi?
+4. **Dampak ke Pasar Saham** — Bagaimana kondisi yield ini mempengaruhi IHSG? Sektor defensif vs growth?
+5. **Outlook** — Apakah yield akan turun (bullish obligasi) atau naik (bearish)? Apa triggernya?
+
+Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas."""
+                with st.spinner("🤖 SIGMA menganalisa bond yield..."):
+                    try:
+                        _ai_by_result, _ai_by_model = _call_groq_primary(_by_prompt, max_tokens=2000, temperature=0.6)
+                        st.session_state["ai_bond_yield_result"] = (_ai_by_result, _ai_by_model)
+                    except Exception as _e:
+                        st.session_state["ai_bond_yield_result"] = (f"❌ Gagal: {str(_e)}", "error")
+            if st.session_state.get("ai_bond_yield_result"):
+                _by_txt, _by_mdl = st.session_state["ai_bond_yield_result"]
+                st.markdown(f"""<div style='background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.25);
+                border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
+                line-height:1.75;color:#e0e0e0;'>
+                <div style='font-size:0.68rem;color:#8b5cf6;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                🤖 SIGMA AI · Bond Yield Analysis · Model: {_by_mdl}</div>
+                {_by_txt.replace(chr(10), "<br>")}
+                </div>""", unsafe_allow_html=True)
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ════════════════════════════════════════════════════════════════
@@ -13608,6 +13671,56 @@ table{{margin-bottom:0!important;}}
             else:
                 st.info(f"Tidak ada data dividen untuk filter yang dipilih: ticker='{_dv_ticker_input or 'Semua'}', tahun={_dv_tahun}, jenis={_dv_freq}")
 
+            # ── AI ANALYST: Dividend ──────────────────────────────
+            st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — DIVIDEND</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+            if "ai_dividend_result" not in st.session_state:
+                st.session_state["ai_dividend_result"] = None
+            _col_ai_dv, _ = st.columns([1, 3])
+            with _col_ai_dv:
+                _btn_analyze_div = st.button("🔍 Analyze Dividend IDX", key="btn_ai_dividend", use_container_width=True)
+            if _btn_analyze_div:
+                # Ringkasan data dividen untuk AI
+                _dv_all = [d for d in _DIV_DB if d["tahun"] == 2026]
+                _dv_yield_avg = round(sum(d["yield_pct"] for d in _dv_all) / len(_dv_all), 2) if _dv_all else 0
+                _dv_top5 = sorted(_dv_all, key=lambda x: x["yield_pct"], reverse=True)[:5]
+                _dv_top5_str = "\n".join([f"  - {d['ticker']} ({d['nama']}): yield {d['yield_pct']:.2f}%, DPS Rp{d['dps']:,}, Ex-Date {d['ex_date']}" for d in _dv_top5])
+                _dv_bi_rate  = _bi_current  # pakai variable yang sudah ada
+                _dv_prompt = f"""Kamu adalah SIGMA AI, analis investasi dividen pasar modal IDX.
+
+Analisa kondisi dividen emiten IDX 2026 berdasarkan data berikut:
+
+📌 DATA DIVIDEN IDX 2026:
+- Total emiten dengan jadwal dividen 2026 di database: {len(_dv_all)}
+- Rata-rata dividend yield 2026: {_dv_yield_avg:.2f}%
+- BI Rate saat ini: {_dv_bi_rate:.2f}%
+- Spread yield dividen vs BI Rate: {_dv_yield_avg - _dv_bi_rate:+.2f}%
+
+📌 TOP 5 DIVIDEN YIELD TERTINGGI 2026:
+{_dv_top5_str}
+
+Buatlah analisa naratif yang mencakup:
+1. **Kondisi Dividen IDX 2026** — Apakah rata-rata yield {_dv_yield_avg:.2f}% menarik dibanding BI Rate {_dv_bi_rate:.2f}%?
+2. **Strategi Dividend Investing** — Haruskah investor fokus ke dividen atau capital gain di kondisi saat ini?
+3. **Highlight Emiten** — Dari top 5 di atas, mana yang paling menarik dari sisi fundamental + yield? Alasan singkat.
+4. **Timing** — Tips kapan masuk (cum date strategy) dan risiko yang perlu diperhatikan?
+5. **Kesimpulan** — Apakah dividend play di IDX 2026 ini layak dijadikan strategi utama?
+
+Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan actionable."""
+                with st.spinner("🤖 SIGMA menganalisa data dividen IDX..."):
+                    try:
+                        _ai_dv_result, _ai_dv_model = _call_groq_primary(_dv_prompt, max_tokens=2000, temperature=0.65)
+                        st.session_state["ai_dividend_result"] = (_ai_dv_result, _ai_dv_model)
+                    except Exception as _e:
+                        st.session_state["ai_dividend_result"] = (f"❌ Gagal: {str(_e)}", "error")
+            if st.session_state.get("ai_dividend_result"):
+                _dv_txt, _dv_mdl = st.session_state["ai_dividend_result"]
+                st.markdown(f"""<div style='background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.25);
+                border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
+                line-height:1.75;color:#e0e0e0;'>
+                <div style='font-size:0.68rem;color:#10b981;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+                🤖 SIGMA AI · Dividend Analysis · Model: {_dv_mdl}</div>
+                {_dv_txt.replace(chr(10), "<br>")}
+                </div>""", unsafe_allow_html=True)
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     with tab_macro:
@@ -15589,47 +15702,100 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 <div style='font-size:0.68rem;color:#64748b;margin-top:3px;'>{_delta}</div>
                 </div>""", unsafe_allow_html=True)
 
-        # ── BI Rate History Chart ──
+        # ── BI Rate History Chart — pakai components.html agar script CDN bisa load ──
         _bi_labels_js = str([r["date"] for r in _bi_rate_history]).replace("'", '"')
         _bi_vals_js   = str([r["rate"] for r in _bi_rate_history])
-        st.markdown(f"""
-        <div style='background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);
-        border-radius:8px;padding:16px;margin:8px 0;'>
-        <div style='font-size:0.75rem;color:#888;margin-bottom:12px;font-family:IBM Plex Mono,monospace;'>
-        📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
-        <span style='float:right;color:#26a69a;font-weight:600;'>Current: {_bi_current:.2f}%</span>
-        </div>
-        <canvas id='bi_rate_chart' height='80'></canvas>
-        </div>
-        <script src='https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js'></script>
-        <script>
-        (function(){{
-          var ctx = document.getElementById('bi_rate_chart').getContext('2d');
-          new Chart(ctx, {{
-            type: 'line',
-            data: {{
-              labels: {_bi_labels_js},
-              datasets: [{{
-                label: 'BI Rate (%)', data: {_bi_vals_js},
-                borderColor: '#26a69a', backgroundColor: 'rgba(38,166,154,0.12)',
-                tension: 0.3, fill: true, pointRadius: 3, pointHoverRadius: 5,
-                borderWidth: 2, pointBackgroundColor: '#26a69a'
-              }}]
-            }},
-            options: {{
-              responsive: true, plugins: {{ legend: {{ display: false }},
-              tooltip: {{ callbacks: {{ label: function(c) {{ return c.parsed.y.toFixed(2) + '%'; }} }} }} }},
-              scales: {{
-                x: {{ ticks: {{ color: '#888', font: {{ size: 9 }} }}, grid: {{ color: 'rgba(255,255,255,0.04)' }} }},
-                y: {{ ticks: {{ color: '#888', font: {{ size: 9 }}, callback: function(v) {{ return v+'%'; }} }},
-                     grid: {{ color: 'rgba(255,255,255,0.05)' }},
-                     min: 4.0, max: 7.0 }}
-              }}
+        _bi_chart_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+          <style>
+            body {{ margin:0; padding:0; background:transparent; }}
+            .chart-wrap {{
+              background:rgba(255,255,255,0.03);
+              border:1px solid rgba(255,255,255,0.09);
+              border-radius:8px;
+              padding:14px 16px 10px;
             }}
-          }});
-        }})();
-        </script>
-        """, unsafe_allow_html=True)
+            .chart-title {{
+              font-family:'IBM Plex Mono',monospace;
+              font-size:11px;
+              color:#888;
+              margin-bottom:10px;
+              display:flex;
+              justify-content:space-between;
+            }}
+            .chart-title span {{ color:#26a69a; font-weight:600; }}
+          </style>
+        </head>
+        <body>
+          <div class="chart-wrap">
+            <div class="chart-title">
+              📊 BI RATE HISTORIS (Jan 2024 – Mei 2026)
+              <span>Current: {_bi_current:.2f}%</span>
+            </div>
+            <canvas id="bi_rate_chart"></canvas>
+          </div>
+          <script>
+          (function() {{
+            var ctx = document.getElementById('bi_rate_chart').getContext('2d');
+            var labels = {_bi_labels_js};
+            var vals   = {_bi_vals_js};
+            // Warna titik: merah naik, hijau turun/sama
+            var ptColors = vals.map(function(v,i) {{
+              if (i === 0) return '#26a69a';
+              return v > vals[i-1] ? '#ef5350' : '#26a69a';
+            }});
+            new Chart(ctx, {{
+              type: 'line',
+              data: {{
+                labels: labels,
+                datasets: [{{
+                  label: 'BI Rate (%)',
+                  data: vals,
+                  borderColor: '#26a69a',
+                  backgroundColor: 'rgba(38,166,154,0.10)',
+                  tension: 0.35,
+                  fill: true,
+                  pointRadius: 4,
+                  pointHoverRadius: 6,
+                  borderWidth: 2,
+                  pointBackgroundColor: ptColors,
+                  pointBorderColor: ptColors,
+                }}]
+              }},
+              options: {{
+                responsive: true,
+                animation: {{ duration: 600 }},
+                plugins: {{
+                  legend: {{ display: false }},
+                  tooltip: {{
+                    backgroundColor: '#1a1a2e',
+                    titleColor: '#888',
+                    bodyColor: '#26a69a',
+                    callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toFixed(2) + '%'; }} }}
+                  }}
+                }},
+                scales: {{
+                  x: {{
+                    ticks: {{ color: '#666', font: {{ size: 9 }}, maxRotation: 45, minRotation: 45 }},
+                    grid: {{ color: 'rgba(255,255,255,0.04)' }}
+                  }},
+                  y: {{
+                    ticks: {{ color: '#666', font: {{ size: 9 }}, callback: function(v) {{ return v+'%'; }} }},
+                    grid: {{ color: 'rgba(255,255,255,0.05)' }},
+                    min: 4.0, max: 7.0
+                  }}
+                }}
+              }}
+            }});
+          }})();
+          </script>
+        </body>
+        </html>
+        """
+        components.html(_bi_chart_html, height=220, scrolling=False)
 
         # ── RDG BI Schedule 2026 ──
         st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
@@ -15647,6 +15813,56 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
 
         _rates_src_note = "US 10Y via yfinance" if _global_rates["US 10Y"]["source"] == "yfinance" else "Semua rates: hardcoded (yfinance gagal)"
         st.caption(f"📡 Sumber data: BI Rate = hardcoded dari keputusan resmi BI · {_rates_src_note} · Cache 30 menit")
+
+        # ── AI ANALYST: Rate Monitor ──────────────────────────────
+        st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>🤖 AI ANALYST — RATE MONITOR</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
+        if "ai_rate_monitor_result" not in st.session_state:
+            st.session_state["ai_rate_monitor_result"] = None
+        _col_ai_rm, _ = st.columns([1, 3])
+        with _col_ai_rm:
+            _btn_analyze_rate = st.button("🔍 Analyze Rate Monitor", key="btn_ai_rate_monitor", use_container_width=True)
+        if _btn_analyze_rate:
+            _bi_trend = "turun" if _bi_chg < 0 else ("naik" if _bi_chg > 0 else "stabil")
+            _rm_prompt = f"""Kamu adalah SIGMA AI, analis makro ekonomi dan pasar modal IDX.
+
+Analisa kondisi suku bunga global dan implikasinya terhadap pasar modal Indonesia (IHSG) saat ini berdasarkan data berikut:
+
+📌 DATA LIVE:
+- BI Rate: {_bi_current:.2f}% (perubahan terakhir: {_bi_chg:+.2f}%, tren: {_bi_trend})
+- Fed Funds Rate: {_global_rates["Fed Funds"]["value"]:.2f}%
+- SOFR (Overnight USD): {_global_rates["SOFR"]["value"]:.2f}%
+- US Treasury 10Y Yield: {_global_rates["US 10Y"]["value"]:.2f}%
+- Indonesia Gov Bond 10Y: {_global_rates["ID 10Y"]["value"]:.2f}%
+- Spread ID-US 10Y: +{round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}%
+
+📌 KONTEKS BI RATE HISTORIS (24 bln terakhir):
+- Puncak tertinggi: 6.25% (Apr–Ags 2024)
+- Siklus pemotongan: Sep 2024 mulai turun bertahap
+- Current: {_bi_current:.2f}% (target BI 2026: ~4.50%)
+
+Buatlah analisa naratif yang mencakup:
+1. **Kondisi Saat Ini** — Apa yang sedang terjadi dengan suku bunga global & Indonesia?
+2. **Spread Analysis** — Spread ID-US {round(_global_rates["ID 10Y"]["value"] - _global_rates["US 10Y"]["value"], 2):.2f}% itu atraktif/tidak? Dampak ke asing masuk/keluar IDX?
+3. **Dampak ke IHSG** — Siklus pemotongan BI Rate ini bullish/bearish? Sektor mana yang paling diuntungkan?
+4. **Risiko** — Apa yang perlu diwaspadai investor IDX dari kondisi rate global saat ini?
+5. **Kesimpulan** — 1–2 kalimat tegas soal outlook suku bunga untuk pasar modal Indonesia.
+
+Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Jujur dan tegas."""
+            with st.spinner("🤖 SIGMA menganalisa kondisi rate monitor..."):
+                try:
+                    _ai_rm_result, _ai_rm_model = _call_groq_primary(_rm_prompt, max_tokens=2000, temperature=0.6)
+                    st.session_state["ai_rate_monitor_result"] = (_ai_rm_result, _ai_rm_model)
+                except Exception as _e:
+                    st.session_state["ai_rate_monitor_result"] = (f"❌ Gagal: {str(_e)}", "error")
+        if st.session_state.get("ai_rate_monitor_result"):
+            _rm_txt, _rm_mdl = st.session_state["ai_rate_monitor_result"]
+            st.markdown(f"""<div style='background:rgba(38,166,154,0.06);border:1px solid rgba(38,166,154,0.25);
+            border-radius:8px;padding:16px 18px;margin-top:8px;font-family:"DM Sans",sans-serif;font-size:0.88rem;
+            line-height:1.75;color:#e0e0e0;'>
+            <div style='font-size:0.68rem;color:#26a69a;font-family:IBM Plex Mono,monospace;margin-bottom:10px;'>
+            🤖 SIGMA AI · Rate Monitor Analysis · Model: {_rm_mdl}</div>
+            {_rm_txt.replace(chr(10), "<br>")}
+            </div>""", unsafe_allow_html=True)
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
         # ─────────────────────────────────────────────────────────
