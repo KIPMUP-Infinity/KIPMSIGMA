@@ -18255,6 +18255,89 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             # ════════════════════════════════════════════════════════════════
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SHAREHOLDER SCREENING</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
+            # ════════════════════════════════════════════════════════════════
+            # PANEL UPDATE DATA MANUAL — Admin input data terbaru per bulan
+            # Data override disimpan di session_state agar klasifikasi
+            # akumulasi/distribusi mengikuti angka real, bukan hardcoded.
+            # ════════════════════════════════════════════════════════════════
+            if "sh_overrides" not in st.session_state:
+                st.session_state["sh_overrides"] = {}  # {ticker: [{"date":..,"shareholders":..}, ...]}
+
+            with st.expander("✏️ UPDATE DATA PEMEGANG SAHAM (Input Manual Bulanan)", expanded=False):
+                st.markdown(f"""<div style='font-family:DM Sans,sans-serif;font-size:0.85rem;
+                    color:{text_sub};line-height:1.8;margin-bottom:12px;'>
+                    Input angka pemegang saham terbaru dari <b style='color:{text_main};'>IDX/KSEI</b> tiap awal bulan.
+                    Data ini akan <b style='color:#00E5BE;'>menggantikan data hardcoded</b> dan mengubah klasifikasi
+                    Akumulasi/Distribusi secara real-time.<br>
+                    <span style='color:#f0a500;'>⚡ Override berlaku untuk sesi ini. Reset otomatis jika halaman di-refresh.</span>
+                    </div>""", unsafe_allow_html=True)
+
+                _upd_col1, _upd_col2, _upd_col3, _upd_col4 = st.columns([2, 2, 2, 1])
+                with _upd_col1:
+                    import datetime as _dtupd
+                    _upd_ticker = st.text_input("Kode Saham", placeholder="cth: BBCA", key="sh_upd_ticker").upper().strip()
+                with _upd_col2:
+                    _upd_bulan_opts = []
+                    _now_upd = _dtupd.datetime.now()
+                    for _i in range(12):
+                        _m = _now_upd.month - _i
+                        _y = _now_upd.year
+                        while _m <= 0:
+                            _m += 12
+                            _y -= 1
+                        import calendar as _cal_upd
+                        _last_d = _cal_upd.monthrange(_y, _m)[1]
+                        _upd_bulan_opts.append(_dtupd.datetime(_y, _m, _last_d))
+                    _upd_bulan_labels = [d.strftime("%b %Y") for d in _upd_bulan_opts]
+                    _upd_bulan_sel = st.selectbox("Bulan Data", _upd_bulan_labels, index=0, key="sh_upd_bulan")
+                    _upd_bulan_dt = _upd_bulan_opts[_upd_bulan_labels.index(_upd_bulan_sel)]
+                with _upd_col3:
+                    _upd_jumlah = st.number_input("Jumlah Pemegang", min_value=0, step=100, value=0, key="sh_upd_jumlah")
+                with _upd_col4:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    _upd_save = st.button("💾 SIMPAN", key="sh_upd_save_btn", use_container_width=True)
+
+                if _upd_save:
+                    if _upd_ticker and _upd_jumlah > 0:
+                        _ov = st.session_state["sh_overrides"]
+                        if _upd_ticker not in _ov:
+                            _ov[_upd_ticker] = []
+                        # Cek duplikat bulan yang sama — replace jika ada
+                        _ov[_upd_ticker] = [r for r in _ov[_upd_ticker]
+                                            if r["date"].strftime("%Y-%m") != _upd_bulan_dt.strftime("%Y-%m")]
+                        _ov[_upd_ticker].append({"date": _upd_bulan_dt, "shareholders": int(_upd_jumlah)})
+                        _ov[_upd_ticker].sort(key=lambda x: x["date"])
+                        st.session_state["sh_overrides"] = _ov
+                        st.success(f"✅ {_upd_ticker} — {_upd_bulan_sel}: {int(_upd_jumlah):,} pemegang tersimpan.")
+                    else:
+                        st.warning("⚠️ Isi kode saham dan jumlah pemegang > 0.")
+
+                # Tampilkan semua override aktif
+                _cur_ov = st.session_state.get("sh_overrides", {})
+                if _cur_ov:
+                    st.markdown(f"<div style='font-family:DM Sans,sans-serif;font-size:0.8rem;color:{text_sub};margin-top:10px;margin-bottom:4px;letter-spacing:0.08em;'>DATA OVERRIDE AKTIF ({len(_cur_ov)} ticker):</div>", unsafe_allow_html=True)
+                    _ov_rows_html = ""
+                    _ov_tickers_sorted = sorted(_cur_ov.keys())
+                    for _ovtk in _ov_tickers_sorted:
+                        _ovdata = sorted(_cur_ov[_ovtk], key=lambda x: x["date"], reverse=True)
+                        _latest_ov = _ovdata[0]
+                        _badge_col = "#00E5BE"
+                        _ov_rows_html += f"""<span style='display:inline-flex;align-items:center;gap:6px;
+                            background:rgba(0,229,190,0.08);border:1px solid rgba(0,229,190,0.3);
+                            border-radius:6px;padding:3px 10px;margin:3px;font-family:IBM Plex Mono,monospace;font-size:0.8rem;'>
+                            <b style='color:{_badge_col};'>{_ovtk}</b>
+                            <span style='color:{text_sub};'>{_latest_ov["date"].strftime("%b %y")}: {_latest_ov["shareholders"]:,}</span>
+                        </span>"""
+                    st.markdown(f"<div style='display:flex;flex-wrap:wrap;gap:2px;'>{_ov_rows_html}</div>", unsafe_allow_html=True)
+
+                    _col_reset, _ = st.columns([1, 3])
+                    with _col_reset:
+                        if st.button("🗑️ Reset Semua Override", key="sh_reset_overrides"):
+                            st.session_state["sh_overrides"] = {}
+                            st.rerun()
+                else:
+                    st.markdown(f"<div style='font-family:DM Sans,sans-serif;font-size:0.8rem;color:{text_sub};opacity:0.6;margin-top:6px;'>Belum ada override. Data screener menggunakan database SIGMA.</div>", unsafe_allow_html=True)
+
             # ── Database screening 200+ emiten BEI (hardcoded, reliable) ──────
             # Format: ticker -> [{"date":..,"shareholders":..}, ...] 12 bulan Apr25-Mar26
             # Pola: Naik = akumulasi, Turun = distribusi, Flat = konsolidasi
@@ -18371,6 +18454,42 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             # ── Hapus saham suspend dari screening database ──
             _full_screen_db = {tk: v for tk, v in _full_screen_db.items() if tk not in IDX_SUSPENDED_TICKERS}
 
+            # ── Merge override session_state ke database screening ──
+            # Override dari panel Update Manual menggantikan data bulan terakhir
+            # sehingga klasifikasi akumulasi/distribusi mengikuti angka real IDX/KSEI.
+            _active_overrides = st.session_state.get("sh_overrides", {})
+            _overridden_tickers = set()
+            if _active_overrides:
+                import datetime as _dtov, calendar as _calov
+                for _ovtk, _ovdata in _active_overrides.items():
+                    if not _ovdata:
+                        continue
+                    if _ovtk in IDX_SUSPENDED_TICKERS:
+                        continue
+                    if _ovtk not in _full_screen_db:
+                        # Ticker baru yang tidak ada di hardcoded DB — buat entry baru
+                        _full_screen_db[_ovtk] = []
+                    _existing = list(_full_screen_db[_ovtk])
+                    for _ovr in _ovdata:
+                        _ovr_ym = _ovr["date"].strftime("%Y-%m")
+                        # Hapus entry bulan yang sama kalau ada, lalu append yang baru
+                        _existing = [r for r in _existing
+                                     if r["date"].strftime("%Y-%m") != _ovr_ym]
+                        _existing.append({"date": _ovr["date"], "shareholders": _ovr["shareholders"]})
+                    _existing.sort(key=lambda x: x["date"])
+                    _full_screen_db[_ovtk] = _existing
+                    _overridden_tickers.add(_ovtk)
+
+                # Info banner override aktif
+                _ov_count = len(_overridden_tickers)
+                st.markdown(f"""<div style='background:rgba(0,229,190,0.07);border:1px solid rgba(0,229,190,0.25);
+                    border-left:4px solid #00E5BE;border-radius:8px;padding:8px 16px;
+                    margin:8px 0 12px;font-family:DM Sans,sans-serif;font-size:0.82rem;color:#00E5BE;'>
+                    ✅ <b>Override aktif:</b> {_ov_count} ticker menggunakan data manual —
+                    {", ".join(sorted(_overridden_tickers))}.
+                    Klasifikasi Akumulasi/Distribusi sudah diperbarui.
+                    </div>""", unsafe_allow_html=True)
+
             pass  # subtitle dihapus per request
 
             # ── Build screening rows dari database gabungan ──
@@ -18413,8 +18532,9 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 _lbl_m2 = _df_sc["date"].iloc[-3].strftime("%b '%y") if _m2 else "-"
                 _lbl_m3 = _df_sc["date"].iloc[-4].strftime("%b '%y") if _m3 else "-"
 
+                _is_overridden = _tk in _overridden_tickers
                 _row = {
-                    "Ticker": _tk,
+                    "Ticker": f"{_tk} ✏️" if _is_overridden else _tk,
                     "Pemegang": f"{_last:,}",
                     "Δ 1 Bln": f"+{_delta1:,}" if _delta1 > 0 else f"{_delta1:,}",
                     "Δ %": f"+{_pct1:.2f}%" if _pct1 > 0 else f"{_pct1:.2f}%",
