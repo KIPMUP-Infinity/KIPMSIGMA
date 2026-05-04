@@ -131,6 +131,19 @@ def _single_card_html(row: dict, idx: int) -> str:
     sigma_score = int(row.get("combined", row.get("ta_score", 0)))
     sigma_score = max(0, min(99, sigma_score))
 
+    # ── Indikator Teknikal Tambahan (RSI · MACD · BB · Vol Ratio) ──
+    rsi_val        = row.get("rsi", None)
+    rsi_label      = row.get("rsi_label", "—")
+    rsi_color      = row.get("rsi_color", "rgba(255,255,255,0.4)")
+    macd_label     = row.get("macd_label", "—")
+    macd_color     = row.get("macd_color", "rgba(255,255,255,0.4)")
+    bb_label       = row.get("bb_label", "—")
+    bb_color       = row.get("bb_color", "rgba(255,255,255,0.4)")
+    bb_pct_b       = row.get("bb_pct_b", None)
+    vol_ratio_label= row.get("vol_ratio_label", row.get("vol_spike", "—"))
+    vol_ratio_color= row.get("vol_ratio_color", "rgba(255,255,255,0.4)")
+    rsi_display    = f"{rsi_val:.0f}" if rsi_val is not None else "—"
+
     bandar_pct   = int(row.get("bandar_pct", max(40, min(85, sigma_score))))
     asing_net    = row.get("asing_net", "")
     inst_net     = row.get("inst_net", "")
@@ -320,6 +333,29 @@ def _single_card_html(row: dict, idx: int) -> str:
         <span class="bc-insight-title">AI INSIGHT</span>
       </div>
       <div class="bc-insight-text">{why}</div>
+    </div>
+
+    <!-- INDIKATOR TEKNIKAL PANEL -->
+    <div class="bc-indicators">
+      <div class="bc-ind-title">INDIKATOR TEKNIKAL</div>
+      <div class="bc-ind-grid">
+        <div class="bc-ind-item">
+          <span class="bc-ind-label">RSI (14)</span>
+          <span class="bc-ind-value" style="color:{rsi_color};">{rsi_display} <span class="bc-ind-sub">{rsi_label}</span></span>
+        </div>
+        <div class="bc-ind-item">
+          <span class="bc-ind-label">MACD</span>
+          <span class="bc-ind-value" style="color:{macd_color};">{macd_label}</span>
+        </div>
+        <div class="bc-ind-item">
+          <span class="bc-ind-label">Bollinger Band</span>
+          <span class="bc-ind-value" style="color:{bb_color};">{bb_label}</span>
+        </div>
+        <div class="bc-ind-item">
+          <span class="bc-ind-label">Vol / Avg10</span>
+          <span class="bc-ind-value" style="color:{vol_ratio_color};">{vol_ratio_label}</span>
+        </div>
+      </div>
     </div>
 
     <!-- SIGMA SCORE FOOTER -->
@@ -839,6 +875,49 @@ _CARD_CSS = """
 }
 .bc-sigma-fill { height: 100%; border-radius: 2px; }
 
+/* ── Indikator Teknikal Panel ── */
+.bc-indicators {
+  padding: 10px 14px 8px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  margin-bottom: 10px;
+}
+.bc-ind-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.22);
+  margin-bottom: 8px;
+}
+.bc-ind-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px 10px;
+}
+.bc-ind-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bc-ind-label {
+  font-size: 9px;
+  color: rgba(255,255,255,0.3);
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.bc-ind-value {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.3;
+}
+.bc-ind-sub {
+  font-size: 9px;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
 /* ── Footer ── */
 .bsjp-footer {
   margin-top: 12px;
@@ -960,12 +1039,10 @@ def _sanitize_html_text(raw) -> str:
 _gemini_cooldown: dict = {}
 _BACKOFF_BASE_SEC = 25      # detik cooldown awal setelah 429
 _BACKOFF_MAX_SEC  = 180     # batas atas cooldown eksponensial
-# ── SIGMA GROQ RATE LIMIT MANAGER ─────────────────────────────
-# Mirror dari sistem Gemini yang sudah ada di atas.
-# Setiap key Groq yang kena 429 dicatat + exponential backoff.
+# ── SIGMA GROQ RATE LIMIT MANAGER ──
 _groq_cooldown: dict = {}
-_GROQ_BACKOFF_BASE_SEC = 30      # detik cooldown awal setelah 429
-_GROQ_BACKOFF_MAX_SEC  = 300     # batas atas (5 menit, sesuai window limit Groq)
+_GROQ_BACKOFF_BASE_SEC = 30
+_GROQ_BACKOFF_MAX_SEC  = 300
 
 def _mark_groq_key_ratelimited(key: str) -> None:
     """Tandai key Groq sebagai rate-limited dengan exponential backoff + jitter."""
@@ -979,30 +1056,23 @@ def _mark_groq_key_ratelimited(key: str) -> None:
     _groq_cooldown[h] = now + wait
 
 def _groq_key_available(key: str) -> bool:
-    """Return True jika key Groq tidak sedang dalam cooldown period."""
     h = hashlib.md5(key.encode()).hexdigest()[:10]
     return time.time() >= _groq_cooldown.get(h, 0)
 
 def _get_available_groq_keys(all_keys: list) -> list:
-    """Return pasangan (name, key) yang tidak sedang cooldown. Fallback ke semua jika semua cooldown."""
     available = [(n, k) for n, k in all_keys if _groq_key_available(k)]
     return available if available else all_keys
 
 def _friendly_ratelimit_message() -> str:
-    """Pesan ramah saat semua provider sedang rate-limit. Hitung ETA dari cooldown tercepat."""
     now = time.time()
     soonest = min(_groq_cooldown.values(), default=now)
     sisa = max(0, soonest - now)
-    if sisa < 10:
-        eta = "beberapa detik lagi"
-    elif sisa < 60:
-        eta = f"sekitar {int(sisa)} detik lagi"
-    else:
-        eta = f"sekitar {int(sisa // 60)} menit lagi"
+    if sisa < 10: eta = "beberapa detik lagi"
+    elif sisa < 60: eta = f"sekitar {int(sisa)} detik lagi"
+    else: eta = f"sekitar {int(sisa // 60)} menit lagi"
     return (
         f"⏳ **SIGMA sedang ramai** — semua jalur AI sedang dalam antrian rate limit.\n\n"
-        f"Estimasi tersedia kembali: **{eta}**.\n\n"
-        f"Coba kirim pesan lagi sebentar. Tidak ada yang hilang."
+        f"Estimasi tersedia kembali: **{eta}**.\n\nCoba kirim pesan lagi sebentar."
     )
 
 
@@ -1193,6 +1263,189 @@ def _swing_highs(highs: list, window: int = 3) -> list:
 
 def _clamp(val, lo=0, hi=100) -> int:
     return int(max(lo, min(hi, val)))
+
+# ─────────────────────────────────────────────────────────────────────
+# INDIKATOR TEKNIKAL TAMBAHAN — RSI · MACD · Bollinger Band · Vol Ratio
+# Digunakan oleh _score_teknikal() dan _enrich_row_indicators()
+# ─────────────────────────────────────────────────────────────────────
+
+def _calc_rsi(closes: list, period: int = 14) -> float:
+    """RSI Wilder — return 0-100. Butuh minimal period+1 data."""
+    if len(closes) < period + 1:
+        return 50.0
+    gains, losses = [], []
+    for i in range(1, period + 1):
+        d = closes[-period - 1 + i] - closes[-period - 2 + i]
+        (gains if d >= 0 else losses).append(abs(d))
+    avg_gain = sum(gains) / period if gains else 0
+    avg_loss = sum(losses) / period if losses else 1e-9
+    # Wilder smoothing untuk sisa data
+    for i in range(len(closes) - period - 1):
+        idx = -(period) + i
+        d = closes[idx] - closes[idx - 1] if idx - 1 >= -len(closes) else 0
+        g = d if d > 0 else 0
+        l = -d if d < 0 else 0
+        avg_gain = (avg_gain * (period - 1) + g) / period
+        avg_loss = (avg_loss * (period - 1) + l) / period
+    rs = avg_gain / avg_loss if avg_loss else 0
+    return round(100 - (100 / (1 + rs)), 1)
+
+
+def _calc_macd(closes: list, fast: int = 12, slow: int = 26, signal: int = 9) -> dict:
+    """
+    MACD klasik. Return dict:
+      macd_line   : MACD line (EMA fast - EMA slow)
+      signal_line : EMA 9 dari MACD
+      histogram   : macd_line - signal_line
+      crossover   : 'BULLISH' / 'BEARISH' / 'NONE'
+    """
+    if len(closes) < slow + signal:
+        return {"macd_line": 0, "signal_line": 0, "histogram": 0, "crossover": "NONE"}
+
+    # Hitung MACD line untuk seluruh history
+    macd_vals = []
+    for i in range(slow - 1, len(closes)):
+        e_fast = _ema(closes[:i + 1], fast)
+        e_slow = _ema(closes[:i + 1], slow)
+        macd_vals.append(e_fast - e_slow)
+
+    if len(macd_vals) < signal:
+        return {"macd_line": 0, "signal_line": 0, "histogram": 0, "crossover": "NONE"}
+
+    sig_line = _ema(macd_vals, signal)
+    macd_now = macd_vals[-1]
+    hist = macd_now - sig_line
+
+    # Crossover detection (hari ini vs kemarin)
+    crossover = "NONE"
+    if len(macd_vals) >= 2:
+        prev_sig = _ema(macd_vals[:-1], signal) if len(macd_vals) > signal else sig_line
+        if macd_vals[-2] < prev_sig and macd_now > sig_line:
+            crossover = "BULLISH"
+        elif macd_vals[-2] > prev_sig and macd_now < sig_line:
+            crossover = "BEARISH"
+
+    return {
+        "macd_line":   round(macd_now, 2),
+        "signal_line": round(sig_line, 2),
+        "histogram":   round(hist, 2),
+        "crossover":   crossover,
+    }
+
+
+def _calc_bollinger(closes: list, period: int = 20, mult: float = 2.0) -> dict:
+    """
+    Bollinger Bands. Return dict:
+      upper, middle, lower  : nilai band (Rp)
+      pct_b                 : posisi harga dalam band (0=lower, 1=upper, 0.5=middle)
+      bandwidth             : (upper-lower)/middle × 100 → ukuran volatilitas
+      status                : 'UPPER' / 'LOWER' / 'SQUEEZE' / 'NORMAL'
+    """
+    if len(closes) < period:
+        p = closes[-1]
+        return {"upper": p, "middle": p, "lower": p, "pct_b": 0.5, "bandwidth": 0, "status": "NORMAL"}
+
+    window = closes[-period:]
+    mid = sum(window) / period
+    variance = sum((x - mid) ** 2 for x in window) / period
+    std = variance ** 0.5
+    upper = mid + mult * std
+    lower = mid - mult * std
+    price = closes[-1]
+
+    band_range = upper - lower
+    pct_b = (price - lower) / band_range if band_range > 0 else 0.5
+    bandwidth = (band_range / mid * 100) if mid > 0 else 0
+
+    if pct_b >= 0.95:
+        status = "UPPER"
+    elif pct_b <= 0.05:
+        status = "LOWER"
+    elif bandwidth < 3.0:
+        status = "SQUEEZE"
+    else:
+        status = "NORMAL"
+
+    return {
+        "upper":     round(upper, 0),
+        "middle":    round(mid, 0),
+        "lower":     round(lower, 0),
+        "pct_b":     round(pct_b, 3),
+        "bandwidth": round(bandwidth, 2),
+        "status":    status,
+    }
+
+
+def _calc_vol_ratio(volumes: list, period: int = 10) -> float:
+    """
+    Volume ratio: volume hari ini vs rata-rata N hari terakhir.
+    Return float, misal 2.3 artinya volume 2.3x rata-rata 10 hari.
+    """
+    if len(volumes) < period + 1:
+        return 1.0
+    avg = sum(volumes[-period - 1:-1]) / period
+    if avg <= 0:
+        return 1.0
+    return round(volumes[-1] / avg, 2)
+
+
+def _enrich_row_indicators(row: dict, closes: list, highs: list, lows: list, volumes: list) -> dict:
+    """
+    Hitung RSI, MACD, Bollinger, Vol Ratio dari data OHLCV dan inject ke row dict.
+    Dipanggil sebelum kartu dirender — hasilnya langsung dipakai oleh _single_card_html().
+    """
+    row = dict(row)  # copy agar tidak mutate original
+
+    if len(closes) >= 15:
+        rsi_val = _calc_rsi(closes, 14)
+        row["rsi"] = rsi_val
+        if rsi_val >= 70:
+            row["rsi_label"] = "OVERBOUGHT"
+            row["rsi_color"] = "#E24B4A"
+        elif rsi_val <= 30:
+            row["rsi_label"] = "OVERSOLD"
+            row["rsi_color"] = "#00E5BE"
+        else:
+            row["rsi_label"] = "NORMAL"
+            row["rsi_color"] = "#F0A500"
+
+    if len(closes) >= 35:
+        macd = _calc_macd(closes)
+        row["macd_hist"]     = macd["histogram"]
+        row["macd_cross"]    = macd["crossover"]
+        row["macd_label"]    = "▲ BULLISH CROSS" if macd["crossover"] == "BULLISH" else (
+                               "▼ BEARISH CROSS" if macd["crossover"] == "BEARISH" else
+                               ("▲ Positif" if macd["histogram"] > 0 else "▼ Negatif"))
+        row["macd_color"]    = "#00E5BE" if macd["histogram"] > 0 else "#E24B4A"
+
+    if len(closes) >= 20:
+        bb = _calc_bollinger(closes)
+        row["bb_upper"]     = bb["upper"]
+        row["bb_middle"]    = bb["middle"]
+        row["bb_lower"]     = bb["lower"]
+        row["bb_pct_b"]     = bb["pct_b"]
+        row["bb_bandwidth"] = bb["bandwidth"]
+        row["bb_status"]    = bb["status"]
+        row["bb_label"]     = {
+            "UPPER":   "⚠ Sentuh Upper Band",
+            "LOWER":   "✅ Sentuh Lower Band",
+            "SQUEEZE": "🔔 BB Squeeze",
+            "NORMAL":  "Normal"
+        }.get(bb["status"], "Normal")
+        row["bb_color"]     = {
+            "UPPER": "#E24B4A", "LOWER": "#00E5BE",
+            "SQUEEZE": "#F0A500", "NORMAL": "rgba(255,255,255,0.4)"
+        }.get(bb["status"], "rgba(255,255,255,0.4)")
+
+    if len(volumes) >= 11:
+        vr = _calc_vol_ratio(volumes, 10)
+        row["vol_ratio"] = vr
+        row["vol_ratio_label"] = f"{vr:.1f}x avg10"
+        row["vol_ratio_color"] = "#00E5BE" if vr >= 2.0 else ("#F0A500" if vr >= 1.3 else "rgba(255,255,255,0.4)")
+
+    return row
+
+
 
 
 # ─────────────────────────────────────────────
@@ -1932,6 +2185,7 @@ def sigma_score(
 def batch_sigma_score(ticker_price_dict: dict, ihsg_closes: list = None) -> dict:
     """
     Score banyak saham sekaligus dari data yang sudah di-fetch.
+    PATCH: Setelah scoring, enrich result dengan RSI/MACD/BB/VolRatio.
 
     ticker_price_dict format (dari _reco_fetch_prices):
     {
@@ -3192,7 +3446,7 @@ def _goapi_resolve_base(force: bool = False) -> str:
 @st.cache_data(ttl=90, show_spinner=False)
 def goapi_get_price(ticker: str) -> dict:
     """Harga real-time satu saham dari GoAPI. Endpoint: /stock/idx/{symbol}
-    PATCH: Cache 90 detik — semua user dalam window ini pakai data yang sama."""
+    Cache 90 detik — semua user dalam window ini pakai data yang sama."""
     _goapi_throttle()
     try:
         r = requests.get(f"{GOAPI_BASE}/{ticker}", headers=_goapi_headers(), timeout=10)
@@ -3216,9 +3470,8 @@ def goapi_get_price(ticker: str) -> dict:
 @st.cache_data(ttl=90, show_spinner=False)
 def goapi_get_prices(tickers: tuple) -> dict:
     """Harga real-time multiple ticker. Endpoint: /stock/idx/prices?symbols=A,B,C
-    PATCH: Parameter diubah list→tuple agar cacheable oleh st.cache_data.
-    Cache 90 detik — semua user dalam window ini pakai data yang sama.
-    Cara panggil: goapi_get_prices(tuple(sorted(ticker_list)))"""
+    PATCH: parameter list→tuple agar cacheable. Panggil dengan tuple(sorted(list)).
+    Cache 90 detik — semua user dalam window ini pakai data yang sama."""
     _goapi_throttle()
     try:
         symbols = ",".join(tickers)
@@ -6695,12 +6948,10 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
     if not all_keys:
         raise Exception("Semua Groq API key tidak tersedia")
 
-    # Prioritaskan key yang tidak sedang cooldown
     valid_keys = _get_available_groq_keys(all_keys)
 
     last_err = None
     for key_name, key in valid_keys:
-        # Skip key yang masih dalam cooldown period
         if not _groq_key_available(key):
             continue
         try:
@@ -6714,12 +6965,10 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
             return response.choices[0].message.content, f"Groq/Llama70B({key_name})"
         except Exception as e:
             err_str = str(e).lower()
-            # 429 rate limit atau token terlalu besar → tandai cooldown + coba key berikutnya
             if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "too large" in err_str or "token" in err_str:
                 last_err = e
-                _mark_groq_key_ratelimited(key)  # ← PATCH: catat cooldown per-key
+                _mark_groq_key_ratelimited(key)
                 continue
-            # Error lain (bukan limit) → langsung raise
             raise e
 
     raise Exception(f"Semua Groq key kena rate limit. Error terakhir: {last_err}")
@@ -6739,12 +6988,10 @@ def _call_groq_fallback(full_prompt):
     if not all_keys:
         raise Exception("Semua Groq API key tidak tersedia")
 
-    # Prioritaskan key yang tidak sedang cooldown
     valid_keys = _get_available_groq_keys(all_keys)
 
     last_err = None
     for key_name, key in valid_keys:
-        # Skip key yang masih dalam cooldown period
         if not _groq_key_available(key):
             continue
         try:
@@ -6763,7 +7010,7 @@ def _call_groq_fallback(full_prompt):
             err_str = str(e).lower()
             if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "too large" in err_str or "token" in err_str:
                 last_err = e
-                _mark_groq_key_ratelimited(key)  # ← PATCH: catat cooldown per-key
+                _mark_groq_key_ratelimited(key)
                 continue
             raise e
 
@@ -7651,6 +7898,53 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
 # Jalankan scheduler setiap page load
 if st.session_state.get("user"):
     _sigma_run_global_scheduler()
+
+# ── AUTO-REFRESH JAM BURSA ─────────────────────────────────────────
+# Aktif 09:00–16:05 WIB, Senin–Jumat, interval 5 menit.
+# Pakai st.fragment + time.sleep agar tidak block seluruh UI.
+# Mekanisme: simpan timestamp refresh terakhir di session_state,
+# bandingkan tiap rerun — kalau sudah lewat 5 menit → trigger rerun.
+def _auto_refresh_bursa():
+    """
+    Trigger st.rerun() otomatis tiap 5 menit selama jam bursa.
+    Dipanggil di setiap page load. Tidak block UI karena hanya
+    membandingkan timestamp, bukan sleep().
+    """
+    import time as _time_ar
+    try:
+        from datetime import timezone as _tz_ar, timedelta as _td_ar
+        _wib_ar  = _tz_ar(_td_ar(hours=7))
+        _now_ar  = datetime.now(_wib_ar)
+        _wd_ar   = _now_ar.weekday()   # 0=Senin 6=Minggu
+        _h_ar    = _now_ar.hour
+        _m_ar    = _now_ar.minute
+
+        # Hanya aktif hari kerja jam 09:00–16:05 WIB
+        _is_bursa = (
+            _wd_ar < 5 and
+            ((_h_ar == 9 and _m_ar >= 0) or (_h_ar > 9 and _h_ar < 16) or
+             (_h_ar == 16 and _m_ar <= 5))
+        )
+        if not _is_bursa:
+            return
+
+        _REFRESH_INTERVAL = 5 * 60  # 5 menit dalam detik
+        _last_key = "_auto_refresh_last_ts"
+        _last_ts  = st.session_state.get(_last_key, 0)
+        _now_ts   = _time_ar.time()
+
+        if _now_ts - _last_ts >= _REFRESH_INTERVAL:
+            st.session_state[_last_key] = _now_ts
+            # Tampilkan toast kecil sebelum rerun
+            _jam_str = _now_ar.strftime("%H:%M")
+            st.toast(f"🔄 Data diperbarui otomatis · {_jam_str} WIB", icon="📈")
+            import time as _t2; _t2.sleep(0.5)  # beri waktu toast tampil
+            st.rerun()
+    except Exception:
+        pass  # auto-refresh gagal → tidak crash app
+
+if st.session_state.get("user"):
+    _auto_refresh_bursa()
 
 
 st.markdown(f"""
@@ -22174,8 +22468,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "vol_spike": f"{spike:.1f}x",
                     "vol_type": vol_type,
                     "vol_trend": vol_trend,
-                    "rsi": round(45 + chg5 * 1.5, 1),
-                    "macd": "Bullish crossover" if chg5 > 2 else "Mendekati sinyal",
+                    "rsi": None,   # akan di-overwrite oleh _enrich_row_indicators di bawah
+                    "macd": None,  # akan di-overwrite oleh _enrich_row_indicators di bawah
                     "wyckoff": wyckoff,
                     "wyckoff_pct": wyckoff_pct,
                     "entry_low": entry_low,
@@ -22198,6 +22492,19 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "dates5":  d.get("dates5", []),
                     "vols5":   vols5,
                 }
+                # ── PATCH: Enrich dengan RSI/MACD/BB/VolRatio yang akurat ──
+                _closes_full  = d.get("closes",  d.get("closes5",  []))
+                _highs_full   = d.get("highs",   d.get("highs5",   []))
+                _lows_full    = d.get("lows",    d.get("lows5",    []))
+                _volumes_full = d.get("volumes", d.get("vols5",    []))
+                if len(_closes_full) >= 15:
+                    row = _enrich_row_indicators(
+                        row,
+                        closes=_closes_full,
+                        highs=_highs_full,
+                        lows=_lows_full,
+                        volumes=_volumes_full,
+                    )
                 result_rows.append(row)
 
             avoid_rows = []
@@ -22536,6 +22843,19 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     "rr":             rr,
                     "bandar_verdict": verdict,
                 }
+                # ── PATCH: Enrich dengan RSI/MACD/BB/VolRatio yang akurat ──
+                _closes_full  = d.get("closes",  d.get("closes5",  []))
+                _highs_full   = d.get("highs",   d.get("highs5",   []))
+                _lows_full    = d.get("lows",    d.get("lows5",    []))
+                _volumes_full = d.get("volumes", d.get("vols5",    []))
+                if len(_closes_full) >= 15:
+                    row = _enrich_row_indicators(
+                        row,
+                        closes=_closes_full,
+                        highs=_highs_full,
+                        lows=_lows_full,
+                        volumes=_volumes_full,
+                    )
                 result_rows.append(row)
 
             avoid_rows = []
@@ -23555,8 +23875,9 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                 except Exception: pass
 
             # ── 4 sub-tab ──
-            _d_tab_plan, _d_tab_hist_plan, _d_tab_hist_sum, _d_tab_trackrecord = st.tabs([
+            _d_tab_plan, _d_tab_ranking, _d_tab_hist_plan, _d_tab_hist_sum, _d_tab_trackrecord = st.tabs([
                 "  📋 TRADE PLAN & SUMMARY  ",
+                "  🏅 RANKING BROKER SCORE  ",
                 "  🗂️ HISTORY TRADE PLAN  ",
                 "  📊 HISTORY SUMMARY  ",
                 "  ⚖️ VERDICT  ",
@@ -23798,50 +24119,118 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 max_cards    = 10,
                             )
 
-                        # ── Ranking tabel sederhana sebagai referensi press 20→10 ──
-                        with st.expander("📋 Lihat ranking GoAPI press 20→10 (detail score)", expanded=False):
-                            _rank_hdr = ["RANK","TICKER","BROKER SCORE","AKUMULASI","BPR","DISTRIBUSI","STATUS","FINAL"]
-                            _rank_th  = "".join(
-                                f"<th style='padding:7px 10px;white-space:nowrap;font-size:0.66rem;"
-                                f"letter-spacing:0.09em;text-transform:uppercase;color:#00E5BE;"
-                                f"border-bottom:1px solid rgba(0,229,190,0.25);text-align:left;'>{h}</th>"
-                                for h in _rank_hdr)
-                            _rank_trs = ""
-                            for _ri_rank, (_bsc_rank, _rrow_rank) in enumerate(_ranked_20, 1):
-                                _tk_rank  = _rrow_rank.get("ticker","")
-                                _bsd_rank = next((s for s in _bs30_cache if s.get("ticker")==_tk_rank), {})
-                                _bpr_rank = f"{float(_bsd_rank.get('bpr',0) or 0):.0f}%"
-                                _accum_r  = " · ".join(_bsd_rank.get("top_accum",[])[:4]) or "—"
-                                _dist_r   = " · ".join(_bsd_rank.get("top_dist", [])[:3]) or "—"
-                                _verd_r   = _bsd_rank.get("verdict","—")
-                                _vc_r     = "#00E5BE" if "AKUMULASI" in _verd_r else ("#ff5c5c" if "DIST" in _verd_r else "#888")
-                                _is_top10 = _ri_rank <= 10
-                                _final_r  = "✅ MASUK" if _is_top10 else "❌ DROP"
-                                _fc_r     = "#00E5BE" if _is_top10 else "#666"
-                                _bg_r     = "rgba(0,229,190,0.05)" if _is_top10 else "transparent"
-                                _rank_trs += (
-                                    f"<tr style='background:{_bg_r};'>"
-                                    f"<td style='padding:6px 10px;color:#555;font-size:0.75rem;text-align:center;font-weight:700;'>{_ri_rank}</td>"
-                                    f"<td style='padding:6px 10px;font-weight:700;color:#a78bfa;font-family:IBM Plex Mono,monospace;font-size:0.82rem;white-space:nowrap;'>{_tk_rank}</td>"
-                                    f"<td style='padding:6px 10px;font-weight:700;color:#00E5BE;font-size:0.82rem;text-align:center;'>{_bsc_rank}</td>"
-                                    f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:#2dd4a0;'>{_accum_r}</td>"
-                                    f"<td style='padding:6px 10px;font-size:0.79rem;white-space:nowrap;text-align:center;'>{_bpr_rank}</td>"
-                                    f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:#ff5c5c;'>{_dist_r}</td>"
-                                    f"<td style='padding:6px 10px;font-size:0.73rem;white-space:nowrap;color:{_vc_r};font-weight:600;'>{_verd_r}</td>"
-                                    f"<td style='padding:6px 10px;font-size:0.75rem;font-weight:700;color:{_fc_r};white-space:nowrap;'>{_final_r}</td>"
-                                    "</tr>"
-                                )
-                            st.markdown(
-                                "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
-                                "border-radius:8px;border:1px solid rgba(0,229,190,0.2);'>"
-                                "<table style='border-collapse:collapse;min-width:700px;width:max-content;'>"
-                                f"<thead><tr style='background:rgba(0,229,190,0.06);'>{_rank_th}</tr></thead>"
-                                f"<tbody>{_rank_trs}</tbody>"
-                                "</table></div>",
-                                unsafe_allow_html=True)
+                        # ── Simpan data ranking ke session_state agar bisa dirender di tab terpisah ──
+                        st.session_state["_daily_ranked_20"]  = _ranked_20
+                        st.session_state["_daily_bs30_cache"] = _bs30_cache
 
             # ════════════════════════════════════════════
-            # TAB 2 — HISTORY TRADE PLAN
+            # TAB 2 — RANKING BROKER SCORE (GoAPI press 20→10)
+            # ════════════════════════════════════════════
+            with _d_tab_ranking:
+                _ranked_20_disp  = st.session_state.get("_daily_ranked_20", [])
+                _bs30_cache_disp = st.session_state.get("_daily_bs30_cache", [])
+
+                st.markdown(
+                    "<div style='font-family:Space Mono,IBM Plex Mono,monospace;"
+                    "font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;"
+                    "color:#00E5BE;margin:4px 0 2px;font-weight:700;'>🏅 RANKING BROKER SCORE</div>"
+                    "<div style='font-size:0.7rem;color:rgba(255,255,255,0.35);margin-bottom:14px;'>"
+                    "Top 20 saham diseleksi → 10 terbaik masuk Trade Plan hari ini</div>",
+                    unsafe_allow_html=True,
+                )
+
+                if not _ranked_20_disp:
+                    st.info("📭 Data ranking belum tersedia. Generate Trade Plan terlebih dahulu untuk melihat ranking.")
+                else:
+                    # ── Legend ──
+                    st.markdown(
+                        "<div style='display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;'>"
+                        "<span style='font-size:0.7rem;color:#00E5BE;font-weight:600;'>✅ MASUK = Top 10</span>"
+                        "<span style='font-size:0.7rem;color:#555;font-weight:600;'>❌ DROP = Rank 11-20</span>"
+                        "<span style='font-size:0.7rem;color:rgba(255,255,255,0.3);'>BPR = Broker Participation Rate</span>"
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
+
+                    # ── Build tabel ──
+                    _rank_hdr = ["RANK","TICKER","BROKER SCORE","AKUMULASI","BPR","DISTRIBUSI","STATUS","FINAL"]
+                    _rank_th  = "".join(
+                        f"<th style='padding:8px 12px;white-space:nowrap;font-size:0.66rem;"
+                        f"letter-spacing:0.09em;text-transform:uppercase;color:#00E5BE;"
+                        f"border-bottom:1px solid rgba(0,229,190,0.25);text-align:left;"
+                        f"font-family:Space Mono,monospace;'>{h}</th>"
+                        for h in _rank_hdr)
+
+                    _rank_trs = ""
+                    for _ri, (_bsc, _rrow) in enumerate(_ranked_20_disp, 1):
+                        _tk   = _rrow.get("ticker","")
+                        _bsd  = next((s for s in _bs30_cache_disp if s.get("ticker")==_tk), {})
+                        _bpr  = f"{float(_bsd.get('bpr',0) or 0):.0f}%"
+                        _accum = " · ".join(_bsd.get("top_accum",[])[:4]) or "—"
+                        _dist  = " · ".join(_bsd.get("top_dist", [])[:3]) or "—"
+                        _verd  = _bsd.get("verdict","—")
+                        _vc    = "#00E5BE" if "AKUMULASI" in _verd else ("#ff5c5c" if "DIST" in _verd else "#888")
+                        _is10  = _ri <= 10
+                        _final = "✅ MASUK" if _is10 else "❌ DROP"
+                        _fc    = "#00E5BE" if _is10 else "#555"
+                        _bg    = "rgba(0,229,190,0.05)" if _is10 else "transparent"
+                        _border_bottom = "border-bottom:1px solid rgba(255,255,255,0.04);"
+                        # Separator line antara rank 10 dan 11
+                        _sep = ""
+                        if _ri == 10:
+                            _sep = f"<tr><td colspan='8' style='padding:0;border-top:1px dashed rgba(0,229,190,0.35);'></td></tr>"
+
+                        _rank_trs += (
+                            f"<tr style='background:{_bg};{_border_bottom}'>"
+                            f"<td style='padding:7px 12px;color:{'#00E5BE' if _is10 else '#444'};font-size:0.78rem;"
+                            f"text-align:center;font-weight:700;font-family:Space Mono,monospace;'>{_ri}</td>"
+                            f"<td style='padding:7px 12px;font-weight:700;color:#a78bfa;"
+                            f"font-family:IBM Plex Mono,monospace;font-size:0.85rem;white-space:nowrap;'>{_tk}</td>"
+                            f"<td style='padding:7px 12px;font-weight:700;color:#00E5BE;"
+                            f"font-size:0.85rem;text-align:center;'>{_bsc}</td>"
+                            f"<td style='padding:7px 12px;font-size:0.72rem;white-space:nowrap;color:#2dd4a0;'>{_accum}</td>"
+                            f"<td style='padding:7px 12px;font-size:0.82rem;white-space:nowrap;"
+                            f"text-align:center;color:rgba(255,255,255,0.6);'>{_bpr}</td>"
+                            f"<td style='padding:7px 12px;font-size:0.72rem;white-space:nowrap;color:#ff5c5c;'>{_dist}</td>"
+                            f"<td style='padding:7px 12px;font-size:0.72rem;white-space:nowrap;"
+                            f"color:{_vc};font-weight:600;'>{_verd}</td>"
+                            f"<td style='padding:7px 12px;font-size:0.78rem;font-weight:700;"
+                            f"color:{_fc};white-space:nowrap;letter-spacing:0.04em;'>{_final}</td>"
+                            "</tr>"
+                        ) + _sep
+
+                    st.markdown(
+                        "<div style='width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;"
+                        "border-radius:10px;border:1px solid rgba(0,229,190,0.18);"
+                        "background:rgba(0,0,0,0.25);'>"
+                        "<table style='border-collapse:collapse;min-width:700px;width:100%;'>"
+                        f"<thead><tr style='background:rgba(0,229,190,0.07);'>{_rank_th}</tr></thead>"
+                        f"<tbody>{_rank_trs}</tbody>"
+                        "</table></div>",
+                        unsafe_allow_html=True,
+                    )
+
+                    # ── Summary stats ──
+                    _n_masuk  = sum(1 for i, _ in enumerate(_ranked_20_disp, 1) if i <= 10)
+                    _avg_bsc  = round(sum(b for b, _ in _ranked_20_disp[:10]) / max(_n_masuk, 1), 1)
+                    _n_accum  = sum(
+                        1 for _, r in _ranked_20_disp[:10]
+                        if "AKUMULASI" in next(
+                            (s.get("verdict","") for s in _bs30_cache_disp if s.get("ticker")==r.get("ticker","")), ""
+                        )
+                    )
+                    st.markdown(
+                        f"<div style='margin-top:12px;display:flex;gap:20px;flex-wrap:wrap;'>"
+                        f"<div style='font-size:0.7rem;color:rgba(255,255,255,0.4);'>"
+                        f"Top 10 avg broker score: <span style='color:#00E5BE;font-weight:700;'>{_avg_bsc}</span></div>"
+                        f"<div style='font-size:0.7rem;color:rgba(255,255,255,0.4);'>"
+                        f"Sinyal akumulasi di top10: <span style='color:#00E5BE;font-weight:700;'>{_n_accum}/10</span></div>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+
+            # ════════════════════════════════════════════
+            # TAB 3 — HISTORY TRADE PLAN
             # ════════════════════════════════════════════
             with _d_tab_hist_plan:
                 _render_auto_history("daily")
