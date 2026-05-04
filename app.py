@@ -13684,7 +13684,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas.""
                 _dv_yield_avg = round(sum(d["yield_pct"] for d in _dv_all) / len(_dv_all), 2) if _dv_all else 0
                 _dv_top5 = sorted(_dv_all, key=lambda x: x["yield_pct"], reverse=True)[:5]
                 _dv_top5_str = "\n".join([f"  - {d['ticker']} ({d['nama']}): yield {d['yield_pct']:.2f}%, DPS Rp{d['dps']:,}, Ex-Date {d['ex_date']}" for d in _dv_top5])
-                _dv_bi_rate  = _bi_current  # pakai variable yang sudah ada
+                _dv_bi_rate  = 4.75  # BI Rate current (Apr 2026)
                 _dv_prompt = f"""Kamu adalah SIGMA AI, analis investasi dividen pasar modal IDX.
 
 Analisa kondisi dividen emiten IDX 2026 berdasarkan data berikut:
