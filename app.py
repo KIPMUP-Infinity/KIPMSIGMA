@@ -960,6 +960,52 @@ def _sanitize_html_text(raw) -> str:
 _gemini_cooldown: dict = {}
 _BACKOFF_BASE_SEC = 25      # detik cooldown awal setelah 429
 _BACKOFF_MAX_SEC  = 180     # batas atas cooldown eksponensial
+# ── SIGMA GROQ RATE LIMIT MANAGER ─────────────────────────────
+# Mirror dari sistem Gemini yang sudah ada di atas.
+# Setiap key Groq yang kena 429 dicatat + exponential backoff.
+_groq_cooldown: dict = {}
+_GROQ_BACKOFF_BASE_SEC = 30      # detik cooldown awal setelah 429
+_GROQ_BACKOFF_MAX_SEC  = 300     # batas atas (5 menit, sesuai window limit Groq)
+
+def _mark_groq_key_ratelimited(key: str) -> None:
+    """Tandai key Groq sebagai rate-limited dengan exponential backoff + jitter."""
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    now = time.time()
+    prev_until = _groq_cooldown.get(h, 0)
+    if prev_until > now:
+        wait = min((prev_until - now) * 2 + random.uniform(3, 10), _GROQ_BACKOFF_MAX_SEC)
+    else:
+        wait = _GROQ_BACKOFF_BASE_SEC + random.uniform(1, 15)
+    _groq_cooldown[h] = now + wait
+
+def _groq_key_available(key: str) -> bool:
+    """Return True jika key Groq tidak sedang dalam cooldown period."""
+    h = hashlib.md5(key.encode()).hexdigest()[:10]
+    return time.time() >= _groq_cooldown.get(h, 0)
+
+def _get_available_groq_keys(all_keys: list) -> list:
+    """Return pasangan (name, key) yang tidak sedang cooldown. Fallback ke semua jika semua cooldown."""
+    available = [(n, k) for n, k in all_keys if _groq_key_available(k)]
+    return available if available else all_keys
+
+def _friendly_ratelimit_message() -> str:
+    """Pesan ramah saat semua provider sedang rate-limit. Hitung ETA dari cooldown tercepat."""
+    now = time.time()
+    soonest = min(_groq_cooldown.values(), default=now)
+    sisa = max(0, soonest - now)
+    if sisa < 10:
+        eta = "beberapa detik lagi"
+    elif sisa < 60:
+        eta = f"sekitar {int(sisa)} detik lagi"
+    else:
+        eta = f"sekitar {int(sisa // 60)} menit lagi"
+    return (
+        f"⏳ **SIGMA sedang ramai** — semua jalur AI sedang dalam antrian rate limit.\n\n"
+        f"Estimasi tersedia kembali: **{eta}**.\n\n"
+        f"Coba kirim pesan lagi sebentar. Tidak ada yang hilang."
+    )
+
+
 
 def _mark_gemini_key_ratelimited(key: str) -> None:
     """Tandai key sebagai rate-limited dengan exponential backoff + random jitter."""
@@ -3143,8 +3189,10 @@ def _goapi_resolve_base(force: bool = False) -> str:
     # Tidak ada yang cocok — kembalikan default
     return GOAPI_BASE
 
+@st.cache_data(ttl=90, show_spinner=False)
 def goapi_get_price(ticker: str) -> dict:
-    """Harga real-time satu saham dari GoAPI. Endpoint: /stock/idx/{symbol}"""
+    """Harga real-time satu saham dari GoAPI. Endpoint: /stock/idx/{symbol}
+    PATCH: Cache 90 detik — semua user dalam window ini pakai data yang sama."""
     _goapi_throttle()
     try:
         r = requests.get(f"{GOAPI_BASE}/{ticker}", headers=_goapi_headers(), timeout=10)
@@ -3165,8 +3213,12 @@ def goapi_get_price(ticker: str) -> dict:
     except Exception:
         return {}
 
-def goapi_get_prices(tickers: list) -> dict:
-    """Harga real-time multiple ticker. Endpoint: /stock/idx/prices?symbols=A,B,C"""
+@st.cache_data(ttl=90, show_spinner=False)
+def goapi_get_prices(tickers: tuple) -> dict:
+    """Harga real-time multiple ticker. Endpoint: /stock/idx/prices?symbols=A,B,C
+    PATCH: Parameter diubah list→tuple agar cacheable oleh st.cache_data.
+    Cache 90 detik — semua user dalam window ini pakai data yang sama.
+    Cara panggil: goapi_get_prices(tuple(sorted(ticker_list)))"""
     _goapi_throttle()
     try:
         symbols = ",".join(tickers)
@@ -6639,12 +6691,18 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
 
     messages.append({"role": "user", "content": full_prompt})
 
-    valid_keys = _get_all_groq_keys()
-    if not valid_keys:
+    all_keys = _get_all_groq_keys()
+    if not all_keys:
         raise Exception("Semua Groq API key tidak tersedia")
+
+    # Prioritaskan key yang tidak sedang cooldown
+    valid_keys = _get_available_groq_keys(all_keys)
 
     last_err = None
     for key_name, key in valid_keys:
+        # Skip key yang masih dalam cooldown period
+        if not _groq_key_available(key):
+            continue
         try:
             client = Groq(api_key=key)
             response = client.chat.completions.create(
@@ -6656,9 +6714,10 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
             return response.choices[0].message.content, f"Groq/Llama70B({key_name})"
         except Exception as e:
             err_str = str(e).lower()
-            # 429 rate limit atau token terlalu besar → coba key berikutnya
+            # 429 rate limit atau token terlalu besar → tandai cooldown + coba key berikutnya
             if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "too large" in err_str or "token" in err_str:
                 last_err = e
+                _mark_groq_key_ratelimited(key)  # ← PATCH: catat cooldown per-key
                 continue
             # Error lain (bukan limit) → langsung raise
             raise e
@@ -6676,12 +6735,18 @@ def _call_groq_fallback(full_prompt):
     # 8B model: context window lebih kecil → budget 10.000 token
     full_prompt = _smart_truncate_prompt(full_prompt, max_tokens=9000)
 
-    valid_keys = _get_all_groq_keys()
-    if not valid_keys:
+    all_keys = _get_all_groq_keys()
+    if not all_keys:
         raise Exception("Semua Groq API key tidak tersedia")
+
+    # Prioritaskan key yang tidak sedang cooldown
+    valid_keys = _get_available_groq_keys(all_keys)
 
     last_err = None
     for key_name, key in valid_keys:
+        # Skip key yang masih dalam cooldown period
+        if not _groq_key_available(key):
+            continue
         try:
             client = Groq(api_key=key)
             response = client.chat.completions.create(
@@ -6698,6 +6763,7 @@ def _call_groq_fallback(full_prompt):
             err_str = str(e).lower()
             if "429" in err_str or "rate_limit" in err_str or "rate limit" in err_str or "too large" in err_str or "token" in err_str:
                 last_err = e
+                _mark_groq_key_ratelimited(key)  # ← PATCH: catat cooldown per-key
                 continue
             raise e
 
