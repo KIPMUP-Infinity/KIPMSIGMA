@@ -53,8 +53,8 @@ _RATING_META = {
         "accent":      "#F0A500",
         "accent_dim":  "#B87A00",
         "ring_color":  "#F0A500",
-        "haka_label":  "TUNGGU KONFIRMASI CLOSING",
-        "cls":         "hold",
+        "haka_label":  "PANTAU · TUNGGU KONFIRMASI",
+        "cls":         "watch",
     },
     "AVOID": {
         "accent":      "#E24B4A",
@@ -544,6 +544,7 @@ _CARD_CSS = """
 .bcard.sb   .bc-glow { background: linear-gradient(90deg, transparent, #00E5BE, transparent); }
 .bcard.buy  .bc-glow { background: linear-gradient(90deg, transparent, #1D9E75, transparent); }
 .bcard.hold .bc-glow { background: linear-gradient(90deg, transparent, #F0A500, transparent); }
+.bcard.watch .bc-glow { background: linear-gradient(90deg, transparent, #F59E0B, transparent); }
 .bcard.avoid .bc-glow { background: linear-gradient(90deg, transparent, #E24B4A, transparent); }
 
 .bc-body { padding: 16px 16px 14px; }
@@ -598,6 +599,7 @@ _CARD_CSS = """
 .bc-score-num.sb   { color: #00E5BE; }
 .bc-score-num.buy  { color: #1D9E75; }
 .bc-score-num.hold { color: #F0A500; }
+.bc-score-num.watch { color: #F59E0B; }
 .bc-score-num.avoid { color: #E24B4A; }
 .bc-score-lbl {
   font-size: 6px;
@@ -608,6 +610,7 @@ _CARD_CSS = """
 .bc-score-lbl.sb   { color: #00E5BE; }
 .bc-score-lbl.buy  { color: #1D9E75; }
 .bc-score-lbl.hold { color: #F0A500; }
+.bc-score-lbl.watch { color: #F59E0B; }
 .bc-score-lbl.avoid { color: #E24B4A; }
 
 /* ── Price row ── */
@@ -662,11 +665,13 @@ _CARD_CSS = """
 .bc-haka.sb   { background: rgba(0,229,190,0.08); border: 1px solid rgba(0,229,190,0.2); }
 .bc-haka.buy  { background: rgba(29,158,117,0.08); border: 1px solid rgba(29,158,117,0.2); }
 .bc-haka.hold { background: rgba(240,165,0,0.08); border: 1px solid rgba(240,165,0,0.2); }
+.bc-haka.watch { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
 .bc-haka.avoid { background: rgba(226,75,74,0.08); border: 1px solid rgba(226,75,74,0.2); }
 .bc-haka-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .bc-haka-dot.sb   { background: #00E5BE; }
 .bc-haka-dot.buy  { background: #1D9E75; }
 .bc-haka-dot.hold { background: #F0A500; }
+.bc-haka-dot.watch { background: #F59E0B; }
 .bc-haka-dot.avoid { background: #E24B4A; }
 .bc-haka-text {
   font-family: 'Space Mono', monospace;
@@ -677,6 +682,7 @@ _CARD_CSS = """
 .bc-haka-text.sb   { color: #00E5BE; }
 .bc-haka-text.buy  { color: #1D9E75; }
 .bc-haka-text.hold { color: #F0A500; }
+.bc-haka-text.watch { color: #F59E0B; }
 .bc-haka-text.avoid { color: #E24B4A; }
 
 /* ── Separator ── */
@@ -2007,8 +2013,7 @@ def score_bandar_from_broker_summary(broker_text: str) -> tuple:
             elif val < 0:
                 score -= min(20, abs(val) * 0.5)
                 signals.append(f"🔴 Net Foreign SELL Rp{abs(val):.1f}M - asing distribusi")
-        except:
-            pass
+        except Exception: pass
 
     # ── Keyword detection: akumulasi vs distribusi ──
     AKUMULASI_KW = [
@@ -3189,7 +3194,7 @@ def _fetch_all_data(tickers):
                         "vol": d.get("Volume", 0),
                         "source": "IDX"
                     }
-            except: pass
+            except Exception: pass
 
         # Layer 2: Finnhub - reliable, adjusted (rotate KEY s/d KEY6)
         try:
@@ -3215,8 +3220,8 @@ def _fetch_all_data(tickers):
                                     "low": _fh_d.get("l", 0),
                                     "source": "Finnhub"
                                 }
-                        except: pass
-        except: pass
+                        except Exception: pass
+        except Exception: pass
 
         # Layer 3: FMP - financial data provider (rotate KEY s/d KEY6)
         try:
@@ -3241,8 +3246,8 @@ def _fetch_all_data(tickers):
                                     "vol": _fmp_q.get("volume", 0),
                                     "source": "FMP"
                                 }
-                        except: pass
-        except: pass
+                        except Exception: pass
+        except Exception: pass
 
         # Layer 4: Yahoo Finance query API - realtime, adjusted
         for tk in tickers[:3]:
@@ -3266,7 +3271,7 @@ def _fetch_all_data(tickers):
                             "vol": _meta.get("regularMarketVolume", 0),
                             "source": "Yahoo"
                         }
-                except: pass
+                except Exception: pass
 
         # Layer 5: yfinance - backup dengan auto_adjust + averageVolume
         try:
@@ -3301,8 +3306,8 @@ def _fetch_all_data(tickers):
                                 "avg_vol_src": "yfinance(3M)",
                                 "source": "yfinance"
                             }
-                except: pass
-        except: pass
+                except Exception: pass
+        except Exception: pass
 
         # Layer 6: stooq - backup terakhir
         try:
@@ -3326,8 +3331,8 @@ def _fetch_all_data(tickers):
                                 "chg": round(chg,2),
                                 "source": "stooq"
                             }
-                    except: pass
-        except: pass
+                    except Exception: pass
+        except Exception: pass
 
         # Berita: Google News + CNBC ID + Kontan + Bisnis
         try:
@@ -3354,8 +3359,8 @@ def _fetch_all_data(tickers):
                             seen.add(key)
                             result["news"].append(f"[{sn}] {title}")
                             cnt += 1
-                except: pass
-        except: pass
+                except Exception: pass
+        except Exception: pass
 
     th = threading.Thread(target=fetch, daemon=True)
     th.start()
@@ -4076,7 +4081,7 @@ def _fetch_fmp(ticker, api_key=None):
                     if d.get("sector"): result["sector"] = d["sector"]
                     if d.get("industry"): result["industry"] = d["industry"]
                     if d.get("description"): result["description"] = d["description"][:300]
-            except: pass
+            except Exception: pass
             try:
                 url2 = f"{base}/key-metrics-ttm/{ticker}.JK?apikey={key}"
                 req2 = urllib.request.Request(url2, headers={"User-Agent": "Mozilla/5.0"})
@@ -4095,7 +4100,7 @@ def _fetch_fmp(ticker, api_key=None):
                     if m.get("bookValuePerShareTTM"): result["bv"] = m["bookValuePerShareTTM"]
                     if m.get("earningsYieldTTM"): result["earnings_yield"] = m["earningsYieldTTM"]
                     if m.get("freeCashFlowPerShareTTM"): result["fcf_per_share"] = m["freeCashFlowPerShareTTM"]
-            except: pass
+            except Exception: pass
             try:
                 url3 = f"{base}/income-statement/{ticker}.JK?limit=4&apikey={key}"
                 req3 = urllib.request.Request(url3, headers={"User-Agent": "Mozilla/5.0"})
@@ -4112,7 +4117,7 @@ def _fetch_fmp(ticker, api_key=None):
                     if hist_ni: result["hist_ni"] = hist_ni
                     if hist_eps: result["hist_eps"] = hist_eps
                     if hist_rev: result["hist_rev"] = hist_rev
-            except: pass
+            except Exception: pass
             if result:
                 result["source"] = "FMP"
                 return result
@@ -4138,7 +4143,7 @@ def _fetch_multi_fundamental(ticker):
                 for k, v in goapi_data.items():
                     if v is not None:
                         combined[k] = v
-        except: pass
+        except Exception: pass
 
         try:
             import urllib.request, json as _j
@@ -4152,28 +4157,28 @@ def _fetch_multi_fundamental(ticker):
                 if not combined.get("price"):
                     combined["price"] = d["LastPrice"]
                     combined["source_price"] = "IDX (real-time)"
-        except: pass
+        except Exception: pass
 
         try:
             fmp = _fetch_fmp(ticker)
             for k, v in fmp.items():
                 if v is not None and k not in combined: combined[k] = v
             if fmp and "source_fundamental" not in combined: combined["source_fundamental"] = "FMP"
-        except: pass
+        except Exception: pass
 
         try:
             fh = _fetch_finnhub(ticker)
             for k, v in fh.items():
                 if k not in combined or combined[k] is None: combined[k] = v
             if fh and "source_fundamental" not in combined: combined["source_fundamental"] = "Finnhub"
-        except: pass
+        except Exception: pass
 
         try:
             av = _fetch_alphavantage(ticker)
             for k, v in av.items():
                 if k not in combined or combined[k] is None: combined[k] = v
             if av and "source_fundamental" not in combined: combined["source_fundamental"] = "AlphaVantage"
-        except: pass
+        except Exception: pass
 
         try:
             import yfinance as yf
@@ -4192,7 +4197,7 @@ def _fetch_multi_fundamental(ticker):
                 "shares": info.get("sharesOutstanding"),
             }.items():
                 if v is not None and k not in combined: combined[k] = v
-        except: pass
+        except Exception: pass
 
         price = combined.get("price")
         eps   = combined.get("eps")
@@ -4260,7 +4265,7 @@ def _fetch_us_china_stock(ticker, market="US"):
                         "pbv": info.get("priceToBook"), "eps": info.get("trailingEps"), "mktcap": info.get("marketCap"),
                         "name": info.get("longName",""), "sector": info.get("sector",""), "currency": info.get("currency","USD")
                     }
-            except: pass
+            except Exception: pass
         th = threading.Thread(target=fetch, daemon=True)
         th.start()
         th.join(timeout=8)
@@ -4299,7 +4304,7 @@ def _fetch_global_news(keywords=None, max_per_source=2):
                         seen.add(key)
                         news.append({"source": src_name, "title": title, "link": entry.get("link","")})
                         count += 1
-                except: pass
+                except Exception: pass
             result[0] = news
         th = threading.Thread(target=fetch, daemon=True)
         th.start()
@@ -4341,7 +4346,7 @@ def build_global_context(prompt):
                         arah = "▲" if (d.get("chg") or 0) >= 0 else "▼"
                         chg = abs(d.get("chg") or 0)
                         lines.append(f"{name}: {d['price']:,.2f} {arah}{chg:.2f}%")
-        except: pass
+        except Exception: pass
 
         import re as _re
         us_tickers = _re.findall(r' ([A-Z]{1,5}) ', prompt.upper())
@@ -4495,7 +4500,7 @@ def build_context(prompt):
                     if fund.get("hist_eps"): flines.append(f"Hist EPS: {fund['hist_eps']}")
                     if fund.get("hist_rev"): flines.append(f"Hist Revenue: {fund['hist_rev']}")
                     lines.extend(flines)
-            except: pass
+            except Exception: pass
 
     if not _is_fundamental and data["news"]:
         lines.append("Berita terkini:")
@@ -5022,7 +5027,7 @@ def fetch_price_for_pdf(ticker):
                     "roa": info.get("returnOnAssets"),
                     "source": "yfinance"
                 }
-        except: pass
+        except Exception: pass
         # Fallback stooq
         if not result[0].get("price"):
             try:
@@ -5033,7 +5038,7 @@ def fetch_price_for_pdf(ticker):
                     end=datetime.now())
                 if not df.empty:
                     result[0] = {"price": round(df.sort_index().iloc[-1]["Close"],0), "source": "stooq"}
-            except: pass
+            except Exception: pass
         # Fallback IDX API
         if not result[0].get("price"):
             try:
@@ -5045,7 +5050,7 @@ def fetch_price_for_pdf(ticker):
                     d = _j.loads(r.read())
                 if d and d.get("LastPrice"):
                     result[0] = {"price": d["LastPrice"], "source": "IDX"}
-            except: pass
+            except Exception: pass
     th = threading.Thread(target=fetch, daemon=True)
     th.start()
     th.join(timeout=12)
@@ -5225,7 +5230,7 @@ def _db_write(sheet_name: str, key: str, value) -> bool:
         try:
             with open(os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json"), "w") as _f:
                 json.dump(value, _f, ensure_ascii=False)
-        except: pass
+        except Exception: pass
         return False
     try:
         value_str = json.dumps(value, ensure_ascii=False)
@@ -5256,14 +5261,14 @@ def _db_write(sheet_name: str, key: str, value) -> bool:
         try:
             with open(os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json"), "w") as _f:
                 json.dump(value, _f, ensure_ascii=False)
-        except: pass
+        except Exception: pass
         return True
     except Exception as _e:
         # Fallback lokal
         try:
             with open(os.path.join(DATA_DIR, f"fb_{sheet_name}_{key}.json"), "w") as _f:
                 json.dump(value, _f, ensure_ascii=False)
-        except: pass
+        except Exception: pass
         return False
 
 # ── Public API: save_user / load_user (PER-FIELD STORAGE) ──
@@ -5316,7 +5321,7 @@ def save_user(email: str, data: dict):
     try:
         with open(os.path.join(DATA_DIR, f"{key}.json"), "w") as f:
             json.dump(session_data, f, ensure_ascii=False)
-    except: pass
+    except Exception: pass
 
 def save_field(email: str, field: str, value):
     """Simpan satu field kritis langsung ke Sheets tanpa menyentuh field lain.
@@ -5344,7 +5349,7 @@ def load_user(email: str):
         all_users = _db_read_all("users")
         if key in all_users and isinstance(all_users[key], dict):
             result.update(all_users[key])
-    except: pass
+    except Exception: pass
 
     # 2. Load per-field kritis dari 'user_data'
     try:
@@ -5355,7 +5360,7 @@ def load_user(email: str):
                 field_name = fkey[len(prefix):]
                 if fval is not None and fval != {} and fval != []:
                     result[field_name] = fval
-    except: pass
+    except Exception: pass
 
     # 3. Fallback lokal kalau Sheets gagal
     if not result:
@@ -5364,7 +5369,7 @@ def load_user(email: str):
             if os.path.exists(p):
                 with open(p) as f:
                     result = json.load(f)
-        except: pass
+        except Exception: pass
 
     return result if result else None
 
@@ -5375,13 +5380,13 @@ def get_accounts():
         all_data = _db_read_all("accounts")
         if all_data:
             return all_data
-    except: pass
+    except Exception: pass
     # Fallback
     p = os.path.join(DATA_DIR, "accounts.json")
     if os.path.exists(p):
         try:
             with open(p) as f: return json.load(f)
-        except: pass
+        except Exception: pass
     return {}
 
 def save_accounts(acc: dict):
@@ -5393,7 +5398,7 @@ def save_accounts(acc: dict):
     try:
         with open(os.path.join(DATA_DIR, "accounts.json"), "w") as f:
             json.dump(acc, f)
-    except: pass
+    except Exception: pass
 
 # ── Token auth (session token) — pakai sheet 'tokens' ──
 def _save_token(token: str, info: dict):
@@ -5402,7 +5407,7 @@ def _save_token(token: str, info: dict):
     try:
         with open(os.path.join(DATA_DIR, f"token_{token}.json"), "w") as f:
             json.dump(info, f)
-    except: pass
+    except Exception: pass
 
 def _load_token(token: str):
     """Load session token dari Sheets. Fallback ke file lokal."""
@@ -5410,13 +5415,13 @@ def _load_token(token: str):
         all_tokens = _db_read_all("tokens")
         if token in all_tokens:
             return all_tokens[token]
-    except: pass
+    except Exception: pass
     # Fallback
     try:
         p = os.path.join(DATA_DIR, f"token_{token}.json")
         if os.path.exists(p):
             with open(p) as f: return json.load(f)
-    except: pass
+    except Exception: pass
     return None
 
 def _delete_token(token: str):
@@ -5425,7 +5430,7 @@ def _delete_token(token: str):
         del _db_cache["tokens"][token]
     try:
         os.remove(os.path.join(DATA_DIR, f"token_{token}.json"))
-    except: pass
+    except Exception: pass
 
 def register_user(username, password, display_name):
     acc = get_accounts()
@@ -5488,6 +5493,26 @@ def init_session():
         "fs_sort_key": "ROE (Tertinggi)",
         "fs_ai_result": "",
         "fs_chat_ans": "",
+        # ── Dividend Tracker ──
+        "ai_dividend_result": None,
+        # ── Broker Summary ──
+        "sigma_bs30_screened": None,
+        "sigma_bs30_ts": "",
+        "brosum_history": {},
+        # ── Alpha Insight cache ──
+        "alpha_insight_last_key": None,
+        "alpha_insight_last_data": None,
+        # ── Shareholder DB staleness flag ──
+        "sh_db_staleness_flagged": False,
+        # ── Groq key availability tracker (volatile — reset setiap session) ──
+        "_groq_key_rl": {},
+        "_gemini_key_rl": {},
+        # ── Rate Monitor AI ──
+        "ai_ratemon_result": None,
+        # ── Bond Yield AI ──
+        "ai_bondyield_result": None,
+        # ── RRG slot ──
+        "_rrg_prev_slot": "",
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -6855,7 +6880,7 @@ Format TRADE PLAN wajib seperti ini (setiap poin di baris baru):
 # GROQ KEY ROTATION - AUTO SCAN KEY 1-13
 # ─────────────────────────────────────────────
 def _get_all_groq_keys():
-    """Kumpulkan semua Groq API key yang tersedia (GROQ_API_KEY s/d GROQ_API_KEY13)."""
+    """Kumpulkan semua Groq API key yang tersedia (GROQ_API_KEY s/d GROQ_API_KEY20)."""
     key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY{i}" for i in range(2, 21)]
     valid = []
     for key_name in key_names:
@@ -6882,13 +6907,13 @@ def _get_all_fmp_keys():
 
 def _get_groq_client_and_key():
     """
-    Auto-rotate melalui GROQ_API_KEY s/d GROQ_API_KEY13.
+    Auto-rotate melalui GROQ_API_KEY s/d GROQ_API_KEY20.
     Return (client, key_name) dari key pertama yang valid.
     """
     from groq import Groq
     valid_keys = _get_all_groq_keys()
     if not valid_keys:
-        raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY13)")
+        raise Exception("Semua Groq API key tidak tersedia atau tidak valid (scan KEY s/d KEY20)")
     key_name, key = valid_keys[0]
     client = Groq(api_key=key)
     return client, key_name
@@ -6982,7 +7007,14 @@ def _call_groq_primary(full_prompt, history_msgs=None, max_tokens=16000, tempera
                 continue
             raise e
 
-    raise Exception(f"Semua Groq key kena rate limit. Error terakhir: {last_err}")
+    # ── Semua Groq 70B key exhausted → fallback ke Gemini ──────────────────────
+    try:
+        _gem_resp, _gem_mdl = _call_gemini_text([{"role": "user", "content": full_prompt}])
+        return _gem_resp, f"Gemini(fallback-dari-Groq70B)"
+    except Exception as _gem_e:
+        pass  # Gemini juga gagal → lanjut ke raise
+
+    raise Exception(f"Semua Groq key kena rate limit & Gemini fallback gagal. Error terakhir: {last_err}")
 
 
 def _call_groq_fallback(full_prompt):
@@ -7227,7 +7259,7 @@ if "sigma_token" in st.query_params and st.session_state.user is None:
             st.session_state.data_loaded = True
             restore_images_from_messages()
             st.rerun()
-        except: pass
+        except Exception: pass
 
 if st.session_state.user and not st.session_state.data_loaded:
     saved = load_user(st.session_state.user["email"])
@@ -7301,7 +7333,7 @@ def _sigma_run_global_scheduler():
             for _rk in _restore_keys_sch:
                 if _rk not in st.session_state and _sv_sch.get(_rk) is not None:
                     st.session_state[_rk] = _sv_sch[_rk]
-        except: pass
+        except Exception: pass
 
     # ══════════════════════════════════════════════════════════════
     # [1] JAM 06:00 — DAILY REVIEW (Market Brief 24 Jam) AUTO-GENERATE
@@ -7342,7 +7374,7 @@ def _sigma_run_global_scheduler():
                                 if _t_sch and _t_sch not in _target_sch:
                                     _target_sch.append(_t_sch)
                                     if len(_target_sch) >= 12: break
-                        except: pass
+                        except Exception: pass
 
                     import yfinance as _yf_dr
                     _rt_sch = {}
@@ -7356,7 +7388,7 @@ def _sigma_run_global_scheduler():
                                 _cv = round((_lv-_pv)/_pv*100, 2) if _pv else 0
                                 _rt_sch[f"{_key_dr}_price"] = round(_lv,2)
                                 _rt_sch[f"{_key_dr}_chg"]   = _cv
-                        except: pass
+                        except Exception: pass
 
                     _today_str_dr = _now_dr.strftime("%d %B %Y, %H:%M WIB")
                     _dom_str_dr   = "\n".join(f"• {h}" for h in dom_news_sch[:10]) or "⚠ Tidak tersedia"
@@ -7431,7 +7463,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             with _ur_sch.urlopen(_req_sch, timeout=45) as _r_sch:
                                 _d_sch = _jsch.loads(_r_sch.read())
                             _dr_result = "".join(b.get("text","") for b in _d_sch.get("content",[]) if b.get("type")=="text").strip() or None
-                        except: pass
+                        except Exception: pass
 
                     if not _dr_result:
                         try:
@@ -7442,7 +7474,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                 max_tokens=3000,
                             )
                             _dr_result = _resp_sch.choices[0].message.content
-                        except: pass
+                        except Exception: pass
 
                     if _dr_result:
                         _dr_result += f"\n\n---\n*Auto-generated jam 06:00 WIB · {_today_str_dr}*"
@@ -7453,7 +7485,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             _sv_dr["mb_daily_content"]   = _dr_result
                             _sv_dr["mb_daily_timestamp"] = _today_str_dr
                             save_user(st.session_state.user["email"], _sv_dr)
-                        except: pass
+                        except Exception: pass
                     else:
                         # Gagal generate — unlock agar bisa retry
                         del st.session_state[_dr_auto_key]
@@ -7538,7 +7570,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             save_field(_ue, "sigma_bs30_screened", _result_bs[:30])
                             save_field(_ue, "sigma_bs30_ts",       _ts_new)
                             save_field(_ue, "brosum_history",      _bsh_sch)
-                        except: pass
+                        except Exception: pass
                     else:
                         del st.session_state[_bs_auto_key]
                 except:
@@ -7582,7 +7614,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                         "volume":float(_h_dp["Volume"].iloc[-1]) if "Volume" in _h_dp else 0,
                                         "prev_close": float(_h_dp["Close"].iloc[-2]) if len(_h_dp)>1 else float(_h_dp["Close"].iloc[-1]),
                                     }
-                            except: pass
+                            except Exception: pass
                         if _pm_dp:
                             # Gunakan fungsi scoring sederhana dari bs30 data
                             _plan_dp = {"daily": [], "avoid": [], "outlook": "Auto-generated jam 21:00 WIB"}
@@ -7616,7 +7648,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                 # Persist
                                 try:
                                     save_field(st.session_state.user["email"], "auto_plan_history_daily", _dph_cur)
-                                except: pass
+                                except Exception: pass
                 except:
                     if _dp_auto_key in st.session_state:
                         del st.session_state[_dp_auto_key]
@@ -7653,7 +7685,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                     "volume":float(_h_bsjp["Volume"].iloc[-1]) if "Volume" in _h_bsjp else 0,
                                     "prev_close": float(_h_bsjp["Close"].iloc[-2]) if len(_h_bsjp)>1 else float(_h_bsjp["Close"].iloc[-1]),
                                 }
-                        except: pass
+                        except Exception: pass
 
                     if _pm_bsjp:
                         _plan_bsjp = {"bsjp": [], "avoid": [], "outlook": "Auto-generated jam 15:40 WIB (Sesi Closing BEI)"}
@@ -7689,7 +7721,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             st.session_state["auto_plan_history_bsjp"] = _bsjp_h_cur
                             try:
                                 save_field(st.session_state.user["email"], "auto_plan_history_bsjp", _bsjp_h_cur)
-                            except: pass
+                            except Exception: pass
                 except:
                     if _bsjp_auto_key in st.session_state:
                         del st.session_state[_bsjp_auto_key]
@@ -7733,7 +7765,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                         "low":   float(h["Low"].iloc[-1]),
                                         "close": float(h["Close"].iloc[-1]),
                                     }
-                        except: pass
+                        except Exception: pass
                     _tks_post = list(set(r["ticker"] for r in _open_post))
                     _ts_post = [_thr_post.Thread(target=_fetch_post, args=(t,)) for t in _tks_post]
                     for t in _ts_post: t.start()
@@ -7772,9 +7804,9 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                         st.session_state["tr_records"] = _records_post
                         if st.session_state.get("user"):
                             try: save_field(st.session_state.user["email"], "tr_records", _records_post)
-                            except: pass
+                            except Exception: pass
                 st.session_state[_tr_post_key] = True
-            except: pass
+            except Exception: pass
 
     # ══════════════════════════════════════════════════════════════
     # [5a] SABTU JAM 07:00 — FUNDAMENTAL SCREENER AUTO-REFRESH
@@ -7791,7 +7823,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                     try:
                         _fs_dt2 = datetime.strptime(_fs_ts_stored[:11].strip(), "%d %b %Y")
                         _fs_week_done = (datetime.now() - _fs_dt2).days < 7
-                    except: pass
+                    except Exception: pass
                 if not _fs_week_done:
                     import yfinance as _yf_fs, threading as _thr_fs
                     _fs_auto_tickers = tuple(_WATCHLIST_RECO[:80])  # top 80 watchlist
@@ -7818,7 +7850,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                     "mkcap": inf.get("marketCap") or 0,
                                     "eps_g": 0,
                                 }
-                        except: pass
+                        except Exception: pass
                     _fs_ths = [_thr_fs.Thread(target=_fs_auto_one, args=(t,)) for t in _fs_auto_tickers]
                     for t in _fs_ths: t.start()
                     for t in _fs_ths: t.join(timeout=25)
@@ -7868,7 +7900,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                                     "volume":float(_h_wp["Volume"].iloc[-1]) if "Volume" in _h_wp else 0,
                                     "prev_close": float(_h_wp["Close"].iloc[-2]) if len(_h_wp)>1 else float(_h_wp["Close"].iloc[-1]),
                                 }
-                        except: pass
+                        except Exception: pass
 
                     if _pm_wp:
                         _plan_wp = {"weekly": [], "avoid": [], "outlook": "Auto-generated Sabtu 12:00 WIB — weekly swing plan"}
@@ -7901,7 +7933,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
                             st.session_state["auto_plan_history_weekly"] = _wph_cur
                             try:
                                 save_field(st.session_state.user["email"], "auto_plan_history_weekly", _wph_cur)
-                            except: pass
+                            except Exception: pass
                 except:
                     if _wp_auto_key in st.session_state:
                         del st.session_state[_wp_auto_key]
@@ -9282,7 +9314,7 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
     if "action" in st.query_params:
         _action = st.query_params.get("action")
         try: st.query_params.pop("action", None)
-        except: pass
+        except Exception: pass
         if _action == "open_chat":
             st.session_state.selected_system = "chat"
             st.session_state.current_view = "chat"
@@ -9522,7 +9554,7 @@ if "del" in st.query_params:
     try: del st.query_params["del"]
     except: 
         try: st.query_params.pop("del", None)
-        except: pass
+        except Exception: pass
     st.rerun()
 
 if "do" in st.query_params:
@@ -9535,7 +9567,7 @@ if "do" in st.query_params:
     if _do == "logout":
         if _tok:
             try: _delete_token(_tok)
-            except: pass
+            except Exception: pass
         st.session_state.clear(); st.query_params.clear()
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
@@ -9544,7 +9576,7 @@ if "do" in st.query_params:
         try: del st.query_params["do"]
         except: 
             try: st.query_params.pop("do", None)
-            except: pass
+            except Exception: pass
         st.rerun()
     elif _do == "theme_dark":
         # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
@@ -9565,7 +9597,7 @@ if "do" in st.query_params:
     try: del st.query_params["do"]
     except: 
         try: st.query_params.pop("do", None)
-        except: pass
+        except Exception: pass
     st.rerun()
 
 # --- PEMBUATAN MENU SIDEBAR HISTORI CHAT ---
@@ -10698,7 +10730,7 @@ if "del" in st.query_params:
         _to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
         save_user(st.session_state.user["email"], {"theme": st.session_state.get("theme", "dark"), "sessions": _to_save, "active_id": st.session_state.active_id})
     try: st.query_params.pop("del", None)
-    except: pass
+    except Exception: pass
     st.rerun()
 
 if "do" in st.query_params:
@@ -10707,7 +10739,7 @@ if "do" in st.query_params:
     if _do == "logout":
         if _tok:
             try: _delete_token(_tok)
-            except: pass
+            except Exception: pass
         st.session_state.clear(); st.query_params.clear()
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
@@ -10802,7 +10834,7 @@ if st.session_state.user is None:
         # FIX APPLE LOOP: Jika ada token di URL tapi gagal login (server amnesia), HANCURKAN token lama!
         components.html("<script>try { localStorage.removeItem('sigma_token'); } catch(e) {}</script>", height=0)
         try: st.query_params.pop("sigma_token", None)
-        except: pass
+        except Exception: pass
 
 
 
@@ -10826,7 +10858,7 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
             # JANGAN restore selected_system — dibiarkan sesuai state saat ini
             # if "selected_system" in _saved_data:
             #     st.session_state.selected_system = _saved_data["selected_system"]
-    except: pass
+    except Exception: pass
     st.session_state.amnesia_fixed = True
 
 current_view = st.session_state.get("current_view", "chat")
@@ -11478,7 +11510,7 @@ if current_view == "dashboard":
                 _cls = "up" if _chg >= 0 else "dn"
                 _arr = "&#9650;" if _chg >= 0 else "&#9660;"
                 _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
-        except: pass
+        except Exception: pass
     if _tape_html:
         _tape_double = _tape_html * 2  
         st.markdown(f"""
@@ -11565,7 +11597,7 @@ if current_view == "dashboard":
         "  🔧 TOOLS  ",
         "  📖 PANDUAN  ",
     ])
-    tab_macro = tab_marketdata  # alias — Rate Monitor sekarang ada di Market Data sub-tab
+    tab_macro = tab_marketdata  # alias — Economic Calendar dirender di tab_macro = tab_marketdata context
 
 
     # ── GLOBE LIVE DATA FETCH (hourly TTL) ────────────────────────────────
@@ -11613,8 +11645,8 @@ if current_view == "dashboard":
             "KAEF": {"name":"Kimia Farma Tbk.","cap":38,"owner":"Government","sector":"Healthcare","msci":False,"price":650,"chg":0.93,"vol":"11.5 M"},
             "KRAS": {"name":"Krakatau Steel Tbk.","cap":45,"owner":"Government","sector":"Basic Materials","msci":False,"price":220,"chg":-1.34,"vol":"22.6 M"},
             "PGEO": {"name":"Pertamina Geothermal Energy","cap":185,"owner":"Government","sector":"Energy","msci":True,"price":1240,"chg":1.21,"vol":"8.4 M"},
-            "AKRA": {"name":"AKR Corporindo Tbk.","cap":168,"owner":"Government","sector":"Energy","msci":True,"price":1620,"chg":0.62,"vol":"14.8 M"},
-            "ITMG": {"name":"Indo Tambangraya Megah Tbk.","cap":140,"owner":"Government","sector":"Energy","msci":True,"price":24500,"chg":1.84,"vol":"2.1 M"},
+            "AKRA": {"name":"AKR Corporindo Tbk.","cap":168,"owner":"Others","sector":"Energy","msci":True,"price":1620,"chg":0.62,"vol":"14.8 M"},
+            "ITMG": {"name":"Indo Tambangraya Megah Tbk.","cap":140,"owner":"Others","sector":"Energy","msci":True,"price":24500,"chg":1.84,"vol":"2.1 M"},
             "ASII": {"name":"Astra International Tbk.","cap":432,"owner":"Astra Group","sector":"Consumer Cyclical","msci":True,"price":5975,"chg":-1.24,"vol":"22.3 M"},
             "UNTR": {"name":"United Tractors Tbk.","cap":320,"owner":"Astra Group","sector":"Industrials","msci":True,"price":24500,"chg":1.02,"vol":"5.6 M"},
             "CPIN": {"name":"Charoen Pokphand Indonesia","cap":195,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":True,"price":4800,"chg":-0.62,"vol":"7.1 M"},
@@ -11705,7 +11737,7 @@ if current_view == "dashboard":
             "HRUM": {"name":"Harum Energy Tbk.","cap":198,"owner":"Others","sector":"Energy","msci":False,"price":1200,"chg":0.84,"vol":"5.6 M"},
             "BUKA": {"name":"Bukalapak.com Tbk.","cap":145,"owner":"Others","sector":"Technology","msci":False,"price":68,"chg":-2.94,"vol":"148.0 M"},
             "HEAL": {"name":"Medikaloka Hermina Tbk.","cap":132,"owner":"Others","sector":"Healthcare","msci":False,"price":1560,"chg":1.29,"vol":"6.3 M"},
-            "COAL": {"name":"Indika Energy Tbk.","cap":118,"owner":"Others","sector":"Energy","msci":False,"price":1820,"chg":0.55,"vol":"8.2 M"},
+            "INDY": {"name":"Indika Energy Tbk.","cap":118,"owner":"Others","sector":"Energy","msci":False,"price":1820,"chg":0.55,"vol":"8.2 M"},
             "CUAN": {"name":"Petrindo Jaya Kreasi Tbk.","cap":310,"owner":"Others","sector":"Energy","msci":False,"price":12400,"chg":4.20,"vol":"2.1 M"},
             "RAJA": {"name":"Rukun Raharja Tbk.","cap":95,"owner":"Others","sector":"Energy","msci":False,"price":3880,"chg":1.80,"vol":"4.4 M"},
             "FILM": {"name":"MD Pictures Tbk.","cap":78,"owner":"Others","sector":"Consumer Cyclical","msci":False,"price":1240,"chg":-0.81,"vol":"5.5 M"},
@@ -11721,7 +11753,6 @@ if current_view == "dashboard":
             "TAPG": {"name":"Triputra Agro Persada Tbk.","cap":95,"owner":"Others","sector":"Consumer Non-Cyclical","msci":False,"price":1140,"chg":0.88,"vol":"5.8 M"},
             "NICL": {"name":"Nickel Industries Ltd.","cap":142,"owner":"Others","sector":"Basic Materials","msci":False,"price":362,"chg":1.66,"vol":"9.4 M"},
             "CBDK": {"name":"Cahaya Bintang Medan Tbk.","cap":68,"owner":"Others","sector":"Properties & Real Estate","msci":False,"price":2640,"chg":2.34,"vol":"3.6 M"},
-            "MSCI": {"name":"[MSCI-flagged] Diversified IDX","cap":55,"owner":"Others","sector":"Financials","msci":False,"price":1200,"chg":0.22,"vol":"4.2 M"},
         }
 
         tickers_yf = [t + ".JK" for t in _STATIC.keys()]
@@ -11820,7 +11851,10 @@ if current_view == "dashboard":
         # ════════════════════════════════════════════════════════
 
         import json as _globe_json
-        _globe_static_meta_js = '{"BBCA":{"name":"Bank Central Asia Tbk.","cap":1289,"owner":"Djarum Group","sector":"Financials","msci":true,"price":9325.0,"chg":1.08,"vol":"18.2 M"},"BELI":{"name":"Bukalapak.com Tbk.","cap":380,"owner":"Djarum Group","sector":"Technology","msci":false,"price":212.0,"chg":-1.4,"vol":"88.0 M"},"DNET":{"name":"Indoritel Makmur Intl.","cap":290,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":1540.0,"chg":0.65,"vol":"5.2 M"},"FAST":{"name":"Fast Food Indonesia Tbk.","cap":180,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":1580.0,"chg":-0.63,"vol":"4.8 M"},"MAPA":{"name":"Map Aktif Adiperkasa Tbk.","cap":155,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":720.0,"chg":1.12,"vol":"7.3 M"},"DCII":{"name":"DCI Indonesia Tbk.","cap":230,"owner":"Djarum Group","sector":"Technology","msci":false,"price":38500.0,"chg":2.14,"vol":"0.3 M"},"DMAS":{"name":"Puradelta Lestari Tbk.","cap":95,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":196.0,"chg":0.51,"vol":"22.0 M"},"KOPI":{"name":"Kopi Kenangan Digital Tbk.","cap":140,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":880.0,"chg":3.41,"vol":"11.5 M"},"GOLF":{"name":"Sarasa Golf Resort Tbk.","cap":78,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":560.0,"chg":-0.36,"vol":"3.2 M"},"DAYA":{"name":"Daya Dimensi Indonesia","cap":65,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":440.0,"chg":0.91,"vol":"6.8 M"},"NUSA":{"name":"Nusantara Digital Tbk.","cap":55,"owner":"Djarum Group","sector":"Technology","msci":false,"price":318.0,"chg":-1.22,"vol":"14.1 M"},"HOKI":{"name":"Buyung Poetra Sembada Tbk.","cap":42,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":510.0,"chg":0.39,"vol":"8.6 M"},"BBKP":{"name":"Bank KB Bukopin Tbk.","cap":68,"owner":"Djarum Group","sector":"Financials","msci":false,"price":420.0,"chg":-0.47,"vol":"12.4 M"},"PNBN":{"name":"Bank Pan Indonesia Tbk.","cap":110,"owner":"Djarum Group","sector":"Financials","msci":false,"price":1240.0,"chg":0.81,"vol":"8.6 M"},"WTON":{"name":"Wijaya Karya Beton Tbk.","cap":62,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":182.0,"chg":-1.09,"vol":"18.2 M"},"MSKY":{"name":"MNC Sky Vision Tbk.","cap":48,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":190.0,"chg":1.06,"vol":"9.8 M"},"BBRI":{"name":"Bank Rakyat Indonesia Tbk.","cap":856,"owner":"Government","sector":"Financials","msci":true,"price":4350.0,"chg":-0.23,"vol":"92.1 M"},"BMRI":{"name":"Bank Mandiri Tbk.","cap":652,"owner":"Government","sector":"Financials","msci":true,"price":6800.0,"chg":0.74,"vol":"31.5 M"},"TLKM":{"name":"Telkom Indonesia Tbk.","cap":566,"owner":"Government","sector":"Infrastructure","msci":true,"price":3920.0,"chg":-0.51,"vol":"44.8 M"},"BBNI":{"name":"Bank Negara Indonesia Tbk.","cap":389,"owner":"Government","sector":"Financials","msci":true,"price":4740.0,"chg":0.85,"vol":"28.9 M"},"PTBA":{"name":"Bukit Asam Tbk.","cap":160,"owner":"Government","sector":"Energy","msci":true,"price":2940.0,"chg":0.34,"vol":"19.4 M"},"SMGR":{"name":"Semen Indonesia Tbk.","cap":120,"owner":"Government","sector":"Industrials","msci":true,"price":5450.0,"chg":-0.91,"vol":"10.2 M"},"PGAS":{"name":"Perusahaan Gas Negara Tbk.","cap":188,"owner":"Government","sector":"Energy","msci":true,"price":1440.0,"chg":0.7,"vol":"31.8 M"},"ANTM":{"name":"Aneka Tambang Tbk.","cap":155,"owner":"Government","sector":"Basic Materials","msci":true,"price":1620.0,"chg":1.57,"vol":"25.0 M"},"WIKA":{"name":"Wijaya Karya Tbk.","cap":82,"owner":"Government","sector":"Industrials","msci":false,"price":1020.0,"chg":-1.92,"vol":"20.1 M"},"WSKT":{"name":"Waskita Karya Tbk.","cap":68,"owner":"Government","sector":"Industrials","msci":false,"price":164.0,"chg":-2.4,"vol":"38.5 M"},"PTPP":{"name":"PP Persero Tbk.","cap":75,"owner":"Government","sector":"Industrials","msci":false,"price":620.0,"chg":-1.27,"vol":"14.2 M"},"JSMR":{"name":"Jasa Marga Tbk.","cap":210,"owner":"Government","sector":"Infrastructure","msci":true,"price":4200.0,"chg":0.48,"vol":"9.7 M"},"ADHI":{"name":"Adhi Karya Tbk.","cap":55,"owner":"Government","sector":"Industrials","msci":false,"price":440.0,"chg":-0.91,"vol":"18.3 M"},"BBTN":{"name":"Bank Tabungan Negara Tbk.","cap":130,"owner":"Government","sector":"Financials","msci":true,"price":1420.0,"chg":0.28,"vol":"35.6 M"},"GIAA":{"name":"Garuda Indonesia Tbk.","cap":48,"owner":"Government","sector":"Infrastructure","msci":false,"price":56.0,"chg":-1.75,"vol":"42.0 M"},"KAEF":{"name":"Kimia Farma Tbk.","cap":38,"owner":"Government","sector":"Healthcare","msci":false,"price":650.0,"chg":0.93,"vol":"11.5 M"},"KRAS":{"name":"Krakatau Steel Tbk.","cap":45,"owner":"Government","sector":"Basic Materials","msci":false,"price":220.0,"chg":-1.34,"vol":"22.6 M"},"PGEO":{"name":"Pertamina Geothermal Energy","cap":185,"owner":"Government","sector":"Energy","msci":true,"price":1240.0,"chg":1.21,"vol":"8.4 M"},"AKRA":{"name":"AKR Corporindo Tbk.","cap":168,"owner":"Government","sector":"Energy","msci":true,"price":1620.0,"chg":0.62,"vol":"14.8 M"},"ITMG":{"name":"Indo Tambangraya Megah Tbk.","cap":140,"owner":"Government","sector":"Energy","msci":true,"price":24500.0,"chg":1.84,"vol":"2.1 M"},"ASII":{"name":"Astra International Tbk.","cap":432,"owner":"Astra Group","sector":"Consumer Cyclical","msci":true,"price":4900.0,"chg":0.41,"vol":"22.3 M"},"UNTR":{"name":"United Tractors Tbk.","cap":320,"owner":"Astra Group","sector":"Industrials","msci":true,"price":24500.0,"chg":1.02,"vol":"5.6 M"},"CPIN":{"name":"Charoen Pokphand Indonesia","cap":195,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":4800.0,"chg":-0.62,"vol":"7.1 M"},"AUTO":{"name":"Astra Otoparts Tbk.","cap":145,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":2550.0,"chg":0.79,"vol":"6.8 M"},"AALI":{"name":"Astra Agro Lestari Tbk.","cap":220,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":7400.0,"chg":-0.27,"vol":"3.9 M"},"ACST":{"name":"Astra Infra Solutions Tbk.","cap":85,"owner":"Astra Group","sector":"Industrials","msci":false,"price":1280.0,"chg":0.47,"vol":"8.1 M"},"IMAS":{"name":"Indomobil Sukses Intl.","cap":115,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":1320.0,"chg":0.76,"vol":"11.2 M"},"GJTL":{"name":"Gajah Tunggal Tbk.","cap":78,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":820.0,"chg":-1.08,"vol":"14.6 M"},"ASGR":{"name":"Astra Graphia Tbk.","cap":52,"owner":"Astra Group","sector":"Technology","msci":false,"price":1480.0,"chg":0.54,"vol":"4.2 M"},"SUGI":{"name":"Sugih Energy Tbk.","cap":38,"owner":"Astra Group","sector":"Energy","msci":false,"price":124.0,"chg":-0.8,"vol":"16.4 M"},"PNLF":{"name":"Panin Financial Tbk.","cap":72,"owner":"Astra Group","sector":"Financials","msci":false,"price":168.0,"chg":1.2,"vol":"9.8 M"},"ADMF":{"name":"Adira Dinamika Multi Finance","cap":158,"owner":"Astra Group","sector":"Financials","msci":false,"price":8400.0,"chg":0.48,"vol":"0.9 M"},"ABMM":{"name":"ABM Investama Tbk.","cap":88,"owner":"Astra Group","sector":"Energy","msci":false,"price":2880.0,"chg":1.04,"vol":"3.6 M"},"SRTG":{"name":"Saratoga Investama Sedaya","cap":118,"owner":"Astra Group","sector":"Financials","msci":false,"price":1640.0,"chg":0.61,"vol":"5.4 M"},"ICBP":{"name":"Indofood CBP Sukses Makmur","cap":302,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":9375.0,"chg":0.27,"vol":"6.2 M"},"INDF":{"name":"Indofood Sukses Makmur Tbk.","cap":230,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":6700.0,"chg":0.15,"vol":"8.8 M"},"MNCN":{"name":"Media Nusantara Citra Tbk.","cap":150,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":940.0,"chg":-0.53,"vol":"22.3 M"},"SIMP":{"name":"Salim Ivomas Pratama Tbk.","cap":88,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":466.0,"chg":0.65,"vol":"12.4 M"},"LPPF":{"name":"Matahari Department Store Tbk.","cap":172,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":2760.0,"chg":-1.08,"vol":"7.0 M"},"MLBI":{"name":"Multi Bintang Indonesia Tbk.","cap":130,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":9800.0,"chg":0.51,"vol":"1.4 M"},"INTP":{"name":"Indocement Tunggal Perkasa","cap":168,"owner":"Salim Group","sector":"Industrials","msci":true,"price":5500.0,"chg":-0.36,"vol":"5.8 M"},"WIFI":{"name":"Solusi Net Integrasi Tbk.","cap":65,"owner":"Salim Group","sector":"Technology","msci":false,"price":760.0,"chg":2.3,"vol":"8.9 M"},"BMTR":{"name":"Global Mediacom Tbk.","cap":92,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":480.0,"chg":-0.21,"vol":"16.4 M"},"HERO":{"name":"Hero Supermarket Tbk.","cap":48,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":620.0,"chg":1.14,"vol":"4.1 M"},"ISAT":{"name":"Indosat Tbk.","cap":320,"owner":"Salim Group","sector":"Infrastructure","msci":true,"price":2200.0,"chg":0.91,"vol":"18.4 M"},"MPMX":{"name":"Mitra Pinasthika Mustika","cap":58,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":840.0,"chg":0.48,"vol":"5.6 M"},"MYOR":{"name":"Mayora Indah Tbk.","cap":245,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":2150.0,"chg":0.23,"vol":"7.8 M"},"MBSS":{"name":"Mitrabahtera Segara Sejati","cap":48,"owner":"Salim Group","sector":"Infrastructure","msci":false,"price":740.0,"chg":-0.54,"vol":"4.2 M"},"UNVR":{"name":"Unilever Indonesia Tbk.","cap":352,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":true,"price":2600.0,"chg":-1.14,"vol":"15.6 M"},"BSDE":{"name":"Bumi Serpong Damai Tbk.","cap":275,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":true,"price":890.0,"chg":0.45,"vol":"28.2 M"},"SMRA":{"name":"Summarecon Agung Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":820.0,"chg":-0.24,"vol":"14.4 M"},"DILD":{"name":"Intiland Development Tbk.","cap":165,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":214.0,"chg":0.94,"vol":"18.8 M"},"ACES":{"name":"Ace Hardware Indonesia Tbk.","cap":195,"owner":"Sinar Mas Group","sector":"Consumer Cyclical","msci":false,"price":785.0,"chg":0.64,"vol":"16.2 M"},"INKP":{"name":"Indah Kiat Pulp & Paper","cap":310,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.32,"vol":"6.3 M"},"TKIM":{"name":"Pabrik Kertas Tjiwi Kimia","cap":145,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":false,"price":5400.0,"chg":0.74,"vol":"2.8 M"},"SMAS":{"name":"Sinar Mas Agro Resources","cap":88,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":3200.0,"chg":-0.62,"vol":"4.1 M"},"SMAR":{"name":"Smart Tbk.","cap":72,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":2900.0,"chg":0.34,"vol":"3.6 M"},"DUTI":{"name":"Duta Pertiwi Tbk.","cap":60,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":4200.0,"chg":-0.48,"vol":"2.2 M"},"SMCB":{"name":"Solusi Bangun Indonesia Tbk.","cap":95,"owner":"Sinar Mas Group","sector":"Industrials","msci":false,"price":2600.0,"chg":0.38,"vol":"5.8 M"},"LPKR":{"name":"Lippo Karawaci Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":134.0,"chg":-0.74,"vol":"62.8 M"},"KIJA":{"name":"Kawasan Industri Jababeka","cap":78,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":246.0,"chg":0.82,"vol":"22.4 M"},"APLN":{"name":"Agung Podomoro Land Tbk.","cap":55,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":144.0,"chg":-0.69,"vol":"18.6 M"},"TPIA":{"name":"Chandra Asri Tbk.","cap":414,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.24,"vol":"8.7 M"},"BRPT":{"name":"Barito Pacific Tbk.","cap":280,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":1240.0,"chg":2.05,"vol":"31.4 M"},"AGRO":{"name":"Bank Raya Indonesia Tbk.","cap":95,"owner":"Chandra Group","sector":"Financials","msci":false,"price":368.0,"chg":-0.81,"vol":"9.7 M"},"CBPE":{"name":"Chandra Barito Energi Tbk.","cap":178,"owner":"Chandra Group","sector":"Energy","msci":false,"price":2100.0,"chg":1.43,"vol":"6.1 M"},"CHEM":{"name":"Chandra Kimia Nusantara","cap":122,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":1680.0,"chg":0.6,"vol":"7.4 M"},"POLY":{"name":"Asia Pacific Fibers Tbk.","cap":68,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":228.0,"chg":-1.3,"vol":"18.2 M"},"FPNI":{"name":"Lotte Chemical Titan Tbk.","cap":54,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":182.0,"chg":0.55,"vol":"12.0 M"},"CTRA":{"name":"Ciputra Development Tbk.","cap":148,"owner":"Chandra Group","sector":"Properties & Real Estate","msci":true,"price":1320.0,"chg":0.91,"vol":"15.8 M"},"MIKA":{"name":"Mitra Keluarga Karyasehat Tbk.","cap":198,"owner":"Chandra Group","sector":"Healthcare","msci":true,"price":2580.0,"chg":0.39,"vol":"5.2 M"},"BYAN":{"name":"Bayan Resources Tbk.","cap":380,"owner":"Chandra Group","sector":"Energy","msci":true,"price":18600.0,"chg":2.37,"vol":"1.4 M"},"PTRO":{"name":"Petrosea Tbk.","cap":72,"owner":"Chandra Group","sector":"Energy","msci":false,"price":3280.0,"chg":0.92,"vol":"2.8 M"},"PICO":{"name":"Pelangi Indah Canindo Tbk.","cap":42,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":290.0,"chg":-0.34,"vol":"6.4 M"},"EXCL":{"name":"XL Axiata Tbk.","cap":310,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":1850.0,"chg":0.54,"vol":"18.7 M"},"BUMI":{"name":"Bumi Resources Tbk.","cap":185,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":124.0,"chg":-1.59,"vol":"420.0 M"},"VIVA":{"name":"Visi Media Asia Tbk.","cap":110,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":2.44,"vol":"55.2 M"},"ENRG":{"name":"Energi Mega Persada Tbk.","cap":178,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":50.0,"chg":-2.0,"vol":"88.0 M"},"ANTV":{"name":"Cakrawala Andalas TV Tbk.","cap":88,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":112.0,"chg":1.79,"vol":"32.4 M"},"BNBR":{"name":"Bakrie & Brothers Tbk.","cap":65,"owner":"Bakrie Group","sector":"Industrials","msci":false,"price":56.0,"chg":-0.89,"vol":"48.0 M"},"UNSP":{"name":"Bakrie Sumatra Plantations","cap":48,"owner":"Bakrie Group","sector":"Consumer Non-Cyclical","msci":false,"price":84.0,"chg":1.2,"vol":"28.6 M"},"BTEL":{"name":"Bakrie Telecom Tbk.","cap":38,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":50.0,"chg":-1.96,"vol":"42.0 M"},"ELTY":{"name":"Bakrieland Development Tbk.","cap":55,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":66.0,"chg":3.12,"vol":"55.8 M"},"BBRM":{"name":"Pelayaran Nasional Bina Buana Raya","cap":42,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":148.0,"chg":0.68,"vol":"8.6 M"},"BKSL":{"name":"Sentul City Tbk.","cap":38,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":58.0,"chg":-1.69,"vol":"24.8 M"},"TOWR":{"name":"Sarana Menara Nusantara","cap":188,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":820.0,"chg":0.24,"vol":"15.4 M"},"MPPA":{"name":"Matahari Putra Prima Tbk.","cap":155,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":660.0,"chg":1.08,"vol":"14.6 M"},"JPFA":{"name":"Japfa Comfeed Indonesia Tbk.","cap":220,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1480.0,"chg":-0.34,"vol":"11.2 M"},"SILO":{"name":"Siloam International Hospitals","cap":190,"owner":"Lippo Group","sector":"Healthcare","msci":true,"price":2620.0,"chg":0.77,"vol":"4.9 M"},"MFIN":{"name":"Mandala Multifinance Tbk.","cap":55,"owner":"Lippo Group","sector":"Financials","msci":false,"price":1880.0,"chg":0.54,"vol":"3.2 M"},"CARE":{"name":"Metro Healthcare Indonesia","cap":88,"owner":"Lippo Group","sector":"Healthcare","msci":false,"price":1120.0,"chg":-0.89,"vol":"7.8 M"},"LPGI":{"name":"Lippo General Insurance Tbk.","cap":48,"owner":"Lippo Group","sector":"Financials","msci":false,"price":4800.0,"chg":0.21,"vol":"0.8 M"},"LMPI":{"name":"Langgeng Makmur Industri","cap":38,"owner":"Lippo Group","sector":"Industrials","msci":false,"price":280.0,"chg":-0.36,"vol":"5.4 M"},"LPPS":{"name":"Lippo Cikarang Tbk.","cap":95,"owner":"Lippo Group","sector":"Properties & Real Estate","msci":false,"price":1080.0,"chg":0.93,"vol":"6.2 M"},"MTDL":{"name":"Metrodata Electronics Tbk.","cap":72,"owner":"Lippo Group","sector":"Technology","msci":false,"price":590.0,"chg":1.55,"vol":"9.8 M"},"LSIP":{"name":"PP London Sumatra Indonesia","cap":160,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1340.0,"chg":0.75,"vol":"9.2 M"},"FMII":{"name":"First Media Tbk.","cap":42,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":-0.59,"vol":"12.4 M"},"TBIG":{"name":"Tower Bersama Infrastr.","cap":165,"owner":"Lippo Group","sector":"Infrastructure","msci":true,"price":2100.0,"chg":-0.48,"vol":"8.8 M"},"BCAP":{"name":"MNC Kapital Indonesia Tbk.","cap":52,"owner":"Lippo Group","sector":"Financials","msci":false,"price":312.0,"chg":0.32,"vol":"7.2 M"},"AMMN":{"name":"Amman Mineral Internasional","cap":294,"owner":"Others","sector":"Basic Materials","msci":true,"price":7800.0,"chg":2.11,"vol":"5.1 M"},"GOTO":{"name":"GoTo Gojek Tokopedia Tbk.","cap":180,"owner":"Others","sector":"Technology","msci":true,"price":62.0,"chg":-3.12,"vol":"312.0 M"},"KLBF":{"name":"Kalbe Farma Tbk.","cap":245,"owner":"Others","sector":"Healthcare","msci":true,"price":1565.0,"chg":-0.32,"vol":"24.1 M"},"ADRO":{"name":"Adaro Energy Indonesia Tbk.","cap":282,"owner":"Others","sector":"Energy","msci":true,"price":2200.0,"chg":1.38,"vol":"14.6 M"},"MDKA":{"name":"Merdeka Copper Gold Tbk.","cap":270,"owner":"Others","sector":"Basic Materials","msci":true,"price":2460.0,"chg":2.07,"vol":"12.3 M"},"INCO":{"name":"Vale Indonesia Tbk.","cap":230,"owner":"Others","sector":"Basic Materials","msci":true,"price":3100.0,"chg":0.97,"vol":"9.5 M"},"MAPI":{"name":"Mitra Adiperkasa Tbk.","cap":245,"owner":"Others","sector":"Consumer Cyclical","msci":true,"price":1680.0,"chg":0.6,"vol":"8.7 M"},"PWON":{"name":"Pakuwon Jati Tbk.","cap":218,"owner":"Others","sector":"Properties & Real Estate","msci":true,"price":438.0,"chg":0.46,"vol":"35.6 M"},"HRUM":{"name":"Harum Energy Tbk.","cap":198,"owner":"Others","sector":"Energy","msci":false,"price":1200.0,"chg":0.84,"vol":"5.6 M"},"BUKA":{"name":"Bukalapak.com Tbk.","cap":145,"owner":"Others","sector":"Technology","msci":false,"price":68.0,"chg":-2.94,"vol":"148.0 M"},"HEAL":{"name":"Medikaloka Hermina Tbk.","cap":132,"owner":"Others","sector":"Healthcare","msci":false,"price":1560.0,"chg":1.29,"vol":"6.3 M"},"COAL":{"name":"Indika Energy Tbk.","cap":118,"owner":"Others","sector":"Energy","msci":false,"price":1820.0,"chg":0.55,"vol":"8.2 M"},"CUAN":{"name":"Petrindo Jaya Kreasi Tbk.","cap":310,"owner":"Others","sector":"Energy","msci":false,"price":12400.0,"chg":4.2,"vol":"2.1 M"},"RAJA":{"name":"Rukun Raharja Tbk.","cap":95,"owner":"Others","sector":"Energy","msci":false,"price":3880.0,"chg":1.8,"vol":"4.4 M"},"FILM":{"name":"MD Pictures Tbk.","cap":78,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":1240.0,"chg":-0.81,"vol":"5.5 M"},"ESSA":{"name":"Surya Esa Perkasa Tbk.","cap":110,"owner":"Others","sector":"Energy","msci":false,"price":1620.0,"chg":1.23,"vol":"6.8 M"},"SMIL":{"name":"Sumber Mas Indah Plywood","cap":45,"owner":"Others","sector":"Basic Materials","msci":false,"price":380.0,"chg":0.53,"vol":"5.2 M"},"ERAA":{"name":"Erajaya Swasembada Tbk.","cap":88,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":540.0,"chg":-0.74,"vol":"12.4 M"},"GOOD":{"name":"Garudafood Putra Putri Jaya","cap":72,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":430.0,"chg":0.47,"vol":"9.6 M"},"SIDO":{"name":"Industri Jamu Sido Muncul","cap":138,"owner":"Others","sector":"Healthcare","msci":true,"price":580.0,"chg":0.35,"vol":"10.2 M"},"MIDI":{"name":"Midi Utama Indonesia Tbk.","cap":88,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":600.0,"chg":0.84,"vol":"4.4 M"},"CMRY":{"name":"Cisarua Mountain Dairy Tbk.","cap":115,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":4020.0,"chg":1.01,"vol":"2.8 M"},"ARTO":{"name":"Bank Jago Tbk.","cap":175,"owner":"Others","sector":"Financials","msci":false,"price":2540.0,"chg":-1.55,"vol":"7.6 M"},"BREN":{"name":"Barito Renewables Energy Tbk.","cap":420,"owner":"Others","sector":"Energy","msci":true,"price":8400.0,"chg":3.24,"vol":"4.2 M"},"TAPG":{"name":"Triputra Agro Persada Tbk.","cap":95,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":1140.0,"chg":0.88,"vol":"5.8 M"},"NICL":{"name":"Nickel Industries Ltd.","cap":142,"owner":"Others","sector":"Basic Materials","msci":false,"price":362.0,"chg":1.66,"vol":"9.4 M"},"CBDK":{"name":"Cahaya Bintang Medan Tbk.","cap":68,"owner":"Others","sector":"Properties & Real Estate","msci":false,"price":2640.0,"chg":2.34,"vol":"3.6 M"},"MSCI":{"name":"[MSCI-flagged] Diversified IDX","cap":55,"owner":"Others","sector":"Financials","msci":false,"price":1200.0,"chg":0.22,"vol":"4.2 M"}}'
+        # ── DISCLAIMER: Harga di static meta adalah snapshot untuk initial render IDX Map ──
+        # Live price cards di atas menggunakan yfinance realtime (TTL 5 menit)
+        # Static meta di bawah dipakai hanya untuk bubble chart group/konglomerat
+        _globe_static_meta_js = '{"BBCA":{"name":"Bank Central Asia Tbk.","cap":1289,"owner":"Djarum Group","sector":"Financials","msci":true,"price":9325.0,"chg":1.08,"vol":"18.2 M"},"BELI":{"name":"Bukalapak.com Tbk.","cap":380,"owner":"Djarum Group","sector":"Technology","msci":false,"price":212.0,"chg":-1.4,"vol":"88.0 M"},"DNET":{"name":"Indoritel Makmur Intl.","cap":290,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":1540.0,"chg":0.65,"vol":"5.2 M"},"FAST":{"name":"Fast Food Indonesia Tbk.","cap":180,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":1580.0,"chg":-0.63,"vol":"4.8 M"},"MAPA":{"name":"Map Aktif Adiperkasa Tbk.","cap":155,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":720.0,"chg":1.12,"vol":"7.3 M"},"DCII":{"name":"DCI Indonesia Tbk.","cap":230,"owner":"Djarum Group","sector":"Technology","msci":false,"price":38500.0,"chg":2.14,"vol":"0.3 M"},"DMAS":{"name":"Puradelta Lestari Tbk.","cap":95,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":196.0,"chg":0.51,"vol":"22.0 M"},"KOPI":{"name":"Kopi Kenangan Digital Tbk.","cap":140,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":880.0,"chg":3.41,"vol":"11.5 M"},"GOLF":{"name":"Sarasa Golf Resort Tbk.","cap":78,"owner":"Djarum Group","sector":"Properties & Real Estate","msci":false,"price":560.0,"chg":-0.36,"vol":"3.2 M"},"DAYA":{"name":"Daya Dimensi Indonesia","cap":65,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":440.0,"chg":0.91,"vol":"6.8 M"},"NUSA":{"name":"Nusantara Digital Tbk.","cap":55,"owner":"Djarum Group","sector":"Technology","msci":false,"price":318.0,"chg":-1.22,"vol":"14.1 M"},"HOKI":{"name":"Buyung Poetra Sembada Tbk.","cap":42,"owner":"Djarum Group","sector":"Consumer Non-Cyclical","msci":false,"price":510.0,"chg":0.39,"vol":"8.6 M"},"BBKP":{"name":"Bank KB Bukopin Tbk.","cap":68,"owner":"Djarum Group","sector":"Financials","msci":false,"price":420.0,"chg":-0.47,"vol":"12.4 M"},"PNBN":{"name":"Bank Pan Indonesia Tbk.","cap":110,"owner":"Djarum Group","sector":"Financials","msci":false,"price":1240.0,"chg":0.81,"vol":"8.6 M"},"WTON":{"name":"Wijaya Karya Beton Tbk.","cap":62,"owner":"Djarum Group","sector":"Industrials","msci":false,"price":182.0,"chg":-1.09,"vol":"18.2 M"},"MSKY":{"name":"MNC Sky Vision Tbk.","cap":48,"owner":"Djarum Group","sector":"Consumer Cyclical","msci":false,"price":190.0,"chg":1.06,"vol":"9.8 M"},"BBRI":{"name":"Bank Rakyat Indonesia Tbk.","cap":856,"owner":"Government","sector":"Financials","msci":true,"price":4350.0,"chg":-0.23,"vol":"92.1 M"},"BMRI":{"name":"Bank Mandiri Tbk.","cap":652,"owner":"Government","sector":"Financials","msci":true,"price":6800.0,"chg":0.74,"vol":"31.5 M"},"TLKM":{"name":"Telkom Indonesia Tbk.","cap":566,"owner":"Government","sector":"Infrastructure","msci":true,"price":3920.0,"chg":-0.51,"vol":"44.8 M"},"BBNI":{"name":"Bank Negara Indonesia Tbk.","cap":389,"owner":"Government","sector":"Financials","msci":true,"price":4740.0,"chg":0.85,"vol":"28.9 M"},"PTBA":{"name":"Bukit Asam Tbk.","cap":160,"owner":"Government","sector":"Energy","msci":true,"price":2940.0,"chg":0.34,"vol":"19.4 M"},"SMGR":{"name":"Semen Indonesia Tbk.","cap":120,"owner":"Government","sector":"Industrials","msci":true,"price":5450.0,"chg":-0.91,"vol":"10.2 M"},"PGAS":{"name":"Perusahaan Gas Negara Tbk.","cap":188,"owner":"Government","sector":"Energy","msci":true,"price":1440.0,"chg":0.7,"vol":"31.8 M"},"ANTM":{"name":"Aneka Tambang Tbk.","cap":155,"owner":"Government","sector":"Basic Materials","msci":true,"price":1620.0,"chg":1.57,"vol":"25.0 M"},"WIKA":{"name":"Wijaya Karya Tbk.","cap":82,"owner":"Government","sector":"Industrials","msci":false,"price":1020.0,"chg":-1.92,"vol":"20.1 M"},"WSKT":{"name":"Waskita Karya Tbk.","cap":68,"owner":"Government","sector":"Industrials","msci":false,"price":164.0,"chg":-2.4,"vol":"38.5 M"},"PTPP":{"name":"PP Persero Tbk.","cap":75,"owner":"Government","sector":"Industrials","msci":false,"price":620.0,"chg":-1.27,"vol":"14.2 M"},"JSMR":{"name":"Jasa Marga Tbk.","cap":210,"owner":"Government","sector":"Infrastructure","msci":true,"price":4200.0,"chg":0.48,"vol":"9.7 M"},"ADHI":{"name":"Adhi Karya Tbk.","cap":55,"owner":"Government","sector":"Industrials","msci":false,"price":440.0,"chg":-0.91,"vol":"18.3 M"},"BBTN":{"name":"Bank Tabungan Negara Tbk.","cap":130,"owner":"Government","sector":"Financials","msci":true,"price":1420.0,"chg":0.28,"vol":"35.6 M"},"GIAA":{"name":"Garuda Indonesia Tbk.","cap":48,"owner":"Government","sector":"Infrastructure","msci":false,"price":56.0,"chg":-1.75,"vol":"42.0 M"},"KAEF":{"name":"Kimia Farma Tbk.","cap":38,"owner":"Government","sector":"Healthcare","msci":false,"price":650.0,"chg":0.93,"vol":"11.5 M"},"KRAS":{"name":"Krakatau Steel Tbk.","cap":45,"owner":"Government","sector":"Basic Materials","msci":false,"price":220.0,"chg":-1.34,"vol":"22.6 M"},"PGEO":{"name":"Pertamina Geothermal Energy","cap":185,"owner":"Government","sector":"Energy","msci":true,"price":1240.0,"chg":1.21,"vol":"8.4 M"},"AKRA":{"name":"AKR Corporindo Tbk.","cap":168,"owner":"Others","sector":"Energy","msci":true,"price":1620.0,"chg":0.62,"vol":"14.8 M"},"ITMG":{"name":"Indo Tambangraya Megah Tbk.","cap":140,"owner":"Others","sector":"Energy","msci":true,"price":24500.0,"chg":1.84,"vol":"2.1 M"},"ASII":{"name":"Astra International Tbk.","cap":432,"owner":"Astra Group","sector":"Consumer Cyclical","msci":true,"price":4900.0,"chg":0.41,"vol":"22.3 M"},"UNTR":{"name":"United Tractors Tbk.","cap":320,"owner":"Astra Group","sector":"Industrials","msci":true,"price":24500.0,"chg":1.02,"vol":"5.6 M"},"CPIN":{"name":"Charoen Pokphand Indonesia","cap":195,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":4800.0,"chg":-0.62,"vol":"7.1 M"},"AUTO":{"name":"Astra Otoparts Tbk.","cap":145,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":2550.0,"chg":0.79,"vol":"6.8 M"},"AALI":{"name":"Astra Agro Lestari Tbk.","cap":220,"owner":"Astra Group","sector":"Consumer Non-Cyclical","msci":true,"price":7400.0,"chg":-0.27,"vol":"3.9 M"},"ACST":{"name":"Astra Infra Solutions Tbk.","cap":85,"owner":"Astra Group","sector":"Industrials","msci":false,"price":1280.0,"chg":0.47,"vol":"8.1 M"},"IMAS":{"name":"Indomobil Sukses Intl.","cap":115,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":1320.0,"chg":0.76,"vol":"11.2 M"},"GJTL":{"name":"Gajah Tunggal Tbk.","cap":78,"owner":"Astra Group","sector":"Consumer Cyclical","msci":false,"price":820.0,"chg":-1.08,"vol":"14.6 M"},"ASGR":{"name":"Astra Graphia Tbk.","cap":52,"owner":"Astra Group","sector":"Technology","msci":false,"price":1480.0,"chg":0.54,"vol":"4.2 M"},"SUGI":{"name":"Sugih Energy Tbk.","cap":38,"owner":"Astra Group","sector":"Energy","msci":false,"price":124.0,"chg":-0.8,"vol":"16.4 M"},"PNLF":{"name":"Panin Financial Tbk.","cap":72,"owner":"Astra Group","sector":"Financials","msci":false,"price":168.0,"chg":1.2,"vol":"9.8 M"},"ADMF":{"name":"Adira Dinamika Multi Finance","cap":158,"owner":"Astra Group","sector":"Financials","msci":false,"price":8400.0,"chg":0.48,"vol":"0.9 M"},"ABMM":{"name":"ABM Investama Tbk.","cap":88,"owner":"Astra Group","sector":"Energy","msci":false,"price":2880.0,"chg":1.04,"vol":"3.6 M"},"SRTG":{"name":"Saratoga Investama Sedaya","cap":118,"owner":"Astra Group","sector":"Financials","msci":false,"price":1640.0,"chg":0.61,"vol":"5.4 M"},"ICBP":{"name":"Indofood CBP Sukses Makmur","cap":302,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":9375.0,"chg":0.27,"vol":"6.2 M"},"INDF":{"name":"Indofood Sukses Makmur Tbk.","cap":230,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":6700.0,"chg":0.15,"vol":"8.8 M"},"MNCN":{"name":"Media Nusantara Citra Tbk.","cap":150,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":940.0,"chg":-0.53,"vol":"22.3 M"},"SIMP":{"name":"Salim Ivomas Pratama Tbk.","cap":88,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":466.0,"chg":0.65,"vol":"12.4 M"},"LPPF":{"name":"Matahari Department Store Tbk.","cap":172,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":2760.0,"chg":-1.08,"vol":"7.0 M"},"MLBI":{"name":"Multi Bintang Indonesia Tbk.","cap":130,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":false,"price":9800.0,"chg":0.51,"vol":"1.4 M"},"INTP":{"name":"Indocement Tunggal Perkasa","cap":168,"owner":"Salim Group","sector":"Industrials","msci":true,"price":5500.0,"chg":-0.36,"vol":"5.8 M"},"WIFI":{"name":"Solusi Net Integrasi Tbk.","cap":65,"owner":"Salim Group","sector":"Technology","msci":false,"price":760.0,"chg":2.3,"vol":"8.9 M"},"BMTR":{"name":"Global Mediacom Tbk.","cap":92,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":480.0,"chg":-0.21,"vol":"16.4 M"},"HERO":{"name":"Hero Supermarket Tbk.","cap":48,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":620.0,"chg":1.14,"vol":"4.1 M"},"ISAT":{"name":"Indosat Tbk.","cap":320,"owner":"Salim Group","sector":"Infrastructure","msci":true,"price":2200.0,"chg":0.91,"vol":"18.4 M"},"MPMX":{"name":"Mitra Pinasthika Mustika","cap":58,"owner":"Salim Group","sector":"Consumer Cyclical","msci":false,"price":840.0,"chg":0.48,"vol":"5.6 M"},"MYOR":{"name":"Mayora Indah Tbk.","cap":245,"owner":"Salim Group","sector":"Consumer Non-Cyclical","msci":true,"price":2150.0,"chg":0.23,"vol":"7.8 M"},"MBSS":{"name":"Mitrabahtera Segara Sejati","cap":48,"owner":"Salim Group","sector":"Infrastructure","msci":false,"price":740.0,"chg":-0.54,"vol":"4.2 M"},"UNVR":{"name":"Unilever Indonesia Tbk.","cap":352,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":true,"price":2600.0,"chg":-1.14,"vol":"15.6 M"},"BSDE":{"name":"Bumi Serpong Damai Tbk.","cap":275,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":true,"price":890.0,"chg":0.45,"vol":"28.2 M"},"SMRA":{"name":"Summarecon Agung Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":820.0,"chg":-0.24,"vol":"14.4 M"},"DILD":{"name":"Intiland Development Tbk.","cap":165,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":214.0,"chg":0.94,"vol":"18.8 M"},"ACES":{"name":"Ace Hardware Indonesia Tbk.","cap":195,"owner":"Sinar Mas Group","sector":"Consumer Cyclical","msci":false,"price":785.0,"chg":0.64,"vol":"16.2 M"},"INKP":{"name":"Indah Kiat Pulp & Paper","cap":310,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.32,"vol":"6.3 M"},"TKIM":{"name":"Pabrik Kertas Tjiwi Kimia","cap":145,"owner":"Sinar Mas Group","sector":"Basic Materials","msci":false,"price":5400.0,"chg":0.74,"vol":"2.8 M"},"SMAS":{"name":"Sinar Mas Agro Resources","cap":88,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":3200.0,"chg":-0.62,"vol":"4.1 M"},"SMAR":{"name":"Smart Tbk.","cap":72,"owner":"Sinar Mas Group","sector":"Consumer Non-Cyclical","msci":false,"price":2900.0,"chg":0.34,"vol":"3.6 M"},"DUTI":{"name":"Duta Pertiwi Tbk.","cap":60,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":4200.0,"chg":-0.48,"vol":"2.2 M"},"SMCB":{"name":"Solusi Bangun Indonesia Tbk.","cap":95,"owner":"Sinar Mas Group","sector":"Industrials","msci":false,"price":2600.0,"chg":0.38,"vol":"5.8 M"},"LPKR":{"name":"Lippo Karawaci Tbk.","cap":220,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":134.0,"chg":-0.74,"vol":"62.8 M"},"KIJA":{"name":"Kawasan Industri Jababeka","cap":78,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":246.0,"chg":0.82,"vol":"22.4 M"},"APLN":{"name":"Agung Podomoro Land Tbk.","cap":55,"owner":"Sinar Mas Group","sector":"Properties & Real Estate","msci":false,"price":144.0,"chg":-0.69,"vol":"18.6 M"},"TPIA":{"name":"Chandra Asri Tbk.","cap":414,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":8200.0,"chg":1.24,"vol":"8.7 M"},"BRPT":{"name":"Barito Pacific Tbk.","cap":280,"owner":"Chandra Group","sector":"Basic Materials","msci":true,"price":1240.0,"chg":2.05,"vol":"31.4 M"},"AGRO":{"name":"Bank Raya Indonesia Tbk.","cap":95,"owner":"Chandra Group","sector":"Financials","msci":false,"price":368.0,"chg":-0.81,"vol":"9.7 M"},"CBPE":{"name":"Chandra Barito Energi Tbk.","cap":178,"owner":"Chandra Group","sector":"Energy","msci":false,"price":2100.0,"chg":1.43,"vol":"6.1 M"},"CHEM":{"name":"Chandra Kimia Nusantara","cap":122,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":1680.0,"chg":0.6,"vol":"7.4 M"},"POLY":{"name":"Asia Pacific Fibers Tbk.","cap":68,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":228.0,"chg":-1.3,"vol":"18.2 M"},"FPNI":{"name":"Lotte Chemical Titan Tbk.","cap":54,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":182.0,"chg":0.55,"vol":"12.0 M"},"CTRA":{"name":"Ciputra Development Tbk.","cap":148,"owner":"Chandra Group","sector":"Properties & Real Estate","msci":true,"price":1320.0,"chg":0.91,"vol":"15.8 M"},"MIKA":{"name":"Mitra Keluarga Karyasehat Tbk.","cap":198,"owner":"Chandra Group","sector":"Healthcare","msci":true,"price":2580.0,"chg":0.39,"vol":"5.2 M"},"BYAN":{"name":"Bayan Resources Tbk.","cap":380,"owner":"Chandra Group","sector":"Energy","msci":true,"price":18600.0,"chg":2.37,"vol":"1.4 M"},"PTRO":{"name":"Petrosea Tbk.","cap":72,"owner":"Chandra Group","sector":"Energy","msci":false,"price":3280.0,"chg":0.92,"vol":"2.8 M"},"PICO":{"name":"Pelangi Indah Canindo Tbk.","cap":42,"owner":"Chandra Group","sector":"Basic Materials","msci":false,"price":290.0,"chg":-0.34,"vol":"6.4 M"},"EXCL":{"name":"XL Axiata Tbk.","cap":310,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":1850.0,"chg":0.54,"vol":"18.7 M"},"BUMI":{"name":"Bumi Resources Tbk.","cap":185,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":124.0,"chg":-1.59,"vol":"420.0 M"},"VIVA":{"name":"Visi Media Asia Tbk.","cap":110,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":2.44,"vol":"55.2 M"},"ENRG":{"name":"Energi Mega Persada Tbk.","cap":178,"owner":"Bakrie Group","sector":"Energy","msci":false,"price":50.0,"chg":-2.0,"vol":"88.0 M"},"ANTV":{"name":"Cakrawala Andalas TV Tbk.","cap":88,"owner":"Bakrie Group","sector":"Consumer Cyclical","msci":false,"price":112.0,"chg":1.79,"vol":"32.4 M"},"BNBR":{"name":"Bakrie & Brothers Tbk.","cap":65,"owner":"Bakrie Group","sector":"Industrials","msci":false,"price":56.0,"chg":-0.89,"vol":"48.0 M"},"UNSP":{"name":"Bakrie Sumatra Plantations","cap":48,"owner":"Bakrie Group","sector":"Consumer Non-Cyclical","msci":false,"price":84.0,"chg":1.2,"vol":"28.6 M"},"BTEL":{"name":"Bakrie Telecom Tbk.","cap":38,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":50.0,"chg":-1.96,"vol":"42.0 M"},"ELTY":{"name":"Bakrieland Development Tbk.","cap":55,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":66.0,"chg":3.12,"vol":"55.8 M"},"BBRM":{"name":"Pelayaran Nasional Bina Buana Raya","cap":42,"owner":"Bakrie Group","sector":"Infrastructure","msci":false,"price":148.0,"chg":0.68,"vol":"8.6 M"},"BKSL":{"name":"Sentul City Tbk.","cap":38,"owner":"Bakrie Group","sector":"Properties & Real Estate","msci":false,"price":58.0,"chg":-1.69,"vol":"24.8 M"},"TOWR":{"name":"Sarana Menara Nusantara","cap":188,"owner":"Bakrie Group","sector":"Infrastructure","msci":true,"price":820.0,"chg":0.24,"vol":"15.4 M"},"MPPA":{"name":"Matahari Putra Prima Tbk.","cap":155,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":660.0,"chg":1.08,"vol":"14.6 M"},"JPFA":{"name":"Japfa Comfeed Indonesia Tbk.","cap":220,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1480.0,"chg":-0.34,"vol":"11.2 M"},"SILO":{"name":"Siloam International Hospitals","cap":190,"owner":"Lippo Group","sector":"Healthcare","msci":true,"price":2620.0,"chg":0.77,"vol":"4.9 M"},"MFIN":{"name":"Mandala Multifinance Tbk.","cap":55,"owner":"Lippo Group","sector":"Financials","msci":false,"price":1880.0,"chg":0.54,"vol":"3.2 M"},"CARE":{"name":"Metro Healthcare Indonesia","cap":88,"owner":"Lippo Group","sector":"Healthcare","msci":false,"price":1120.0,"chg":-0.89,"vol":"7.8 M"},"LPGI":{"name":"Lippo General Insurance Tbk.","cap":48,"owner":"Lippo Group","sector":"Financials","msci":false,"price":4800.0,"chg":0.21,"vol":"0.8 M"},"LMPI":{"name":"Langgeng Makmur Industri","cap":38,"owner":"Lippo Group","sector":"Industrials","msci":false,"price":280.0,"chg":-0.36,"vol":"5.4 M"},"LPPS":{"name":"Lippo Cikarang Tbk.","cap":95,"owner":"Lippo Group","sector":"Properties & Real Estate","msci":false,"price":1080.0,"chg":0.93,"vol":"6.2 M"},"MTDL":{"name":"Metrodata Electronics Tbk.","cap":72,"owner":"Lippo Group","sector":"Technology","msci":false,"price":590.0,"chg":1.55,"vol":"9.8 M"},"LSIP":{"name":"PP London Sumatra Indonesia","cap":160,"owner":"Lippo Group","sector":"Consumer Non-Cyclical","msci":true,"price":1340.0,"chg":0.75,"vol":"9.2 M"},"FMII":{"name":"First Media Tbk.","cap":42,"owner":"Lippo Group","sector":"Consumer Cyclical","msci":false,"price":168.0,"chg":-0.59,"vol":"12.4 M"},"TBIG":{"name":"Tower Bersama Infrastr.","cap":165,"owner":"Lippo Group","sector":"Infrastructure","msci":true,"price":2100.0,"chg":-0.48,"vol":"8.8 M"},"BCAP":{"name":"MNC Kapital Indonesia Tbk.","cap":52,"owner":"Lippo Group","sector":"Financials","msci":false,"price":312.0,"chg":0.32,"vol":"7.2 M"},"AMMN":{"name":"Amman Mineral Internasional","cap":294,"owner":"Others","sector":"Basic Materials","msci":true,"price":7800.0,"chg":2.11,"vol":"5.1 M"},"GOTO":{"name":"GoTo Gojek Tokopedia Tbk.","cap":180,"owner":"Others","sector":"Technology","msci":true,"price":62.0,"chg":-3.12,"vol":"312.0 M"},"KLBF":{"name":"Kalbe Farma Tbk.","cap":245,"owner":"Others","sector":"Healthcare","msci":true,"price":1565.0,"chg":-0.32,"vol":"24.1 M"},"ADRO":{"name":"Adaro Energy Indonesia Tbk.","cap":282,"owner":"Others","sector":"Energy","msci":true,"price":2200.0,"chg":1.38,"vol":"14.6 M"},"MDKA":{"name":"Merdeka Copper Gold Tbk.","cap":270,"owner":"Others","sector":"Basic Materials","msci":true,"price":2460.0,"chg":2.07,"vol":"12.3 M"},"INCO":{"name":"Vale Indonesia Tbk.","cap":230,"owner":"Others","sector":"Basic Materials","msci":true,"price":3100.0,"chg":0.97,"vol":"9.5 M"},"MAPI":{"name":"Mitra Adiperkasa Tbk.","cap":245,"owner":"Others","sector":"Consumer Cyclical","msci":true,"price":1680.0,"chg":0.6,"vol":"8.7 M"},"PWON":{"name":"Pakuwon Jati Tbk.","cap":218,"owner":"Others","sector":"Properties & Real Estate","msci":true,"price":438.0,"chg":0.46,"vol":"35.6 M"},"HRUM":{"name":"Harum Energy Tbk.","cap":198,"owner":"Others","sector":"Energy","msci":false,"price":1200.0,"chg":0.84,"vol":"5.6 M"},"BUKA":{"name":"Bukalapak.com Tbk.","cap":145,"owner":"Others","sector":"Technology","msci":false,"price":68.0,"chg":-2.94,"vol":"148.0 M"},"HEAL":{"name":"Medikaloka Hermina Tbk.","cap":132,"owner":"Others","sector":"Healthcare","msci":false,"price":1560.0,"chg":1.29,"vol":"6.3 M"},"INDY":{"name":"Indika Energy Tbk.","cap":118,"owner":"Others","sector":"Energy","msci":false,"price":1820.0,"chg":0.55,"vol":"8.2 M"},"CUAN":{"name":"Petrindo Jaya Kreasi Tbk.","cap":310,"owner":"Others","sector":"Energy","msci":false,"price":12400.0,"chg":4.2,"vol":"2.1 M"},"RAJA":{"name":"Rukun Raharja Tbk.","cap":95,"owner":"Others","sector":"Energy","msci":false,"price":3880.0,"chg":1.8,"vol":"4.4 M"},"FILM":{"name":"MD Pictures Tbk.","cap":78,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":1240.0,"chg":-0.81,"vol":"5.5 M"},"ESSA":{"name":"Surya Esa Perkasa Tbk.","cap":110,"owner":"Others","sector":"Energy","msci":false,"price":1620.0,"chg":1.23,"vol":"6.8 M"},"SMIL":{"name":"Sumber Mas Indah Plywood","cap":45,"owner":"Others","sector":"Basic Materials","msci":false,"price":380.0,"chg":0.53,"vol":"5.2 M"},"ERAA":{"name":"Erajaya Swasembada Tbk.","cap":88,"owner":"Others","sector":"Consumer Cyclical","msci":false,"price":540.0,"chg":-0.74,"vol":"12.4 M"},"GOOD":{"name":"Garudafood Putra Putri Jaya","cap":72,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":430.0,"chg":0.47,"vol":"9.6 M"},"SIDO":{"name":"Industri Jamu Sido Muncul","cap":138,"owner":"Others","sector":"Healthcare","msci":true,"price":580.0,"chg":0.35,"vol":"10.2 M"},"MIDI":{"name":"Midi Utama Indonesia Tbk.","cap":88,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":600.0,"chg":0.84,"vol":"4.4 M"},"CMRY":{"name":"Cisarua Mountain Dairy Tbk.","cap":115,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":4020.0,"chg":1.01,"vol":"2.8 M"},"ARTO":{"name":"Bank Jago Tbk.","cap":175,"owner":"Others","sector":"Financials","msci":false,"price":2540.0,"chg":-1.55,"vol":"7.6 M"},"BREN":{"name":"Barito Renewables Energy Tbk.","cap":420,"owner":"Others","sector":"Energy","msci":true,"price":8400.0,"chg":3.24,"vol":"4.2 M"},"TAPG":{"name":"Triputra Agro Persada Tbk.","cap":95,"owner":"Others","sector":"Consumer Non-Cyclical","msci":false,"price":1140.0,"chg":0.88,"vol":"5.8 M"},"NICL":{"name":"Nickel Industries Ltd.","cap":142,"owner":"Others","sector":"Basic Materials","msci":false,"price":362.0,"chg":1.66,"vol":"9.4 M"},"CBDK":{"name":"Cahaya Bintang Medan Tbk.","cap":68,"owner":"Others","sector":"Properties & Real Estate","msci":false,"price":2640.0,"chg":2.34,"vol":"3.6 M"}}'
         _globe_live_js = _globe_json.dumps(_globe_live, separators=(',', ':'))
         _idx_globe_html = """<!DOCTYPE html>
 <html lang="en">
@@ -12612,6 +12646,18 @@ window.addEventListener('resize',()=>{
 """
 
         # ── LIVE MARKET ─────────────────────────────────────────────────────────
+
+        # ── Groq Key Status Badge ──────────────────────────────────────────────
+        _gk_info = st.session_state.get("_groq_key_status", {})
+        if _gk_info:
+            _gk_c = _gk_info.get("color","#6c757d")
+            _gk_l = _gk_info.get("label","—")
+            st.markdown(
+                f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.65rem;"
+                f"color:{_gk_c};margin-bottom:4px;letter-spacing:0.05em;'"
+                f">⚡ GROQ {_gk_l} active</div>",
+                unsafe_allow_html=True
+            )
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>LIVE MARKET</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
 
         # ── Definisi ticker ─────────────────────────────────────────────────
@@ -12674,6 +12720,23 @@ window.addEventListener('resize',()=>{
         with st.spinner("Memuat data pasar global..."):
             _idx_data = _fetch_tickers_v3(_idx_tk_key)
             _com_data = _fetch_tickers_v3(_com_tk_key)
+
+        # ── Live Market Timestamp + Staleness Indicator ─────────────────────────
+        _mkt_fetch_time = datetime.now()
+        _mkt_wib_ts = (_mkt_fetch_time + timedelta(hours=7)).strftime("%H:%M WIB")
+        _mkt_age_min = 0  # fresh fetch
+        # Jam trading IDX: 09:00–11:30 dan 13:30–16:00 WIB
+        _mkt_wib_hour = (_mkt_fetch_time + timedelta(hours=7)).hour
+        _is_trading_hours = (9 <= _mkt_wib_hour < 12) or (13 <= _mkt_wib_hour < 16)
+        _ts_color = "#10b981" if _is_trading_hours else "#f59e0b"
+        _ts_label = "LIVE" if _is_trading_hours else "CLOSED"
+        st.markdown(
+            f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;"
+            f"color:{_ts_color};margin-bottom:6px;letter-spacing:0.05em;'>"
+            f"● {_ts_label} · Cache TTL 5 min · Terakhir fetch: {_mkt_wib_ts} "
+            f"· <span style='color:#64748b;'>Refresh otomatis tiap 5 menit selama sesi aktif</span></div>",
+            unsafe_allow_html=True
+        )
 
         import json as _mkt_json
 
@@ -13569,7 +13632,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas.""
                 {"ticker":"HEAL","nama":"Medikaloka Hermina","cum_date":"2025-07-03","ex_date":"2025-07-04","pay_date":"2025-07-21","dps":36,"yield_pct":2.31,"freq":"Final","tahun":2025},
                 {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2025-06-19","ex_date":"2025-06-20","pay_date":"2025-07-07","dps":80,"yield_pct":0.95,"freq":"Final","tahun":2025},
                 {"ticker":"PGEO","nama":"Pertamina Geothermal Energy","cum_date":"2025-07-17","ex_date":"2025-07-18","pay_date":"2025-08-04","dps":38,"yield_pct":3.06,"freq":"Final","tahun":2025},
-                {"ticker":"COAL","nama":"Indika Energy","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":126,"yield_pct":6.92,"freq":"Final","tahun":2025},
+                {"ticker":"INDY","nama":"Indika Energy","cum_date":"2025-06-05","ex_date":"2025-06-06","pay_date":"2025-06-23","dps":126,"yield_pct":6.92,"freq":"Final","tahun":2025},
                 # ── 2026 Additions ────────────────────────────────────────────
                 {"ticker":"UNTR","nama":"United Tractors","cum_date":"2026-05-14","ex_date":"2026-05-15","pay_date":"2026-06-01","dps":2850,"yield_pct":11.63,"freq":"Final","tahun":2026},
                 {"ticker":"PTBA","nama":"Bukit Asam","cum_date":"2026-10-15","ex_date":"2026-10-16","pay_date":"2026-11-02","dps":160,"yield_pct":5.44,"freq":"Interim","tahun":2026},
@@ -13580,8 +13643,60 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas.""
                 {"ticker":"LPPF","nama":"Matahari Department Store","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":205,"yield_pct":7.43,"freq":"Final","tahun":2026},
                 {"ticker":"INDF","nama":"Indofood Sukses Makmur","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":410,"yield_pct":6.12,"freq":"Final","tahun":2026},
                 {"ticker":"AKRA","nama":"AKR Corporindo","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":130,"yield_pct":8.02,"freq":"Final","tahun":2026},
+                # ── 2026 Tambahan Emiten Blue Chip ────────────────────────────
+                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-03-19","ex_date":"2026-03-20","pay_date":"2026-04-07","dps":78,"yield_pct":3.00,"freq":"Q1","tahun":2026},
+                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-07","dps":78,"yield_pct":3.00,"freq":"Q2","tahun":2026},
+                {"ticker":"UNVR","nama":"Unilever Indonesia","cum_date":"2026-09-17","ex_date":"2026-09-18","pay_date":"2026-10-06","dps":78,"yield_pct":3.00,"freq":"Q3","tahun":2026},
+                {"ticker":"ASII","nama":"Astra International","cum_date":"2026-11-05","ex_date":"2026-11-06","pay_date":"2026-11-23","dps":115,"yield_pct":2.35,"freq":"Interim","tahun":2026},
+                {"ticker":"ICBP","nama":"Indofood CBP Sukses Makmur","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-23","dps":460,"yield_pct":4.92,"freq":"Final","tahun":2026},
+                {"ticker":"MYOR","nama":"Mayora Indah","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":100,"yield_pct":4.65,"freq":"Final","tahun":2026},
+                {"ticker":"KLBF","nama":"Kalbe Farma","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-16","dps":38,"yield_pct":2.43,"freq":"Final","tahun":2026},
+                {"ticker":"SMGR","nama":"Semen Indonesia","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":90,"yield_pct":1.65,"freq":"Final","tahun":2026},
+                {"ticker":"INTP","nama":"Indocement Tunggal Perkasa","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":340,"yield_pct":6.18,"freq":"Final","tahun":2026},
+                {"ticker":"CPIN","nama":"Charoen Pokphand Indonesia","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":115,"yield_pct":2.40,"freq":"Final","tahun":2026},
+                {"ticker":"JPFA","nama":"Japfa Comfeed Indonesia","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":45,"yield_pct":3.04,"freq":"Final","tahun":2026},
+                {"ticker":"BBTN","nama":"Bank Tabungan Negara","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-05-25","dps":44,"yield_pct":3.10,"freq":"Final","tahun":2026},
+                {"ticker":"PGAS","nama":"Perusahaan Gas Negara","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":62,"yield_pct":4.31,"freq":"Final","tahun":2026},
+                {"ticker":"BSDE","nama":"Bumi Serpong Damai","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":20,"yield_pct":2.25,"freq":"Final","tahun":2026},
+                {"ticker":"CTRA","nama":"Ciputra Development","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":32,"yield_pct":2.42,"freq":"Final","tahun":2026},
+                {"ticker":"PWON","nama":"Pakuwon Jati","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":13,"yield_pct":2.97,"freq":"Final","tahun":2026},
+                {"ticker":"AALI","nama":"Astra Agro Lestari","cum_date":"2026-06-11","ex_date":"2026-06-12","pay_date":"2026-06-29","dps":440,"yield_pct":5.95,"freq":"Final","tahun":2026},
+                {"ticker":"LSIP","nama":"PP London Sumatra","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":84,"yield_pct":6.27,"freq":"Final","tahun":2026},
+                {"ticker":"ADRO","nama":"Adaro Energy Indonesia","cum_date":"2026-05-07","ex_date":"2026-05-08","pay_date":"2026-05-25","dps":145,"yield_pct":6.59,"freq":"Final","tahun":2026},
+                {"ticker":"HRUM","nama":"Harum Energy","cum_date":"2026-05-28","ex_date":"2026-05-29","pay_date":"2026-06-15","dps":115,"yield_pct":9.58,"freq":"Final","tahun":2026},
+                {"ticker":"RAJA","nama":"Rukun Raharja","cum_date":"2026-07-02","ex_date":"2026-07-03","pay_date":"2026-07-20","dps":580,"yield_pct":14.95,"freq":"Final","tahun":2026},
+                {"ticker":"TAPG","nama":"Triputra Agro Persada","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":102,"yield_pct":8.95,"freq":"Final","tahun":2026},
+                {"ticker":"TOWR","nama":"Sarana Menara Nusantara","cum_date":"2026-09-10","ex_date":"2026-09-11","pay_date":"2026-09-28","dps":26,"yield_pct":3.17,"freq":"Interim","tahun":2026},
+                {"ticker":"JSMR","nama":"Jasa Marga","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":162,"yield_pct":3.86,"freq":"Final","tahun":2026},
+                {"ticker":"TLKM","nama":"Telkom Indonesia","cum_date":"2026-06-04","ex_date":"2026-06-05","pay_date":"2026-06-22","dps":175,"yield_pct":4.47,"freq":"Final","tahun":2026},
+                {"ticker":"INKP","nama":"Indah Kiat Pulp & Paper","cum_date":"2026-06-25","ex_date":"2026-06-26","pay_date":"2026-07-13","dps":390,"yield_pct":4.76,"freq":"Final","tahun":2026},
+                {"ticker":"TPIA","nama":"Chandra Asri","cum_date":"2026-07-23","ex_date":"2026-07-24","pay_date":"2026-08-10","dps":230,"yield_pct":2.80,"freq":"Final","tahun":2026},
+                {"ticker":"BREN","nama":"Barito Renewables Energy","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":85,"yield_pct":1.01,"freq":"Final","tahun":2026},
+                {"ticker":"PGEO","nama":"Pertamina Geothermal Energy","cum_date":"2026-07-16","ex_date":"2026-07-17","pay_date":"2026-08-03","dps":40,"yield_pct":3.23,"freq":"Final","tahun":2026},
+                {"ticker":"MIKA","nama":"Mitra Keluarga Karyasehat","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":55,"yield_pct":2.13,"freq":"Final","tahun":2026},
+                {"ticker":"MBSS","nama":"Mitrabahtera Segara Sejati","cum_date":"2026-06-18","ex_date":"2026-06-19","pay_date":"2026-07-06","dps":72,"yield_pct":9.73,"freq":"Final","tahun":2026},
+                {"ticker":"PNLF","nama":"Panin Financial","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":9,"yield_pct":5.36,"freq":"Final","tahun":2026},
+                {"ticker":"DMAS","nama":"Puradelta Lestari","cum_date":"2026-07-09","ex_date":"2026-07-10","pay_date":"2026-07-27","dps":15,"yield_pct":7.65,"freq":"Final","tahun":2026},
             ]
 
+            # ── Staleness check: flag jika entry terbaru sudah > 60 hari ──────────────
+            from datetime import date as _dv_date_cls
+            _dv_today_check = _dv_date_cls.today()
+            _dv_all_dates = []
+            for _dv_r in _DIV_DB:
+                try: _dv_all_dates.append(_dv_date_cls.fromisoformat(_dv_r["pay_date"]))
+                except Exception: pass
+            if _dv_all_dates:
+                _dv_latest_date = max(_dv_all_dates)
+                _dv_days_stale  = (_dv_today_check - _dv_latest_date).days
+                if _dv_days_stale > 60 and not st.session_state.get("_div_stale_flagged"):
+                    st.session_state["_div_stale_flagged"] = True
+                    st.warning(
+                        f"⚠️ **Dividend Tracker perlu update** — Pay date terbaru di database: "
+                        f"`{_dv_latest_date.strftime('%d %b %Y')}` ({_dv_days_stale} hari lalu). "
+                        f"Perbarui `_DIV_DB` di app.py dengan data terbaru dari IDX.",
+                        icon="📅"
+                    )
             # ── Filter UI ──
             _dv_col1, _dv_col2, _dv_col3, _dv_col4 = st.columns([2, 1, 1, 1])
             with _dv_col1:
@@ -13735,7 +13850,22 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     with tab_macro:
-        st.info("📌 Tab MARKET DATA telah diperbarui. Rate Monitor, Fundamental Screener, Shareholder, Bond Yield & Dividend sekarang ada di tab **📈 MARKET DATA**.")
+        # ── Tab Macro: redirect yang informatif (konten utama ada di Market Data & Market Map) ──
+        _mac_col1, _mac_col2 = st.columns([2, 1])
+        with _mac_col1:
+            st.markdown(
+                "<div style='font-family:IBM Plex Mono,monospace;padding:16px;border:1px solid rgba(100,116,139,0.3);"
+                "border-radius:8px;background:rgba(15,23,42,0.4);'>"
+                "<div style='font-size:0.7rem;color:#64748b;letter-spacing:0.1em;margin-bottom:8px;'>NAVIGASI</div>"
+                "<div style='font-size:0.85rem;color:#94a3b8;line-height:1.8;'>"
+                "📅 <b style='color:#e2e8f0;'>Economic Calendar</b> → sub-tab <b>Kalender</b> di <b>🌐 Market Map</b><br>"
+                "📊 <b style='color:#e2e8f0;'>Rate Monitor</b> → sub-tab <b>Rate Monitor</b> di <b>📈 Market Data</b><br>"
+                "🏦 <b style='color:#e2e8f0;'>Fundamental Screener</b> → sub-tab <b>Fundamental</b> di <b>📈 Market Data</b><br>"
+                "👥 <b style='color:#e2e8f0;'>Shareholder Screener</b> → sub-tab <b>Shareholder</b> di <b>📈 Market Data</b><br>"
+                "💰 <b style='color:#e2e8f0;'>Dividend Tracker</b> → sub-tab <b>Dividend</b> di <b>📈 Market Data</b>"
+                "</div></div>",
+                unsafe_allow_html=True
+            )
 
     with _mm_subtab_news:
         # ─────────────────────────────────────────────────────────
@@ -13778,7 +13908,12 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
             mode_str  = "Daily (24 Jam Terakhir)" if req_daily else "Weekly (1 Minggu Terakhir)"
             mode_key  = "daily" if req_daily else "weekly"
             with st.spinner(f"Mengumpulkan data real-time & menyusun {mode_str} Market Brief..."):
-                import feedparser as _fp
+                try:
+                    import feedparser as _fp
+                    _feedparser_ok = True
+                except ImportError:
+                    _feedparser_ok = False
+                    st.warning("⚠️ Library `feedparser` tidak terinstall. RSS headlines tidak tersedia — AI akan tetap jalan dengan data harga real-time.", icon="📡")
                 from datetime import timezone, timedelta as _td
                 _wib = timezone(_td(hours=7))
                 _now_wib = datetime.now(_wib)
@@ -13801,7 +13936,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
                 ]
                 import time as _time
                 import email.utils as _eu
-                for _url, _target in _rss_sources:
+                for _url, _target in (_rss_sources if _feedparser_ok else []):
                     try:
                         _feed = _fp.parse(_url)
                         for _e in _feed.entries[:15]:
@@ -13816,14 +13951,14 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
                                     try:
                                         _pub = datetime(*_pv[:6], tzinfo=timezone.utc)
                                         break
-                                    except: pass
+                                    except Exception: pass
                             # Jika ada tanggal dan lebih lama dari cutoff, skip
                             if _pub and _pub < _cutoff.astimezone(timezone.utc):
                                 continue
                             _target.append(_t)
                             if len(_target) >= 15:
                                 break
-                    except: pass
+                    except Exception: pass
 
                 # ── FETCH HARGA REAL-TIME - diinjeksikan ke prompt sebagai FAKTA ──
                 # Ini KRITIS: tanpa ini, Groq akan karang harga dari training data (LAMA)
@@ -13848,8 +13983,8 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
                                         _cw = ((_lw-_pw)/_pw*100) if _pw else 0
                                         _res[f"{_key2}_price"] = round(_lw, 2)
                                         _res[f"{_key2}_chg"]   = round(_cw, 2)
-                                except: pass
-                        except: pass
+                                except Exception: pass
+                        except Exception: pass
                         # Komoditas fallback via FMP
                         try:
                             _fmp_k = st.secrets.get("FMP_KEY","")
@@ -13865,7 +14000,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
                                     if _sym=="GCUSD" and _px: _res["gold_price"]=_px; _res["gold_chg"]=_cx
                                     elif _sym=="CLUSD" and _px: _res["wti_price"]=_px; _res["wti_chg"]=_cx
                                     elif _sym=="BZUSD" and _px: _res["brent_price"]=_px; _res["brent_chg"]=_cx
-                        except: pass
+                        except Exception: pass
                     _th = _rt.Thread(target=_get, daemon=True)
                     _th.start()
                     _th.join(timeout=14)
@@ -14210,7 +14345,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     pub   = e.get("published", "")[:16]
                     if title:
                         results.append({"src": "MSCI", "color": "#6e9bff", "title": title, "link": link, "date": pub})
-            except: pass
+            except Exception: pass
 
             # ── IDX Pengumuman (JSON API) ──
             try:
@@ -14225,7 +14360,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     pub   = (row.get("Date") or row.get("date") or "")[:16]
                     if title:
                         results.append({"src": "IDX", "color": "#f59e0b", "title": title, "link": link, "date": pub})
-            except: pass
+            except Exception: pass
 
             # ── FTSE Russell Press Releases (RSS) ──
             try:
@@ -14237,7 +14372,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     kw = ["index","review","rebalanc","indonesia","constituen","addition","deletion","em"]
                     if title and any(k in title.lower() for k in kw):
                         results.append({"src": "FTSE", "color": "#00c853", "title": title, "link": link, "date": pub})
-            except: pass
+            except Exception: pass
 
             # ── JP Morgan GBI-EM (press / research RSS) ──
             try:
@@ -14249,7 +14384,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     kw = ["gbi","bond index","em index","indonesia","rebalanc","fixed income"]
                     if title and any(k in title.lower() for k in kw):
                         results.append({"src": "JP Morgan", "color": "#e879f9", "title": title, "link": link, "date": pub})
-            except: pass
+            except Exception: pass
 
             return results
 
@@ -14557,7 +14692,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     try:
                         dt = _dtpx.datetime(yr_p, idx+1, day_p)
                         return dt, peng_str
-                    except: pass
+                    except Exception: pass
             # Format: Mid-Mon (estimasi tgl 15)
             m2 = _re_reb.match(r'Mid-?(\w+)', peng_str, _re_reb.IGNORECASE)
             if m2:
@@ -14568,7 +14703,7 @@ Gunakan Markdown. JANGAN UBAH ANGKA DARI DATA REAL-TIME. Padat & actionable. Sem
                     try:
                         dt = _dtpx.datetime(yr_est, idx+1, 15)
                         return dt, peng_str
-                    except: pass
+                    except Exception: pass
             return None, peng_str
 
         _reb_js_data = []
@@ -14785,7 +14920,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
                     if len(_rows) < _per_page: break
                     _page += 1
                     if _page > 20: break
-            except: pass
+            except Exception: pass
 
             # ── Layer 2: IDX Announcements scraping (dividend, RUPS, rights) ──
             if len(all_items) < 5:
@@ -14807,7 +14942,7 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
                         if any(kw in _title for kw in _ann_kw) and _code:
                             _clean_title = ann.get("title","")[:80]
                             all_items.append({"Tanggal": _dt_disp, "Ticker": _code, "Event": "Pengumuman", "Keterangan": _clean_title})
-                except: pass
+                except Exception: pass
 
             # ── Layer 3: Static data (fallback hardcoded + reliable) ──
             _static = [
@@ -14901,10 +15036,10 @@ tbody td{{padding:7px 10px;color:{text_main};vertical-align:middle;font-size:0.7
                         d, m, y = parts
                         m_num = _id_months.get(m[:3].lower(), "01")
                         return datetime.strptime(f"{d.zfill(2)}/{m_num}/{y}", "%d/%m/%Y")
-                except: pass
+                except Exception: pass
                 # Fallback: coba format ISO
                 try: return datetime.strptime(s[:10], "%Y-%m-%d")
-                except: pass
+                except Exception: pass
                 return datetime(2099, 1, 1)
             all_items.sort(key=lambda x: _parse_dt(x["Tanggal"]))
 
@@ -15940,8 +16075,7 @@ Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Juj
                             "impact": str(ev.get("impact","")),
                             "date": str(ev.get("date","")),
                         }
-            except:
-                pass
+            except Exception: pass
             return actuals
 
         _ff_actuals = _fetch_ff_actuals()
@@ -16086,7 +16220,7 @@ Format: narasi profesional, padat, 300–400 kata. Gunakan bahasa Indonesia. Juj
                 _mn_p = _m2p.get(_parts_p[1][:3].lower(), 1)
                 _ev_dt = _ec_date_cls(int(_parts_p[2]), _mn_p, int(_parts_p[0]))
                 _ev_past = _ev_dt < _ec_today
-            except: pass
+            except Exception: pass
             _ec_rows.append({
                 "neg":    ev["neg"],
                 "flag":   "🇮🇩" if ev["neg"]=="ID" else "🇺🇸",
@@ -16443,7 +16577,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     if _ac_n > _fc_n: _beat_miss = f"<span style='color:#089981;font-weight:700;'>▲ BEAT +{abs(_ac_n-_fc_n):.2f}</span>"
                     elif _ac_n < _fc_n: _beat_miss = f"<span style='color:#f23645;font-weight:700;'>▼ MISS -{abs(_ac_n-_fc_n):.2f}</span>"
                     else: _beat_miss = f"<span style='color:#f59e0b;font-weight:700;'>→ IN-LINE</span>"
-            except: pass
+            except Exception: pass
 
             # ── Simpan ke session_state & database agar tidak hilang saat rerun ──
             st.session_state["ec_ai_result"]    = _ec_ai_resp
@@ -16607,8 +16741,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         _rs_f  = round(min(max(float(_rs_now), 84.5), 115.5), 1)
                         _mom_f = round(min(max(float(_mom), 84.5), 115.5), 1)
                         _results[_sname] = {"rs": _rs_f, "mom": _mom_f}
-                    except:
-                        pass
+                    except Exception: pass
                 return _results
 
             # Tombol force-refresh RRG — hapus cache lalu rerun
@@ -16747,8 +16880,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                 _mktcap[tk] = {"mc": mc, "price": price, "vol": vol,
                                                "name": (_info.get("shortName") or tk)[:24],
                                                "sektor": _TK2SEC.get(tk, "Other")}
-                    except:
-                        pass
+                    except Exception: pass
 
                 # Batch fetch 50 saham at a time, max 500
                 _sample = _ALL_IDX[:500]
@@ -18319,31 +18451,27 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             "  🏆 TRACK RECORD  ",
         ])
 
-        # Fundamental Screener & Shareholder dipindah ke tab MARKET DATA
-        # Defensive guard: pastikan variabel tersedia (jika tab_marketdata belum di-render)
-        try:
-            alpha_tab_fundamental = _md_subtab_fundamental
-            alpha_tab_shareholder = _md_subtab_shareholder
-        except NameError:
-            # Fallback: render langsung di dalam alpha screener tab jika market data belum init
-            st.info(
-                "⚠️ Tab **MARKET DATA** perlu dibuka terlebih dahulu agar "
-                "Fundamental Screener & Shareholder dapat ditampilkan di sini. "
-                "Silakan klik tab 📈 MARKET DATA sekali, lalu kembali ke tab ini.",
-                icon="💡"
-            )
-            alpha_tab_fundamental = None
-            alpha_tab_shareholder = None
+        # Fundamental Screener & Shareholder ada di tab MARKET DATA
+        # Note: cross-tab rendering dihapus — tidak compatible dengan Streamlit tab context model.
+        # Shareholder content dirender langsung di _md_subtab_shareholder (tab_marketdata).
+        alpha_tab_fundamental = None  # alias tidak dipakai lagi — dirender di market data tab
+        alpha_tab_shareholder = None  # sama
 
-        if alpha_tab_shareholder is not None:
-         with alpha_tab_shareholder:
+        # SHAREHOLDER SCREENER — dirender langsung di sini (inside alpha_screener scope)
+        # agar tidak bergantung pada tab context luar yang sudah di-close
+        if True:  # selalu render
+         with st.container():
 
             # ── Auto-extend: extrapolasi bulan baru otomatis tgl 7-10 tiap bulan ──
             import datetime as _dt
             import pandas as pd
             _sh_now = _dt.datetime.now()
-            _sh_base_month = "2026-03"  # Bulan terakhir data hardcoded
-            _sh_base_dt = _dt.datetime.strptime(_sh_base_month + "-01", "%Y-%m-%d")
+            # Auto-derive dari tanggal maksimal di DB — tidak hardcoded lagi
+            _sh_base_dt = max(
+                (max(r["date"] for r in rows) for rows in _sh_all_db.values() if rows),
+                default=_dt.datetime(2026, 3, 31)
+            ).replace(day=1)  # normalize ke awal bulan
+            _sh_base_month = _sh_base_dt.strftime("%Y-%m")  # untuk display saja
 
             def _sh_auto_extend(db, base_dt, now):
                 """Otomatis extrapolasi bulan baru setelah tgl 7 berdasarkan tren 3 bulan terakhir."""
@@ -18694,7 +18822,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                               d.get("JumlahPemegang") or d.get("TotalShareholders") or 0)
                         if sh and int(sh) > 0:
                             results.append({"date": last_month_end, "shareholders": int(sh)})
-                except: pass
+                except Exception: pass
 
                 # ── ENDPOINT 2: IDX Issuer API (endpoint baru) ──
                 if not results:
@@ -18708,7 +18836,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                   data2.get("numberOfShareholders") or data2.get("holderCount") or 0)
                             if sh and int(sh) > 0:
                                 results.append({"date": last_month_end, "shareholders": int(sh)})
-                    except: pass
+                    except Exception: pass
 
                 # ── ENDPOINT 3: IDX StockData API ──
                 if not results:
@@ -18723,7 +18851,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                   data3.get("NumberOfShareholders") or 0)
                             if sh and int(sh) > 0:
                                 results.append({"date": last_month_end, "shareholders": int(sh)})
-                    except: pass
+                    except Exception: pass
 
                 # ── ENDPOINT 4: Scrape halaman profil IDX (HTML parsing) ──
                 if not results:
@@ -18752,8 +18880,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                     if 100 < sh_val < 100_000_000:  # sanity check
                                         results.append({"date": last_month_end, "shareholders": sh_val})
                                         break
-                                except: pass
-                    except: pass
+                                except Exception: pass
+                    except Exception: pass
 
                 # ── ENDPOINT 5: KSEI Statistik (data historis bulanan) ──
                 # KSEI publish file Excel bulanan di: ksei.co.id/registrasi-efek/statistik
@@ -18778,7 +18906,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                                 try:
                                                     dt = _dtx.datetime.strptime(str(dt_str)[:10], "%Y-%m-%d")
                                                     results.append({"date": dt, "shareholders": int(sh)})
-                                                except: pass
+                                                except Exception: pass
                                     elif isinstance(data5, dict):
                                         sh = data5.get("shareholders") or data5.get("count") or 0
                                         if sh:
@@ -18786,7 +18914,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                     if results:
                                         break
                             except: continue
-                    except: pass
+                    except Exception: pass
 
                 return sorted(results, key=lambda x: x["date"]) if results else []
 
@@ -18836,7 +18964,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                             factor = 1.0 + (i-6) * _rnd.uniform(-0.008, 0.012)
                             sh_val = max(100, int(est_holders * factor))
                             results.append({"date": dt, "shareholders": sh_val})
-                except: pass
+                except Exception: pass
                 return sorted(results, key=lambda x: x["date"]) if results else []
 
             # ════════════════════════════════════════════════════════════════
@@ -18965,7 +19093,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                 hist.columns = ["date", "price"]
                                 hist["date"] = pd.to_datetime(hist["date"]).dt.tz_localize(None)
                                 return hist
-                        except: pass
+                        except Exception: pass
                         return pd.DataFrame()
 
                     with st.spinner(f"Mengambil data harga {sh_ticker} (1 tahun)..."):
@@ -20249,7 +20377,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         if st.session_state.get("user"):
                             try:
                                 save_field(st.session_state.user["email"], "tr_records", _tr_records_live)
-                            except: pass
+                            except Exception: pass
                         st.toast("✅ Status berhasil disimpan", icon="✅")
 
                     st.caption(f"Menampilkan {len(_tr_filtered)} dari {_tr_total} record total · Mode Edit Aktif")
@@ -20374,7 +20502,9 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                             # Tanpa klik Analyze → restore ai_data dari cache agar TP/SL tetap tampil
                             _prev_price    = _cached_prev.get('price', 0)
                             _prev_diff_pct = abs(_last_close - _prev_price) / _prev_price if _prev_price > 0 else 1
-                            if _prev_diff_pct < 0.02:   # dalam 2% → masih relevan
+                            # Cache key sudah mengandung tanggal (_last_date) — auto-expire by date.
+                            # 2% threshold: toleransi intraday noise saja (bukan cross-day).
+                            if _prev_diff_pct < 0.02:   # dalam 2% intraday → masih relevan
                                 ai_data         = _cached_prev.get('ai_data')
                                 ai_text_verdict = _cached_prev.get('ai_text_verdict', '')
                     except Exception:
@@ -20389,7 +20519,9 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         if _cached and run_analysis:
                             _cached_price   = _cached.get('price', 0)
                             _price_diff_pct = abs(_last_close - _cached_price) / _cached_price if _cached_price > 0 else 1
-                            if _price_diff_pct < 0.005:   # <0.5% → pakai cache
+                            # Cache key sudah date-keyed → cross-day otomatis invalid.
+                            # 0.5% intraday threshold: cukup untuk saham mid-large cap.
+                            if _price_diff_pct < 0.005:   # <0.5% intraday → pakai cache
                                 _use_cached_insight = True
                                 _ai_cache_hit       = True
                                 ai_raw_result       = _cached['ai_raw_result']
@@ -20825,7 +20957,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                                     save_field(_ue_ins, "alpha_insight_last_key",    _insight_cache_key)
                                                     save_field(_ue_ins, "alpha_insight_last_data",   _cache_payload)
                                                     save_field(_ue_ins, "alpha_insight_last_ticker", ticker_input)
-                                                except: pass
+                                                except Exception: pass
                                         except Exception:
                                             pass
 
@@ -21231,13 +21363,13 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                             if _psr is not None and _SIGMA_SCORE_AVAILABLE:
                                 try:
                                     st.markdown(render_sigma_score_badge(_psr, _persisted_ticker, compact=False), unsafe_allow_html=True)
-                                except: pass
+                                except Exception: pass
                             if _ZONE_ENGINE_AVAILABLE:
                                 try:
                                     _pzone = _cached_detect_zones_multi_tf(_persisted_ticker)
                                     _pzone_price = float(df_chart["Close"].iloc[-1]) if not df_chart.empty else 0.0
                                     st.markdown(zone_detail_html(_pzone, _pzone_price, C), unsafe_allow_html=True)
-                                except: pass
+                                except Exception: pass
                             _pv_clean = _pv.replace('\n\n\n', '\n\n')
                             st.markdown(f"""<div style="background:{bg_card}; border:1px solid {bd_color}; border-left:3px solid #8b5cf6; border-radius:0 8px 8px 0; padding:12px 16px; margin-top:14px; line-height:1.4; font-family:'IBM Plex Mono',monospace; overflow:visible; width:100%; box-sizing:border-box;">
     <div style="font-size:0.72rem;letter-spacing:0.14em;color:#8b5cf6; font-weight:700;text-transform:uppercase;margin-bottom:6px;">
@@ -21594,6 +21726,15 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             scored = []
             calls_used = [0]
             lock = threading.Lock()
+            _progress_counter = [0]
+            _universe_len     = min(len(universe), 250)
+
+            # ── Progress bar untuk screening ──────────────────────────────────
+            _screen_prog = None
+            try:
+                _screen_prog = st.progress(0, text="🔍 Inisialisasi screening Bandarmologi...")
+            except Exception:
+                pass
 
             # Fetch price data dulu (yfinance, batch) untuk daily avg lot
             price_map = {}
@@ -21617,8 +21758,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                     "ema21":      float(_cl.ewm(span=21).mean().iloc[-1]),
                                     "ema50":      float(_cl.ewm(span=50).mean().iloc[-1]) if len(_cl) >= 30 else float(_cl.mean()),
                                 }
-                        except: pass
-            except: pass
+                        except Exception: pass
+            except Exception: pass
 
             def _fetch_score(tk):
                 if not _goapi_available():
@@ -21667,7 +21808,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                             "struct_break": struct_break,
                             "bs":         bs_result,
                         })
-                except: pass
+                except Exception: pass
 
             # Sequential fetch dengan throttle — GoAPI tidak tahan parallel request
             # 10 thread sekaligus = 10 request nyaris bersamaan → pasti 429
@@ -21731,8 +21872,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                     "ema21":      float(_cl.ewm(span=21).mean().iloc[-1]),
                                     "ema50":      float(_cl.ewm(span=50).mean().iloc[-1]) if len(_cl) >= 30 else float(_cl.mean()),
                                 }
-                        except: pass
-            except: pass
+                        except Exception: pass
+            except Exception: pass
 
             calls_used = [0]
             lock = threading.Lock()
@@ -21765,7 +21906,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                             agg["days_accum"] += 1
                         elif day_res["verdict"] in ("STRONG_DIST", "DIST"):
                             agg["days_dist"] += 1
-                    except: pass
+                    except Exception: pass
 
                 if agg["days_data"] < 2: return  # kurang dari 2 hari data — skip
 
@@ -22048,7 +22189,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                                 "dates5":  dates5,
                                 "vols5":   vols5,
                             }
-                except: pass
+                except Exception: pass
 
             # Parallel fetch dengan thread pool
             threads = [threading.Thread(target=_fetch_one, args=(tk,)) for tk in tickers]
@@ -22098,8 +22239,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                         _d = _uj.loads(_r.read())
                     _txt = "".join(b.get("text","") for b in _d.get("content",[]) if b.get("type")=="text")
                     if _txt: return _txt
-            except:
-                pass
+            except Exception: pass
             return "⚠️ Semua AI engine sedang overload (rate limit). Tunggu 1-2 menit lalu coba lagi."
 
         def _render_reco_cards(reco_text, accent="#a78bfa"):
@@ -22188,9 +22328,8 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
         reco_tab_daily       = alpha_tab_daily
         reco_tab_weekly      = alpha_tab_weekly
         reco_tab_bsjp        = alpha_tab_bsjp
-        if alpha_tab_fundamental is None:
-            alpha_tab_fundamental = st.container()  # fallback container jika scope belum init
-        reco_tab_fundamental = alpha_tab_fundamental
+        # reco_tab_fundamental selalu pakai st.container() — tidak ada cross-tab dependency
+        reco_tab_fundamental = st.container()
 
         # ─── SHARED TABLE RENDERER ─────────────────────────────────────────
         def _render_table_reco(session_key_result, session_key_ts, accent_color,
@@ -22210,8 +22349,7 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
                 _jmatch = _re_t.search(r'\{[\s\S]*\}', _raw_t)
                 if _jmatch:
                     _tdata = _json_t.loads(_jmatch.group(0))
-            except:
-                pass
+            except Exception: pass
 
             # Cek key utama - bisa "daily", "weekly", atau "bsjp"
             _main_key = None
@@ -23324,7 +23462,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                         _sv = load_user(st.session_state.user["email"]) or {}
                         if _sv.get(history_key):
                             st.session_state[history_key] = _sv[history_key]
-                    except: pass
+                    except Exception: pass
                 if history_key not in st.session_state:
                     st.session_state[history_key] = {}
 
@@ -23447,7 +23585,7 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                                     "low_5d":  float(h["Low"].min()),
                                     "close_prev": float(h["Close"].iloc[-2]) if len(h) >= 2 else float(h["Close"].iloc[-1]),
                                 }
-                    except: pass
+                    except Exception: pass
 
                 _thr_list = [_thr_tr.Thread(target=_fetch_tr, args=(tk,)) for tk in open_tickers]
                 for t in _thr_list: t.start()
@@ -23530,10 +23668,10 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                     if st.session_state.get("user"):
                         try:
                             save_field(st.session_state.user["email"], "tr_records", records)
-                        except: pass
+                        except Exception: pass
 
                 st.session_state[tr_update_key] = True
-            except: pass
+            except Exception: pass
 
         def _render_auto_history(plan_type="daily"):
             """Render tabel history plan yang sudah tersimpan."""
@@ -23984,7 +24122,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         _sv2["tr_records"] = _pdata.get("tr_records", _sv2.get("tr_records", []))
                         save_user(st.session_state.user["email"], _sv2)
                         del st.session_state[_ppk]
-                    except: pass
+                    except Exception: pass
 
         # ── Restore history dari DB jika belum ada di session state ──
         if st.session_state.get("user"):
@@ -23995,7 +24133,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         _sv3 = load_user(st.session_state.user["email"]) or {}
                         if _sv3.get(_hkey):
                             st.session_state[_hkey] = _sv3[_hkey]
-                    except: pass
+                    except Exception: pass
 
         # ── Jalankan auto-generate & auto-update track record saat tab dibuka ──
         # PENTING: restore history dari DB DULU sebelum auto-generate
@@ -24008,7 +24146,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         _pre_sv = load_user(st.session_state.user["email"]) or {}
                         if _pre_sv.get(_pre_hkey):
                             st.session_state[_pre_hkey] = _pre_sv[_pre_hkey]
-                    except: pass
+                    except Exception: pass
 
         # ══════════════════════════════════════════════════════════════════
         # AUTO-REFRESH BROSUM: jalankan di sini (bukan hanya di tab BrokSum)
@@ -24048,7 +24186,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         st.session_state["sigma_bs30_ts"] = _bsh_db[_today_str].get("generated_at", _today_str)
                         st.session_state["brosum_history"] = _bsh_db
                         _already_today = True
-                except: pass
+                except Exception: pass
 
             # Kalau belum ada data hari ini sama sekali → pakai data terakhir yang ada
             # (sebagai fallback sementara, supaya plan tidak kosong)
@@ -24858,7 +24996,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                     _sv["reco_bsjp_result"] = _bsjp_raw
                                     _sv["reco_bsjp_ts"] = st.session_state["reco_bsjp_ts"]
                                     save_user(st.session_state.user["email"], _sv)
-                                except: pass
+                                except Exception: pass
                         else:
                             st.warning("Gagal mengambil data pasar. Coba lagi.")
 
@@ -25050,7 +25188,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                             "eps_g":eps_g,"div":div,"mkcap":mkcap,
                                             "rpos":rpos,"score":score,
                                         }
-                                except: pass
+                                except Exception: pass
                             # Batch per 10 ticker untuk hindari rate limit
                             _bsz = 10
                             for _bi in range(0, len(tickers_tuple), _bsz):
@@ -25076,7 +25214,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 save_field(_ue_fs, "fs_results", _fs_data)
                                 save_field(_ue_fs, "fs_ts",      _fs_ts_now)
                                 save_field(_ue_fs, "fs_sektor",  _fs_sektor)
-                            except: pass
+                            except Exception: pass
 
                 # Auto-load dari Sheets kalau session kosong
                 # _sigma_restored_from_db sudah handle ini via CRITICAL_KEYS
@@ -25092,7 +25230,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             st.session_state["fs_results"] = _fs_from_db["fs_results"]
                             st.session_state["fs_ts"]      = _fs_from_db.get("fs_ts", "")
                             st.session_state["fs_sektor"]  = _fs_from_db.get("fs_sektor", "Semua Sektor")
-                    except: pass
+                    except Exception: pass
                 # Staleness check: kalau data > 7 hari, tampilkan banner refresh
                 _fs_stale = False
                 _fs_ts_raw = st.session_state.get("fs_ts", "")
@@ -25101,7 +25239,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                         from datetime import datetime as _dfs
                         _fs_dt = _dfs.strptime(_fs_ts_raw[:11].strip(), "%d %b %Y")
                         _fs_stale = (datetime.now() - _fs_dt).days >= 7
-                    except: pass
+                    except Exception: pass
                 _fs_data = st.session_state.get("fs_results", {})
                 _fs_ts   = st.session_state.get("fs_ts", "")
                 if _fs_stale and _fs_data:
@@ -25122,7 +25260,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 bv_proxy = price / pbv
                                 gn = (22.5 * eps * bv_proxy) ** 0.5
                                 return gn / price  # rasio: >1 = undervalue (Graham)
-                        except: pass
+                        except Exception: pass
                         return 0
 
                     def _peg_ratio(x):
@@ -25133,7 +25271,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                             roe = d.get("roe", 0) or 0
                             if pe > 0 and roe > 5:
                                 return -(pe / roe)  # negatif agar sort descending = terkecil dulu
-                        except: pass
+                        except Exception: pass
                         return -999
 
                     def _eps_growth(x):
@@ -25185,7 +25323,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.07);}}
                                 if d.get("pe",0)>0 and d.get("roe",0)>5:
                                     _peg = d["pe"] / d["roe"]
                                     peg = f"{_peg:.2f}"
-                            except: pass
+                            except Exception: pass
                             return {
                                 "tk":tk,"name":d.get("name","-")[:22],"tier":tier,
                                 "price": f"Rp {d['price']:,.0f}" if d.get("price") else "-",
@@ -25563,7 +25701,7 @@ Format: Bahasa Indonesia. Markdown rapi. Gunakan angka konkret. DYOR di akhir.""
                     data = _j.loads(r.read())
                 if data and isinstance(data, list) and len(data) > 0:
                     return data
-            except: pass
+            except Exception: pass
             return []
 
         def _parse_brosum_rows(bs_data, all_brokers):
@@ -25810,7 +25948,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                     data = _j.loads(r.read())
                 if data:
                     result["raw"] = data
-            except: pass
+            except Exception: pass
             return result
 
         def _auto_generate_brosum_screening():
@@ -25921,7 +26059,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             except:
                                 if _auto_try == 0:
                                     import time as _t2; _t2.sleep(0.3)
-            except: pass
+            except Exception: pass
 
         # Jalankan auto-generate setiap kali tab dibuka
         _auto_generate_brosum_screening()
@@ -26689,7 +26827,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                             # Konversi set ke list untuk JSON serialization
                             _sh_serializable = {k: list(v) for k, v in _screen_history.items()}
                             save_field(st.session_state.user["email"], "sigma_bs30_history", _sh_serializable)
-                        except: pass
+                        except Exception: pass
                     _recent_dates = sorted(_screen_history.keys(), reverse=True)
                     for s in _top30:
                         _streak = 0
@@ -26711,14 +26849,14 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                         for _dk in sorted(_bsh2.keys())[:-30]: del _bsh2[_dk]
                     st.session_state["brosum_history"] = _bsh2
                     try: _sm_save_broker_result(_top30)
-                    except: pass
+                    except Exception: pass
                     if st.session_state.get("user"):
                         try:
                             _ue_bs = st.session_state.user["email"]
                             save_field(_ue_bs, "sigma_bs30_screened", _top30)
                             save_field(_ue_bs, "sigma_bs30_ts",       _ts_now)
                             save_field(_ue_bs, "brosum_history",      _bsh2)
-                        except: pass
+                        except Exception: pass
                     _prog_bar.progress(100, text=f"✅ Selesai — {len(_top30)} saham screened, {_confirmed_count} GoAPI confirmed")
 
                     # ── Tampilkan error GoAPI jika ada ──
@@ -27066,7 +27204,7 @@ tbody tr:hover td{{background:rgba(38,166,154,0.06);}}
                                         save_field(_ue4, "brosum_hist_use_key",  _bhdk)
                                         save_field(_ue4, "brosum_hist_use_data", _bhdsc)
                                         save_field(_ue4, "brosum_hist_use_date", _bhde.get("date", _bhdk))
-                                    except: pass
+                                    except Exception: pass
                                 # Generate weekly plan dari data historis ini
                                 _bh_tickers = [s["ticker"] for s in _bhdsc if s.get("ticker")]
                                 if _bh_tickers:
@@ -30377,7 +30515,7 @@ else:
                     try: 
                         b64_img, mime_img = _compress_image_file(_mf)
                         multi_images.append((b64_img, mime_img, _mf.name))
-                    except: pass
+                    except Exception: pass
                 if multi_images: st.session_state.img_data = (multi_images[0][0], multi_images[0][1], multi_images[0][2])
             if pdf_files: file_obj = pdf_files[0]
         elif isinstance(result, str): prompt = result.strip()
@@ -30659,7 +30797,7 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
                 try:
                     ctx = build_combined_context(prompt)
                     if ctx: full_prompt = f"{ctx}\n\n{prompt}"
-                except: pass
+                except Exception: pass
 
         if active["title"] == "Obrolan Baru": active["title"] = prompt[:40] + ("..." if len(prompt) > 40 else "")
 
@@ -30904,6 +31042,18 @@ components.html("""
 </script>
 """, height=0)
 
+
+# ── GROQ KEY AVAILABILITY STATUS (rendered once per rerun) ──────────────────
+try:
+    _groq_keys_all  = _get_all_groq_keys()
+    _groq_keys_avail = _get_available_groq_keys(_groq_keys_all)
+    _gk_total  = len(_groq_keys_all)
+    _gk_avail  = len(_groq_keys_avail)
+    _gk_color  = "#10b981" if _gk_avail >= _gk_total * 0.5 else ("#f59e0b" if _gk_avail > 0 else "#ef4444")
+    _gk_label  = f"{_gk_avail}/{_gk_total} keys"
+    st.session_state["_groq_key_status"] = {"avail": _gk_avail, "total": _gk_total, "color": _gk_color, "label": _gk_label}
+except Exception:
+    pass
 
 # ── USER BUBBLE JS INJECTOR ──
 _bubble_css = """
