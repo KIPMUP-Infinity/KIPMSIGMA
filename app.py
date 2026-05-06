@@ -13850,22 +13850,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     with tab_macro:
-        # ── Tab Macro: redirect yang informatif (konten utama ada di Market Data & Market Map) ──
-        _mac_col1, _mac_col2 = st.columns([2, 1])
-        with _mac_col1:
-            st.markdown(
-                "<div style='font-family:IBM Plex Mono,monospace;padding:16px;border:1px solid rgba(100,116,139,0.3);"
-                "border-radius:8px;background:rgba(15,23,42,0.4);'>"
-                "<div style='font-size:0.7rem;color:#64748b;letter-spacing:0.1em;margin-bottom:8px;'>NAVIGASI</div>"
-                "<div style='font-size:0.85rem;color:#94a3b8;line-height:1.8;'>"
-                "📅 <b style='color:#e2e8f0;'>Economic Calendar</b> → sub-tab <b>Kalender</b> di <b>🌐 Market Map</b><br>"
-                "📊 <b style='color:#e2e8f0;'>Rate Monitor</b> → sub-tab <b>Rate Monitor</b> di <b>📈 Market Data</b><br>"
-                "🏦 <b style='color:#e2e8f0;'>Fundamental Screener</b> → sub-tab <b>Fundamental</b> di <b>📈 Market Data</b><br>"
-                "👥 <b style='color:#e2e8f0;'>Shareholder Screener</b> → sub-tab <b>Shareholder</b> di <b>📈 Market Data</b><br>"
-                "💰 <b style='color:#e2e8f0;'>Dividend Tracker</b> → sub-tab <b>Dividend</b> di <b>📈 Market Data</b>"
-                "</div></div>",
-                unsafe_allow_html=True
-            )
+        pass  # Konten dipindah ke Market Data & Market Map sub-tabs
 
     with _mm_subtab_news:
         # ─────────────────────────────────────────────────────────
@@ -17718,13 +17703,16 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_msci_excl = pd.DataFrame(msci_excluded)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · MSCI STANDARD INDEX — {len(df_msci_std)} SAHAM (THE GIANTS)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_msci_std.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_msci_std = min(38 + len(df_msci_std) * 38, 800)
+                st.dataframe(safe_style(df_msci_std.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_std)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>02 · MSCI SMALL CAP INDEX — {len(df_msci_sm)} SAHAM</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_msci_sm.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_msci_sm = min(38 + len(df_msci_sm) * 38, 800)
+                st.dataframe(safe_style(df_msci_sm.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_sm)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>03 · KELUAR DARI MSCI — {len(df_msci_excl)} SAHAM</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_msci_excl.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_msci_excl = min(38 + len(df_msci_excl) * 38, 800)
+                st.dataframe(safe_style(df_msci_excl.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_excl)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>📌 STRATEGI MSCI REBALANCING</div>
@@ -17776,13 +17764,16 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_ftse_s  = pd.DataFrame(ftse_small)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:14px 0 8px;font-weight:700;'>01 · LARGE CAP — {len(df_ftse_l)} SAHAM</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_ftse_l.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_ftse_l = min(38 + len(df_ftse_l) * 38, 800)
+                st.dataframe(safe_style(df_ftse_l.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_l)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:18px 0 8px;font-weight:700;'>02 · MID CAP — {len(df_ftse_m)} SAHAM</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_ftse_m.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_ftse_m = min(38 + len(df_ftse_m) * 38, 800)
+                st.dataframe(safe_style(df_ftse_m.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_m)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>03 · SMALL CAP — {len(df_ftse_s)} SAHAM</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_ftse_s.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_ftse_s = min(38 + len(df_ftse_s) * 38, 800)
+                st.dataframe(safe_style(df_ftse_s.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_s)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>📌 MSCI vs FTSE — PERBEDAAN KUNCI</div>
@@ -17835,10 +17826,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_lq45_out    = pd.DataFrame(lq45_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;margin:14px 0 8px;font-weight:700;'>01 · 45 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=min(38+len(df_lq45_active)*38,900))
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI LQ45</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_lq45_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_lq45_out = min(38 + len(df_lq45_out) * 38, 400)
+                st.dataframe(safe_style(df_lq45_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_lq45_out)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG LQ45</div>
@@ -17884,10 +17876,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_idx30_out    = pd.DataFrame(idx30_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:14px 0 8px;font-weight:700;'>01 · 30 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=min(38+len(df_idx30_active)*38,700))
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX30</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx30_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_idx30_out = min(38 + len(df_idx30_out) * 38, 400)
+                st.dataframe(safe_style(df_idx30_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx30_out)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG IDX30</div>
@@ -17955,10 +17948,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_idx80_out    = pd.DataFrame(idx80_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · {len(df_idx80_active)} KONSTITUEN AKTIF (Efektif 4 Mei 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=min(38+len(df_idx80_active)*38,1200))
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX80 (per 4 Mei 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx80_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore")
+                _h_df_idx80_out = min(38 + len(df_idx80_out) * 38, 400)
+                st.dataframe(safe_style(df_idx80_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx80_out)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG IDX80</div>
@@ -18023,7 +18017,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 _df_k100_show = df_k100 if _k100_sel == "Semua Sektor" else df_k100[df_k100["Sektor"] == _k100_sel]
 
                 st.markdown(f"<p style='font-size:0.8rem;color:#ef4444;margin-bottom:8px;'>{len(_df_k100_show)} saham ditampilkan</p>", unsafe_allow_html=True)
-                st.dataframe(_df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=min(60 + len(_df_k100_show)*36, 600))
+                st.dataframe(_df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=min(38 + len(_df_k100_show) * 38, 1200))
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG KOMPAS100</div>
@@ -18107,7 +18101,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                 df_display = df_conglo[df_conglo["Grup"] == selected_grup] if selected_grup != "Semua Grup" else df_conglo
                 st.dataframe(df_display[["Grup","Ticker","Nama","Fokus Bisnis","Indeks"]], use_container_width=True, hide_index=True, on_select="ignore",
-                             height=min(60 + len(df_display)*36, 620))
+                             height=min(38 + len(df_display) * 45, 1000))
 
                 st.markdown(f"""
                 <div class="trm-card" style="margin-top:16px;">
@@ -18193,7 +18187,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.dataframe(
                     _df_bumn_show[["Sektor","Ticker","Nama","Indeks","Keterangan"]],
                     use_container_width=True, hide_index=True, on_select="ignore",
-                    height=min(60 + len(_df_bumn_show)*38, 680),
+                    height=min(38 + len(_df_bumn_show) * 45, 900),
                 )
 
                 st.markdown(f"""
@@ -18466,12 +18460,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             import datetime as _dt
             import pandas as pd
             _sh_now = _dt.datetime.now()
-            # Auto-derive dari tanggal maksimal di DB — tidak hardcoded lagi
-            _sh_base_dt = max(
-                (max(r["date"] for r in rows) for rows in _sh_all_db.values() if rows),
-                default=_dt.datetime(2026, 3, 31)
-            ).replace(day=1)  # normalize ke awal bulan
-            _sh_base_month = _sh_base_dt.strftime("%Y-%m")  # untuk display saja
+            # _sh_base_dt akan di-derive ulang setelah _sh_all_db dimuat di bawah
+            # Fallback sementara (jika ada kode di antara ini dan load DB yang butuh nilai)
+            _sh_base_dt    = _dt.datetime(2026, 3, 1)
+            _sh_base_month = "2026-03"  # fallback — akan di-overwrite di bawah setelah DB load
 
             def _sh_auto_extend(db, base_dt, now):
                 """Otomatis extrapolasi bulan baru setelah tgl 7 berdasarkan tren 3 bulan terakhir."""
@@ -18767,6 +18759,16 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 }
 
             _sh_all_db = get_manual_sh_db_full()
+            # ── Auto-derive _sh_base_dt dari DB (setelah DB dimuat) ──────────────
+            try:
+                _sh_base_dt = max(
+                    (max(r["date"] for r in rows) for rows in _sh_all_db.values() if rows),
+                    default=_dt.datetime(2026, 3, 31)
+                ).replace(day=1)
+                _sh_base_month = _sh_base_dt.strftime("%Y-%m")
+            except Exception:
+                _sh_base_dt    = _dt.datetime(2026, 3, 1)
+                _sh_base_month = "2026-03"
             _sh_all_db = _sh_auto_extend(_sh_all_db, _sh_base_dt, _sh_now)
 
             # ════════════════════════════════════════════════════════════════
