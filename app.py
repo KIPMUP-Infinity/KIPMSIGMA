@@ -7182,7 +7182,6 @@ ALLOWED_EMAILS = [
     "tehnikalkipm2@gmail.com",
     "toocoolthecreator@gmail.com",
     "anwarlubis2020@gmail.com",
-    "sabrinanurulfarah@gmail.com",
     "tehnikalkipm3@gmail.com"
 ] 
 
@@ -13220,7 +13219,7 @@ table{{margin-bottom:0!important;}}
             df_yield_disp.rename(columns={"Indonesia 10Y (%)": "ID 10Y Yield (%)"}, inplace=True)
 
             st.dataframe(df_yield_disp, use_container_width=True, hide_index=True,
-                         height=min(60 + len(df_yield_disp) * 36, 580))
+                         height=60 + len(df_yield_disp) * 36)
 
             st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
             ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / yfinance (^TNX proxy) · Last update: {_y_latest["Bulan"]}
@@ -13470,7 +13469,7 @@ table{{margin-bottom:0!important;}}
             df_usy_disp = df_usy_disp[["Bulan","US 10Y (%)","Δ US 10Y MoM","DXY","Spread (%)","USD/IDR"]]
             df_usy_disp.rename(columns={"US 10Y (%)": "US 10Y Yield (%)"}, inplace=True)
             st.dataframe(df_usy_disp, use_container_width=True, hide_index=True,
-                         height=min(60 + len(df_usy_disp) * 36, 580))
+                         height=60 + len(df_usy_disp) * 36)
 
             st.markdown(f"""<div style='font-size:0.72rem;color:{text_sub};margin-top:6px;font-family:IBM Plex Mono,monospace;'>
             ⓘ Data update: <b>Mingguan (setiap Senin)</b> · Sumber: SIGMA Database / US Treasury (^TNX) · Last update: {_usy_latest["Bulan"]}
@@ -13779,7 +13778,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur dan tegas.""
                     _dv_df,
                     use_container_width=True,
                     hide_index=True,
-                    height=min(80 + len(_dv_df) * 36, 600),
+                    height=80 + len(_dv_df) * 36,
                     column_config={
                         "Yield %": st.column_config.NumberColumn("Yield %", format="%.2f%%"),
                         "DPS (Rp)": st.column_config.NumberColumn("DPS (Rp)", format="Rp %d"),
@@ -13851,7 +13850,7 @@ Format: narasi profesional, 300–400 kata, bahasa Indonesia, jujur, tegas, dan 
             st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
 
     with tab_macro:
-        pass  # Konten dipindah ke Market Data & Market Map sub-tabs
+        pass  # Tab ini kosong — konten ada di tab Market Data dan Market Map
 
     with _mm_subtab_news:
         # ─────────────────────────────────────────────────────────
@@ -15288,6 +15287,31 @@ tbody tr:hover td{{background:rgba(3,40,238,0.04);}}
 
         components.html(ca_html_widget, height=_ca_total_h + 8, scrolling=False)
 
+    # ── Market Data sub-tabs: Fundamental & Shareholder redirect ke Alpha Screener ──
+    with _md_subtab_fundamental:
+        st.markdown(
+            "<div style='font-family:IBM Plex Mono,monospace;padding:20px;border:1px solid rgba(100,116,139,0.2);"
+            "border-radius:8px;background:rgba(15,23,42,0.3);margin-top:12px;'>"
+            "<div style='font-size:0.7rem;color:#64748b;letter-spacing:0.1em;margin-bottom:10px;'>LOKASI FITUR</div>"
+            "<div style='font-size:0.9rem;color:#94a3b8;'>"
+            "📊 <b style='color:#e2e8f0;'>Fundamental Screener</b> tersedia di tab "
+            "<b style='color:#26a69a;'>⚡ Alpha Screener → 📊 Fundamental</b>"
+            "</div></div>",
+            unsafe_allow_html=True
+        )
+
+    with _md_subtab_shareholder:
+        st.markdown(
+            "<div style='font-family:IBM Plex Mono,monospace;padding:20px;border:1px solid rgba(100,116,139,0.2);"
+            "border-radius:8px;background:rgba(15,23,42,0.3);margin-top:12px;'>"
+            "<div style='font-size:0.7rem;color:#64748b;letter-spacing:0.1em;margin-bottom:10px;'>LOKASI FITUR</div>"
+            "<div style='font-size:0.9rem;color:#94a3b8;'>"
+            "👥 <b style='color:#e2e8f0;'>Shareholder Screener</b> tersedia di tab "
+            "<b style='color:#26a69a;'>⚡ Alpha Screener → 👥 Shareholder</b>"
+            "</div></div>",
+            unsafe_allow_html=True
+        )
+
     # FED RATE MONITOR + BI RATE → masuk Rate Monitor sub-tab di Market Data
     with _md_subtab_ratemon:
         st.markdown("<hr class='fancy-divider'>", unsafe_allow_html=True)
@@ -15872,8 +15896,12 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
           <script>
           (function() {{
             var ctx = document.getElementById('bi_rate_chart').getContext('2d');
-            var labels = {_bi_labels_js};
-            var vals   = {_bi_vals_js};
+            var labelsAll = {_bi_labels_js};
+            var valsAll   = {_bi_vals_js};
+            // Tampilkan 18 bulan terakhir agar fokus ke data terkini
+            var showN  = Math.min(18, labelsAll.length);
+            var labels = labelsAll.slice(-showN);
+            var vals   = valsAll.slice(-showN);
             // Warna titik: merah naik, hijau turun/sama
             var ptColors = vals.map(function(v,i) {{
               if (i === 0) return '#26a69a';
@@ -15911,13 +15939,18 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                 }},
                 scales: {{
                   x: {{
-                    ticks: {{ color: '#666', font: {{ size: 9 }}, maxRotation: 45, minRotation: 45 }},
+                    ticks: {{
+                      color: '#666', font: {{ size: 9 }},
+                      maxRotation: 45, minRotation: 45,
+                      autoSkip: true, maxTicksLimit: 16
+                    }},
                     grid: {{ color: 'rgba(255,255,255,0.04)' }}
                   }},
                   y: {{
-                    ticks: {{ color: '#666', font: {{ size: 9 }}, callback: function(v) {{ return v+'%'; }} }},
+                    ticks: {{ color: '#666', font: {{ size: 9 }}, callback: function(v) {{ return v.toFixed(2)+'%'; }} }},
                     grid: {{ color: 'rgba(255,255,255,0.05)' }},
-                    min: 4.0, max: 7.0
+                    min: 3.5, max: 7.0,
+                    suggestedMin: 3.5, suggestedMax: 7.0
                   }}
                 }}
               }}
@@ -15927,7 +15960,7 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
         </body>
         </html>
         """
-        components.html(_bi_chart_html, height=220, scrolling=False)
+        components.html(_bi_chart_html, height=265, scrolling=False)
 
         # ── RDG BI Schedule 2026 ──
         st.markdown(f"<div style='font-size:0.75rem;color:#888;margin:12px 0 6px;font-family:IBM Plex Mono,monospace;'>📅 JADWAL RDG BI 2026</div>", unsafe_allow_html=True)
@@ -17704,15 +17737,15 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_msci_excl = pd.DataFrame(msci_excluded)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · MSCI STANDARD INDEX — {len(df_msci_std)} SAHAM (THE GIANTS)</p>", unsafe_allow_html=True)
-                _h_df_msci_std = min(38 + len(df_msci_std) * 38, 800)
+                _h_df_msci_std = 38 + len(df_msci_std) * 36
                 st.dataframe(safe_style(df_msci_std.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_std)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>02 · MSCI SMALL CAP INDEX — {len(df_msci_sm)} SAHAM</p>", unsafe_allow_html=True)
-                _h_df_msci_sm = min(38 + len(df_msci_sm) * 38, 800)
+                _h_df_msci_sm = 38 + len(df_msci_sm) * 36
                 st.dataframe(safe_style(df_msci_sm.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_sm)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>03 · KELUAR DARI MSCI — {len(df_msci_excl)} SAHAM</p>", unsafe_allow_html=True)
-                _h_df_msci_excl = min(38 + len(df_msci_excl) * 38, 800)
+                _h_df_msci_excl = 38 + len(df_msci_excl) * 36
                 st.dataframe(safe_style(df_msci_excl.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_msci_excl)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
@@ -17765,15 +17798,15 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_ftse_s  = pd.DataFrame(ftse_small)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:14px 0 8px;font-weight:700;'>01 · LARGE CAP — {len(df_ftse_l)} SAHAM</p>", unsafe_allow_html=True)
-                _h_df_ftse_l = min(38 + len(df_ftse_l) * 38, 800)
+                _h_df_ftse_l = 38 + len(df_ftse_l) * 36
                 st.dataframe(safe_style(df_ftse_l.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_l)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#00c853;margin:18px 0 8px;font-weight:700;'>02 · MID CAP — {len(df_ftse_m)} SAHAM</p>", unsafe_allow_html=True)
-                _h_df_ftse_m = min(38 + len(df_ftse_m) * 38, 800)
+                _h_df_ftse_m = 38 + len(df_ftse_m) * 36
                 st.dataframe(safe_style(df_ftse_m.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_m)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#a78bfa;margin:18px 0 8px;font-weight:700;'>03 · SMALL CAP — {len(df_ftse_s)} SAHAM</p>", unsafe_allow_html=True)
-                _h_df_ftse_s = min(38 + len(df_ftse_s) * 38, 800)
+                _h_df_ftse_s = 38 + len(df_ftse_s) * 36
                 st.dataframe(safe_style(df_ftse_s.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_ftse_s)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
@@ -17827,10 +17860,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_lq45_out    = pd.DataFrame(lq45_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f5a623;margin:14px 0 8px;font-weight:700;'>01 · 45 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=min(38+len(df_lq45_active)*38,900))
+                st.dataframe(safe_style(df_lq45_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_lq45_active)*36)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI LQ45</p>", unsafe_allow_html=True)
-                _h_df_lq45_out = min(38 + len(df_lq45_out) * 38, 400)
+                _h_df_lq45_out = 38 + len(df_lq45_out) * 36
                 st.dataframe(safe_style(df_lq45_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_lq45_out)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
@@ -17877,10 +17910,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_idx30_out    = pd.DataFrame(idx30_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:14px 0 8px;font-weight:700;'>01 · 30 KONSTITUEN AKTIF (Periode Feb–Jul 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=min(38+len(df_idx30_active)*38,700))
+                st.dataframe(safe_style(df_idx30_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx30_active)*36)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX30</p>", unsafe_allow_html=True)
-                _h_df_idx30_out = min(38 + len(df_idx30_out) * 38, 400)
+                _h_df_idx30_out = 38 + len(df_idx30_out) * 36
                 st.dataframe(safe_style(df_idx30_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx30_out)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
@@ -17949,10 +17982,10 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 df_idx80_out    = pd.DataFrame(idx80_out_data)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#8b5cf6;margin:14px 0 8px;font-weight:700;'>01 · {len(df_idx80_active)} KONSTITUEN AKTIF (Efektif 4 Mei 2026)</p>", unsafe_allow_html=True)
-                st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=min(38+len(df_idx80_active)*38,1200))
+                st.dataframe(safe_style(df_idx80_active.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=38+len(df_idx80_active)*36)
 
                 st.markdown(f"<p style='font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;color:#f23645;margin:18px 0 8px;font-weight:700;'>02 · KELUAR DARI IDX80 (per 4 Mei 2026)</p>", unsafe_allow_html=True)
-                _h_df_idx80_out = min(38 + len(df_idx80_out) * 38, 400)
+                _h_df_idx80_out = 38 + len(df_idx80_out) * 36
                 st.dataframe(safe_style(df_idx80_out.style, highlight_status, ["Status"]), use_container_width=True, hide_index=True, on_select="ignore", height=_h_df_idx80_out)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
@@ -18018,7 +18051,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 _df_k100_show = df_k100 if _k100_sel == "Semua Sektor" else df_k100[df_k100["Sektor"] == _k100_sel]
 
                 st.markdown(f"<p style='font-size:0.8rem;color:#ef4444;margin-bottom:8px;'>{len(_df_k100_show)} saham ditampilkan</p>", unsafe_allow_html=True)
-                st.dataframe(_df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=min(38 + len(_df_k100_show) * 38, 1200))
+                st.dataframe(_df_k100_show, use_container_width=True, hide_index=True, on_select="ignore", height=38+len(_df_k100_show)*36)
 
                 st.markdown(f"""<div class='trm-card' style='margin-top:16px;'>
                 <div class='trm-card-title'>ℹ️ TENTANG KOMPAS100</div>
@@ -18102,7 +18135,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
 
                 df_display = df_conglo[df_conglo["Grup"] == selected_grup] if selected_grup != "Semua Grup" else df_conglo
                 st.dataframe(df_display[["Grup","Ticker","Nama","Fokus Bisnis","Indeks"]], use_container_width=True, hide_index=True, on_select="ignore",
-                             height=min(38 + len(df_display) * 45, 1000))
+                             height=38+len(df_display)*36)
 
                 st.markdown(f"""
                 <div class="trm-card" style="margin-top:16px;">
@@ -18188,7 +18221,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                 st.dataframe(
                     _df_bumn_show[["Sektor","Ticker","Nama","Indeks","Keterangan"]],
                     use_container_width=True, hide_index=True, on_select="ignore",
-                    height=min(38 + len(_df_bumn_show) * 45, 900),
+                    height=38+len(_df_bumn_show)*36,
                 )
 
                 st.markdown(f"""
@@ -18436,7 +18469,7 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
         st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>⚡ ALPHA SCREENER</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-family:DM Sans,sans-serif;font-size:0.72rem;letter-spacing:0.08em;color:{text_sub};margin-bottom:16px;text-transform:uppercase;'>AI Stock Insight &middot; Daily Plan &middot; Fundamental Screener &mdash; All in one place</p>", unsafe_allow_html=True)
 
-        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord = st.tabs([
+        alpha_tab_insight, alpha_tab_daily, alpha_tab_weekly, alpha_tab_bsjp, alpha_tab_brosum, alpha_tab_ipo, alpha_tab_trackrecord, alpha_tab_fundamental, alpha_tab_shareholder = st.tabs([
             "  ⚡ ALPHA STOCK INSIGHT  ",
             "  📅 DAILY PLAN  ",
             "  📆 WEEKLY PLAN  ",
@@ -18444,18 +18477,11 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             "  🏦 BROKER SUMMARY  ",
             "  📋 ANALISA IPO  ",
             "  🏆 TRACK RECORD  ",
+            "  📊 FUNDAMENTAL  ",
+            "  👥 SHAREHOLDER  ",
         ])
 
-        # Fundamental Screener & Shareholder ada di tab MARKET DATA
-        # Note: cross-tab rendering dihapus — tidak compatible dengan Streamlit tab context model.
-        # Shareholder content dirender langsung di _md_subtab_shareholder (tab_marketdata).
-        alpha_tab_fundamental = None  # alias tidak dipakai lagi — dirender di market data tab
-        alpha_tab_shareholder = None  # sama
-
-        # SHAREHOLDER SCREENER — dirender langsung di sini (inside alpha_screener scope)
-        # agar tidak bergantung pada tab context luar yang sudah di-close
-        if True:  # selalu render
-         with st.container():
+        with alpha_tab_shareholder:
 
             # ── Auto-extend: extrapolasi bulan baru otomatis tgl 7-10 tiap bulan ──
             import datetime as _dt
@@ -22331,8 +22357,7 @@ white-space:pre-wrap;word-break:break-word;line-height:1.75;box-sizing:border-bo
         reco_tab_daily       = alpha_tab_daily
         reco_tab_weekly      = alpha_tab_weekly
         reco_tab_bsjp        = alpha_tab_bsjp
-        # reco_tab_fundamental selalu pakai st.container() — tidak ada cross-tab dependency
-        reco_tab_fundamental = st.container()
+        reco_tab_fundamental = alpha_tab_fundamental
 
         # ─── SHARED TABLE RENDERER ─────────────────────────────────────────
         def _render_table_reco(session_key_result, session_key_ts, accent_color,
