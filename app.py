@@ -7186,7 +7186,7 @@ ALLOWED_EMAILS = [
     "fythapoetriagayha9712@gmail.com",
     "anwarlubis2020@gmail.com",
     "pelisacitra@gmail.com",
-    "danielfebrino2425@gmail.com
+    "danielfebrino2425@gmail.com",
     "tehnikalkipm3@gmail.com"
 ] 
 
