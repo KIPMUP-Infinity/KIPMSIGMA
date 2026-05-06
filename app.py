@@ -7185,7 +7185,8 @@ ALLOWED_EMAILS = [
     "tehnikalkipm3@gmail.com",
     "damara.azzalia01@gmail.com",
     "adewi5710@gmail.com",
-    "fythapoetriagayha9712@gmail.com"
+    "fythapoetriagayha9712@gmail.com",
+    "pelisacitra@gmail.com"
 ] 
 
 # ─── AUTENTIKASI GOOGLE ───
@@ -9577,10 +9578,12 @@ if "do" in st.query_params:
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
     elif _do == "go_home":
-        # Redirect ke terminal langsung (tidak ada halaman home)
-        st.session_state.selected_system = "terminal_local"
-        st.session_state.current_view = "dashboard"
+        # Kembali ke halaman 3-card selector
+        st.session_state.selected_system = None
+        st.session_state.current_view = "chat"
         try: st.query_params.pop("do", None)
+        except Exception: pass
+        try: st.query_params.pop("nav", None)
         except Exception: pass
         st.rerun()
     elif _do == "theme_dark":
@@ -9682,6 +9685,8 @@ m.innerHTML=`
     <a class="smi" id="smi-ai"><span class="smico"></span>SIGMA AI Chat</a>
     <a class="smi" id="smi-stats"><span class="smico"></span>SIGMA Terminal</a>
     <a class="smi" id="smi-diag"><span class="smico"></span>Diagnostik API</a>
+    <div class="smsp"></div><div class="smhd">NAVIGASI</div>
+    <a class="smi" id="smi-home"><span class="smico">&#8962;</span>Menu Utama</a>
     <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
     <a class="smi" id="smi-dark"><span class="smico"></span>Dark Mode {'v' if st.session_state.theme=='dark' else ''}</a>
     <a class="smi" id="smi-light"><span class="smico"></span>Light Mode {'v' if st.session_state.theme=='light' else ''}</a>
@@ -9693,6 +9698,7 @@ btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.displ
 (function(){{
     var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
     pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','view_ai'); pd.getElementById('smi-ai').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','view_stats'); pd.getElementById('smi-stats').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','view_diag'); pd.getElementById('smi-diag').href=u.toString();
@@ -10751,7 +10757,7 @@ if "do" in st.query_params:
     elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_ai": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
-    elif _do == "go_home": st.session_state.selected_system = "terminal_local"; st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "go_home": st.session_state.selected_system = None; st.session_state.current_view = "chat"; st.query_params.pop("do", None); [st.query_params.pop(k, None) for k in ["nav"]]; st.rerun()
     elif _do == "theme_dark":
         # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "dark"
@@ -11603,6 +11609,21 @@ if current_view == "dashboard":
                     letter-spacing: 0.06em;
                 ">--:--:-- WIB</span>
             </div>
+            <a href="?do=go_home" style="
+                display: inline-flex; align-items: center; gap: 5px;
+                background: rgba(139,92,246,0.10);
+                border: 1px solid rgba(139,92,246,0.25);
+                border-radius: 50px;
+                padding: 5px 13px;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 0.62rem;
+                color: {'rgba(167,139,250,0.85)' if is_dark else '#7c3aed'};
+                letter-spacing: 0.06em;
+                text-decoration: none;
+                transition: all 0.2s;
+            " onmouseover="this.style.background='rgba(139,92,246,0.22)'" onmouseout="this.style.background='rgba(139,92,246,0.10)'">
+                &#8962; HOME
+            </a>
         </div>
     </div>
     <style>
@@ -20252,6 +20273,15 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     # ── CT Corp ──
                     {"Grup": "CT Corp (Chairul T.)",       "Ticker": "MEGA",  "Nama": "Bank Mega",               "Fokus Bisnis": "Perbankan",                     "Indeks": "IDX80"},
                     {"Grup": "CT Corp (Chairul T.)",       "Ticker": "BBHI",  "Nama": "Allo Bank Indonesia",     "Fokus Bisnis": "Bank Digital",                  "Indeks": "IDX80·KOMPAS100"},
+                    # ── Hapsoro Group ──
+                    {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "HRUM",  "Nama": "Harum Energy",            "Fokus Bisnis": "Batu Bara — Flagship",          "Indeks": "LQ45·IDX30"},
+                    {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "BSSR",  "Nama": "Baramulti Suksessarana",  "Fokus Bisnis": "Batu Bara Kalori Tinggi",        "Indeks": "IDX80·KOMPAS100"},
+                    {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "GEMS",  "Nama": "Golden Energy Mines",     "Fokus Bisnis": "Batu Bara — Tambang",            "Indeks": "IDX80·KOMPAS100"},
+                    {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "GTBO",  "Nama": "Garda Tujuh Buana",       "Fokus Bisnis": "Batu Bara Kalimantan",           "Indeks": "—"},
+                    # ── Jhonlin Group ──
+                    {"Grup": "Jhonlin (Andi Syamsuddin)", "Ticker": "JHLN", "Nama": "Jhonlin Agro Raya",      "Fokus Bisnis": "Perkebunan Sawit",               "Indeks": "IDX80·KOMPAS100"},
+                    {"Grup": "Jhonlin (Andi Syamsuddin)", "Ticker": "SQMI", "Nama": "Sumber Quality Mining",  "Fokus Bisnis": "Pertambangan Nikel",             "Indeks": "—"},
+                    {"Grup": "Jhonlin (Andi Syamsuddin)", "Ticker": "JHLM", "Nama": "Jhonlin Maritim Raya",   "Fokus Bisnis": "Logistik Batubara & Maritim",    "Indeks": "—"},
                 ]
                 df_conglo = pd.DataFrame(conglo_data)
 
@@ -31122,6 +31152,8 @@ var m=pd.createElement('div');m.id='spmenu';
 m.innerHTML=`
     <a class="smi" id="smi-new"><span class="smico">&#9998;</span>Percakapan Baru</a>
     <button class="smi" id="smi-hist"><span class="smico">&#9776;</span>History</button>
+    <div class="smsp"></div><div class="smhd">NAVIGASI</div>
+    <a class="smi" id="smi-home"><span class="smico">&#8962;</span>Menu Utama</a>
     <div class="smsp"></div><div class="smhd">PENAMPILAN</div>
     <a class="smi" id="smi-dark"><span class="smico">&#127183;</span>Dark Mode {'v' if st.session_state.theme=='dark' else ''}</a>
     <a class="smi" id="smi-light"><span class="smico">&#9728;</span>Light Mode {'v' if st.session_state.theme=='light' else ''}</a>
@@ -31133,6 +31165,7 @@ btn.onclick=function(e){{ e.preventDefault(); e.stopPropagation(); m.style.displ
 (function(){{
     var u; u=new URL(window.parent.location.href); u.searchParams.set('do','newchat'); pd.getElementById('smi-new').href=u.toString();
     pd.getElementById('smi-hist').onclick=function(){{m.style.display='none';h.style.display='block';}};
+    u=new URL(window.parent.location.href); u.searchParams.set('do','go_home'); pd.getElementById('smi-home').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','theme_dark'); pd.getElementById('smi-dark').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.set('do','theme_light'); pd.getElementById('smi-light').href=u.toString();
     u=new URL(window.parent.location.href); u.searchParams.delete('sigma_token'); u.searchParams.set('do','logout'); pd.getElementById('smi-out').href=u.toString();
