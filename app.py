@@ -9342,7 +9342,11 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
 # ── Routing: jika sudah login tapi belum pilih sistem → cek query_params dulu ──
 if st.session_state.user and not st.session_state.get("selected_system"):
     _nav_qp = st.query_params.get("nav", "")
-    if _nav_qp == "chat":
+    _force_home = st.session_state.pop("_force_home", False)  # consume flag sekali pakai
+    if _force_home:
+        # User klik Menu Utama — tampilkan 3-card selector, jangan auto-redirect
+        pass
+    elif _nav_qp == "chat":
         st.session_state.selected_system = "chat"
         st.session_state.current_view = "chat"
     else:
@@ -9581,6 +9585,7 @@ if "do" in st.query_params:
         # Kembali ke halaman 3-card selector
         st.session_state.selected_system = None
         st.session_state.current_view = "chat"
+        st.session_state["_force_home"] = True  # bypass auto-redirect ke terminal
         try: st.query_params.pop("do", None)
         except Exception: pass
         try: st.query_params.pop("nav", None)
@@ -10757,7 +10762,7 @@ if "do" in st.query_params:
     elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_ai": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
-    elif _do == "go_home": st.session_state.selected_system = None; st.session_state.current_view = "chat"; st.query_params.pop("do", None); [st.query_params.pop(k, None) for k in ["nav"]]; st.rerun()
+    elif _do == "go_home": st.session_state.selected_system = None; st.session_state.current_view = "chat"; st.session_state["_force_home"] = True; st.query_params.pop("do", None); [st.query_params.pop(k, None) for k in ["nav"]]; st.rerun()
     elif _do == "theme_dark":
         # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "dark"
@@ -18078,7 +18083,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
               }},
               options: {{
                 responsive: true,
-                animation: {{ duration: 600 }},
+                maintainAspectRatio: true,
+                animation: false,
                 plugins: {{
                   legend: {{ display: false }},
                   tooltip: {{
@@ -18088,6 +18094,8 @@ var DIR_BADGE_BG = {{ "cut":"rgba(8,153,129,0.15)", "hold":"rgba(66,133,244,0.15
                     callbacks: {{ label: function(c) {{ return ' ' + c.parsed.y.toFixed(2) + '%'; }} }}
                   }}
                 }},
+                interaction: {{ mode: 'nearest', intersect: false }},
+                events: ['mousemove', 'mouseout', 'touchstart', 'touchmove'],
                 scales: {{
                   x: {{
                     ticks: {{
