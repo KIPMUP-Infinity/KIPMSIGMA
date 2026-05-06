@@ -7181,6 +7181,9 @@ ALLOWED_EMAILS = [
     "tehnikalkipm@gmail.com",
     "tehnikalkipm2@gmail.com",
     "toocoolthecreator@gmail.com",
+    "damara.azzalia01@gmail.com",
+    "adewi5710@gmail.com",
+    "fythapoetriagayha9712@gmail.com",
     "anwarlubis2020@gmail.com",
     "tehnikalkipm3@gmail.com"
 ] 
