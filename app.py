@@ -7327,6 +7327,14 @@ def _sigma_run_global_scheduler():
     if not st.session_state.get("user"):
         return  # hanya untuk user yang sudah login
 
+    # ── Fast-path: jalankan max 1x per 60 detik ──────────────────
+    import time as _t_sch_guard
+    _sch_last = st.session_state.get("_sch_last_run_ts", 0)
+    if _t_sch_guard.time() - _sch_last < 60:
+        return  # belum waktunya, skip seluruh scheduler
+    st.session_state["_sch_last_run_ts"] = _t_sch_guard.time()
+    # ─────────────────────────────────────────────────────────────
+
     from datetime import timezone, timedelta as _td_sch
     _wib_sch  = timezone(_td_sch(hours=7))
     _now_sch  = datetime.now(_wib_sch)
@@ -7339,20 +7347,22 @@ def _sigma_run_global_scheduler():
     def _past(h, m=0): return _hour_s > h or (_hour_s == h and _min_s >= m)
 
     # ── Restore data dari DB jika session baru ──────────────────────────────
-    _restore_keys_sch = [
-        "auto_plan_history_daily", "auto_plan_history_weekly",
-        "auto_plan_history_bsjp", "tr_records", "brosum_history",
-        "sigma_bs30_screened", "sigma_bs30_ts",
-        "mb_daily_content", "mb_daily_timestamp",
-    ]
-    _need_restore = any(k not in st.session_state for k in _restore_keys_sch)
-    if _need_restore:
-        try:
-            _sv_sch = load_user(st.session_state.user["email"]) or {}
-            for _rk in _restore_keys_sch:
-                if _rk not in st.session_state and _sv_sch.get(_rk) is not None:
-                    st.session_state[_rk] = _sv_sch[_rk]
-        except Exception: pass
+    # Skip jika data_loaded=True — semua key sudah di-restore oleh blok utama
+    if not st.session_state.get("data_loaded"):
+        _restore_keys_sch = [
+            "auto_plan_history_daily", "auto_plan_history_weekly",
+            "auto_plan_history_bsjp", "tr_records", "brosum_history",
+            "sigma_bs30_screened", "sigma_bs30_ts",
+            "mb_daily_content", "mb_daily_timestamp",
+        ]
+        _need_restore = any(k not in st.session_state for k in _restore_keys_sch)
+        if _need_restore:
+            try:
+                _sv_sch = load_user(st.session_state.user["email"]) or {}
+                for _rk in _restore_keys_sch:
+                    if _rk not in st.session_state and _sv_sch.get(_rk) is not None:
+                        st.session_state[_rk] = _sv_sch[_rk]
+            except Exception: pass
 
     # ══════════════════════════════════════════════════════════════
     # [1] JAM 06:00 — DAILY REVIEW (Market Brief 24 Jam) AUTO-GENERATE
@@ -9346,13 +9356,16 @@ if st.session_state.user and not st.session_state.get("selected_system"):
     elif _nav_qp == "chat":
         st.session_state.selected_system = "chat"
         st.session_state.current_view = "chat"
+    elif _nav_qp == "terminal_local":
+        # Sudah di-set sebelumnya — jangan rerun lagi
+        st.session_state.selected_system = "terminal_local"
+        st.session_state.current_view = "dashboard"
     else:
         # Auto-direct ke SIGMA Terminal — skip halaman pemilihan sistem
         st.session_state.selected_system = "terminal_local"
         st.session_state.current_view = "dashboard"
         try: st.query_params["nav"] = "terminal_local"
         except Exception: pass
-        st.rerun()
 
 # ── FIX: jika selected_system="terminal" (external URL), redirect kembali otomatis ──
 # Ini terjadi setelah theme toggle atau rerun — pastikan user tidak stuck di chat view
@@ -9579,15 +9592,15 @@ if "do" in st.query_params:
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
     elif _do == "go_home":
-        # Kembali ke halaman 3-card selector
+        # Kembali ke halaman 3-card selector — langsung render, tanpa rerun tambahan
         st.session_state.selected_system = None
         st.session_state.current_view = "chat"
-        st.session_state["_force_home"] = True  # bypass auto-redirect ke terminal
         try: st.query_params.pop("do", None)
         except Exception: pass
         try: st.query_params.pop("nav", None)
         except Exception: pass
-        st.rerun()
+        show_system_selector()
+        st.stop()
     elif _do == "theme_dark":
         # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "dark"
@@ -10759,7 +10772,15 @@ if "do" in st.query_params:
     elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_ai": st.session_state.current_view = "chat"; st.session_state.selected_system = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
-    elif _do == "go_home": st.session_state.selected_system = None; st.session_state.current_view = "chat"; st.session_state["_force_home"] = True; st.query_params.pop("do", None); [st.query_params.pop(k, None) for k in ["nav"]]; st.rerun()
+    elif _do == "go_home":
+        st.session_state.selected_system = None
+        st.session_state.current_view = "chat"
+        try: st.query_params.pop("do", None)
+        except Exception: pass
+        try: st.query_params.pop("nav", None)
+        except Exception: pass
+        show_system_selector()
+        st.stop()
     elif _do == "theme_dark":
         # FIXED: hanya simpan theme, JANGAN reset selected_system — user tetap di halaman yg sama
         st.session_state.theme = "dark"
