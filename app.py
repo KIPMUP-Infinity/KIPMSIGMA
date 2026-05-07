@@ -7666,7 +7666,7 @@ Padat & actionable. JANGAN UBAH ANGKA REAL-TIME. Waktu dalam WIB."""
         _bsjp_auto_key = f"bsjp_plan_global_{_today_s}"
         if not st.session_state.get(_bsjp_auto_key):
             _bsjp_h = st.session_state.get("auto_plan_history_bsjp", {})
-            _slot_bsjp = f"{_today_s}_1540"
+            _slot_bsjp = f"{_today_s}_1540"  # format: YYYY-MM-DD_1540
             if _slot_bsjp not in _bsjp_h:
                 st.session_state[_bsjp_auto_key] = True
                 try:
@@ -9345,20 +9345,22 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
 
 
 # ── FIX: tangkap klik btn_sys_chat/terminal dari show_system_selector SEBELUM routing ──
-# Masalah: saat btn_chat diklik, rerun dimulai dari awal. Baris 9343 jalan
-# SEBELUM show_system_selector dipanggil, sehingga selected_system=None
-# dan langsung redirect ke terminal. Solusi: cek button state di sini.
+# Streamlit menyimpan state button di session_state["btn_sys_chat"] = True saat diklik
+# Ini bisa dibaca SEBELUM show_system_selector dipanggil
 if st.session_state.get("user") and not st.session_state.get("selected_system"):
-    # Cek apakah ada pending button dari show_system_selector di sesi sebelumnya
-    _pending_nav = st.session_state.pop("_pending_system_nav", None)
-    if _pending_nav == "chat":
+    # Cek Streamlit button state langsung (bukan pending flag)
+    _btn_chat_state    = st.session_state.get("btn_sys_chat", False)
+    _btn_term_state    = st.session_state.get("btn_sys_terminal", False)
+    _pending_nav       = st.session_state.pop("_pending_system_nav", None)
+
+    if _btn_chat_state or _pending_nav == "chat":
         st.session_state.selected_system = "chat"
-        st.session_state.current_view = "chat"
+        st.session_state.current_view    = "chat"
         try: st.query_params["nav"] = "chat"
         except Exception: pass
-    elif _pending_nav == "terminal":
+    elif _btn_term_state or _pending_nav == "terminal":
         st.session_state.selected_system = "terminal_local"
-        st.session_state.current_view = "dashboard"
+        st.session_state.current_view    = "dashboard"
         try: st.query_params["nav"] = "terminal_local"
         except Exception: pass
 
@@ -23485,9 +23487,9 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
                 return datetime.now(timezone(timedelta(hours=7)))
 
         def _auto_plan_date_key(dt=None):
-            """Key unik per hari: YYYYMMDD"""
+            """Key unik per hari: YYYY-MM-DD (ISO format agar sort string = sort kronologis)"""
             d = dt or _wib_now()
-            return d.strftime("%Y%m%d")
+            return d.strftime("%Y-%m-%d")
 
         def _auto_plan_slot(dt=None):
             """
@@ -24345,17 +24347,18 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             if plan_type == "bsjp":
                 slot = _auto_plan_slot_bsjp(now)
                 if slot in ("pre_closing", "weekend_skip"):
-                    return False   # belum 15:40 WIB atau weekend
+                    return False
+                slot_key = f"{date_key}_1540"   # YYYY-MM-DD_1540
             elif plan_type == "weekly":
                 slot = _auto_plan_slot(now)
                 if slot not in ("saturday_noon",):
-                    return False   # belum Sabtu 12:00
+                    return False
+                slot_key = f"{date_key}_1200"   # YYYY-MM-DD_1200
             else:  # daily
                 slot = _auto_plan_slot(now)
                 if slot not in ("evening",):
-                    return False   # belum 21:00
-
-            slot_key = f"{date_key}_{slot}"
+                    return False
+                slot_key = f"{date_key}_2100"   # YYYY-MM-DD_2100
             history_key = f"auto_plan_history_{plan_type}"
 
             # Restore history dari DB jika belum ada di session
@@ -24592,8 +24595,23 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
             _txt      = text_main
             _sub_c    = text_sub
 
-            # Sort: terbaru dulu
-            sorted_slots = sorted(history.keys(), reverse=True)
+            # Sort: terbaru dulu — parse tanggal dari key (format YYYY-MM-DD_HHMM atau YYYYMMDD_slot)
+            def _sort_key(k):
+                try:
+                    parts = k.split("_")
+                    date_part = parts[0]
+                    # Normalisasi: YYYYMMDD → YYYY-MM-DD
+                    if len(date_part) == 8 and "-" not in date_part:
+                        date_part = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:]}"
+                    time_part = parts[1] if len(parts) > 1 else "0000"
+                    # Normalisasi time: "closing"→"1540", "evening"→"2100", "saturday_noon"→"1200"
+                    time_map = {"closing": "1540", "evening": "2100", "saturday": "1200",
+                                "1530": "1530", "1540": "1540", "2100": "2100", "1200": "1200"}
+                    time_part = time_map.get(time_part, time_part if time_part.isdigit() else "0000")
+                    return f"{date_part}_{time_part}"
+                except Exception:
+                    return k
+            sorted_slots = sorted(history.keys(), key=_sort_key, reverse=True)
             # Batasi tampil 60 entri
             sorted_slots = sorted_slots[:60]
 
