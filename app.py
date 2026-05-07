@@ -10760,7 +10760,7 @@ if "do" in st.query_params:
         components.html("""<script>try { localStorage.removeItem('sigma_token'); } catch(e) {} setTimeout(function(){ window.parent.location.replace(window.parent.location.pathname); }, 100);</script>""", height=0)
         st.stop()
     elif _do == "view_stats": st.session_state.current_view = "dashboard"; st.query_params.pop("do", None); st.rerun()
-    elif _do == "view_ai": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
+    elif _do == "view_ai": st.session_state.current_view = "chat"; st.session_state.selected_system = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "view_diag": st.session_state.current_view = "chat"; st.query_params.pop("do", None); st.rerun()
     elif _do == "go_home": st.session_state.selected_system = None; st.session_state.current_view = "chat"; st.session_state["_force_home"] = True; st.query_params.pop("do", None); [st.query_params.pop(k, None) for k in ["nav"]]; st.rerun()
     elif _do == "theme_dark":
