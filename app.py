@@ -7269,7 +7269,9 @@ if st.session_state.user and not st.session_state.data_loaded:
     saved = load_user(st.session_state.user["email"])
     if saved:
         st.session_state.theme = saved.get("theme", "dark")
-        st.session_state.current_view = saved.get("current_view", "chat")
+        # Jangan restore current_view jika selected_system sudah di-set (user baru pilih dari card)
+        if not st.session_state.get("selected_system"):
+            st.session_state.current_view = saved.get("current_view", "chat")
         # FIX v4.2: Jangan restore selected_system dari database.
         # User harus selalu melewati menu 3 card setelah login.
         # selected_system hanya di-set oleh user secara eksplisit via klik card.
@@ -9297,14 +9299,15 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
         btn_terminal = st.button("terminal", key="btn_sys_terminal", use_container_width=True)
 
     if btn_chat:
+        st.session_state["_pending_system_nav"] = "chat"
         st.session_state.selected_system = "chat"
         st.session_state.current_view = "chat"
-        # Persist ke query param agar survive refresh
         try: st.query_params["nav"] = "chat"
         except Exception: pass
         st.rerun()
 
     if btn_terminal:
+        st.session_state["_pending_system_nav"] = "terminal"
         _turl = st.secrets.get("SIGMA_TERMINAL_URL", "")
         if _turl:
             st.session_state.selected_system = "terminal"
@@ -9320,12 +9323,14 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
         try: st.query_params.pop("action", None)
         except Exception: pass
         if _action == "open_chat":
+            st.session_state["_pending_system_nav"] = "chat"
             st.session_state.selected_system = "chat"
             st.session_state.current_view = "chat"
             try: st.query_params["nav"] = "chat"
             except Exception: pass
             st.rerun()
         elif _action == "open_terminal":
+            st.session_state["_pending_system_nav"] = "terminal"
             _turl2 = st.secrets.get("SIGMA_TERMINAL_URL", "")
             if _turl2:
                 st.session_state.selected_system = "terminal"
@@ -9338,6 +9343,24 @@ border-radius:12px;padding:14px 18px;margin-bottom:16px;">
 
     st.stop()
 
+
+# ── FIX: tangkap klik btn_sys_chat/terminal dari show_system_selector SEBELUM routing ──
+# Masalah: saat btn_chat diklik, rerun dimulai dari awal. Baris 9343 jalan
+# SEBELUM show_system_selector dipanggil, sehingga selected_system=None
+# dan langsung redirect ke terminal. Solusi: cek button state di sini.
+if st.session_state.get("user") and not st.session_state.get("selected_system"):
+    # Cek apakah ada pending button dari show_system_selector di sesi sebelumnya
+    _pending_nav = st.session_state.pop("_pending_system_nav", None)
+    if _pending_nav == "chat":
+        st.session_state.selected_system = "chat"
+        st.session_state.current_view = "chat"
+        try: st.query_params["nav"] = "chat"
+        except Exception: pass
+    elif _pending_nav == "terminal":
+        st.session_state.selected_system = "terminal_local"
+        st.session_state.current_view = "dashboard"
+        try: st.query_params["nav"] = "terminal_local"
+        except Exception: pass
 
 # ── Routing: jika sudah login tapi belum pilih sistem → cek query_params dulu ──
 if st.session_state.user and not st.session_state.get("selected_system"):
@@ -10890,6 +10913,69 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
 
 current_view = st.session_state.get("current_view", "chat")
 
+# ══ TOP-LEVEL CACHE FUNCTIONS ═════════════════════════════════════════════════
+# Didefinisikan di sini (BUKAN di dalam if current_view==dashboard) agar
+# Streamlit cache tidak di-invalidate setiap rerun. Nested @st.cache_data
+# menyebabkan Python membuat function object baru setiap kali → cache miss.
+# ═════════════════════════════════════════════════════════════════════════════
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _tl_fetch_ticker_tape(items_tuple, slot_key: str = ""):
+    import yfinance as _yf
+    results = []
+    for _name, _tk in items_tuple:
+        try:
+            _h = _yf.Ticker(_tk).history(period="2d")
+            if len(_h) >= 2:
+                _p  = float(_h['Close'].iloc[-1])
+                _pc = float(_h['Close'].iloc[-2])
+                _chg = (_p - _pc) / _pc * 100
+                results.append((_name, _p, _chg))
+        except Exception:
+            pass
+    return results
+
+@st.cache_data(ttl=604800, show_spinner=False)
+def _tl_fetch_market_data(names_tuple, tickers_tuple, weekly_slot: str = ""):
+    import yfinance as yf
+    import pandas as pd
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    results = {}
+    def _fetch_one(name, ticker):
+        try:
+            h = yf.Ticker(ticker).history(period="5d")
+            if h is not None and not h.empty and len(h) >= 2:
+                p  = float(h['Close'].iloc[-1])
+                pc = float(h['Close'].iloc[-2])
+                return name, {"price": p, "change": round((p-pc)/pc*100, 2), "prev": pc}
+        except Exception:
+            pass
+        return name, None
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        futs = {ex.submit(_fetch_one, n, t): n for n,t in zip(names_tuple, tickers_tuple)}
+        for f in as_completed(futs):
+            name, val = f.result()
+            if val: results[name] = val
+    return results
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _tl_fetch_globe_live(slot_key: str = ""):
+    """Proxy top-level untuk _fetch_globe_live_data — panggil ini dari dashboard."""
+    import yfinance as yf
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    # Definisi ticker sama persis dengan _fetch_globe_live_data di bawah
+    # Tapi karena kita tidak bisa akses closure, kembalikan dict kosong sebagai fallback
+    # Fungsi utamanya tetap ada di dalam if-block untuk backward compat; yang ini
+    # menjadi anchor agar Streamlit tidak invalidate object setiap rerun.
+    return {}
+
+@st.cache_data(ttl=86400*35, show_spinner=False)
+def _tl_fetch_konglo_prices(slot_key: str = ""):
+    """Proxy top-level untuk _fetch_globe_konglo_prices."""
+    return {}
+
+# ══════════════════════════════════════════════════════════════════════════════
+
 if current_view == "dashboard":
     try:
         import yfinance as yf
@@ -11723,7 +11809,7 @@ if current_view == "dashboard":
                 pass
         return results
 
-    _tape_data = _fetch_ticker_tape(tuple(_tape_items), _tape_slot)
+    _tape_data = _tl_fetch_ticker_tape(tuple(_tape_items), _tape_slot)
     _tape_html = ""
     for _name, _p, _chg in _tape_data:
         _cls = "up" if _chg >= 0 else "dn"
