@@ -11666,8 +11666,8 @@ if current_view == "dashboard":
     </script>
     """, height=0)
 
+    # ── TICKER TAPE: cache dengan slot 12:30 & 19:00 WIB ─────────────────
     _tape_items = [
-        # GLOBAL INDICES & VOLATILITY
         ("IHSG",     "^JKSE"),
         ("S&P500",   "^GSPC"),
         ("Dow Jones","^DJI"),
@@ -11677,7 +11677,6 @@ if current_view == "dashboard":
         ("Hang Seng","^HSI"),
         ("Shanghai", "000001.SS"),
         ("VIX",      "^VIX"),
-        # COMMODITIES & FOREX
         ("USD/IDR",  "IDR=X"),
         ("DXY",      "DX-Y.NYB"),
         ("Gold",     "GC=F"),
@@ -11687,19 +11686,38 @@ if current_view == "dashboard":
         ("Palm Oil", "MYP=F"),
         ("Nickel",   "ALI=F"),
     ]
+    # Hitung slot tape (sama dengan globe slot: 12:30 & 19:00 WIB)
+    _tape_wib = datetime.now(timezone(timedelta(hours=7)))
+    _th, _tm = _tape_wib.hour, _tape_wib.minute
+    if (_th > 12 or (_th == 12 and _tm >= 30)) and _th < 19:
+        _tape_slot = _tape_wib.strftime("%Y%m%d") + "_1230"
+    elif _th >= 19:
+        _tape_slot = _tape_wib.strftime("%Y%m%d") + "_1900"
+    else:
+        _tape_slot = _tape_wib.strftime("%Y%m%d") + "_0000"
+
+    @st.cache_data(ttl=86400, show_spinner=False)
+    def _fetch_ticker_tape(items_tuple, slot_key: str = ""):
+        import yfinance as _yf
+        results = []
+        for _name, _tk in items_tuple:
+            try:
+                _h = _yf.Ticker(_tk).history(period="2d")
+                if len(_h) >= 2:
+                    _p  = _h['Close'].iloc[-1]
+                    _pc = _h['Close'].iloc[-2]
+                    _chg = (_p - _pc) / _pc * 100
+                    results.append((_name, _p, _chg))
+            except Exception:
+                pass
+        return results
+
+    _tape_data = _fetch_ticker_tape(tuple(_tape_items), _tape_slot)
     _tape_html = ""
-    for _name, _tk in _tape_items:
-        try:
-            import yfinance as _yf
-            _h = _yf.Ticker(_tk).history(period="2d")
-            if len(_h) >= 2:
-                _p  = _h['Close'].iloc[-1]
-                _pc = _h['Close'].iloc[-2]
-                _chg = (_p - _pc) / _pc * 100
-                _cls = "up" if _chg >= 0 else "dn"
-                _arr = "&#9650;" if _chg >= 0 else "&#9660;"
-                _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
-        except Exception: pass
+    for _name, _p, _chg in _tape_data:
+        _cls = "up" if _chg >= 0 else "dn"
+        _arr = "&#9650;" if _chg >= 0 else "&#9660;"
+        _tape_html += f'<span class="{_cls}">{_name} {_p:,.1f} {_arr}{abs(_chg):.2f}%</span><span class="sep">|</span>'
     if _tape_html:
         _tape_double = _tape_html * 2  
         st.markdown(f"""
@@ -11709,8 +11727,8 @@ if current_view == "dashboard":
         """, unsafe_allow_html=True)
 
     # ── LIVE MARKET: cache harus di luar tab scope agar tidak di-redefine tiap rerun ──
-    @st.cache_data(ttl=300)
-    def _fetch_market_data_cached(names_tuple, tickers_tuple):
+    @st.cache_data(ttl=604800, show_spinner=False)  # TTL 1 minggu — refresh dikontrol slot Minggu 06:00 WIB
+    def _fetch_market_data_cached(names_tuple, tickers_tuple, weekly_slot: str = ""):
         """Batch fetch semua ticker sekaligus. Dipanggil dengan tuple agar hashable untuk cache."""
         import yfinance as yf
         import pandas as pd
@@ -11790,8 +11808,8 @@ if current_view == "dashboard":
 
 
     # ── GLOBE LIVE DATA FETCH (hourly TTL) ────────────────────────────────
-    @st.cache_data(ttl=1800, show_spinner=False)  # 30 menit — lebih sering refresh
-    def _fetch_globe_live_data():
+    @st.cache_data(ttl=86400, show_spinner=False)  # TTL panjang — refresh dikontrol oleh slot key
+    def _fetch_globe_live_data(slot_key: str = ""):
         """Fetch live price, chg%, volume, market cap untuk semua saham globe.
         Cache 24 jam (auto-refresh tiap hari). Fallback ke data statis jika gagal."""
         import yfinance as yf
@@ -12010,15 +12028,62 @@ if current_view == "dashboard":
 
         return result
 
-    _globe_live = _fetch_globe_live_data()
-    # ── Globe: background auto-refresh tiap 30 menit ──────────────────────────
-    _now_wib = datetime.now(timezone(timedelta(hours=7)))
-    _globe_slot = _now_wib.strftime("%Y%m%d_%H") + ("_30" if _now_wib.minute >= 30 else "_00")
+    # ── Slot bulanan untuk Konglo/BUMN (update 1x sebulan) ───────────────────
+    _now_wib_g2 = datetime.now(timezone(timedelta(hours=7)))
+    _konglo_slot = _now_wib_g2.strftime("%Y%m")  # berubah tiap bulan
+
+    @st.cache_data(ttl=86400*35, show_spinner=False)  # TTL 35 hari — refresh dikontrol slot bulanan
+    def _fetch_globe_konglo_prices(slot_key: str = ""):
+        """Fetch harga live untuk saham Konglo & BUMN. Update 1x sebulan."""
+        import yfinance as yf
+        KONGLO_TICKERS = [
+            "BBCA","BELI","DNET","FAST","MAPA","DCII","DMAS","KOPI","GOLF","DAYA","NUSA","HOKI","BBKP","PNBN","WTON","MSKY",
+            "BBRI","BMRI","TLKM","BBNI","PTBA","SMGR","PGAS","ANTM","WIKA","WSKT","PTPP","JSMR","ADHI","BBTN","GIAA","KAEF","KRAS","PGEO",
+            "ASII","UNTR","CPIN","AUTO","AALI","ACST","IMAS","GJTL","ASGR","SUGI","PNLF","ADMF","ABMM","SRTG",
+            "ICBP","INDF","MNCN","SIMP","LPPF","MLBI","INTP","WIFI","BMTR","HERO","ISAT","MPMX","MYOR","MBSS",
+            "UNVR","BSDE","SMRA","DILD","ACES","INKP","TKIM","SMAS","SMAR","DUTI","SMCB","LPKR","KIJA","APLN",
+            "TPIA","BRPT","AGRO","CBPE","CHEM","POLY","FPNI","CTRA","MIKA","BYAN","PTRO","PICO",
+            "EXCL","BUMI","VIVA","ENRG","ANTV","BNBR","UNSP","BTEL","ELTY","BBRM","BKSL","TOWR",
+            "MPPA","JPFA","SILO","MFIN","CARE","LPGI","LMPI","LPPS","MTDL","LSIP","FMII","TBIG","BCAP",
+        ]
+        tickers_jk = [t + ".JK" for t in KONGLO_TICKERS]
+        prices = {}
+        try:
+            data = yf.download(tickers_jk, period="2d", interval="1d", group_by="ticker",
+                               auto_adjust=True, progress=False, threads=True, timeout=30)
+            for tk in KONGLO_TICKERS:
+                try:
+                    df = data[tk + ".JK"] if len(tickers_jk) > 1 else data
+                    if df is not None and not df.empty and len(df) >= 1:
+                        prices[tk] = {
+                            "price": int(round(float(df["Close"].iloc[-1]))),
+                            "chg": round((float(df["Close"].iloc[-1]) - float(df["Close"].iloc[-2])) / float(df["Close"].iloc[-2]) * 100, 2) if len(df) >= 2 else 0,
+                        }
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return prices
+
+    if st.session_state.get("_konglo_slot", "") != _konglo_slot:
+        try: _fetch_globe_konglo_prices.clear()
+        except Exception: pass
+        st.session_state["_konglo_slot"] = _konglo_slot
+    _konglo_prices = _fetch_globe_konglo_prices(_konglo_slot)
+    _now_wib_g = datetime.now(timezone(timedelta(hours=7)))
+    _gh, _gm = _now_wib_g.hour, _now_wib_g.minute
+    if (_gh > 12 or (_gh == 12 and _gm >= 30)) and _gh < 19:
+        _globe_slot = _now_wib_g.strftime("%Y%m%d") + "_1230"
+    elif _gh >= 19:
+        _globe_slot = _now_wib_g.strftime("%Y%m%d") + "_1900"
+    else:
+        _globe_slot = _now_wib_g.strftime("%Y%m%d") + "_0000"  # sebelum 12:30, pakai data hari ini pagi
+
     if st.session_state.get("_globe_prev_slot", "") != _globe_slot:
         try: _fetch_globe_live_data.clear()
         except Exception: pass
-        _globe_live = _fetch_globe_live_data()
         st.session_state["_globe_prev_slot"] = _globe_slot
+    _globe_live = _fetch_globe_live_data(_globe_slot)
     # ─────────────────────────────────────────────────────────────────────
 
     with tab_idxmap:
@@ -13085,12 +13150,12 @@ table{{margin-bottom:0!important;}}
             if st.button("🔄 Refresh Globe", key="globe_refresh_btn", use_container_width=True,
                          help="Paksa fetch harga live baru untuk Market Map Globe"):
                 _fetch_globe_live_data.clear()
-                _globe_live = _fetch_globe_live_data()
+                _globe_live = _fetch_globe_live_data(_globe_slot)
                 st.session_state["globe_last_refresh"] = datetime.now().strftime("%d %b %Y %H:%M WIB")
                 st.rerun()
-        _globe_ts = st.session_state.get("globe_last_refresh", "Auto (cache 1 jam)")
+        _globe_ts = st.session_state.get("globe_last_refresh", "Auto")
         with _gc1:
-            st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh tiap 30 menit")
+            st.caption(f"🕐 Data globe terakhir diperbarui: {_globe_ts} · Auto-refresh jam 12:30 & 19:00 WIB")
         # Staleness check: alert jika globe_live berisi data statis lebih dari 2 jam
         try:
             _globe_fetch_age = st.session_state.get("_globe_fetch_age_ts")
@@ -18843,16 +18908,20 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
             st.markdown("<div class='trm-section'><div class='trm-section-line'></div><span class='trm-section-label'>SECTOR ROTATION &mdash; RRG CONCEPT</span><div class='trm-section-line'></div></div>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-family:'DM Sans',sans-serif;font-size:0.875rem;color:{text_sub};margin-bottom:16px;'>Klik sektor di bubble chart untuk melihat detail saham &middot; RRG = Relative Rotation Graph &middot; Kanan-atas = Leading, Kiri-atas = Improving, Kanan-bawah = Weakening, Kiri-bawah = Lagging</p>", unsafe_allow_html=True)
 
-            # ── AUTO-UPDATE: slot update 13:00 & 21:00 WIB ─────────────────
+            # ── AUTO-UPDATE: slot update 12:30 & 19:00 WIB ─────────────────
             # Cache key berubah tiap slot → data otomatis refresh 2x sehari
             from datetime import timezone as _tz, timedelta as _tdelta
             _wib = _tz(_tdelta(hours=7))
             _now_wib = datetime.now(_wib)
             _h = _now_wib.hour
-            # Tentukan slot aktif: 0–12 → slot pagi (update jam 13:00), 13–20 → slot siang, 21–23 → slot malam
-            _update_slot = f"{_now_wib.strftime('%Y%m%d')}_{'PM' if _h >= 13 else 'AM'}"
-            if _h >= 21:
-                _update_slot = f"{_now_wib.strftime('%Y%m%d')}_NIGHT"
+            _m = _now_wib.minute
+            # Slot: sebelum 12:30 → pagi, 12:30–18:59 → siang (update 12:30), 19:00+ → malam (update 19:00)
+            if (_h > 12 or (_h == 12 and _m >= 30)) and _h < 19:
+                _update_slot = f"{_now_wib.strftime('%Y%m%d')}_1230"
+            elif _h >= 19:
+                _update_slot = f"{_now_wib.strftime('%Y%m%d')}_1900"
+            else:
+                _update_slot = f"{_now_wib.strftime('%Y%m%d')}_PAGI"
 
             # ── Background trigger: bust cache saat slot berubah (tanpa tunggu user buka tab) ──
             _rrg_prev_slot = st.session_state.get("_rrg_prev_slot", "")
@@ -18933,8 +19002,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     st.rerun()
 
             _live_rrg = _compute_rrg_live(_update_slot)
-            _last_update_slot = "13:00" if _update_slot.endswith("PM") else ("21:00" if _update_slot.endswith("NIGHT") else "sebelum 13:00")
-            _next_update = "21:00" if _update_slot.endswith("PM") else ("13:00 besok" if _update_slot.endswith("NIGHT") else "13:00")
+            _last_update_slot = "12:30" if _update_slot.endswith("1230") else ("19:00" if _update_slot.endswith("1900") else "sebelum 12:30")
+            _next_update = "19:00" if _update_slot.endswith("1230") else ("12:30 besok" if _update_slot.endswith("1900") else "12:30")
             _rrg_data_fresh = bool(_live_rrg)  # False = yfinance gagal, fallback ke hardcoded
             with _rrg_refresh_col1:
                 _rrg_status_icon = "🟢" if _rrg_data_fresh else "🟡"
@@ -20286,6 +20355,8 @@ Format: gunakan header markdown, bullet points, dan emoji untuk keterbacaan. Gun
                     {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "BSSR",  "Nama": "Baramulti Suksessarana",  "Fokus Bisnis": "Batu Bara Kalori Tinggi",        "Indeks": "IDX80·KOMPAS100"},
                     {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "GEMS",  "Nama": "Golden Energy Mines",     "Fokus Bisnis": "Batu Bara — Tambang",            "Indeks": "IDX80·KOMPAS100"},
                     {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "GTBO",  "Nama": "Garda Tujuh Buana",       "Fokus Bisnis": "Batu Bara Kalimantan",           "Indeks": "—"},
+                    {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "RAJA",  "Nama": "Rukun Raharja",           "Fokus Bisnis": "Gas & Infrastruktur Energi",     "Indeks": "IDX80·KOMPAS100"},
+                    {"Grup": "Hapsoro (Hapsoro S.)",    "Ticker": "RATU",  "Nama": "Raharja Energi Cepu",     "Fokus Bisnis": "Hulu Migas — Blok Cepu",         "Indeks": "—"},
                     # ── Jhonlin Group ──
                     {"Grup": "Jhonlin (Andi Syamsuddin)", "Ticker": "JHLN", "Nama": "Jhonlin Agro Raya",      "Fokus Bisnis": "Perkebunan Sawit",               "Indeks": "IDX80·KOMPAS100"},
                     {"Grup": "Jhonlin (Andi Syamsuddin)", "Ticker": "SQMI", "Nama": "Sumber Quality Mining",  "Fokus Bisnis": "Pertambangan Nikel",             "Indeks": "—"},
