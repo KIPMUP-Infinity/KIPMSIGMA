@@ -10812,10 +10812,10 @@ if user:
 
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
     
-    # ── RENDER LOOP SAVE: HANYA session/theme (TIDAK BOLEH field kritis di sini) ──
-    # Field kritis (plan history, tr_records, brosum) HANYA disimpan via save_field()
-    # saat data berubah — bukan setiap render — agar tidak pernah overwrite dengan kosong
-    save_user(user["email"], {
+    # ── RENDER LOOP SAVE: pakai dirty-flag agar tidak write ke Sheets setiap rerun ──
+    # Google Sheets write itu blocking ~200-500ms — jangan dipanggil tiap rerun!
+    # Hanya write kalau ada yang benar-benar berubah (dirty).
+    _save_payload = {
         "theme": st.session_state.get("theme", "dark"),
         "sessions": sessions_to_save,
         "active_id": st.session_state.active_id,
@@ -10840,9 +10840,17 @@ if user:
         "alpha_insight_last_key":    st.session_state.get("alpha_insight_last_key"),
         "alpha_insight_last_data":   st.session_state.get("alpha_insight_last_data"),
         "alpha_insight_last_ticker": st.session_state.get("alpha_insight_last_ticker"),
-        # !! JANGAN TAMBAHKAN tr_records / auto_plan_history_* / brosum_history DI SINI !!
-        # Field kritis hanya boleh disimpan via save_field() saat data berubah.
-    })
+    }
+    # Buat hash ringkas dari payload untuk deteksi perubahan
+    import hashlib as _hl
+    try:
+        _payload_hash = _hl.md5(json.dumps(_save_payload, ensure_ascii=False, default=str, sort_keys=True).encode()).hexdigest()
+    except Exception:
+        _payload_hash = ""
+    _prev_hash = st.session_state.get("_last_save_hash", "")
+    if _payload_hash and _payload_hash != _prev_hash:
+        save_user(user["email"], _save_payload)
+        st.session_state["_last_save_hash"] = _payload_hash
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
 if st.session_state.user is None:
@@ -10873,10 +10881,10 @@ if "amnesia_fixed" not in st.session_state and st.session_state.get("user"):
         _saved_data = load_user(st.session_state.user["email"])
         if _saved_data:
             if "current_view" in _saved_data:
-                st.session_state.current_view = _saved_data["current_view"]
-            # JANGAN restore selected_system — dibiarkan sesuai state saat ini
-            # if "selected_system" in _saved_data:
-            #     st.session_state.selected_system = _saved_data["selected_system"]
+                # Jangan restore current_view jika selected_system = "chat"
+                # karena user baru saja memilih SIGMA AI dari 3-card selector
+                if st.session_state.get("selected_system") != "chat":
+                    st.session_state.current_view = _saved_data["current_view"]
     except Exception: pass
     st.session_state.amnesia_fixed = True
 
@@ -31210,13 +31218,21 @@ Format: Bahasa Indonesia. Markdown rapi, tiap poin di baris terpisah. DYOR di ak
 
 if user:
     sessions_to_save = [{"id": s["id"], "title": s["title"], "created": s["created"], "messages": [dict(m) for m in s["messages"] if m["role"] != "system"]} for s in st.session_state.sessions]
-
-    save_user(user["email"], {
+    _save2 = {
         "theme": st.session_state.get("theme", "dark"), 
         "sessions": sessions_to_save, 
         "active_id": st.session_state.active_id,
-        "current_view": st.session_state.get("current_view", "chat"), "selected_system": st.session_state.get("selected_system", "chat")
-    })
+        "current_view": st.session_state.get("current_view", "chat"),
+        "selected_system": st.session_state.get("selected_system", "chat")
+    }
+    try:
+        import hashlib as _hl2
+        _h2 = _hl2.md5(json.dumps(_save2, ensure_ascii=False, default=str, sort_keys=True).encode()).hexdigest()
+    except Exception:
+        _h2 = ""
+    if _h2 and _h2 != st.session_state.get("_last_save_hash2", ""):
+        save_user(user["email"], _save2)
+        st.session_state["_last_save_hash2"] = _h2
 
 _new_token = st.session_state.pop("new_token", None)
 if _new_token: components.html(f"<script>try {{ localStorage.setItem('sigma_token', '{_new_token}'); }} catch(e) {{}}</script>", height=0)
