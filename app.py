@@ -9260,49 +9260,6 @@ function selectTerminal() {{
 </html>
     """, height=820, scrolling=False)
 
-    # ── UPDATE NOTIFICATION — tampil di bawah menu 3 card ──
-    # FIX v4.2: dipindah dari dashboard ke sini agar user lihat changelog
-    # segera setelah login, sebelum masuk ke sistem manapun.
-    _SIGMA_VERSION_HOME  = "v4.2"
-    _SIGMA_UPDATED_HOME  = "01 Mei 2026"
-    _CURR_EMAIL_HOME     = (st.session_state.user or {}).get("email", "")
-    _UPD_SEEN_KEY_HOME   = f"update_seen_{_SIGMA_VERSION_HOME}_{_CURR_EMAIL_HOME}"
-    _UPD_ITEMS_HOME = [
-        "🔐 Login disederhanakan — hanya via Google, lebih cepat & aman",
-        "🖼️ Background login diperbarui ke aset KIPM-UP lokal (lebih cepat load)",
-        "📦 sigma_sheets & sigma_modules sekarang selalu aktif — history broker, reko, dan journal tersimpan otomatis",
-        "☁️ Semua data (daily plan, weekly plan, BS30) langsung tersimpan ke Google Sheets tanpa toggle",
-        "🔄 Auto-rotate API key (Finnhub, FMP, AlphaVantage, GoAPI) berjalan penuh tanpa mode opsional",
-        "📊 Reko History & Broker History tampil otomatis tanpa perlu koneksi manual",
-        "🚀 Performa startup lebih cepat — modul tidak lagi load secara kondisional",
-    ]
-    if not st.session_state.get(_UPD_SEEN_KEY_HOME):
-        _upd_c1, _upd_c2 = st.columns([10, 1])
-        with _upd_c1:
-            _items_html_home = "".join(
-                f"<div style='display:flex;align-items:flex-start;gap:8px;margin-bottom:5px;'>"
-                f"<span style='font-size:0.82rem;color:#e2e8f0;line-height:1.5'>{_itm}</span>"
-                f"</div>"
-                for _itm in _UPD_ITEMS_HOME
-            )
-            st.markdown(f"""
-<div style="background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(59,130,246,0.10));
-border:1px solid rgba(124,58,237,0.35);border-left:4px solid #7c3aed;
-border-radius:12px;padding:14px 18px;margin-bottom:16px;">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-    <span style="font-size:1rem;"></span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;
-    color:#a78bfa;font-weight:700;letter-spacing:0.08em;">
-    SIGMA {_SIGMA_VERSION_HOME} &mdash; UPDATE {_SIGMA_UPDATED_HOME}</span>
-  </div>
-  {_items_html_home}
-</div>
-""", unsafe_allow_html=True)
-        with _upd_c2:
-            if st.button("✕", key="btn_dismiss_update_home", help="Tutup notifikasi update"):
-                st.session_state[_UPD_SEEN_KEY_HOME] = True
-                st.rerun()
-
     # ── HIDDEN STREAMLIT BUTTONS (fallback for all browsers) ──
     col1, col2 = st.columns(2)
     with col1:
