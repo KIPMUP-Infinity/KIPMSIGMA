@@ -9345,7 +9345,10 @@ if st.session_state.user and not st.session_state.get("selected_system"):
     _force_home = st.session_state.pop("_force_home", False)  # consume flag sekali pakai
     if _force_home:
         # User klik Menu Utama — tampilkan 3-card selector, jangan auto-redirect
-        pass
+        try: st.query_params.pop("nav", None)
+        except Exception: pass
+        show_system_selector()
+        st.stop()
     elif _nav_qp == "chat":
         st.session_state.selected_system = "chat"
         st.session_state.current_view = "chat"
@@ -12949,8 +12952,18 @@ window.addEventListener('resize',()=>{
             ("ETH/USD",        "ETH-USD",    "\U0001f48e", "USD",       "crypto"),
         ]
 
-        @st.cache_data(ttl=300, show_spinner=False)
-        def _fetch_tickers_v3(ticker_key):
+        # ── Slot Live Market: update 12:30 & 19:00 WIB ─────────────────────────
+        _lm_wib = datetime.now(timezone(timedelta(hours=7)))
+        _lmh, _lmm = _lm_wib.hour, _lm_wib.minute
+        if (_lmh > 12 or (_lmh == 12 and _lmm >= 30)) and _lmh < 19:
+            _lm_slot = _lm_wib.strftime("%Y%m%d") + "_1230"
+        elif _lmh >= 19:
+            _lm_slot = _lm_wib.strftime("%Y%m%d") + "_1900"
+        else:
+            _lm_slot = _lm_wib.strftime("%Y%m%d") + "_0000"
+
+        @st.cache_data(ttl=86400, show_spinner=False)
+        def _fetch_tickers_v3(ticker_key, slot_key: str = ""):
             import yfinance as yf
             result = {}
             for name, tk in ticker_key:
@@ -12972,23 +12985,23 @@ window.addEventListener('resize',()=>{
         _com_tk_key = tuple((n, tk) for n, tk, *_ in _COM_TICKERS)
 
         with st.spinner("Memuat data pasar global..."):
-            _idx_data = _fetch_tickers_v3(_idx_tk_key)
-            _com_data = _fetch_tickers_v3(_com_tk_key)
+            _idx_data = _fetch_tickers_v3(_idx_tk_key, _lm_slot)
+            _com_data = _fetch_tickers_v3(_com_tk_key, _lm_slot)
 
         # ── Live Market Timestamp + Staleness Indicator ─────────────────────────
         _mkt_fetch_time = datetime.now()
         _mkt_wib_ts = (_mkt_fetch_time + timedelta(hours=7)).strftime("%H:%M WIB")
-        _mkt_age_min = 0  # fresh fetch
         # Jam trading IDX: 09:00–11:30 dan 13:30–16:00 WIB
         _mkt_wib_hour = (_mkt_fetch_time + timedelta(hours=7)).hour
         _is_trading_hours = (9 <= _mkt_wib_hour < 12) or (13 <= _mkt_wib_hour < 16)
         _ts_color = "#10b981" if _is_trading_hours else "#f59e0b"
         _ts_label = "LIVE" if _is_trading_hours else "CLOSED"
+        _lm_next = "19:00 WIB" if _lm_slot.endswith("_1230") else ("12:30 WIB besok" if _lm_slot.endswith("_1900") else "12:30 WIB")
         st.markdown(
             f"<div style='font-family:IBM Plex Mono,monospace;font-size:0.68rem;"
             f"color:{_ts_color};margin-bottom:6px;letter-spacing:0.05em;'>"
-            f"● {_ts_label} · Cache TTL 5 min · Terakhir fetch: {_mkt_wib_ts} "
-            f"· <span style='color:#64748b;'>Refresh otomatis tiap 5 menit selama sesi aktif</span></div>",
+            f"● {_ts_label} · Slot: {_lm_slot.split('_')[-1]} · "
+            f"<span style='color:#64748b;'>Update berikutnya: {_lm_next}</span></div>",
             unsafe_allow_html=True
         )
 
