@@ -67,12 +67,16 @@ _RATING_META = {
 _DEFAULT_META = _RATING_META["BUY"]
 
 
+try:
+    import pytz as _pytz
+    _WIB = _pytz.timezone("Asia/Jakarta")
+except ImportError:
+    _pytz = None
+    _WIB = timezone(timedelta(hours=7))
+
+
 def _wib_now() -> datetime:
-    try:
-        import pytz
-        return datetime.now(pytz.timezone("Asia/Jakarta"))
-    except ImportError:
-        return datetime.now(timezone(timedelta(hours=7)))
+    return datetime.now(_WIB)
 
 
 def _fmt_price(p) -> str:
@@ -107,17 +111,21 @@ def _build_candle_labels(n: int, row: dict) -> list:
     return labels
 
 
+# ── Safe cast helpers (module-level) ───────────────────────────────────────────
+def _card_si(v, default=0):
+    """Safe int — tolerate None, '—', '', non-numeric strings."""
+    try:    return int(float(v)) if v not in (None, "", "—", "-") else default
+    except: return default
+
+def _card_sf(v, default=0.0):
+    """Safe float."""
+    try:    return float(v) if v not in (None, "", "—", "-") else default
+    except: return default
+# ─────────────────────────────────────────────────────────────────────────────
+
 def _single_card_html(row: dict, idx: int) -> str:
-    # ── Safe cast helpers ──────────────────────────────────────────
-    def _si(v, default=0):
-        """Safe int — tolerate None, '—', '', non-numeric strings."""
-        try:    return int(float(v)) if v not in (None, "", "—", "-") else default
-        except: return default
-    def _sf(v, default=0.0):
-        """Safe float."""
-        try:    return float(v) if v not in (None, "", "—", "-") else default
-        except: return default
-    # ───────────────────────────────────────────────────────────────
+    _si = _card_si  # alias ke module-level
+    _sf = _card_sf  # alias ke module-level
 
     ticker   = row.get("ticker", "—")
     name     = row.get("name", ticker)
@@ -201,7 +209,7 @@ def _single_card_html(row: dict, idx: int) -> str:
     }, ensure_ascii=False)
 
     # ── Helper format harga ──
-    def fp(v): return _fmt_price(v) if v else "—"
+    fp = lambda v: _fmt_price(v) if v else "—"  # inline alias
 
     # ── TP2 block ──
     tp2_html = f"""
@@ -2379,7 +2387,7 @@ _sigma_score_calc = sigma_score
 # ═══════════════════════════════════════════════════════════════════════════════
 from dataclasses import dataclass, field as dc_field
 from typing import List, Optional
-import math
+# [removed duplicate import] import math
 
 
 # ─────────────────────────────────────────────
@@ -5122,11 +5130,11 @@ def enrich_pdf_context(pdf_text):
 # =========================================================
 # PART 6: CONFIG, AUTH & SYSTEM PROMPT
 # =========================================================
-import streamlit as st
-import os
-import hashlib
-import bcrypt
-import json
+# [removed duplicate import] import streamlit as st
+# [removed duplicate import] import os
+# [removed duplicate import] import hashlib
+# [removed duplicate import] import bcrypt
+# [removed duplicate import] import json
 
 st.set_page_config(
     page_title="KIPM SIGMA",
@@ -5521,7 +5529,12 @@ def init_session():
 init_session()
 
 # ── Load sigma_modules persistent storage ──
-_sm_load_all()
+# ── Guard: _sm_load_all hanya jalan sekali per 5 menit (bukan setiap rerun) ──
+_SM_LOAD_TTL = 300  # 5 menit
+_sm_load_ts = st.session_state.get("_sm_load_ts", 0)
+if time.time() - _sm_load_ts >= _SM_LOAD_TTL:
+    _sm_load_all()
+    st.session_state["_sm_load_ts"] = time.time()
 
 C = get_colors(st.session_state.theme)
 
@@ -7987,8 +8000,7 @@ def _auto_refresh_bursa():
             # Tampilkan toast kecil sebelum rerun
             _jam_str = _now_ar.strftime("%H:%M")
             st.toast(f"🔄 Data diperbarui otomatis · {_jam_str} WIB", icon="📈")
-            import time as _t2; _t2.sleep(0.5)  # beri waktu toast tampil
-            st.rerun()
+            st.rerun()  # toast is async, sleep not needed
     except Exception:
         pass  # auto-refresh gagal → tidak crash app
 
@@ -9749,9 +9761,9 @@ current_view = st.session_state.get("current_view", "chat")
 # =========================================================
 # PART 8: MAIN CHAT ENGINE & UI — SIGMA v4.2 (Google-only Auth, Modules Always Active)
 # =========================================================
-import requests
-import re
-from datetime import datetime, timedelta, timezone
+# [removed duplicate import] import requests
+# [removed duplicate import] import re
+# [removed duplicate import] from datetime import datetime, timedelta, timezone
 
 # --- FUNGSI KOMPRESI GAMBAR UNTUK HEMAT LIMIT API ---
 def _compress_image_file(file_obj):
@@ -23477,14 +23489,8 @@ tbody tr:hover td{{background:rgba(124,58,237,0.10);}}
         # RULE-BASED (tidak butuh AI call → tidak kena rate limit)
         # ══════════════════════════════════════════════════════════════════
 
-        try:
-            import pytz as _pytz_ap
-            def _wib_now():
-                return datetime.now(_pytz_ap.timezone("Asia/Jakarta"))
-        except ImportError:
-            def _wib_now():
-                from datetime import timezone, timedelta
-                return datetime.now(timezone(timedelta(hours=7)))
+        # _wib_now sudah didefinisikan di module-level (pakai _WIB global)
+        pass  # local override tidak diperlukan
 
         def _auto_plan_date_key(dt=None):
             """Key unik per hari: YYYY-MM-DD (ISO format agar sort string = sort kronologis)"""
@@ -31390,6 +31396,8 @@ pd.addEventListener('click',function(e){{ if(!btn.contains(e.target) && !m.conta
 components.html("""
 <script>
 (function() {
+    if (window.__sigmaPastePolyfillRunning) return;
+    window.__sigmaPastePolyfillRunning = true;
     var _boundTextarea = null;
 
     function pasteHandler(e) {
