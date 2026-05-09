@@ -9438,7 +9438,10 @@ def show_login():
 
     body.sigma-login-active [data-testid="stAppViewContainer"],
     body.sigma-login-active section[data-testid="stMain"] {{
-        background: {_bg_desktop} center/cover no-repeat fixed !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
         min-height: 100vh !important;
     }}
     body.sigma-login-active section[data-testid="stMain"]::before {{ display: none !important; }}
@@ -9490,7 +9493,8 @@ def show_login():
         }}
         body.sigma-login-active [data-testid="stAppViewContainer"],
         body.sigma-login-active section[data-testid="stMain"] {{
-            background: {_bg_mobile} center top/cover no-repeat fixed !important;
+            background-size: cover !important;
+            background-position: center top !important;
         }}
     }}
 
@@ -9594,6 +9598,27 @@ def show_login():
 
     /* Tambah class sigma-login-active ke body — aktifkan scoped CSS */
     pd.body.classList.add('sigma-login-active');
+
+    /* Set background image via JS (hindari base64 di st.markdown yang bisa gagal render) */
+    var _bgDesktop = "{_bg_desktop}";
+    var _bgMobile  = "{_bg_mobile}";
+    var _isMobile  = window.innerWidth <= 768;
+    var _bgUrl     = _isMobile ? _bgMobile : _bgDesktop;
+    var _applyBg   = function() {{
+        var targets = [
+            pd.querySelector('[data-testid="stAppViewContainer"]'),
+            pd.querySelector('section[data-testid="stMain"]')
+        ];
+        targets.forEach(function(el) {{
+            if (el) {{
+                el.style.setProperty('background-image', _bgUrl, 'important');
+            }}
+        }});
+    }};
+    _applyBg();
+    /* Reapply setelah Streamlit rerender elemen */
+    setTimeout(_applyBg, 300);
+    setTimeout(_applyBg, 800);
 
     /* Hide fork/share bar Streamlit */
     if (!pd.getElementById('hide-fork-bar')) {{
