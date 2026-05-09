@@ -9678,23 +9678,36 @@ html,body{{
     /* ── Sembunyikan semua elemen Streamlit di parent frame ── */
     var _st = pd.createElement('style');
     _st.id = 'sigma-login-hide';
-    _st.textContent = [
-        '[data-testid="stSidebar"]',
-        'header[data-testid="stHeader"]',
-        '#MainMenu', 'footer',
-        '[data-testid="stToolbar"]',
-        '[data-testid="stDecoration"]',
-        '[data-testid="stStatusWidget"]',
-        '.stDeployButton',
-        '[data-testid="stMainBlockContainer"]',
-        '[data-testid="stAppViewContainer"] > section > div',
-        'section[data-testid="stMain"] > div'
-    ].join(',') + '{{display:none!important;visibility:hidden!important;}}';
+    _st.textContent =
+        /* Sembunyikan chrome Streamlit, tapi JANGAN container utama (iframe ada di sana) */
+        '[data-testid="stSidebar"],' +
+        'header[data-testid="stHeader"],' +
+        '#MainMenu,footer,' +
+        '[data-testid="stToolbar"],' +
+        '[data-testid="stDecoration"],' +
+        '[data-testid="stStatusWidget"],' +
+        '.stDeployButton,' +
+        '[data-testid="stBottom"]' +
+        '{{display:none!important;}}' +
+        /* Reset padding/margin container agar iframe bisa full-screen */
+        '[data-testid="stAppViewContainer"],' +
+        'section[data-testid="stMain"],' +
+        '[data-testid="stMainBlockContainer"]' +
+        '{{padding:0!important;margin:0!important;max-width:100%!important;}}' +
+        /* Buat iframe yang dirender components.html full-screen */
+        '[data-testid="stMainBlockContainer"] iframe' +
+        '{{position:fixed!important;top:0!important;left:0!important;' +
+        'width:100vw!important;height:100vh!important;' +
+        'border:none!important;z-index:9999!important;}}';
 
     /* Background parent */
     var _bg = pd.createElement('style');
     _bg.id = 'sigma-login-bg';
-    _bg.textContent = 'html,body,.stApp,[data-testid="stAppViewContainer"],section[data-testid="stMain"]{{background:#070A10!important;}}';
+    _bg.textContent =
+        'html,body,.stApp,' +
+        '[data-testid="stAppViewContainer"],' +
+        'section[data-testid="stMain"]' +
+        '{{background:#070A10!important;}}';
 
     if (!pd.getElementById('sigma-login-hide')) pd.head.appendChild(_st);
     if (!pd.getElementById('sigma-login-bg'))   pd.head.appendChild(_bg);
@@ -9780,7 +9793,7 @@ html,body{{
 </script>
 </body>
 </html>
-""", height=620, scrolling=False)
+""", height=800, scrolling=True)
 
     # ── Handle postMessage login dari iframe ────────────────────────────────
     # Streamlit tidak bisa terima postMessage langsung.
