@@ -9394,12 +9394,13 @@ C = get_colors(st.session_state.theme)
 
 def show_login():
     # ═══════════════════════════════════════════════════════════════════════
-    # SIGMA LOGIN PAGE  —  Premium Glassmorphism Dark Terminal Edition v5.0
+    # SIGMA LOGIN PAGE  —  Premium Glassmorphism Dark Terminal Edition v5.1
+    # FIX: Semua CSS di-scope ke body.sigma-login-active agar tidak bocor
+    #      ke halaman utama. JS inject class ke <body> saat login, dan
+    #      remove saat user sudah login (Streamlit rerun).
     # ═══════════════════════════════════════════════════════════════════════
 
-    # ── Load background images sebagai base64 dari file lokal (paling reliable) ──
     def _img_to_css_url(filename: str) -> str:
-        """Return CSS url() value: base64 data URI jika file ada, fallback raw GitHub."""
         import base64 as _b64, os as _os
         local_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), filename)
         if _os.path.exists(local_path):
@@ -9417,31 +9418,31 @@ def show_login():
     _bg_desktop = _img_to_css_url("KIPM-UP.png")
     _bg_mobile  = _img_to_css_url("KIPM-UP M.png")
 
-    # ── CSS ──────────────────────────────────────────────────────────────────
+    # ── CSS: semua rule di-scope ke body.sigma-login-active ──────────────
+    # Ini mencegah style bocor ke halaman terminal setelah login.
     st.markdown(f"""
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
-    <style>
-    /* ── Hide Streamlit chrome ── */
-    [data-testid="stSidebar"]          {{ display: none !important; }}
-    header[data-testid="stHeader"]     {{ display: none !important; }}
-    #MainMenu                          {{ display: none !important; }}
-    footer                             {{ display: none !important; }}
-    [data-testid="stToolbar"]          {{ display: none !important; }}
-    [data-testid="stDecoration"]       {{ display: none !important; }}
-    [data-testid="stStatusWidget"]     {{ display: none !important; }}
-    .stDeployButton                    {{ display: none !important; }}
+    <style id="sigma-login-css">
 
-    /* ── Background ── */
-    [data-testid="stAppViewContainer"],
-    section[data-testid="stMain"] {{
+    /* ── Hanya aktif saat body.sigma-login-active ── */
+    body.sigma-login-active [data-testid="stSidebar"]        {{ display: none !important; }}
+    body.sigma-login-active header[data-testid="stHeader"]   {{ display: none !important; }}
+    body.sigma-login-active #MainMenu                        {{ display: none !important; }}
+    body.sigma-login-active footer                           {{ display: none !important; }}
+    body.sigma-login-active [data-testid="stToolbar"]        {{ display: none !important; }}
+    body.sigma-login-active [data-testid="stDecoration"]     {{ display: none !important; }}
+    body.sigma-login-active [data-testid="stStatusWidget"]   {{ display: none !important; }}
+    body.sigma-login-active .stDeployButton                  {{ display: none !important; }}
+
+    body.sigma-login-active [data-testid="stAppViewContainer"],
+    body.sigma-login-active section[data-testid="stMain"] {{
         background: {_bg_desktop} center/cover no-repeat fixed !important;
         min-height: 100vh !important;
     }}
-    section[data-testid="stMain"]::before {{ display: none !important; }}
+    body.sigma-login-active section[data-testid="stMain"]::before {{ display: none !important; }}
 
-    /* ── Dark overlay for depth ── */
-    [data-testid="stAppViewContainer"]::after {{
+    body.sigma-login-active [data-testid="stAppViewContainer"]::after {{
         content: '';
         position: fixed;
         inset: 0;
@@ -9450,8 +9451,8 @@ def show_login():
         z-index: 0;
     }}
 
-    /* ── Login card: centered glassmorphism ── */
-    [data-testid="stMainBlockContainer"] {{
+    /* ── Login card ── */
+    body.sigma-login-active [data-testid="stMainBlockContainer"] {{
         position: fixed !important;
         top: 50% !important;
         left: 50% !important;
@@ -9463,10 +9464,10 @@ def show_login():
         padding: 40px 36px 36px !important;
         margin: 0 !important;
         z-index: 10 !important;
-        background: rgba(255, 255, 255, 0.03) !important;
+        background: rgba(255,255,255,0.03) !important;
         backdrop-filter: blur(24px) saturate(1.6) !important;
         -webkit-backdrop-filter: blur(24px) saturate(1.6) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
         border-radius: 24px !important;
         box-shadow:
             0 0 0 1px rgba(255,255,255,0.04),
@@ -9475,9 +9476,8 @@ def show_login():
             inset 0 1px 0 rgba(255,255,255,0.06) !important;
     }}
 
-    /* ── Mobile: natural flow ── */
     @media(max-width: 768px) {{
-        [data-testid="stMainBlockContainer"] {{
+        body.sigma-login-active [data-testid="stMainBlockContainer"] {{
             position: relative !important;
             top: unset !important;
             left: unset !important;
@@ -9487,15 +9487,17 @@ def show_login():
             padding: 32px 24px 28px !important;
             border-radius: 20px !important;
         }}
-        [data-testid="stAppViewContainer"],
-        section[data-testid="stMain"] {{
+        body.sigma-login-active [data-testid="stAppViewContainer"],
+        body.sigma-login-active section[data-testid="stMain"] {{
             background: {_bg_mobile} center top/cover no-repeat fixed !important;
         }}
     }}
 
-    /* ── Input fields ── */
-    .stTabs, [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
-    [data-testid="stTextInput"] input {{
+    body.sigma-login-active .stTabs,
+    body.sigma-login-active [data-testid="stVerticalBlock"] {{ background: transparent !important; }}
+
+    /* ── Inputs ── */
+    body.sigma-login-active [data-testid="stTextInput"] input {{
         background: rgba(0,0,0,0.20) !important;
         border: 1px solid rgba(255,255,255,0.10) !important;
         border-radius: 12px !important;
@@ -9503,30 +9505,26 @@ def show_login():
         padding: 13px 16px !important;
         font-size: 0.92rem !important;
         font-family: 'Inter', sans-serif !important;
-        font-weight: 400 !important;
-        letter-spacing: 0.2px !important;
         transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
-        -webkit-font-smoothing: antialiased !important;
     }}
-    [data-testid="stTextInput"] input:focus {{
+    body.sigma-login-active [data-testid="stTextInput"] input:focus {{
         border-color: rgba(201,162,39,0.70) !important;
         box-shadow: 0 0 0 3px rgba(201,162,39,0.12), 0 0 14px rgba(201,162,39,0.10) !important;
         outline: none !important;
         background: rgba(0,0,0,0.28) !important;
     }}
-    [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.28) !important; }}
-    [data-testid="stTextInput"] label {{
+    body.sigma-login-active [data-testid="stTextInput"] input::placeholder {{ color: rgba(255,255,255,0.28) !important; }}
+    body.sigma-login-active [data-testid="stTextInput"] label {{
         color: #94A3B8 !important;
         font-size: 0.78rem !important;
         font-family: 'Inter', sans-serif !important;
         font-weight: 500 !important;
         letter-spacing: 0.6px !important;
         text-transform: uppercase !important;
-        margin-bottom: 4px !important;
     }}
 
-    /* ── Buttons (st.button) — gold accent ── */
-    [data-testid="stMainBlockContainer"] .stButton > button {{
+    /* ── Buttons: HANYA di dalam login card ── */
+    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button {{
         background: linear-gradient(135deg, #c9a227 0%, #a07a14 100%) !important;
         color: #0A0C12 !important;
         font-family: 'Inter', sans-serif !important;
@@ -9539,44 +9537,40 @@ def show_login():
         width: 100% !important;
         transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease !important;
         box-shadow: 0 4px 18px rgba(201,162,39,0.28), 0 2px 6px rgba(0,0,0,0.3) !important;
-        cursor: pointer !important;
     }}
-    [data-testid="stMainBlockContainer"] .stButton > button:hover {{
+    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:hover {{
         transform: translateY(-2px) scale(1.008) !important;
         filter: brightness(1.10) !important;
         box-shadow: 0 8px 28px rgba(201,162,39,0.40), 0 4px 12px rgba(0,0,0,0.35) !important;
     }}
-    [data-testid="stMainBlockContainer"] .stButton > button:active {{
+    body.sigma-login-active [data-testid="stMainBlockContainer"] .stButton > button:active {{
         transform: translateY(0px) scale(0.997) !important;
         filter: brightness(0.96) !important;
     }}
 
     /* ── Tabs ── */
-    [data-testid="stTabs"] [role="tablist"] {{
+    body.sigma-login-active [data-testid="stTabs"] [role="tablist"] {{
         background: rgba(255,255,255,0.04) !important;
         border-radius: 12px !important;
         padding: 4px !important;
         border: 1px solid rgba(255,255,255,0.07) !important;
-        gap: 2px !important;
     }}
-    [data-testid="stTabs"] button[role="tab"] {{
+    body.sigma-login-active [data-testid="stTabs"] button[role="tab"] {{
         border-radius: 9px !important;
         color: rgba(255,255,255,0.40) !important;
         font-size: 0.84rem !important;
         font-family: 'Inter', sans-serif !important;
-        font-weight: 500 !important;
         padding: 7px 12px !important;
         border: none !important;
         background: transparent !important;
-        transition: color 0.18s, background 0.18s !important;
     }}
-    [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
+    body.sigma-login-active [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {{
         background: rgba(201,162,39,0.12) !important;
         color: #c9a227 !important;
         font-weight: 700 !important;
         border-bottom: 2px solid #c9a227 !important;
     }}
-    [data-testid="stTabs"] [role="tabpanel"] {{
+    body.sigma-login-active [data-testid="stTabs"] [role="tabpanel"] {{
         background: rgba(255,255,255,0.02) !important;
         border-radius: 14px !important;
         border: 1px solid rgba(255,255,255,0.06) !important;
@@ -9584,40 +9578,58 @@ def show_login():
         margin-top: 8px !important;
         backdrop-filter: blur(10px) !important;
     }}
-    [data-testid="stAlert"] {{ border-radius: 10px !important; font-family: 'Inter', sans-serif !important; font-size: 0.85rem !important; }}
+    body.sigma-login-active [data-testid="stAlert"] {{
+        border-radius: 10px !important;
+        font-family: 'Inter', sans-serif !important;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-    # ── JS: hide fork bar + mobile logo ──────────────────────────────────────
+    # ── JS: tambah class ke <body>, hide fork bar, mobile logo ───────────
     components.html(f"""
 <script>
 (function() {{
     var pd = window.parent.document;
+
+    /* Tambah class sigma-login-active ke body — aktifkan scoped CSS */
+    pd.body.classList.add('sigma-login-active');
+
+    /* Hide fork/share bar Streamlit */
     if (!pd.getElementById('hide-fork-bar')) {{
         var fs = pd.createElement('style');
         fs.id = 'hide-fork-bar';
         fs.textContent = '.viewerBadge_container__r5tak,.viewerBadge_link__qRIco,[class*="viewerBadge"],[class*="styles_viewerBadge"],#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"],header[data-testid="stHeader"],.stDeployButton,[kind="header"],div[data-testid="collapsedControl"]{{display:none!important;visibility:hidden!important;height:0!important;overflow:hidden!important;}}';
         pd.head.appendChild(fs);
     }}
-    if (pd.getElementById('kipm-mobile-logo')) return;
-    var s = pd.createElement('style');
-    s.id = 'kipm-mobile-logo-style';
-    s.textContent = `
-        #kipm-mobile-logo {{ display:none; text-align:center; padding:14px 0 10px; position:fixed; top:0; left:0; right:0; z-index:10; pointer-events:none; }}
-        #kipm-mobile-logo img {{ width:80px; height:80px; object-fit:contain; filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6)); }}
-        #kipm-mobile-logo .kipm-name {{ font-size:0.7rem; color:rgba(255,255,255,0.7); letter-spacing:2px; font-family:'Inter',sans-serif; margin-top:4px; }}
-        @media(max-width:768px) {{ #kipm-mobile-logo {{ display:block !important; }} }}
-    `;
-    pd.head.appendChild(s);
-    var div = pd.createElement('div');
-    div.id = 'kipm-mobile-logo';
-    div.innerHTML = '<img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png" onerror="this.style.display=\'none\'" style="width:80px;height:80px;object-fit:contain;"><div class="kipm-name">KIPM-UP</div>';
-    pd.body.appendChild(div);
+
+    /* Mobile logo */
+    if (!pd.getElementById('kipm-mobile-logo')) {{
+        var s = pd.createElement('style');
+        s.id = 'kipm-mobile-logo-style';
+        s.textContent = '#kipm-mobile-logo{{display:none;text-align:center;padding:14px 0 10px;position:fixed;top:0;left:0;right:0;z-index:10;pointer-events:none;}}#kipm-mobile-logo img{{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6));}}#kipm-mobile-logo .kipm-name{{font-size:0.7rem;color:rgba(255,255,255,0.7);letter-spacing:2px;font-family:Inter,sans-serif;margin-top:4px;}}@media(max-width:768px){{#kipm-mobile-logo{{display:block!important;}}}}';
+        pd.head.appendChild(s);
+        var div = pd.createElement('div');
+        div.id = 'kipm-mobile-logo';
+        div.innerHTML = '<img src="https://raw.githubusercontent.com/kipmuniversitaspancasila-commits/KIPMSIGMA/main/Mate%20KIPM%20LOGO.png" onerror="this.style.display=\'none\'" style="width:80px;height:80px;object-fit:contain;"><div class="kipm-name">KIPM-UP</div>';
+        pd.body.appendChild(div);
+    }}
+
+    /* Poll: kalau user sudah login (sigma-login-active tidak relevan lagi),
+       remove class dari body saat Streamlit rerun menghapus elemen login */
+    var _poll = setInterval(function() {{
+        var loginCss = pd.getElementById('sigma-login-css');
+        if (!loginCss) {{
+            pd.body.classList.remove('sigma-login-active');
+            var logo = pd.getElementById('kipm-mobile-logo');
+            if (logo) logo.remove();
+            clearInterval(_poll);
+        }}
+    }}, 400);
 }})();
 </script>
 """, height=0)
 
-    # ── Header: Sigma mark + title ───────────────────────────────────────────
+    # ── Header ───────────────────────────────────────────────────────────────
     st.markdown("""
 <div style="text-align:center;margin:0 0 28px;font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;">
     <div style="display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,rgba(201,162,39,0.18) 0%,rgba(160,122,20,0.10) 100%);border:1px solid rgba(201,162,39,0.30);margin-bottom:16px;box-shadow:0 0 24px rgba(201,162,39,0.12);">
@@ -9651,7 +9663,7 @@ def show_login():
     except Exception:
         st.info("Google login belum dikonfigurasi di Secrets")
 
-    # ── Footer disclaimer ─────────────────────────────────────────────────────
+    # ── Footer ───────────────────────────────────────────────────────────────
     st.markdown("""
 <p style="text-align:center;color:rgba(255,255,255,0.20);font-size:0.68rem;font-family:'Inter',sans-serif;font-weight:300;margin-top:28px;line-height:1.7;letter-spacing:0.1px;">
     Dengan masuk, kamu menyetujui penggunaan platform untuk analisa.<br>
