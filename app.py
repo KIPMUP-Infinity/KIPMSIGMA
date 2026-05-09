@@ -8018,86 +8018,87 @@ if st.session_state.get("user"):
     _auto_refresh_bursa()
 
 
-st.markdown(f"""
-<style>
-* {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
-.stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
-section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
-section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
-section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
-[data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
-section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
-section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
-section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
-[data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
-[data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
-[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.875rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
-
-/* -- USER BUBBLE - Gemini style (applied via JS class injection) -- */
-.sigma-user-msg {{
-    display: flex !important;
-    justify-content: flex-end !important;
-    padding-right: 0 !important;
-}}
-.sigma-user-msg [data-testid="stChatMessageContent"] {{
-    display: flex !important;
-    justify-content: flex-end !important;
-    width: 100% !important;
-}}
-.sigma-user-msg [data-testid="stMarkdownContainer"] {{
-    background: {C['bubble']} !important;
-    color: {C['bubble_text']} !important;
-    border-radius: 20px 20px 4px 20px !important;
-    padding: 10px 16px !important;
-    max-width: 75% !important;
-    margin-left: auto !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
-    font-size: 0.875rem !important;
-}}
-.sigma-user-msg [data-testid="stMarkdownContainer"] p,
-.sigma-user-msg [data-testid="stMarkdownContainer"] span,
-.sigma-user-msg [data-testid="stMarkdownContainer"] li,
-.sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
-    color: {C['bubble_text']} !important;
-    font-size: 0.875rem !important;
-}}
-[data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
-[data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
-div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
-[data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.875rem !important; }}
-[data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
-[data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
-footer, #MainMenu {{ visibility: hidden !important; }}
-hr {{ border-color: {C['border']} !important; }}
-[data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.875rem !important; line-height: 1.8 !important; }}
-[data-testid="stMarkdownContainer"] h1 {{ font-size: 1.5rem !important; }}
-[data-testid="stMarkdownContainer"] h2 {{ font-size: 1.25rem !important; }}
-[data-testid="stMarkdownContainer"] h3 {{ font-size: 1.1rem !important; }}
-
-@media (max-width:768px) {{
-    .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
-    .sys-header {{ margin-bottom: 24px; }}
-    .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
-    .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
-    .sys-subtitle {{ font-size: 0.75rem; }}
-    .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
+if st.session_state.get("user"):
+    st.markdown(f"""
+    <style>
+    * {{ font-family: ui-sans-serif,-apple-system,system-ui,"Segoe UI",sans-serif !important; box-sizing: border-box; }}
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section, section[data-testid="stMain"], [data-testid="stMainBlockContainer"], [data-testid="stBottom"], [data-testid="stBottom"] > div {{ background: {C['bg']} !important; }}
+    section[data-testid="stSidebar"], section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, section[data-testid="stSidebar"] > div > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div, [data-testid="stSidebarUserContent"] > div > div {{ background: {C['sidebar_bg']} !important; box-shadow: none !important; }}
+    section[data-testid="stSidebar"] {{ border-right: 1px solid {C['border']} !important; }}
+    section[data-testid="stSidebar"] > div, section[data-testid="stSidebar"] > div > div, [data-testid="stSidebarContent"], [data-testid="stSidebarUserContent"], [data-testid="stSidebarUserContent"] > div {{ padding-top: 0 !important; margin-top: 0 !important; }}
+    [data-testid="collapsedControl"], [data-testid="stSidebarCollapseButton"] {{ display: none !important; }}
+    section[data-testid="stSidebar"] .stButton > button {{ background: transparent !important; border: none !important; box-shadow: none !important; color: {C['text']} !important; font-size: 0.875rem !important; padding: 7px 12px !important; border-radius: 8px !important; width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; text-align: left !important; min-height: 36px !important; transition: all 0.18s ease !important; border-left: 2px solid transparent !important; }}
+    section[data-testid="stSidebar"] .stButton > button:hover {{ background: linear-gradient(135deg, rgba(124,58,237,0.16) 0%, rgba(59,130,246,0.16) 100%) !important; border-left: 2px solid rgba(124,58,237,0.6) !important; color: #a78bfa !important; }}
+    section[data-testid="stSidebar"] .stButton > button p, section[data-testid="stSidebar"] .stButton > button span {{ margin: 0 !important; text-align: left !important; color: inherit !important; width: 100% !important; }}
+    [data-testid="stChatMessage"] {{ background: transparent !important; border: none !important; box-shadow: none !important; }}
+    [data-testid="stChatMessageAvatarUser"], [data-testid="stChatMessageAvatarAssistant"] {{ display: none !important; }}
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {{ font-size: 0.875rem !important; line-height: 1.75 !important; color: {C['text']} !important; background: transparent !important; }}
     
-    .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
-    .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
+    /* -- USER BUBBLE - Gemini style (applied via JS class injection) -- */
+    .sigma-user-msg {{
+        display: flex !important;
+        justify-content: flex-end !important;
+        padding-right: 0 !important;
+    }}
+    .sigma-user-msg [data-testid="stChatMessageContent"] {{
+        display: flex !important;
+        justify-content: flex-end !important;
+        width: 100% !important;
+    }}
+    .sigma-user-msg [data-testid="stMarkdownContainer"] {{
+        background: {C['bubble']} !important;
+        color: {C['bubble_text']} !important;
+        border-radius: 20px 20px 4px 20px !important;
+        padding: 10px 16px !important;
+        max-width: 75% !important;
+        margin-left: auto !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+        font-size: 0.875rem !important;
+    }}
+    .sigma-user-msg [data-testid="stMarkdownContainer"] p,
+    .sigma-user-msg [data-testid="stMarkdownContainer"] span,
+    .sigma-user-msg [data-testid="stMarkdownContainer"] li,
+    .sigma-user-msg [data-testid="stMarkdownContainer"] strong {{
+        color: {C['bubble_text']} !important;
+        font-size: 0.875rem !important;
+    }}
+    [data-testid="stMainBlockContainer"] {{ max-width: 760px !important; margin: 0 auto !important; padding: 0 24px 120px !important; overflow-y: visible !important; }}
+    [data-testid="stMainBlockContainer"] p, [data-testid="stMainBlockContainer"] li, [data-testid="stMainBlockContainer"] h1, [data-testid="stMainBlockContainer"] h2, [data-testid="stMainBlockContainer"] h3 {{ color: {C['text']} !important; }}
+    div[data-testid="stChatInputContainer"] {{ border: 1px solid {C['border']} !important; background: {C['input_bg']} !important; border-radius: 16px !important; }}
+    [data-testid="stChatInput"] textarea {{ background: {C['input_bg']} !important; color: {C['text']} !important; font-size: 0.875rem !important; }}
+    [data-testid="stChatInput"] textarea::placeholder {{ color: {C['text_muted']} !important; }}
+    [data-testid="stChatInputContainer"] textarea:focus {{ box-shadow: none !important; outline: none !important; }}
+    footer, #MainMenu {{ visibility: hidden !important; }}
+    hr {{ border-color: {C['border']} !important; }}
+    [data-testid="stMarkdownContainer"] *, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span, [data-testid="stMarkdownContainer"] div {{ font-size: 0.875rem !important; line-height: 1.8 !important; }}
+    [data-testid="stMarkdownContainer"] h1 {{ font-size: 1.5rem !important; }}
+    [data-testid="stMarkdownContainer"] h2 {{ font-size: 1.25rem !important; }}
+    [data-testid="stMarkdownContainer"] h3 {{ font-size: 1.1rem !important; }}
     
-    .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
-    .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
-    .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
-    .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
-    .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
-    
-    .card-features {{ margin-bottom: 20px; }}
-    .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
-    .card-cta {{ padding: 12px; font-size: 0.85rem; }}
-    .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
-}}
-</style>
-""", unsafe_allow_html=True)
+    @media (max-width:768px) {{
+        .sys-wrapper {{ padding: 20px 16px 40px; justify-content: flex-start; min-height: 100vh; }}
+        .sys-header {{ margin-bottom: 24px; }}
+        .sys-welcome {{ font-size: 0.65rem; margin-bottom: 4px; }}
+        .sys-title {{ font-size: 1.8rem; margin-bottom: 4px; }}
+        .sys-subtitle {{ font-size: 0.75rem; }}
+        .sys-divider {{ margin-top: 10px; margin-bottom: 0; }}
+        
+        .sys-cards {{ gap: 14px; flex-direction: column; align-items: center; width: 100%; }}
+        .sys-card {{ width: 100%; min-width: unset; max-width: 100%; padding: 22px 18px 18px; border-radius: 16px; }}
+        
+        .card-icon {{ width: 44px; height: 44px; font-size: 1.2rem; margin-bottom: 12px; }}
+        .card-badge {{ top: 14px; right: 14px; font-size: 0.55rem; padding: 3px 8px; }}
+        .card-name {{ font-size: 1.2rem; margin-bottom: 4px; }}
+        .card-tagline {{ font-size: 0.65rem; margin-bottom: 12px; }}
+        .card-desc {{ font-size: 0.78rem; margin-bottom: 16px; line-height: 1.5; }}
+        
+        .card-features {{ margin-bottom: 20px; }}
+        .card-features li {{ font-size: 0.75rem; padding: 5px 0; gap: 6px; }}
+        .card-cta {{ padding: 12px; font-size: 0.85rem; }}
+        .sys-footer {{ margin-top: 32px; font-size: 0.65rem; }}
+    }}
+    </style>
+    """, unsafe_allow_html=True)
 
 def show_system_selector():
     """Halaman pemilihan sistem - pixel-perfect cyberpunk design."""
@@ -9387,7 +9388,7 @@ if st.session_state.get("user") and st.session_state.get("selected_system") == "
 
 init_chat()
 user = st.session_state.user
-C = get_colors(st.session_state.theme)
+# C di-inisialisasi setelah login check (baris ~9679)
 
 # _call_cerebras sudah didefinisikan di atas (PART 6) dengan smart truncation - tidak perlu duplikat.
 
