@@ -9615,17 +9615,48 @@ def show_login():
         pd.body.appendChild(div);
     }}
 
-    /* Poll: kalau user sudah login (sigma-login-active tidak relevan lagi),
-       remove class dari body saat Streamlit rerun menghapus elemen login */
-    var _poll = setInterval(function() {{
+    /* Cleanup login CSS + class saat Streamlit rerun setelah login.
+       Strategi: MutationObserver (cepat) + interval fallback.
+       Juga langsung eksekusi cleanup jika elemen sudah tidak ada. */
+    function _cleanupLogin() {{
         var loginCss = pd.getElementById('sigma-login-css');
         if (!loginCss) {{
             pd.body.classList.remove('sigma-login-active');
             var logo = pd.getElementById('kipm-mobile-logo');
             if (logo) logo.remove();
+            var logoStyle = pd.getElementById('kipm-mobile-logo-style');
+            if (logoStyle) logoStyle.remove();
+            return true;
+        }}
+        return false;
+    }}
+
+    /* MutationObserver: deteksi saat #sigma-login-css dihapus dari DOM */
+    if (typeof MutationObserver !== 'undefined') {{
+        var _obs = new MutationObserver(function(mutations) {{
+            for (var i = 0; i < mutations.length; i++) {{
+                var removed = mutations[i].removedNodes;
+                for (var j = 0; j < removed.length; j++) {{
+                    var n = removed[j];
+                    if (n.id === 'sigma-login-css' ||
+                        (n.querySelectorAll && n.querySelectorAll('#sigma-login-css').length > 0)) {{
+                        _cleanupLogin();
+                        _obs.disconnect();
+                        return;
+                    }}
+                }}
+            }}
+        }});
+        _obs.observe(pd.head, {{ childList: true, subtree: true }});
+        _obs.observe(pd.body, {{ childList: true, subtree: true }});
+    }}
+
+    /* Interval fallback (lebih agresif: 200ms) */
+    var _poll = setInterval(function() {{
+        if (_cleanupLogin()) {{
             clearInterval(_poll);
         }}
-    }}, 400);
+    }}, 200);
 }})();
 </script>
 """, height=0)
@@ -9675,6 +9706,28 @@ def show_login():
     st.stop()
 
 if st.session_state.user is None: show_login()
+
+# ── CLEANUP AKTIF: hapus sigma-login-css & class dari DOM setelah login ──────
+# Dirender hanya ketika user SUDAH login (show_login() di atas sudah st.stop())
+import streamlit.components.v1 as _comp_cleanup
+_comp_cleanup.html("""
+<script>
+(function() {
+    var pd = window.parent.document;
+    // Hapus <style id="sigma-login-css"> jika masih ada di DOM
+    var _css = pd.getElementById('sigma-login-css');
+    if (_css) { _css.parentNode && _css.parentNode.removeChild(_css); }
+    // Hapus class sigma-login-active dari body
+    pd.body.classList.remove('sigma-login-active');
+    // Hapus mobile logo artifacts
+    ['kipm-mobile-logo','kipm-mobile-logo-style'].forEach(function(id) {
+        var el = pd.getElementById(id);
+        if (el) { el.parentNode && el.parentNode.removeChild(el); }
+    });
+})();
+</script>
+""", height=0)
+
 init_chat()
 user = st.session_state.user
 C = get_colors(st.session_state.theme)
